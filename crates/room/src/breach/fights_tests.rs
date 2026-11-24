@@ -175,7 +175,7 @@ fn a_watcher_sees_a_player_in_its_light_and_at_normal_unwrites_them_and_at_hard_
         let ahead = [watcher.x + sine * 5.0, watcher.y - cosine * 5.0, watcher.z - 0.5];
         for _ in 0..ways::SEEN_TICKS + 5 {
             stand_at(&mut room, players[1], ahead);
-            room.breach.as_mut().expect("run").fights.ways.watchers[0].2 = room.clock + 1;
+            room.breach.as_mut().expect("run").fights.ways.watchers[0].2 = -1.0;
             room.tick();
         }
         assert!(breach(&room).fights.ways.seen, "{tier:?}: seen");
@@ -186,6 +186,27 @@ fn a_watcher_sees_a_player_in_its_light_and_at_normal_unwrites_them_and_at_hard_
             assert!(room.players[&players[1]].fighter.dead() && !room.players[&players[0]].fighter.dead());
         }
     }
+}
+
+#[test]
+fn a_watcher_struck_down_hastens_the_others_sweeps_without_snapping_their_lenses() {
+    let (mut room, players) = won_to(Tier::Normal, 1, WAYS);
+    begin_at(&mut room, &players, "ways", "heart");
+    put_at(&mut room, players[0], "ways", "checkpoint");
+    ticks(&mut room, 20 * 60);
+    let watchers = breach(&room).fights.ways.watchers.clone();
+    let (first, second) = (watchers[0].0, watchers[1].0);
+    let before = room.foes[&second].fighter.body.facing;
+    room.tick();
+    let unhastened = combat::sight::off(before, room.foes[&second].fighter.body.facing);
+    let before = room.foes[&second].fighter.body.facing;
+    kill(&mut room, first);
+    room.tick();
+    let step = combat::sight::off(before, room.foes[&second].fighter.body.facing);
+    assert!(
+        step <= unhastened * ways::FASTER + 1e-3,
+        "a tick's turn, a quarter faster: {step:.3} after {unhastened:.3}"
+    );
 }
 
 #[test]

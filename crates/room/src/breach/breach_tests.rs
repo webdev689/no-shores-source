@@ -169,6 +169,21 @@ fn outside_a_running_encounter_the_fallen_stand_again_after_six_seconds_at_eithe
 }
 
 #[test]
+fn a_fall_into_the_dark_stands_again_no_sooner_than_a_fights_dead_would() {
+    let (mut room, players) = run(Tier::Normal, 1);
+    room.tick();
+    room.players.get_mut(&players[0]).expect("in").standing = reach::Standing::Dead { ticks: 0, fell: true };
+    let lies = fallen::STANDS_OUTSIDE;
+    for sequence in 1..=lies + 2 {
+        room.input(players[0], crate::Input { sequence, respawn: true, ..crate::Input::default() }).expect("taken");
+        room.tick();
+        let down = matches!(room.players[&players[0]].standing, reach::Standing::Dead { .. });
+        assert!(down || sequence + 2 >= lies, "asked at {sequence} ticks, still down");
+    }
+    assert_eq!(room.players[&players[0]].standing, reach::Standing::Inside, "stood again after six seconds");
+}
+
+#[test]
 fn every_living_player_down_three_seconds_wipes_the_attempt_and_stands_them_at_its_stage() {
     let (mut room, players) = run(Tier::Hard, 2);
     let inside = at(&room, "mending", "mender");

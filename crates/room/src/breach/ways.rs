@@ -31,12 +31,13 @@ pub const SEEN_TO_WIPE: u64 = 3 * 60;
 const EYE_M: f64 = 2.2;
 const CHEST_M: f64 = 1.2;
 
-/// The Ways as they stand: each Watcher, its post's facing and its sweep's start; how long each player has stood in
-/// a light; whether anyone was seen this attempt, and at Hard when the company is unwritten.
+/// The Ways as they stand: each Watcher, its post's facing and how far its sweep has come, in sweeps (below 0 until it
+/// begins; it comes on by the pace each tick, so a quicker pace never jumps the lens); how long each player has stood
+/// in a light; whether anyone was seen this attempt, and at Hard when the company is unwritten.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Ways {
     pub begun: bool,
-    pub watchers: Vec<(FighterId, f64, u64)>,
+    pub watchers: Vec<(FighterId, f64, f64)>,
     pub lit: Vec<(PlayerId, u32)>,
     pub seen: bool,
     pub wipe_at: Option<u64>,
@@ -56,7 +57,7 @@ impl Room {
         if !fight.begun {
             self.post_watchers(breach, &mut fight);
         }
-        self.turn_watchers(&fight);
+        self.turn_watchers(&mut fight);
         self.watch(breach, &mut fight);
         if fight.wipe_at.is_some_and(|at| self.clock >= at) {
             fight.wipe_at = None;
@@ -81,7 +82,6 @@ impl Room {
 
     /// The Watchers stand at their posts, Idols that never walk or strike, each to its post's facing.
     fn post_watchers(&mut self, breach: &mut Breach, fight: &mut Ways) {
-        let clock = self.clock;
         for (nth, (at, facing)) in breach.plan.numbered("ways", "watcher").into_iter().enumerate() {
             let Some(id) = self.stand_breach_foe(breach, (IDOL, Rank::Elite), at, Some("Watcher")) else { continue };
             self.make_walker(id);
@@ -89,19 +89,20 @@ impl Room {
             if let Some(foe) = self.foes.get_mut(&id) {
                 (foe.fighter.body.facing, foe.fighter.aim) = (post, post);
             }
-            fight.watchers.push((id, post, clock + nth as u64 * 50));
+            fight.watchers.push((id, post, -(nth as f64) * 50.0 / SWEEP_TICKS));
         }
         fight.begun = true;
     }
 
-    /// Each Watcher's lens turned to where its sweep stands now: a smooth swing either way of its post's facing.
-    fn turn_watchers(&mut self, fight: &Ways) {
+    /// Each Watcher's lens turned to where its sweep stands now, a smooth swing either way of its post's facing, and
+    /// its sweep brought on by this tick's pace.
+    fn turn_watchers(&mut self, fight: &mut Ways) {
         let pace = libm::pow(FASTER, fight.fallen(self) as f64);
-        for &(id, post, from) in &fight.watchers {
-            let Some(foe) = self.foes.get_mut(&id).filter(|foe| !foe.fighter.dead()) else { continue };
-            let along = self.clock.saturating_sub(from) as f64 * pace / SWEEP_TICKS;
-            let facing = movement::wrap(post + SWEEP * libm::sin(along * std::f64::consts::TAU));
+        for (id, post, along) in &mut fight.watchers {
+            let Some(foe) = self.foes.get_mut(id).filter(|foe| !foe.fighter.dead()) else { continue };
+            let facing = movement::wrap(*post + SWEEP * libm::sin(along.max(0.0) * std::f64::consts::TAU));
             (foe.fighter.body.facing, foe.fighter.aim) = (facing, facing);
+            *along += pace / SWEEP_TICKS;
         }
     }
 

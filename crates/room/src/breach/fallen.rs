@@ -49,9 +49,16 @@ impl Room {
         }
     }
 
-    /// Whether a player the section killed (a fall) may ask to stand again: never at Hard inside a running encounter.
+    /// Whether a player the section killed (a fall) may ask to stand again: in a Breach's run or its Waking once they
+    /// have lain as long as a fight's dead lie there (`stands_after`), so never at Hard inside a running encounter.
     pub(crate) fn may_respawn(&self, id: PlayerId) -> bool {
-        self.stands_after(id).is_some()
+        let Some(after) = self.stands_after(id) else { return false };
+        let breached = self.breach.is_some() || self.breach_gate.as_ref().is_some_and(|gate| gate.fighting(id));
+        let lain = self.players.get(&id).map_or(0, |found| match found.standing {
+            Standing::Dead { ticks, .. } => ticks,
+            _ => 0,
+        });
+        !breached || lain >= after
     }
 
     /// A player stood whole at `at`, graced, and told they stand again.
