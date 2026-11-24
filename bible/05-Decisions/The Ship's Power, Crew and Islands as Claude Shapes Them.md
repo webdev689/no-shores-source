@@ -66,3 +66,7 @@ for (Destiny 1, Star Trek Online, Black Desert, Deadfire, DFO's own crew), and t
 - Leaving a fight below a third of its hull counts as sunk.
 - What floats for a player waits for their account while it floats, though they drop and rejoin.
 - Everyone who fought a ship keeps their own lot of what floats; boarders who win its deck take its hold on top.
+
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: a sinking pays twelve land kills of its rank,
+in XP to the ship, its modules and its officers aboard and in XP and Aurem to the player; every module climbs to its
+rarity's Prestige over however many upgrades its grid holds.

@@ -23,6 +23,7 @@ pub(crate) fn bounties_of<'built>(
                 paid: current && today.turned_in.contains(&place),
                 pool: bounty.pool,
                 name: Some(builder.create_string(bounty.name)),
+                tier: bounty.tier,
             };
             messages::GearBounty::create(builder, &args)
         })

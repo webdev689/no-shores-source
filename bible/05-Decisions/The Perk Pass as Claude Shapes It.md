@@ -27,6 +27,9 @@ them out is [[Gear]] and [[Ship Power]].
 | A kept Atheric | Follows its catalogue entry: a node bought moves with its perk where its column changed, else to the perk it merged into, else stays on the plain perk in its place, a reworked Atheric's own among them; one left only a perk that gives and takes, or a place another took, is given back | Destiny's reworked exotics changed every copy, and nobody bought them again. A node costs the same whatever its perk, so mostly nothing is given back; nor is a cost pressed on a player who never chose it |
 | Its look | Its own metal or set, and its own make where the forge has more than one (a shield's kind, a bow's), with its rarity's glow | Destiny's exotics each had a model of their own |
 
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: an Atheric's own node costs 2,500 Aurem, 4
+fragments, 10 of its resource and 1 Essence.
+
 ### The Atheric weapons
 
 Five reworked, five new: one or more for each family (blades, blunt, pairs, shields, bows, guns, the staff).

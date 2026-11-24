@@ -236,11 +236,11 @@ impl Room {
     }
 }
 
-/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage to the bit
-/// (`combat::step`'s quick shot, power 1), and one loosed from the draw at its draw's power and the aimed trim, which
-/// may be more or, with Hair Trigger, less.
+/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage times a player's
+/// share of it to the bit (`combat::step`'s quick shot, `player_power`), and one loosed from the draw at its draw's
+/// power and the aimed trim, which may be more or, with Hair Trigger, less.
 pub(crate) fn aimed(shot: &Shot) -> bool {
-    shot.damage != combat::shots::shot_numbers(shot.ranged).1
+    shot.damage != combat::shots::shot_numbers(shot.ranged).1 * combat::shots::player_power(shot.ranged)
 }
 
 /// Wears a level 1 Normal loadout of this kind, as their gear would put it on.

@@ -332,6 +332,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
 - [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]
 - [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]
+- [[The Balance and Economy Pass Is Claude's, After Destiny 1 Vanilla]]
+- [[The Balance and Economy Pass as Claude Shapes It]]
+- [[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]
+- [[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]
 - [[What a Body Meets Keeps to What Is Drawn]]
 - [[The Owner's Hand-Drawn Meadow Grows Over the Grass]]
 

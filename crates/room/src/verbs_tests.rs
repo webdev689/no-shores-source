@@ -2,7 +2,7 @@
 //! foe falls: Exposing Strikes, Thunderclap, Exploit, Marked Shot, Shocking Rounds, Keen Eye, Attuned and Spellfeed.
 
 use crate::foes::Foe;
-use crate::perks::trim_of;
+use crate::perks::{EXPLOIT_TIMES, trim_of};
 use crate::{FighterId, How, PlayerId, Room, loadout_arms};
 use combat::{Blow, BlowKind, Fighter, Ranged, Status, Stroke, Trim, Verdict};
 use gear::{At, Element, Item, Kind, Rarity, Slot};
@@ -114,12 +114,15 @@ fn a_loadouts_perks_work_only_while_it_is_drawn() {
     let (mut room, player, [exposed, other]) = room_wearing(Kind::Sword, "exploit");
     wear(&mut room, player, WORN + 1, Kind::Bow, "keen_eye");
     assert!(room.give(exposed, Status::Expose, None, None));
-    assert!(room.empower(blow(player, SWING), exposed).crit, "the sword's Exploit with the sword drawn");
+    let plain = room.empower(blow(player, SWING), other).damage;
+    let exploited = room.empower(blow(player, SWING), exposed).damage;
+    assert!((exploited - plain * EXPLOIT_TIMES).abs() < 1e-9, "the sword's Exploit with the sword drawn");
     swing(&mut room, player, &[other], Verdict::Hit { damage: 5_000.0, poise: 0.0 });
     assert!(!has(&room, player, Status::Crit), "the bow's Keen Eye waits for the bow");
     let fighter = *room.fighter(player).expect("in");
     room.set_fighter(player, Fighter { arms: loadout_arms(Kind::Bow), ..fighter });
-    assert!(!room.empower(blow(player, SWING), exposed).crit, "the fists with the bow drawn take no Exploit");
+    let fists = (room.empower(blow(player, SWING), exposed), room.empower(blow(player, SWING), other));
+    assert_eq!(fists.0.damage, fists.1.damage, "the fists with the bow drawn take no Exploit");
 }
 
 #[test]
@@ -189,15 +192,17 @@ fn a_blow_that_breaks_a_guard_charges_the_foe_with_thunderclap() {
 }
 
 #[test]
-fn blows_on_an_exposed_foe_crit_with_exploit() {
+fn swings_on_an_exposed_foe_strike_a_quarter_harder_with_exploit_and_no_crit() {
     let (mut room, player, [first, second]) = room_wearing(Kind::Sword, "exploit");
     assert!(room.give(first, Status::Expose, None, None));
-    assert!(room.empower(blow(player, SWING), first).crit, "Exploit");
-    assert!(!room.empower(blow(player, SWING), second).crit, "a foe not Exposed");
-    assert!(!room.empower(blow(player, BlowKind::Shot(Ranged::Bow)), first).crit, "a shot is no blow");
-    let (mut room, player, [first, _]) = room_wearing(Kind::Sword, "light_grip");
+    let (exposed, plain) = (room.empower(blow(player, SWING), first), room.empower(blow(player, SWING), second));
+    assert!((exposed.damage - plain.damage * EXPLOIT_TIMES).abs() < 1e-9 && !exposed.crit, "Exploit");
+    let shot = |room: &Room, foe| room.empower(blow(player, BlowKind::Shot(Ranged::Bow)), foe).damage;
+    assert_eq!(shot(&room, first), shot(&room, second), "a shot is no swing");
+    let (mut room, player, [first, second]) = room_wearing(Kind::Sword, "light_grip");
     assert!(room.give(first, Status::Expose, None, None));
-    assert!(!room.empower(blow(player, SWING), first).crit, "not without the perk");
+    let swung = |room: &Room, foe| room.empower(blow(player, SWING), foe).damage;
+    assert_eq!(swung(&room, first), swung(&room, second), "not without the perk");
 }
 
 #[test]
