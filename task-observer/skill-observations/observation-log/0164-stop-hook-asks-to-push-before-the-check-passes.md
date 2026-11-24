@@ -22,3 +22,5 @@ no push before a passing check. Holding the push is right, but each turn spends 
 
 **Suggested improvement:** In `bible/03-Code/Toolkit.md`, say: commit each tested piece at once (the hook's
 uncommitted check is then met), and answer the hook's push request with the check's state until it passes; then push.
+
+**Another instance (2026-11-24, No Shores boxing budget and meadow):** the Stop hook asked for a push five times while a full `cargo xtask check` (about 35 min) ran on the commit it named; each time the push was held until the check passed, so the rule held by attention alone, at the cost of a check per doc-only commit.
