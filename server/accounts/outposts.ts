@@ -5,7 +5,7 @@
  * abandoned. Its founder and admins build, at the outpost itself; any member collects there; only the founder abandons,
  * from anywhere. Whatever is taken back refunds half its Aurem, as much of it as the treasury holds. Each write holds
  * only while the asker still has their rank and what it changes is as it was read, both inside it; a page may name its
- * ask (`rid`), so one sent twice moves its Aurem once.
+ * ask (`rid`), so one sent twice moves its Aurem once and answers as it did, its answer kept as a room's errand's is.
  */
 
 import { levelOf } from '../../client/src/game/guild/guildLaw.ts';
@@ -26,7 +26,16 @@ import {
 import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
 import type { KeptGuild } from './guildFace.ts';
-import { fills, outpostRoom, plotOf, settled, settling, strongboxRate } from './outpostStores.ts';
+import {
+  fills,
+  keepAnswer,
+  keptAnswer,
+  outpostRoom,
+  plotOf,
+  settled,
+  settling,
+  strongboxRate,
+} from './outpostStores.ts';
 import { randomToken } from './secrets.ts';
 import { type Moved, type Paid, move } from './treasury.ts';
 
@@ -67,12 +76,13 @@ async function there(database: Db, own: string, site: string, guild: string, now
 const ranked = (from: number, rank: number) =>
   `EXISTS (SELECT 1 FROM guild_members WHERE account_id = ?${from} AND guild_id = ?${from + 1} AND rank <= ${rank})`;
 
-/** One ask's say: who asks, their guild, the site, its ledger id and the time. */
+/** One ask's say: who asks, their guild, the site, its ledger id, whether the page named it, and the time. */
 interface Asking {
   readonly own: string;
   readonly guild: KeptGuild;
   readonly site: string;
   readonly rid: string;
+  readonly named: boolean;
   readonly now: number;
 }
 
@@ -106,9 +116,16 @@ async function layoutOf(database: Db, guild: string, site: string) {
   return row?.laid ?? '';
 }
 
-/** Moves Aurem for an ask with the writes it pays for. */
-const moveFor = (database: Db, asking: Asking, kind: string, amount: number, writes: readonly Paid[]) =>
-  move(database, asking.guild.id, { account: asking.own, kind, amount, rid: asking.rid, now: asking.now }, writes);
+/** Moves Aurem for an ask with the writes it pays for, keeping the amount moved as a named ask's answer; `lined`
+ *  writes a line though nothing moves. */
+const moveFor = (database: Db, asking: Asking, kind: string, amount: number, writes: readonly Paid[], lined = false) =>
+  move(
+    database,
+    asking.guild.id,
+    { account: asking.own, kind, amount, rid: asking.rid, now: asking.now, lined },
+    writes,
+    asking.named ? keepAnswer(database, asking.rid, amount, asking.now) : null,
+  );
 
 /** Raises an outpost at a site, its hall at the plot's middle turned as asked and its standard before the hall; the
  *  guild's count of outposts is read inside the write, so two raised at once never pass what its level allows. */
@@ -233,15 +250,22 @@ async function takeDown(database: Db, asking: Asking, what: 'structure' | 'decor
     ? ['outpost_structures', 'spent', structure.spent]
     : ['outpost_decor', 'paid', decor?.paid ?? 0];
   const back = await fitting(database, guild.id, Math.floor(spent / 2));
-  const moved = await moveFor(database, asking, `take down ${structure?.kind ?? decor?.piece ?? ''}`, back, [
-    ...(structure ? await settleFirst(database, asking, structure.kind, plot) : []),
-    paid(
-      database,
-      asking,
-      (guards) => `DELETE FROM ${table} WHERE guild_id = ?1 AND site = ?2 AND id = ?3 AND ${cost} = ?4 AND ${guards}`,
-      [guild.id, site, id, spent],
-    ),
-  ]);
+  const moved = await moveFor(
+    database,
+    asking,
+    `take down ${structure?.kind ?? decor?.piece ?? ''}`,
+    back,
+    [
+      ...(structure ? await settleFirst(database, asking, structure.kind, plot) : []),
+      paid(
+        database,
+        asking,
+        (guards) => `DELETE FROM ${table} WHERE guild_id = ?1 AND site = ?2 AND id = ?3 AND ${cost} = ?4 AND ${guards}`,
+        [guild.id, site, id, spent],
+      ),
+    ],
+    spent > 0,
+  );
   return gaveBack(moved, back);
 }
 
@@ -316,15 +340,22 @@ async function abandon(database: Db, asking: Asking) {
     .first<{ spent: number }>();
   if (!row) return said(404, 'Your guild holds no outpost there.');
   const back = await fitting(database, guild.id, Math.floor(row.spent / 2));
-  const moved = await moveFor(database, asking, 'abandon', back, [
-    paid(
-      database,
-      asking,
-      (guards) => `DELETE FROM outposts WHERE guild_id = ?1 AND site = ?2 AND ${spentSql} = ?3 AND ${guards}`,
-      [guild.id, site, row.spent],
-      FOUNDER,
-    ),
-  ]);
+  const moved = await moveFor(
+    database,
+    asking,
+    'abandon',
+    back,
+    [
+      paid(
+        database,
+        asking,
+        (guards) => `DELETE FROM outposts WHERE guild_id = ?1 AND site = ?2 AND ${spentSql} = ?3 AND ${guards}`,
+        [guild.id, site, row.spent],
+        FOUNDER,
+      ),
+    ],
+    row.spent > 0,
+  );
   return gaveBack(moved, back);
 }
 
@@ -354,8 +385,11 @@ export async function outpostAsk(
   if (named !== undefined && (typeof named !== 'string' || !ASKED_ID.test(named)))
     return said(400, 'That ask is not one the page makes.');
   const rid = named === undefined ? randomToken() : `page:${own}:${named}`;
+  // A take-down's answer says what came back; every other ask answered done says only that.
+  const kept = named === undefined ? null : await keptAnswer(database, rid);
+  if (kept !== null) return ['remove', 'undecorate', 'abandon'].includes(asked) ? gaveBack('already', kept) : done;
   if (named !== undefined && (await made(database, guild.id, rid))) return done;
-  const asking: Asking = { own, guild, site, rid, now };
+  const asking: Asking = { own, guild, site, rid, named: named !== undefined, now };
   if (asked === 'abandon')
     return guild.rank === FOUNDER ? abandon(database, asking) : said(403, 'Only the founder can abandon an outpost.');
   if (!(await there(database, own, site, guild.id, now))) return said(409, "Do that at your guild's outpost.");

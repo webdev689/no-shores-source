@@ -176,7 +176,7 @@ async function memberOf(database: Db, account: string) {
 }
 
 /** The answer kept for a room's errand under its id, or null for none kept: asked again, it is answered the same. */
-async function keptAnswer(database: Db, rid: string | undefined): Promise<number | null> {
+export async function keptAnswer(database: Db, rid: string | undefined): Promise<number | null> {
   if (rid === undefined) return null;
   const row = await database
     .prepare('SELECT answer FROM outpost_errands WHERE rid = ?1')
@@ -188,7 +188,7 @@ async function keptAnswer(database: Db, rid: string | undefined): Promise<number
 /** The statement that keeps an errand's answer under the room's id for it, written only when the statement before it
  *  changed a row. Kept for good: a character carries an errand it was not answered until a room holds it again, which
  *  may be long after, and asked again then it must answer as it did. */
-const keepAnswer = (database: Db, rid: string, answer: number, now: number) =>
+export const keepAnswer = (database: Db, rid: string, answer: number, now: number) =>
   database
     .prepare('INSERT INTO outpost_errands (rid, answer, at) SELECT ?1, ?2, ?3 WHERE changes() = 1')
     .bind(rid, answer, now);

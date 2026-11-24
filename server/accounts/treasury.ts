@@ -28,11 +28,13 @@ const within = (guild: string, amount: string) =>
 
 /** Moves `amount` into a guild's treasury (out of it when less than nothing) for `kind`, in the same write as `paid`,
  *  which change first: answers `stale` when what they would change is not as it was read. An amount of nothing writes
- *  no line. A write the database refuses for a clash with what it holds is stale too. */
+ *  no line unless it is `lined` (a refund a full treasury cut to nothing). `answer`, the ask's answer kept under its
+ *  id, is written only once the move is made. A write the database refuses for a clash with what it holds is stale
+ *  too. */
 export async function move(
   database: Db,
   guild: string,
-  move: { account: string | null; kind: string; amount: number; rid: string; now: number },
+  move: { account: string | null; kind: string; amount: number; rid: string; now: number; lined?: boolean },
   paid: readonly Paid[] = [],
   answer: Statement | null = null,
 ): Promise<Moved | 'stale'> {
@@ -43,15 +45,16 @@ export async function move(
   const writes = paid.map((statement, place) =>
     place === 0 ? statement(first, [guild, move.rid, move.amount]) : statement(() => 'changes() = 1', []),
   );
-  const lined = move.amount === 0 ? [] : line(database, guild, move, mark, paid.length > 0, answer);
+  const unlined = move.amount === 0 && move.lined !== true;
+  const lined = unlined ? [] : line(database, guild, move, mark, paid.length > 0, answer);
   let written;
   try {
-    written = await database.batch([...writes, ...lined]);
+    written = await database.batch([...writes, ...lined, ...(unlined && answer ? [answer] : [])]);
   } catch (error) {
     if (/constraint/i.test(String(error))) return 'stale';
     throw error;
   }
-  if (move.amount === 0) return written.at(-1)?.meta.changes === 1 ? 'moved' : 'stale';
+  if (unlined) return written[writes.length - 1]?.meta.changes === 1 ? 'moved' : 'stale';
   // Decided by the balance's own write, never by reading the line back: the prune after it may take the line first.
   if (written[writes.length + 1]?.meta.changes === 1) return 'moved';
   const kept = await database

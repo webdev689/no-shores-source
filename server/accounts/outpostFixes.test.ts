@@ -385,3 +385,29 @@ test('past the outpost limit every errand answers so, and plot reads count apart
   assert.equal(await kept().takeStores(ada, here, 'timber', 5), -3);
   assert.equal(await kept().soundHorn(ada, here), -3);
 });
+
+test('a named take-down or abandonment a full treasury gave nothing for is lined, and answers as it did when sent again', async () => {
+  const { standAt, fund, ask, sql, deps } = await world();
+  await standAt('Ada');
+  await fund(20_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'counting', x: 0, y: 0, turn: 0 });
+  await sql('UPDATE guilds SET treasury = ?1', TREASURY_MOST);
+  const lines = async () =>
+    (await deps.database.prepare('SELECT kind FROM guild_ledger ORDER BY rowid DESC').all<{ kind: string }>()).results
+      .map((line) => line.kind)
+      .filter((kind) => kind.startsWith('take down') || kind === 'abandon');
+  const first = await ask('Ada', 'outpost/remove', { site: SITE, id: 3, rid: 'take-3' });
+  assert.deepEqual([first.status, first.body['back']], [200, 0]);
+  assert.deepEqual(await lines(), ['take down counting'], 'the ledger shows it, for nothing');
+  const again = await ask('Ada', 'outpost/remove', { site: SITE, id: 3, rid: 'take-3' });
+  assert.deepEqual([again.status, again.body['back']], [200, 0], 'answered as it was');
+  const standard = await ask('Ada', 'outpost/remove', { site: SITE, id: 2, rid: 'take-2' });
+  assert.deepEqual([standard.status, standard.body['back']], [200, 0], String(standard.body['error']));
+  assert.deepEqual(await lines(), ['take down counting'], 'the free standard costs nothing, and is no line');
+  const left = await ask('Ada', 'outpost/abandon', { site: SITE, rid: 'leave-1' });
+  assert.deepEqual([left.status, left.body['back']], [200, 0]);
+  const leftAgain = await ask('Ada', 'outpost/abandon', { site: SITE, rid: 'leave-1' });
+  assert.deepEqual([leftAgain.status, leftAgain.body['back']], [200, 0], 'not "no outpost there"');
+  assert.deepEqual(await lines(), ['abandon', 'take down counting']);
+});

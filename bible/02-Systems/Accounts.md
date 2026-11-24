@@ -33,7 +33,7 @@ code:
   - server/accounts/binds.ts#bindsAsk
   - server/accounts/migrations/20261121180000_binds.sql
   - client/src/game/bindsKept.ts#keepBinds
-  - crates/gear/src/character.rs#from_json
+  - crates/gear/src/character_json.rs#from_json
 ---
 # Accounts
 
@@ -187,15 +187,18 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
   and guild, and their guild's motto and description. A friend ask still waiting and a guild's invite show no one where the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild); 600 an
-  hour of one account's outpost asks, plot reads and its rooms' errands together.
+  hour of one account's outpost asks and its rooms' errands together, and 600 an hour of its plot reads apart.
 - **Outposts** ([[Outposts]]): `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, the
   site they stand at, what they took from the stores this game day (`taken`, the day turning at 09:00 UTC) and
   whether the War Horn sounded this week (`hornSounded`); `GET /v1/outposts/<room>` gives anyone signed in the plot and
   banner of an outpost raised there, null where none is. `POST /v1/social/outpost/<ask>` raises, places, rises,
   removes, decorates, undecorates, collects and abandons; a removal or abandonment answers `back`, the Aurem the
-  treasury took of the half, the rest lost when it is full. A room's errands go over its binding: a deposit (its id
-  begins with the room's name, so it goes only to that outpost's guild), a delivery, a take and the horn, each answered
-  again the same under its id.
+  treasury took of the half, the rest lost when it is full, and writes its ledger line even when that is nothing (a
+  free standard's removal, which cost nothing, writes none). A page's named ask (`rid`) answers again as it did. A
+  room's errands go over its binding: a deposit (its id begins with the room's name, so it goes only to that
+  outpost's guild), a delivery, a take and the horn, each answered again the same under its id, for good
+  (`outpost_errands`), read before anything that may have changed since; past the limit each says so (a deposit
+  `limited`, the rest -3). A take holds within the day's 20 across the guild's outposts inside its write.
 
 ## Find a Company
 
