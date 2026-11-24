@@ -47,14 +47,15 @@ impl Room {
         (standing && found.living()).then(|| gear::last::Last::social(node, [body.x, body.y, body.z], body.facing))
     }
 
-    /// A player whose character last stood in this very social space stands where they left it, facing as they did,
-    /// so logging back in takes them there; elsewhere, or where a body no longer fits there, as they joined.
+    /// A player whose character, as it was claimed (`left_at`), last stood in this very social space stands where they
+    /// left it, facing as they did, so logging back in takes them there; elsewhere, or where a body no longer fits
+    /// there, as they joined.
     pub fn stand_where_left(&mut self, player: PlayerId) -> bool {
         let Some(node) = self.quests.node.clone().filter(|_| self.place == Some(gear::gate::Place::Social)) else {
             return false;
         };
         let Some(found) = self.players.get(&player) else { return false };
-        let Some(([x, y, z], facing)) = found.character.last.as_ref().and_then(|last| last.stood_in(&node)) else {
+        let Some(([x, y, z], facing)) = found.left_at.as_ref().and_then(|last| last.stood_in(&node)) else {
             return false;
         };
         let inside = self.section.as_ref().is_some_and(|section| reach::inside(&section.ring, x, y));

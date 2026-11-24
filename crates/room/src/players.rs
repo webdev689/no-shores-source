@@ -205,6 +205,9 @@ pub struct Player {
     /// Whether their last input held Use to revive a fallen ally, and whether one this tick asked to respawn.
     pub(crate) reviving: bool,
     pub(crate) respawn_asked: bool,
+    /// Where their kept character last left the overworld or a social space, as it was claimed: the spot logging back
+    /// in stands them at, kept apart from the character's, which the room moves on as they stand (`keep_spots`).
+    pub(crate) left_at: Option<gear::last::Last>,
 }
 
 impl Player {
@@ -259,6 +262,7 @@ impl Player {
             chain: crate::chain::Chain::default(),
             reviving: false,
             respawn_asked: false,
+            left_at: None,
         }
     }
 
@@ -423,6 +427,7 @@ impl Room {
             return false;
         }
         let Some(found) = self.players.get_mut(&player) else { return false };
+        found.left_at = character.last.clone();
         found.character = character;
         (found.gear_changed, found.claimed) = (true, true);
         self.arrived(player);

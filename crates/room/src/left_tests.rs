@@ -76,9 +76,10 @@ fn a_player_logs_back_in_where_they_last_stood_in_a_social_space_on_the_floor_th
     let mut back = social();
     let again = back.join().expect("in");
     assert!(back.restore_character(again, &kept));
+    back.tick();
     let at_spawn = back.players[&again].fighter.body;
     assert_eq!([at_spawn.x, at_spawn.y], [0.0, 150.0], "a claim alone moves no one: through a gate, a rejoin");
-    assert!(back.stand_where_left(again), "logging back in");
+    assert!(back.stand_where_left(again), "logging back in, a tick after the claim");
     let body = back.players[&again].fighter.body;
     assert_eq!([body.x, body.y, body.z, body.facing], [45.0, 44.0, 3.0, 2.0], "on the ledge, not under it");
     let mut sea = social();
