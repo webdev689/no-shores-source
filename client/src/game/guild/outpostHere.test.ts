@@ -3,9 +3,10 @@ import { after, test } from 'node:test';
 import type { AccountLink, OutpostSeen } from '../../network/accounts.ts';
 import type { Block } from '../../rules/movementRules.ts';
 import { OutpostHere, useWords } from './outpostHere.ts';
-import { letGo, startPlacing } from './decorPlacing.ts';
-import { PLOT_M } from './outpostLaw.ts';
-import { placeOf, socketOf } from './outpostPlaces.ts';
+import { letGo, placingStrip, startPlacing } from './decorPlacing.ts';
+import { guildRead, keepGuild } from './guildHeld.ts';
+import { PLOT_M, kindOf, tierName } from './outpostLaw.ts';
+import { decorPlaceOf, placeOf, socketOf } from './outpostPlaces.ts';
 
 // The page's window events, which the outpost listens on, are none under Node.
 Object.assign(globalThis, {
@@ -42,15 +43,16 @@ function outpost(link: AccountLink | null = null) {
   return { here, courses };
 }
 
-test('a bare site stands only a post at the hall’s door, whose use says how to raise the outpost', () => {
+test('a bare site stands only the standard’s oak staff at the plot’s middle, whose use says how to raise the outpost', () => {
   const { here } = outpost();
   const props = here.props();
   assert.deepEqual(
     props.map((prop) => prop.module),
-    ['lamp-post'],
+    ['outpost-standard-oak'],
   );
   const [x = 0, y = 0] = props[0]?.at ?? [];
-  assert.equal(here.uses(x, y, () => undefined)?.words, "Raise your guild's outpost here from the Guild tab.");
+  assert.deepEqual([x, y], [...GROUND.plot], 'at the plot’s middle');
+  assert.equal(here.uses(x + 1, y, () => undefined)?.words, "Raise your guild's outpost here from the Guild tab.");
   assert.equal(
     here.uses(x + 20, y, () => undefined),
     null,
@@ -69,9 +71,14 @@ test('a raised outpost stands each structure and piece, walls them beside the no
   assert.equal(courses[0]?.[0], NODE_BOX, "the node's own boxes kept first");
   assert.ok((courses[0]?.length ?? 0) > 3, 'and the plot walled');
   const [countX, countY] = socketOf(structure(2, 'counting', 0, 0), GROUND, '', 'use');
-  assert.equal(here.uses(countX, countY, () => undefined)?.words, 'Counting House');
+  assert.equal(here.uses(countX, countY, () => undefined)?.words, 'Counting House I', 'named at its tier');
   assert.equal(useWords(structure(3, 'horn', 12, 0, 0, 1)), 'Deliver materials', 'a scaffold takes deliveries');
-  assert.equal(useWords(structure(3, 'horn', 12, 0, 1, 0)), 'Sound the War Horn');
+  assert.equal(useWords(structure(3, 'horn', 12, 0, 1, 0), true), 'Sound the War Horn', 'to the founder or an admin');
+  assert.equal(useWords(structure(3, 'horn', 12, 0, 1, 0)), 'War Horn I', 'to a member, only its name');
+  const hall = kindOf('hall');
+  assert.ok(hall);
+  assert.equal(useWords(structure(1, 'hall', 6, 6, 2)), tierName(hall, 2), "the hall by its tier's own name");
+  assert.notEqual(useWords(structure(1, 'hall', 6, 6, 2)), 'Hall');
 });
 
 test('a piece being placed stands its ghost just before the player, snapped to a quarter metre, red where the law refuses', async () => {
@@ -153,4 +160,148 @@ test('at a Delve Gate standing, its prompt goes down at the highest tier it open
     'Deliver materials',
     'a gate first being built opens nothing: its scaffold takes deliveries',
   );
+});
+
+test("a companion's guest reads the outpost of the guild whose room they joined, and stays there on a guild change", () => {
+  const read: string[] = [];
+  const link = {
+    outpost: (room: string) => {
+      read.push(room);
+      return Promise.resolve('The accounts are away.');
+    },
+  } as unknown as AccountLink;
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const course = { setCourse: () => undefined };
+  const guest = new OutpostHere('gull-cove-outpost', GROUND, link, { boxes: [], courses: [course] }, undefined, {
+    guild: key,
+    own: false,
+  });
+  made.push(guest);
+  assert.deepEqual(read, [`node-gull-cove-outpost--guild-${key}`]);
+  assert.equal(guest.rejoins(null), false, 'a guest stays whatever their own guild');
+  const own = new OutpostHere('gull-cove-outpost', GROUND, link, { boxes: [], courses: [course] });
+  made.push(own);
+  assert.equal(own.rejoins(key), true, 'at the wild site, a guild founded here takes the player to its room');
+  assert.equal(own.rejoins(null), false);
+});
+
+test("the room's word that it stood another plot reads the plot again", () => {
+  let reads = 0;
+  const link = { outpost: () => Promise.resolve(String(++reads)) } as unknown as AccountLink;
+  const heard = { plots: 0 };
+  const course = { setCourse: () => undefined };
+  const here = new OutpostHere(
+    'gull-cove-outpost',
+    GROUND,
+    link,
+    { boxes: [], courses: [course] },
+    undefined,
+    {
+      guild: null,
+      own: true,
+    },
+    heard,
+  );
+  made.push(here);
+  here.uses(0, 0, () => undefined);
+  assert.equal(reads, 1, 'read on arriving');
+  heard.plots = 3;
+  here.uses(0, 0, () => undefined);
+  here.uses(0, 0, () => undefined);
+  assert.equal(reads, 2, 'read again once as it changed');
+});
+
+test('a piece is offered to take up only to the founder or an admin, held through, and the horn only to them', async () => {
+  // Read as keepGuild starts, again by the first fresh read, and again by the second, the player made an admin.
+  const ranks = [2, 2, 1];
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const asked: string[] = [];
+  const link = {
+    guild: () => Promise.resolve({ guild: { key, rank: ranks.shift() ?? 2, banner: {} } }),
+    outposts: () => Promise.resolve({ outposts: [] }),
+    outpost: () => Promise.resolve('The accounts are away.'),
+    social: (path: string) => {
+      asked.push(path);
+      return Promise.resolve('Refused.');
+    },
+  } as unknown as AccountLink;
+  keepGuild(link);
+  await guildRead();
+  const { here } = outpost(link);
+  const horn = structure(3, 'horn', 12, 0, 1, 0);
+  here.take({ ...SEEN, plot: { ...SEEN.plot, structures: [...SEEN.plot.structures, horn] } });
+  const [wellX, wellY] = decorPlaceOf(SEEN.plot.decor[0] ?? { id: 0, piece: '', x: 0, y: 0, turn: 0 }, GROUND).at;
+  const [hornX, hornY] = socketOf(horn, GROUND, '', 'use');
+  assert.equal(
+    here.uses(wellX, wellY, () => undefined),
+    null,
+    'a member is offered nothing at a piece',
+  );
+  assert.equal(here.uses(hornX, hornY, () => undefined)?.words, 'War Horn I');
+  await guildRead();
+  assert.equal(here.uses(hornX, hornY, () => undefined)?.words, 'Sound the War Horn', 'an admin sounds it');
+  let now = 1000;
+  here.clock = () => now;
+  const take = here.uses(wellX, wellY, () => undefined);
+  assert.equal(take?.words, 'Take up the Well');
+  take?.run();
+  now += 400;
+  assert.equal(here.uses(wellX, wellY, () => undefined, 0, true)?.held, 0.5, 'held half way');
+  assert.equal(here.uses(wellX, wellY, () => undefined, 0, false)?.held, undefined, 'let go, the hold is gone');
+  now += 1000;
+  here.uses(wellX, wellY, () => undefined, 0, true);
+  assert.deepEqual(asked, [], 'nothing asked before it is held through');
+  here.uses(wellX, wellY, () => undefined)?.run();
+  now += 400;
+  here.uses(hornX, hornY, () => undefined, 0, true);
+  now += 400;
+  here.uses(wellX, wellY, () => undefined, 0, true);
+  assert.deepEqual(asked, [], 'a hold broken by stepping to a structure starts again');
+  here.uses(wellX, wellY, () => undefined)?.run();
+  now += 800;
+  here.uses(wellX, wellY, () => undefined, 0, true);
+  assert.deepEqual(asked, ['outpost/undecorate'], 'held through, it is asked once');
+});
+
+test('a structure is used from its front alone: a Delve Gate is not entered through its back wall', () => {
+  const course = { setCourse: () => undefined };
+  const here = new OutpostHere('gull-cove-outpost', GROUND, null, { boxes: [], courses: [course] }, () => undefined);
+  made.push(here);
+  const gate = structure(4, 'gate', 6, 12, 1);
+  here.take({ ...SEEN, plot: { structures: [gate], decor: [] } });
+  const [doorX, doorY] = socketOf(gate, GROUND, 'driftwood', 'door');
+  assert.equal(here.uses(doorX, doorY + 1.5, () => undefined)?.words, 'Delve: Normal', 'before its door, south');
+  assert.equal(
+    here.uses(doorX, doorY - 1.9, () => undefined),
+    null,
+    'behind it, through the wall',
+  );
+  const turned = { ...gate, turn: 1 };
+  here.take({ ...SEEN, plot: { structures: [turned], decor: [] } });
+  const [westX, westY] = socketOf(turned, GROUND, 'driftwood', 'door');
+  assert.equal(
+    here.uses(westX - 1.5, westY, () => undefined)?.words,
+    'Delve: Normal',
+    'turned a quarter, before it west',
+  );
+  assert.equal(
+    here.uses(westX + 1.9, westY, () => undefined),
+    null,
+  );
+});
+
+test('while placing, the law’s words show and Place is offered on the strip only where the piece may stand', () => {
+  const { here } = outpost();
+  here.take(SEEN);
+  startPlacing('gull-cove-outpost', 'bench');
+  const corner = [GROUND.plot[0] - PLOT_M / 2, GROUND.plot[1] - PLOT_M / 2] as const;
+  const east = Math.PI / 2;
+  const onHall = [GROUND.plot[0] - PLOT_M / 2 + 6 * 4 + 2, GROUND.plot[1] - PLOT_M / 2 + 6 * 4 + 2] as const;
+  assert.equal(here.uses(onHall[0], onHall[1], () => undefined, east)?.words, 'A structure stands there.');
+  const offered = () => (placingStrip()?.hints ?? []).map(([keys]) => keys);
+  assert.deepEqual(offered(), ['[ / ]', 'Esc'], 'red: no Place');
+  assert.equal(here.uses(corner[0] + 0.85, corner[1] + 30.4, () => undefined, east)?.words, 'Place the Bench');
+  assert.deepEqual(offered(), ['[ / ]', 'use', 'Esc'], 'green: Place');
+  letGo();
+  assert.equal(placingStrip(), null);
 });

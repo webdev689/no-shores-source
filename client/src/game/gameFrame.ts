@@ -1,7 +1,7 @@
 // The game's frames: each one steps and draws the mode the flow is in, on foot or at sea, with the friendly ships round
 // the eye, the held map over the sea while it is up, and the veil lifted once a place has loaded. `game.ts` boots the
 // pieces and keeps the travel; this draws what they hold, as `Playing` has it this frame.
-import { PLACING_STRIP, placingNow } from './guild/decorPlacing.ts';
+import { placingStrip } from './guild/decorPlacing.ts';
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -317,7 +317,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
     const mapless = paused || here.fallen || here.dungeon;
-    const placing = placingNow() ? PLACING_STRIP : null;
+    const placing = placingStrip();
     hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? shown.hints : withMapKey(shown.hints))));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
     // nor while she speaks; fallen, it says why not.

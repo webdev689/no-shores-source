@@ -94,11 +94,18 @@ function lockAt(
 }
 
 /** The ring and its glyph (in `ink`, the ring's colour unless given), the glyph in the mended face, which holds the ones Pixelify lacks. */
-function ring(glyph: string, colour: string, size: number, hovered: boolean, chosen: boolean, ink = colour): Picture {
+function ring(
+  glyph: string,
+  colour: string,
+  size: number,
+  state: { readonly hovered: boolean; readonly chosen: boolean; readonly outlined: boolean },
+  ink = colour,
+): Picture {
+  const { hovered, chosen, outlined } = state;
   const edge = chosen ? GOLD : colour;
   const side = texels(size);
   return {
-    key: `mark ${glyph} ${colour} ${ink} ${side} ${glyphPx(size)} ${hovered} ${chosen}`,
+    key: `mark ${glyph} ${colour} ${ink} ${side} ${glyphPx(size)} ${hovered} ${chosen} ${outlined}`,
     pixel: { width: side, height: side },
     source: {
       draw: (context, width, height) => {
@@ -111,11 +118,25 @@ function ring(glyph: string, colour: string, size: number, hovered: boolean, cho
         context.lineWidth = 2 * unit;
         context.strokeStyle = edge;
         context.stroke();
+        // An outlined ring (the guild's own, in its banner's colours) is edged in light, its glyph too, so a dark or
+        // sea-coloured cloth still reads against the sea.
+        if (outlined) {
+          context.beginPath();
+          context.arc(middle[0], middle[1], width / 2 - unit / 2, 0, Math.PI * 2);
+          context.lineWidth = unit;
+          context.strokeStyle = TONES.ink;
+          context.stroke();
+        }
         context.fillStyle = ink;
         if (glyph === LOCK_GLYPH) return lockAt(context, middle, (glyphPx(size) * unit) / 11, ink);
         context.font = `${glyphPx(size) * unit}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
+        if (outlined) {
+          context.lineWidth = unit;
+          context.strokeStyle = TONES.ink;
+          context.strokeText(glyph, middle[0], middle[1]);
+        }
         context.fillText(glyph, middle[0], middle[1]);
       },
     },
@@ -154,17 +175,17 @@ function glow(size: number): Picture {
   };
 }
 
-/** The arrow a held mark points with, in its colour. */
-function arrow(colour: string): Picture {
+/** A sign drawn in a colour, filling its box: the arrow a held mark points with, the star over the guild's own. */
+function signOf(sign: string, colour: string): Picture {
   return {
-    key: `mark arrow ${colour}`,
+    key: `mark ${sign} ${colour}`,
     source: {
       draw: (context, width, height) => {
         context.fillStyle = colour;
         context.font = `${height}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText('▲', width / 2, height / 2);
+        context.fillText(sign, width / 2, height / 2);
       },
     },
   };
@@ -205,14 +226,21 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
       {
         id,
         press: true,
-        label: `${mark.name}, ${KIND_WORDS[mark.kind]}, ${mark.note}`,
+        label: `${mark.name}, ${own ? "your guild's outpost" : KIND_WORDS[mark.kind]}, ${mark.note}`,
         width: size,
         height: size,
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
-        picture: ring(glyph, colour, size, hovered, mark.chosen, own?.device),
+        picture: ring(glyph, colour, size, { hovered, chosen: mark.chosen, outlined: own !== null }, own?.device),
         children: [
           look?.emblem ? emblemNode(look.emblem, size) : null,
           look?.badge ? badgeNode(look.badge) : null,
+          // Not by its colours alone: a light star over the ring marks the guild's own.
+          own && {
+            width: 18,
+            height: 18,
+            float: { at: [0.5, 0], anchor: [0.5, 1], y: 2 },
+            picture: signOf('★', TONES.ink),
+          },
           held && {
             width: 12,
             height: 12,
@@ -222,10 +250,12 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
               x: Math.round(Math.sin(turn) * reach),
               y: Math.round(-Math.cos(turn) * reach),
             },
-            picture: { ...arrow(colour), turn: mark.arrowDegrees ?? 0 },
+            picture: { ...signOf('▲', colour), turn: mark.arrowDegrees ?? 0 },
           },
           mark.named && words(mark.name, mark.chosen ? GOLD : mark.locked ? DIM : TONES.ink, 4),
-          mark.named && !held && words(`${KIND_WORDS[mark.kind]} · ${mark.note}`, DIM, 22),
+          mark.named &&
+            !held &&
+            words(`${own ? "Your guild's outpost" : KIND_WORDS[mark.kind]} · ${mark.note}`, DIM, 22),
         ],
       },
     ];

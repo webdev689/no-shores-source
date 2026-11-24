@@ -58,7 +58,7 @@ import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
-import { closedIfThrown, nodeAddress, stand } from './footPlace.ts';
+import { closedIfThrown, nodeAddress, outpostJoined, stand } from './footPlace.ts';
 import { type OutpostHere, outpostAt } from './guild/outpostHere.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
@@ -180,10 +180,7 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
-    this.outpost =
-      node.kind === 'outpost'
-        ? outpostAt(node, opened.boxes, context.movement, parts.combat, context.trips.enterDelve?.bind(context.trips))
-        : null;
+    this.outpost = outpostAt(node, opened, context, parts.combat, people.held);
     this.publicView = new PublicView(node.id, this.feel, {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
@@ -196,13 +193,15 @@ export class Foot {
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
    *  names, keeping how they hold the camera, and joins its room: online the server's at the voyage's `seas`, signed
-   *  in with the session's token; alone one in the rooms' worker that may stand the foes asked for. */
+   *  in with the session's token; alone one in the rooms' worker that may stand the foes asked for. At an outpost
+   *  site the room is the outpost's of `guild`, a companion's (null the wild site), else the player's own guild's. */
   static async enter(
     context: FootContext,
     node: NodeInfo,
     facing: number,
     seas: Difficulty = 'normal',
     arriving?: AtEntrance,
+    guild?: string | null,
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
@@ -210,7 +209,8 @@ export class Foot {
     let { boxes, ground } = await standOn(context, rules.combat, rect);
     const [x, y] = arriving ? [arriving.x, arriving.y] : (node.spawns[0] ?? node.centre);
     stand(context, x, y, arriving?.facing ?? facing, node.kind === 'social');
-    const address = await nodeAddress(context, node, seas, arriving);
+    const outpost = await outpostJoined(node, guild);
+    const address = nodeAddress(context, node, seas, arriving, outpost?.guild ?? null);
     return Foot.start(context, node, rules, async (heard, session) => {
       const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
       // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
@@ -222,7 +222,7 @@ export class Foot {
         }
         const text = nodeText(node, rect, ground, boxes, await context.land.grounds(node.id));
         const link = connection ?? (await openNodeAlone(module, node, text, heard, arriving?.number, seas));
-        return { link, boxes, text, dungeon: null, seas };
+        return { link, boxes, text, dungeon: null, seas, outpost };
       };
       return connection ? closedIfThrown(connection, work) : work();
     });
@@ -271,6 +271,7 @@ export class Foot {
         received(snapshot);
         held.cache = cacheOf(snapshot.cache);
         heardRun(held, snapshot, hearer.fight?.player ?? null);
+        held.plots = snapshot.outpost;
       },
       // Offline the room's word on the gear tells of the patrol's entrances and the chests; the figure keeps its dress.
       gear: (sent: GearState) => {
@@ -518,7 +519,7 @@ export class Foot {
       module: this.module,
     };
     const placeUse = this.outpost
-      ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing)
+      ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing, controls.held('use'))
       : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const { mounted } = walker.player;
     const counters = countersOf(this.node);
@@ -526,7 +527,8 @@ export class Foot {
     this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
-    this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able && !mounted, gear?.gear ?? null));
+    const share = this.using?.held ?? this.hold.share(clock, able && !mounted, gear?.gear ?? null);
+    this.prompt.show(this.using?.words ?? null, share);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;

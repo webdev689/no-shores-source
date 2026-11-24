@@ -270,6 +270,8 @@ export type FromRoomMessage =
       readonly cache: readonly number[];
       /** In an Abyss run, the revives its company has left; -1 in any other room. */
       readonly revives: number;
+      /** At a guild's outpost, how many plots its room has stood; 0 in any other room. */
+      readonly outpost: number;
     } & FleetPart &
       HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
@@ -584,6 +586,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       goneFoes: Array.from(snapshot.goneFoesArray() ?? []),
       cache: Array.from(snapshot.cacheArray() ?? []),
       revives: snapshot.revives(),
+      outpost: snapshot.outpost(),
       ...fleetOf(snapshot),
       ...harbourOf(snapshot),
     };

@@ -120,6 +120,21 @@ export function runInstance(
   return Array.from(random(new Uint8Array(8)), (byte) => INSTANCE[byte % INSTANCE.length]).join('');
 }
 
+/** How many of a guild dungeon's run's instance's letters name the week it is laid for, in base 36. */
+const DELVE_WEEK_LETTERS = 3;
+
+/** A guild dungeon's run's instance: the week it is laid for, then the rest of the random `instance`. A companion who
+ *  joins after the week turns lays the run's own week from it, as the room does, not the new week's. */
+export function delveInstance(week: number, instance: string): string {
+  const named = week.toString(36).padStart(DELVE_WEEK_LETTERS, '0').slice(-DELVE_WEEK_LETTERS);
+  return `${named}${instance.slice(DELVE_WEEK_LETTERS)}`;
+}
+
+/** The week a guild dungeon's run is laid for, read from its instance. */
+export function delveWeek(instance: string): number {
+  return Number.parseInt(instance.slice(0, DELVE_WEEK_LETTERS), 36);
+}
+
 /** Whether a room is a run, kept to the company that entered it. */
 export function privateRun(room: string): boolean {
   return RUN_ENDING.test(room);

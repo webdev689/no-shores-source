@@ -2,13 +2,14 @@
 // door the player went in by, facing away from it; a sea island's from its door on the sea, back out onto the island;
 // and a run launched or found from the Playlist, from the sea and back out onto it where the ship lies. Every dungeon
 // at Elite or Abyss and every Elite Dungeon is a run: the company's where a member is in one.
-import { seaDungeonRoom } from '../../../server/roomNames.ts';
+import { delveInstance, delveWeek, seaDungeonRoom } from '../../../server/roomNames.ts';
 import { activitiesAt, eliteRun } from './activities.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { askLayout, type DungeonAsk, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { BEFORE_DOOR_M, beforeDoor, type Entrance } from './entrances.ts';
 import type { AtEntrance } from './footPlace.ts';
 import { delveBase, delveLaid } from './guild/delveRoom.ts';
+import { gateOut } from './guild/outpostHere.ts';
 import { weekOf } from './guild/guildLaw.ts';
 import { type InDungeon, type Trips, seaPlace } from './footTrips.ts';
 import type { Happening } from './flow.ts';
@@ -49,7 +50,14 @@ export interface TripGame {
     layout: DungeonLayout,
     seas: Difficulty,
   ) => Promise<void>;
-  readonly ontoPatrol: (patrol: NodeInfo, facing: number, seas: Difficulty, arriving?: AtEntrance) => Promise<void>;
+  /** Onto a node; at an outpost site, into the room of the outpost of the guild of key `guild` where one is given. */
+  readonly ontoPatrol: (
+    patrol: NodeInfo,
+    facing: number,
+    seas: Difficulty,
+    arriving?: AtEntrance,
+    guild?: string | null,
+  ) => Promise<void>;
   readonly ontoSea: (back?: SeaBack) => Promise<void>;
   readonly companyPlaces: () => Promise<readonly (string | null)[]>;
   readonly drawers: {
@@ -108,16 +116,21 @@ export function dungeonTrips(
         game.ontoPatrol(node, before?.facing ?? 0, seas, arriving),
       );
     };
-  /** A guild's dungeon's ask this week, named for its outpost's place, and the way out of it to the outpost at
-   *  Normal, before its gate, where the outpost's room stands a player by entrance 0. */
-  const delveAsk = (key: string, name: string): DungeonAsk => {
-    const { seed, style } = delveLaid(key, weekOf(roomNow()));
+  /** A guild's dungeon's ask for its run `room`, laid for the week the run's name carries, named for its outpost's
+   *  place; and the way out of it to that guild's outpost at Normal, before its gate (`gate`, read as the player
+   *  leaves), where the outpost's room stands a player by entrance 0. */
+  const delveAsk = (key: string, name: string, room: string): DungeonAsk => {
+    const run = nodeOfRoom(room)?.run;
+    const { seed, style } = delveLaid(key, run ? delveWeek(run) : weekOf(roomNow()));
     return { seed, style: style as StyleKey, name };
   };
-  const toGate = (node: NodeInfo, gate: Omit<AtEntrance, 'number'>) => (layout: DungeonLayout, fell: boolean) =>
-    game.travel({ kind: fell ? 'wiped' : 'leave', node: node.id, name: layout.name }, () =>
-      game.ontoPatrol(node, gate.facing, 'normal', { number: 0, ...gate }),
-    );
+  const toGate =
+    (node: NodeInfo, key: string, gate: () => Promise<Omit<AtEntrance, 'number'>>) =>
+    (layout: DungeonLayout, fell: boolean) =>
+      game.travel({ kind: fell ? 'wiped' : 'leave', node: node.id, name: layout.name }, async () => {
+        const out = await gate();
+        await game.ontoPatrol(node, out.facing, 'normal', { number: 0, ...out }, key);
+      });
   /** Out of a run the Playlist started, back onto the sea where the ship lies. */
   const toSea = (layout: DungeonLayout, fell: boolean) =>
     game.travel({ kind: 'surface', name: layout.name, fell }, () => game.ontoSea());
@@ -181,17 +194,13 @@ export function dungeonTrips(
     join: (node, place) => {
       const where = nodeOfRoom(place);
       if (!where) return;
-      // A member's guild dungeon is joined by its name; its way out is the outpost's spawn, the gate not known here.
+      // A member's guild dungeon is joined by its name; its way out is before its gate as the accounts keep the plot,
+      // else the outpost's spawn.
       if (where.guild !== null && where.run !== null) {
-        const out = node.spawns[0] ?? node.centre;
-        const away = toGate(node, { x: out[0], y: out[1], facing: 0 });
-        const work = into(
-          { node, text: '' },
-          { number: 0, ask: delveAsk(where.guild, node.name) },
-          where.seas,
-          async () => place,
-          away,
-        );
+        const [key, [x = 0, y = 0]] = [where.guild, node.spawns[0] ?? node.centre];
+        const away = toGate(node, key, async () => (await gateOut(node, key)) ?? { x, y, facing: 0 });
+        const ask = delveAsk(key, node.name, place);
+        const work = into({ node, text: '' }, { number: 0, ask }, where.seas, async () => place, away);
         game.travel({ kind: 'join', node: `${node.id}--delve`, name: node.name }, work);
         return;
       }
@@ -221,14 +230,20 @@ export function dungeonTrips(
       if (!from || from.dungeon || from.node.kind !== 'outpost') return;
       const { node } = from;
       const seas = DELVE_SEAS[tier] ?? 'normal';
-      const room = roomOf(delveBase(key, node.id, tier), seas, true);
-      const work = into(
-        { node, text: from.text },
-        { number: 0, ask: delveAsk(key, node.name) },
-        seas,
-        room,
-        toGate(node, gate),
-      );
+      const base = delveBase(key, node.id, tier);
+      // A new run's name carries the week it is laid for; the company's is laid for its own.
+      const fresh = () => runOf(base, delveInstance(weekOf(chance.minute() * 60_000), chance.instance()));
+      const work = async () => {
+        const room = sharedRun(base, await game.companyPlaces()) ?? fresh();
+        const ask = delveAsk(key, node.name, room);
+        await into(
+          { node, text: from.text },
+          { number: 0, ask },
+          seas,
+          async () => room,
+          toGate(node, key, async () => gate),
+        )();
+      };
       game.travel({ kind: 'enter', node: `${node.id}--delve`, name: node.name }, work);
     },
     enterSeaDungeon: ({ room, at: [x, y], facing }) => {

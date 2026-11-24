@@ -57,3 +57,14 @@ test("a structure's use is where its module says, toward its front, which a quar
   const [, bare] = socketOf(standing('counting', 2, 2), GROUND, 'oak', 'none such');
   assert.equal(bare, NORTH + 4 * CELL_M + 1, 'a metre before its front edge where its module has no such socket');
 });
+
+test('a piece turned off the quarters is walled where it is drawn: a Lawn Bed at 45 degrees along its diagonal', () => {
+  const ground = { plot: [1000, 2000], level: 0 } as const;
+  const [middleX, middleY] = [ground.plot[0] - PLOT_M / 2 + 20, ground.plot[1] - PLOT_M / 2 + 20];
+  const boxes = plotBoxes({ structures: [], decor: [{ id: 1, piece: 'lawn-bed', x: 20, y: 20, turn: 3 }] }, ground, '');
+  const inside = (x: number, y: number) =>
+    boxes.some((box) => x > box.minX && x < box.maxX && y > box.minY && y < box.maxY);
+  const along = Math.PI / 4;
+  assert.equal(inside(middleX + 3.5 * Math.cos(along), middleY + 3.5 * Math.sin(along)), true, 'its drawn end walls');
+  assert.equal(inside(middleX, middleY + 3.5), false, 'empty ground beside it does not');
+});
