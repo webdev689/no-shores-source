@@ -5,8 +5,16 @@ import { fillSlots } from '../law/message.ts';
 import { recordOf } from '../law/settings.ts';
 import type { BotContext } from '../kit.ts';
 import type { Snapshot } from '../store.ts';
-import { serversWith } from './birthdays.ts';
 import type { ServerModule } from './module.ts';
+
+/** Every server where a module is on: the clock's modules run across them all. */
+export async function serversWith(context: BotContext, moduleId: string): Promise<string[]> {
+  const servers = await context.database
+    .prepare('SELECT guild_id FROM guild_config WHERE module = ? AND enabled = 1')
+    .bind(moduleId)
+    .all<{ guild_id: string }>();
+  return servers.results.map((server) => String(server.guild_id));
+}
 
 /** The minute of each ten when the counters are updated. */
 export const STATS_MINUTE = 3;

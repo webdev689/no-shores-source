@@ -6,7 +6,7 @@ import { escapeText, fillSlots } from '../law/message.ts';
 import { type Settings, recordOf } from '../law/settings.ts';
 import { type BotContext, postTo } from '../kit.ts';
 import { type Fetch, USER_AGENT } from '../rest.ts';
-import { serversWith } from './birthdays.ts';
+import { serversWith } from './stats.ts';
 import type { ServerModule } from './module.ts';
 
 /** The minute of each ten when the feeds are read. */

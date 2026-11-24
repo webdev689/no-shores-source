@@ -12,8 +12,8 @@ import {
   privateReply,
   subcommandOf,
 } from '../kit.ts';
-import { slotsFor } from '../slots.ts';
 import type { ServerModule } from './module.ts';
+import { serversWith } from './stats.ts';
 
 const DAYS_IN = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const MONTHS = [
@@ -69,13 +69,6 @@ async function onCommand(context: BotContext, interaction: Interaction): Promise
 }
 
 /** Every server where a module is on: the clock's modules run across them all. */
-export async function serversWith(context: BotContext, moduleId: string): Promise<string[]> {
-  const servers = await context.database
-    .prepare('SELECT guild_id FROM guild_config WHERE module = ? AND enabled = 1')
-    .bind(moduleId)
-    .all<{ guild_id: string }>();
-  return servers.results.map((server) => String(server.guild_id));
-}
 
 /** Wish one member well: the message, then the day's role. */
 async function wish(context: BotContext, guildId: string, userId: string, config: Record<string, unknown>) {
@@ -83,6 +76,8 @@ async function wish(context: BotContext, guildId: string, userId: string, config
   if (!member.ok) return;
   const found = recordOf(recordOf(member.json).user);
   const user = found.id ? found : { id: userId };
+  // slots.ts reads the registry, which names this module: imported when used, so neither loads half-made
+  const { slotsFor } = await import('../slots.ts');
   const vars = await slotsFor(context, guildId, user, config.message);
   const payload = messagePayload(config.message, vars, context.now());
   const ping = config.pingMember !== false;

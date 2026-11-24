@@ -131,6 +131,12 @@ async function closeTicket(
   const userId = String(member?.user?.id ?? '');
   if (userId !== ticket.user_id && !isStaff(member, config))
     return 'Only the member who opened it, or staff, can close a ticket.';
+  // The close is claimed first, so two presses of Close at once post one transcript.
+  const claimed = await context.database
+    .prepare('UPDATE tickets SET closed_at = ?, closed_by = ? WHERE id = ? AND closed_at = 0')
+    .bind(Math.floor(context.now() / 1000), userId, ticket.id)
+    .run();
+  if (claimed.meta.changes !== 1) return 'This ticket is closing already.';
   if (config.logChannel) {
     const form = new FormData();
     form.append(
@@ -149,10 +155,6 @@ async function closeTicket(
     form.append('files[0]', new Blob([text], { type: 'text/plain' }), `ticket-${ticket.id}.txt`);
     await context.rest.call('POST', `/channels/${String(config.logChannel)}/messages`, { form });
   }
-  await context.database
-    .prepare('UPDATE tickets SET closed_at = ?, closed_by = ? WHERE id = ?')
-    .bind(Math.floor(context.now() / 1000), userId, ticket.id)
-    .run();
   await context.rest.del(`/channels/${channelId}`, { reason: `Ticket ${ticket.id} closed` });
   return 'Closed.';
 }

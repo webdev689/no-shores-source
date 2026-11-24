@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { GUILD, MOD, MOD_ROLE, TARGET, countOf } from '../botForTests.ts';
 import { recordOf } from '../law/settings.ts';
 import { BOT_ID, interactionFrom, standEngagement } from './engagementForTests.ts';
-import { ticketOverwrites, ticketsModule } from './tickets.ts';
+import { ticketOverwrites, ticketsModule, transcript } from './tickets.ts';
 
 const LOGS = '900000000000000071';
 const OTHER = '900000000000000013';
@@ -84,4 +84,42 @@ test('tickets: only staff add a member, and only inside an open ticket', async (
     (call) => call.method === 'PUT' && call.path.endsWith(`/permissions/${OTHER}`),
   );
   assert.equal(recordOf(put?.body).type, 1);
+});
+
+test('tickets: a transcript is every message, oldest first, paged back past the first hundred', async () => {
+  const bot = await standEngagement({ tickets: {} }, [ticketsModule]);
+  const ROOM = '900000000000000075';
+  const said = (index: number) => ({
+    id: String(500 + index),
+    timestamp: `t${index}`,
+    author: { username: `u${index}` },
+    content: `line ${index}`,
+    attachments: index === 0 ? [{ url: 'https://cdn.example/a.png' }] : [],
+  });
+  // Discord lists newest first: 101 messages, a full page then one more
+  const newestFirst = Array.from({ length: 101 }, (unused, index) => said(100 - index));
+  let pages = 0;
+  bot.world.state.extra = [
+    [
+      'GET',
+      new RegExp(`^/channels/${ROOM}/messages$`),
+      () => Response.json(pages++ ? newestFirst.slice(100) : newestFirst.slice(0, 100)),
+    ],
+  ];
+  const lines = (await transcript(bot.context, ROOM)).split('\n');
+  assert.equal(pages, 2);
+  assert.equal(lines.length, 101);
+  assert.equal(lines[0], '[t0] u0: line 0 [https://cdn.example/a.png]');
+  assert.equal(lines.at(-1), '[t100] u100: line 100');
+});
+
+test('tickets: two presses of Close at once post one transcript', async () => {
+  const bot = await standEngagement({ tickets: { logChannel: LOGS } }, [ticketsModule]);
+  await press(bot, TARGET, ['open']);
+  const channelId = String(recordOf(bot.database.raw.prepare('SELECT channel_id FROM tickets').get()).channel_id);
+  await Promise.all([press(bot, TARGET, ['close'], [], channelId), press(bot, TARGET, ['close'], [], channelId)]);
+  const posted = bot.world.state.calls.filter(
+    (call) => call.method === 'POST' && call.path === `/channels/${LOGS}/messages`,
+  );
+  assert.equal(posted.length, 1);
 });

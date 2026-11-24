@@ -279,7 +279,7 @@ export const giveawaysModule: ServerModule = {
     async list(context, guildId) {
       const rows = await context.database
         .prepare(
-          'SELECT g.*, (SELECT COUNT(*) FROM giveaway_entries e WHERE e.giveaway_id = g.id) AS entries FROM giveaways g WHERE guild_id = ? ORDER BY id DESC LIMIT 50',
+          'SELECT *, (SELECT COUNT(*) FROM giveaway_entries WHERE giveaway_id = giveaways.id) AS entries FROM giveaways WHERE guild_id = ? ORDER BY id DESC LIMIT 50',
         )
         .bind(guildId)
         .all<GiveawayRow & { entries: number }>();

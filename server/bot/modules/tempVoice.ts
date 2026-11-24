@@ -7,7 +7,7 @@ import { recordOf } from '../law/settings.ts';
 import type { BotContext } from '../kit.ts';
 import type { EventHandler, ServerModule } from './module.ts';
 
-/** Manage Channels, Move Members and Priority Speaker: the owner may rename the room and run it. */
+/** Manage Channels, Connect and Move Members: the owner may rename the room, lock it and still get in, and run it. */
 const ROOM_OWNER_BITS = (1n << 4n) | (1n << 20n) | (1n << 24n);
 const VOICE = 2;
 

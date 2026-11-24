@@ -52,3 +52,15 @@ test('voice rooms: a room no one could be moved into goes at once, and one left 
   assert.equal(rooms(bot), 0);
   assert.deepEqual(bot.cache.inVoice(GUILD), [], 'and the cache holds no one who left meanwhile');
 });
+
+test('voice rooms: a room stays while anyone is still in it', async () => {
+  const bot = await standEngagement({ tempvoice: { hub: HUB } }, [tempVoiceModule]);
+  await voice(bot, TARGET, HUB);
+  const room = roomNow(bot);
+  await voice(bot, TARGET, room);
+  await voice(bot, MOD, room);
+  await voice(bot, TARGET, null);
+  assert.equal(bot.world.state.gone.includes(room), false, 'one member is still there');
+  await voice(bot, MOD, null);
+  assert.ok(bot.world.state.gone.includes(room));
+});
