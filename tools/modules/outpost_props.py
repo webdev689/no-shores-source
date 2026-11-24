@@ -73,8 +73,14 @@ def brazier(module, at, high=1.0, bowl=0.38, foot=True):
         angle = math.tau * coal / 7
         shapes.ball(module, (x + math.cos(angle) * bowl * 0.5, y + math.sin(angle) * bowl * 0.5, top - 0.02),
                     bowl * 0.24, 'black' if coal % 2 else 'glow', detail=0)
-    shapes.lathe(module, (x, y, top - 0.04), [(bowl * 0.62, 0.0), (bowl * 0.42, 0.25), (bowl * 0.16, 0.55),
-                 (0.0, 0.75)], 'glow', sides=7)
+    # The flame in three tongues of unlike heights, the lesser two leaning out from the middle, so it reads as fire
+    # and not as one smooth cone.
+    for tongue, (out, lean, tall) in enumerate(((0.0, 0.0, 0.75), (0.25, 0.28, 0.55), (0.25, 0.28, 0.45))):
+        angle = math.tau * tongue / 3 + 0.5
+        east, north = math.cos(angle), math.sin(angle)
+        shapes.lathe(module, (x + east * bowl * out, y + north * bowl * out, top - 0.04),
+                     [(bowl * 0.4, 0.0), (bowl * 0.28, tall * 0.33), (bowl * 0.1, tall * 0.73), (0.0, tall)], 'glow',
+                     sides=6, turn=(-north * lean, east * lean, 0.0))
     module.part((x - bowl, y - bowl, at[2]), (x + bowl, y + bowl, top + 0.1))
 
 

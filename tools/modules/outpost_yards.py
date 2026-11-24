@@ -32,9 +32,9 @@ SIDE_M = 5.0
 FLIGHT_FOOT_Y = -5.4
 
 
-def platform(module, body, cap, step, wear):
-    """The gate's platform round its well, of `body` blocks capped in `cap`, its two flights of `step`; each block a
-    part."""
+def platform(module, body, cap, step, wear, frame=None):
+    """The gate's platform round its well, of `body` blocks capped in `cap`, its two flights of `step`, its doorway
+    framed in `frame` where one is given; each block a part."""
     rise = PLATFORM_M / STEPS
     top_front = FLIGHT_FOOT_Y + STEPS * RUN_M
     head = LANDING_Y - STEPS * RUN_M
@@ -49,7 +49,8 @@ def platform(module, body, cap, step, wear):
                   cap, bevel=0.03, wear=0.0, part=False)
     kit.stair(module, (0.0, FLIGHT_FOOT_Y, 0.0), (0, 1), 3.0, rise, RUN_M, STEPS, step, wear=wear)
     kit.stair(module, (0.0, LANDING_Y, 0.0), (0, -1), STEPS_HALF_M * 2, rise, RUN_M, STEPS, step, wear=wear)
-    # The doorway: a recess of dark faces at the foot of the back wall, nothing past it.
+    # The doorway: a recess at the foot of the back wall, its sides and head of the wall's own stuff so it reads as
+    # deep, dark only at its back, nothing past it; a worn threshold, and a frame round it where one is given.
     for x in (-1, 1):
         kit.block(module, (x * (WELL_HALF_M - 0.2), DOORWAY_Y + 0.15, 0.0), (0.4, 0.3, PLATFORM_M), body, bevel=0.03,
                   wear=wear, part=False)
@@ -58,8 +59,13 @@ def platform(module, body, cap, step, wear):
     module.part((-WELL_HALF_M, DOORWAY_Y, 0.0), (WELL_HALF_M, DOORWAY_Y + 0.3, PLATFORM_M))
     shapes.slab(module, (0.0, DOORWAY_Y + 0.28, 1.0), (2.0, 0.02, 2.0), 'black')
     for x in (-1, 1):
-        shapes.slab(module, (x * 0.99, DOORWAY_Y + 0.15, 1.0), (0.02, 0.28, 2.0), 'black')
-    shapes.slab(module, (0.0, DOORWAY_Y + 0.15, 1.99), (2.0, 0.28, 0.02), 'black')
+        shapes.slab(module, (x * 0.99, DOORWAY_Y + 0.15, 1.0), (0.02, 0.28, 2.0), body)
+    shapes.slab(module, (0.0, DOORWAY_Y + 0.15, 1.99), (2.0, 0.28, 0.02), body)
+    shapes.slab(module, (0.0, DOORWAY_Y + 0.1, 0.03), (2.0, 0.4, 0.06), step)
+    if frame:
+        for x in (-1, 1):
+            shapes.slab(module, (x * 1.12, DOORWAY_Y - 0.04, 1.05), (0.24, 0.12, 2.1), frame)
+        shapes.slab(module, (0.0, DOORWAY_Y - 0.05, 2.15), (2.7, 0.14, 0.3), frame)
     module.socket('door', (0.0, LANDING_Y + 0.3, 0.0), (0, -1))
 
 
@@ -102,8 +108,9 @@ def gate_mound(module):
     shapes.slab(module, (0.0, 2.4, PLATFORM_M + 2.85), (2.3, 0.2, 0.2), 'timber')
     shapes.ring(module, (0.0, 2.4, PLATFORM_M + 2.5), 0.28, 0.05, 'timber', turn=(0.0, math.pi / 2, 0.0),
                 segments=12, sides=4)
-    shapes.rod(module, (0.0, 2.15, PLATFORM_M + 2.3), (0.0, 2.15, 1.0), 0.015, 'linen', sides=4)
-    shapes.lathe(module, (0.0, 2.15, 0.6), [(0.16, 0.0), (0.2, 0.36), (0.0, 0.36)], 'timber', sides=10)
+    # The bucket wound up near the wheel, so its rope never hangs down the steps through those going down them.
+    shapes.rod(module, (0.0, 2.15, PLATFORM_M + 2.3), (0.0, 2.15, PLATFORM_M + 0.9), 0.015, 'linen', sides=4)
+    shapes.lathe(module, (0.0, 2.15, PLATFORM_M + 0.55), [(0.16, 0.0), (0.2, 0.36), (0.0, 0.36)], 'timber', sides=10)
     for x in (-2.4, 2.4):
         furnish.lantern_post(module, (x, FLIGHT_FOOT_Y + 0.4, 0.0), high=2.2)
     for k in range(6):
@@ -137,7 +144,7 @@ def arch(module, y, inner, outer, high, material, trim, deep=0.9):
 
 
 def gate_arch(module):
-    platform(module, 'stone', 'trim', 'stone', 0.06)
+    platform(module, 'stone', 'trim', 'stone', 0.06, frame='trim')
     arch(module, ARCH_Y, WELL_HALF_M, 2.3, 4.0, 'stone', 'trim')
     # The heavy door's two leaves hung open against the landing's walls, their iron straps toward the steps.
     for side in (-1, 1):
@@ -181,7 +188,7 @@ def statue(module, x, y):
 
 
 def gate_monument(module):
-    platform(module, 'stone', 'trim', 'trim', 0.03)
+    platform(module, 'stone', 'trim', 'trim', 0.03, frame='trim')
     spring = arch(module, ARCH_Y, WELL_HALF_M, 2.6, 5.4, 'stone', 'trim', deep=1.1)
     front = ARCH_Y - 0.65
     # Its crown: a carved frieze, a gilt keystone and a pediment, chains hung across the arch and down its piers.

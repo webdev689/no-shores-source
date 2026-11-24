@@ -75,7 +75,7 @@ function fieldRow(
             padding: [0, 8],
             alignY: 'center',
             label: said,
-            field: { most, size, placeholder: `${said}: ${most} letters at most` },
+            field: { most, size, placeholder: `${said}: ${most} characters at most` },
           },
           // One width for every field's press, so the fields end at one edge.
           pressNode(sendId(field), press, 'button', '', size, { width: PRESS_PX * size, alignX: 'center' }),

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GuildFace } from '../../network/accounts.ts';
 import type { Child, Node } from '../../ui/node.ts';
-import { sizesOf } from '../gearNodes.ts';
+import { sizesOf, words } from '../gearNodes.ts';
 import { drawn } from '../menuForTests.ts';
 import { bannerOfName } from './bannerLaw.ts';
 import { EDGE, type Home, type Member, edgeId, homeNode } from './guildHome.ts';
@@ -146,4 +146,73 @@ test('at 1600 by 900 the home keeps one type scale: nothing smaller than the lab
 
 test('a bounty done together says what its brass means', () => {
   assert.ok(home(FACE, { width: 1180, height: 520 }).shows().includes('Brass: a bounty the guild does together.'));
+});
+
+test('at 800 by 600 every edge press lies in the room, and the side says when more of it lies below', () => {
+  const room = { width: 710, height: 350 };
+  const { ui } = home(FACE, room, [800, 600]);
+  for (const icon of EDGE) {
+    const box = ui.boxOf(edgeId(icon));
+    assert.ok(box && box.y + box.height <= room.height, `${icon} ends at ${box && box.y + box.height}`);
+  }
+  const side = ui.boxOf('guild-home-side');
+  const end = ui.boxOf('guild-home-side-end');
+  assert.ok(side && end && end.y > side.y + side.height, 'the roster and outposts run on below the side, to scroll to');
+});
+
+test('the longest name the guilds allow is shown whole, never cut short', () => {
+  const name = 'Wardens of the Wide Wake';
+  const { tree } = home({ ...FACE, name }, { width: 710, height: 350 }, [800, 600]);
+  const found = (node: Child): Node | null =>
+    !node ? null : node.text?.words === name ? node : ((node.children ?? []).map(found).find(Boolean) ?? null);
+  const text = found(tree())?.text;
+  assert.ok(text && !text.ellipsis && text.wrap, 'the name wraps to a second line instead of ending in an ellipsis');
+});
+
+test('the roster puts those playing first, and within each the founder and admins before the members', () => {
+  const members = [
+    member('Ada', 'Member', OUTPOST_ROOM),
+    member('Zed', 'Founder', null),
+    member('Yan', 'Admin', OUTPOST_ROOM),
+    member('Bo', 'Member', null),
+    member('Xia', 'Admin', null),
+  ];
+  const drawing = drawn((context) =>
+    homeNode(context, { face: FACE, banner: bannerOfName(FACE.name), members, now: 0, said: '' }, { page: 0 }),
+  );
+  drawing.frame();
+  const order = ['Yan', 'Ada', 'Zed', 'Xia', 'Bo'].map((name) => drawing.shows().indexOf(` ${name} |`));
+  assert.ok(
+    order.every((spot, index) => spot > 0 && (index === 0 || spot > order[index - 1])),
+    drawing.shows(),
+  );
+});
+
+test('at 1280 by 720 with two outposts the roster shows five rows, and the outposts still end in the room', () => {
+  const room = { width: 1180, height: 470 };
+  const members = Array.from({ length: 15 }, (_unused, index) => member(`M${index}`, 'Member', null));
+  const outposts: Node = { direction: 'column', children: [words('Gull Cove', 1), words('Salt Hythe', 1)] };
+  const drawing = drawn(
+    (context) => ({
+      width: room.width,
+      height: room.height,
+      children: [
+        homeNode(
+          context,
+          { face: FACE, banner: bannerOfName(FACE.name), members, now: 0, said: '', outposts },
+          { page: 0 },
+        ),
+      ],
+    }),
+    room,
+  );
+  drawing.frame();
+  drawing.frame();
+  assert.ok(drawing.shows().includes('1/3'), drawing.shows());
+  const laid = (drawing.ui as unknown as { laid: { node: Node; box: { y: number; height: number } }[] }).laid;
+  const salt = laid.find((each) => each.node.text?.words === 'Salt Hythe');
+  assert.ok(
+    salt && salt.box.y + salt.box.height <= room.height,
+    `the outposts end at ${salt && salt.box.y + salt.box.height}`,
+  );
 });

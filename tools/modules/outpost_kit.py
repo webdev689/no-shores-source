@@ -251,13 +251,15 @@ def keep(module, middle, side, high, strings, plinth=0.2, course=0.14, string=0.
 
 def opening(module, middle, quarter, wide, high, material='black', frame='timber'):
     """The dark of a window or doorway in a wall, its foot's middle at `middle` on the wall's face, turned `quarter`
-    from facing -y: a dark panel inside a frame of `frame` round its sides and head, a sill under it."""
+    from facing -y: a dark panel inside a deep frame of `frame` round its sides and head, its reveals standing out from
+    the dark so it reads as an opening with depth, and a sill under it."""
     with shapes.frame(module, middle, quarter):
         shapes.slab(module, (0.0, -0.01, high / 2), (wide, 0.04, high), material)
         for side in (-1, 1):
-            shapes.slab(module, (side * (wide / 2 + 0.06), -0.02, high / 2), (0.12, 0.08, high + 0.1), frame)
-        shapes.slab(module, (0.0, -0.02, high + 0.06), (wide + 0.3, 0.09, 0.12), frame)
-        shapes.slab(module, (0.0, -0.05, -0.04), (wide + 0.2, 0.14, 0.08), frame)
+            shapes.slab(module, (side * (wide / 2 + 0.06), -0.08, high / 2), (0.12, 0.2, high + 0.1), frame)
+        # The head a little prouder than the jambs, so their faces never lie in one plane.
+        shapes.slab(module, (0.0, -0.09, high + 0.06), (wide + 0.3, 0.22, 0.12), frame)
+        shapes.slab(module, (0.0, -0.13, -0.05), (wide + 0.3, 0.3, 0.1), frame)
 
 
 def shutters(module, middle, quarter, wide, high, bars=False):
@@ -267,22 +269,23 @@ def shutters(module, middle, quarter, wide, high, bars=False):
     with shapes.frame(module, middle, quarter):
         if bars:
             shapes.slab(module, (0.0, -0.05, high / 2), (0.07, 0.04, high), 'timber')
-            shapes.slab(module, (0.0, -0.05, high * 0.6), (wide, 0.04, 0.07), 'timber')
+            shapes.slab(module, (0.0, -0.055, high * 0.6), (wide, 0.05, 0.07), 'timber')
         for side in (-1, 1):
             x = side * (wide * 0.75 + 0.14)
             shapes.slab(module, (x, -0.04, high / 2), (wide / 2, 0.04, high), 'timber')
             for z in (0.18, high - 0.18):
                 shapes.slab(module, (x, -0.07, z), (wide / 2 - 0.04, 0.02, 0.07), 'timber')
-            shapes.slab(module, (side * (wide / 2 + 0.1), -0.07, high * 0.7), (0.1, 0.02, 0.03), 'iron')
+            # The hinge strap on the leaf's face, just clear of the deep jamb.
+            shapes.slab(module, (side * (wide / 2 + 0.2), -0.07, high * 0.7), (0.16, 0.02, 0.03), 'iron')
 
 
 def slit(module, middle, quarter, high=0.9):
-    """An arrow slit in a stone wall's face, its middle at `middle`: a dark slot in a dressed surround, splayed out at
-    its foot into a little cross."""
+    """An arrow slit in a stone wall's face, its middle at `middle`: a dark slot in a dressed surround, crossed at its
+    middle by a short sighting slot, as a crosslet's arms sit (lower, it reads as a cross turned over)."""
     with shapes.frame(module, middle, quarter):
         shapes.slab(module, (0.0, -0.01, 0.0), (0.42, 0.06, high + 0.3), 'trim')
         shapes.slab(module, (0.0, -0.045, 0.0), (0.09, 0.02, high), 'black')
-        shapes.slab(module, (0.0, -0.045, -high * 0.18), (0.32, 0.02, 0.08), 'black')
+        shapes.slab(module, (0.0, -0.045, 0.0), (0.32, 0.02, 0.08), 'black')
 
 
 def door(module, middle, quarter, wide, high, kind='ledged'):

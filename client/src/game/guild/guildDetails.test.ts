@@ -124,3 +124,22 @@ test('a member reads the motto and description, with a placeholder for none', ()
   assert.ok(shows().includes('No motto yet.'), shows());
   assert.ok(shows().includes(FACE.description));
 });
+
+test("the fields' placeholders count characters, as the accounts do", () => {
+  const placeholders: string[] = [];
+  const walk = (node: Child): void => {
+    if (!node) return;
+    if (node.field?.placeholder) placeholders.push(node.field.placeholder);
+    for (const child of node.children ?? []) walk(child);
+  };
+  const page = drawn((context) => {
+    const node = detailsNode(context, FACE, context.holds, () => undefined);
+    walk(node);
+    return node;
+  });
+  page.frame();
+  assert.ok(
+    placeholders.length > 0 && placeholders.every((said) => said.endsWith('characters at most')),
+    placeholders.join(' | '),
+  );
+});

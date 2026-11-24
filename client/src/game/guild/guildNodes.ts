@@ -273,7 +273,8 @@ export function scrollNode(ui: Interface, id: string, height: number, children: 
     width: 'grow',
     height,
     direction: 'column',
-    gap: 4,
+    // Clear of the line the scroll cuts, so the cue never reads as lying over it.
+    gap: 10,
     children: [
       {
         id,
