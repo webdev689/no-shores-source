@@ -177,8 +177,9 @@ impl Piece {
 
     fn middle(&self) -> [f64; 2] {
         let start = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
-        let [west, north, east, south] =
-            self.boxes.iter().fold(start, |[w, n, e, s], b| [w.min(b[0]), n.min(b[1]), e.max(b[2]), s.max(b[3])]);
+        let [west, north, east, south] = self.boxes.iter().fold(start, |[west, north, east, south], b| {
+            [west.min(b[0]), north.min(b[1]), east.max(b[2]), south.max(b[3])]
+        });
         [(west + east) / 2.0, (north + south) / 2.0]
     }
 
