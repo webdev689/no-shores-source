@@ -25,7 +25,7 @@ test('a strip that failed to arrive is asked for again only after a while, not o
   const realFetch = globalThis.fetch;
   globalThis.fetch = (async (url: string) => {
     asked.push(url);
-    return url.endsWith('index/a.json') ? Response.json(index) : new Response('', { status: 503 });
+    return url.endsWith('index/a.json') ? Response.json(index) : new Response('', { status: 404 });
   }) as typeof fetch;
   mock.timers.enable({ apis: ['setTimeout'] });
   try {

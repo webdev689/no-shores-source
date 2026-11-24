@@ -10,6 +10,7 @@ import { GlowCards } from '../player/glowCards.ts';
 import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts, sunAxes } from '../shadow.ts';
 import { SKY_WGSL, skyUniformFor } from '../sky/skyUniform.ts';
 import { SAMPLES } from '../water/waterView.ts';
+import { LATTICE_SHADE_WGSL } from './latticeShade.ts';
 import {
   FIGURE_REACH_M,
   UNSEEN_EVERY,
@@ -106,8 +107,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
 // A figure in a shadow keeps what the land's ambient light gives an upright face: at a clear noon about half its
 // sunlit colour.
 const SHADED = 0.55;
-// The least light a Lattice figure's crystal shows at.
-const CRYSTAL_FLOOR = 0.8;
+${LATTICE_SHADE_WGSL}
 
 // How far up from its feet a figure on a city's ground is pulled nearer as that ground is, fading to none: its soles win
 // over the slabs under them, and nothing at its body's height (a hit's star, a weapon's glow) moves in depth.
@@ -133,11 +133,8 @@ struct Drawn { @location(0) colour: vec4f, @builtin(frag_depth) depth: f32 }
   let facing = normalize(vec3f(-in.from_eye.xy, 0.0) + vec3f(1e-4, 0.0, 0.0));
   let lamps = sky_lamps(in.from_eye, facing);
   var light = mix(shaded_light, shaded_light + sky_state.key_light.rgb * (1.0 - SHADED), sun) + lamps;
-  // A Lattice figure's crystal (its bright, strongly hued texels) glows of itself: never lit below a floor.
-  let brightest = max(texel.r, max(texel.g, texel.b));
-  if (card.size.w > 0.5 && brightest > 0.45 && brightest - min(texel.r, min(texel.g, texel.b)) > 0.3) {
-    light = max(light, vec3f(CRYSTAL_FLOOR));
-  }
+  // A Lattice figure is shaded darker than a man, but for its crystal's bright points, which glow (latticeShade.ts).
+  if (card.size.w > 0.5) { light = lattice_lit(texel.rgb, light); }
   // Where no sun shines (a dungeon), the light the page found where the figure stands.
   let lit = select(texel.rgb * light, texel.rgb * card.light.rgb, card.light.w > 0.5);
   // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.

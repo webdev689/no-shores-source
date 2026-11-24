@@ -10,6 +10,7 @@ import type { Fighting, KeptFoe } from './fighting.ts';
 import { Flashes } from './flashes.ts';
 import { FoeFigures } from './foeFigures.ts';
 import { latticeWaves } from './latticeLooks.ts';
+import { blowPhase } from './latticeStrikes.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const roster = rosterOf(
@@ -337,4 +338,64 @@ test('a Fissure’s first wave into a room empty of foes climbs out of its wave;
   } finally {
     latticeWaves.burst = burst;
   }
+});
+
+test('a Lattice foe’s telegraphed blow strikes and lands once the rules end its tell; a feint or a shot does not', () => {
+  // The Husk's lunge, twelve frames: its tell held through a 40-tick wind-up, then what the rules set it to.
+  const lunge = (elapsed: number, feintAt: number | null, shape: 'lunge' | 'aimed') =>
+    ({
+      kind: 'telegraph',
+      shape,
+      elapsed,
+      windup: 40,
+      origin: [0, 0, 0],
+      bearing: 0,
+      ahead: 0,
+      iron: false,
+      feintAt,
+    }) as const;
+  const played = (
+    after: KeptFoe['view']['action'],
+    feintAt: number | null = null,
+    shape: 'lunge' | 'aimed' = 'lunge',
+  ) => {
+    const figures = new FoeFigures(latticeRoster);
+    const drawn: { anim: string; phase: string | null; looks: number }[] = [];
+    const twelve = {
+      ...forge,
+      frames: () => 12,
+      card: (...[, , anim, , frame]: Parameters<Cards['card']>) => (
+        drawn.push({ anim, phase: blowPhase(frame, 12), looks: 0 }),
+        card
+      ),
+    } as unknown as Cards;
+    const eye = { x: 0, y: 5 };
+    const ends = feintAt ?? 40;
+    for (let tick = 0; tick < 100; tick++) {
+      const clock = 100 + tick / 60;
+      const action = tick < ends ? lunge(tick, feintAt, shape) : after;
+      figures.cards(huskFight(action), twelve, eye, clock, 1, 1 / 60, new Flashes());
+      const last = drawn.at(-1);
+      if (last) last.looks = figures.overheads([0, 5, 1.5], clock).length;
+    }
+    return drawn;
+  };
+  for (const after of [{ kind: 'idle' }, { kind: 'overreach', left: 60 }] as const) {
+    const drawn = played(after);
+    const lunged = drawn.filter(({ anim }) => anim === 'husk_lunge');
+    for (const phase of ['tell', 'strike', 'lands'])
+      assert.ok(
+        lunged.some((each) => each.phase === phase && each.looks > 0),
+        `${after.kind}: its ${phase}, figure and looks`,
+      );
+    assert.equal(
+      drawn.at(-1)?.anim,
+      after.kind === 'idle' ? 'husk_idle' : 'husk_lunge',
+      `${after.kind}: then the rules'`,
+    );
+  }
+  const struck = (drawn: ReturnType<typeof played>) =>
+    drawn.some(({ anim, phase }) => anim === 'husk_lunge' && phase === 'strike');
+  assert.ok(!struck(played({ kind: 'idle' }, 20)), 'a feint strikes nothing');
+  assert.ok(!struck(played({ kind: 'idle' }, null, 'aimed')), 'nor does an aimed shot, drawn and loosed');
 });

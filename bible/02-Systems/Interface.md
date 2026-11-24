@@ -1169,7 +1169,9 @@ it is asked for to fetch then, the crash and the splash only once. A gull's cry,
 Every file and chunk
 fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
 changes, so one let go comes back from the disk. The storage holds every file the game reads from R2, within 1 GB, the
-files kept longest ago let go first.
+files kept longest ago let go first. A fetch that fails for a while (a network error, a 429, a 5xx) is asked again
+three times, after 0.5, 1.5 and 4 s or the server's Retry-After up to 10 s (`fetchRetried`); any other failure is
+final.
 
 ## The sea fight's readout
 
