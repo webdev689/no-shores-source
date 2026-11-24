@@ -226,8 +226,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   each in its caverns (a coven's or a cave's area, at the area's middle) and on its runs' beats short of their end
   arenas, which hold their objective's site ([[Layouts]], "Runs"); one in the garrison's own square stands none, its
   ground held already. A site's group stands the first time a player comes within 150 m of it, none is within
-  40 m, and the room's living foes leave room for all of it, on a navmesh baked round the site then as a quest's
-  place's is, so a room opens as quickly as before. It is drawn as a
+  40 m, and the room's living foes leave room for all of it, on a navmesh baked round the site then, a slice a tick, as
+  a quest's place's is ([[Navmesh]]), so a room opens as quickly as before. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes

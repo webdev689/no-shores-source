@@ -5,7 +5,7 @@
 //! that place and else on one baked round it the first time, and again `STAND_AGAIN` after it fell while the goal is
 //! unmet.
 
-use crate::garrison::{Post, SPREAD, STAND_AGAIN, draws_of, gird_of, ground_middle, square, square_of};
+use crate::garrison::{Post, SPREAD, STAND_AGAIN, draws_of, gird_of, ground_middle, square_baking, square_of};
 use crate::players::Player;
 use crate::{Floor, PlayerId, Room};
 use ::foes::Rank;
@@ -29,8 +29,8 @@ pub(crate) type QuestMesh = (String, navmesh::Bounds, NavMesh);
 /// A room's own for the roads: its node's id, the places its file names, its island's band of levels, each kill goal's
 /// group standing here by the goal's quest, task and place in the task, with its foes, and the tick each one's last
 /// group fell. The node's own square, once its places are known, and the square and navmesh round each place a group
-/// has stood at, and the tick one was last baked; and the mesh each foe's way was last found on, but the node's own
-/// (`routes.rs`).
+/// has stood at, the one being baked and the tick a slice of one was last baked; and the mesh each foe's way was last
+/// found on, but the node's own (`routes.rs`).
 #[derive(Debug, Default)]
 pub(crate) struct QuestGround {
     pub node: Option<String>,
@@ -50,6 +50,7 @@ pub(crate) struct QuestGround {
     pub fallen: Vec<([usize; 3], u64)>,
     pub square: Option<navmesh::Bounds>,
     pub grounds: Vec<QuestMesh>,
+    pub baking: Option<(String, navmesh::Bounds, navmesh::Baking)>,
     pub way_on: BTreeMap<FighterId, usize>,
     /// The lore read for what lies in its node (`lore.rs`): the file's, unless a test gives its own.
     pub lore: Option<&'static gear::lore::LoreDef>,
@@ -113,9 +114,10 @@ impl Room {
     }
 
     /// The mesh round a place, by its number among the room's (`routes.rs`): the node's own (0) where its square holds
-    /// all within `reach` each way of the place's middle, as far as what stands there stands; else one baked the first
-    /// time it is needed, as large as the node's own and as it is (`garrison::square`), and kept. None in a tick
-    /// another was baked in: one a tick, so no tick bears two.
+    /// all within `reach` each way of the place's middle, as far as what stands there stands; else one baked once it
+    /// is needed, as large as the node's own and as it is (`garrison::square_baking`), and kept. A bake is some 150
+    /// ms, so it is made a slice a tick (`navmesh::Baking`), the one under way stepped whichever place asks: none until
+    /// it is whole, and none for another place meanwhile, which asks again on a later tick.
     pub(crate) fn ground_of(&mut self, place: &Place, reach: f64) -> Option<usize> {
         let at = place.at;
         let holds = |bounds: &navmesh::Bounds| {
@@ -136,10 +138,16 @@ impl Room {
         if self.quests.baked_at == Some(self.clock) {
             return None;
         }
-        let (bounds, mesh) = square(&self.floor, &self.blocks, (at[0], at[1]));
-        self.quests.grounds.push((place.name.clone(), bounds, mesh));
         self.quests.baked_at = Some(self.clock);
-        Some(self.quests.grounds.len())
+        let (floor, blocks) = (&self.floor, &self.blocks);
+        let (_, _, baking) = self.quests.baking.get_or_insert_with(|| {
+            let (bounds, baking) = square_baking(floor, blocks, (at[0], at[1]));
+            (place.name.clone(), bounds, baking)
+        });
+        let mesh = baking.step(floor)?;
+        let (name, bounds, _) = self.quests.baking.take()?;
+        self.quests.grounds.push((name, bounds, mesh));
+        round(&bounds).then_some(self.quests.grounds.len())
     }
 
     /// One of the room's meshes by its number: 0 the node's own, else a place's.

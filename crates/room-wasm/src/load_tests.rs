@@ -233,13 +233,19 @@ fn load_of_a_roads_groups_standing() {
                         room.tick();
                         start.elapsed().as_secs_f64() * 1000.0
                     };
-                    let standing = timed(room);
+                    // Its place's mesh is baked a slice a tick: ticked until it is kept, or a second at most.
+                    let (mut slowest, mut baking) = (0.0_f64, 0);
+                    while room.place_grounds() == 0 && baking < 60 {
+                        slowest = slowest.max(timed(room));
+                        baking += 1;
+                    }
                     assert!(room.place_grounds() <= 1, "its place's mesh, baked as it first stands, or the node's own");
-                    (standing, timed(room))
+                    (slowest, baking, timed(room))
                 });
-                let (standing, after) = ticks.unwrap();
+                let (slowest, baking, after) = ticks.unwrap();
                 eprintln!(
-                    "STAND {id} '{place}': opens in {opening:.1} ms; stands in {standing:.1} ms; then {after:.2} ms a tick"
+                    "STAND {id} '{place}': opens in {opening:.1} ms; its mesh over {baking} ticks, the slowest \
+                     {slowest:.1} ms; then {after:.2} ms a tick"
                 );
             }
         }
@@ -292,11 +298,11 @@ fn load_of_a_roads_steps() {
                 })
                 .collect();
             ticks.sort_by(f64::total_cmp);
-            (idle, begun, ticks[300], ticks[594], room.place_grounds() - start)
+            (idle, begun, (ticks[300], ticks[594], ticks[599]), room.place_grounds() - start)
         });
-        let (idle, begun, median, p99, baked) = times.unwrap();
+        let (idle, begun, (median, p99, most), baked) = times.unwrap();
         eprintln!(
-            "STEP {kind:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2})"
+            "STEP {kind:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2}, slowest {most:.1})"
         );
     }
 }
