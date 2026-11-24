@@ -253,3 +253,25 @@ fn a_building_run_off_a_raised_floor_is_reached_by_a_ramp_down_to_its_mouth() {
         assert!(capsules(run, 2.5).contains(&ramp), "and carved with it");
     }
 }
+
+#[test]
+fn a_building_run_s_ramp_stops_short_of_its_area_s_middle_by_its_half_width() {
+    let areas =
+        [Area { kind: AreaKind::Coven, name: "The Coven".into(), at: [0.0, 0.0], radius: 30.0, leads_to: None }];
+    let run = |top: f64| Run {
+        name: "The Keep".into(),
+        kind: RunKind::Keep,
+        place: RunPlace::Rock,
+        area: 0,
+        mouth: [30.0, 0.0],
+        line: Vec::new(),
+        levels: Vec::new(),
+        beats: Vec::new(),
+        door: [400.0, 0.0],
+        facing: [1.0, 0.0],
+        ramp: Some([top, 0.0, 30.0, 0.0, 4.0, 0.5, 0.0]),
+    };
+    assert!(!ramp_clear(&run(3.0), &areas), "a ramp reaching within 4 m of the middle cuts through what stands there");
+    assert!(ramp_clear(&run(5.0), &areas), "one stopping 5 m short is clear");
+    assert!(ramp_clear(&Run { ramp: None, ..run(0.0) }, &areas), "a run with no ramp is clear");
+}

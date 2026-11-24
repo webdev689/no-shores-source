@@ -300,6 +300,40 @@ pub fn walked(lines: &[Vec<[f64; 2]>]) -> Vec<[f64; 2]> {
     points
 }
 
+/// What a body walks and fights in, as lines: every way, each run's line to 3 m short of its door and the round of each
+/// of its beats, each climb to a lookout and the lookout's round, each ledge's stair, and each cavern's tunnel and
+/// hollow's round, every round a metre in from its edge.
+pub(crate) fn walked_lines(
+    paths: &[crate::paths::Path],
+    runs: &[crate::runs::Run],
+    climbs: &[[f64; 7]],
+    ledges: &[crate::ledges::Ledge],
+    caverns: &[crate::caverns::Cavern],
+) -> Vec<Vec<[f64; 2]>> {
+    let mut lines: Vec<Vec<[f64; 2]>> = paths.iter().map(|path| path.points.clone()).collect();
+    for run in runs {
+        let mut way = run.way();
+        if let [.., before, door] = way[..] {
+            let short = (1.0 - 3.0 / crate::field::distance(before, door).max(3.0)).max(0.0);
+            let last = way.len() - 1;
+            way[last] = [before[0] + (door[0] - before[0]) * short, before[1] + (door[1] - before[1]) * short];
+        }
+        lines.push(way);
+        lines.extend(run.beats.iter().map(|beat| round(beat.at, beat.radius - 1.0)));
+    }
+    for pair in crate::carve::lookouts(climbs) {
+        let ([x1, y1, x2, y2, ..], lookout) = (pair[0], pair[1]);
+        lines.push(vec![[x1, y1], [x2, y2]]);
+        lines.push(round([lookout[0], lookout[1]], lookout[4] - 1.0));
+    }
+    lines.extend(ledges.iter().map(|ledge| vec![ledge.start, ledge.edge]));
+    for cavern in caverns {
+        lines.push(vec![cavern.mouth, cavern.middle]);
+        lines.push(round(cavern.middle, cavern.reach - 1.0));
+    }
+    lines
+}
+
 /// A closed line round a point at a reach, metres.
 #[must_use]
 pub fn round(at: [f64; 2], reach: f64) -> Vec<[f64; 2]> {

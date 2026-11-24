@@ -286,7 +286,8 @@ out past its edge.
   the floor). A gorge's entry ramps down from the floor it leaves, no steeper than 0.6, to the land's own level, and
   it keeps to it; a building run (a keep, a mine, an undercroft) keeps to the land's own level, its entry built for
   level ground, and where it breaks off a raised place a ramp 2 m wider than its passage is cut down through that
-  place's floor to its mouth, no steeper than 0.6, so a body walks in and back out. A climbing run ends at 0.55 so the face
+  place's floor to its mouth, no steeper than 0.6, so a body walks in and back out; a run whose ramp would come
+  within its half-width of the place's middle, where what the place holds stands, is not laid there. A climbing run ends at 0.55 so the face
   behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
   it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
   road. Its beats are marked as foes' sites, where its room stands a group as a player first comes near ([[Enemies]], "Caverns and runs"); its end arena is an objective's site and its door a door's.

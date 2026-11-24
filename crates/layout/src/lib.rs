@@ -280,7 +280,7 @@ pub fn plan(
     let module_pads: Vec<land::pads::Pad> = seating.solids.iter().flat_map(city::modules::pads).collect();
     seating.pads.extend(module_pads);
     // The section holds what a body walks and fights in, and none of the rock beside a run on the rock's top.
-    let walked = ring::walked(&walked_lines(&paths, &runs, &sculpt.climbs, &ledges, &caverns));
+    let walked = ring::walked(&ring::walked_lines(&paths, &runs, &sculpt.climbs, &ledges, &caverns));
     let tops: Vec<[f64; 7]> = runs
         .iter()
         .filter(|run| runs::on_top(run.kind))
@@ -296,7 +296,7 @@ pub fn plan(
     let ring = ring::traced(reach, &cells, &walked);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     // The works keep off the climbs' ways as off every other, though those are walked only once the works stand.
-    let kept: Vec<paths::Path> = paths.iter().cloned().chain(climb_ways(&sculpt.climbs)).collect();
+    let kept: Vec<paths::Path> = paths.iter().cloned().chain(carve::climb_ways(&sculpt.climbs)).collect();
     works::build(&mut kit, &areas, (&paths, &kept), &sculpt.outcrops, &carved);
     for cavern in &caverns {
         caverns::build(&mut kit, cavern, &carved);
@@ -312,7 +312,7 @@ pub fn plan(
         }
     }
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
-    for (pair, walk) in carve::lookouts(&sculpt.climbs).zip(climb_ways(&sculpt.climbs)) {
+    for (pair, walk) in carve::lookouts(&sculpt.climbs).zip(carve::climb_ways(&sculpt.climbs)) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
         paths.push(walk);
         skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
@@ -550,57 +550,6 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         }
     }
     Blocked(blocked)
-}
-
-/// What a body walks and fights in, as lines: every way, each run's line to 3 m short of its door and the round of each
-/// of its beats, each climb to a lookout and the lookout's round, each ledge's stair, and each cavern's tunnel and
-/// hollow's round, every round a metre in from its edge.
-fn walked_lines(
-    paths: &[Path],
-    runs: &[runs::Run],
-    climbs: &[[f64; 7]],
-    ledges: &[ledges::Ledge],
-    caverns: &[caverns::Cavern],
-) -> Vec<Vec<[f64; 2]>> {
-    let mut lines: Vec<Vec<[f64; 2]>> = paths.iter().map(|path| path.points.clone()).collect();
-    for run in runs {
-        let mut way = run.way();
-        if let [.., before, door] = way[..] {
-            let short = (1.0 - 3.0 / field::distance(before, door).max(3.0)).max(0.0);
-            let last = way.len() - 1;
-            way[last] = [before[0] + (door[0] - before[0]) * short, before[1] + (door[1] - before[1]) * short];
-        }
-        lines.push(way);
-        lines.extend(run.beats.iter().map(|beat| ring::round(beat.at, beat.radius - 1.0)));
-    }
-    for pair in carve::lookouts(climbs) {
-        let ([x1, y1, x2, y2, ..], lookout) = (pair[0], pair[1]);
-        lines.push(vec![[x1, y1], [x2, y2]]);
-        lines.push(ring::round([lookout[0], lookout[1]], lookout[4] - 1.0));
-    }
-    lines.extend(ledges.iter().map(|ledge| vec![ledge.start, ledge.edge]));
-    for cavern in caverns {
-        lines.push(vec![cavern.mouth, cavern.middle]);
-        lines.push(ring::round(cavern.middle, cavern.reach - 1.0));
-    }
-    lines
-}
-
-/// Each climb to a lookout as the footpath it is walked as, a point every 8 m or less.
-fn climb_ways(climbs: &[[f64; 7]]) -> Vec<paths::Path> {
-    carve::lookouts(climbs)
-        .map(|pair| {
-            let [x1, y1, x2, y2, ..] = pair[0];
-            let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
-            let points = (0..=steps as usize)
-                .map(|step| {
-                    let along = step as f64 / steps;
-                    [x1 + (x2 - x1) * along, y1 + (y2 - y1) * along]
-                })
-                .collect();
-            paths::Path { tier: paths::Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() }
-        })
-        .collect()
 }
 
 #[cfg(test)]

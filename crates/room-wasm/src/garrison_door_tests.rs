@@ -76,8 +76,8 @@ fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s
 
 /// Both tests hold this value: the node as a patrol whose layout marks a foes' site the player runs near, so its
 /// group stands mid-run on a mesh baked round it then.
-pub const PATROL_SITE_HASH: &str = "00000000";
-const PATROL_SITE: [f64; 2] = [-60.0, 0.0];
+pub const PATROL_SITE_HASH: &str = "ea374418";
+const PATROL_SITE: [f64; 2] = [-60.0, 40.0];
 
 /// The node as a patrol, its file naming one foes' site at `site`.
 fn patrol_node(site: [f64; 2]) -> String {

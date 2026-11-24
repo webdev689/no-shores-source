@@ -195,8 +195,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
   which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
   are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
-  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in [[The
-  Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
+  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in
+  [[The Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
   after a stop or going astern, a ship drawn 5x in a hard turn, the wake's box holding all of it); a read-only review's
   five findings fixed with those tests. Not seen on a real GPU: how the curved wake looks, and the shader's cost while a
   ship turns (unmeasured; a straight course takes the old path).

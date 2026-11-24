@@ -319,12 +319,22 @@ fn off_ring(ring: &[[f64; 2]], at: [f64; 2]) -> f64 {
     if crate::field::ring_holds(ring, at[0], at[1]) { -edge } else { edge }
 }
 
+/// Whether a building run's ramp, cut back into the raised floor of the area it leaves, stops short of the area's
+/// middle by its half-width, so it cuts through nothing standing there.
+fn ramp_clear(run: &Run, areas: &[Area]) -> bool {
+    let (Some([x1, y1, x2, y2, half, ..]), Some(area)) = (run.ramp, areas.get(run.area)) else { return true };
+    crate::paths::off_line(area.at, [x1, y1], [x2, y2]) > half
+}
+
 /// Whether a run fits where it was shaped: as long as a run is, clear of the other runs and climbs, its rock standing
 /// round it, inside the claim (a run in the rock) or out past it on dry land clear of every other claim and the sea
 /// (a run past the edge).
 fn fits(setting: &Setting, run: &Run, taken: &[[f64; 7]]) -> bool {
     let long: f64 = run.line.windows(2).map(|pair| crate::field::distance(pair[0], pair[1])).sum();
     if !(SHORTEST_M..=LONGEST_M).contains(&long) || steepest_climb(run, setting.rise) > RAMPART_STEEPEST {
+        return false;
+    }
+    if !ramp_clear(run, setting.areas) {
         return false;
     }
     let beyond = run.place == RunPlace::Beyond;

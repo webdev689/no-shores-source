@@ -195,6 +195,23 @@ pub fn lookouts(climbs: &[[f64; 7]]) -> impl Iterator<Item = &[[f64; 7]]> {
     climbs.chunks_exact(2).take_while(|pair| pair[1][5] >= 1.0)
 }
 
+/// Each climb to a lookout as the footpath it is walked as, a point every 8 m or less.
+pub(crate) fn climb_ways(climbs: &[[f64; 7]]) -> Vec<Path> {
+    lookouts(climbs)
+        .map(|pair| {
+            let [x1, y1, x2, y2, ..] = pair[0];
+            let steps = (distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
+            let points = (0..=steps as usize)
+                .map(|step| {
+                    let along = step as f64 / steps;
+                    [x1 + (x2 - x1) * along, y1 + (y2 - y1) * along]
+                })
+                .collect();
+            Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() }
+        })
+        .collect()
+}
+
 /// A layout's sculpt (its claim, its floors, its outcrops of a shape, its climbs, its massif's height and seed), each of
 /// its areas' basins, the caverns cut beside them, and the area each climb to a lookout climbs out of (`lookouts`).
 #[must_use]
