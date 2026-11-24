@@ -164,11 +164,9 @@ test('two pieces of decoration set at once take their own ids, never a fault', a
     ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 3, turn: 0 }),
     ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 50, turn: 0 }),
   ]);
-  assert.deepEqual(
-    answers.map((answer) => answer.status),
-    [200, 200],
-  );
-  assert.equal(await count('outpost_decor'), 2);
+  // The second judged the plot as it was before the first, so it is asked again rather than set blind.
+  assert.deepEqual(answers.map((answer) => answer.status).sort(), [200, 409]);
+  assert.equal(await count('outpost_decor'), 1);
 });
 
 test('two of a kind an outpost holds one of, placed at once, stand once', async () => {
@@ -183,4 +181,23 @@ test('two of a kind an outpost holds one of, placed at once, stand once', async 
   ]);
   assert.equal(await count("outpost_structures WHERE kind = 'counting'"), 1);
   assert.deepEqual(answers.map((answer) => answer.status).sort(), [200, 409]);
+});
+
+test('two structures placed on the same cells at once, or two pieces on one spot, stand once', async () => {
+  const { ask, standAt, fund, deps, count } = await world();
+  await deps.database.prepare('UPDATE guilds SET xp = 40000').run();
+  await standAt('Ada');
+  await fund(60_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  slowly(deps);
+  await Promise.all([
+    ask('Ada', 'outpost/place', { site: SITE, kind: 'counting', x: 0, y: 0, turn: 0 }),
+    ask('Ada', 'outpost/place', { site: SITE, kind: 'camp', x: 0, y: 0, turn: 0 }),
+  ]);
+  assert.equal(await count('outpost_structures'), 3);
+  await Promise.all([
+    ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 50, turn: 0 }),
+    ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 50, turn: 0 }),
+  ]);
+  assert.equal(await count('outpost_decor'), 1);
 });

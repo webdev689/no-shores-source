@@ -4,7 +4,8 @@
  * with whatever it pays for. The paid writes go first, the first holding only while no line has this ask's id and the
  * balance allows the move (at least nothing, at most the most), each after it only while the one before changed a row;
  * the line and the balance follow only while the last did. So an ask made twice moves once, and nothing is paid for
- * that did not change. A ledger keeps its newest lines.
+ * that did not change; a write before the last that keeps value (a settling) may land alone. A ledger keeps its
+ * newest lines.
  */
 
 import { TREASURY_MOST } from '../../client/src/game/guild/outpostLaw.ts';

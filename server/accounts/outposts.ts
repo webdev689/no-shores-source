@@ -92,6 +92,20 @@ async function settleFirst(database: Db, asking: Asking, kind: string, plot: Plo
   return settle ? [paid(database, asking, settle.sql, settle.values)] : [];
 }
 
+/** SQL for where everything on a plot stands, its parameters the guild ?1 and site ?2: a new structure or piece judged
+ *  against the plot as read goes in only while the plot is still laid out so, so two at once never overlap. */
+const LAYOUT = `(SELECT COALESCE(group_concat(spot, ';'), '') FROM (
+  SELECT 's' || id || ':' || kind || ':' || x || ':' || y || ':' || turn AS spot FROM outpost_structures
+  WHERE guild_id = ?1 AND site = ?2
+  UNION ALL SELECT 'd' || id || ':' || piece || ':' || CAST(x * 4 AS INTEGER) || ':' || CAST(y * 4 AS INTEGER)
+  FROM outpost_decor WHERE guild_id = ?1 AND site = ?2 ORDER BY 1))`;
+
+/** A plot's layout as `LAYOUT` reads it, read before the plot itself, so a change between the two reads stales it. */
+async function layoutOf(database: Db, guild: string, site: string) {
+  const row = await database.prepare(`SELECT ${LAYOUT} AS laid`).bind(guild, site).first<{ laid: string }>();
+  return row?.laid ?? '';
+}
+
 /** Moves Aurem for an ask with the writes it pays for. */
 const moveFor = (database: Db, asking: Asking, kind: string, amount: number, writes: readonly Paid[]) =>
   move(database, asking.guild.id, { account: asking.own, kind, amount, rid: asking.rid, now: asking.now }, writes);
@@ -138,6 +152,7 @@ async function raise(database: Db, asking: Asking, turn: number) {
  *  id and how many of its kind stand are read inside the write. */
 async function place(database: Db, asking: Asking, given: Record<string, unknown>) {
   const { guild, site } = asking;
+  const laid = await layoutOf(database, guild.id, site);
   const plot = await plotOf(database, guild.id, site);
   const spot = { x: Number(given['x']), y: Number(given['y']), turn: Number(given['turn']) };
   const kind = String(given['kind'] ?? '');
@@ -156,9 +171,9 @@ async function place(database: Db, asking: Asking, given: Record<string, unknown
         `INSERT INTO outpost_structures (guild_id, site, id, kind, tier, building, x, y, turn, spent)
          SELECT ?1, ?2, COALESCE((SELECT MAX(id) FROM outpost_structures WHERE guild_id = ?1 AND site = ?2), 0) + 1,
          ?3, ?4, ?5, ?6, ?7, ?8, ?9
-         WHERE (SELECT COUNT(*) FROM outpost_structures WHERE guild_id = ?1 AND site = ?2 AND kind = ?3) < ?10
+         WHERE (SELECT COUNT(*) FROM outpost_structures WHERE guild_id = ?1 AND site = ?2 AND kind = ?3) < ?10 AND ${LAYOUT} = ?11
          AND ${guards}`,
-      [guild.id, site, kind, ready ? 1 : 0, ready ? 0 : 1, spot.x, spot.y, spot.turn, first.aurem, found.most],
+      [guild.id, site, kind, ready ? 1 : 0, ready ? 0 : 1, spot.x, spot.y, spot.turn, first.aurem, found.most, laid],
     ),
   ]);
   return answered(moved, lacks(first.aurem, `the ${found.name}`));
@@ -223,6 +238,7 @@ async function takeDown(database: Db, asking: Asking, what: 'structure' | 'decor
  *  write. */
 async function decorate(database: Db, asking: Asking, given: Record<string, unknown>) {
   const { guild, site } = asking;
+  const laid = await layoutOf(database, guild.id, site);
   const plot = await plotOf(database, guild.id, site);
   const decor = {
     piece: String(given['piece'] ?? ''),
@@ -240,9 +256,9 @@ async function decorate(database: Db, asking: Asking, given: Record<string, unkn
       (guards) =>
         `INSERT INTO outpost_decor (guild_id, site, id, piece, x, y, turn, paid)
          SELECT ?1, ?2, COALESCE((SELECT MAX(id) FROM outpost_decor WHERE guild_id = ?1 AND site = ?2), 0) + 1,
-         ?3, ?4, ?5, ?6, ?7 WHERE (SELECT COUNT(*) FROM outpost_decor WHERE guild_id = ?1 AND site = ?2) < ?8
+         ?3, ?4, ?5, ?6, ?7 WHERE (SELECT COUNT(*) FROM outpost_decor WHERE guild_id = ?1 AND site = ?2) < ?8 AND ${LAYOUT} = ?9
          AND ${guards}`,
-      [guild.id, site, decor.piece, decor.x, decor.y, decor.turn, price, decorCap(hallTier(plot))],
+      [guild.id, site, decor.piece, decor.x, decor.y, decor.turn, price, decorCap(hallTier(plot)), laid],
     ),
   ]);
   return answered(moved, lacks(price, `the ${pieceOf(decor.piece)?.name ?? 'piece'}`));

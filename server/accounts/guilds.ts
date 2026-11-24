@@ -176,7 +176,8 @@ export async function guildAsk(
         )
         .bind(own, mine.id, them.id, now),
     ]);
-    return sent?.meta.changes === 1 ? done : refused;
+    if (sent?.meta.changes === 1) return done;
+    return ((await members())?.count ?? 0) >= GUILD_MOST ? said(409, 'Your guild is full.') : refused;
   }
   const theirs = await guildOf(database, them.id);
   if (theirs?.id !== mine.id) return said(404, 'They are not in your guild.');
