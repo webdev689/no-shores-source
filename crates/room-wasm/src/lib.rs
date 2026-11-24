@@ -181,10 +181,9 @@ pub fn open_node(text: &[u8]) -> bool {
     if let Some(grounds) = node.grounds {
         room.open_public(&node.id, grounds.into(), levels);
     }
+    let patrol = node.kind == NodeKind::Patrol;
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
-    if node.kind == NodeKind::Patrol
-        && let Some(resource) = resource
-    {
+    if let Some(resource) = resource.filter(|_| patrol) {
         room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default(), &node.resources);
         finds_door::lay(&mut room, node.finds);
     }

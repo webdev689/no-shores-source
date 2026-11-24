@@ -110,7 +110,7 @@ pub use land::sites::NodeKind;
 use movement::standing;
 use movement::{Block, Body, Mode};
 use players::Player;
-use reach::{Place, respawn_point};
+use reach::Place;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -352,17 +352,6 @@ impl Room {
         let body =
             if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
         Body { facing: self.facing, ..body }
-    }
-
-    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
-    /// fell in a patrol zone (`respawns.rs`), else at the section's spawn nearest it, or the room's spawn.
-    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
-        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
-            return body;
-        }
-        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
-        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
     }
 
     /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
