@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { AccountLink } from '../../network/accounts.ts';
 import { hexOf } from './bannerLaw.ts';
-import { guildHeld, keepGuild, ownOutpostColours } from './guildHeld.ts';
+import { guildHeld, guildRead, keepGuild, ownOutpostColours } from './guildHeld.ts';
 
 Object.assign(globalThis, { addEventListener: () => undefined });
 
@@ -19,4 +19,18 @@ test("the guild kept from the accounts names its rooms' key and flies its banner
   await Promise.resolve();
   assert.deepEqual(ownOutpostColours('gull-cove-outpost'), { cloth: hexOf('navy'), device: hexOf('gold') });
   assert.equal(ownOutpostColours('far-rocks-outpost'), null, "another guild's site, or none, as it is");
+});
+
+test('a failed read is tried again at the next ask, and a fresh read takes a removal the player did not make', async () => {
+  const key = 'ffeeddccbbaa99887766554433221100';
+  const answers: unknown[] = ['The accounts are away.', { guild: { key, rank: 1, banner: {} } }, { guild: null }];
+  const link = {
+    guild: () => Promise.resolve(answers.shift()),
+    outposts: () => Promise.resolve({ outposts: [] }),
+  } as unknown as AccountLink;
+  keepGuild(link);
+  assert.equal(await guildHeld(), null, 'the first read failed');
+  assert.deepEqual(await guildHeld(), { key, rank: 1, banner: {}, sites: [] }, 'read again, not kept failed');
+  assert.equal((await guildHeld())?.key, key, 'an answer is kept');
+  assert.equal(await guildRead(), null, 'removed by an admin, seen at a fresh read');
 });

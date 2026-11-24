@@ -29,7 +29,7 @@ export const PLACING_STRIP: Strip = {
   hints: [
     ['[ ]', 'Turn'],
     ['use', 'Place'],
-    ['Escape', 'Let go'],
+    ['Esc', 'Let go'],
   ],
 };
 

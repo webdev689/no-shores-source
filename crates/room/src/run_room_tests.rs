@@ -294,7 +294,7 @@ fn a_guild_dungeon_pays_a_sea_islands_clear_and_each_member_a_guild_package_at_t
     late.guild_player(past, seen());
     late.minute += gear::clock::WEEK_MINUTES;
     clear_the_end(&mut late);
-    assert!(!late.players[&past].character.guild.delve, "a run cleared after the week it opened for pays none");
+    assert!(late.players[&past].character.guild.delve, "a run cleared after the week it opened in pays that week's");
     let mut joined = opened(FRIDAY_NINE);
     let newcomer = kept_in(&mut joined, &past_the_prologue());
     let new = Standing { before_the_week: false, ..Standing::default() };

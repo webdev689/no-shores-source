@@ -8,6 +8,12 @@ import type { NodeInfo } from './worldData.ts';
 import { BEFORE_DOOR_M } from './entrances.ts';
 import { activitiesAt } from './activities.ts';
 import { WORLD_CLOCK, roomNow } from '../sky/worldClock.ts';
+import type { AccountLink } from '../network/accounts.ts';
+import { delveInstance } from '../../../server/roomNames.ts';
+import { delveLaid } from './guild/delveRoom.ts';
+import { keepGuild } from './guild/guildHeld.ts';
+import { weekOf } from './guild/guildLaw.ts';
+import { groundOf, outOfGate } from './guild/outpostHere.ts';
 
 const bytes = await readFile(
   new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url),
@@ -33,8 +39,8 @@ function recorded(here: { foot: object | null }, places: readonly (string | null
       ways.push(['into', outside.text, dungeon.room, layout.name, seas]);
       here.foot = { ...here.foot, dungeon: { patrol: outside.node, ...dungeon, layout }, seas };
     },
-    ontoPatrol: async (onto, facing, seas, arriving) => {
-      ways.push(['onto', onto.id, facing, seas, arriving]);
+    ontoPatrol: async (onto, facing, seas, arriving, guild) => {
+      ways.push(['onto', onto.id, facing, seas, arriving, ...(guild === undefined ? [] : [guild])]);
     },
     ontoSea: async (back) => {
       ways.push(['sea', back]);
@@ -355,11 +361,16 @@ test('the guild dungeon is entered from an outpost as its company’s run at a t
   const { trips, happenings, ways, settled } = recorded({ foot: standing(outpost, 'normal') });
   trips.enterDelve(key, 1, gate);
   await settled();
-  assert.deepEqual(ways[0]?.slice(2, 3), [`node-tern-strand-outpost--guild-${key}--elite--run-k3j4h5g6`]);
+  // The pinned minute's week, 2ag in base 36, before the rest of the instance.
+  assert.deepEqual(ways[0]?.slice(2, 3), [`node-tern-strand-outpost--guild-${key}--elite--run-2ag4h5g6`]);
   assert.equal(ways[0]?.[4], 'elite');
   trips.leave();
   await settled();
-  assert.deepEqual(ways[1], ['onto', outpost.id, Math.PI, 'normal', { number: 0, ...gate }], 'out before the gate');
+  assert.deepEqual(
+    ways[1],
+    ['onto', outpost.id, Math.PI, 'normal', { number: 0, ...gate }, key],
+    'out before the gate',
+  );
   assert.deepEqual(
     happenings.map((happening) => happening.kind),
     ['enter', 'leave'],
@@ -382,4 +393,53 @@ test('the guild dungeon is entered from an outpost as its company’s run at a t
   patrolled.trips.enterDelve(key, 0, gate);
   await patrolled.settled();
   assert.deepEqual(patrolled.ways, [], 'only from an outpost');
+});
+
+test("a companion joining a guild dungeon's run lays the run's own week and comes out before its gate", async () => {
+  Object.assign(globalThis, { addEventListener: () => undefined });
+  const key = '0a1b2c3d4e5f60718293a4b5c6d7e8f9';
+  const outpost = { id: 'tern-strand-outpost', name: 'Tern Strand', kind: 'outpost', centre: [100, 200] };
+  const node = { ...outpost, spawns: [[5, 5]] } as unknown as NodeInfo;
+  const gate = { id: 2, kind: 'gate', tier: 1, building: 0, x: 6, y: 12, turn: 0 };
+  const seen = { guild: key, name: 'Salt Kings', banner: '{}', site: node.id, plot: { structures: [gate], decor: [] } };
+  const read: string[] = [];
+  keepGuild({
+    guild: () => Promise.resolve({ guild: null }),
+    outpost: (room: string) => {
+      read.push(room);
+      return Promise.resolve({ outpost: seen });
+    },
+  } as unknown as AccountLink);
+  const [asks, ways, travels] = [[] as unknown[], [] as unknown[][], [] as Promise<void>[]];
+  const here = { foot: null as object | null };
+  const game: TripGame = {
+    foot: () => here.foot as TripFoot | null,
+    travel: (_happening, work) => void travels.push(work()),
+    module,
+    intoDungeon: async (outside, dungeon, layout) => {
+      asks.push(dungeon.ask);
+      here.foot = { node: outside.node, dungeon: { patrol: outside.node, ...dungeon, layout } };
+    },
+    ontoPatrol: async (onto, facing, seas, arriving, guild) => void ways.push([onto.id, seas, arriving, guild]),
+    ontoSea: async () => undefined,
+    companyPlaces: async () => [],
+    drawers: { props: null, show: () => undefined },
+  };
+  const trips = dungeonTrips(game);
+  const lastWeek = weekOf(roomNow()) - 1;
+  trips.join(node, `node-${node.id}--guild-${key}--elite--run-${delveInstance(lastWeek, 'abcdefgh')}`);
+  await new Promise((done) => setImmediate(done));
+  await Promise.all(travels);
+  const { seed, style } = delveLaid(key, lastWeek);
+  assert.deepEqual(asks, [{ seed, style, name: 'Tern Strand' }], 'laid as the room lays it, not this week');
+  trips.leave();
+  await new Promise((done) => setImmediate(done));
+  await Promise.all(travels);
+  const out = outOfGate(
+    seen,
+    groundOf(node, () => 0),
+  );
+  assert.ok(out);
+  assert.deepEqual(ways, [[node.id, 'normal', { number: 0, ...out }, key]], "before the gate, in the guild's room");
+  assert.deepEqual(read, [`node-${node.id}--guild-${key}`]);
 });

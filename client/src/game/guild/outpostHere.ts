@@ -12,9 +12,11 @@ import { type Banner, bannerFrom, bannerOfName } from './bannerLaw.ts';
 import { nodeRoom } from '../rooms.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { ghostOf, letGo, placingNow } from './decorPlacing.ts';
-import { accountsHeld, guildHeld } from './guildHeld.ts';
+import { accountsHeld, guildLanded } from './guildHeld.ts';
 import { ridAnswered, withRid } from './outpostAsks.ts';
-import { kindOf, pieceOf, type Plot, type Standing } from './outpostLaw.ts';
+import { type Decor, kindOf, pieceOf, type Plot, type Standing, tierName } from './outpostLaw.ts';
+import type { AtEntrance, FootContext, Opened, OutpostJoined } from '../footPlace.ts';
+import { HOLD_MS } from '../gearHold.ts';
 import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } from './outpostPlaces.ts';
 
 /**
@@ -49,13 +51,14 @@ export function groundOf(node: NodeInfo, floor: (x: number, y: number) => number
   return { plot: [x, y], level: floor(x, y) };
 }
 
-/** What using a structure offers: delivering while it is built, the horn sounded, or its name. */
-export function useWords(standing: Standing): string {
+/** What using a structure offers: delivering while it is built, the horn sounded where the player `runs` the
+ *  outpost (its founder or an admin), or its name at its tier. */
+export function useWords(standing: Standing, runs = false): string {
   const kind = kindOf(standing.kind);
   if (!kind) return '';
   if (standing.building > 0) return 'Deliver materials';
-  if (kind.id === 'horn') return 'Sound the War Horn';
-  return kind.name;
+  if (kind.id === 'horn' && runs) return 'Sound the War Horn';
+  return tierName(kind, Math.max(1, standing.tier));
 }
 
 /** How far out before the gate's door the outpost's room stands a player come back out (`Room::join_at`). */
@@ -63,6 +66,34 @@ const OUT_OF_GATE_M = 1.5;
 
 /** A placed module as a prop standing whole. */
 const propOf = (placed: Placed): EventProp => ({ ...placed, scale: 1, rise: 1, lid: 0, glow: 1 });
+
+/** Where the outpost's room stands a player come back out of the guild dungeon: before the Delve Gate's door, facing
+ *  away from it; null with no gate. */
+export function outOfGate(seen: OutpostSeen, ground: Ground): Omit<AtEntrance, 'number'> | null {
+  const gate = gateOf(seen.plot);
+  if (!gate) return null;
+  const facing = Math.PI + (gate.turn * Math.PI) / 2;
+  const [doorX, doorY] = socketOf(gate, ground, bannerOf(seen).staff, 'door');
+  return { x: doorX + Math.sin(facing) * OUT_OF_GATE_M, y: doorY - Math.cos(facing) * OUT_OF_GATE_M, facing };
+}
+
+/** Where a companion come out of the guild dungeon of the guild of `key` at `node` stands: before its gate, as the
+ *  room stands them, read from the accounts; null where it cannot be read. */
+export async function gateOut(node: NodeInfo, key: string): Promise<Omit<AtEntrance, 'number'> | null> {
+  const answer = await accountsHeld()
+    ?.outpost(nodeRoom(node, 'normal', key))
+    .catch(() => null);
+  const seen = answer && typeof answer !== 'string' ? answer.outpost : null;
+  return seen
+    ? outOfGate(
+        seen,
+        groundOf(node, () => 0),
+      )
+    : null;
+}
+
+/** The key a guild's outposts' rooms are named by, from its id. */
+const keyOf = (seen: OutpostSeen): string => seen.guild.replaceAll('-', '').toLowerCase();
 
 /** A guild's banner, as kept. */
 function bannerOf(seen: OutpostSeen): Banner {
@@ -88,8 +119,24 @@ export class OutpostHere {
   /** The zone's own props and the list they were last joined into, kept while neither changes. */
   private joined: { besides: readonly EventProp[]; shown: readonly EventProp[]; all: readonly EventProp[] } | null =
     null;
-  /** The room this page joined here, named by the guild's key as it stood on arriving. */
-  private readonly room: Promise<string>;
+  /** The room this page joined here, named by the key of the guild whose outpost it is (none at the wild site). */
+  private readonly room: string;
+  /** How many plots the room last said it has stood, none before it first says. */
+  private plots: number | null = null;
+  /** Each structure with the socket it is used at, and each piece of decoration with where it stands, once a read. */
+  private sockets: readonly { readonly standing: Standing; readonly at: readonly [number, number] }[] = [];
+  private pieces: readonly { readonly decor: Decor; readonly at: readonly number[] }[] = [];
+  /** The ghost of a piece being placed and the list it was last joined into, kept while it stands still. */
+  private ghosted: {
+    readonly key: string;
+    readonly besides: readonly EventProp[];
+    readonly shown: readonly EventProp[];
+    readonly all: readonly EventProp[];
+  } | null = null;
+  /** A piece of decoration being taken up while E is held, since `since` on the page's clock. */
+  private taking: { readonly id: number; readonly since: number } | null = null;
+  /** The page's clock in milliseconds, which a hold is timed by. */
+  clock = (): number => performance.now();
   /** The plot's boxes as last read, which the camera keeps clear of too. */
   walls: readonly Block[] = [];
   private takenUp: { readonly id: number; readonly why: string } | null = null;
@@ -104,15 +151,23 @@ export class OutpostHere {
   /** The page's way into the guild dungeon, where it has one. */
   private readonly delve: Trips['enterDelve'];
 
+  /** The guild whose outpost's room was joined, and whether it was the player's own. */
+  readonly entered: OutpostJoined;
+  /** What the room last said, the plots it has stood counted. */
+  private readonly heard: { readonly plots: number };
+
   constructor(
     site: string,
     ground: Ground,
     link: AccountLink | null,
     course: { readonly boxes: readonly Block[]; readonly courses: readonly Course[] },
     delve: Trips['enterDelve'] = undefined,
+    joined: OutpostJoined = { guild: null, own: true },
+    heard: { readonly plots: number } = { plots: 0 },
   ) {
     [this.site, this.ground, this.link, this.course, this.delve] = [site, ground, link, course, delve];
-    this.room = guildHeld().then((guild) => nodeRoom({ id: site, kind: 'outpost' }, 'normal', guild?.key ?? null));
+    [this.entered, this.heard] = [joined, heard];
+    this.room = nodeRoom({ id: site, kind: 'outpost' }, 'normal', joined.guild);
     this.shown = this.standing();
     this.look();
     this.timer = setInterval(this.look, LOOK_MS);
@@ -123,14 +178,11 @@ export class OutpostHere {
   /** The guild dungeon at `tier` (0 Normal to 2 Abyss), where the gate stands at it or higher: in by the page's trips,
    *  out before the gate's door, facing away from it. */
   private delveAt(tier: number): void {
-    const { seen, ground } = this;
-    const gate = seen ? gateOf(seen.plot) : null;
+    const { seen } = this;
+    const out = seen ? outOfGate(seen, this.ground) : null;
     const top = seen ? gateTier(seen.plot) : null;
-    if (!seen || !gate || top === null || tier < 0 || tier > top) return;
-    const facing = Math.PI + (gate.turn * Math.PI) / 2;
-    const [doorX, doorY] = socketOf(gate, ground, this.staff, 'door');
-    const out = { x: doorX + Math.sin(facing) * OUT_OF_GATE_M, y: doorY - Math.cos(facing) * OUT_OF_GATE_M, facing };
-    this.delve?.(seen.guild.replaceAll('-', '').toLowerCase(), tier, out);
+    if (!seen || !out || top === null || tier < 0 || tier > top) return;
+    this.delve?.(keyOf(seen), tier, out);
   }
 
   private readonly delveAsked = (event: Event): void => {
@@ -158,8 +210,8 @@ export class OutpostHere {
     const asked = ++this.asked;
     const link = this.link;
     if (!link) return;
-    void this.room
-      .then((room) => link.outpost(room))
+    void link
+      .outpost(this.room)
       .then((answer) => {
         if (asked !== this.asked || typeof answer === 'string') return;
         this.take(answer.outpost);
@@ -174,6 +226,12 @@ export class OutpostHere {
     this.shown = this.standing();
     this.hung = this.hangs();
     this.walls = seen ? plotBoxes(seen.plot, this.ground, this.staff) : [];
+    const { ground, staff } = this;
+    this.sockets = (seen?.plot.structures ?? []).map((standing) => ({
+      standing,
+      at: socketOf(standing, ground, staff, socketNameOf(standing.kind)),
+    }));
+    this.pieces = (seen?.plot.decor ?? []).map((decor) => ({ decor, at: decorPlaceOf(decor, ground).at }));
     for (const course of this.course.courses) course.setCourse([...this.course.boxes, ...this.walls]);
   }
 
@@ -202,7 +260,14 @@ export class OutpostHere {
    *  the ghost of a piece being placed at `feet`. */
   props(besides: readonly EventProp[] = [], feet?: readonly [number, number]): readonly EventProp[] {
     const ghost = feet ? this.ghost(feet) : null;
-    if (ghost) return [...besides, ...this.shown, ghost];
+    if (ghost) {
+      const key = `${ghost.module} ${ghost.at.join()} ${ghost.turn} ${ghost.tint?.join() ?? ''}`;
+      const { ghosted } = this;
+      const { shown } = this;
+      if (ghosted?.key !== key || ghosted.besides !== besides || ghosted.shown !== shown)
+        this.ghosted = { key, besides, shown, all: [...besides, ...shown, ghost] };
+      return this.ghosted?.all ?? [];
+    }
     if (besides.length === 0) return this.shown;
     const { joined, shown } = this;
     if (joined?.besides !== besides || joined.shown !== shown)
@@ -271,8 +336,15 @@ export class OutpostHere {
 
   /** What E does at (`x`, `y`): opens the Guild tab on the structure whose socket is near, takes up a piece of
    *  decoration, or, while the outpost is bare, says how to raise it. */
-  readonly uses = (x: number, y: number, ask: (asked: GearAsk) => void, facing = this.facing): Use | null => {
+  readonly uses = (
+    x: number,
+    y: number,
+    ask: (asked: GearAsk) => void,
+    facing = this.facing,
+    useHeld = false,
+  ): Use | null => {
     this.facing = facing;
+    this.hear();
     const placing = this.place([x, y], ask);
     if (placing) return placing;
     const { seen, ground, site } = this;
@@ -284,20 +356,47 @@ export class OutpostHere {
         ? { words: RAISE_WORDS, run: () => openGearWindow({ view: 'guild', outpost: { site } }) }
         : null;
     }
-    const { staff } = this;
     const top = gateTier(seen.plot);
-    for (const standing of seen.plot.structures) {
-      if (!near(socketOf(standing, ground, staff, socketNameOf(standing.kind)))) continue;
+    const runs = this.runs(seen);
+    for (const { standing, at } of this.sockets) {
+      if (!near(at)) continue;
       // A gate standing goes down at its highest tier; a lower one is chosen on the Guild tab.
       if (standing.kind === 'gate' && standing.building === 0 && top !== null && this.delve)
         return { words: `Delve: ${DELVE_WORDS[top] ?? ''}`, run: () => this.delveAt(top) };
       const outpost = { site, structure: standing.id };
-      return { words: useWords(standing), run: () => openGearWindow({ view: 'guild', outpost }) };
+      return { words: useWords(standing, runs), run: () => openGearWindow({ view: 'guild', outpost }) };
     }
-    const piece = seen.plot.decor.find((decor) => near(decorPlaceOf(decor, ground).at));
-    if (!piece || !this.link) return null;
+    const piece = this.pieces.find(({ at }) => near(at))?.decor;
+    if (!piece || !this.link || !runs) {
+      this.taking = null;
+      return null;
+    }
+    return this.takeUp(piece, ask, useHeld);
+  };
+
+  /** Whether the player is the founder or an admin of the guild whose outpost this is, as the guild was last read. */
+  private runs(seen: OutpostSeen): boolean {
+    const guild = guildLanded();
+    return guild !== null && guild.key === keyOf(seen) && guild.rank <= 1;
+  }
+
+  /** Reads the plot again when the room says it has stood another. */
+  private hear(): void {
+    const { plots } = this.heard;
+    if (this.plots !== null && plots !== this.plots) this.look();
+    this.plots = plots;
+  }
+
+  /** Taking up `piece`, as the page holds a structure's take-down: E pressed begins it, held through it is asked of
+   *  the accounts, let go before it is not. */
+  private takeUp(piece: Decor, ask: (asked: GearAsk) => void, useHeld: boolean): Use {
     const link = this.link;
-    const run = () => {
+    const { site } = this;
+    const now = this.clock();
+    if (this.taking && (this.taking.id !== piece.id || !useHeld)) this.taking = null;
+    const share = this.taking ? (now - this.taking.since) / HOLD_MS : null;
+    if (this.taking && share !== null && share >= 1 && link) {
+      this.taking = null;
       const sent = withRid('outpost/undecorate', { site, id: piece.id });
       void link.social('outpost/undecorate', sent).then((why) => {
         this.takenUp = why === null ? null : { id: piece.id, why };
@@ -306,11 +405,19 @@ export class OutpostHere {
         ask({ kind: ASKS.outpostChanged });
         dispatchEvent(new Event(OUTPOST_CHANGED));
       });
-    };
-    // A refusal (a member below admin) is said where the piece stands, as the use prompt's words.
+    }
+    // A refusal is said where the piece stands, as the use prompt's words.
     const refused = this.takenUp?.id === piece.id ? this.takenUp.why : null;
-    return { words: refused ?? `Take up the ${pieceOf(piece.piece)?.name ?? 'decoration'}`, run };
-  };
+    const words = refused ?? `Take up the ${pieceOf(piece.piece)?.name ?? 'decoration'}`;
+    const run = () => void (this.taking = { id: piece.id, since: this.clock() });
+    return share === null || !this.taking ? { words, run } : { words, run, held: Math.min(1, share) };
+  }
+
+  /** Whether the player, in the room of their own guild's outpost (or the wild site), belongs in another now that
+   *  their guild is `key`: they founded, joined or left one here. A companion's guest stays. */
+  rejoins(key: string | null): boolean {
+    return this.entered.own && key !== this.entered.guild;
+  }
 
   /** Stops reading the plot, as the player leaves. */
   stop(): void {
@@ -322,15 +429,20 @@ export class OutpostHere {
   }
 }
 
-/** An outpost site's outpost, read for the player's guild, walled in the page's movement and fight beside the node's
- *  own `boxes`. */
+/** An outpost site's outpost, read for the guild whose outpost's room was joined, walled in the page's movement and
+ *  fight beside the node's own boxes, the plot read again as the room `heard` says it stood another; none at any
+ *  other node. */
 export function outpostAt(
   node: NodeInfo,
-  boxes: readonly Block[],
-  movement: Course & { standing(x: number, y: number): { readonly z: number } },
+  opened: Pick<Opened, 'boxes' | 'outpost'>,
+  context: Pick<FootContext, 'movement' | 'trips'>,
   fight: Course,
-  delve?: Trips['enterDelve'],
-): OutpostHere {
+  heard: { readonly plots: number },
+): OutpostHere | null {
+  if (node.kind !== 'outpost') return null;
+  const { movement, trips } = context;
   const ground = groundOf(node, (x, y) => movement.standing(x, y).z);
-  return new OutpostHere(node.id, ground, accountsHeld(), { boxes, courses: [movement, fight] }, delve);
+  const course = { boxes: opened.boxes, courses: [movement, fight] };
+  const delve = trips.enterDelve?.bind(trips);
+  return new OutpostHere(node.id, ground, accountsHeld(), course, delve, opened.outpost ?? undefined, heard);
 }

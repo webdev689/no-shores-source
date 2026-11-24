@@ -103,8 +103,10 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   the guild's members (and anyone in a company with one), `node-<site>--guild-<key>--run-<instance>`, the tier after
   the key at Elite or Abyss ([[Server]], "An outpost's room"). Each week it is laid afresh as a sea island's dungeon in
   the site's continent, its seed and its style (caverns, a crypt or mines) drawn from the guild's key and the week,
-  the same all week for every company of that guild (`delveRoom.ts`). Its clear pays as a sea island's dungeon's at
-  its tier, and each member who clears it takes a guild package at their first clear that week, beside the horn's.
+  the same all week for every company of that guild (`delveRoom.ts`); a run begun before the week turned keeps its own
+  week's, which its name carries, for whoever joins it. Its clear pays as a sea island's dungeon's at its tier, and
+  each member who clears it takes a guild package at their first clear that week, the week of the clear, beside the
+  horn's.
   It is entered from the guild's outpost alone, and leaving it, or its clear's way out, comes back before the gate.
 - **The models.** Each structure at each tier, the standard on each staff, and a scaffold for each footprint are
   modules built in Blender ([[Modules]], "The outposts' structures"); unturned, each faces south.

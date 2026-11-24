@@ -3,6 +3,10 @@ import { test } from 'node:test';
 import { type Controlled, contextOf, listenForControls } from './gameKeys.ts';
 import { OPEN_AT, setGearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
+import { PLACING_STRIP, placingNow, startPlacing } from './guild/decorPlacing.ts';
+import { keysOf } from './hints.ts';
+import { padName } from './controls.ts';
+import { BINDS } from '../player/input.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
 const dead = { standing: { kind: 'dead' } };
@@ -183,4 +187,41 @@ test('Escape opens Settings with nothing else over the game, and steps back from
   escape();
   setGearScreenOpen(false);
   assert.equal(opened.length, 2, 'not on the way to the helm’s map, behind the veil, nor over a window');
+});
+
+test('Escape or B while a piece of decoration is placed lets it go first and opens nothing', () => {
+  const { window } = fakePage();
+  const opened: unknown[] = [];
+  window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
+  const used: string[] = [];
+  const pads: ((pressed: Set<string>, buttons: Set<string>) => void)[] = [];
+  listenForControls({
+    playing: {
+      flow: { mode: 'foot' },
+      sea: null,
+      foot: { standing: { kind: 'inside' }, use: () => used.push('use') },
+      helmMap: { key: () => false, busy: false },
+      through: null,
+      after: {},
+    },
+    input: { onPad: (heard: (pressed: Set<string>, buttons: Set<string>) => void) => pads.push(heard) },
+    ui: { typing: false },
+    hud: { controls: { rebinding: {}, open: false } },
+    story: null,
+    retry: () => null,
+    change: () => undefined,
+  } as unknown as Controlled);
+  startPlacing('gull-cove-outpost', 'bench');
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape', code: 'Escape' }));
+  assert.equal(placingNow(), null, 'let go');
+  assert.deepEqual(opened, [], 'and Settings not opened');
+  startPlacing('gull-cove-outpost', 'bench');
+  pads[0]?.(new Set(['dodge']), new Set(['B']));
+  assert.equal(placingNow(), null, 'B lets go on the pad');
+  assert.deepEqual([opened, used], [[], []]);
+  assert.deepEqual(
+    keysOf(PLACING_STRIP.hints.at(-1)?.[0] ?? '', 'pad', BINDS.now),
+    [padName('B')],
+    'named for the pad',
+  );
 });

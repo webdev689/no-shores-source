@@ -154,17 +154,17 @@ function glow(size: number): Picture {
   };
 }
 
-/** The arrow a held mark points with, in its colour. */
-function arrow(colour: string): Picture {
+/** A sign drawn in a colour, filling its box: the arrow a held mark points with, the star over the guild's own. */
+function signOf(sign: string, colour: string): Picture {
   return {
-    key: `mark arrow ${colour}`,
+    key: `mark ${sign} ${colour}`,
     source: {
       draw: (context, width, height) => {
         context.fillStyle = colour;
         context.font = `${height}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText('▲', width / 2, height / 2);
+        context.fillText(sign, width / 2, height / 2);
       },
     },
   };
@@ -205,7 +205,7 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
       {
         id,
         press: true,
-        label: `${mark.name}, ${KIND_WORDS[mark.kind]}, ${mark.note}`,
+        label: `${mark.name}, ${own ? "your guild's outpost" : KIND_WORDS[mark.kind]}, ${mark.note}`,
         width: size,
         height: size,
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
@@ -213,6 +213,13 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
         children: [
           look?.emblem ? emblemNode(look.emblem, size) : null,
           look?.badge ? badgeNode(look.badge) : null,
+          // Not by its colours alone: a star over the ring marks the guild's own, in its banner's device's colour.
+          own && {
+            width: 12,
+            height: 12,
+            float: { at: [0.5, 0], anchor: [0.5, 1], y: -1 },
+            picture: signOf('★', own.device),
+          },
           held && {
             width: 12,
             height: 12,
@@ -222,7 +229,7 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
               x: Math.round(Math.sin(turn) * reach),
               y: Math.round(-Math.cos(turn) * reach),
             },
-            picture: { ...arrow(colour), turn: mark.arrowDegrees ?? 0 },
+            picture: { ...signOf('▲', colour), turn: mark.arrowDegrees ?? 0 },
           },
           mark.named && words(mark.name, mark.chosen ? GOLD : mark.locked ? DIM : TONES.ink, 4),
           mark.named && !held && words(`${KIND_WORDS[mark.kind]} · ${mark.note}`, DIM, 22),

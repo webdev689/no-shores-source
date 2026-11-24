@@ -35,8 +35,15 @@ export interface Box {
   readonly bottom: number;
 }
 
-type Listed = { readonly name: string; readonly parts?: readonly (readonly number[])[] };
-const MODULES = (manifest as unknown as { readonly modules: readonly Listed[] }).modules;
+type Listed = {
+  readonly name: string;
+  readonly parts?: readonly (readonly number[])[];
+  readonly sockets?: readonly { readonly name: string; readonly at: readonly number[] }[];
+};
+/** The manifest's modules by name, looked up for every structure each frame. */
+const MODULES = new Map(
+  (manifest as unknown as { readonly modules: readonly Listed[] }).modules.map((module) => [module.name, module]),
+);
 
 /** A structure with no module in the manifest stands as its cells less this each side, so high: it still walls. */
 const BARE_INSET_M = 0.2;
@@ -99,53 +106,78 @@ function quartered(x: number, y: number, quarters: number): readonly [number, nu
   }
 }
 
-/** A module's solid parts as boxes in the world, stood at a place turned a whole number of quarters; a structure
- *  whose module the manifest lacks stands as `bare` (west, north, east, south in its own frame) when given. */
-function boxesAt(placed: Placed, quarters: number, bare?: readonly number[]): Box[] {
+/** A point in a module's frame turned `turn` radians clockwise (x east, y south). */
+function turned(x: number, y: number, turn: number): readonly [number, number] {
+  const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
+  return [x * cos - y * sin, x * sin + y * cos];
+}
+
+/** A part of a module (west, north, bottom, east, south, top) cut into pieces at most `step` metres across. */
+function sliced(part: readonly number[], step: number): (readonly number[])[] {
+  const [west = 0, north = 0, bottom = 0, east = 0, south = 0, top = 0] = part;
+  const pieces = (length: number) => Math.max(1, Math.ceil(length / step - 1e-9));
+  const [across, down] = [pieces(east - west), pieces(south - north)];
+  const [wide, deep] = [(east - west) / across, (south - north) / down];
+  return Array.from({ length: across * down }, (unused, index) => {
+    const [left, upper] = [west + (index % across) * wide, north + Math.floor(index / across) * deep];
+    return [left, upper, bottom, left + wide, upper + deep, top];
+  });
+}
+
+/** How wide the pieces a part turned off the quarters is walled as are, metres: the box round each, turned, stands
+ *  about a fifth of this past what is drawn. */
+const SLICE_M = 1;
+
+/** A module's solid parts as boxes in the world, each the box round its corners turned `turn` radians clockwise; a
+ *  part turned off the quarters is walled as pieces of it, so the boxes keep to what is drawn. A structure whose
+ *  module the manifest lacks stands as `bare` (west, north, east, south in its own frame) when given. */
+function boxesAt(placed: Placed, turn: number, bare?: readonly number[]): Box[] {
   const parts =
-    MODULES.find((module) => module.name === placed.module)?.parts ??
+    MODULES.get(placed.module)?.parts ??
     (bare ? [[bare[0] ?? 0, bare[1] ?? 0, 0, bare[2] ?? 0, bare[3] ?? 0, BARE_HEIGHT_M]] : []);
+  const quarters = (turn * 2) / Math.PI;
+  const square = Math.abs(quarters - Math.round(quarters)) < 1e-9;
+  const turnedAt = (x: number, y: number) => (square ? quartered(x, y, Math.round(quarters)) : turned(x, y, turn));
   const [x, y, z] = placed.at;
   return parts
     .filter((part) => (part[5] ?? 0) >= LEAST_HEIGHT_M)
+    .flatMap((part) => (square ? [part] : sliced(part, SLICE_M)))
     .map(([west = 0, north = 0, bottom = 0, east = 0, south = 0, top = 0]) => {
-      const [oneX, oneY] = quartered(west, north, quarters);
-      const [twoX, twoY] = quartered(east, south, quarters);
+      const corners = [turnedAt(west, north), turnedAt(east, north), turnedAt(east, south), turnedAt(west, south)];
+      const [across, down] = [corners.map(([atX]) => atX), corners.map(([, atY]) => atY)];
       return {
-        minX: x + Math.min(oneX, twoX),
-        minY: y + Math.min(oneY, twoY),
-        maxX: x + Math.max(oneX, twoX),
-        maxY: y + Math.max(oneY, twoY),
+        minX: x + Math.min(...across),
+        minY: y + Math.min(...down),
+        maxX: x + Math.max(...across),
+        maxY: y + Math.max(...down),
         top: z + top,
         bottom: z + bottom,
       };
     });
 }
 
-/** Every box a body runs into on a plot: each structure's module's parts, and each piece of decoration's. Decoration
- *  turns in steps finer than a quarter, so its parts are taken at the nearest quarter: pieces are small, and a body
- *  is kept off them, not fitted round them. */
+/** Every box a body runs into on a plot: each structure's module's parts, and each piece of decoration's turned by
+ *  its own angle, so a piece turned off the quarters walls where it is drawn. */
 export function plotBoxes(plot: Plot, ground: Ground, staff: string): Box[] {
   const structures = plot.structures.flatMap((standing) => {
     const kind = kindOf(standing.kind);
     const [across = 1, down = 1] = kind?.cells ?? [];
     const half = [(across * CELL_M) / 2 - BARE_INSET_M, (down * CELL_M) / 2 - BARE_INSET_M];
     const bare = [-(half[0] ?? 0), -(half[1] ?? 0), half[0] ?? 0, half[1] ?? 0];
-    return boxesAt(placeOf(standing, ground, staff), standing.turn, bare);
+    return boxesAt(placeOf(standing, ground, staff), (standing.turn * Math.PI) / 2, bare);
   });
-  const decor = plot.decor.flatMap((each) =>
-    boxesAt(decorPlaceOf(each, ground), Math.round((each.turn * 4) / DECOR_TURNS)),
-  );
+  const decor = plot.decor.flatMap((each) => {
+    const placed = decorPlaceOf(each, ground);
+    return boxesAt(placed, placed.turn);
+  });
   return [...structures, ...decor];
 }
 
-/** A socket of a structure's module in the world (where a player stands to use it), or the middle of its front edge
- *  where its module has none so named. */
+/** A socket of a structure's module in the world (where a player stands to use it), or 1 m before the middle of its
+ *  front edge where its module has none so named. */
 export function socketOf(standing: Standing, ground: Ground, staff: string, name: string): readonly [number, number] {
   const placed = placeOf(standing, ground, staff);
-  const listed = MODULES.find((module) => module.name === placed.module) as
-    (Listed & { readonly sockets?: readonly { readonly name: string; readonly at: readonly number[] }[] }) | undefined;
-  const socket = listed?.sockets?.find((each) => each.name === name)?.at;
+  const socket = MODULES.get(placed.module)?.sockets?.find((each) => each.name === name)?.at;
   const [down = 1] = (kindOf(standing.kind)?.cells ?? []).slice(1);
   const [x, y] = quartered(socket?.[0] ?? 0, socket?.[1] ?? (down * CELL_M) / 2 + 1, standing.turn);
   return [placed.at[0] + x, placed.at[1] + y];

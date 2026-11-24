@@ -629,10 +629,13 @@ so every decision is Rust and the shell only carries bytes and time.
   `--abyss--run-<i>` after the key at the harder two (`delveRoom.ts`, read by `nodeRoom`). It keeps to the guild as
   the outpost does and to one company as any run does. The host opens it (`delveAsk`) only on an outpost's site while
   `outpost(room)` of its outpost says the Delve Gate stands at the run's tier or higher, as a sea island's dungeon in
-  the site's continent, its seed and style drawn from the key and the week, with the key in the ask (`guild`). It is
-  entered from its guild's outpost alone and left back to it at any tier; the host tells the room where the gate's
-  `door` socket lies and the way it faces (`room_outpost_gate`), and one who joins the outpost at entrance 0 coming
-  out of the run stands there.
+  the site's continent, its seed and style drawn from the key and the week its instance names (its first three
+  letters, the week in base 36: `delveInstance`), this week's or last week's and no other, with the key in the ask
+  (`guild`). A companion who joins after the week turned lays that week's dungeon too, as the room does; a clear pays
+  the guild package in the week of the clear, whatever week the run began in. It is entered from its guild's outpost
+  alone and left back to it at any tier; the host tells the room where the gate's `door` socket lies and the way it
+  faces (`room_outpost_gate`), and one who joins the outpost at entrance 0 coming out of the run stands there, a
+  companion who joined the run too (the page reads the gate from the plot).
 
 ## The browser's side
 

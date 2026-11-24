@@ -212,11 +212,12 @@ export function useOnFoot(
   return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted) ?? tripAt(x, y, here, trips);
 }
 
-/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters. */
+/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters, no plot. */
 export const unheard = () => ({
   entrances: new Entrances(),
   cache: null,
   revives: -1,
   wiped: false,
   encounter: null as EncounterSeen | null,
+  plots: 0,
 });
