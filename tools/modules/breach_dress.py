@@ -398,21 +398,57 @@ def shore(module, was):
 
 
 def court(module, radius):
-    """The Steward's court over the dark: the rock it was torn from hanging under it, a broken balustrade's stumps round
-    its rim, a throne's back grown into a crown of crystal, and its dais' edges banded in gold."""
+    """The Steward's court over the dark: the rock it was torn from hanging under it and chains hung from its edge, a
+    kerb round its rim on the floor's innermost edge carrying a broken balustrade, a ring of broken columns inside
+    it, walls' stubs either side of each rift's arch, the Steward's throne at its own scale on the dais, crowned with
+    crystal and its veins crept out over the floor, and the dais' edges banded in gold."""
     hanging(module, -radius * 0.8, -radius * 0.8, radius * 0.8, radius * 0.8, -3.0, 16.0)
     hanging(module, -3.0, -46.0, 3.0, -radius, -2.0, 4.0)
-    for post in range(40):
-        angle = post * math.tau / 40
-        if module.draw() < 0.45 or abs(angle - 1.5 * math.pi) < 0.2:
+    # The stepped floor's edge comes no nearer its middle than 24.4 m, so the kerb stands on it all round.
+    kerb = radius - 2.0
+    for stone in range(44):
+        angle = (stone + 0.5) * math.tau / 44
+        if abs(angle - 1.5 * math.pi) < 0.2 or abs(math.sin(angle)) < 0.26:
             continue
-        spot = (math.cos(angle) * (radius - 0.5), math.sin(angle) * (radius - 0.5), 0.0)
-        kit.block(module, spot, (0.35, 0.35, module.draw(0.3, 1.1)), 'trim', turn=angle, bevel=0.02, wear=0.05,
+        spot = (math.cos(angle) * kerb, math.sin(angle) * kerb, 0.0)
+        kit.block(module, spot, (0.8, math.tau * kerb / 44 * 0.97, 0.3), 'trim', turn=angle, bevel=0.0, wear=0.0,
                   part=False)
-    kit.block(module, (0.0, 23.3, 5.6), (3.6, 0.6, 3.4), 'stone', bevel=0.05, wear=0.03, part=False)
+        if module.draw() < 0.4:
+            continue
+        tall = 1.1 if module.draw() < 0.5 else module.draw(0.3, 0.9)
+        kit.block(module, (spot[0], spot[1], 0.3), (0.35, 0.35, tall), 'trim', turn=angle, bevel=0.0, wear=0.0,
+                  part=False)
+        if tall > 1.0:
+            kit.block(module, (spot[0], spot[1], 1.4), (0.45, math.tau * kerb / 44 * 0.97, 0.16), 'trim', turn=angle,
+                      bevel=0.0, wear=0.0, part=False)
+    for degrees in (30.0, 60.0, 120.0, 150.0, 210.0, 240.0, 300.0, 330.0):
+        angle = math.radians(degrees)
+        spot = (math.cos(angle) * (kerb - 1.4), math.sin(angle) * (kerb - 1.4), 0.0)
+        kit.block(module, spot, (1.7, 1.7, 0.45), 'trim', turn=angle, bevel=0.03, wear=0.04, part=False)
+        kit.column(module, (spot[0], spot[1], 0.45), 0.62, module.draw(2.0, 7.5), 'stone', sides=12, part=False)
+    for side in (-1, 1):
+        for end in (-1, 1):
+            kit.block(module, (side * (radius - 2.0), end * 6.2, 0.0), (1.4, 3.6, module.draw(3.0, 6.0)), 'stone',
+                      bevel=0.04, wear=0.06, part=False)
+    for chain in range(6):
+        angle = math.tau * (chain + 0.3) / 6
+        kit.column(module, (math.cos(angle) * 21.0, math.sin(angle) * 21.0, -9.5), 0.04, 6.5, 'iron', sides=4,
+                   wear=0.0, part=False)
+    # The throne at the Steward's scale: its seat the part the builder lays, its arms, and its back rising 11 m.
+    kit.block(module, (0.0, 22.4, 5.6), (3.6, 2.3, 0.25), 'trim', bevel=0.02, wear=0.0, part=False)
+    for side in (-1, 1):
+        kit.block(module, (side * 2.8, 22.3, 2.0), (1.2, 2.4, 5.2), 'stone', bevel=0.04, wear=0.03, part=False)
+        kit.block(module, (side * 2.8, 22.2, 7.2), (1.4, 2.7, 0.3), 'trim', bevel=0.02, wear=0.0, part=False)
+        kit.block(module, (side * 3.0, 22.98, 2.0), (0.15, 0.06, 11.0), 'gold', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, (0.0, 23.5, 2.0), (6.4, 1.0, 11.0), 'stone', bevel=0.05, wear=0.03, part=False)
+    kit.block(module, (0.0, 22.98, 9.0), (6.0, 0.06, 0.15), 'gold', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, (0.0, 23.5, 13.0), (7.0, 1.3, 0.5), 'trim', bevel=0.03, wear=0.03, part=False)
     pick = latticekit.picker(module.random.randrange(1 << 30))
-    for x in (-1.2, 0.0, 1.2):
-        bk.crystal(module, pick, (x, 23.3, 8.8), count=3, length=2.4 if x == 0.0 else 1.6, radius=0.35)
+    for x in (-2.4, -1.2, 0.0, 1.2, 2.4):
+        bk.crystal(module, pick, (x, 23.5, 13.4), count=3, length=3.6 if x == 0.0 else 2.4 - abs(x) * 0.3,
+                   radius=0.4)
+    for at, reach in (((-3.2, 11.0), 2.2), ((3.0, 7.0), 2.0)):
+        bk.crust(module, pick, (*at, 0.02), reach)
     for sign in (-1, 1):
         kit.block(module, (0.0, 21.0 + sign * 3.02, 1.7), (12.0, 0.06, 0.12), 'gold', bevel=0.0, wear=0.0,
                   part=False)
