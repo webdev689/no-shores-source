@@ -24,7 +24,7 @@ enum DungeonAsked {
 }
 
 /// A run's ask: its dungeon, its tier (0 Normal, 1 Elite, 2 Abyss) and the Unix minute it opens; for a playlist's run
-/// of an Elite Dungeon, the level its foes stand at.
+/// of an Elite Dungeon, the level its foes stand at; for a guild dungeon's run of a sea island's, its guild's key.
 #[derive(Deserialize)]
 struct RunAsked {
     dungeon: DungeonAsked,
@@ -32,6 +32,8 @@ struct RunAsked {
     minute: u64,
     #[serde(default)]
     playlist: Option<u8>,
+    #[serde(default)]
+    guild: Option<String>,
 }
 
 /// What a patrol's dungeon's run reads of its patrol's node file: whose it is, and whether it is locked.
@@ -63,7 +65,11 @@ pub fn open_run(text: &[u8], patrol: &[u8]) -> bool {
         },
         DungeonAsked::Seed { seed, style, continent } => (RunOf::Sea { seed, style, continent }, None),
     };
-    let Some(room) = Room::dungeon_run(&of, tier, asked.minute) else { return false };
+    let guild = asked.guild.filter(|_| matches!(of, RunOf::Sea { .. }));
+    let Some(mut room) = Room::dungeon_run(&of, tier, asked.minute) else { return false };
+    if let Some(key) = guild {
+        room.delve_for(&key);
+    }
     keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
     true
 }
@@ -232,6 +238,17 @@ mod tests {
         assert!(!open(json!({ "seed": 4_242, "style": "caverns", "continent": "continent-0" }), 0));
         assert!(!open(json!({ "place": "krakens-grotto" }), 3), "no fourth tier");
         assert!(!open_run(b"not an ask", b""));
+    }
+
+    #[test]
+    fn a_guild_dungeons_run_opens_from_a_sea_islands_ask_with_its_guilds_key() {
+        let sea = json!({ "seed": 4_242, "style": "mines", "continent": "continent-4" });
+        let delve =
+            |dungeon: &Value| json!({ "dungeon": dungeon, "tier": 1, "minute": 29_919_420_u64, "guild": "c0ffee" });
+        assert!(open_run(delve(&sea).to_string().as_bytes(), b""));
+        assert_ne!(crate::room_join(), 0);
+        let elsewhere = delve(&json!({ "seed": 4_242, "style": "mines", "continent": "continent-0" }));
+        assert!(!open_run(elsewhere.to_string().as_bytes(), b""), "a guild's key lays no dungeon a sea's does not");
     }
 
     #[test]

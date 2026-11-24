@@ -33,7 +33,7 @@ code:
   - server/accounts/binds.ts#bindsAsk
   - server/accounts/migrations/20261121180000_binds.sql
   - client/src/game/bindsKept.ts#keepBinds
-  - crates/gear/src/character.rs#from_json
+  - crates/gear/src/character_json.rs#from_json
   - crates/gear/src/last.rs#Last
   - crates/room/src/left.rs#stand_where_left
   - server/accounts/lastPlace.ts#lastPlace
@@ -120,7 +120,7 @@ they play in holds it while they are there.
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room (4001),
   and that page joins no more ([[Server]], "Joining again"). Each claim keeps the room that claims it (`room`, from
-  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]) and the account's username (null for a guest), which the room names the player by for their plate, and a look answers
+  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]) and the account's username (null for a guest) and its guild's tag (null in none), which the room puts on the player's plate, and a look answers
   the room that last held it; a room that lets a character go untouched (its gate shut, or it never gave it) was never
   where it was, so the room before is its last again. The rooms judge where a character comes from by these alone
   ([[Server]], "Where a character comes from").
@@ -193,8 +193,11 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   typed; and a motto of one line, 80 characters at most, with no control characters or marks that turn the text's
   direction. Each is judged as [[Names]] says. Its founder and admins invite players with no guild, who accept or
   decline; the founder makes members admins and back, either removes those below them, and the founder hands the
-  founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. A founder leaves only once another founds it, or alone, which
-  ends it. A hundred at most.
+  founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. Every
+  such write holds only while both are still in that guild at the ranks read, so a rank never lands in another guild
+  and a guild never loses its founder. An invite unanswered is kept 30 days. A founder leaves only once another founds it, or alone, which
+  ends it; a member leaves only at the rank read, so a founding handed to them as they leave keeps its founder. A hundred at most. Its banner, description and level, and the Guild tab's own read (`GET /v1/guild`), are
+  in [[Guilds]].
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
   as sent and never arrives. A block either way between a player and anyone in a company keeps them out of it, by
   joining or by an invite, answered as a company closed to them. The one blocked sees the blocker's details as a
@@ -206,8 +209,20 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the owner to read in the database, ten a day a player. [[Names]] says how the owner reads and acts on a name.
 - **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
-  and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.
-- **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
+  and guild, and their guild's motto and description. A friend ask still waiting and a guild's invite show no one where the player asked is.
+- **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild); 600 an
+  hour of one account's outpost asks and its rooms' errands together, and 600 an hour of its plot reads apart.
+- **Outposts** ([[Outposts]]): `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, the
+  site they stand at, what they took from the stores this game day (`taken`, the day turning at 09:00 UTC) and
+  whether the War Horn sounded this week (`hornSounded`); `GET /v1/outposts/<room>` gives anyone signed in the plot and
+  banner of an outpost raised there, null where none is. `POST /v1/social/outpost/<ask>` raises, places, rises,
+  removes, decorates, undecorates, collects and abandons; a removal or abandonment answers `back`, the Aurem the
+  treasury took of the half, the rest lost when it is full, and writes its ledger line even when that is nothing (a
+  free standard's removal, which cost nothing, writes none). A page's named ask (`rid`) answers again as it did. A
+  room's errands go over its binding: a deposit (its id begins with the room's name, so it goes only to that
+  outpost's guild), a delivery, a take and the horn, each answered again the same under its id, for good
+  (`outpost_errands`), read before anything that may have changed since; past the limit each says so (a deposit
+  `limited`, the rest -3). A take holds within the day's 20 across the guild's outposts inside its write.
 
 ## Find a Company
 

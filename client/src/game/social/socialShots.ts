@@ -12,18 +12,19 @@ import { type PlatedPlayer, PlayerPlates } from '../../combat/playerPlates.ts';
 
 const DUSK = '#3d4a58';
 
-const plate = (player: number, name: string, level: number, menu = false): PlayerPlate => ({
+const plate = (player: number, name: string, level: number, menu = false, tag = ''): PlayerPlate => ({
   player,
   name,
   level,
   menu,
+  tag,
 });
 
 /** Four players east of the eye: a stranger at level 6 close by, aimed at and Use half held; a company member at
  *  level 24, in gold; one with a menu open; and a guest, nameless, farther off. */
 const PLAYERS: readonly PlatedPlayer[] = [
   { id: 1, feet: [4, 0, 0], plate: plate(1, 'WoodenOsprey782', 6), company: false },
-  { id: 2, feet: [9, -4, 0], plate: plate(2, 'ChiefKabr', 24), company: true },
+  { id: 2, feet: [9, -4, 0], plate: plate(2, 'ChiefKabr', 24, false, 'SALT'), company: true },
   { id: 3, feet: [12, 5, 0], plate: plate(3, 'xDR_EXOx', 6, true), company: false },
   { id: 4, feet: [30, -9, 0], plate: plate(4, '', 3), company: false },
 ];

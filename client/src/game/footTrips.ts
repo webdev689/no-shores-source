@@ -36,6 +36,12 @@ export interface Trips {
   props(): PropTable | null;
   enter(number: number, name: string): void;
   leave(): void;
+  /** Into the guild dungeon behind an outpost's Delve Gate (`dungeonTrips.ts`), where the page has the way. */
+  enterDelve?(
+    key: string,
+    tier: number,
+    gate: { readonly x: number; readonly y: number; readonly facing: number },
+  ): void;
 }
 
 /** The name of the room a point stands in, or null in a corridor or past the grid: "the Ossuary". */
@@ -97,6 +103,7 @@ export function hearRoom(
       received(snapshot);
       held.cache = cacheOf(snapshot.cache);
       heardRun(held, snapshot, own());
+      held.plots = snapshot.outpost;
     },
     gear: (sent) => {
       if (online) held.gear = sent;
@@ -228,7 +235,7 @@ export function useOnFoot(
   return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted) ?? tripAt(x, y, here, trips);
 }
 
-/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters. */
+/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters, no plot. */
 export const unheard = () => ({
   entrances: new Entrances(),
   cache: null,
@@ -237,4 +244,5 @@ export const unheard = () => ({
   darkness: false,
   reviving: [] as readonly Reviving[],
   encounter: null as EncounterSeen | null,
+  plots: 0,
 });

@@ -3,7 +3,8 @@
  * never by its page. Overlook's social space, where every session begins, takes anyone. Any other node's room takes a
  * character that rejoins it, lands from the sea with its ship lying off the node's island, comes through a gate from
  * a node whose gate leads there, or comes out of the node's own dungeon; a dungeon's room or a run takes one from its
- * node's room. A join to one of the company playing in the room is the keeper's to judge (`keeping.ts`).
+ * node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing in the
+ * room is the keeper's to judge (`keeping.ts`).
  */
 
 import { nodeRoom, seaRoom, startedAtSea } from './roomNames.ts';
@@ -20,8 +21,9 @@ export const NO_WAY_HERE = 'You cannot reach this place from where you were.';
  *  (`SIDE.coastReachM`), and the ship heaves to a moment after it does. */
 export const LANDFALL_M = 32_000;
 
-/** What a node's room knows of where its node lies and what leads into it: whether it is a social space (one room at
- *  every tier), its island's coast, and the nodes whose gates lead into it. */
+/** What a node's room knows of where its node lies and what leads into it: whether it is landed on from every tier's
+ *  sea (a social space, or an outpost site, whose rooms are at Normal alone), its island's coast, and the nodes whose
+ *  gates lead into it. */
 export interface Reach {
   readonly social: boolean;
   readonly coast: readonly Point[];
@@ -47,7 +49,7 @@ export function reachOf(
   const outline = continents.find((each) => each.id === node.continent)?.outline ?? [];
   const coast = outline.map(([x = 0, y = 0]): Point => [x, y]);
   const gatedFrom = index.filter((each) => each.gates?.includes(id)).map((each) => each.id);
-  return { social: node.kind === 'social', coast, gatedFrom };
+  return { social: node.kind === 'social' || node.kind === 'outpost', coast, gatedFrom };
 }
 
 /** Where a kept character's ship lies, as the sea last kept it; null for none, or a character that does not read. */
@@ -77,7 +79,13 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   if (!to) return false;
   // A run started from the Playlist, beside any port, is entered from the sea alone.
   if (startedAtSea(room)) return from !== null && seaRoom(from) !== null;
+  // A guild dungeon's run is entered from its guild's outpost alone and left back to it, at whatever tier it runs.
+  if ((to.guild !== null && inside(to)) || (was !== null && was.guild !== null && inside(was)))
+    return was?.id === to.id && was.guild === to.guild && inside(was) !== inside(to);
   if (was && was.id === to.id) {
+    // An outpost site's wild ground and a guild's plot on it are one place at Normal: a player walks between them.
+    const plot = to.guild !== null || was.guild !== null;
+    if (plot && !inside(to) && !inside(was) && was.seas === to.seas) return true;
     // Into a dungeon from its node's room at its seas, an Elite Dungeon's run (the week's at its own tier, or at
     // Normal) from its node at any, as its tier is its own whatever the seas; out of the node's own dungeon or run at
     // the seas it was gone into at.
@@ -110,9 +118,12 @@ export function toCoast([x, y]: Point, ring: readonly Point[]): number {
 
 /** Whether a character that came from `from` comes out of the dungeon behind entrance `number` of the node's room
  *  `room`: that patrol's dungeon of the number or a run of it, or by its one entrance an Elite Dungeon's run, at the
- *  room's seas. */
+ *  room's seas; or by the Delve Gate, its guild dungeon's run at any tier. */
 export function cameOutOf(room: string, from: string | null, number: number): boolean {
   const [to, was] = [nodeOf(room), nodeOf(from)];
-  if (!to || !was || inside(to) || was.id !== to.id || was.seas !== to.seas || startedAtSea(from ?? '')) return false;
+  if (!to || !was || inside(to) || was.id !== to.id || startedAtSea(from ?? '')) return false;
+  // Out of a guild dungeon's run, at any tier, before its outpost's Delve Gate, entrance 0.
+  if (to.guild !== null || was.guild !== null) return was.guild === to.guild && was.run !== null && number === 0;
+  if (was.seas !== to.seas) return false;
   return was.dungeon === number || (was.dungeon === null && was.run !== null && number === 0);
 }

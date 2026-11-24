@@ -40,11 +40,21 @@ export function accounts(discord: DiscordApp | null = null) {
 export function slowly(deps: Deps): void {
   const { database } = deps;
   const tick = () => new Promise((resolve) => setTimeout(resolve, 2));
-  const slow = (statement: Statement): Statement => ({
-    bind: (...values) => slow(statement.bind(...values)),
-    first: async () => (await tick(), statement.first()),
-    all: async () => (await tick(), statement.all()),
-    run: async () => (await tick(), statement.run()),
-  });
-  Object.assign(deps, { database: { prepare: (sql: string) => slow(database.prepare(sql)) } });
+  // Each slow statement remembers the one it wraps, so a batch hands the database its own.
+  const wrapped = new WeakMap<Statement, Statement>();
+  const slow = (statement: Statement): Statement => {
+    const made: Statement = {
+      bind: (...values) => slow(statement.bind(...values)),
+      first: async () => (await tick(), statement.first()),
+      all: async () => (await tick(), statement.all()),
+      run: async () => (await tick(), statement.run()),
+    };
+    wrapped.set(made, statement);
+    return made;
+  };
+  const batch = async (statements: Statement[]) => (
+    await tick(),
+    database.batch(statements.map((each) => wrapped.get(each) ?? each))
+  );
+  Object.assign(deps, { database: { prepare: (sql: string) => slow(database.prepare(sql)), batch } });
 }

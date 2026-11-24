@@ -8,6 +8,7 @@ export const NODE_COLOURS = {
   mission: '#4d9de0',
   dungeon: '#a873e8',
   boss: '#e5484d',
+  outpost: '#3fb8af',
 } as const;
 export type NodeKind = keyof typeof NODE_COLOURS;
 export const NODE_KINDS = Object.keys(NODE_COLOURS) as NodeKind[];

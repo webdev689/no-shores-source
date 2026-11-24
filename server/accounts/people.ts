@@ -62,6 +62,17 @@ export async function usernameOf(database: Db, account: string): Promise<string 
   return row?.username ?? null;
 }
 
+/** The tag of the guild an account is in, or null for none. */
+export async function guildTagOf(database: Db, account: string): Promise<string | null> {
+  const row = await database
+    .prepare(
+      'SELECT guilds.tag FROM guild_members JOIN guilds ON guilds.id = guild_members.guild_id WHERE account_id = ?1',
+    )
+    .bind(account)
+    .first<{ tag: string }>();
+  return row?.tag ?? null;
+}
+
 /** The accounts `account` blocks or is blocked by. */
 export async function apartFrom(database: Db, account: string): Promise<string[]> {
   const { results } = await database

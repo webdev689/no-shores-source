@@ -184,9 +184,9 @@ function drawField(
     field?.secret ? '*'.repeat([...words.text.slice(0, upTo)].length) : words.text.slice(0, upTo);
   const caretX = ui.measure(prefix(words.caret), size);
   const focused = state.focused(id);
-  // The words scroll left just enough to keep the caret in sight.
-  let scrolled = state.fieldScroll.get(id) ?? 0;
-  scrolled = Math.max(0, Math.min(scrolled, caretX), caretX - inner.width + 1);
+  // While typed in, the words scroll left just enough to keep the caret in sight; otherwise they show from the start.
+  const kept = state.fieldScroll.get(id) ?? 0;
+  const scrolled = focused ? Math.max(0, Math.min(kept, caretX), caretX - inner.width + 1) : 0;
   state.fieldScroll.set(id, scrolled);
   const within = meet(clip, scaled(inner, scale));
   const tall = lineHeight(size);

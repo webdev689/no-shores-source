@@ -192,6 +192,27 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **Guilds** (#179), merged on the owner's "Merge and deploy when ready", which deploys the page and the rooms and
+  applies five migrations. The owner asked for guild names and banners with the tag on nameplates and in the social
+  menu, descriptions, bounties and levelling, and outposts on any island for a cost whose structures give guild buffs,
+  passive income, guild dungeons, guild bosses and housing decoration
+  ([[Guilds Gain Banners, Levels, Bounties and Outposts]]). All of it is built ([[Guilds]], [[Outposts]],
+  [[Guilds and Outposts as Claude Shapes Them]]): the banner and its editor, the Guild tab after Destiny 2's clan
+  screen, levels, weekly contribution and bounties, the treasury, an outpost site on each island with its own room for
+  each guild, thirty-eight structure models in three tiers, the strongbox and stores, the boons, decoration placed in
+  the world, the War Horn's guild boss and the guild dungeon behind the Delve Gate. Three deep audits ran; every real
+  finding is fixed with a test or pictures. The third found a give-back lost when a reload or a sailing off came before
+  the accounts' answer (the errand now rides in the character's save under its id, settled once by whichever room next
+  holds it), a deposit that could be done twice, idle plot reads eating the errands' limit, guests sent out when their
+  member stepped away, and the plan drawn over the menu when scrolled. Tested offline, not live; the PR names the commit
+  its last full check covered. Waiting on the owner: playing it; marking the DFO Pick rows for heraldry and for halls,
+  works and decor approved (`proposed` now). Known limits: the players on an abandoned outpost stand on bare ground
+  until they leave; an errand the accounts never answer at a claim holds that player's outpost asks until a later claim
+  answers it; the accounts keep every errand's answer for good, one row an errand; the guild boss is lost if everyone
+  leaves its room before it falls; a member can push older ledger lines out with many small deposits, each line naming
+  who moved it; the banner cloth takes no sky light, so it reads pale at night.
+- **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
+  it around No Shores, which the owner raised and set aside: "Lets come back to this later."
 - **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
   adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
   ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
@@ -580,8 +601,8 @@ The decisions in [[Open Questions]] are not repeated here.
   in `combat/attackFeel.ts`). And whether a drawn bow or gun can punch, and in what element.
 - **The mirrored view**: a drawn sword, dagger or mace changes hands through the walk, the rest and a blow, as the
   forge draws none in the left fist there; whether it should.
-- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; the Guild
-  tab's own page; more emblems and where they come from.
+- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; more
+  emblems and where they come from.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
