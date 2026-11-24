@@ -216,8 +216,8 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **Foes in a crowd give a breath after each exchange, and the waiting stand farther out**, a draft pull request for
-  the owner's yes, on the owner's note that "constant enemy chasing and pressure" overwhelms a solo player and their
+- **Foes in a crowd give a breath after each exchange, and the waiting stand farther out** (#199, a draft for the
+  owner's yes), on the owner's note that "constant enemy chasing and pressure" overwhelms a solo player and their
   "Lets do that. Take autonomy and develop this in full"
   ([[Foes in a Crowd Give a Breath After Each Exchange, and the Waiting Stand Farther Out]], [[Foes]], "The breath").
   After three blows from more than one foe, each within 2 s of the one before, no foe strikes, goes in or takes an
