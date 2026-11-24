@@ -1,5 +1,5 @@
 ---
-id: 186
+id: 188
 title: "A layout test broken by a brief change: diagnose the geometry before searching brief parameters"
 status: open
 type: internal
