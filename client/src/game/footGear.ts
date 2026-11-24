@@ -45,11 +45,13 @@ const SHAPE_OFFER = { words: KEEPERS.shape.title, opens: { view: 'shape' } } as 
 /** The stations of the place a player stands in, and where Shape may stand there. */
 type Here = Pick<NodeInfo, 'stations' | 'visitorSpots'>;
 
-/** What E does where a player stands: its deed in words, and the doing; and for a node, which, as E is held there. */
+/** What E does where a player stands: its deed in words, and the doing; and for a node, which, as E is held there,
+ *  or the fallen ally it revives (`footRevive.ts`). */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
   readonly gather?: number;
+  readonly revive?: number;
 }
 
 /** What E does at a counter of a kind (its offer's view) besides opening it: speaking with its keeper, while a quest

@@ -8,8 +8,8 @@ import type { Box } from './hitWords.ts';
 import type { HudFrame } from './hud.ts';
 import { SIGHT_SKIN_M } from './plateSight.ts';
 
-/** How long the dead lie before standing again, in ticks (crates/combat/src/tuning.rs RESPAWN). */
-const RESPAWN_TICKS = 240;
+/** How long the dead lie before standing again or asking to, in ticks (crates/combat/src/tuning.rs RESPAWN). */
+export const RESPAWN_TICKS = 240;
 /** How tall a Boss's figure stands, metres, for the span of the view the call keeps clear of. */
 const BOSS_TALL_M = 2.6;
 
@@ -47,17 +47,15 @@ export function clearOf<Spot extends { readonly x: number; readonly y: number }>
 }
 
 /** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
- *  death (the ticks they have lain, while the room will stand them again: with no revive left, it promises nothing);
- *  a link's veil is plain, death's is blood. Null while none of these holds, and for a death the section dealt too,
- *  whose own veil offers Respawn. */
+ *  death in a room that stands them again unasked (the ticks they have lain); a link's veil is plain, death's is
+ *  blood. Null while none of these holds, and for a death in a room that waits for the ask, whose own screen tells it. */
 export function veilOf(
-  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'revivesLeft' | 'sectionDead'>,
+  frame: Pick<HudFrame, 'own' | 'lost' | 'rejoining' | 'asksToRespawn'>,
 ): { readonly words: string; readonly link: boolean } | null {
   if (frame.rejoining) return { words: 'Reconnecting…', link: true };
   if (frame.lost !== null) return { words: `The link to the room was lost: ${frame.lost}.`, link: true };
   const dead = frame.own?.action.kind === 'dead' ? frame.own.action : null;
-  if (!dead || frame.sectionDead) return null;
-  if (frame.revivesLeft === 0) return { words: 'You fell.', link: false };
+  if (!dead || frame.asksToRespawn) return null;
   const seconds = Math.ceil(Math.max(0, RESPAWN_TICKS - dead.elapsed) / 60);
   return { words: `You fell. Standing again in ${seconds} s`, link: false };
 }

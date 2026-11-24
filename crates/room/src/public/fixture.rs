@@ -44,6 +44,11 @@ pub(crate) fn room_at(minute: u64, players: usize) -> (Room, Vec<PlayerId>) {
 }
 
 pub(crate) fn place(room: &mut Room, player: PlayerId, [x, y]: [f64; 2]) {
+    // A player fallen respawns first, as soon as they may, as the page's scripted players ask.
+    while room.players[&player].fighter.dead() {
+        room.players.get_mut(&player).expect("the player").respawn_asked = true;
+        room.tick();
+    }
     let found = room.players.get_mut(&player).expect("the player");
     (found.fighter.body.x, found.fighter.body.y, found.fighter.body.z) = (x, y, 0.0);
 }
