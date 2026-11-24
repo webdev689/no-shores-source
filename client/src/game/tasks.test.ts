@@ -170,3 +170,25 @@ test('a step shows its clock as m:ss and its share as a percentage where a count
   );
   assert.ok(words.includes('1:25') && words.includes('64%'), words.join(' | '));
 });
+
+test('a step’s way stands under its words while it is not met, and a new way redraws the tracker', () => {
+  const page = globalThis as unknown as Record<string, unknown>;
+  const tailing = (note: string, done = false): Quest => ({
+    name: 'What the Tithe Writes',
+    task: 'Tail a collector',
+    steps: [{ text: 'Follow the collector, not too close', note, done }],
+  });
+  try {
+    page['document'] = { ariaNotify: () => undefined };
+    const tracker = new TaskTracker();
+    tracker.show(tailing('Hold M to return to your ship'), 0);
+    const words = JSON.stringify(tracker.node({ width: 1280, height: 720 }, 1, true));
+    assert.ok(words.includes('Hold M to return to your ship'), words);
+    assert.ok(!sameQuest(tailing('Hold M to return to your ship'), tailing('Sail to Saltgrass Downs')));
+    tracker.show(tailing('Sail to Saltgrass Downs', true), 2);
+    const met = JSON.stringify(tracker.node({ width: 1280, height: 720 }, 3, true));
+    assert.ok(!met.includes('Sail to Saltgrass Downs'), 'no way under a step met');
+  } finally {
+    delete page['document'];
+  }
+});

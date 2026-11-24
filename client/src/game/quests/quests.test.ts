@@ -243,22 +243,27 @@ test("the HUD marks where the task's next goal stands in the node the player is 
   await frame();
   const east: Shot = { eye: [0, 0, 2], yaw: Math.PI / 2, pitch: 0, fov: 1, near: 0.1, far: 900 };
   const view = { width: 1280, height: 720 };
-  const [mark] = quests.marks(east, view, [0, 0], () => 0, goal.node ?? '');
+  const zone = (id: string, landing: readonly [number, number]) =>
+    ({ id, kind: 'patrol', name: id, continent: 'continent-1', ring: [], spawns: [landing], centre: landing }) as const;
+  const there = zone(goal.node ?? '', [0, 900]);
+  const chart = { nodes: [there, zone('elsewhere', [0, 0])], layouts: [] };
+  const afoot = (node: typeof there) => ({ on: 'land', node, at: [0, 0], marked: null, foes: [] }) as const;
+  quests.guide(afoot(there), chart);
+  const [mark] = quests.marks(east, view, [0, 0], () => 0);
   assert.ok(mark);
   assert.deepEqual([mark.kind, mark.name, mark.note, mark.arrowDegrees], ['quest', goal.text, '100 m', null]);
-  assert.ok(Math.abs(mark.x - 640) < 1, 'dead ahead');
-  const [behind] = quests.marks({ ...east, yaw: -Math.PI / 2 }, view, [0, 0], () => 0, goal.node ?? '');
+  assert.ok(Math.abs(mark.x - 640) < 1, 'dead ahead, where the room marks it');
+  const [behind] = quests.marks({ ...east, yaw: -Math.PI / 2 }, view, [0, 0], () => 0);
   assert.ok(behind && behind.arrowDegrees !== null, 'held at the edge, pointing the way');
-  assert.deepEqual(
-    quests.marks(east, view, [0, 0], () => 0, 'elsewhere'),
-    [],
-    'its goal is in another node',
-  );
+  quests.guide(afoot(zone('elsewhere', [0, 0])), chart);
+  const [away] = quests.marks(east, view, [0, 0], () => 0);
+  assert.ok(away && away.name === goal.text && away.note === '900 m', 'from another zone, the way to its landing');
   quests.hear(null);
+  quests.guide(afoot(there), chart);
   assert.deepEqual(
-    quests.marks(east, view, [0, 0], () => 0, goal.node ?? ''),
+    quests.marks(east, view, [0, 0], () => 0),
     [],
-    'a room just joined',
+    'a room just joined, and no place of its own known',
   );
 });
 

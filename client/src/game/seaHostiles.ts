@@ -10,7 +10,7 @@ import { emblemSvg, markPicture } from '../plus/emblems.ts';
 import { rankMark } from '../rules/roster.ts';
 import type { WaterHolder, WatersRules, WatersTable } from '../rules/watersRules.ts';
 import { rankColour, shipName, sightedWords } from '../ships/shipBars.ts';
-import { distanceText } from './hudLaw.ts';
+import { distanceText } from '../plus/compass.ts';
 
 /** The least distance a hostile ship is sighted from, metres (crates/room/src/sighting.rs), read for a room that sends
  *  none. */
