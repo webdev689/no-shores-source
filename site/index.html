@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-t="home.title"></title>
+    <meta name="description" data-t-content="premise.opening" />
+    <link rel="stylesheet" href="/src/site.css" />
+  </head>
+  <body>
+    <!--site:top-->
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-art">
+          <img class="hero-scene" data-art="overlook" data-t-alt="home.heroAlt" />
+          <img class="hero-lights" data-art="overlook-lights" aria-hidden="true" />
+        </div>
+        <div class="hero-words">
+          <h1 id="hero-title"><img class="hero-logo" data-art="logo" data-t-alt="shell.brand" /></h1>
+          <p class="hero-line" data-t="premise.opening"></p>
+          <p class="buttons">
+            <a class="button button-gold button-big" data-to="play" data-t="shell.navPlay"></a>
+            <a class="button button-big" data-to="discord" data-t="home.discord"></a>
+          </p>
+        </div>
+      </section>
+
+      <section class="passage">
+        <p data-t="premise.expanse"></p>
+        <p data-t="premise.coast"></p>
+        <p class="beat" data-t="premise.three"></p>
+        <p class="beat" data-t="premise.ruin"></p>
+      </section>
+
+      <div class="leads">
+        <article class="card">
+          <img class="frame" data-art="ruined-port" data-t-alt="world.ruinsAlt" loading="lazy" />
+          <h2 data-t="shell.navWorld"></h2>
+          <p data-t="premise.history"></p>
+          <a class="button" data-to="world" data-t="home.worldLead"></a>
+        </article>
+        <article class="card">
+          <img class="frame" data-art="under-sail" data-t-alt="game.shipAlt" loading="lazy" />
+          <h2 data-t="shell.navGame"></h2>
+          <p data-t="home.gameText"></p>
+          <a class="button" data-to="game" data-t="home.gameLead"></a>
+        </article>
+      </div>
+
+      <section class="passage closing">
+        <p data-t="premise.countless"></p>
+        <p class="beat" data-t="premise.safety"></p>
+      </section>
+    </main>
+    <!--site:foot-->
+  </body>
+</html>
