@@ -5,6 +5,7 @@
 import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { Placed } from '../player/figures.ts';
+import { ridersOf } from '../player/others.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import { type Action, type FighterView, type StatusName, fighterView } from '../rules/fighters.ts';
 import { audioPoint, listen } from '../listener.ts';
@@ -176,7 +177,7 @@ export class WorldSounds {
     const seen = this.seen(frame);
     const byId = new Map(seen.map((one) => [one.id, one]));
     this.fighters(frame, seen, hear);
-    this.horses.frame(ridersOf(frame), frame.seconds, frame.ground, hear);
+    this.horses.frame(heardRiders(frame), frame.seconds, frame.ground, hear);
     const { fight, walker } = frame;
     const spellLook = (id: number) => elementOfArt(fight.spells.arts.get(id));
     for (const event of frame.events) {
@@ -376,13 +377,8 @@ export class WorldSounds {
   }
 }
 
-/** Everyone as their horse is heard: the player by their walker, every other player by how they are drawn (a rider's
- *  moves are the horse's). */
-function ridersOf({ fight, walker, others }: WorldFrame): Rider[] {
+/** Everyone as their horse is heard: the player by their walker, every other player as they are drawn. */
+function heardRiders({ fight, walker, others }: WorldFrame): Rider[] {
   const own = { id: fight.player, feet: walker.feet, mounted: walker.mounted, boosting: walker.boosting ?? 0 };
-  const rest = [...others].map(([id, placed]): Rider => {
-    const feet = [placed.x, placed.y, placed.z] as const;
-    return { id, feet, mounted: placed.anim.startsWith('horse'), boosting: 0 };
-  });
-  return [own, ...rest];
+  return [own, ...ridersOf(others, fight.others)];
 }

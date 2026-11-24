@@ -59,9 +59,11 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   bursting out round them (18 motes) and clods of earth flying up behind (8); while it runs the hooves strike in turn
   ten times a second at a boosted walk's pace or faster (fewer slower, none standing), each kicking up dust that hangs,
   swells and thins behind the horse, a clod one strike in three; as it ends the horse sits back in a low cloud thrown
-  ahead and to the sides (14). Stone and wood throw paler dust and no clods, water a white spray. Every mote is a square
-  of the figures' pixels facing the eye, from one pool of 192, the oldest given up for a new one, so it makes nothing
-  new a frame. The player's own horse alone: another player's glance carries no boost.
+  ahead and to the sides (14). Stone (and a footstep's wood, only the wreck's) throws paler dust and no clods, water a
+  white spray. Every mote is a square of the figures' pixels facing the eye, from one pool of 192 shared by every
+  rider, the oldest given up for a new one, so it makes nothing new a frame. In a node every rider drawn throws it,
+  each from their own boost: the player's own, and another player's as the room last stepped their body (their
+  fighter, sent to every page, begins with it); one no longer drawn is let go.
 - **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Through the
   head it sees 65° tall where third person sees the lens's 50°, widening as the camera comes in past third person's
   nearest, 0.6 m;

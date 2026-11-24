@@ -1,15 +1,16 @@
 // A horse's boost as the land shows it, in the figures' pixels as a blow's bits are. As it begins, the hind hooves
 // dig in: dust bursts out round them and clods of earth fly up behind. While it runs, each hoof that strikes kicks up
 // dust that hangs and swells behind the horse, a clod now and then. As it ends, the horse sits back on its haunches
-// in a last low cloud thrown ahead and to the sides. Stone and wood throw paler dust and no clods; water throws
-// spray. Every mote lives in one fixed pool, the oldest given up for a new one, so a boost draws at most the pool and
-// makes nothing new a frame.
+// in a last low cloud thrown ahead and to the sides. Stone throws paler dust and no clods; water throws spray. Every
+// rider's motes live in one fixed pool, the oldest given up for a new one, so the boosts draw at most the pool and
+// make nothing new a frame.
+import { hoofGround } from './horseSounds.ts';
 import { quadOut } from './markSprites.ts';
-import type { StepGround } from './worldCues.ts';
-import { stepCue } from './worldCues.ts';
+import { type StepGround, stepCue } from './worldCues.ts';
 
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number];
+type Ground = ReturnType<typeof hoofGround>;
 
 /** The most motes at once. */
 export const MOST_MOTES = 192;
@@ -31,20 +32,30 @@ const DUST_WIDTH = [0.12, 0.5] as const;
 const CLOD_WIDTH = 0.07;
 
 /** What a ground throws: its dust's colour and cover, and its clods' colour (none for ground that throws none). */
-const THROWN: Readonly<Record<ReturnType<typeof stepCue>, { dust: Colour; cover: number; clod: Colour | null }>> = {
+const THROWN: Readonly<Record<Ground, { dust: Colour; cover: number; clod: Colour | null }>> = {
   'step.ground': { dust: [0.62, 0.53, 0.4], cover: 0.6, clod: [0.3, 0.22, 0.14] },
   'step.stone': { dust: [0.7, 0.67, 0.6], cover: 0.4, clod: null },
-  'step.wood': { dust: [0.66, 0.58, 0.46], cover: 0.35, clod: null },
   'step.water': { dust: [0.86, 0.93, 1], cover: 0.7, clod: [0.75, 0.86, 0.95] },
 };
 
-/** A rider as their boost is thrown from: their feet, the way they face (radians clockwise from north), whether they
- *  ride and the seconds their boost still runs. */
+/** A rider as their boost is thrown from: their number, their feet, the way they face (radians clockwise from north),
+ *  whether they ride and the seconds their boost still runs. */
 export interface Boosting {
+  readonly id: number;
   readonly feet: Point;
   readonly facing: number;
   readonly mounted: boolean;
   readonly boosting: number;
+}
+
+/** A rider's boost as last thrown: whether it ran, the strikes owed since the last and how many have struck this
+ *  boost, and where their feet stood, by which their pace is told. */
+interface Kept {
+  was: boolean;
+  owed: number;
+  struck: number;
+  lastX: number;
+  lastY: number;
 }
 
 const DUST = 0;
@@ -61,21 +72,15 @@ export class HoofDust {
   private readonly life = new Float64Array(MOST_MOTES);
   private readonly floor = new Float64Array(MOST_MOTES);
   private readonly kind = new Uint8Array(MOST_MOTES);
-  private readonly ground: ReturnType<typeof stepCue>[] =
-    Array<ReturnType<typeof stepCue>>(MOST_MOTES).fill('step.ground');
+  private readonly ground: Ground[] = Array<Ground>(MOST_MOTES).fill('step.ground');
   /** The place the next mote takes. */
   private next = 0;
   /** A mote's middle and its quad's two steps as it is laid, the same three each time. */
   private readonly middle: [number, number, number] = [0, 0, 0];
   private readonly across: [number, number, number] = [0, 0, 0];
   private readonly upright: [number, number, number] = [0, 0, 0];
-  private was = false;
-  /** The strikes owed since the last, and how many have struck this boost. */
-  private owed = 0;
-  private struck = 0;
-  /** Where the rider's feet stood last frame, by which their pace is told. */
-  private lastX = Number.NaN;
-  private lastY = Number.NaN;
+  /** Each rider's boost, by their number, while they are drawn. */
+  private readonly kept = new Map<number, Kept>();
 
   constructor(random: () => number = Math.random) {
     this.random = random;
@@ -90,34 +95,48 @@ export class HoofDust {
     return alive;
   }
 
-  /** The rider's boost `seconds` on, over `under`: its dust thrown as it begins, runs and ends, every mote flown on. */
-  frame(rider: Boosting, under: StepGround, seconds: number): void {
+  /** Each of `riders`' boosts `seconds` on, over `under`: its dust thrown as it begins, runs and ends; every mote flown
+   *  on. A rider no longer among them is let go, throwing nothing more. */
+  frame(riders: Iterable<Boosting>, under: StepGround, seconds: number): void {
+    const present = new Set<number>();
+    for (const rider of riders) {
+      present.add(rider.id);
+      let kept = this.kept.get(rider.id);
+      if (!kept)
+        this.kept.set(rider.id, (kept = { was: false, owed: 0, struck: 0, lastX: Number.NaN, lastY: Number.NaN }));
+      this.thrownBy(rider, kept, under, seconds);
+    }
+    for (const id of this.kept.keys()) if (!present.has(id)) this.kept.delete(id);
+    this.fly(seconds);
+  }
+
+  /** One rider's boost `seconds` on: its dust thrown as it begins, runs and ends. */
+  private thrownBy(rider: Boosting, kept: Kept, under: StepGround, seconds: number): void {
     const boosted = rider.mounted && rider.boosting > 0;
-    const ground = boosted || this.was ? stepCue(rider.feet, under) : 'step.ground';
-    if (boosted && !this.was) {
-      [this.owed, this.struck] = [0, 0];
+    const ground = boosted || kept.was ? hoofGround(stepCue(rider.feet, under)) : 'step.ground';
+    if (boosted && !kept.was) {
+      [kept.owed, kept.struck] = [0, 0];
       for (const side of [-1, 1]) {
         this.throw(rider, ground, DUST, DIG_DUST / 2, -HOOF_AHEAD, side, [1.5, 3], 0.6, 1);
         if (THROWN[ground].clod) this.throw(rider, ground, CLOD, DIG_CLODS / 2, -HOOF_AHEAD, side, [2, 4], 3, -1);
       }
     }
-    if (!boosted && this.was)
+    if (!boosted && kept.was)
       for (const side of [-1, 1]) this.throw(rider, ground, DUST, SETTLE_DUST / 2, HOOF_AHEAD, side, [1, 2], 0.4, 1);
-    const moved = Math.hypot(rider.feet[0] - this.lastX, rider.feet[1] - this.lastY);
+    const moved = Math.hypot(rider.feet[0] - kept.lastX, rider.feet[1] - kept.lastY);
     const pace = seconds > 0 && Number.isFinite(moved) ? Math.min(1, moved / seconds / STRIKING_SPEED) : 0;
-    this.lastX = rider.feet[0];
-    this.lastY = rider.feet[1];
+    kept.lastX = rider.feet[0];
+    kept.lastY = rider.feet[1];
     if (boosted) {
-      for (this.owed += STRIKES_PER_S * pace * seconds; this.owed >= 1; this.owed--, this.struck++) {
+      for (kept.owed += STRIKES_PER_S * pace * seconds; kept.owed >= 1; kept.owed--, kept.struck++) {
         // The hooves strike in turn: near fore, far fore, near hind, far hind.
-        const [ahead, side] = [this.struck % 4 < 2 ? HOOF_AHEAD : -HOOF_AHEAD, this.struck % 2 === 0 ? -1 : 1];
+        const [ahead, side] = [kept.struck % 4 < 2 ? HOOF_AHEAD : -HOOF_AHEAD, kept.struck % 2 === 0 ? -1 : 1];
         this.throw(rider, ground, DUST, DUST_A_STRIKE, ahead, side, [0.5, 1.5], 0.9, -1);
-        if (this.struck % 3 === 0 && THROWN[ground].clod)
+        if (kept.struck % 3 === 0 && THROWN[ground].clod)
           this.throw(rider, ground, CLOD, 1, ahead, side, [2, 3.5], 3, -1);
       }
     }
-    this.was = boosted;
-    this.fly(seconds);
+    kept.was = boosted;
   }
 
   /** `count` motes of `kind` from the hoof `ahead` metres before the feet on `side` (-1 left, 1 right), out at a
@@ -125,7 +144,7 @@ export class HoofDust {
    *  hoof stands, -1 back behind the horse. */
   private throw(
     rider: Boosting,
-    ground: ReturnType<typeof stepCue>,
+    ground: Ground,
     kind: number,
     count: number,
     ahead: number,

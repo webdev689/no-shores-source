@@ -542,15 +542,6 @@
       ]
     },
     {
-      "id": "horse.walk.wood",
-      "use": "A horse walking on wood, one stride",
-      "query": "horse walk wood",
-      "seconds": [
-        0.3,
-        1.5
-      ]
-    },
-    {
       "id": "horse.walk.water",
       "use": "A horse walking through water, one stride",
       "query": "horse walk water splash",
@@ -578,15 +569,6 @@
       ]
     },
     {
-      "id": "horse.gallop.wood",
-      "use": "A horse galloping on wood, one stride",
-      "query": "horse gallop wood",
-      "seconds": [
-        0.3,
-        1.2
-      ]
-    },
-    {
       "id": "horse.gallop.water",
       "use": "A horse galloping through water, one stride",
       "query": "horse gallop water splash",
@@ -608,15 +590,6 @@
       "id": "horse.boost.stone",
       "use": "A horse boosted to its fastest gallop on stone, one stride",
       "query": "horse gallop fast cobblestone",
-      "seconds": [
-        0.2,
-        1.0
-      ]
-    },
-    {
-      "id": "horse.boost.wood",
-      "use": "A horse boosted to its fastest gallop on wood, one stride",
-      "query": "horse gallop fast wood",
       "seconds": [
         0.2,
         1.0

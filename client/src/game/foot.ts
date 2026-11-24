@@ -22,7 +22,7 @@ import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
 import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
-import type { OtherPlayers, Others } from '../player/others.ts';
+import { type OtherPlayers, type Others, ridersOf } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
@@ -465,6 +465,7 @@ export class Foot {
       held: fight.publicHeld,
       encounter: { layout: this.dungeon?.layout, seen: this.held.encounter },
     });
+    const [{ facing, mounted }, boosting] = [walker.player, body.boosting ?? 0];
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
       blocks: this.boxes,
@@ -475,7 +476,7 @@ export class Foot {
       groundAt,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
       more: dropped.marks,
-      rider: { feet, facing: walker.player.facing, mounted: walker.player.mounted, boosting: body.boosting ?? 0 },
+      riders: [{ id: fight.player, feet, facing, mounted, boosting }, ...ridersOf(others, fight.others)],
     });
     this.sounds.frame({
       seconds,
@@ -489,8 +490,8 @@ export class Foot {
         feet: [body.x, body.y, body.z],
         walked: walker.walked,
         drawn: walker.you.dress.outfit.drawn,
-        mounted: walker.player.mounted,
-        boosting: walker.player.body.boosting ?? 0,
+        mounted,
+        boosting,
         look: effects.ownLook,
         pulled: shown.pulled,
       },
@@ -523,7 +524,6 @@ export class Foot {
       module: this.module,
     };
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
-    const { mounted } = walker.player;
     const counters = countersOf(this.node);
     const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
     this.using = able ? (chest ?? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted)) : null;

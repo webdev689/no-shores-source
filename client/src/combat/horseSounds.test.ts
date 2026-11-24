@@ -2,18 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import listed from '../../../content/audio/freesound.json' with { type: 'json' };
 import { HORSE_CUES, HorseSounds, type Rider, SNORT_S, STRIDE_M } from './horseSounds.ts';
+import type { StepGround } from './worldCues.ts';
 
 const FLAT = { blocks: [] };
 const STONE = { blocks: [{ minX: -100, minY: -100, maxX: 100, maxY: 100, top: 0, bottom: -1 }] };
 
 /** Rides `rider` for `seconds` at `speed` metres a second north, a frame at a time, and answers the cues heard. */
-function ride(
-  sounds: HorseSounds,
-  rider: Rider,
-  seconds: number,
-  speed: number,
-  ground: { readonly blocks: readonly never[] } | typeof STONE = FLAT,
-): string[] {
+function ride(sounds: HorseSounds, rider: Rider, seconds: number, speed: number, ground: StepGround = FLAT): string[] {
   const heard: string[] = [];
   const frame = 1 / 60;
   const x = rider.feet[0];
@@ -40,6 +35,24 @@ test('a horse is heard a stride at a time at its gait, on the ground under it', 
   assert.ok(count(boosted, 'horse.boost.ground') >= 3, 'boosted hooves, even at a boosted walk');
 });
 
+test('a horse is boosted only while its boost runs, however fast it goes', () => {
+  const sounds = new HorseSounds();
+  const rider: Rider = { id: 3, feet: [0, 0, 0], mounted: true, boosting: 0 };
+  sounds.frame([rider], 1 / 60, FLAT, () => undefined);
+  const fast = ride(sounds, rider, 2, 18);
+  assert.equal(fast.filter((cue) => cue.startsWith('horse.boost')).length, 0, fast.join());
+  assert.ok(count(fast, 'horse.gallop.ground') >= 9, 'a gallop');
+});
+
+test("on wood, only the wreck's timber, a horse sounds as on stone", () => {
+  const sounds = new HorseSounds();
+  const rider: Rider = { id: 4, feet: [0, 0, 0], mounted: true, boosting: 0 };
+  const timber = { ...STONE, wooden: STONE.blocks };
+  sounds.frame([rider], 1 / 60, timber, () => undefined);
+  const heard = ride(sounds, rider, 2, 6, timber);
+  assert.ok(count(heard, 'horse.walk.stone') >= 6, heard.join());
+});
+
 test('mounting whinnies, getting down is heard, a horse standing snorts now and then, and on foot it is silent', () => {
   const sounds = new HorseSounds();
   const heard: string[] = [];
@@ -58,7 +71,7 @@ test('mounting whinnies, getting down is heard, a horse standing snorts now and 
   assert.deepEqual(ride(sounds, standing, 2, 4), [], 'on foot, the footsteps are heard instead');
 });
 
-test("every horse's cue is one the Freesound list searches for", () => {
-  const searched = new Set(listed.cues.map((cue) => cue.id));
-  for (const cue of HORSE_CUES) assert.ok(searched.has(cue), `${cue} is searched for`);
+test("the Freesound list searches for every horse's cue, and for no other horse's", () => {
+  const searched = listed.cues.map((cue) => cue.id).filter((id) => id.startsWith('horse.'));
+  assert.deepEqual(searched.sort(), [...HORSE_CUES].sort());
 });

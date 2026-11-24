@@ -1054,8 +1054,8 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
 - **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a cue a
   stride (1.7 m at a walk, 3.4 m at a gallop, 4.6 m boosted), at a walk, a gallop (over 8 m/s) or boosted (while the
-  player's boost runs, or another rider goes over 14 m/s) on the footsteps' four grounds (`horse.<gait>.<ground>`,
-  twelve cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down (`horse.dismount`); a snort
+  rider's boost runs: another player's as the room last stepped their body) on the ground, stone or water, a
+  footstep's wood (only the wreck's) heard as stone (`horse.<gait>.<ground>`, nine cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down (`horse.dismount`); a snort
   each 9 s a ridden horse stands (`horse.snort`); and the boost's start (`horse.boost`). The player's and every other
   player's horse, another's riding read from its moves. Each is silent until it has its pick on the sound sheet.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
