@@ -7,6 +7,10 @@ status: in force
 
 > "Take autonomy, be as detailed as possible and return when this is 100% complete"
 
+Replaced in part by [[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]: every
+chest is DFO's chest, and a chest's Vestige is poured out of it; the rows on the chests' looks, their lids and the
+Vestige laid before a chest stay as they were, and the rows after them are Claude's calls under it.
+
 ## What it settles
 
 Claude's choices for the chests and the searchable containers
@@ -51,3 +55,10 @@ owner can change any of them.
 | A room playing alone | The page hands it the layout's chest places and the props of the holding families, which the room takes as holders as the bake's (`dungeon::models::held_by`) | Offline plays as online |
 | What the rooms carry | The bake writes each patrol's `chests` (x, y, facing) and `holders` (box, foot, top, model) into its node file; the bake now reads the dungeon crate's families | One list of holding families, the rules' |
 | Where they are not | Sea islands' landings, the social spaces, the sea, the Test Ground | The owner named patrols and dungeons |
+| Every chest's fit | DFO's chest scaled to stand within the box of the chest it takes the place of, as large as its width and depth allow: a patrol's and an event's plain chest 0.95 by 0.58 m (0.83 m across, 0.64 m tall), a heroic one 1.1 by 0.66 m, a dungeon's cache and its chests 0.9 by 0.5 m | As DFO fitted it, so where each stands, its reach and its marks are unchanged |
+| Its metal | A plain chest's hinge iron and its latch gold, a heroic one's both gold; in a dungeon both the textures' ironwork | DFO's iron hinge and brass latch, and its Aurum Coffer's gold for the finer chest; the dungeon's pictures hold no brass |
+| Its lid | Open to the model's widest, 77 degrees, about the line the model's own opening turns it about, over 0.6 s (the model's 0.62) | The owner's model, short of upright: a dungeon's chest's open lid keeps 0.36 m off its wall |
+| A patrol's chest's front | Looking the way its place faces, its back to what it is tucked against | Its lid swings back toward the face, into the band kept clear for it |
+| The pour | Its Vestige thrown from the chest's foot 0.22 s after the lid begins to open, leaving 0.7 m over the foot at 6.2 to 7.6 m/s, then as any Vestige; fanned toward its opener and resting 2 m out as a kill's, a cache's onto the floor it keeps clear before it | project-final's cache (`CHEST_POP`, `CHEST_POP_DELAY`, raised 5 cm as every drop's heights are); its ring round the chest would throw into the wall a chest is tucked against |
+| A poured Vestige's wait | 122 ticks before it can be taken: the 0.22 s and the longest the pour bounces | As every drop: never taken in the air |
+| An event chest not opened by its player | Lapsing, or opened as they leave: its Vestige into the ten, else the vault, else the ground, as before | Nobody sees it opened, and a leaver's ground is lost |

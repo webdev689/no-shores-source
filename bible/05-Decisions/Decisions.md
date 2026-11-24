@@ -343,6 +343,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Foe's Plain Swing Takes Seven Eighths of Its Time]]
 - [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]
 - [[Chests and Searchable Containers as Claude Builds Them]]
+- [[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]
 
 ## Replaced
 
