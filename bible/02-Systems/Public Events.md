@@ -219,8 +219,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   keep theirs. Its crack flares at each beat, its width eases to the room's, and a shard set arcs into it over 0.4 s.
   The Fissure won bursts the Lattice's death wave at four times a man's size where it seals (`sealWave`), in its
   picture's own texels; each Lattice foe coming while it runs climbs out of its wave played backwards. A raid won
-  topples its banners; a failed Fissure closes into the plain turf. A Lattice figure's crystal glows of itself at
-  night. The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
+  topples its banners; a failed Fissure closes into the plain turf. A Lattice figure is shaded darker than a man, its
+  crystal's bright points glowing of themselves at night
+  ([[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]). The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
   A room lost leaves no event on the screen but its stores, whose walls still stand; a page come mid-event replays no
   beat; and one back from a hidden tab slides the last beat in, but plays none of the sounds, stings, chimes or
   tremors kept meanwhile.

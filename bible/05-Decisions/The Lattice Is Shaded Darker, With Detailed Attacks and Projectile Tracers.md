@@ -12,16 +12,18 @@ After a playtest, the owner:
 
 ## What it settles
 
-- The public event's elements are seen again ([[Public Events]]).
+- The owner saw none of the public event's elements in the playtest ([[Public Events]]); what hid them is not found.
 - The Lattice gets a proper shading pass: they read too bright ([[Lattice]]).
 - The Lattice's attacks get more detail, and their projectiles tracers ([[Lattice]], [[Combat]]).
+- Replaces in part [[Public Events as Claude Builds Them]] ("The Lattice at night"): a Lattice figure's bright,
+  strongly hued texels are no longer lit at no less than 0.8; the figure is shaded as below.
 
 ## Claude's calls
 
 | Call | Chosen | Why |
 |---|---|---|
 | Where the shading is fixed | In the game's drawing of the pictures (`game/latticeShade.ts`), not by rendering the forge's pictures again | The renders are published; the game's light is where the Lattice stood out, and a change there needs no new render |
-| What read too bright | The glow test lit any bright, warm texel at no less than 0.8: about two fifths of the skin, four fifths of the Ravager's mantle and three quarters of the Idol's emitter, day and night | Measured on the published idle pictures |
+| What read too bright | The glow test lit any bright, strongly hued texel at no less than 0.8: about two fifths of the skin, four fifths of the Ravager's mantle and three quarters of the Idol's emitter, day and night | Measured on the published idle pictures |
 | How dark | The whole figure at 0.78 of a man's light | Darker than the Grey Tithe beside it, still read at night |
 | What still glows | A texel brighter than 0.72 with more than 0.4 between its strongest and weakest channel, never below 0.7 | Only the shards' tips and veins pass; the skin and the mantle do not |
 | What a blow shows | A star of crystal growing where it comes from through the tell (the first 0.35 of the move, where the rules hold it), a cut or a rush's streak to 0.55, then a ring of shards breaking up on the ground to 0.8 | Wind-up, strike and landing, each readable, drawn from the move's frames alone |

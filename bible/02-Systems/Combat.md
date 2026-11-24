@@ -171,7 +171,9 @@ charge turn after their target through the first half of the wind-up, and never 
 crosses its lane and a leap flies to its disc as the wind-up ends. A feint is cut short. A non-iron blow can be parried
 or blocked by a fighter facing the foe; an iron one, winding up a fifth of a second longer, must be dodged, and an iron
 slam or ring knocks down. A blow that finds no one leaves its foe overreached for its shape's punish (longer for iron,
-half again after a perfect dodge), taking 1.3 times more and staggered by the first blow landed.
+half again after a perfect dodge), taking 1.3 times more and staggered by the first blow landed. A Lattice foe's
+blows are drawn through their tell, strike and landing, and its shots as its crystal's tracers ([[Lattice]],
+[[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]).
 
 | Shape | Wind-up (s) | Ground | Damage |
 |---|---|---|---|

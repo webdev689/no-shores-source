@@ -1,6 +1,6 @@
 // How the game lights a Lattice figure's picture (figureView.ts), in WGSL and as the same sums here for the tests.
-// The forge renders the Lattice bright, its crystal lit from within, so drawn as a man is drawn they stood out of
-// the light round them: their whole figure is shaded a share darker than a man's, and only the crystal's bright,
+// The forge renders the Lattice bright, its crystal lit from within, so drawn as a man is drawn they would stand out
+// of the light round them: their whole figure is shaded a share darker than a man's, and only the crystal's bright,
 // strongly hued points (its shards' tips and veins) glow of themselves, never lit below a floor, at night too.
 
 /** The light a Lattice figure takes as a share of a man's; how bright and how strongly hued a texel must be to be
