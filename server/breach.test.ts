@@ -4,7 +4,16 @@ import { characters } from './accounts/characters.ts';
 import { launchedFor } from './accounts/companies.ts';
 import { foundRun } from './accounts/finding.ts';
 import { accounts } from './accounts/accountsForTests.ts';
-import { Breach, type BreachDeps, GATE_SHUT, LAUNCH_ARRIVES_MS, breachAsked, toldBreach } from './breach.ts';
+import {
+  ASK_AGAIN_MS,
+  Breach,
+  type BreachDeps,
+  GATE_SHUT,
+  LAUNCH_ARRIVES_MS,
+  breachAsked,
+  breachRoom,
+  toldBreach,
+} from './breach.ts';
 import { NO_WAY_HERE } from './arrival.ts';
 import { Keeper } from './keeping.ts';
 import { roomOf } from './keepingForTests.ts';
@@ -103,7 +112,7 @@ test('a run tells its zone at once as its company moves on or clears, and asks i
 });
 
 test('in its zone a launched player arrives from anywhere within the arrival window, and is held in the company for the day, asked twice', async () => {
-  const asked: (number | undefined)[] = [];
+  const [asked, waited]: [(number | undefined)[], number[]] = [[], []];
   let blips = 1;
   const { said, deps } = host();
   const zone = new Breach('node-gullwing-vale', {
@@ -112,11 +121,13 @@ test('in its zone a launched player arrives from anywhere within the arrival win
       asked.push(within);
       return blips-- > 0 ? Promise.reject(new Error('blip')) : Promise.resolve(true);
     },
+    wait: (span) => void waited.push(span) ?? Promise.resolve(),
   });
   zone.joined(4, RUN);
   zone.owned(4, 'ada');
   await new Promise((done) => setTimeout(done, 0));
   assert.deepEqual(asked, [undefined, undefined], 'the day a found run is kept, asked again after a blip');
+  assert.deepEqual(waited, [ASK_AGAIN_MS], 'given time to come back first');
   assert.deepEqual(said.company, [[4, JSON.stringify({ run: RUN, tier: 1 })]]);
   zone.joined(5, RUN);
   assert.equal(await zone.launchedHere(5, 'ben'), true);
@@ -181,4 +192,24 @@ test('a host’s keeper tells its Breach of each character it keeps, once kept, 
   const door = toldBreach(() => breach as unknown as Breach, kept);
   assert.deepEqual([door.own(4, 'ada'), door.own(5, 'ben'), door.name(4, 'Ada')], [true, false, true]);
   assert.deepEqual(told, ['owned 4', '4 Ada'], 'one refused is not told');
+});
+
+test('a Breach asks the room through its guard, so a trap closes the room rather than being swallowed', () => {
+  const trapped: string[] = [];
+  const room = {
+    breachCompany: () => {
+      throw new Error('unreachable');
+    },
+    breachProgress: () => 'null',
+  } as unknown as RoomDoor;
+  const guarded = <T>(call: () => T, fallback: T): T => {
+    try {
+      return call();
+    } catch {
+      trapped.push('closed');
+      return fallback;
+    }
+  };
+  assert.equal(breachRoom(room, guarded).breachCompany(4, '{}'), false);
+  assert.deepEqual(trapped, ['closed']);
 });

@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { addressKey } from './address.ts';
-import { Breach, breachAsked, breachHeard, toldBreach } from './breach.ts';
+import { Breach, breachAsked, breachHeard, breachRoom, toldBreach } from './breach.ts';
 import { type Count, admitsFrom, counted } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
 import { entranceOf, roomName, sessionHash } from './joinRequest.ts';
@@ -239,7 +239,7 @@ export class RoomHost extends DurableObject<Env> {
       guild: (player: number, told: string) => this.guarded(() => this.room.guild(player, told), false),
     });
     this.breach = new Breach(name, {
-      room: this.room,
+      room: breachRoom(this.room, this.guarded.bind(this)),
       zone: (zone) => this.env.ROOMS.getByName(zone),
       launched: (account, run, within) => accounts.launched(account, run, within),
     });

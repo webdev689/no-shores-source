@@ -17,6 +17,8 @@ const INSIDE_EVERY_MS = 10_000;
 const GATE_TRUSTED_MS = 60_000;
 /** How long after its launch a run's company may come to its gate from anywhere, as the Launch takes them there. */
 export const LAUNCH_ARRIVES_MS = 30 * 60_000;
+/** How long after a blip at the accounts a launched player's run is asked of them again. */
+export const ASK_AGAIN_MS = 2_000;
 /** The name a company is shown by in its zone when no player of it has a username yet. */
 const NAMELESS = 'A company';
 
@@ -31,9 +33,21 @@ export interface Zone {
 /** What a host needs: its room, the zone's room by name, and whether the accounts launched a run for an account, within
  *  `within` ms or the day a found run is kept. */
 export interface BreachDeps {
-  readonly room: RoomDoor;
+  /** The room's two words a Breach asks of it, each guarded as every call into the room is (`worker.ts`). */
+  readonly room: Pick<RoomDoor, 'breachCompany' | 'breachProgress'>;
   readonly zone: (name: string) => Zone;
   readonly launched: (account: string, run: string, within?: number) => Promise<boolean>;
+  /** Waits `span` ms, as the accounts are given time to come back after a blip (a timer unless a test says). */
+  readonly wait?: (span: number) => Promise<void>;
+}
+
+/** The room's words a Breach asks of it, each through `guarded`, which closes the room should the call trap, as
+ *  every call into it does: a trap in a word asked as the accounts answer is never swallowed while the room runs on. */
+export function breachRoom(room: RoomDoor, guarded: <T>(call: () => T, fallback: T) => T): BreachDeps['room'] {
+  return {
+    breachCompany: (player, word) => guarded(() => room.breachCompany(player, word), false),
+    breachProgress: () => guarded(() => room.breachProgress(), 'null'),
+  };
 }
 
 /** The run a join into a patrol's room comes launched for, `?breach=<room>`: null for none, or a name that is no
@@ -97,7 +111,7 @@ export class Breach {
 
   /** A player's character is kept for `account`: in a zone, held in the company of the run they came for once the
    *  accounts say it was launched for them that day, so one back from the run after the arrival window is held again;
-   *  asked twice, as a blip at the accounts would leave them out of their company. */
+   *  asked twice, ASK_AGAIN_MS apart, as a blip at the accounts would leave them out of their company. */
   owned(player: number, account: string): void {
     const run = this.asked.get(player);
     const tier = run === undefined ? undefined : breachRun(run)?.tier;
@@ -107,8 +121,9 @@ export class Breach {
     // One the keeper let in as launched is held at once; one who came by a way leading here is asked of the accounts.
     if (this.launched.delete(player)) return void hold();
     const ask = () => this.deps.launched(account, run);
+    const wait = this.deps.wait ?? ((span: number) => new Promise<void>((done) => setTimeout(done, span)));
     void ask()
-      .catch(ask)
+      .catch(() => wait(ASK_AGAIN_MS).then(ask))
       .then((launched) => launched && hold())
       .catch(() => false);
   }
