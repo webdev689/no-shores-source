@@ -70,13 +70,13 @@ fn a_pairs_blows_take_turns_between_the_hands() {
 fn a_players_pair_comes_round_in_four_fifths_of_its_lone_weapons_time_each_blow_nine_tenths_and_a_foes_as_lone() {
     assert_eq!(pair_swing_ticks(WeaponClass::Sword), (14, 36), "a sword's 18 and 45 at four fifths");
     let mut striker = player_at(0.0, 0.0);
-    let (_, happenings) = run(striker.clone(), swinging(0.0, Stroke::Up), 1, None);
+    let (_, happenings) = run(striker, swinging(0.0, Stroke::Up), 1, None);
     let Some(Happening::Swung(attack)) = happenings.first().map(|(_, happening)| *happening) else { panic!("a swing") };
     let lone = combat::judge::swing_blow(1, &striker, &attack, 2).damage;
     striker.arms.off_hand = OffHand::Weapon;
     let paired = combat::judge::swing_blow(1, &striker, &attack, 2).damage;
     assert!((paired - lone * PAIR_DAMAGE).abs() < 1e-9, "{paired} against {lone}");
-    let (_, happenings) = run(striker.clone(), swinging(0.0, Stroke::Up), 1, None);
+    let (_, happenings) = run(striker, swinging(0.0, Stroke::Up), 1, None);
     assert!(matches!(happenings.first(), Some((_, Happening::Swung(attack))) if attack.end == 36), "a player's pair");
     let mut foe = foe_at(0.0, 0.0, 0.0);
     let foes_lone = combat::judge::swing_blow(1, &foe, &attack, 2).damage;
