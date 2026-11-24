@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { AccountLink } from '../network/accounts.ts';
+import { hexOf } from './guild/bannerLaw.ts';
 import { keepGuild } from './guild/guildHeld.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 
@@ -14,7 +15,7 @@ function drawnBy(picture: Picture): string[] {
       (_held, name: string) =>
       (...args: unknown[]) =>
         calls.push(`${name}(${args.map(String).join(',')})`),
-    set: () => true,
+    set: (_held, name: string, value: unknown) => (calls.push(`${name}=${String(value)}`), true),
   }) as unknown as OffscreenCanvasRenderingContext2D;
   const source = picture.source as { draw: (context: OffscreenCanvasRenderingContext2D, w: number, h: number) => void };
   source.draw(context, 64, 64);
@@ -80,6 +81,12 @@ test("the guild's own outposts are marked by a star over the ring and in words, 
   const drawn = (node?: Node) => drawnBy(node?.picture as Picture);
   const strokes = (calls: string[]) => calls.filter((call) => call.startsWith('stroke')).length;
   assert.ok(strokes(drawn(own)) > strokes(drawn(other)), 'its ring and glyph edged in light, to read on any cloth');
-  assert.ok(drawn(own).some((call) => call.startsWith('strokeText(')));
+  // A flag drawn, not the face's flag glyph (which reads as a "P" at a mark's size), its cloth filled in the
+  // banner's cloth with a band of its device's colour.
+  const calls = drawn(own);
+  assert.ok(!calls.some((call) => call.startsWith('fillText(')), 'no text glyph');
+  const filled = (colour: string) =>
+    calls.some((call, index) => call === `fillStyle=${colour}` && calls[index + 1]?.startsWith('fillRect('));
+  assert.ok(filled(hexOf('navy')) && filled(hexOf('gold')), 'its cloth and its device in their colours');
   assert.match(named(ownNamed), /Your guild's outpost · raised/, 'its note says it is the guild’s own');
 });
