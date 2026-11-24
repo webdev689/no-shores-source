@@ -49,7 +49,7 @@ async function world(names = ['Ada', 'Ben', 'Cyra']) {
       .prepare(text)
       .bind(...values)
       .run();
-  return { ...made, tokens, ask, kept, accountOf, guild, room, standAt, fund, get, sql };
+  return { ...made, api: made.ask, tokens, ask, kept, accountOf, guild, room, standAt, fund, get, sql };
 }
 
 /** Runs `between` once, just before the first statement whose SQL starts so runs, alone or in a batch. */
@@ -425,4 +425,29 @@ test('an errand refused under its id is refused again under it, though another r
   assert.equal(await kept().deliver(ben, here, { id: 3, stuff: 'timber', amount: 5 }, 'past-limit'), -3);
   assert.equal(await kept().deposit(ben, 5, `${here}:limited`), 'limited');
   assert.equal(await kept().deposit(ben, 5, `${here}:limited`), 'limited', 'answered alike');
+});
+
+test('a kept errand answer goes a week on, but never while a character still carries its errand', async () => {
+  const { api, kept, accountOf, room, fund, sql, clock, deps } = await world(['Ada']);
+  const ada = await accountOf('Ada');
+  await fund(1_000);
+  const carried = `${await room()}:1:7:2`;
+  assert.equal(await kept().deposit(ada, 100, carried), 'moved');
+  // A reload took the character before the room heard the answer: its save still carries the errand.
+  const body = JSON.stringify({ errand: { rid: carried, what: { deposit: 100 } } });
+  await sql(
+    'INSERT INTO characters (account_id, body) VALUES (?1, ?2) ON CONFLICT (account_id) DO UPDATE SET body = ?2',
+    ada,
+    body,
+  );
+  const answers = async () =>
+    (await deps.database.prepare('SELECT rid FROM outpost_errands').all<{ rid: string }>()).results.length;
+  assert.equal(await answers(), 2);
+  clock.now += 6 * 24 * HOUR;
+  await api('POST', '/v1/guest');
+  assert.equal(await answers(), 2, 'within the week every answer is kept');
+  clock.now += 2 * 24 * HOUR;
+  await api('POST', '/v1/guest');
+  assert.equal(await answers(), 1, 'past it, only the answer a character still carries the errand of');
+  assert.equal(await kept().deposit(ada, 100, carried), 'already', 'and asked again late, it answers as it did');
 });
