@@ -253,6 +253,45 @@ The decisions in [[Open Questions]] are not repeated here.
   holds the heroic raid again, the dev page's bots now lose the plain raid's stores in its third wave, and the road's
   test player, facing north while foes struck from its sides, fell before a kill (it now turns to the nearest foe).
   A lone player is felled about as fast as before (`measure_blows`). Tested offline; not played.
+- **What a body meets keeps to what is drawn, and the owner's meadow** (#186, merged on the owner's "Merge and deploy
+  when ready", which deploys the page and the rooms). The owner: "In patrol zones there are invisible bounds of
+  some props that can be climbed" and "Implement the handcrafted grass texture we have from DFO"
+  ([[What a Body Meets Keeps to What Is Drawn]], [[The Owner's Handcrafted Meadow Grows Over the Grass]], Claude's calls
+  in each).
+  - The bounds: a layout's prop was the box round its turned footprint to its highest point (a beached boat at a
+    slant a block twice its size as tall as its mast), a turned or tilted solid the box round its turned corners (a
+    25 m rail at a slant 11 by 23 m). Now no box stands more than 0.45 m off what is drawn, nor leaves more of it out
+    (`city::hug`, used by cities and layouts alike): props are the parts their forged mesh fills in 0.25 m columns
+    (`content/forged/parts.json`, written by `node tools/forgedParts.mjs`, held to the mesh by a test), a turned
+    prop's strips within 0.2 m of them; solids are cut to the faces the page draws (a round's polygon, a dome's
+    rings), turned pieces in strips, tilted ones halved however far they turn ([[Layouts]], "Boxes";
+    [[Forged Models]], "Parts"). What a solid or a turned prop may cost is held (64 boxes a 2 m cell, a box a square metre,
+    at least 256, a prop twice its loosest strips; looser a quarter at a time past that): 99.3 % of solids and 97 %
+    of laid props keep that close. Against the merge base on one machine: 1,433,893 boxes over every landmass where
+    271,789 were, the rooms' files 50 MB where 16.4 MB were, a tick 8.0 µs where 3.4 µs. A puzzle's point now stands
+    on ground a walk reaches from its place. The node runs' fingerprint moved with the boxes, native and WebAssembly
+    agreeing on the new one.
+  - A deep audit on the owner's "Do a deep audit on this" (five read-only audits by part) found and fixed: a mill's
+    sails rolled past a half-turn boxed 37 m off (a tilt's reach is now its chord); halving that stopped short of its
+    keep reported as fitting; rounds kept to a smooth shape where the page draws polygons and rings; large props'
+    0.5 m columns standing 0.7 m off their mesh; turned props' strips adding a full 0.45 m; a test that passed
+    without a raised place; the meadow on the layouts' paths and through thin walls, drawing grassless cells, its
+    card light law dimming all light where DFO's dims the sun's; and notes that said more than the code does. The
+    full check then caught the movement grid missing a block stacked out over a wall's face (fixed in `wall_top`),
+    and the boxes mended a known failure: the Lion Grasslands' Test Ledge's door is no longer walked round.
+  - The meadow ([[Meadow]], [[Pick - Meadow Grass]]): the owner's five sprites written from DFO's PNGs by
+    `tools/meadow/write.py` (pixel for pixel DFO's bake), DFO's atlas, chain, pick, sizes and colour law, 16 m cells
+    of 576 tufts drawn by the GPU to 160 m over the grass of every grass biome.
+  - The owner's answers
+    ([[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]): the sprites
+    are the owner's own; `parts.json` and `meadowArt.ts` stay in git by exception; the boxes' budget stands; and the
+    meadow takes the trees' rain fix (#185: no sky's glare in rain, the plants' slower `SWAY`), sharing the plants'
+    light in `natureShader.ts`. Still the owner's: whether the plants' baked grass stays under the meadow, and whether
+    Graphics gains a grass setting.
+  - Tested offline: the full check on the head (the commit named in the pull request), `main` merged in; the meadow pictured headless through the real
+    renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
+    180,000 tufts on open grass), and so is the boxing's in WebAssembly.
+
 - **Patrol chests, the same chests in every dungeon, and searchable containers** (#192, merged on the owner's "Merge
   and deploy", which deploys the page and the rooms). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
   autonomy", every call in [[Chests and Searchable Containers as Claude Builds Them]] after Destiny 1's loot chests. A
@@ -681,6 +720,10 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
+  square to the world stack up a lean; boxing a city takes 0.03 to 0.5 s natively where it took a millisecond, and
+  WebAssembly's cost (the land worker boxes a node's city on entry) is unmeasured. The meadow's cost on a real GPU,
+  and a hand's play of both, are still to come.
 - **The patrol audit's risks left** (#170's description, each with its file in the audit): run lines against the
   section's ring (the ways measured: 4 of some 14,800 samples outside, by 1.8 m at most) and rock beside a run inside
   it, against [[A Run on the Rock's Top Is Held by Out of Bounds]]; `runs_everywhere` checks the wing from the ring,

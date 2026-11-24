@@ -8,10 +8,12 @@ export const FRAME_FLOATS = 32;
 export const SHADE_SEGMENTS = 10;
 /** The leaf share the bake gives moss (tools/flora/near.py MOSS_LEAF): it is let go past a stone's throw. */
 const MOSS_LEAF = 0.6;
-const { azimuths, elevations } = FLORA.frames;
 /** How fast the plants move, radians of each beat a second: gusts rolling downwind, each plant rocking on its own
  *  beat, and its leaves trembling. Slow, so a crown sways rather than shakes. */
 export const SWAY = { gustPerS: 0.6, rockPerS: 0.85, tremblePerS: 3 } as const;
+/** How far a gust travels, as a phase a metre: the plants' and the meadow's alike. */
+export const GUST_PER_M = 0.035;
+const { azimuths, elevations } = FLORA.frames;
 
 /** What the plants' passes share: their terms, their instances, their pictures, and where each stands. */
 const PLANTS = /* wgsl */ `
@@ -80,12 +82,7 @@ struct Vertex {
 };
 
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
-const SNOW = vec3f(0.94, 0.95, 0.97);
-// The ambient's tint from below (light bounced off the ground) and from above (the sky).
-const BOUNCE = vec3f(0.95, 0.9, 0.76);
-const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
-// How far a gust travels in a second, as a phase a metre and a second.
-const GUST_PER_M = 0.035;
+const GUST_PER_M = ${GUST_PER_M};
 const GUST_PER_S = ${SWAY.gustPerS.toFixed(2)};
 // Moss is known by its leaf share, and hangs only as far as a stone's throw: past that it is too fine to read.
 const MOSS = ${MOSS_LEAF};
@@ -189,14 +186,21 @@ fn picture_of(uv: vec2f, wraps: f32) -> Picture {
 }
 `;
 
-/** Lighting, as the land is lit by the sky: its ambient bounced warm from the ground under a crown and cool from the
- *  sky over it, the sun as the shadow map and the sky's dapple let it through, a little light through the leaves, the
- *  lamps, snow settling on what faces up, and rain darkening bark and leaves. A leaf takes no sky's glare: its normal
- *  turns every way, so the glare a grazing eye sees on stone would wash a whole crown white. */
-const LIGHT = /* wgsl */ `
-fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, snow: f32) -> vec3f {
+/** Lighting, as the land is lit by the sky, shared by the plants and the meadow: its ambient bounced warm from the
+ *  ground under a crown and cool from the sky over it, the sun as the shadow map and the sky's dapple let it through,
+ *  a little light through the leaves, the lamps, snow settling on what faces up, and rain darkening bark and leaves.
+ *  A leaf, or a tuft, takes no sky's glare: its normal turns every way, so the glare a grazing eye sees on stone would
+ *  wash a whole crown or meadow white. And the samples of a pixel a fade leaves drawn. */
+export const PLANT_LIGHT_WGSL = /* wgsl */ `
+const SNOW = vec3f(0.94, 0.95, 0.97);
+// The ambient's tint from below (light bounced off the ground) and from above (the sky).
+const BOUNCE = vec3f(0.95, 0.9, 0.76);
+const SKYLIGHT = vec3f(1.0, 1.02, 1.08);
+
+fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, snow: f32, facing: f32) -> vec3f {
   let sun = sunlit(from_eye, normal) * sky_dapple(from_eye);
-  let direct = sky_direct(normal, sun);
+  // 'facing' is the share of the sun's or the moon's own light a face turned from it keeps: 1 but for a meadow's card.
+  let direct = sky_direct(normal, sun) * facing;
   let ambient = sky_ambient(normal) * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5) * occlusion;
   // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
   let behind = 0.3 * max(-dot(normal, sky_state.key.xyz), 0.0) * sun;
@@ -210,15 +214,6 @@ fn lit(base: vec3f, normal: vec3f, leaf: f32, occlusion: f32, from_eye: vec3f, s
   return sky_soaked(colour, wet * mix(0.6, 0.3, leaf));
 }
 
-// The instance's tint turns foliage warmer and yellower one way, deeper and cooler the other; bark only lightens or
-// darkens. Far off, a plant's colour leans toward the biome's ground, so a far forest sits in its land.
-fn tinted(albedo: vec3f, tint: f32, leaf: f32, distance: f32) -> vec3f {
-  let hue = select(vec3f(0.9, 0.98, 1.05), vec3f(1.12, 1.05, 0.8), tint > 0.0);
-  let own = albedo * mix(vec3f(1.0), hue, abs(tint) * leaf) * (1.0 + 0.08 * tint * (1.0 - leaf));
-  let lean = select(0.0, 0.35 * smoothstep(900.0, form.ranges.y, distance), frame.ground.w > 0.5);
-  return mix(own, frame.ground.rgb * 0.85, lean);
-}
-
 // The samples a share of a pixel covers: 'share' of four, dithered over two pixels, starting at a sample that turns
 // with the pixel, so neighbouring pixels leave different samples open.
 fn coverage(share: f32, pixel: vec2u, turn: u32) -> u32 {
@@ -227,6 +222,19 @@ fn coverage(share: f32, pixel: vec2u, turn: u32) -> u32 {
   let run = (1u << count) - 1u;
   let start = (pixel.x + 3u * pixel.y + turn) & 3u;
   return ((run << start) | (run >> (4u - start))) & 15u;
+}
+`;
+
+/** The plants' own light: the shared light and their tint, their alpha-cut edges and what they draw. */
+const LIGHT = /* wgsl */ `
+${PLANT_LIGHT_WGSL}
+// The instance's tint turns foliage warmer and yellower one way, deeper and cooler the other; bark only lightens or
+// darkens. Far off, a plant's colour leans toward the biome's ground, so a far forest sits in its land.
+fn tinted(albedo: vec3f, tint: f32, leaf: f32, distance: f32) -> vec3f {
+  let hue = select(vec3f(0.9, 0.98, 1.05), vec3f(1.12, 1.05, 0.8), tint > 0.0);
+  let own = albedo * mix(vec3f(1.0), hue, abs(tint) * leaf) * (1.0 + 0.08 * tint * (1.0 - leaf));
+  let lean = select(0.0, 0.35 * smoothstep(900.0, form.ranges.y, distance), frame.ground.w > 0.5);
+  return mix(own, frame.ground.rgb * 0.85, lean);
 }
 
 // An alpha-cut edge as a share of the pixel, so a leaf's edge is smoothed by the samples rather than stepped.
@@ -322,7 +330,7 @@ fn plant_fragment(shaded: Shaded) -> Drawn {
   let up = cross(normal_axis, across) * select(-1.0, 1.0, shaded.tangent.w >= 0.0);
   let normal = normalize(across * mapped.x + up * mapped.y + normal_axis * max(mapped.z, 0.2));
   let base = tinted(albedo.rgb * shaded.colour.rgb, shaded.look.y, shaded.leaf, shaded.look.z);
-  let colour = lit(base, normal, shaded.leaf, shaded.colour.a, shaded.from_eye, shaded.look.x);
+  let colour = lit(base, normal, shaded.leaf, shaded.colour.a, shaded.from_eye, shaded.look.x, 1.0);
   return Drawn(vec4f(colour, 1.0), mask);
 }
 
@@ -428,7 +436,7 @@ fn sprite_fragment(sprite: Sprite) -> Drawn {
   let blender = normalize(facing.xyz * 2.0 - 1.0);
   let normal = vec3f(turned(sprite.rows.zw, vec2f(blender.x, -blender.y)), blender.z);
   let base = tinted(albedo.rgb, sprite.look.y, facing.a, sprite.look.z);
-  return Drawn(vec4f(lit(base, normal, facing.a, 1.0, sprite.from_eye, sprite.look.x), 1.0), mask);
+  return Drawn(vec4f(lit(base, normal, facing.a, 1.0, sprite.from_eye, sprite.look.x, 1.0), 1.0), mask);
 }
 
 struct Shade {

@@ -443,3 +443,80 @@ fn no_city_walls_underside_stands_off_the_ground_on_a_slope() {
     }
     assert!(checked > 10, "the cities have their walls: {checked}");
 }
+
+/// How far a point of a solid's own frame lies outside its own box, metres.
+fn off_box([width, depth, height]: [f64; 3], [x, y, z]: [f64; 3]) -> f64 {
+    let gap = |value: f64, low: f64, high: f64| (low - value).max(value - high).max(0.0);
+    let (across, along, rise) =
+        (gap(x, -width / 2.0, width / 2.0), gap(y, -depth / 2.0, depth / 2.0), gap(z, 0.0, height));
+    (across * across + along * along + rise * rise).sqrt()
+}
+
+fn corners([west, north, east, south, top, bottom]: [f64; 6]) -> impl Iterator<Item = [f64; 3]> {
+    (0..8).map(move |corner| {
+        let x = if corner & 1 == 0 { west } else { east };
+        let y = if corner & 2 == 0 { north } else { south };
+        [x, y, if corner & 4 == 0 { bottom } else { top }]
+    })
+}
+
+#[test]
+fn no_box_of_a_laid_prop_or_solid_stands_further_off_its_parts_or_its_own_box_than_a_box_may() {
+    let laid = laid();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let book = bake::builders(&root).expect("the builders read").book;
+    // Boxes are grown out to the centimetre.
+    let keep = city::hug::KEEP_M + 0.015;
+    let mut failed = Vec::new();
+    for layout in &laid.layouts {
+        for prop in &layout.seating.props {
+            let Some(parts) = book.parts.get(&prop.model) else { continue };
+            let Some(measure) = book.measure(prop.model, false) else { continue };
+            // A turned prop's strips keep within their own keep of its parts, loosened as its cost asks.
+            let loosened = layout::collide::prop_kept(prop, measure, Some(parts)).1;
+            let strips = layout::collide::STRIPS_KEEP_M * loosened + 0.015;
+            let alone = layout::seat::Seating { props: vec![prop.clone()], ..layout::seat::Seating::default() };
+            let (sine, cosine) = land::exact::sin_cos(prop.yaw.to_radians());
+            for found in layout::collide::seated_boxes(&alone, &layout.ring, &book) {
+                let shut = layout::pieces::model::GATE_ARCHES.contains(&prop.model);
+                for [east, south, up] in corners(found) {
+                    let (east_of, south_of) = (east - prop.at[0], south - prop.at[1]);
+                    let (x, z, y) =
+                        (east_of * cosine + south_of * sine, east_of * sine - south_of * cosine, up - prop.at[2]);
+                    let gap = |value: f64, low: f64, high: f64| (low - value).max(value - high).max(0.0);
+                    let off = parts
+                        .iter()
+                        .map(|&[x0, y0, z0, x1, y1, z1]| {
+                            let low = if shut { f64::NEG_INFINITY } else { y0 };
+                            let (across, rise, along) = (gap(x, x0, x1), gap(y, low, y1), gap(z, z0, z1));
+                            (across * across + rise * rise + along * along).sqrt()
+                        })
+                        .fold(f64::INFINITY, f64::min);
+                    if off > strips {
+                        failed.push(format!("{}: prop {} {off:.2} m off", layout.id, prop.model));
+                    }
+                }
+            }
+        }
+        for solid in &layout.seating.solids {
+            let ground = matches!(solid.material, Material::Paving | Material::Path | Material::Lawn | Material::Earth);
+            if ground || solid.size[2] < STEPPED_OVER_M || city::rock::is_rock(solid.shape) {
+                continue;
+            }
+            // A solid hardly tilted is boxed as if upright, as far off as its tilt moves it; one too costly to box
+            // so closely keeps as far as its budget loosens it.
+            let (boxes, loosened) = city::collision::kept(solid);
+            let tilted = city::hug::tilt_move(solid);
+            let tilt = if tilted <= city::hug::STILL_M { tilted } else { 2.0 * city::hug::tilt_reach(solid) };
+            let allowed = keep * loosened + tilt;
+            for found in boxes {
+                let off = corners(found).map(|corner| off_box(solid.size, solid.own(corner))).fold(0.0, f64::max);
+                if off > allowed {
+                    failed.push(format!("{}: {:?} {off:.2} m off", layout.id, solid.shape));
+                }
+            }
+        }
+    }
+    failed.dedup();
+    assert!(failed.is_empty(), "{} boxes, the first {:#?}", failed.len(), &failed[..failed.len().min(12)]);
+}

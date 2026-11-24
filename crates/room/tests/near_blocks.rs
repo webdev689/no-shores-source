@@ -1,6 +1,7 @@
 //! The movement rules find a body's blocks through a grid (`movement::Blocks`) so a patrol area's thousands of boxes
 //! cost a tick no more than a few: these runs over the Saltgrass Downs' boxes, as the bake lays them, step bodies
-//! once over the plain list and once over the grid, and every tick must agree to the bit.
+//! once over the plain list of every box a run can reach and once over the grid of them all, and every tick must
+//! agree to the bit.
 
 use movement::{Block, Blocks, Body, Controls, Mode, Near, TICK_SECONDS, Terrain, step_body};
 use room::{Floor, Room, standing_on};
@@ -20,6 +21,11 @@ fn saltgrass() -> bake::NodeFile {
     let nodes = bake::nodes_of(continent.expect("continent-1"), edits, &city, &builders);
     nodes.expect("continent-1 bakes").into_iter().find(|node| node.id == NODE).expect("the Saltgrass Downs bake")
 }
+
+/// The furthest a run strays from its start (it runs 10 s at 7.6 m/s at most), and how much further a box may stand and
+/// still be met: a run's plain list holds every box that near, so it answers as the whole list does.
+const RUN_REACH_M: f64 = 100.0;
+const MET_PAST_REACH_M: f64 = 10.0;
 
 /// Where the runs start: the node's spawns, and every box's centre one in fifty, so bodies start among buildings.
 fn starts(node: &bake::NodeFile) -> Vec<(f64, f64)> {
@@ -60,9 +66,21 @@ fn bodies_among_a_patrol_areas_boxes_step_alike_with_and_without_the_grid() {
     let mut modes = Vec::new();
     let mut on_blocks = 0;
     for (x, y) in starts(&node) {
+        let gap = |block: &Block| {
+            let off = |value: f64, low: f64, high: f64| (low - value).max(value - high).max(0.0);
+            let (across, along) = (off(x, block.min_x, block.max_x), off(y, block.min_y, block.max_y));
+            (across * across + along * along).sqrt()
+        };
+        let met: Vec<Block> =
+            list.iter().filter(|block| gap(block) <= RUN_REACH_M + MET_PAST_REACH_M).cloned().collect();
         let start = standing_on(&floor, &list, x, y);
-        let plain = run(&list, &floor, start, 600);
+        let plain = run(&met, &floor, start, 600);
         let gridded = run(&grid, &floor, start, 600);
+        let strayed = plain
+            .iter()
+            .map(|body| ((body.x - x) * (body.x - x) + (body.y - y) * (body.y - y)).sqrt())
+            .fold(0.0, f64::max);
+        assert!(strayed <= RUN_REACH_M, "from ({x}, {y}) the run strayed {strayed} m");
         for (tick, (plain, gridded)) in plain.iter().zip(&gridded).enumerate() {
             assert_eq!(plain.to_floats(), gridded.to_floats(), "from ({x}, {y}), tick {tick}");
         }

@@ -36,6 +36,7 @@ renderer can key it as `archive_record`.
 | **Weather and Sky**: ported, [[Pick - Weather and Sky]] | | | | | | | |
 | `render/heatHaze, windfallParticles, windfallSway` | Heat Haze and Windfall mod passes | Engine | Can't | — | Ports of demifiend's shaders and particle systems (record open). | — | src/render/windfallSway.js |
 | `render/snowfallGlsl, snowfallSurface` | Snowfall's three snow tiers: meshes and shader | Engine | Cut | WebGPU rewrite | Shader is "our own"; its tiers come from systems/snowfallRuntime (Snowfall port, pinned to the author's C#). | S | src/render/snowfallGlsl.js |
+| **Meadow Grass**: approved in part, [[Pick - Meadow Grass]] | | | | | | | |
 | `render/labGrass, grassMeadow, grassPixelArt, meadowArt` | GPU grass blades, meadow sprite blend, pixel grass | Engine | Cut | WebGPU rewrite | Ours. Placement reads DF ground tiles and climate; meadowArt is baked from the owner's PNGs. | M | src/render/labGrass.js |
 | `render/lowPolyTreesGlsl, lowPolyTreesRender` | Low Poly Trees' draw | Engine | Can't | — | Low Poly Trees' geometry, a mod's; atlases are the player's DF nature archives 500-511. No Shores builds its own trees ([[Which Made-for-DFO Mods Come Over]]). | — | src/render/lowPolyTreesRender.js |
 | `render/grahtOakArt, jungleFloorArt, landPropArt` | Code-painted pictures: graht-oaks, jungle floor, landmarks | Content | Clean | TS port | Every texel comes from a seed. Uploaded as pseudo-archives. | S | src/render/grahtOakArt.js |

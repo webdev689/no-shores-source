@@ -223,8 +223,8 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   stretched taller lifts the second over its step.
   Every river crossing, a way's or a gate's gorge's, stands the shortest stone bridge as long as its deck would run
   (timber where none is), its deck where the timber's would be, turned along the way, and moving with the land as
-  a bridge does. A turned part's boxes are cut in slices no longer than the part is thick, so a parapet's keep off
-  the way they line.
+  a bridge does. A turned part is boxed in strips across the world that keep within 0.45 m of it, so a parapet's keep
+  off the way they line.
 - **The public events' props** are drawn by the page's event-props drawer (`EventPropsDraw`, among the scene's drawers
   after the layouts and before the nature) from a list it is handed (`eventProps` makes it from the room's event
   marks and the player's chests): each prop at its place, turn and scale, risen out of the ground as far as it has
