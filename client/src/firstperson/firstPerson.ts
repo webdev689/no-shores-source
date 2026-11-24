@@ -395,8 +395,9 @@ export class FirstPerson {
     const { wielded } = holding;
     let { record, frame } = view;
     if (wielded.kind === 'flail' && record === 0) [record, frame] = [SWAY_RECORD, swayFrame(sway, SWAY_FRAMES)];
-    const key = `weapon|${wielded.kind}|${wielded.make}|${wielded.bow}|${worn.hands}|${worn.feet}|${record}-${frame}|${view.flip}|${armedKey(armed)}`;
-    const ask = () => weaponPicture(this.sourceFor(armed), wielded, worn, record, frame, view.flip);
+    const key = `weapon|${wielded.kind}|${wielded.make}|${wielded.bow}|${worn.hands}|${worn.feet}|${record}-${frame}|${view.flip}|${view.hand}|${armedKey(armed)}`;
+    const left = view.hand === 'left';
+    const ask = () => weaponPicture(this.sourceFor(armed), wielded, worn, record, frame, view.flip, left);
     const hand = wielded.kind === 'fists' ? {} : { hand: view.hand };
     return { key, ask, place, ...hand, ...(tip ? { tip } : {}) };
   }

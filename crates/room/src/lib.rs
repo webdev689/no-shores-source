@@ -541,10 +541,16 @@ impl Room {
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
+/// A loot seed on which the tests' first kills, chests and flotsam roll finer than Normal, so each leaves a Vestige
+/// where a Normal roll would leave its item: for the tests of where a Vestige goes.
+#[cfg(test)]
+pub(crate) const SEALING_SEED: u64 = 5;
 #[cfg(test)]
 mod balance_tests;
 #[cfg(test)]
 mod climb_tests;
+#[cfg(test)]
+mod commons_tests;
 #[cfg(test)]
 mod course_tests;
 #[cfg(test)]

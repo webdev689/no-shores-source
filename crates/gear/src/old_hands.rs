@@ -12,7 +12,7 @@ use crate::dice::Dice;
 use crate::grid::{Column, Cost};
 use crate::item::{Item, NONE_CHOSEN};
 use crate::kinds::Kind;
-use crate::vestige::named_item;
+use crate::vestige::made_named;
 use serde_json::{Map, Value};
 
 const MAIN: &str = "main_hand";
@@ -124,7 +124,9 @@ impl Shields {
                 continue;
             };
             give_back(character, &shield, |_, _| true);
-            let mut item = named_item(shield.id, def, def.kind.slot());
+            // Made as one is made for a player: a faction's weapon rolls its traits, its entry writing none.
+            let dice = Dice { seed: 0, tick: u64::from(shield.id), player: 0 };
+            let mut item = made_named(shield.id, def, def.kind.slot(), &dice);
             item.xp = shield.xp.min(item.xp_most());
             character.items.insert(item.id, (item, at));
         }
@@ -150,14 +152,13 @@ const MERGED: [(&str, &str); 14] = [
     ("sealed_magazine", "boarding_nets"),
 ];
 
-/// An item read against the catalogue as it is now. A named item of its entry's rarity follows its entry: its columns
-/// offer the entry's traits, each node bought and choice kept, so a reworked Atheric's new perk stands where its old one
-/// was bought, as Destiny's reworked exotics changed in every copy, and nothing is given back or lost. A rolled item
-/// offering a trait the catalogue no longer holds offers in its place, bought and chosen as it was, the perk it merged
-/// into where that fits it, else the first plain perk of its column's pool it does not offer already; with none left
-/// but perks that give and take, the first of those, its node given back, so no cost is pressed on a player who never
-/// chose it. A node bought whose trait no longer fits the item (armour kept with a shield's Bulwark from before the
-/// loadouts) is given back once, for what it cost, and its choice is cleared.
+/// An item read against the catalogue as it is now. A named item of its entry's rarity
+/// follows its entry, each node bought and choice kept, so a reworked Atheric's new perk stands where its old one was
+/// bought, as Destiny's reworked exotics changed in every copy; a faction's armour or weapon keeps what it rolled, so a
+/// piece bought never changes under its player. A rolled item's trait the catalogue no longer holds gives way to the
+/// perk it merged into, else the first plain perk of its column's pool it lacks, bought and chosen as it was; with only
+/// perks that give and take left, the first of those, its node given back, so no cost is pressed on a player who never
+/// chose it. A node whose trait no longer fits the item is given back once, for what it cost, and its choice cleared.
 pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     let content = catalogue();
     let entry = item.named.as_deref().and_then(|named| content.named(named));
@@ -166,28 +167,43 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     if let Some(entry) = entry {
         item.source = entry.source();
     }
-    if let Some(entry) = entry.filter(|entry| entry.rarity == item.rarity) {
+    // A faction's armour or weapon keeps the traits it rolled as it was made (`vestige::made_named`), its faction's own
+    // perks among its perk columns' pools.
+    let faction = entry.and_then(|entry| entry.faction.as_deref()).filter(|_| item.kind != Kind::Cloak);
+    if let Some(entry) = entry.filter(|entry| entry.rarity == item.rarity && faction.is_none()) {
         item = follow(character, item, entry);
     }
+    let (kind, breach) = (item.kind, item.breach);
+    // A Breach's piece keeps what it rolled too, the Breaches' own perks its perk columns' pool.
+    let own_perk = |column: Column, id: &str| {
+        let own = |perks: Vec<&crate::catalogue::TraitDef>| perks.iter().any(|found| found.id == id);
+        matches!(column, Column::Perk(_))
+            && (faction.is_some_and(|key| own(content.faction_perks(key, kind)))
+                || (breach && own(content.breach_perks(kind))))
+    };
     let mut pressed: Vec<(usize, u8)> = Vec::new();
-    // A named item's traits are its entry's (`follow`); a rolled one's are those of its columns' pools.
+    // A named item's traits are its entry's (`follow`); a rolled one's and a faction piece's are those of its columns'
+    // pools.
     let trait_columns: Vec<(usize, Column)> = (item.columns().iter().copied().enumerate())
-        .filter(|(_, kind)| kind.traits() && item.named.is_none())
+        .filter(|(_, kind)| kind.traits() && (item.named.is_none() || faction.is_some()))
         .collect();
     for (place, (index, column)) in trait_columns.into_iter().enumerate() {
         for node in 0..item.layout.get(place).map_or(0, Vec::len) {
             let gone = item.layout[place][node].clone();
             // A trait its column still offers stays; one that no longer fits the item is given back below; one that
             // has gone, or has moved to another column (Double Shotted, a perk become a finish), is replaced.
-            let offered_here = content.pool(column, item.kind).iter().any(|found| found.id == gone);
-            let misfit = content.trait_def(&gone).is_some() && !content.trait_fits(&gone, item.kind, None);
+            let offered_here =
+                content.pool(column, item.kind).iter().any(|found| found.id == gone) || own_perk(column, &gone);
+            let misfit = content.trait_def(&gone).is_some()
+                && !content.trait_fits(&gone, item.kind, item.named.as_deref(), item.breach);
             if offered_here || misfit {
                 continue;
             }
             let offered = |id: &str| item.layout.iter().flatten().any(|each| each == id);
             let merged = MERGED.iter().find(|(old, _)| *old == gone).map(|(_, into)| *into);
-            let merged = merged.filter(|into| !offered(into) && content.trait_fits(into, item.kind, None));
-            let pool = content.pool(column, item.kind);
+            let merged = merged.filter(|into| !offered(into) && content.trait_fits(into, item.kind, None, item.breach));
+            let breach_perk = breach && matches!(column, Column::Perk(_));
+            let pool = if breach_perk { content.breach_perks(kind) } else { content.pool(column, kind) };
             let plain =
                 pool.iter().find(|found| found.takes.is_none() && !offered(&found.id)).map(|found| found.id.as_str());
             let trading = pool.iter().find(|found| !offered(&found.id)).map(|found| found.id.as_str());
@@ -198,7 +214,7 @@ pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
             item.layout[place][node] = id.to_owned();
         }
     }
-    let fits = |id: &String| content.trait_fits(id, item.kind, item.named.as_deref());
+    let fits = |id: &String| content.trait_fits(id, item.kind, item.named.as_deref(), item.breach);
     let misfits: Vec<(usize, u8)> = (item.columns().iter().enumerate())
         .flat_map(|(column, kind)| (0..kind.nodes()).map(move |node| (column, node)))
         .filter(|&(column, node)| item.has(column, node))

@@ -175,7 +175,7 @@ table Gear {
   barding: ushort;
   cosmetics_sold: [ushort];
   // Their Shapes; and while Shape is in their social space, his place among its spots (255 while he is away) and
-  // his wares of the week, each numbered by its place among them and priced in Shapes.
+  // his wares of the week, each priced in Shapes and numbered as a page asks for it (`gear::shape::shown`).
   shapes: ushort;
   shape_place: ubyte = 255;
   shape_wares: [GearItem];

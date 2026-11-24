@@ -264,3 +264,22 @@ test("a faction's shield, bow and staff are covered whole by its colour, in hand
   assert.deepEqual(whole, layers.slice(1, 5));
   assert.deepEqual(ramps['formal_cloak_plated'], cosmeticRamp('stormcaller_blue', table.palette), 'the cape its dye');
 });
+
+test("a faction's blade takes its faction's colour on its trim alone, put away too; a content's blade none", () => {
+  const table = { palette: [], clothing: {}, armour: { Elven: [[3, 3, 3] as const] } };
+  const layers = ['sword_elven', 'sheath_dagger_ebony', 'shield_kite_elven', 'formal_cloak_plated'];
+  const looks = { bodies: {}, dye: ['shield_kite_elven', 'formal_cloak_plated'], metal: ['shield_kite_elven'] };
+  const dyes = {
+    sword_elven: 'stormcallers',
+    dagger_ebony: 'veiled',
+    shield_kite_elven: 'stormcallers',
+    formal_cloak: 'stormcaller_blue',
+  };
+  const worn = layerRamps(layers, { ...outfit, dyes, dye: null }, looks, table);
+  assert.deepEqual(worn.trimmed, ['sword_elven', 'sheath_dagger_ebony']);
+  assert.deepEqual(worn.ramps['sword_elven'], factionRamp('stormcallers', table.palette));
+  assert.deepEqual(worn.ramps['sheath_dagger_ebony'], factionRamp('veiled', table.palette), 'at the hip, as in hand');
+  const found = layerRamps(layers, { ...outfit, dyes: {}, dye: 'coral' }, looks, table);
+  assert.deepEqual(found.trimmed, [], 'the same blades from a dungeon: no trim, whatever dye is worn');
+  assert.equal(found.ramps['sword_elven'], undefined);
+});

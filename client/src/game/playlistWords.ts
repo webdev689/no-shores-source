@@ -43,7 +43,7 @@ export interface PlaylistEntry {
   readonly rules: readonly string[];
   readonly modifiers: readonly KeyedModifier[];
   readonly rewards: readonly PlaylistReward[];
-  /** What its runs drop: "Drops orcish and mithril gear". */
+  /** What its runs drop: "Drops Elite Dungeon gear". */
   readonly drops: string;
   /** Why it is shut, in its gate's words; null where it is open. */
   readonly shut: string | null;
@@ -65,11 +65,11 @@ const ABYSS_DRAWN_RULE = 'One of the 18 Elite Dungeons, at Abyss, drawn as each 
 const DAILY = "Daily, the first clear: a Boss's worth of XP and Aurem, and a Vestige in a Boss's colours.";
 const PLAIN = 'Every clear pays its kills and its cache, as any run does.';
 
-/** What a tier's runs drop, by the looks its content gives (`content/gear/looks.json`): "Drops orcish and mithril
+/** What a tier's runs drop, by its content's name (`content/gear/looks.json`), never a metal's: "Drops Elite Dungeon
  *  gear". */
 function dropsWords(seas: 'elite' | 'abyss'): string {
-  const sets = SOURCES.find((source) => source.key === seas)?.armour ?? [];
-  return sets.length === 0 ? '' : `Drops ${sets.join(' and ')} gear`;
+  const name = SOURCES.find((source) => source.key === seas)?.name ?? '';
+  return name === '' ? '' : `Drops ${name.replace(/^(an?|the) /, '')} gear`;
 }
 
 /** A shut entry's reason at a glance: "Opens at level 24 · You are 15", from its gate's words; the gate's own words
