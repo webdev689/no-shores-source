@@ -94,7 +94,7 @@ test('the Core counts and locks the fragments not owned, and refuses them before
 test('a spell’s numbers at each level are scaled as the room scales them, the rest as written', () => {
   const storm = art(1);
   assert.deepEqual(spellNumbers(storm.anima, 1), [
-    ['Damage', '10.8'],
+    ['Damage', '28.8'],
     ['Orbs', '6'],
     ['Reach', '30 m'],
     ['Speed', '14 m/s'],
@@ -110,13 +110,13 @@ test('a spell’s numbers at each level are scaled as the room scales them, the 
   assert.deepEqual(spellNumbers(divine.anima, 2), [
     ['Radius', '10 m'],
     ['Lasts', '8.4 s'],
-    ['Heals a second', '3.5'],
+    ['Heals a second', '5.6'],
     ['Linked lingers', '2.1 s'],
   ]);
   assert.deepEqual(spellNumbers(divine.tenets[0] ?? divine.anima, 4), [['Heals', '36']]);
   const shadow = art(3);
   const raven = spellNumbers(shadow.anima, 1);
-  assert.ok(raven.some(([label, value]) => label === 'Damage' && value === '4.2'));
+  assert.ok(raven.some(([label, value]) => label === 'Damage' && value === '9.6'));
   assert.ok(raven.some(([label, value]) => label === 'Lasts' && value === '7.2 s'));
   assert.ok(raven.some(([label, value]) => label === 'Heals you' && value === '50% of its damage'));
   assert.deepEqual(spellNumbers(shadow.tenets[1] ?? shadow.anima, 1), [

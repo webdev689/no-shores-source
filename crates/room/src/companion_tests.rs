@@ -241,16 +241,19 @@ fn a_companion_goes_when_their_officer_is_sent_aboard_or_their_leader_leaves_and
 
 #[test]
 fn a_companion_strikes_and_is_struck_as_a_player_matched_to_their_level_with_brawler_harder() {
+    use crate::power::{FOE_HARM, PLAYER_HARM};
     let mut room = room();
     let (_, ids) = with_officers(&mut room, &[Post::FirstMate], 10);
     room.tick();
     let (id, _) = companions(&room)[&ids[0]];
     let foe = tithe(&mut room, 10, -30.0);
     let times = room.companion_times(id, foe).unwrap();
-    assert!((times - gear::power::by_player(150, 10, 10)).abs() < 1e-9, "a weapon of their level's Attack");
-    assert!((room.companion_times(foe, id).unwrap() - 1.0).abs() < 1e-9, "a foe of their level reaches no further");
+    let matched = gear::power::by_player(150, 10, 10) * PLAYER_HARM;
+    assert!((times - matched).abs() < 1e-9, "a weapon of their level's Attack, eased as a player's blow is");
+    let struck = room.companion_times(foe, id).unwrap();
+    assert!((struck - FOE_HARM).abs() < 1e-9, "a foe of their level reaches no further, eased as on a player");
     let high = tithe(&mut room, 13, -30.0);
-    assert!(room.companion_times(high, id).unwrap() > 1.0, "one above their level strikes harder");
+    assert!(room.companion_times(high, id).unwrap() > FOE_HARM, "one above their level strikes harder");
     room.ashore.standing.get_mut(&id).unwrap().brawler = true;
     assert!((room.companion_times(id, foe).unwrap() - times * 1.1).abs() < 1e-9, "Brawler adds a tenth");
     assert_eq!(room.companion_times(foe, high), None, "between foes, nothing of theirs");

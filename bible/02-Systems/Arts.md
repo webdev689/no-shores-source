@@ -76,7 +76,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   counting what is set and owned ("Core · 1 of 3 · 2 owned") and its rule as long as the line above. Under the
   Core, each fragment set is written out: its name in the element's light, what it does after it.
 - **The level** ([[Factions]]): the worn Art's name carries five pips lit to its level, read aloud as "Level n". Under
-  the three Arts' diamonds (each with its own small pips, so they never move) its bar fills with the XP its kills
+  the three Arts' diamonds (each with its own small pips, so they never move) its bar fills with the XP its deeds
   earn: "3,200 of 8,000", then, full, "Ready to rise at the Stormcallers' counter", or "Highest level", in brass when
   full or at level 5, with the faction's emblem small at its end, its card naming the faction and what its counter
   does. The element's line says the share the spells hold ("Spells at 70%"). Spell and fragment cards give their
@@ -200,13 +200,13 @@ The numbers are an Art's at level 5.
 
 | Spell | What the room does | Numbers | Core |
 |---|---|---|---|
-| Tempest | Orbs leave the chest one by one over 1 s, fanned over 90 degrees ahead and rising. Each seeks the living foe nearest it within reach, keeps it while it lives and stays in reach, turns toward it, and is spent on the first foe it touches | 6 orbs, 30 m, 14 m/s, 4 rad/s, 4 s, 18 damage | Pursuit: 8 orbs |
+| Tempest | Orbs leave the chest one by one over 1 s, fanned over 90 degrees ahead and rising. Each seeks the living foe nearest it within reach, keeps it while it lives and stays in reach, turns toward it, and is spent on the first foe it touches | 6 orbs, 30 m, 14 m/s, 4 rad/s, 4 s, 48 damage (72 on a foe of the player's level, felling a Major skirmisher, swordsman or archer) | Pursuit: 8 orbs |
 | Quicken | Haste on the caster and every living player within reach | 12 m, Haste's 6 s | Gale: 18 m and 9 s. Momentum: Crit on the caster as long |
 | Arc Lash | Each foe within 7 m in a 70-degree cone along the aim is struck, then Charged | 16 damage, Charge by rank | Conduction: Charge 1.5 times as long. Overload: Exposed |
 | Sunwell | An orb at the caster's feet. Each tick, every living player within reach is Linked, so it lingers 3 s after | 10 m, 12 s | Radiance: 13 m, 16 s |
 | Mend | Heals the caster | 40 | Mercy: players within 8 m heal 20. Resolve: Crit |
 | Dawnflare | A bird flies from 3 m behind the chest along the aim, burning each foe within 3 m of it once a pass | 24 m in 1.6 s, 14 damage | Wings: a second pass back. Searing: Exposes |
-| Duskraven | A raven at the right shoulder. On its first tick and every 0.8 s it fires a bolt at the foe nearest it within reach. The bolt flies at its foe, strikes, Exposes and heals the caster half the health it took, or fizzles if its foe falls first | 12 s, 22 m, 30 m/s, 7 damage | Hunger: heals all it took. Dread: see above |
+| Duskraven | A raven at the right shoulder. On its first tick and every 0.8 s it fires a bolt at the foe nearest it within reach. The bolt flies at its foe, strikes, Exposes and heals the caster half the health it took, or fizzles if its foe falls first | 12 s, 22 m, 30 m/s, 16 damage | Hunger: heals all it took. Dread: see above |
 | Dusk Daggers | Aimed while held, then a ring where it was aimed, drawn in to the reach, always on the ground there. Every 0.5 s from its first tick, each foe inside is struck and Exposed | 16 m, 4 m ring, 5 s, 3 damage | Blades: 5.5 m ring, 7 s |
 | Vanish | On the ground, where a dodge could start, a dodge's hop the way the body moves, or back when still, landing the roll away, blows passing through it as a dodge's do. Then Veiled; out of what a dodge cannot leave (a dodge, a flinch's first 8 ticks, the tick before a blow lands, a reload, an overreach), the veil without the hop, and what the player was doing runs on | 3 m, the veil's 4 s | Night: 6 s. Hunt: see above |
 

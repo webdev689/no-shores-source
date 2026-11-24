@@ -30,4 +30,9 @@ hard a foe archer's arrow should hit now that foes draw and aim their bows as pl
   fires onto the crosshair half again as hard; a bow reaches that over a second's charge.
 - A bow in first person has the same two shots.
 - A foe archer aims and draws as a player does, but its arrow strikes as a quick shot, never half again ([[Foes]]).
+
+  Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: a player's bow strikes two thirds of the
+  bow's damage, 12 quick and 18 at a full draw, an aimed shot still half again a quick one; a foe archer's arrow keeps
+  the 18 chosen here.
+
 - Every shot draws a tracer from the barrel or the arrow, along its flight to where it stops.

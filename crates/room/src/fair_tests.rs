@@ -199,7 +199,10 @@ fn an_aimed_shot_leaves_from_the_foes_own_weapon_a_ball_straight_and_quick() {
     let [east, south, up] = ball.velocity;
     assert_eq!(ball.ranged, Ranged::Pistolet);
     assert!(((east * east + south * south + up * up).sqrt() - 70.0 * 1.3).abs() < 1e-9 && up.abs() < 1e-12);
-    assert!((ball.damage - 30.0 * 1.4 * foe.might).abs() < 1e-9, "{ball:?}");
+    assert!(
+        (ball.damage - 30.0 * combat::shots::FOE_GUN * 1.4 * foe.might).abs() < 1e-9,
+        "two thirds of its gun: {ball:?}"
+    );
 }
 
 #[test]
