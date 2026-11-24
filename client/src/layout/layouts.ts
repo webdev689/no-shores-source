@@ -143,7 +143,8 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
     const foes = laid.sites.flatMap(({ kind, at, holds }) =>
       kind === 'foes' && (holds === undefined || cavern(holds)) ? [at] : [],
     );
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid) };
+    const paths = laid.paths.map((path) => path.points);
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid), paths };
   });
 }
 

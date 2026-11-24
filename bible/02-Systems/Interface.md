@@ -294,7 +294,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   widths, each line's glyphs and each colour read are kept across frames (bounded, emptied whole when full), and a
   node whose box, frame and shadows fall outside its clip is not drawn.
 - **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,
-  death's words and Respawn, the key strip's panel, the task tracker, the
+  death's words and Respawn (for a fall in a fight, the seconds to Respawn, who revives the player or why no Respawn
+  comes, `fallenNode`; [[Revives]], "On the page"), the key strip's panel, the task tracker, the
   toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
   and its offers, Manage's panel, the prompt for E and the leave held in its place, the veil (the loading screen, `loadingNode`, with the
   trip's words; [[One Loading Screen Covers Every Trip Until the Place Is Ready]]) and the sheet of every control. Each stands where the page's sheet stood
@@ -642,7 +643,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the kick off too, whatever is drawn; the Arts' three while one is worn and the hands are free to cast, Shadow's
   first Tenet apart as held to aim Dusk Daggers; the held map's key wherever it can be raised, before the leave's;
   the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told, and
-  nothing while the fall plays out. The prompt for Use says what it does, with Use's key or button, so the strip
+  nothing while the fall plays out; fallen in a fight, Respawn once it may be pressed, and nothing before it or in a
+  darkness zone. The prompt for Use says what it does, with Use's key or button, so the strip
   leaves it out. At sea: sailing, the click to sail there and the helm's controls (the sea bar names its own keys); in
   Manage, the drag, the wheel and Manage's key back; on the deck, the click to look round as on foot, run, jump and
   Use to take the helm; at the map and choosing a landing, their clicks, Set sail and Escape; with the land's held map

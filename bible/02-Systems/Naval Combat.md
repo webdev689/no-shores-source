@@ -324,7 +324,8 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
   ship's own frame, a wall off its planks), its ring the deck's bounds, its spawns at the ship's rails amidships, half a
   metre in from its outermost plank (`rail_spot`; at its helm where no plank lies across its middle). A boarder comes
   over its rail on the side their own ship lies, clear of its masts (which stand on its middle line), facing its bow and
-  its crew; one who falls stands again at the rail nearest. So the land combat runs unchanged on its deck, with each
+  its crew; one who falls lies until an ally revives them or they respawn, then stands at the rail nearest
+  ([[Revives]]). So the land combat runs unchanged on its deck, with each
   boarder's character. Its crew is its faction's deck types for its rank (`foes::crews`): a Minor three Minors; a Major
   four, the Bosun a Major; an Elite five, the Bosun an Elite; a Miniboss six, the Tithe-Mate the Miniboss; a Boss
   Captain Brannoc Thule and six. The plain hands are the Grey Tithe's skirmisher, swordsman and shot in turn (the

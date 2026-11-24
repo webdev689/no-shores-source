@@ -332,6 +332,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]
 - [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]
 - [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]
+- [[Fallen Players Are Revived as in Destiny]]
+- [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]]
+- [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
+- [[Revives, Respawns and Relogs as Claude Shapes Them]]
 
 ## Replaced
 

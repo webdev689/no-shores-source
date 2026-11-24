@@ -181,6 +181,13 @@ the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet
 looking 17° down over the parapet onto the city, the harbour and the sea. Arriving from the story played through, the
 stranger's last moment plays there once the veil has fallen ([[Prologue]]); leaving the node ends it.
 
+A returning player, past the title with the story played before, goes back where they last left the overworld or a
+social space ([[A Player Logs Back In Where They Left the Overworld or a Social Space]], `relog.ts`): the veil says
+"Returning to your ship" and they are aboard, the ship where the sea room kept it (offline, where the page kept it);
+or "Arriving at" the social space, standing where they left it. Online the accounts say which (`/v1/me`'s `place`),
+offline the browser's `noshores.place`; with none, or a social space not open, they arrive at Overlook ([[Accounts]],
+"Where a player logs back in").
+
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook, and so
 does a patrol or mission still locked, played alone too, as the server refuses it
@@ -248,10 +255,11 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in an element (the player's own in
   their weapon's glow as their game shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
   from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
-  A player arriving, as they spawn into a place or respawn, is built from the feet up in 2 by 2 cells over 0.6 s, each
-  white as it lands, throwing no shadow until they stand whole, when their weapon glows
-  ([[Players Arrive as Destiny's Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and on each respawn, every other
-  player on respawning or when first seen after the player arrived. The player sees their own figure begin once their
+  A player arriving, as they spawn into a place, respawn or are revived, is built from the feet up in 2 by 2 cells
+  over 0.6 s, each white as it lands, throwing no shadow until they stand whole, when their weapon glows
+  ([[Players Arrive as Destiny's Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and
+  on each respawn or revive, every other player on respawning or being revived, or when first seen after the player
+  arrived. The player sees their own figure begin once their
   view is first open, 0.5 s in. Foes never arrive so.
   A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
   [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
@@ -370,7 +378,8 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   says ("Encounters", "In the Game"), from the layout's plan and each snapshot's `encounter`, held with the cache
   (`heardRun`).
 - **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives
-  left", "1 revive left", "No revives left"). When the room says this player's company fell (`Wiped`, `heardRun`),
+  left", "1 revive left", "No revives left"), and with "Darkness zone" while the room is one (the Court while its
+  Boss stands, or no revive left; [[Revives]]). When the room says this player's company fell (`Wiped`, `heardRun`),
   the page takes them out by the way they came in, even with the menu open, the veil saying "Your company fell.
   Leaving" the dungeon: before its entrance, or from a sea island's back to the sea.
 
@@ -419,9 +428,9 @@ procedural textures as the city paints its own ([[Procedural Textures]]). Their 
 
 The node's room judges the body against the node's section each tick ([[Reach]]). Past the edge the screen darkens and
 "Return to the area" counts down 10 s; back inside, it ends. At 0, or 60 m past, the player dies: "You died", the
-pointer is freed, and Respawn is offered after 4 s (or Enter). The player comes back at the section's spawn nearest
-where they fell. A dead body lies still while its standing ticks on. A player killed in the fight falls, the fight's
-display counts down 4 s, and the room stands them again at the section's spawn nearest where they fell.
+pointer is freed, and Respawn is offered after 4 s (or Enter). A dead body lies still while its standing ticks on. A
+player killed in the fight falls and lies there the same way, "YOU DIED" over the view counting down to Respawn, until
+they press it or an ally revives them ([[Revives]], "On the page"); a respawn stands them where [[Revives]] says.
 
 ## At sea
 
@@ -787,7 +796,8 @@ way.
 Under way the player's ship stirs the water's ripples at its bow and quarters, as the World Editor's does, and the
 ripples follow it.
 In death the world drains to grey once death is told (a fall plays out in colour first, the camera holding and turning
-after the body, no key listed until Respawn is offered), and comes back in colour on respawn or on leaving: over 1.4 s
+after the body, no key listed until Respawn is offered), and as soon as the player falls in a fight, and comes back in
+colour on respawn, a revive or on leaving: over 1.4 s
 each way, eased out, grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last into its own
 picture, so the interface the game draws over the world keeps its colour. In the same pass the arriving player's view
 blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, open by 1 s.

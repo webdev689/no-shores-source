@@ -34,6 +34,11 @@ code:
   - server/accounts/migrations/20261121180000_binds.sql
   - client/src/game/bindsKept.ts#keepBinds
   - crates/gear/src/character.rs#from_json
+  - crates/gear/src/last.rs#Last
+  - crates/room/src/left.rs#stand_where_left
+  - server/accounts/lastPlace.ts#lastPlace
+  - client/src/game/relog.ts#resume
+  - client/src/game/relog.ts#keepPlace
 ---
 # Accounts
 
@@ -135,6 +140,20 @@ they play in holds it while they are there.
   port city it would wash up at, as the fight has it), and what floats gathered into it; a deck boarded fights with it, and gives it back
   as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
   character whose ship has the hurts it keeps.
+- **Where a player logs back in** ([[A Player Logs Back In Where They Left the Overworld or a Social Space]]). The
+  character keeps the last place it left of the overworld and the social spaces (`last`, `gear::last::Last`): the sea,
+  written by the sea room as it keeps a ship at sea, or a social space's node with where the player stood, to the
+  centimetre, and the way they faced, written by that room on every save while they stand there on their feet, alive.
+  No other room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
+  the two they were in last. `GET /v1/me` answers it beside the account (`place`: `{ "kind": "sea" }`, or
+  `{ "kind": "social", "node", "at", "facing" }` in metres and radians, or null; `lastPlace.ts`). After the title the
+  page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; or into that social space, whose room
+  stands a player whose character last stood in it where they left it, on the floor they stood on (`stand_where_left`;
+  where a body no longer fits there, at a spawn). One who has just played the story through, one with none kept, or one
+  whose social space is not open on the landmass arrives at Overlook. The sea's tier is Normal, as every voyage's
+  begins. Offline, where no room keeps a character, the page keeps the place itself in the browser
+  (`noshores.place`, every 10 s and as the page hides or goes, `keepPlace`), the ship where it lay and the player where
+  they stood, and resumes from it the same way.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
   that is not kept, or in a run, which keeps no one unkept, is sent away. A socket with no session, its token none in
   five seconds or no session at all, is sent away from any room that keeps characters ([[Server]], "The host"). The
