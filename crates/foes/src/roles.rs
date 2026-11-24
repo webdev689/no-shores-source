@@ -170,15 +170,17 @@ pub fn numbers(role: Role) -> Numbers {
             shooter: true,
             ..PLAIN
         },
+        // A captain fights only as an Elite, a Miniboss or a Boss: its defence sits far enough under the ranks' cap
+        // (`ranks::DEFENCE_MOST`) that each of those ranks parries, blocks and dodges more than the one below.
         Role::Captain => Numbers {
             health: 160.0,
             poise: 60.0,
             weight: Weight::Heavy,
             might: 1.2,
             reaction: 14,
-            parry: 0.25,
-            block: 0.3,
-            dodge: 0.15,
+            parry: 0.2,
+            block: 0.22,
+            dodge: 0.13,
             shapes: Shapes::of(&[Shape::Sweep, Shape::Lunge, Shape::Charge, Shape::Leap]),
             ..PLAIN
         },

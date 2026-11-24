@@ -28,6 +28,10 @@ made under that word, and the owner may change any of it. Numbers reference Dest
 | Named pieces | One Legendary for each kind; the old ones keep their names under their new kind (The Reefwall becomes an Atheric Sword & Shield); new ones for the new kinds |
 | Vendors | The Armsmith sells four Melee pieces and two Ranged a day |
 
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: the greatsword deals 21 at a weight of 1.2 ×
+1.15, the longest reach of the three heavy weapons and the lightest blow; a player's bow strikes two thirds of its
+damage, quick or aimed.
+
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Weaponsmith sells them, two Melee to each Ranged.
 
 ## Verbs and statuses
@@ -256,6 +260,9 @@ Melee and 4 to 6 for Ranged):
 | Keen Eye | Weapon | Perk | A kill with the weapon gives Crit for 4 s |
 | Attuned | Weapon | Finish | While the worn Art's element is the weapon's, it deals 10% more |
 | Spellfeed | Weapon | Finish | Each kill with the weapon takes 3% off the Tenets' cooldowns |
+
+Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: Exploit's blows on an Exposed foe strike 25%
+harder, no crit.
 
 A loadout's perks, these and the rest, work while it is drawn, beside the armour's; none touches a spell or its kill.
 

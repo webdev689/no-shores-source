@@ -1,5 +1,5 @@
 //! Shape: here from Friday 09:00 to Sunday 21:00 UTC, one place and six pieces a week of the clock's, from Tuesday
-//! 09:00 UTC, sold for Shapes, which only the Elite and Abyss seas give.
+//! 09:00 UTC, sold for Shapes, which only the week's Abyss content gives.
 
 use crate::asks::{Ask, Here, Refusal};
 use crate::character::Character;
@@ -93,8 +93,21 @@ fn a_piece_is_bought_with_shapes_at_his_place() {
     let stale = character.ask(Ask::BuyFromShape { ware: 4, shown: another }, here, &DICE);
     assert_eq!(stale, Err(Refusal::NotSold), "a page shown another piece at that place buys nothing");
     assert!(character.ask(Ask::BuyFromShape { ware: 4, shown: shown(4) }, here, &DICE).is_ok());
-    assert_eq!(character.materials.shapes, 200 - price(Rarity::Atheric));
     let bought = character.items.values().map(|(item, _)| item).find(|item| item.rarity == Rarity::Atheric);
+    assert_eq!(character.materials.shapes, 200 - bought.map_or(0, price), "{bought:?}");
     assert_eq!(bought.map(|item| item.named.clone()), Some(wares(5_000)[4].named.clone()));
     assert_eq!(character.ask(Ask::BuyFromShape { ware: 9, shown: shown(9) }, here, &DICE), Err(Refusal::NoSuchItem));
+}
+
+#[test]
+fn an_atherics_weapon_costs_more_shapes_than_its_armour_and_either_more_than_a_legendary() {
+    let week = wares(5_000);
+    let priced = |rarity: Rarity, weapon: bool| {
+        week.iter().find(|item| item.rarity == rarity && item.kind.weapon() == weapon).map(price)
+    };
+    let atheric = (0..400_u64).flat_map(wares).filter(|item| item.rarity == Rarity::Atheric);
+    let (weapons, armour): (Vec<_>, Vec<_>) = atheric.partition(|item| item.kind.weapon());
+    assert!(weapons.iter().all(|item| price(item) == 23) && armour.iter().all(|item| price(item) == 13));
+    assert!(!weapons.is_empty() && !armour.is_empty(), "both come in 400 weeks");
+    assert_eq!(priced(Rarity::Legendary, true).or(priced(Rarity::Legendary, false)), Some(7));
 }

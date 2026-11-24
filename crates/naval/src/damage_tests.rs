@@ -239,3 +239,16 @@ fn a_share_of_a_blow_carries_its_parts_until_they_make_a_whole_point() {
     let mut sound = Damage::new(&TITHE_SLOOP, false);
     assert_eq!(sound.shared(hurt(5.0, 2.0, 1.0), 1.0), hurt(5.0, 2.0, 1.0), "the Sloop's ball, whole");
 }
+
+#[test]
+fn a_fire_set_with_twice_the_bite_burns_twice_the_hull() {
+    let burnt = |bite: f64| {
+        let mut damage = Damage::new(&TITHE_SLOOP, false);
+        let whole = damage.hull;
+        damage.apply_burning(Hurt { fire: true, ..hurt(0.0, 0.0, 0.0) }, 0.0, 0.0, bite);
+        damage.step(1.0, 1.0);
+        whole - damage.hull
+    };
+    assert!((burnt(FIRE_HP) - FIRE_HP).abs() < 1e-9, "a plain fire's bite a second");
+    assert!((burnt(2.0 * FIRE_HP) - 2.0 * burnt(FIRE_HP)).abs() < 1e-9, "a raised one's twice");
+}

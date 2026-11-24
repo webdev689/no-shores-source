@@ -41,10 +41,16 @@ pub fn place(week: u64) -> usize {
     Dice { seed: week, tick: 0, player: 0 }.pick(Purpose::Shape, 0, PLACES)
 }
 
-/// What a piece costs, in Shapes.
+/// What a piece costs, in Shapes: a Legendary 7; an Atheric's armour 13 and its weapon 23, Xûr's Strange Coins for
+/// Destiny 1's exotic armour and weapons at launch, so the week's Abyss buys an Atheric's armour in about a week and
+/// a half and its weapon in about two and a half.
 #[must_use]
-pub fn price(rarity: Rarity) -> u16 {
-    if rarity == Rarity::Atheric { 15 } else { 7 }
+pub fn price(item: &Item) -> u16 {
+    match item.rarity {
+        Rarity::Atheric if item.kind.weapon() => 23,
+        Rarity::Atheric => 13,
+        _ => 7,
+    }
 }
 
 /// The place in the catalogue's items of the named piece Shape shows at a place in a week, as a page names it when
@@ -110,7 +116,7 @@ impl Character {
         if self.level() < item.level {
             return Err(Refusal::TooLow);
         }
-        let cost = price(item.rarity);
+        let cost = price(&item);
         if self.materials.shapes < cost {
             return Err(Refusal::Short);
         }

@@ -39,7 +39,8 @@ are in [[Crew]].
   0.5, sails 0.35, rigging 0.3.
 - **Its level**, 1 to 30 (`Character::ship_level`): to 20 by its own experience, on the player's own curve
   (190,000 for level 20), then by the Prestige its four modules carry, each as an armour piece carries it from level
-  20 (a Rare 13 to 15, a Legendary 18 to 27, an Atheric 21 to 30), against the player's own Prestige steps. A
+  20 (a Rare 13 to 15, a Legendary 18 to 27, an Atheric 21 to 30, by equal steps over however many upgrades its grid
+  holds, the guns' five as a hull's three), against the player's own Prestige steps. A
   module is fitted only at the ship's level or below, and one Atheric among the four.
 - **Its modules** are items of four kinds (`Kind::Guns`, `Hull`, `Sails`, `Rigging`), each fitted in its own slot
   and carried nine to a slot beside it, kept in the vault with the ship's other modules (twenty). Each has a rarity,
@@ -57,12 +58,12 @@ are in [[Crew]].
 - **Found** (`ship::found`): each piece of what floats where a ship went down holds one common material (1 to 3), a
   chance of Heartwood (2% a rank) and of a module (3% and 1% a rank); its chest holds three (2 to 4 each), Heartwood
   25% and 5% a rank (a chest is rolled at a Miniboss's or a Boss's) and a module one time in two. An island's wreckage
-  holds two (1 to 3), Heartwood 5% and a module 8%, an isle's three (3 to 6) and one in five. A sea Breach's hold always
+  holds one (1 to 2), Heartwood 1.5% and a module 3%, so a cove's two or three wrecks together hold less than a Minor
+  ship's whole lot; an isle's three (3 to 6) and one in five. A sea Breach's hold always
   holds a module, three materials of 4 to 8 and two Heartwood. Every Heartwood and module chance is raised by the
   voyage's tier, as a kill's chances are. A module is coloured as a Vestige from a foe of its source's rank ([[Gear]],
   "Vestiges"): a piece its ship's, a chest the rank it is rolled at, a cove's wreckage a Minor's, an isle's an
-  Elite's, a Breach's a Boss's; never past what its level could drop. By the whole find, a cove's wreckage holds less
-  than a Minor ship's pieces, an isle's about a Major's, and an Elite's far more.
+  Elite's, a Breach's a Boss's; never past what its level could drop.
 - **The Shipwright** sells six modules a day (the clock's, from 09:00 UTC: [[Activities]]), three Rare and three Magic, at the buyer's ship's level, at the
   Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
 
@@ -113,8 +114,12 @@ are in [[Crew]].
 - **Its hands.** The player's Sloop carries ten men ([[Crew]]): balls cut them down as a captain's are, a thinned crew
   reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
-- **What a fight pays.** A captain going down pays the ship the experience a kill of a foe of its rank would, at its
-  level, raised by the sea's tier (`reward_sinking`), and every officer aboard the same; the player earns none of it.
+- **What a fight pays.** A captain going down pays as twelve kills of a foe of its rank would, at its level, raised by
+  the sea's tier (`reward_sinking`, `SINKING_KILLS`): its XP to the ship, its fitted modules and every officer aboard,
+  and its XP and Aurem to the player, their worn Art and their faction, as a kill pays them; nothing to a player
+  whose ship is four levels or more below it, as on land. A sea fight with the
+  sighting before it takes about as long as a dozen fights on foot, so a ship climbs as its player does on land and
+  the sea pays as a patrol ([[The Balance and Economy Pass as Claude Shapes It]]).
   What floats holds ship salvage beside the ship's one kill's drop (`flotsam::Held`).
 
 ## In the browser

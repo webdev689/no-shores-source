@@ -81,6 +81,9 @@ the owner.
 - **Shapes from the week's Abyss**: its Abyss Dungeon's first clear each week pays 15, enough for one of Shape's
   Atheric pieces or two Legendary a week (`clears::ABYSS_SHAPES`). The activities had paid Shapes from kills at the
   Elite and Abyss seas instead; those are gone.
+
+  Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: 10 Shapes, a Legendary a week and an
+  Atheric's armour or weapon in one and a half or two and a half weeks.
 - **A dungeon's cache** pays the dungeon's completion: its clear's XP and Aurem, an item and a Vestige one time in
   three, where the activities' cache gave a sure Vestige in its Reeve's colours. A dungeon's garrison on an island's
   node, which has no cache, pays the same clear as its groups all fall.

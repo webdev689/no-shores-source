@@ -73,3 +73,5 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   Atheric but two guns; a dungeon has no Atheric; an Elite Dungeon's Legendaries are three Melee pieces. Where a content
   has none, its Vestige opens to any content's: 36 of the 60 contents, colours and slots have none of their own. The
   owner: "Let's talk about this more when we finish everything".
+- **The balance pass's open point** ([[The Balance and Economy Pass as Claude Shapes It]]): Conduit (Deepwatch) brings
+  a Tenet back about every 27 s against 105.

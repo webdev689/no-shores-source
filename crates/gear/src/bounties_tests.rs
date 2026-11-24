@@ -29,7 +29,7 @@ fn a_bounty_is_taken_at_the_board_after_the_prologue_and_turned_in_once_done_for
     }
     let (xp, aurem) = (character.xp, character.materials.aurem);
     assert_eq!(character.ask(turn_in(0), at_board(20_778), &DICE), Ok(Done::Done));
-    assert_eq!((character.xp, character.materials.aurem), (xp + 600, aurem + 36));
+    assert_eq!((character.xp, character.materials.aurem), (xp + 900, aurem + 54), "a second tier's, at level 1");
     assert_eq!(character.ask(turn_in(0), at_board(20_778), &DICE), Err(Refusal::BountyPaid));
     assert_eq!(character.ask(take(0), at_board(20_778), &DICE), Err(Refusal::BountyHeld), "once a day");
     character.activity.today.turned_in.insert(3);
