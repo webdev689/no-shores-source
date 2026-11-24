@@ -7,8 +7,13 @@ use crate::world::Difficulty;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-/// How many places the bounty board has.
+/// How many of the bounty board's places are the town's.
 pub const BOUNTIES: u8 = 6;
+/// How many bounties each faction posts a day, and how many factions post them (`content/gear/factions.json`'s).
+pub const FACTION_BOUNTIES: u8 = 3;
+pub const POSTING_FACTIONS: u8 = 3;
+/// Every place a bounty stands at: the town's six, then each faction's three in the factions' order.
+pub const BOUNTY_PLACES: u8 = BOUNTIES + POSTING_FACTIONS * FACTION_BOUNTIES;
 
 /// A character's day and week.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -124,11 +129,11 @@ impl Activity {
         &mut self.this_week
     }
 
-    /// Made whole as read: no bounty held or turned in past the board's six places.
+    /// Made whole as read: no bounty held or turned in past the board's places.
     #[must_use]
     pub fn kept(mut self) -> Self {
-        self.today.bounties.retain(|place, _| *place < BOUNTIES);
-        self.today.turned_in.retain(|place| *place < BOUNTIES);
+        self.today.bounties.retain(|place, _| *place < BOUNTY_PLACES);
+        self.today.turned_in.retain(|place| *place < BOUNTY_PLACES);
         self
     }
 }

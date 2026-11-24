@@ -55,6 +55,8 @@ pub struct FactionsDef {
     pub weapon_aurem: u32,
     pub fragment_aurem: u32,
     pub fragment_rank: u32,
+    /// What a faction's first-tier bounty pays in its reputation, whatever the player's level (`bounties`).
+    pub bounty_reputation: u64,
     pub factions: Vec<FactionDef>,
 }
 
@@ -180,10 +182,22 @@ impl Character {
         if pledge == 0 || self.cape_worn() != Some(pledge) {
             return;
         }
+        self.add_reputation(pledge, u64::from(xp));
+    }
+
+    /// Reputation with a faction, cape or none: a faction's bounty pays its own.
+    pub(crate) fn add_reputation(&mut self, faction: u8, amount: u64) {
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
-        if let Some(reputation) = place(pledge).and_then(|at| self.allegiance.reputation.get_mut(at)) {
-            *reputation = reputation.saturating_add(u64::from(xp));
+        if let Some(reputation) = place(faction).and_then(|at| self.allegiance.reputation.get_mut(at)) {
+            *reputation = reputation.saturating_add(amount);
         }
+    }
+
+    /// Whether a faction's bounty counts now: while the player is pledged to it and wears its cape, as its reputation
+    /// is earned in the world.
+    #[must_use]
+    pub fn serves(&self, faction: u8) -> bool {
+        faction != 0 && self.allegiance.pledge == faction && self.cape_worn() == Some(faction)
     }
 
     /// Pledges to a faction at its counter: freely the first time, for Aurem after; reputation with each is kept, and
