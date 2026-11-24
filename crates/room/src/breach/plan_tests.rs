@@ -1,6 +1,8 @@
 //! The Drowned Vale's plan: it reads, every space stands a module the manifest holds, each space's way in meets the
 //! last one's way out to the millimetre, every piece the rules stand on has its socket, its seals and slabs stand,
-//! and a body walks its spaces' floors to their pieces.
+//! a body walks its spaces' floors to their pieces, and on foot over the dark, every seal open and every slab
+//! standing, every piece is reached from the Descent's top and the court from each, and in each shore from its
+//! arrival and its rift from each.
 
 use super::*;
 use crate::floor::Floor;
@@ -284,5 +286,170 @@ fn a_body_pressing_or_jumping_into_the_ways_barricades_and_walls_never_gets_up_t
             let highest = highest_pressing(&blocks, stage, yaw, jump, 8.0);
             assert!(highest < stage[2] + 2.0, "{what}, jumping {jump}: up to {:.2} m", highest - stage[2]);
         }
+    }
+}
+
+/// Whether a body walked from one point toward another gets there, within `near` metres flat and on its floor: steered
+/// at it each tick, running, jumping where its way half a metre ahead drops deeper than its goal or it stops getting
+/// nearer, and dying, as the run kills, by a fall of reach::FALL_M or onto the dark.
+fn walks_to(blocks: &Blocks, from: [f64; 3], to: [f64; 3], near: f64) -> bool {
+    let mut body = Body { z: from[2], ..standing(from[0], from[1]) };
+    let (mut stood, mut nearest, mut stalled) = (body.z, f64::INFINITY, 0);
+    let flat = |body: &Body| combat::sight::apart([to[0], to[1]], [body.x, body.y]);
+    for _ in 0..((flat(&body) / movement::TUNING.walk + 4.0) / TICK_SECONDS) as usize {
+        let far = flat(&body);
+        if far <= near && (body.z - to[2]).abs() < near.max(0.6) && body.mode == movement::Mode::Ground {
+            return true;
+        }
+        (nearest, stalled) = if far < nearest - 0.3 { (far, 0) } else { (nearest, stalled + 1) };
+        if stalled > 2 * 60 {
+            return false;
+        }
+        let (east, south) = ((to[0] - body.x) / far.max(1e-9), (to[1] - body.y) / far.max(1e-9));
+        let ahead =
+            movement::blocks::ground_at(blocks, &Floor::Dark, body.x + east / 2.0, body.y + south / 2.0, body.z);
+        let gap = ahead < body.z - movement::TUNING.step && ahead < to[2] - movement::TUNING.step;
+        let jump = body.mode == movement::Mode::Ground && (gap || stalled > 30);
+        let controls =
+            Controls { forward: 1.0, yaw: libm::atan2(east, -south), run: true, jump, ..Controls::default() };
+        body = step_body(&body, &controls, blocks, &Floor::Dark, TICK_SECONDS);
+        if body.mode != movement::Mode::Air {
+            stood = body.z;
+        }
+        if stood - body.z >= reach::FALL_M || body.z < 0.5 {
+            return false;
+        }
+    }
+    false
+}
+
+/// A spot a body walks to: its space, its name, where, how near a body must come (beside a plinth, within reach of
+/// its stone), and whether it must be reached: a piece must, the middle of a floor only helps the way there.
+struct Spot {
+    space: String,
+    name: String,
+    at: [f64; 3],
+    near: f64,
+    piece: bool,
+}
+
+/// The points five metres out the way each of a space's pieces faces.
+fn fronts(plan: &Plan, space: &str) -> Vec<[f64; 3]> {
+    let found = plan.space(space).expect("its space");
+    let sockets = module(&found.module).expect("its module").sockets;
+    let named = sockets.iter().map(|socket| socket.name).filter(|name| stood_at(name));
+    let front = |name: &str| {
+        plan.socket(space, name).map(|(at, [east, south])| [at[0] + east * 5.0, at[1] + south * 5.0, at[2]])
+    };
+    named.filter_map(front).collect()
+}
+
+/// A space's spots: each piece a body stands at or beside, its slabs among them, and the middle of each floor in it
+/// a body could stand on.
+fn spots(plan: &Plan, blocks: &[Block], space: &str) -> Vec<Spot> {
+    let found = plan.space(space).expect("its space");
+    let ground = plan.space_bounds(space, 0.0).expect("its ground");
+    let sockets = module(&found.module).expect("its module").sockets;
+    let named = sockets.iter().map(|socket| socket.name).filter(|name| stood_at(name) || name.starts_with("slab-"));
+    let near = |name: &str| if name == "plinth" { crate::breach::lodestone::TAKE_REACH_M - 0.5 } else { 0.8 };
+    let at = |name: &str| plan.socket(space, name).expect("its socket").0;
+    let pieces =
+        named.map(|name| Spot { space: space.into(), name: name.into(), at: at(name), near: near(name), piece: true });
+    let clear = |[x, y, z]: [f64; 3]| {
+        let over = |block: &&Block| block.min_x <= x && x <= block.max_x && block.min_y <= y && y <= block.max_y;
+        blocks.iter().filter(over).all(|block| block.top <= z + 0.05 || block.bottom >= z + 1.8)
+    };
+    let floors = blocks.iter().filter_map(|block| {
+        let middle = [(block.min_x + block.max_x) / 2.0, (block.min_y + block.max_y) / 2.0, block.top];
+        let inside = middle[0] >= ground.min_x
+            && middle[0] <= ground.max_x
+            && middle[1] >= ground.min_y
+            && middle[1] <= ground.max_y;
+        let wide = block.max_x - block.min_x >= 1.2 && block.max_y - block.min_y >= 1.2;
+        (inside && wide && clear(middle)).then(|| Spot {
+            space: space.into(),
+            name: format!("floor {middle:.1?}"),
+            at: middle,
+            near: 0.8,
+            piece: false,
+        })
+    });
+    // Five metres out the way each piece faces, as a house's heart faces its door.
+    let fronts = fronts(plan, space).into_iter().filter(|at| clear(*at)).map(|at| Spot {
+        space: space.into(),
+        name: format!("front {at:.1?}"),
+        at,
+        near: 0.8,
+        piece: false,
+    });
+    pieces.chain(floors).chain(fronts).collect()
+}
+
+/// The pieces not reached from the first spot, walking the way asked (`toward` from the reached to the next, else
+/// back): each tried in turn from the nearest spots already reached in its own space, or standing where it stands (as
+/// a space's way out stands at the next one's way in), three at a time until every way is tried; a floor's middle
+/// three times at most.
+fn unreached(blocks: &Blocks, spots: &[Spot], toward: bool) -> Vec<String> {
+    let apart = |one: [f64; 3], two: [f64; 3]| combat::sight::apart([one[0], one[1]], [two[0], two[1]]);
+    let mut reached = vec![false; spots.len()];
+    reached[0] = true;
+    let (mut tried, mut tries) = (std::collections::BTreeSet::new(), vec![0; spots.len()]);
+    let mut grew = true;
+    while grew {
+        grew = false;
+        for next in 0..spots.len() {
+            let goal = &spots[next];
+            if reached[next] || (!goal.piece && tries[next] >= 9) {
+                continue;
+            }
+            let mut from: Vec<usize> = (0..spots.len())
+                .filter(|from| reached[*from] && !tried.contains(&(*from, next)))
+                .filter(|from| spots[*from].space == goal.space || apart(spots[*from].at, goal.at) < 0.01)
+                .collect();
+            from.sort_by(|one, two| apart(spots[*one].at, goal.at).total_cmp(&apart(spots[*two].at, goal.at)));
+            for one in from.into_iter().take(3) {
+                (tries[next], grew) = (tries[next] + 1, true);
+                tried.insert((one, next));
+                let start = &spots[one];
+                let walked = apart(start.at, goal.at) < 0.01
+                    || if toward {
+                        walks_to(blocks, start.at, goal.at, goal.near)
+                    } else {
+                        walks_to(blocks, goal.at, start.at, start.near)
+                    };
+                if walked {
+                    reached[next] = true;
+                    break;
+                }
+            }
+        }
+    }
+    let left = spots.iter().zip(reached).filter(|(spot, reached)| spot.piece && !reached);
+    left.map(|(spot, _)| format!("{}/{}", spot.space, spot.name)).collect()
+}
+
+#[test]
+fn every_piece_is_reached_on_foot_from_the_descent_and_the_court_from_each() {
+    let plan = drowned_vale();
+    let mut standing = plan.standing();
+    standing.extend(plan.slabs.iter().filter_map(|slab| plan.slab_block(slab)));
+    let blocks: Blocks = standing.clone().into();
+    let walked = ["descent", "mending", "choir", "ways", "stair", "hall", "court"];
+    let mut all: Vec<Spot> = walked.iter().flat_map(|space| spots(plan, &standing, space)).collect();
+    let first = |all: &[Spot], name: &str| all.iter().position(|spot| format!("{}/{}", spot.space, spot.name) == name);
+    let arrival = first(&all, "descent/arrival").expect("its arrival");
+    all.swap(0, arrival);
+    assert_eq!(unreached(&blocks, &all, true), Vec::<String>::new(), "from the Descent's arrival");
+    let court = first(&all, "court/checkpoint").expect("its stage");
+    all.swap(0, court);
+    assert_eq!(unreached(&blocks, &all, false), Vec::<String>::new(), "the court, from each");
+    for shore in plan.shores.values().flatten() {
+        let mut all = spots(plan, &standing, shore);
+        let arrival = first(&all, &format!("{shore}/arrival")).expect("its arrival");
+        all.swap(0, arrival);
+        assert_eq!(unreached(&blocks, &all, true), Vec::<String>::new(), "{shore}, from its arrival");
+        let rift = first(&all, &format!("{shore}/rift")).expect("its rift");
+        all.swap(0, rift);
+        assert_eq!(unreached(&blocks, &all, false), Vec::<String>::new(), "{shore}'s rift, from each");
     }
 }
