@@ -69,7 +69,11 @@ const roster = (more: Partial<Roster> = {}): Roster => ({
     tag: 'SALT',
     motto: '',
     rank: 'Founder',
-    members: [member('Ada', 'Founder', 'Overlook'), member('Ben', 'Admin', null), member('Cal', 'Member', null)],
+    members: [
+      member('Ada', 'Founder', 'node-overlook-social'),
+      member('Ben', 'Admin', null),
+      member('Cal', 'Member', null),
+    ],
     invited: [],
   },
   guildInvites: [],
@@ -113,7 +117,7 @@ test("the Guild tab stands the guild as Destiny 2's clan screen: its name, membe
     shows().includes('GUILD LEVEL | 5,000 / 25,000 XP | 2'),
     'the XP toward the next level, the level in its diamond',
   );
-  assert.ok(shows().includes('GUILD ROSTER | Page 1 / 1 | Ada | Founder · Overlook'), 'those playing first');
+  assert.ok(shows().includes('ROSTER | 3 | 1/1 | Ada | Founder · Overlook'), 'those playing first, where in words');
 });
 
 test('the banner press opens the editor, a choice changes the banner, and keeping it sends it to the guild', async () => {
@@ -145,8 +149,11 @@ test('a member sees the editor but has no press to keep a banner', async () => {
 });
 
 test('an admin sets the motto and description and invites a player by name from the details', async () => {
-  const { click, type, asked } = await tab(face({ rank: 1 }));
+  const { click, type, ui, asked } = await tab(face({ rank: 1 }));
   click(edgeId('details'));
+  // The motto's field starts from the motto the guild has; it is cleared to write another.
+  assert.equal(ui.fieldText(FIELDS.motto[0]), 'No tithe, no master.');
+  ui.setFieldText(FIELDS.motto[0], '');
   type(FIELDS.motto[0], 'Fair winds');
   click(sendId('motto'));
   await settle();
@@ -233,7 +240,7 @@ test('a member who joined this week sees no claim press, but when claims open to
 test('the home names the part over the bounties and outposts for what it holds, and says it waits with an ellipsis', async () => {
   const { shows } = await tab(face());
   assert.ok(!shows().includes('GUILD DETAILS'), 'Details is its own page');
-  assert.ok(shows().includes('BOUNTIES AND OUTPOSTS'), shows());
+  assert.ok(shows().includes('BOUNTIES') && shows().includes('OUTPOSTS'), shows());
   const { link } = fakeLink(face());
   const waiting = new GuildPage({ link, now: () => 0 });
   const drawing = drawn((context) => guildPage(context, waiting));

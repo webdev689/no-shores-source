@@ -1,12 +1,14 @@
 // The guild pages' own parts, drawn by the game as Destiny 2's clan screen stands them: the banner hung on its staff,
 // the guild's level as a diamond on a rule with its XP, a meter, a checked line of a list, and the small presses down
-// the page's edge, each a pixel picture in the kit's brass.
+// the page's edge, each a pixel picture in the kit's brass; and the Journal's heads, panels and page arrows, with a
+// column that says when more of it lies below.
 
 import { type Pixels, svgOf } from '../../plus/emblems.ts';
 import { TONES } from '../../plus/tones.ts';
 import type { Child, Node } from '../../ui/node.ts';
+import type { Interface } from '../../ui/ui.ts';
 import { INK, words } from '../gearNodes.ts';
-import { pixelNode } from '../journalIcons.ts';
+import { iconNode as journalIcon, pixelNode } from '../journalIcons.ts';
 import {
   CLOTH_HEIGHT,
   CLOTH_WIDTH,
@@ -206,4 +208,87 @@ export const ICONS: Readonly<Record<'banner' | 'details' | 'outposts' | 'treasur
 /** One of the edge's icons, `size` pixels square. */
 export function iconNode(icon: keyof typeof ICONS, size: number): Node {
   return pixelNode(`guild icon ${icon}`, svgOf(ICONS[icon]), [12, 12], size);
+}
+
+/** A part's head as the Journal heads its quests and bounties: its name in large capitals spaced wide, a count in its
+ *  chip, and anything beside it at the right. */
+export function headNode(said: string, count: string | null = null, beside: Child = null): Node {
+  return {
+    width: 'grow',
+    gap: 10,
+    alignY: 'center',
+    children: [
+      words(said.toUpperCase(), 2, INK.word, { tracking: 3, ellipsis: true }),
+      count !== null && { role: 'chip', padding: [1, 8], children: [words(count)] },
+      { width: 'grow' },
+      beside,
+    ],
+  };
+}
+
+/** A part framed as the Journal frames its bounties: the kit's panel with 10 by 12 px of room round what it holds. */
+export const panelNode = (children: readonly Child[], more: Partial<Node> = {}): Node => ({
+  role: 'panel',
+  width: 'grow',
+  direction: 'column',
+  gap: 8,
+  padding: [10, 12],
+  ...more,
+  children,
+});
+
+/** Page arrows as the Journal's: brass back and next, greyed at either end, with the page between them; `said`
+ *  names what they turn for a screen reader. */
+export function arrowsNode(ids: readonly [string, string], page: number, pages: number, said: string): Node {
+  const arrow = (id: string, icon: 'back' | 'next', none: boolean, way: string): Node => ({
+    id,
+    press: true,
+    disabled: none,
+    role: 'button',
+    label: `${said}: ${way}`,
+    width: 33,
+    height: 33,
+    alignX: 'center',
+    alignY: 'center',
+    children: [{ ...journalIcon(icon, 24), opacity: none ? 0.4 : 1 }],
+  });
+  return {
+    gap: 8,
+    alignY: 'center',
+    children: [
+      arrow(ids[0], 'back', page === 0, 'the page before'),
+      words(`${page + 1}/${pages}`, 1, INK.faint),
+      arrow(ids[1], 'next', page >= pages - 1, 'the next page'),
+    ],
+  };
+}
+
+/** A column `height` pixels tall whose parts scroll inside it, with a chip at its foot while more of it lies below,
+ *  read from where its last line was laid the frame before (the interface draws no scroll bar). */
+export function scrollNode(ui: Interface, id: string, height: number, children: readonly Child[]): Node {
+  const box = ui.boxOf(id);
+  const end = ui.boxOf(`${id}-end`);
+  const below = box !== null && end !== null && end.y > box.y + box.height + 1;
+  return {
+    width: 'grow',
+    height,
+    direction: 'column',
+    gap: 4,
+    children: [
+      {
+        id,
+        width: 'grow',
+        height: 'grow',
+        direction: 'column',
+        gap: 10,
+        scroll: true,
+        children: [...children, { id: `${id}-end`, width: 'grow', height: 1 }],
+      },
+      below && {
+        width: 'grow',
+        alignX: 'center',
+        children: [{ role: 'chip', padding: [2, 10], children: [words('More below: scroll', 1, INK.word)] }],
+      },
+    ],
+  };
 }

@@ -86,16 +86,22 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   at the left at whole multiples of its cells; the name and tag, its members, its motto and description; the week
   with when it turns; the level as a diamond on a rule filled toward the next, with the XP, and the player's weekly
   contribution under it, its square filled at the week's most; the week's bounties as a checklist with the guild's
-  counts and a Claim on each one done; the
-  roster at the right, those playing first, with page arrows; and four presses down the edge: Banner, Details,
-  Outposts and Treasury, the last two opening the guild's outposts and its treasury ([[Outposts]]). The page asks the accounts for the guild (`GET /v1/guild`), the Roster and the outposts on
-  opening an outpost's page and again every 15 s while any of its pages is seen; a failed read offers Try again. At
-  sea a done bounty offers no claim, since no room there answers one. Escape steps back to its home from any of its other pages.
+  counts and a Claim on each one done, a "together" bounty's brass explained under them; the roster at the right,
+  those playing first, where each plays in words, with page arrows, and the outposts under it; and four named presses
+  down the edge (under the roster in a narrow room): Banner, Details, Outposts and Treasury, the last two opening the
+  guild's outposts and its treasury ([[Outposts]]). Its parts stand in the Journal's panels under its heads, every
+  word at the menu's label step; where the room is short the middle scrolls, a chip saying more lies below. The page
+  asks the accounts for the guild (`GET /v1/guild`), the Roster and the outposts on opening an outpost's page and
+  again every 15 s while any of its pages is seen; a failed read offers Try again. At sea a done bounty offers no
+  claim, since no room there answers one. Escape steps back to its home from any of its other pages.
 - **The banner editor**, after Destiny 2's: the banner on its staff as it will hang; the nine parts, each naming its
-  choice; and the chosen part's choices, each drawn as the banner would look with it, at twice its cells. A choice the
-  law refuses with the rest stands greyed, saying why; a staff not yet earned names the level that opens it. "Draw
-  another" draws a banner afresh. Only the founder and admins keep one; a member sees the editor without the press.
-- **Details**: the founder and admins set the motto and description and invite a player by name; a member reads them.
+  choice; and the chosen part's choices, each drawn as the banner would look with it, at twice its cells where all of
+  them fit the room and at their own where not, with Keep, Draw and Back in the head's line. A line under the head
+  names the choice under the pointer or the focus; one the law refuses with the rest stands dimmed, still takes the
+  focus, and says why there; a staff not yet earned names the level that opens it. "Draw another" draws a banner
+  afresh. Only the founder and admins keep one; a member sees the editor without the press.
+- **Details**, beside the banner: the founder and admins set the motto and description from what they are (the
+  description read whole under its one-line field, with its count) and invite a player by name; a member reads them.
   Anyone may hold to leave.
 - **At an outpost site** a member joins their guild's room for it, named by the guild's key that `GET /v1/guild`
   gives, read afresh on arriving; a player in no guild joins the wild site, and one who goes to a companion joins the
@@ -108,8 +114,8 @@ ranks are the Roster's as well ([[Accounts]], "The Roster").
   the founder and admins alone take up a piece of decoration, E held through. A
   bare site stands the Banner Standard's oak staff alone at the plot's middle, saying the outpost is raised from the
   Guild tab.
-- **In no guild**, the tab founds one: its name, its tag and the banner made for it before it exists, with the
-  invites waiting, each joined or declined.
+- **In no guild**, the tab founds one: its name, its tag and the banner made for it before it exists, "Found the
+  guild" greyed with its reason until both are written, with the invites waiting, each joined or declined.
 
 ## An outpost's room
 

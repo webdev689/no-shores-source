@@ -115,7 +115,7 @@ function onGround(ground: string, x: number, y: number): boolean {
 
 /** The sign's cells on the cloth: 1 its colour, 2 its lighter shade, by cell index; centred on the sign's middle. */
 function signOnCloth(sign: string): Map<number, 1 | 2> {
-  const rows = signRows(sign);
+  const rows = REDRAWN[sign] ?? signRows(sign);
   const filled = rows.flatMap((row, y) => [...row].flatMap((char, x) => (char === '.' ? [] : [[x, y, char] as const])));
   const cells = new Map<number, 1 | 2>();
   if (filled.length === 0) return cells;
@@ -126,6 +126,20 @@ function signOnCloth(sign: string): Map<number, 1 | 2> {
   for (const [x, y, char] of filled) cells.set((y + offsetY) * CLOTH_WIDTH + x + offsetX, char === '+' ? 2 : 1);
   return cells;
 }
+
+/** Signs a banner draws its own way: the emblems' spyglass slants as their oar does, so on a banner it lies level,
+ *  its three draws stepping out to its glass. */
+const REDRAWN: Readonly<Record<string, readonly string[]>> = {
+  spyglass: [
+    '...........#####',
+    '......######+++#',
+    '#######+++++#++#',
+    '#+++++#+++++#++#',
+    '#######+++++#++#',
+    '......######+++#',
+    '...........#####',
+  ],
+};
 
 /** A colour's lighter shade, for a sign's `+` cells: lighter, or darker where it is already near white. */
 function lit(colour: Rgb): Rgb {
