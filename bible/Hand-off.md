@@ -196,14 +196,18 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
   ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
   [[The Bounty Board as Claude Shapes It]]). Each faction posts three of its own four bounties a day, taken only by
-  those pledged to it, counting only with its cape worn, paying XP and its reputation (2,500, 3,750, 5,000 by tier);
-  the wire carries each bounty's place and faction, so the merge deploys the page and the rooms together. The board is
-  laid as a keeper's screen, the board drawn where a keeper stands; every town bounty wears one writ, every faction's
-  its emblem, 52 px tiles (were 80), the card floating beside the tile pointed at; the Journal's column takes the same.
-  Tested offline: the full check on the PR's head (the commit named there), the rules', wire's and page's tests, and
-  pictures through the real renderer at three sizes. Not yet: the board in the live game (the picture driver reaches
-  no local room and the offline page keeps no gear), a real GPU, a hand. For the owner: the faction bounties' design,
-  and whether a card gains a line of tale ([[Open Questions]]).
+  those pledged to it, counting only with its cape worn, paying XP and its reputation (2,500, 3,750, 5,000 by tier),
+  kept in the day's record under keys of their own so a rollback of the rooms keeps them; the wire carries each
+  bounty's place and faction, so the merge deploys the page and the rooms together. The board is laid as a keeper's
+  screen, the board drawn where a keeper stands; every town bounty wears one writ, every faction's its emblem, 52 px
+  tiles (were 80), the card floating beside the tile pointed at, the refresh under the tiles; the Journal's column
+  takes the same. Then, on the owner's "Do a comprehensive audit on this", main (#179's guilds, #191) merged in and
+  five read-only audits, every finding measured first and fixed (the PR lists them). Tested offline: the full check
+  on the PR's head (the commit named there), the rules', wire's, room's and page's tests, pictures through the real
+  renderer at five sizes. Not yet: the board in the live game (the picture driver reaches no local room and the
+  offline page keeps no gear), a real GPU, a hand. Known: no card shows by touch, as none in the menu does. For the
+  owner ([[Open Questions]]): the faction bounties' design, one icon for every faction's bounties or each faction's
+  emblem as built, and whether a card gains a line of tale.
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
