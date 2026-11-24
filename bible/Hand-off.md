@@ -196,7 +196,7 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The key strip, the leave held and Settings in tabs** (#PRNUM, branch `ccr-cb6f70a9-3mm7g6`), for the owner's yes to
+- **The key strip, the leave held and Settings in tabs** (#181, branch `ccr-cb6f70a9-3mm7g6`), for the owner's yes to
   merge, which deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
   key strip a compact panel at the bottom right under the moment's name, 11 px to 1440p; the M menu gone, M or the
