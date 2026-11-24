@@ -1,5 +1,6 @@
 //! A Breach on the wire, as each snapshot carries it whole (`room::breach::seen::BreachSeen`): a few hundred bytes
-//! at most, in its run or at its gate, so none is left out while it stands still.
+//! at most, in its run or at its gate, so none is left out while it stands still. An empty list, like a field at its
+//! default, is left unwritten, as both readers take it for empty: an idle gate costs every zone player little.
 
 use crate::wire::overlook::wire as messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
@@ -21,21 +22,21 @@ pub(crate) fn breach_offset<'built>(
             )
         })
         .collect();
-    let inside = Some(builder.create_vector(&inside));
-    let phases = Some(builder.create_vector(&seen.phases));
-    let stone_at = Some(builder.create_vector(&seen.stone_at));
-    let marked = Some(builder.create_vector(&seen.marked));
-    let mark_ticks = Some(builder.create_vector(&seen.mark_ticks));
-    let raising = Some(builder.create_vector(&seen.raising));
-    let raised = Some(builder.create_vector(&seen.raised));
-    let counts = Some(builder.create_vector(&seen.counts));
-    let bells = Some(builder.create_vector(&seen.bells));
-    let bell_foes = Some(builder.create_vector(&seen.bell_foes));
-    let rifts = Some(builder.create_vector(&seen.rifts));
-    let rift_held = Some(builder.create_vector(&seen.rift_held));
-    let away = Some(builder.create_vector(&seen.away));
-    let open_to = Some(builder.create_vector(&seen.open_to));
-    let holders = Some(builder.create_vector(&seen.holders));
+    let inside = (!inside.is_empty()).then(|| builder.create_vector(&inside));
+    let phases = (!seen.phases.is_empty()).then(|| builder.create_vector(&seen.phases));
+    let stone_at = (seen.stone_at != [0.0; 3]).then(|| builder.create_vector(&seen.stone_at));
+    let marked = (!seen.marked.is_empty()).then(|| builder.create_vector(&seen.marked));
+    let mark_ticks = (!seen.mark_ticks.is_empty()).then(|| builder.create_vector(&seen.mark_ticks));
+    let raising = (!seen.raising.is_empty()).then(|| builder.create_vector(&seen.raising));
+    let raised = (!seen.raised.is_empty()).then(|| builder.create_vector(&seen.raised));
+    let counts = (!seen.counts.is_empty()).then(|| builder.create_vector(&seen.counts));
+    let bells = (!seen.bells.is_empty()).then(|| builder.create_vector(&seen.bells));
+    let bell_foes = (!seen.bell_foes.is_empty()).then(|| builder.create_vector(&seen.bell_foes));
+    let rifts = (!seen.rifts.is_empty()).then(|| builder.create_vector(&seen.rifts));
+    let rift_held = (!seen.rift_held.is_empty()).then(|| builder.create_vector(&seen.rift_held));
+    let away = (!seen.away.is_empty()).then(|| builder.create_vector(&seen.away));
+    let open_to = (!seen.open_to.is_empty()).then(|| builder.create_vector(&seen.open_to));
+    let holders = (!seen.holders.is_empty()).then(|| builder.create_vector(&seen.holders));
     let args = messages::BreachSeenArgs {
         gate: seen.gate,
         tier: seen.tier,
@@ -213,5 +214,19 @@ mod tests {
         let read = flatbuffers::root::<messages::Snapshot<'_>>(builder.finished_data()).expect("it reads");
         assert_eq!(breach_of(&read), Some(seen));
         assert!(room.breach_seen().is_some(), "a run carries its Breach");
+    }
+
+    #[test]
+    fn an_idle_gate_is_written_small_and_reads_back_whole() {
+        let idle = BreachSeen { gate: true, revives: -1, marked_desk: -1, away_shore: -1, ..BreachSeen::default() };
+        let mut builder = FlatBufferBuilder::new();
+        let breach = Some(breach_offset(&mut builder, &idle));
+        let snapshot =
+            messages::Snapshot::create(&mut builder, &messages::SnapshotArgs { breach, ..Default::default() });
+        builder.finish(snapshot, None);
+        let bytes = builder.finished_data();
+        assert!(bytes.len() <= 100, "{} bytes, the snapshot round it with them", bytes.len());
+        let read = flatbuffers::root::<messages::Snapshot<'_>>(bytes).expect("it reads");
+        assert_eq!(breach_of(&read), Some(idle));
     }
 }
