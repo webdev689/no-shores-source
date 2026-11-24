@@ -6,6 +6,7 @@ import type { SeenPlayer } from '../network/messages.ts';
 import { fighterView } from '../rules/fighters.ts';
 import { FIGHT_TICKS } from './fightMoves.ts';
 import type { Player } from './player.ts';
+import { CAMERA } from './playerCamera.ts';
 
 type Point = readonly [number, number, number];
 
@@ -49,7 +50,10 @@ export class FollowCamera {
     if (!followed) return player;
     const [x, y, z] = followed.at;
     const body = { ...player.body, x, y, z };
-    return { ...player, body, previous: body, blend: 1, view: { ...player.view, firstPerson: false } };
+    // From behind, as third person stands: a view in first person (its boom drawn in to nothing) stands back too.
+    const back = Math.max(player.view.distance, CAMERA.back);
+    const view = { ...player.view, firstPerson: false, distance: back, shown: Math.max(player.view.shown, back) };
+    return { ...player, body, previous: body, blend: 1, view };
   }
 }
 

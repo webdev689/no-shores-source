@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { FollowCamera, fallPlayed, followable, nextFollowed } from './followCamera.ts';
 import { FIGHT_TICKS } from './fightMoves.ts';
 import type { Player } from './player.ts';
+import { CAMERA } from './playerCamera.ts';
 
 const ada = { id: 4, at: [10, 0, 50] as const };
 const ben = { id: 9, at: [20, 5, 50] as const };
@@ -57,4 +58,13 @@ test("the camera leaves the player's body only once their own fall has played, b
   assert.equal(fallPlayed({ kind: 'dead', told: false }, undefined), false, 'over the edge, still tumbling');
   assert.equal(fallPlayed({ kind: 'dead', told: true }, undefined), true);
   assert.equal(fallPlayed(inside, { kind: 'idle' }), false, 'standing');
+});
+
+test('a first-person view, its boom drawn in to nothing, stands back behind the one followed', () => {
+  const camera = new FollowCamera();
+  camera.frame(true, [ada], false);
+  const near = { ...own, view: { firstPerson: true, distance: 0.5, shown: 0 } } as unknown as Player;
+  const seen = camera.viewed(near);
+  assert.equal(seen.view.firstPerson, false);
+  assert.ok(seen.view.shown >= CAMERA.back && seen.view.distance >= CAMERA.back, 'behind their head, not in it');
 });

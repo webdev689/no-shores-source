@@ -267,7 +267,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // is the tour's, never through the player's eyes.
     const hands =
       mapDraw ??
-      (walker.inFirstPerson && !told
+      (walker.inFirstPerson && !told && here.followable === null
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined);
     parts.isleFrame();
