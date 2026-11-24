@@ -1,5 +1,7 @@
 // Tickets: a button opens a private channel that only the member, the staff roles and the bot can see. Closing it
-// posts a transcript of its messages as a file in the transcript channel, then deletes the channel.
+// posts a transcript of its messages as a file in the transcript channel, then deletes the channel; a transcript
+// that cannot be posted keeps the ticket open, so no one's words are lost. A ticket channel deleted by hand closes
+// its ticket.
 
 import { fillSlots } from '../law/message.ts';
 import { type Settings, recordOf } from '../law/settings.ts';
@@ -18,6 +20,7 @@ import {
   privateReply,
   subcommandOf,
 } from '../kit.ts';
+import { UNKNOWN } from '../rest.ts';
 import type { ServerModule } from './module.ts';
 
 const BIT = Object.freeze({
@@ -52,16 +55,43 @@ export function ticketOverwrites(guildId: string, userId: string, staff: readonl
   ];
 }
 
+/** A ticket whose channel is gone is closed, by no one. */
+const closeGone = (context: BotContext, guildId: string, channelId: string) =>
+  context.database
+    .prepare('UPDATE tickets SET closed_at = ? WHERE guild_id = ? AND channel_id = ? AND closed_at = 0')
+    .bind(Math.floor(context.now() / 1000), guildId, channelId)
+    .run();
+
+/**
+ * Close the member's open tickets whose channel Discord no longer has: one deleted by hand where the bot did not hear
+ * it, as while the module is off. Answers whether it closed any.
+ */
+async function closeVanished(context: BotContext, guildId: string, userId: string): Promise<boolean> {
+  const open = await context.database
+    .prepare("SELECT channel_id FROM tickets WHERE guild_id = ? AND user_id = ? AND closed_at = 0 AND channel_id != ''")
+    .bind(guildId, userId)
+    .all<{ channel_id: string }>();
+  let closed = 0;
+  for (const ticket of open.results) {
+    const found = await context.rest.get(`/channels/${ticket.channel_id}`);
+    if (!found.ok && found.code === UNKNOWN.CHANNEL)
+      closed += (await closeGone(context, guildId, ticket.channel_id)).meta.changes;
+  }
+  return closed > 0;
+}
+
 async function openTicket(context: BotContext, guildId: string, member: Member, config: Settings): Promise<string> {
   const userId = String(member?.user?.id ?? '');
   // The count and the claim are one statement, so a double press opens one ticket, not two.
-  const row = await context.database
-    .prepare(
-      `INSERT INTO tickets (guild_id, channel_id, user_id, opened_at) SELECT ?, '', ?, ?
-       WHERE (SELECT COUNT(*) FROM tickets WHERE guild_id = ? AND user_id = ? AND closed_at = 0) < ? RETURNING id`,
-    )
-    .bind(guildId, userId, Math.floor(context.now() / 1000), guildId, userId, Number(config.maxOpen))
-    .first<{ id: number }>();
+  const claim = () =>
+    context.database
+      .prepare(
+        `INSERT INTO tickets (guild_id, channel_id, user_id, opened_at) SELECT ?, '', ?, ?
+         WHERE (SELECT COUNT(*) FROM tickets WHERE guild_id = ? AND user_id = ? AND closed_at = 0) < ? RETURNING id`,
+      )
+      .bind(guildId, userId, Math.floor(context.now() / 1000), guildId, userId, Number(config.maxOpen))
+      .first<{ id: number }>();
+  const row = (await claim()) ?? ((await closeVanished(context, guildId, userId)) ? await claim() : null);
   if (!row) return 'You have a ticket open already.';
   const botId = await botUserId(context.rest, String(context.vars.DISCORD_BOT_TOKEN ?? ''));
   const made = await context.rest.post(
@@ -90,15 +120,16 @@ async function openTicket(context: BotContext, guildId: string, member: Member, 
   return `Your ticket is open: <#${channelId}>`;
 }
 
-/** A ticket's messages, oldest first, as text. */
-export async function transcript(context: BotContext, channelId: string): Promise<string> {
+/** A ticket's messages, oldest first, as text; null when Discord would not give a page of them. */
+export async function transcript(context: BotContext, channelId: string): Promise<string | null> {
   const all: Settings[] = [];
   let before = '';
   while (all.length < TRANSCRIPT_MAX) {
     const page = await context.rest.get(`/channels/${channelId}/messages`, {
       query: { limit: 100, ...(before ? { before } : {}) },
     });
-    const list = page.ok && Array.isArray(page.json) ? page.json.map(recordOf) : [];
+    if (!page.ok) return null;
+    const list = Array.isArray(page.json) ? page.json.map(recordOf) : [];
     if (!list.length) break;
     all.push(...list);
     before = String(list[list.length - 1]?.id ?? '');
@@ -114,6 +145,36 @@ export async function transcript(context: BotContext, channelId: string): Promis
       return `[${String(message.timestamp)}] ${name}: ${String(message.content ?? '')}${files}`;
     })
     .join('\n');
+}
+
+/** Post a ticket's transcript in the transcript channel. Answers why it could not, or '' once it is posted. */
+async function postTranscript(
+  context: BotContext,
+  ticket: { readonly id: number; readonly user_id: string },
+  channelId: string,
+  closerId: string,
+  logChannel: string,
+): Promise<string> {
+  const text = await transcript(context, channelId);
+  if (text === null) return 'The bot could not read this ticket, so it stays open. Try again in a minute.';
+  const form = new FormData();
+  form.append(
+    'payload_json',
+    JSON.stringify({
+      embeds: [
+        embed({
+          title: `Ticket ${ticket.id} closed`,
+          description: `Opened by <@${ticket.user_id}>, closed by <@${closerId}>.`,
+        }),
+      ],
+      allowed_mentions: NO_PINGS,
+    }),
+  );
+  form.append('files[0]', new Blob([text], { type: 'text/plain' }), `ticket-${ticket.id}.txt`);
+  const posted = await context.rest.call('POST', `/channels/${logChannel}/messages`, { form });
+  return posted.ok
+    ? ''
+    : `The bot could not post the transcript in <#${logChannel}>, so the ticket stays open. It needs to send messages and attach files there.`;
 }
 
 async function closeTicket(
@@ -137,23 +198,15 @@ async function closeTicket(
     .bind(Math.floor(context.now() / 1000), userId, ticket.id)
     .run();
   if (claimed.meta.changes !== 1) return 'This ticket is closing already.';
-  if (config.logChannel) {
-    const form = new FormData();
-    form.append(
-      'payload_json',
-      JSON.stringify({
-        embeds: [
-          embed({
-            title: `Ticket ${ticket.id} closed`,
-            description: `Opened by <@${ticket.user_id}>, closed by <@${userId}>.`,
-          }),
-        ],
-        allowed_mentions: NO_PINGS,
-      }),
-    );
-    const text = await transcript(context, channelId);
-    form.append('files[0]', new Blob([text], { type: 'text/plain' }), `ticket-${ticket.id}.txt`);
-    await context.rest.call('POST', `/channels/${String(config.logChannel)}/messages`, { form });
+  const refused = config.logChannel
+    ? await postTranscript(context, ticket, channelId, userId, String(config.logChannel))
+    : '';
+  if (refused) {
+    await context.database
+      .prepare("UPDATE tickets SET closed_at = 0, closed_by = '' WHERE id = ?")
+      .bind(ticket.id)
+      .run();
+    return refused;
   }
   await context.rest.del(`/channels/${channelId}`, { reason: `Ticket ${ticket.id} closed` });
   return 'Closed.';
@@ -226,6 +279,11 @@ export const ticketsModule: ServerModule = {
   ],
   command: onCommand,
   component: onComponent,
+  events: {
+    async CHANNEL_DELETE(context, data) {
+      if (data.guild_id && data.id) await closeGone(context, String(data.guild_id), String(data.id));
+    },
+  },
   views: {
     async open(context, guildId) {
       const rows = await context.database

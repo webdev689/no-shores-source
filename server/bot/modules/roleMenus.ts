@@ -6,11 +6,10 @@ import { type Settings, recordOf } from '../law/settings.ts';
 import {
   BOT_PREFIX,
   type BotContext,
-  EPHEMERAL,
   type Interaction,
-  NO_PINGS,
-  REPLY,
+  type InteractionReply,
   botUserId,
+  deferred,
   embed,
   postTo,
   privateReply,
@@ -80,19 +79,13 @@ export function menuMessage(menu: Menu, roleNames: ReadonlyMap<string, string>, 
   return { embeds: [card], components: rows };
 }
 
+type How = 'press' | 'pick';
+
 /**
- * Change one member's roles within a menu: `chosen` the roles they want of it. A press toggles one role; a pick sets
- * the menu's roles to the list. Answers what changed.
+ * What one member's choice within a menu would change: `chosen` the roles they want of it. A press toggles one role;
+ * a pick sets the menu's roles to the list.
  */
-export async function applyChoice(
-  context: BotContext,
-  guildId: string,
-  userId: string,
-  has: readonly string[],
-  menu: Menu,
-  chosen: readonly string[],
-  how: 'press' | 'pick',
-) {
+export function planChoice(has: readonly string[], menu: Menu, chosen: readonly string[], how: How) {
   const offered = offeredOf(menu).map((option) => option.role);
   const valid = chosen.filter((role) => offered.includes(role));
   let give: string[] = [];
@@ -107,17 +100,56 @@ export async function applyChoice(
     give = valid.filter((role) => !has.includes(role));
     take = menu.mode === 'keep' ? [] : offered.filter((role) => has.includes(role) && !valid.includes(role));
   }
-  const reason = `Role menu ${menu.name}`;
-  for (const role of give)
-    await context.rest.put(`/guilds/${guildId}/members/${userId}/roles/${role}`, undefined, { reason });
-  for (const role of take) await context.rest.del(`/guilds/${guildId}/members/${userId}/roles/${role}`, { reason });
   return { give, take };
 }
 
-const changeWords = (change: { give: readonly string[]; take: readonly string[] }) => {
+/** What Discord did with a choice: the roles it gave and took, the ones it would not, and whether it was down. */
+export interface Change {
+  readonly given: readonly string[];
+  readonly taken: readonly string[];
+  readonly notGiven: readonly string[];
+  readonly notTaken: readonly string[];
+  readonly down: boolean;
+}
+
+/** Change one member's roles within a menu as `planChoice` says. Answers what Discord took of it. */
+export async function applyChoice(
+  context: BotContext,
+  guildId: string,
+  userId: string,
+  has: readonly string[],
+  menu: Menu,
+  chosen: readonly string[],
+  how: How,
+): Promise<Change> {
+  const { give, take } = planChoice(has, menu, chosen, how);
+  const reason = `Role menu ${menu.name}`;
+  const path = (role: string) => `/guilds/${guildId}/members/${userId}/roles/${role}`;
+  const change = { given: [] as string[], taken: [] as string[], notGiven: [] as string[], notTaken: [] as string[] };
+  let down = false;
+  for (const role of give) {
+    const done = await context.rest.put(path(role), undefined, { reason });
+    (done.ok ? change.given : change.notGiven).push(role);
+    down ||= !done.ok && done.down;
+  }
+  for (const role of take) {
+    const done = await context.rest.del(path(role), { reason });
+    (done.ok ? change.taken : change.notTaken).push(role);
+    down ||= !done.ok && done.down;
+  }
+  return { ...change, down };
+}
+
+const mentions = (roles: readonly string[]) => roles.map((role) => `<@&${role}>`).join(' ');
+
+const changeWords = (change: Change) => {
   const parts = [];
-  if (change.give.length) parts.push(`Given: ${change.give.map((role) => `<@&${role}>`).join(' ')}.`);
-  if (change.take.length) parts.push(`Taken: ${change.take.map((role) => `<@&${role}>`).join(' ')}.`);
+  if (change.given.length) parts.push(`Given: ${mentions(change.given)}.`);
+  if (change.taken.length) parts.push(`Taken: ${mentions(change.taken)}.`);
+  if (change.notGiven.length) parts.push(`Not given: ${mentions(change.notGiven)}.`);
+  if (change.notTaken.length) parts.push(`Not taken: ${mentions(change.notTaken)}.`);
+  if (change.notGiven.length || change.notTaken.length)
+    parts.push(change.down ? 'Try again in a minute.' : 'The bot needs Manage Roles, and its own role above those.');
   return parts.join(' ') || 'Nothing changed.';
 };
 
@@ -145,17 +177,28 @@ const events: ServerModule['events'] = {
   MESSAGE_REACTION_REMOVE: (context, data, config) => onReaction(context, data, config, false),
 };
 
-/** A button pressed or a list picked. */
-async function onComponent(context: BotContext, interaction: Interaction, words: readonly string[], config: Settings) {
+/**
+ * A button pressed or a list picked. Each role is one call to Discord, and a rate limit can hold one for seconds, so
+ * any change is answered later; a choice that changes nothing is answered at once.
+ */
+async function onComponent(
+  context: BotContext,
+  interaction: Interaction,
+  words: readonly string[],
+  config: Settings,
+): Promise<InteractionReply> {
   const menu = menusOf(config).find((candidate) => candidate.name === words[0]);
   if (!menu) return privateReply('This menu is no longer offered.');
   const guildId = String(interaction.guild_id);
   const userId = String(interaction.member?.user?.id ?? '');
   const has = (interaction.member?.roles ?? []).map(String);
-  const change = words[1]
-    ? await applyChoice(context, guildId, userId, has, menu, [words[1]], 'press')
-    : await applyChoice(context, guildId, userId, has, menu, (interaction.data?.values ?? []).map(String), 'pick');
-  return { type: REPLY.MESSAGE, data: { content: changeWords(change), flags: EPHEMERAL, allowed_mentions: NO_PINGS } };
+  const how: How = words[1] ? 'press' : 'pick';
+  const chosen = words[1] ? [words[1]] : (interaction.data?.values ?? []).map(String);
+  const plan = planChoice(has, menu, chosen, how);
+  if (!plan.give.length && !plan.take.length) return privateReply('Nothing changed.');
+  return deferred(context, interaction, async () => ({
+    content: changeWords(await applyChoice(context, guildId, userId, has, menu, chosen, how)),
+  }));
 }
 
 /** Post a menu, or edit the message it was posted as. */

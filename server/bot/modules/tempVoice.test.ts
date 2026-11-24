@@ -53,6 +53,23 @@ test('voice rooms: a room no one could be moved into goes at once, and one left 
   assert.deepEqual(bot.cache.inVoice(GUILD), [], 'and the cache holds no one who left meanwhile');
 });
 
+test("voice rooms: a room is named with the member's name as written, held to Discord's 100 characters", async () => {
+  const bot = await standEngagement({ tempvoice: { hub: HUB } }, [tempVoiceModule]);
+  const member = (nick: string) => ({ user: { id: TARGET, username: 'jl' }, nick, roles: [] });
+  await bot.send('VOICE_STATE_UPDATE', {
+    guild_id: GUILD,
+    user_id: TARGET,
+    channel_id: HUB,
+    member: member('Jean-Luc'),
+  });
+  assert.equal(bot.world.state.channels.get(roomNow(bot))?.name, "Jean-Luc's room");
+  await voice(bot, TARGET, roomNow(bot));
+  await voice(bot, TARGET, null);
+  const long = '_'.repeat(120);
+  await bot.send('VOICE_STATE_UPDATE', { guild_id: GUILD, user_id: TARGET, channel_id: HUB, member: member(long) });
+  assert.equal(bot.world.state.channels.get(roomNow(bot))?.name, long.slice(0, 100));
+});
+
 test('voice rooms: a room stays while anyone is still in it', async () => {
   const bot = await standEngagement({ tempvoice: { hub: HUB } }, [tempVoiceModule]);
   await voice(bot, TARGET, HUB);

@@ -1,5 +1,6 @@
 // Invites: which invite each new member used, found by comparing each invite's use count before and after the join.
-// The counts are kept in the Gateway object's cache and read again from Discord on a join.
+// The counts are kept in the Gateway object's cache and read again from Discord on a join. A join that the counts
+// cannot pin to one invite is credited to no one, never to a wrong one.
 
 import { recordOf } from '../law/settings.ts';
 import {
@@ -33,16 +34,34 @@ async function readInvites(context: BotContext, guildId: string): Promise<Invite
 async function refresh(context: BotContext, data: EventData): Promise<void> {
   const guildId = String(data.guild_id ?? data.id);
   const list = await readInvites(context, guildId);
-  if (list) context.cache?.putInvites(guildId, list);
+  if (list) context.cache?.putInvites(guildId, list, context.now());
+}
+
+/**
+ * The counts last read, where they can be trusted: read after the second the module's settings were last saved in.
+ * The module hears no join while it is off, so counts read before it was turned on again may have missed some.
+ */
+async function trustedCounts(context: BotContext, guildId: string) {
+  const held = context.cache?.invites(guildId);
+  const savedS = (await context.config(guildId, 'invites'))?.updatedAt ?? 0;
+  return held?.at && held.at >= (savedS + 1) * 1000 ? held.counts : null;
+}
+
+/** The invite whose count rose by one, or null where none did, two did, or one rose by more (two joins at once). */
+function usedInvite(before: ReadonlyMap<string, { readonly uses: number }>, now: readonly InviteCount[]) {
+  const rise = (invite: InviteCount) => invite.uses - (before.get(invite.code)?.uses ?? 0);
+  const risen = now.filter((invite) => rise(invite) > 0);
+  const only = risen.length === 1 ? risen[0] : undefined;
+  return only && rise(only) === 1 ? only : null;
 }
 
 const onJoin: EventHandler = async (context, data, config) => {
   const guildId = String(data.guild_id);
-  const before = context.cache?.invites(guildId) ?? new Map<string, { uses: number }>();
+  const before = await trustedCounts(context, guildId);
   const now = await readInvites(context, guildId);
   if (!now) return;
-  context.cache?.putInvites(guildId, now);
-  const used = now.find((invite) => invite.uses > (before.get(invite.code)?.uses ?? 0));
+  context.cache?.putInvites(guildId, now, context.now());
+  const used = before ? usedInvite(before, now) : null;
   if (!used) return;
   await context.database
     .prepare(

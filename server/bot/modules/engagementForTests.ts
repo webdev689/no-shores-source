@@ -54,6 +54,12 @@ export function fakeWorld() {
       return Response.json({ id, ...fields });
     }
     if (method === 'DELETE' && parts[0] === 'channels' && parts.length === 2) state.gone.push(parts[1] ?? '');
+    if (method === 'GET' && parts[0] === 'channels' && parts.length === 2) {
+      const held = state.channels.get(parts[1] ?? '');
+      return held && !state.gone.includes(String(held.id))
+        ? Response.json(held)
+        : Response.json({ code: 10003, message: 'Unknown Channel' }, { status: 404 });
+    }
     if (parts[0] === 'guilds' && parts[2] === 'members') {
       const userId = parts[3] ?? '';
       const roles = state.members.get(userId) ?? [];

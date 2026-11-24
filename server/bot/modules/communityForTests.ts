@@ -1,6 +1,6 @@
 // The community modules stood up for their tests: the core's Gateway side, with a fake Discord that remembers what the
-// bot did to it (posts by channel, edits, direct messages, reactions, members' roles) and can refuse a channel, lose a
-// post or go down for edits.
+// bot did to it (posts by channel, edits, direct messages, reactions, members' roles, answers to presses) and can
+// refuse a channel or a role, lose a post or go down for edits.
 
 import { GUILD, standGateway } from '../botForTests.ts';
 import type { BotContext, Interaction } from '../kit.ts';
@@ -26,6 +26,10 @@ export function rememberingDiscord() {
     closed: new Set<string>(),
     deleted: new Set<string>(),
     editsDown: false,
+    /** Roles the bot may not give or take, as for a role above its own. */
+    refusedRoles: new Set<string>(),
+    /** What a deferred answer to an interaction was changed to. */
+    answers: [] as Record<string, unknown>[],
   };
   let made = 0;
   const answer = (status: number, body: unknown) => Response.json(body, { status });
@@ -39,6 +43,10 @@ export function rememberingDiscord() {
     if (method === 'GET' && first === 'users' && second)
       return answer(200, { id: second, username: `user${second.slice(-2)}` });
     if (method === 'POST' && path === '/users/@me/channels') return answer(200, { id: DM_CHANNEL });
+    if (method === 'PATCH' && first === 'webhooks') {
+      world.answers.push(body);
+      return answer(200, body);
+    }
     if (first === 'channels' && second && third === 'messages') {
       if (method === 'POST' && !fourth) {
         if (world.closed.has(second)) return answer(403, { code: 50013, message: 'Missing Permissions' });
@@ -68,6 +76,7 @@ export function rememberingDiscord() {
           : answer(404, { code: 10007, message: 'Unknown Member' });
       const role = parts[5];
       if (fifth === 'roles' && role) {
+        if (world.refusedRoles.has(role)) return answer(403, { code: 50013, message: 'Missing Permissions' });
         const held = world.members.get(fourth) ?? { roles: [] };
         world.members.set(fourth, held);
         if (method === 'PUT' && !held.roles.includes(role)) held.roles.push(role);
@@ -80,7 +89,10 @@ export function rememberingDiscord() {
   return { world, fetch };
 }
 
-/** The core's Gateway side with these modules on, answering through a remembering Discord. */
+/**
+ * The core's Gateway side with these modules on, answering through a remembering Discord. `settle` runs every answer
+ * an interaction deferred.
+ */
 export async function standCommunity(
   settings: Readonly<Record<string, unknown>>,
   modules: readonly ServerModule[],
@@ -89,15 +101,18 @@ export async function standCommunity(
   const bot = await standGateway(settings, []);
   const discord = rememberingDiscord();
   const token = 'bot-token-for-tests';
+  const pending: Array<Promise<unknown>> = [];
   const context: BotContext = {
     ...bot.context,
     vars: { DISCORD_BOT_TOKEN: token, BOT_URL: 'https://bot.example.workers.dev', ...vars },
     rest: createRest({ token, fetch: discord.fetch, sleep: async () => {} }),
+    later: (work) => void pending.push(work),
   };
   bot.dispatcher.use(moduleHandlers(context, registryOf(modules)));
   const posts = (channel: string): Posted[] => discord.world.posts.get(channel) ?? [];
   const settingsOf = async (moduleId: string) => (await context.config(GUILD, moduleId))?.config ?? {};
-  return { ...bot, context, world: discord.world, posts, settingsOf };
+  const settle = () => Promise.all(pending.splice(0));
+  return { ...bot, context, world: discord.world, posts, settingsOf, settle };
 }
 
 /** An interaction from a member of the test server. */

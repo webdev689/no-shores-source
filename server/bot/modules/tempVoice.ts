@@ -2,7 +2,7 @@
 // and moves them into it. When the last member leaves, the room is deleted. Who sits where is the Gateway's cache.
 // A room no one could be moved into goes at once, and one left empty while the bot was away goes when it is back.
 
-import { escapeText, fillSlots } from '../law/message.ts';
+import { fillSlots } from '../law/message.ts';
 import { recordOf } from '../law/settings.ts';
 import type { BotContext } from '../kit.ts';
 import type { EventHandler, ServerModule } from './module.ts';
@@ -43,8 +43,9 @@ const onVoice: EventHandler = async (context, data, config) => {
   if (!config.hub || joined !== config.hub) return;
   const member = recordOf(data.member);
   const user = recordOf(member.user);
+  // a channel's name is shown as it is, never read as markdown, so the member's name goes in unescaped
   const name = fillSlots(config.name, {
-    name: escapeText(member.nick || user.global_name || user.username || 'Member'),
+    name: String(member.nick || user.global_name || user.username || 'Member'),
   }).slice(0, 100);
   const limit = Number(config.limit) || 0;
   const made = await context.rest.post(

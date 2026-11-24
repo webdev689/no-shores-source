@@ -50,6 +50,8 @@ export interface ListField extends FieldBase {
   readonly of: Field;
   readonly max: number;
   readonly default: readonly unknown[];
+  /** A field of each entry that no two entries may share: the name the module finds an entry by. */
+  readonly unique?: string;
 }
 export interface GroupField extends FieldBase {
   readonly type: 'group';
@@ -169,7 +171,9 @@ function checkField(field: Field, value: unknown, path: string, errors: FieldErr
       const most = Math.min(field.max, LIST_HARD_MAX);
       const items = lenient ? value.slice(0, most) : value;
       if (items.length > most) return bad(`At most ${most} entries.`);
-      return items.map((item, i) => checkField(field.of, item, `${path}[${i}]`, errors, lenient));
+      const checked = items.map((item, i) => checkField(field.of, item, `${path}[${i}]`, errors, lenient));
+      if (field.unique && !lenient) refuseTwins(field, field.unique, items, path, errors);
+      return checked;
     }
     case 'group':
       return checkGroup(field.fields, value, path, errors, lenient);
@@ -178,6 +182,22 @@ function checkField(field: Field, value: unknown, path: string, errors: FieldErr
     default:
       return bad('Unknown setting.');
   }
+}
+
+/**
+ * Refuse an entry whose `key` an entry before it already holds. Only a save is refused: a saved config that has two
+ * still loads, so nothing saved before is lost.
+ */
+function refuseTwins(field: ListField, key: string, items: readonly unknown[], path: string, errors: FieldError[]) {
+  const entry = field.of.label.toLowerCase();
+  const named = (field.of.type === 'group' ? field.of.fields[key]?.label : undefined) ?? key;
+  const seen = new Set<unknown>();
+  items.forEach((item, i) => {
+    const held = recordOf(item)[key];
+    if (seen.has(held))
+      errors.push({ path: `${path}[${i}].${key}`, message: `Another ${entry} has this ${named.toLowerCase()}.` });
+    seen.add(held);
+  });
 }
 
 /**

@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GUILD, MOD_ROLE, TARGET, TEXT_CHANNEL } from '../botForTests.ts';
+import { ROLEMENUS_SHAPE } from '../law/communityShape.ts';
 import { emojiOf } from '../law/message.ts';
+import { salvage, validate } from '../law/settings.ts';
 import { actorOf, interactionFrom, standCommunity } from './communityForTests.ts';
 import { type Menu, applyChoice, menuMessage, roleMenusModule } from './roleMenus.ts';
 
@@ -85,10 +87,48 @@ test('role menus: publishing posts, then edits; a reactions menu reacts and answ
   assert.deepEqual(bot.world.members.get(TARGET)?.roles, []);
   const press = interactionFrom(TARGET, { custom_id: `bot:rolemenus:colours:${ROLE_A}` }, { type: 3 });
   const pressed = await roleMenusModule.component?.(bot.context, press, ['colours', ROLE_A], config);
-  assert.equal(pressed?.data?.content, `Given: <@&${ROLE_A}>.`);
   assert.equal(pressed?.data?.flags, 64);
+  await bot.settle();
+  assert.equal(bot.world.answers.at(-1)?.content, `Given: <@&${ROLE_A}>.`);
   const gone = await roleMenusModule.component?.(bot.context, press, ['gone', ROLE_A], config);
   assert.equal(gone?.data?.content, 'This menu is no longer offered.');
+});
+
+test('role menus: a press is answered at once and told later, naming only what Discord did and what it refused', async () => {
+  const ROLE_HIGH = '900000000000000043';
+  const offered = [...MENU.options, { role: ROLE_HIGH, label: 'Gold', emoji: '' }];
+  const bot = await standCommunity({ rolemenus: { menus: [{ ...MENU, style: 'select', options: offered }] } }, [
+    roleMenusModule,
+  ]);
+  bot.world.members.set(TARGET, { roles: [] });
+  bot.world.refusedRoles.add(ROLE_HIGH);
+  const config = await bot.settingsOf('rolemenus');
+  const picked = (values: string[], roles: string[] = []) =>
+    interactionFrom(
+      TARGET,
+      { custom_id: 'bot:rolemenus:colours', values },
+      { type: 3, member: { user: { id: TARGET }, roles } },
+    );
+  const reply = await roleMenusModule.component?.(bot.context, picked([ROLE_A, ROLE_HIGH]), ['colours'], config);
+  assert.deepEqual([reply?.type, reply?.data?.flags], [5, 64], 'deferred, and private');
+  await bot.settle();
+  assert.equal(
+    bot.world.answers.at(-1)?.content,
+    `Given: <@&${ROLE_A}>. Not given: <@&${ROLE_HIGH}>. The bot needs Manage Roles, and its own role above those.`,
+  );
+  assert.deepEqual(bot.world.members.get(TARGET)?.roles, [ROLE_A]);
+  const same = await roleMenusModule.component?.(bot.context, picked([ROLE_A], [ROLE_A]), ['colours'], config);
+  assert.equal(same?.data?.content, 'Nothing changed.', 'nothing to ask Discord is answered at once');
+});
+
+test('role menus: two menus cannot be saved with one name, and a save that has them still loads', () => {
+  const twins = { menus: [MENU, { ...MENU, title: 'More colours' }] };
+  const checked = validate(ROLEMENUS_SHAPE.schema, twins);
+  assert.deepEqual(checked.ok ? [] : checked.errors, [
+    { path: 'menus[1].name', message: 'Another menu has this name.' },
+  ]);
+  assert.equal((salvage(ROLEMENUS_SHAPE.schema, twins).menus as unknown[]).length, 2);
+  assert.equal(validate(ROLEMENUS_SHAPE.schema, { menus: [MENU, { ...MENU, name: 'sizes' }] }).ok, true);
 });
 
 test('role menus: publishing refuses a menu with no channel, no roles, or a reaction with no emoji', async () => {
