@@ -1,5 +1,5 @@
 ---
-id: 214
+id: 215
 title: "uiShot draws only shots a module exports, so measuring a one-off menu state (a layout risk an audit estimated) means editing a tracked shots file and reverting it"
 status: open
 type: internal
