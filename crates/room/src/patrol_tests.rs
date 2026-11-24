@@ -3,7 +3,7 @@
 
 use super::*;
 use crate::asks::{GATHER_TICKS, NODE_REACH};
-use crate::patrol::RETURN_TICKS;
+use crate::patrol::RETURN_MINUTES;
 use gear::Difficulty;
 
 const SPAWN: [f64; 2] = [0.0, 0.0];
@@ -87,20 +87,55 @@ fn every_node_stands_for_everyone_and_one_gathered_is_spent_for_its_gatherer_alo
     assert_eq!(standing(&room, other), every, "still standing for another player");
     stand_by(&mut room, other, 4, 1.0);
     assert_eq!(hold(&mut room, other, 4, GATHER_TICKS + 1), 0, "who gathers it too");
-    // It returns for its gatherer nine minutes after they gathered it, and not before.
-    stand_by(&mut room, player, 4, 1.0);
-    let gathered_at = room.clock - 1 - (GATHER_TICKS + 1);
-    while room.clock < gathered_at + RETURN_TICKS - 1 {
-        room.tick();
-    }
-    assert_eq!(hold(&mut room, player, 4, 0), asks::OUT_OF_REACH, "spent a moment before it returns");
+    assert_eq!(hold(&mut room, other, 4, 0), asks::OUT_OF_REACH, "and it is spent for them in turn");
+}
+
+/// A minute of the world's clock, as a room is told it.
+const MINUTE: u64 = 29_000_000;
+
+/// Gathers the room's first node standing for `player`, at `MINUTE`; answers its number.
+fn gather_one(room: &mut Room, player: PlayerId) -> u8 {
+    room.set_minute(MINUTE);
+    let node = room.nodes_for(player).map(|(index, _)| index).next().expect("a node standing");
+    stand_by(room, player, node, 1.0);
+    assert_eq!(hold(room, player, node, GATHER_TICKS + 1), 0);
+    node
+}
+
+#[test]
+fn a_gathered_node_returns_for_its_gatherer_nine_minutes_on_by_the_worlds_clock() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    let node = gather_one(&mut room, player);
+    room.set_minute(MINUTE + 8);
+    room.tick();
+    assert!(spent(&room, player, node), "spent eight minutes on");
     room.players.get_mut(&player).expect("in").gear_changed = false;
+    room.set_minute(MINUTE + 9);
     room.tick();
-    room.tick();
-    assert!(standing(&room, player).contains(&4), "back for them");
+    assert!(room.nodes_for(player).any(|(index, _)| index == node), "back for them nine minutes on");
     assert!(room.player(player).expect("in").gear_changed, "and their page is told");
-    assert_eq!(hold(&mut room, player, 4, GATHER_TICKS + 1), 0, "gathered again");
-    assert_eq!(RETURN_TICKS, 60 * 540, "nine minutes");
+    assert_eq!(hold(&mut room, player, node, GATHER_TICKS + 1), 0, "gathered again");
+    assert_eq!(RETURN_MINUTES, 9);
+}
+
+#[test]
+fn a_gathered_node_returns_by_the_worlds_clock_while_the_room_stood_empty_and_still() {
+    let (mut room, player) = patrol(Difficulty::Normal);
+    room.own(player, "account-a");
+    let node = gather_one(&mut room, player);
+    // An empty room does not tick; its minute is told again as the next player comes.
+    room.leave(player);
+    room.set_minute(MINUTE + 8);
+    let back = room.join().expect("a room with space");
+    room.own(back, "account-a");
+    room.tick();
+    assert!(spent(&room, back, node), "eight minutes away, still spent");
+    room.leave(back);
+    room.set_minute(MINUTE + 20);
+    let again = room.join().expect("a room with space");
+    room.own(again, "account-a");
+    room.tick();
+    assert!(room.nodes_for(again).any(|(index, _)| index == node), "twenty minutes away, back for them");
 }
 
 #[test]
@@ -168,9 +203,8 @@ fn a_node_gathered_stays_spent_for_its_account_however_often_the_player_rejoins_
     assert!(spent(&room, other, node));
     // Once it has returned, a rejoin brings it back spent no more.
     room.leave(back);
-    for _ in 0..RETURN_TICKS {
-        room.tick();
-    }
+    room.set_minute(room.minute + RETURN_MINUTES);
+    room.tick();
     let again = room.join().expect("a room with space");
     room.own(again, "account-a");
     assert!(room.nodes_for(again).any(|(index, _)| index == node), "returned for the account");

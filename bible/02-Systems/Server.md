@@ -137,7 +137,8 @@ on Cloudflare.
   [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file
   (`resources`) and the room numbers in that order, as the page does; every one holds a node for everyone at once,
   and a node a player gathered is spent for them alone, standing for everyone else, until it returns for them nine
-  minutes after (`patrol::RETURN_TICKS`; [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Its three dungeons'
+  minutes of wall-clock time after, counted on the room's minute as the server tells it, so they pass while the room
+  stands empty and does not tick (`patrol::RETURN_MINUTES`; [[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Its three dungeons'
   entrances are laid out from the node's id, the same every time: inside the ring and 60 m inside its edge, 60 m from
   every spawn, 40 m from every resource place and 300 m from one another, on dry ground (above the sea, out of a river
   or a lake) whose height varies by 3 m at most across the 12 m round it, 8 m from every box a body would run into;

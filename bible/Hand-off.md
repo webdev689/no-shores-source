@@ -196,7 +196,7 @@ The decisions in [[Open Questions]] are not repeated here.
   its head with `main` (#178) merged in. The owner's answers are recorded in three decisions, Claude's calls in their
   tables. #185 (this branch): the Harbourmaster's stall in the Beacon Walk market and the harbour way sealed at its
   head; rain spares the trees' crowns, fewer and finer puddles, a slower sway; every patrol node standing, one gathered
-  spent for its gatherer alone for 9 minutes
+  spent for its gatherer alone for 9 minutes of wall-clock time
   ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). #187: other
   players' marks over their ships at sea, no fog on the sea map, the Bay given by the stranger, a rider's jump boosting
   the horse 1.5x for 4 s with 12 s to recharge, the burst's spray and the boost's dust, and 17 horse cues

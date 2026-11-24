@@ -35,7 +35,7 @@ a sealed gate at its head, like the hub's other sealed gates."
 
 | Call | Chosen | Why |
 |---|---|---|
-| When a gathered patrol node returns for its gatherer | Nine minutes after they gathered it (`patrol::RETURN_TICKS`), for them alone, across a rejoin | The rate a player had before: a node stood for them one turn in three, three minutes a turn |
+| When a gathered patrol node returns for its gatherer | Nine minutes of wall-clock time after they gathered it (`patrol::RETURN_MINUTES`, on the room's minute), for them alone, across a rejoin and while the room stands empty | The rate a player had before: a node stood for them one turn in three, three minutes a turn. The wall clock, as an empty room does not tick |
 | Where the harbour way's gate stands | Across the switchback's top landing at the Stair Yard's edge, in a stone wall 10 m high along that edge from the east sealed wall, the sealed gate module set in it as at the other two gates | The edge was open over the switchback's top leg as well as the landing, so a gate alone would leave a step round it |
 | Which bays of the market | The outer bays between the lamp posts, the Harbourmaster's on the east (the Stair Yard's side, toward the harbour), backs on the line of the base's face, counters to the walk | The inner bays hold the fish and fruit stalls; the outer ones were empty |
 | The chandlery | Stands in the market too, in the west outer bay opposite the Harbourmaster's | Its keeper is townsfolk life and has a mark on the held map; left past the gate it would be life no one sees |

@@ -8,9 +8,9 @@ use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, GATHER_TICKS};
 use crate::{PlayerId, ResourceNode, Room};
 use gear::Difficulty;
 
-/// How long a node a player gathered stays spent for them (nine minutes): the once in three turns of three minutes
-/// each that a node stood for a player when the nodes took turns.
-pub const RETURN_TICKS: u64 = 60 * 540;
+/// How many minutes of the world's clock (`Room::minute`) a node a player gathered stays spent for them. The world's
+/// clock, not the room's ticks, as an empty room does not tick.
+pub const RETURN_MINUTES: u64 = 9;
 
 impl Room {
     /// Makes this node's room a patrol: `resource`'s nodes where its layout stands them (`places`, each on its
@@ -42,14 +42,14 @@ impl Room {
         })
     }
 
-    /// Keeps a patrol going for a tick: each node a player gathered `RETURN_TICKS` ago returns for them, and they are
-    /// sent the nodes they may gather now.
+    /// Keeps a patrol going for a tick: each node a player gathered `RETURN_MINUTES` ago returns for them, and they
+    /// are sent the nodes they may gather now.
     pub(crate) fn keep_patrol(&mut self) {
         if !self.patrol {
             return;
         }
-        let clock = self.clock;
-        let returned = |&(_, at): &(u8, u64)| clock.saturating_sub(at) >= RETURN_TICKS;
+        let minute = self.minute;
+        let returned = |&(_, at): &(u8, u64)| minute.saturating_sub(at) >= RETURN_MINUTES;
         for found in self.players.values_mut() {
             if found.spent.iter().any(returned) {
                 found.spent.retain(|spent| !returned(spent));
@@ -86,13 +86,13 @@ impl Room {
             found.gathering = None;
             found.gear_changed = true;
             let Some(node) = self.resource_nodes.get(usize::from(gathering.node)).filter(|_| done) else { continue };
-            found.spent.push((gathering.node, self.clock));
+            found.spent.push((gathering.node, self.minute));
             // On a sea island the node stays spent for the character until the day turns, in any room of it.
             if let Some(seed) = isle {
                 found.character.activity.gather_on(day, seed, gathering.node);
             }
             if let Some(owner) = &found.owner {
-                self.gathered.entry(owner.clone()).or_default().push((gathering.node, self.clock));
+                self.gathered.entry(owner.clone()).or_default().push((gathering.node, self.minute));
             }
             let resource = node.resource;
             found.character.gather(usize::from(resource));

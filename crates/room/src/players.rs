@@ -176,8 +176,8 @@ pub struct Player {
     pub answer: u8,
     pub identified: u32,
     pub answered: u32,
-    /// The room's resource nodes they have gathered from, each with the tick it was gathered, spent for them: on a
-    /// patrol until it returns (`patrol::RETURN_TICKS`), on a sea island this landing.
+    /// The room's resource nodes they have gathered from, each with the minute it was gathered, spent for them: on a
+    /// patrol until it returns (`patrol::RETURN_MINUTES`), on a sea island this landing.
     pub spent: Vec<(u8, u64)>,
     /// The node they are gathering, E held, if they are, and whether their last input rode a horse.
     pub gathering: Option<crate::asks::Gathering>,
@@ -503,9 +503,9 @@ impl Room {
     }
 
     /// Notes the account that keeps a player's character: the nodes that account gathered in this room (in a patrol,
-    /// until each returns; on a sea island, this landing) are spent for them again, however often they rejoin, and they are told
-    /// they landed if the sea said that account did; the Arts' charge the room kept for it is theirs again; and in a
-    /// run that counts revives, the body it left with. A sea island's wrecks are kept on the character itself. False,
+    /// until each returns; on a sea island, this landing) are spent for them again, however often they rejoin, and
+    /// they are told they landed if the sea said that account did; the Arts' charge the room kept for it is theirs
+    /// again; and in a run that counts revives, the body it left with. A sea island's wrecks are kept on the character itself. False,
     /// noting nothing, for an account another player in the room already has: one account is one player in a room.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
         if self.players.iter().any(|(id, found)| *id != player && found.owner.as_deref() == Some(owner)) {

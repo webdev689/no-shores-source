@@ -190,8 +190,8 @@ pub struct Room {
     pub(crate) drops: Vec<Drop>,
     pub(crate) spells: spells::Spells,
     /// The difficulty its voyage set out at; whether it is a patrol, whose gathered nodes return (`patrol.rs`); and
-    /// the nodes each account's character gathered here, each with its tick (in a patrol, until it returns), kept past
-    /// a player's leaving.
+    /// the nodes each account's character gathered here, each with its minute (in a patrol, until it returns), kept
+    /// past a player's leaving.
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
     pub(crate) gathered: std::collections::BTreeMap<String, Vec<(u8, u64)>>,
