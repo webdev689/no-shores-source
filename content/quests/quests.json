@@ -109,7 +109,7 @@
         },
         {
           "id": "wear-them",
-          "task": "Wear them",
+          "task": "Put them on",
           "goals": [
             {
               "kind": "wear",

@@ -96,7 +96,7 @@ A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, 
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
 the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
-**Wear them**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
+**Put them on**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
 bought and worn during the round meet both as the last keeper is heard; a buy or wear goal names a weapon's or
 armour's slot and a count of 1; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
 [[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'
@@ -155,7 +155,7 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
-  mid-road says nothing it has said before.
+  mid-road says nothing it has said before. How they are written: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.

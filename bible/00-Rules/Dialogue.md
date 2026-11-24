@@ -23,4 +23,6 @@ dialouge is not overbearing, bloated, has em dashes, and develop a rule standard
 
 **Checked by.** The dialogue check, on every scene in `content/story/` (rules 1 to 4 and 6), and on the quests'
 (`content/quests/quests.json`: each scene they name is the story's, each speaker the cast's, and what they show on the
-screen holds no dash or ellipsis, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); review for the rest.
+screen holds no dash or ellipsis, [[The Audit's Leftovers Are Fixed as Claude Suggested]]; and no speaker says more than
+two lines in a row across a quest's seams, its `begin` into its first task's `start` and each task's `end` into the next
+task's `start`, [[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]); review for the rest.

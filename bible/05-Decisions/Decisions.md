@@ -278,6 +278,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Horses Are Items Worn in a Mount Slot]]
 - [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
 - [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]
+- [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]]
+- [[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]
 - [[The Game Is Named No Shores]]
 - [[A Mark Over What a Player Can Use Is Seen Through Walls]]
 - [[The Wreck's Arms Lie Farther Out, as a Loot Drop]]
