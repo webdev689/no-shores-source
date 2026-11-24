@@ -122,8 +122,9 @@ on Overlook's quay, and its one script (`site/src/panel/`) draws everything insi
 - **Sign-in.** "Sign in with Discord" goes to the bot's `/v1/auth/discord`, asking to come back to this page. Discord
   sends the person back through the bot with a one-use ticket in the address's hash. Only the tab that pressed Sign in
   trades it (a mark in that tab's own storage, ten minutes long), so a ticket in a link someone else sent signs no one
-  in. The session token is kept in the browser and sent as a bearer header; a sign-out the bot did not hear is told
-  again at the next load.
+  in; a browser that blocks that storage cannot sign in, and is told so. The session token is kept in the tab's own
+  storage, never the storage the site's pages share with the game under `/play/`, so each tab signs in for itself; it
+  is sent as a bearer header, and a sign-out the bot did not hear is told again at the next load.
 - **Pages by hash.** `#` lists the person's servers; `#g=<id>` a server's connection, audit log, pictures and its
   modules by group; `&m=<module>` a module's settings, acts and tables; `&audit` and `&pictures`; `#lb=<id>` a public
   leaderboard, once the levels module serves it. An answer that comes back after the person moved on draws nothing.
