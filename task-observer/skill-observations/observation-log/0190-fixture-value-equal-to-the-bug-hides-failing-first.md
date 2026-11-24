@@ -1,5 +1,5 @@
 ---
-id: 187
+id: 190
 title: "A failing-first test passed without its fix because the fixture's value equalled the bug's output; only reverting the fix alone showed it"
 status: open
 type: open-source

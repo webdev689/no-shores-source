@@ -1,5 +1,5 @@
 ---
-id: 186
+id: 189
 title: "Web research for a game's rules found the main wiki (destinypedia.com) and pcgamer.com unreachable at DNS from the cloud session; the Toolkit's list of sites to skip names neither, so the research agent spent fetches learning it"
 status: open
 type: open-source
