@@ -52,8 +52,12 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
   the manifest stands as its cells' box, so a structure always walls.
 - **The treasury.** A guild's Aurem, put in by members and earned by its outposts, spent only on outposts and never
   paid out (`treasury.ts`). Every move is a ledger line with the balance after, made in one write with whatever it
-  pays for: the line goes in only while the balance stays between nothing and 1,000,000, and each write after it holds
-  only while that line is this ask's, so an ask made twice moves once.
+  pays for: that write goes first and changes only while the asker keeps their rank, what it changes is as it was
+  read, and the balance stays between nothing and 1,000,000; the line and the balance follow only if it changed. A
+  refund or an emptied strongbox is what the row it changes held. A page may name its ask (`rid`, up to 64 of
+  `a-z0-9-`), so an ask sent twice moves once and is answered the same. A move of nothing writes no line, and a
+  guild's ledger keeps its newest 200 lines. Its words name what moved: `build <kind>` for one standing at once,
+  `begin <kind>` for a scaffold, `take down <kind or piece>`.
 - **Raising.** The founder or an admin standing in their guild's room at a site raises an outpost for 5,000 Aurem: its
   hall stands in the middle of the plot and its standard before it. A guild holds one outpost from level 1, two from
   level 4 and three from level 7, one a site.
@@ -64,7 +68,9 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
 - **What it earns.** A Counting House's strongbox fills each whole hour by its tier and holds two days; a member there
   empties it into the treasury. An Island Camp gathers the island's own resource and a Dockyard Timber, Canvas and
   Iron into the outpost's stores each whole day, three days at most; a member there takes up to 20 of each a day.
-  Neither is written until it is read or emptied.
+  Neither is written until it is read or emptied, or a structure that fills them stands, rises or is taken down: then
+  both are settled to that moment at the rates before it, so a new rate counts only from then. A strongbox the
+  treasury cannot hold whole gives what fits and keeps the rest.
 - **Boons.** The War Table, Captain's Lodge and Assay House give every member, wherever they play, 5, 10 or 15% more
   XP, reputation or Aurem from kills and clears: the highest tier of each standing at any of the guild's outposts. The
   accounts tell the rooms with the player's guild (`boonsOf`); the room gives them to the character each tick, never
@@ -82,7 +88,8 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
   reads it again. Putting Aurem in, delivering, taking from the stores and sounding the horn are asked of the room,
   which takes what is given at once and asks the accounts as an errand under an id of its own: asked again, the
   accounts answer as they did, so nothing is done or given back twice.
-- **The guild boss.** The War Horn, sounded once a week by the founder or an admin, calls a High Assessor and four
+- **The guild boss.** The War Horn, sounded once a week by the founder or an admin (the accounts answer its tier, 0
+  when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier), calls a High Assessor and four
   Majors to the muster ground beyond the plot, at the level of the highest member there, at Normal, Elite or Abyss by
   the horn's tier. Felled, each player who struck it is paid as a world boss's clear pays, and each member among them
   takes a guild package once that week.
@@ -96,9 +103,10 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
   It is entered from the guild's outpost alone, and leaving it, or its clear's way out, comes back before the gate.
 - **The models.** Each structure at each tier, the standard on each staff, and a scaffold for each footprint are
   modules built in Blender ([[Modules]], "The outposts' structures"); unturned, each faces south.
-- **Reading an outpost.** `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, and the
-  site they stand at; `GET /v1/outposts/<room>` gives anyone signed in the plot and banner a room stands, so a
-  member's company draws it too ([[Accounts]]).
+- **Reading an outpost.** `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, the
+  site they stand at, and what they took from the stores today (`taken`); `GET /v1/outposts/<room>` gives anyone
+  signed in the plot and banner a room stands, so a member's company draws it too ([[Accounts]]). A player stands at
+  an outpost only while its room holds their character. Outpost asks and plot reads are 600 an hour an account.
 
 ## Limits
 

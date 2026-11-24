@@ -28,7 +28,8 @@ const PASSWORD_LEAST = 8;
 const PASSWORD_MOST = 200;
 const MINUTE = 60_000;
 /** How many times one address may ask each of these within its window, and new guests be made from everywhere at
- *  once; one username be tried from one address, and from everywhere at once; and one account take a Discord ticket. */
+ *  once; one username be tried from one address, and from everywhere at once; one account take a Discord ticket; and
+ *  one account ask of outposts and read their plots. */
 const LIMITS = {
   guest: { most: 10, window: 60 * MINUTE },
   guests: { most: 500, window: 60 * MINUTE },
@@ -41,6 +42,7 @@ const LIMITS = {
   social: { most: 60, window: 60 * MINUTE },
   report: { most: 10, window: 24 * 60 * MINUTE },
   binds: { most: 120, window: 60 * MINUTE },
+  outpost: { most: 600, window: 60 * MINUTE },
 } as const;
 
 /** An account as its player sees it. */
@@ -126,6 +128,10 @@ async function social(request: Request, deps: Deps, route: string, now: number):
   if (account === LAPSED) return refused(401, LAPSED);
   if (!account) return refused(401, 'Not signed in.');
   if (account.username === null) return refused(409, 'Add a username in Settings to use the Roster.');
+  // Outpost asks and reads of a plot each write or read a plot's rows, so they are limited too.
+  const outpost = read?.startsWith('outposts/') || asked?.startsWith('outpost/');
+  if (outpost && !(await within(database, `outpost:${account.id}`, LIMITS.outpost, now)))
+    return refused(429, 'Too many asks. Wait a while.');
   if (read) {
     const answer = await socialRead(database, account.id, read, now);
     return json(answer.body, answer.status);

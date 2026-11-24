@@ -101,7 +101,42 @@ export function storesNow(plot: Plot, stores: Readonly<Partial<Record<Stuff, num
     const kept = stores[stuff] ?? 0;
     filled[stuff] = Math.min(Math.max(kept, rate * STORES_HOLD_DAYS), kept + days * rate);
   }
-  return { stores: filled, at: since + days * DAY_MS };
+  // Nothing filling keeps no part of a day, so a store that starts filling counts from then.
+  const filling = Object.values(rates).some((rate) => rate > 0);
+  return { stores: filled, at: filling ? since + days * DAY_MS : now };
+}
+
+/** Whether a structure of this kind fills the strongbox or the stores. */
+export const fills = (kind: string) => ['income', 'stores'].includes(kindOf(kind)?.effect.kind ?? '');
+
+/** The write that settles an outpost's strongbox and stores to now at the rates its plot gives before a change to a
+ *  structure that fills them, made in the same write as that change, so the new rate counts only from then; it holds
+ *  only while both are as read, and while `guards` (SQL after its own ten parameters) holds. Null for no outpost. */
+export async function settling(database: Db, guild: string, site: string, plot: Plot, now: number) {
+  const row = await database
+    .prepare('SELECT strongbox, strongbox_at, stores, stores_at FROM outposts WHERE guild_id = ?1 AND site = ?2')
+    .bind(guild, site)
+    .first<{ strongbox: number; strongbox_at: number; stores: string; stores_at: number }>();
+  if (!row) return null;
+  const box = settled(row.strongbox, row.strongbox_at, strongboxRate(plot), now);
+  const stores = storesNow(plot, JSON.parse(row.stores), row.stores_at, now);
+  return {
+    sql: (guards: string) =>
+      `UPDATE outposts SET strongbox = ?3, strongbox_at = ?4, stores = ?5, stores_at = ?6 WHERE guild_id = ?1
+       AND site = ?2 AND strongbox = ?7 AND strongbox_at = ?8 AND stores = ?9 AND stores_at = ?10 AND ${guards}`,
+    values: [
+      guild,
+      site,
+      box.amount,
+      box.at,
+      JSON.stringify(stores.stores),
+      stores.at,
+      row.strongbox,
+      row.strongbox_at,
+      row.stores,
+      row.stores_at,
+    ],
+  };
 }
 
 /** The guild and rank of an account, with the guild's id. */
@@ -139,7 +174,8 @@ function withAnswer(database: Db, rid: string | undefined, now: number, work: St
 export async function deposit(database: Db, account: string, amount: number, rid: string, now: number): Promise<Moved> {
   const member = await memberOf(database, account);
   if (!member || !Number.isInteger(amount) || amount <= 0) return 'refused';
-  return move(database, member.guild_id, { account, kind: 'deposit', amount, rid: `room:${rid}`, now });
+  const moved = await move(database, member.guild_id, { account, kind: 'deposit', amount, rid: `room:${rid}`, now });
+  return moved === 'stale' ? 'refused' : moved;
 }
 
 /** Delivers a member's materials to a structure being built at the outpost their room is: answers how many it used, the
@@ -171,11 +207,21 @@ export async function deliver(
   if (used === 0) return 0;
   const after = { ...delivered, [given.stuff]: (delivered[given.stuff] ?? 0) + used };
   const whole = (Object.entries(needs) as [Stuff, number][]).every(([stuff, needed]) => (after[stuff] ?? 0) >= needed);
+  const settle =
+    whole && fills(row.kind)
+      ? await settling(
+          database,
+          member.guild_id,
+          outpost.site,
+          await plotOf(database, member.guild_id, outpost.site),
+          now,
+        )
+      : null;
   const update = database
     .prepare(
       `UPDATE outpost_structures SET delivered = ?4, tier = CASE WHEN ?5 THEN building ELSE tier END,
        building = CASE WHEN ?5 THEN 0 ELSE building END WHERE guild_id = ?1 AND site = ?2 AND id = ?3 AND delivered = ?6
-       AND building = ?7`,
+       AND building = ?7${settle ? ' AND changes() = 1' : ''}`,
     )
     .bind(
       member.guild_id,
@@ -186,8 +232,9 @@ export async function deliver(
       row.delivered,
       row.building,
     );
-  const written = await database.batch(withAnswer(database, rid, now, [update], used));
-  return written[rid === undefined ? 0 : 1]?.meta.changes === 1 ? used : 0;
+  const work = settle ? [database.prepare(settle.sql('1')).bind(...settle.values), update] : [update];
+  const written = await database.batch(withAnswer(database, rid, now, work, used));
+  return written[work.length - (rid === undefined ? 1 : 0)]?.meta.changes === 1 ? used : 0;
 }
 
 /** Takes up to `amount` of a material from the stores of the outpost a member's room is, within what they may take a
@@ -227,6 +274,7 @@ export async function takeStores(
   if (give === 0) return 0;
   const after = JSON.stringify({ ...filled.stores, [stuff]: (filled.stores[stuff] ?? 0) - give });
   const work = [
+    database.prepare('DELETE FROM outpost_takes WHERE account_id = ?1 AND day < ?2').bind(account, day),
     database
       .prepare(
         'UPDATE outposts SET stores = ?3, stores_at = ?4 WHERE guild_id = ?1 AND site = ?2 AND stores = ?5 AND stores_at = ?6',
@@ -240,21 +288,23 @@ export async function takeStores(
       .bind(account, day, stuff, give),
   ];
   const written = await database.batch(withAnswer(database, rid, now, work, give));
-  return written[rid === undefined ? 0 : 1]?.meta.changes === 1 ? give : 0;
+  return written[work.length - (rid === undefined ? 1 : 0)]?.meta.changes === 1 ? give : 0;
 }
 
 /** Sounds the War Horn of the outpost a member's room is, once a guild a week, by its founder or an admin: answers its
- *  tier, or 0 when it may not sound. Asked again under the room's id for it, it answers as it did. */
+ *  tier (1 to 3) when it sounds, 0 when it has sounded this week, -1 when the asker is not the founder or an admin of
+ *  the outpost's guild, -2 when no horn stands there at a tier. Asked again under the room's id for it, it answers as
+ *  it did. */
 export async function soundHorn(database: Db, account: string, room: string, now: number, rid?: string) {
   const kept = await keptAnswer(database, rid);
   if (kept !== null) return kept;
   const outpost = outpostOf(room);
   const member = await memberOf(database, account);
-  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key || member.rank > 1) return 0;
+  if (!outpost || !member || guildKey(member.guild_id) !== outpost.key || member.rank > 1) return -1;
   const horn = (await plotOf(database, member.guild_id, outpost.site)).structures.find(
     (standing) => standing.kind === 'horn',
   );
-  if (!horn || horn.tier < 1) return 0;
+  if (!horn || horn.tier < 1) return -2;
   const week = weekOf(now);
   const sound = database
     .prepare('UPDATE guilds SET horn_week = ?2 WHERE id = ?1 AND horn_week <> ?2')
@@ -267,9 +317,12 @@ export async function soundHorn(database: Db, account: string, room: string, now
 export async function outpostFor(database: Db, room: string) {
   const outpost = outpostOf(room);
   if (!outpost) return null;
+  const key = outpost.key;
+  // A guild's id is a UUID: its key is its digits, so the id is found again by its primary key.
+  const id = `${key.slice(0, 8)}-${key.slice(8, 12)}-${key.slice(12, 16)}-${key.slice(16, 20)}-${key.slice(20)}`;
   const guild = await database
-    .prepare("SELECT id, name, banner FROM guilds WHERE lower(replace(id, '-', '')) = ?1")
-    .bind(outpost.key)
+    .prepare('SELECT id, name, banner FROM guilds WHERE id = ?1')
+    .bind(id)
     .first<{ id: string; name: string; banner: string }>();
   if (!guild) return null;
   const plot = await plotOf(database, guild.id, outpost.site);
@@ -312,12 +365,17 @@ export async function outpostsRead(database: Db, account: string, guild: string,
       here: holder?.holder?.startsWith(`${room}:`) ?? false,
     });
   }
+  const { results: takes } = await database
+    .prepare('SELECT stuff, taken FROM outpost_takes WHERE account_id = ?1 AND day = ?2')
+    .bind(account, Math.floor(now / DAY_MS))
+    .all<{ stuff: Stuff; taken: number }>();
   // The site whose guild room holds the player's character, raised there or not: where they may raise one.
   const standing = outpostOf(holder?.holder?.split(':')[0] ?? '');
   return {
     treasury,
     ledger,
     allowed,
+    taken: Object.fromEntries(takes.map((take) => [take.stuff, take.taken])) as Partial<Record<Stuff, number>>,
     at: standing && standing.key === guildKey(guild) ? standing.site : null,
     outposts,
   };

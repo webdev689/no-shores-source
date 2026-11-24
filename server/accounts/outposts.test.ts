@@ -51,7 +51,7 @@ test('an outpost is raised at its site by the founder or an admin for its Aurem,
   assert.equal((await read('Ada'))['at'], null);
   await standAt('Ada');
   assert.equal((await read('Ada'))['at'], SITE, 'standing at a site the guild has not raised');
-  assert.equal((await raise()).body['error'], 'Raising an outpost takes 5,000 Aurem from the treasury.');
+  assert.equal((await raise()).body['error'], 'The treasury lacks the 5,000 Aurem raising an outpost takes.');
   await fund(7_000);
   assert.equal((await raise()).status, 200);
   assert.equal((await guild()).treasury, 7_000 - RAISE_AUREM);
@@ -153,10 +153,12 @@ test('the strongbox fills by the hour to two days and is emptied into the treasu
   assert.equal((await ask('Ben', 'outpost/collect', { site: SITE })).body['error'], 'Go to that outpost to do that.');
   await standAt('Ben');
   clock.now += 5.5 * HOUR;
+  await standAt('Ben');
   const before = (await guild()).treasury;
   assert.equal((await ask('Ben', 'outpost/collect', { site: SITE })).status, 200);
   assert.equal((await guild()).treasury, before + 5 * 30, 'five whole hours at tier 1');
   clock.now += 100 * HOUR;
+  await standAt('Ben');
   await ask('Ben', 'outpost/collect', { site: SITE });
   assert.equal((await guild()).treasury, before + 5 * 30 + 48 * 30, 'two days at most');
 });
@@ -179,7 +181,8 @@ test('a member takes from the stores within what a day allows, and the horn soun
   assert.equal(await kept.takeStores(ada, room, 'island', 25), 20, "a day's most");
   assert.equal(await kept.takeStores(ada, room, 'island', 5), 0, 'none more that day');
   assert.equal(await kept.takeStores(await accountOf('Ben'), room, 'island', 25), 10, 'the rest of two days');
-  assert.equal(await kept.soundHorn(ada, room), 0, 'no horn built');
+  assert.equal(await kept.soundHorn(ada, room), -2, 'no horn built');
+  assert.equal(await kept.soundHorn(await accountOf('Ben'), room), -1, 'a member may not sound it');
 });
 
 test('the founder abandons an outpost from anywhere for half of all spent on it', async () => {
@@ -241,4 +244,142 @@ test('a delivery, a take and the horn asked again under the same id answer as th
   assert.equal(await kept.takeStores(ada, room, 'island', 12, 'errand-4'), 12);
   assert.equal(await kept.takeStores(ada, room, 'island', 12, 'errand-4'), 12, 'the same answer');
   assert.equal(await kept.takeStores(ada, room, 'island', 20, 'errand-5'), 8, "the day's most counts the first once");
+});
+
+test('a strongbox fills only from when its Counting House stands, and a new tier pays only from then', async () => {
+  const { ask, standAt, fund, guild, kept, accountOf, clock, raiseXp, read, deps } = await world();
+  await raiseXp(40_000);
+  await standAt('Ada');
+  await fund(100_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await deps.database.prepare("UPDATE outpost_structures SET tier = 2 WHERE kind = 'hall'").run();
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'counting', x: 0, y: 0, turn: 0 });
+  clock.now += 40 * HOUR;
+  const room = outpostRoom(SITE, (await guild()).id);
+  const ada = await accountOf('Ada');
+  await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 40 });
+  await kept.deliver(ada, room, { id: 3, stuff: 'iron', amount: 20 });
+  const box = async () => ((await read('Ada'))['outposts'] as { strongbox: number }[])[0]?.strongbox;
+  assert.equal(await box(), 0, 'nothing for the hours before it stood');
+  clock.now += 10 * HOUR;
+  assert.equal(await box(), 10 * 30);
+  await standAt('Ada');
+  const rose = await ask('Ada', 'outpost/rise', { site: SITE, id: 3 });
+  assert.equal(rose.status, 200);
+  const before = (await guild()).treasury;
+  await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 200 });
+  await kept.deliver(ada, room, { id: 3, stuff: 'iron', amount: 200 });
+  await kept.deliver(ada, room, { id: 3, stuff: 'island', amount: 200 });
+  clock.now += 2 * HOUR;
+  await standAt('Ada');
+  assert.equal((await ask('Ada', 'outpost/collect', { site: SITE })).status, 200);
+  const tier = (
+    (await read('Ada'))['outposts'] as { plot: { structures: { id: number; tier: number }[] } }[]
+  )[0]?.plot.structures.find((each) => each.id === 3)?.tier;
+  assert.equal(tier, 2, 'it stands at tier 2');
+  assert.equal((await guild()).treasury - before, 10 * 30 + 2 * 60, 'ten hours at tier 1, then two at tier 2');
+});
+
+test('an ask the page names and sends twice pays and places once, and answers the same', async () => {
+  const { ask, standAt, fund, guild, deps } = await world();
+  await standAt('Ada');
+  await fund(20_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  const decorate = () =>
+    ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 3, turn: 0, rid: 'well-1' });
+  const before = (await guild()).treasury;
+  assert.equal((await decorate()).status, 200);
+  const after = (await guild()).treasury;
+  assert.equal((await decorate()).status, 200, 'the same answer');
+  assert.equal((await guild()).treasury, after);
+  assert.ok(after < before);
+  const pieces = await deps.database.prepare('SELECT COUNT(*) AS count FROM outpost_decor').first<{ count: number }>();
+  assert.equal(pieces?.count, 1);
+  const bad = await ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 30, turn: 0, rid: 'NO!' });
+  assert.equal(bad.status, 400);
+});
+
+test('the ledger names what was built, begun and taken down, writes nothing for nothing, and keeps its newest', async () => {
+  const { ask, standAt, fund, guild, deps } = await world();
+  await standAt('Ada');
+  await fund(20_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'counting', x: 0, y: 0, turn: 0 });
+  await ask('Ada', 'outpost/remove', { site: SITE, id: 3 });
+  await ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 3, turn: 0 });
+  await ask('Ada', 'outpost/undecorate', { site: SITE, id: 1 });
+  await ask('Ada', 'outpost/remove', { site: SITE, id: 2 });
+  const kinds = async () =>
+    (await deps.database.prepare('SELECT kind FROM guild_ledger ORDER BY rowid').all<{ kind: string }>()).results.map(
+      (row) => row.kind,
+    );
+  assert.deepEqual((await kinds()).slice(1), [
+    'raise',
+    'begin counting',
+    'take down counting',
+    'decorate well',
+    'take down well',
+  ]);
+  assert.equal((await ask('Ada', 'outpost/place', { site: SITE, kind: 'standard', x: 0, y: 0, turn: 0 })).status, 200);
+  assert.equal((await kinds()).length, 6, 'a free standard writes no line');
+  const id = (await guild()).id;
+  for (let each = 0; each < 210; each++)
+    await deps.database
+      .prepare(
+        "INSERT INTO guild_ledger (guild_id, rid, mark, kind, amount, balance, at) VALUES (?1, ?2, '', 'old', 0, 0, 0)",
+      )
+      .bind(id, `old-${each}`)
+      .run();
+  assert.equal((await ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 50, turn: 0 })).status, 200);
+  assert.equal((await kinds()).length, 200);
+  assert.ok((await kinds()).includes('decorate well'), 'the newest kept');
+});
+
+test('a strongbox that would fill the treasury past its most moves what fits and keeps the rest', async () => {
+  const { ask, standAt, fund, guild, kept, accountOf, clock, read } = await world();
+  await standAt('Ada');
+  await fund(20_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'counting', x: 0, y: 0, turn: 0 });
+  const room = outpostRoom(SITE, (await guild()).id);
+  const ada = await accountOf('Ada');
+  await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 40 });
+  await kept.deliver(ada, room, { id: 3, stuff: 'iron', amount: 20 });
+  await fund(1_000_000 - (await guild()).treasury - 100);
+  clock.now += 10 * HOUR;
+  await standAt('Ada');
+  assert.equal((await ask('Ada', 'outpost/collect', { site: SITE })).status, 200);
+  assert.equal((await guild()).treasury, 1_000_000);
+  assert.equal(((await read('Ada'))['outposts'] as { strongbox: number }[])[0]?.strongbox, 10 * 30 - 100);
+});
+
+test('a character whose outpost room let go of it is no longer there, and the page reads what it took today', async () => {
+  const { ask, standAt, fund, guild, kept, accountOf, clock, raiseXp, read } = await world();
+  await raiseXp(40_000);
+  await standAt('Ada');
+  await fund(40_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'camp', x: 0, y: 0, turn: 0 });
+  const room = outpostRoom(SITE, (await guild()).id);
+  const ada = await accountOf('Ada');
+  await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 40 });
+  await kept.deliver(ada, room, { id: 3, stuff: 'canvas', amount: 20 });
+  clock.now += 2 * 24 * HOUR;
+  assert.equal(
+    (await ask('Ada', 'outpost/decorate', { site: SITE, piece: 'well', x: 3, y: 50, turn: 0 })).body['error'],
+    'Go to that outpost to do that.',
+  );
+  assert.equal(await kept.takeStores(ada, room, 'island', 7), 7);
+  assert.deepEqual((await read('Ada'))['taken'], { island: 7 });
+});
+
+test("outpost asks and reads of an outpost's plot are limited", async () => {
+  const { ask, get, guild } = await world();
+  const room = outpostRoom(SITE, (await guild()).id);
+  let asked = 0;
+  while ((await ask('Ada', 'outpost/collect', { site: SITE })).status !== 429 && asked < 1_000) asked++;
+  assert.ok(asked < 1_000, 'asks stop');
+  let read = 0;
+  while ((await get('Ben', `/v1/outposts/${room}`))['error'] === undefined && read < 1_000) read++;
+  assert.ok(read < 1_000, 'reads stop');
 });
