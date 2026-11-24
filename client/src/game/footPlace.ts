@@ -5,7 +5,7 @@ import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { FoeAsk } from '../network/messages.ts';
+import type { FoeAsk, Reviving } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
@@ -93,9 +93,12 @@ export interface Held {
   alone: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;
-  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
+  /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell; whether the
+   *  room is a darkness zone now, and who is reviving whom (`footRevive.ts`). */
   revives: number;
   wiped: boolean;
+  darkness: boolean;
+  reviving: readonly Reviving[];
   /** An Elite Dungeon's encounters as its room last said; null in any other room. */
   encounter: EncounterSeen | null;
 }

@@ -203,11 +203,13 @@ fn play(minute: u32) -> (String, (u8, u8, u8), [u32; 3]) {
         for player in players {
             let (controls, combat) = decide(&last, player, tick);
             let intent = combat::Intent { controls, combat };
+            // Each asks to respawn every tick: the room takes it once they may, as it stood them up unasked before.
             let sent = room::Input {
                 sequence: tick,
                 intent,
                 seen: u64::from(tick - 1),
                 arms: sword,
+                respawn: true,
                 ..room::Input::default()
             };
             assert_eq!(input(player, &protocol::input_bytes(&sent)), TAKEN);

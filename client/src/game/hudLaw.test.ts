@@ -103,6 +103,8 @@ test('in an Abyss run the words under its name end with the revives its company 
   assert.equal(placeWords(dungeon, 'the Ossuary', 3), `${placeWords(dungeon, 'the Ossuary')} · 3 revives left`);
   assert.ok(placeWords(dungeon, null, 1).endsWith(' · 1 revive left'));
   assert.ok(placeWords(dungeon, null, 0).endsWith(' · No revives left'));
+  assert.ok(placeWords(dungeon, null, 0, true).endsWith(' · No revives left · Darkness zone'), 'no respawn here');
+  assert.ok(placeWords(dungeon, 'the Court', -1, true).endsWith(' · Darkness zone'));
   assert.equal(placeWords(dungeon, null, -1), placeWords(dungeon, null), 'none counted outside Abyss');
 });
 

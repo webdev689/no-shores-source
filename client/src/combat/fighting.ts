@@ -162,6 +162,8 @@ export class Fighting {
   private artsAt = 0;
   private sentDress = '';
   private respawnAsked = false;
+  /** Whether Use is held over a fallen ally beside the player, sent with each tick's input (`footRevive.ts`). */
+  reviving = false;
   /** Whether a menu is open on the player's screen, sent with each input for others to see over their head. */
   menuOpen = false;
   /** Where the player stands with a node's section, as the room last said: dead, by a fall or past its edge, the room
@@ -387,6 +389,7 @@ export class Fighting {
       spawn: spawned?.foe,
       spawnLevel: spawned?.level ?? 0,
       respawn: this.respawnAsked && !holding,
+      revive: this.reviving && !holding,
       menu: this.menuOpen,
       ...(gear === undefined ? {} : { ask: gear }),
       ...(cast === null ? {} : { cast }),

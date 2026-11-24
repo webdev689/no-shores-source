@@ -111,7 +111,8 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
     for (const player of players) {
       const intent = decide(last, player, tick);
       const look = { anim: '', frame: 0, facing: 0 };
-      const sent = inputBytes(tick, { intent, look, arms: SWORD, seen: BigInt(tick - 1) });
+      // Each asks to respawn every tick, as the rules' test's players do: the room takes it once they may.
+      const sent = inputBytes(tick, { intent, look, arms: SWORD, seen: BigInt(tick - 1), respawn: true });
       assert.equal(room.input(player, sent), 'taken');
     }
     room.tick();

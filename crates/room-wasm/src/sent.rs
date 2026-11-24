@@ -10,7 +10,7 @@ use protocol::land::foe_numbers;
 use protocol::pack::quantized;
 use protocol::{Snapshot, UNTRIMMED_FLOATS, snapshot_bytes, standing_parts};
 use room::public::PublicSeen;
-use room::{Event, FoeSeen, Plate, PlayerId, Room, Seen, SpellSeen};
+use room::{Event, FoeSeen, Plate, PlayerId, Reviving, Room, Seen, SpellSeen};
 use std::collections::{BTreeMap, VecDeque};
 
 /// How many ticks of snapshots are kept to build on: two seconds; a screen further behind is sent everything.
@@ -40,6 +40,8 @@ struct Now {
     revives: Option<u8>,
     public: Option<PublicSeen>,
     encounter: Option<room::encounters::EncounterSeen>,
+    darkness: bool,
+    reviving: Vec<Reviving>,
 }
 
 #[derive(Debug, Default)]
@@ -94,6 +96,8 @@ impl Sent {
             revives: room.revives(),
             public: room.public_seen(),
             encounter: room.encounter_seen(),
+            darkness: room.darkness(),
+            reviving: room.reviving_seen(),
         };
         let own: BTreeMap<_, _> = now
             .players
@@ -192,6 +196,8 @@ impl Sent {
             revives: now.revives,
             public,
             encounter: now.encounter.as_ref(),
+            darkness: now.darkness,
+            reviving: &now.reviving,
         })
     }
 }

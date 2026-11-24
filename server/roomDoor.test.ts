@@ -10,10 +10,10 @@ import {
   type FightEvent,
   type Look,
   type SeenPlayer,
-  courseBytes,
   inputBytes,
   readFromRoom,
 } from '../client/src/network/messages.ts';
+import { courseBytes } from '../client/src/network/courseMessages.ts';
 import { type FleetOrders, ordersBytes } from '../client/src/network/fleetMessages.ts';
 import { ASKS } from '../client/src/network/gearMessages.ts';
 import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
@@ -255,7 +255,10 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.ok(lies.x >= before.x && lies.x < before.x + 3 && lies.vx === 0, `at rest near where it died: ${lies.x}`);
   seen = play(room, second, ++sequence, east, true);
   assert.deepEqual(seen.standing, { kind: 'inside' });
-  assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
+  // Back at the spawn nearest its death: in a patrol zone, facing where it fell, due east (crates/room/src/respawns.rs).
+  const back = { ...movement.standing(30, -40), facing: Math.PI / 2 };
+  assert.equal(lies.y, -40, 'it fell due east of the spawn');
+  assert.deepEqual(floatsOf(seen.body), floatsOf(back), 'back at the spawn nearest its death');
 });
 
 test('a locked node’s room takes no player and says why, so the host turns every join away; any other takes them', () => {

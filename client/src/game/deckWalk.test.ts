@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { LocalRoom } from '../network/localRoom.ts';
-import { courseBytes, helmBytes, walkBytes } from '../network/messages.ts';
+import { courseBytes, helmBytes, walkBytes } from '../network/courseMessages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import { type Body, type Controls, floatsOf, floatsOfControls, startMovementRules } from '../rules/movementRules.ts';
 import type { Cards } from '../player/cards.ts';
