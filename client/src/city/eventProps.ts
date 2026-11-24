@@ -28,19 +28,22 @@ export type PropModule = (typeof PROP_MODULES)[number];
 
 /** A module that opens rather than rises: its rise widens it from a line and deepens it, and the land is opened
  *  along its mouth. */
-export const OPENS: ReadonlySet<PropModule> = new Set(['lattice-fissure']);
+export const OPENS: ReadonlySet<EventProp['module']> = new Set<PropModule>(['lattice-fissure']);
 
 /** One prop drawn: its module, the middle of its foot (world metres east, south, up), its turn clockwise from north,
  *  its scale, how far it has risen out of the ground (0 under it, 1 standing: one that opens, opened), how far it is
  *  swung up about its own x at its origin (a lid about its hinge, radians) and its crystal's glow (1 as built). */
 export type EventProp = {
-  readonly module: PropModule;
+  /** An event's own module, or any other the manifest holds (an outpost's structures stand as props too). */
+  readonly module: PropModule | (string & {});
   readonly at: Point;
   readonly turn: number;
   readonly scale: number;
   readonly rise: number;
   readonly lid: number;
   readonly glow: number;
+  /** A colour the prop is washed in (a ghost's: green where it may stand, red where not); none for a prop itself. */
+  readonly tint?: readonly [number, number, number];
 };
 
 /** A mark of the running event as the room sends it (protocol PublicMark): what it is, its id, where it stands, its

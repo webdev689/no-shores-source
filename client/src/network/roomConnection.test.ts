@@ -12,7 +12,7 @@ type Said = ({ readonly player: number } | { readonly tick: bigint }) & Plated;
 /** A room's message as its bytes: a welcome for `player`, or a snapshot at `tick`, with the plates given. */
 function fromRoom(message: Said): ArrayBuffer {
   const builder = new flatbuffers.Builder(64);
-  const each = (message.plates ?? []).map(([player, level]) => Plate.createPlate(builder, player, 0, level, false));
+  const each = (message.plates ?? []).map(([player, level]) => Plate.createPlate(builder, player, 0, level, false, 0));
   const plates = message.plates ? Joined.createPlatesVector(builder, each) : 0;
   // A snapshot holds a table of its own (its public events), so flatc writes it no one-call maker.
   const snapshot = (tick: bigint) => {

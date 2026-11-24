@@ -9,6 +9,11 @@ import court_pieces
 import dress
 import fissure
 import market
+import outpost_halls
+import outpost_standards
+import outpost_stores
+import outpost_works
+import outpost_yards
 import props
 import ranges
 import stairs
@@ -76,5 +81,28 @@ EVENTS = {'lattice-fissure': (fissure.fissure, 101), 'lattice-fissure-sealed': (
           'tithe-banner': (tithe.banner, 115), 'event-chest': (chest.chest, 121), 'event-chest-lid': (chest.chest_lid, 122),
           'event-chest-heroic': (chest.heroic, 123), 'event-chest-heroic-lid': (chest.heroic_lid, 124)}
 for name, (build, seed) in EVENTS.items():
+    BUILDERS[name] = build
+    SEEDS[name] = seed
+# The outposts' structures: drawn by the page on a guild's plot, each on its footprint of 4 m cells.
+OUTPOST = {'outpost-hall-1': (outpost_halls.hall_camp, 201), 'outpost-hall-2': (outpost_halls.hall_longhouse, 202),
+           'outpost-hall-3': (outpost_halls.hall_stronghold, 203),
+           'outpost-counting-1': (outpost_works.counting_camp, 204),
+           'outpost-counting-2': (outpost_works.counting_shed, 205),
+           'outpost-counting-3': (outpost_works.counting_house, 206),
+           'outpost-war-table-1': (outpost_works.war_table_camp, 207),
+           'outpost-war-table-2': (outpost_works.war_table_pavilion, 208),
+           'outpost-war-table-3': (outpost_works.war_table_stone, 209),
+           'outpost-camp-1': (outpost_stores.camp_open, 210), 'outpost-camp-2': (outpost_stores.camp_shed, 211),
+           'outpost-camp-3': (outpost_stores.camp_workshop, 212), 'outpost-dock-1': (outpost_stores.dock_yard, 213),
+           'outpost-dock-2': (outpost_stores.dock_shed, 214), 'outpost-dock-3': (outpost_stores.dock_works, 215),
+           'outpost-gate-1': (outpost_yards.gate_mound, 216), 'outpost-gate-2': (outpost_yards.gate_arch, 217),
+           'outpost-gate-3': (outpost_yards.gate_monument, 218), 'outpost-lodge-1': (outpost_yards.lodge_tent, 219),
+           'outpost-lodge-2': (outpost_yards.lodge_timber, 220), 'outpost-lodge-3': (outpost_yards.lodge_stone, 221),
+           'outpost-horn-1': (outpost_yards.horn_frame, 222), 'outpost-horn-2': (outpost_yards.horn_platform, 223),
+           'outpost-horn-3': (outpost_yards.horn_tower, 224), 'outpost-assay-1': (outpost_works.assay_camp, 225),
+           'outpost-assay-2': (outpost_works.assay_smithy, 226), 'outpost-assay-3': (outpost_works.assay_house, 227)}
+for number, (name, build) in enumerate(outpost_standards.STANDARDS + outpost_standards.SCAFFOLDS):
+    OUTPOST[name] = (build, 228 + number)
+for name, (build, seed) in OUTPOST.items():
     BUILDERS[name] = build
     SEEDS[name] = seed

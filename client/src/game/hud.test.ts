@@ -647,7 +647,7 @@ test("at sea another player's ship wears their plate over its masthead, and on l
   const hud = new Hud();
   // The camera 300 m west of the ship and 120 m up, looking east and a little down.
   hud.shipBars([], poseOf({ eye: [-300, 0, 120], forward: forwardOf(Math.PI / 2, -0.2) }, 0.9));
-  const plate = { player: 98, name: 'Wooden_Osprey', level: 12, menu: false };
+  const plate = { player: 98, name: 'Wooden_Osprey', level: 12, menu: false, tag: '' };
   hud.seaPlayers([{ id: 98, feet: [0, 0, 80], plate, company: false }]);
   const laid = frame(ui, hud);
   const box = boxOf(laid, 'player-plate-98');

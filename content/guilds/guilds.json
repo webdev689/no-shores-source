@@ -1,0 +1,96 @@
+{
+  "levels": [0, 15000, 40000, 80000, 140000, 220000, 320000, 450000, 600000, 800000],
+  "contribution": { "tenths": 1, "weekMost": 5000 },
+  "bountyXp": 2500,
+  "bountiesAWeek": 4,
+  "bounties": [
+    {
+      "id": "felling",
+      "name": "The Long Cull",
+      "words": "Defeat 1,500 foes.",
+      "objective": { "kind": "fell" },
+      "target": 1500
+    },
+    {
+      "id": "tithe",
+      "name": "Tithe Breakers",
+      "words": "Defeat 400 Grey Tithe foes.",
+      "objective": { "kind": "fell", "faction": 1 },
+      "target": 400
+    },
+    {
+      "id": "elites",
+      "name": "Sharp Steel",
+      "words": "Defeat 120 foes of Elite rank or higher.",
+      "objective": { "kind": "fell", "rank": 3 },
+      "target": 120
+    },
+    {
+      "id": "big-game",
+      "name": "Trophy Wall",
+      "words": "Defeat 25 foes of Miniboss rank or higher.",
+      "objective": { "kind": "fell", "rank": 4 },
+      "target": 25
+    },
+    {
+      "id": "gathering",
+      "name": "Full Stores",
+      "words": "Gather 120 resource nodes.",
+      "objective": { "kind": "gather" },
+      "target": 120
+    },
+    {
+      "id": "broadsides",
+      "name": "Broadsides",
+      "words": "Sink or take 50 ships.",
+      "objective": { "kind": "sink" },
+      "target": 50
+    },
+    {
+      "id": "flagships",
+      "name": "Flag Hunters",
+      "words": "Sink or take 10 ships of Elite rank or higher.",
+      "objective": { "kind": "sink", "rank": 3 },
+      "target": 10
+    },
+    {
+      "id": "delving",
+      "name": "Deep Delvers",
+      "words": "Clear 20 dungeons.",
+      "objective": { "kind": "clear" },
+      "target": 20
+    },
+    {
+      "id": "elite-company",
+      "name": "Shoulder to Shoulder",
+      "words": "Clear a dungeon at Elite or harder, two of the guild together.",
+      "objective": { "kind": "clear", "tier": "elite" },
+      "target": 1,
+      "together": true
+    },
+    {
+      "id": "abyss-company",
+      "name": "Into the Abyss",
+      "words": "Clear a dungeon at Abyss, two of the guild together.",
+      "objective": { "kind": "clear", "tier": "abyss" },
+      "target": 1,
+      "together": true
+    },
+    {
+      "id": "boss-company",
+      "name": "Kingslayers",
+      "words": "Defeat 3 Bosses, two of the guild together.",
+      "objective": { "kind": "fell", "rank": 5 },
+      "target": 3,
+      "together": true
+    },
+    {
+      "id": "company-clears",
+      "name": "Sworn Company",
+      "words": "Clear 6 dungeons, two of the guild together.",
+      "objective": { "kind": "clear" },
+      "target": 6,
+      "together": true
+    }
+  ]
+}

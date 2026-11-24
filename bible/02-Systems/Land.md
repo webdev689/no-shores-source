@@ -72,7 +72,7 @@ The same file holds the places the owner draws, each with an id that never chang
 | A town | Its area, a ring of points | A ring that never crosses itself, on the land, overlapping no other town |
 | A port | One point | On the land within 3 km of the coast |
 | The port city, one at most | Its name, the middle its landmark stands at, and its motif | Its middle on the land within 3 km of the coast; a name of 1 to 48 characters; a motif of lowercase letters and hyphens |
-| A node | Its kind (social, patrol, mission, dungeon or boss), its name, its section (a ring of points) and its spawns | A ring that never crosses itself, on the land along every edge, holding 0.01 to 9 km²; a name of 1 to 48 characters; at least one spawn, every one inside its section; an id that does not end `-social` |
+| A node | Its kind (social, patrol, mission, dungeon, boss or outpost), its name, its section (a ring of points) and its spawns | A ring that never crosses itself, on the land along every edge, holding 0.01 to 9 km²; a name of 1 to 48 characters; at least one spawn, every one inside its section; an id that does not end `-social` |
 
 The city and the nodes are the places a player reaches ([[World Map]]): a node is one section of the land, and its
 spawns are where a player lands and respawns. A city's own social space takes the city's id and `-social`, which is
