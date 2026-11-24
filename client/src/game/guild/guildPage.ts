@@ -262,7 +262,8 @@ export class GuildPage {
         setTimeout(() => this.look(), CLAIM_SAVED_MS);
       },
     };
-    const cellPx = Math.max(14, Math.min(26, Math.floor((room.height - 150) / 16)));
+    // The plan's cells fit the room's height under the page's head where they can.
+    const cellPx = Math.max(12, Math.min(26, Math.floor((room.height - 140) / 16)));
     const page =
       this.view === 'treasury'
         ? treasuryNode(ui, outposts, this.now(), sizes.label, acts.room)

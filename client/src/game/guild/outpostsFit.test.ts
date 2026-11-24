@@ -225,3 +225,25 @@ test('every block says its mark and tier as the key does, the key naming each by
       assert.ok(shows.includes(mark), `${mark} in the key`);
   }
 });
+
+test('the Delve Gate, the raise panel and the heading each say a thing once', async () => {
+  const gated: KeptPlot = { structures: [...PLOT.structures, structure(6, 'gate', 10, 10, 2)], decor: [] };
+  const outposts: OutpostsFace = {
+    ...OUTPOSTS(),
+    outposts: [{ ...OUTPOSTS().outposts[0], plot: gated } as OutpostFace],
+  };
+  const { page } = await opened({ width: 1180, height: 470 }, [1280, 720], outposts);
+  page.click(cellId(10, 10));
+  const count = (said: string) => page.shows().split(said).length - 1;
+  assert.equal(count('laid afresh each week'), 1, page.shows());
+  assert.ok(!page.shows().includes('| 1/3 |'), 'no count chip repeating the line under the heading');
+  const poor = await opened({ width: 1180, height: 470 }, [1280, 720], {
+    ...OUTPOSTS(),
+    treasury: 4_999,
+    at: 'salt-hythe-outpost',
+  });
+  poor.page.click(outpostTabId('salt-hythe-outpost'));
+  const said = poor.page.shows();
+  assert.equal(said.split('5,000').length - 1, 1, said);
+  assert.equal(said.split('4,999').length - 1, 2, 'the heading and the panel, once each');
+});

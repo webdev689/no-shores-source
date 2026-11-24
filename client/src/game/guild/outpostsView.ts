@@ -58,7 +58,7 @@ export const AWAY_WORDS = 'Stand at the outpost to build, deliver, take from its
 const COLUMN_PX = 420;
 const BUILD_PX = 320;
 /** The plan's smallest cell, in pixels; under it the plan stands over the rest. */
-const LEAST_CELL_PX = 14;
+const LEAST_CELL_PX = 12;
 
 /** A site's name and its island's own resource, as the page's world knows them. */
 export type SiteOf = (site: string) => { readonly name: string; readonly island: string };
@@ -193,7 +193,7 @@ function outpostNode(ui: Interface, holds: Holds, given: Given & { readonly outp
   const cellPx = Math.max(LEAST_CELL_PX, Math.min(given.cellPx, Math.floor((width - column - 24) / PLOT_CELLS)));
   const builds = face.rank <= 1 && outpost.here;
   if (!builds) state.plan.choosing = null;
-  const plan = planNode(ui, outpost.plot, state.plan, { level: face.level, treasury: outposts.treasury, cellPx });
+  const plan = planNode(ui, outpost.plot, state.plan, { level: face.level, treasury: outposts.treasury, cellPx, size });
   const site = outpost.site;
   const island = given.siteOf(site).island;
   if (plan.placing) {
@@ -229,7 +229,8 @@ function outpostNode(ui: Interface, holds: Holds, given: Given & { readonly outp
       },
       {
         id: SIDE_ID,
-        width: narrow ? 'grow' : column,
+        // Fixed beside a third column, so neither changes with what is chosen; else it takes the rest of the row.
+        width: three ? column : 'grow',
         direction: 'column',
         gap: 12,
         children: [
@@ -363,7 +364,8 @@ function delveNode(ui: Interface, outpost: OutpostFace, standing: KeptPlot['stru
     direction: 'column',
     gap: 6,
     children: [
-      words(`It opens ${tiers.join(', ')}.`, size, INK.faint, { wrap: true }),
+      // At the outpost its presses name what it opens; away, these words do.
+      !outpost.here && words(`It opens ${tiers.join(', ')}.`, size, INK.faint, { wrap: true }),
       outpost.here && {
         gap: 8,
         wrap: true,

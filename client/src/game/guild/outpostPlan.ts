@@ -151,7 +151,7 @@ export function planNode(
   ui: Interface,
   plot: KeptPlot,
   state: PlanState,
-  given: { readonly level: number; readonly treasury: number; readonly cellPx: number },
+  given: { readonly level: number; readonly treasury: number; readonly cellPx: number; readonly size?: number },
 ): {
   readonly node: Node;
   readonly placing: Placing | null;
@@ -161,6 +161,8 @@ export function planNode(
 } {
   const { level, treasury, cellPx } = given;
   const grid = gridOf(plot);
+  // A block's words take the menu's label size where a cell holds them, 12 px of cell a step.
+  const wordsSize = Math.max(1, Math.min(given.size ?? 1, Math.floor(cellPx / 12)));
   let cursor = state.cursor ?? (PLOT_CELLS / 2) * PLOT_CELLS + PLOT_CELLS / 2;
   const keys = ui.keysOn(PLAN_ID);
   for (const key of keys) {
@@ -213,7 +215,8 @@ export function planNode(
       fill: refusal === null ? GHOST_FITS : GHOST_REFUSED,
       opacity: 0.7,
       outline: { width: 2, colour: refusal === null ? '#9be0a8' : '#e8968a' },
-      children: [frontNode(state.turn, ghostSize, cellPx, '#e8e0cc')],
+      // Thicker than a block's, so it shows inside the ghost's outline.
+      children: [frontNode(state.turn, ghostSize, cellPx, '#ffffff', Math.max(5, Math.round(cellPx / 3)))],
     };
   // The keys' cursor, ringed where the keys hold the focus.
   const ring: Child = keyed && {
@@ -241,7 +244,7 @@ export function planNode(
       outline: { width: 2, colour: INK.stoneHi },
       children: [
         ...rowsOf(grid, cellPx),
-        ...plot.structures.map((standing) => blockNode(standing, cellPx, state.chosen === standing.id)),
+        ...plot.structures.map((standing) => blockNode(standing, cellPx, state.chosen === standing.id, wordsSize)),
         ...plot.decor.map((decor) => decorNode(decor, cellPx)),
         ghostNode,
         ring,
@@ -253,9 +256,15 @@ export function planNode(
   };
 }
 
-/** A bar along the front of a block `size` pixels across and down, the side it faces as it is turned. */
-function frontNode(turn: number, size: readonly [number, number], cellPx: number, colour: string): Node {
-  const bar = Math.max(3, Math.round(cellPx / 6));
+/** A bar along the front of a block `size` pixels across and down, the side it faces as it is turned; `bar` pixels
+ *  thick. */
+function frontNode(
+  turn: number,
+  size: readonly [number, number],
+  cellPx: number,
+  colour: string,
+  bar = Math.max(3, Math.round(cellPx / 6)),
+): Node {
   const facing = FACINGS[turn % 4];
   const [across, down] = size;
   const flat = facing === 'south' || facing === 'north';
@@ -302,7 +311,7 @@ export function blockWords(standing: Standing): string {
 
 /** One structure as a block over its cells: its colour, its words, a bar on its front, hollow in its colour while it
  *  is built, banded while a tier rises over it, ringed when chosen. */
-function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
+function blockNode(standing: Standing, cellPx: number, chosen: boolean, size: number): Node {
   const [west = 0, north = 0, east = 0, south = 0] = rectOf(standing);
   const [colour] = LOOKS[standing.kind] ?? ['#999999'];
   // A structure never built is its plan drawn in its colour, as a blueprint is, till it stands.
@@ -323,7 +332,7 @@ function blockNode(standing: Standing, cellPx: number, chosen: boolean): Node {
     alignY: 'center',
     gap: 2,
     children: [
-      words(blockWords(standing), 1, ink),
+      words(blockWords(standing), size, ink),
       frontNode(standing.turn, [(east - west) * cellPx - 2, tall - 2], cellPx, blueprint ? colour : FRONT),
       rising && {
         width: 'grow',
