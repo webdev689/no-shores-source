@@ -72,9 +72,9 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
   both are settled to that moment at the rates before it, so a new rate counts only from then. A strongbox the
   treasury cannot hold whole gives what fits and keeps the rest.
 - **Boons.** The War Table, Captain's Lodge and Assay House give every member, wherever they play, 5, 10 or 15% more
-  XP, reputation or Aurem from kills and clears: the highest tier of each standing at any of the guild's outposts. The
-  accounts tell the rooms with the player's guild (`boonsOf`); the room gives them to the character each tick, never
-  kept (`gear::guild::Boons`), and the central payout adds them.
+  XP, reputation or Aurem from kills and clears (reputation from chests and the Abyss boon too): the highest tier of
+  each standing at any of the guild's outposts. The accounts tell the rooms with the player's guild (`boonsOf`); the
+  room gives them to the character each tick, never kept (`gear::guild::Boons`), and the central payout adds them.
 - **The Guild tab.** The Outposts page shows each outpost by its site: its plan from above, each structure a block in
   its colour (a blueprint while built), its strongbox and stores, and what it gives. Standing there a member delivers,
   takes and empties; a founder or admin builds on the plan (the footprint's ghost green where the law lets it stand,
@@ -86,13 +86,14 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
   with a member there. The host stands the plot's boxes as the room's blocks (`outpostHost.ts`), and stands them anew
   when a member changes the plot or a delivery raises a structure; the snapshot counts each plot stood, so the page
   reads it again. Putting Aurem in, delivering, taking from the stores and sounding the horn are asked of the room,
-  which takes what is given at once and asks the accounts as an errand under an id of its own: asked again, the
-  accounts answer as they did, so nothing is done or given back twice.
+  which takes what is given at once, saves the character so taken, and asks the accounts as an errand under an id of
+  its own: asked again, the accounts answer as they did, so nothing is done or given back twice. A player has one
+  such ask with the accounts at a time.
 - **The guild boss.** The War Horn, sounded once a week by the founder or an admin (the accounts answer its tier, 0
   when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier), calls a High Assessor and four
   Majors to the muster ground beyond the plot, at the level of the highest member there, at Normal, Elite or Abyss by
   the horn's tier. Felled, each player who struck it is paid as a world boss's clear pays, and each member among them
-  takes a guild package once that week.
+  who was in the guild before the week turned takes a guild package once that week, as from the guild dungeon.
 - **The guild dungeon.** A Delve Gate opens a dungeon behind it, at Normal with the gate at tier 1, Elite at tier 2
   and Abyss at tier 3; a company may choose a lower tier than its gate's. It is a run of its own for each company of
   the guild's members (and anyone in a company with one), `node-<site>--guild-<key>--run-<instance>`, the tier after

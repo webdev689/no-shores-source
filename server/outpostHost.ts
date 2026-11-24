@@ -1,17 +1,15 @@
 /**
- * The host's side of a guild's outpost's room (`node-<site>--guild-<key>`). It stands the guild's plot as blocks, as
- * the page draws it (`outpostPlaces.ts` `plotBoxes`), and stands it anew each time the plot is read again: on a
- * player's word that it changed (at most once a second, which the room judges) and after every delivery the accounts
- * used. Each tick it takes the errands the room holds for its players' asks, asks the accounts, and gives each answer
- * back, so the room gives back what was not moved or used. Each errand has an id of its own, under which the accounts
- * keep their answer in the same write as the errand; one they throw on is asked again under it, so one that went
- * through answers as it did and is never done or given back twice. Only one they throw on every time is given back
- * whole. A leaving player's last save waits for their errands in flight (`settled`).
+ * The host's side of a guild's outpost's room (`node-<site>--guild-<key>`): it stands the guild's plot as blocks, as
+ * the page draws it (`outpostPlaces.ts` `plotBoxes`), anew each time the plot is read again, and runs the errands the
+ * room holds for its players' asks with the accounts. A deposit or delivery goes only once the character it was taken
+ * from is saved, so no claim elsewhere finds it whole, and a take's gift is saved at once. The accounts keep each
+ * errand's answer under its own id, so one they throw on is asked again under it and is never done or given back
+ * twice. A leaving player's last save waits a while for their errands (`settled`); the room keeps a later answer.
  */
 
 import manifest from '../content/modules/modules.json' with { type: 'json' };
 import type { Characters } from './accounts/characters.ts';
-import { bannerFrom } from '../client/src/game/guild/bannerLaw.ts';
+import { keptBanner } from './accounts/guildFace.ts';
 import type { Stuff } from '../client/src/game/guild/outpostLaw.ts';
 import { gateOf, gateTier } from '../client/src/game/guild/delveRoom.ts';
 import type { Plot } from '../client/src/game/guild/outpostLaw.ts';
@@ -25,10 +23,9 @@ type OutpostDoor = Pick<
   'outpostErrands' | 'outpostAnswered' | 'outpostStood' | 'outpostGate' | 'standBlock' | 'takeBlock'
 >;
 
-/** The staff a banner with none hangs from. */
-const DRIFTWOOD = 'driftwood';
-/** How long an errand the accounts threw on waits before each try again, under its one id. */
-const AGAIN_WAITS_MS = [250, 1_000, 4_000];
+/** How long an errand the accounts threw on waits before each try again, under its one id: about five minutes in all,
+ *  past which they are taken to have never done it. */
+export const AGAIN_WAITS_MS = [250, 1_000, 4_000, ...Array<number>(30).fill(10_000)];
 /** How long a leaving player's last save waits for their errands at most: past it, it is made all the same. */
 export const SETTLE_MOST_MS = 30_000;
 
@@ -69,8 +66,11 @@ export class OutpostHost {
   private readonly ground: Ground;
   /** Runs a call into the room, catching a fault in it. */
   private readonly guarded: <T>(call: () => T, fallback: T) => T;
+  /** Saves a player's character as the room holds it now; whether the save holds. */
+  private readonly saved: (player: number) => Promise<boolean>;
   /** When this host began, which makes its deposits' ids its own though the room's count starts again. */
   private readonly began: number;
+  private readonly waits: readonly number[];
 
   constructor(
     door: OutpostDoor,
@@ -78,14 +78,18 @@ export class OutpostHost {
     room: string,
     ground: Ground,
     guarded: <T>(call: () => T, fallback: T) => T,
+    saved: (player: number) => Promise<boolean>,
     began = Date.now(),
+    waits: readonly number[] = AGAIN_WAITS_MS,
   ) {
     this.door = door;
     this.accounts = accounts;
     this.room = room;
     this.ground = ground;
     this.guarded = guarded;
+    this.saved = saved;
     this.began = began;
+    this.waits = waits;
   }
 
   /** Reads the plot and stands it anew; one read at a time, and one asked during it reads once more after. */
@@ -107,7 +111,7 @@ export class OutpostHost {
   /** Stands the plot as the accounts keep it now, taking what was stood before; nothing changes if they cannot say. */
   private async stand(): Promise<void> {
     const outpost = await this.accounts.outpost(this.room);
-    const staff = outpost ? (bannerFrom(JSON.parse(outpost.banner))?.staff ?? DRIFTWOOD) : DRIFTWOOD;
+    const staff = outpost ? keptBanner(outpost.banner, outpost.name).staff : '';
     const boxes = outpost ? plotBoxes(outpost.plot, this.ground, staff) : [];
     for (const box of this.stood) this.guarded(() => this.door.takeBlock(box), false);
     for (const box of boxes) this.guarded(() => this.door.standBlock(box), false);
@@ -124,10 +128,7 @@ export class OutpostHost {
         void this.read();
         continue;
       }
-      const flight = this.answer(errand).then((answer) => {
-        this.guarded(() => this.door.outpostAnswered(errand.id, answer), false);
-        if (errand.kind === 'deliver' && (answer ?? 0) > 0) void this.read();
-      });
+      const flight = this.run(errand);
       const flying = this.flying.get(errand.player) ?? new Set();
       flying.add(flight);
       this.flying.set(errand.player, flying);
@@ -136,6 +137,16 @@ export class OutpostHost {
         if (flying.size === 0 && this.flying.get(errand.player) === flying) this.flying.delete(errand.player);
       });
     }
+  }
+
+  /** Runs an errand and gives its answer to the room. What the room took is saved before it is asked; unsaved, it is
+   *  surely not taken, and given back whole. */
+  private async run(errand: Errand): Promise<void> {
+    const takes = errand.kind === 'deposit' || errand.kind === 'deliver';
+    const answer = takes && !(await this.saved(errand.player)) ? null : await this.answer(errand);
+    this.guarded(() => this.door.outpostAnswered(errand.id, answer), false);
+    if (errand.kind === 'take' && (answer ?? 0) > 0) await this.saved(errand.player);
+    if (errand.kind === 'deliver' && (answer ?? 0) > 0) void this.read();
   }
 
   /** What the accounts answer an errand: how many they moved, used or gave, or the horn's tier; null when they threw
@@ -164,7 +175,7 @@ export class OutpostHost {
 
   /** An errand asked again under its one id while the accounts throw: answered once, or null after every try. */
   private async retried(ask: () => Promise<number>): Promise<number | null> {
-    for (const millis of [0, ...AGAIN_WAITS_MS]) {
+    for (const millis of [0, ...this.waits]) {
       if (millis > 0) await new Promise((done) => setTimeout(done, millis));
       const answered = await ask().catch(() => null);
       if (answered !== null) return answered;
@@ -172,13 +183,21 @@ export class OutpostHost {
     return null;
   }
 
-  /** Once a leaving player's errands are answered, those the room holds meanwhile taken too, or SETTLE_MOST_MS on. */
-  async settled(player: number, wait = (millis: number) => new Promise((done) => setTimeout(done, millis))) {
-    const late = wait(SETTLE_MOST_MS).then(() => true);
-    for (;;) {
-      this.tick();
-      const flying = [...(this.flying.get(player) ?? [])];
-      if (flying.length === 0 || (await Promise.race([Promise.all(flying).then(() => false), late]))) return;
+  /** Once a leaving player's errands are answered, those the room holds meanwhile taken too, or `most` on; its timer
+   *  runs only while one is in flight. */
+  async settled(player: number, most = SETTLE_MOST_MS): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let late: Promise<boolean> | null = null;
+    try {
+      for (;;) {
+        this.tick();
+        const flying = [...(this.flying.get(player) ?? [])];
+        if (flying.length === 0) return;
+        late ??= new Promise((done) => (timer = setTimeout(() => done(true), most)));
+        if (await Promise.race([Promise.all(flying).then(() => false), late])) return;
+      }
+    } finally {
+      if (timer !== undefined) clearTimeout(timer);
     }
   }
 }

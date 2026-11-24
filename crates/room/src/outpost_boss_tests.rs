@@ -10,18 +10,23 @@ use gear::guild::{Boons, Standing};
 
 const GUILD: &str = "c0ffee00-0000-0000-0000-000000000000";
 
+/// The guild as its member is told it: in it before the week turned, or only since.
+fn seen(before_the_week: bool) -> GuildSeen {
+    let standing = Standing { before_the_week, ..Standing::default() };
+    GuildSeen { id: GUILD.to_owned(), standing, boons: Boons::default() }
+}
+
 fn sounded(tier: u32) -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.open_outpost(&guild_key(GUILD), [30.0, 0.0]);
     let player = room.join().expect("a room with space");
-    let seen = GuildSeen { id: GUILD.to_owned(), standing: Standing::default(), boons: Boons::default() };
-    room.guild_player(player, Some(seen));
+    room.guild_player(player, Some(seen(true)));
     let found = room.players.get_mut(&player).expect("in");
     found.owner = Some("salt".to_owned());
     found.character.xp = gear::power::xp_for_level(12);
     room.answer(player, Asked::Outpost(OutpostAsk::Horn));
     let errand = room.outpost_errands().remove(0);
-    room.outpost_answered(errand.id, Some(tier));
+    room.outpost_answered(errand.id, Some(i64::from(tier)));
     for _ in 0..3 {
         room.tick();
     }
@@ -82,4 +87,21 @@ fn a_player_who_struck_none_of_the_horn_s_foes_is_not_paid() {
     assert_eq!(room.players[&player].character.materials.aurem, aurem);
     assert!(!room.players[&player].character.guild.horn);
     assert!(!room.horn_foe_up(), "felled all the same");
+}
+
+#[test]
+fn a_member_who_joined_since_the_week_turned_is_paid_the_clear_but_not_the_guild_s_package() {
+    let (mut room, player) = sounded(1);
+    room.guild_player(player, Some(seen(false)));
+    let ids: Vec<_> = room.foes.keys().copied().collect();
+    room.foes.get_mut(&ids[0]).expect("the boss").struck_by.insert(player, (0, gear::Slot::Melee));
+    room.tick();
+    for id in ids {
+        room.foes.remove(&id);
+    }
+    let aurem = room.players[&player].character.materials.aurem;
+    room.tick();
+    let character = &room.players[&player].character;
+    assert!(character.materials.aurem > aurem, "a world boss's clear's Aurem");
+    assert!(!character.guild.horn && character.vestiges.is_empty(), "no guild package");
 }

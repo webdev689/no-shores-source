@@ -266,7 +266,8 @@ fn a_guild_dungeon_pays_a_sea_islands_clear_and_each_member_a_guild_package_at_t
         assert!(room.delve_for(&key));
         room
     };
-    let seen = || Some(GuildSeen { id: guild.to_owned(), standing: Standing::default(), boons: Boons::default() });
+    let standing = Standing { before_the_week: true, ..Standing::default() };
+    let seen = || Some(GuildSeen { id: guild.to_owned(), standing, boons: Boons::default() });
     let mut first = opened(FRIDAY_NINE);
     let member = kept_in(&mut first, &past_the_prologue());
     let outsider = first.join().expect("a room with space");
@@ -294,5 +295,11 @@ fn a_guild_dungeon_pays_a_sea_islands_clear_and_each_member_a_guild_package_at_t
     late.minute += gear::clock::WEEK_MINUTES;
     clear_the_end(&mut late);
     assert!(!late.players[&past].character.guild.delve, "a run cleared after the week it opened for pays none");
+    let mut joined = opened(FRIDAY_NINE);
+    let newcomer = kept_in(&mut joined, &past_the_prologue());
+    let new = Standing { before_the_week: false, ..Standing::default() };
+    joined.guild_player(newcomer, Some(GuildSeen { id: guild.to_owned(), standing: new, boons: Boons::default() }));
+    clear_the_end(&mut joined);
+    assert!(!joined.players[&newcomer].character.guild.delve, "none to one who joined since the week turned");
     assert!(!Room::new(Vec::new(), (0.0, 0.0)).delve_for(&key), "no run, no guild dungeon");
 }

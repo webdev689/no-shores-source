@@ -227,10 +227,14 @@ export class Keeper {
     return true;
   }
 
-  /** Tells the room a kept player's guild as the accounts tell it now; nothing if they cannot be reached. */
+  /** Tells the room a kept player's guild as the accounts tell it now, and at an outpost notes whether they are still
+   *  its member, so one who left it no longer admits their company; nothing if they cannot be reached. */
   private async tellGuild(player: number, held: Held): Promise<void> {
     const told = await this.characters?.guild(held.account).catch(() => undefined);
-    if (told === undefined || this.held.get(player) !== held) return;
+    if (told === undefined) return;
+    if (this.guild !== null && told !== null && guildKey(told.id) === this.guild) this.members.add(held.account);
+    else this.members.delete(held.account);
+    if (this.held.get(player) !== held) return;
     this.room.guild(player, told === null ? '' : JSON.stringify(told));
   }
 
@@ -345,24 +349,46 @@ export class Keeper {
       held.changed = false;
       // Unchanged, it is saved only to keep the hold.
       if (body === held.saved && waited < SAVE_UNCHANGED_MS) return;
-      held.saving = true;
-      const saving = characters.save(held.account, held.holder, body).catch(() => null);
-      held.inFlight = saving;
-      const saved = await saving;
-      held.saving = false;
-      held.inFlight = null;
-      if (saved === false && this.held.get(player) === held) {
-        this.held.delete(player);
-        this.lost(player);
-      } else if (saved === true) {
-        held.savedAt = now;
-        held.saved = body;
-      } else {
-        // The accounts could not be reached: try again soon.
-        held.changed = true;
-      }
+      await this.store(characters, player, held, body, now);
     });
     await Promise.all(saves);
+  }
+
+  /** Saves a kept player's character as the room holds it now, after any save under way; whether the save holds. An
+   *  outpost's errand that takes from the character goes only once it does, so no claim elsewhere finds it whole. */
+  async saveNow(player: number): Promise<boolean> {
+    const held = this.held.get(player);
+    const characters = this.characters;
+    const body = this.room.character(player);
+    if (!held || !characters || body === null) return false;
+    return (await this.store(characters, player, held, body, held.savedAt)) === true;
+  }
+
+  /** Saves `body` after the save under way, if any, so an older one never lands last; what the accounts answered. */
+  private async store(characters: Characters, player: number, held: Held, body: string, now: number) {
+    held.saving = true;
+    const before = held.inFlight;
+    const saving = (async () => {
+      await before;
+      return characters.save(held.account, held.holder, body).catch(() => null);
+    })();
+    held.inFlight = saving;
+    const saved = await saving;
+    if (held.inFlight === saving) {
+      held.saving = false;
+      held.inFlight = null;
+    }
+    if (saved === false && this.held.get(player) === held) {
+      this.held.delete(player);
+      this.lost(player);
+    } else if (saved === true) {
+      held.savedAt = Math.max(held.savedAt, now);
+      held.saved = body;
+    } else {
+      // The accounts could not be reached: try again soon.
+      held.changed = true;
+    }
+    return saved;
   }
 
   /** Lets a player's character go with a last save; call it, without waiting, before the room lets the player go. A

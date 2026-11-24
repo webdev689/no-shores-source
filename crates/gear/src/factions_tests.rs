@@ -196,6 +196,18 @@ fn a_guilds_outposts_raise_what_a_kill_pays_each_boon_by_its_own_share() {
 }
 
 #[test]
+fn the_reputation_boon_raises_a_chest_s_and_the_abyss_boon_s_reputation_too() {
+    let mut member = caped(1);
+    member.boons = crate::guild::Boons { xp: 0, aurem: 0, reputation: 20 };
+    let chest = member.open_chest(2, (5, Difficulty::Normal), None, &DICE).expect("a chest of tier 2");
+    assert_eq!(member.reputation(1), u64::from(chest.xp + chest.xp / 5), "a chest's");
+    let before = member.reputation(1);
+    member.activity.this_week(0).boon = true;
+    let more = member.boon_xp(0, 400, None);
+    assert_eq!(member.reputation(1) - before, u64::from(more + more / 5), "the Abyss boon's");
+}
+
+#[test]
 fn ranks_keep_the_emblem_then_the_dye_then_leave_packages_without_end() {
     let mut character = caped(3);
     let per_rank = factions().reputation_per_rank;

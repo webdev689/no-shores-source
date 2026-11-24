@@ -97,6 +97,12 @@ test('an item is named as the catalogue names it', () => {
   // A keeper the asks name, nothing to say, and no fragment choice waiting: the gear crate's 135 to 137, sent plus one.
   for (let code = 136; code <= 138; code++)
     assert.ok(!answerText(code).startsWith('Refused'), `the roads' refusal ${code} has words`);
+  // The guilds' and outposts' refusals, the gear crate's 150 to 164, sent plus one.
+  for (let code = 151; code <= 165; code++)
+    assert.ok(!answerText(code).startsWith('Refused'), `the guilds' refusal ${code} has words`);
+  assert.equal(answerText(163), 'Wait for your last ask.');
+  assert.equal(answerText(164), 'Only the founder or an admin sounds the War Horn.');
+  assert.equal(answerText(165), 'No War Horn stands here yet.');
 });
 
 test('the hands hold the drawn loadout in its look, or the nearest metal the forge draws', () => {

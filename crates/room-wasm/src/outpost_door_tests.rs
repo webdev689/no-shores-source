@@ -44,7 +44,7 @@ fn a_deposit_is_held_as_an_errand_for_the_host_and_its_refusal_gives_the_aurem_b
     assert_eq!(errands(), "[]", "taken once");
     let aurem = || on_land(|room| room.player(player).map(|found| found.character.materials.aurem)).flatten();
     assert_eq!(aurem(), Some(180));
-    assert_eq!(room_outpost_answered(1, -1), 1, "the accounts could not be reached");
+    assert_eq!(room_outpost_answered(1, i32::MIN), 1, "the accounts could not be reached");
     assert_eq!(aurem(), Some(300), "given back whole");
     assert_eq!(room_outpost_answered(1, 0), 0, "answered once");
 }

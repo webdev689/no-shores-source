@@ -174,15 +174,17 @@ impl Character {
         factions().of_cape(cloak.named.as_deref()?).map(|faction| faction.id)
     }
 
-    /// A kill's reputation: as much as its XP, to the faction pledged, while its cape is worn.
+    /// Reputation as much as `xp`, raised by the guild's reputation boon, to the faction pledged, while its cape is
+    /// worn. Every source passes its base, so the boon raises each once.
     pub(crate) fn earn_reputation(&mut self, xp: u32) {
         let pledge = self.allegiance.pledge;
         if pledge == 0 || self.cape_worn() != Some(pledge) {
             return;
         }
+        let raised = crate::guild::Boons::more(xp, self.boons.reputation);
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
         if let Some(reputation) = place(pledge).and_then(|at| self.allegiance.reputation.get_mut(at)) {
-            *reputation = reputation.saturating_add(u64::from(xp));
+            *reputation = reputation.saturating_add(u64::from(raised));
         }
     }
 

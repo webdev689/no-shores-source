@@ -167,13 +167,14 @@ impl Room {
         self.run.as_mut().map(|run| run.pays = Pays::Guild { key: key.to_owned(), week }).is_some()
     }
 
-    /// A guild package to a kept member of the run's guild, once in the week it opened for.
+    /// A guild package to a kept member of the run's guild from before the week turned, once in the week it opened for.
     fn pay_delve(&mut self, player: PlayerId, key: &str, week: u64) {
-        let member = self.guilds.of(player).is_some_and(|seen| crate::outpost::guild_key(&seen.id) == key);
+        let seen = self.guilds.of(player).filter(|seen| crate::outpost::guild_key(&seen.id) == key);
+        let Some(standing) = seen.map(|seen| seen.standing) else { return };
         let (dice, now) = (self.dice(player), week_of(self.minute));
         let Some(found) = self.players.get_mut(&player).filter(|found| found.owner.is_some()) else { return };
-        // Refused only once taken this week, or with ten Vestiges carried: nothing more to give.
-        if member && week == now && found.character.claim_delve_package(week, &dice).is_ok() {
+        // Refused once taken this week, to one who joined since it turned, or with ten Vestiges carried.
+        if week == now && found.character.claim_delve_package(week, standing, &dice).is_ok() {
             found.gear_changed = true;
         }
     }

@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Box } from '../client/src/game/guild/outpostPlaces.ts';
 import { placeOf, plotBoxes, socketOf } from '../client/src/game/guild/outpostPlaces.ts';
-import { type OutpostAccounts, OutpostHost, gateDoor, outpostGround } from './outpostHost.ts';
+import { AGAIN_WAITS_MS, type OutpostAccounts, OutpostHost, gateDoor, outpostGround } from './outpostHost.ts';
+import { bannerOfName } from '../client/src/game/guild/bannerLaw.ts';
 import type { Errand } from './roomDoor.ts';
 
+const STAFF = bannerOfName('Salt').staff;
 const ROOM = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
 const GROUND = { plot: [100, 200], level: 12 } as const;
 const hall = (tier: number, building = 0) => ({ id: 1, kind: 'hall', tier, building, x: 6, y: 6, turn: 0 });
@@ -32,7 +34,7 @@ function doorOf() {
 }
 
 /** The accounts as an outpost's host asks them, each answer from `answers`, a throw for an Error. */
-function accountsOf(answers: { plot?: () => ReturnType<typeof plotOf>; [ask: string]: unknown }) {
+function accountsOf(answers: { plot?: () => ReturnType<typeof plotOf>; banner?: string; [ask: string]: unknown }) {
   const asked: [string, ...unknown[]][] = [];
   const answering = (ask: string) => {
     const answer = answers[ask];
@@ -43,7 +45,8 @@ function accountsOf(answers: { plot?: () => ReturnType<typeof plotOf>; [ask: str
     outpost: () => {
       asked.push(['outpost']);
       const plot = answers.plot?.();
-      return Promise.resolve(plot ? { guild: 'g', name: 'Salt', banner: '{}', site: 'oakfast-landing', plot } : null);
+      const banner = answers.banner ?? '{}';
+      return Promise.resolve(plot ? { guild: 'g', name: 'Salt', banner, site: 'oakfast-landing', plot } : null);
     },
     deposit: (...args: unknown[]) => (asked.push(['deposit', ...args]), answering('deposit')),
     deliver: (...args: unknown[]) => (asked.push(['deliver', ...args]), answering('deliver')),
@@ -54,6 +57,8 @@ function accountsOf(answers: { plot?: () => ReturnType<typeof plotOf>; [ask: str
 }
 
 const guarded = <T>(call: () => T) => call();
+/** Every save holds. */
+const saves = () => Promise.resolve(true);
 const settle = () => new Promise((done) => setTimeout(done, 0));
 const errand = (id: number, kind: Errand['kind'], more: Partial<Errand> = {}): Errand => ({
   id,
@@ -77,14 +82,14 @@ test('the plot stands as its boxes, and read again stands the new plot in place 
   let tier = 1;
   const door = doorOf();
   const { accounts } = accountsOf({ plot: () => plotOf(tier) });
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves);
   await host.read();
-  const first = plotBoxes(plotOf(1), GROUND, 'driftwood');
+  const first = plotBoxes(plotOf(1), GROUND, STAFF);
   assert.ok(first.length > 0);
   assert.deepEqual(door.blocks, first);
   tier = 2;
   await host.read();
-  assert.deepEqual(door.blocks, plotBoxes(plotOf(2), GROUND, 'driftwood'), 'the old taken, the new stood');
+  assert.deepEqual(door.blocks, plotBoxes(plotOf(2), GROUND, STAFF), 'the old taken, the new stood');
   assert.equal(door.stood, 2, 'each plot stood counted, for the snapshot');
 });
 
@@ -97,7 +102,7 @@ test('a plot the accounts cannot read leaves the plot standing as it was', async
       return plotOf(1);
     },
   });
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves);
   await host.read();
   const standing = [...door.blocks];
   broken = true;
@@ -112,7 +117,7 @@ test('an errand is asked again under its one id while the accounts throw, and gi
     deposit: [new Error('blip'), 'already', 'refused', ...Array(4).fill(new Error('down'))],
     deliver: [new Error('blip'), 6],
   });
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, 77);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves, 77, [1, 1, 1]);
   door.waiting.push(errand(1, 'deposit', { amount: 40 }));
   await host.settled(3);
   door.waiting.push(errand(2, 'deposit', { amount: 30 }), errand(3, 'deposit', { amount: 20 }));
@@ -139,7 +144,7 @@ test('a delivery the accounts used reads the plot again; a take and the horn ans
     takeStores: 2,
     soundHorn: 0,
   });
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves);
   door.waiting.push(
     errand(1, 'deliver', { structure: 4, stuff: 'canvas', amount: 9 }),
     errand(2, 'take', { stuff: 'island', amount: 3 }),
@@ -147,15 +152,16 @@ test('a delivery the accounts used reads the plot again; a take and the horn ans
     errand(4, 'deliver', { structure: 4, stuff: 'iron', amount: 1 }),
   );
   host.tick();
-  await settle();
-  await settle();
+  for (let times = 0; times < 5; times++) await settle();
+  door.answered.sort(([one], [two]) => one - two);
   assert.deepEqual(door.answered, [
     [1, 5],
     [2, 2],
     [3, 0],
     [4, 0],
   ]);
-  assert.deepEqual(asked[0]?.slice(0, 4), ['deliver', 'salt', ROOM, { id: 4, stuff: 'canvas', amount: 9 }]);
+  const delivered = asked.find(([ask]) => ask === 'deliver');
+  assert.deepEqual(delivered?.slice(0, 4), ['deliver', 'salt', ROOM, { id: 4, stuff: 'canvas', amount: 9 }]);
   assert.ok(
     asked.some(([ask]) => ask === 'outpost'),
     'read again after the delivery',
@@ -168,10 +174,10 @@ test('a plot changed is read again, and a leaving player’s last save waits for
   let answer: (moved: string) => void = () => undefined;
   const { accounts } = accountsOf({ plot: () => plotOf(1) });
   (accounts as { deposit: unknown }).deposit = () => new Promise((done) => (answer = done));
-  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded);
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves);
   door.waiting.push(errand(1, 'changed'), errand(2, 'deposit', { amount: 10 }));
   let parted = false;
-  const leaving = host.settled(3, () => new Promise(() => undefined)).then(() => (parted = true));
+  const leaving = host.settled(3, 60_000).then(() => (parted = true));
   await settle();
   assert.equal(door.stood, 1, 'the plot read again');
   assert.equal(parted, false, 'the deposit is still with the accounts');
@@ -179,7 +185,7 @@ test('a plot changed is read again, and a leaving player’s last save waits for
   await leaving;
   assert.deepEqual(door.answered, [[2, 10]], 'answered before the last save');
   let gave = false;
-  await host.settled(9, () => new Promise(() => undefined)).then(() => (gave = true));
+  await host.settled(9, 60_000).then(() => (gave = true));
   assert.ok(gave, 'a player with none in flight leaves at once');
 });
 
@@ -194,19 +200,79 @@ test('one out of the guild dungeon stands at the foot of the Delve Gate’s step
     turn,
   });
   const withGate = (standing: ReturnType<typeof gate>) => ({ structures: [hall(1), standing], decor: [] });
-  const south = gateDoor(withGate(gate(1, 0)), GROUND, 'driftwood');
-  const middle = placeOf(gate(1, 0), GROUND, 'driftwood').at;
-  assert.deepEqual(south?.slice(0, 2), socketOf(gate(1, 0), GROUND, 'driftwood', 'door'));
+  const south = gateDoor(withGate(gate(1, 0)), GROUND, STAFF);
+  const middle = placeOf(gate(1, 0), GROUND, STAFF).at;
+  assert.deepEqual(south?.slice(0, 2), socketOf(gate(1, 0), GROUND, STAFF, 'door'));
   assert.ok(south && south[1] < middle[1], 'the steps’ foot lies north of its middle');
   assert.ok(south && Math.abs(south[2] - Math.PI) < 1e-9, 'unturned, up the steps out to the south');
-  const west = gateDoor(withGate(gate(2, 1)), GROUND, 'driftwood');
+  const west = gateDoor(withGate(gate(2, 1)), GROUND, STAFF);
   assert.ok(west && Math.abs(west[2] - (3 * Math.PI) / 2) < 1e-9, 'a quarter turned clockwise, out to the west');
-  assert.equal(gateDoor(withGate(gate(0, 0, 1)), GROUND, 'driftwood'), null, 'first being built');
-  assert.equal(gateDoor(plotOf(1), GROUND, 'driftwood'), null, 'none placed');
+  assert.equal(gateDoor(withGate(gate(0, 0, 1)), GROUND, STAFF), null, 'first being built');
+  assert.equal(gateDoor(plotOf(1), GROUND, STAFF), null, 'none placed');
   const door = doorOf();
   const { accounts } = accountsOf({
     plot: () => ({ ...withGate(gate(3, 0)), structures: [{ ...gate(3, 0), spent: 0, delivered: {} }] }),
   });
-  await new OutpostHost(door, accounts, ROOM, GROUND, guarded).read();
+  await new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves).read();
   assert.deepEqual(door.gates, [south], 'the host tells the room');
+});
+
+test('a deposit or delivery goes only once the character it was taken from is saved, and a take’s gift is saved at once', async () => {
+  const door = doorOf();
+  const { accounts, asked } = accountsOf({ deposit: 'moved', deliver: 3, takeStores: 2 });
+  let holds = false;
+  const saving = (player: number) => {
+    asked.push(['save', player]);
+    return Promise.resolve(holds);
+  };
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saving, 1, [1]);
+  door.waiting.push(errand(1, 'deposit', { amount: 40 }));
+  await host.settled(3);
+  assert.deepEqual(door.answered, [[1, null]], 'unsaved, given back whole');
+  assert.deepEqual(asked, [['save', 3]], 'and never asked');
+  holds = true;
+  door.waiting.push(errand(2, 'deliver', { structure: 1, stuff: 'iron', amount: 5 }));
+  await host.settled(3);
+  door.waiting.push(errand(3, 'take', { stuff: 'iron', amount: 2 }));
+  await host.settled(3);
+  assert.deepEqual(door.answered.slice(1), [
+    [2, 3],
+    [3, 2],
+  ]);
+  const order = asked.map(([ask]) => ask).filter((ask) => ask !== 'outpost');
+  assert.deepEqual(order, ['save', 'save', 'deliver', 'takeStores', 'save'], 'saved before a delivery, after a take');
+});
+
+test('an errand the accounts throw on is asked again under its id for minutes before it is given back', async () => {
+  const waited = AGAIN_WAITS_MS.reduce((total, millis) => total + millis, 0);
+  assert.ok(waited >= 4 * 60_000 && waited <= 10 * 60_000, `${waited} ms`);
+  const door = doorOf();
+  const { accounts, asked } = accountsOf({ deposit: [...Array(8).fill(new Error('down')), 'moved'] });
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves, 1, Array(8).fill(1));
+  door.waiting.push(errand(1, 'deposit', { amount: 40 }));
+  await host.settled(3);
+  assert.deepEqual(door.answered, [[1, 40]], 'answered as the first try went through');
+  assert.equal(new Set(asked.map((each) => each[3])).size, 1, 'under one id');
+});
+
+test('a guild whose banner is empty or no banner stands its plot under the banner its name draws', async () => {
+  for (const banner of ['', '[]', '{"staff":1}']) {
+    const door = doorOf();
+    const { accounts } = accountsOf({ plot: () => plotOf(1), banner });
+    await new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves).read();
+    assert.deepEqual(door.blocks, plotBoxes(plotOf(1), GROUND, STAFF), JSON.stringify(banner));
+  }
+});
+
+test('a leaving player’s wait arms its timer only while an errand is in flight, and clears it once settled', async () => {
+  const timers = () => process.getActiveResourcesInfo().filter((kind) => kind === 'Timeout').length;
+  const door = doorOf();
+  const { accounts } = accountsOf({ deposit: 'moved' });
+  const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, saves);
+  const before = timers();
+  await host.settled(9);
+  assert.equal(timers(), before, 'none in flight, none armed');
+  door.waiting.push(errand(1, 'deposit', { amount: 5 }));
+  await host.settled(3);
+  assert.equal(timers(), before, 'cleared once answered');
 });
