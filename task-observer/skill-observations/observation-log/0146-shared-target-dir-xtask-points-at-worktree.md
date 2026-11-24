@@ -27,3 +27,7 @@ check, and always read the commit `cargo xtask check` prints last against `git r
 
 **Principle:** A shared build cache must not hold a tool that knows its own source tree; and a check is only evidence
 for the commit it names.
+- 2026-11-24 again (first Breach, round two): a worker in an isolation worktree set CARGO_TARGET_DIR to the main
+  checkout's target; afterwards `cargo xtask check` in the main checkout stopped at once with "the TypeScript tools are
+  not installed" because the xtask binary had been rebuilt from the worktree (`repo_root` is `env!("CARGO_MANIFEST_DIR")`,
+  the worktree's, which has no node_modules). `cargo clean -p xtask` fixed it. Same root as 0098; see its barrier proposal.

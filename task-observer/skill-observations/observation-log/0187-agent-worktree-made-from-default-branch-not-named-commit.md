@@ -21,3 +21,12 @@ commands_verified: "Worker's report: worktree branch at 19b248ba; git reset --ha
 - The same worker found the permission guard refused `python3 -I - <<EOF` and `cat >> file <<EOF` inside its
   worktree, while `git commit -F - <<EOF` passed; it wrote helper scripts in the scratchpad instead. Worth a line in
   the worker brief's template.
+- Round two (both worktree workers told to `git switch -c <name> e092aa84` first): both did so and worked on the right
+  base. The art worker reports the guard also refuses compound shell commands that name git or paths outside the
+  worktree, and that whole-scene Blender renders (15+ min) running beside a bake slowed it about 3x and ran past the
+  30-minute background limit; a second bake from a scratch copy in parallel avoided a race on modules.json. The rules
+  worker, meanwhile, set CARGO_TARGET_DIR to the main checkout's target (see 0098).
+- Merge worker, same day: the guard refused every `git merge` and `git merge-base` in its worktree (even with a local
+  branch name); only a helper script could run the merge. And `npx tsc -p server/tsconfig.json` misses
+  `server/*.test.ts`, which only `npm run -s types` checks: one full check was spent finding that. It built in its own
+  target (17 GB) as told, and nothing leaked into the main checkout.
