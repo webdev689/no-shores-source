@@ -156,6 +156,13 @@ impl Room {
                 self.inert.remove(&id);
                 continue;
             }
+            // A walker whose seam has shut turns to the nearest open one; with none open, it falls apart.
+            let seam = if fight.open(seam) { Some(seam) } else { self.nearest_open(id, fight, seams) };
+            let Some(seam) = seam else {
+                self.inert.remove(&id);
+                self.gone(id);
+                continue;
+            };
             if self.walk_inert(id, seams[seam], WALK_PACE) {
                 self.inert.remove(&id);
                 self.gone(id);
@@ -165,6 +172,13 @@ impl Room {
                 fight.walkers.push((id, seam));
             }
         }
+    }
+
+    /// The open seam nearest a walker, if any is open.
+    fn nearest_open(&self, id: FighterId, fight: &Mending, seams: &[[f64; 3]]) -> Option<usize> {
+        let body = self.foes.get(&id)?.fighter.body;
+        let far = |seam: usize| apart([body.x, body.y], [seams[seam][0], seams[seam][1]]);
+        (0..SEAMS.len()).filter(|&seam| fight.open(seam)).min_by(|&one, &two| far(one).total_cmp(&far(two)))
     }
 
     /// Every living player standing on a seam's overtaken ground loses a share of their health.

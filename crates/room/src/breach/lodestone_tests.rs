@@ -1,4 +1,5 @@
-//! The Lodestone's rules where a bearer could slip them: Hold True's rest kept through a set-down or a pass.
+//! The Lodestone's rules where a bearer could slip them: Hold True's rest kept through a set-down or a pass; and the
+//! company unwritten losing its attempt, however its fallen stand again.
 
 use super::breach_tests::{at, breach, run, stand_at};
 use super::*;
@@ -53,16 +54,4 @@ fn the_company_unwritten_loses_the_attempt_though_one_fallen_before_it_stands_ag
     ticks(&mut room, WIPE_TICKS + 60);
     assert_eq!(breach(&room).phases[CHOIR], Phase::Waiting, "the attempt is lost");
     assert!(breach(&room).lodestone.needed || breach(&room).lodestone == Lodestone::default(), "its rule whole again");
-}
-
-#[test]
-fn a_vale_closed_by_its_fusions_stops_its_clock_and_loses_the_attempt() {
-    let (mut room, players) = run(Tier::Normal, 2);
-    super::fights_tests::begin_at(&mut room, &players, "mending", "mender");
-    room.breach.as_mut().expect("run").fights.mending.fused = [2, 1, 1];
-    room.tick();
-    assert!(breach(&room).lost.is_some(), "four fusions unwrite the company");
-    assert_eq!(room.breach_seen().expect("seen").stage_ticks, 0, "its clock stopped, never counting from nothing");
-    ticks(&mut room, WIPE_TICKS + 1);
-    assert_eq!(breach(&room).phases[MENDING], Phase::Waiting, "and the attempt lost");
 }

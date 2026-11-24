@@ -576,6 +576,9 @@ mod keeping_tests;
 #[path = "lodestone_tests.rs"]
 mod lodestone_tests;
 #[cfg(test)]
+#[path = "mending_tests.rs"]
+mod mending_tests;
+#[cfg(test)]
 #[path = "rewards_tests.rs"]
 mod rewards_tests;
 #[cfg(test)]
