@@ -192,8 +192,8 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
-  the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
+- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184), merged on
+  the owner's "Merge and deploy when ready", which deploys the rooms and the page. The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
   [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
   [[A Player Logs Back In Where They Left the Overworld or a Social Space]]), built on "take autonomy", every call in
   [[Revives, Respawns and Relogs as Claude Shapes Them]] with the Destiny research behind it ([[Revives]], [[Accounts]],
@@ -205,8 +205,8 @@ The decisions in [[Open Questions]] are not repeated here.
   social-space place, `/v1/me` says it, and the page resumes there after the title, the social room standing the player
   where they left only on that `?relog=1` join (offline from the browser, the spot across but not its height). Tested
   offline: the full check at the PR's head (the commit named there), the rules' tests on Saltmere's real zones, the
-  agreement runs natively and in WebAssembly. Not yet: played by hand, two players reviving in a deployed room, a real
-  GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
+  agreement runs natively and in WebAssembly. Not yet: played by hand, a fall and a respawn driven on the page, two
+  players reviving in the deployed rooms, a real GPU. For the owner: [[Open Questions]], "Revives, respawns and relogs".
 - **The key strip, the leave held and Settings in tabs** (#181), merged on the owner's "Merge and deploy", which
   deploys the page (the rooms' code is untouched). The owner's three asks
   ([[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]], Claude's calls listed there): the
