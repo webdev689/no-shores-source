@@ -35,6 +35,10 @@ export interface Goal {
   readonly greet?: string;
   readonly order?: readonly number[];
   readonly slot?: string;
+  readonly types?: readonly string[];
+  readonly rank?: string;
+  readonly island?: string;
+  readonly side?: string;
 }
 
 /** A task: its id, its tracker words, the scenes said as it begins and as it is done, its goals, and what it gives
@@ -77,7 +81,7 @@ export const COUNTERS: Readonly<Record<string, number>> = {
 };
 
 /** The smith who sells a slot's pieces, by their station's kind. */
-const SMITH_OF: Readonly<Record<string, string>> = {
+export const SMITH_OF: Readonly<Record<string, string>> = {
   melee: 'weaponsmith',
   ranged: 'weaponsmith',
   head: 'armorsmith',
@@ -100,6 +104,14 @@ function walked(state: QuestState | null | undefined): { quest: QuestLine; task:
 
 /** Whether the goal at `index` of the task now is met. */
 const met = (goal: Goal, count: number): boolean => count >= most(goal);
+
+/** The task now's goals not yet met, in its order, each with its place among the task's goals. */
+export function openGoals(state: QuestState | null | undefined): { readonly goal: Goal; readonly index: number }[] {
+  const now = walked(state);
+  return (now?.task.goals ?? []).flatMap((goal, index) =>
+    met(goal, now?.counts[index] ?? 0) ? [] : [{ goal, index }],
+  );
+}
 
 /** The kinds whose goal runs the task's clock: a race's time left, or the wait before a failed step (a ward lost, a
  *  quarry that noticed, the player seen) is tried again. An escort waits on no clock: it waits for the player. */

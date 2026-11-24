@@ -32,6 +32,9 @@ export interface NodeInfo {
   /** A patrol area's resource places (where, and the island's resource they hold), where its room's nodes stand, in
    *  its layout's order. */
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
+  /** A sea's island: its kind (cove, ruin, quarry), and its wrecks where they lie, in its plan's order. */
+  readonly isle?: string;
+  readonly wrecks?: readonly Point[];
   /** A patrol area's foes' sites, in its caverns and on its runs' beats, where its room stands groups (`laidNodes`). */
   readonly foes?: readonly Point[];
   /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */

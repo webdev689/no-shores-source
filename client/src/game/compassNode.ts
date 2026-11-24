@@ -12,6 +12,7 @@ import {
   shipsMarked,
 } from '../plus/compass.ts';
 import { TONES } from '../plus/tones.ts';
+import { questMark } from '../combat/compassNode.ts';
 
 /** How much of the strip at each end a point fades across, so marks come and go softly at its ends. */
 const FADE_SHARE = 0.08;
@@ -39,13 +40,14 @@ const bow = (colour: string): Node['picture'] => ({
   },
 });
 
-/** The compass turned to `heading` (turns from north), marking `ships` round a player at `from`, in a view `width`
- *  CSS pixels wide. */
+/** The compass turned to `heading` (turns from north), marking `ships` and the quest's waypoint at `quest` round a
+ *  player at `from`, in a view `width` CSS pixels wide. */
 export function compassNode(
   width: number,
   heading: number,
   from: readonly [number, number] = [0, 0],
   ships: readonly ShipMark[] = [],
+  quest: readonly [number, number] | null = null,
 ): Node {
   const span = Math.round(Math.min(COMPASS.width, COMPASS.share * width));
   const { height, rule } = COMPASS;
@@ -91,6 +93,7 @@ export function compassNode(
         children: [{ width: 2, height: 8, fill: TONES.brass, float: { at: [0.5, 0.5], anchor: [0.5, 0.5] } }],
       },
       ...marks,
+      ...(quest ? questMark(quest, from, heading) : []),
     ],
   };
 }

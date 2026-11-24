@@ -361,6 +361,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Lattice Is Shaded Darker, With Detailed Attacks and Projectile Tracers]]
 - [[Ships at Sea Wear Their Guild's Tag]]
 - [[CI Is the Check Before a Merge]]
+- [[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]
+- [[Waypoints as Claude Builds Them]]
 
 ## Replaced
 
