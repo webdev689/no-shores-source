@@ -90,6 +90,12 @@ decision, made in the same change as its entry here.
 | `client/src/game/welcome/` | The stranger's welcome to Overlook after the story: her words, the camera's flight to each place she names with the player's keys held, and her gift asked of the room ([[Prologue]]) |
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings, and the keeper that keeps each player's character with the accounts while they play |
 | `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the judge of the [[Names]] players set for others to read, the Roster (friends, companies, guilds, blocks, mutes, reports, where each player is), the chat's hall and its law, the characters the rooms hold, Find a Company's queues, and the database's migrations |
+| `site/` | The [[Website]], built apart from the game by its own Vite config (`site/vite.config.ts`) into `target/site/`: one folder a page, each `index.html` naming its words, links and pictures by key |
+| `site/src/siteMap.ts` | The site's pages, the outside places it links to (Play, the Discord) and its own address, each named once; adding a page is one entry here |
+| `site/src/words.ts` | Every word the site says, by page and name: the owner's premise passage by passage, and the lines from the decisions |
+| `site/src/page.ts`, `sitePlugin.ts` | A page made whole: the bar and the foot laid in, its words, links and pictures filled; and the Vite plugin that does it at serve and at build and writes the pictures into the build |
+| `site/src/art/` | The site's pictures, drawn at build time: the sheet and its PNG writer, the scenes' parts, the scenes, and the owner's logo and the tab's icon from the game's own pixel picture |
+| `site/src/site.css` | The site's one stylesheet: the night sea, lantern gold, framed pictures and Pixelify Sans, bundled |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names and borders; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |

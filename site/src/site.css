@@ -1,0 +1,421 @@
+/* The website's one stylesheet: the night sea, lantern gold, framed pictures, the pixel face. */
+@import '@fontsource-variable/pixelify-sans/index.css';
+
+/* Pixelify Sans draws the copyright sign as a speck; the device's own sans draws that one sign. Nothing is fetched. */
+@font-face {
+  font-family: 'Site Marks';
+  src: local('Arial'), local('Helvetica'), local('DejaVu Sans'), local('Liberation Sans');
+  unicode-range: U+00A9;
+}
+
+:root {
+  color-scheme: dark;
+  --night: #070c18;
+  --deep: #0a1222;
+  --panel: #0e1a2e;
+  --edge: #2b3a55;
+  --edge-lit: #3d5276;
+  --ink: #e4e9f1;
+  --ink-soft: #b4c1d6;
+  --gold: #ffd36e;
+  --gold-mid: #d99a36;
+  --gold-deep: #7a4a16;
+  --shadow: 0 14px 34px rgb(0 0 0 / 45%);
+  --gutter: clamp(16px, 4vw, 40px);
+  --measure: 66ch;
+  font-family: 'Site Marks', 'Pixelify Sans Variable', system-ui, sans-serif;
+  font-size: clamp(17px, 0.6vw + 14px, 20px);
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--night);
+  scrollbar-color: var(--edge-lit) var(--deep);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--night) 0%, var(--deep) 60%, #050913 100%);
+  overflow-x: hidden;
+}
+
+main {
+  flex: 1;
+}
+
+::selection {
+  background: var(--gold-mid);
+  color: var(--night);
+}
+
+img {
+  image-rendering: pixelated;
+  display: block;
+}
+
+a {
+  color: var(--gold);
+  text-underline-offset: 0.25em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+h1,
+h2 {
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+  margin: 0 0 0.6em;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  color: var(--gold);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  color: var(--gold);
+}
+
+p {
+  margin: 0 0 0.9em;
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+.skip {
+  position: absolute;
+  left: var(--gutter);
+  top: -100px;
+  z-index: 10;
+  padding: 0.5em 1em;
+  background: var(--gold);
+  color: var(--night);
+}
+
+.skip:focus {
+  top: 8px;
+}
+
+/* The bar: the logo at its own size, the pages, Play. On a narrow screen the pages wrap under the logo, and the bar
+   scrolls away rather than hold a seventh of the screen. */
+.bar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 8px var(--gutter);
+  background: rgb(7 12 24 / 94%);
+  border-bottom: 2px solid var(--edge);
+}
+
+.bar-brand img {
+  width: 255px;
+  height: 64px;
+}
+
+.bar-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+}
+
+.bar-nav a:not(.button) {
+  color: var(--ink);
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.bar-nav a:not(.button):hover,
+.bar-nav a[aria-current='page'] {
+  color: var(--gold);
+  border-bottom-color: var(--gold-mid);
+}
+
+.button {
+  display: inline-block;
+  padding: 0.45em 1.1em;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  background: var(--panel);
+  border: 2px solid var(--edge-lit);
+  box-shadow:
+    inset 0 -3px 0 rgb(0 0 0 / 35%),
+    0 6px 14px rgb(0 0 0 / 35%);
+  transition:
+    background 160ms ease-out,
+    transform 160ms ease-out;
+}
+
+.button:hover {
+  background: #15243c;
+  transform: translateY(-2px);
+}
+
+.button-gold {
+  color: #1a1206;
+  background: var(--gold);
+  border-color: #fff1c4;
+}
+
+.button-gold:hover {
+  background: #ffe08f;
+}
+
+.button-big {
+  font-size: 1.2rem;
+  padding: 0.55em 1.6em;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  justify-content: center;
+  max-width: none;
+}
+
+/* The home page's scene: the picture fills the band, its lanterns flicker, the logo and the first line over the sky. */
+.hero {
+  position: relative;
+  height: clamp(420px, 66vh, 560px);
+  overflow: hidden;
+  border-bottom: 2px solid var(--edge);
+}
+
+.hero-art,
+.hero-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 100%;
+}
+
+.hero-lights {
+  animation: flicker 3.2s steps(4) infinite;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0.8;
+  }
+}
+
+.hero-words {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: clamp(36px, 9vh, 96px) var(--gutter) 0;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0;
+}
+
+.hero-logo {
+  width: 255px;
+  height: 64px;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 70%));
+}
+
+.hero-line {
+  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  color: var(--ink);
+  text-shadow: 0 2px 8px rgb(0 0 0 / 90%);
+  margin: 12px 0 20px;
+}
+
+@media (min-width: 640px) {
+  .bar {
+    position: sticky;
+    top: 0;
+  }
+
+  .hero {
+    height: clamp(440px, 82vh, 760px);
+  }
+
+  .hero-art img {
+    object-position: 62% 100%;
+  }
+
+  .hero-logo {
+    width: 510px;
+    height: 128px;
+  }
+}
+
+/* The owner's words between the pictures: set apart, centred, the short lines heavier. */
+.passage {
+  padding: clamp(48px, 9vw, 112px) var(--gutter);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-size: clamp(1.1rem, 1.4vw + 0.6rem, 1.4rem);
+  color: var(--ink-soft);
+}
+
+.passage .beat {
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 0.3em;
+}
+
+.closing .beat {
+  color: var(--gold);
+  font-size: 1.3em;
+  margin-bottom: 1.2em;
+}
+
+.closing {
+  padding-bottom: 0;
+}
+
+/* Framed pictures: an outer edge, a gold inner line, a shadow under. */
+.frame {
+  width: 100%;
+  height: auto;
+  border: 3px solid var(--edge);
+  outline: 2px solid var(--gold-deep);
+  outline-offset: -7px;
+  background: var(--deep);
+  box-shadow: var(--shadow);
+}
+
+.leads {
+  display: grid;
+  gap: clamp(20px, 3vw, 36px);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(14px, 2vw, 22px);
+  background: var(--panel);
+  border: 2px solid var(--edge);
+  box-shadow: var(--shadow);
+}
+
+.card .frame {
+  margin-bottom: 20px;
+}
+
+.card .button {
+  margin-top: auto;
+}
+
+/* A page's own head, then its scenes: the picture and its words side by side on a wide screen, in turn left and right. */
+.page-head {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(40px, 7vw, 88px) var(--gutter) clamp(16px, 3vw, 32px);
+}
+
+.lede {
+  font-size: clamp(1.15rem, 1.6vw + 0.6rem, 1.5rem);
+  color: var(--ink-soft);
+}
+
+.scene {
+  display: grid;
+  gap: clamp(20px, 4vw, 56px);
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 64px) var(--gutter);
+}
+
+@media (min-width: 900px) {
+  .scene {
+    grid-template-columns: 7fr 5fr;
+  }
+
+  .scene:nth-of-type(even) {
+    grid-template-columns: 5fr 7fr;
+  }
+
+  .scene:nth-of-type(even) .frame {
+    order: 2;
+  }
+}
+
+/* The foot: the pages by name, the Discord once it has an address, the copyright. */
+.foot {
+  margin-top: clamp(32px, 6vw, 72px);
+  padding: 28px var(--gutter) 36px;
+  border-top: 2px solid var(--edge);
+  background: #050913;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.foot ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 28px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.foot a {
+  color: var(--ink);
+}
+
+.foot a[aria-current='page'] {
+  color: var(--gold);
+}
+
+.foot p {
+  margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-lights {
+    animation: none;
+  }
+
+  .button {
+    transition: none;
+  }
+
+  .button:hover {
+    transform: none;
+  }
+}
