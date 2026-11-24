@@ -471,3 +471,6 @@ pub(crate) fn space_of(plan: &Plan, encounter: usize) -> String {
 #[cfg(test)]
 #[path = "breach_tests.rs"]
 mod breach_tests;
+#[cfg(test)]
+#[path = "fights_tests.rs"]
+mod fights_tests;

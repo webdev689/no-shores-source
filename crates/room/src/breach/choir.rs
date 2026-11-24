@@ -221,7 +221,7 @@ impl Room {
     }
 
     /// The Scrivener stands at the altar's desk, warded; the Lodestone stands on its plinth, needed.
-    fn wake_scrivener(&mut self, breach: &mut Breach, fight: &mut Choir) {
+    pub(crate) fn wake_scrivener(&mut self, breach: &mut Breach, fight: &mut Choir) {
         let clock = self.clock;
         let Some((at, _)) = breach.plan.socket("choir", "lectern-1") else { return };
         let scrivener = self.stand_breach_foe(breach, (SCRIVENER, Rank::Boss), at, Some("The Scrivener"));

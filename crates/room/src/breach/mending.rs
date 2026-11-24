@@ -34,6 +34,7 @@ const OPEN: [[bool; 3]; 3] = [[true, false, false], [false, true, true], [true, 
 /// Mender.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Mending {
+    pub begun: bool,
     pub stage: u8,
     pub stage_from: u64,
     pub fused: [u8; 3],
@@ -100,7 +101,7 @@ impl Room {
         let won = fight.mender.is_some_and(|id| !self.standing_foe(id)) && fight.stage == 3;
         breach.fights.mending = fight;
         if closed {
-            breach.fights.mending.stage_from = u64::MAX / 2;
+            (breach.fights.mending.stage_from, breach.fights.mending.next_walker) = (u64::MAX / 2, u64::MAX);
             self.unwrite_all(breach);
         } else if won {
             self.win_encounter(breach, MENDING);

@@ -46,7 +46,8 @@ pub enum Stone {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Lodestone {
     pub stone: Stone,
-    pub charged_at: u64,
+    /// When it was last grounded: it charges GROUND_CHARGE from then, and stands charged where never grounded.
+    pub grounded_at: Option<u64>,
     pub held_from: Option<u64>,
     pub rests_until: u64,
     pub needed: bool,
@@ -90,14 +91,12 @@ impl Room {
     pub(crate) fn take_lodestone(&mut self, id: PlayerId) -> bool {
         let Some(found) = self.players.get(&id).filter(|found| found.living()) else { return false };
         let body = found.fighter.body;
-        let clock = self.clock;
         let Some(breach) = self.breach.as_mut() else { return false };
         let Some(at) = breach.lodestone.lying_at() else { return false };
         if apart([body.x, body.y], [at[0], at[1]]) > TAKE_REACH_M || (body.z - at[2]).abs() > 2.0 {
             return false;
         }
         breach.lodestone.stone = Stone::Borne(id);
-        breach.lodestone.charged_at = breach.lodestone.charged_at.max(clock.saturating_sub(GROUND_CHARGE));
         self.tell(EventKind::LodestoneTaken, None, id, id, 0.0);
         true
     }
@@ -123,9 +122,10 @@ impl Room {
         let body = found.fighter.body;
         let clock = self.clock;
         let Some(mut breach) = self.breach.take() else { return false };
-        let ready = breach.lodestone.bearer() == Some(id) && clock >= breach.lodestone.charged_at + GROUND_CHARGE;
+        let charged = breach.lodestone.grounded_at.is_none_or(|at| clock >= at + GROUND_CHARGE);
+        let ready = breach.lodestone.bearer() == Some(id) && charged;
         if ready {
-            breach.lodestone.charged_at = clock;
+            breach.lodestone.grounded_at = Some(clock);
             let near: Vec<FighterId> = self
                 .foes
                 .iter()

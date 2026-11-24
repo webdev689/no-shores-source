@@ -174,7 +174,7 @@ impl Room {
             stone: kind,
             bearer,
             stone_at: at.map(|axis| axis as f32),
-            charge: per_mille(clock.saturating_sub(stone.charged_at), GROUND_CHARGE),
+            charge: stone.grounded_at.map_or(1000, |at| per_mille(clock.saturating_sub(at), GROUND_CHARGE)),
             held: stone.held_from.map_or(0, |from| 1000 - per_mille(clock.saturating_sub(from), HOLD_MOST)),
             lying_ticks,
             marked: breach.marked.keys().copied().collect(),
