@@ -12,7 +12,10 @@ After a playtest, the owner:
 
 ## What it settles
 
-- The owner saw none of the public event's elements in the playtest ([[Public Events]]); what hid them is not found.
+- The owner saw none of the public event's elements in the playtest ([[Public Events]]). Its likely cause, found in
+  the code and not seen live: the page asked R2 for all 512 module meshes at once, the events' 42 last, and never
+  asked again for one that failed, and a prop missing a mesh draws nothing. The meshes are fetched eight at a time,
+  each failure that passes asked again ([[Modules]]).
 - The Lattice gets a proper shading pass: they read too bright ([[Lattice]]).
 - The Lattice's attacks get more detail, and their projectiles tracers ([[Lattice]], [[Combat]]).
 - Replaces in part [[Public Events as Claude Builds Them]] ("The Lattice at night"): a Lattice figure's bright,
