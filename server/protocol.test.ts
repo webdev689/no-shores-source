@@ -27,7 +27,7 @@ function moduleFile(from: string, path: string): string {
   return `crates/${name}/src/${module}.rs`;
 }
 
-test("the protocol's version hashes every file that lays out the numbers crossing as plain lists", () => {
+test("the protocol's version hashes every file that lays out the fights' numbers crossing as plain lists", () => {
   // The foes' list and how others' numbers are packed are laid out by the protocol itself.
   for (const path of ['crates/protocol/src/land.rs', 'crates/protocol/src/pack.rs'])
     assert.ok(PROTOCOL_PATHS.includes(path), `${path} is hashed`);

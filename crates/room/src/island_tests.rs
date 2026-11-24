@@ -217,10 +217,11 @@ fn an_islands_nodes_all_stand_and_each_is_gathered_once_by_each_account_while_it
     let other = room.join().expect("a room with space");
     room.own(other, "account-b");
     assert!(gather(&mut room, other) > 0, "another account gathers it");
-    // The next landing opens the room again: back for an account that gathered nothing in it today.
+    // The next landing opens the room again: what the room held gathered is gone with it, so the node is back for an
+    // account whose character brings nothing gathered there today.
     let mut again = Room::island(&plan, AT, None, None, Some(BRINEGLASS));
     let landed = again.join().expect("a room with space");
-    again.own(landed, "account-c");
+    again.own(landed, "account-a");
     assert!(again.nodes_for(landed).any(|(index, _)| index == 0), "back on the next landing");
     assert!(Room::island(&plan, AT, None, None, None).resource_nodes.is_empty(), "none without a resource");
 }

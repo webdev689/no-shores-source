@@ -1,7 +1,7 @@
-// The protocol's version: the hash of the schema's files, of every file laying out the numbers that cross as plain
-// lists (`FLOATS`), and of the content and rules numbered on the wire (tools/numbered.json), never a number bumped by
-// hand: a page and a room built from different layouts, or from lists in a different order, know it from the room's
-// welcome.
+// The protocol's version: the hash of the schema's files, of the files laying out the fights' numbers that cross as
+// plain lists (`FLOATS`), and of the content and rules numbered on the wire (tools/numbered.json), never a number
+// bumped by hand: a page and a room built from different layouts, or from lists in a different order, know it from the
+// room's welcome.
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -12,8 +12,8 @@ export const SCHEMAS: readonly string[] = readdirSync('crates/protocol', { encod
   .filter((name) => name.endsWith('.fbs'))
   .sort()
   .map((name) => join('crates/protocol', name));
-/** The files laying out the numbers that cross as plain lists: a fighter (its body, statuses and trim among them), an
- *  intent and a glance, the sea fight's view and lay, the foes' list and how others' numbers are packed. */
+/** The files laying out the fights' numbers that cross as plain lists: a fighter (its body, statuses and trim among
+ *  them), an intent and a glance, the sea fight's view and lay, the foes' list and how others' numbers are packed. */
 const FLOATS = [
   'crates/combat/src/floats.rs',
   'crates/movement/src/floats.rs',
