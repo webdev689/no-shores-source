@@ -1,5 +1,5 @@
 ---
-id: 160
+id: 172
 title: "A rules fix tipped a scripted bot run's pinned outcome at its one minute; only a sweep over many minutes told chance from a harder event"
 status: open
 type: internal
