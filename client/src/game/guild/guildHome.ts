@@ -42,11 +42,12 @@ const ROW_PX = 48;
 const ROSTER_HEAD_PX = 72;
 /** The roster's width from which its page arrows stand in its head's line. */
 const ROSTER_ROOMY_PX = 300;
-/** What a together bounty's brass words mean. */
-/** The room the edge's presses take, two to a line under the roster, and the outposts' panel there, at the label's
- *  first step. */
+/** The room the edge's presses take, two to a line under the roster, and the outposts' panel there with each of its
+ *  lines, at the label's first step. */
 const EDGE_GRID_PX = 128;
-const OUTPOSTS_PX = 90;
+const OUTPOSTS_PX = 60;
+const OUTPOST_LINE_PX = 20;
+/** What a together bounty's brass words mean. */
 const BRASS_WORDS = 'Brass: a bounty the guild does together.';
 
 /** The roster column's page, kept across frames. */
@@ -86,7 +87,9 @@ export function homeNode(context: PlainContext, home: Home, turn: RosterTurn): N
   // the room.
   const narrow = room.width < 1000;
   const scale = Math.max(2, Math.min(narrow ? 2 : 4, Math.floor((room.height - 30) / 100)));
-  const besideRoster = (narrow ? EDGE_GRID_PX : 0) + OUTPOSTS_PX * sizes.label;
+  // The outposts' panel grows a line for each outpost the page hands it, and the roster gives up rows for it.
+  const lines = Math.max(1, (home.outposts && home.outposts.children?.length) || 1);
+  const besideRoster = (narrow ? EDGE_GRID_PX : 0) + (OUTPOSTS_PX + OUTPOST_LINE_PX * lines) * sizes.label;
   const rosterWidth = Math.min(260 + 80 * sizes.label, Math.max(180, Math.floor(room.width * 0.24)));
   const headPx = ROSTER_HEAD_PX + (rosterWidth < ROSTER_ROOMY_PX ? 40 : 0);
   const rowPx = ROW_PX + 12 * (sizes.label - 1) + 6;
