@@ -316,15 +316,16 @@ def rope_walk(module, x, south, north):
 
 
 def dock_works(module):
-    west, east, front, back, wall = -3.2, 3.2, 0.4, 5.2, 3.6
-    def piers(x):
-        for y in (front, front + 1.6):
-            kit.block(module, (x, y, 0.0), (0.6, 0.6, wall), 'stone', bevel=0.05, wear=0.03, cuts=1)
-
-    shell.walls(module, 'stone', west, east, front, back, wall, open_front=True, sides_from=back - 1.6, beside=piers)
-    for y in (front, front + 1.6):
-        shapes.slab(module, (0.0, y, wall + 0.12), (east - west + 0.4, 0.3, 0.26), 'timber', bevel=0.01)
-    shell.shingles(module, west - 0.1, east + 0.1, front - 0.2, back + 0.1, wall + 0.25, wall + 2.4)
+    # The shed runs along the yard's length, as the Dockyard II's does: its stone back wall on the west, short end
+    # walls, its east side open on piers; the crane and the rope walk in the open east of it and before it.
+    west, east, front, back, wall = -3.2, 0.6, -0.8, 5.2, 3.6
+    shell.run(module, 'stone', (west, front), (west, back), wall)
+    shell.run(module, 'stone', (west, back), (east, back), wall)
+    shell.run(module, 'stone', (west, front), (west + 1.6, front), wall)
+    for y in (front, 1.2, 3.2):
+        kit.block(module, (east, y, 0.0), (0.6, 0.6, wall), 'stone', bevel=0.05, wear=0.03, cuts=1)
+    shapes.slab(module, (east, (front + back) / 2, wall + 0.12), (0.3, back - front + 0.4, 0.26), 'timber', bevel=0.01)
+    shell.shingles(module, west - 0.1, east + 0.2, front - 0.1, back + 0.1, wall + 0.25, wall + 2.4, along_y=True)
     # The forge for fittings under the shed's back wall, its chimney through the roof.
     kit.block(module, (-1.6, back - 0.9, 0.0), (1.8, 1.2, 0.8), 'stone', bevel=0.05, wear=0.03, cuts=1)
     kit.block(module, (-1.6, back - 1.0, 0.8), (1.2, 0.7, 0.06), 'glow', bevel=0.0, wear=0.0, part=False)
@@ -334,14 +335,14 @@ def dock_works(module):
     shapes.pyramid(module, (-1.6, back - 0.6, 2.0), 0.95, 0.65, 1.2, 'stone', eave=0.2, top=(0.4, 0.4))
     kit.block(module, (-1.6, back - 0.4, 3.2), (0.8, 0.8, 3.6), 'stone', bevel=0.04, wear=0.03, cuts=1)
     module.part((-2.5, back - 1.5, 2.0), (-0.7, back, 3.2))
-    stall_weaponsmith.anvil(module, (-0.1, back - 2.1, 0.0), turn=0.2)
+    stall_weaponsmith.anvil(module, (-1.4, 2.4, 0.0), turn=0.2)
     for k in range(5):
-        shapes.slab(module, (0.9 + k * 0.12, back - 0.35, 1.2 + (k % 2) * 0.2), (0.08, 0.04, 0.5), 'iron')
-    crane(module, -2.3, -2.0)
-    rope_walk(module, 2.3, -4.6, 2.2)
-    iron_pallet(module, (-0.4, -1.4, 0.0))
+        shapes.slab(module, (-0.2 + k * 0.12, back - 0.35, 1.2 + (k % 2) * 0.2), (0.08, 0.04, 0.5), 'iron')
+    crane(module, -2.3, -2.4)
+    rope_walk(module, 2.3, -4.6, 4.4)
+    iron_pallet(module, (-0.2, -3.0, 0.0))
     for k in range(3):
-        stall_tailor.bolt(module, (0.6 + k * 0.42, back - 1.3, 0.2), 1.2, 0.2, 'linen', along_x=False)
-    module.part((0.35, back - 1.95, 0.0), (1.7, back - 0.65, 0.4))
+        stall_tailor.bolt(module, (-2.8 + k * 0.42, 0.4, 0.2), 1.2, 0.2, 'linen', along_x=False)
+    module.part((-3.05, -0.25, 0.0), (-1.75, 1.05, 0.4))
     stores_at(module, -5.4)
     shell.fits(module, 2, 3)

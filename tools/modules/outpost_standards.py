@@ -1,9 +1,9 @@
 """The Banner Standard (`outpost-standard-driftwood`, `-oak`, `-iron`, `-brass`, `-whalebone`, `-gilded`), 1 x 1 cell:
 a T-shaped staff about 6 m tall on a weighted stone foot, a crossbar 1.8 m wide near its head standing just in front
-of its pole and a finial over it. The page hangs the guild's banner from the crossbar, at `cloth`, so no cloth is
-modelled. And the scaffolds (`outpost-scaffold-1`, `-2`, `-2x3`, `-3`, `-4`) the page stands over a structure being
-built, each filling its footprint: poles and planks in lifts, braces, a ladder, a gin wheel, stacked timber and a tarp
-over sacks inside a footing of laid stones.
+of its pole and a finial over it. The page hangs the guild's banner from the crossbar, at `cloth` on the bar's top,
+so no cloth is modelled. And the scaffolds (`outpost-scaffold-1`, `-2`, `-2x3`, `-3`, `-4`) the page stands over a
+structure being built, each filling its footprint: poles and planks in lifts, braces, a ladder, a gin wheel, stacked
+timber and a tarp over sacks inside a footing of laid stones.
 """
 import math
 
@@ -28,7 +28,7 @@ def weighted_foot(module, material='stone', trim='trim'):
 
 def crossbar(module, radius, material, ends=None, end_radius=0.07):
     """The crossbar along x just in front of the pole, its ends capped in `ends` when given, and the `cloth` socket
-    under its middle, facing out of its front."""
+    on top of its middle, facing out of its front: the cloth hangs from there, so its loops wrap the bar."""
     y = -radius - 0.06
     shapes.rod(module, (-BAR_M / 2, y, BAR_Z), (BAR_M / 2, y, BAR_Z), 0.05, material, sides=8)
     shapes.slab(module, (0.0, y / 2, BAR_Z), (0.16, -y + 0.06, 0.14), material)
@@ -36,7 +36,7 @@ def crossbar(module, radius, material, ends=None, end_radius=0.07):
         for side in (-1, 1):
             shapes.lathe(module, (side * (BAR_M / 2 - 0.1), y, BAR_Z), [(0.06, 0.0), (end_radius, 0.03),
                          (end_radius, 0.07), (0.0, 0.1)], ends, sides=8, turn=(0.0, side * math.pi / 2, 0.0))
-    module.socket('cloth', (0.0, y, BAR_Z - 0.05), (0, -1))
+    module.socket('cloth', (0.0, y, BAR_Z + 0.05), (0, -1))
     return y
 
 
@@ -139,7 +139,8 @@ def standard_whalebone(module):
         x = -0.6 + k * 0.2
         shapes.cutout(module, [(-0.03, 0.0), (0.03, 0.0), (0.0, -0.08)], 0.05, 'bone',
                       (x, y, BAR_Z + 0.03 - 0.04 * math.cos(x / 0.9 * math.pi / 2)))
-    module.socket('cloth', (0.0, y, BAR_Z - 0.12), (0, -1))
+    # Within the jaw over the cloth's width, so its loops wrap the bone.
+    module.socket('cloth', (0.0, y, BAR_Z + 0.15), (0, -1))
     shapes.lathe(module, (0.0, 0.0, TOP_M - 0.2), [(0.07, 0.0), (0.1, 0.12), (0.07, 0.3), (0.02, 0.62), (0.0, 0.65)],
                  'bone', sides=8)
     pole_part(module, 0.12)

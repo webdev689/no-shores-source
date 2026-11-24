@@ -75,6 +75,24 @@ def gate_mound(module):
     shapes.rod(module, (-1.6, DOORWAY_Y - 0.05, 2.05), (1.6, DOORWAY_Y - 0.05, 2.05), 0.16, 'timber', sides=6)
     for x in (-1.0, 1.0):
         shapes.slab(module, (x, DOORWAY_Y - 0.05, 1.0), (0.2, 0.2, 2.0), 'timber')
+    # A mine's portal over the head of the steps down, so the mound reads as a way in from the flight: two stout
+    # posts, a cap beam braced to them and a lantern hung under it.
+    portal = PLATFORM_M + 2.6
+    for x in (-1, 1):
+        fittings.post(module, (x * (WELL_HALF_M + 0.15), ARCH_Y, PLATFORM_M), 2.6, side=0.28)
+        shapes.slab(module, (x * (WELL_HALF_M - 0.2), ARCH_Y, portal - 0.3), (0.8, 0.14, 0.14), 'timber',
+                    turn=(0.0, -x * 0.75, 0.0))
+    shapes.slab(module, (0.0, ARCH_Y, portal + 0.15), (WELL_HALF_M * 2 + 1.0, 0.36, 0.3), 'timber', bevel=0.01)
+    module.part((-WELL_HALF_M - 0.5, ARCH_Y - 0.18, portal), (WELL_HALF_M + 0.5, ARCH_Y + 0.18, portal + 0.3))
+    fittings.lantern(module, (0.0, ARCH_Y - 0.1, portal - 0.6), size=0.24, hung_from=portal)
+    # The mound's front shored with posts and planks either side of the flight.
+    top_front = FLIGHT_FOOT_Y + STEPS * RUN_M
+    for x in (-1, 1):
+        for k in range(4):
+            fittings.post(module, (x * (1.9 + k * 1.0), top_front - 0.1, 0.0), PLATFORM_M + 0.1, side=0.18,
+                          part=False)
+        for z in (0.5, 1.4):
+            shapes.slab(module, (x * 3.4, top_front - 0.04, z), (3.4, 0.06, 0.32), 'timber')
     # The headframe over the well's mouth: two legs, a beam, a wheel and its rope down into the dark.
     for x in (-1, 1):
         shell.pole(module, (x * 1.8, 2.4, PLATFORM_M), (x * 0.9, 2.4, PLATFORM_M + 2.8), 0.08)

@@ -260,10 +260,14 @@ def opening(module, middle, quarter, wide, high, material='black', frame='timber
         shapes.slab(module, (0.0, -0.05, -0.04), (wide + 0.2, 0.14, 0.08), frame)
 
 
-def shutters(module, middle, quarter, wide, high):
-    """A shuttered window: its opening, and two board shutters swung open flat to the wall either side of it."""
+def shutters(module, middle, quarter, wide, high, bars=False):
+    """A shuttered window: its opening, crossed by a timber mullion and transom when `bars`, and two board shutters
+    swung open flat to the wall either side of it."""
     opening(module, middle, quarter, wide, high)
     with shapes.frame(module, middle, quarter):
+        if bars:
+            shapes.slab(module, (0.0, -0.05, high / 2), (0.07, 0.04, high), 'timber')
+            shapes.slab(module, (0.0, -0.05, high * 0.6), (wide, 0.04, 0.07), 'timber')
         for side in (-1, 1):
             x = side * (wide * 0.75 + 0.14)
             shapes.slab(module, (x, -0.04, high / 2), (wide / 2, 0.04, high), 'timber')
