@@ -70,6 +70,30 @@ exposure and how long it lasts. As the rules build them (`hull_builds_json`, whi
 - **A captain's ship keeps its rank's numbers** ([[Naval Combat]], "Ranks and factions"), and the World Editor's fleet
   room, which holds no characters, and the story's fight still sail the Sloop.
 
+## Measured
+
+A plain player of each hull against one bold Grey Tithe captain of each rank, 12 fights a row in the world's hostile
+waters, standing off at 300 m or closing to 150 m (`measure_fights_by_hull`, run by hand in release):
+
+| Hull, captain | Stand-off: won / sunk, median length, hull kept | Closing to 150 m: the same |
+|---|---|---|
+| Sloop, Major | 12 / 0 of 12, 206 s, 100% | 10 / 2 of 12, 257 s, 55% |
+| Sloop, Elite | 12 / 0 of 12, 242 s, 96% | 4 / 8 of 12, 225 s, 32% |
+| Sloop, Miniboss | 12 / 0 of 12, 261 s, 76% | 1 / 11 of 12, 162 s, 50% |
+| Schooner, Major | 12 / 0 of 12, 204 s, 98% | 10 / 2 of 12, 259 s, 55% |
+| Schooner, Elite | 12 / 0 of 12, 215 s, 91% | 3 / 9 of 12, 186 s, 33% |
+| Schooner, Miniboss | 12 / 0 of 12, 251 s, 75% | 1 / 11 of 12, 150 s, 24% |
+| Brig, Major | 12 / 0 of 12, 213 s, 97% | 10 / 2 of 12, 258 s, 67% |
+| Brig, Elite | 12 / 0 of 12, 233 s, 92% | 10 / 2 of 12, 279 s, 41% |
+| Brig, Miniboss | 12 / 0 of 12, 247 s, 78% | 2 / 10 of 12, 207 s, 26% |
+| Frigate, Major | 12 / 0 of 12, 237 s, 99% | 12 / 0 of 12, 232 s, 68% |
+| Frigate, Elite | 12 / 0 of 12, 234 s, 93% | 10 / 2 of 12, 280 s, 55% |
+| Frigate, Miniboss | 12 / 0 of 12, 256 s, 82% | 4 / 8 of 12, 238 s, 32% |
+
+Standing off, every hull wins every fight. Closing in, the Schooner fights as the Sloop does, its edge its speed; the
+Brig and the Frigate take ten Elites in twelve to the Sloop's four; the Frigate keeps the most of its hull and takes
+the most Minibosses. Twelve fights a row leave a row's wins within two or so of chance.
+
 ## The Harbourmaster's counter
 
 Four parts, chosen as the inventory's shelves are (`harbour/harbourPage.ts`): every ask is the Harbourmaster's alone,

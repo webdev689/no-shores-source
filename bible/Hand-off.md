@@ -192,6 +192,23 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The ships at the Harbourmaster**, on branch `ccr-227e6a07-cigm8y`, for the owner's yes to merge, on the owner's
+  "integrating all our current models into the harbormaster", "shouldnt have a ship until they reach the harbor master",
+  "their own standard defined statistics" and "customization options with a cost"
+  ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]], every call of Claude's in
+  [[The Ships at the Harbourmaster as Claude Shapes Them]], the system in [[Shipyard]]). A character keeps a fleet: the
+  Sloop handed over by the welcome's Harbourmaster (a task of its own), the Schooner, Brig and Frigate bought from ship
+  levels 7, 13 and 20; each hull with its class's numbers (how long it lasts, broadside, reload, way, swing, boarders),
+  answering its helm as the Sloop does; 43 dresses (paint, stripe, canvas, flag) bought once and laid free; names from
+  two word lists, free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag. A read-only
+  review found seven faults after the first commit, each fixed with a test (a free name sent twice paid 250, the
+  page's voyage ignored the class's way, refusals without words, a return to the ship before the claim, a shipless
+  player shut out to the sea, a module worn twice, the settled swing); measuring then found the Frigate's lower gun
+  deck falling short, so a player's guns are each elevated from their own deck, still square. Tested offline: the full
+  check (its commit in the pull request), the counter pictured headless (`harbourShots.ts`), a dressed Brig pictured
+  at sea, and 12 fights a row by hull ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open
+  for the owner: the prices, levels and class numbers, the word lists, a figurehead once one is modelled, and whether
+  a captain's guns are elevated gun by gun too ([[Shipyard]], "Limits").
 - **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
   adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
   ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
