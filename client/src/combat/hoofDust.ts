@@ -16,7 +16,7 @@ export const MOST_MOTES = 192;
 /** While it runs at a boosted walk's pace or faster, hooves strike this many times a second, fewer the slower it goes
  *  and none standing, each kicking up this much dust; one strike in three also throws a clod. */
 export const STRIKES_PER_S = 10;
-const STRIKING_MS = 9;
+const STRIKING_SPEED = 9;
 const DUST_A_STRIKE = 3;
 /** As it begins, dust and clods thrown from the hind hooves; as it ends, the cloud thrown ahead. */
 export const DIG_DUST = 18;
@@ -104,8 +104,9 @@ export class HoofDust {
     if (!boosted && this.was)
       for (const side of [-1, 1]) this.throw(rider, ground, DUST, SETTLE_DUST / 2, HOOF_AHEAD, side, [1, 2], 0.4, 1);
     const moved = Math.hypot(rider.feet[0] - this.lastX, rider.feet[1] - this.lastY);
-    const pace = seconds > 0 && Number.isFinite(moved) ? Math.min(1, moved / seconds / STRIKING_MS) : 0;
-    [this.lastX, this.lastY] = [rider.feet[0], rider.feet[1]];
+    const pace = seconds > 0 && Number.isFinite(moved) ? Math.min(1, moved / seconds / STRIKING_SPEED) : 0;
+    this.lastX = rider.feet[0];
+    this.lastY = rider.feet[1];
     if (boosted) {
       for (this.owed += STRIKES_PER_S * pace * seconds; this.owed >= 1; this.owed--, this.struck++) {
         // The hooves strike in turn: near fore, far fore, near hind, far hind.

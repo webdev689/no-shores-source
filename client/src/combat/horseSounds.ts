@@ -12,14 +12,14 @@ export type Gait = 'walk' | 'gallop' | 'boost';
 export const STRIDE_M: Readonly<Record<Gait, number>> = { walk: 1.7, gallop: 3.4, boost: 4.6 };
 /** Faster than this a horse gallops, and faster than this it is boosted (metres a second): between the walk's 6, the
  *  gallop's 12 and the boosted gallop's 18. */
-const GALLOP_MS = 8;
-const BOOSTED_MS = 14;
+const GALLOP_SPEED = 8;
+const BOOSTED_SPEED = 14;
 /** A horse standing this long snorts, and again each time as long. */
 export const SNORT_S = 9;
 /** A rider that moved farther than this in a frame was placed afresh, not ridden. */
 const LEAP_M = 3;
 /** Slower than this a horse stands. */
-const STILL_MS = 0.2;
+const STILL_SPEED = 0.2;
 
 /** The footsteps' grounds, as the hooves' cues name them. */
 const GROUNDS = ['ground', 'stone', 'wood', 'water'] as const;
@@ -77,12 +77,12 @@ export class HorseSounds {
       const moved = Math.hypot(feet[0] - kept.at[0], feet[1] - kept.at[1]);
       const speed = seconds > 0 && moved < LEAP_M ? moved / seconds : 0;
       if (mounted) {
-        const gait: Gait = boosting > 0 || speed > BOOSTED_MS ? 'boost' : speed > GALLOP_MS ? 'gallop' : 'walk';
+        const gait: Gait = boosting > 0 || speed > BOOSTED_SPEED ? 'boost' : speed > GALLOP_SPEED ? 'gallop' : 'walk';
         const ridden = kept.ridden + (moved < LEAP_M ? moved : 0);
         if (stepsBetween(kept.ridden, ridden, STRIDE_M[gait]) > 0) hear(hoofCue(gait, stepCue(feet, ground)), feet, id);
         if (boosting > 0 && kept.boosting <= 0) hear('horse.boost', feet, id);
         kept.ridden = ridden;
-        kept.standing = speed < STILL_MS ? kept.standing + seconds : 0;
+        kept.standing = speed < STILL_SPEED ? kept.standing + seconds : 0;
         if (kept.standing >= SNORT_S) {
           hear('horse.snort', feet, id);
           kept.standing = 0;

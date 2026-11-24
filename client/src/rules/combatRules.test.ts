@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { checkSizes, PAGE_SIZES, roomWasmAt, startCombatRules } from './combatRules.ts';
 import { DRINKS_AT, FIGHTER_FLOATS, GLANCE_FLOATS, INTENT_FLOATS, fighterView } from './fighters.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
+import { BODY_FLOATS } from './movementRules.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
 const FIGHT_HASH = 'ce32e3be40bda863';
@@ -40,7 +41,10 @@ const SCRIPT: readonly Phase[] = [
 function startingPlayer(): Float64Array {
   const fighter = new Float64Array(FIGHTER_FLOATS);
   fighter.set([0, 2, 0, 0, 0, 0, Math.PI, 0, 0, 0, 1]);
-  fighter.set([0, SWORD_AND_SHIELD, 1, 60, 100, 100, 0, 0, 40, 0, 0, Math.PI, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], 22);
+  fighter.set(
+    [0, SWORD_AND_SHIELD, 1, 60, 100, 100, 0, 0, 40, 0, 0, Math.PI, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    BODY_FLOATS,
+  );
   fighter[DRINKS_AT] = 3;
   return fighter;
 }
@@ -68,18 +72,19 @@ test('the scripted fight through WebAssembly moves to the same fingerprint as th
   const rules = startCombatRules(compiled);
   rules.setCourse(COURSE);
   assert.deepEqual(rules.sizes, { fighter: FIGHTER_FLOATS, intent: INTENT_FLOATS, glance: GLANCE_FLOATS });
-  assert.equal(INTENT_FLOATS, 17);
+  assert.equal(INTENT_FLOATS, 18);
   const view = [{ id: 2, glance: foeGlance() }];
   let fighter = startingPlayer();
   const fighters: Float64Array[] = [];
   for (const [ticks, forward, sideways, yaw, stroke, guard, dodge, shoot, aim, bow, heal] of SCRIPT) {
     for (let tick = 0; tick < ticks; tick += 1) {
       fighter = fighter.slice();
-      fighter[23] = bow ? BOW : SWORD_AND_SHIELD;
+      fighter[BODY_FLOATS + 1] = bow ? BOW : SWORD_AND_SHIELD;
       const intent = new Float64Array([
         forward,
         sideways,
         yaw,
+        0,
         0,
         0,
         0,
@@ -95,7 +100,7 @@ test('the scripted fight through WebAssembly moves to the same fingerprint as th
         Number.NaN,
         +(heal && tick === 0),
       ]);
-      fighter = rules.predict(fighter, intent, 1, fighter[23] ?? 0, view).fighter;
+      fighter = rules.predict(fighter, intent, 1, fighter[BODY_FLOATS + 1] ?? 0, view).fighter;
       fighters.push(fighter);
     }
   }

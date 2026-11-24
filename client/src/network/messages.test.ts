@@ -241,14 +241,14 @@ test('a fighting ship’s orders cross as the naval crate’s numbers', () => {
 });
 
 test('an input is its number, its controls and fight buttons in the combat crate’s order, its look, its arms, the tick seen, a foe asked for, a dress if given, and a respawn', () => {
-  const intent = new Float64Array([1, -0.5, 0.3, 1, 0, 1, 0, 6, 1, 0, 1, -0.2]);
+  const intent = new Float64Array([1, -0.5, 0.3, 1, 0, 1, 0, 1, 6, 1, 0, 1, -0.2]);
   const look = { anim: 'ride_gallop', frame: 3, facing: -1.5 };
   const parts = { intent, look, arms: 0x10002, seen: 977n, spawn: { type: 12, rank: 5 } };
   const input = Input.getRootAsInput(
     new flatbuffers.ByteBuffer(inputBytes(42, { ...parts, dress: '{"body":"female"}', respawn: true })),
   );
   assert.equal(input.sequence(), 42);
-  assert.deepEqual(Array.from(input.controlsArray() ?? []), [1, -0.5, 0.3, 1, 0, 1, 0]);
+  assert.deepEqual(Array.from(input.controlsArray() ?? []), [1, -0.5, 0.3, 1, 0, 1, 0, 1]);
   assert.deepEqual(Array.from(input.combatArray() ?? []), [6, 1, 0, 1, -0.2]);
   assert.deepEqual(
     [input.anim(), input.frame(), input.facing(), input.dress(), input.arms(), input.seen(), input.spawn()],

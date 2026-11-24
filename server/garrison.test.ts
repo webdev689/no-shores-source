@@ -14,7 +14,7 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same node, script and fingerprint
  *  (crates/room-wasm/src/garrison_door_tests.rs). */
-const GARRISON_HASH = '6df4581a';
+const GARRISON_HASH = 'd4b41f69';
 const RUN_IN = 420;
 const SWING_EVERY = 30;
 const RUN_TICKS = 1500;
@@ -77,7 +77,7 @@ function runIn(node: object): { hash: string; mostAlert: number; events: number 
   for (let tick = 1; tick <= RUN_TICKS; tick++) {
     const running = tick <= RUN_IN;
     const swing = !running && tick % SWING_EVERY === 0 ? 1 : 0;
-    const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+    const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
     const look = { anim: '', frame: 0, facing: 0 };
     assert.equal(room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) })), 'taken');
     room.tick();
@@ -101,7 +101,7 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
 
 /** The room door's agreement test holds the same run and fingerprint: the node as a patrol whose layout marks a foes'
  *  site the player runs near, so its group stands mid-run on a mesh baked round it then. */
-const PATROL_SITE_HASH = 'ea374418';
+const PATROL_SITE_HASH = 'ade4d029';
 
 test('a patrol’s foes’ site stands its group to the same fingerprint through WebAssembly as natively', () => {
   const { hash, mostAlert } = runIn({ ...NODE, kind: 'patrol', foes: [[-60, 40]] });
@@ -111,7 +111,7 @@ test('a patrol’s foes’ site stands its group to the same fingerprint through
 
 /** The room door's agreement test holds the same run and fingerprint: two players, the garrison's foes shared out
  *  between them. */
-const GARRISON_PAIR_HASH = 'c0541149';
+const GARRISON_PAIR_HASH = '212fe761';
 
 test('two players against a node’s garrison fight to the same fingerprint through WebAssembly as natively', () => {
   const room = startRoomDoor(compiled);
@@ -124,7 +124,7 @@ test('two players against a node’s garrison fight to the same fingerprint thro
       // The second player swings half a beat of swings after the first.
       const running = tick <= RUN_IN;
       const swing = !running && (tick + 15 * index) % SWING_EVERY === 0 ? 1 : 0;
-      const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+      const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
       const look = { anim: '', frame: 0, facing: 0 };
       assert.equal(room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) })), 'taken');
     });
