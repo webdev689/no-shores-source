@@ -10,7 +10,7 @@
 use super::{Breach, CHOIR};
 use crate::{EventKind, PlayerId, Room};
 use ::foes::Rank;
-use ::foes::roster::{BELL, BULWARK, HUSK, SCRIVENER};
+use ::foes::roster::{BELL, BULWARK, FLICKER, HUSK, SCRIVENER};
 use combat::fighter::FighterId;
 use combat::sight::apart;
 
@@ -23,9 +23,12 @@ pub const RING_AFTER: (u64, u64) = (8 * 60, 6 * 60);
 pub const BETWEEN: u64 = 4 * 60;
 /// How long a mark made in the Choir lasts before it unwrites, ticks.
 pub const MARK_LASTS: u64 = 20 * 60;
-/// The font: how near it a body is cleansed, metres, and how long it rests after, ticks.
+/// The font: how near it a body is cleansed, metres, and how long it rests after, ticks: longer than a mark lasts, so a
+/// second ring before it is lit again unwrites.
 pub const FONT_REACH_M: f64 = 2.5;
-pub const FONT_REST: u64 = 10 * 60;
+pub const FONT_REST: u64 = 25 * 60;
+/// A bell's health against a Brute Minor's: three blows of a sword, so a round is won by its order, not its harm.
+pub const BELL_HEALTH: f64 = 0.5;
 /// The Scrivener: how often it marks a desk, how long the mark shows, how often it writes, how often a bell wakes, and
 /// when its Fury begins, ticks; and how near a desk's middle a body blots it, metres.
 pub const MARK_EVERY: u64 = 25 * 60;
@@ -147,6 +150,10 @@ impl Room {
             fight.order = self.drawn_bells(breach, ROUNDS[fight.round], fight.round as u64 + fight.round_from);
             fight.woke = vec![None; fight.order.len()];
             fight.broken = 0;
+            // A wave comes from the chapel's mouths as the round wakes, so the whole company has work.
+            let mouths: Vec<[f64; 3]> = breach.plan.numbered("choir", "mouth").iter().map(|(at, _)| *at).collect();
+            self.breach_wave(breach, "choir", &[(HUSK, Rank::Major), (FLICKER, Rank::Minor)], &mouths, fight.waves);
+            fight.waves += 1;
         }
         let places = breach.plan.numbered("choir", "bell");
         for nth in 0..fight.order.len() {
@@ -204,10 +211,14 @@ impl Room {
         }
     }
 
-    /// A bell at its frame: struck down by any blow worth a few of a Minor's, never moving or striking.
+    /// A bell at its frame, never moving or striking, at BELL_HEALTH.
     fn stand_bell(&mut self, breach: &mut Breach, at: [f64; 3]) -> Option<FighterId> {
         let id = self.stand_breach_foe(breach, (BELL, Rank::Minor), at, None)?;
         self.make_walker(id);
+        if let Some(foe) = self.foes.get_mut(&id) {
+            (foe.fighter.health, foe.fighter.health_max) =
+                (foe.fighter.health * BELL_HEALTH, foe.fighter.health_max * BELL_HEALTH);
+        }
         Some(id)
     }
 

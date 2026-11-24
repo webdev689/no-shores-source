@@ -393,3 +393,29 @@ fn the_walkers_of_the_mending_and_the_seam_stand_whatever_their_waves_have_stood
     room.tick();
     assert!(!breach(&room).fights.shores.walkers.is_empty(), "a walker to the Seam past the waves' cap");
 }
+
+#[test]
+fn the_choirs_font_rests_past_a_mark_its_bells_stand_at_half_a_minors_health_and_a_wave_comes_with_each_round() {
+    let (mut room, players) = won_to(Tier::Normal, 2, CHOIR);
+    begin_at(&mut room, &players, "choir", "lectern-2");
+    ticks(&mut room, 2 * 60 + 1);
+    let fight = &breach(&room).fights.choir;
+    let bell = fight.bells.first().map(|(_, id)| *id).expect("a bell woke");
+    let minor = ::foes::foe_type(::foes::roster::BELL).expect("a bell").numbers(::foes::Rank::Minor, 1).health;
+    let whole = minor * gear::power::foe_health_times(Tier::Normal.foes_at());
+    assert!((room.foes[&bell].fighter.health_max - whole / 2.0).abs() < 1e-6, "half a Minor's");
+    let bells: Vec<FighterId> = fight.bells.iter().map(|(_, id)| *id).collect();
+    let wave = breach(&room).foes.iter().filter(|id| !bells.contains(id)).count();
+    assert_eq!(wave, 3, "two and one for two in the chapel, with the round");
+    let rewritten = |room: &mut Room| {
+        let mut breach_box = room.breach.take().expect("run");
+        room.rewrite(&mut breach_box, players[0]);
+        room.breach = Some(breach_box);
+        put_at(room, players[0], "choir", "font");
+        room.tick();
+        breach(room).marked.contains_key(&players[0])
+    };
+    assert!(!rewritten(&mut room), "the font cleanses");
+    room.clock += choir::MARK_LASTS - 60;
+    assert!(rewritten(&mut room), "and still rests as the next mark would unwrite");
+}
