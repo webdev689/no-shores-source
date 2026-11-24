@@ -192,7 +192,7 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The bounty board after the Bounty Tracker, and faction bounties** (#PR_NUMBER, a draft for the owner's yes), on the
+- **The bounty board after the Bounty Tracker, and faction bounties** (#196, a draft for the owner's yes), on the
   owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
   ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
   [[The Bounty Board as Claude Shapes It]]). Each faction posts three of its own four bounties a day, taken only by
