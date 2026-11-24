@@ -41,8 +41,14 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   10 s at its stage; at Hard they never stand again of themselves: a company member raises them (hold the interact
   key 3 s within 2.5 m), each raising one of the attempt's 5 revives. Outside a running encounter the fallen stand
   again after 6 s at either tier (`stands_after`); a fall into the dark waits as long. At the Waking the same holds
-  for the company holding the gate in its hollow, standing again at the gate's arrival. Every living player down 3 s at once wipes the attempt: its foes go,
-  the company stands whole at its stage, its revives are whole again, and it begins again as they walk in.
+  for the company holding the gate in its hollow, standing again at the gate's arrival. At Hard every blow on a player
+  in the run, or of the company in its Waking, weighs 1.25 times. Every living player down 3 s at once wipes the
+  attempt: its foes go, the company stands whole at its stage, its revives are whole again, and it begins again as
+  they walk in. A player who leaves and comes back keeps what the Breach laid on them: down if they left down (a fall
+  too), their mark and its time, and a shore they were taken to (`breach/rejoin.rs`).
+- **Its great foes** are matched to the whole company in the run, living or not (each player past the first adds 0.45
+  of its health; a Keeper is matched to half the company), then stand at their own times: the Scrivener six, the
+  Steward eight, the Mender and the Warden one and a half.
 - **The company.** Companies hold eight, as a Breach is taken on by up to eight
   ([[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]); a Breach's run holds eight and every other run four. It is
   launched from the Playlist: the finder (`/v1/find/node-gullwing-vale--breach-<tier>?launch`) starts the run for the
@@ -52,11 +58,14 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   joins the zone with `?breach=<run>`, may arrive there from anywhere, and stands at the gate in their run's company.
   One company holds the gate at a time: **the Waking**. Its three moorings held at once by its living players fill
   the Spire (150 s); fewer let it ebb (at a quarter the pace at Normal, a half at Hard), and a Bulwark sent out claims
-  a mooring left empty, which holds nothing while it stands. Waves come from the hollow's four growths. The Spire
-  woken, the gate opens to that company alone, and stays open 3 minutes, or while its run says its company is inside
-  (a word every 10 s, forgotten after a minute's silence); lost, the company stands whole at the gate's arrival and the
-  gate is free. The gate's company holds eight at most, and only those the Breach would let in (its tier's level, and
-  Hard's Normal win); the gate stands only in the Gullwing Vale's room at Normal seas. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
+  a mooring left empty, which holds nothing while it stands. Waves come from the hollow's four growths, two and one
+  more for every two of the company's living holders, six at most. The Spire woken, the gate opens to that company
+  alone until its Breach is cleared or a day has passed, and no company whose run opened takes the gate again; lost
+  (a wipe, or the Spire standing empty a whole minute), the company stands whole at the gate's arrival and the gate is
+  free. The zone hears only the runs it opened, so a run no one was let into shows no company inside. The gate's
+  company holds eight at most, and only those the Breach would let in (its tier's level, and Hard's Normal win); one
+  refused is told why (`ShutOut`). The gate stands only in the Gullwing Vale's room at Normal seas, its doorway shut by
+  rock behind its seal. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
 - **Into the run.** The run's room lets a character in only once the zone's room says its company's gate opened
   (`server/breach.ts`), and its first player must be one the run was launched for. Its spaces are the plan's
   (`content/dungeon/breach-drowned-vale.json`): each a module stood at a point of the run's own frame and turned whole
@@ -76,12 +85,12 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 |---|---|---|
 | The Waking | The Spire at the Sunken Gate, in the zone | Above |
 | The Descent | Down the old mill race: drops, the fallen wheel across a gap, a jump; a hidden chest off a ledge | A traversal |
-| The Mending | The drowned green: three seams | Three stages of 60 s (north; west and east; all three), waves between; Husks walk to an open seam and fuse, each fusion overtaking ground round it (a tenth of health a second); four fusions (Hard three) wipe; the Mender last |
-| The Choir | The chapel: seven bells, five desks, the font | Rounds of 3 to 7 bells waking 1 s apart (Hard 0.7 s) and ringing 8 s (Hard 6 s) after the last; broken in waking order or they ring; a ring Rewrites the chapel; the font cleanses, then rests 10 s. Then the Scrivener, warded, at a desk: Ground breaks the ward; every 25 s it marks a desk for 4 s, blotted by a player standing on it, or it moves there; every 30 s it writes, unwriting the Rewritten; a bell wakes every 20 s; fury at 8 minutes |
-| The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | A Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s; a Watcher killed, the rest sweep a quarter faster; the Heart's chest opens to an attempt in which no one was seen |
+| The Mending | The drowned green: three seams | Three stages of 60 s (north; west and east; all three), waves between; Husks walk to an open seam and fuse, each fusion overtaking ground round it (a tenth of health a second), the walkers standing whatever the waves; four fusions (Hard three) wipe; the Mender last |
+| The Choir | The chapel: seven bells, five desks, the font | Rounds of 3 to 7 bells waking 1 s apart (Hard 0.7 s) and ringing 8 s (Hard 6 s) after the last; broken in waking order (a few blows each) or they ring; a wave stands as each round wakes; a ring Rewrites every living player in the run; the font cleanses, then rests 25 s. Then the Scrivener, warded, at a desk, its aimed shot telegraphed, at half health quicker with two Flickers called behind it: Ground breaks the ward; every 25 s it marks a desk for 4 s, blotted by a player standing on it, or it moves there; every 30 s it writes, unwriting the Rewritten; a bell wakes every 20 s; fury at 8 minutes |
+| The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | A Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s; Watchers cannot be harmed; won when every living member of the company stands on the Stair; the Heart's chest opens to an attempt in which no one was seen |
 | The Broken Stair | Slabs over the dark | A traversal on the slabs' measure; a hidden chest on a side slab |
 | The Two Shores | The keep's hall: the Seam, two rifts | The Warden first; then each rift opens (3 s) while its mooring is held; inside, its Keeper; a Keeper's fall Rewrites its shore, again every 4 s while inside; a shore shut strands those in it (unwritten after 8 s); the Seam tolls every 30 s and fuses Husks as the Mending's seams do |
-| The Steward | Its court over the dark | Its first taking at 25 s, then every 70 s (Hard 60 s): half the court, up to four, into one shore, Rewritten; there, five bells broken in the order shown in the court open the way back while the rift's mooring is held from the court (by two at Hard while two are left there); it tolls every 20 s; Grounded at its feet it lies bare 25 s (blows on it five times, the Arts recharging three times as fast); after the fourth taking, when a fifth would come it unwrites everyone, and every 20 s after; its fall wins, bringing back any still in a shore |
+| The Steward | Its court over the dark | Its first taking at 25 s, then every 70 s (Hard 60 s) on a fixed clock: half the living players in the run not away, up to four, into one shore, Rewritten; any still away when the next taking comes are unwritten first; there, five bells broken in the order shown in the court open the way back while the rift's mooring is held from the court (by two at Hard, or as many as are left there; with none left, the bells alone); it tolls 20 s after each taking and every 20 s; Grounded at its feet it lies bare 25 s, once between takings (blows on it five times, the Arts recharging three times as fast), and a company that never lays it bare cannot fell it before its last toll; it sweeps and lunges, at two thirds slams with two Husks called beside it, at one third rings; after the fourth taking, when a fifth would come it unwrites everyone, and every 20 s after; its fall wins, bringing back any still in a shore |
 
 ## Rewards
 
@@ -149,8 +158,14 @@ dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of
   owner's named yes; its first-person frames (`fpride.py --looks`) are in no workflow. Until then the page draws the
   bare horse under it. The swatches' count sets every look's stripes, so that run redraws the other four looks too.
 - **The Scrivener and the Steward** wear the Idol's and the Heart's bodies until their own are drawn.
-- **The page copies some of the rules' numbers** (the standing-again times, the hollow's reach, the Choir's rounds,
-  the fusions and takings that end an attempt, the stages, the Prestige each tier reaches): a change to one in the
-  rules changes it in the page too.
-- **Small companies**: one or two cannot hold the Spire's three moorings, and nothing says so on the page.
+- **The page copies some of the rules' numbers** (the standing-again times, the hollow's reach, the Choir's rounds and
+  the font's rest, a Watcher's hearing, a shore's strand, the Scrivener's fury, a Bulwark's claim, the court's
+  holders, the fusions and takings that end an attempt, the stages, the Prestige each tier reaches): a change to one in
+  the rules changes it in the page too. A player already paid a hidden chest this week sees it shut.
+- **Small companies**: one or two cannot hold the Spire's three moorings; their Waking is lost when the Spire stands
+  empty a minute.
+- **At Hard, a fall into the dark in the Unlit Ways** is not waited for: the living alone must reach the Stair, as the
+  Vault let a few finish its maze. Claude's reading; the owner may want every player.
+- **The Two Shores' crossing rule at Hard** (the Lodestone may not cross a rift) never binds yet: no Keeper is warded.
+  A Hard ward on the Keepers would give it weight; that is a new mechanic, for the owner.
 - **Played offline only**: tested by the rules' and the page's tests, never in a deployed room.
