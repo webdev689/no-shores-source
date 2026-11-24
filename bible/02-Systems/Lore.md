@@ -48,6 +48,8 @@ Houses":
 Each book's eleven chapters come one as each task of its road is done, in the road's order, the last as the road ends.
 Together they tell where each Art came from. Its words keep to the owner's: no em or en dashes; and every bold and
 italic is closed, a document's every line set in and a break alone, or a check fails.
+How they are written, detailed and shown rather than explained:
+[[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 
 ## In the rules
 

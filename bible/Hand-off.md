@@ -192,6 +192,17 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The writing pass** (#176, branch `ccr-c249af15-iwfmsb`, against `main` with `main` merged in), for the owner's
+  read and yes: every spoken line read and most reworded, all 33 lore chapters, the new tutorial with them, each
+  speaker in a voice of their own within [[Dialogue]], and the lore given more detail and mysteries shown and never
+  explained ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]], every call listed
+  there). Ids, scene names, each scene's speakers in order and the puzzles' orders are kept, so the game behaves as
+  before. The dialogue check holds two lines a turn across a quest's seams
+  ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]). Merging deploys the rooms too: `lore.json`,
+  `quests.json`, `items.json` and `factions.json` feed the protocol's version. Tested offline: the full check on the
+  head. Not yet read or heard in the game. For the owner: the Pearl Tomb's brief (`briefs.json`, never shown) has
+  dunes where the lore has cliffs; the books name Corran Hale, the brothers Penhallow and the wreckers' wars, which
+  no note of the owner's names.
 - **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
   which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
   are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
