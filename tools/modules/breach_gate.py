@@ -22,6 +22,8 @@ DOOR_DEEP = 6.0
 LEDGE_TOP = 3.0
 LEDGE_X = (22.0, 28.0)
 LEDGE_Y = (-12.0, 18.0)
+FIELD_WALLS = (((-12.0, -12.0), 6.0, True), ((12.0, -12.0), 6.0, True), ((-13.0, 13.0), 5.0, True),
+               ((13.0, 13.0), 5.0, True), ((-17.0, -1.0), 4.0, False), ((17.0, -1.0), 4.0, False))
 
 
 def ground(module):
@@ -48,11 +50,12 @@ def ground(module):
                   'rubble', bevel=0.06, wear=0.05)
         run = round(LEDGE_TOP / bk.RISE_M) * bk.RUN_M
         bk.stair(module, (middle, LEDGE_Y[0] - run), (0, 1), 3.6, 0.0, LEDGE_TOP)
-    # The old field walls, low enough to vault, and the mill's foundation round the dais, broken.
-    for at, long, along_x in (((-12.0, -12.0), 6.0, True), ((12.0, -12.0), 6.0, True), ((-13.0, 13.0), 5.0, True),
-                              ((13.0, 13.0), 5.0, True), ((-17.0, -1.0), 4.0, False), ((17.0, -1.0), 4.0, False)):
+    # The old field walls, low enough to vault, laid dry of fieldstones; and the mill's foundation round the dais,
+    # broken.
+    for at, long, along_x in FIELD_WALLS:
         size = (long, 0.8, 1.1) if along_x else (0.8, long, 1.1)
-        kit.block(module, (*at, 0.0), size, 'stone', bevel=0.06, wear=0.08)
+        module.part((at[0] - size[0] / 2, at[1] - size[1] / 2, 0.0), (at[0] + size[0] / 2, at[1] + size[1] / 2, 1.1))
+        bk.dry_wall(module, at, long, along_x, 1.1)
     for side in range(8):
         if side in (2, 6):
             continue
@@ -67,7 +70,9 @@ def pieces(module):
     """The Spire, the mooring stones and the sockets the rules and the page read. The first socket is the way in."""
     module.socket('way', (0.0, -33.0, 0.0), (0.0, -1.0))
     top = TIERS[-1][1]
-    kit.column(module, (*DAIS, top), 1.4, 16.0, 'crystal', sides=7, top=0.35, wear=0.0)
+    bk.shaft(module, (*DAIS, top), 1.5, 16.0)
+    inner = 1.4 * (1 + 0.35) / 2 * 0.8
+    module.part([DAIS[0] - inner, DAIS[1] - inner, top], [DAIS[0] + inner, DAIS[1] + inner, top + 16.0])
     bk.mooring(module, 'mooring-west', (-20.0, 2.0, 0.0))
     bk.mooring(module, 'mooring-east', (20.0, 2.0, 0.0))
     bk.mooring(module, 'mooring-south', (0.0, -19.0, 0.0))
@@ -99,30 +104,90 @@ def doorway(module):
     for step in range(3):
         kit.block(module, (0.0, CLIFF_SOUTH - 1.6 + step * 0.5, 0.0), (DOOR_HALF * 2 + 2.0 - step * 0.6, 0.5, 0.05),
                   'stone', bevel=0.01, wear=0.0, part=False)
+    # Stepped pilasters either side, and over the lintel a relieving arch of wedged stones round a carved tympanum,
+    # under a cornice the rock has half swallowed.
+    for side in (-1, 1):
+        for step, (wide, deep) in enumerate(((1.6, 1.4), (1.2, 1.8))):
+            x = side * (DOOR_HALF + 1.0 + wide / 2 + step * 0.2)
+            kit.block(module, (x, CLIFF_SOUTH - deep / 2 + 0.3, 0.0), (wide, deep, DOOR_HIGH + 1.4 - step * 0.4), 'trim',
+                      bevel=0.04, wear=0.03, part=False)
+        kit.block(module, (side * (DOOR_HALF + 1.9), CLIFF_SOUTH - 1.4, 0.0), (2.2, 1.4, 0.6), 'stone', bevel=0.05,
+                  wear=0.04, part=False)
+    bk.arch(module, (0.0, CLIFF_SOUTH - 0.5, DOOR_HIGH + 1.4), DOOR_HALF + 1.2, 1.1, 1.2, stones=13)
+    kit.block(module, (0.0, CLIFF_SOUTH - 0.45, DOOR_HIGH + 1.4), (DOOR_HALF * 2 + 1.6, 0.6, DOOR_HALF + 0.6), 'stone',
+              bevel=0.02, wear=0.02, part=False)
+    bk.arch(module, (0.0, CLIFF_SOUTH - 0.78, DOOR_HIGH + 1.4), 1.6, 0.06, 0.16, stones=9, material='gold')
+    kit.block(module, (0.0, CLIFF_SOUTH - 0.8, DOOR_HIGH + 1.9), (0.5, 0.06, 0.5), 'gold', turn=0.0, bevel=0.0,
+              wear=0.0, part=False).rotation_euler = (0.0, math.pi / 4, 0.0)
+    kit.block(module, (0.0, CLIFF_SOUTH - 0.9, DOOR_HIGH + DOOR_HALF + 2.9), (DOOR_HALF * 2 + 6.4, 1.6, 0.7), 'trim',
+              bevel=0.05, wear=0.06, part=False)
 
 
 def dressing(module):
     """The hollow's look: the cliff's rock face, standing stones round its south, the mill's millstone broken by the
     Spire, crystal crept from the Spire's foot and the seal, and the four growths the Lattice comes out of."""
     pick = latticekit.picker(module.random.randrange(1 << 30))
-    bk.rock_face(module, -CLIFF_HALF - 2.0, CLIFF_SOUTH - 1.5, -DOOR_HALF - 1.2, CLIFF_SOUTH + 2.0, -0.5, CLIFF_TOP + 1.5,
-                 module.random.randrange(1000), triangles=2600)
-    bk.rock_face(module, DOOR_HALF + 1.2, CLIFF_SOUTH - 1.5, CLIFF_HALF + 2.0, CLIFF_SOUTH + 2.0, -0.5, CLIFF_TOP + 1.5,
-                 module.random.randrange(1000), triangles=2600)
-    bk.rock_face(module, -CLIFF_HALF, CLIFF_SOUTH + 2.0, CLIFF_HALF, CLIFF_NORTH, CLIFF_TOP - 3.0, CLIFF_TOP + 2.5,
-                 module.random.randrange(1000), triangles=2200)
+    bk.rock_face(module, -CLIFF_HALF - 2.0, CLIFF_SOUTH - 1.5, -DOOR_HALF - 3.4, CLIFF_SOUTH + 2.0, -0.5,
+                 CLIFF_TOP + 1.5, face=(0.0, -1.0))
+    bk.rock_face(module, DOOR_HALF + 3.4, CLIFF_SOUTH - 1.5, CLIFF_HALF + 2.0, CLIFF_SOUTH + 2.0, -0.5, CLIFF_TOP + 1.5,
+                 face=(0.0, -1.0))
+    bk.rock_face(module, -DOOR_HALF - 3.4, CLIFF_SOUTH - 0.2, DOOR_HALF + 3.4, CLIFF_SOUTH + 2.0,
+                 DOOR_HIGH + DOOR_HALF + 3.4, CLIFF_TOP + 1.5)
+    bk.rock_face(module, -CLIFF_HALF, CLIFF_SOUTH + 2.0, CLIFF_HALF, CLIFF_NORTH, CLIFF_TOP - 3.0, CLIFF_TOP + 2.5)
     for sign in (-1, 1):
         west, east = sorted((sign * LEDGE_X[0] - sign * 0.4, sign * (LEDGE_X[1] + 1.5)))
-        bk.rock_face(module, west, LEDGE_Y[0], east, LEDGE_Y[1], -0.3, LEDGE_TOP + 0.4, module.random.randrange(1000),
-                     triangles=1400)
+        bk.rock_face(module, west, LEDGE_Y[0] + 0.3, east, LEDGE_Y[1], -0.3, LEDGE_TOP, face=(-sign, 0.0),
+                     ragged=False)
+        for drum in range(3):
+            at = (sign * module.draw(23.5, 26.5), module.draw(-4.0, 14.0), LEDGE_TOP)
+            kit.column(module, at, 0.55, 0.7, 'trim', sides=10, part=False).rotation_euler = (
+                math.pi / 2, 0.0, module.draw(0.0, math.pi))
+    # The ring of standing stones round the hollow's south, two of them pairs still bearing their lintels.
     for stone in range(9):
         angle = math.pi + math.pi * (stone + 0.5) / 9
         at = (31.0 * math.cos(angle), 31.0 * math.sin(angle) - 2.0, -0.4)
-        tall = module.draw(2.8, 4.6)
-        lean = module.draw(-0.12, 0.12) if stone % 4 else 0.0
-        item = kit.block(module, at, (1.2, 0.8, tall), 'stone', turn=angle + math.pi / 2, bevel=0.08, wear=0.12,
-                         part=False)
-        item.rotation_euler = (lean, 0.0, angle + math.pi / 2)
+        along = (-math.sin(angle), math.cos(angle))
+        if stone in (2, 6):
+            for side in (-1, 1):
+                foot = (at[0] + along[0] * 1.5 * side, at[1] + along[1] * 1.5 * side, -0.4)
+                bk.facet_rock(module, foot, (1.1, 0.9, 4.0), 'stone', points=18, turn=angle + math.pi / 2)
+            bk.facet_rock(module, (at[0], at[1], 3.5), (4.4, 1.0, 0.8), 'stone', points=16, turn=angle + math.pi / 2)
+            continue
+        lean = (module.draw(-0.1, 0.1), module.draw(-0.1, 0.1)) if stone % 4 else (0.0, 0.0)
+        bk.facet_rock(module, at, (1.3, 0.9, module.draw(2.8, 4.6)), 'stone', points=18, turn=angle + math.pi / 2,
+                      dip=lean)
+    # Talus fallen from the cliff along its foot, clear of the doorway.
+    for boulder in range(16):
+        x = module.draw(-CLIFF_HALF + 1.0, CLIFF_HALF - 1.0)
+        if abs(x) < DOOR_HALF + 4.0:
+            continue
+        size = module.draw(0.8, 2.2)
+        at = (x, CLIFF_SOUTH - 1.8 - module.draw(0.0, 1.6), -0.2)
+        bk.facet_rock(module, at, (size * 1.4, size, size * 0.8), 'rubble', points=14, turn=module.draw(0, math.pi))
+    # Flags of the mill's yard still lying round the dais, and fieldstones fallen across the hollow.
+    for flag in range(26):
+        angle, reach = module.draw(0.0, math.tau), module.draw(8.0, 12.5)
+        at = (DAIS[0] + reach * math.cos(angle), DAIS[1] + reach * math.sin(angle), -0.06)
+        kit.block(module, at, (module.draw(1.0, 1.8), module.draw(0.8, 1.4), 0.1), 'paving', turn=angle, bevel=0.0,
+                  wear=0.0, part=False)
+    for stone in range(22):
+        at = (module.draw(-29.0, 29.0), module.draw(-30.0, 22.0), -0.1)
+        if abs(at[0]) < 9.0 and abs(at[1]) < 9.0:
+            continue
+        size = module.draw(0.4, 1.0)
+        bk.facet_rock(module, at, (size * 1.3, size, size * 0.7), 'rubble', points=12, turn=module.draw(0, math.pi))
+    # Each tier of the dais banded below its lip, its corners set with squared blocks, its top worn smooth.
+    for side, top in TIERS:
+        half = side / 2
+        for sign_x, sign_y in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+            kit.block(module, (sign_x * (half - 0.35), sign_y * (half - 0.35), top - 0.02), (0.7, 0.7, 0.06), 'stone',
+                      bevel=0.01, wear=0.0, part=False)
+        for along_x in (True, False):
+            for sign in (-1, 1):
+                at = (0.0, sign * (half + 0.02), top - 0.22) if along_x else (sign * (half + 0.02), 0.0, top - 0.22)
+                size = (side - 0.2, 0.06, 0.1) if along_x else (0.06, side - 0.2, 0.1)
+                kit.block(module, at, size, 'gold' if side == TIERS[-1][0] else 'stone', bevel=0.0, wear=0.0,
+                          part=False)
     kit.column(module, (2.6, -2.4, TIERS[-1][1]), 1.5, 0.45, 'stone', sides=18, part=False)
     kit.column(module, (-2.4, 2.8, TIERS[-1][1]), 1.4, 0.35, 'stone', sides=18, part=False)
     for base in ((1.3, -1.0, 1.2), (-1.4, 0.9, 1.2), (0.6, 1.4, 1.2)):

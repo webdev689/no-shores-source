@@ -5,6 +5,7 @@ floor, wall, flight and piece a body meets is a part; every piece the rules stan
 """
 import math
 
+import breach_dress
 import breach_kit as bk
 import kit
 import latticekit
@@ -32,6 +33,7 @@ def ways(module):
         bk.wall(module, west, south, east, north, high=6.0, material='plaster')
     bk.floor(module, -half - 6, -2.0, -half, 2.0)
     bk.floor(module, half, -2.0, half + 6, 2.0)
+    shut = []
     for column in range(6):
         for row in range(6):
             x, y = -half + CELL * (column + 0.5), -half + CELL * (row + 0.5)
@@ -42,6 +44,7 @@ def ways(module):
                 continue
             kit.block(module, (x, y, 0.0), (HOUSE, HOUSE, 5.2), 'plaster', bevel=0.05, wear=0.04)
             kit.block(module, (x, y, 5.2), (HOUSE + 0.4, HOUSE + 0.4, 0.4), 'roof', bevel=0.02, wear=0.0, part=False)
+            shut.append((x, y))
             for door in range(2):
                 face = (x + (door - 0.5) * 3.0, y - HOUSE / 2 - 0.05, 0.0)
                 kit.block(module, face, (1.2, 0.14, 2.2), 'stone', bevel=0.02, wear=0.06, part=False)
@@ -61,6 +64,7 @@ def ways(module):
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for x, y, _ in WATCHERS:
         bk.crust(module, pick, (x, y, 0.02), 1.8, dim=0.5)
+    breach_dress.ways(module, shut, half, HOUSE)
 
 
 # The Broken Stair, laid along x from its west door: landings 6 m square, three slabs 2.8 m square between each two a
@@ -121,6 +125,8 @@ def stair(module):
     for x, top, steady in slabs:
         if steady:
             bk.crystal(module, pick, (x, 0.0, top - 0.6), count=4, length=1.6, radius=0.3, up=(0.0, 0.0, -1.0))
+    held = [(x, 0.0, top, SLAB) for x, top, steady in slabs if steady] + [(hidden[0], hidden[1], hidden[2], SLAB)]
+    breach_dress.stair(module, landings, LANDING, held)
 
 
 def hall(module):
@@ -132,7 +138,8 @@ def hall(module):
         bk.wall(module, west, south, east, north, high=12.0)
     bk.floor(module, -2.5, -32.0, 2.5, -26.0)
     bk.floor(module, -3.0, 26.0, 3.0, 32.0)
-    kit.column(module, (0.0, 0.0, 0.0), 1.6, 9.0, 'crystal', sides=7, top=0.3, wear=0.0)
+    inner = 1.6 * (1 + 0.3) / 2 * 0.8
+    module.part([-inner, -inner, 0.0], [inner, inner, 9.0])
     for x in (-10.0, 10.0):
         for y in (-14.0, 14.0):
             kit.column(module, (x, y, 0.0), 0.8, 11.0, 'stone', sides=14)
@@ -153,6 +160,7 @@ def hall(module):
     bk.crust(module, pick, (0.0, 0.0, 0.02), 3.2)
     for base in ((1.4, 1.0, 0.0), (-1.2, -1.3, 0.0)):
         bk.crystal(module, pick, base, count=6, length=2.6, radius=0.5)
+    breach_dress.hall(module)
 
 
 def shore(was):
@@ -185,6 +193,7 @@ def shore(was):
             for base in ((-12.0, 12.0, 0.0), (12.0, 12.0, 0.0), (-12.0, -12.0, 0.0), (12.0, -8.0, 0.0), (0.0, 13.0, 0.0)):
                 bk.crystal(module, pick, base, count=7, length=3.2, radius=0.6)
             bk.crust(module, pick, (0.0, 4.0, 0.02), 6.0)
+        breach_dress.shore(module, was)
 
     return build
 
@@ -225,3 +234,4 @@ def court(module):
             x, y, _ = socket['at']
             bk.crystal(module, pick, (x * 1.12, y * 1.12, 0.0), count=7, length=3.4, radius=0.6)
     bk.crust(module, pick, (0.0, 16.0, 0.02), 4.0)
+    breach_dress.court(module, COURT)

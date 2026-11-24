@@ -4,6 +4,7 @@ floor, wall, flight and piece a body meets is a part; every piece the rules stan
 """
 import math
 
+import breach_dress
 import breach_kit as bk
 import kit
 import latticekit
@@ -51,6 +52,7 @@ def descent(module):
         angle = spoke * math.pi / 4
         kit.block(module, (0.0, 0.0, -3.0), (0.25, 5.6, 0.25), 'timber', turn=angle, bevel=0.0, wear=0.0, part=False)
     bk.drowned_floor(module, -4.0, 36.0, 4.0, 40.0, top=-10.0)
+    breach_dress.descent(module)
 
 
 def mending(module):
@@ -85,6 +87,7 @@ def mending(module):
         bk.crystal(module, pick, (x, y, 0.0), count=6, length=2.6, radius=0.5)
     for west, south, east, north in ((-30.0, -30.0, -12.0, -12.0), (12.0, -30.0, 30.0, -12.0), (-12.0, 12.0, 12.0, 30.0)):
         bk.drowned_floor(module, west, south, east, north)
+    breach_dress.mending(module)
 
 
 BELLS_Y = (-18.0, -2.0, 14.0)
@@ -133,3 +136,4 @@ def choir(module):
         bk.crystal(module, pick, base, count=6, length=2.8, radius=0.5)
     for x in (-10.0, 10.0):
         kit.block(module, (x, 0.0, 11.0), (1.2, 52.0, 1.2), 'timber', bevel=0.02, wear=0.0, part=False)
+    breach_dress.choir(module)
