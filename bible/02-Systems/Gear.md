@@ -80,6 +80,8 @@ code:
   - content/gear/looks.json
   - content/gear/rolled.json
   - client/src/player/gear.ts#itemName
+  - content/gear/words.json
+  - client/src/player/gear.ts#itemWords
   - client/src/player/sourceLooks.ts#setName
   - client/src/player/sourceLooks.ts#rolledArmourSet
   - crates/gear/src/vestige.rs#rolled
@@ -182,6 +184,11 @@ number is one of [[Gear as Claude Shapes It]].
   gives one. They are kept-only, and one a player keeps stays as it is, its name its own. A rolled piece's `name`
   byte is its look roll. A gun is named by its content's metal, though drawn plain or gilded, so it says where it was
   earned. A ship's module keeps its rolled name.
+- **Words** ([[Weapons and Armour Carry Flavour Text]]). Every armour piece and weapon has words on its card and its
+  page (`itemWords`). A rolled one reads its set's line for its kind, in `content/gear/words.json` by set name and kind
+  word ("Portwatch", "Helm"): one line for every pair a rolled piece is made in, Homespun's for every kind. A test makes
+  every rolled piece of every content, rarity, level and look roll, and holds each to its line and every line to a
+  piece. A named piece reads its own words in `content/gear/items.json`; a faction's piece with none, its faction's.
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
