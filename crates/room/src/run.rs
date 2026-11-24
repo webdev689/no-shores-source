@@ -106,6 +106,14 @@ impl Room {
                 times *= BURN_TIMES;
             }
             times *= self.fury_times();
+            times *= self.held_times(defender);
+        }
+        // In a Breach: the Lodestone's Strike, and the Steward laid bare.
+        if by_player && melee && self.bears_lodestone(blow.striker) {
+            times *= crate::breach::lodestone_strike();
+        }
+        if by_player {
+            times *= self.bare_times(defender);
         }
         times
     }
@@ -118,7 +126,8 @@ impl Room {
     /// How much longer an Art's recharge takes: half again under Trickle.
     #[must_use]
     pub fn recharge_times(&self) -> f64 {
-        if self.modded(Modifier::Trickle) { TRICKLE_TIMES } else { 1.0 }
+        let trickle = if self.modded(Modifier::Trickle) { TRICKLE_TIMES } else { 1.0 };
+        trickle / self.bare_recharge()
     }
 
     /// What a heal on a player gives, times: half under Exposure.

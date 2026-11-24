@@ -1,0 +1,253 @@
+//! The Steward, the Drowned Vale's last encounter, after the Vault of Glass's Atheon, on the round court over the
+//! dark. On a measure it takes four living players (half the company, fewer when fewer stand) into a shore, what was
+//! and what is in turn, and Rewrites them; it tolls on a shorter measure, unwriting the Rewritten. In the shore the
+//! Lodestone stands on its plinth and five bells wake; their order is shown only in the court, over that rift's
+//! mooring, so the court must call it. Broken in order the way back opens, while a player in the court holds that
+//! rift's mooring (two at Hard). Back in the court, the Lodestone grounded at the Steward's feet lays it bare: its
+//! ledger cracks open and every blow on it weighs five times, and Arts recharge three times as fast. After its fourth
+//! taking, its next toll unwrites the whole company. Its fall wins the Drowned Vale.
+
+use super::{Breach, STEWARD};
+use crate::{EventKind, PlayerId, Room};
+use ::foes::Rank;
+use ::foes::roster::{BELL, FLICKER, HUSK, RAVAGER, STEWARD as STEWARD_TYPE};
+use combat::fighter::FighterId;
+use combat::sight::apart;
+
+/// How long after it wakes it first takes, and how often after: Normal, Hard, ticks.
+pub const FIRST_TAKING: u64 = 25 * 60;
+pub const TAKING_EVERY: (u64, u64) = (70 * 60, 60 * 60);
+/// How many it takes at most, how often it tolls, and how many takings before its last toll.
+pub const TAKES: usize = 4;
+pub const TOLL_EVERY: u64 = 20 * 60;
+pub const TAKINGS_MOST: u8 = 4;
+/// How long it lies bare, ticks, and what a blow on it and an Art's recharge weigh meanwhile.
+pub const BARE_TICKS: u64 = 25 * 60;
+pub const BARE_BLOW: f64 = 5.0;
+pub const BARE_RECHARGE: f64 = 3.0;
+/// How near the Steward the Lodestone is grounded to lay it bare, metres.
+pub const BARE_REACH_M: f64 = 8.0;
+/// How often a wave comes, ticks.
+pub const WAVE_EVERY: u64 = 18 * 60;
+const DRAWS: u64 = 0x0073_7465_7761_7264;
+
+/// Those taken: into which shore (0 what was, 1 what is), who, the bells' order by place, the bells standing, how many
+/// broken in order, and whether their way back is open.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Away {
+    pub shore: usize,
+    pub taken: Vec<PlayerId>,
+    pub order: Vec<usize>,
+    pub bells: Vec<(usize, FighterId)>,
+    pub broken: usize,
+    pub done: bool,
+}
+
+/// The Steward's court as it stands.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Steward {
+    pub boss: Option<FighterId>,
+    pub woke_at: u64,
+    pub takings: u8,
+    pub next_taking: u64,
+    pub away: Option<Away>,
+    pub bare_until: u64,
+    pub next_toll: u64,
+    pub next_wave: u64,
+    pub waves: usize,
+}
+
+impl Room {
+    pub(crate) fn keep_steward(&mut self, breach: &mut Breach) {
+        let clock = self.clock;
+        let mut fight = std::mem::take(&mut breach.fights.steward);
+        if fight.boss.is_none() {
+            if let Some((at, _)) = breach.plan.socket("court", "steward") {
+                fight.boss = self.stand_breach_foe(breach, (STEWARD_TYPE, Rank::Boss), at, Some("The Steward"));
+                fight.boss.iter().for_each(|id| self.match_company(*id));
+            }
+            (fight.woke_at, fight.next_taking) = (clock, clock + FIRST_TAKING);
+            (fight.next_toll, fight.next_wave) = (clock + TOLL_EVERY, clock + 5 * 60);
+            self.tell_all(EventKind::BossWoke, 1.0);
+        }
+        if clock >= fight.next_taking && fight.away.is_none() {
+            if fight.takings >= TAKINGS_MOST {
+                self.unwrite_all(breach);
+                fight.next_taking = clock + TOLL_EVERY;
+            } else {
+                self.take(breach, &mut fight);
+            }
+        }
+        if clock >= fight.next_toll {
+            fight.next_toll = clock + TOLL_EVERY;
+            self.tell_all(EventKind::Tolled, 1.0);
+            self.write(breach, fight.boss.unwrap_or(0));
+        }
+        self.keep_away(breach, &mut fight);
+        if clock >= fight.next_wave {
+            fight.next_wave = clock + WAVE_EVERY;
+            let mouths: Vec<[f64; 3]> = breach.plan.numbered("court", "mouth").iter().map(|(at, _)| *at).collect();
+            let kinds = [(HUSK, Rank::Major), (FLICKER, Rank::Major), (RAVAGER, Rank::Elite)];
+            self.breach_wave(breach, "court", &kinds, &mouths, fight.waves);
+            fight.waves += 1;
+        }
+        let won = fight.boss.is_some_and(|id| !self.standing_foe(id));
+        breach.fights.steward = fight;
+        if won {
+            self.win_encounter(breach, STEWARD);
+        }
+    }
+
+    /// The Steward takes up to four living players in the court into a shore, Rewriting them; the Lodestone and five
+    /// bells wait there, the bells' order drawn.
+    fn take(&mut self, breach: &mut Breach, fight: &mut Steward) {
+        let clock = self.clock;
+        let shore = usize::from(fight.takings % 2);
+        let shores = breach.plan.shores.get("steward").cloned().unwrap_or_default();
+        let Some(space) = shores.get(shore) else { return };
+        let mut court = self.in_space(breach, "court");
+        let count = TAKES.min(court.len().div_ceil(2));
+        let mut draws = self.steward_draws(clock);
+        let mut taken = Vec::new();
+        for _ in 0..count {
+            let pick = ((draws.draw() * court.len() as f64) as usize).min(court.len() - 1);
+            taken.push(court.swap_remove(pick));
+        }
+        let Some((arrival, _)) = breach.plan.socket(space, "arrival") else { return };
+        for (nth, id) in taken.iter().enumerate() {
+            let spread = [arrival[0] + (nth % 2) as f64 * 1.6 - 0.8, arrival[1] + (nth / 2) as f64 * 1.2, arrival[2]];
+            if breach.lodestone.bearer() == Some(*id) {
+                self.drop_lodestone(*id);
+            }
+            self.carry(*id, spread);
+            self.rewrite(breach, *id);
+        }
+        self.set_on_plinth(breach, space, true);
+        let places = breach.plan.numbered(space, "bell");
+        let mut order: Vec<usize> = (0..places.len()).collect();
+        for at in (1..order.len()).rev() {
+            order.swap(at, ((draws.draw() * (at + 1) as f64) as usize).min(at));
+        }
+        let mut bells = Vec::new();
+        for &place in &order {
+            if let Some(id) = self.stand_breach_foe(breach, (BELL, Rank::Minor), places[place].0, None) {
+                self.make_walker(id);
+                bells.push((place, id));
+            }
+        }
+        fight.away = Some(Away { shore, taken, order, bells, broken: 0, done: false });
+        fight.takings += 1;
+        let every = if breach.tier == gear::breach::Tier::Hard { TAKING_EVERY.1 } else { TAKING_EVERY.0 };
+        fight.next_taking = clock + every;
+        self.tell_all(EventKind::Taken, shore as f64);
+    }
+
+    /// The taken in their shore: each bell broken judged against the order (one out of order stands them all again),
+    /// the way back opened once all are broken while the court holds the rift's mooring, and those back in the court
+    /// set free of the taking.
+    fn keep_away(&mut self, breach: &mut Breach, fight: &mut Steward) {
+        let Some(mut away) = fight.away.take() else { return };
+        let shores = breach.plan.shores.get("steward").cloned().unwrap_or_default();
+        let Some(space) = shores.get(away.shore).cloned() else { return };
+        let mut wrong = false;
+        for (place, id) in away.bells.clone() {
+            if self.standing_foe(id) {
+                continue;
+            }
+            away.bells.retain(|(_, bell)| *bell != id);
+            if away.order.get(away.broken) == Some(&place) {
+                away.broken += 1;
+                self.tell_all(EventKind::BellBroken, place as f64);
+            } else {
+                wrong = true;
+            }
+        }
+        if wrong && !away.done {
+            self.tell_all(EventKind::BellRang, 1.0);
+            for (_, id) in std::mem::take(&mut away.bells) {
+                self.gone(id);
+            }
+            away.broken = 0;
+            let places = breach.plan.numbered(&space, "bell");
+            for &place in &away.order.clone() {
+                if let Some(id) = self.stand_breach_foe(breach, (BELL, Rank::Minor), places[place].0, None) {
+                    self.make_walker(id);
+                    away.bells.push((place, id));
+                }
+            }
+            for id in self.in_space(breach, &space) {
+                self.rewrite(breach, id);
+            }
+        }
+        if away.broken == away.order.len() && !away.done {
+            away.done = true;
+            self.tell_all(EventKind::WayBack, away.shore as f64);
+        }
+        let (rift, mooring) = if away.shore == 0 { ("rift-was", "mooring-was") } else { ("rift-is", "mooring-is") };
+        let needed = if breach.tier == gear::breach::Tier::Hard { 2 } else { 1 };
+        let held = breach
+            .plan
+            .socket("court", mooring)
+            .is_some_and(|(at, _)| self.held_by_players(at, super::shores::MOORING_REACH_M) >= needed);
+        if away.done
+            && held
+            && let (Some((back, _)), Some((mouth, _)), Some((at, _))) = (
+                breach.plan.socket(&space, "rift"),
+                breach.plan.socket("court", rift),
+                breach.plan.socket("court", mooring),
+            )
+        {
+            let out = [mouth[0] + (at[0] - mouth[0]) * 0.5, mouth[1] + (at[1] - mouth[1]) * 0.5, at[2]];
+            let leaving: Vec<PlayerId> = self
+                .in_space(breach, &space)
+                .into_iter()
+                .filter(|id| {
+                    self.players.get(id).is_some_and(|found| {
+                        apart([found.fighter.body.x, found.fighter.body.y], [back[0], back[1]])
+                            <= super::shores::RIFT_REACH_M
+                    })
+                })
+                .collect();
+            for id in leaving {
+                self.carry(id, out);
+            }
+        }
+        if self.someone_in(breach, &space) || !away.done {
+            fight.away = Some(away);
+        } else {
+            self.tell_all(EventKind::Returned, away.shore as f64);
+        }
+    }
+
+    /// The Lodestone grounded within reach of the Steward, with no one left away, lays it bare.
+    pub(crate) fn ground_steward(&mut self, breach: &mut Breach, at: [f64; 3]) -> bool {
+        let fight = &mut breach.fights.steward;
+        let Some(id) = fight.boss.filter(|_| fight.away.is_none()) else { return false };
+        let Some(foe) = self.foes.get(&id).filter(|foe| !foe.fighter.dead()) else { return false };
+        if apart([foe.fighter.body.x, foe.fighter.body.y], [at[0], at[1]]) > BARE_REACH_M {
+            return false;
+        }
+        fight.bare_until = self.clock + BARE_TICKS;
+        self.tell_all(EventKind::LaidBare, 0.0);
+        true
+    }
+
+    /// What a blow on a foe weighs in a Breach's run: five times on the Steward while it lies bare.
+    pub(crate) fn bare_times(&self, defender: FighterId) -> f64 {
+        let Some(breach) = self.breach.as_ref() else { return 1.0 };
+        let fight = &breach.fights.steward;
+        if fight.boss == Some(defender) && self.clock < fight.bare_until { BARE_BLOW } else { 1.0 }
+    }
+
+    /// How much faster Arts recharge in a Breach's run: three times while the Steward lies bare.
+    #[must_use]
+    pub fn bare_recharge(&self) -> f64 {
+        let Some(breach) = self.breach.as_ref() else { return 1.0 };
+        if self.clock < breach.fights.steward.bare_until { BARE_RECHARGE } else { 1.0 }
+    }
+
+    fn steward_draws(&self, salt: u64) -> naval::random::Mulberry32 {
+        let seed = self.world_seed ^ DRAWS ^ salt.rotate_left(13);
+        naval::random::Mulberry32::new((seed ^ (seed >> 32)) as u32)
+    }
+}

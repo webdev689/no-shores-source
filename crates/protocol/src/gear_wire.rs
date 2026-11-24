@@ -100,6 +100,13 @@ pub const CHOOSE_FRAGMENT: u8 = 65;
 pub const USE_POINT: u8 = 66;
 /// A return to the player's ship asked, which the room answers before the page leaves for the sea.
 pub const TO_SHIP: u8 = 73;
+/// A Breach's asks: raise a fallen player (`item` their number) and let go, take up and set down the Lodestone, and
+/// ask at the gate whether it is open (`room::breach`).
+pub const RAISE: u8 = 80;
+pub const STOP_RAISE: u8 = 81;
+pub const TAKE_LODESTONE: u8 = 82;
+pub const DROP_LODESTONE: u8 = 83;
+pub const ENTER_BREACH: u8 = 84;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -197,6 +204,11 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_POINT => Asked::UsePoint { point: column },
         FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
         TO_SHIP => Asked::ToShip,
+        RAISE => Asked::Raise { player: item },
+        STOP_RAISE => Asked::StopRaise,
+        TAKE_LODESTONE => Asked::TakeLodestone,
+        DROP_LODESTONE => Asked::DropLodestone,
+        ENTER_BREACH => Asked::EnterBreach,
         _ => return None,
     })
 }
@@ -287,6 +299,11 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
+        Asked::Raise { player } => args = messages::AskArgs { kind: RAISE, item: *player, ..args },
+        Asked::StopRaise => args = messages::AskArgs { kind: STOP_RAISE, ..args },
+        Asked::TakeLodestone => args = messages::AskArgs { kind: TAKE_LODESTONE, ..args },
+        Asked::DropLodestone => args = messages::AskArgs { kind: DROP_LODESTONE, ..args },
+        Asked::EnterBreach => args = messages::AskArgs { kind: ENTER_BREACH, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,

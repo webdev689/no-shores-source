@@ -10,6 +10,7 @@ mod atheric;
 pub mod battle;
 pub mod boarding_hands;
 mod bounties;
+pub mod breach;
 mod chain;
 pub mod chart;
 pub mod clash;
@@ -222,6 +223,9 @@ pub struct Room {
     pub(crate) quests: quests::QuestGround,
     /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
     pub(crate) encounters: Option<Box<encounters::Encounters>>,
+    /// A Breach's run (`breach/`), or a Breach's gate in its patrol zone (`breach/gate.rs`); none in any other room.
+    pub(crate) breach: Option<Box<breach::Breach>>,
+    pub(crate) breach_gate: Option<Box<breach::gate::Gate>>,
 }
 
 impl Room {
@@ -299,6 +303,8 @@ impl Room {
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
             encounters: None,
+            breach: None,
+            breach_gate: None,
         }
     }
 
@@ -310,13 +316,27 @@ impl Room {
 
     /// A body standing at a spawn: on the ground in a node's room, on the top of the block under it on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
-        let body =
-            if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
+        let body = if let Some(breach) = self.breach.as_ref() {
+            // Over the dark, from the furthest stage's height: the floor at 0 lies far below every space.
+            let (at, _) = self.checkpoint(breach);
+            let z = movement::blocks::ground_at(&self.blocks, &self.floor, x, y, at[2] + 1.0);
+            Body { z, ..movement::standing(x, y) }
+        } else if self.section.is_some() {
+            standing_on(&self.floor, &self.blocks, x, y)
+        } else {
+            self.on_top(x, y)
+        };
         Body { facing: self.facing, ..body }
     }
 
-    /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
+    /// Where a body that fell at (x, y) stands again: in a Breach's run its furthest stage reached, else the section's
+    /// spawn nearest it, or the room's spawn.
     pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
+        if let Some(breach) = self.breach.as_ref() {
+            let (at, _) = self.checkpoint(breach);
+            let body = self.stand((at[0], at[1]));
+            return Body { z: at[2].max(body.z), ..body };
+        }
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
@@ -404,6 +424,7 @@ impl Room {
     /// or are gone; and every fighter is kept for judging later blows as players saw them.
     pub fn tick(&mut self) {
         self.clock += 1;
+        self.breach_blocks();
         self.step_players();
         self.spawn_asked();
         self.keep_patrol();
@@ -420,6 +441,8 @@ impl Room {
         self.raise_the_dead();
         self.keep_garrison();
         self.keep_encounters();
+        self.keep_breach();
+        self.keep_breach_gate();
         self.keep_public();
         self.keep_cache();
         self.keep_quests();
@@ -471,6 +494,7 @@ impl Room {
                     input.intent.combat.heal = false;
                     found.fighter.kept.heal = 0;
                 }
+                let (bearer, may_respawn) = (self.bears_lodestone(id), self.may_respawn(id));
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
@@ -480,7 +504,7 @@ impl Room {
                     found.remember(seen);
                     let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
                     found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
-                    if input.respawn && found.standing.may_respawn() {
+                    if input.respawn && found.standing.may_respawn() && may_respawn {
                         let lain = found.fighter;
                         let body = self.stand_again(lain.body.x, lain.body.y);
                         let graced = self.clock + GRACE;
@@ -494,7 +518,10 @@ impl Room {
                     }
                     continue;
                 }
-                let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
+                // The Lodestone's bearer holds no weapon: their swing is its Strike (`breach/lodestone.rs`).
+                let asked_arms =
+                    if bearer { BARE_HANDS } else { allowed_arms(Arms::from_code(input.arms), &found.character) };
+                let held = found.fighter.holding(asked_arms);
                 let fighter = found.armed(held);
                 let asked = &mut input.intent.combat.attack;
                 *asked = asked.map(|asked| chain::stroke(found.chain, asked, &fighter, &view));

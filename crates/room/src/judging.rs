@@ -62,6 +62,45 @@ pub enum EventKind {
     /// slam landed (the amount how many it struck), told to every player.
     Drowned = 33,
     BossSlammed = 34,
+    /// A Breach's moments (`breach/`), the amount as each says: an encounter begun, gone to its next stage, won and
+    /// wiped (its number), the Breach cleared; a player raised by another (the revives left), marked Rewritten (their
+    /// number), cleansed, carried through a rift; the company unwritten (how many); the Lodestone taken, set down,
+    /// grounded (1 where it broke a ward) and held true; a bell woken, broken and rung (its place); a Husk fused (how
+    /// many have); ground overtaken harming a player; a mooring claimed; a desk marked and blotted, and the Scrivener
+    /// writing itself; a Watcher seeing a player (their number); a rift opened and closed, a Keeper fallen (the
+    /// rift); a toll; the Steward taking, the way back opening, the taken returned (the shore), and laid bare.
+    BreachBegun = 35,
+    BreachStage = 36,
+    BreachWon = 37,
+    BreachWiped = 38,
+    BreachCleared = 39,
+    Revived = 40,
+    Rewritten = 41,
+    Cleansed = 42,
+    Carried = 43,
+    Unwritten = 44,
+    LodestoneTaken = 45,
+    LodestoneDropped = 46,
+    Grounded = 47,
+    HeldTrue = 48,
+    BellWoke = 49,
+    BellBroken = 50,
+    BellRang = 51,
+    Fused = 52,
+    Overtaken = 53,
+    Claimed = 54,
+    DeskMarked = 55,
+    Blotted = 56,
+    WroteItself = 57,
+    Seen = 58,
+    RiftOpened = 59,
+    RiftClosed = 60,
+    KeeperFell = 61,
+    Tolled = 62,
+    Taken = 63,
+    WayBack = 64,
+    Returned = 65,
+    LaidBare = 66,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round

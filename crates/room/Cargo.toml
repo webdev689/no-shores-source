@@ -10,6 +10,7 @@ description = "A shared space on the server: its players, each player's inputs t
 gear = { path = "../gear" }
 isle = { path = "../isle" }
 combat = { path = "../combat" }
+city = { path = "../city" }
 dungeon = { path = "../dungeon" }
 foes = { path = "../foes" }
 land = { path = "../land" }
@@ -19,14 +20,14 @@ naval = { path = "../naval" }
 navmesh = { path = "../navmesh" }
 reach = { path = "../reach" }
 sailing = { path = "../sailing" }
+serde.workspace = true
+serde_json.workspace = true
 sky = { path = "../sky" }
 world = { path = "../world" }
 
 [dev-dependencies]
 bake = { path = "../bake" }
 layout = { path = "../layout" }
-city = { path = "../city" }
-serde_json.workspace = true
 
 [lints]
 workspace = true

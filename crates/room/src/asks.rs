@@ -74,6 +74,16 @@ pub enum Asked {
     OpenChest {
         chest: u32,
     },
+    /// In a Breach, begins to raise a fallen player of the company by holding Use beside their body, and lets go
+    /// (`breach/fallen.rs`); takes the Lodestone up and sets it down (`breach/lodestone.rs`); and at a Breach's gate,
+    /// asks whether it is open to the player's company (`breach/gate.rs`).
+    Raise {
+        player: PlayerId,
+    },
+    StopRaise,
+    TakeLodestone,
+    DropLodestone,
+    EnterBreach,
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -361,6 +371,23 @@ impl Room {
             Asked::FindLore { chapter } => self.find_lore(player, chapter),
             Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
+            Asked::Raise { player: whom } => self.ask_raise(player, whom),
+            Asked::StopRaise => self.stop_raising(player),
+            Asked::TakeLodestone => {
+                if self.take_lodestone(player) {
+                    0
+                } else {
+                    OUT_OF_REACH
+                }
+            }
+            Asked::DropLodestone => {
+                if self.drop_lodestone(player) {
+                    0
+                } else {
+                    OUT_OF_REACH
+                }
+            }
+            Asked::EnterBreach => self.ask_enter_breach(player),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

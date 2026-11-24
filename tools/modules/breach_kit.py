@@ -56,6 +56,11 @@ def wall(module, west, south, east, north, bottom=-1.2, high=WALL_M, material='s
     return item
 
 
+def flight_run(rise):
+    """How far a flight runs to climb `rise` metres."""
+    return max(1, round(rise / RISE_M)) * RUN_M
+
+
 def stair(module, foot, way, width, z_from, z_to):
     """A flight from `foot` (x, y at the front of its first tread) along `way` from `z_from` up to `z_to`."""
     steps = max(1, round((z_to - z_from) / RISE_M))
