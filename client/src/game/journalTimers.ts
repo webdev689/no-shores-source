@@ -184,7 +184,8 @@ function groupsOf(week: ThisWeek): readonly Group[] {
           icon: 'bounty',
           name: 'Bounties',
           lines: [],
-          words: 'Six a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons.',
+          words:
+            'Posted each day on the board in Overlook’s plaza: six for the town, two on land, two at sea and two in dungeons, and three from your faction.',
         },
       ],
     },

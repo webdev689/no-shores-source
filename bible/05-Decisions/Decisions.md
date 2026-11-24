@@ -227,6 +227,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Story Is Nine Missions, With Side Quests Between Them]]
 - [[The Activities Are Built in Full, Before the Story's Missions]]
 - [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]
+- [[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]
+- [[The Bounty Board as Claude Shapes It]]
 - [[Plates as Claude Shows Them]]
 - [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]
 - [[Foe Groups as Claude Builds Them]]
