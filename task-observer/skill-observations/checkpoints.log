@@ -118,3 +118,6 @@
 2026-11-24 20:21 [no-shores-source] session-start scan: files=196 parsed=187 principles=0
 2026-11-24T20:41:02Z checkpoint after 3 tasks (deploys): no observations
 2026-11-24T21:16:10Z checkpoint after 6 tasks: logged 223
+2026-11-24 17:23 [no-shores-source] session-start scan: files=188 parsed=179 principles=0
+2026-11-24 18:59 [no-shores-source] session-start scan: files=189 parsed=180 principles=0
+2026-11-24 20:55 [no-shores-source] session-start scan: files=191 parsed=182 principles=0
