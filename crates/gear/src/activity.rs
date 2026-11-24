@@ -66,6 +66,10 @@ pub struct ThisWeek {
     pub elite_playlist: u8,
     #[serde(skip_serializing_if = "is_zero")]
     pub abyss_playlist: u8,
+    /// Each Breach's finds paid this week at each tier ("drowned-vale/hard"), one bit each: its encounters in order,
+    /// then its hidden chests (`crate::breach`).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub breaches: BTreeMap<String, u16>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,

@@ -13,6 +13,7 @@ mod art_levels;
 pub mod arts;
 pub mod asks;
 pub mod bounties;
+pub mod breach;
 pub mod catalogue;
 pub mod character;
 pub mod chests;

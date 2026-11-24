@@ -5,6 +5,11 @@
       "id": "houses",
       "name": "The Three Houses",
       "motif": "lighthouse"
+    },
+    {
+      "id": "breaches",
+      "name": "The Breaches",
+      "motif": "spire"
     }
   ],
   "books": [
@@ -367,6 +372,117 @@
             "kind": "quest",
             "quest": "veiled",
             "task": "burn-page"
+          }
+        }
+      ]
+    },
+    {
+      "id": "drowned-vale",
+      "category": "breaches",
+      "name": "Soundings",
+      "cover": {
+        "colour": "#1d4a52",
+        "motif": "spire"
+      },
+      "chapters": [
+        {
+          "id": "mooring-stones",
+          "title": "The Mooring Stones",
+          "text": "There are mooring stones in the Gullwing Vale. Three of them, squat and ringed in iron, in the hollow under the knolls below the Old Stones, each with a ring on a post where a boat would tie. The river runs half a mile off and lower than the hollow. No water has lain there in anyone's memory.\n\nI asked the miller at Weir Mill. She said her grandmother tied her boat there of a morning, and she said it the way you would say the sun came up. I asked her where her grandmother rowed to. She looked at me as if I had asked which way was down.\n\nValeguard sent me with a line, a lead and the old stone from the keep's chapel, the one the reeves swear on. In the keep it turns to the north, as a lodestone should. In the hollow it turns to the cliff, to the doorway cut in it that nobody remembers cutting.\n\nThe crystal came out of the ground beside the mill's old stones a season ago. It is taller each time I look at it, and I have stopped measuring.\n\n~\n\n> Stand on all three. Do not let the red ones take a stone. When it wakes, the door will know you.\n\nThat is not my hand. It was scratched on the mooring stone nearest the cliff, and the scratches were fresh.\n\n*Ossery Vane, surveyor to Valeguard*",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "waking"
+          }
+        },
+        {
+          "id": "the-line",
+          "title": "The Line",
+          "text": "Past the doorway the stone goes down in steps that were a mill race once. The walls are wet. The air tastes of the sea, and the sea is twenty miles off.\n\nI let my line down where the race falls away. I have sounded every water in the vale with it, every pool and the deep of the weir, and it has never run out. It ran out. I tied on the spare and it ran out again, and when I drew it up the last fathom was wet, and the water on it was salt, and cold the way only deep water is cold.\n\nThe lodestone does not turn to the north down here. It turns to the bottom. When I hold it over the edge it pulls my hand so hard that I have to brace.\n\nI have left the spare line on this ledge, tied off to the wheel. If I do not come back for it, follow it.\n\n~\n\nThere is a mill wheel lying across the race, its paddles grown through with red. The miller's wheel at Weir Mill is the same wheel. The same crack runs through the seventh paddle. I put my hand on it to be sure.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "descent"
+          }
+        },
+        {
+          "id": "the-green",
+          "title": "The Green",
+          "text": "At the bottom of the race there is a village. It is Gullwing.\n\nIt is the green, and the well where the green's well is, and the houses round it where the houses are, the smith's and the chandler's and the long house with the low door. It is all under a hand of still water, and the sky above it is water too, far up, the light coming down through it in shafts that move when nothing moves them.\n\nThe people come out of the crystal along the walls. They walk to the cracks in the green as if a bell had rung for them, and they kneel in the red, and it closes over them, and the cracks grow. Each one that goes in, the green is smaller.\n\nI knew one of them. He sold me rope in Gullwing in the spring. He sold me rope in Gullwing this morning, before I came down; I have the receipt in my coat. Both of those are true. I have stopped asking which one is.\n\n~\n\nThe one who keeps the cracks is bigger than the rest, and it wears a shield of the crystal. When it fell the cracks went still. I sat on the well's edge for a long time after.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "mending"
+          }
+        },
+        {
+          "id": "the-chapel",
+          "title": "The Chapel of the Vale",
+          "text": "The Gullwing Vale has never had a chapel. There is a chapel here, at the head of the green, with seven bells hung in timber frames down its length and an altar at its end, and the lodestone's plinth before the altar, empty, cut to the stone's own shape.\n\nThe bells wake one by one, each with its own note. Then they ring together. When they ring, something in me is written over. I forgot my sister's name for an hour. I remembered it at the font, standing in the light there, and I wept, and I am not a weeping man.\n\nBreak them in the order they woke and they go quiet. Break them out of order and they ring at once. I learned that the way you would think.\n\n*The thing at the altar writes.* I do not know a better word. It stands over a desk and its hand moves and the vale changes to match. When it saw me it wrote, and I felt my name go thin.\n\nThe stone can stop it. Strike the floor with the stone and its crystal breaks. Hold the stone up and its light keeps what is yours yours.\n\n~\n\nIt moved from desk to desk. When I stood where it meant to go, it could not.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "choir"
+          }
+        },
+        {
+          "id": "the-unwritten-page",
+          "title": "The Unwritten Page",
+          "text": "It never once left its altar while we fought it. When it fell, a page lay on the desk, the ink still wet. I copy it here as it stands.\n\n> **The Vale, as kept.** Gullwing, thirty-one houses. Weir Mill, the miller and her daughter. Valeguard, the reeve, the guard of twelve, the chapel and its bells.\n> Ossery Vane, surveyor.\n> Ossery Vane, drowned.\n> The moorings, three. The water, kept.\n\nMy name is on it twice. The first is struck through with a single line, straight across, edge to edge. The hand that struck it is the hand that wrote it in again below. The ink is the same ink.\n\nValeguard has no chapel. Gullwing has twenty-nine houses; I counted them for the levy. I am not drowned.\n\n~\n\nI have torn the page in half and left one half under the desk. If someone finds it, they will know I was here, whatever the other half says.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "page"
+          }
+        },
+        {
+          "id": "the-unlit-ways",
+          "title": "The Unlit Ways",
+          "text": "Behind the chapel the old streets run between houses with their doors bricked shut. There are no lamps. Where the lamps stood there are things like tall men, crystal grown out of their faces into a single lens, and the lens turns, slowly, from one end of the street to the other, and casts a red light down it.\n\nThey do not look for us. They look for what is out of place. We are out of place.\n\nIf the light finds you, it holds you, and it calls the others, and they all turn to you at once. I saw the light find a fox that had come down the race with me. I will not write what happened to the fox.\n\nDo not run where they can hear it. Wait in the doorways while the light goes past. Count. The lenses turn on a measure, the same measure every time, as if they were wound.\n\n~\n\nOne of them I struck down. The others turned faster after, as if they had shared out its share of looking.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "ways"
+          }
+        },
+        {
+          "id": "the-heart-of-the-ways",
+          "title": "The Heart of the Ways",
+          "text": "In the middle of the streets there is a house that is not bricked up. Its door stands open and its lamp is lit, the only lit lamp I have seen below.\n\nInside, a table is set for three, with bread and a jug and three cups. The bread is warm. There is a coat on the peg by the door, a surveyor's coat with Valeguard's buttons. It is my size. Its pockets hold a receipt for rope.\n\nI did not sit down. I wanted to, very badly. I think if all three places had been filled, I would have.\n\n~\n\nNone of the lenses had found me on my way in. I do not think the door would have been open if they had.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "heart"
+          }
+        },
+        {
+          "id": "the-broken-stair",
+          "title": "The Broken Stair",
+          "text": "The way to the keep is a stair of slabs hung over nothing. Under it there is no bottom that my line can find.\n\nThe stair remembers itself and forgets. A slab will be there for six breaths, solid as a flagstone, and then it goes thin and red and is gone, and four breaths later it is back where it was, to the inch. Each slab keeps its own time. Watch them and you will see the measure.\n\nI lost the lead here. It fell between two slabs and I listened for it for a long time.\n\n~\n\nOn a slab off to the side, out of the way, someone has left a lantern and a bedroll, rolled tight the way they teach at Valeguard. The lantern is cold. The bedroll is dry.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "stair"
+          }
+        },
+        {
+          "id": "what-was-and-what-is",
+          "title": "What Was and What Is",
+          "text": "The keep's hall stands at the top of the stair, and it is Valeguard's hall, the same beams, the same hearth, the reeve's chair at the head of it. In the middle of the floor the crystal has grown up into a seam that hums like the lodestone does when you hold it close.\n\nThere are two doors in the walls that are not doors. Through one the hall is whole and dry, and the sun comes in at the windows, and there are banners I have never seen in the colours of no house I know. Through the other it is drowned to the rafters and red all through.\n\nIn each of them something keeps the door. When it falls the door's air sticks to you, and you are written over, and you must come back through to the seam and the stone's light before it finishes the sentence.\n\n~\n\nI stood in the sunlit hall for a moment longer than I should. A woman at the hearth looked up and knew me, and called me by a name that was nearly mine.",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "shores"
+          }
+        },
+        {
+          "id": "the-steward",
+          "title": "The Steward",
+          "text": "The Steward keeps the vale. It keeps it the way a ledger keeps a debt.\n\nIt sits in the court past the hall, over the dark, and it is taller than the keep's gate, and its chest is a book of crystal pages that turn by themselves. It takes us away from each other. It takes half of us into the vale as it was, or the vale as it is, and leaves the rest to hold the moorings so they can come back. Those it takes must break the bells there and carry the stone home. When the stone is driven down at its feet, the book cracks open, and for a little while it can be hurt.\n\nWe hurt it. It fell.\n\n~\n\nWhen it fell, the lodestone turned to the north again.\n\nI am going back up the line. If the moorings still stand in the hollow when I reach the top, then the water was never there. If they do not, then it is, and it always was, and I will write that down too.\n\n*O. V.*",
+          "found": {
+            "kind": "breach",
+            "breach": "drowned-vale",
+            "find": "steward"
           }
         }
       ]

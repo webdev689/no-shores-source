@@ -113,11 +113,13 @@ fn a_breach_piece_rolls_its_perks_from_the_breaches_pool_and_its_other_columns_f
 }
 
 #[test]
-fn a_breach_legendary_armour_piece_climbs_to_thirty_prestige_and_its_weapon_carries_none() {
+fn a_breach_legendary_armour_piece_climbs_to_28_prestige_at_normal_and_30_at_hard_and_its_weapon_carries_none() {
     let dice = Dice { seed: 9, tick: 3, player: 1 };
     let mut helm = crate::vestige::make(1, Rarity::Legendary, Slot::Head, 20, Source::Breach, &dice).expect("a helm");
     helm.xp = helm.xp_most();
     helm.bought = u32::MAX;
+    assert_eq!(helm.prestige(), 28);
+    helm.hard = true;
     assert_eq!(helm.prestige(), 30);
     let blade = crate::vestige::make(1, Rarity::Legendary, Slot::Melee, 20, Source::Breach, &dice).expect("a blade");
     assert!(blade.breach && blade.prestige() == 0);

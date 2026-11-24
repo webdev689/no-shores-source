@@ -36,6 +36,9 @@ pub struct Item {
     /// A Breach's armour piece or weapon: its perk columns roll from the Breaches' own perks, and a Legendary armour
     /// piece's upgrades climb further in Prestige.
     pub breach: bool,
+    /// A Breach's piece won at Hard: its armour climbs to the most Prestige, a Normal one's short of it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub hard: bool,
     pub xp: u32,
     /// The nodes bought, one bit each, column after column.
     pub bought: u32,
@@ -68,6 +71,7 @@ impl Item {
             layout: Vec::new(),
             resource: None,
             breach: false,
+            hard: false,
             xp: 0,
             bought: 0,
             chosen: Vec::new(),
@@ -220,7 +224,7 @@ impl Item {
     }
 
     /// Its Prestige, if it is armour or a ship's module of level 20: a Rare 13 to 15, a Legendary 18 to 27 (a
-    /// Breach's to 30), an Atheric 21 to 30.
+    /// Breach's at Normal 19 to 28, at Hard 21 to 30), an Atheric 21 to 30.
     #[must_use]
     pub fn prestige(&self) -> u32 {
         if !self.kind.carries_prestige() {
@@ -229,7 +233,8 @@ impl Item {
         let (bought, _) = self.upgrades();
         match self.rarity {
             Rarity::Rare if self.level >= NAMED_LEVEL => 13 + bought,
-            Rarity::Legendary => 18 + bought * if self.breach { 4 } else { 3 },
+            Rarity::Legendary if self.breach => (if self.hard { 21 } else { 19 }) + 3 * bought,
+            Rarity::Legendary => 18 + 3 * bought,
             Rarity::Atheric => 21 + 3 * bought,
             _ => 0,
         }

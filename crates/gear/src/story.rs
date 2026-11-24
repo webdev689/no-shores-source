@@ -11,6 +11,9 @@ use serde::{Deserialize, Serialize};
 pub struct Story {
     /// Whether they have finished the prologue.
     pub prologue: bool,
+    /// The Breaches they have seen won, each with its tier ("drowned-vale/normal"): Hard opens after Normal's.
+    #[serde(skip_serializing_if = "std::collections::BTreeSet::is_empty")]
+    pub breaches: std::collections::BTreeSet<String>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
@@ -26,7 +29,8 @@ impl Story {
     /// Every step either story has taken: the story only moves forward, whichever side heard of a step first.
     #[must_use]
     pub fn merged(self, other: &Self) -> Self {
-        Self { prologue: self.prologue || other.prologue, ..self }
+        let breaches = self.breaches.union(&other.breaches).cloned().collect();
+        Self { prologue: self.prologue || other.prologue, breaches, ..self }
     }
 }
 

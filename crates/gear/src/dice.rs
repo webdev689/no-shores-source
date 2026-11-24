@@ -44,6 +44,8 @@ pub enum Purpose {
     Recruit = 1_100,
     /// Whether a boarded deck's officer joins the winner, and who it is.
     Taken = 1_900,
+    /// A Breach's clear: its Vestiges' slots, and its last encounter's chances at the dye and the horse.
+    Breach = 2_000,
 }
 
 /// One player's dice for one tick of one room.
