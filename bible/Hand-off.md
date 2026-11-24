@@ -217,10 +217,8 @@ The decisions in [[Open Questions]] are not repeated here.
   island door, `identify`'s number, the bake's panics, the chat hall's sizes, mottos' hidden marks and the World
   Editor's keys; dead code and some 25 stale docs out; the Code Map, Toolchain, Testing and other notes made true.
   Tested offline (the full check at its head, `main` merged in); not played. What it left for the owner:
-  - The `modules` workflow's publish uploads `"$RUNNER_TEMP/stage"`, a folder nothing writes, so it uploads nothing and
-    passes; the next change to a module would name meshes R2 does not hold. A one-line fix (`"$RUNNER_TEMP/modules"`)
-    and a guard in `tools/r2.py`, held back because pushing either starts the asset workflows with the Cloudflare
-    token.
+  - The `modules` workflow's publish uploaded `"$RUNNER_TEMP/stage"`, a folder nothing writes: fixed on `main` by
+    eaf42df2, which #182 carries onto the gear branch's line so its Breach meshes publish.
   - One address can hold all 64 of the sea's places with sockets that never sign in, each let go after 5 s and opened
     again: a per-address cap like the chat hall's is a new security limit, the owner's to approve. The roster's and a
     player's reads have no rate limit.
@@ -245,6 +243,19 @@ The decisions in [[Open Questions]] are not repeated here.
     Claude Drafts Them]]); every drop rolled in its content's set look, Legendaries included; the Breaches' own pool,
     made with the Breaches; the faction blades' colour. `wt/fblade`, where an earlier session built the blades' trim,
     was never pushed and is lost: the work starts again, and publishing its art needs the owner's yes.
+- **#182, the first Breach, the Drowned Vale**, a draft stacked on #169 for the owner's yes, `cargo xtask check` green
+  at 4a1c78c9 (tested offline; not played, not in a deployed room). Built in full on Claude's autonomy after the
+  owner's three decisions ([[The First Breach Follows the Vault of Glass, at Normal and Hard]] and the two it names);
+  the system in [[Breaches]], every call of Claude's in [[The Drowned Vale as Claude Builds It]]. Its rules, wire,
+  doors, server (eight to a company and a Breach's run, launched never matched, the run let in only once the zone's
+  gate opened), the Sunken Gate and ten spaces in Blender, the page, the Drowned horse, the banner, dye and
+  *Soundings*. A read-only review of the branch found ten defects, each fixed with a test. Left for the owner:
+  - Hard is not shown locked on the Playlist for a character without a Normal clear (the gear message carries no
+    story records); the run's own gate refuses them. A gate refusal (112) shows no words yet.
+  - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn; the Drowned
+    horse's ridden pictures render on `main`'s forge workflow.
+  - The Sunken Gate's area stands last in Gullwing Vale's brief at level 20: at the land's own level its ways ramped
+    the Old Stones' and Valeguard's ledges away, and earlier in the list it moved the Old Stones off their puzzle.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first
