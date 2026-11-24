@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { GUILD, countOf } from '../botForTests.ts';
 import { pruneMemory } from '../kit.ts';
 import type { Actor } from './module.ts';
-import { antiraidModule, startRaid } from './antiraid.ts';
+import { RAID_TOLD_GROUP, RAID_TOLD_ONE_BY_ONE, antiraidModule, startRaid } from './antiraid.ts';
 import { ALERTS, standSafetyGateway } from './safetyForTests.ts';
 
 const author = (id: string) => ({ id, username: `user${id.slice(-2)}` });
@@ -63,6 +63,29 @@ test('raid guard: set to only report, raid mode reports each joiner in the alert
     joiners.every((id) => bot.discord.state.members.has(id) && !bot.discord.state.timeouts.has(id)),
     'no one is kicked or timed out',
   );
+});
+
+test('raid guard: a large raid set to only report is told one by one at first, then in groups, never a post each', async () => {
+  const settings = {
+    joinCount: 3,
+    joinSeconds: 600,
+    raidAction: 'alert',
+    raiseVerification: false,
+    alertChannel: ALERTS,
+  };
+  const bot = await standSafetyGateway({ antiraid: settings });
+  for (let joiner = 0; joiner < 42; joiner++) {
+    const id = String(900000000000000200n + BigInt(joiner));
+    bot.discord.state.members.set(id, []);
+    bot.clock.now += 1000;
+    await bot.send('GUILD_MEMBER_ADD', { guild_id: GUILD, user: author(id), roles: [] });
+  }
+  const told = titles(bot);
+  assert.equal(told.filter((title) => title === 'Joined in raid mode').length, RAID_TOLD_ONE_BY_ONE);
+  // 40 joined in raid mode: five one by one, then one post for each full group of the rest
+  const grouped = Math.floor((40 - RAID_TOLD_ONE_BY_ONE) / RAID_TOLD_GROUP);
+  assert.equal(told.filter((title) => title === `${RAID_TOLD_GROUP} more joined in raid mode`).length, grouped);
+  assert.ok(told.length < 10, `a raid of 40 is a few posts, not one each: ${told.length}`);
 });
 
 test('raid guard: joins spread wider than the window never start raid mode', async () => {

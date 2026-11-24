@@ -26,6 +26,8 @@ export interface Bucket {
 
 /** Where pictures are served: `/v1/media/<id>.<ext>`. */
 export const MEDIA_PATH = '/v1/media/';
+/** Where a picture is kept in the bucket, by its id: every reader and writer of the bucket goes through this. */
+export const mediaKey = (id: string): string => `media/${id}`;
 /** The largest picture kept: Discord's own limit for an upload without boosts. */
 export const MEDIA_BYTES_MAX = 8 * 1024 * 1024;
 /** How many pictures one server may keep. */
@@ -116,7 +118,7 @@ export async function mediaRoute(
       .bind(id, snapshot.guildId)
       .first();
     if (!row) return fail('media', 404, cors, 'There is no such picture.');
-    await bucket.delete(`media/${id}`);
+    await bucket.delete(mediaKey(id));
     await database.prepare('DELETE FROM media WHERE id = ?').bind(id).run();
     await record('media.remove', id, {});
     return json({ ok: true, message: 'Removed. Messages that show it may take a day or more to lose it.' }, 200, cors);
@@ -172,7 +174,7 @@ async function upload(
       `This server has no room left: ${MEDIA_FILES_MAX} pictures or 200 MB. Remove one first.`,
     );
   try {
-    await bucket.put(`media/${fresh}`, clean, { httpMetadata: { contentType: kind.type } });
+    await bucket.put(mediaKey(fresh), clean, { httpMetadata: { contentType: kind.type } });
   } catch (error) {
     await database.prepare('DELETE FROM media WHERE id = ?').bind(fresh).run();
     context.bot.log(`[bot] a picture was not kept: ${error instanceof Error ? error.message : String(error)}`);
@@ -194,7 +196,7 @@ export async function serveMedia(bucket: Bucket | null, path: string): Promise<R
   const found = /^\/v1\/media\/([a-f0-9]{32})\.(png|jpg|gif|webp)$/.exec(path);
   const notFound = () => new Response('Not found', { status: 404 });
   if (!found || !bucket) return notFound();
-  const object = await bucket.get(`media/${found[1]}`);
+  const object = await bucket.get(mediaKey(found[1]));
   if (!object) return notFound();
   const type = String(object.httpMetadata?.contentType ?? '');
   if (!KINDS.some((kind) => kind.type === type)) return notFound();

@@ -399,14 +399,14 @@ export const SERVER_TABLES = [
 ] as const;
 
 /**
- * Forgets every server the bot left more than LEFT_KEEP_S ago: its pictures (through `removeMedia`, by their keys)
+ * Forgets every server the bot left more than LEFT_KEEP_S ago: its pictures (through `removeMedia`, by their ids)
  * and its rows in every table, then its snapshot; and drops tickets closed more than CLOSED_TICKET_KEEP_S ago.
  * Returns the servers forgotten.
  */
 export async function forgetLeftServers(
   database: Db,
   nowS: number,
-  removeMedia: (keys: readonly string[]) => Promise<void>,
+  removeMedia: (ids: readonly string[]) => Promise<void>,
 ): Promise<string[]> {
   await database
     .prepare('DELETE FROM tickets WHERE closed_at > 0 AND closed_at < ?')

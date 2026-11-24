@@ -222,6 +222,26 @@ test('feeds: two feeds of one address each post in their own channel, and a plac
   );
 });
 
+test('feeds: a place saved by address alone is let go once a feed reads on from it, so a feed added later only marks', async () => {
+  const xml = ATOM.replace('<feed>', `<feed>${FOUR}`);
+  const bot = await standFeeds([YOUTUBE_FEED], async () => new Response(xml));
+  const address = feedUrl(YOUTUBE_FEED);
+  bot.database.raw
+    .prepare('INSERT INTO social_seen (guild_id, feed, last_id, checked_at) VALUES (?, ?, ?, ?)')
+    .run(GUILD, address, 'yt:video:3', 1);
+  await bot.runAt(RUNS[0] ?? 0);
+  const left = bot.database.raw.prepare('SELECT COUNT(*) AS n FROM social_seen WHERE feed = ?').get(address) as {
+    n: number;
+  };
+  assert.equal(left.n, 0, 'the place saved by address alone is gone once moved');
+  // the same address is followed in a second channel later on
+  bot.database.raw
+    .prepare("UPDATE guild_config SET config = ? WHERE guild_id = ? AND module = 'socials'")
+    .run(JSON.stringify({ feeds: [YOUTUBE_FEED, { ...YOUTUBE_FEED, channel: MORE_NEWS }] }), GUILD);
+  await bot.runAt(RUNS[1] ?? 0);
+  assert.deepEqual(bot.world.posts(MORE_NEWS), [], 'a feed added later marks its place and posts nothing old');
+});
+
 test('feeds: two runs at once post a new item once', async () => {
   let xml = ATOM;
   const bot = await standFeeds([YOUTUBE_FEED], async () => new Response(xml));

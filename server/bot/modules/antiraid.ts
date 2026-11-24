@@ -124,6 +124,34 @@ async function report(context: BotContext, config: Settings, title: string, user
   });
 }
 
+/** How many joiners raid mode set to only report tells one by one, before it tells them in groups. */
+export const RAID_TOLD_ONE_BY_ONE = 5;
+/** How many joiners each later post counts, so a large raid is a few posts rather than one each, which would hold the
+ *  Gateway's one queue on the channel's rate limit for minutes. */
+export const RAID_TOLD_GROUP = 25;
+
+/** Tell of one more joiner in raid mode: the first few one by one, then one post for each full group. */
+async function tellJoiner(
+  context: BotContext,
+  config: Settings,
+  told: { key: string; nowMs: number },
+  user: Settings,
+  ageMs: number,
+): Promise<void> {
+  const memory = context.memory ?? new Map<string, unknown>();
+  const held = memory.get(told.key);
+  // one entry with `at`, the shape the core's memory pruning reads an entry's age by
+  const count = (Array.isArray(held) ? Number(recordOf(held[0]).count) || 0 : 0) + 1;
+  memory.set(told.key, [{ at: told.nowMs, count }]);
+  if (count <= RAID_TOLD_ONE_BY_ONE) return report(context, config, 'Joined in raid mode', user, ageMs);
+  if ((count - RAID_TOLD_ONE_BY_ONE) % RAID_TOLD_GROUP !== 0) return;
+  await postTo(context.rest, String(config.alertChannel ?? ''), {
+    embeds: [
+      embed({ title: `${RAID_TOLD_GROUP} more joined in raid mode`, color: 0xd9a33c, timestamp: context.now() }),
+    ],
+  });
+}
+
 const events: Readonly<Record<string, EventHandler>> = {
   async GUILD_MEMBER_ADD(context, data, config) {
     const user = recordOf(data.user);
@@ -149,8 +177,15 @@ const events: Readonly<Record<string, EventHandler>> = {
     if (raid) {
       const left = Math.max(60, Number(raid.until_s) - Math.floor(now / 1000));
       await deal(context, guildId, userId, config.raidAction, left, 'Raid mode');
-      // a kick or a time-out shows in Discord's audit log; a joiner only reported is told of here, one post each
-      if (config.raidAction === 'alert') await report(context, config, 'Joined in raid mode', user, ageMs);
+      // a kick or a time-out shows in Discord's audit log; a joiner only reported is told of here
+      if (config.raidAction === 'alert')
+        await tellJoiner(
+          context,
+          config,
+          { key: `antiraid-told:${guildId}:${raid.started_at}`, nowMs: now },
+          user,
+          ageMs,
+        );
       return;
     }
     const youngDays = Number(config.minAccountDays) || 0;

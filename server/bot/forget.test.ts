@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { freshDatabase } from './botForTests.ts';
+import { fakeBucket, freshDatabase, standWorker } from './botForTests.ts';
+import { mediaKey } from './media.ts';
+import { tick } from './worker.ts';
 import { CLOSED_TICKET_KEEP_S, LEFT_KEEP_S, SERVER_TABLES, forgetLeftServers } from './store.ts';
 
 const NOW_S = Date.UTC(2026, 10, 15) / 1000;
@@ -56,9 +58,9 @@ test('a server left a month ago is forgotten whole, its pictures with it; one le
       .run('entrant', guildId);
   }
   const removed: string[] = [];
-  const forgotten = await forgetLeftServers(database, NOW_S, async (keys) => void removed.push(...keys));
+  const forgotten = await forgetLeftServers(database, NOW_S, async (ids) => void removed.push(...ids));
   assert.deepEqual(forgotten, ['gone']);
-  assert.deepEqual(removed, ['media-gone'], 'its pictures leave the bucket too');
+  assert.deepEqual(removed, ['media-gone'], 'its pictures are named for the bucket by their ids');
   const count = (table: string, guildId: string) =>
     Number((raw.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE guild_id = ?`).get(guildId) as { n: number }).n);
   for (const table of [...SERVER_TABLES, 'guild_snapshot']) {
@@ -97,4 +99,21 @@ test('a ticket closed a month ago is let go; an open one and one closed lately s
     database.raw.prepare('SELECT channel_id FROM tickets ORDER BY channel_id').all() as { channel_id: string }[]
   ).map((row) => row.channel_id);
   assert.deepEqual(left, ['open', 'recent']);
+});
+
+test('the hourly clock takes a forgotten server’s pictures out of the bucket, so none is served again', async () => {
+  const bucket = fakeBucket();
+  const bot = await standWorker({ env: { BOT_MEDIA: bucket } });
+  await bucket.put(mediaKey('picture1'), new Uint8Array([1, 2, 3]), { httpMetadata: { contentType: 'image/png' } });
+  const nowMs = Date.UTC(2026, 10, 15, 10, 17);
+  const nowS = nowMs / 1000;
+  snapshot(bot.database.raw, 'gone', false, nowS - LEFT_KEEP_S - 60);
+  bot.database.raw
+    .prepare('INSERT INTO media (id, guild_id, type, bytes, by_user, at) VALUES (?, ?, ?, ?, ?, ?)')
+    .run('picture1', 'gone', 'image/png', 3, '1', nowS - LEFT_KEEP_S - 600);
+  await tick(bot.env, nowMs, bot.execution, { fetch: bot.discord.fetch, registry: bot.registry });
+  await bot.execution.settle();
+  assert.equal(bucket.held.has(mediaKey('picture1')), false, 'the picture left the bucket');
+  const served = await bot.call(new Request('https://bot.test/v1/media/picture1.png'));
+  assert.equal(served.status, 404, 'and is served no more');
 });

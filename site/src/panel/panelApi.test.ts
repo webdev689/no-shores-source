@@ -166,3 +166,14 @@ test('a file is sent as it is, with its own type; anything else as JSON', async 
   await api.call('PUT', '/v1/panel/g/1/m/core', { rev: 1 });
   assert.equal(world.asked[1]?.init.body, '{"rev":1}');
 });
+
+test('a session token an older panel kept in the storage every page shares is cleared when the panel starts', () => {
+  const store = memoryStorage();
+  store.setItem(TOKEN_KEY, 'old-token');
+  store.setItem(PENDING_OUT_KEY, 'old-token');
+  const tab = memoryStorage();
+  const api = createPanelApi({ store, tab, fetchFn: async () => new Response('{}') });
+  assert.equal(store.getItem(TOKEN_KEY), null, 'the game’s pages can no longer read it');
+  assert.equal(store.getItem(PENDING_OUT_KEY), null);
+  assert.equal(api.signedIn(), false, 'and it signs no one in');
+});

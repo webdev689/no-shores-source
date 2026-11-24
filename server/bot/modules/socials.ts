@@ -310,6 +310,13 @@ async function readFeed(context: BotContext, fetchFeed: Fetch, read: FeedRead): 
         .bind(read.guildId, read.key, newest.id, recent, nowS);
   // the write claims the items: a run that overlaps this one finds the place moved on, and posts none of them again
   if ((await claim.run()).meta.changes !== 1) return;
+  // once a feed has read on from a place saved under its address alone, that place goes: a feed of the same address
+  // added later must mark where it stands, never read on from a place frozen at an old item
+  if (!own && saved)
+    await context.database
+      .prepare('DELETE FROM social_seen WHERE guild_id = ? AND feed = ?')
+      .bind(read.guildId, addressKey)
+      .run();
   const role = String(read.feed.role ?? '');
   for (const item of fresh.reverse()) {
     // a feed's title is someone else's words: its markdown is shown as typed, never read as links or headings

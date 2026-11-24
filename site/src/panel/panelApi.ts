@@ -87,6 +87,13 @@ export interface PanelDeps {
 export function createPanelApi(deps: PanelDeps = {}) {
   const store = deps.store === undefined ? storageOf('localStorage') : deps.store;
   const tab = deps.tab === undefined ? storageOf('sessionStorage') : deps.tab;
+  // a session an older panel kept where every page of the site reads, the game's among them, is let go
+  for (const key of [TOKEN_KEY, PENDING_OUT_KEY])
+    try {
+      store?.removeItem(key);
+    } catch {
+      // a storage the browser refuses holds nothing to clear
+    }
   const now = deps.now ?? (() => Date.now());
   const fetchFn: Fetch = deps.fetchFn ?? ((url, init) => fetch(url, init));
   const named = deps.local ? read(store, BOT_ORIGIN_KEY) : '';

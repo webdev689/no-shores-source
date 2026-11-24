@@ -22,8 +22,11 @@ import type { Actor } from './module.ts';
 
 /** Discord's longest time-out. */
 export const TIMEOUT_MAX_S = 28 * 86_400;
-/** How long a ban or an unban the bot asked for is known as its own: far longer than Discord's word of it takes. */
-export const OWN_BAN_S = 600;
+/**
+ * How long a ban or an unban the bot asked for is known as its own: an hour, longer than Discord's word of it takes even
+ * when a resume replays what the Gateway missed, or a busy queue holds it.
+ */
+export const OWN_BAN_S = 3600;
 /** The name the case shows for an act the bot took by itself. */
 export const BOT_NAME = 'The bot';
 

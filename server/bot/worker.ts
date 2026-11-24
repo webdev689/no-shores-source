@@ -17,7 +17,7 @@ import { GATEWAY_NAME } from './gateway.ts';
 import { corsFor, fail, json } from './http.ts';
 import { INTERACTION_PATH, interactionRoute } from './interactions.ts';
 import { type BotContext, type Vars, createConfigCache } from './kit.ts';
-import { type Bucket, MEDIA_PATH, serveMedia } from './media.ts';
+import { type Bucket, MEDIA_PATH, mediaKey, serveMedia } from './media.ts';
 import { panelRoute } from './panel.ts';
 import { REGISTRY, type Registry } from './registry.ts';
 import { type Fetch, type Rest, createRest } from './rest.ts';
@@ -164,10 +164,12 @@ export async function tick(env: Env, nowMs: number, execution: Execution, over: 
     sessionIdleS: SESSION_IDLE_S,
     sessionMaxS: SESSION_MAX_S,
   });
-  // a picture the bucket would not let go of stays there; its row goes all the same, so nothing serves it again
-  await forgetLeftServers(env.BOT_DB, Math.floor(nowMs / 1000), async (keys) => {
-    for (const key of keys)
-      await env.BOT_MEDIA?.delete(key).catch((error) => console.warn(`[bot] a picture stayed: ${said(error)}`));
+  // a picture the bucket will not let go of now is logged and stays; the bot never names it again
+  await forgetLeftServers(env.BOT_DB, Math.floor(nowMs / 1000), async (ids) => {
+    for (const id of ids)
+      await env.BOT_MEDIA?.delete(mediaKey(id)).catch((error) =>
+        console.warn(`[bot] a picture stayed: ${said(error)}`),
+      );
   });
 }
 

@@ -130,8 +130,8 @@ message that breaks a filter, and warns or times out through moderation once a b
 breaks of that filter are only deleted.
 
 **Raid guard** counts joins in the Gateway object's memory. Enough inside the window starts raid mode, kept in
-`raid_mode` so a restart does not end it: joiners are reported (one post each in the alert channel), timed out or
-kicked, and the verification level is
+`raid_mode` so a restart does not end it: joiners are reported (the first five one post each in the alert channel, then one
+post for every 25 more), timed out or kicked, and the verification level is
 raised and given back when the clock ends it. Very new accounts can be dealt with at any time.
 
 ## Community modules
@@ -249,3 +249,6 @@ built by the message law. The page only draws what the panel's API answers; ever
   minutes, sooner when the panel's save reaches it; a save whose word to the Gateway is lost waits out the five.
 - While the Gateway is down, the roles' permissions in a server's snapshot stay as last seen until the server's next
   GUILD_CREATE or role event.
+- A person's list of servers weighs the bot's first 50 servers by name, the same for everyone: past 50, a person
+  opens their server through `/panel` in it. Listing only a person's own servers needs Discord's `guilds` scope at
+  sign-in, which the panel does not ask for ([[Open Questions]]).

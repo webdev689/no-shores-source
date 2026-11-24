@@ -186,6 +186,16 @@ test("moderation: the Gateway seeing the bot's own bans and unbans late leaves a
   assert.equal(bot.discord.state.bans.has(TARGET), false, 'lifted on time');
 });
 
+test("moderation: Discord's word of the bot's own ban, half an hour late, is still known as the bot's", async () => {
+  const bot = await standSafetyWorker();
+  await bot.ask(ban(text('duration', '1d')));
+  // the clock runs while the word is still on its way, as after a resume that replays what was missed
+  await bot.clock(Date.now() + 30 * 60_000);
+  await bot.dispatcher.dispatch('GUILD_BAN_ADD', { guild_id: GUILD, user: { id: TARGET } });
+  await bot.clock(Date.now() + 2 * 86_400_000);
+  assert.equal(bot.discord.state.bans.has(TARGET), false, 'the day ban is still lifted on time');
+});
+
 test('moderation: a member is told of a ban only once the bot holds Ban Members, and told again if Discord refuses', async () => {
   const bot = await standSafetyWorker();
   const botRole = (permissions: string) => ({
