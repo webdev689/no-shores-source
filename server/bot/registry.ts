@@ -3,11 +3,22 @@
 
 import type { BotContext } from './kit.ts';
 import type { EventData, ServerModule } from './modules/module.ts';
+import { announceModule } from './modules/announce.ts';
+import { levelsModule } from './modules/levels.ts';
+import { roleMenusModule } from './modules/roleMenus.ts';
+import { tagsModule } from './modules/tags.ts';
+import { welcomeModule } from './modules/welcome.ts';
 
 // A module is added in two steps: its shape in `law/modules.ts` (what the panel draws and the bot checks), and its
 // code as one file in `modules/` exporting a `ServerModule` with the same id, named in the list below. Its tables, if
 // it has any, come with a migration in `migrations/` named by its UTC time.
-export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([]);
+export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([
+  welcomeModule,
+  levelsModule,
+  roleMenusModule,
+  tagsModule,
+  announceModule,
+]);
 
 /** A module list, ready to route: tests build one of their own. */
 export interface Registry {

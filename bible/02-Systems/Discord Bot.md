@@ -38,6 +38,19 @@ code:
   - server/bot/migrations/20261124120000_core.sql
   - server/bot/migrations/20261124120100_messages.sql
   - server/bot/wrangler.jsonc
+  - server/bot/modules/welcome.ts#welcomeModule
+  - server/bot/modules/card.ts#cardUrl
+  - server/bot/modules/card.ts#cardRoute
+  - server/bot/modules/cardDrawing.ts#drawCard
+  - server/bot/modules/cardLetters.ts#letterRows
+  - server/bot/modules/png.ts#decodePng
+  - server/bot/modules/png.ts#encodePng
+  - server/bot/modules/levels.ts#levelsModule
+  - server/bot/modules/levels.ts#publicBoard
+  - server/bot/modules/roleMenus.ts#roleMenusModule
+  - server/bot/modules/tags.ts#tagsModule
+  - server/bot/modules/announce.ts#announceModule
+  - server/bot/migrations/20261124130100_community.sql
 ---
 # Discord Bot
 
@@ -65,6 +78,25 @@ A module is one file in `modules/` exporting a `ServerModule`, named in `registr
 `law/modules.ts`. It may answer commands and presses, hear Gateway events, run each minute, answer the panel's
 tables and acts, keep Discord in step when it is saved, fill placeholders of its own, and serve public routes. Its
 tables come with a migration named by its UTC time.
+
+## Community modules
+
+- **Welcome** greets a member who joins, sends a direct message, says goodbye, and gives roles on joining (to bots,
+  their own). Roles wait for a set delay, or for Discord's rules screening to be passed, and the clock gives them.
+  It fills `{welcome_card}`: a signed address of a card drawn in the Worker, a night sea in the server's colour, a
+  double frame in the accent (lantern gold), the member's avatar in a ring and three lines in our own pixel letters.
+  The address is signed with `CARD_SIGNING_KEY`, so the bot draws only the cards it handed out.
+- **Levels** gives experience for messages (once a cooldown) and for minutes in voice, says a level-up where the
+  settings say, gives and takes reward roles, and answers `/rank` and `/leaderboard`. The panel gives, takes and
+  resets; a level a gift reaches gives its reward only if the giver could give that role. The website reads the
+  public board at `/v1/public/levels/<server>`: names and standing, never a user id.
+- **Role menus** post buttons, a list or reactions from which members pick roles: any number, one at a time, or
+  kept once given. Publishing again edits the same message, and only the roles a menu offers ever move.
+- **Tags** answer a saved message to the prefix in chat or to `/tag`, which offers names as they are typed. A tag can
+  be kept to some roles.
+- **Announcements** post a message in up to ten channels, now from the panel or on a schedule in UTC (once, hourly,
+  daily, weekly), each time once; one more than a quarter hour late is skipped. Set to edit, they change their last
+  post in place, posting again only when Discord says it is gone.
 
 ## Limits
 

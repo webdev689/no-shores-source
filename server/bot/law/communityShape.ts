@@ -74,7 +74,7 @@ export const WELCOME_SHAPE: BotModule = {
           default: 'Member #{count} of {server}',
         },
         accent: colour('Accent', '#d9a33c'),
-        background: colour('Background', '#1b1d22'),
+        background: colour('Background', '#0e1a2e'),
       },
     },
     joinRoles: roles('Roles for new members', 10),
