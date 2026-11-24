@@ -97,7 +97,8 @@ clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Des
 ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]; Claude's calls in
 [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]): **Hear the stranger out** (her welcome,
 [[Prologue]]; its reward the 400 Aurem she gives and the Bay Horse, `"horse": true`, worn unless one is, never a
-second); **Find your way round Overlook**, speaking at each counter in turn
+second,
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]); **Find your way round Overlook**, speaking at each counter in turn
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
 the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);

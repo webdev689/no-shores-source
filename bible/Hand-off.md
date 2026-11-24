@@ -431,7 +431,7 @@ The decisions in [[Open Questions]] are not repeated here.
   the rest: #59, #61 (a captain strikes from losing men at about 80% of its hull), #68, #69, #95, #98, #99.
 - **Elements and shields**: whether named weapons keep an element of their own (a leap is Volt on any Gullwing),
   whether a shield comes back after a while, and which foes beyond the patrols' carry them.
-- **The held map on land** has no fog of war, so a whole land shows the first time; whether to fog it as the sea is.
+- **The held map on land** has no fog of war, so a whole land shows the first time; whether to fog it.
 - **The hub's plants**: whether "any flora like bushes or trees" ([[The Hub's Plants Are the World's Low-Poly Ones]])
   also covers the wall ivy and the cut flowers at the flower stall and cart, which are the hub's own.
 - **The wreck's teaching** ([[The Wreck Opens by Teaching the Player]]): the owner's "teaching them the inventory" is
@@ -655,10 +655,9 @@ The decisions in [[Open Questions]] are not repeated here.
   within 2 km of a city's wall yet); the World Editor's 3D view without the city, woods and shadows (its worker opens a
   landmass without the RMB index); flats and lit windows in the cities (the RMB table keeps no places for flats, and
   their archives are not paintable).
-- **The held map** ([[Held Map]]): discovery kept by the server per character, a quest's goals beyond the keepers it
-  names (ringed on land by #153) tracked on it, the charted sea's
-  wash laid while it is up; on land, the relief past the camera's 2 km read off the worker's exact ground, and lakes,
-  which only the 1 km grid holds.
+- **The held map** ([[Held Map]]): a quest's goals beyond the keepers it names (ringed on land by #153) tracked on
+  it; on land, the relief past the camera's 2 km read off the worker's exact ground, and lakes, which only the 1 km
+  grid holds.
 - **Touch**: no touch layer yet, so the sea fight and the wreck's fights need keys or a pad ([[Interface]], "Limits").
 - **The audit's findings left** (the audit's pull request lists each with its evidence), each needing the owner's word
   or more than a fix:

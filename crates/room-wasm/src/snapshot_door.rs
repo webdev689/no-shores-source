@@ -259,7 +259,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 base_foes: None,
                 players: &players,
                 dressed: &dressed,
-                // A deck draws no plates: the sea names no one.
+                // A deck draws no plates.
                 plates: &[],
                 foes: &foes,
                 events: &events,
