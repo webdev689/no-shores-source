@@ -49,6 +49,10 @@ Each book's eleven chapters come one as each task of its road is done, in the ro
 Together they tell where each Art came from. Its words keep to the owner's: no em or en dashes; and every bold and
 italic is closed, a document's every line set in and a break alone, or a check fails.
 
+The Breaches' category, "The Breaches", holds *Soundings* (deep teal, the spire), the Drowned Vale's ten chapters: one
+at each of its encounters' first clear and the Descent's, and one in each hidden chest (`found` of kind `breach`, by
+the Breach and the find; [[Breaches]]).
+
 ## In the rules
 
 - **Kept by id.** A character keeps each chapter found by its book's id and its own (`book/chapter`), in the order

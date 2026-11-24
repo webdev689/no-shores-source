@@ -499,7 +499,10 @@ so every decision is Rust and the shell only carries bytes and time.
   Playlist"). The week's run the Playlist launches is marked `--sea` before its instance
   (`node-<Elite Dungeon>--abyss--sea--run-<i>`): it opens as the week's run, and `startedAtSea` reads it and a
   playlist's run as started at sea. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
-  Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). No name opens a shared
+  Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). A Breach's run names its
+  gate's patrol zone and its tier, `node-<zone>--breach-<normal|hard>--run-<i>` (`nodeRoom`'s `breach`), and opens from
+  `breachAsk`'s ask; it lets a character in only once its zone's room says its company's gate opened, and holds eight
+  accounts ([[Breaches]]). No name opens a shared
   Elite or Abyss dungeon, a private Normal one, or a run without its whole instance. A run and a sea island's
   dungeon (on its sea's word, "The sea") open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
   player joins, and a patrol's dungeon's run is given its patrol's node file too, so it keeps the patrol's lock. One
@@ -515,10 +518,10 @@ so every decision is Rust and the shell only carries bytes and time.
   or no token five seconds after the join (a claim's own waits), closes with 4003 and "Sign in to enter this run.",
   and a claim or a company the accounts never gave, each asked again after a claim's waits, closes with 1013 and
   "Something went wrong. Try again.", which the page joins again on; a kept character the room cannot read closes
-  with 4003 and those words, since joining again would find it the same. A run holds four accounts (`RUN_MOST`, a
-  company's most), judged as each signs in: a fifth account is sent away with 4003 and "This run is full.", so the
+  with 4003 and those words, since joining again would find it the same. A run holds four accounts (`RUN_MOST`; a
+  Breach's run a company's most, eight, `runMost`), judged as each signs in: a fifth account is sent away with 4003 and "This run is full.", so the
   page takes them back as from a shut gate, saying why, while a member signing in again on a new socket is kept and
-  their old socket let go. Its sockets are held to twice that, eight, signed in or not (`socketsMost`), so those
+  their old socket let go. Its sockets are held to twice that, signed in or not (`socketsMost`), so those
   that never sign in are not without end in their five seconds. An emptied run's room stays as its company left it
   for `RUN_LINGER_MS`, a minute, through a dropped connection, and is then forgotten: the next to come opens a fresh
   run.
