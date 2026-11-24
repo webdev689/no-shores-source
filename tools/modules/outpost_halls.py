@@ -37,7 +37,7 @@ def supplies(module, at):
 
 
 def hall_camp(module):
-    # The command tent at the back of the plot, open toward the front, the map table and a chest inside.
+    # The command tent in the plot's middle, open toward the front, the map table and a chest inside.
     # Wide and deep enough to fill the plot's middle, its front wall at y -2.2 clear of the fire and its tents.
     shell.tent(module, (0.0, 2.6, 0.0), 0, 8.0, 9.6, 5.0, eave=2.4, open_door=True, out=0.6)
     top = furnish.trestle(module, (0.0, 3.6, 0.0), 2.4, 1.1)
@@ -143,7 +143,7 @@ def hall_longhouse(module):
     shapes.slab(module, (0.0, porch + 0.2, eave - 0.1), (8.2, 0.3, 0.3), 'timber', bevel=0.01)
     fittings.floor(module, -3.9, porch, 3.9, front - 0.2, high=0.06)
     for x in (-1.3, 1.3):
-        fittings.round_shield(module, (x, porch + 0.2 - 0.17, 2.2), radius=0.42, face='crimson' if x < 0 else 'black')
+        fittings.round_shield(module, (x, porch + 0.2 - 0.13, 2.2), radius=0.42, face='crimson' if x < 0 else 'black')
     kit.block(module, (-2.4, front - 0.55, 0.42), (1.8, 0.4, 0.06), 'timber', bevel=0.01, wear=0.0, part=False)
     for x in (-3.15, -1.65):
         shapes.slab(module, (x, front - 0.55, 0.27), (0.08, 0.34, 0.42), 'timber')

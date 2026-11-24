@@ -81,7 +81,7 @@ def gate_mound(module):
     for x in (-1, 1):
         fittings.post(module, (x * (WELL_HALF_M + 0.15), ARCH_Y, PLATFORM_M), 2.6, side=0.28)
         shapes.slab(module, (x * (WELL_HALF_M - 0.2), ARCH_Y, portal - 0.3), (0.8, 0.14, 0.14), 'timber',
-                    turn=(0.0, -x * 0.75, 0.0))
+                    turn=(0.0, x * 0.75, 0.0))
     shapes.slab(module, (0.0, ARCH_Y, portal + 0.15), (WELL_HALF_M * 2 + 1.0, 0.36, 0.3), 'timber', bevel=0.01)
     module.part((-WELL_HALF_M - 0.5, ARCH_Y - 0.18, portal), (WELL_HALF_M + 0.5, ARCH_Y + 0.18, portal + 0.3))
     fittings.lantern(module, (0.0, ARCH_Y - 0.1, portal - 0.6), size=0.24, hung_from=portal)
