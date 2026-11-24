@@ -15,7 +15,8 @@ const add = (first: Colour, second: Colour): Colour => [
   first[2] + second[2],
 ];
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
-const smooth = (low: number, high: number, value: number): number => {
+/** WGSL's smoothstep, for the TypeScript that mirrors the sky's shaders. */
+export const smooth = (low: number, high: number, value: number): number => {
   const share = clamp01((value - low) / (high - low));
   return share * share * (3 - 2 * share);
 };

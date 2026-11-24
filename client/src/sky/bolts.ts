@@ -1,7 +1,7 @@
 import { type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { flashOf } from './skyDriver.ts';
 import type { Strike } from './skyLaw.ts';
-import { smoothstep } from '../water/shore.ts';
+import { smooth } from './skyLook.ts';
 
 /** The most segments drawn in a frame, a strike's main channel's, and the share of its length a branch runs. */
 export const MOST_SEGMENTS = 512;
@@ -148,7 +148,7 @@ export function underWeatherM(fromM: number, toM: number, distance: number, topM
   const rise = Math.abs(toM - fromM);
   const low = Math.min(fromM, toM);
   const under = rise < 1 ? (fromM < topM ? distance : 0) : distance * Math.min(1, Math.max(0, (topM - low) / rise));
-  return distance + (under - distance) * smoothstep(topM, 2 * topM, fromM);
+  return distance + (under - distance) * smooth(topM, 2 * topM, fromM);
 }
 
 /**
