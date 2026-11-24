@@ -1,29 +1,11 @@
-// The menu's pages that need no gear, drawn by the game: Guild, still to come and saying so; the Sloop's papers as
-// Manage shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the account, the
-// world's resolution and the volumes of the interface and the world. And the parts they share with the Roster: a
-// heading over its rule, a faint hint and an answer.
+// The menu's pages that need no gear, drawn by the game: Guild, still to come and saying so, and the Sloop's papers as
+// Manage shows them (`shipPages.ts` puts its power and crew beside them). And the parts they share with the Roster and
+// Settings (`settingsPage.ts`): a heading over its rule, a faint hint and an answer.
 
 import type { Child, Node } from '../ui/node.ts';
-import { PAGE, type Page } from '../ui/page.ts';
-import { choice, slider } from '../ui/controls.ts';
-import type { AccountPanel } from './accountTab.ts';
 import { drawings, ruleUnder, strip } from './hudParts.ts';
 import { INK, type Sizes, words } from './gearNodes.ts';
-import type { PlainContext } from './menuPage.ts';
 import type { ShipPanel } from './shipPanel.ts';
-import { soundCredits } from '../soundSamples.ts';
-import { RESOLUTIONS, resolution, setResolution } from './renderScale.ts';
-import {
-  ambienceVolume,
-  interfaceVolume,
-  musicVolume,
-  play,
-  setAmbienceVolume,
-  setInterfaceVolume,
-  setMusicVolume,
-  setWorldVolume,
-  worldVolume,
-} from './uiSounds.ts';
 
 /** A press's padding on these pages: its words' line and the room round them, as the kit's presses stand. */
 export const PRESS_PADDING = [10, 14] as const;
@@ -139,149 +121,6 @@ export function shipPart(heading: string, rows: readonly (readonly [string, stri
           children: [{ width: 'grow', ...words(label, 1, INK.faint) }, words(value, 1, INK.word)],
         })),
       },
-    ],
-  };
-}
-
-/** The Settings page: the account, or why there is none, the players blocked, the world's resolution, and the
- *  volumes. */
-export function settingsPage(context: PlainContext, account: AccountPanel | null, page: Page = PAGE): Node {
-  return pagePanel('page-settings', context.sizes.name > 1 ? 880 : 640, [
-    headingNode('Account'),
-    { height: 10 },
-    ...(account ? account.nodes(context) : [hintNode('Playing offline: there is no account.')]),
-    picturePanel(context),
-    soundPanel(context, page),
-  ]);
-}
-
-/** The resolution the world is drawn at, Auto or a share of the screen's, kept in this browser. */
-function picturePanel({ ui }: PlainContext): Node {
-  const { node, chosen } = choice(ui, 'resolution', resolution(), RESOLUTIONS);
-  if (chosen !== resolution()) setResolution(chosen);
-  const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
-  return {
-    width: 'grow',
-    direction: 'column',
-    padding: [18, 0, 0, 0],
-    gap: 6,
-    children: [
-      headingNode('Picture'),
-      { height: 4 },
-      {
-        width: 'grow',
-        gap: 14,
-        alignY: 'center',
-        children: [
-          { minWidth: 99, ...words('Resolution', 1, INK.word) },
-          { ...node, label: `Resolution, ${said}` },
-        ],
-      },
-      hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
-    ],
-  };
-}
-
-/** The volumes of the interface, the world, the music and the ambience, each from silent to full, kept in this
- *  browser. */
-function soundPanel(context: PlainContext, page: Page): Node {
-  return {
-    width: 'grow',
-    direction: 'column',
-    padding: [18, 0, 0, 0],
-    gap: 6,
-    children: [
-      headingNode('Sound'),
-      { height: 4 },
-      volumeRow(context, 'Interface sounds', interfaceVolume, setInterfaceVolume),
-      volumeRow(context, 'World sounds', worldVolume, setWorldVolume),
-      volumeRow(context, 'Music', musicVolume, setMusicVolume),
-      volumeRow(context, 'Ambience', ambienceVolume, setAmbienceVolume),
-      creditsList(context, page),
-    ],
-  };
-}
-
-/** One volume's slider, its level said beside it; let go, the interface's press is heard at its new level. */
-function volumeRow(
-  { ui }: PlainContext,
-  name: string,
-  volume: () => number,
-  setVolume: (volume: number) => void,
-): Node {
-  const id = `volume-${name.split(' ')[0]?.toLowerCase() ?? name}`;
-  const before = Math.round(volume() * 100);
-  const { node, value } = slider(ui, id, before, { low: 0, high: 100, step: 5, width: 260 });
-  if (value !== before) setVolume(value / 100);
-  // Let go of, or stepped by a key, the slider says its level in the interface's own press.
-  const dropped = ui.drag(id) !== null && !ui.pressing(id);
-  if (dropped || ui.keysOn(id).length > 0) play('press');
-  return {
-    width: 'grow',
-    gap: 14,
-    alignY: 'center',
-    children: [
-      { minWidth: 99, ...words(name, 1, INK.word) },
-      { ...node, label: `${name}, ${value}%` },
-      { minWidth: 36, alignX: 'end', children: [words(`${value}%`, 1, INK.word)] },
-    ],
-  };
-}
-
-/** A link in the credits: brass words that open their page in a new tab. */
-function linkNode({ ui }: PlainContext, id: string, said: string, url: string, page: Page): Node {
-  if (ui.clicked(id)) page.open(url);
-  return {
-    id,
-    press: true,
-    label: `${said}, opens in a new tab`,
-    direction: 'column',
-    children: [
-      words(said, 1, ui.hovered(id) || ui.focused(id) ? INK.word : INK.brassLit),
-      { width: 'grow', height: 1, fill: ui.hovered(id) || ui.focused(id) ? INK.word : INK.brassLit },
-    ],
-  };
-}
-
-/** Faint words a word at a time, each with its space, so a line of them and links wraps where it must. */
-const plain = (said: string): Node[] => said.split(/(?<= )/).map((word) => words(word, 1, INK.faint));
-
-/** The recorded sounds' credits: each sound's name and author, its licence and its source, and what was changed. */
-function creditsList(context: PlainContext, page: Page): Node {
-  return {
-    width: 'grow',
-    direction: 'column',
-    padding: [12, 0, 0, 0],
-    gap: 4,
-    label: 'Sound credits',
-    children: [
-      hintNode('Sound credits'),
-      hintNode("Each plays at the game's own level."),
-      ...soundCredits().map((credit, index): Node => {
-        // Its licence by its full name and version, as the licence's own page gives it: CC BY 4.0, CC0 1.0.
-        const version = /(\d\.\d)\/$/.exec(credit.licenceUrl)?.[1] ?? '';
-        const licence = `${credit.licence.replace('-', ' ')} ${version}`.trim();
-        // The bullet stands apart, so the lines its words wrap onto start under them, as a list's do.
-        return {
-          width: 'grow',
-          padding: [0, 0, 0, 8],
-          children: [
-            { width: 10, children: [words('•', 1, INK.faint)] },
-            {
-              width: 'grow',
-              wrap: true,
-              alignY: 'end',
-              children: [
-                ...plain(`"${credit.name}" by ${credit.author}, `),
-                linkNode(context, `credit-${index}-licence`, licence, credit.licenceUrl, page),
-                ...plain(', from '),
-                linkNode(context, `credit-${index}-source`, 'Freesound', credit.page, page),
-                ...plain(`. ${credit.changes}`),
-              ],
-            },
-          ],
-        };
-      }),
     ],
   };
 }

@@ -138,7 +138,7 @@ The sea room holds its islands (`sea_islands.rs`):
   beach behind the veil ("Going ashore on a cove"). Steered, sent elsewhere or chasing, the ship gives the landing
   up. The sea is left only once the island's room has opened: one that does not leaves the player aboard, told so,
   and online the sea room is joined again, as the island's room may have taken the character from it.
-  The menu's Return to ship takes them back aboard, where the ship lies.
+  The leave held ([[Interface]], "The leave held") takes them back aboard, where the ship lies.
 - On foot E scavenges a wreck within 3 m not spent for them ("Scavenge the wreck") and tries the door ("Enter the
   caverns").
 

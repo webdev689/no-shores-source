@@ -163,6 +163,8 @@ export const journalTimersShot = menuShot('journal', () => dispatchEvent(new Key
 export const characterShot = menuShot('character', undefined, { ...sampleGear(), level: 24, prestige: 84 });
 /** The bounty board's screen, its six tiles in their states and the chosen one's card. */
 export const boardShot = menuShot('board');
+/** Settings at its first tab, Graphics; its other tabs are pressed by a shot's events. */
+export const settingsShot = menuShot('settings');
 
 /** Three letters at the Postmaster's: a Rare Vestige left lying, a Legendary hull salvaged into a full mailbox, and a
  *  piece with no name sent on. */

@@ -195,9 +195,9 @@ the dialogue box; the chapel's own hung light may be cut by the view's top. Her 
 view unless a solid stands between, looking down so their feet stand 36% down the view, both figures whole above the dialogue box
 (whose top is 43% down at 960x540). Each other view looks a fifth of its lens below its target, so what it frames stands in its upper part, clear of the dialogue box over its lower middle. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
 view where it is, her words said all the same. From her first word to her farewell the view is hers and, as in the
-story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape, the menu's key and the
-pad's Start and View open the menu, the character page or the sheet, her words and their time holding still under it;
-no other game key acts (no move or look, no use, map, chat or respawn). While she speaks every figure is drawn for the tour's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it; no townsman is drawn within 4 m of that eye (one walking past the camera would fill the view), the player and she always are (the pair stands 6 m off it, a keeper at least 5.5 m). While she speaks a soft warm lamp hangs 2.6 m over the middle of the pair, a lantern of the town's at seven tenths of its light, reaching 8 m: lit as the city's lamps are, only as the daylight fades, so the two of them are seen at any hour, and put out once the welcome ends. As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
+story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape and the pad's Start and
+View open Settings, the character page or the sheet, her words and their time holding still under them; no other game
+key acts (no move or look, no use, map, chat, respawn or leave). While she speaks every figure is drawn for the tour's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it; no townsman is drawn within 4 m of that eye (one walking past the camera would fill the view), the player and she always are (the pair stands 6 m off it, a keeper at least 5.5 m). While she speaks a soft warm lamp hangs 2.6 m over the middle of the pair, a lantern of the town's at seven tenths of its light, reaching 8 m: lit as the city's lamps are, only as the daylight fades, so the two of them are seen at any hour, and put out once the welcome ends. As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
 view eases back over their shoulder, so she is seen going; the keys are theirs once it has. It is a cutscene: the HUD's
 bars, compass, tracker, marks and key strip, the use prompt, the toasts and a gate's offer are hidden while the keys are held, until the view is the player's again,
 the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives
@@ -446,7 +446,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   iron the mesh stands there (canvas never counts), a mast or spar standing through it kept whole, and the heaps
   standing added; its boom eases in and out round them as on foot. Where the player wakes, facing as they wake, the
   boom stands 1.9 m back of its 2.1 m, the whole figure in view. Its room is
-  let go as the wreck's fight ends. The key strip is foot's, without M. The menu's gear pages open on the wreck alone
+  let go as the wreck's fight ends. The key strip is foot's, without the leave's. The menu's gear pages open on the wreck alone
   in the story (I for Character, O for Inventory), on the player's gear in its room; over them the player's presses
   rest while the room runs on, so what they equip is worn at once.
 - **The teaching** (`Tutorial`), in the tracker under the quest "Prologue"

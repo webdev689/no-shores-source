@@ -134,13 +134,13 @@ test('a gift still owed is asked only once this room holds the player’s own ge
 test('while she speaks the HUD of the player’s own play is hidden, the dialogue box left to her', () => {
   const shown: string[] = [];
   const hud = {
-    hints: (hints: readonly unknown[]) => void shown.push(`hints ${hints.length}`),
+    strip: (strip: null) => void shown.push(`strip ${String(strip)}`),
     marks: (marks: readonly unknown[]) => void shown.push(`marks ${marks.length}`),
     tasks: { show: (quest: unknown) => void shown.push(`tracker ${String(quest)}`) },
   };
   const quiet = { ...hud, quiet: false };
   heldHud(quiet, { hideDisplay: () => void shown.push('bars and compass hidden') }, true);
-  assert.deepEqual(shown.sort(), ['bars and compass hidden', 'hints 0', 'marks 0', 'tracker null']);
+  assert.deepEqual(shown.sort(), ['bars and compass hidden', 'marks 0', 'strip null', 'tracker null']);
   assert.equal(quiet.quiet, true, 'the use prompt, the toasts and a gate’s offer stand aside');
   shown.length = 0;
   heldHud(quiet, { hideDisplay: () => void shown.push('bars and compass hidden') }, false);
