@@ -86,14 +86,20 @@ impl Room {
         self.respawning.checkpoints = laid.collect();
     }
 
-    /// Whether a checkpoint's ground is won now: its group fallen, its seal broken, or the Court's Boss woken.
+    /// Whether a checkpoint's ground is won now: its group fallen, its seal broken, or the Court's Boss woken (with no
+    /// seal, once reached).
     fn won(&self, won: Won) -> bool {
         match won {
             Won::Post(post) => self.garrison.get(post).is_some_and(|found| found.cleared_at.is_some()),
             Won::Seal(seal) => self.encounters.as_ref().is_some_and(|encounters| {
                 encounters.seals.get(seal).is_some_and(|found| found.state == crate::encounters::SealState::Broken)
             }),
-            Won::Court => self.encounters.as_ref().is_some_and(|encounters| encounters.court.woke_at.is_some()),
+            // With seals the Boss wakes as the last breaks; with none it is awake from the first, so the Court's is won
+            // only once a living player has stood in it with the Boss (Fury's clock begun).
+            Won::Court => self.encounters.as_ref().is_some_and(|encounters| {
+                let court = &encounters.court;
+                court.woke_at.is_some() && (!encounters.plan.seals.is_empty() || court.fury_from.is_some())
+            }),
         }
     }
 
@@ -118,7 +124,8 @@ impl Room {
         self.respawning.holds_ground && !self.players.is_empty() && won
     }
 
-    /// Each tick, as the checkpoint stood at moves on to one farther along, every player is told its number.
+    /// Each tick, as the checkpoint stood at moves on to one farther along, every player is told, with no amount: the
+    /// page takes an amount aimed at a player for a blow taken.
     pub(crate) fn keep_checkpoints(&mut self, was: Option<usize>) {
         let now = self.checkpoint();
         let along = |number: Option<usize>| number.and_then(|found| self.respawning.checkpoints.get(found));
@@ -127,8 +134,8 @@ impl Room {
             (None, Some(_)) => true,
             (Some(before), Some(after)) => after.along > before.along,
         };
-        if farther && let Some(number) = now {
-            self.tell_all(EventKind::Checkpoint, number as f64);
+        if farther {
+            self.tell_all(EventKind::Checkpoint, 0.0);
         }
     }
 }

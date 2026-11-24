@@ -45,6 +45,19 @@ test('the fallen ally nearest within reach is the one revived, never a standing 
   assert.equal(fallenNear([0, 0, 0], others), null, 'out of reach across, or up a floor, or standing, or strayed');
 });
 
+test('one another ally already revives is passed over for the next fallen within reach, as the room takes them', () => {
+  const others = new Map([
+    [2, seen(2, [1, 0, 0], 0)],
+    [3, seen(3, [2, 0, 0], 0)],
+  ]);
+  const fight = { others, player: 1, reviving: false };
+  const taken = word({ reviving: [{ fallen: 2, reviver: 9, progress: 0.5 }] });
+  const here = reviveHere(fight, taken, [0, 0, 0], true, { held: () => true }, (id) => `Ally ${id}`);
+  assert.equal(here.use?.revive, 3, 'the nearer is another’s');
+  const own = word({ reviving: [{ fallen: 2, reviver: 1, progress: 0.5 }] });
+  assert.equal(reviveHere(fight, own, [0, 0, 0], true, { held: () => true }, () => '').use?.revive, 2, 'its own hold');
+});
+
 test('E held over a fallen ally holds their revive and shows the room’s share; let go, or unable, it holds none', () => {
   const fight = { others: new Map([[2, seen(2, [1, 0, 0], 0)]]), player: 1, reviving: false };
   const held = { held: () => true };
@@ -61,7 +74,11 @@ test('E held over a fallen ally holds their revive and shows the room’s share;
   const guest = reviveHere(fight, word(), [0, 0, 0], true, held, () => '');
   assert.equal(guest.use?.words, 'Hold to revive', 'a guest has no name to say');
   const none = reviveHere(fight, word({ revives: 0 }), [0, 0, 0], true, held, () => 'Ada');
-  assert.deepEqual([none.use?.words, none.use?.revive, fight.reviving], ['No revives left', undefined, false]);
+  assert.deepEqual(
+    [none.use, none.share, fight.reviving],
+    [null, null, false],
+    'none left: E is the cache’s, the door’s',
+  );
 });
 
 test('the fallen are told the seconds to Respawn, then may press it; never in the dark, nor while revived', () => {
@@ -89,7 +106,7 @@ test('the fallen are told the seconds to Respawn, then may press it; never in th
   const dark = fallenOf(lying(RESPAWN_TICKS), 1, word({ darkness: true }), () => '');
   assert.deepEqual(dark, { offered: false, canRespawn: false, line: 'Darkness zone. Only an ally can raise you.' });
   const spent = fallenOf(lying(RESPAWN_TICKS), 1, word({ revives: 0, darkness: true }), () => '');
-  assert.equal(spent?.line, 'No revives left. Only an ally can raise you.');
+  assert.equal(spent?.line, 'No revives left. You stay down for the rest of the run.');
   const revived = fallenOf(
     lying(RESPAWN_TICKS),
     1,

@@ -98,8 +98,9 @@ on Cloudflare.
   left fallen (`left.rs`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]). In
   a node's room they stand on the ground at the node's spawns in turn, the first player at the first spawn, the next
   at the next; elsewhere at the room's spawn, on the top of the block under it (or the ground where none stands). A
-  social space's room stands a player whose character last stood in it where they left it ([[Accounts]], "Where a
-  player logs back in"). Where a respawn stands a player is [[Revives]]'s. A patrol's room may instead stand a player 1.5 m before one of its entrances'
+  social space's room joined with `?relog=1`, logging back in, stands a player whose character last stood in it
+  where they left it ([[Accounts]], "Where a player logs back in"). Where a respawn stands a player is
+  [[Revives]]'s. A patrol's room may instead stand a player 1.5 m before one of its entrances'
   doors, facing away from it, as they come out of that entrance's dungeon, and stand them at the next spawn after all
   (`stand_at_spawn`), as an ordinary join, when its host learns they did not. A room holds 16 players; past that, it
   turns the next away.
@@ -190,15 +191,16 @@ on Cloudflare.
   how they fight (their trim, or the arms their gear allows) is sent at once, and before the snapshot, so their
   browser predicts them by it from that snapshot on. Only the Test Ground's room hands out gear to try the loop
   with.
-- **The dead** lie where they fell until an ally revives them, holding Use beside them 2 s, or until they ask to
-  respawn once they have lain four seconds; then they stand whole with all three healing charges, the foes leaving
-  them be for three more unless they strike first (a blow, a shot or a spell) ([[Revives]]). A respawn stands them at
-  their activity's checkpoint, near where they fell in a patrol zone, else at the spawn nearest (in a dungeon before
-  any checkpoint, at its way in, facing into the room); a room with no section stands its fallen again unasked. An
-  Elite Dungeon's Court while its Boss stands, and an Abyss run with no revive left, take no ask to respawn; a company
-  all down in the Court falls back to its checkpoint as the Court starts over. A dead foe is gone after ten seconds.
-  In an Abyss run each stand takes one of the company's five revives, and the fallen stay down once none is left; when
-  every player in it is down at once and it was never won, the run starts over (`abyss.rs`).
+- **The dead** lie where they fell until an ally revives them, holding Use beside them 2 s, or until they ask to respawn
+  once they have lain four seconds; then they stand whole with all three healing charges, the foes leaving them be for
+  three more unless they strike first (a blow, a shot or a spell) ([[Revives]]). A respawn stands them at their
+  activity's checkpoint, near where they fell in a patrol zone or a world boss's node, else at the spawn nearest (in a
+  dungeon before any checkpoint, at its way in, facing into the room); a room with no section stands its fallen again
+  unasked. A body lying in an Elite Dungeon's Court while its Boss stands, or anywhere in an Abyss run with no revive
+  left, takes no ask to respawn; a company all down while the Court's Boss stands, below Abyss, falls back to its
+  checkpoint as the Court starts over, once the last of them has lain four seconds. A dead foe is gone after ten
+  seconds. In an Abyss run each stand takes one of the company's five revives, and the fallen stay down once none is
+  left; when every player in it is down at once and it was never won, the run starts over (`abyss.rs`).
 - **A run's room** opens from a JSON ask (`room_open_run`): its dungeon (a patrol's by its number, an Elite Dungeon
   by its place, or a sea island's by its seed, style and continent), its tier and the Unix minute it opens, as
   `Room::dungeon_run` stands it ([[Dungeons]]); an ask no rule lays opens nothing. A patrol's dungeon's run also takes
@@ -724,8 +726,8 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - The browser does not predict the section: it shows a warning, a death or a respawn when the room's snapshot says so.
 - The [[Test Ground]] joins a Test Ground room by name; given a whole address it joins any room, a node's too, but sends
   no token, so a room that keeps characters sends it away. It predicts on its own course and never asks to respawn,
-  its room standing its fallen again unasked; the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone is
-  told to (`take_foe_asks`).
+  its room standing its fallen again unasked; the [[Game]] does both, and fights there. A server's node room takes no
+  ask for a foe; only a room a page plays alone is told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
   crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 27 patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A

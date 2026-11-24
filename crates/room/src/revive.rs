@@ -91,13 +91,6 @@ impl Room {
         }
     }
 
-    /// Whether a darkness zone stands in the room now, where no one lying in it respawns by their own ask: an Elite
-    /// Dungeon's Court while its Boss stands, or an Abyss run with no revive left (`dark_at`).
-    #[must_use]
-    pub fn darkness(&self) -> bool {
-        self.boss().is_some() || self.revives() == Some(0)
-    }
-
     /// Whether the darkness holds a player where they are now (`dark_at`): none for one not in the room.
     #[must_use]
     pub fn darkness_for(&self, player: PlayerId) -> bool {
@@ -108,22 +101,23 @@ impl Room {
     /// Elite Dungeon's Court while its Boss stands, so one come back down at the way in may still respawn.
     fn dark_at(&self, x: f64, y: f64) -> bool {
         let in_court = self.encounters.as_ref().is_some_and(|encounters| {
-            let columns = encounters.plan.columns;
-            let cell = (y / dungeon::CELL_M).max(0.0) as usize * columns + (x / dungeon::CELL_M).max(0.0) as usize;
-            encounters.court_cells.contains(&cell)
+            encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.court_cells.contains(&cell))
         });
         self.revives() == Some(0) || (in_court && self.boss().is_some())
     }
 
-    /// Whether every player the room judges (those it keeps, where it keeps anyone) is down in the Court's darkness.
+    /// Whether every player the room judges (those it keeps, where it keeps anyone) is down while the Court's Boss
+    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back.
     fn fallen_in_darkness(&self) -> bool {
         let keeps = self.players.values().any(|found| found.owner.is_some());
         let mut judged = self.players.values().filter(|found| !keeps || found.owner.is_some());
-        self.boss().is_some() && !self.players.is_empty() && judged.all(|found| found.fighter.dead())
+        let lain = |found: &crate::players::Player| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN);
+        self.boss().is_some() && !self.players.is_empty() && judged.all(lain)
     }
 
-    /// A company fallen together in the Court: each player is told, shots, blows waiting and spells are dropped, the
-    /// Court starts over (`court_start_over`), and every player stands whole at the checkpoint.
+    /// A company fallen together while the Court's Boss stands: each player is told, shots, blows waiting and spells
+    /// are dropped, every player stands whole at the checkpoint, and then the Court starts over (`court_start_over`),
+    /// so a Court won only once reached is still the one they stand at.
     fn fall_back(&mut self) {
         let players: Vec<PlayerId> = self.players.keys().copied().collect();
         for &id in &players {
@@ -133,12 +127,12 @@ impl Room {
         self.pending.clear();
         self.spells.list.clear();
         self.respawning.revivals.clear();
-        self.court_start_over();
         for id in players {
             let Some(lain) = self.players.get(&id).map(|found| found.fighter.body) else { continue };
             let body = self.stand_again(lain.x, lain.y);
             self.stand_up(id, body, None);
         }
+        self.court_start_over();
     }
 
     /// Each ally holding Use to revive holds on over the fallen player they were reviving while they stay in reach,

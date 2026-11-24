@@ -94,7 +94,7 @@ export interface Held {
   readonly entrances: Entrances;
   cache: Cache | null;
   /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell; whether the
-   *  room is a darkness zone now, and who is reviving whom (`footRevive.ts`). */
+   *  darkness holds the player where they lie, and who is reviving whom (`footRevive.ts`). */
   revives: number;
   wiped: boolean;
   darkness: boolean;

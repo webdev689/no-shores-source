@@ -91,6 +91,23 @@ fn a_player_logs_back_in_where_they_last_stood_in_a_social_space_on_the_floor_th
 }
 
 #[test]
+fn the_spot_last_stood_at_is_kept_through_a_jump_after_it_so_leaving_mid_jump_logs_back_in_there() {
+    let mut left = social();
+    let player = left.join().expect("in");
+    let mut character = gear::Character::starting();
+    character.last = Some(gear::last::Last::Sea);
+    assert!(left.restore_character(player, &character.to_json()));
+    stand_at(&mut left, player, [45.0, 44.0, 3.0], 2.0);
+    left.tick();
+    let stood = left.players[&player].fighter.body;
+    left.players.get_mut(&player).expect("in").fighter.body.mode = movement::Mode::Air;
+    let kept = left.kept_character(player).expect("kept");
+    let last = gear::Character::from_json(&kept).and_then(|character| character.last);
+    let spot = gear::last::Last::social("overlook-social", [stood.x, stood.y, stood.z], stood.facing);
+    assert_eq!(last, Some(spot), "where they last stood, not where they came from");
+}
+
+#[test]
 fn no_spot_is_kept_from_a_jump_a_fall_or_another_room_and_one_a_body_no_longer_fits_stands_at_the_spawn() {
     let mut left = social();
     let player = left.join().expect("in");

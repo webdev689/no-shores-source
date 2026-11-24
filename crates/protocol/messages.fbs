@@ -459,6 +459,14 @@ table PublicEvent {
   next_wave_ticks: uint;
 }
 
+// A fallen player an ally is reviving: the fallen player's number, the ally's, and how much of the hold is done, per
+// mille.
+table Reviving {
+  fallen: uint;
+  reviver: uint;
+  progress: ushort;
+}
+
 // One of an Elite Dungeon's seals: its kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the Holdfast), its state
 // (0 waiting, 1 running, 2 broken), its progress per mille, its pieces' marks (a Litany's runes 0 dark, 1 showing, 2
 // stepped in order, 3 stepped wrong a moment ago; a Weighing's plates in play and a Holdfast's ring 1 while stood on;
@@ -476,14 +484,6 @@ table SealSeen {
 // per mille; the ticks until a Reckoning lands while one is shown (0 for none) and the anchor it is shown at; Fury's
 // step (each a tenth more on its company's blows); the ticks until Fury begins while its clock runs (0 before and
 // after); and the ticks until the warded Boss's slam lands while it is shown (0 for none).
-// A fallen player an ally is reviving: the fallen player's number, the ally's, and how much of the hold is done, per
-// mille.
-table Reviving {
-  fallen: uint;
-  reviver: uint;
-  progress: ushort;
-}
-
 table EncounterSeen {
   seals: [SealSeen];
   woken: bool;

@@ -42,8 +42,9 @@ top beside a rampart or a ledge outside it.
 | Dead | Dead a tick longer, wherever the body is: only a respawn ends it |
 
 - **Respawning.** A respawn is offered once the body has been dead 4 s (240 ticks). It comes back where a respawn
-  stands a player ([[Revives]]): near where it died in a patrol zone, else at the section's spawn nearest where it
-  died, of two as near the first listed (`respawn_point`). The room tells everyone it respawned, as it does for a
+  stands a player ([[Revives]]): at the activity's checkpoint once one is won, near where it died in a patrol zone or
+  a world boss's node, else at the section's spawn nearest where it died, of two as near the first listed
+  (`respawn_point`). The room tells everyone it respawned, as it does for a
   death in a fight, and it arrives ([[Game]]). An ally cannot revive a body the section killed.
 - **How far past.** The distance past the edge is to the ring's nearest edge, on the map.
 
@@ -53,7 +54,8 @@ In play with others, the node's room alone ([[Server]]). After each of its ticks
 its inputs left it, once a tick, whether or not that player sent any; a fall is measured from the height the feet
 last stood at, on the ground, a wall or a lip, never a jump's rise. A dead body is stepped with no controls of its
 own, so one that died in the air falls on and lies where it lands. An input asking to respawn is granted only once
-the standing offers it, and stands the body where a respawn stands it, its fall measured from there. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
+the standing offers it, and stands the body where a respawn stands it, its fall measured from there. Each snapshot
+carries every player's standing, with the ticks left of a warning or the ticks dead, and
 the browser shows what the room says; it does not judge. Playing alone, the [[Game]] runs the node's room in its
 rooms' worker, so the same room judges.
 

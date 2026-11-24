@@ -409,7 +409,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
     const drawers = standing(ships, [...shown.figures, ...crews], herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
-    // A boarder fallen on its deck is told so as on foot, Respawn with it ([[Revives]]).
+    // A boarder fallen on its deck is told so as on foot, Respawn with it.
     showStanding(here.boarding.standing ?? { kind: 'inside' }, here.boarding.foot?.fell ?? null);
     const { landmass, seaWord } = playing;
     // The status chip keeps the state alone; the watch's and the sea's word are DFO's toasts. In a fight the fight's

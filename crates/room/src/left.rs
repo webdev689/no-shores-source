@@ -23,6 +23,21 @@ impl Room {
         Some(character.to_json())
     }
 
+    /// Each tick, in a social space, each player's spot as they stand in it is kept on their character, so a save
+    /// made mid-jump or after a fall keeps the last spot they stood at, not where they came from.
+    pub(crate) fn keep_spots(&mut self) {
+        if self.place != Some(gear::gate::Place::Social) {
+            return;
+        }
+        let spots: Vec<_> =
+            self.players.iter().filter_map(|(&id, found)| Some((id, self.social_spot(found)?))).collect();
+        for (id, spot) in spots {
+            if let Some(found) = self.players.get_mut(&id) {
+                found.character.last = Some(spot);
+            }
+        }
+    }
+
     /// Where a player stands in a social space's room, as their character keeps it to log back in there: only while
     /// they stand alive on their feet inside it, so none is kept from a fall, a jump or a death.
     fn social_spot(&self, found: &Player) -> Option<gear::last::Last> {

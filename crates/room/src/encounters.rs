@@ -172,7 +172,7 @@ impl Room {
     }
 
     /// The Boss stands on its post, and every player is told.
-    fn wake_boss(&mut self) {
+    pub(crate) fn wake_boss(&mut self) {
         if self.garrison.is_empty() {
             return;
         }

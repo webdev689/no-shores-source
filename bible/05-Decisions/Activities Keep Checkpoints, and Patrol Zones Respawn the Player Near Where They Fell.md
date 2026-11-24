@@ -11,7 +11,7 @@ status: in force
 
 ## What it settles
 
-- **A respawn no longer always stands the player at the start of the place.**
+- **A respawn stands the player at their progress or near their fall**, not at the start of the place.
 - **Dungeons and other activities keep checkpoint progress**, and a player respawns at it ([[Revives]]).
 - **In a patrol zone a player respawns close to where they died.**
 - It replaces the respawn at "the section's nearest spawn" in [[The World as Claude Shapes It]]. Claude's calls in

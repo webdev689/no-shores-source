@@ -46,7 +46,8 @@ pub struct Snapshot<'snapshot> {
     pub public: Option<&'snapshot room::public::PublicSeen>,
     /// In an Elite Dungeon's room, its encounters (`Room::encounter_seen`); none in any other room.
     pub encounter: Option<&'snapshot room::encounters::EncounterSeen>,
-    /// Whether the room is a darkness zone now (`Room::darkness`), and each fallen player being revived.
+    /// Whether the darkness holds the player it is sent to (`Room::darkness_for`), and each fallen player being
+    /// revived.
     pub darkness: bool,
     pub reviving: &'snapshot [Reviving],
 }

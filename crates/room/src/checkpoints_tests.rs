@@ -79,7 +79,9 @@ fn the_fallen_stand_at_the_band_fallen_farthest_along_and_every_player_is_told_a
     };
     clear(&mut room, farthest);
     room.tick();
-    assert_eq!(told(&mut room), [number(&room, farthest) as f64], "told as it is won");
+    // Told with no amount: the page takes an amount aimed at a player for a blow taken.
+    assert_eq!(told(&mut room), [0.0], "told as it is won");
+    assert_eq!(room.checkpoint(), Some(number(&room, farthest)), "the one won");
     let at = room.respawning.checkpoints[number(&room, farthest)].at;
     assert_eq!(respawned(&mut room, player), at, "stood at its doorway");
     if nearest != farthest {
@@ -128,6 +130,23 @@ fn an_elite_dungeon_lays_its_seals_and_its_court_and_the_court_s_is_won_as_its_b
     }
     let at = room.respawning.checkpoints[court.expect("laid")].at;
     assert_eq!(respawned(&mut room, player), at, "the Boss gone, the dark lifts: stood at the Court's door");
+}
+
+#[test]
+fn with_no_seal_to_break_the_court_s_is_won_only_once_a_living_player_has_stood_in_it_with_its_boss() {
+    let mut room = elite_room("krakens-grotto");
+    let player = room.join().expect("in");
+    let encounters = room.encounters.as_mut().expect("encounters");
+    (encounters.plan.seals, encounters.seals) = (Vec::new(), Vec::new());
+    room.wake_boss();
+    room.tick();
+    let court = room.respawning.checkpoints.iter().position(|found| found.won == Won::Court);
+    assert_ne!(room.checkpoint(), court, "its Boss awake from the first, but no one has come near it");
+    let door = room.respawning.checkpoints[court.expect("laid")].at;
+    let body = &mut room.players.get_mut(&player).expect("in").fighter.body;
+    (body.x, body.y) = (door[0], door[1]);
+    room.tick();
+    assert_eq!(room.checkpoint(), court, "reached");
 }
 
 #[test]

@@ -428,6 +428,7 @@ impl Room {
     pub fn tick(&mut self) {
         self.clock += 1;
         self.step_players();
+        self.keep_spots();
         self.spawn_asked();
         self.keep_patrol();
         self.keep_gathering();

@@ -174,7 +174,7 @@ fn in_an_abyss_run_a_revive_spends_one_of_the_company_s_revives_and_with_none_le
     assert!(!room.players[&fallen.player].fighter.dead(), "revived");
     assert_eq!(room.revives(), Some(1), "and one revive spent");
     room.run.as_mut().expect("a run").revives = Some(0);
-    assert!(room.darkness(), "none left: darkness");
+    assert!(room.darkness_for(fallen.player), "none left: darkness");
     fell(&mut room, fallen.player, RESPAWN);
     for _ in 0..REVIVE_TICKS * 2 {
         tick(&mut room, &mut [&mut ally, &mut fallen], 1);
@@ -192,12 +192,13 @@ fn in_the_court_while_its_boss_stands_no_one_respawns_by_their_ask_but_an_ally_r
     let mut ally = Page { player: hardy(&mut room), sequence: 0 };
     let mut fallen = Page::join(&mut room);
     unseal(&mut room);
-    assert!(room.darkness() && !room.players.is_empty(), "the Boss awake: darkness");
+    assert!(room.boss().is_some(), "the Boss awake");
     // Both in the Court, where it holds.
     let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
     let [x, y] = crate::encounters::encounters_tests::middle_of(&room, cell);
     put(&mut room, ally.player, [x, y]);
     put(&mut room, fallen.player, [x + 1.0, y]);
+    assert!(room.darkness_for(fallen.player), "darkness in the Court");
     fell(&mut room, fallen.player, RESPAWN);
     fallen.send(&mut room, false, true);
     ally.send(&mut room, false, false);
@@ -224,7 +225,21 @@ fn a_company_all_down_in_the_court_falls_back_to_its_checkpoint_as_the_court_sta
         fell(&mut room, player, 0);
     }
     room.tick();
-    let events = room.take_events();
+    assert!(told(&room.take_events(), EventKind::FellBack).is_empty(), "the company sees itself fall first");
+    assert!(players.iter().all(|player| room.players[player].fighter.dead()));
+    let mut events = Vec::new();
+    for _ in 0..RESPAWN * 2 {
+        if !told(&events, EventKind::FellBack).is_empty() {
+            break;
+        }
+        let lain = players.iter().map(|player| room.players[player].fighter.action).collect::<Vec<_>>();
+        room.tick();
+        events.extend(room.take_events());
+        if !told(&events, EventKind::FellBack).is_empty() {
+            let elapsed = |action: &Action| if let Action::Dead { elapsed } = action { *elapsed } else { 0 };
+            assert!(lain.iter().all(|action| elapsed(action) + 1 >= RESPAWN), "not before the last has lain RESPAWN");
+        }
+    }
     assert_eq!(told(&events, EventKind::FellBack).len(), 2, "each is told");
     assert_eq!(told(&events, EventKind::Wiped).len(), 0, "below Abyss no wipe ends the run");
     for player in players {
@@ -307,4 +322,19 @@ fn the_courts_darkness_holds_those_lying_in_it_and_one_down_at_the_way_in_may_re
     let stood = room.players[&outside.player].fighter;
     assert!(!stood.dead() && [stood.body.x, stood.body.y] == door, "come back down at the way in: to the Court's door");
     assert!(room.players[&inside.player].fighter.dead(), "fallen in the Court: only an ally raises them");
+}
+
+#[test]
+fn a_body_past_the_dungeon_s_last_column_lies_in_no_court_cell_however_its_row_wraps() {
+    let mut room = elite_room("krakens-grotto");
+    let player = room.join().expect("in");
+    unseal(&mut room);
+    let encounters = room.encounters.as_ref().expect("encounters");
+    let columns = encounters.plan.columns;
+    let cell = *encounters.court_cells.iter().find(|&&cell| cell >= columns).expect("a Court cell past the first row");
+    let (row, column) = (cell / columns, cell % columns);
+    // One row up and a whole row's width east: the same cell's number, were the row not bounded.
+    let past = [((column + columns) as f64 + 0.5) * dungeon::CELL_M, ((row - 1) as f64 + 0.5) * dungeon::CELL_M];
+    put(&mut room, player, past);
+    assert!(!room.darkness_for(player), "outside the dungeon's columns");
 }

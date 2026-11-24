@@ -377,11 +377,11 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   and Fury and the Reckoning's light are drawn, its banner and compass marks shown and its moments heard as [[Dungeons]]
   says ("Encounters", "In the Game"), from the layout's plan and each snapshot's `encounter`, held with the cache
   (`heardRun`).
-- **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives
-  left", "1 revive left", "No revives left"), and with "Darkness zone" while the room is one (the Court while its
-  Boss stands, or no revive left; [[Revives]]). When the room says this player's company fell (`Wiped`, `heardRun`),
-  the page takes them out by the way they came in, even with the menu open, the veil saying "Your company fell.
-  Leaving" the dungeon: before its entrance, or from a sea island's back to the sea.
+- **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives left", "1
+  revive left", "No revives left"), and with "Darkness zone" while the darkness holds the player (lying in the Court
+  while its Boss stands, or no revive left; [[Revives]]). When the room says this player's company fell (`Wiped`,
+  `heardRun`), the page takes them out by the way they came in, even with the menu open, the veil saying "Your company
+  fell. Leaving" the dungeon: before its entrance, or from a sea island's back to the sea.
 
 **Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
 near-black, then the blows' arcs, the see-through marks and their light over the picture, and last death's grey, as

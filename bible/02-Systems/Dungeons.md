@@ -256,7 +256,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   arrival, where a body joins, facing into the room.
 - **Checkpoints** ([[Revives]]): each room whose band stands lays one, and an Elite Dungeon one at each seal's room and
   one at the Court, each at the doorway cell the walk from the way in enters its room by, facing in. One is won as its
-  band falls, its seal breaks or the Court's Boss wakes; a player who respawns stands at the one won farthest along,
+  band falls, its seal breaks or the Court's Boss wakes (with no seal, once a living player has stood in the Court with
+  it); a player who respawns stands at the one won farthest along,
   before any at the arrival, and every player is told "Checkpoint reached" as it moves on. In a run a band whose fall
   won its room's checkpoint does not stand again while anyone is in the room; in a shared dungeon it stands again as
   any group does, and the checkpoint falls back to the one won before it.
@@ -411,7 +412,8 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   is broken. Leaving and coming back keeps everything: it is the room's.
 - **The Court's darkness.** While the Boss stands the Court's cells are a darkness zone ([[Revives]]): no one fallen
   there respawns by their own ask, and only an ally stands them up; one fallen outside it may. A company all down
-  while the Boss stands, below Abyss, falls back to the Court's checkpoint, every player whole at its door: its waves
+  while the Boss stands, below Abyss, falls back to the Court's checkpoint once the last of them has lain four
+  seconds, every player whole at its door: its waves
   are gone, its ward, anchors and Fury begin again, and its Boss stands again whole and awake; every seal stays
   broken.
 - **On the wire.** Each snapshot carries the encounters whole (`EncounterSeen`, about 240 bytes): each seal's kind,

@@ -299,12 +299,14 @@ export class Foot {
     const [x, y] = node.spawns[0] ?? node.centre;
     stand(context, x, y, place.facing ?? 0, false);
     const { players, heard, received } = hearing(context.forge);
-    const link = open(received);
+    // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
+    const held: Held = Object.assign(place.gear ?? { gear: null }, { alone: null }, unheard());
+    // Each snapshot is heard as a node's is, so a deck's fallen and their revives show as on land.
+    const own = () => heard.fight?.player ?? null;
+    const link = open(hearRoom(held, own, received, { online: context.rooms !== null, asks: false }).snapshot);
     const fight = new Fighting(rules.combat, link);
     heard.fight = fight;
     players.take(link);
-    // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
-    const held: Held = Object.assign(place.gear ?? { gear: null }, { alone: null }, unheard());
     const opened: Opened = { link, boxes, text: '', dungeon: null, seas: 'normal' };
     const people = { otherPlayers: players, held, folk: [], module: await context.roomModule };
     const foot = new Foot(context, node, opened, { link, fight, ...rules }, people);

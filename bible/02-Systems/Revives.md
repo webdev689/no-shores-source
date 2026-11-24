@@ -50,39 +50,44 @@ shows what the room says.
 - **Checkpoints** (`checkpoints.rs`). A dungeon lays one at each room whose band stands, and in an Elite Dungeon one at
   each seal's room and one at the Court in its end room: each at the doorway cell the walk from the way in enters its
   room by, facing in from the cell before it (`doorway_of`). One is won while its band has fallen, its seal is broken,
-  or the Court's Boss has woken. A mission lays one at each of its garrison's posts, won while its group is cleared,
-  along by its distance from the first spawn. The fallen stand at the one won farthest along, before any at the way
-  in; every player is told `Checkpoint` (36) as the one used moves on. In a run's own room (`holds_ground`) a band or
-  group whose fall won a checkpoint holds its ground: it does not stand again while anyone is in the room. In a shared
-  room it stands again as any group does, and its checkpoint falls back to the one won before it ([[Enemies]],
-  "Standing again").
+  or the Court's Boss has woken; in an Elite Dungeon with no seal, whose Boss stands awake from the first, the Court's
+  is won once a living player has stood in the Court with it. A mission lays one at each of its garrison's posts, won
+  while its group is cleared, along by its distance from the first spawn. The fallen stand at the one won farthest
+  along, before any at the way in; every player is told `Checkpoint` (36) as the one used moves on. In a run's own room
+  (`holds_ground`) a band or group whose fall won a checkpoint holds its ground: it does not stand again while anyone is
+  in the room. In a shared room it stands again as any group does, and its checkpoint falls back to the one won before
+  it ([[Enemies]], "Standing again").
 - **Darkness zones** (`darkness_for`). A body lying on a cell of an Elite Dungeon's Court while its Boss stands, or
   anywhere in an Abyss run with no revive left, takes no ask to respawn: only an ally stands them up. One fallen
   outside the Court, come back down at the way in, may still respawn. When every player the room judges (those it
-  keeps, where it keeps anyone) is down while the Court's Boss stands, below Abyss, each is told `FellBack` (37),
-  shots, blows waiting and spells are dropped, the Court starts over (`court_start_over`: its waves gone, its ward,
-  anchors and Fury as they first were, its Boss stood again whole and awake) and every player stands whole at the
-  Court's checkpoint. Every seal stays broken.
+  keeps, where it keeps anyone) is down while the Court's Boss stands, below Abyss, the last of them for 4 s
+  (`RESPAWN`) so the company sees itself fall, each is told `FellBack` (37), shots, blows waiting and spells are
+  dropped, every player stands whole at the Court's checkpoint, and the Court starts over (`court_start_over`: its
+  waves gone, its ward, anchors and Fury as they first were, its Boss stood again whole and awake). Every seal stays
+  broken.
 - **An Abyss run** spends one of the company's five revives on every stand, revived or respawned; with none left no
   hold is taken up, and an Abyss wipe ends the run ([[Activities]], "Abyss's rules").
 - **Revived where they lay**: on the ground under the body, a ledge or a floor above as much as the terrain, facing as
   they fell.
 - **On the wire.** Each input carries `revive`, Use held to revive. Each snapshot on land, and on a ship's deck,
   carries `darkness`, whether the darkness holds the player it is sent to, and `reviving`: each fallen player being
-  revived, their reviver and the hold's share per mille ([[Server]]).
+  revived, their reviver and the hold's share per mille ([[Server]]); the page hears them on a deck and a sea island
+  as on land.
 
 ## On the page
 
-- **E over a fallen ally** (`reviveHere`): the use prompt says "Hold to revive" and their name (none for a guest), or
-  "No revives left" in an Abyss run with none; held, the fight sends `revive` with each input, and the prompt's ring
-  shows the room's share. It comes before any other use where the player stands.
+- **E over a fallen ally** (`reviveHere`): the use prompt says "Hold to revive" and their name (none for a guest);
+  held, the fight sends `revive` with each input, and the prompt's ring shows the room's share. It comes before any
+  other use where the player stands. A fallen ally another player revives is passed over for the next within reach,
+  as the room takes them; in an Abyss run with no revive left it offers nothing, so E stays the cache's or the
+  door's.
 - **The fallen ally's mark** (`fallenMarks`): a faceted shell of light round a glowing eye, after Destiny's Ghost,
   1.1 m over the body, lit, so it beats and shows through walls ([[What a Player Can Use Wears Its Mark Over It]]).
 - **The player fallen** (`fallenOf`): the world greys and the screen's edge darkens, the pointer kept to look round
   while an ally comes, and death's words stand over the view: "YOU DIED", then "Respawn in 3 s" and Respawn waiting,
-  "You fell." and Respawn once it may be pressed (the respawn key, Enter or the pad's A, the keys' "dead" context),
-  "Ada is reviving you  40%" while an ally holds, or "Darkness zone. Only an ally can raise you." and "No revives
-  left. Only an ally can raise you." with no Respawn. The key strip shows Respawn only once it may be pressed. The
+  "You fell." and Respawn once it may be pressed (the respawn key, Enter or the pad's A, the keys' "dead" context), "Ada
+  is reviving you  40%" while an ally holds, or "Darkness zone. Only an ally can raise you." and "No revives left. You
+  stay down for the rest of the run." with no Respawn. The key strip shows Respawn only once it may be pressed. The
   place line adds "Darkness zone" while the darkness holds the player ([[Interface]]).
 - **Told** over the view for 3 s (`ReviveNotices`): "Ada is down" as another player falls, "Ada revived you", "You
   revived Ada", "Checkpoint reached", and "Your company fell. Back to the checkpoint".
@@ -93,8 +98,8 @@ shows what the room says.
 
 ## Limits
 
-- A fallen player who leaves and comes back stays down (`left.rs`), and asks again; in an Abyss run their body is kept
-  by the run.
+- A fallen player who leaves and comes back within two minutes stays down (`left.rs`), and asks again; onto a deck
+  they come whole, and in an Abyss run their body is kept by the run.
 - The points near a patrol's fall are laid only from the ways the node's file names; a page playing alone writes them
   into its own node file from the layout, as the bake does.
 - Nothing yet speeds a revive or raises a fallen player alone (Destiny 1's Fireborn had no match here).

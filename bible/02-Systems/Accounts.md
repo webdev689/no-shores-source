@@ -143,14 +143,16 @@ they play in holds it while they are there.
 - **Where a player logs back in** ([[A Player Logs Back In Where They Left the Overworld or a Social Space]]). The
   character keeps the last place it left of the overworld and the social spaces (`last`, `gear::last::Last`): the sea,
   written by the sea room as it keeps a ship at sea, or a social space's node with where the player stood, to the
-  centimetre, and the way they faced, written by that room on every save while they stand there on their feet, alive.
-  No other room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
+  centimetre, and the way they faced, kept on the character by that room each tick while they stand there on their
+  feet, alive (`keep_spots`), so a save made mid-jump or after a fall keeps the last spot they stood at. No other
+  room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
   the two they were in last. `GET /v1/me` answers it beside the account (`place`: `{ "kind": "sea" }`, or
   `{ "kind": "social", "node", "at", "facing" }` in metres and radians, or null; `lastPlace.ts`). After the title the
   page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; or into that social space, joining
   its room with `?relog=1`, and the room stands a player whose character last stood in it where they left it, on the
   floor they stood on (`stand_where_left`; where a body no longer fits there, at a spawn). Only logging back in asks
-  it: travelling there, taking a gate or coming back from an activity arrives at the arrival. One who has just played
+  it: travelling there, taking a gate or coming back from an activity arrives at the arrival. A link dropped and
+  joined again keeps the ask, so one who logged back in stands again at the spot last saved. One who has just played
   the story through, one with none kept, or one whose social space is not open on the landmass arrives at Overlook.
   The sea's tier is Normal, as every voyage's begins. Offline, where no room keeps a character, the page keeps the
   place itself in the browser (`noshores.place`, every 10 s and as the page hides or goes, `keepPlace`), the ship
