@@ -145,8 +145,8 @@ workflow renders every move of every foe and the wave this way, a job a move, an
   Fissure, its scar, the growth and the shard are meshes built from the props' own shards, clusters, crusts and
   boulders.
 - The Tithe-Taker holds no ledger: the forge has no ledger to give him.
-- The figures' glow at night and the seal's wave are drawn, but no picture of them in the game has been looked at
-  ([[Public Events]], "Limits").
+- The figures' shading and glow at night and the seal's wave are drawn, but no picture of them at night in the game
+  has been looked at, only the published pictures lit by the same sums ([[Public Events]], "Limits").
 - The Idol's beam and the Ravager's shards are drawn along the foe's facing when it aims at no fighter the page
   knows; the Heart's moves are drawn but it is in no event.
 - The wardrobe asks DFO's game code what may be worn under each garment, and that code is not in this repository:

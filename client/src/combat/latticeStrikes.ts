@@ -21,7 +21,7 @@ interface Blow {
 }
 
 /** Each blow of the six foes' moves (Lattice.md), by its move. */
-export const BLOWS: Readonly<Record<string, Blow>> = {
+const BLOWS: Readonly<Record<string, Blow>> = {
   husk_lunge: { gathers: [0.45, 1.25], cut: null, lands: 1.1, ring: 6 },
   husk_gore: { gathers: [0.45, 1.25], cut: null, lands: 1.0, ring: 7 },
   flicker_slash_left: { gathers: [0.5, 1.5], cut: [2, 22], lands: 0.9, ring: 4 },
@@ -45,12 +45,13 @@ export function blowPhase(frame: number, frames: number): 'tell' | 'strike' | 'l
   const share = frame / frames;
   return share <= TELL_SHARE ? 'tell' : share < SHARES.lands ? 'strike' : share < SHARES.gone ? 'lands' : null;
 }
+
 /** A rush's streak runs this far back from where the crystal gathers (metres, on a man-sized foe). */
 const STREAK_BACK_M = 0.9;
 
 /**
  * What a Lattice foe's blow draws in its frame: `place` stands a spot of a man-sized foe where this one stands and
- * faces, `feet` where its feet are, `scale` how many times a man it is, `ramp` its crystal's, seen from `eye`.
+ * faces, `scale` how many times a man it is, `ramp` its crystal's, seen from `eye`.
  */
 export function layLatticeStrike(
   out: number[],

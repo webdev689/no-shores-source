@@ -257,6 +257,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - Built and tested but not pictured on the page: a store plundered, the tithe-taker counting and leaving, Marrow, the
   Tithe giving up, the raid's chest, the growth sinking unbroken, a lid swinging open, the scar risen, the Lattice's
   glow at night and the seal's wave in its picture's own texels.
+- The props are pictured drawn on a page playing alone (its room in the page or in its own thread, a development or
+  a production build); in a server's room they are unchecked.
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
 - The stores, banners, fissures and growth spots are chosen before the layout stands its beacons and resource marks,
   climbs, cliff stairs, retaining walls, footbridges, talus and graves, so they could meet;
