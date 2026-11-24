@@ -93,7 +93,12 @@ test("a laid node's foes' sites are its caverns' and its runs' beats, as the bak
       { kind: 'objective', at: [90, 5], radius: 20, holds: 'The Chalk Adit' },
     ],
   };
-  const drawn: Parameters<typeof laidNodes>[0][number] = { id: 'saltgrass-downs', ring: [], spawns: [], centre: [0, 0] };
+  const drawn: Parameters<typeof laidNodes>[0][number] = {
+    id: 'saltgrass-downs',
+    ring: [],
+    spawns: [],
+    centre: [0, 0],
+  };
   assert.deepEqual(laidNodes([drawn], [laid])[0]?.foes, [
     [10, -20],
     [70, 5],
