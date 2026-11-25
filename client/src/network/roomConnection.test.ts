@@ -3,7 +3,14 @@ import { type TestContext, test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { FromRoom, Joined, Plate, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
-import { ELSEWHERE, RoomConnection, SHUT, type Snapshot as RoomSnapshot, rejoinWait } from './roomConnection.ts';
+import {
+  ELSEWHERE,
+  RoomConnection,
+  SHUT,
+  type Snapshot as RoomSnapshot,
+  UNHEARD_MOST,
+  rejoinWait,
+} from './roomConnection.ts';
 
 /** Each plate a message carries: a player's number and level. */
 type Plated = { readonly plates?: readonly (readonly [number, number])[] };
@@ -117,6 +124,26 @@ test('a socket a deploy closes is joined again after a second: a new player, wel
   assert.deepEqual([connection.player, connection.joins, connection.rejoining, ticks], [1, 2, false, [10n, 2n]]);
   connection.send(new Uint8Array([1]));
   assert.equal(sockets[1]?.sent.length, 1, 'the new socket carries the inputs');
+});
+
+test('a room unheard for two seconds of inputs goes quiet until it speaks, so a stall never lets through more', async () => {
+  const { connection, sockets } = await joined(3);
+  for (let sent = 1; sent < UNHEARD_MOST; sent++) connection.send(new Uint8Array([1]));
+  assert.equal(connection.quiet, false, 'one short of the most, the room still takes inputs');
+  connection.send(new Uint8Array([1]));
+  assert.equal(connection.quiet, true);
+  sockets[0]?.says({ tick: 4n });
+  assert.equal(connection.quiet, false, 'any word from the room lets the page send again');
+});
+
+test('a rejoin starts the count of messages the room has not answered over once welcomed', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { connection, sockets } = await joined(3);
+  for (let sent = 0; sent < UNHEARD_MOST; sent++) connection.send(new Uint8Array([1]));
+  sockets[0]?.closed(1006);
+  context.mock.timers.tick(waitMs(0));
+  sockets[1]?.says({ player: 1 });
+  assert.equal(connection.quiet, false);
 });
 
 test('tries that fail wait longer each time, and a welcome starts the waits over', async (context: TestContext) => {

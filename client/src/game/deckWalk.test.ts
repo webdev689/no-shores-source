@@ -138,6 +138,20 @@ test("the page corrects its walk to the room's word, once, stepping again the st
   assert.deepEqual(floatsOf(walker.player.body), floatsOf(rules.standing(...SLOOP_DECK.helm)), 'a word is taken once');
 });
 
+test('a sea room gone quiet is sent no step, and the body stands, until it speaks', () => {
+  const sent: number[] = [];
+  const room = { onDeck: null, words: 0, quiet: false, walk: (sequence: number) => sent.push(sequence) };
+  const walker = { player: { view: 'third' } } as unknown as Walker;
+  const walk = new DeckWalk(rules, walker, SLOOP_DECK, room);
+  const forward = { ...walked(0), run: false, jump: false };
+  const stood = walk.rules().step(walker.player.body, forward);
+  room.quiet = true;
+  assert.deepEqual(floatsOf(walk.rules().step(stood, forward)), floatsOf(stood), 'it stands');
+  room.quiet = false;
+  walk.rules().step(stood, forward);
+  assert.deepEqual(sent, [1, 2], 'numbered on from where it held');
+});
+
 test("off the helm the page waits on the room's word: with none in 2 s it takes the helm back, and goes up once the room gives it", () => {
   const asked: string[] = [];
   const room: HelmRoom & { onDeck: { acknowledged: number; body: Body } | null } = {

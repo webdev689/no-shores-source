@@ -337,6 +337,11 @@ export class SeaRoom {
     this.link.send(helmBytes(false));
   }
 
+  /** Whether the room has gone unheard so long that what the page sends waits for its word (`UNHEARD_MOST`). */
+  get quiet(): boolean {
+    return this.link.quiet === true;
+  }
+
   /** A step of the player's walk on deck: its number and its controls in the movement crate's order. */
   walk(sequence: number, controls: readonly number[]): void {
     this.link.send(walkBytes(sequence, controls));

@@ -223,6 +223,46 @@ function fightByHand() {
   return { fighting, control, word, step };
 }
 
+test('a link gone quiet is sent no input, and the player stands, until the room speaks', () => {
+  const sent: Uint8Array[] = [];
+  const hold = { quiet: false };
+  const link = {
+    player: 1,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: (bytes: Uint8Array) => sent.push(bytes),
+    pump: () => undefined,
+    get quiet() {
+      return hold.quiet;
+    },
+  } as unknown as RoomLink;
+  const rules = { predict: (fighter: Float64Array) => ({ fighter, fired: null }), strokeReach: () => 1 };
+  const fighting = new Fighting(rules as unknown as CombatRules, link);
+  const fighter = new Float64Array(UNTRIMMED_FLOATS);
+  const seen = { player: 1, acknowledged: 0, fighter, standing: { kind: 'inside' } };
+  const word = {
+    kind: 'snapshot',
+    tick: 1n,
+    players: [seen],
+    dressed: [],
+    foes: [],
+    events: [],
+    shots: [],
+    spells: [],
+  };
+  fighting.receive(word as unknown as Snapshot);
+  const steps = fighting.steps(movement);
+  steps.step({} as Body, STILL);
+  hold.quiet = true;
+  for (let tick = 0; tick < 5; tick++) steps.step({} as Body, STILL);
+  assert.equal(sent.length, 1, 'nothing is numbered or sent while the room is unheard');
+  hold.quiet = false;
+  steps.step({} as Body, STILL);
+  assert.equal(sent.length, 2);
+});
+
 test("a shot an input lets go only once the room's word is replayed is handed over once; one already handed over is not", () => {
   const { fighting, control, word, step } = fightByHand();
   word(0);

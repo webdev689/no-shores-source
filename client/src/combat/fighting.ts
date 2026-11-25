@@ -368,6 +368,9 @@ export class Fighting {
       this.trimTaken = this.link.trim;
       this.fighter = trimmed(this.fighter, this.link.trim);
     }
+    // A room long unheard is sent nothing more until it speaks, and the player stands meanwhile: what a stalled
+    // network holds back reaches it at once, and past its budget it would send the player away.
+    if (this.link.quiet === true) return bodyOf(Array.from(this.fighter.subarray(0, BODY_FLOATS)));
     const { pitch } = this.buttons;
     const swing = this.latches.swing.tick(this.buttons.swing);
     // A swing asked takes the chain's next stroke that reaches from here, its first after a rest.

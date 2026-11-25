@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Count, MESSAGES_A_SECOND, UNSIGNED_FROM_ONE, admitsFrom, counted } from './budget.ts';
+import { UNHEARD_MOST } from '../client/src/network/roomConnection.ts';
 
 /** Counts a socket's messages sent at `times` (milliseconds); answers whether each was within the budget. */
 function send(times: readonly number[]): boolean[] {
@@ -19,6 +20,11 @@ test('a browser sending an input a tick, with a stall caught up at once, stays w
   assert.ok(send(ticks(600, 10_000)).every(Boolean), 'ten seconds of ticks');
   const stalled = [...Array.from({ length: 30 }, () => 10_000), ...ticks(120, 10_000)];
   assert.ok(send(stalled).every(Boolean), 'half a second of inputs at once, then two seconds of ticks');
+});
+
+test('a stall of any length lets through no more than the page sends a room it has not heard from, within budget', () => {
+  const held = Array.from({ length: UNHEARD_MOST }, () => 10_000);
+  assert.ok(send([...held, ...ticks(120, 10_000)]).every(Boolean), 'all held back at once, then two seconds of ticks');
 });
 
 test('a flood is past its budget within the second it starts, and each second starts afresh', () => {
