@@ -106,23 +106,29 @@ test('the player’s own fighter sent as what changed is laid over the one held,
 
 test('a foe sent as what changed is laid over the numbers held, a companion still the officer it was', () => {
   const kept = new SnapshotKeeper();
-  const numbers = new Float64Array(GLANCE_FLOATS + 17);
-  // A swordsman of type 14 at level 4, then last its leader, 9, its officer's names and post, the Lookout.
+  const numbers = new Float64Array(GLANCE_FLOATS + 21);
+  // A swordsman of type 14 at level 4, then its leader, 9, its officer's names and post, the Lookout; and last its
+  // arrival, let down from airship 3 at tick 600, landing at 660.
   numbers.set([2, 14, 3, 0, 1, 2, 4], GLANCE_FLOATS);
   numbers.set([9, 2, 5, 4], GLANCE_FLOATS + 13);
-  kept.whole(snapshot(10n, { foes: [foeOf(13, numbers)] }));
-  const alertness = GLANCE_FLOATS + 5;
+  numbers.set([1, 3, 600, 660], GLANCE_FLOATS + 17);
+  const first = kept.whole(snapshot(10n, { foes: [foeOf(13, numbers)] }));
+  assert.deepEqual(first?.foes[0]?.arrival, { kind: 1, from: 3, drops: 600, lands: 660 });
+  // Its alertness changed, and it landed: the room sends its arrival as none.
+  const changed = [GLANCE_FLOATS + 5, GLANCE_FLOATS + 17, GLANCE_FLOATS + 18, GLANCE_FLOATS + 19, GLANCE_FLOATS + 20];
   const bits = new Uint8Array(Math.ceil(numbers.length / 8));
-  bits[alertness >> 3] = 1 << (alertness & 7);
-  const sent = { ...foeOf(13, new Float64Array(numbers.length)), changes: { bits, numbers: Float64Array.from([3]) } };
+  for (const place of changed) bits[place >> 3] = (bits[place >> 3] ?? 0) | (1 << (place & 7));
+  const changes = { bits, numbers: Float64Array.from([3, 0, 0, 0, 0]) };
+  const sent = { ...foeOf(13, new Float64Array(numbers.length)), changes };
   const whole = kept.whole(snapshot(11n, { base: 10n, foes: [sent] }));
   assert.deepEqual([whole?.foes[0]?.alert, whole?.foes[0]?.level], [3, 4]);
   assert.deepEqual(whole?.foes[0]?.companion, { leader: 9, given: 2, family: 5, post: 4 });
+  assert.equal(whole?.foes[0]?.arrival, null, 'landed');
 });
 
 test('a foe sent as what changed keeps the name it stands under, which crosses each time it does', () => {
   const kept = new SnapshotKeeper();
-  const numbers = new Float64Array(GLANCE_FLOATS + 17);
+  const numbers = new Float64Array(GLANCE_FLOATS + 21);
   kept.whole(snapshot(10n, { foes: [{ ...foeOf(6, numbers), name: 'The Warden of the Fissure' }] }));
   const bits = new Uint8Array(Math.ceil(numbers.length / 8));
   bits[0] = 1;

@@ -277,7 +277,7 @@ const MIDDLE: [f64; 2] = [1.0, -2.0];
 type Happened<'snapshot> = (&'snapshot [Shot], &'snapshot [(u64, Line)], &'snapshot [(PlayerId, room::Plate)]);
 
 /// The test snapshot, for player 9: whole, building on nothing.
-fn snapshot<'snapshot>(
+pub(crate) fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
     (shots, lines, plates): Happened<'snapshot>,

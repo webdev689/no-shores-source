@@ -70,8 +70,11 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   const fighting = fighterView(snapshot.players[1]?.fighter ?? []);
   assert.deepEqual([fighting.target, fighting.stamina, fighting.health, fighting.side], [12, 88, 100, 'players']);
   assert.equal(fighting.x, walked.x);
-  // The brute, staggered by a parry, 40 of its 130 health gone, its lock on the player.
+  // The brute, staggered by a parry, 40 of its 130 health gone, its lock on the player; let down from airship 3 at
+  // tick 1230, landing at 1290.
   const [foe] = snapshot.foes;
+  assert.deepEqual(foe?.arrival, { kind: 1, from: 3, drops: 1230, lands: 1290 });
+  assert.equal(snapshot.foes[1]?.arrival, null, 'one landed crosses with none');
   const brute = glanceView(foe?.glance ?? []);
   assert.deepEqual(
     [foe?.id, foe?.kind, brute.health, brute.healthMax, brute.target, brute.side],
@@ -297,6 +300,25 @@ test('a room’s darkness and a revive under way the server wrote read back, its
   assert.equal(read?.kind, 'snapshot');
   if (read?.kind !== 'snapshot') return;
   assert.deepEqual([read.darkness, read.reviving], [true, [{ fallen: 3, reviver: 7, progress: 0.425 }]]);
+});
+
+test('every airship and crown the server wrote reads back whole', async () => {
+  // protocol_tests.rs writes it: airship 3 and crown 4, over the same ground.
+  const read = readFromRoom(await written('arrivals.bin'));
+  assert.equal(read?.kind, 'snapshot');
+  if (read?.kind !== 'snapshot') return;
+  const ship = {
+    id: 3,
+    kind: 1,
+    at: [12.5, -40.25, 9.75],
+    heading: 1.25,
+    high: 24,
+    began: 1000,
+    hangs: 1480,
+    leaves: 1800,
+    gone: 2340,
+  };
+  assert.deepEqual(read.arrivals, [ship, { ...ship, id: 4, kind: 2, heading: 2.5, high: 0 }]);
 });
 
 test('a course is its points, x then y, and its pace', () => {

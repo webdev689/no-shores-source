@@ -87,7 +87,7 @@ pub fn foe_numbers(foe: &FoeSeen) -> Vec<f64> {
     });
     numbers.extend(companion.map(f64::from));
     let arrival = foe.arrival.map_or([0.0; 4], |arrival| {
-        [f64::from(arrival.kind as u8), f64::from(arrival.from), arrival.drops as f64, arrival.lands as f64]
+        [f64::from(bringer_number(arrival.kind)), f64::from(arrival.from), arrival.drops as f64, arrival.lands as f64]
     });
     numbers.extend(arrival);
     numbers
@@ -256,6 +256,16 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     finish_snapshot(builder, &args)
 }
 
+/// What brings a foe, as the wire numbers it (`arrivalMessages.ts` BRINGER): its numbers kept here, in a file the
+/// protocol's version hashes.
+fn bringer_number(kind: room::Bringer) -> u8 {
+    match kind {
+        room::Bringer::Airship => 1,
+        room::Bringer::Crown => 2,
+        room::Bringer::Called => 3,
+    }
+}
+
 /// Every airship and crown bringing foes, as the snapshot carries them.
 fn arrivals_vector<'built>(
     builder: &mut flatbuffers::FlatBufferBuilder<'built>,
@@ -265,7 +275,7 @@ fn arrivals_vector<'built>(
         .iter()
         .map(|seen| {
             let at = Some(builder.create_vector(&seen.at));
-            let (id, kind, heading, high) = (seen.id, seen.kind as u8, seen.heading, seen.high);
+            let (id, kind, heading, high) = (seen.id, bringer_number(seen.kind), seen.heading, seen.high);
             let (began, hangs, leaves, gone) = (seen.began, seen.hangs, seen.leaves, seen.gone);
             let args = messages::ArrivalArgs { id, kind, at, heading, high, began, hangs, leaves, gone };
             messages::Arrival::create(builder, &args)
