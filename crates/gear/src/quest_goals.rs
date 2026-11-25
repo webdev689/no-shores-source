@@ -1,8 +1,9 @@
 //! A road's goals, each kind with the fields it reads and no others: read from `content/quests/quests.json` with the
-//! words the tracker shows, how many times it is met and the scene said as it is, a field missing or left over named as
-//! the file is read; what meets each; and what of each the rooms read.
+//! words the tracker shows, how many times it is met, the scene said and the reward given as it is, a field missing or
+//! left over named as the file is read; what meets each; and what of each the rooms read.
 
 use crate::kinds::Slot;
+use crate::quest_defs::RewardDef;
 use crate::quests::{Event, Kill};
 use serde::de::{Deserializer, Error as _};
 use serde::{Deserialize, Serialize};
@@ -251,13 +252,14 @@ pub enum Goal {
     Wear(InSlot),
 }
 
-/// One goal: the tracker's words, how many times it is met (1 when left out), the scene said as it is met, and what
-/// meets it.
+/// One goal: the tracker's words, how many times it is met (1 when left out), the scene said as it is met, what it
+/// gives as it is met (Aurem or the first horse; nothing when left out), and what meets it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GoalDef {
     pub text: String,
     pub count: u16,
     pub scene: Option<String>,
+    pub reward: RewardDef,
     pub goal: Goal,
 }
 
@@ -275,9 +277,10 @@ impl<'de> Deserialize<'de> for GoalDef {
         let named = |error: D::Error| D::Error::custom(format!("{text}: {error}"));
         let count: u16 = take(&mut fields, "count").map_err(named)?.unwrap_or(1);
         let scene = take(&mut fields, "scene").map_err(named)?;
+        let reward = take(&mut fields, "reward").map_err(named)?.unwrap_or_default();
         let goal = Goal::deserialize(serde_json::Value::Object(fields))
             .map_err(|error| D::Error::custom(format!("{text}: {error}")))?;
-        Ok(GoalDef { text, count, scene, goal })
+        Ok(GoalDef { text, count, scene, reward, goal })
     }
 }
 

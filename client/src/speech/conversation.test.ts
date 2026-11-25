@@ -5,7 +5,10 @@ import { AUTO_HOLD_S, Conversation } from './conversation.ts';
 
 const VOICE = { pitchHz: 120, spreadHz: 10, muffleHz: 1400, volume: 0.3, syllableS: 0.1 };
 const CAST: Cast = {
-  speakers: { mate: { name: 'First Mate', voice: 'mate' }, bosun: { name: 'Bosun', voice: 'bosun' } },
+  speakers: {
+    mate: { name: 'First Mate', voice: 'mate', colour: null },
+    bosun: { name: 'Bosun', voice: 'bosun', colour: null },
+  },
   voices: { mate: VOICE, bosun: { ...VOICE, syllableS: 0.12 } },
 };
 const LINES: Line[] = [

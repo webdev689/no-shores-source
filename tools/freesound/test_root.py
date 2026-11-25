@@ -11,6 +11,7 @@ import wave
 import numpy
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import publish  # noqa: E402
 import root  # noqa: E402
 
 NOISE = numpy.random.default_rng(7)
@@ -63,7 +64,7 @@ class Root(unittest.TestCase):
         self.assertEqual(root.root_text('C3', -38), 'C3-38')
         self.assertEqual(root.root_text('F#2', 12), 'F#2+12')
         for text in ['C3', 'C3-38', 'F#2+12', 'C-1-5']:
-            self.assertRegex(text, root.ROOT)
+            self.assertRegex(text, publish.ROOT)
 
     def test_noise_has_no_steady_pitch(self):
         self.assertIsNone(root.fundamental(0.3 * NOISE.standard_normal(root.RATE * 2)))

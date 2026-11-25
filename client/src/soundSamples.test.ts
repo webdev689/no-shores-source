@@ -11,17 +11,25 @@ test("every recorded sound is kept under its hash; Freesound's carry their whole
     const keys = keysOf(sound);
     assert.ok(keys.length > 0, `${id} has a file`);
     for (const key of keys) assert.match(key, /^sounds\/[0-9a-f]{64}\.(mp3|wav)$/, `${id}'s file is named by its hash`);
-    if (!('freesound' in sound)) {
+    // A cue of several Freesound picks credits each of its files, in their order.
+    const credits = 'freesound' in sound ? [sound] : 'credits' in sound ? sound.credits : null;
+    if (!credits) {
       const own = sound as { readonly licence: string; readonly from?: string; readonly name: string };
       assert.ok(['Ours', 'CC0'].includes(own.licence) && own.from && own.name, `${id} says what it is and whence`);
       continue;
     }
-    assert.ok(['CC0', 'CC-BY'].includes(sound.licence), `${id} is under a licence the owner allows`);
-    assert.match(sound.licenceUrl, /^https:\/\/creativecommons\.org\/(publicdomain\/zero|licenses\/by)\/\d\.\d\/$/);
-    assert.match(sound.page, /^https:\/\/freesound\.org\/people\/[^/]+\/sounds\/\d+\/$/, `${id} links its source`);
-    assert.ok(sound.name && sound.author && sound.changes, `${id} names itself, its author and what was changed`);
+    assert.equal(credits.length, keys.length, `${id} credits each of its files`);
+    assert.ok('changes' in sound && sound.changes, `${id} says what was changed`);
+    for (const credit of credits) {
+      assert.ok(['CC0', 'CC-BY'].includes(credit.licence), `${id} is under a licence the owner allows`);
+      assert.match(credit.licenceUrl, /^https:\/\/creativecommons\.org\/(publicdomain\/zero|licenses\/by)\/\d\.\d\/$/);
+      assert.match(credit.page, /^https:\/\/freesound\.org\/people\/[^/]+\/sounds\/\d+\/$/, `${id} links its source`);
+      assert.ok(credit.name && credit.author, `${id} names each recording and its author`);
+    }
   }
-  const recorded = sounds.filter(([, sound]) => 'freesound' in sound);
+  const recorded = sounds.flatMap(([, sound]) =>
+    'freesound' in sound ? [sound] : 'credits' in sound ? sound.credits : [],
+  );
   assert.equal(soundCredits().length, recorded.length, 'Settings credits every Freesound recording');
 });
 

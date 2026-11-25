@@ -219,6 +219,38 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
+  the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
+  each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
+  and on stone, the boost, its neigh, the whinny, the snort, into and out of the saddle. The Grey Tithe: its four
+  alerts ("All"), four attack grunts and three pain grunts as variations, each credited, and its death. The Lattice:
+  its alert, attack, hurt and death ("No glass"). A stride is heard as the last one's recording ends (`HorseSounds`,
+  the sample's length), each hoofbeat cut to one stride of its recording, quiet to quiet, mono; a fixed 1.7, 3.4 or
+  4.6 m a stride had doubled the hoofbeats' pace at the Bay's 6 and 12 m/s. Foes never make a din: at most two foe
+  voices begin in 0.75 s besides a death, never kept back; one foe's swing or hurt once in 2 s; only a fighter's voice
+  that began counts, so a raid's alarm is never held (`WorldSounds.playHeard`). Nothing found in any wording for
+  walking, galloping and boosting in water, nor boosting on stone: each plays its gait's on the ground until it has
+  its own, on the owner's "yes play a sound in their place" (`hoofCue`). The sheet "Horse and Foe Sounds"
+  (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN) holds the picks in its `picks` store. Not heard in a browser:
+  whether it drops the MP3's 25 to 40 ms of padding as ffmpeg does (each stride decodes to its cut there).
+
+- **The five asks: plain clothes, the Tack's Bay, the welcome's camera, speakers' colours and the city's sounds**
+  (#206; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
+  every call there). The prologue's end gives a Plain Shirt and Plain Breeches with no stats (`Item::plain`), worn
+  where the torso and legs are bare; the Tack gives the Bay as she is spoken with on the round (a goal's own
+  `reward`, which may give Aurem or the horse, never a house's gifts nor the Sloop), and at her counter for nothing to
+  one who pledged before the round reached her; the face-to-face shot stands
+  2.8 m over the pair's feet, solved for the lens, their crowns no longer cut off; each speaker's name has a colour of
+  their own in the dialogue box. The city's sounds are settled: the crowd kept on the owner's "Keep"; the hum the
+  owner's pick from the sheet "Overlook City Sounds" (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound
+  824369 (an old-town alley in Stockholm, CC0, vhio), on R2 by the `freesound` run 45635457113, after seven searches
+  (parks and ghost towns refused; it came from "old town ambience -park -klankbeeld", searched beside the owner's own
+  "distant city"). Merged on the owner's "merge and deploy", which deploys the page, the site, the rooms and the bot. `main` with #201
+  (the Sloop), #209 (the audit) and #210 (the desktop app) merged in. Tested offline: the rules', wire's and page's tests, the new ones
+  failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and after
+  (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the prologue
+  before this are given no clothes (the owner's option gives them at its end).
+
 - **Three latent layout flaws, and the town's walls, windows and signs** (#207, merged on the owner's "Merge and
   deploy", which deploys the page, the site, the rooms and the bot: CI run 1129 on main). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
   metre off a module's foot; a camp's palisade gap is sized from the path grid; fallen rock keeps 1.2 m off each run's

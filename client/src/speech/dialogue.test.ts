@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import cast from '../../../content/story/cast.json' with { type: 'json' };
+import { TONES } from '../plus/tones.ts';
 import { Stack } from '../ui/stack.ts';
-import { fakeInterface, laidOf, wordsOf } from '../ui/uiForTests.ts';
+import { fakeInterface, laidOf, nodesOf, wordsOf } from '../ui/uiForTests.ts';
 import { castOf } from './cast.ts';
 import { DialogueBox, dialogueNode, speaking, typedSpans } from './dialogue.ts';
 
@@ -84,4 +85,27 @@ test('the box keeps to the middle over the sea bar, clear of the vitals, and nev
     assert.equal(box.x + box.width / 2, width / 2);
     assert.equal(box.y + box.height, 720 - 104);
   }
+});
+
+test("each speaker's name is shown in their own colour, turn by turn, and a name with none in the kit's brass", () => {
+  const box = new DialogueBox(new Stack(), () => null);
+  const { ui } = fakeInterface(1280, 720);
+  const nameColour = (name: string) => nodesOf(box.node(ui)).find((each) => each.text?.words === name)?.text?.colour;
+  const stranger = read.speakers.stranger;
+  const tack = read.speakers.tack;
+  assert.ok(stranger?.colour && tack?.colour && stranger.colour !== tack.colour);
+  void box.play(
+    [
+      { who: 'stranger', say: 'The Tack has horses.' },
+      { who: 'tack', say: 'There is always a Bay.' },
+    ],
+    read,
+  );
+  assert.equal(nameColour(stranger.name), stranger.colour);
+  box.advance();
+  box.advance();
+  assert.equal(nameColour(tack.name), tack.colour);
+  box.remove();
+  const plain = nodesOf(dialogueNode('Kael', typedSpans('Up.', ''), 1280));
+  assert.equal(plain.find((each) => each.text?.words === 'Kael')?.text?.colour, TONES.brassHi);
 });

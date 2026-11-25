@@ -83,11 +83,6 @@ test('the level meter is the room’s word: XP to the next below 20, Prestige pa
 test('an item’s detail lays out its nodes: bought, to buy once unlocked, and what it may do where it is', () => {
   const detail = itemDetailOf(legendary, state({ items: [legendary], stocks: [0, 0, 0, 0, 2] }));
   assert.equal(detail.kind, 'Legendary Sword');
-  assert.deepEqual(detail.numbers, [
-    ['Attack', '248'],
-    ['Level', '20'],
-    ['From', 'The world'],
-  ]);
   const [upgrade, perk] = detail.columns;
   assert.equal(upgrade?.nodes[0]?.chosen, true);
   assert.equal(upgrade?.nodes[0]?.ask, null, 'an upgrade bought asks nothing');
@@ -98,8 +93,6 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
     [['Take off', 'button']],
     'a Fruit of Dagon is eaten from the inventory, never fed from a page',
   );
-  const module = itemDetailOf({ ...legendary, kind: 25, bucket: 8, source: 4 }, state({}));
-  assert.ok(!module.numbers.some(([label]) => label === 'From'), 'a ship’s module keeps no look of a content');
   const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atMage: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),

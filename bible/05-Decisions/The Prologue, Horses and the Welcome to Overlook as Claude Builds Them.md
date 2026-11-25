@@ -72,5 +72,8 @@ writes the quiet deck's `masts`.
 | The Test Ground and the public events' scripted players | Keep a plain sword and armour, no horse; the Test Ground's opening shows no task it cannot do | So they stay fightable, and the events' fingerprints hold |
 | An old page | The protocol's version covers the smiths' stock and the quests, so a page left open across a deploy reloads | Its ware and task numbers would be wrong |
 
+Replaced in part by [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]: the prologue's end dresses the player in plain clothes, the Tack gives the first
+horse, and the face-to-face shot stands over the pair's heads.
+
 Replaced in part by [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]: while she speaks
 the game's menu no longer opens (it is gone); Escape opens Settings, and the leave held waits until she is done.

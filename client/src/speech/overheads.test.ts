@@ -7,7 +7,7 @@ import { Overheads } from './overheads.ts';
 import { GAP_PX } from './place.ts';
 
 const CAST: Cast = {
-  speakers: { kael: { name: 'Kael', voice: 'low' } },
+  speakers: { kael: { name: 'Kael', voice: 'low', colour: null } },
   voices: { low: { pitchHz: 120, spreadHz: 10, muffleHz: 2000, volume: 0.5, syllableS: 0.1 } },
 };
 
