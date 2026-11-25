@@ -403,6 +403,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Desktop App Releases With Each Merge That Changes It]]
 - [[The Website Offers the Desktop App's Downloads]]
 - [[The Launcher Stands in a Window of Its Own]]
+- [[The Drawing Click Swings, and the Player's Own Hits Show at Once]]
 
 ## Replaced
 

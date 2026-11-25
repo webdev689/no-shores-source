@@ -56,6 +56,8 @@ export interface FightShown {
   readonly loosed: boolean;
   readonly aiming: boolean;
   readonly handsSeconds?: number;
+  /** Whether the rules hold the arms `outfit` holds, as they do once they take them up at rest. */
+  readonly holds?: (outfit: Outfit) => boolean;
 }
 
 /** The strokes struck so far after this frame's swing: a swing begins where there was none, or where the last one
@@ -165,7 +167,6 @@ export class Walker {
   private shown: Shown = { anim: 'idle', frame: null, frameSeconds: 0.25 };
   private readonly loop = new Loop();
   /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
-  private drawnBefore = false;
   /** Whether the fight held the player to a drink last frame, which put the shown weapon away. */
   private drank = false;
   /** The seconds a tick of the rules lasts, as the last step took them. */
@@ -267,7 +268,6 @@ export class Walker {
   ): void {
     const { you, firstPerson } = this;
     const wasDrawn = you.dress.outfit.drawn;
-    this.drawnBefore = wasDrawn;
     this.tickSeconds = rules.tickSeconds;
     if (!controls.locked) return;
     const swinging = firstPerson.swing !== null;
@@ -294,7 +294,8 @@ export class Walker {
     Object.assign(you, { x: body.x, y: body.y, z: body.z, facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const worn = shownDress(you.dress, holding);
-    const kept = this.dress.outfit;
+    // The weapon the frame before held, unless the rules already hold the one worn: drawn by a swing's own click.
+    const kept = fighting && fight?.holds?.(worn.outfit) ? worn.outfit : this.dress.outfit;
     const drinking = own?.action.kind === 'drink';
     const drawn = drawnInFight({ holding, kept: kept.drawn, worn: worn.outfit.drawn, drinking, drank: this.drank });
     this.drank = drinking;
@@ -305,8 +306,8 @@ export class Walker {
     const { outfit } = dress;
     const speed = Math.hypot(body.vx, body.vy);
     if (body.moving && body.mode === 'ground') this.stride += speed * seconds;
-    // The weapon swings only once it is out, on foot, with the hands free; the click that readies it does not swing.
-    const swings = controls.locked && this.drawnBefore && outfit.drawn && holding && !player.mounted;
+    // The weapon swings only while it is out, on foot, with the hands free; the click that draws it swings too.
+    const swings = controls.locked && outfit.drawn && holding && !player.mounted;
     const shooter = SHOOTERS.test(outfit.right ?? '');
     // A swing the rules end early (a dodge, a flinch, a guard) ends in the first person too, as does a bow's draw let
     // go too soon to shoot.

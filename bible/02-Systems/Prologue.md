@@ -301,7 +301,7 @@ their slots and shown on the Character page and in the pack ("Steel Cuirass", "S
 drawn in steel from the gear as the game's gear is drawn (`gearOutfit`, `STORY_SET`). On the wreck the figure is
 dressed from their gear as on foot (`dressInGear`): once they equip the story's sword and shield they hold the item as
 their gear has it, a Normal Sword & Shield drawn in iron, and once they equip its bow it is their other loadout; the
-Melee loadout put away is their dress for the rest of the story; a swing draws it, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
+Melee loadout put away is their dress for the rest of the story; a swing draws it and swings, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
 
 ## The wreck
 

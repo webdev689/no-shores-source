@@ -8,6 +8,7 @@ import { type Reticle, reticleOf } from './reticle.ts';
 import type { Fighting } from './fighting.ts';
 
 type Point = readonly [number, number, number];
+type Outfit = Walker['wornDress']['outfit'];
 
 /** What the display needs of the player's frame in a fight: whether a ranged weapon is out to fight with, whether the
  *  Ranged loadout is drawn on a body free to shoot (from the outfit shown, the pointer held or not), the reticle of the
@@ -48,7 +49,7 @@ export class PlayerFight {
    * One frame: `steps` the fight's movement rules, the room's clock run while `running`, the fight's buttons taken
    * only while `hands` (the pointer held), an aimed shot laid on `markOf`'s point (the crosshair's), and the first
    * person's hands zoomed with the view by `zoomOf` once the player has stepped, moving `handsSeconds` on. The buttons:
-   * a swing or a shot only with the weapon already out, on foot, the hands free; a guard on foot; a dodge and a drink
+   * a swing or a shot with the weapon out, the click that draws it swinging too, on foot, the hands free; a guard on foot; a dodge and a drink
    * whenever pressed (the rules refuse them in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's
    * button aims it and the guard's fires it, and no guard rises behind it. Bearing the Lodestone (`bearer`), the Arts'
    * keys ground it.
@@ -77,7 +78,11 @@ export class PlayerFight {
     const { walker, fight } = this;
     const { player, you } = walker;
     const free = player.body.mode === 'ground' || player.body.mode === 'air';
-    const armed = hands && you.dress.outfit.drawn && free && !player.mounted;
+    const ready = hands && free && !player.mounted;
+    // The click that draws the weapon swings it too: the fight is told it is out before the ticks that swing it.
+    const drawing = ready && !you.dress.outfit.drawn && controls.pressed('swing');
+    if (drawing) this.tellArms({ ...walker.wornDress.outfit, drawn: true });
+    const armed = ready && (you.dress.outfit.drawn || drawing);
     const shooter = SHOOTERS.test(you.dress.outfit.right ?? '');
     const ranged = armed && shooter;
     const aiming = ranged && controls.held('swing');
@@ -114,17 +119,11 @@ export class PlayerFight {
       loosed: fight.shotsLoosed > 0,
       aiming,
       handsSeconds,
+      holds: (outfit: Outfit) => fight.own?.arms === this.armsOf(outfit),
     };
     [fight.swingsBegun, fight.drawsDropped, fight.shotsLoosed] = [0, 0, 0];
     walker.show(controls, seconds, clock, shown, zoomOf());
-    const { outfit } = walker.wornDress;
-    // A greatsword's left hand is on its hilt, which combat's arms read as the left hand's own.
-    const left = outfit.grip === 'hilt' ? 'hilt' : outfit.left;
-    const handsKey = `${outfit.right}|${left}|${outfit.drawn}`;
-    if (handsKey !== this.armsKey) {
-      this.armsKey = handsKey;
-      fight.arms = this.rules.armsCode(outfit.right, left, outfit.drawn);
-    }
+    this.tellArms(walker.wornDress.outfit);
     fight.look = walker.look;
     fight.dress = walker.lookDress;
     const pressed = (armed && !shooter && controls.pressed('swing')) || (hands && controls.pressed('dodge'));
@@ -137,6 +136,20 @@ export class PlayerFight {
     // A ranged weapon drawn turns the pad's triggers round, on whichever page the player fights.
     BINDS.ranged = rangedDrawn;
     return { shooter, ranged, rangedDrawn, reticle, aiming, pressed, pulled: ranged && controls.pressed('guard') };
+  }
+
+  /** Tells the fight the arms `outfit` holds, when they change. */
+  private tellArms(outfit: Outfit): void {
+    const handsKey = `${outfit.right}|${outfit.grip === 'hilt' ? 'hilt' : outfit.left}|${outfit.drawn}`;
+    if (handsKey === this.armsKey) return;
+    this.armsKey = handsKey;
+    this.fight.arms = this.armsOf(outfit);
+  }
+
+  /** The arms `outfit` holds, as combat codes them. */
+  private armsOf(outfit: Outfit): number {
+    // A greatsword's left hand is on its hilt, which combat's arms read as the left hand's own.
+    return this.rules.armsCode(outfit.right, outfit.grip === 'hilt' ? 'hilt' : outfit.left, outfit.drawn);
   }
 
   /** The casting keys: a cast sent to the room plays its move in its Art's colour (a grounding of the Lodestone plays

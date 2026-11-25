@@ -348,3 +348,20 @@ test('while a cutscene holds the room still, the page sends it no inputs, so non
   frame(controls());
   assert.equal(sent.count, before + 1, 'running again, one input a tick');
 });
+
+test('the click that draws the weapon swings it too: one click with it put away, as the game begins', () => {
+  const { fighting, walker, shown, frame } = fightingPlayer();
+  walker.you.dress = { ...walker.you.dress, outfit: { ...walker.you.dress.outfit, drawn: false } };
+  frame(controls());
+  assert.equal(fighting.arms, startCombatRules(compiled).armsCode('sword_iron', null, false), 'the sword put away');
+  frame(controls(['swing'], ['swing']));
+  for (let ticks = 0; ticks < 5; ticks += 1) frame(controls(['swing']));
+  assert.equal(walker.you.dress.outfit.drawn, true, 'drawn');
+  const action = fighting.own?.action;
+  assert.ok(action?.kind === 'attack', `swung with the one click, as the room has it: ${action?.kind}`);
+  assert.equal(action.strike, 18, "the sword's swing, not the fists'");
+  assert.ok(
+    shown.some((each) => each.attackPressed),
+    'the first person swings',
+  );
+});
