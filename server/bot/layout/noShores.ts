@@ -86,10 +86,15 @@ export const HOUSE_ROLES: Readonly<Record<string, string>> = {
   'The Veiled': 'veiled',
 };
 
-/** What the bot needs where members may not post: to post, and to keep its own messages tidy. */
+/**
+ * What the bot needs where members may not post: to post, and to keep its own messages tidy. It keeps the thread
+ * permissions everyone loses there too, since Discord lets a bot set on a channel only what it holds in its category.
+ */
 const BOT_POSTS: readonly PermissionName[] = [
   'VIEW_CHANNEL',
   'SEND_MESSAGES',
+  'CREATE_PUBLIC_THREADS',
+  'SEND_MESSAGES_IN_THREADS',
   'EMBED_LINKS',
   'ATTACH_FILES',
   'READ_MESSAGE_HISTORY',

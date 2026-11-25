@@ -270,11 +270,16 @@ async function adopt(walk: Walk, channel: LayoutChannel, held: Settings, parentI
   return `There already, moved into ${into}`;
 }
 
+/** The part that says Discord's own categories were seen to on the first build. */
+const TIDIED = 'setting:discordCategories';
 /** The categories a new Discord server starts with, removed once the layout has moved their channels out. */
 const DISCORD_CATEGORIES = ['text channels', 'voice channels'];
 
 /** Discord's own categories, left empty once their channels are the layout's: removed, so none sits empty. */
 export async function tidyDiscordCategories(walk: Walk): Promise<void> {
+  // once, on the layout's first build: a category of that name made by hand later is the owner's
+  if (walk.records.has(TIDIED)) return;
+  if (walk.act) await record(walk, TIDIED, '', true);
   const ours = new Set(walk.ids.values());
   for (const category of [...walk.channels]) {
     const id = String(category.id);

@@ -4,7 +4,7 @@ import { GUILD, OWNER } from '../botForTests.ts';
 import { PERMISSION } from '../law/access.ts';
 import { BOT_MODULES, moduleOf } from '../law/modules.ts';
 import { type Settings, defaults, recordOf, validate } from '../law/settings.ts';
-import { readConfig, writeConfig } from '../store.ts';
+import { readConfig, readSnapshot, writeConfig } from '../store.ts';
 import { LAYOUT_BY, build, planRows } from './build.ts';
 import { BOT, FIRST_INVITE, OWNER_ACTOR, standLayout } from './guildForTests.ts';
 import { RULES, guideMessage, openingNews, firstPatchNotes, rulesMessage, tags } from './messages.ts';
@@ -161,6 +161,51 @@ test("layout: on Discord's own new server, its #general and voice room are adopt
   assert.match(done.message, /^Made 7 roles and 20 channels/, 'one role and two channels fewer, as they were adopted');
   const tickets = await readConfig(stood.database, GUILD, 'tickets');
   assert.deepEqual(tickets?.config.staffRoles, ['920000000000000001'], 'the adopted role is the one named');
+});
+
+test('layout: two builds at once, as from two tabs, make each part once: the second is turned away', async () => {
+  const stood = await standLayout();
+  const [first, second] = await Promise.all([run(stood), run(stood)]);
+  assert.deepEqual([first.ok, second.ok].sort(), [false, true]);
+  assert.match((first.ok ? second : first).message, /already running/);
+  assert.equal(stood.server.state.roles.filter((role) => role.name === 'Moderator').length, 1);
+  assert.equal(stood.server.state.channels.filter((channel) => channel.name === 'general').length, 1);
+  const again = await run(stood);
+  assert.equal(again.ok, true, 'the claim is let go once a build ends');
+});
+
+test("layout: Discord's own empty categories are removed by the first build alone, never one made by hand later", async () => {
+  const stood = await standLayout();
+  const { state } = stood.server;
+  state.channels.push({ id: '920000000000000010', name: 'Text Channels', type: 4, parent_id: null });
+  await run(stood);
+  assert.equal(stood.server.channelNamed('Text Channels'), undefined);
+  state.channels.push({ id: '920000000000000020', name: 'Text Channels', type: 4, parent_id: null });
+  await run(stood);
+  assert.ok(stood.server.channelNamed('Text Channels'), 'one the owner made afterwards is theirs');
+});
+
+test("layout: the snapshot it leaves is Discord's after the build, so the panel never reads @everyone as able to ping", async () => {
+  const stood = await standLayout();
+  await run(stood);
+  const snapshot = await readSnapshot(stood.database, GUILD);
+  const everyone = snapshot?.roles.find((role) => role.id === GUILD);
+  assert.equal(BigInt(String(everyone?.permissions)) & PERMISSION.MENTION_EVERYONE, 0n);
+  assert.ok(snapshot?.channels.some((channel) => channel.name === 'mod-log'));
+});
+
+test('layout: in each category the bot keeps every permission the category takes from everyone, so it may set its channels', () => {
+  // Discord lets a bot set on a channel only what it holds in the channel's category.
+  for (const category of CHANNELS.filter((channel) => channel.kind === 'category')) {
+    const denied = (category.overwrites ?? []).find((each) => each.who === 'everyone')?.deny ?? [];
+    const kept = (category.overwrites ?? []).find((each) => each.who === 'bot')?.allow ?? [];
+    const children = CHANNELS.filter((channel) => channel.parent === category.key);
+    const setBelow = children.flatMap((child) =>
+      (child.overwrites ?? []).flatMap((each) => [...(each.allow ?? []), ...(each.deny ?? [])]),
+    );
+    for (const name of [...denied, ...setBelow].filter((each) => denied.includes(each)))
+      assert.ok(kept.includes(name), `${category.name}: the bot gives up ${name}`);
+  }
 });
 
 test('layout: once Community is on, a build makes the news channels announcement ones and sets the welcome screen', async () => {

@@ -28,6 +28,8 @@ export function rememberingDiscord() {
     editsDown: false,
     /** Roles the bot may not give or take, as for a role above its own. */
     refusedRoles: new Set<string>(),
+    /** Roles deleted from the server since a setting named them. */
+    deletedRoles: new Set<string>(),
     /** What a deferred answer to an interaction was changed to. */
     answers: [] as Record<string, unknown>[],
   };
@@ -90,6 +92,7 @@ export function rememberingDiscord() {
       const role = parts[5];
       if (fifth === 'roles' && role) {
         if (world.refusedRoles.has(role)) return answer(403, { code: 50013, message: 'Missing Permissions' });
+        if (world.deletedRoles.has(role)) return answer(404, { code: 10011, message: 'Unknown Role' });
         const held = world.members.get(fourth) ?? { roles: [] };
         world.members.set(fourth, held);
         if (method === 'PUT' && !held.roles.includes(role)) held.roles.push(role);

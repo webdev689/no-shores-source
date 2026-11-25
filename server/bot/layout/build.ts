@@ -6,7 +6,7 @@
 
 import { PERMISSION, type PermissionName } from '../law/access.ts';
 import { moduleOf } from '../law/modules.ts';
-import { type Settings, defaults, validate } from '../law/settings.ts';
+import { type Settings, defaults, recordOf, validate } from '../law/settings.ts';
 import { type BotContext, postTo } from '../kit.ts';
 import type { RestResult } from '../rest.ts';
 import { announceModule } from '../modules/announce.ts';
@@ -93,7 +93,7 @@ async function walkSettings(walk: Walk, picture: FetchPicture): Promise<void> {
     ),
   );
   const everyone = walk.roles.find((role) => String(role.id) === walk.guildId);
-  await once(walk, 'setting:everyonePing', 'Only staff and the bot ping everyone', () =>
+  await once(walk, 'setting:everyonePing', 'Only the owner and the bot ping everyone', () =>
     refusal(
       rest.patch(
         `${guild}/roles/${walk.guildId}`,
@@ -157,11 +157,20 @@ async function walkSettings(walk: Walk, picture: FetchPicture): Promise<void> {
   );
 }
 
-/** The snapshot the panel and the modules read, from what Discord holds now, so new channels can be named at once. */
+/**
+ * The snapshot the panel and the modules read, from what Discord holds after the build's changes (asked again, as the
+ * build's own lists still hold @everyone as it was), so new channels can be named at once and the panel's checks read
+ * the server as it now is.
+ */
 async function freshSnapshot(walk: Walk): Promise<void> {
   const { context, guildId } = walk;
   const stored = await readSnapshot(context.database, guildId);
   if (!stored) return;
+  const guild = await context.rest.get(`/guilds/${guildId}`);
+  const roles = guild.ok ? recordOf(guild.json).roles : null;
+  if (Array.isArray(roles)) walk.roles = roles.map(recordOf);
+  const channels = await context.rest.get(`/guilds/${guildId}/channels`);
+  if (channels.ok && Array.isArray(channels.json)) walk.channels = channels.json.map(recordOf);
   stored.roles = walk.roles.map(roleOf);
   stored.channels = walk.channels.filter((channel) => ![10, 11, 12].includes(Number(channel.type))).map(channelOf);
   stored.updatedAt = Math.floor(context.now() / 1000);
@@ -339,12 +348,50 @@ export async function planRows(context: BotContext, guildId: string): Promise<{ 
   return { rows: walk.rows, note: todos.length ? '' : 'Nothing is left for you once it is built.' };
 }
 
+/** The claim a build holds on a server while it runs, and how long one is trusted before it is taken as dropped. */
+const BUILDING = 'build:running';
+const BUILD_CLAIM_S = 600;
+
+/**
+ * One build a server at a time: two at once (two tabs, or the owner and a bot owner) would each find nothing made
+ * and make it all. Answers whether this build holds the claim; a claim older than BUILD_CLAIM_S is taken over.
+ */
+async function claimBuild(context: BotContext, guildId: string): Promise<boolean> {
+  const nowS = Math.floor(context.now() / 1000);
+  const claimed = await context.database
+    .prepare(
+      `INSERT INTO layout_parts (guild_id, part, discord_id, made, at) VALUES (?, ?, '', 0, ?)
+       ON CONFLICT (guild_id, part) DO UPDATE SET at = excluded.at WHERE layout_parts.at < ?`,
+    )
+    .bind(guildId, BUILDING, nowS, nowS - BUILD_CLAIM_S)
+    .run();
+  return claimed.meta.changes === 1;
+}
+
 /** The build: makes what is missing, sets what it owns, posts, and keeps the checklist. */
 export async function build(
   context: BotContext,
   guildId: string,
   actor: Actor,
   picture: FetchPicture = fetchPicture,
+): Promise<{ ok: boolean; message: string; rows: Row[] }> {
+  if (!(await claimBuild(context, guildId)))
+    return { ok: false, message: 'A build is already running in this server. Try again in a minute.', rows: [] };
+  try {
+    return await buildClaimed(context, guildId, actor, picture);
+  } finally {
+    await context.database
+      .prepare('DELETE FROM layout_parts WHERE guild_id = ? AND part = ?')
+      .bind(guildId, BUILDING)
+      .run();
+  }
+}
+
+async function buildClaimed(
+  context: BotContext,
+  guildId: string,
+  actor: Actor,
+  picture: FetchPicture,
 ): Promise<{ ok: boolean; message: string; rows: Row[] }> {
   const walk = await look(context, guildId, true);
   if (typeof walk === 'string') return { ok: false, message: walk, rows: [] };

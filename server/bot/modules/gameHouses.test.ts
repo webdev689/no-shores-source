@@ -149,6 +149,23 @@ test('houses: a role Discord refuses is logged once a sweep, and the other house
   assert.equal(bot.lines.filter((line) => line.includes(STORM)).length, 1);
 });
 
+test('houses: a house role deleted from the server is passed over, so the sweep still reaches the other houses', async () => {
+  const members: Record<string, string[]> = {};
+  const pledged = new Map<string, string | null>();
+  for (let index = 0; index < 60; index++) {
+    const id = String(900000000000000400n + BigInt(index));
+    members[id] = [];
+    pledged.set(id, 'Stormcallers');
+  }
+  members['900000000000000499'] = [];
+  pledged.set('900000000000000499', 'Lamplighters');
+  const bot = await standHouses(members, pledged);
+  bot.world.deletedRoles.add(STORM);
+  await bot.sweep();
+  assert.deepEqual(bot.rolesOf('900000000000000499'), [LAMP], 'the change budget is not spent on a role that is gone');
+  assert.equal(bot.lines.filter((line) => line.includes(STORM)).length, 1);
+});
+
 test('houses: a house is named once at most', () => {
   const schema = moduleOf('game')?.schema ?? {};
   const twice = [

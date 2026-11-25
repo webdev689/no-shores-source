@@ -6,7 +6,7 @@
 import { PLEDGES_MAX } from '../../accounts/linked.ts';
 import { type Settings, recordOf } from '../law/settings.ts';
 import type { BotContext } from '../kit.ts';
-import type { RestResult } from '../rest.ts';
+import { type RestResult, UNKNOWN } from '../rest.ts';
 import type { ServerModule } from './module.ts';
 import { serversWith } from './stats.ts';
 
@@ -102,7 +102,9 @@ async function sweep(context: BotContext, guildId: string, houses: Map<string, s
         const done = await change(context, guildId, userId, each);
         if (done.ok) continue;
         if (done.down) return;
-        if (done.status !== 403) continue;
+        // a role refused, or deleted since the setting named it, fails for every member: it is passed over for the
+        // rest of the sweep so the changes left reach the other houses; a member who left fails alone
+        if (done.status !== 403 && done.code !== UNKNOWN.ROLE) continue;
         refused.add(each.role);
         context.log(`[bot] game: Discord refused to give or take house role ${each.role}: ${done.message}`);
       }

@@ -217,8 +217,8 @@ the accounts also answer each linked one's faction name, or null for none; an id
 at once. At minute 5 of every ten the bot sweeps each server where the module is on: it lists the members a page of
 1000 at a time, asks the accounts' `pledges` once a page, and gives each member their pledged house's role and takes
 every other house role the setting names; an unlinked or unpledged member loses them all. Bots, members still pending
-screening, and roles the setting does not name are never touched. A sweep makes at most 50 changes a server, and a
-role Discord refuses is logged once a sweep. While the binding, its `pledges` or the accounts cannot answer, no role
+screening, and roles the setting does not name are never touched. A sweep makes at most 50 changes a server; a role
+Discord refuses, or one deleted since the setting named it, is passed over for the rest of the sweep and logged once. While the binding, its `pledges` or the accounts cannot answer, no role
 changes.
 
 `/link` answers privately how to link: open the game at `https://noshores.online/play/`, then in
@@ -240,8 +240,8 @@ to confirm, does it.
   permissions and tags, as it is made.
 - **The bot gives only what it holds.** A role's permissions and a channel's are cut to the bot's own; what is cut is
   named in the checklist, with an invite link that grants it (below).
-- **The server's settings are set once**: verification, notifications, the media filter, Discord's notices, only staff
-  and the bot pinging everyone, and the icon (`noshores.online/art/server-icon.png`, only where the server has none).
+- **The server's settings are set once**: verification, notifications, the media filter, Discord's notices, only the
+  owner and the bot pinging everyone, and the icon (`noshores.online/art/server-icon.png`, only where the server has none).
   The rules, updates and safety channels, the description and the welcome screen wait for Community.
 - **Modules are set while the layout wrote them last**: a module's settings are saved by the layout (`updated_by` is
   `layout`) only while no one has saved them in the panel since; the Gateway is told at once.
@@ -308,6 +308,7 @@ built by the message law. The page only draws what the panel's API answers; ever
 - A server a person joins after signing in shows in their list once they sign in again.
 - A house role trails a switch of house or an unlink by up to ten minutes, longer while a sweep's 50 changes run out.
 - A build runs in one request: a part Discord refuses, or a rate limit longer than five seconds, is left for the next
-  build, which picks up where it stopped. Two builds run at once could each make the same part.
+  build, which picks up where it stopped. One build runs in a server at a time: a second is turned away, and the
+  claim of a build that died is taken over after ten minutes.
 - The layout cannot turn on Community or rules screening (Discord keeps both for the owner, and its rules screening
   has no API); its checklist says how.

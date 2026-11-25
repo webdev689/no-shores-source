@@ -25,7 +25,7 @@ built by the bot's server layout ([[Discord Bot]], "The server layout"). The own
 | House roles | Given and taken by the bot from each linked member's pledge, in each house's gear colour, never picked by a button | A house is what a player pledged in the game |
 | Ping roles | Picked with buttons in #welcome, pinged only by the bot and the owner | Members choose what they hear about, and nobody else can spam them |
 | Moderators | Delete messages, manage threads, time out, kick, ban, mute and move in voice, read the audit log | What moderating needs, and no say over the server's settings |
-| Everyone | Only staff and the bot ping everyone | No @everyone from members |
+| Everyone | Only the server's owner and the bot ping everyone | No @everyone from members or moderators; news pings its own role |
 | Server settings | Verification medium, new members told of mentions only, every upload scanned, Discord's join messages and tips off | The bot welcomes; members are not buzzed for every message |
 | Welcome screen | #welcome, #rules, #announcements, #general, #looking-for-group, under the website's line on the game | What a newcomer sees before the first channel |
 | Embeds | Lantern gold for welcome and news, sea blue for patch notes, brass for rules and help | The colour says what kind of message it is |
