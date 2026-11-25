@@ -221,23 +221,20 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
-  reference ([[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]; every call in
-  [[The Desktop App as Claude Builds It]]; how it works in [[Desktop App]]). Electron 45 plays the game at
-  `noshores.online/play/` in a sandboxed window, so it is never a version behind the rooms. WebGPU runs on Direct3D 12
-  then 11 on Windows (Chromium gives WebGPU no Vulkan there, read in its source), Metal on a Mac, and on Linux on
-  Vulkan three ways in turn; DFO's guard is rebuilt for WebGPU from the game's own adapter report. Settings' Graphics
-  tab gains an App part. Updates through electron-updater from `noshores.online/download/`, which the site's Worker
-  answers from R2; installers released by hand from `main` (`desktop.yml`), the owner's yes each time. Tested offline
-  in a container with no GPU: the shell's, the bridge's and the site Worker's tests; the app in Electron 45.3.0 on
-  SwiftShader driven through Playwright and real X keys (the bridge, the watch, the fences, F11, Alt+Enter, F12,
-  closing, Settings' App part pictured); the packed AppImage's own main and preload. Not seen: any real GPU, an
-  installer on Windows or a Mac, an update installed, a Discord sign-in in the window, and Exit to Desktop's hold
-  driven by the mouse in the app (its close is tested in parts). A read-only audit's findings were each measured
-  first and fixed, among them a question left unanswered that recorded working graphics as failed, a slow page load
-  counted as a failure of the graphics, the Mac app's signature broken by the fuses, and an AppImage that could have
-  updated as a Debian package; three of its claims were checked and did not hold (the PR says which). After a merge,
-  the owner says when to cut the first release (Actions, `desktop`, run on `main`); the site's links to the downloads
-  and signing keys are open questions.
+  reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
+  [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
+  `noshores.online/play/?room=live` in a sandboxed window; WebGPU on Direct3D 12 then 11 on Windows, Metal on a Mac,
+  Vulkan three ways on Linux, watched from the game's own adapter report. It opens on a launcher in the game's look
+  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's
+  "Patch notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play.
+  Updates through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases
+  by hand from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their
+  tests; the PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on
+  SwiftShader with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank
+  window, a Windows or Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on
+  Ubuntu 23.10 or later. After a merge: the owner says when to cut the first release; the site's links to the
+  downloads and signing keys are open questions; performance is to be measured on a real GPU with `?perf`, in Chrome
+  and in the app, before any switch for it (an uncapped frame rate was proposed, not built).
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and
