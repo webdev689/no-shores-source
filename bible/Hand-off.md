@@ -231,8 +231,8 @@ The decisions in [[Open Questions]] are not repeated here.
   kept on the owner's "Keep"; the hum the owner's pick from the sheet "Overlook City Sounds"
   (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound 824369 (an old-town alley in Stockholm, CC0, vhio),
   on R2 by the `freesound` run 45635457113 and in `sounds.json`, after seven searches (parks and ghost towns refused;
-  the owner's own words "distant city" found it beside "old town ambience -park -klankbeeld"). Waiting on the owner:
-  Then the owner's yes to merge, which deploys the page and the rooms. `main` (#202) merged
+  it came from "old town ambience -park -klankbeeld", searched beside the owner's own "distant city"). Waiting on the
+  owner: the yes to merge, which deploys the page and the rooms. `main` (#202) merged
   in. The full check passed in CI on f8dff2b4 (run 45526624102); the rules', wire's and page's tests, the new ones
   failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and
   after (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the
