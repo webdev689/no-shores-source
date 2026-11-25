@@ -104,7 +104,8 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
 ## Where it is served
 
 The Worker `noshores-site` serves the site and the game at `noshores.online`
-([[noshores.online Is Served From Cloudflare, and the Game Is Played There]]): static files alone, the site's pages at
+([[noshores.online Is Served From Cloudflare, and the Game Is Played There]]): static files, with a script for the
+desktop app's downloads alone (below), the site's pages at
 the root and the game's client, built with its base at `/play/`, under `/play/`. An address with no file gets the
 site's own "Page not found" (`site/lost/`, served as `404.html`) with a 404; files the builds name by a hash of their
 bytes are kept by the browser for a year (`site/_headers`). `www.noshores.online` is a Worker of its own,

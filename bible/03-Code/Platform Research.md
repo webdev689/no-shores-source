@@ -4,7 +4,7 @@ type: reference
 # Platform Research
 
 What the browsers and Cloudflare offer for the game's interface, its threads and its network, as researched on
-2026-11-20, and what Electron and Chromium offer the [[Desktop App]], as researched on 2026-11-25, with the sources each
+2026-11-20, and what Electron and Chromium offer the [[Desktop App]], with the sources each
 finding rests on. The decisions built on it: [[The Interface Uses No HTML, Now or Later]],
 [[Work Leaves the Main Thread Where It Can]], [[The Network Is Made Smaller and Readied for WebTransport]],
 [[The Desktop App as Claude Builds It]].
@@ -87,8 +87,8 @@ finding rests on. The decisions built on it: [[The Interface Uses No HTML, Now o
 Read in the Chromium of Electron 45 (156, branch `8078`) where a source file is named, and tried in Electron 45.3.0 in
 a Linux container with no GPU, Mesa's software Vulkan (llvmpipe) and SwiftShader, where a result is said to be measured.
 
-- **Electron.** 45 is the current stable major (Chromium 156, Node 24), supported with 44 and 43; a new major comes
-  every 8 weeks and three are supported. Since 45 a sandboxed preload loads only Electron's own modules; since 42 the
+- **Electron.** 45 runs Chromium 156 and Node 24; a new major comes every 8 weeks, and the newest three are
+  supported. Since 45 a sandboxed preload loads only Electron's own modules; since 42 the
   `electron` package downloads its binary on first run, not at install; since 38 an app opens as Wayland's own on a
   Wayland desktop. [Releases](https://releases.electronjs.org/),
   [timelines](https://www.electronjs.org/docs/latest/tutorial/electron-timelines),

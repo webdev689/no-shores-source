@@ -2,7 +2,7 @@
 // the desktop app's downloads, `/download/`, read from the game's R2 bucket under `desktop/`. There stand each
 // release's installers, named by their version and never changed, the update feeds (`latest*.yml`) the installed
 // copies read, and `latest.json`, which names the newest installer for each of the names that never move
-// (`/download/windows` and its kin), the site's links and a copy that cannot update itself go to.
+// (`/download/windows` and its kin), which a copy that cannot update itself, and later the site's links, go to.
 
 /** The bucket as the script reads it: the binding's `get` and `head`, typed as far as they are used. */
 export interface DownloadBucket {

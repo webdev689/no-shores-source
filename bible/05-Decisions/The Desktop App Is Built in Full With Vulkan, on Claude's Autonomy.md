@@ -16,8 +16,9 @@ status: in force
 
 - **The install version is built now**: the desktop app [[Browser and Desktop From the Start]] promised, on Electron,
   with proper Vulkan support, made the best it can be.
-- **DFO's desktop app is the reference** ([[Pick List - Network and Platform]], its `app/` and release rows, approved
-  by these words), and the bar is to do better than DFO did.
+- **DFO's desktop app is the reference**, and the bar is to do better than DFO did. Its `app/` and release rows in
+  [[Pick List - Network and Platform]] are marked approved as that reference, which the owner named and did not
+  list row by row; [[Pick - Desktop App]] says what is taken from them and what is left.
 - **Claude decides what the owner has not**, each call recorded in [[The Desktop App as Claude Builds It]] for the
   owner to change.
 - **It is extremely detailed, and not done until it is 100%.**

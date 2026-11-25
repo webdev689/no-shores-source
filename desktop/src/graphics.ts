@@ -45,8 +45,8 @@ export const BACKEND_SWITCHES: Readonly<Record<Backend, BackendSwitches>> = {
   },
 };
 
-/** The API each backend is, as the player chooses and reads it, and as the game's adapter names it (Chromium's
- *  developer features, which the app turns on, in any case). */
+/** The API each backend is, as the player chooses and reads it, and as the game's adapter names it (in whatever
+ *  letters: Chromium's developer features, which the app turns on, give the name). */
 export const API_OF: Readonly<Record<Backend, Exclude<GraphicsApi, 'auto'>>> = {
   'd3d12': 'd3d12',
   'd3d11': 'd3d11',

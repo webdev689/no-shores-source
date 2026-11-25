@@ -1082,8 +1082,8 @@ never while a press is held. Each press is an ask the room answers.
   Exit to Desktop, each held ("Hold to exit to the menu"), in the warn role; the account's mark shows Account, from
   Settings too. Exit to Menu loads the page at its title, the tap to start, keeping the rooms asked for in its
   address, the place, the story's start and any fragment taken off (`titleAddress`), and where nothing is taken off,
-  loads it again. Exit to Desktop closes the window where the browser lets a page close its own (the desktop app's,
-  [[Browser and Desktop From the Start]]), and where it does not (a browser's tab the player opened), Settings says,
+  loads it again. Exit to Desktop closes the window where the browser lets a page close its own (the
+  [[Desktop App]]'s), and where it does not (a browser's tab the player opened), Settings says,
   and reads aloud, to close the tab. Escape opens Settings wherever nothing else is over the game, on foot or at sea:
   not behind a veil, nor as the view goes down to the helm's map. While the credits show the footer says Back, and
   showing them or putting them away gives the focus to their way back or to their press, never an exit.

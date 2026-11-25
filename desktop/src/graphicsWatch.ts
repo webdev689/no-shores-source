@@ -1,9 +1,9 @@
 // The watch over one launch's graphics. The game says what adapter WebGPU gave it; a launch fails when it gave none,
 // gave one that draws on the CPU, drew with another API than the one launched, could not start its device, said
-// nothing within a minute of asking WebGPU for it, or lost the GPU's process in the launch's first minute. A failure is
-// kept by card, driver and Chromium, the player is told, and the app starts again on the next backend; with none left
-// it says what to do. A backend that may draw a blank window, which no check sees, has its player asked once the game
-// has drawn whether they see it, and the answer is kept for that card, driver and Chromium.
+// nothing within a minute of asking WebGPU for it, or lost the GPU (its process, or the device) in its first minute.
+// A failure is kept by card, driver and Chromium, the player is told, and the app starts again on the next backend;
+// with none left it says what to do. A backend that may draw a blank window, which no check sees, has its player asked
+// once the game has drawn whether they see it, and the answer is kept for that card, driver and Chromium.
 import type { GpuReport } from '../../client/src/desktop.ts';
 import type { GraphicsFailure, GraphicsSeen } from './config.ts';
 import type { Box } from './crashes.ts';

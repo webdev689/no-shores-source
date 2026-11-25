@@ -180,7 +180,7 @@ jobs:
           done
           status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://$ZONE/no-such-page/")
           test "$status" = 404 || { echo "::error::an address with no page answered $status, not 404"; exit 1; }
-          # The desktop app's downloads are the script's, which answers a feed not yet released in words, not the page.
+          # The desktop app's downloads are the script's: before a release it says in words that there is none, never the page.
           kind=$(curl -sS -o /dev/null -w '%{content_type}' --max-time 15 "https://$ZONE/download/latest.yml")
           case "$kind" in text/html*) echo "::error::/download/ answered the site's page, not the downloads"; exit 1 ;; esac
           # www's name is seconds old, and a resolver that asked too soon keeps "no such name" for the zone's 30 minutes,
