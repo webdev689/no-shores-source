@@ -67,6 +67,21 @@ jobs:
       id-token: write
     uses: ./.github/workflows/pages.yml
 
+  # Serves the website and the game at noshores.online from Cloudflare, on the page's terms: from main, once this same
+  # commit has passed the check and the rooms have deployed or had nothing to.
+  site:
+    needs: [check, rooms]
+    if: >-
+      !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes')
+    # A called workflow's jobs get at most what its caller grants: the site's deploy reads checks when run by hand.
+    permissions:
+      contents: read
+      checks: read
+    uses: ./.github/workflows/site.yml
+    secrets: inherit
+
   # Deploys the rooms from main, once this same commit has passed the check, when their code changed: the owner's yes
   # to a merge covers it. Reading the deployments tells it what was deployed last, and reading the checks whether a
   # commit run by hand passed.
@@ -78,4 +93,18 @@ jobs:
       deployments: read
       checks: read
     uses: ./.github/workflows/rooms.yml
+    secrets: inherit
+
+  # Deploys the Discord bot from main, once this same commit has passed the check, when its code changed: the owner's
+  # yes to a merge covers it. It waits on the rooms' workflow, which deploys the accounts its service binding names.
+  bot:
+    needs: [check, rooms]
+    if: >-
+      !cancelled() && needs.check.result == 'success' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      deployments: read
+      checks: read
+    uses: ./.github/workflows/bot.yml
     secrets: inherit

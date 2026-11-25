@@ -5,6 +5,7 @@ import { type ActivityRecord, activityOf } from './activityRecord.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
+import { FIND_ASKS, type FindState, findsOf } from './findMessages.ts';
 import { LORE_ASKS, type LoreState, loreOf } from './loreMessages.ts';
 import { PASSAGE_ASKS, type PassageGearState, passagesOf } from './passageMessages.ts';
 import { type GearShip, shipOf } from './shipMessages.ts';
@@ -102,6 +103,7 @@ export const ASKS = {
   takeAllLetters: 72,
   ...LORE_ASKS,
   ...PASSAGE_ASKS,
+  ...FIND_ASKS,
   /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
    *  seconds) before the page leaves for the sea. */
   toShip: 73,
@@ -195,8 +197,8 @@ export const AMMO_FULL = 720;
 export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2, chest: 3 } as const;
 
 /** A drop lying for the player: their number for it, a Vestige's rarity and slot, where it rests, what it is, where it
- *  was thrown from, the room's ticks it has still to fly, and a chest's tier (1 won, 2 won with the bonus, 3 heroic,
- *  4 heroic with the bonus; 0 for anything else). */
+ *  was thrown from, the room's ticks it has still to fly, a chest's tier (1 won, 2 won with the bonus, 3 heroic,
+ *  4 heroic with the bonus; 0 for anything else), and whether it was poured out of a chest. */
 export interface GearDrop {
   readonly id: number;
   readonly rarity: number;
@@ -206,6 +208,7 @@ export interface GearDrop {
   readonly from: readonly [number, number, number];
   readonly flying: number;
   readonly tier: number;
+  readonly poured: boolean;
 }
 
 /** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
@@ -219,7 +222,7 @@ export interface GearNode {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
-export interface GearState extends LoreState, PassageGearState<GearItem> {
+export interface GearState extends LoreState, PassageGearState<GearItem>, FindState {
   readonly xp: bigint;
   readonly level: number;
   readonly prestige: number;
@@ -293,7 +296,8 @@ export interface GearState extends LoreState, PassageGearState<GearItem> {
   readonly prologueDone?: boolean;
   /** Their day's and week's record, as kept with their character. */
   readonly activity?: ActivityRecord;
-  /** The day's six bounties on the board, in its order, and what a first tier's pays them when turned in. */
+  /** The day's bounties on the board: the town's six in its order, the pledged faction's three, then any other
+   *  faction's held today; and what a first tier's pays them when turned in, XP for any and Aurem for the town's. */
   readonly bounties?: readonly GearBounty[];
   readonly bountyXp?: number;
   readonly bountyAurem?: number;
@@ -314,6 +318,10 @@ export interface GearBounty {
   readonly name: string;
   /** Its tier, 1 to 3: it pays a first tier's pay, half again or twice that, rounded down. */
   readonly tier: number;
+  /** Its place on the board, which its take and turn-in ask by: the town's 0 to 5, then each faction's three. */
+  readonly place: number;
+  /** The faction that posts it, by its number, paying its reputation for the town's Aurem; 0 the town's. */
+  readonly faction: number;
 }
 
 export type { ActivityRecord } from './activityRecord.ts';
@@ -423,6 +431,7 @@ export function gearOf(gear: Gear): GearState {
       from: [fromX, fromY, fromZ] as const,
       flying: drop.flying(),
       tier: drop.tier(),
+      poured: drop.poured(),
     };
   });
   return {
@@ -486,19 +495,22 @@ export function gearOf(gear: Gear): GearState {
     dungeons: Array.from(gear.dungeonsArray() ?? []),
     prologueDone: gear.prologueDone(),
     activity: activityOf(gear),
-    bounties: Array.from({ length: gear.bountiesLength() }, (unusedBounty, place) => {
-      const bounty = gear.bounties(place);
+    bounties: Array.from({ length: gear.bountiesLength() }, (unusedBounty, index) => {
+      const bounty = gear.bounties(index);
       const words = bounty?.words() ?? '';
       const [target, count] = [bounty?.target() ?? 0, bounty?.count() ?? 0];
       const [held, paid] = [bounty?.held() ?? false, bounty?.paid() ?? false];
       const [pool, name, tier] = [bounty?.pool() ?? 0, bounty?.name() ?? '', bounty?.tier() || 1];
-      return { words, target, count, held, paid, pool, name, tier };
+      // A field a room leaves out reads 0, so a place of 0 falls back to its index, where the town's first stands.
+      const [place, faction] = [bounty?.place() || index, bounty?.faction() ?? 0];
+      return { words, target, count, held, paid, pool, name, tier, place, faction };
     }),
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
     ...loreOf(gear),
     ...passagesOf(gear, itemOf),
+    ...findsOf(gear),
   };
 }
 

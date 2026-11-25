@@ -7,8 +7,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Done
 
-All of this is on `main`; a merge deploys the page and the rooms ([[The Rooms Deploy When Their Code Changes]]). How
-each part works is in its system note.
+All of this is on `main`; a merge deploys the page, the site, the rooms and the bot
+([[The Rooms Deploy When Their Code Changes]], [[The Discord Bot Deploys on Each Merge]]). How each part works is in
+its system note.
 
 - **The scaffold**: the client on WebGPU, the Rust repo checks, CI, this vault, the [[Pick List]] and [[Decisions]];
   the [[Toolkit]]; the [[World Map]], all nine continents drawn by the owner, and the [[World Editor]] on GitHub Pages.
@@ -167,6 +168,28 @@ each part works is in its system note.
   pictured live (see Next); the shore's plain clothes (its key beat does not advance headless; tested); anything on a
   real GPU or played by hand. Known and left: the tour's keepers read small behind their counters (each stall is
   framed whole); a rollback past this round loses a new character's welcome (Gear).
+- **The website at noshores.online and the Discord bot** (#194, merged on the owner's "Yes";
+  [[The Website Is at noshores.online, After DFO's]], [[DFO's Discord Bot Comes Over, Its Panel on the Website]],
+  [[noshores.online Is Served From Cloudflare, and the Game Is Played There]], [[The Discord Bot Deploys on Each Merge]],
+  [[The Panel's Sign-in Asks for a Person's Servers]], [[The Website's Words and the Bot's Month Are Approved]]).
+  - The [[Website]]: Home, The World, The Game, the panel and a 404, telling a newcomer plainly what the game is, every
+    line matched to a decision or to what is built (a read-only audit checked each claim against these notes); every
+    picture drawn by code to DFO's detail, Overlook's court and a duel and a dungeon's gate among them; share cards; the
+    Discord invite that never expires (`RdDURveYus`, tested live). Served by `site.yml` from Cloudflare: the site at
+    `noshores.online`, the game under `/play/`, `www` redirected, hashed files cached a year. `noshores.online`'s
+    nameservers are Cloudflare's (tested live).
+  - The [[Discord Bot]] (`server/bot/`): the core and all 19 modules, deployed by `bot.yml` on each merge when its code
+    changed, writing its slash commands to Discord; the panel's sign-in lists only the servers a person is in. Five
+    read-only audits (the bot's core and security, its modules, the deploys, the notes and tests, the site) and a final
+    review of the merged fixes: every finding fixed with a test that failed first, or recorded as a limit in its note;
+    the two high ones were auto-mod's link allow-list bypassed by `?` or `#` in a host, and a temporary ban's expiry
+    lifting a later ban made by hand.
+  - The deploys: the accounts keep their own deploy record, so a failed accounts deploy is tried again; one tested
+    script decides the rooms', the accounts' and the bot's deploys.
+  Tested offline at the head: 638 server and site tests, lint, types, format and `cargo xtask repo`; both Workers'
+  `wrangler deploy --dry-run`; the site served by `wrangler dev` (404, redirects, caching); `cargo xtask check` in CI
+  on the PR's head. `server/outpostReload.test.ts`'s three tests misreported once in a full parallel run and passed
+  alone and on the next run. Its first deploy's live checks are under Next.
 - **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
   device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
   space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
@@ -192,6 +215,62 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **An extreme performance pass, quality unchanged** (#203, merged on the owner's "merge and deploy", which deploys
+  the page and the rooms), on the owner's "do an extreme performance pass while not reducing quality". Measured first:
+  the page headless with the new performance probe ([[Toolkit]]), the rooms natively. The page: each frame's culls and
+  draw lists, the interface, figures' terms, marks and a ship's canvas laid into kept lists (the hub's and a patrol's
+  garbage cut some 60 to 80%, a patrol's mean frame halved, headless with no GPU); the plants' list a slice a frame
+  (its worst frame 52 to 14 ms in Node, [[Nature]]); textures' views and bind groups kept; shaders branching past work
+  multiplied by zero, foam's lace only in quads that show it, the city drawn before the ground it covers ([[Game]]).
+  The rooms: a place's navmesh baked a slice a tick, not in one tick of 130 to 390 ms (some 45 ticks, each 15 to 19 ms
+  at most natively, [[Navmesh]]), the watershed and the ear-clip touching only what can change, and the land's course
+  search passing far segments by, every mesh of the first landmass's 77 squares the same to the bit before and after;
+  the rooms' load measurements running again. Tests that read a stand in the tick a player came near now wait for the
+  mesh; the patrol site's agreement fingerprint is `4e39f0f0`, native and WebAssembly agreeing. Tested offline: `cargo
+  xtask check` on e3ea41eb, with main merged in; the sea's foam pictured headless. Not timed on a real GPU, nor the
+  rooms' slices in WebAssembly; not played.
+- **The inspect panel after Destiny 1's weapon page** (#202, merged on the owner's "merge and deploy", which deploys
+  the page and the rooms). Built on the owner's "take some autonomy" from
+  [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]; Claude's calls in
+  [[The Inspect Panel as Claude Shapes It]]. Fight numbers from the room's own rules (`room::stats` through the room's
+  WebAssembly) as Destiny's stat bars on every item's page and card, a node hovered previewing its change in green and
+  red, a node's card with its costs as have over need, square nodes and a square growth band, the art large, Compare
+  (its press or C) and every card set beside the piece worn, Inspect beside the player's own ([[Interface]], [[Gear]],
+  "Stats"). Five read-only audits (the rules, the page, the design, the bible, the tests) and each finding tested
+  before its fix: the fire rate a tick fast per reload, Impact without a player's ×1.5, a finish's drawn trims unseen,
+  a module's card set against the worn sword, locked nodes' cards never reachable, italic breaking the face's letters,
+  among them. The owner's next asks are in too: hints as plain verbs ("Hold, Buy", "Click, Choose", and a held
+  consumable's "Hold, Use"), no "frees a hand" line, Impact named Damage
+  ([[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]); a Fruit of Dagon no longer fed from an item's
+  page but held from the inventory's Consumables, growing every piece worn 5,000 XP each, the owner's two answers
+  ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]; the wire's Feed ask now carries no item).
+  Main (#196, the chests; then #194, the website) merged in. Then the owner's two answers
+  ([[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]): [[Plain Text]]'s
+  example is the square now, and a hover card's perk is its icon and a short line, Claude's line for each of the 139
+  perks (`short`, and `short_takes` for a cost, in `content/gear/traits.json`) waiting on the owner's check. Tested
+  offline: the full `cargo xtask check` on f0240671 (the short lines, before #194 merged in), and CI on the PR's head;
+  pictures rendered headless at 1280 by 720, 1600 by 900 and 1920 by 1080; not played by hand or on a real GPU.
+
+- **The Discord application's settings, after #194's first deploy** ([[Discord Bot]], "One Discord application"):
+  its interactions endpoint set to the bot's `/v1/discord/interactions`, its two redirects, and the bot invited to
+  the server with its permissions. The words still Claude's: the auto-mod rules' prefix `No Shores: ` and "The bot"
+  on the bot's own cases. The Porkbun key posted in an earlier chat should be rotated; it was never stored or used.
+- **The bounty board after the Bounty Tracker, and faction bounties** (#196, merged), on the
+  owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
+  ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
+  [[The Bounty Board as Claude Shapes It]]). Each faction posts three of its own four bounties a day, taken only by
+  those pledged to it, counting only with its cape worn, paying XP and its reputation (2,500, 3,750, 5,000 by tier),
+  kept in the day's record under keys of their own so a rollback of the rooms keeps them; the wire carries each
+  bounty's place and faction, so the merge deploys the page and the rooms together. The board is laid as a keeper's
+  screen, the board drawn where a keeper stands; every town bounty wears one writ, every faction's its emblem, 52 px
+  tiles (were 80), the card floating beside the tile pointed at, the refresh under the tiles; the Journal's column
+  takes the same. Then, on the owner's "Do a comprehensive audit on this", main (#179's guilds, #191) merged in and
+  five read-only audits, every finding measured first and fixed (the PR lists them). Tested offline: the full check
+  on the PR's head (the commit named there), the rules', wire's, room's and page's tests, pictures through the real
+  renderer at five sizes. Not yet: the board in the live game (the picture driver reaches no local room and the
+  offline page keeps no gear), a real GPU, a hand. Known: no card shows by touch, as none in the menu does. For the
+  owner ([[Open Questions]]): the faction bounties' design, one icon for every faction's bounties or each faction's
+  emblem as built, and whether a card gains a line of tale.
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
@@ -232,8 +311,6 @@ The decisions in [[Open Questions]] are not repeated here.
   answers it; the accounts keep every errand's answer for good, one row an errand; the guild boss is lost if everyone
   leaves its room before it falls; a member can push older ledger lines out with many small deposits, each line naming
   who moved it; the banner cloth takes no sky light, so it reads pale at night.
-- **The Discord bot**: porting DFO Online's unmerged bot work (#1662 to #1680 there, reverted by #1682) and redesigning
-  it around No Shores, which the owner raised and set aside: "Lets come back to this later."
 - **Every objective has a waypoint on the compass, on land and at sea**, for the owner's yes to merge, on the owner's
   "for any and all objectives we need to utilize waypoints utilizing our compass with land and sea, I dont want players
   to feel lost" and their four answers ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]; Claude's
@@ -292,6 +369,30 @@ The decisions in [[Open Questions]] are not repeated here.
     renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
     180,000 tufts on open grass), and so is the boxing's in WebAssembly.
 
+- **Patrol chests, the same chests in every dungeon, and searchable containers** (#192, merged on the owner's "Merge
+  and deploy", which deploys the page and the rooms). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
+  autonomy", every call in [[Chests and Searchable Containers as Claude Builds Them]] after Destiny 1's loot chests. A
+  patrol's layout marks 12 to 24 chest places tucked against something tall (`layout::chests`); its room stands one
+  chest for every five, two to four, each moving to another place every 5 minutes, staggered; every dungeon (a
+  patrol's, an Elite Dungeon's at every tier, the playlists', a sea island's) stands one a block against a room's
+  wall, drawn again as its garrison stands again; one container in six (a dungeon's one in four) is searchable, 16
+  at most, none a body cannot stand beside. E held 1 s opens a chest, 1.5 s searches; each player opens each once,
+  kept for their account. A chest pays 30 Aurem at level 5, 2 to 4 of the island's resource and a Vestige one time in
+  four; a search 8 Aurem, the resource one time in two and a Vestige one time in twenty; no XP. Then the owner's
+  second word ([[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]): every chest
+  (the finds, the cache, the events' plain and heroic) is the owner's chest from DFO, its 50 points ported and built
+  in code (`models/chest.ts`, [[Pick - Chest]]), the Blender event chests gone; a chest's Vestige (a find's, the
+  cache's, an event chest its player opens) is poured out of it as its lid opens, as project-final's cache pours; Aurem
+  and materials still go straight to the player, and a search pours nothing. A patrol's chest looks the way its place
+  faces, and a page playing alone draws the drops lying for the player. The page draws a mark over each chest and searchable container, the feed's
+  "Chest" or "Searched the wardrobe", and plays alone as online. A read-only audit's
+  findings were each tested first and fixed. Tested offline: `cargo xtask check` on its head (the commit named in the
+  pull request); in the running game headless with no GPU, a chest opened (21 Aurem, 4 Brineglass) and a crate
+  searched (5 Aurem, 1 Brineglass) by holding E; pictured through the renderer (sent to the owner with the session's
+  report, not in git). Not yet: played by hand, a real GPU, a deployed room, the feed's lines in a live room. For the
+  owner: the bake may now read the dungeon crate's families (`crates.rs`'s list for `bake` gains `dungeon`); the
+  chest's source in DFO is named `Low_Poly_Chest_Mimic.fbx`, recorded there as the owner's supplied model; and the
+  `modules` workflow bakes on this branch with the four Blender chests taken out of the manifest by hand.
 - **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
   the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
   [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
@@ -427,8 +528,9 @@ The decisions in [[Open Questions]] are not repeated here.
   sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the owner: whether
   sections may overlap (0.3 m new on continent 2, greystone-tors and hollow-crypt; 4.2 m before, highwater-fells and
   wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first stand bakes its
-  navmesh in one tick (130 to 270 ms natively); room memory with every site stood unmeasured; a cavern over 4 m below
-  the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids either way.
+  navmesh a slice a tick (15 to 19 ms at most natively, #203); room memory with every site stood unmeasured; a
+  cavern over 4 m below the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids
+  either way.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
@@ -696,6 +798,11 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **#194's first deploy, live** (unchecked until a hand-off says it was seen): `noshores.online`'s pages, the game at
+  `/play/`, `www` redirected, an unknown address answered by the 404 page; the bot's `/health` naming the merged
+  commit, and its slash commands listed in Discord.
+- **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
+  attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
   square to the world stack up a lean; boxing a city takes 0.03 to 0.5 s natively where it took a millisecond, and
   WebAssembly's cost (the land worker boxes a node's city on entry) is unmeasured. The meadow's cost on a real GPU,
@@ -771,8 +878,16 @@ The decisions in [[Open Questions]] are not repeated here.
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
   draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
-- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
-  140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
+- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake's slices in
+  WebAssembly (15 to 19 ms at most natively, some 45 ticks a place); playing alone walks no road, as it keeps no gear.
+- **After the performance pass** (#203): a node's room opens in 0.7 to 0.9 s natively on the roads' nodes, about 95%
+  of it navmesh bakes (the node's own square 370 to 510 ms), half of each bake reading the land's height and a quarter
+  stepping bodies over links. Baking a node's meshes with `npm run bake` would open a room at once but ship larger node
+  files: the owner's call, not asked yet. The bake's whole-field slices (the open floor, the regions, the polys, some
+  15 ms each natively) could be cut finer. The GPU audit's other ideas wait on a real GPU's timing; indexing the
+  city's quads was left, as it breaks their culling a quad at a time, and so was culling hulls on the CPU. A 10 s
+  window at the hub 30 s after loading still allocated some 400 MB over many sites, while the hub streamed in: measure
+  later after loading before taking it on.
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
   `server/garrison.test.ts`): its 13 foes stand all 1500 ticks, so nothing after a fall (drops, a group's break,
   fallback and last stand, waves) is checked natively against WebAssembly. Next: a scripted player that turns to its
@@ -843,8 +958,8 @@ The decisions in [[Open Questions]] are not repeated here.
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
     a rebound Details or Character. The clash finder sees neither.
   - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`).
-  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
-    scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
+  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), an island
+    room's hauls are kept and never told, and `RoomHost`
     (`server/worker.ts`) has no test.
   - Workflows (#180 adds `content/forged` to `ROOMS_CODE`, which the bake reads); the wreck's and the ships' workflows
     miss inputs they import (`tools/ships`, `shipPictures.ts`); a failed accounts deploy still lets the rooms record

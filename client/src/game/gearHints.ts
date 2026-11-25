@@ -1,9 +1,10 @@
-// What the menu's footer says each view's presses and keys do, an item's page's, and each inventory shelf's cells'.
+// What the menu's footer says each view's presses and keys do and each inventory shelf's cells', and what an item's
+// page says over its node grid.
 import { DISMANTLE_KEY } from './gearHold.ts';
 import type { Hint } from './gearNodes.ts';
 import type { View } from './gearScreen.ts';
 
-/** What the footer says each view's presses and keys do, and an item's page's. */
+/** What the footer says each view's presses and keys do, and what an item's page says over its node grid. */
 export const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   // A worn piece is not dismantled; a carried one's card in the flyout says how.
   character: [
@@ -21,12 +22,16 @@ export const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = 
   ],
   harbourmaster: [['Hold', 'Buy']],
   ship: [['Click', 'Open a module or an officer']],
-  board: [['Click / E', 'Take or turn in']],
+  board: [
+    ['Click / E', 'Take or turn in'],
+    ['character', 'Open Character'],
+    ['Esc', 'Dismiss'],
+  ],
   mail: [['Click / E', 'Take']],
   journal: [['T', 'Timers']],
   item: [
-    ['Hold', 'Buy a node'],
-    ['Click', 'Choose one bought'],
+    ['Hold', 'Buy'],
+    ['Click', 'Choose'],
   ],
 };
 /** What the inventory's shelves' cells show. */

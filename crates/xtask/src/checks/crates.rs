@@ -76,10 +76,11 @@ pub const CRATES: &[CrateRule] = &[
         outside: &["serde", "serde_json"],
         door: true,
     },
-    // A tool run at build time: it bakes what the rooms read, so it may use the rules that make the land.
+    // A tool run at build time: it bakes what the rooms read, so it may use the rules that make the land, and the
+    // dungeons' families of props, which say which of a patrol's props hold things.
     CrateRule {
         name: "bake",
-        workspace: &["city", "land", "layout", "world"],
+        workspace: &["city", "dungeon", "land", "layout", "world"],
         outside: &["serde", "serde_json"],
         door: false,
     },

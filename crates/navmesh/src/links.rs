@@ -97,30 +97,59 @@ fn floor_at(blocks: &Blocks, floor: &dyn Terrain, x: f64, y: f64) -> f64 {
 }
 
 /// Every link the rules allow over a course's blocks, block by block, each side north to west, along it from its low
-/// end: up it, then down off it. Ramps are not blocks the rules know, so no link is tried over one.
-pub(crate) fn bake(colliders: &[Collider], floor: &dyn Terrain) -> Vec<Link> {
-    // Each try steps a body through the grid, which answers every rule as the plain list would, to the bit.
-    let blocks = Blocks::new(
-        colliders
-            .iter()
-            .filter_map(|collider| if let Collider::Block(block) = collider { Some(*block) } else { None })
-            .collect(),
-    );
-    let mut links = Vec::new();
-    for block in blocks.iter() {
-        for side in sides(block) {
-            for along in side.stops() {
-                links.extend(up(&blocks, floor, block, &side, along));
-                links.extend(down(&blocks, floor, block, &side, along));
-            }
-        }
+/// end: up it, then down off it. Ramps are not blocks the rules know, so no link is tried over one. Tried a few
+/// stops at a step, so a bake may be spread over a room's ticks (`Baking`).
+#[derive(Debug)]
+pub(crate) struct Linking {
+    blocks: Blocks,
+    /// Where each link is tried, in turn: its block, the side, and how far along it.
+    stops: Vec<(usize, usize, f64)>,
+    next: usize,
+    links: Vec<Link>,
+}
+
+impl Linking {
+    pub(crate) fn new(colliders: &[Collider]) -> Self {
+        // Each try steps a body through the grid, which answers every rule as the plain list would, to the bit.
+        let blocks = Blocks::new(
+            colliders
+                .iter()
+                .filter_map(|collider| if let Collider::Block(block) = collider { Some(*block) } else { None })
+                .collect(),
+        );
+        let stops = (blocks.iter().enumerate())
+            .flat_map(|(at, block)| {
+                let sides = sides(block).into_iter().enumerate();
+                sides.flat_map(move |(side, it)| it.stops().map(move |along| (at, side, along)).collect::<Vec<_>>())
+            })
+            .collect();
+        Self { blocks, stops, next: 0, links: Vec::new() }
     }
-    links
+
+    /// Tries the links of more stops over `floor`, until their tries have stepped a body `ticks` ticks in all (one
+    /// stop at least); answers whether every stop's are tried.
+    pub(crate) fn step(&mut self, floor: &dyn Terrain, ticks: u32) -> bool {
+        let Self { blocks, stops, next, links } = self;
+        let mut stepped = 0;
+        while let Some(&(at, side, along)) = stops.get(*next).filter(|_| stepped < ticks) {
+            let block = &blocks[at];
+            let side = &sides(block)[side];
+            links.extend(up(blocks, floor, block, side, along, &mut stepped));
+            links.extend(down(blocks, floor, block, side, along, &mut stepped));
+            *next += 1;
+        }
+        *next == stops.len()
+    }
+
+    /// The links laid.
+    pub(crate) fn links(self) -> Vec<Link> {
+        self.links
+    }
 }
 
 /// Up a side from the floor beside it: going over with a jump, or climbing with none, whichever the rules carry a
 /// body across sooner; tried from where a walker reaching the start stands nearest the side and farthest from it.
-fn up(blocks: &Blocks, floor: &dyn Terrain, block: &Block, side: &Side, along: f64) -> Option<Link> {
+fn up(blocks: &Blocks, floor: &dyn Terrain, block: &Block, side: &Side, along: f64, stepped: &mut u32) -> Option<Link> {
     let (x, y) = side.at(along, TUNING.radius + TOUCH_GAP);
     let z = floor_at(blocks, floor, x, y);
     if block.top - z <= TUNING.step {
@@ -140,9 +169,9 @@ fn up(blocks: &Blocks, floor: &dyn Terrain, block: &Block, side: &Side, along: f
     [true, false]
         .into_iter()
         .filter_map(|jump| {
-            let (to, ticks) =
-                crossed(blocks, floor, [x, y, z], into, jump, budget).filter(|(to, _)| over([x, y, z], *to))?;
-            crossed(blocks, floor, back, into, jump, budget).filter(|(end, _)| over(back, *end))?;
+            let (to, ticks) = crossed(blocks, floor, [x, y, z], (into, jump), budget, stepped)
+                .filter(|(to, _)| over([x, y, z], *to))?;
+            crossed(blocks, floor, back, (into, jump), budget, stepped).filter(|(end, _)| over(back, *end))?;
             Some(made([x, y, z], to, into, jump, ticks))
         })
         .min_by(|one, other| one.cost.total_cmp(&other.cost))
@@ -150,7 +179,14 @@ fn up(blocks: &Blocks, floor: &dyn Terrain, block: &Block, side: &Side, along: f
 
 /// Off the block's edge onto a floor more than a step lower, walked off from just inside it and from a run's tick
 /// farther in.
-fn down(blocks: &Blocks, floor: &dyn Terrain, block: &Block, side: &Side, along: f64) -> Option<Link> {
+fn down(
+    blocks: &Blocks,
+    floor: &dyn Terrain,
+    block: &Block,
+    side: &Side,
+    along: f64,
+    stepped: &mut u32,
+) -> Option<Link> {
     let (x, y) = side.at(along, -EDGE_IN);
     let (below_x, below_y) = side.at(along, TUNING.radius + TOUCH_GAP);
     // A taller block over the edge stands in the way; one beside it no more than a step down is walked onto.
@@ -161,9 +197,11 @@ fn down(blocks: &Blocks, floor: &dyn Terrain, block: &Block, side: &Side, along:
     }
     let budget = budget(block.top - floor_at(blocks, floor, below_x, below_y));
     let fell = |end: [f64; 3]| end[2] < block.top - TUNING.step;
-    let (to, ticks) = crossed(blocks, floor, [x, y, block.top], side.out, false, budget).filter(|(to, _)| fell(*to))?;
+    let start = [x, y, block.top];
+    let (to, ticks) = crossed(blocks, floor, start, (side.out, false), budget, stepped).filter(|(to, _)| fell(*to))?;
     let (back_x, back_y) = side.at(along, -EDGE_IN - LINK_REACH);
-    crossed(blocks, floor, [back_x, back_y, block.top], side.out, false, budget).filter(|(end, _)| fell(*end))?;
+    let back = [back_x, back_y, block.top];
+    crossed(blocks, floor, back, (side.out, false), budget, stepped).filter(|(end, _)| fell(*end))?;
     Some(made([x, y, block.top], to, side.out, false, ticks))
 }
 
@@ -179,14 +217,15 @@ fn budget(rise: f64) -> u32 {
 
 /// A body standing at `start` facing along `way`, stepped by the rules with a walker's controls across: walking on
 /// along it, and pressing jump while it stands, if `jump`, until it leaves its feet. Answers where it stands once back
-/// on them and steady, and the ticks that took; none within the budget.
+/// on them and steady, and the ticks that took; none within the budget. Every tick the body is stepped counts in
+/// `stepped`.
 fn crossed(
     blocks: &Blocks,
     floor: &dyn Terrain,
     start: [f64; 3],
-    way: [f64; 2],
-    jump: bool,
+    (way, jump): ([f64; 2], bool),
     budget: u32,
+    stepped: &mut u32,
 ) -> Option<([f64; 3], u32)> {
     let yaw = bearing_of(way);
     let mut body = Body { z: start[2], facing: yaw, ..standing(start[0], start[1]) };
@@ -197,9 +236,11 @@ fn crossed(
         if body.mode != Mode::Ground {
             left = true;
         } else if left {
+            *stepped += tick + STEADY_TICKS;
             return steady(blocks, floor, &body, yaw).then_some(([body.x, body.y, body.z], tick));
         }
     }
+    *stepped += budget;
     None
 }
 

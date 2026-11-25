@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { wideTexels } from './waterCommon.ts';
+import { wideTexels } from './wideTexels.ts';
 
 test("the 1 km land's texels hold each cell's height, coast distance and carried height, row by row", () => {
   // A window 3 cells wide and 2 high; the texels of its east two columns.

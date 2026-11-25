@@ -164,7 +164,7 @@ export const sampleGearState = (): GearState =>
       { id: 1, rarity: 1, slot: 0, level: 10, vaulted: false, source: 0 },
       { id: 2, rarity: 3, slot: 2, level: 12, vaulted: true, source: 0 },
     ],
-    drops: [{ id: 1, rarity: 0, slot: 0, at: [0, 0, 0], kind: 0, from: [0, 0, 0], flying: 0, tier: 0 }],
+    drops: [{ id: 1, rarity: 0, slot: 0, at: [0, 0, 0], kind: 0, from: [0, 0, 0], flying: 0, tier: 0, poured: false }],
     ammo: 18,
     ammoMost: 24,
     crates: 2,

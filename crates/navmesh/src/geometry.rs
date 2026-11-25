@@ -75,30 +75,58 @@ fn diagonal(poly: &[Point], i: usize, j: usize) -> bool {
     in_cone(poly, i, j) && in_cone(poly, j, i) && crosses_no_edge(poly, i, j)
 }
 
-/// Ear-clips a counter-clockwise simple polygon into triangles, the shortest diagonal first.
+/// Whether the diagonal from corner `i` to the corner two on cuts an ear, and if so its squared length.
+fn ear(poly: &[Point], i: usize) -> Option<f64> {
+    let j = (i + 2) % poly.len();
+    let (a, b) = (poly[i], poly[j]);
+    diagonal(poly, i, j).then_some((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
+}
+
+/// Ear-clips a counter-clockwise simple polygon into triangles, the shortest diagonal first. Each corner's ear is kept
+/// between clips and tried again only where a clip can change it: the four corners whose diagonal ends or turns at the
+/// clip's two ends, and any whose diagonal's box meets the clipped triangle's, the only place an edge came or went.
 pub(crate) fn triangulate(points: &[Point]) -> Vec<[Point; 3]> {
     let mut poly = points.to_vec();
     let mut triangles = Vec::new();
+    let mut ears: Vec<Option<f64>> =
+        if poly.len() > 3 { (0..poly.len()).map(|i| ear(&poly, i)).collect() } else { Vec::new() };
     while poly.len() > 3 {
         let n = poly.len();
         let mut best = None;
         let mut best_length = f64::INFINITY;
-        for i in 0..n {
-            let (a, b) = (poly[i], poly[(i + 2) % n]);
-            if diagonal(&poly, i, (i + 2) % n) {
-                let length = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
-                if length < best_length {
-                    best_length = length;
-                    best = Some(i);
-                }
+        for (i, length) in ears.iter().enumerate() {
+            if let Some(length) = *length
+                && length < best_length
+            {
+                best_length = length;
+                best = Some(i);
             }
         }
         // A degenerate polygon has no proper diagonal: clip its first convex corner.
         let best = best.or_else(|| (0..n).find(|&i| left(poly[i], poly[(i + 1) % n], poly[(i + 2) % n])));
         let Some(best) = best else { break };
         let middle = (best + 1) % n;
-        triangles.push([poly[best], poly[middle], poly[(best + 2) % n]]);
+        let clipped = [poly[best], poly[middle], poly[(best + 2) % n]];
+        triangles.push(clipped);
         poly.remove(middle);
+        ears.remove(middle);
+        let n = n - 1;
+        if n <= 3 {
+            continue;
+        }
+        let start = if middle == 0 { n - 1 } else { best };
+        let [one, two, three] = clipped;
+        let (low_x, high_x) = (one.x.min(two.x).min(three.x), one.x.max(two.x).max(three.x));
+        let (low_y, high_y) = (one.y.min(two.y).min(three.y), one.y.max(two.y).max(three.y));
+        for i in 0..n {
+            let (a, b) = (poly[i], poly[(i + 2) % n]);
+            let beside = (i + n - start) % n >= n - 2 || (i + n - start) % n <= 1;
+            let meets =
+                a.x.min(b.x) <= high_x && a.x.max(b.x) >= low_x && a.y.min(b.y) <= high_y && a.y.max(b.y) >= low_y;
+            if beside || meets {
+                ears[i] = ear(&poly, i);
+            }
+        }
     }
     if poly.len() == 3 {
         triangles.push([poly[0], poly[1], poly[2]]);

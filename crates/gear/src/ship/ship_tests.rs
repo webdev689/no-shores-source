@@ -111,7 +111,8 @@ fn a_module_dismantled_gives_back_its_own_material_and_no_fruit_feeds_one() {
     let mut character = Character::starting();
     let hull = carry(&mut character, Kind::Hull, Rarity::Atheric, 20);
     character.materials.fruit = 1;
-    assert_eq!(character.ask(Ask::Feed { item: hull }, Here::default(), &dice(0)), Err(Refusal::DoesNotFit));
+    let _ = character.ask(Ask::Feed, Here::default(), &dice(0));
+    assert_eq!(character.item(hull).map(|item| item.xp), Some(0), "a Fruit grows no module");
     character.ask(Ask::Dismantle { item: hull }, Here::default(), &dice(0)).expect("dismantled");
     assert_eq!(character.materials.ship.timber, 10);
     assert_eq!(character.materials.ship.heartwood, 3, "an Atheric's Essence, as Heartwood");

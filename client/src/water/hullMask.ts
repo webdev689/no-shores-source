@@ -69,13 +69,13 @@ export function hullEdge(
 }
 
 /** How much of a point is inside its hull line (1 within, 0 past it, eased over a pixel's footprint). Mirrors WGSL
- *  hull_inside. */
+ *  hull_cover's inside. */
 export function hullInside(mask: HullMask, point: readonly [number, number], footprint: number): number {
   return 1 - smoothstep(-footprint, 0, hullEdge(mask, point).outside);
 }
 
 /** The foam along its sides at a point: a band outside its hull line, widening with its drawn size, whole at its full
- *  way and most at its bow. Mirrors WGSL hull_foam. */
+ *  way and most at its bow. Mirrors WGSL hull_cover's foam. */
 export function hullFoam(mask: HullMask, point: readonly [number, number]): number {
   const { along, outside } = hullEdge(mask, point);
   const width = HULL_FOAM_M * (mask.scale ?? 1);
@@ -131,31 +131,29 @@ fn hull_edge(index: u32, offset: vec2f) -> vec3f {
   return vec3f(along, across, max(beside, abs(along) - size.x));
 }
 
-// How much of a point is inside a ship's hull line: its waterline holds no water (hullInside).
-fn hull_inside(offset: vec2f, footprint: f32) -> f32 {
+// How much of a point is inside a ship's hull line, its waterline holding no water (hullInside), and the foam along
+// its sides there, most at its bow (hullFoam): one walk over the ships, each one's edge measured once for both.
+fn hull_cover(offset: vec2f, footprint: f32) -> vec2f {
   var inside = 0.0;
-  for (var index = 0u; index < HULLS; index++) {
-    let size = frame.hulls[index * HULL_VECTORS + 1u];
-    if (size.w < 0.5) { break; }
-    if (length(offset - frame.hulls[index * HULL_VECTORS].xy) > size.x + size.y + footprint) { continue; }
-    inside = max(inside, 1.0 - smoothstep(-footprint, 0.0, hull_edge(index, offset).z));
-  }
-  return inside;
-}
-
-// The foam along its sides, most at its bow (hullFoam).
-fn hull_foam(offset: vec2f) -> f32 {
   var foam = 0.0;
   for (var index = 0u; index < HULLS; index++) {
     let size = frame.hulls[index * HULL_VECTORS + 1u];
     if (size.w < 0.5) { break; }
+    let apart = length(offset - frame.hulls[index * HULL_VECTORS].xy);
     let width = ${HULL_FOAM_M} * frame.hulls[index * HULL_VECTORS + 2u].x;
-    if (size.z <= 0.0 || length(offset - frame.hulls[index * HULL_VECTORS].xy) > size.x + size.y + width) { continue; }
+    let holds = !(apart > size.x + size.y + footprint);
+    let foams = !(size.z <= 0.0 || apart > size.x + size.y + width);
+    if (!holds && !foams) { continue; }
     let edge = hull_edge(index, offset);
-    let band = smoothstep(-0.05, 0.0, edge.z) * (1.0 - smoothstep(0.0, width, edge.z));
-    let ahead = clamp(edge.x / (size.x / ${HULL_FIT}) / 2.0 + 0.5, 0.0, 1.0);
-    foam = max(foam, band * (0.25 + 0.75 * ahead * ahead) * min(1.0, size.z / ${HULL_FOAM_WAY.toFixed(1)}));
+    if (holds) {
+      inside = max(inside, 1.0 - smoothstep(-footprint, 0.0, edge.z));
+    }
+    if (foams) {
+      let band = smoothstep(-0.05, 0.0, edge.z) * (1.0 - smoothstep(0.0, width, edge.z));
+      let ahead = clamp(edge.x / (size.x / ${HULL_FIT}) / 2.0 + 0.5, 0.0, 1.0);
+      foam = max(foam, band * (0.25 + 0.75 * ahead * ahead) * min(1.0, size.z / ${HULL_FOAM_WAY.toFixed(1)}));
+    }
   }
-  return foam;
+  return vec2f(inside, foam);
 }
 `;

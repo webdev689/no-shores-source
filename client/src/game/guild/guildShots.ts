@@ -161,7 +161,13 @@ export const foundShot = tabShot(null);
 export function editorShot(ui: Interface): Node {
   const editor = new BannerEditor(BANNER, FACE.name);
   const holds = new Holds(() => 0);
-  const context = { ui, room: { width: 1180, height: 520 }, sizes: sizesOf(1280, 720, 1), holds };
+  const context = {
+    ui,
+    room: { width: 1180, height: 520 },
+    sizes: sizesOf(1280, 720, 1),
+    holds,
+    card: () => undefined,
+  };
   return {
     width: 'grow',
     height: 'grow',
@@ -248,7 +254,13 @@ function outpostsShotOf(view: 'outposts' | 'treasury', chosen?: number): (ui: In
       pages.set(ui, page);
     }
     const holds = new Holds(() => 0);
-    const context = { ui, room: { width: 1180, height: 620 }, sizes: sizesOf(1600, 900, 1), holds };
+    const context = {
+      ui,
+      room: { width: 1180, height: 620 },
+      sizes: sizesOf(1600, 900, 1),
+      holds,
+      card: () => undefined,
+    };
     return { width: 'grow', height: 'grow', fill: '#15171b', padding: 24, children: [guildPage(context, page)] };
   };
 }

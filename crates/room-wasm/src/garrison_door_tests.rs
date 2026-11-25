@@ -76,7 +76,7 @@ fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s
 
 /// Both tests hold this value: the node as a patrol whose layout marks a foes' site the player runs near, so its
 /// group stands mid-run on a mesh baked round it then.
-pub const PATROL_SITE_HASH: &str = "9dde7381";
+pub const PATROL_SITE_HASH: &str = "4e39f0f0";
 const PATROL_SITE: [f64; 2] = [-60.0, 40.0];
 
 /// The node as a patrol, its file naming one foes' site at `site`.
@@ -188,6 +188,10 @@ fn a_patrol_s_node_file_names_its_foes_sites_and_its_room_stands_a_group_at_one_
         let Opened::Land { room, .. } = opened else { panic!("a node's room") };
         assert!(room.put_player(player, site[0], site[1] + 100.0));
     });
-    room_tick();
-    assert!(near() >= 2, "its group stands round it");
+    // Its mesh is baked round the site a slice a tick, so the group stands within a second or two.
+    let stood = (0..120).any(|_| {
+        room_tick();
+        near() >= 2
+    });
+    assert!(stood, "its group stands round it");
 }

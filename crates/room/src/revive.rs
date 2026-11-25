@@ -12,7 +12,7 @@ use crate::{EventKind, PlayerId, Room};
 use combat::fighter::{Action, FighterId, player};
 use combat::tuning::{FOE_GONE, RESPAWN};
 use movement::Body;
-use reach::{Standing, respawn_point};
+use reach::Standing;
 use std::collections::BTreeMap;
 
 /// How long an ally holds Use beside a fallen player to revive them: 2 s, as long as a node's gather is held.
@@ -90,17 +90,6 @@ impl Room {
             self.quiet.remove(&id);
             self.names.remove(&id);
         }
-    }
-
-    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
-    /// fell in a patrol zone (`respawns.rs`), else at the section's spawn nearest it, or the room's spawn.
-    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
-        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
-            return body;
-        }
-        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
-        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
     }
 
     /// Whether the darkness holds a player where they are now (`dark_at`): none for one not in the room.

@@ -6,6 +6,7 @@
 //! polys they touch. Coordinates are the game's: x east, y south, z up, in metres. Every number is a 64-bit float and
 //! every sum is taken in a fixed order, so every machine bakes and paths alike.
 
+mod baking;
 mod collider;
 mod compact;
 mod contours;
@@ -20,6 +21,7 @@ mod reach;
 mod regions;
 mod spots;
 
+pub use baking::Baking;
 pub use collider::{Collider, Ramp, Rise};
 pub use links::{LINK_REACH, Link};
 pub use obstacles::ObstacleId;
@@ -119,8 +121,7 @@ impl NavMesh {
     /// up is walked, and so is the deck. The parts of it that no walk joins to the largest are left out.
     #[must_use]
     pub fn bake(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
-        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::bake_colliders(&colliders, bounds, agent)
+        Baking::flat(blocks, bounds, agent).finish(&Flat)
     }
 
     /// Bakes the walkable surface of blocks laid over open sea at 0 across `bounds`, as ships' decks are: the sea is
@@ -128,8 +129,7 @@ impl NavMesh {
     /// ground joins them into one.
     #[must_use]
     pub fn bake_over_sea(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
-        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, None, bounds, agent, (None, true), true)
+        Baking::over_sea(blocks, bounds, agent).finish(&OverSea)
     }
 
     /// Bakes a course's blocks standing on a terrain, which may dip below 0, as a seabed does: its height is read at
@@ -137,8 +137,7 @@ impl NavMesh {
     /// height that is not a number is baked as open ground at 0.
     #[must_use]
     pub fn bake_on(blocks: &[Block], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Self {
-        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, (None, true), false)
+        Baking::on(blocks, bounds, agent).finish(ground)
     }
 
     /// Bakes as `bake_on` does, but keeps the part a walk joins to the floor nearest `anchor` rather than the largest:
@@ -152,22 +151,23 @@ impl NavMesh {
         agent: &Agent,
         anchor: [f64; 3],
     ) -> Self {
-        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, (Some(anchor), false), false)
+        Baking::anchored(blocks, bounds, agent, anchor).finish(ground)
     }
 
     /// Bakes from blocks and ramps on open ground at 0.
     #[must_use]
     pub fn bake_colliders(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Self {
-        Self::baked(colliders, None, bounds, agent, (None, true), false)
+        Baking::colliders(colliders, bounds, agent).finish(&Flat)
     }
 
-    fn baked(
+    /// The mesh from its polys over a field's grid, each corner lifted onto the true surface nearest its own level
+    /// rather than its voxel's rounded top, with its firing spots, and its links laid (`Baking`'s last slice).
+    fn assembled(
         colliders: &[Collider],
         ground: Option<Heights>,
-        bounds: Bounds,
-        agent: &Agent,
-        (anchor, climbed): (Option<[f64; 3]>, bool),
+        grid: raster::Grid,
+        (mut corners, polys): (Vec<poly::Corner>, Vec<poly::Poly>),
+        (spots, links): (Vec<Spot>, Vec<Link>),
         over_sea: bool,
     ) -> Self {
         let floor: &dyn Terrain = match &ground {
@@ -175,16 +175,6 @@ impl NavMesh {
             None if over_sea => &OverSea,
             None => &Flat,
         };
-        // The solid is let go of once the open surface is built: the two at once would double the bake's memory.
-        let mut field = compact::build(&raster::voxelise(colliders, floor, bounds, agent, !over_sea), agent);
-        let links = if climbed { links::bake(colliders, floor) } else { Vec::new() };
-        let joins = links::joins(&field, &links);
-        regions::partition(&mut field, &joins, anchor, over_sea);
-        let spots = spots::bake(&field, colliders, ground.as_ref(), floor, bounds);
-        let outlines = contours::build(&field);
-        let grid = field.grid;
-        let (mut corners, polys) = poly::build(&outlines, grid.cell, grid.voxel);
-        // Each corner is lifted onto the true surface nearest its own level, rather than its voxel's rounded top.
         for corner in &mut corners {
             let (x, y) = (grid.min_x + corner.x * grid.cell, grid.min_y + corner.y * grid.cell);
             corner.z = collider::surface_near(colliders, floor, x, y, Some(corner.z));

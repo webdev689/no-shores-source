@@ -197,7 +197,8 @@ export class AcquiredFeed {
     const { slide, fade } = this.motion(row, now, still);
     const rarity = row.gain.rarity;
     const pips = row.gain.pips ?? 0;
-    const count = pips > 0 ? '' : row.total > 1 || !row.gain.item ? `+${row.total.toLocaleString()}` : '';
+    const bare = pips > 0 || row.gain.bare === true;
+    const count = bare ? '' : row.total > 1 || !row.gain.item ? `+${row.total.toLocaleString()}` : '';
     return {
       minWidth: 240,
       gap: 12,

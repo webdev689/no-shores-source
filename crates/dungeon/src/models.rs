@@ -92,6 +92,38 @@ pub const FAMILIES: &[&[PropModel]] = &[
     HANGINGS,
 ];
 
+/// The families whose pieces hold things, which a room may make searchable (`room::finds`): cabinets, cupboards,
+/// wardrobes, dressers, shelves, crates, sarcophagi and tombs.
+pub const HOLDERS: &[&[PropModel]] = &[
+    CABINETS,
+    CUPBOARDS,
+    WARDROBES,
+    DRESSERS,
+    SHELVES,
+    LONG_SHELVES,
+    STEP_SHELVES,
+    CRATES,
+    SMALL_CRATES,
+    GREAT_CRATES,
+    SARCOPHAGI,
+    TOMBS,
+    GREAT_TOMBS,
+];
+
+/// The model with this id, if a family that holds things holds it.
+#[must_use]
+pub fn holder(id: u32) -> Option<PropModel> {
+    HOLDERS.iter().flat_map(|family| family.iter()).find(|model| model.id == id).copied()
+}
+
+/// A prop as a room's holder, if its model holds things: its box across (west, north, east, south) as it stands, its
+/// foot and its top over its origin's height `up`, and its model, as `room::finds` takes one.
+#[must_use]
+pub fn held_by(model: u32, [west, north, east, south]: [f64; 4], up: f64) -> Option<[f64; 7]> {
+    let box_of = holder(model)?;
+    Some([west, north, east, south, up + box_of.min[1], up + box_of.max[1], f64::from(model)])
+}
+
 /// The model with this id, if a family holds it.
 #[must_use]
 pub fn prop_model(id: u32) -> Option<PropModel> {

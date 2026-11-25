@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { RUN_REACH_M, laidNodes, layoutFollower, type NodeLayout, placesOf } from './layouts.ts';
+import { RUN_REACH_M, findsOf, laidNodes, layoutFollower, type NodeLayout, placesOf } from './layouts.ts';
 
 /** A layout whose section is a 100 m square round a point. */
 function square(id: string, x: number, y: number): NodeLayout {
@@ -139,4 +139,33 @@ test('a run whose name an area has already is left to the area, as the bake leav
     { name: 'Moorhold', at: [10, 10], radius: 40 },
     { name: 'The Wreck Stair', at: [-30, 0], radius: RUN_REACH_M },
   ]);
+});
+
+test("a patrol's chest places and its props that may hold things go to a room playing alone, as the bake writes them", () => {
+  const seated = (model: number, x: number) => ({
+    model,
+    at: [x, 0, 3] as const,
+    yaw: 0,
+    building: false,
+    footprint: [x - 0.4, -0.4, x + 0.4, 0.4] as const,
+    open: false,
+  });
+  const laid = {
+    sites: [
+      { kind: 'chest', at: [5, 6], radius: 0.5, facing: Math.PI },
+      { kind: 'beacon', at: [9, 9], radius: 3 },
+    ],
+    props: [seated(41816, 0), seated(41704, 10), seated(41003, 20)],
+  } as unknown as NodeLayout;
+  const finds = findsOf(laid);
+  assert.deepEqual(finds.chests, [[5, 6, Math.PI]]);
+  assert.deepEqual(
+    finds.holderProps,
+    [
+      [41816, -0.4, -0.4, 0.4, 0.4, 3],
+      [41704, 9.6, -0.4, 10.4, 0.4, 3],
+      [41003, 19.6, -0.4, 20.4, 0.4, 3],
+    ],
+    'every prop: the room keeps the crate and the wardrobe, as the bake does',
+  );
 });

@@ -19,7 +19,7 @@ fn a_bounty_is_taken_at_the_board_after_the_prologue_and_turned_in_once_done_for
     assert_eq!(character.ask(take(0), at_board(20_778), &DICE), Err(Refusal::BoardShut));
     character.story.prologue = true;
     assert_eq!(character.ask(take(0), Here { social: false, ..at_board(20_778) }, &DICE), Err(Refusal::NotHere));
-    assert_eq!(character.ask(take(8), at_board(20_778), &DICE), Err(Refusal::NoSuchBounty));
+    assert_eq!(character.ask(take(17), at_board(20_778), &DICE), Err(Refusal::NoSuchBounty), "past the board");
     assert_eq!(character.ask(take(0), at_board(20_778), &DICE), Ok(Done::Done));
     assert_eq!(character.ask(take(0), at_board(20_778), &DICE), Err(Refusal::BountyHeld));
     assert_eq!(character.ask(turn_in(0), at_board(20_778), &DICE), Err(Refusal::BountyNotDone));
@@ -58,16 +58,9 @@ fn the_board_turns_at_the_daily_reset_and_a_page_or_room_behind_takes_and_pays_n
 }
 
 #[test]
-fn every_bounty_has_a_short_plain_name_of_its_own_and_counts_in_its_pool() {
-    use crate::bounties::{BOUNTY_NAME_MOST, DUNGEONS, LAND, PASSAGES, SEA, board};
-    let names: Vec<&str> =
-        LAND.iter().chain(&SEA).chain(&DUNGEONS).chain(&PASSAGES).map(|template| template.3).collect();
-    let unique: std::collections::BTreeSet<&str> = names.iter().copied().collect();
-    assert_eq!(unique.len(), names.len(), "each bounty its own name");
-    for name in names {
-        let plain = !name.is_empty() && name.chars().count() <= BOUNTY_NAME_MOST && !name.contains('\u{2014}');
-        assert!(plain, "{name:?} is short and plain");
-    }
-    let pools: Vec<u8> = board(20_778).iter().map(|bounty| bounty.pool).collect();
+fn the_towns_eight_count_in_their_pools_and_are_posted_by_no_faction() {
+    let on = crate::bounties::board(20_778);
+    let pools: Vec<u8> = on.iter().map(|bounty| bounty.pool).collect();
     assert_eq!(pools, [0, 0, 1, 1, 2, 2, 3, 3], "two on land, two at sea, two in dungeons, two in the passages");
+    assert!(on.iter().all(|bounty| bounty.faction == 0));
 }

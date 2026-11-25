@@ -2,11 +2,15 @@
 type: system
 status: live
 code:
+  - crates/gear/src/finds.rs#find
   - crates/gear/src/emblems.rs#emblems
   - crates/gear/src/looks.rs#shown
   - client/src/player/sourceLooks.ts#earnedFrom
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/gearScreen.ts#itemDetailOf
+  - crates/room/src/stats.rs#stats
+  - crates/room/src/perks.rs#trim_by
+  - client/src/game/itemStats.ts#statsOf
   - crates/gear/src/cosmetics.rs#dressed
   - content/gear/drawn.json
   - crates/gear/src/emblems.rs#sold_on
@@ -149,7 +153,9 @@ number is one of [[Gear as Claude Shapes It]].
   each, to the loadout whose blow last landed and to every armour piece worn. Every deed's XP (a kill, a clear, a
   chest, a sinking, a bounty, the day's and the week's clears, a road's task) also grows the worn Art and, while its
   cape is worn, the faction pledged, before Scholar's share (`earn_play_xp`). An item stops earning at its
-  last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
+  last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, used from the inventory: one gives every piece
+  worn (the loadouts, the armour and the cloak, never a ship's module or a horse) 5,000 XP each, up to its last column,
+  and is refused while none of them can grow ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]).
 - **Level and Prestige.** XP alone reaches level 20. Past it, the Prestige of the four armour pieces worn sets the
   level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 30), an Atheric 21 to 30,
   each climbing by equal steps over its upgrades, however many its grid holds (a ship's guns five, armour three).
@@ -200,6 +206,23 @@ number is one of [[Gear as Claude Shapes It]].
   word ("Portwatch", "Helm"): one line for every pair a rolled piece is made in, Homespun's for every kind. A test makes
   every rolled piece of every content, rarity, level and look roll, and holds each to its line and every line to a
   piece. A named piece reads its own words in `content/gear/items.json`; a faction's piece with none, its faction's.
+- **Stats** ([[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]],
+  [[The Inspect Panel as Claude Shapes It]]). An item's fight numbers, as its card and page show them, are the room's
+  own (`room::stats`), never numbers of the screen's: what its kind fights with, from combat's arms and shots and the
+  player's swing and reload as the step paces them, under the trim the traits it gives make (`trim_by`, the one
+  `trim_of` makes of a player's worn gear), so a page and play agree to the bit; a test steps a fighter holding each
+  weapon's stroke or trigger and holds the rates to it. Damage is a player's on a foe of level 0, half again as the
+  room strikes a foe (`PLAYER_HARM`), before the Attack and the levels weigh it. A Melee loadout's: a diagonal blow's
+  damage (a pair's at its pair's share), blows a second, how far the blow reaches from the feet to a body's middle, the
+  poise it fills and the stamina a swing costs. A Ranged one's: a quick shot's damage (a bow's two thirds) and a full
+  draw's, shots a second (the tick a reload ends begins nothing, so the next shot comes a tick after it; a pair of
+  pistolets fires twice, the left a brace's gap and a tick after the right, then reloads), the poise a shot fills (its
+  weight's alone), the shots it carries (`ammo::capacity`), how fast an arrow or a bolt flies (a ball at once) and the
+  share of the pace kept aiming. How either is held: a hand free (the page says nothing of it), a shield, a pair, or both hands (a
+  two-handed blade, a bow, a crossbow, a thunderlock). Any item's body numbers, which armour shows: the stamina back a
+  second resting, a dodge's cost, the poise held before a stagger and a healing charge's share; a weapon's with its
+  finish's trims while it is drawn. The browser asks them of the room's module (`fighter_item_stats`), as it predicts
+  the player's fighter; an Atheric's intrinsic counts only at its catalogue entry's rarity, as the room counts it.
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
@@ -214,6 +237,14 @@ number is one of [[Gear as Claude Shapes It]].
   (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
   Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
   dungeon's room pays the same clear as its cache opens ([[Dungeons]], "The cache").
+- **A find** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], `gear::finds`): a chest
+  opened in a patrol or a dungeon pays 30 Aurem at level 5, grown with the level as a kill's worth is, 2 to 4 of the
+  island's resource and a Vestige one time in four, coloured as a Major's; a container searched 8 Aurem, one of the
+  resource one time in two and a Vestige one time in twenty, coloured as a Minor's. A harder voyage raises the Aurem
+  and the Vestige's chance by its reward, as a kill's. Neither pays XP. It is of the island's band's middle, raised by
+  the room's seas, and a full stock takes none of the resource while the rest is paid
+  ([[Chests and Searchable Containers as Claude Builds Them]]). A chest's Vestige is poured out of it ("Drops",
+  below); a container's is thrown to the searcher's feet.
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
   a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).
@@ -253,7 +284,7 @@ number is one of [[Gear as Claude Shapes It]].
 - **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens
   and pays every player then in the dungeon's room a dungeon's clear at the end foe's level, whoever struck it
   (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige as often as its
-  Miniboss leaves one, thrown out of the cache to lie before it for them as a kill's drop does ("Drops", below;
+  Miniboss leaves one, poured out of the cache onto the floor before it for them ("Drops", below;
   [[Dungeons]], "In the rooms"). A run's first clear in its period pays as well, the dungeon of the day's or the
   week's two's, its Vestige kept straight into the carried ten, else the vault, else the mail ([[Activities]], "What it
   pays, once").
@@ -436,6 +467,13 @@ DFO's spoils ([[Pick - Loot Drops]]).
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
   section's ring, so a piece never rests out of its player's reach. A piece is taken only once it has had time to
   settle, the longest it can bounce: a Vestige 94 ticks (about 1.6 s) after it is thrown, ammunition 60 (1 s).
+- **Poured out of a chest** ([[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]).
+  A chest's Vestige, a patrol's or a dungeon's chest to find, a dungeon's cache, or a public event's chest its player
+  opens, is poured out of it as project-final's cache pours its loot (`Room::pour`): thrown from the chest's foot,
+  fanned toward the player who opened it as a kill's are, or onto the floor the cache keeps clear before it. It may be
+  taken 122 ticks after (about 2 s: the lid's 0.22 s to open its mouth, and the longest the pour's higher pop
+  bounces), and is otherwise as any drop. An event's chest that lapses unopened, or is opened as its player leaves,
+  puts its Vestige in the ten, else the vault, else on the ground.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
   the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
@@ -448,7 +486,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **Seen** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
   [[Pick - project-final Drops]]). Each piece pops up out of the body, falls, and bounces until it lands slower than it
   settles, coming down on the room's spot; one thrown up to a spot over the body pops at least high enough to land
-  there. Settled, it rises to hover, bobbing and turning:
+  there. A poured Vestige waits unseen in its chest 0.22 s, then leaves its mouth 0.7 m over the chest's foot, popped
+  up at 6.2 to 7.6 m/s, and is otherwise a Vestige (`POURED_FEEL`). Settled, it rises to hover, bobbing and turning:
 
   | | A Vestige | Ammunition |
   |---|---|---|

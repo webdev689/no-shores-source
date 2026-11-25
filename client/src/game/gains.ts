@@ -16,7 +16,9 @@ import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
 import { EMBLEMS } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
-import { bardingSvg, keeperMarkSvg, shapesSvg } from './npc/npcMarks.ts';
+import { bardingSvg, keeperMarkSvg, markSvg, shapesSvg } from './npc/npcMarks.ts';
+import { holderName } from './finds.ts';
+import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
 import { rarityNamed } from './npc/npcWares.ts';
 
 /** One gain: what merges with the same gain shown already, its name, how many, and how it is drawn. */
@@ -37,6 +39,8 @@ export interface Gain {
   readonly icon: string | null;
   /** A chest's tier, 1 to 4, shown as pips in place of a count. */
   readonly pips?: number;
+  /** Whether it names what was opened, with no count: a chest or a container searched. */
+  readonly bare?: boolean;
   /** Whether it stands as a short line, a count beside its icon (and its word, where the icon alone is not enough),
    *  over the items' rows: currency, XP, reputation, an Art's progress. */
   readonly compact: boolean;
@@ -142,9 +146,25 @@ function chestGains(before: GearState, after: GearState): Gain[] {
   return chest ? [gain(`chest-${chest.id}`, chest.tier >= 3 ? 'Heroic chest' : 'Chest', 1, { pips: chest.tier })] : [];
 }
 
-/** What `after` holds that `before` did not: counts grown, and items, Vestiges and emblems new; a chest opened. */
+/** A chest or a container the room paid the player for between two words (`opened`, standing for them in
+ *  `before`), named as its mark shows it; what it gave is told as any gain is. */
+function findGains(before: GearState, after: GearState): Gain[] {
+  const opened = after.opened ?? 0;
+  if (opened === 0 || opened === before.opened) return [];
+  const chest = before.chests?.find((find) => find.number === opened);
+  if (chest) return [gain(`find-${opened}`, 'Chest', 1, { icon: CHEST_SVG, bare: true })];
+  const held = before.searchables?.find((find) => find.number === opened);
+  const searched = held && `Searched the ${holderName(held.model)}`;
+  return searched ? [gain(`find-${opened}`, searched, 1, { icon: SEARCH_SVG, bare: true })] : [];
+}
+
+const CHEST_SVG = markSvg(CHEST_PICTURE.rows, CHEST_PICTURE.colours);
+const SEARCH_SVG = markSvg(SEARCH_PICTURE.rows, SEARCH_PICTURE.colours);
+
+/** What `after` holds that `before` did not: counts grown, and items, Vestiges and emblems new; a chest opened, or a
+ *  container searched. */
 export function gainsOf(before: GearState, after: GearState): Gain[] {
-  const gains: Gain[] = chestGains(before, after);
+  const gains: Gain[] = [...chestGains(before, after), ...findGains(before, after)];
   if (after.aurem > before.aurem) gains.push(line('aurem', 'Aurem', after.aurem - before.aurem, { glyph: 'aurem' }));
   const [shapes, shapesBefore] = [after.shapes ?? 0, before.shapes ?? 0];
   if (shapes > shapesBefore) gains.push(line('shapes', 'Shapes', shapes - shapesBefore, { icon: shapesSvg() }));

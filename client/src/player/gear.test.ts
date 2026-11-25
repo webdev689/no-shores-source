@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import traits from '../../../content/gear/traits.json' with { type: 'json' };
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
 import {
@@ -135,6 +136,16 @@ test('an item is named as the catalogue names it', () => {
   assert.equal(answerText(164), 'Only the founder or an admin sounds the War Horn.');
   assert.equal(answerText(165), 'No War Horn stands here yet.');
   assert.equal(answerText(166), 'Too many asks. Wait a while.', 'past the limit, the accounts own words');
+});
+
+test("every perk has a card's short line of one line's length, and a short cost exactly where it costs", () => {
+  for (const each of traits.traits) {
+    const short = traitOf(each.id);
+    const lines = [short.short, short.shortTakes].filter((line) => line !== '');
+    assert.equal(lines.length, 'takes' in each ? 2 : 1, each.id);
+    // 30 letters stand on one line of a large card, the face drawn at twice its size.
+    for (const line of lines) assert.ok([...line].length <= 30, `${each.id}: "${line}"`);
+  }
 });
 
 test('the hands hold the drawn loadout in its look, or the nearest metal the forge draws', () => {

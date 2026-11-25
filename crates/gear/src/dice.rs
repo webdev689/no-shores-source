@@ -48,6 +48,10 @@ pub enum Purpose {
     Taken = 1_900,
     /// A passage's cache: its fragments' stock and count, and whether a cold lantern is found (the question added).
     Passage = 1_200,
+    /// How much of the island's resource a chest or a search holds, and whether a search holds any (the question
+    /// added); and, apart, which places a patrol's chests and which containers are searchable stand at
+    /// (`room::finds`).
+    Find = 2_100,
 }
 
 /// One player's dice for one tick of one room.

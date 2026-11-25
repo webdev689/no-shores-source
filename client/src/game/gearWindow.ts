@@ -39,7 +39,7 @@ import {
 } from './gearScreen.ts';
 import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNode } from './gearShell.ts';
 import { inventoryPage } from './inventoryPage.ts';
-import { ITEM_NAME, itemPage } from './itemPage.ts';
+import { Comparing, ITEM_NAME, itemPage } from './itemPage.ts';
 import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
 import { Compendium } from './compendium/compendiumPage.ts';
 import type { Lore } from './compendium/lore.ts';
@@ -108,6 +108,7 @@ export function startGearWindow(
   let artPending: number | null = null;
   let shelf = FIRST_SHELF;
   let inspecting: number | null = null;
+  const comparing = new Comparing();
   /** How many asks the room had answered when the menu opened: only a newer answer is shown. */
   let heard: number | null = null;
   /** The answer a refusal was last heard for, and the words last said. */
@@ -139,6 +140,7 @@ export function startGearWindow(
   const shut = () => {
     holds.letGo();
     view = null;
+    comparing.shown = false;
     // The timers go up with the Journal, so they never stand over another tab; the Compendium opens at its front.
     journal.up();
     compendium.reset();
@@ -300,7 +302,7 @@ export function startGearWindow(
     let aside: readonly Hint[] | null = null;
     let answer = '';
     let colour: string = INK.answer;
-    if (!ofGear(shown)) page = plainPage(shown, { ui: frame, room, sizes, holds });
+    if (!ofGear(shown)) page = plainPage(shown, { ui: frame, room, sizes, holds, card: cardFor });
     else if (!now || !gear) {
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
@@ -383,7 +385,7 @@ export function startGearWindow(
         page = stationPage(context, shown);
         if (isKeeperView(shown) && npcChoosing()) aside = npcHints(shown);
       }
-      item = inspected ? itemPage(context, inspected, back) : null;
+      item = inspected ? itemPage(context, inspected, back, comparing) : null;
     }
     if (answer !== said && answer) announce(answer);
     said = answer;
@@ -397,7 +399,7 @@ export function startGearWindow(
       : !gear || shutBoard
         ? []
         : item
-          ? HINTS.item
+          ? []
           : (aside ??
             (shown === 'inventory'
               ? [...opens, ...(SHELF_HINTS[shelf] ?? [])]
@@ -444,10 +446,10 @@ export function startGearWindow(
       id: 'gear-body',
       width: 'grow',
       height: 'grow',
-      // A column, as only a column's children scroll up and down in it. The Art's screen and a keeper's are laid to
-      // the body's height, a keeper's rows scrolling in it; the rest scroll.
+      // A column, as only a column's children scroll up and down in it. The Art's screen, a keeper's and the bounty
+      // board's are laid to the body's height, a keeper's rows scrolling in it; the rest scroll.
       direction: 'column',
-      scroll: item === null && !(bleed && !appearance) && !isKeeperView(shown),
+      scroll: item === null && !(bleed && !appearance) && !isKeeperView(shown) && shown !== 'board',
       padding: bleed ? 0 : [10, 20, 14, 20],
       children: [page, item?.page],
     };
@@ -514,7 +516,8 @@ export function startGearWindow(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
-      const bound = (id: 'character' | 'inventory' | 'details') => BINDS.now[id].keys.includes(keyNameOf(event));
+      const bound = (id: 'character' | 'inventory' | 'details' | 'compare') =>
+        BINDS.now[id].keys.includes(keyNameOf(event));
       // A drawn field typed in anywhere keeps its letters.
       const typing = Boolean(ui?.typing);
       const opens = !typing && !resting() && (bound('character') || bound('inventory'));
@@ -530,6 +533,17 @@ export function startGearWindow(
         event.preventDefault();
         inspecting = shown.id;
         [returnTo, focusNext] = [ui?.focusedId ?? null, ITEM_NAME];
+      } else if (
+        bound('compare') &&
+        !typing &&
+        inspecting !== null &&
+        !event.repeat &&
+        !event.ctrlKey &&
+        !event.metaKey
+      ) {
+        // C sets the piece worn beside an item's page, or takes it away, as its press does; Ctrl+C copies.
+        event.preventDefault();
+        comparing.toggle(here()?.gear ?? null, inspecting);
       } else if (opens && !event.repeat) {
         event.preventDefault();
         open(bound('character') ? 'character' : 'inventory');

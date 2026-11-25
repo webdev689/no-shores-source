@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
+import { standing } from '../network/gearForTests.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
 import { BANNER_KEYS, bannerSvg } from '../plus/journalArt.ts';
@@ -22,6 +23,7 @@ const bounty = (words: string, target: number, count = 0, held = false, paid = f
   pool,
   name: `Sample ${pool}`,
   tier: 1,
+  faction: 0,
 });
 const BOARD = [
   bounty('Defeat 30 Grey Tithe foes.', 30),
@@ -30,6 +32,12 @@ const BOARD = [
   bounty('Sink or take a ship of Elite rank or higher.', 1, 1, true, true, 1),
   bounty('Clear 2 dungeons.', 2, 0, false, false, 2),
   bounty('Clear 3 dungeons.', 3, 0, false, false, 2),
+].map((one, place) => ({ ...one, place }));
+/** The Lamplighters' three, the first taken, for one pledged to them. */
+const THEIRS = [
+  { ...bounty('Gather 8 resource nodes.', 8, 2, true), name: 'Lamp Oil', place: 9, faction: 2 },
+  { ...bounty('Clear 2 dungeons.', 2, 0, false, false, 2), name: 'Light the Way', place: 10, faction: 2 },
+  { ...bounty('Sink or take 3 ships.', 3, 0, false, false, 1), name: 'Calm Waters', place: 11, faction: 2 },
 ];
 /** Where a character stands on the houses' roads: walking quest `quest` (from 1, 0 none) at `task`, `done` by place. */
 const roads = (quest: number, task: number, done: readonly number[] = [0, 0, 0, 0]): QuestState => ({
@@ -51,16 +59,27 @@ function journalOf(source: JournalSource, now = () => FRIDAY_AT, width = 1280, t
   const journal = new Journal(source, now);
   const sizes = sizesOf(width, 900, 1);
   let built: Node = {};
-  const page = () => journal.page({ ui, sizes, room: { width: width - 120, height: tall }, holds: null as never });
-  const window: () => Node = () => ({
-    role: 'window',
-    solid: true,
-    width,
-    height: 900,
-    direction: 'column',
-    float: { to: 'screen', z: 20 },
-    children: [journal.hourglass(ui), page()],
-  });
+  // The card the menu floats over everything while its tile is pointed at or holds the keys.
+  let card: Node | null = null;
+  const shows = (id: string, content: () => Node) => {
+    if (ui.hovered(id) || (ui.focused(id) && ui.keyFocused)) card = content();
+  };
+  const room = { width: width - 120, height: tall };
+  const page = () => journal.page({ ui, sizes, room, holds: null as never, card: shows });
+  const window: () => Node = () => {
+    card = null;
+    const children = [journal.hourglass(ui), page()];
+    const floated: Node | null = card && { ...(card as Node), float: { to: 'screen', z: 30, x: 0, y: 0 } };
+    return {
+      role: 'window',
+      solid: true,
+      width,
+      height: 900,
+      direction: 'column',
+      float: { to: 'screen', z: 20 },
+      children: [...children, floated],
+    };
+  };
   const tree = (): Node => ({ width: 'grow', height: 'grow', children: [window()] });
   const frame = (events: UiEvent[] = []) => step(() => (built = tree()), events);
   const click = (id: string) => {
@@ -74,9 +93,16 @@ function journalOf(source: JournalSource, now = () => FRIDAY_AT, width = 1280, t
     ]);
     frame();
   };
+  /** The pointer brought over what `id` names, laid last frame. */
+  const point = (id: string) => {
+    const box = ui.boxOf(id);
+    assert.ok(box, `${id} is laid`);
+    frame([{ kind: 'pointer', x: box.x + box.width / 2, y: box.y + box.height / 2 }]);
+    frame();
+  };
   frame();
   frame();
-  return { ui, journal, frame, click, tree: () => built };
+  return { ui, journal, frame, click, point, tree: () => built };
 }
 
 /** What `id` names, its words. */
@@ -130,8 +156,8 @@ test('the Journal shows the houses’ roads: the opening at its task before the 
   assert.ok(!keyed(unclaimed.ui, `quest-${opening.id}`), 'nothing from a word not on the player’s own character');
 });
 
-test('each bounty taken is a tile, its state its look; the rest empty frames; its card under them, with no press', () => {
-  const { ui, frame, tree } = journalOf({ week: () => null, kept: () => geared(roads(0, 0)) });
+test('each bounty taken is a tile, its state its look; the rest empty frames; its card beside it, with no press', () => {
+  const { ui, point, tree } = journalOf({ week: () => null, kept: () => geared(roads(0, 0)) });
   assert.deepEqual(
     [0, 1, 2, 3, 4, 5].map((place) => keyed(ui, `bounty-${place}`)),
     [false, true, true, true, false, false],
@@ -139,23 +165,43 @@ test('each bounty taken is a tile, its state its look; the rest empty frames; it
   );
   const wells = nodesOf(byId(tree(), 'journal-bounties')).filter((node) => node.role === 'well');
   assert.equal(wells.length, 3);
-  const said = () => wordsOf(tree(), 'bounty-card');
   assert.ok(wordsIn(tree()).includes('3/6'));
-  assert.ok(said().includes('Defeat 2 foes of Miniboss rank or higher.') && said().includes('1/2'), 'the first first');
-  assert.ok(said().includes('LAND BOUNTY') && said().includes('+3,500'), 'its kind, and its XP by its glyph');
-  ui.focusOn('bounty-2');
-  frame();
+  assert.equal(byId(tree(), 'bounty-card'), undefined, 'no card until a tile is pointed at');
+  const said = () => wordsOf(tree(), 'bounty-card');
+  point('bounty-1');
+  assert.ok(said().includes('Defeat 2 foes of Miniboss rank or higher.') && said().includes('1/2'));
+  assert.ok(said().includes('Land bounty') && said().includes('+3,500'), 'its kind, and its XP by its glyph');
+  point('bounty-2');
   assert.ok(said().includes('Sink or take 3 ships.') && said().includes('Done. Turn it in at the board.'));
-  ui.focusOn('bounty-3');
-  frame();
+  point('bounty-3');
   assert.ok(said().includes('Turned in'));
-  assert.equal(byId(tree(), 'board-press'), undefined, 'taken and turned in at the board alone');
+  assert.ok(!nodesOf(tree()).some((node) => node.press && node.id?.startsWith('bounty-')), 'taken at the board alone');
+});
+
+test('one pledged to a faction has a slot for each of its three, its bounty taken worn on its own face', () => {
+  const pledged = { ...geared(roads(0, 0), [...BOARD, ...THEIRS]), standing: standing({ pledge: 2 }), items: [] };
+  const { ui, point, tree } = journalOf({ week: () => null, kept: () => pledged });
+  assert.ok(wordsIn(tree()).includes('4/9'), 'the town’s six and the faction’s three');
+  const face = (id: string) => nodesOf(byId(tree(), id)).find((node) => node.picture)?.picture?.key;
+  assert.equal(face('bounty-9'), 'bounty face 2', 'the Lamplighters’ emblem');
+  assert.equal(face('bounty-1'), 'bounty face 0', 'the town’s writ');
+  assert.ok(keyed(ui, 'bounty-9') && !keyed(ui, 'bounty-10'));
+  point('bounty-9');
+  const card = wordsOf(tree(), 'bounty-card');
+  for (const words of [
+    'LAMP OIL',
+    'Lamplighters bounty',
+    '+2,500 reputation',
+    'Counts while pledged to them and wearing their cape',
+  ])
+    assert.ok(card.includes(words), words);
+  assert.ok(!card.some((words) => words.includes('Aurem')), 'a faction pays reputation in the town’s Aurem’s place');
 });
 
 test('gear of another day’s board, kept at sea through the reset, shows no bounty until a room sends today’s', () => {
   const { ui, tree } = journalOf({ week: () => weekEnding(FRIDAY_AT, 20_779), kept: () => geared(null) });
   assert.ok(!keyed(ui, 'bounty-1'));
-  assert.ok(wordsIn(tree()).includes('Eight a day, from the board in Overlook’s plaza.'));
+  assert.ok(wordsIn(tree()).includes('Posted each day on the board in Overlook’s plaza.'));
   assert.ok(!wordsIn(tree()).includes('0/0'), 'no count without a board to count');
 });
 
@@ -221,7 +267,8 @@ test('the timers stand within the room the menu gives the page, however many row
 
 test('a bounty’s card keeps its name within its edge, cut short where it is too long', () => {
   const long = BOARD.map((one, place) => (place === 1 ? { ...one, name: 'A Name Far Too Long For Any Card' } : one));
-  const { tree } = journalOf({ week: () => null, kept: () => geared(null, long) });
+  const { point, tree } = journalOf({ week: () => null, kept: () => geared(null, long) });
+  point('bounty-1');
   const laid = laidOf(tree(), 1280, 900);
   const card = laidWith(laid, 'bounty-card');
   const name = laid.find((each) => each.node.text?.words === 'A NAME FAR TOO LONG FOR ANY CARD');

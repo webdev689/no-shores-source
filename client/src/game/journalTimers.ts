@@ -218,8 +218,7 @@ function groupsOf(week: ThisWeek): readonly Group[] {
           icon: 'bounty',
           name: 'Bounties',
           lines: [],
-          words:
-            'Eight a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons, two in the passages.',
+          words: 'Posted each day on the board in Overlook’s plaza.',
         },
         ...lampRows(week, 'day'),
       ],

@@ -98,6 +98,7 @@ Server side lands as a Rust rebuild with DFO as the specification; client side a
 | `scripts/steNotes.mjs`, `leanBundle.mjs` | STE patch-notes checker; bundle author-name scrub | Tooling | Clean | Practice | `steNotes` carries as-is; `leanBundle` enforces a DFU/mod credit rule. | S | `scripts/steNotes.mjs` |
 | `scripts/bakeBooks.mjs`, `bakeSettings.mjs`, `bakeSettingsText.mjs` | Bake DFU's MIT books, settings defaults, settings text | Tooling | Can't | — | Exist to import Daggerfall Unity vendor data. | — | `scripts/bakeBooks.mjs` |
 | `scripts/bakeWindmill.mjs`, `bakeWindmillInterior.mjs` | Bake the windmills mod's rotor and farm interior | Content | Can't | — | Port of a mod's geometry, from its vendor folder; the windmills stay; we design our own ([[Which Made-for-DFO Mods Come Over]]). | — | `scripts/bakeWindmill.mjs` |
+| **Discord bot** (`server-bot/`, `src/bot/`, `src/panel/`, `panel/` on the unmerged `ccr-ed24355a-76go4h`): approved, "port over the bot work we never merged", [[Pick - Discord Bot]] | | | | | | | |
 
 ## Unmerged work in this area
 

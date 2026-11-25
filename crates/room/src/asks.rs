@@ -74,6 +74,10 @@ pub enum Asked {
     OpenChest {
         chest: u32,
     },
+    /// Begins to open a chest or search a container by its number, E held (`find_holds.rs`); let go of as a gather is.
+    Find {
+        number: u32,
+    },
     /// Claims a guild bounty one's guild finished this week, by its slot among the week's four (`guild_room.rs`).
     ClaimGuild {
         slot: u8,
@@ -317,11 +321,12 @@ impl Room {
         let Some(found) = self.players.get_mut(&player) else { return };
         // E let go of is heard at once, and lets go of every gather asked before it, so none outlives the key.
         if asked == Asked::StopGather {
-            found.asks.retain(|held| !matches!(held, Asked::Gather { .. }));
+            found.asks.retain(|held| !matches!(held, Asked::Gather { .. } | Asked::Find { .. }));
             if let Some(gathering) = found.gathering.as_mut() {
                 gathering.let_go = true;
             }
             self.let_go_hold(player);
+            self.finds.opening.entry(player).and_modify(|opening| opening.let_go = true);
             return;
         }
         if found.asks.len() < ASKS_HELD {
@@ -370,6 +375,7 @@ impl Room {
                 if let Some(gathering) = self.players.get_mut(&player).and_then(|found| found.gathering.as_mut()) {
                     gathering.let_go = true;
                 }
+                self.finds.opening.entry(player).and_modify(|opening| opening.let_go = true);
                 0
             }
             Asked::Scavenge { wreck } => self.scavenge(player, wreck),
@@ -380,6 +386,7 @@ impl Room {
             Asked::FindLore { chapter } => self.find_lore(player, chapter),
             Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
+            Asked::Find { number } => self.open_find(player, number),
             Asked::ClaimGuild { slot } => self.claim_guild(player, slot),
             Asked::Outpost(ask) => self.ask_outpost(player, ask),
             Asked::Passage(ask) => self.ask_passage(player, ask),

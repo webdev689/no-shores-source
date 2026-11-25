@@ -2,8 +2,8 @@ import type { GlowElement, GlowField, GlowLook } from '../elementGlow.ts';
 import { type Colours, onRamp } from '../forge/compose.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { TRIM_ALPHA, coverSteps, coversOf } from '../forge/coverLight.ts';
-import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
-import { type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/looks.ts';
+import { type DyeTable, PaletteSnap, type Rgb } from '../forge/dyes.ts';
+import { type Figure, type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { RETRY_AFTER_MS } from '../forge/stripCache.ts';
@@ -116,6 +116,15 @@ export const weaponArtPath = (layer: string): string => `@art/weapons/${layer.re
 
 /** Each figure's frames, composed from the forge's strips once and kept as textures; while a frame is being composed,
  *  the figure keeps showing the last one it had. */
+/** A dress's figure in a move and the dyes on its layers, and its frames' key up to the view. */
+type Dressed = {
+  readonly figure: Figure;
+  readonly ramps: Record<string, readonly Rgb[]>;
+  readonly whole: string[];
+  readonly trimmed: string[];
+  readonly stem: string;
+};
+
 export class Cards {
   private readonly kept = new Map<string, Card | null>();
   private readonly composing = new Set<string>();
@@ -140,6 +149,10 @@ export class Cards {
   /** Each body's layers a move carries (its props, instrument or spark), found once a body and move: a figure asks
    *  every frame, and a body has hundreds of layers. */
   private readonly carriedBy = new Map<string, readonly string[]>();
+  /** Each dress's figure and dyes in a move, drawn or mirrored, and its warm key by glow, worked out once: a figure is
+   *  posed and warmed every few frames, and a dress is read-only, so it changes only as a whole. */
+  private readonly dressedIn = new WeakMap<Dress, Map<string, Dressed>>();
+  private readonly warmKeys = new WeakMap<Dress, string[]>();
   private readonly scene: CardMaker;
   private readonly looks: ForgeLooks;
   private readonly dyes: DyeTable;
@@ -301,6 +314,16 @@ export class Cards {
   }
 
   private framed(dress: Dress, anim: string, view: number, frame: number, flip: boolean, glow: GlowLook) {
+    let moves = this.dressedIn.get(dress);
+    if (!moves) this.dressedIn.set(dress, (moves = new Map()));
+    const move = `${flip ? 1 : 0}${anim}`;
+    let dressed = moves.get(move);
+    if (!dressed) moves.set(move, (dressed = this.dressedFor(dress, anim, flip)));
+    // The key is JSON.stringify([figure, dyes, dyed, horse, anim, view, frame, glow]), its stem made once a move.
+    return { ...dressed, key: `${dressed.stem},${view},${frame},${glow}]` };
+  }
+
+  private dressedFor(dress: Dress, anim: string, flip: boolean): Dressed {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const figure = this.figured(dress, anim, flip);
     const { dyes, dye, coat } = dress.outfit;
@@ -310,7 +333,7 @@ export class Cards {
     // The dye worn counts only where a layer takes it: each dye's ramp is one made once, so it is found by itself.
     const worn = cosmeticRamp(dye, this.dyes.palette);
     const dyed = worn && Object.values(ramps).includes(worn) ? dye : null;
-    return { figure, ramps, whole, trimmed, key: JSON.stringify([figure, dyes, dyed, horse, anim, view, frame, glow]) };
+    return { figure, ramps, whole, trimmed, stem: JSON.stringify([figure, dyes, dyed, horse, anim]).slice(0, -1) };
   }
 
   /** A figure's frame in a move and a view, composed `haste` if it is not kept or under way, and hurried if it is
@@ -400,7 +423,9 @@ export class Cards {
    *  only its newest dress will be shown, and leave every other figure's queued. The moves (`anims`, the same for the
    *  same dress) are asked for only when the dress is new: a figure warms each frame. */
   warm(dress: Dress, anims: () => readonly string[], glow: GlowLook = 0, owner: number | string = 0): void {
-    const key = JSON.stringify([dress, glow]);
+    let keys = this.warmKeys.get(dress);
+    if (!keys) this.warmKeys.set(dress, (keys = []));
+    const key = (keys[glow] ??= JSON.stringify([dress, glow]));
     if (this.warmed.has(key)) return;
     this.warmed.add(key);
     // A dress replaced before all of it was composed is warmed again if it is worn again.

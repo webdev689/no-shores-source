@@ -86,6 +86,8 @@ export const CONTROLS = {
   character: control(['i'], ['Start'], EVERYWHERE),
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),
+  // On an item's page, the piece worn in its slot set beside it.
+  compare: control(['c'], [], ['menu']),
   controls: control(['k'], ['View'], EVERYWHERE),
   // The chat's field opens on T wherever the player plays, the owner's choice: at the helm Enter sets sail.
   chat: control(['t'], [], ['foot', 'dead', 'helm', 'fight']),
@@ -135,7 +137,7 @@ export const DEFAULTS: Binds = Object.fromEntries(
  *  mouse button. */
 const KEYS_ONLY: ReadonlySet<BindId> = new Set<BindId>([
   ...(['use', 'leave', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
-  ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'controls', 'chat'] as const),
+  ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'compare', 'controls', 'chat'] as const),
   ...(['steerLeft', 'steerRight', 'sailOn', 'heaveTo'] as const),
 ]);
 /** Whether a mouse button bound to `id` is heard. */

@@ -38,7 +38,7 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
   assert.match(useAt(0.5, 0.5, { stations: [WEAPONSMITH] }, lying, ask)?.words ?? '', /^The Weaponsmith/);
   const gather = useAt(10 + NODE_REACH_M - 0.1, 0, { stations: [WEAPONSMITH] }, lying, ask);
   assert.match(gather?.words ?? '', /^Hold to gather /);
-  assert.equal(gather?.gather, 3, 'held there, it gathers that node');
+  assert.equal(gather?.hold?.index, 3, 'held there, it gathers that node');
   gather?.run();
   assert.deepEqual(asked, [{ kind: ASKS.gather, node: 3 }]);
   assert.equal(
@@ -57,7 +57,7 @@ test('a node is not offered on horseback, nor while its resource is full', () =>
   const ask = () => undefined;
   const near = 10 + NODE_REACH_M - 0.1;
   const gear = { ...lying, resources: [STOCK_MOST - 1] } as GearState;
-  assert.ok(useAt(near, 0, {}, gear, ask)?.gather === 3);
+  assert.ok(useAt(near, 0, {}, gear, ask)?.hold?.index === 3);
   assert.equal(useAt(near, 0, {}, gear, ask, undefined, true), null, 'mounted');
   assert.equal(useAt(near, 0, {}, { ...gear, resources: [STOCK_MOST] }, ask), null, 'full');
 });
@@ -83,7 +83,7 @@ test('on foot the room is always told, so no character is kept out by a prologue
 test('the bounty board is used where a player stands before it, though no keeper stands there, and marked', () => {
   const ask = () => undefined;
   const here = countersOf({ stations: [WEAPONSMITH], board: [5, 0] });
-  assert.equal(useAt(5.5, 0, here, null, ask)?.words, 'The Bounty Board: bounties for XP and Aurem');
+  assert.equal(useAt(5.5, 0, here, null, ask)?.words, 'The Bounty Board: the day’s bounties');
   assert.equal(useAt(9, 0, here, null, ask), null, 'past its reach');
   const keepers = markedHere(null, { stations: [WEAPONSMITH] }, () => 0).length;
   assert.equal(markedHere(null, here, () => 0).length, keepers + 1, 'its mark beside the keepers');

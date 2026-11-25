@@ -47,7 +47,7 @@ pub fn add(
 ) {
     for gate in gates(areas, links) {
         let (at, radius, holds) = (gate.at, gate.radius, gate.leads_to.clone());
-        sites.push(Site { kind: SiteKind::Gate, at, radius, holds, node: None });
+        sites.push(Site { kind: SiteKind::Gate, at, radius, holds, node: None, facing: None });
         let way =
             Path { tier: Tier::Footpath, points: vec![areas[0].at, at], crossings: Vec::new(), heights: Vec::new() };
         ways.push((way, [0, areas.len()]));
