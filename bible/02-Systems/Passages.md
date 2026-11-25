@@ -187,7 +187,8 @@ passages' own pieces standing in it with their solids.
   two Elite bands. A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
   Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
-  (`lamps::KILL_SHARE`).
+  (`lamps::KILL_SHARE`), and so of the officer and boon XP that follow it; Bountiful's more Vestiges are paid whole
+  ([[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]).
 - **The most foes** a zone's bands stand is by its size (`Size::foes_most`): 7, 9 and 12 (small, medium, large), a
   hollow laying half as many posts (`Size::posts`); Crowded's extra foes are not counted, so it holds as many bands,
   and a band past it is held back. Its waves are held to the same most apart from the

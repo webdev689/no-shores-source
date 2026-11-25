@@ -222,11 +222,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The passages and the regions** (#204, a draft on `ccr-9b9e80b0-5e314s-passages`), built on the owner's
   autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
   audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
-  [[Passages as Claude Builds Them]]; how it works in [[Passages]]. Two for the owner to agree:
-  - `passage` now uses `gear`, for the week's modifiers its currents keep clear of (`crates/xtask/src/checks/crates.rs`,
-    [[Code Map]]): a widened check. Without it, the week's modifiers are passed into `Web::of` by its callers.
-  - A passage foe's kill share (`lamps::KILL_SHARE`, 0.75) also scales the officer and boon XP that follow its kill;
-    Bountiful's more Vestiges are not shared.
+  [[Passages as Claude Builds Them]]; how it works in [[Passages]].
 - **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
   its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
   [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new

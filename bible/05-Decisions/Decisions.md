@@ -372,6 +372,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Passages Web Out From the Patrol Zone Across Its Island]]
 - [[Passages as Claude Builds Them]]
 - [[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]
+- [[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]
 - [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]
 - [[Chests and Searchable Containers as Claude Builds Them]]
 - [[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]
