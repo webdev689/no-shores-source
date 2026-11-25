@@ -17,6 +17,8 @@ const LONGEST_TICKS: u32 = 60 * 1_800;
 /// hold it (m).
 const NEAR_M: f64 = 10.0;
 const AT_PIECE_M: f64 = 2.8;
+/// How near a node the player stands to gather it, inside the room's reach of one (`asks::NODE_REACH`).
+const AT_NODE_M: f64 = 2.0;
 
 /// What the deal sends a player to before its foes: a dead lamp to kindle, a reliquary to open or a node to gather.
 #[derive(Clone, Copy, PartialEq)]
@@ -88,14 +90,15 @@ fn play_one(room: &mut Room, walker: &mut Walker) {
         }
         (None, Some((at, used))) => {
             let apart = libm::hypot(at[0] - me.body.x, at[1] - me.body.y);
-            match used.filter(|_| apart <= AT_PIECE_M) {
+            let stop = if matches!(used, Some(Use::Gather(_))) { AT_NODE_M } else { AT_PIECE_M };
+            match used.filter(|_| apart <= stop) {
                 Some(Use::Kindle(nth)) => drop(room.ask_passage(player, PassageAsk::Kindle { lamp: nth })),
                 Some(Use::Open) => drop(room.ask_passage(player, PassageAsk::Open)),
                 Some(Use::Gather(node)) => room.answer(player, crate::asks::Asked::Gather { node }),
                 None => {}
             }
             let there = [at[0], at[1], movement::Terrain::height_at(&room.floor, at[0], at[1])];
-            walker.steer(room, there, if used.is_some() { AT_PIECE_M } else { 1.0 }, false);
+            walker.steer(room, there, if used.is_some() { stop } else { 1.0 }, false);
         }
         (None, None) => walker.steer(room, here, f64::MAX, false),
     }
@@ -106,6 +109,25 @@ fn play_one(room: &mut Room, walker: &mut Walker) {
 fn play_the_deal(room: &mut Room, plan: &Plan, players: usize) -> (Option<f64>, usize) {
     level_one(room);
     let mut walkers: Vec<Walker> = (0..players).map(|_| Walker::into(room, Some(plan.walk()))).collect();
+    // Each on a dive of the zone, as a player is, whom a Gauntlet's far mouth counts.
+    let week = room.zone().map_or(0, |zone| zone.week);
+    for walker in &walkers {
+        let start = gear::dive::Start {
+            island: "continent-1",
+            week,
+            route: gear::dive::Route::Company,
+            mouth: 0,
+            zone: plan.zone.number,
+            depth: plan.zone.depth,
+            lamp: None,
+            seas: gear::Difficulty::Normal,
+        };
+        let found = room.players.get_mut(&walker.player).expect("in");
+        found.character.begin_dive(&start).expect("begun");
+        if let Some(dive) = found.character.passage.as_mut() {
+            dive.here = true;
+        }
+    }
     let mut felled = std::collections::BTreeSet::new();
     let mut ticks = 0;
     while ticks < LONGEST_TICKS {
