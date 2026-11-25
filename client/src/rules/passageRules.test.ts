@@ -60,6 +60,26 @@ test('what does not read is refused, saying why', () => {
   assert.throws(() => readPassageWeb(JSON.stringify(web)), /zone 4, which it does not hold/);
   assert.throws(() => readPassagePlan('{"zone": 3}'), /zone is no object/);
   assert.throws(() => readPassageHeights(new Uint8Array(12)), /no whole count/);
+  assert.throws(() => readPassageHeights(new Uint8Array(new Float64Array([0, 0, 2, -1, -1, 0]).buffer)), /no grid/);
+  const twice = { ...web, mouths: [], zones: [] as unknown[] };
+  const zone = (number: number, lamp: number | null) => ({
+    number,
+    depth: 1,
+    lane: 0,
+    at: [0, 0],
+    ground: { kind: 'open', form: 'hollow' },
+    size: 'small',
+    deal: 'lamp',
+    currents: [],
+    name: 'A hollow',
+    onward: [],
+    landmark: null,
+    lamp,
+  });
+  twice.zones = [zone(1, null), zone(1, null)];
+  assert.throws(() => readPassageWeb(JSON.stringify(twice)), /zone number twice/);
+  twice.zones = [zone(1, 5)];
+  assert.throws(() => readPassageWeb(JSON.stringify(twice)), /lamp 5/);
   assert.equal(readPassagePlan(''), null);
   assert.equal(readPassageHeights(new Uint8Array()), null);
 });

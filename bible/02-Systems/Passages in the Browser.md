@@ -39,7 +39,7 @@ week's two modifiers and every zone, each its number, depth, place on the island
 ways on, landmark and lamp; a way on to a zone the web lacks is refused), `room_passage_zone` (a zone laid whole: its
 ground, its sites, its pieces and their solids; its onward mouths as many as its ways on) and `room_passage_heights`
 (an above-ground zone's ground as `movement::Heights` gives it). An island with no passages, a zone the web lacks or a
-style the Forge does not lay yet answers empty, read as none. The week is the clock's (`weekOf`, Tuesday 09:00 UTC).
+style the Forge does not lay yet answers empty, read as none.
 
 ### A zone drawn
 
@@ -66,7 +66,7 @@ style the Forge does not lay yet answers empty, read as none. The week is the cl
 | Rise | 1.5 | From the camera in the zone left up to the island seen whole, framed from the side of the zone left as an island's side is framed from the ship (`frameSide`), every zone of the web and the patrol zone inside the picture |
 | Draw | 2 | The way come as dots, 10 a leg; the way being taken drawn a dot at a time to the next zone's place |
 | Wait | until ready | Held over the island while the room gone to is not ready (`wayClock`) |
-| Down | 1.5 | Down to behind the character at their start, 3 m back from the arrival |
+| Down | 1.5 | Down to behind the character at their start, 3 m back from the arrival (its length Claude's call: the design gives none) |
 | Walk | 1.5 | The character walks 3 m in to where the room stands them, the camera settling 4.5 m behind and 2.2 m up |
 
 The player's inputs are held to its end. A lamp's Home is the same way, its leg running back to the patrol zone. A

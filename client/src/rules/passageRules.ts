@@ -182,6 +182,7 @@ function zoneOf(value: unknown): PassageZone {
   const ground = objectOf(raw.ground, "zone's ground");
   const kind = oneOf(ground.kind, ['under', 'open'] as const, "zone's ground");
   const lamp = raw.lamp === null ? null : whole(raw.lamp, "zone's lamp");
+  if (lamp !== null && (lamp < 1 || lamp > 4)) fail(`lamp ${lamp} is not one of the four`);
   return {
     number: whole(raw.number, "zone's number"),
     depth: whole(raw.depth, "zone's depth"),
@@ -220,6 +221,7 @@ export function readPassageWeb(answer: string): PassageWeb | null {
   const raw = parsed(answer, 'web');
   const zones = list(raw.zones, "web's zones", zoneOf);
   const numbered = new Set(zones.map((zone) => zone.number));
+  if (numbered.size !== zones.length) fail('web holds a zone number twice');
   const mouths = list(raw.mouths, "web's mouths", (each) => {
     const mouth = objectOf(each, 'mouth');
     return { run: text(mouth.run, "mouth's run"), zone: whole(mouth.zone, "mouth's zone") };
@@ -260,6 +262,17 @@ function groundOf(value: unknown): PassageGround {
   };
 }
 
+function pieceOf(each: unknown): PassagePiece {
+  const piece = objectOf(each, 'piece');
+  return {
+    module: text(piece.module, "piece's module"),
+    kind: oneOf(piece.kind, PIECE_KINDS, "piece's kind"),
+    number: whole(piece.number, "piece's number"),
+    at: numbers(piece.at, 3, "piece's place") as unknown as readonly [number, number, number],
+    facing: finite(piece.facing, "piece's facing"),
+  };
+}
+
 /** Reads a zone laid whole, or throws saying what is wrong; an empty answer (a zone the web does not hold, or a style
  *  the Forge does not know yet) is null. Its onward mouths must be as many as its ways on. */
 export function readPassagePlan(answer: string): PassagePlan | null {
@@ -273,6 +286,9 @@ export function readPassagePlan(answer: string): PassagePlan | null {
   const onward = list(sites.onward, 'onward mouths', (each) => doorOf(each, 'an onward mouth'));
   if (onward.length !== zone.onward.length)
     fail(`zone ${zone.number} stands ${onward.length} mouths for ${zone.onward.length} ways on`);
+  const pieces = list(raw.pieces, 'pieces', pieceOf);
+  if (pieces.filter((piece) => piece.kind === 'mouth').length !== onward.length)
+    fail(`zone ${zone.number} stands mouth pieces other than its ${onward.length} onward mouths`);
   return {
     zone,
     ground,
@@ -285,16 +301,7 @@ export function readPassagePlan(answer: string): PassagePlan | null {
       posts: list(sites.posts, 'posts', (each) => point(each, 'a post')),
       spots: list(sites.spots, 'spots', (each) => point(each, 'a spot')),
     },
-    pieces: list(raw.pieces, 'pieces', (each) => {
-      const piece = objectOf(each, 'piece');
-      return {
-        module: text(piece.module, "piece's module"),
-        kind: oneOf(piece.kind, PIECE_KINDS, "piece's kind"),
-        number: whole(piece.number, "piece's number"),
-        at: numbers(piece.at, 3, "piece's place") as unknown as readonly [number, number, number],
-        facing: finite(piece.facing, "piece's facing"),
-      };
-    }),
+    pieces,
     solids: list(raw.solids, 'solids', (each) => numbers(each, 5, 'a solid') as unknown as IsleBlock),
   };
 }
@@ -307,7 +314,13 @@ export function readPassageHeights(bytes: Uint8Array): Float64Array | null {
   const floats = new Float64Array(bytes.slice().buffer);
   // A grid's west, north, cell, columns and rows, then a height for each of its cells.
   const [columns = NaN, rows = NaN] = [floats[3], floats[4]];
-  if (!Number.isInteger(columns) || !Number.isInteger(rows) || floats.length !== 5 + columns * rows)
+  if (
+    !Number.isInteger(columns) ||
+    !Number.isInteger(rows) ||
+    columns < 2 ||
+    rows < 2 ||
+    floats.length !== 5 + columns * rows
+  )
     fail(`ground of ${floats.length} numbers is no grid`);
   return floats;
 }

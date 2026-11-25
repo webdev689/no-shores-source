@@ -28,7 +28,8 @@ export type Happening =
   | { readonly kind: 'wash-up'; readonly node: string; readonly words: string }
   | { readonly kind: 'isle'; readonly node: string; readonly words: string }
   | { readonly kind: 'back' }
-  /** Through a passage's mouth to the zone beyond, or by a lamp's Home back to the patrol zone. */
+  /** Through a passage's mouth to the zone beyond, or by a lamp's Home back to the patrol zone. `loaded` then ends
+   *  the way only once it has played to its end (`wayAt`'s `done`) and the place has come. */
   | { readonly kind: 'onward'; readonly node: string }
   | { readonly kind: 'home'; readonly node: string }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }

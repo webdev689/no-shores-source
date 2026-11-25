@@ -52,3 +52,20 @@ test('a piece’s boxes stand at its foot, turned to its facing, every face lit 
   }
   assert.equal(mesh.indices.length, 2 * 36);
 });
+
+test('a piece turns clockwise from north: facing east, the lamp’s first stone, north of it at rest, stands east', () => {
+  const lamp: PassagePiece = { ...piece('lamp'), at: [0, 0, 0], facing: Math.PI / 2 };
+  const mesh = pieceMesh([lamp], UNTOUCHED);
+  // The plinth's 24 corners and its light's 24 come first; the first stone's follow.
+  const stone = 48 * PIECE_FLOATS;
+  const easts = Array.from({ length: 24 }, (unused, corner) => mesh.vertices[stone + corner * PIECE_FLOATS] ?? NaN);
+  const souths = Array.from(
+    { length: 24 },
+    (unused, corner) => mesh.vertices[stone + corner * PIECE_FLOATS + 1] ?? NaN,
+  );
+  const middle = (values: number[]) => (Math.max(...values) + Math.min(...values)) / 2;
+  assert.ok(
+    Math.abs(middle(easts) - 3.5) < 1e-5 && Math.abs(middle(souths)) < 1e-5,
+    `${middle(easts)}, ${middle(souths)}`,
+  );
+});

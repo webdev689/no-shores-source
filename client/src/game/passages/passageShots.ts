@@ -97,7 +97,6 @@ export async function zoneShot(
   const floor = floorOf(plan, heights);
   const pieces = new PieceView(gpu);
   pieces.set(pieceMesh(plan.pieces, state));
-  // From behind the arrival, looking along its bearing into the zone.
   // Above ground from over the arrival, its back to the rim's rock; under ground from behind it in the way in.
   const { back, up, pitch } =
     eye ?? (kind === 'open' ? { back: -4, up: 14, pitch: 0.45 } : { back: 14, up: 9, pitch: 0.3 });
@@ -158,7 +157,7 @@ export async function zoneShot(
   return readBack(device, target);
 }
 
-/** The web this module last read, for the interface's pictures, which build without waiting. */
+/** The passages' door this module opened, for the interface's pictures, which build without waiting. */
 let shownWeb: Awaited<ReturnType<typeof doorOf>> | null = null;
 export async function loadDoor(): Promise<void> {
   shownWeb = await doorOf();

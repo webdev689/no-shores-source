@@ -78,3 +78,11 @@ test('the way come is a track to where the player is; the ways on from there are
   assert.equal(atFirst.paths.filter((path) => !path.track).length, 2);
   assert.throws(() => passageSheet(web, { here: 9, come: [], lit: [] }, 'The passages', null), /no zone 9/);
 });
+
+test('the map opens round the player at the sheet’s span, not the land’s 400 m', async () => {
+  const { viewOn } = await import('../../heldmap/heldMapLaw.ts');
+  const { sheet, you } = passageSheet(web, { here: 0, come: [], lit: [] }, 'The passages', patrol);
+  const ink = { width: 1000, height: 700 };
+  const view = viewOn(you, ink, { width: sheet.width, height: sheet.height }, sheet.span);
+  assert.ok(Math.abs(ink.width / view.scale - (sheet.span ?? 0)) < 1e-6 || ink.width / view.scale >= sheet.width);
+});

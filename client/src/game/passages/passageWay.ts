@@ -129,7 +129,8 @@ export function wayAt(way: Way, seconds: number): WayFrame {
   if (seconds < RISE_S)
     return { beat: 'rise', shot: railShot(way.rise, seconds, ask.from.fov), dots: shown(0), body: null, held: true };
   const overhead = railShot(way.rise, RISE_S, ask.from.fov);
-  if (seconds < DRAWN_AT) {
+  // The draw holds its last moment too: `wayClock` waits there while the room gone to is not ready.
+  if (seconds <= DRAWN_AT) {
     const taken = Math.ceil(((seconds - RISE_S) / DRAW_S) * LEG_DOTS);
     return { beat: 'draw', shot: overhead, dots: shown(taken), body: null, held: true };
   }

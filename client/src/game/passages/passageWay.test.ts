@@ -63,6 +63,10 @@ test('the clock waits over the island until the room gone to is ready', () => {
   assert.equal(wayClock(RISE_S + DRAW_S - 0.1, 0.5, false), RISE_S + DRAW_S);
   assert.equal(wayClock(RISE_S + DRAW_S, 0.5, false), RISE_S + DRAW_S);
   assert.equal(wayClock(RISE_S + DRAW_S, 0.5, true), RISE_S + DRAW_S + 0.5);
+  const held = wayAt(way, wayClock(RISE_S + DRAW_S - 0.1, 0.5, false));
+  assert.equal(held.beat, 'draw', 'held over the island, not on the way down');
+  assert.equal(held.dots.filter((dot) => dot.taking).length, LEG_DOTS);
+  assert.equal(held.body, null);
 });
 
 test('the camera comes down behind the character, who walks 3 m in over 1.5 s to the arrival, inputs held till then', () => {
