@@ -151,7 +151,8 @@ fn every_set_piece_at_an_areas_middle_stands() {
                     | AreaKind::Cave
             )
         });
-        for area in centred {
+        // A crossing gate on the landing toward another patrol zone stands no set piece (layout's crossings.rs).
+        for area in centred.filter(|area| !layout::crossings::is_crossing(area)) {
             if !layout.seating.props.iter().any(|prop| distance([prop.at[0], prop.at[1]], area.at) < 0.5) {
                 let nearest = layout
                     .paths

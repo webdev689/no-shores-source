@@ -190,3 +190,19 @@ test('through a passage’s mouth, or by a lamp’s Home, the way between zones 
   assert.equal(next(passing, { kind: 'shut', why: 'Shut.' }).mode, 'loading', 'a room shut on the way sends them back');
   assert.equal(onTheSea(passing), false);
 });
+
+test("across from one of Saltmere's patrol zones to another, behind the veil until the way between zones is drawn", () => {
+  const crossing = next(
+    { mode: 'foot', node: 'saltgrass-downs' },
+    { kind: 'cross', node: 'gullwing-vale', name: 'The Gullwing Vale' },
+  );
+  assert.deepEqual(crossing, {
+    mode: 'loading',
+    words: 'Going to The Gullwing Vale',
+    then: { mode: 'foot', node: 'gullwing-vale' },
+  });
+  assert.deepEqual(next(crossing, { kind: 'loaded' }), { mode: 'foot', node: 'gullwing-vale' });
+  assert.deepEqual(next({ mode: 'sea' }, { kind: 'cross', node: 'gullwing-vale', name: 'The Gullwing Vale' }), {
+    mode: 'sea',
+  });
+});

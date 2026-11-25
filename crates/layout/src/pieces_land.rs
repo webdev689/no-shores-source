@@ -204,7 +204,8 @@ const BANK_REACH_M: f64 = 12.0;
 
 /// Where a bridge's deck runs over a river and at what height: 3 m past each bank and on out along a lower bank (2 m
 /// at a time) until its two ends' land stands within 0.15 m, 0.3 m over the land at its higher end; its ends, its way
-/// and its deck's height. None where the banks lie together.
+/// and its deck's height. None where the banks lie together, or where a bridge laid before already carries the
+/// crossing, both its ends on that bridge's deck: two ways over the river at one place cross by one bridge.
 fn deck_over(kit: &Kit, [from, to]: [[f64; 2]; 2]) -> Option<([[f64; 2]; 2], [f64; 2], f64)> {
     let length = distance(from, to);
     if length < 1.0 {
@@ -223,6 +224,12 @@ fn deck_over(kit: &Kit, [from, to]: [[f64; 2]; 2]) -> Option<([[f64; 2]; 2], [f6
         }
     }
     let (start, end) = (ahead(from, way, -back, 0.0), ahead(to, way, on, 0.0));
+    let carried = kit.into.bridges.iter().any(|&[x1, y1, x2, y2, half]| {
+        [start, end].iter().all(|&at| crate::paths::off_line(at, [x1, y1], [x2, y2]) <= half)
+    });
+    if carried {
+        return None;
+    }
     Some(([start, end], way, kit.height(start).max(kit.height(end)) + 0.3))
 }
 
@@ -314,5 +321,30 @@ pub fn footbridges(kit: &mut Kit, field: &Field, ([x1, y1, x2, y2, _], stone): (
             }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::book::Book;
+    use crate::seat::Seating;
+    use land::edits::Edits;
+    use land::grid::Grid;
+    use land::ground::Ground;
+
+    #[test]
+    fn two_ways_crossing_a_river_at_one_place_cross_by_one_bridge() {
+        let land = Grid::new(40, 40, -1000.0, -1000.0, 50.0).like(100.0);
+        let coast = land.like(land::relief::COAST_REACH_M);
+        let ground = Ground::new(&land, &coast, &vec![0.0; land.data.len()], &[], &Edits::default(), 1);
+        let (book, mut seating) = (Book::default(), Seating::default());
+        let mut kit = Kit { ground: &ground, book: &book, seed: 7, draws: 0, into: &mut seating };
+        bridge(&mut kit, [[0.0, 0.0], [20.0, 0.0]], 2.6);
+        // A second way over the same water a metre aside, its deck on the first's.
+        bridge(&mut kit, [[0.0, 1.0], [20.0, 1.0]], 2.6);
+        assert_eq!(kit.into.bridges.len(), 1, "one bridge carries both");
+        bridge(&mut kit, [[0.0, 60.0], [20.0, 60.0]], 2.6);
+        assert_eq!(kit.into.bridges.len(), 2, "a crossing elsewhere has its own");
     }
 }

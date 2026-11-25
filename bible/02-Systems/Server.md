@@ -408,10 +408,13 @@ the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the three fact
 it (none in any other node); and whether it is locked: each patrol area and mission the open list,
 `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"), and each social space but
 Overlook's ([[Only Overlook's Social Space Opens for Now]]); and its gates: the nodes its layout's gates and way in
-lead to, each with a layout of its own, as the [[Game]]'s passages go. The index lists each node's id, kind, name,
+lead to, each with a layout of its own, as the [[Game]]'s passages go (a patrol area's instances of its region and
+the other patrol areas of its island, [[World Map]], "Regions"); the host lets a player into a node from any node
+whose gates lead there (`server/arrival.ts`, `gatedFrom`), so one of Saltmere's zones is walked into from both
+others. The index lists each node's id, kind, name,
 continent, rect and gates, which the host reads to judge arrivals. A locked node's room opens but takes no player, and so does
 each dungeon's room of a locked patrol, its runs among them, which open only with the patrol's file. The bake takes
-about 18 s for the nine continents' 99 nodes, a few at a time, and writes about 50 MB in all, a patrol area's file
+about 14 s for the nine continents' 92 nodes, a few at a time, and writes about 35 MB in all, a patrol area's file
 the largest at about 1.6 MB (the Gullwing Vale's, its boxes keeping to what is drawn, [[Layouts]], "Boxes"). `server`, `server:bundle` and
 `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
 `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`, of at

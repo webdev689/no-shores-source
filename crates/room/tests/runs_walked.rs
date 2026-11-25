@@ -86,7 +86,14 @@ fn bridges_of(laid: &layout::Layout) -> Vec<Bridge> {
                 .collect();
             Some(Bridge { deck: middle.at[2] + middle.size[2], ends, width, rails })
         })
-        .collect()
+        // Two ways over the river at one place cross by one bridge (pieces_land.rs `deck_over`): it is walked once.
+        .fold(Vec::new(), |mut kept: Vec<Bridge>, bridge| {
+            let same = |other: &Bridge| bridge.ends.iter().all(|&at| off_line(at, other.ends[0], other.ends[1]) < 3.0);
+            if !kept.iter().any(same) {
+                kept.push(bridge);
+            }
+            kept
+        })
 }
 
 /// The raised floors that ramp along a ruin's spokes (each of its basin's floors but its plaza), from its plaza's
@@ -421,8 +428,8 @@ fn every_climb_is_walked_to_its_lookout() {
 
 #[test]
 fn every_bridge_is_walked_over_both_ways() {
-    // Continent 3 holds the world's one path crossing a river, by the ironclad wreck.
-    let zones: Vec<Zone> = ["continent-1", "continent-3"].into_iter().flat_map(zones_of).collect();
+    // Continent 9 holds the world's one path crossing a river, in the Whitewind Tundra.
+    let zones: Vec<Zone> = ["continent-1", "continent-9"].into_iter().flat_map(zones_of).collect();
     let (mut bridges, mut failed) = (0, Vec::new());
     for zone in &zones {
         for &Bridge { deck, ends, .. } in &zone.bridges {
@@ -460,7 +467,7 @@ fn every_bridge_is_walked_over_both_ways() {
 
 #[test]
 fn no_bridge_rail_stands_on_its_walked_width_or_leaves_a_gap() {
-    let zones: Vec<Zone> = ["continent-1", "continent-3"].into_iter().flat_map(zones_of).collect();
+    let zones: Vec<Zone> = ["continent-1", "continent-9"].into_iter().flat_map(zones_of).collect();
     let (mut rails, mut failed) = (0, Vec::new());
     for zone in &zones {
         for bridge in &zone.bridges {

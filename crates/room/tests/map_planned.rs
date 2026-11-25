@@ -335,7 +335,11 @@ fn each_of_saltmeres_gates_closes_its_cleft_from_rock_to_rock() {
 
 fn gates_close(laid: &Layout) {
     let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
-    let gates = laid.areas.iter().filter(|area| area.kind == layout::brief::AreaKind::Gate);
+    // A crossing gate on the landing toward another patrol zone stands in no cleft (layout's crossings.rs).
+    let gates = laid
+        .areas
+        .iter()
+        .filter(|area| area.kind == layout::brief::AreaKind::Gate && !layout::crossings::is_crossing(area));
     let mut seen = 0;
     for gate in gates {
         seen += 1;

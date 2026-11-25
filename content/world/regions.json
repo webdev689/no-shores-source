@@ -11,64 +11,64 @@
     "island": "continent-2",
     "regions": [
       {"name": "The Cairn Heights", "centre": [942701, 175149], "anchorage": [942003, 183118], "nodes": ["highwater-fells", "wreckwood", "gallows-point", "greyshingle-strand-outpost"]},
-      {"name": "The Low Glens", "centre": [1534306, 1114448], "anchorage": [1532569, 1104600], "nodes": ["highwater-glen", "lookout-rock", "cinder-deep", "leviathans-rest"]},
-      {"name": "The Tor Marches", "centre": [494015, 421894], "anchorage": [484046, 426542], "nodes": ["greystone-tors", "ironwood-camp", "hollow-crypt"]}
+      {"name": "The Low Glens", "centre": [1534306, 1114448], "anchorage": [1532569, 1104600], "nodes": ["lookout-rock", "cinder-deep", "leviathans-rest"]},
+      {"name": "The Tor Marches", "centre": [494015, 421894], "anchorage": [484046, 426542], "nodes": ["ironwood-camp", "hollow-crypt"]}
     ]
   },
   {
     "island": "continent-3",
     "regions": [
       {"name": "The Elder March", "centre": [3621148, 1221984], "anchorage": [3620189, 1232943], "nodes": ["elder-thicket", "lost-caravan", "moonwell", "elmroot-cove-outpost"]},
-      {"name": "The Tidewood", "centre": [3090088, 751270], "anchorage": [3085139, 756220], "nodes": ["hollow-dells", "old-lighthouse", "black-tide-caverns", "ironclad-wreck"]},
-      {"name": "The Greenwold", "centre": [3391931, 706987], "anchorage": [3390972, 696029], "nodes": ["oakshade-weald", "tar-pit-camp", "pale-undercroft"]}
+      {"name": "The Tidewood", "centre": [3090088, 751270], "anchorage": [3085139, 756220], "nodes": ["old-lighthouse", "black-tide-caverns", "ironclad-wreck"]},
+      {"name": "The Greenwold", "centre": [3391931, 706987], "anchorage": [3390972, 696029], "nodes": ["tar-pit-camp", "pale-undercroft"]}
     ]
   },
   {
     "island": "continent-4",
     "regions": [
       {"name": "The Ochre Coast", "centre": [3098999, 2536001], "anchorage": [3107355, 2526042], "nodes": ["ochre-wastes", "hanging-bridge", "cinder-mine", "sunbleached-strand-outpost"]},
-      {"name": "The Thunder Flats", "centre": [3886508, 2989987], "anchorage": [3891157, 2999956], "nodes": ["sunscorched-barrens", "old-customs-house", "forsaken-cistern", "thundercrag"]},
-      {"name": "The Dune Sea", "centre": [2858681, 2874905], "anchorage": [2848056, 2872058], "nodes": ["scorpion-erg", "sunken-chapel", "sandworn-vault"]}
+      {"name": "The Thunder Flats", "centre": [3886508, 2989987], "anchorage": [3891157, 2999956], "nodes": ["old-customs-house", "forsaken-cistern", "thundercrag"]},
+      {"name": "The Dune Sea", "centre": [2858681, 2874905], "anchorage": [2848056, 2872058], "nodes": ["sunken-chapel", "sandworn-vault"]}
     ]
   },
   {
     "island": "continent-5",
     "regions": [
       {"name": "The Gold Plains", "centre": [1644726, 2701690], "anchorage": [1645597, 2711652], "nodes": ["lion-grasslands", "drowned-abbey", "kiln-hollow", "lionsand-cove-outpost"]},
-      {"name": "The Bone Veldt", "centre": [1305649, 2950213], "anchorage": [1296253, 2953633], "nodes": ["baobab-grasslands", "beacon-ridge", "smugglers-labyrinth", "bone-colossus"]},
-      {"name": "The Long Grass", "centre": [1185122, 2423031], "anchorage": [1176156, 2423816], "nodes": ["thunderhoof-grasslands", "scrimshaw-camp", "silt-barrows"]}
+      {"name": "The Bone Veldt", "centre": [1305649, 2950213], "anchorage": [1296253, 2953633], "nodes": ["beacon-ridge", "smugglers-labyrinth", "bone-colossus"]},
+      {"name": "The Long Grass", "centre": [1185122, 2423031], "anchorage": [1176156, 2423816], "nodes": ["scrimshaw-camp", "silt-barrows"]}
     ]
   },
   {
     "island": "continent-6",
     "regions": [
       {"name": "The Mistfall Terraces", "centre": [490001, 2280001], "anchorage": [485212, 2266845], "nodes": ["emerald-tangle", "smugglers-stair", "copper-quarry", "mangrove-cove-outpost"]},
-      {"name": "The Drowned Green", "centre": [600620, 2720443], "anchorage": [607620, 2720443], "nodes": ["vinewood-basin", "cutthroat-landing", "deepwater-vault", "stormspire"]},
-      {"name": "The Coral Shade", "centre": [256007, 2613882], "anchorage": [249454, 2618471], "nodes": ["rainshadow-canopy", "salt-road", "coral-halls"]}
+      {"name": "The Drowned Green", "centre": [600620, 2720443], "anchorage": [607620, 2720443], "nodes": ["cutthroat-landing", "deepwater-vault", "stormspire"]},
+      {"name": "The Coral Shade", "centre": [256007, 2613882], "anchorage": [249454, 2618471], "nodes": ["salt-road", "coral-halls"]}
     ]
   },
   {
     "island": "continent-7",
     "regions": [
       {"name": "The Windward Plateau", "centre": [4306975, 942430], "anchorage": [4305586, 950308], "nodes": ["kurgan-plateau", "marooned-hulk", "saltpan-ruins", "windworn-strand-outpost"]},
-      {"name": "The Barrowlands", "centre": [3548007, 280357], "anchorage": [3534852, 285146], "nodes": ["horsehead-mounds", "signal-fires", "barrow-halls", "tusked-behemoth"]},
-      {"name": "The Silent Steppe", "centre": [4167693, 647995], "anchorage": [4160623, 639568], "nodes": ["greywind-steppe", "silent-fort", "saltworm-warrens"]}
+      {"name": "The Barrowlands", "centre": [3548007, 280357], "anchorage": [3534852, 285146], "nodes": ["signal-fires", "barrow-halls", "tusked-behemoth"]},
+      {"name": "The Silent Steppe", "centre": [4167693, 647995], "anchorage": [4160623, 639568], "nodes": ["silent-fort", "saltworm-warrens"]}
     ]
   },
   {
     "island": "continent-8",
     "regions": [
       {"name": "The Bell Fens", "centre": [4038997, 1669991], "anchorage": [4043586, 1676544], "nodes": ["bogmire-sloughs", "raven-hill", "hermits-rock", "reedwater-hythe-outpost"]},
-      {"name": "The Queen's Mire", "centre": [4608542, 1840513], "anchorage": [4616542, 1840513], "nodes": ["sunken-fen", "tithe-watchtower", "mire-hollows", "mire-queens-throne"]},
-      {"name": "The Rotwater", "centre": [3647207, 1947309], "anchorage": [3642708, 1952671], "nodes": ["blackwater-marsh", "corsairs-rest", "rotwater-sewers"]}
+      {"name": "The Queen's Mire", "centre": [4608542, 1840513], "anchorage": [4616542, 1840513], "nodes": ["tithe-watchtower", "mire-hollows", "mire-queens-throne"]},
+      {"name": "The Rotwater", "centre": [3647207, 1947309], "anchorage": [3642708, 1952671], "nodes": ["corsairs-rest", "rotwater-sewers"]}
     ]
   },
   {
     "island": "continent-9",
     "regions": [
       {"name": "The Whalebone Coast", "centre": [2303711, 199098], "anchorage": [2302322, 191220], "nodes": ["whitewind-tundra", "pearl-divers-camp", "cracked-bell", "rimefrost-cove-outpost"]},
-      {"name": "The Wyrm's Ice", "centre": [2660932, 417482], "anchorage": [2663890, 423826], "nodes": ["pale-wastes", "charred-pier", "frozen-sepulchre", "frostwyrms-grave"]},
-      {"name": "The Aurora Shelf", "centre": [2110258, 472889], "anchorage": [2101065, 482081], "nodes": ["aurora-wastes", "wreckers-cove", "brine-catacombs"]}
+      {"name": "The Wyrm's Ice", "centre": [2660932, 417482], "anchorage": [2663890, 423826], "nodes": ["charred-pier", "frozen-sepulchre", "frostwyrms-grave"]},
+      {"name": "The Aurora Shelf", "centre": [2110258, 472889], "anchorage": [2101065, 482081], "nodes": ["wreckers-cove", "brine-catacombs"]}
     ]
   }
 ]

@@ -53,7 +53,7 @@ const RUNS: readonly {
   {
     continent: 'continent-6',
     node: 'emerald-tangle',
-    bounds: [489_198, 2_279_225, 490_895.5, 2_280_145],
+    bounds: [489_114.5, 2_279_164.5, 490_901, 2_280_862.5],
     script: [
       [600, 1, 0, 0, true, false],
       [600, 1, 0, Math.PI / 2, true, false],
