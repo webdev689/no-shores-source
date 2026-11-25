@@ -219,6 +219,15 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The Playlist's nodes in more detail** (#216, open, waiting on the owner's yes to merge), on the owner's "I want
+  you to redesign the Playlist nodes to be more detailed", both the map's mark and the screen's crests, with richer art
+  and motion as the owner chose ([[The Playlist's Nodes Are Drawn in More Detail, and Move]]). The crests are worked
+  metal shields with finer devices, each on a ticked dial of its own on the chart (`playlistCrest.ts`); they rise into
+  place as the screen opens, the dials turn, the chosen glow breathes, a light sweeps a crest as it is lit or chosen,
+  and a ring spreads from a waiting reward. The map's mark is the Playlist's shield in small in a ticked ring that
+  turns, with a beacon ring spreading from it (`playlistMark.ts`), the face's ☰ gone. Nothing moves under reduced
+  motion. `tools/uiShot.mjs` takes `"motion": true`. Tested offline: new tests, pictures before and after and of the
+  motion; not yet seen in a running game.
 - **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
