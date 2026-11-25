@@ -231,8 +231,8 @@ The decisions in [[Open Questions]] are not repeated here.
   but `.after(`/`.before(` and a style held under another name. Tested offline; CI's full check on the PR's head. Left
   for the owner, in the PR: three workflow changes (`site.yml` by hand, the Lattice's concurrency group, `forge.yml`'s
   paths), the foes' fall-back with no way out, a shot loosed inside a cliff, and the city's picture cache's budget.
-- **Three latent layout flaws, and the town's walls, windows and signs** (#207, a draft for the owner's yes once its
-  checks pass). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
+- **Three latent layout flaws, and the town's walls, windows and signs** (#207, merged on the owner's "Merge and
+  deploy", which deploys the page, the site, the rooms and the bot: CI run 1129 on main). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
   metre off a module's foot; a camp's palisade gap is sized from the path grid; fallen rock keeps 1.2 m off each run's
   way ([[Layouts]]). One departure from the brief, the owner's to confirm: the gap's 9 m half-chord
   (`CELL_M + KEEP_OFF_M`) is measured along the grid axis more across the way in, not along the chord, since 9 m along
@@ -254,13 +254,13 @@ The decisions in [[Open Questions]] are not repeated here.
   looks like its raining in interiors": a room's ceiling was drawn but no box a body meets, so the rain's shelter
   left every top storey open; each ceiling is now a box over its room to its outer faces, and a shelter cell is dry
   where a box reaches a tenth of it ([[Weather]], "Shelter"). Tested offline: the
-  full check on the merged head before its push (the PR names the commit); pictured headless in the Downs: the
+  full check on each head before its push, the last `a7ef2573`, and CI green on the head merged, `e77fdccb`; pictured headless in the Downs: the
   windows, and the raid's panel on its ground, none 60 m off it, and its ring on the map with its name and time left.
   Not played by hand or seen on a real GPU; the dots and the light through the panes never pictured (no second
   player stands in a headless world, and its sky gave no sun). Open for the owner: the camp gap's measure
-  ([[Open Questions]]), other zones' events are not on a zone's map, the compass still marks the event's ground from
-  anywhere in the zone, and the tracker still counts a chest left lying.
-- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+  ([[Open Questions]]), the compass still marking the event's ground from anywhere in the zone, and the tracker still
+  counting a chest left lying. Another zone's events stay off a zone's map, on the owner's "Leave as is".
+- **The codebase audit** (#209, merged; CI run 1111 on main passed), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
   `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
@@ -277,22 +277,22 @@ The decisions in [[Open Questions]] are not repeated here.
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
   ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
-- **The desktop app** (#210, merged; its next work, a launcher window of its own and releases, is #212, a draft), on the
-  owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
-  reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
-  [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
+- **The desktop app** (#210, merged; CI run 1100 on main passed; its next work, a launcher window of its own and
+  releases, is #212, a draft), on the owner's "develop the new install version along with implementing proper Vulcan
+  support, electron" with DFO as the reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call
+  in [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
   `noshores.online/play/?room=live` in a sandboxed window; WebGPU on Direct3D 12 then 11 on Windows, Metal on a Mac,
   Vulkan three ways on Linux, watched from the game's own adapter report. It opens on a launcher in the game's look
-  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's
-  "Patch notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play.
-  Updates through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases
-  by hand from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their
-  tests; the PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on
-  SwiftShader with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank
-  window, a Windows or Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on
-  Ubuntu 23.10 or later. After a merge: the owner says when to cut the first release; the site's links to the
-  downloads and signing keys are open questions; performance is to be measured on a real GPU with `?perf`, in Chrome
-  and in the app, before any switch for it (an uncapped frame rate was proposed, not built).
+  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's "Patch
+  notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play. Updates
+  through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases by hand
+  from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their tests; the
+  PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on SwiftShader
+  with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank window, a Windows or
+  Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on Ubuntu 23.10 or later. After
+  a merge: the owner says when to cut the first release; the site's links to the downloads and signing keys are open
+  questions; performance is to be measured on a real GPU with `?perf`, in Chrome and in the app, before any switch for
+  it (an uncapped frame rate was proposed, not built).
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and
@@ -320,17 +320,17 @@ The decisions in [[Open Questions]] are not repeated here.
     the same perks at a Forged grade, about half again, and Hard armour is named "(Forged)"; the numbers are Claude's,
     in [[Gear as Claude Shapes It]].
   - **Its sound** ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]): each space of the run heard as
-    its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key,
-    tempo and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is
-    picked. All 74 of its cues are picked by the owner, on two sound sheets
-    (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
-    the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
-    timpani on the owner's "Search for single notes"); in #208, merged, published to R2 by freesound runs 171
-    and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
-    centre on the owner's "Use it as it is". To change a pick: write its `picked` into
-    `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
-    the preview's partials) and write it on its cue, push so the freesound workflow publishes it, and take
-    `sounds.json` from that run's artifact; a search keeps to two common words (Freesound matches every word).
+    its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key, tempo
+    and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is picked.
+    All 74 of its cues are picked by the owner, on two sound sheets (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ,
+    then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for the cues marked None, those the first search missed, and
+    single held notes for the piano, drone, low choir and timpani on the owner's "Search for single notes"); in #208,
+    merged (CI run 1119 on main passed), published to R2 by freesound runs 171 and 175. Each of the 14 pitched music
+    picks has a measured root; the low choir's pick moves, and is rooted at its centre on the owner's "Use it as it is".
+    To change a pick: write its `picked` into `content/audio/freesound.json`, measure a pitched one's root with
+    `tools/freesound/root.py` (and check it against the preview's partials) and write it on its cue, push so the
+    freesound workflow publishes it, and take `sounds.json` from that run's artifact; a search keeps to two common words
+    (Freesound matches every word).
   - **Its fidelity**: the run's own underground sky and its pieces' lamps (its floors measured to read, at sRGB 0.12
     and over), the shores drawn only while in play, the dark's fade, stained glass, water, idle bells, chests that
     read as payable, the gate's void; and its pieces made solid where they look it (the court, the rifts' walls, the
