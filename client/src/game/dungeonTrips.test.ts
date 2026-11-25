@@ -296,6 +296,14 @@ test('a dungeon left leads nowhere from the next place under ground, a passage z
   trips.fell();
   await settled();
   assert.equal(ways.length, 2, 'no way out of the dungeon left before');
+  // A dungeon left by another road (its room shut, the player sent to their ship) leads nowhere either.
+  here.foot = standing(patrol, 'normal');
+  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  await settled();
+  here.foot = { ...standing(patrol, 'normal'), dungeon: { room: 'passage-continent-1-w2921-z3' } };
+  trips.fell();
+  await settled();
+  assert.equal(ways.length, 3, 'in, and no way out of it from the passage zone');
 });
 
 test('a dungeon is shown with the entrance gone in by, so its exit door wears that door', async () => {

@@ -64,7 +64,7 @@ export function regionAt(
   const cell = cellOf(waters, point);
   if (island === null || cell === null || (waters.water[cell] ?? -1) >= 0) return null;
   const own = regions.filter((region) => region.island === island);
-  return insideCells(waters, own[0]?.outline ?? [])[cell] ? nearest(own, point) : null;
+  return own[0] && insideCells(waters, own[0].outline)[cell] ? nearest(own, point) : null;
 }
 
 /** A byte a cell of the waters' grid, 255 over the land of `region`; all 0 for none. */
