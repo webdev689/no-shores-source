@@ -24,3 +24,9 @@ commands_verified: "check8.log: '== tests (Rust) failed' from 'encountered diff 
 Recurred the same session: the full check on 2bf38a0c ran in the background while the hub's plants were being written
 into the same tree (new files, a rebake, module splits). It reported a pass, but over a tree that changed under it,
 so it was not counted and was run again on a quiet tree. The rule proposed above would have prevented both.
+
+Recurred 2026-11-25, PR #209 (the codebase audit): main took #201's ship work at 13:26 and #209 went "dirty". Four
+pushes after that (a78de452 to 32da2b8b) started no `ci` run, and the controller noticed only some 40 minutes later,
+by asking why the branch's run list ended at 0743ef9b. Rule (2) above, reading `mergeable_state` after each push,
+would have caught it at the first push; it is the third time, so it wants a barrier (a post-push script that prints
+the PR's mergeable state and fails on "dirty"), not a sentence.
