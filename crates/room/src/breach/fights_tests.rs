@@ -212,6 +212,26 @@ fn a_watcher_sees_a_player_in_its_light_and_at_normal_unwrites_them_and_at_hard_
 }
 
 #[test]
+fn a_player_in_a_porch_of_the_ways_is_hidden_from_a_watcher_down_the_street() {
+    // The first Watcher looks east down its street; 7.5 m on, a house's porch opens off the street's north side, its
+    // jambs standing 1 m out from the house's front 2 m north of the street's middle.
+    for (north, seen) in [(0.0, true), (1.6, false)] {
+        let (mut room, players) = won_to(Tier::Normal, 2, WAYS);
+        begin_at(&mut room, &players, "ways", "heart");
+        put_at(&mut room, players[0], "ways", "checkpoint");
+        let (id, _, _) = breach(&room).fights.ways.watchers[0];
+        let watcher = room.foes[&id].fighter.body;
+        let spot = [watcher.x + 7.5, watcher.y - north, watcher.z - 0.5];
+        for _ in 0..ways::SEEN_TICKS + 5 {
+            stand_at(&mut room, players[1], spot);
+            room.breach.as_mut().expect("run").fights.ways.watchers[0].2 = -1.0;
+            room.tick();
+        }
+        assert_eq!(breach(&room).fights.ways.seen, seen, "{north} m north of the street's middle");
+    }
+}
+
+#[test]
 fn a_rift_held_open_carries_a_body_through_and_back_and_its_keepers_fall_rewrites_its_shore() {
     let (mut room, players) = won_to(Tier::Normal, 2, SHORES);
     begin_at(&mut room, &players, "hall", "plinth");

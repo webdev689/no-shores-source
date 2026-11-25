@@ -281,6 +281,11 @@ def rock_face(module, west, south, east, north, bottom, top, seed=0, triangles=N
             for row_across in range(rows):
                 thick = deep / rows * module.draw(0.85, 1.15)
                 across = (row_across + 0.5) / rows * deep - deep / 2 + module.draw(-0.12, 0.12) * deep / rows
+                if face is not None:
+                    # A faced box's outer row kept inside it, so the rock stands no further out than the part it faces.
+                    out = face[1] if along_x else face[0]
+                    assert out, 'a faced box looks out across its depth'
+                    across = out * min(across * out, deep / 2 - thick / 2)
                 material = 'stone' if module.draw() < 0.14 else 'rubble'
                 rise = tall * module.draw(0.85, 1.1) if rows > 1 and (last and ragged) else tall
                 # `back` is below 0, so each bed sits that much further from the way the face looks.

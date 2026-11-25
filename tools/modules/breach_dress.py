@@ -13,8 +13,8 @@ import latticekit
 def face(module, west, south, east, north, bottom, top, toward, bay=4.0, lancets=True, ruin=0.25,
          material='stone', pane='black'):
     """Dresses the face of a wall's box that looks `toward` (along x or y): a plinth along its foot, pilasters every
-    `bay` metres, a pointed lancet in each bay, blind (its `pane` black) or glazed and lit (glow, a mullion down it),
-    and a cornice along its top, a share `ruin` of it fallen."""
+    `bay` metres, a pointed lancet in each bay, blind (its `pane` black) or glazed (glass, a mullion down it), and a
+    cornice along its top, a share `ruin` of it fallen."""
     along_x = toward[0] == 0.0
     length = (east - west) if along_x else (north - south)
     front = (north if toward[1] > 0 else south) if along_x else (east if toward[0] > 0 else west)
@@ -178,15 +178,16 @@ def descent(module):
 
 def mending(module):
     """The drowned green: the houses' backs framed in timber with shuttered windows under their eaves, a well with its
-    roof and windlass, the cottages' chimneys, a cart and barrels left in the square, and fieldstone walls."""
+    roof and windlass, the cottages' chimneys, a cart and barrels left in the square, and fieldstone walls; the cart,
+    the barrels and the walls parts."""
     for west, south, east, north, toward in ((-34.0, -30.0, -30.0, 30.0, (1.0, 0.0)), (30.0, -30.0, 34.0, 30.0, (-1.0, 0.0)),
                                              (-30.0, -34.0, -3.0, -30.0, (0.0, 1.0)), (3.0, -34.0, 30.0, -30.0, (0.0, 1.0)),
                                              (-30.0, 30.0, -3.0, 34.0, (0.0, -1.0)), (3.0, 30.0, 30.0, 34.0, (0.0, -1.0))):
         timbered(module, west, south, east, north, toward)
     # The well: a stone ring with a roof on two posts and its windlass.
-    # Its posts stand beside the ring, from the ground.
+    # Its posts stand beside the ring, from the ground, parts as the ring is.
     for side in (-1, 1):
-        kit.block(module, (side * 1.2, -8.0, 0.0), (0.2, 0.2, 3.3), 'timber', bevel=0.02, wear=0.0, part=False)
+        kit.block(module, (side * 1.2, -8.0, 0.0), (0.2, 0.2, 3.3), 'timber', bevel=0.02, wear=0.0)
     roof = kit.block(module, (0.0, -8.0, 3.3), (2.8, 1.2, 0.12), 'roof', bevel=0.0, wear=0.0, part=False)
     roof.rotation_euler = (0.5, 0.0, 0.0)
     roof = kit.block(module, (0.0, -8.0, 3.3), (2.8, 1.2, 0.12), 'roof', bevel=0.0, wear=0.0, part=False)
@@ -194,17 +195,21 @@ def mending(module):
     kit.column(module, (-1.1, -8.0, 2.2), 0.12, 2.2, 'timber', sides=8, part=False).rotation_euler = (0.0, math.pi / 2,
                                                                                                     0.0)
     for at in ((-21.0, 21.0), (21.0, 21.0), (-22.0, -20.0), (22.0, -20.0)):
-        kit.block(module, (at[0] + 2.0, at[1] + 1.5, 0.0), (0.9, 0.9, 5.0), 'stone', bevel=0.04, wear=0.06,
-                  part=False)
-    # A cart tipped by the east cottage, barrels by the west.
+        kit.block(module, (at[0] + 2.0, at[1] + 1.5, 0.0), (0.9, 0.9, 5.0), 'stone', bevel=0.04, wear=0.06)
+    # A cart tipped on its wheels by the east cottage, barrels north of the west cottage, each the part of the box
+    # round it; and fieldstone walls, each its part, clear of the ways between the seams.
     cart = kit.block(module, (14.0, -12.0, 0.6), (2.6, 1.5, 0.5), 'timber', bevel=0.02, wear=0.02, part=False)
-    cart.rotation_euler = (0.18, 0.0, 0.4)
+    cart.rotation_euler = (0.18, 0.0, 0.0)
     for wheel in (-1, 1):
         bk.bpy_ring(module, (14.0 + wheel * 0.9, -12.9, 0.55), 0.5, 0.06, material='timber')
+    module.part((12.6, -13.0, 0.0), (15.4, -11.1, 1.2))
     for barrel in range(5):
-        kit.column(module, (-14.0 + (barrel % 3) * 0.75, -12.0 + (barrel // 3) * 0.75, 0.0), 0.35, 0.9, 'timber',
+        kit.column(module, (-24.0 + (barrel % 3) * 0.75, -12.0 + (barrel // 3) * 0.75, 0.0), 0.35, 0.9, 'timber',
                    sides=10, part=False)
-    for at, long, along_x in (((-15.0, 14.0), 5.0, True), ((15.0, 14.0), 5.0, True), ((-26.0, 0.0), 6.0, False)):
+    module.part((-24.4, -12.4, 0.0), (-22.1, -10.9, 0.9))
+    for at, long, along_x in (((-21.0, 14.0), 5.0, True), ((21.0, 14.0), 5.0, True), ((-26.0, 0.0), 6.0, False)):
+        size = (long, 0.8, 0.8) if along_x else (0.8, long, 0.8)
+        module.part((at[0] - size[0] / 2, at[1] - size[1] / 2, 0.0), (at[0] + size[0] / 2, at[1] + size[1] / 2, 0.8))
         bk.dry_wall(module, at, long, along_x, 0.8)
     rubble(module, (0.0, 0.0), 22.0, 14)
     # The green's turf laid over the rock it was torn from, which hangs under it.
@@ -259,11 +264,11 @@ def choir(module):
                     turn=math.pi / 2, pointed=True)
     for y in columns[1:-1]:
         bk.arch(module, (0.0, y, 11.0), 9.2, 0.8, 0.7, stones=12, pointed=True, broken=6)
-    # The rose: a wheel of stone tracery over lit glass in a whole ring of wedged stones, set in a square frame high
+    # The rose: a wheel of stone tracery over stained glass in a whole ring of wedged stones, set in a square frame high
     # over the altar and bell 7's frame.
     rose = (0.0, 35.7, 8.0)
     bk.arch(module, rose, 2.2, 0.4, 0.35, stones=20, whole=True)
-    glass = kit.column(module, (rose[0], 35.98, rose[2]), 2.25, 0.12, 'glow', sides=20, wear=0.0, part=False)
+    glass = kit.column(module, (rose[0], 35.98, rose[2]), 2.25, 0.12, 'glass', sides=20, wear=0.0, part=False)
     glass.rotation_euler = (math.pi / 2, 0.0, 0.0)
     for spoke in range(8):
         bar = kit.block(module, (rose[0], rose[1], rose[2] - 0.06), (4.4, 0.14, 0.12), 'trim', bevel=0.0, wear=0.0,
@@ -287,10 +292,10 @@ def choir(module):
         for side in (-1, 1):
             kit.block(module, (side * 4.5, row_y + 0.45, 0.9), (5.0, 0.12, 0.6), 'timber', bevel=0.0, wear=0.0,
                       part=False)
-    # The roof's fallen timbers, lying across the nave between the rows of pews, clear of the desks and the font.
-    for x, y, long in ((-3.0, -23.5, 6.0), (4.0, -10.5, 5.0), (-3.5, 15.0, 6.0)):
-        beam = kit.block(module, (x, y, 0.3), (0.5, long, 0.5), 'timber', bevel=0.0, wear=0.0, part=False)
-        beam.rotation_euler = (module.draw(-0.1, 0.1), module.draw(-0.1, 0.1), math.pi / 2 + module.draw(-0.2, 0.2))
+    # The roof's fallen timbers, lying square across the nave between the rows of pews, each its part, clear of the
+    # desks, the font and the way up the nave's middle.
+    for x, y, long in ((-3.6, -23.5, 6.0), (4.0, -10.5, 5.0), (-3.5, 15.0, 6.0)):
+        kit.block(module, (x, y, 0.0), (long, 0.5, 0.5), 'timber', bevel=0.02, wear=0.03)
     bk.drowned_floor(module, -15.0, -31.0, -11.0, 20.0)
     bk.drowned_floor(module, 11.0, -31.0, 15.0, 20.0)
     rubble(module, (-12.0, 16.0), 3.0, 5)
@@ -376,14 +381,14 @@ def banner(module, at, facing, field, band):
 
 
 def shore(module, was):
-    """A shore's dressing: as it was, a long table set before the lit hearth, benches, a rug, the sun at glazed windows,
+    """A shore's dressing: as it was, a long table set before the lit hearth, benches, a rug, stained glass in its windows,
     lit sconces and banners in the colours of no house the vale knows; as it is, the same walls fallen to ragged tops,
     the table broken, rubble, and crystal."""
     for west, south, east, north, toward in ((-18.0, -14.0, -14.0, 14.0, (1.0, 0.0)), (14.0, -14.0, 18.0, 14.0, (-1.0, 0.0)),
                                              (-14.0, 14.0, 14.0, 18.0, (0.0, -1.0))):
         # Bays of 5.6 m leave the north wall's middle to the hearth and its pilasters' faces to banners and sconces.
         face(module, west, south, east, north, 0.0, 10.0, toward, bay=5.6, lancets=was, ruin=0.0 if was else 0.7,
-             pane='glow')
+             pane='glass')
         if not was:
             bk.rock_face(module, west, south, east, north, 9.0, 11.5)
     # The table stands west of the hall's middle, where the Keeper's post and the Lodestone's plinth are.
@@ -412,52 +417,68 @@ def shore(module, was):
     hanging(module, -13.0, -13.0, 13.0, 13.0, -1.2, 10.0)
 
 
+# The court's broken columns, by their bearing from its middle in degrees, and how far out they stand.
+COLUMNS = (30.0, 60.0, 120.0, 150.0, 210.0, 240.0, 300.0, 330.0)
+COLUMN_M = 22.6
+
+
 def court(module, radius):
-    """The Steward's court over the dark: the rock it was torn from hanging under it and chains hung from its edge, a
-    kerb round its rim on the floor's innermost edge carrying a broken balustrade, a ring of broken columns inside
-    it, walls' stubs either side of each rift's arch, the Steward's throne at its own scale on the dais, crowned with
-    crystal and its veins crept out over the floor, and the dais' edges banded in gold."""
+    """The Steward's court over the dark: the rock it was torn from hanging under it and chains hung from its edge, its
+    rim broken and round, flags cracked and tipped along it and teeth of the torn rock under it, a ring of broken
+    columns inside it, walls' stubs either side of each rift's arch, the Steward's throne at its own scale on the
+    dais, crowned with crystal and its veins crept out over the floor, and the dais' edges banded in gold. The
+    columns, the stubs and the throne's arms and back are parts; nothing on the rim stands higher than its flags, so
+    the edge promises no rail."""
     hanging(module, -radius * 0.8, -radius * 0.8, radius * 0.8, radius * 0.8, -3.0, 16.0)
     hanging(module, -3.0, -46.0, 3.0, -radius, -2.0, 4.0)
-    # The stepped floor's edge comes no nearer its middle than 24.4 m, so the kerb stands on it all round.
-    kerb = radius - 2.0
-    for stone in range(44):
-        angle = (stone + 0.5) * math.tau / 44
-        if abs(angle - 1.5 * math.pi) < 0.2 or abs(math.sin(angle)) < 0.26:
+    # The rim: the stepped floor's edge lies between 24.4 m and the court's radius from its middle. Teeth of the torn
+    # rock stand round it under the floor's top, so they show only past its edge and round its steps' corners, each
+    # lower the further out it stands, so the edge falls away and nothing past it looks stood on; flags cracked along
+    # it lie on the floor, some tipped down over the edge. Clear of the bridge and the rifts.
+    for tooth in range(72):
+        angle = (tooth + module.draw(0.2, 0.8)) * math.tau / 72
+        if abs(angle - 1.5 * math.pi) < 0.16 or abs(math.cos(angle)) > 0.95:
             continue
-        spot = (math.cos(angle) * kerb, math.sin(angle) * kerb, 0.0)
-        kit.block(module, spot, (0.8, math.tau * kerb / 44 * 0.97, 0.3), 'trim', turn=angle, bevel=0.0, wear=0.0,
-                  part=False)
-        if module.draw() < 0.4:
+        far = radius + module.draw(-0.8, 1.4)
+        # Half a metre under the floor at the least, so in a step's notch it reads as the drop, not ground.
+        top = -0.5 - max(0.0, far - radius + 0.6) * 1.3
+        tall = module.draw(1.8, 3.6)
+        bk.facet_rock(module, (math.cos(angle) * far, math.sin(angle) * far, top - tall),
+                      (module.draw(1.4, 2.8), module.draw(1.0, 2.0), tall), 'rubble', points=12,
+                      turn=angle + math.pi / 2 + module.draw(-0.3, 0.3))
+    for flag in range(40):
+        angle = module.draw(0.0, math.tau)
+        if abs(angle - 1.5 * math.pi) < 0.16 or abs(math.cos(angle)) > 0.95:
             continue
-        tall = 1.1 if module.draw() < 0.5 else module.draw(0.3, 0.9)
-        kit.block(module, (spot[0], spot[1], 0.3), (0.35, 0.35, tall), 'trim', turn=angle, bevel=0.0, wear=0.0,
-                  part=False)
-        if tall > 1.0:
-            kit.block(module, (spot[0], spot[1], 1.4), (0.45, math.tau * kerb / 44 * 0.97, 0.16), 'trim', turn=angle,
-                      bevel=0.0, wear=0.0, part=False)
-    for degrees in (30.0, 60.0, 120.0, 150.0, 210.0, 240.0, 300.0, 330.0):
+        far = module.draw(23.0, 24.6)
+        tipped = far > 23.6
+        stone = kit.block(module, (math.cos(angle) * far, math.sin(angle) * far, -0.16 if tipped else -0.07),
+                          (module.draw(0.9, 1.6), module.draw(0.7, 1.2), 0.1), 'paving', turn=angle, bevel=0.0,
+                          wear=0.0, part=False)
+        if tipped:
+            stone.rotation_euler = (module.draw(-0.1, 0.1), module.draw(0.15, 0.3), angle)
+    for degrees in COLUMNS:
         angle = math.radians(degrees)
-        spot = (math.cos(angle) * (kerb - 1.4), math.sin(angle) * (kerb - 1.4), 0.0)
-        kit.block(module, spot, (1.7, 1.7, 0.45), 'trim', turn=angle, bevel=0.03, wear=0.04, part=False)
-        kit.column(module, (spot[0], spot[1], 0.45), 0.62, module.draw(2.0, 7.5), 'stone', sides=12, part=False)
+        spot = (math.cos(angle) * COLUMN_M, math.sin(angle) * COLUMN_M, 0.0)
+        kit.block(module, spot, (1.7, 1.7, 0.45), 'trim', bevel=0.03, wear=0.04)
+        kit.column(module, (spot[0], spot[1], 0.45), 0.62, module.draw(2.0, 7.5), 'stone', sides=12)
     for side in (-1, 1):
         for end in (-1, 1):
             kit.block(module, (side * (radius - 2.0), end * 6.2, 0.0), (1.4, 3.6, module.draw(3.0, 6.0)), 'stone',
-                      bevel=0.04, wear=0.06, part=False)
+                      bevel=0.04, wear=0.06)
     for chain in range(6):
         angle = math.tau * (chain + 0.3) / 6
         kit.column(module, (math.cos(angle) * 21.0, math.sin(angle) * 21.0, -9.5), 0.04, 6.5, 'iron', sides=4,
                    wear=0.0, part=False)
-    # The throne at the Steward's scale: its seat the part the builder lays, its arms, and its back rising 11 m.
+    # The throne at the Steward's scale: its seat the part the builder lays, its arms and its back rising 11 m parts.
     kit.block(module, (0.0, 22.4, 5.6), (3.6, 2.3, 0.25), 'trim', bevel=0.02, wear=0.0, part=False)
     for side in (-1, 1):
-        kit.block(module, (side * 2.8, 22.3, 2.0), (1.2, 2.4, 5.2), 'stone', bevel=0.04, wear=0.03, part=False)
-        kit.block(module, (side * 2.8, 22.2, 7.2), (1.4, 2.7, 0.3), 'trim', bevel=0.02, wear=0.0, part=False)
+        kit.block(module, (side * 2.8, 22.3, 2.0), (1.2, 2.4, 5.2), 'stone', bevel=0.04, wear=0.03)
+        kit.block(module, (side * 2.8, 22.2, 7.2), (1.4, 2.7, 0.3), 'trim', bevel=0.02, wear=0.0)
         kit.block(module, (side * 3.0, 22.98, 2.0), (0.15, 0.06, 11.0), 'gold', bevel=0.0, wear=0.0, part=False)
-    kit.block(module, (0.0, 23.5, 2.0), (6.4, 1.0, 11.0), 'stone', bevel=0.05, wear=0.03, part=False)
+    kit.block(module, (0.0, 23.5, 2.0), (6.4, 1.0, 11.0), 'stone', bevel=0.05, wear=0.03)
     kit.block(module, (0.0, 22.98, 9.0), (6.0, 0.06, 0.15), 'gold', bevel=0.0, wear=0.0, part=False)
-    kit.block(module, (0.0, 23.5, 13.0), (7.0, 1.3, 0.5), 'trim', bevel=0.03, wear=0.03, part=False)
+    kit.block(module, (0.0, 23.5, 13.0), (7.0, 1.3, 0.5), 'trim', bevel=0.03, wear=0.03)
     pick = latticekit.picker(module.random.randrange(1 << 30))
     for x in (-2.4, -1.2, 0.0, 1.2, 2.4):
         bk.crystal(module, pick, (x, 23.5, 13.4), count=3, length=3.6 if x == 0.0 else 2.4 - abs(x) * 0.3,

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import manifest from '../../../content/modules/modules.json' with { type: 'json' };
+import { PROP_MODULES } from './eventProps.ts';
 import {
   inOpenWorld,
   loadModules,
@@ -35,10 +36,13 @@ test('a module mesh reads its vertices, normals and triangles', () => {
   assert.throws(() => readModuleMesh(bytes.slice(0, 20)), /wrong length/);
 });
 
-test("every material a module's surfaces wear is one the page draws, and the first group is never paving", () => {
+test("every material a city's module wears is one the city draws, and no module's first group is paving", () => {
   const book = pictureBook({ climate: 'temperate', season: 'summer' }, [], [2], () => []);
+  // An event's or a Breach's piece is drawn by the props' drawer, which eventPropsDraw.test.ts holds to its own.
+  const props: readonly string[] = PROP_MODULES;
   for (const module of manifest.modules) {
     assert.notEqual(module.groups[0]?.material, 'paving', module.name);
+    if (props.includes(module.name)) continue;
     for (const group of module.groups) assert.ok(group.material in book.materials, `${module.name}: ${group.material}`);
   }
 });

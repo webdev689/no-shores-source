@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { PROP_MODULES } from '../city/eventProps.ts';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
+import manifest from '../../../content/modules/modules.json' with { type: 'json' };
 import { EVENT_LAMPS } from '../sky/lamps.ts';
 import { EventPropsDraw } from './eventPropsDraw.ts';
 import { PROPS_SHADER } from './eventPropsShader.ts';
@@ -29,16 +31,23 @@ test("the fissure's lips pack station by station along its x, the lower lip's y 
   assert.equal(packLips(moduleNumber('lattice-growth')), null, 'a module that does not open has none');
 });
 
-test("the drawer's materials are the modules' kit's, in its order, the page's newest ahead of the kit's", () => {
+test("the drawer's materials are the modules' kit's, in its order", () => {
   const kit = readFileSync(new URL('../../../tools/modules/kit.py', import.meta.url), 'utf8');
   const tuple = (name: string) => /^NAME = \(([^)]*)\)/m.source.replace('NAME', name);
   const [listed, cloths] = ['MATERIALS', 'CLOTHS'].map((name) => new RegExp(tuple(name), 'm').exec(kit)?.[1]);
   assert.ok(listed && cloths, 'kit.py names its MATERIALS and its CLOTHS');
   const names = (text: string) => [...text.matchAll(/'([a-z_]+)'|\*CLOTHS/g)].map((found) => found[1] ?? '*');
   const kits = names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name]));
-  assert.deepEqual(kits, MATERIALS.slice(0, kits.length));
-  // Stained glass is on the page before the kit gives it to a module (it is appended to the kit's list, last).
-  assert.ok(MATERIALS.slice(kits.length).every((ahead) => ahead === 'glass'));
+  assert.deepEqual(kits, [...MATERIALS]);
+});
+
+test("every material an event's or a Breach's piece wears is one the props' drawer draws", () => {
+  const drawn: readonly string[] = MATERIALS;
+  for (const name of PROP_MODULES) {
+    const module = manifest.modules.find((each) => each.name === name);
+    if (!module) continue;
+    for (const group of module.groups) assert.ok(drawn.includes(group.material), `${name}: ${group.material}`);
+  }
 });
 
 test('every material a module may wear has a colour of its own in the drawer, none left to the grey default', () => {

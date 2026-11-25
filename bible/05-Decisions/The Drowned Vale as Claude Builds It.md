@@ -134,3 +134,22 @@ Claude's calls for how the run is lit and drawn ([[Breaches]], "Its art"). The o
 | Bells outside their rounds | A dim bell asleep at every socket no bell foe holds | Empty frames read as missing art; the woken bell is the bright one |
 | A hidden chest that will pay | The heroic chest, its crystal alight; the plain chest dim while it will not | Told apart at a glance, with what the game already has |
 | The gate opened to a company | Its doorway the dark of the way in, filling the doorway's opening exactly, a faint violet low in it | The recess's back wall read as a wall where the company is meant to go through; the seal's own shape stood proud of the jambs |
+
+## Its pieces
+
+The modules' shapes are Claude's, as the owner's "a detailed design pass on everything ... an overall push to make the
+fidelity of this insanely impressive" asked. The owner can change any of them.
+
+| Call | Chosen | Why |
+|---|---|---|
+| The court's rim | No kerb or balustrade; flags cracked along its edge, some tipped over it, and teeth of the torn rock round it under the floor's top | A rail bodies pass through promises what the edge does not keep; a broken edge reads as the drop it is |
+| The court's set pieces | Its broken columns on square bases, the walls' stubs by its rifts and the throne's arms and back are parts | What looks solid on a fight floor stops a body |
+| The court's rifts | A wall behind each arch, from its jambs' backs to the floor's edge, 9 m high | As the hall and the shores have: the opening shows a wall, and a body walked into it shut stands on the floor |
+| The Ways' barricades | Each halfway along the street it stands across, between two crossings or a crossing and the lane inside the town's wall, its socket `bar-1` to `bar-8` on its top; two by the lane, so every Watcher's post and mouth is walked to straight down some street | A bar standing in a crossing would leave the street round it open; between crossings it cuts the street, so the way through is a maze |
+| The Ways' porches | Jambs standing 1 m out, parts | A body stands between them out of the sight of a Watcher down the street, which reads the parts |
+| The Ways' windows | Bricked up, one over each door, two in each house's back and one in each side, clear of the barricades: a dark infill under a lintel over a sill | The houses read as homes shut up, within the module's triangles |
+| The seals | A `seal` socket in each doorway, inside its walls' thickness, the plan's seals stood there; the crystal grown from the jambs, the foot and the head, no wider or deeper than its part (6.4 by 1 m) | It stands where it shuts, and nothing of it hangs over the walls it is set in |
+| The Mending's pieces | Its field walls parts, the two north ones by the north cottages, clear of the ways between the seams; the cart squared and the barrels north of the west cottage, each the part of its box; the well's posts and the chimneys parts | Cover that is cover, off the lines walkers and players run |
+| The Choir's fallen beams | Laid square on the floor, each a part, the first clear of the nave's middle | Cover in the nave that never stands between the door and the font |
+| The gate's ledges | A faced rock's outer row kept inside its box | The rock stands no further out than the ledge's solid face, but for its buttresses |
+| Stained glass | A material of its own, `glass`, in the Choir's rose and the shore's lancets | The windows read as glass, not lamps |

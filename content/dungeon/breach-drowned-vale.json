@@ -116,19 +116,19 @@
   "seals": [
     {
       "space": "mending",
-      "socket": "exit",
+      "socket": "seal",
       "opens": "mending",
       "turn": 0
     },
     {
       "space": "choir",
-      "socket": "exit",
+      "socket": "seal",
       "opens": "choir",
       "turn": 1
     },
     {
       "space": "hall",
-      "socket": "exit",
+      "socket": "seal",
       "opens": "shores",
       "turn": 1
     }
