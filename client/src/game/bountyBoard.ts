@@ -33,11 +33,12 @@ const NARROW = 600;
 const SLOT_CLOAK = SLOTS.indexOf('cloak');
 
 export interface BountyRow {
-  /** Its place on the board, which its asks name: the town's 0 to 5, then each faction's three. */
+  /** Its place on the board, which its asks name: the town's 0 to 5, then each faction's three, then the passages'
+   *  two (the town's) at 15 and 16. */
   readonly place: number;
   readonly words: string;
   readonly name: string;
-  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons. */
+  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons, 3 in the passages. */
   readonly pool: number;
   /** Its tier, 1 to 3, by how big a task it is. */
   readonly tier: number;

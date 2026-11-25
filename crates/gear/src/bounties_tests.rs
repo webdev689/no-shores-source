@@ -64,3 +64,25 @@ fn the_towns_eight_count_in_their_pools_and_are_posted_by_no_faction() {
     assert_eq!(pools, [0, 0, 1, 1, 2, 2, 3, 3], "two on land, two at sea, two in dungeons, two in the passages");
     assert!(on.iter().all(|bounty| bounty.faction == 0));
 }
+
+#[test]
+fn a_passages_bounty_at_its_place_after_the_factions_is_taken_counted_and_turned_in_as_the_towns() {
+    let mut character = Character::starting();
+    character.story.prologue = true;
+    let day = 20_778;
+    for place in [15, 16] {
+        let bounty = crate::bounties::bounty_at(day, place).expect("on the board");
+        assert_eq!((bounty.pool, bounty.faction), (3, 0), "the passages', posted by the town");
+        assert_eq!(character.ask(Ask::TakeBounty { place, day }, at_board(day), &DICE), Ok(Done::Done));
+        let crate::objectives::Objective::Passage(deed) = bounty.objective else { panic!("a passage's deed") };
+        for _ in 0..bounty.target {
+            character.saw(&Feat::Passage(deed), day);
+        }
+        assert_eq!(character.activity.today.bounties.get(&place), Some(&bounty.target), "under the town's keys");
+        let aurem = character.materials.aurem;
+        assert_eq!(character.ask(Ask::TurnInBounty { place, day }, at_board(day), &DICE), Ok(Done::Done));
+        assert!(character.materials.aurem > aurem, "paid in Aurem, as the town's");
+        assert!(character.activity.today.turned_in.contains(&place));
+    }
+    assert!(character.activity.today.faction_bounties.is_empty(), "none under the factions' keys");
+}
