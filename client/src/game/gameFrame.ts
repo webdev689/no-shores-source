@@ -501,6 +501,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   /** A frame of the way between passage zones, over the island; once it has played and the place has come, the
    *  player arrives on foot. */
   const passingFrame = (seconds: number, size: { width: number; height: number }) => {
+    // A room gone to that shuts sends the player to their ship, as it would on foot, before its body ever comes.
+    if (playing.foot && parts.heed(playing.foot)) return;
     const shot = parts.passages.passing(seconds, playing.ready);
     if (shot) scene.draw(shot, size, clock, seconds, []);
     else playing.foot?.arrive(clock);
