@@ -25,8 +25,23 @@ fn hollows(weeks: core::ops::Range<u64>) -> impl Iterator<Item = (u64, Plan)> {
     })
 }
 
-/// How long a body is driven at the wall, ticks: 3 s, past any wall's foot at a run.
-const DRIVEN_TICKS: u32 = 180;
+/// How far past the floor's ring a body may stand at most: the ring's half metre in, the wall's run and its lip,
+/// and the diagonal of the cell the ground ends at.
+const LIP_REACH_M: f64 = 0.5 + 5.0 + 2.0 + 2.0 * core::f64::consts::SQRT_2;
+
+/// How far a point lies from a ring's nearest edge.
+fn off(ring: &[[f64; 2]], at: [f64; 2]) -> f64 {
+    let edge = |from: [f64; 2], to: [f64; 2]| {
+        let (east, south) = (to[0] - from[0], to[1] - from[1]);
+        let share = (((at[0] - from[0]) * east + (at[1] - from[1]) * south) / (east * east + south * south).max(1e-12))
+            .clamp(0.0, 1.0);
+        libm::hypot(at[0] - from[0] - east * share, at[1] - from[1] - south * share)
+    };
+    (0..ring.len()).map(|at| edge(ring[at], ring[(at + 1) % ring.len()])).fold(f64::MAX, f64::min)
+}
+
+/// How long a body is driven at the wall, ticks: 10 s, up any wall aslant to its lip and on.
+const DRIVEN_TICKS: u32 = 600;
 
 #[test]
 fn a_body_driven_at_a_hollows_wall_is_held_inside_its_bounds_by_the_ground() {
@@ -49,7 +64,10 @@ fn a_body_driven_at_a_hollows_wall_is_held_inside_its_bounds_by_the_ground() {
                     let controls = movement::Controls { jump: jump && tick % 40 == 0, ..controls };
                     body =
                         movement::step_body(&body, &controls, &hollow.blocks, &hollow.ground, movement::TICK_SECONDS);
-                    if !within(&hollow.bounds, [body.x, body.y]) || !hollow.ground.stands_at(body.x, body.y) {
+                    let past_floor =
+                        if within(&hollow.ring, [body.x, body.y]) { 0.0 } else { off(&hollow.ring, [body.x, body.y]) };
+                    let held = within(&hollow.bounds, [body.x, body.y]) && hollow.ground.stands_at(body.x, body.y);
+                    if !held || past_floor > LIP_REACH_M {
                         escaped.push(format!(
                             "week {week} zone {} {:?} {:?}: from {start:.1?} aslant {aslant} run {run} jump {jump}, \
                              out at {:.1?}",

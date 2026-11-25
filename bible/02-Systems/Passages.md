@@ -172,8 +172,9 @@ passages' own pieces standing in it with their solids.
   band from depth 11. A lamp's guard is an Elite band at the first lamp, a Miniboss and an Elite band at the second and
   third, a Miniboss and two Elite bands at the fourth. A vault stands a dungeon's garrison with its Miniboss in the end
   room, and no cache chest of its own: its cache is the passage's. A zone's room stands at most nine foes at once, its
-  bands and its waves together (`ZONE_FOES_MOST`); a hollow lays its posts for `Size::foes_most`, 7, 9 and 12 by size, bands past it not standing, so one player does its deal in about
-  three minutes and a lamp comes about every fifteen. A guard never stands again by itself. A foe of a passage zone
+  bands and its waves together (`ZONE_FOES_MOST`), bands past it not standing, so one player does its deal in about
+  three minutes and a lamp comes about every fifteen; a hollow lays its posts for `Size::foes_most`, 7, 9 and 12 by
+  size. A guard never stands again by itself. A foe of a passage zone
   pays three quarters of a kill as it falls, its XP, Aurem and chances of a find (`lamps::KILL_SHARE`).
 - **The week's two modifiers** are the zone's run's, weighing the runs' hooks (`run.rs`); **the zone's currents**
   weigh them too at the depth's strength: Kindled and Sharpened a blow, Shielded the share shielded, Frail a heal, Spent

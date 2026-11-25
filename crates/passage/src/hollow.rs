@@ -142,7 +142,7 @@ impl Outline {
         [reach * libm::cos(angle), reach * libm::sin(angle)]
     }
 
-    /// The section's ring: the edge a little inside, round it.
+    /// The floor's ring: the edge a little inside, round it.
     fn ring(&self) -> Vec<[f64; 2]> {
         if self.form != Form::Ravine {
             return (0..RING_POINTS)
