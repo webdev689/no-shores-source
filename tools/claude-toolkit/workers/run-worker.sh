@@ -5,11 +5,12 @@
 #   brief file: the whole task (common rules + the item). With --resume the brief is sent as a follow-up to the
 #   worker's last conversation in that worktree (claude -c), e.g. a controller update; its context is kept.
 # Log: <worktree>/../reports/<name>.log ; final report path is whatever the brief says.
-# Controller: start it with Bash run_in_background and timeout 7200000 (2 h; the 30 min default killed a worker
-# mid-run with its edits uncommitted). If one is stopped anyway: --resume it with 'commit what you have, then continue'.
+# Controller: start it detached, `setsid nohup bash run-worker.sh <worktree> <brief> >/dev/null 2>&1 </dev/null &`, and
+# wait with `wait-worker.sh <name>` (Bash run_in_background, timeout 7200000, started again at that limit): a worker
+# started as the background task itself is killed with it at 2 h. If one is stopped anyway: --resume it.
 # Late owner changes: append them to <worktree>/../reports/inbox-<name>.md; the worker re-reads it before each commit
 # and before its final report. Stop/--resume only for changes that invalidate work in progress.
-# Stop a worker: TaskStop on its background task, or `bash stop-worker.sh <worktree>` (pid file); never pkill -f.
+# Stop a worker: `bash stop-worker.sh <worktree>` (pid file); never pkill -f.
 KIT_DIR=${KIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}; SHARED_DIR=${SHARED_DIR:-$HOME/toolkit-data}; export KIT_DIR SHARED_DIR
 set -u; WT=$(cd "$1" && pwd); BRIEF=$2; MODE=${3:-}; NAME=$(basename "$WT"); OUT=$(dirname "$WT")/reports; mkdir -p "$OUT"
 cd "$WT"
