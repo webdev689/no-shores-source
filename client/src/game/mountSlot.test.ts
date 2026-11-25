@@ -12,7 +12,7 @@ import type { MovementRules } from '../rules/movementRules.ts';
 import { SLOOP_DECK } from '../ships/deck.ts';
 import { Aboard } from './aboard.ts';
 import { appearanceRows, previewDress } from './appearance/appearanceModel.ts';
-import { dressInGear } from './footFigures.ts';
+import { type Dressed, dressInGear } from './footFigures.ts';
 import { cardOf } from './gearCards.ts';
 import { sizesOf } from './gearNodes.ts';
 import { itemDetailOf } from './gearScreen.ts';
@@ -175,4 +175,21 @@ test('at sea the horse worn is read from the gear the sea sends, on deck as asho
   assert.equal(walker.rides, true, 'a horse worn');
   aboard.step(1 / 60, 0, IDLE, false, { ...helm, gearSent: state({ items: [] }) });
   assert.equal(walker.rides, false, 'and none once it is taken off');
+});
+
+test("bearing the Lodestone the player's figure holds no weapon, as the room has its bearer, and again once set down", () => {
+  const walker = Object.assign(Object.create(Walker.prototype) as Walker, {
+    player: { mounted: false, loadout: 0 },
+    you: { dress: plainDress('human', 0.3) },
+  });
+  const wardrobe = { sets: {}, garments: [], right: ['sword_iron'], left: [], hairStyles: [] };
+  const forge = { wardrobe: () => wardrobe } as unknown as Cards;
+  const dressed: Dressed = { gear: null, loadout: 0 };
+  const gear = state({ items: [item({ id: 1, kind: 2, at: 2 })] });
+  dressInGear(walker, forge, gear, dressed);
+  assert.equal(walker.you.dress.outfit.right, 'sword_iron', 'the sword worn');
+  dressInGear(walker, forge, gear, dressed, true);
+  assert.deepEqual([walker.you.dress.outfit.right, walker.you.dress.outfit.left], [null, null]);
+  dressInGear(walker, forge, gear, dressed);
+  assert.equal(walker.you.dress.outfit.right, 'sword_iron', 'dressed again once the stone is set down');
 });

@@ -100,7 +100,8 @@ impl Stats {
 /// only a body's numbers.
 #[must_use]
 pub fn stats<'a>(kind: Kind, traits: impl IntoIterator<Item = &'a str>) -> (Stats, Trim) {
-    let trim = trim_by(traits);
+    // An item's page shows no harm taken, the only numbers a Forged grade trims, so it reads each trait plain.
+    let trim = trim_by(traits, |_| false);
     let arms = loadout_arms(kind);
     let fights = match arms.ranged {
         Some(ranged) => shooting(kind, ranged, &trim),

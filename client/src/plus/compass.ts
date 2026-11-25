@@ -89,7 +89,7 @@ export function markPlace(
 export interface PlaceMark {
   readonly x: number;
   readonly y: number;
-  readonly kind: 'event' | 'heroic' | 'chest' | 'store';
+  readonly kind: 'event' | 'heroic' | 'chest' | 'store' | 'breach';
 }
 
 /** The ships the compass marks of `ships` round a player at `from`: those within their range. */

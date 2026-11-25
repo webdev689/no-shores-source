@@ -11,6 +11,7 @@ export const item = (fields: Partial<GearItem>): GearItem => ({
   name: 0,
   resource: null,
   breach: false,
+  hard: false,
   xp: 0,
   xpMost: 0,
   bought: 0,

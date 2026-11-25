@@ -27,6 +27,7 @@
     {"id": "corsairs_mark", "name": "Bone Mark", "rarity": "rare", "source": {"kind": "sold", "aurem": 2500, "level": 20}, "words": "Sold by the Tailor from level 20.", "art": {"ground": ["#1b1b1b", "#050505"], "ink": "#f1f1f1", "accent": "#c1121f", "pattern": "chevrons", "motif": "skull"}},
     {"id": "stormcallers", "name": "Stormcallers", "rarity": "rare", "source": {"kind": "faction", "faction": 1, "rank": 1}, "words": "Reach the Stormcallers' first rank.", "art": {"ground": ["#14406e", "#06121f"], "ink": "#c8f0ff", "accent": "#3a9be0", "pattern": "chevrons", "motif": "bolt"}},
     {"id": "lamplighters", "name": "Lamplighters", "rarity": "rare", "source": {"kind": "faction", "faction": 2, "rank": 1}, "words": "Reach the Lamplighters' first rank.", "art": {"ground": ["#7a3d0c", "#241003"], "ink": "#fff1c4", "accent": "#e09a2c", "pattern": "plain", "motif": "lantern"}},
-    {"id": "veiled", "name": "The Veiled", "rarity": "rare", "source": {"kind": "faction", "faction": 3, "rank": 1}, "words": "Reach the Veiled's first rank.", "art": {"ground": ["#2b1446", "#0a0512"], "ink": "#e6d4ff", "accent": "#7b4bc4", "pattern": "stripes", "motif": "moon"}}
+    {"id": "veiled", "name": "The Veiled", "rarity": "rare", "source": {"kind": "faction", "faction": 3, "rank": 1}, "words": "Reach the Veiled's first rank.", "art": {"ground": ["#2b1446", "#0a0512"], "ink": "#e6d4ff", "accent": "#7b4bc4", "pattern": "stripes", "motif": "moon"}},
+    {"id": "drowned-vale", "name": "The Drowned Vale", "rarity": "legendary", "source": {"kind": "breach"}, "words": "Lay the Steward to rest in the Drowned Vale.", "art": {"ground": ["#123038", "#05090c"], "ink": "#e05a5a", "accent": "#9fd6d0", "pattern": "waves", "motif": "spire"}}
   ]
 }

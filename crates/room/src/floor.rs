@@ -1,5 +1,5 @@
-//! The ground a room's fighters stand on: open ground at 0 m, the open sea, a node's window of the land, a ship's deck,
-//! a sea island, or a dungeon's floor.
+//! The ground a room's fighters stand on: open ground at 0 m, the dark under a Breach, the open sea, a node's window of
+//! the land, a ship's deck, a sea island, or a dungeon's floor.
 
 use crate::dungeon_ground::DungeonGround;
 use land::ground::Ground;
@@ -14,6 +14,9 @@ use movement::{Block, Body, Heights, Terrain, standing};
 #[derive(Clone, Debug, PartialEq)]
 pub enum Floor {
     Flat,
+    /// The dark under a Breach's spaces: open ground at 0 m far below them, over whose blocks a body vaults but never
+    /// climbs, so their walls and barricades hold.
+    Dark,
     Sea(Box<Heights>),
     Land(Box<Ground>),
     Deck(Box<movement::Heights>),
@@ -43,7 +46,7 @@ impl Terrain for Floor {
         match self {
             // The sea is at 0 m off the blocks as under them: its rim walls bodies in, but a drop or a shot over the
             // sea meets the water, not a wall's height.
-            Floor::Flat | Floor::Sea(_) => 0.0,
+            Floor::Flat | Floor::Dark | Floor::Sea(_) => 0.0,
             Floor::Land(ground) => ground.height_at(x, y),
             Floor::Deck(heights) | Floor::Island(heights) => heights.height_at(x, y),
             Floor::Dungeon(ground) => ground.height_at(x, y),
@@ -54,7 +57,7 @@ impl Terrain for Floor {
     /// mast, a gun, its rails) and a dungeon's rock, jambs and pillars are.
     fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
         match self {
-            Floor::Flat | Floor::Land(_) | Floor::Island(_) => false,
+            Floor::Flat | Floor::Dark | Floor::Land(_) | Floor::Island(_) => false,
             Floor::Sea(heights) | Floor::Deck(heights) => heights.walled(from, to),
             Floor::Dungeon(ground) => ground.walled(from, to),
         }
@@ -64,7 +67,7 @@ impl Terrain for Floor {
     /// rises.
     fn line_walled(&self, from: [f64; 3], to: [f64; 3]) -> bool {
         match self {
-            Floor::Flat | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => false,
+            Floor::Flat | Floor::Dark | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => false,
             Floor::Dungeon(ground) => ground.line_walled(from, to),
         }
     }
@@ -72,7 +75,7 @@ impl Terrain for Floor {
     /// Only a dungeon's walls stand in a shot's way: the land's rises are met by its height.
     fn wall_entry(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
         match self {
-            Floor::Flat | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => None,
+            Floor::Flat | Floor::Dark | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => None,
             Floor::Dungeon(ground) => ground.wall_entry(from, to),
         }
     }
@@ -80,13 +83,15 @@ impl Terrain for Floor {
     /// A shot falls onto the land's height, or onto a dungeon's floor under its walls.
     fn floor_at(&self, x: f64, y: f64) -> f64 {
         match self {
-            Floor::Flat | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => self.height_at(x, y),
+            Floor::Flat | Floor::Dark | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => {
+                self.height_at(x, y)
+            }
             Floor::Dungeon(ground) => ground.floor_at(x, y),
         }
     }
 
     fn climbs(&self) -> bool {
-        !matches!(self, Floor::Sea(rim) if !rim.climbs())
+        !matches!(self, Floor::Dark) && !matches!(self, Floor::Sea(rim) if !rim.climbs())
     }
 }
 

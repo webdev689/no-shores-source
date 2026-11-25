@@ -20,6 +20,7 @@ test("the guild dungeon's run is named after its outpost, its tier at Elite or A
       run: 'abcd1234',
       playlist: null,
       guild: KEY,
+      breach: null,
     });
     // Its ask is the host's, which reads the outpost first (`delveHost.ts`).
     assert.equal(runAsk(delveRoom(KEY, 'crown-isle', tier, 'abcd1234'), 0), null);

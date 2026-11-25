@@ -144,7 +144,10 @@ struct Drawn { @location(0) colour: vec4f, @builtin(frag_depth) depth: f32 }
   let clip = view.from_eye * vec4f(pulled(in.from_eye, in.from_eye.z + view.right.z), 1.0);
   // A smear keeps standing a hair behind its figure, as its vertices put it.
   let feet_depth = select(clip.z / clip.w, clip.z / clip.w * 0.999, card.tint.w > 0.5);
-  return Drawn(vec4f(shown.rgb, 1.0), mix(in.position.z, feet_depth, near_feet));
+  // Underground (key_light.w, where all is dark), a figure fades into the dark as the stone round it does.
+  let far = sky_state.key_light.w;
+  let dark = select(0.0, smoothstep(far / 3.0, far, length(in.from_eye)), far > 0.0);
+  return Drawn(vec4f(mix(shown.rgb, sky_state.fog.rgb, dark), 1.0), mix(in.position.z, feet_depth, near_feet));
 }
 
 // A figure's contact shade: a soft dark disc on the ground at its feet. Where the near shadow map holds the figure's

@@ -46,6 +46,7 @@ test('where a player is reads as its place: a node by name and its difficulty, t
   const guild = 'node-tern-strand-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
   assert.equal(placeWords(`${guild}--run-k3j4h5g6`), 'Tern Strand Outpost · Guild dungeon', "a guild's room's run");
   assert.equal(placeWords(`${guild}--abyss--run-k3j4h5g6`), 'Tern Strand Outpost · Guild dungeon · Abyss');
+  assert.equal(placeWords('node-gullwing-vale--breach-hard--run-k3j4h5g6'), 'Gullwing Vale · Breach · Hard');
   assert.equal(
     placeWords('node-saltworm-warrens--abyss--run-k3j4h5g6'),
     'Saltworm Warrens · Abyss Dungeon of the week',
@@ -125,11 +126,12 @@ test('each player offers what their place in the lists allows, and what cannot b
     'away: no join',
   );
   assert.deepEqual(labels(lists, 'Ada'), ['Details', 'Leave guild'], 'oneself');
-  const three = roster({ company: { leader: 'Ada', members: [person('Ada'), person('Ben'), person('Cal')] } });
-  assert.ok(labels(three, 'Dee').includes('Invite to company'), 'three of four invite one more');
-  const members = [person('Ada'), person('Ben'), person('Cal'), person('Dee')];
+  const seven = ['Ada', 'Ben', 'Cal', 'Dee', 'Eve', 'Fay', 'Gil'].map((name) => person(name));
+  const almost = roster({ company: { leader: 'Ada', members: seven } });
+  assert.ok(labels(almost, 'Hal').includes('Invite to company'), 'seven of eight invite one more');
+  const members = [...seven, person('Hal')];
   const full = roster({ company: { leader: 'Ada', members } });
-  assert.ok(!labels(full, 'Eve').includes('Invite to company'), 'a full company invites no one');
+  assert.ok(!labels(full, 'Ivy').includes('Invite to company'), 'a full company of eight invites no one');
   assert.ok(labels(full, 'Ben').includes('Remove from company'), 'its leader removes');
   assert.ok(!labels(full, 'Ben').includes('Go to them'), 'in the same room');
   assert.ok(labels(full, 'Cal', 'node-saltgrass-downs').includes('Go to them'), 'a member playing elsewhere');

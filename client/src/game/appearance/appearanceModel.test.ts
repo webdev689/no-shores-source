@@ -54,6 +54,10 @@ test('kept pieces are lit and the one worn of each kind is marked; the rest are 
 test("each card says how its piece is had: the Tailor's, the Tack's, a faction's rank, or from the start", () => {
   assert.equal(howHad({ kind: 'sold', aurem: 1000, level: 1 }, 'dye'), 'Sold by the Tailor.');
   assert.equal(howHad({ kind: 'sold', aurem: 3000, level: 5 }, 'coat'), 'Sold by the Tack from level 5.');
+  assert.equal(
+    howHad({ kind: 'breach' }, 'barding'),
+    "A chance with the Steward's first clear each week, likelier at Hard.",
+  );
   assert.equal(howHad({ kind: 'sold', aurem: 9000, level: 20 }, 'barding'), 'Sold by the Tack from level 20.');
   assert.equal(howHad({ kind: 'faction', faction: 2, rank: 2 }, 'dye'), "Reach the Lamplighters' second rank.");
   assert.equal(howHad({ kind: 'faction', faction: 3, rank: 2 }, 'dye'), "Reach the Veiled's second rank.");

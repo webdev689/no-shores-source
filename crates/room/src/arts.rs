@@ -134,6 +134,11 @@ impl Room {
         if !self.arts {
             return;
         }
+        // The Lodestone's bearer casts no Art: their Art's key grounds it (`breach/lodestone.rs`).
+        if cast.is_some() && self.bears_lodestone(player) {
+            self.ground_lodestone(player);
+            return;
+        }
         let Some((cast, found)) = cast.zip(self.players.get_mut(&player)) else { return };
         let character = &found.character;
         let known = cast.spell >= 1
