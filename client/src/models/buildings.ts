@@ -153,15 +153,39 @@ export type Opening = Pane & {
   readonly height: number;
 };
 
+/** Whether a building's pitched masses are gabled, else hipped: the first draw of its own seed (`randomFromSeed`). */
+const gabledBy = (random: { next(): number }): boolean => random.next() < 0.5;
+
+/** A gable's end: the triangle its roof stands at each end of its ridge, in the plane where x (`axis` 0) or z (2) is
+ *  `fixed`, from `from` to `to` along it, rising from the eaves `low` to the ridge `high` over its middle. */
+type GableEnd = { axis: 0 | 2; fixed: number; from: number; to: number; low: number; high: number };
+
+/** The ends of the gables `buildingModel` roofs the plan's masses with, the building `gabled` (none where it hips):
+ *  where a lower wing's end stands in a taller mass's wall, no window is laid. */
+function gableEnds(measure: BuildingMeasure, plan: Plan, gabled: boolean): GableEnd[] {
+  const fit = boxFrame(measure);
+  return plan.masses.flatMap((block): GableEnd[] => {
+    const roof = gabled ? roofOf(block, plan, fit, measure.doors ?? []) : null;
+    if (!roof) return [];
+    const { west, east, south, north, rise } = roof;
+    const [low, high] = [block.top, block.top + rise];
+    return east - west >= north - south
+      ? [west, east].map((fixed) => ({ axis: 0, fixed, from: south, to: north, low, high }))
+      : [south, north].map((fixed) => ({ axis: 2, fixed, from: west, to: east, low, high }));
+  });
+}
+
 /** Where an open building's windows go through its walls, as `buildingModel` cuts them. */
-export function openingsOf(measure: BuildingMeasure, frameOf?: WindowFrameOf): Opening[] {
+export function openingsOf(table: BuildingTable, id: number, frameOf?: WindowFrameOf): Opening[] {
+  const measure: BuildingMeasure | undefined = table[id];
+  const size = measure?.glass && windowSize(measure.glass, frameOf);
+  if (!measure || !size) return [];
   const plan = planOf(measure);
-  const size = measure.glass && windowSize(measure.glass, frameOf);
-  if (!size) return [];
+  const ends = gableEnds(measure, plan, gabledBy(randomFromSeed(seedOf(id))));
   return plan.masses.flatMap((block) =>
     glassOf(block, measure)
       ? sides(partBuilder(), measure.walls[0] ?? measure.looks[0], block, plan).flatMap((run) =>
-          panesOf(run, block.base, measure.doors ?? [], size).map((pane) => ({
+          panesOf(run, block.base, measure.doors ?? [], size, ends).map((pane) => ({
             normal: run.normal,
             fixed: run.fixed,
             width: size.width,
@@ -220,8 +244,27 @@ function wallAround(
 }
 
 /** Where a wall's run takes its windows: a storey apart, clear of the run's ends and of every door. */
-function panesOf(run: Run, base: number, doors: readonly MeasuredDoor[], { width, height }: WindowSize): Pane[] {
+function panesOf(
+  run: Run,
+  base: number,
+  doors: readonly MeasuredDoor[],
+  { width, height }: WindowSize,
+  ends: readonly GableEnd[],
+): Pane[] {
   const [, storey, sill, clear] = WINDOW_M;
+  // A lower wing's gable whose end stands in this wall's plane, under a window: that window would look into its roof.
+  const axis = run.normal[0] ? 0 : 2;
+  const gables = ends.filter((end) => end.axis === axis && Math.abs(end.fixed - run.fixed) < 1e-3);
+  const underGable = (left: number, right: number, level: number) =>
+    gables.some((end) => {
+      const [from, to] = [Math.max(left, end.from), Math.min(right, end.to)];
+      if (from >= to) return false;
+      const [middle, half] = [(end.from + end.to) / 2, (end.to - end.from) / 2];
+      const highest = Math.min(Math.max(middle, from), to);
+      return (
+        level + height > end.low && level < end.low + (end.high - end.low) * (1 - Math.abs(highest - middle) / half)
+      );
+    });
   const length = run.to - run.from;
   const count = Math.floor((length - clear * 2 + storey - width) / storey);
   const panes: Pane[] = [];
@@ -240,7 +283,7 @@ function panesOf(run: Run, base: number, doors: readonly MeasuredDoor[], { width
         point(right, level + height),
         point(left, level + height),
       ];
-      if (!doors.some((door) => near(door, corners))) panes.push({ middle, level });
+      if (!doors.some((door) => near(door, corners)) && !underGable(left, right, level)) panes.push({ middle, level });
     }
   }
   return panes;
@@ -430,14 +473,16 @@ export function buildingModel(
   const plan = planOf(measure);
   const size = measure.glass && windowSize(measure.glass, frameOf);
   const random = randomFromSeed(seedOf(id));
-  const gabled = random.next() < 0.5;
+  const gabled = gabledBy(random);
+  const ends = gableEnds(measure, plan, gabled);
   let stacks = 0;
   for (const block of plan.masses) {
     const { wing } = block;
     const span = Math.min(block.x1 - block.x0, block.z1 - block.z0);
     const pitched = roofOf(block, plan, fit, measure.doors ?? []);
     const glass = glassOf(block, measure);
-    const panes = (run: Run): Pane[] => (glass && size ? panesOf(run, block.base, measure.doors ?? [], size) : []);
+    const panes = (run: Run): Pane[] =>
+      glass && size ? panesOf(run, block.base, measure.doors ?? [], size, ends) : [];
     // An open building's windows are holes through its wall, seen through from either side.
     const look = block.top - block.base < 1.2 ? trim : wall;
     const runs = sides(parts, look, block, plan, open ? panes : undefined, size);

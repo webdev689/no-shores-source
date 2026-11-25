@@ -25,6 +25,7 @@ import {
   originInstance,
 } from './cityGpu.ts';
 import { CityPainter, type PaintProgress, painting } from './painter.ts';
+import type { ModelEntry } from './cityModels.ts';
 import { standIn } from '../standIns.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
@@ -393,7 +394,7 @@ export class CityView implements CityDrawer {
     pass.setPipeline(cast);
     pass.setBindGroup(0, drawn.group);
     pass.setBindGroup(1, shadow.casterGroup(cast));
-    if (!far) this.drawNear(pass, drawn, 'near', cells);
+    if (!far) this.drawNear(pass, drawn, 'near', cells, (entry) => !entry.clear);
     pass.setVertexBuffer(0, drawn.solidVertices);
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
@@ -402,7 +403,14 @@ export class CityView implements CityDrawer {
     const eye = [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] as const;
     if (!far) for (const run of detailRuns(chunks, eye, this.detail)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
     this.drawCrystal(pass, drawn, chunks, eye);
-    if (!far) return;
+    if (!far) {
+      // An open building's windows let the sun into its rooms through their clear panes.
+      const clear = this.pipelines.modelsClearCast;
+      pass.setPipeline(clear);
+      pass.setBindGroup(1, shadow.casterGroup(clear));
+      this.drawNear(pass, drawn, 'near', cells, (entry) => entry.clear === true);
+      return;
+    }
     pass.setPipeline(this.pipelines.massesCast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.massesCast));
     pass.setVertexBuffer(0, drawn.masses);
@@ -467,6 +475,7 @@ export class CityView implements CityDrawer {
     drawn: Drawn,
     holding: Modelled,
     cells: readonly number[],
+    drawing: (entry: ModelEntry) => boolean = () => true,
   ): { draws: number; triangles: number } {
     const { data } = drawn;
     const held = drawn.instances[holding];
@@ -514,7 +523,7 @@ export class CityView implements CityDrawer {
     pass.setIndexBuffer(drawn.modelIndices, 'uint32');
     for (const [model, first, instances] of held.draws) {
       const entry = data.models.entries[model];
-      if (!entry.indexCount) continue;
+      if (!entry.indexCount || !drawing(entry)) continue;
       pass.drawIndexed(entry.indexCount, instances, entry.firstIndex, entry.baseVertex, first);
       drew.draws++;
       drew.triangles += (entry.indexCount / 3) * instances;

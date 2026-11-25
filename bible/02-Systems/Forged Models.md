@@ -60,7 +60,8 @@ Every forge answers a `ForgedModel`: positions, normals, UVs and indices, its pa
 underside) to its eaves. It walls each side that stands in the open; a taller wing's wall rises over a lower wing's
 roof. A pitched wing gets a roof, gabled or hipped by the building's own seed, its eaves out 0.3 m over open ground
 with a soffit under them, and up to two chimneys. A flat wing gets a parapet; a wing a door opens onto is a terrace.
-Windows are laid a storey apart along each wall, clear of every door, each its glass picture's window and frame
+Windows are laid a storey apart along each wall, clear of every door and of a lower wing's gable whose end stands
+in the wall, each its glass picture's window and frame
 alone, without the wall the picture paints round it (`frameOf`, the textures' `windowFrameOf` in the city's climate):
 2 m wide at the frame's proportions, narrower where a storey holds no more over its 0.9 m sill ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]). An open
 building's (one walked into) are holes through its wall, the window laid again on its room's lining facing in and its

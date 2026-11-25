@@ -25,7 +25,7 @@ export function cutAtWindows(
   const windowed = pieces
     .filter((piece) => piece.open && piece.building && buildings[piece.model]?.glass)
     .map((piece) => {
-      const known = openings.get(piece.model) ?? openingsOf(buildings[piece.model], frameOf);
+      const known = openings.get(piece.model) ?? openingsOf(buildings, piece.model, frameOf);
       openings.set(piece.model, known);
       const holes = known.map((opening) => holeOf(piece, opening));
       const round = holes.reduce<Box>(

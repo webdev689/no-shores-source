@@ -297,7 +297,9 @@ flickering on its own, and each glowing solid is a lamp ([[Sky]]). Faces are lit
 little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.
 In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one, and each
 building's masses (its hull past where the masses are drawn) into the far one, a few boxes standing in for a model
-whose shadow at the far map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]).
+whose shadow at the far map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]). An open
+building's windows let the sun into its rooms through their clear panes: its models cast through a pass that reads
+their pictures (`MODEL_CLEAR_CAST_SHADER`), every other model through one that reads none.
 
 | Material | Temperate | Desert | Mountain | Swamp |
 |---|---|---|---|---|

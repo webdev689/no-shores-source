@@ -489,6 +489,37 @@ fn model_cast(vertex: Vertex) -> @builtin(position) vec4f {
 }
 `;
 
+/** An open building's depth along the sun, as `MODEL_CAST_SHADER` gives it, but through its windows' clear panes,
+ *  which let the sun into its rooms as they let the eye. Only models with clear windows are cast with it: reading the
+ *  pictures costs the shadow pass its early depth test. */
+export const MODEL_CLEAR_CAST_SHADER = /* wgsl */ `
+${VIEW}
+${SHADOW_CAST_WGSL}
+${MODEL_PLACE}
+const CLEAR_GLASS = ${CLEAR_GLASS}u;
+const LAST_PICTURE = ${PICTURE_LAYERS - 1}u;
+
+struct Cast {
+  @builtin(position) position: vec4f,
+  @location(0) uv: vec2f,
+  @location(1) @interpolate(flat) layer: u32,
+};
+
+@vertex
+fn model_clear_cast(vertex: Vertex) -> Cast {
+  return Cast(shadow.from_eye * vec4f(placed_broken(vertex) - view.eye.xyz, 1.0), vertex.uv, vertex.layer);
+}
+
+@fragment
+fn model_clear_cast_fragment(caster: Cast) {
+  let layer = caster.layer & ~CLEAR_GLASS;
+  let picture = textureSample(pictures, picture_sampler, caster.uv, min(layer, LAST_PICTURE));
+  if (caster.layer & CLEAR_GLASS) != 0u && picture.a < 0.5 {
+    discard;
+  }
+}
+`;
+
 /** The masses' and hulls' depth along the sun, for the far shadow map: stood up as they are drawn. */
 export const MASS_CAST_SHADER = /* wgsl */ `
 ${VIEW}

@@ -35,8 +35,14 @@ export function forgedModel(
   return buildingModel(tables.buildings, Number(id), { open: kind === 'open', frameOf });
 }
 
-/** Where each model sits in the shared buffers. */
-export type ModelEntry = { readonly firstIndex: number; readonly indexCount: number; readonly baseVertex: number };
+/** Where each model sits in the shared buffers, and whether any of it is an open building's clear window, whose
+ *  shadow lets the sun through its panes as the eye sees through them. */
+export type ModelEntry = {
+  readonly firstIndex: number;
+  readonly indexCount: number;
+  readonly baseVertex: number;
+  readonly clear?: boolean;
+};
 
 export type ModelBuffers = {
   readonly vertices: ArrayBuffer;
@@ -92,7 +98,8 @@ export function* modelBufferSteps(
         whole[(vertexAt + model.indices[k]) * MODEL_FLOATS + 8] = layer;
     }
     indices.set(model.indices, indexAt);
-    entries.push({ firstIndex: indexAt, indexCount: model.indices.length, baseVertex: vertexAt });
+    const clear = model.parts.some((part) => part.clear);
+    entries.push({ firstIndex: indexAt, indexCount: model.indices.length, baseVertex: vertexAt, clear });
     triangles.push(model.indices.length / 3);
     vertexAt += count;
     indexAt += model.indices.length;

@@ -43,8 +43,8 @@ test('a lining cut round a window keeps the rest of it, its whole depth, and not
 });
 
 test("an open building's lining is cut behind each of its windows, at any quarter turn", () => {
-  const id = Number(Object.keys(buildings).find((key) => buildings[key].glass && openingsOf(buildings[key]).length));
-  const [opening] = openingsOf(buildings[id]);
+  const id = Number(Object.keys(buildings).find((key) => openingsOf(buildings, Number(key)).length));
+  const [opening] = openingsOf(buildings, id);
   for (const yaw of [0, 90, 180, 270]) {
     const piece = { model: id, building: true, open: true, at: [100, 200, 10] as const, yaw };
     // The window's middle, a hand inside its wall, turned into the world as the models are drawn (cityShaders turned).

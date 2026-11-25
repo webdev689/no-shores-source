@@ -1,9 +1,9 @@
 // The forged models are DFO's, whole, so this layer must build DFO's shapes to the bit, and only bytes show that.
 // Each hash is what DFO's own Building Forge, Prop Forge or Room Kit builds from the same table: a building from
 // every stretch of the table and every kind of wing, a prop of every family, and pieces of the kit with doors,
-// slopes and the big rooms; a building's windows are the owner's own, 2 m wide and their frame alone, where DFO's laid
-// the whole picture 1.6 m square. It covers the positions, normals, UVs and indices as bytes, then the parts. A
-// deliberate change to a shape re-pins its hash.
+// slopes and the big rooms; but not a building's windows, which are the owner's own, 2 m wide and their frame alone,
+// and left out where a lower wing's gable stands in the wall as where a door does. It covers the positions, normals,
+// UVs and indices as bytes, then the parts. A deliberate change to a shape re-pins its hash.
 import { strict as assert } from 'node:assert';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
@@ -38,8 +38,8 @@ const PINNED: Record<'buildings' | 'buildingsWithoutDoors' | 'props' | 'kit', Re
     314: 'ee5adca2e8829bc76224e64af0fcfbff8068ae86f4f5b401efee70731c9fa924',
     317: '7bbd77db2ac6b7cffddf1c57ca0d59e621517c6e5dd6891e0371dc7c76236dc9',
     330: 'db965482e651ce8d9533125d31bebf44b012d05011b5b97cdeed58d1b1d375fd',
-    345: '0ba989c7bbced6064f8ec8e759fbdce996cbfd5f1a923f741610a9ddb88d60ad',
-    402: '2a75460c739393a0e52ca6a879d1ff655d22da72ee680de23e18c106486da855',
+    345: 'd950c952813251627167c5991d7e3b2be26bdf57ff4092b355d9e243ed4e61c8',
+    402: '8e45e72538626653d9f6c13c63ffb696d8fde05b7450da161594423e7a4d224b',
     417: 'e8195bf2ec688c4f73691b3c82474b3b4689c3d3c40e4e595151e0b50f0bf7c7',
     439: '005682cb25fbefd96b753c52fd3f6bb49a76b358f3e39435c51bb02c472ff7b4',
     444: '7f51466df652df2b3aef64ddad83fd9fc8eabbdc084af46743ce68c8f90c94b1',
