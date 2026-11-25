@@ -152,8 +152,8 @@ patrol zone.
 
 | Call | Choice |
 |---|---|
-| Kills | As anywhere, at the zone's levels |
-| A deal's cache | Paid to each player who took part once it is done, at the zone's level, its XP and Aurem times 1 + (depth − 1) ÷ 38 (1 to 1.5), its finds into the haul with their chances times 1 + (depth − 1) ÷ 19. Skirmish 300 XP and 22 Aurem at level 5 and a Vestige one time in three; mission a mission's clear and a Vestige one time in two; vault a dungeon's clear, its Miniboss's item and Vestige; vein the six nodes and two fragments; reliquary a sure Vestige and two to five fragments; lamp 600 XP, 45 Aurem and a sure Vestige |
+| Kills | As anywhere, at the zone's levels, a passage zone's foe paying three quarters of a kill (`lamps::KILL_SHARE`) |
+| A deal's cache | Paid to each player who took part once it is done, at the zone's level, its XP and Aurem times 1 + (depth − 1) ÷ 76 (1 to 1.25), its finds into the haul with their chances times 1 + (depth − 1) ÷ 19 (1 to 2). At level 5: a skirmish 430 XP and 33 Aurem and a Vestige about one time in ten; a mission 560 and 42 and a Vestige about one time in six; a vault 870 and 65, its Miniboss's item about one time in three and its Vestige; a vein 220 and 16, the six nodes and two fragments; a reliquary 220 and 16, a sure Vestige and two to five fragments; a lamp 870 and 65 and a sure Vestige |
 | The day's lamp | The day's first lamp lit pays a dungeon of the day's clear at its level and a sure Vestige in a Boss's colours |
 | The week's lamps | The first time each week a player lights each lamp on an island: the first a sure Vestige in a Boss's colours; the second also one Essence of each stock; the third two; the fourth two, and a roll as the week's Abyss Dungeon's first clear, Legendary or Atheric. No Shapes, which come from the week's Abyss alone |
 | Bounties | A fourth pool on the board, the passages', two a day: light a lamp; finish three missions; bring down 25 foes; go 8 zones deep; open two reliquaries; gather a vein |
@@ -162,35 +162,17 @@ patrol zone.
 ## The band, measured
 
 Measured by `gear::band` against an hour of the patrol zone at the same level, its times from a scripted player in
-the rooms (`room::band_measure_tests`): a patrol garrison's foe 25 s, a patrol dungeon's 55 s, an Elite Dungeon's 45 s,
-a passage zone's 35 s and about eighteen foes a zone; the day's and the week's rewards spread over 14 hours a week;
-the haul's losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
+the rooms: a patrol garrison's foe 25 s, a patrol dungeon's 55 s and an Elite Dungeon's 45 s
+(`room::band_measure_tests`); a passage zone's deal played to done on a body's way about 192 s over about five foes,
+45 s a foe (`room::deal_measure_tests`); the day's and the week's rewards spread over 14 hours a week; the haul's
+losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
 
 | Call | Choice |
 |---|---|
 | The band | Every activity's XP and Aurem an hour 0.7 to 2 of the patrol zone's, its loot (each colour weighed twice the one below) 0.75 to 5; a test fails for any outside it, for the passages paying the most XP at every level, and for the passages dropping the most loot at any |
-| The passages' caches | At level 5: a skirmish 1,400 XP and 105 Aurem; a mission 1,800 and 135; a vault 2,800 and 210; a vein and a reliquary 700 and 52; a lamp 2,800 and 210. Depth raises their XP and Aurem 1 to 1.25 and their finds' chances 1 to 2. A zone takes one player about ten minutes, so the cache stands where a patrol zone's public events do; the passages measure 0.8 to 1.4 of the patrol zone's XP and 0.8 to 1.3 of its loot |
+| The passages' caches | The passages' main pay, as a dive pays through its caches, the lamp and the reliquary, deeper paying more: the numbers in "Rewards", sized for a zone of about three minutes |
+| The passages' lever | What a passage zone's foe pays as it falls: three quarters of a kill, its XP, Aurem and chances of a find (`lamps::KILL_SHARE`), the caches and the sure Vestiges standing; the share also scales the officer and boon XP that follow its kill, and Bountiful's more Vestiges are not shared. The passages measure 0.77 to 1.40 of the patrol zone's XP and 1.21 to 1.84 of its loot |
 | The sea | A sinking pays as twenty-one land kills of its rank; a ship's piece holds a module 12 times in a hundred and 4 more a rank, and its chest always. An hour at sea measured 0.44 of the patrol zone's XP at level 5, below the band, the twelve having been set against the patrol's kills alone |
-
-Replaced in part, by the table above: the caches' numbers in "Rewards".
-
-Replaced in part, to keep the owner's lamp about every 15 minutes at five zones: a zone's room stands at most nine
-foes, its bands and waves together, and a Kindle's and a Hold's wave comes every 30 s once the last is down; one
-player then does a zone's deal in about 145 s (`room::deal_measure_tests::measure_the_deals`), about eight foes, a lamp
-every twelve to fifteen minutes. The caches are set again to keep the band: at level 5 a skirmish 70 XP and 5 Aurem, a
-mission 90 and 7, a vault 140 and 10, a vein and a reliquary 40 and 3, a lamp 140 and 10; a Vestige 1 time in a
-hundred from a skirmish, 2 from a mission, 3 from a reliquary, 5 from a lamp, and a vault's item 1 time in 4. The
-passages measure 0.79 to 1.76 of the patrol zone's XP and 1.10 to 1.95 of its loot.
-
-Replaced in part, the measure having felled by hand the foes its script could not reach: a body now walks to all a
-zone asks (`room::passages::passage_reach_tests`), and the script plays on foot, felling none by hand; in the zones it
-did it took 192 s a zone over about five foes, 45 s a foe against a patrol's 25. The caches come back as the
-passages' main pay, the ten-minute zone's times 0.31, about 192 s over its 635 s: at level 5 a skirmish 430 XP and
-33 Aurem, a mission 560 and 42, a vault 870 and 65, a vein and a reliquary 220 and 16, a lamp 870 and 65; a
-skirmish's and a mission's Vestige and a vault's item at the same share of their chances; the reliquary's and the
-lamp's sure Vestige stand. Claude's call: the passages' lever on the band is what their foes pay as they fall, three quarters of a kill
-(`lamps::KILL_SHARE`), as the dive pays through its caches, deeper paying more, and its kills are its way there. The
-passages measure 0.77 to 1.40 of the patrol zone's XP and 1.21 to 1.84 of its loot.
 
 ## As the rules play them
 

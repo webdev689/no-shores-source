@@ -5,16 +5,15 @@
 //! foes brought down, none by hand. Run by hand, in release:
 //! `cargo test -p room --release measure_the_deals -- --ignored --nocapture`.
 
-use super::band_measure_tests::{Walker, level_one};
+use super::band_measure_tests::{REACH_M, Walker, level_one};
 use super::*;
 use crate::passages::PassageAsk;
 use passage::{Deal, Mission, PieceKind, Plan, Web};
 
 /// The longest one deal is let run: half an hour.
 const LONGEST_TICKS: u32 = 60 * 1_800;
-/// How near the player comes before swinging, how near a foe is fought before a dead lamp is held or a ring kept,
-/// and how near a dead lamp the player stands to hold it (m).
-const REACH_M: f64 = 1.6;
+/// How near a foe is fought before a dead lamp is held or a ring kept, and how near a dead lamp the player stands to
+/// hold it (m).
 const NEAR_M: f64 = 10.0;
 const AT_PIECE_M: f64 = 2.8;
 

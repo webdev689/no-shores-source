@@ -16,12 +16,15 @@ use std::collections::BTreeSet;
 const SWORD: u32 = 2;
 /// The longest one clear is let run: half an hour.
 const LONGEST_TICKS: u32 = 60 * 1_800;
-/// How near the player comes before swinging, metres, and how often the way is found again, ticks.
-const REACH_M: f64 = 1.6;
+/// How near the player comes before swinging, inside a blow's 1.1 m so a foe that stands still is struck, metres;
+/// and how often the way is found again, ticks.
+pub(super) const REACH_M: f64 = 1.0;
 const REPATH_TICKS: u32 = 15;
-const ON_FOOT_TICKS: u32 = 60;
+const ON_FOOT_TICKS: u32 = 15;
 /// How near a walk's next square a body comes before it makes for the one after, metres.
 const WALK_AHEAD_M: f64 = 0.3;
+/// How near its target a body on a walk's way makes straight for it, metres.
+const STRAIGHT_M: f64 = 2.0;
 /// How far forward a body leans while it swings within reach, a share of a step.
 const FACE_FORWARD: f64 = 0.05;
 /// A foe neither neared nor harmed in 20 s is out of the scripted player's reach (behind a wall it cannot path round,
@@ -54,7 +57,7 @@ impl Walker {
 
     /// One tick played: held whole, walking toward `there` until within `stop` of it, swinging every half second
     /// at it within a metre past `stop` when `swing`. In a passage zone the way is the walk's, square by square, found
-    /// again each second or as it runs out; elsewhere the navmesh's, its points a metre apart.
+    /// again each quarter second or as it runs out; elsewhere the navmesh's, its points a metre apart.
     pub(super) fn step(&mut self, room: &mut Room, there: [f64; 3], stop: f64, swing: bool) {
         let me = *room.fighter(self.player).expect("in");
         let apart = libm::hypot(there[0] - me.body.x, there[1] - me.body.y);
@@ -72,8 +75,8 @@ impl Walker {
         while self.way.first().is_some_and(|point| libm::hypot(point[0] - me.body.x, point[1] - me.body.y) < near) {
             self.way.remove(0);
         }
-        // A navmesh's way is walked straight its last 3 m; a walk's to its end, round every corner.
-        let straight = self.walk.is_none() && apart <= 3.0;
+        // A navmesh's way is walked straight its last 3 m; a walk's to within a blow, round every corner till then.
+        let straight = apart <= if self.walk.is_none() { 3.0 } else { STRAIGHT_M };
         let toward = self.way.first().copied().filter(|_| !straight).unwrap_or([there[0], there[1]]);
         room.set_fighter(self.player, combat::fighter::Fighter { health: me.health_max, ..me });
         let attack = (swing && self.ticks.is_multiple_of(30) && apart < stop + 1.0).then_some(Stroke::Down);
@@ -86,7 +89,8 @@ impl Walker {
         } else {
             0.0
         };
-        let controls = Controls { yaw, forward, ..Controls::default() };
+        // Running, as a player crosses a zone and chases a collector who runs.
+        let controls = Controls { yaw, forward, run: true, ..Controls::default() };
         let input = Input {
             sequence: self.ticks + 1,
             intent: Intent { controls, combat: CombatInput { attack, ..CombatInput::default() } },
