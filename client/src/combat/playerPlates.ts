@@ -33,14 +33,20 @@ const COLOURS = {
 } as const;
 
 /** Another player as their plate is drawn: their number, where their figure's feet stand, what the room says of them,
- *  whether they are in the viewer's company, and at sea the name of the ship they sail, if they named it. */
+ *  whether they are in the viewer's company, whether a Breach marks them Rewritten, and at sea the name of the ship
+ *  they sail, if they named it. */
 export interface PlatedPlayer {
   readonly id: number;
   readonly feet: Point;
   readonly plate: PlayerPlate;
   readonly company: boolean;
   readonly vessel?: string;
+  readonly marked?: boolean;
 }
+
+/** The Rewritten's word on a plate, in the pale violet of the ring under them (`breachView.ts`). */
+const REWRITTEN_WORD = 'Rewritten';
+const REWRITTEN = '#c4a8ff';
 
 /** How the plates see the world this frame: the camera, whether a line is blocked, where a point falls on the screen
  *  (null behind the eye) with its depth, and the viewer's own feet, from which a person's reach is measured. */
@@ -160,7 +166,7 @@ export class PlayerPlates {
       y,
       depth,
       // The words are drawn whole at any distance: only the square shrinks. A ship's name is a second line.
-      width: (SIDE + 6) * scale + Math.max(plateWords(player.plate).length, player.vessel?.length ?? 0) * LETTER_PX,
+      width: (SIDE + 6) * scale + Math.max(plateWords(player).length, player.vessel?.length ?? 0) * LETTER_PX,
       height: player.vessel ? Math.max(SIDE * scale, 2 * LINE_PX) : SIDE * scale,
     }));
     const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
@@ -207,13 +213,16 @@ export class PlayerPlates {
   }
 }
 
-/** What a plate writes after its square: the name, and the guild's tag in brackets after it; none for a guest. */
-function plateWords(plate: PlayerPlate): string {
-  return plate.name === '' ? '' : plate.tag === '' ? plate.name : `${plate.name} [${plate.tag}]`;
+/** What a plate writes after its square, as it is laid: the name, and the guild's tag in brackets after it (none for a
+ *  guest), and the Breach's Rewritten mark while the player bears it. */
+export function plateWords({ plate, marked }: PlatedPlayer): string {
+  const named = plate.name === '' ? [] : plate.tag === '' ? [plate.name] : [plate.name, `[${plate.tag}]`];
+  return [...named, ...(marked ? [REWRITTEN_WORD] : [])].join(' ');
 }
 
 /** A player's plate at `scale`: its square (or the bubble), their name and their guild's tag a shade fainter after it,
- *  in the company's colours or another's, and under them the name of the ship they sail, where it has one. */
+ *  in the company's colours or another's, the Breach's Rewritten mark after them while they bear it, and under them
+ *  the name of the ship they sail, where it has one. */
 export function plateNode(player: PlatedPlayer, scale: number): Node {
   const colours = player.company ? COLOURS.company : COLOURS.other;
   const side = Math.round(SIDE * scale);
@@ -246,6 +255,7 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
         opacity: TAG_OPACITY,
         text: { words: `[${plate.tag}]`, colour: colours.word, edge: 'halo', wrap: false },
       },
+    !!player.marked && { text: { words: REWRITTEN_WORD, colour: REWRITTEN, edge: 'halo', wrap: false } },
   ];
   const vessel: Node | false = Boolean(player.vessel) && {
     text: { words: player.vessel ?? '', colour: TONES.stoneHi, edge: 'halo', wrap: false },

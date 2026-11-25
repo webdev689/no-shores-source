@@ -295,6 +295,7 @@ fn snapshot<'snapshot>(
         public: Some(public),
         encounter: Some(&crate::encounter_wire_tests::ENCOUNTER),
         outpost: 0,
+        breach: None,
         darkness: false,
         reviving: &[],
     }

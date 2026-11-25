@@ -45,6 +45,8 @@ table GearItem {
   element: ubyte;
   source: ubyte;
   story: bool;
+  /// A Breach's piece won at Hard, which climbs to 30 Prestige (last, so old readers skip it).
+  hard: bool;
 }
 
 // A Vestige a player holds: their number for it, its colour, the slot it holds an item for, that item's level,

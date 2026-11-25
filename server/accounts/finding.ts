@@ -4,10 +4,11 @@
  * starts with four of a band, or fewer once its first has waited a minute, keeping apart any two where one blocks the
  * other. A group found is no company: the accounts keep whom each run was found for (`found_runs`), and that run's
  * room lets them in together, for that run alone. The Abyss Dungeon of the week is never matched. The two playlists
- * have a queue each, banded by five levels, whose runs are drawn as they are found (playlists.ts).
+ * have a queue each, banded by five levels, whose runs are drawn as they are found (playlists.ts). A Breach's run is
+ * launched for its seeker's company from the Playlist, up to eight, never matched.
  */
 
-import { RUN_MOST } from '../roomNames.ts';
+import { type BREACH_TIERS, RUN_MOST } from '../roomNames.ts';
 import { liveAccount } from './characters.ts';
 import { FOUND_KEPT_MS } from './companies.ts';
 import type { Db } from './database.ts';
@@ -36,8 +37,24 @@ const ANOTHER_TAB = 'You are finding a company in another tab.';
 /** The longest base a run is found for, so its run's name (`--run-` and eight more) fits a room's 64. */
 const BASE_MOST = 50;
 /** An Elite Dungeon's base at Normal, the week's at Elite (`--sea` after it from the Playlist, whose run is started
- *  at sea), or a playlist's, as Find a Company is asked for it by WebSocket. */
-const FINDING = /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?)?|playlist-(?:elite|abyss))$/;
+ *  at sea), a Breach's at its tier (`node-<its gate's zone>--breach-<tier>`), or a playlist's, as Find a Company is
+ *  asked for it by WebSocket. */
+const FINDING =
+  /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?|--breach-(?:normal|hard))?|playlist-(?:elite|abyss))$/;
+/** A Breach's base, and the level each of its tiers opens at (`gear::breach::Tier::opens_at`), in the gate's words. */
+const BREACH_BASE = /--breach-(normal|hard)$/;
+export const BREACH_OPENS = { normal: 25, hard: 29 } as const;
+/** Each Breach by the patrol zone its gate stands in (`gear::breach::BREACHES`): no other zone launches one. */
+export const BREACH_ZONES: Readonly<Record<string, string>> = { 'gullwing-vale': 'drowned-vale' };
+/** Why Hard is shut to one who has not won the Breach at Normal (`gear::gate::Shut::BreachHard`). */
+export const BREACH_HARD_SHUT = 'A Breach at Hard opens once you have won it at Normal.';
+/** The Breach a base launches, by its zone; null for a base that is no Breach's. */
+const breachOf = (base: string) => BREACH_ZONES[/^node-(.+)--breach-/.exec(base)?.[1] ?? ''] ?? null;
+export const BREACH_LAUNCHED = 'A Breach is launched by its company from the Playlist.';
+/** A Breach launched again by its company within this is the run it launched, so two members' Launches start one. */
+export const BREACH_RELAUNCH_MS = 30 * 60_000;
+const breachShut = (tier: (typeof BREACH_TIERS)[number]) =>
+  `A Breach at ${tier === 'normal' ? 'Normal' : 'Hard'} opens at level ${BREACH_OPENS[tier]}.`;
 
 /** The week's Elite Dungeon's bases, from its door or from the Playlist. */
 const WEEK = /--elite(?:--sea)?$/;
@@ -54,6 +71,7 @@ export function bandOf(level: number): number {
 export function findingAt(request: Request): string | null {
   if (request.headers.get('Upgrade') !== 'websocket') return null;
   const base = FINDING.exec(new URL(request.url).pathname)?.[1];
+  if (base !== undefined && BREACH_BASE.test(base) && breachOf(base) === null) return null;
   return base !== undefined && base.length <= BASE_MOST ? base : null;
 }
 
@@ -124,13 +142,25 @@ export async function seekerOf(database: Db, token: string, now: number): Promis
   if (account === null) return null;
   const kept = await database
     .prepare(
-      `SELECT json_extract(body, '$.shown.level') AS level, json_extract(body, '$.story.prologue') AS prologue
-       FROM characters WHERE account_id = ?1`,
+      `SELECT json_extract(body, '$.shown.level') AS level, json_extract(body, '$.story.prologue') AS prologue,
+       json_extract(body, '$.story.breaches') AS breaches FROM characters WHERE account_id = ?1`,
     )
     .bind(account)
-    .first<{ level: number | null; prologue: number | null }>();
+    .first<{ level: number | null; prologue: number | null; breaches: string | null }>();
   const [level, prologue] = [Number(kept?.level ?? 1) || 1, Boolean(kept?.prologue)];
-  return { account, level, prologue, apart: await apartFrom(database, account) };
+  const breaches = wonOf(kept?.breaches ?? null);
+  return { account, level, prologue, breaches, apart: await apartFrom(database, account) };
+}
+
+/** The Breaches a character has won, by their records' keys (`drowned-vale/normal`), from their JSON; none for any
+ *  other text. */
+function wonOf(text: string | null): string[] {
+  try {
+    const won: unknown = JSON.parse(text ?? '[]');
+    return Array.isArray(won) ? won.filter((each): each is string => typeof each === 'string') : [];
+  } catch {
+    return [];
+  }
 }
 
 /** A seeker as the accounts read them for the finder. */
@@ -138,6 +168,8 @@ export interface Seeking {
   readonly account: string;
   readonly level: number;
   readonly prologue: boolean;
+  /** The Breaches won, by their records' keys; none where the accounts did not say. */
+  readonly breaches?: readonly string[];
   readonly apart: readonly string[];
 }
 
@@ -155,6 +187,8 @@ export interface FinderSocket {
 export interface FinderDeps {
   seeker(token: string): Promise<Seeking | null>;
   found(run: string, accounts: readonly string[]): Promise<boolean>;
+  /** The run of a base launched for the account's company within BREACH_RELAUNCH_MS, if any (`companyRunOf`). */
+  relaunched?(account: string, base: string): Promise<string | null>;
   readonly now: () => number;
   readonly instance: () => string;
   readonly pick?: (count: number) => number;
@@ -210,10 +244,18 @@ export class Finder {
     const playlist = playlistOf(this.base);
     const band = playlist === null ? bandOf(level) : playlistBand(playlist, level);
     if (playlist !== null && band === null) return this.letGo(socket, 4003, playlistShut(playlist));
-    // The week's Elite Dungeon opens at its own level, which its room would hold a seeker to after they were matched.
+    // The week's Elite Dungeon opens at its own level, which its room would hold a seeker to after they were matched,
+    // and a Breach at its tier's.
     if (WEEK.test(this.base) && level < WEEK_ELITE_OPENS) return this.letGo(socket, 4003, WEEK_ELITE_SHUT);
-    // Only a playlist's run is launched alone: an Elite Dungeon's and the week's start from their entrances.
-    const alone = held.alone && playlist !== null;
+    const breach = BREACH_BASE.exec(this.base)?.[1] as (typeof BREACH_TIERS)[number] | undefined;
+    if (breach !== undefined && level < BREACH_OPENS[breach]) return this.letGo(socket, 4003, breachShut(breach));
+    const won = `${breachOf(this.base) ?? ''}/normal`;
+    if (breach === 'hard' && !(found.breaches ?? []).includes(won)) return this.letGo(socket, 4003, BREACH_HARD_SHUT);
+    // A Breach is no stranger's: it is launched for a company, never matched.
+    if (breach !== undefined && !held.alone) return this.letGo(socket, 4003, BREACH_LAUNCHED);
+    // Only a playlist's run and a Breach's are launched alone: an Elite Dungeon's and the week's start from their
+    // entrances.
+    const alone = held.alone && (playlist !== null || breach !== undefined);
     const replaced = this.queue.join({ socket, account, band: band ?? 0, since: this.deps.now(), apart, alone });
     if (replaced !== null) this.letGo(replaced, 4003, ANOTHER_TAB);
   }
@@ -235,10 +277,13 @@ export class Finder {
       try {
         const playlist = playlistOf(this.base);
         const band = group[0]?.band ?? 0;
+        const first = group[0]?.account;
+        const again = BREACH_BASE.test(this.base) && first ? await this.deps.relaunched?.(first, this.base) : null;
         const run =
-          playlist === null
+          again ??
+          (playlist === null
             ? `${this.base}--run-${this.deps.instance()}`
-            : playlistRun(playlist, band, this.deps.pick ?? drawnOf, this.deps.instance());
+            : playlistRun(playlist, band, this.deps.pick ?? drawnOf, this.deps.instance()));
         const accounts = group.map((one) => one.account);
         const kept = await this.deps.found(run, accounts).catch(() => false);
         for (const { socket } of group)

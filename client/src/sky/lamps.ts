@@ -46,6 +46,8 @@ const CARRIED = {
 } as const;
 /** The carried light is held at the hand, this high over the carrier's feet. */
 const HAND_M = 1.1;
+/** A lamp no brighter than this at full shows on nothing, so it takes no place among the few lit. */
+const FAINTEST = 0.05;
 /** A lamp is whole once it leads the first lamp left out by this much, metres, and fades to nothing as that one nears. */
 const CUT_FADE_M = 10;
 
@@ -106,7 +108,8 @@ export function lampsRound(
   // Every city lamp weighed each frame, only the few nearest kept: one past the room, the first left out.
   ranked.clear();
   for (let index = 0; index < places.length; index++) {
-    const { at, reachM } = places[index] as LampPlace;
+    const { at, reachM, light } = places[index] as LampPlace;
+    if (Math.max(...light) < FAINTEST) continue;
     ranked.offer(index, Math.hypot(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]) - reachM);
   }
   // A lamp near the cut fades by how far it leads the first left out, so none switches on or off as the eye moves.

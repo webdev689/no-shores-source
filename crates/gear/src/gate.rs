@@ -5,6 +5,7 @@
 //! Elite from 10 and Abyss from 20. Each shut says why, in a line the page shows the player.
 
 use crate::activities::Weekly;
+use crate::breach::{DROWNED_VALE, Tier};
 use crate::character::Character;
 use crate::playlist::Playlist;
 use crate::world::Difficulty;
@@ -21,6 +22,8 @@ pub enum Place {
     Week(Weekly),
     /// A playlist's run for the band whose foes stand at this level.
     Playlist(Playlist, u8),
+    /// A Breach's run, or its gate in its patrol zone, at a tier (`crate::breach`).
+    Breach(Tier),
     /// A mission's or a boss's node, the sea, a sea island, or a sea island's dungeon: shut by its seas alone.
     Node,
 }
@@ -38,6 +41,10 @@ pub enum Shut {
     Band(u8, u8),
     /// The sea, to a character who keeps no ship yet: the Harbourmaster hands over the first (`ship::fleet`).
     NoShip,
+    /// A Breach below the level its tier opens at.
+    BreachLevel(Tier),
+    /// A Breach's Hard before its Normal is won.
+    BreachHard,
 }
 
 impl Shut {
@@ -59,6 +66,8 @@ impl Shut {
             Shut::Band(first, last) if first == last => format!("This run is for level {first}."),
             Shut::Band(first, last) => format!("This run is for levels {first} to {last}."),
             Shut::NoShip => NO_SHIP.to_owned(),
+            Shut::BreachLevel(tier) => format!("A Breach at {} opens at level {}.", tier.name(), tier.opens_at()),
+            Shut::BreachHard => "A Breach at Hard opens once you have won it at Normal.".to_owned(),
         }
     }
 }
@@ -69,7 +78,11 @@ pub const NO_SHIP: &str = "You have no ship yet. The Harbourmaster in Overlook's
 /// Whether a character may enter a place at these seas, and if not why (`shut_at`).
 #[must_use]
 pub fn shut(character: &Character, place: Place, tier: Difficulty) -> Option<Shut> {
-    shut_at(character.level(), character.story.prologue, place, tier)
+    let shut = shut_at(character.level(), character.story.prologue, place, tier);
+    if shut.is_none() && place == Place::Breach(Tier::Hard) && !character.breach_won(&DROWNED_VALE, Tier::Normal) {
+        return Some(Shut::BreachHard);
+    }
+    shut
 }
 
 /// As `shut` judges, from a level and whether the prologue was played: a social space never shuts; a patrol, its
@@ -89,6 +102,9 @@ pub fn shut_at(level: u8, prologue: bool, place: Place, tier: Difficulty) -> Opt
         && level < weekly.opens_at()
     {
         return Some(Shut::Level(weekly.opens_at()));
+    }
+    if let Place::Breach(breach) = place {
+        return (level < breach.opens_at()).then_some(Shut::BreachLevel(breach));
     }
     if let Place::Playlist(playlist, foes_at) = place {
         if level < playlist.opens_at() {

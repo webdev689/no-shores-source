@@ -15,9 +15,14 @@ const roster = rosterOf(
 );
 
 test("every type in the rules' roster is dressed, holding the roster's own weapons drawn, in the forge's dyes", () => {
-  assert.equal(roster.length, 45);
+  assert.equal(roster.length, 48);
   for (const type of roster) {
     const dress = foeDress(type);
+    // A Breach's Bell stands as its crystal alone, drawn where it stands: no figure.
+    if (type.name === 'Bell') {
+      assert.equal(dress, null);
+      continue;
+    }
     assert.ok(dress, `${type.name} is dressed`);
     // The Lattice (faction 3) wear their own crystal layers in place of the roster's weapons (lattice.test.ts).
     if (type.faction === 3) continue;

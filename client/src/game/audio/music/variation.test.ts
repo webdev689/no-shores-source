@@ -17,8 +17,8 @@ function die(seed: number): () => number {
 }
 
 const scores = overlookScores();
-const { boarding, reckoning, wrath } = scores.bosses;
-/** Every song a fight plays: the families', the sea's two, and each boss's phases and last stand. */
+const { boarding, reckoning, wrath, scrivener, steward } = scores.bosses;
+/** Every song a fight plays: the families', the sea's two, the Breach's, and each boss's phases and last stand. */
 const FIGHTS: readonly Song[] = [
   ...Object.values(scores.families).flatMap((family) => (family ? [family.song] : [])),
   scores.sea.fight,
@@ -27,6 +27,8 @@ const FIGHTS: readonly Song[] = [
   ...reckoning.phases,
   ...wrath.phases,
   ...[boarding.last, reckoning.last].filter((song): song is Song => !!song),
+  ...Object.values(scores.breach).map((fight) => fight.song),
+  ...[scrivener, steward].flatMap((boss) => [...boss.phases, ...(boss.last ? [boss.last] : [])]),
 ];
 /** The layers heard as danger nears (the wreck's walk is this, for minutes), in a fight, and at its height. */
 const MOODS = ['tension', 'combat', 'peak'] as const;

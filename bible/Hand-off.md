@@ -624,7 +624,7 @@ The decisions in [[Open Questions]] are not repeated here.
     its set and kind ("Portwatch Helm"), Atherics and kept named pieces keeping theirs; every drop, Vestige and Shape's
     Legendaries rolled in a content's set look with random perks, the named Legendaries kept-only; faction pieces
     rolling the shared pool and one of their faction's nine perks; the Breaches' own pool of thirteen, a Breach piece
-    rolling its perk columns from it alone, never one twice (no Breach is built: the owner, "Lets just finish this");
+    rolling its perk columns from it alone, never one twice (the Drowned Vale pays them, #200);
     no metal name in anything a player reads (`client/src/metalWords.test.ts`); a faction blade's hilt, guard and
     trim in its faction's colour, the Veiled's a faint cold violet ([[Factions]], [[Sprite Forge]],
     [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and
@@ -633,13 +633,56 @@ The decisions in [[Open Questions]] are not repeated here.
   - Asked to wait before the merge, the owner added three calls: flavour text for every weapon and armour piece
     ([[Weapons and Armour Carry Flavour Text]]: `content/gear/words.json`, a line for each set and kind); commons drop
     as themselves, never as Vestiges ([[Commons Drop as Themselves, Never as Vestiges]]); and a Breach's Hard weapons
-    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (#182, stacked on #169) to
+    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (now #200) to
     build with its `Item.hard`. The owner relays that one: this session may not message another.
   - The faction blades' art is published (forge run 18: figure strips and first person's frames, after a first run
     failed on a missing scikit-image pin) and `content/forge/renders.json` points at it.
   - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
     of a kept piece moves once with the wider look roll; played live. Here the full check stops at four R2 ship tests
     this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
+- **#200, the first Breach, the Drowned Vale, polished**, a draft for the owner's yes that supersedes #182 (its branch
+  merged whole) and is merged with `main` (its bounty board, finds and code-built chests included). The Breach itself:
+  [[Breaches]] (its Limits say what waits), every call of Claude's in [[The Drowned Vale as Claude Builds It]]. On it,
+  the owner's three asks:
+  - **Forged perks** ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]): a Breach piece won at Hard rolls
+    the same perks at a Forged grade, about half again, and Hard armour is named "(Forged)"; the numbers are Claude's,
+    in [[Gear as Claude Shapes It]].
+  - **Its sound** ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]): each space of the run heard as
+    its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key,
+    tempo and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is
+    picked. The sound sheet waits on the owner's picks, none made yet:
+    https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ (its `picks` collection). Once picked: write each `picked` into
+    `content/audio/freesound.json`, measure each pitched music pick's root with `tools/freesound/root.py` and write
+    it on its cue, push so the freesound workflow publishes them, and take `sounds.json` from that run's artifact; a
+    cue the owner marks "None" is searched again.
+  - **Its fidelity**: the run's own underground sky and its pieces' lamps (its floors measured to read, at sRGB 0.12
+    and over), the shores drawn only while in play, the dark's fade, stained glass, water, idle bells, chests that
+    read as payable, the gate's void; and its pieces made solid where they look it (the court, the rifts' walls, the
+    Ways' barricades and porches, the seals, the fight floors, the ledge rock), with windows, a torn rim and `glass`.
+    Judged on SwiftShader pictures drawn offline, never on a real GPU or in a live run.
+  - **A comprehensive audit** of the whole raid (rules, server and wire, page, design and tests, the bible, the art):
+    about seventy findings, each fixed with a test that fails without it, or left in Breaches' Limits.
+  - Left for the owner:
+    - Claude's reading of "Plenty of sounds come from freesound" (scores played on Freesound's recorded instruments).
+    - Whether a run's company is fixed at launch, or follows the accounts' company as it changes.
+    - Whether launching again within the gate's day returns the run whose gate stands open, not a new one.
+    - Whether the gate's state should outlive an eviction or a deploy (it is held in memory: either shuts it).
+    - Whether a member kicked from the company should be forgotten by the run that admitted them.
+    - Whether the Ways wait on every living player of the company, or only those in the Ways; and at Hard, whether
+      the fallen count (Claude's reading: the living alone).
+    - Hard's "no respawn" read as within a running encounter.
+    - New mechanics the audits proposed, not built: Keepers warded at Hard (so the crossing rule binds), Hard's seams
+      in a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad way to call the
+      Steward's order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale.
+    - Whether a Forged weapon should differ from its Normal one in more than its name, element and perk grades.
+    - The Drowned horse renders only by a hand forge run (`figures` =
+      `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2); its first-person frames are in no workflow.
+    - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
+  - The gate was tried in the Saltgrass Downs at the owner's word and reverted at their word; it stays in the Gullwing
+    Vale. Laying it there showed three latent flaws in the zones' layout, none showing as they stand, queued as their
+    own task: a beacon or resource node may stand inside a module, whose floors later level the ground under it; a
+    camp's palisade gap is narrower than the path grid passes at some turns (`blocked_by` widens a stake to a cell);
+    and fallen rock is kept off a run's stone and climb but not its line.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:

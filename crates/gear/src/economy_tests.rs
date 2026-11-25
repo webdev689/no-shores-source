@@ -62,9 +62,9 @@ fn an_atheric_never_costs_less_of_anything_to_finish_than_a_legendary_and_more_a
 }
 
 #[test]
-fn a_breachs_legendary_armour_asks_seven_essence_a_last_upgrade_and_climbs_to_thirty() {
+fn a_breachs_legendary_armour_asks_seven_essence_a_last_upgrade_and_at_hard_climbs_to_thirty() {
     let mut breach = item(Kind::Legs, Rarity::Legendary);
-    breach.breach = true;
+    (breach.breach, breach.hard) = (true, true);
     assert_eq!(
         finishing(&breach).0.essence,
         3 * BREACH_LAST_ESSENCE,

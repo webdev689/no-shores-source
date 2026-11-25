@@ -28,6 +28,8 @@
     {"id": "ember_plate", "kind": "barding", "name": "Ember Plate", "rarity": "legendary", "source": {"kind": "sold", "aurem": 9000, "level": 20}, "words": "Black plate over a red glow, blades up the crest and embers at every hoof.", "look": ["horse_warhorse"]},
     {"id": "wraith_mist", "kind": "barding", "name": "Wraith Mist", "rarity": "legendary", "source": {"kind": "sold", "aurem": 9000, "level": 15}, "words": "Long wisps stream from the mane and tail, and mist rises at every hoof.", "look": ["horse_spectral"]},
     {"id": "dawnfire", "kind": "barding", "name": "Dawnfire", "rarity": "legendary", "source": {"kind": "sold", "aurem": 9000, "level": 15}, "words": "A gilded sunburst on the brow, and a mane and tail of flame.", "look": ["horse_dawnfire"]},
-    {"id": "clockwork", "kind": "barding", "name": "Clockwork", "rarity": "legendary", "source": {"kind": "sold", "aurem": 9000, "level": 20}, "words": "Brass plates, rivets and pistons, and a blue glow between them.", "look": ["horse_automaton"]}
+    {"id": "clockwork", "kind": "barding", "name": "Clockwork", "rarity": "legendary", "source": {"kind": "sold", "aurem": 9000, "level": 20}, "words": "Brass plates, rivets and pistons, and a blue glow between them.", "look": ["horse_automaton"]},
+    {"id": "drowned-vale", "kind": "dye", "name": "Drowned Vale", "rarity": "legendary", "source": {"kind": "breach"}, "words": "The deep's teal in the shadows, and the crystal's red where the light strikes.", "look": ["#0b1a1e", "#1d3d42", "#8a2733", "#e3a59c"]},
+    {"id": "drowned", "kind": "barding", "name": "Drowned", "rarity": "legendary", "source": {"kind": "breach"}, "words": "Weed and barnacle on its flanks, and red crystal grown up through its mane.", "look": ["horse_drowned"]}
   ]
 }

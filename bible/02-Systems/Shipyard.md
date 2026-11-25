@@ -40,7 +40,7 @@ every call of Claude's in [[The Ships at the Harbourmaster as Claude Shapes Them
   it was, and the character's quests say whether the Sloop is due; a dress laid that the player does not keep, or on a
   part it is not for, is the part's start entry again (`dress_kept`).
 - **No ship, no sea.** The land room answers a return to the ship with 103 ("Wait a moment before you try that
-  again.") until the accounts have said whose character it holds, and with 108 for a player who keeps none, and the
+  again.") until the accounts have said whose character it holds, and with 109 for a player who keeps none, and the
   page says "You have no ship yet. The Harbourmaster in Overlook's market has one for you." The sea's gate shuts to a
   character who keeps none with the same line, so no page can sail one (`Sea::shut`). The Ship tab says so too. A
   land room whose gate shuts sends a player who keeps no ship to Overlook, not to the sea.

@@ -274,6 +274,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 public: public.as_ref(),
                 encounter: None,
                 outpost: 0,
+                breach: None,
                 darkness: room.darkness_for(viewer),
                 reviving: &reviving,
             };

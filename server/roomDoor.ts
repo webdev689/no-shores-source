@@ -45,6 +45,17 @@ export interface RoomDoor {
    *  crates/room-wasm/src/run_door.rs reads it), and a patrol's dungeon's from its patrol's node file's text, whose lock
    *  it keeps; false for an ask that does not read, a dungeon no rule lays, or a patrol's without its file. */
   openRun(ask: string, patrolText?: string): boolean;
+  /** Opens a Breach's run from its ask (JSON: its gate's patrol zone, its tier 0 Normal or 1 Hard and the Unix minute
+   *  it opens, as crates/room-wasm/src/breach_door.rs reads it); false for an ask naming no Breach or tier. */
+  openBreach(ask: string): boolean;
+  /** In a patrol's room with a Breach's gate: a player came launched for a run (`{"run","tier"}`); whether held. */
+  breachCompany(player: number, word: string): boolean;
+  /** In a patrol's room with a Breach's gate: a run's company is inside (`{"run","tier","name","encounter"}`). */
+  breachInside(word: string): boolean;
+  /** In a patrol's room with a Breach's gate: whether a run's gate has opened, its Spire woken by its company. */
+  breachOpened(run: string): boolean;
+  /** In a Breach's run: how far its company has come, as JSON (`{"tier","encounter"}`), or `null`. */
+  breachProgress(): string;
   /** What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each, each
    *  island's dungeon of the day, the day's modifier, the week's two with their modifiers and levels, each island's
    *  band at each tier, the revives, and each modifier's name and words. */
@@ -246,6 +257,11 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_dungeon(address: number, length: number, dungeon: number): number;
   room_open_run(address: number, length: number, patrolAddress: number, patrolLength: number): number;
+  room_open_breach(address: number, length: number): number;
+  room_breach_company(player: number, address: number, length: number): number;
+  room_breach_inside(address: number, length: number): number;
+  room_breach_opened(address: number, length: number): number;
+  room_breach_progress(): bigint;
   room_activities(minute: number): bigint;
   room_gates(level: number, prologue: number): bigint;
   room_open_deck(hull: number, faction: number, rank: number, level: number): number;
@@ -371,6 +387,12 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
         lend(patrol, (patrolAt) => exports.room_open_run(address, length, patrolAt, patrol.length));
       return openWith(opens, ask);
     },
+    openBreach: (ask) => openWith(exports.room_open_breach, ask),
+    breachCompany: (player, word) =>
+      openWith((address, length) => exports.room_breach_company(player >>> 0, address, length), word),
+    breachInside: (word) => openWith(exports.room_breach_inside, word),
+    breachOpened: (run) => openWith(exports.room_breach_opened, run),
+    breachProgress: () => new TextDecoder().decode(take(exports.room_breach_progress())),
     activities: (minute) => new TextDecoder().decode(take(exports.room_activities(minute >>> 0))),
     gates: (level, prologue) => new TextDecoder().decode(take(exports.room_gates(level >>> 0, prologue ? 1 : 0))),
     openDeck: (hull, faction, rank, level) => exports.room_open_deck(hull, faction, rank, level) === 1,

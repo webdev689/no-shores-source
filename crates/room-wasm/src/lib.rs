@@ -20,6 +20,7 @@ use sent::Sent;
 use serde::Deserialize;
 use std::cell::RefCell;
 
+mod breach_door;
 mod course_door;
 mod deck_door;
 mod dungeon_door;
@@ -39,6 +40,7 @@ mod roster_door;
 mod run_door;
 mod sea_door;
 mod sent;
+mod tables_door;
 mod waters_door;
 
 pub use dungeon_door::open_dungeon;
@@ -110,6 +112,9 @@ struct NodeFile {
     places: Vec<gear::quests::Place>,
     #[serde(default)]
     paths: Vec<Vec<[f64; 2]>>,
+    /// In a patrol area with a Breach's gate, where its module stands and its quarter turns.
+    #[serde(default)]
+    breach: Option<([f64; 3], u8)>,
 }
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
@@ -144,7 +149,7 @@ fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> boo
     let blocks =
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
-    fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone().into());
+    fighter_door::keep_course(blocks.clone().into());
     keep(Opened::Land {
         room: Box::new(room_on(blocks, (spawn[0], spawn[1]))),
         node: None,
@@ -190,6 +195,7 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Dungeon {
         room.lay_elite_entrance(&node.id);
     }
+    breach_door::stand_gate(&mut room, node.kind, node.breach);
     let refusal = lock_words(node.locked, &node.name);
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });
@@ -475,12 +481,6 @@ pub extern "C" fn room_epoch(unix_ms: f64) {
     set_epoch(unix_ms);
 }
 
-/// How long one of the room's ticks is, in seconds: its host ticks it that often.
-#[unsafe(no_mangle)]
-pub extern "C" fn room_tick_seconds() -> f64 {
-    movement::TICK_SECONDS
-}
-
 /// A new player's number, or 0 with no room open, the room full or its node locked (`room_refusal` says which).
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join() -> PlayerId {
@@ -545,24 +545,6 @@ pub extern "C" fn room_snapshot_prepare() {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot_for(player: PlayerId) -> u64 {
     hand_over(snapshot_door::snapshot_for(player))
-}
-
-/// Each player's hull's build as the naval rules hold it, as JSON (`deck_door::hull_builds_json`).
-#[unsafe(no_mangle)]
-pub extern "C" fn room_hulls() -> u64 {
-    hand_over(deck_door::hull_builds_json().into_bytes())
-}
-
-/// The port cities' ids as JSON (`world::ports::MAIN_PORTS`): every other city is a ruin.
-#[unsafe(no_mangle)]
-pub extern "C" fn room_main_ports() -> u64 {
-    hand_over(serde_json::to_vec(&world::ports::MAIN_PORTS).unwrap_or_default())
-}
-
-/// Every enemy type the rules know, as JSON (`roster_door::roster_json`).
-#[unsafe(no_mangle)]
-pub extern "C" fn room_roster() -> u64 {
-    hand_over(roster_door::roster_json().into_bytes())
 }
 
 /// Lets the open room take players' asks for foes; see `take_foe_asks`.

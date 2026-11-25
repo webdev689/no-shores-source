@@ -43,6 +43,7 @@ export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Cont
   const down = (here: Pick<NonNullable<Playing['foot']>, 'standing' | 'fell'> | null | undefined) =>
     here?.standing.kind === 'dead' || !!here?.fell;
   if (socialUp()) return 'menu';
+  // Fallen in a fight or past the edge alike, the dead's controls act (Follow among them, where it is read).
   if (flow.mode === 'foot') return down(foot) ? 'dead' : 'foot';
   if (sea?.boarding.onDeck) return down(sea.boarding.foot) ? 'dead' : 'foot';
   if (sea?.aboard.walking) return 'foot';

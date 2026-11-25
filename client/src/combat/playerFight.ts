@@ -50,7 +50,8 @@ export class PlayerFight {
    * person's hands zoomed with the view by `zoomOf` once the player has stepped, moving `handsSeconds` on. The buttons:
    * a swing or a shot only with the weapon already out, on foot, the hands free; a guard on foot; a dodge and a drink
    * whenever pressed (the rules refuse them in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's
-   * button aims it and the guard's fires it, and no guard rises behind it.
+   * button aims it and the guard's fires it, and no guard rises behind it. Bearing the Lodestone (`bearer`), the Arts'
+   * keys ground it.
    */
   frame(
     controls: InputFrame,
@@ -63,12 +64,14 @@ export class PlayerFight {
       markOf,
       zoomOf,
       handsSeconds = seconds,
+      bearer = null,
     }: {
       running: boolean;
       hands: boolean;
       markOf: () => Point | null;
       zoomOf: () => number;
       handsSeconds?: number;
+      bearer?: { readonly charged: boolean } | null;
     },
   ): PlayerFightFrame {
     const { walker, fight } = this;
@@ -82,7 +85,7 @@ export class PlayerFight {
     // Each press is the fight's even when let go within the frame; one of the guard's two keys pressed while the other
     // is held is a fresh press.
     const floorAt = (x: number, y: number) => steps.standing(x, y).z;
-    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt });
+    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt, bearer });
     // A cast under way holds off a drink, as the room does: sent, aimed, or its move still playing.
     const casting = this.castKeys.waiting || walker.player.cast !== null;
     fight.press({
@@ -134,13 +137,21 @@ export class PlayerFight {
     return { shooter, ranged, rangedDrawn, reticle, aiming, pressed, pulled: ranged && controls.pressed('guard') };
   }
 
-  /** The casting keys: a cast sent to the room plays its move in its Art's colour, and Dusk Daggers' ring is laid while
-   *  it is aimed, on the ground `floorAt` gives. */
+  /** The casting keys: a cast sent to the room plays its move in its Art's colour (a grounding of the Lodestone plays
+   *  none), and Dusk Daggers' ring is laid while it is aimed, on the ground `floorAt` gives. */
   private castFrame(
     controls: InputFrame,
     seconds: number,
     hands: boolean,
-    { markOf, floorAt }: { markOf: () => Point | null; floorAt: (x: number, y: number) => number },
+    {
+      markOf,
+      floorAt,
+      bearer,
+    }: {
+      markOf: () => Point | null;
+      floorAt: (x: number, y: number) => number;
+      bearer: { readonly charged: boolean } | null;
+    },
   ): void {
     const { fight, walker } = this;
     if (fight.joins !== this.castJoins) {
@@ -148,7 +159,7 @@ export class PlayerFight {
       this.castKeys.reset();
     }
     const state = fight.arts;
-    const { cast, ring } = this.castKeys.frame(controls, seconds, {
+    const { cast, ring, grounds } = this.castKeys.frame(controls, seconds, {
       hands,
       state,
       abilities: fight.abilities,
@@ -156,10 +167,12 @@ export class PlayerFight {
       yaw: walker.player.yaw,
       markOf,
       floorAt,
+      bearer,
     });
     fight.aimRing = ring;
     if (!cast) return;
-    fight.cast(cast);
+    fight.cast(cast, !grounds);
+    if (grounds) return;
     const element = arts.arts.find((art) => art.id === state?.art)?.element ?? 0;
     if (cast.spell > 0 && (element === 1 || element === 2 || element === 3)) walker.beginCast(element);
   }

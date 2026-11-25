@@ -12,7 +12,7 @@ export const NOT_YET = 103;
 export const FALLEN = 105;
 export const FIGHTING = 106;
 export const TO_SHIP = 107;
-export const NO_SHIP = 108;
+export const NO_SHIP = 109;
 /** How long the page waits on the room's answer before saying it did not come. */
 const ANSWER_WAIT_MS = 3000;
 const POLL_MS = 100;

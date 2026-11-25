@@ -52,7 +52,7 @@ const middleOf = (ui: Interface, id: string): { x: number; y: number } => {
 test('Today and This week each carry their reset’s icon and its one countdown; every row its icon and its name', async () => {
   const { tree } = await opened();
   const said = wordsIn(tree());
-  for (const words of ['TIMERS', 'TODAY', 'THIS WEEK', 'LATER', 'Dungeon of the day', 'Bounties'])
+  for (const words of ['TIMERS', 'TODAY', 'THIS WEEK', 'Dungeon of the day', 'Bounties'])
     assert.ok(said.includes(words), words);
   for (const words of ['forsaken-cistern', 'saltworm-warrens', 'Abyss boon', 'Breaches'])
     assert.ok(said.includes(words), words);
@@ -60,7 +60,7 @@ test('Today and This week each carry their reset’s icon and its one countdown;
     ['timer-day-reset', 'timer-week-reset'].map((id) => wordsIn(byId(tree(), id))[0]),
     ['23:59:59', '3d 23h'],
   );
-  assert.equal(byId(tree(), 'timer-later-reset'), undefined, 'no countdown over Later');
+  assert.ok(!said.includes('LATER'), 'a Breach is open: nothing waits under Later');
   const rows = nodesOf(tree()).filter((node) => node.id?.startsWith('timer-row-'));
   assert.equal(rows.length, 6, 'a row each: the day’s dungeon, the bounties, the week’s two, the boon, Breaches');
   const drawn = (row: Node) =>

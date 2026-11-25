@@ -224,9 +224,10 @@ impl Room {
         living.filter(|(_, found)| near(&found.fighter.body)).map(|(id, _)| *id).collect()
     }
 
-    /// The living foe of a faction whose chest is nearest `at`, within `reach`.
-    fn nearest_foe(&self, at: [f64; 3], reach: f64) -> Option<FighterId> {
-        let living = self.foes.iter().filter(|(_, foe)| enemy(&foe.fighter));
+    /// The living foe of a faction whose chest is nearest `at`, within `reach`, that a spell may seek: never one the
+    /// Arts pass by (`arts_pass_by`).
+    pub(crate) fn nearest_foe(&self, at: [f64; 3], reach: f64) -> Option<FighterId> {
+        let living = self.foes.iter().filter(|(id, foe)| enemy(&foe.fighter) && !self.arts_pass_by(**id));
         let measured = living.map(|(id, foe)| (*id, distance(at, foe.fighter.chest())));
         measured.filter(|(_, far)| *far <= reach).min_by(|first, second| first.1.total_cmp(&second.1)).map(|(id, _)| id)
     }
@@ -243,6 +244,9 @@ impl Room {
     /// its Art's element, by the caster's best weapon's Attack, judged against the foe as it stands and settled as a
     /// weapon's blow is. Answers the health it took.
     fn spell_strikes(&mut self, spell: &Spell, foe: FighterId, from: [f64; 3], damage: f64) -> Option<f64> {
+        if self.arts_pass_by(foe) {
+            return None;
+        }
         let found = self.players.get(&spell.caster)?;
         let (attack, hand) = spell_power(&found.character);
         // The level of the Art that cast it, as it was cast, whatever is worn or risen since.

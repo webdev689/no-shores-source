@@ -4,8 +4,8 @@
 //! they fell with no living foe within FOES_CLEAR_M, facing where they fell. Where a foe stands near every one, they
 //! stand at the section's spawn nearest them.
 
-use crate::Room;
 use crate::garrison::SPAWN_CLEAR;
+use crate::{PlayerId, Room};
 use combat::sight::{apart, bearing};
 use combat::tuning::BODY_HEIGHT;
 use movement::Body;
@@ -39,10 +39,12 @@ fn along(way: &[[f64; 2]]) -> Vec<[f64; 2]> {
 }
 
 impl Room {
-    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
-    /// fell in a patrol zone (below), else at the section's spawn nearest it, or the room's spawn.
-    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
-        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
+    /// Where a player's body that fell at (x, y) stands again by its own respawn: where a Breach's rules say
+    /// (`breach_stands_at`); at an activity's checkpoint, near where it fell in a patrol zone, else at the section's
+    /// spawn nearest it, or the room's spawn.
+    pub(crate) fn stand_again(&self, id: PlayerId, x: f64, y: f64) -> Body {
+        let found = self.breach_stands_at(id).or_else(|| self.at_checkpoint());
+        if let Some(body) = found.or_else(|| self.near_where_fell(x, y)) {
             return body;
         }
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
