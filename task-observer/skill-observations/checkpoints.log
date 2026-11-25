@@ -129,3 +129,6 @@
 2026-11-25T00:00Z checkpoint: 0216, 0217 written; 0214 actioned; 0033 extended
 2026-11-24 23:53 [no-shores-source] session-start scan: files=205 parsed=196 principles=0
 2026-11-25T00:23:50Z inspect panel, short lines: no new observations
+2026-11-24T22:12:06Z checkpoint after audits and site pass: observations 0025 extended; none pending
+2026-11-24T22:52:10Z checkpoint after fixes merged and pushed: observations 0225 logged; none pending
+2026-11-25T00:57:11Z no observations (merge, live checks, www fix: covered by 0153 and 0216 extensions)

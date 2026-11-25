@@ -26,3 +26,10 @@ merges should watch main's run to its deploy.
 
 **Principle:** A tool's output must never read success where the command failed; a time limit that a busy day reaches
 is a flaky gate.
+
+**Again (2026-11-25, #194):** after the squash-merge, `git push origin --delete ccr-e0e5f211-v55a3s` through rtk
+again printed only "Everything up-to-date"; `git ls-remote` still listed the branch, and `rtk bypass` showed the
+proxy's HTTP 403. Caught only because the merge step was followed by an `ls-remote`. Second occurrence, so the fix is a
+barrier, not a sentence: rtk's git filter keeps any `fatal:`/`error:` line and the exit code of `git push`, or
+`git push` is left out of rtk's compaction entirely. Since the first entry, `ci.yml`'s check limit is 75 minutes; #194's
+PR run took 49 minutes and passed.

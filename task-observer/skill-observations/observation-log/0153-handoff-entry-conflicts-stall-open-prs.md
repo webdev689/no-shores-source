@@ -9,7 +9,7 @@ target_file: ["CLAUDE.md", "bible/04-Procedures/Recording a Decision.md"]
 siblings_checked: "checked: this session's merge of main into #168; the only conflict was bible/Hand-off.md's 'Waiting on the owner' head, the code and Naval Combat.md merged clean. Other notes each PR edits (a system note's middle) merged clean."
 area: "parallel sessions' PRs and the shared hand-off note"
 date: 2026-11-23
-session_context: "Picked up session ccr-bc9c76c9-rau31m: its PR #168 (the ship aim) was opened at 18:29 while #163 and #167 merged into main around it. #168 showed mergeable_state dirty and no check runs at all: GitHub builds no merge ref for a conflicting PR, so its CI never ran. The conflict was one hunk: both sides had put their entry first under '## Waiting on the owner' (main also added an intro line there). Again 2026-11-24, bounty board #196: opened 18:35, dirty within the hour (main took 158 commits, #179 and #191 among them); conflicts in Hand-off.md, a moved test helper and factions.rs; no check run at all until main was merged in on the owner's next ask."
+session_context: "Picked up session ccr-bc9c76c9-rau31m: its PR #168 (the ship aim) was opened at 18:29 while #163 and #167 merged into main around it. #168 showed mergeable_state dirty and no check runs at all: GitHub builds no merge ref for a conflicting PR, so its CI never ran. The conflict was one hunk: both sides had put their entry first under '## Waiting on the owner' (main also added an intro line there). Again 2026-11-24, bounty board #196: opened 18:35, dirty within the hour (main took 158 commits, #179 and #191 among them); conflicts in Hand-off.md, a moved test helper and factions.rs; no check run at all until main was merged in on the owner's next ask. Again 2026-11-24, website and bot #194: main merged #186, #192 and #196 while #194 waited; conflicts in Hand-off.md and Decisions.md (both sides adding at the same list end); no CI for five pushes over about an hour, found by reading mergeable_state after list_workflow_runs and get_check_runs came back empty."
 parked_until:
 resolved:
 resolution:
@@ -32,3 +32,5 @@ touch.
 its own line, or have it edit the shared file last against the current tip.
 
 **Again (2026-11-24, #196):** the hand-off entry conflicted once more, with two code conflicts beside it; found only because a later audit read the PR's check runs (zero) and then its `mergeable_state`. Checking `mergeable_state` right after opening a PR, and after each merge to main while it waits, would have caught it within the hour.
+
+**Again (2026-11-24, #194):** a third instance, this time also in `Decisions.md`'s index, where every decision is appended to the same list end. The time went to looking for a CI outage before reading `mergeable_state`, which answers it in one call. Reading `mergeable_state` first whenever a PR shows no runs would end the search at once; the fix proposed above is still the root one.
