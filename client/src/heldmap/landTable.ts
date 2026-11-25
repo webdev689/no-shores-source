@@ -3,13 +3,14 @@
 // ground's length at the map's zoom.
 import type { Rect, View } from './heldMapLaw.ts';
 import { GLYPH_HALF, GLYPHS, type LandGlyph, paintGlyph } from './landGlyphs.ts';
-import type { LandSheet } from './landSheet.ts';
+import type { LandSheet, MapMarks } from './landSheet.ts';
 import { FACE, INK, KEY_FONT, keyCorners, type KeyPlace } from './mapKey.ts';
-import { paintArrow, type Painter } from './mapLetters.ts';
+import { paintArrow, paintDot, type Painter } from './mapLetters.ts';
 
-/** A row of the table: a glyph, or the player's arrow, and what it is. */
+/** A row of the table: a glyph, the player's arrow or another player's dot (a company's green, else blue), and what
+ *  it is. */
 export interface TableRow {
-  readonly glyph: LandGlyph | 'you';
+  readonly glyph: LandGlyph | 'you' | 'company' | 'player';
   readonly word: string;
 }
 
@@ -24,12 +25,16 @@ const BAR_LENGTHS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
 
 /** The table's rows: each glyph the sheet holds, once, in `GLYPHS`' order, with what its first mark is called; then
  *  the player's arrow. */
-export function tableRows(sheet: Pick<LandSheet, 'marks'>): TableRow[] {
+export function tableRows(sheet: Pick<LandSheet, 'marks'>, others: MapMarks['others'] = []): TableRow[] {
   const rows = GLYPHS.flatMap((glyph): TableRow[] => {
     const mark = sheet.marks.find((each) => each.glyph === glyph);
     return mark ? [{ glyph, word: mark.word }] : [];
   });
-  return [...rows, { glyph: 'you', word: 'You' }];
+  const dots: TableRow[] = [
+    ...(others.some((other) => other.company) ? [{ glyph: 'company' as const, word: 'Your company' }] : []),
+    ...(others.some((other) => !other.company) ? [{ glyph: 'player' as const, word: 'Other players' }] : []),
+  ];
+  return [...rows, { glyph: 'you', word: 'You' }, ...dots];
 }
 
 /** The rows in each column: `ROWS_A_COLUMN` at most to a column, the columns as even as they can be. */
@@ -132,7 +137,8 @@ export function paintTable(
       if (row.glyph === 'you') {
         painter.scale(0.75, 0.75);
         paintArrow(painter, 0);
-      } else paintGlyph(painter, row.glyph);
+      } else if (row.glyph === 'company' || row.glyph === 'player') paintDot(painter, row.glyph === 'company');
+      else paintGlyph(painter, row.glyph);
       painter.restore();
       painter.fillStyle = INK;
       painter.fillText(row.word, left + TABLE.glyph + TABLE.gap, y);

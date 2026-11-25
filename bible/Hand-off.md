@@ -238,7 +238,36 @@ The decisions in [[Open Questions]] are not repeated here.
   deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in the game and which
   areas hold territories ([[Open Questions]], "Foe arrivals"); the door test's scripted pair loses the heroic raid's
   last wave, pinned as it is.
-- **The codebase audit** (#209, merged), on the owner's "a comprehensive codebase
+- **Three latent layout flaws, and the town's walls, windows and signs** (#207, merged on the owner's "Merge and
+  deploy", which deploys the page, the site, the rooms and the bot: CI run 1129 on main). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
+  metre off a module's foot; a camp's palisade gap is sized from the path grid; fallen rock keeps 1.2 m off each run's
+  way ([[Layouts]]). One departure from the brief, the owner's to confirm: the gap's 9 m half-chord
+  (`CELL_M + KEEP_OFF_M`) is measured along the grid axis more across the way in, not along the chord, since 9 m along
+  the chord still sealed 8 of 5,760 turns tested (18 m wide square to the grid, up to 25.5 m at 45 degrees). Then the
+  owner's town notes, each pictured headless before and after in the Saltgrass Downs: a taller room is lined over a
+  lower one beside it (the tavern's upper floor saw sky there); a walk-in building's windows are holes through its
+  wall and lining with clear panes, the owner's choice over tinted glass ([[Forged Models]], [[Cities]]); the signpost
+  41739's and the signboard 41700's boards are painted wood as a shop's sign is ([[Procedural Textures]]). Then the
+  owner's third notes ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]):
+  every building's window is its frame alone, 2 m wide at the frame's proportions, with no wall's margin round it
+  ([[Forged Models]]); a public event's panel shows only on its ground, and the held map rings each running event
+  with its name and time left ([[Public Events]]); the held map dots every other player in the room in their
+  nameplate's colour, on land from the room's players and at sea from the sea's chart, which the room now sends every
+  player once a second ([[Held Map]], [[Server]]). Then an audit of the whole PR, each finding checked against the
+  code and fixed at its cause with a test: the sea's chart reaches every player at its tick and a sea opened again;
+  the land's map paints its sheet once for its view and what moves on it over a copy, ten times a second at most; the
+  public event's dead next-event banner is gone, and stepping onto its ground is read out; the sun comes through an
+  open building's panes; and no window is laid into a lower wing's gable (33 in 16 buildings). Then the owner's "It
+  looks like its raining in interiors": a room's ceiling was drawn but no box a body meets, so the rain's shelter
+  left every top storey open; each ceiling is now a box over its room to its outer faces, and a shelter cell is dry
+  where a box reaches a tenth of it ([[Weather]], "Shelter"). Tested offline: the
+  full check on each head before its push, the last `a7ef2573`, and CI green on the head merged, `e77fdccb`; pictured headless in the Downs: the
+  windows, and the raid's panel on its ground, none 60 m off it, and its ring on the map with its name and time left.
+  Not played by hand or seen on a real GPU; the dots and the light through the panes never pictured (no second
+  player stands in a headless world, and its sky gave no sun). Open for the owner: the camp gap's measure
+  ([[Open Questions]]), the compass still marking the event's ground from anywhere in the zone, and the tracker still
+  counting a chest left lying. Another zone's events stay off a zone's map, on the owner's "Leave as is".
+- **The codebase audit** (#209, merged; CI run 1111 on main passed), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
   `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
@@ -255,7 +284,7 @@ The decisions in [[Open Questions]] are not repeated here.
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
   ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
-- **The desktop app** (#210, merged), on the
+- **The desktop app** (#210, merged; CI run 1100 on main passed), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
   reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
   [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
@@ -303,7 +332,7 @@ The decisions in [[Open Questions]] are not repeated here.
     picked. All 74 of its cues are picked by the owner, on two sound sheets
     (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
     the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
-    timpani on the owner's "Search for single notes"); in #208, not yet merged, published to R2 by freesound runs 171
+    timpani on the owner's "Search for single notes"); in #208, merged (CI run 1119 on main passed), published to R2 by freesound runs 171
     and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
     centre on the owner's "Use it as it is". To change a pick: write its `picked` into
     `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
@@ -1057,6 +1086,14 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites. The
   dungeons session (#82) plans to move each patrol's dungeon entrances onto the layouts' places, and will
   coordinate before it touches the layout code.
+- **Latent layout flaws a re-roll exposes** (#207's description): five re-rolls of the Saltgrass Downs' brief (an area
+  added, moved or removed), the same failures on main's code and #207's. The Tithe Barns, a keep run beyond the
+  claim, gets a beat inside the section in four of five, failing four of `runs_planned`'s checks; a track grazes a
+  building's lining corner (`clearing::round_rooms` samples in tenths and bends at most three times); a gate's
+  palisade stops 11.3 m short of the rock; and with the Barrow Field removed, loose rock lies in the Beacon Stair's
+  stone and a run raises the Broken Causeway's claim 2 mm. Each wants its cause found before an area is added or
+  moved there. The 7 x 4 x 11 m block once seen on a Chalk Adit beat did not show in any of them; its source is
+  still unfound.
 - **Attack visuals**, left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the marks copied
   into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still lighting; `camera.ts`
   `shifted` keeping the HUD matrix's translation in float32 (about 0.25 m off far out).

@@ -295,3 +295,89 @@ test("an open building's rooms show its windows: each is laid again on the linin
   }
   assert.ok(checked > 20, `buildings with windows checked: ${checked}`);
 });
+
+test("an open building's windows are holes through its wall, seen through from either side; a closed one's are not", () => {
+  const table = buildingTable;
+  /** The model's mesh without its glass: an open building's clear panes, a closed one's windows. */
+  const without = (model: ForgedModel, glass: readonly number[]) => {
+    const kept = model.parts.filter((part) => part.archive !== glass[0] || part.record !== glass[1]);
+    return {
+      positions: model.positions,
+      indices: Uint32Array.from(
+        kept.flatMap((part) => [...model.indices.subarray(part.start, part.start + part.count)]),
+      ),
+    };
+  };
+  let [panes, through, shut] = [0, 0, 0];
+  for (const id of idsOf(table).filter((each) => table[each].glass)) {
+    const glass = table[id].glass!;
+    const [closed, open] = [buildingModel(table, id), buildingModel(table, id, { open: true })];
+    if (!closed || !open) continue;
+    const worn = (model: ForgedModel) =>
+      model.parts.filter((part) => part.archive === glass[0] && part.record === glass[1]);
+    assert.ok(
+      worn(open).every((part) => part.clear),
+      `${id}: an open building's panes are clear`,
+    );
+    assert.ok(!closed.parts.some((part) => part.clear), `${id}: a closed building's are not`);
+    for (const [model, mesh, isOpen] of [
+      [open, without(open, glass), true],
+      [closed, without(closed, glass), false],
+    ] as const)
+      for (const part of worn(model))
+        for (let quad = part.start; quad + 5 < part.start + part.count; quad += 6) {
+          const corners = [0, 1, 2, 5].map((k) => vertexOf(model, model.indices[quad + k]));
+          const middle = [0, 1, 2].map((axis) => corners.reduce((sum, corner) => sum + corner[axis], 0) / 4);
+          const normal = [0, 1, 2].map((axis) => model.normals[model.indices[quad] * 3 + axis]);
+          // From a hand before the pane, through the wall's depth and the lining's place behind it: at its middle and
+          // near each corner, so nothing reaches into any part of it.
+          const points = [
+            middle,
+            ...corners.map((corner) => corner.map((value, axis) => middle[axis] + (value - middle[axis]) * 0.9)),
+          ];
+          const hit = points.some(
+            (point) =>
+              rayHit(
+                mesh,
+                point.map((value, axis) => value + normal[axis] * 0.05),
+                normal.map((value) => -value),
+                0.35,
+              ) !== null,
+          );
+          if (isOpen) [panes, through] = [panes + 1, through + (hit ? 0 : 1)];
+          else shut += hit ? 1 : 0;
+        }
+  }
+  // None looks into a lower wing's roof: no window is laid where its gable's end stands in the wall's plane.
+  assert.ok(panes > 1000 && through === panes, `seen through: ${through} of ${panes}`);
+  assert.ok(shut > 500, `a closed building's windows are pictures on a whole wall: ${shut}`);
+});
+
+test("a window is its picture's frame alone, 2 m wide at the frame's proportions, narrower where a storey holds no more", () => {
+  const table = buildingTable;
+  const id = Number(idsOf(table).find((each) => table[each].glass && buildingModel(table, each)?.parts.length));
+  const glass = table[id].glass!;
+  for (const [box, width, height] of [
+    // A leaded window 48 by 36 texels; a slit 16 by 60, too tall for a storey over its sill at 2 m wide.
+    [[8, 48, 56, 84], 2, 1.5],
+    [[24, 40, 40, 100], 2 / 3.75, 2],
+  ] as const) {
+    const model = buildingModel(table, id, { frameOf: () => box });
+    assert.ok(model, `${id} builds`);
+    const window = model.parts.find((part) => part.archive === glass[0] && part.record === glass[1]);
+    assert.ok(window, `${id} has windows`);
+    const corners = [0, 1, 2, 5].map((k) => model.indices[window.start + k]);
+    const places = corners.map((vertex) => vertexOf(model, vertex));
+    const span = (axis: number) =>
+      Math.max(...places.map((point) => point[axis])) - Math.min(...places.map((point) => point[axis]));
+    assert.ok(Math.abs(Math.max(span(0), span(2)) - width) < 1e-4, `${id}: ${Math.max(span(0), span(2))} m wide`);
+    assert.ok(Math.abs(span(1) - height) < 1e-4, `${id}: ${span(1)} m tall`);
+    const uvs = corners.map((vertex) => [model.uvs[vertex * 2], model.uvs[vertex * 2 + 1]]);
+    const [across, down] = [uvs.map((share) => share[0]), uvs.map((share) => share[1])];
+    assert.deepEqual(
+      [Math.min(...across), Math.min(...down), Math.max(...across), Math.max(...down)].map((share) => share.toFixed(4)),
+      [box[0] / glass[2], box[1] / glass[3], box[2] / glass[2], box[3] / glass[3]].map((share) => share.toFixed(4)),
+      `${id}: shows its frame's share of the picture`,
+    );
+  }
+});

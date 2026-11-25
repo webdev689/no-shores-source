@@ -83,8 +83,9 @@ from the sea, fresh water and the claim's edge), then:
 3. **The rooms.** Every shop, guild hall, temple, tavern, palace and house is walked into
    ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]: "Buildings are now open spaces"): its
    doorways stand open, and inside its outline it is lined with plaster, gaps left at its doors with lintels over
-   them, floored with planks and ceiled under its eaves, each of the building's windows laid again on the lining's
-   face so the room shows the windows the building shows outside. The planks stand 3 cm over the highest ground under the room
+   them, and where a taller room opens onto a lower one beside it, lined above that room's top, so its wall over the
+   lower roof is not seen through from inside; floored with planks and ceiled under its eaves, each of the building's windows a hole through its wall and
+   the lining, its picture on both faces and its panes clear, so the room is seen into and out of through it. The planks stand 3 cm over the highest ground under the room
    (7 cm over its base at least, 40 cm at most), so neither the land nor the model's own floor shows through, and a
    body walks on them. A wing tall enough has an upper floor on a slab and a stair of 0.2 m risers up to it, along a
    long wall and from whichever end leaves every door clear: none in its wall within a metre of its run or the
@@ -95,7 +96,9 @@ from the sea, fresh water and the claim's edge), then:
    outdoor steps and platforms stay solid.
 4. **The set pieces** of the kinds no block stands, each of forged props and the city's solids, facing the way it
    is entered: a landing's boardwalk, lanterns, stores and a beached boat; a gate's stone arch between palisades; a
-   camp's palisade round tents and a fire, its gap toward the path; a watchtower with a brazier on its battlements; a
+   camp's palisade round tents and a fire, its gap toward the path, no stake within a cell and a metre (9 m) of the
+   line out through it along the grid's rows or columns, whichever lie more across it, so a cell's middle always lies
+   in the gap for a way to reach the camp by (how it is measured waits on the owner: [[Open Questions]]); a watchtower with a brazier on its battlements; a
    lighthouse; a jetty; a mill and its wheel; a quarry's stepped faces and crane; a wreck; a graveyard of hulls; ribs
    and a skull; a broken causeway; a cave's mouth; the wilds' outcrops and broken walls, set every 10 m round a ring
    at about 0.58 of its reach (an arena's every 8 m) with a share left out, round its standing stone.
@@ -127,8 +130,8 @@ from the sea, fresh water and the claim's edge), then:
    in a way's path (a lantern, a fire's stones), with what stands on them, and each building not walked into that a way
    runs through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner
    of a building walked into rather than graze it. A way may not cross a cell reaching under a building walked into, nor
-   one whose middle stands under anything else, each taken at least a cell wide so a thin wall never slips between the
-   grid's cells; and a work's or a wall's turned pieces are laid in lengths whose boxes keep close to them, each kept
+   one whose middle stands under anything else or within a metre of it (`KEEP_OFF_M`), each taken at least a cell wide
+   so a thin wall never slips between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose boxes keep close to them, each kept
    off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and the great wall are.
 6. **The land carved.** Each area becomes a basin shaped by its kind, holding its reach and 32 m of floor round each of
    its buildings:
@@ -222,8 +225,8 @@ from the sea, fresh water and the claim's edge), then:
    left bare and never by a path, a heap of a boulder or two against the foot, smaller stones by them and scree spilt
    out onto the floor too low to trip on; and such heaps all round each outcrop's foot, a whaleback's ends too, more
    the longer its footprint is round. A face's foot is found by walking in from the section's edge to where the
-   carving no longer raises the floor. No stone that lies in what a run built or on the ground its climb takes is
-   laid, and a run's own loose stones (its cover's boulders, a stump's fallen courses) keep off the rest of what it
+   carving no longer raises the floor. No stone that lies in what a run built, on the ground its climb takes or within
+   1.2 m of its way (its line and on to its door, `WAY_CLEAR_M`) is laid, and a run's own loose stones (its cover's boulders, a stump's fallen courses) keep off the rest of what it
    built. All of it is the solids' rubble, which wears the ground's stone in the grey the
    terrain draws its cliffs in; in a layout with a `stone` of chalk its rubble wears chalk's white instead (the client
    turns its rubble solids to the `chalk` material, a picture of the same stone tile brought to white).
@@ -231,9 +234,10 @@ from the sea, fresh water and the claim's edge), then:
    wilds or arena as an event's ground, each hamlet's three stores, its raiders' approach and their two banners, where
    each wilds' fissure opens beside its obelisk and its growth spot ([[Public Events]]), two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
-   5 m clear of every way's edge, each resource 12 m from every other and from each beacon, and where foes hold ground:
-   a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a Breach's hollow
-   and a guild's plot, its patrol's territories
+   5 m clear of every way's edge and a metre clear of every building and of every module's foot, whose floors level
+   the land under it once the sites are marked, each resource 12 m from every other and from each beacon, and where
+   foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a
+   Breach's hollow and a guild's plot, its patrol's territories
    ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
    the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
@@ -376,7 +380,8 @@ file takes its section, spawns and boxes from its layout.
 
 ## Boxes
 
-What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs and stairs, the outdoor steps, each wing
+What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs, ceiling and stairs, the ceiling's box
+over the room to its outer faces, so the rain stops under it ([[Weather]], "Shelter"), the outdoor steps, each wing
 too low to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the
 ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
 never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,

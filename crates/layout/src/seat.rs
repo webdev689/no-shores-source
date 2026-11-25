@@ -68,7 +68,8 @@ pub struct Seating {
     pub solids: Vec<Solid>,
     /// The rooms of the buildings walked into: their linings, floors, ceilings and stairs.
     pub rooms: Vec<Solid>,
-    /// Boxes a body meets that are not each one solid: a room's walls, floors and stairs, a wing too low to enter.
+    /// Boxes a body meets that are not each one solid: a room's walls, floors, ceilings and stairs, a wing too low to
+    /// enter.
     #[serde(skip)]
     pub walls: Vec<crate::collide::Box3>,
     pub pads: Vec<Pad>,

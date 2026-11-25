@@ -37,6 +37,9 @@ pub struct Run {
     pub ramp: Option<[f64; 7]>,
 }
 
+/// How far either side of a run's way nothing a body meets stands, metres.
+pub const WAY_CLEAR_M: f64 = 1.2;
+
 impl Run {
     /// The way a body walks: the run's line from its mouth to its end beat's middle, then on to its door.
     #[must_use]

@@ -426,8 +426,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
-  way while they show; so does a public event's banner at a phone's width (600 px or less), but for the next event's
-  line. On foot the vitals hold the top left, so the place's name and the status line under it stand at the top
+  way while they show; so does a public event's banner at a phone's width (600 px or less), but for the one line an
+  Elite Dungeon or a Breach shows between its encounters. On foot the vitals hold the top left, so the place's name and the status line under it stand at the top
   right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
   and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
   vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the

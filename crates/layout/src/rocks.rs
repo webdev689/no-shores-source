@@ -1,12 +1,12 @@
 //! The rock fallen from a layout's cliffs and outcrops, in rubble: boulders and scree lying on the floor where each
 //! face meets it, never up the face, so every stone rests on level ground as if it had rolled there, and never in what
-//! a run built or on its climb. Scree is stepped over; a boulder is a box.
+//! a run built, on its climb or on its way. Scree is stepped over; a boulder is a box.
 
 use crate::field::{distance, ring_holds};
-use crate::paths::{Path, off_line};
+use crate::paths::{Path, off_line, rect_off_line};
 use crate::pieces::Kit;
 use crate::run_climbs::climb;
-use crate::runs::Run;
+use crate::runs::{Run, WAY_CLEAR_M};
 use crate::seat::Seating;
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::{Outcrop, Sculpts};
@@ -23,15 +23,23 @@ const SCREE_TALLEST_M: f64 = 0.4;
 /// The carving raises the floor no more than this where a face meets it, metres: a face's foot.
 pub(crate) const FOOT_RISE_M: f64 = 0.3;
 
-/// What fallen rock keeps clear of, as boxes (west, north, east, south, bottom, top): each solid built before it (a
-/// run's, a wall's, a module's), and the ground a run's climb takes, whatever the height.
+/// What fallen rock keeps clear of: boxes (west, north, east, south, bottom, top) it lies in none of, and ways it
+/// keeps `WAY_CLEAR_M` off.
+#[derive(Debug, Default)]
+pub(crate) struct Kept {
+    pub boxes: Vec<[f64; 6]>,
+    pub ways: Vec<Vec<[f64; 2]>>,
+}
+
+/// What fallen rock keeps clear of: each solid built before it (a run's, a wall's, a module's), the ground a run's
+/// climb takes, whatever the height, and each run's way, which a body walks.
 #[must_use]
-pub(crate) fn kept_clear(built: &[Solid], runs: &[Run]) -> Vec<[f64; 6]> {
+pub(crate) fn kept_clear(built: &[Solid], runs: &[Run]) -> Kept {
     let climbs = runs.iter().filter_map(climb).map(|climb| {
         let [west, north, east, south] = climb.print;
         [west, north, east, south, f64::NEG_INFINITY, f64::INFINITY]
     });
-    built.iter().map(Solid::bounds).chain(climbs).collect()
+    Kept { boxes: built.iter().map(Solid::bounds).chain(climbs).collect(), ways: runs.iter().map(Run::way).collect() }
 }
 
 /// Whether a solid is loose rock: rubble tipped as it fell (`stone`).
@@ -40,11 +48,14 @@ pub(crate) fn loose(solid: &Solid) -> bool {
     solid.material == Material::Rubble && (solid.lean != 0.0 || solid.roll != 0.0)
 }
 
-/// Leaves out each loose stone laid from `from` on whose box meets one of `kept` (west, north, east, south, bottom,
-/// top), so none lies in a run's stone or on its climb.
-pub(crate) fn keep_off(seating: &mut Seating, from: usize, kept: &[[f64; 6]]) {
+/// Leaves out each loose stone laid from `from` on whose box meets one of `kept`'s boxes or comes within
+/// `WAY_CLEAR_M` of one of its ways, so none lies in a run's stone, on its climb or on its way.
+pub(crate) fn keep_off(seating: &mut Seating, from: usize, kept: &Kept) {
     let meets = |[west, north, east, south, bottom, top]: [f64; 6]| {
-        kept.iter().any(|b| west < b[2] && b[0] < east && north < b[3] && b[1] < south && bottom < b[5] && b[4] < top)
+        let boxed =
+            |b: &[f64; 6]| west < b[2] && b[0] < east && north < b[3] && b[1] < south && bottom < b[5] && b[4] < top;
+        let near = |pair: &[[f64; 2]]| rect_off_line([west, north, east, south], pair[0], pair[1]) < WAY_CLEAR_M;
+        kept.boxes.iter().any(boxed) || kept.ways.iter().any(|way| way.windows(2).any(near))
     };
     let mut index = 0;
     seating.solids.retain(|solid| {
@@ -197,5 +208,43 @@ pub fn clad(kit: &mut Kit, outcrops: &[Outcrop], paths: &[Path], carved: &Sculpt
             }
             heap(kit, carved, foot, outward);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::brief::{RunKind, RunPlace};
+    use crate::runs::Beat;
+
+    #[test]
+    fn no_fallen_stone_lies_on_a_runs_way() {
+        // A mine's line east 40 m to its end beat's middle, then on 20 m south to its door.
+        let beat = |at: [f64; 2]| Beat { at, radius: 8.0, level: 0.0 };
+        let run = Run {
+            name: "A Run".into(),
+            kind: RunKind::Mine,
+            place: RunPlace::Rock,
+            area: 0,
+            mouth: [0.0, 0.0],
+            line: vec![[0.0, 0.0], [40.0, 0.0]],
+            levels: vec![0.0, 0.0],
+            beats: vec![beat([20.0, 0.0]), beat([40.0, 0.0])],
+            door: [40.0, 20.0],
+            facing: [0.0, 1.0],
+            ramp: None,
+        };
+        // Each stone a metre across, tipped a little: on the line, its edge a metre off it, on the way on to the door,
+        // and its edge two metres off the line.
+        let stone = |at: [f64; 2]| {
+            let upright =
+                Solid::upright(Shape::Dome { sides: 7 }, [at[0], at[1], 0.0], [1.0, 1.0, 0.6], Material::Rubble);
+            Solid { lean: 0.05, ..upright }
+        };
+        let solids = [[10.0, 0.0], [25.0, 1.5], [40.5, 12.0], [30.0, 2.6]].map(stone).to_vec();
+        let mut seating = Seating { solids, ..Seating::default() };
+        keep_off(&mut seating, 0, &kept_clear(&[], &[run]));
+        let left: Vec<[f64; 2]> = seating.solids.iter().map(|solid| [solid.at[0], solid.at[1]]).collect();
+        assert_eq!(left, [[30.0, 2.6]], "only the stone two metres off the way is left");
     }
 }

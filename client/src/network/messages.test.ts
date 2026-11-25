@@ -162,12 +162,16 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.ok(ball?.muzzle);
 });
 
-test('the sea’s snapshot the server wrote reads back the traffic ids its room took and the friendly ships it keeps', async () => {
+test('the sea’s snapshot the server wrote reads back the traffic ids its room took, its friendly ships and its chart', async () => {
   const sea = readFromRoom(await written('sea.bin'));
   assert.equal(sea?.kind, 'snapshot');
   if (sea?.kind !== 'snapshot') return;
   assert.deepEqual(sea.taken, [2_605, 777]);
   assert.deepEqual(sea.friendlies, [{ traffic: 2_605, x: 1_500.5, y: 2_200.25, heading: 0.75, hull: 1 }]);
+  assert.deepEqual(sea.charted, [
+    { player: 4, at: [4_000_000.5, 90_000.25], name: 'Wren' },
+    { player: 9, at: [-5, 7], name: '' },
+  ]);
 });
 
 /** The dresses every ship is built in, by their numbers, in the parts' order. */
