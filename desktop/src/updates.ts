@@ -29,6 +29,13 @@ export function transportOf(copy: CopyFacts): Transport {
   return 'none';
 }
 
+/** The AppImage this copy runs from, or null: an AppImage's variables pass down to whatever it starts, so only a copy
+ *  running from inside the AppImage's own mount (`APPDIR`) is one. */
+export function ownAppImage(variables: Readonly<Record<string, string | undefined>>, execPath: string): string | null {
+  const [image, mount] = [variables['APPIMAGE'], variables['APPDIR']];
+  return image && mount && execPath.startsWith(`${mount}/`) ? image : null;
+}
+
 /** What electron-updater says, and the shell's own check on the notice transport. */
 export type UpdateEvent =
   | { readonly kind: 'available'; readonly version: string }

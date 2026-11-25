@@ -29,13 +29,15 @@ function overlap(place: Area, area: Area): { width: number; height: number } {
 
 /** A first window on `main`. */
 export function firstPlace(main: Area): WindowPlace {
-  const width = Math.round(Math.min(FIRST_MOST_WIDTH, Math.max(LEAST_WIDTH, main.width * FIRST_SHARE)));
-  const height = Math.round(Math.min(FIRST_MOST_HEIGHT, Math.max(LEAST_HEIGHT, main.height * FIRST_SHARE)));
+  const share = (size: number, least: number, most: number) =>
+    Math.min(size, Math.round(Math.min(most, Math.max(least, size * FIRST_SHARE))));
+  const width = share(main.width, LEAST_WIDTH, FIRST_MOST_WIDTH);
+  const height = share(main.height, LEAST_HEIGHT, FIRST_MOST_HEIGHT);
   return {
     x: Math.round(main.x + (main.width - width) / 2),
     y: Math.round(main.y + (main.height - height) / 2),
-    width: Math.min(width, main.width),
-    height: Math.min(height, main.height),
+    width,
+    height,
     maximized: false,
     fullScreen: false,
   };
@@ -51,5 +53,13 @@ export function openingPlace(kept: WindowPlace | null, screens: readonly Area[])
     return width >= SHOWN_LEAST && height >= SHOWN_LEAST;
   });
   if (!shown) return { ...firstPlace(main), maximized: kept.maximized, fullScreen: kept.fullScreen };
-  return { ...kept, width: Math.max(LEAST_WIDTH, kept.width), height: Math.max(LEAST_HEIGHT, kept.height) };
+  const [widest, tallest] = [
+    Math.max(...screens.map((area) => area.width)),
+    Math.max(...screens.map((area) => area.height)),
+  ];
+  return {
+    ...kept,
+    width: Math.max(LEAST_WIDTH, Math.min(widest, kept.width)),
+    height: Math.max(LEAST_HEIGHT, Math.min(tallest, kept.height)),
+  };
 }

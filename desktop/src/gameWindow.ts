@@ -88,6 +88,8 @@ export function openGameWindow(setup: GameWindowSetup): BrowserWindow {
       nodeIntegration: false,
       webviewTag: false,
       spellcheck: false,
+      // A page that opens box after box (alert, confirm) is offered a way to stop them.
+      safeDialogs: true,
     },
   });
   window.once('ready-to-show', () => {
@@ -120,11 +122,14 @@ function watchPage(window: BrowserWindow, setup: GameWindowSetup): void {
   const stops = stopCount();
   let asking = false;
   let restarting = false;
+  /** The box over a page that stopped answering, closed when it answers again or its process goes. */
+  let hang: AbortController | null = null;
   contents.on('did-fail-load', (_event, code, description, address, mainFrame) => {
     if (!mainFrame || code === ABORTED || asking) return;
     asking = true;
     if (!window.isVisible()) window.show();
-    const host = new URL(setup.address).host;
+    // The host that failed: the game's, or a sign-in's on its way.
+    const host = URL.parse(address)?.host ?? new URL(setup.address).host;
     void boxOver(window, unreachableBox(host, description || `error ${code}`)).then((answer) => {
       asking = false;
       if (window.isDestroyed()) return;
@@ -133,6 +138,7 @@ function watchPage(window: BrowserWindow, setup: GameWindowSetup): void {
     });
   });
   contents.on('render-process-gone', (_event, details) => {
+    hang?.abort();
     if (details.reason === 'clean-exit') return;
     setup.gone(details.reason, details.exitCode);
     if (window.isDestroyed()) return;
@@ -147,12 +153,13 @@ function watchPage(window: BrowserWindow, setup: GameWindowSetup): void {
       else setup.quit();
     });
   });
+  contents.on('responsive', () => hang?.abort());
   contents.on('unresponsive', () => {
-    if (asking || window.isDestroyed()) return;
-    asking = true;
-    void boxOver(window, HANG_BOX).then((answer) => {
-      asking = false;
-      if (!restartsHung(answer) || window.isDestroyed()) return;
+    if (hang || window.isDestroyed()) return;
+    const stop = (hang = new AbortController());
+    void boxOver(window, HANG_BOX, stop.signal).then((answer) => {
+      hang = null;
+      if (stop.signal.aborted || !restartsHung(answer) || window.isDestroyed() || contents.isCrashed()) return;
       restarting = true;
       contents.forcefullyCrashRenderer();
     });

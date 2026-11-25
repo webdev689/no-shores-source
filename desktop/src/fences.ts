@@ -48,7 +48,8 @@ export function staysInWindow(address: string, game: GamePlace): boolean {
 /** Whether `address` may be handed to the player's browser: a web address, never a file, a script or an app's. */
 export function opensInBrowser(address: string): boolean {
   const url = parsed(address);
-  return url !== null && (url.protocol === 'https:' || url.protocol === 'http:') && url.username === '';
+  const plain = url !== null && url.username === '' && url.password === '';
+  return plain && (url.protocol === 'https:' || url.protocol === 'http:');
 }
 
 /** Where a navigation of the game's window goes: on, to the player's browser, or nowhere. Only its top page is fenced;

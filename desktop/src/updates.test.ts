@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { DesktopUpdate } from '../../client/src/desktop.ts';
-import { type CopyFacts, followsFeed, looksFor, restartOf, transportOf, updateAfter } from './updates.ts';
+import { type CopyFacts, followsFeed, looksFor, ownAppImage, restartOf, transportOf, updateAfter } from './updates.ts';
 
 const installed: CopyFacts = {
   packaged: true,
@@ -96,4 +96,12 @@ test('a copy follows a feed only where its update file names a provider: a trial
   assert.equal(followsFeed('provider: generic\nurl: https://noshores.online/download/\n'), true);
   assert.equal(followsFeed('updaterCacheDirName: no-shores-desktop-updater\n'), false);
   assert.equal(followsFeed(null), false);
+});
+
+test('an AppImage is trusted only as the one this copy runs from, not one a parent passed down', () => {
+  const mounted = { APPIMAGE: '/home/wren/No-Shores.AppImage', APPDIR: '/tmp/.mount_NoShoAbc' };
+  assert.equal(ownAppImage(mounted, '/tmp/.mount_NoShoAbc/no-shores'), '/home/wren/No-Shores.AppImage');
+  assert.equal(ownAppImage(mounted, '/opt/No Shores/no-shores'), null, 'the Debian package started from an AppImage');
+  assert.equal(ownAppImage({ APPIMAGE: '/x.AppImage' }, '/tmp/.mount_x/no-shores'), null);
+  assert.equal(ownAppImage({}, '/opt/No Shores/no-shores'), null);
 });

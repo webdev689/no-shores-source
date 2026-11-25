@@ -20,9 +20,13 @@ test('a first window is centred on the main screen, at most a usual monitor', ()
 });
 
 test('a first window on a small screen keeps to the screen', () => {
-  const small = firstPlace({ x: 0, y: 0, width: 800, height: 560 });
-  assert.equal(small.width, 800);
-  assert.equal(small.height, 560);
+  const small = firstPlace({ x: 100, y: 40, width: 800, height: 560 });
+  assert.deepEqual([small.x, small.y, small.width, small.height], [100, 40, 800, 560]);
+});
+
+test('a window kept larger than every screen opens as large as the largest', () => {
+  const kept = { x: 0, y: 0, width: 9000, height: 5000, maximized: false, fullScreen: false };
+  assert.deepEqual(openingPlace(kept, [fullHd, right]), { ...kept, width: right.width, height: right.height });
 });
 
 test('a window opens where it was left, on any screen that shows enough of it', () => {

@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  CRASH_LOG_MOST,
+  LOG_MOST,
   HANG_BOX,
   LOOP_SPAN_MS,
   goneBox,
   goneLine,
+  logLine,
   logWith,
   restarts,
   restartsHung,
@@ -41,17 +42,27 @@ test('a third stop in two minutes says it keeps stopping, and stops spread out d
   assert.doesNotMatch(goneBox('crashed', 1).detail, /times/);
 });
 
-test('a log line says when, which, why, its exit code and the card, on one line', () => {
-  const line = goneLine('renderer', { reason: 'oom', exitCode: 9 }, Date.UTC(2026, 10, 25), 'NVIDIA\nGeForce   RTX');
-  assert.equal(line, '2026-11-25T00:00:00.000Z renderer oom exitCode=9 on NVIDIA GeForce RTX\n');
-  assert.equal(goneLine('gpu', {}, 0), '1970-01-01T00:00:00.000Z gpu unknown exitCode=?\n');
+test('a log line says which, why, its exit code and the card', () => {
+  assert.equal(
+    goneLine('renderer', { reason: 'oom', exitCode: 9 }, 'NVIDIA\nGeForce   RTX'),
+    'renderer oom exitCode=9 on NVIDIA GeForce RTX',
+  );
+  assert.equal(goneLine('gpu', {}), 'gpu unknown exitCode=?');
+});
+
+test("each log line is stamped and kept on one line, whatever a page's words hold", () => {
+  assert.equal(logLine('graphics: up', Date.UTC(2026, 10, 25)), '2026-11-25T00:00:00.000Z graphics: up\n');
+  assert.equal(
+    logLine('lost: x\n2026-11-25T00:00:00.000Z forged\r\n', 0),
+    '1970-01-01T00:00:00.000Z lost: x 2026-11-25T00:00:00.000Z forged  \n',
+  );
 });
 
 test('the log keeps its newest whole lines within its most', () => {
   const line = `${'x'.repeat(99)}\n`;
   let log = '';
   for (let index = 0; index < 1000; index++) log = logWith(log, line);
-  assert.ok(log.length <= CRASH_LOG_MOST);
+  assert.ok(log.length <= LOG_MOST);
   assert.ok(log.startsWith('x'));
   assert.ok(log.endsWith('\n'));
   assert.equal(log.length % line.length, 0);

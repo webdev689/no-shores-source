@@ -66,15 +66,18 @@ with a dev server or a local build); an installed copy takes only this machine's
   It is sandboxed, isolated from its preload, with no Node and no `<webview>`. F11 and Alt+Enter make it whole-screen
   as a browser's (on a Mac, the system's own key); F12 and Ctrl+Shift+I open the developer tools, as in a browser.
   Windows and Linux show no menu bar; a Mac has the app, edit, view and window menus, its copy and paste among them.
-- **The game's address not answering** is said in a box the system draws, Try again or Quit, as the window has
-  nothing to show. A page that stops is told, with why in the player's words, and restarted at the player's word; a
-  third stop in two minutes says so. A page that stops answering is offered Wait, the default, or Restart. Each stop
-  of the page or the GPU's process is a line in `app.log`, with the card the game drew on (`crashes.ts`).
+- **An address not answering** (the game's, or a sign-in's on its way) is said by its host in a box the system draws,
+  Try again or Quit, as the window has nothing to show. A page that stops is told, with why in the player's words,
+  and restarted at the player's word; a third stop in two minutes says so. A page that stops answering is offered
+  Wait, the default, or Restart, and the box goes if it answers again. Each stop of the page or the GPU's process is
+  a line in `app.log`, with the card the game drew on, every line kept to one whatever a page's words hold
+  (`crashes.ts`). A page that opens box after box (alert, confirm) is offered a way to stop them.
 - **The fences** (`fences.ts`): the window stays on the game's pages, and on the two others a sign-in with Discord
   passes through on its way out and back ([[Accounts]], "Discord"): the accounts' `/v1/discord/` doors and
-  `discord.com`. A link or address anywhere else opens in the player's browser, and only a web address does. No page
-  opens a window of its own. The game's origin alone is granted the pointer's lock, the whole screen, the keys the
-  system would take while it is whole, and copying to the clipboard; nothing else is granted to any page.
+  `discord.com`. A link or address anywhere else opens in the player's browser, once a second at most, and only a web
+  address with no name or password in it does. No page opens a window of its own. The game's origin alone is granted
+  the pointer's lock, the whole screen, the keys the system would take while it is whole, and copying to the
+  clipboard; nothing else is granted to any page, and a site that asks for a certificate of the player's gets none.
 
 ### The bridge
 
@@ -198,3 +201,8 @@ SwiftShader, until its log says the game's adapter came up (`desktop.yml`).
   Chromium's drawing on Vulkan, which an open Electron report crashes on one AMD card with offscreen textures the game
   does not use.
 - **The site's download links** are not yet on the website, whose words are the owner's ([[Open Questions]]).
+- **The AppImage may not start on Ubuntu 23.10 and later**, which keep an app from making the sandbox Chromium needs
+  unless an AppArmor profile allows it. The Debian package installs that profile; an AppImage cannot (unchecked on a
+  real Ubuntu). Its player is better served by the Debian package.
+- **WebGPU's developer features are on for every page in the window**, Discord's sign-in pages too: they give the
+  watch the backend, card type and driver it judges a launch by, and give a page timers finer than a browser's.

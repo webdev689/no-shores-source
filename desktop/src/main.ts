@@ -1,13 +1,13 @@
 // The desktop app: the game noshores.online serves, in a window of its own, with what a browser cannot give it. This
 // file wires the shell's parts together: the data folder, one copy at a time, the launch's graphics and Chromium's
 // switches before the app is ready, the fences, the window, the watch over the graphics, the updater and the bridge.
-import { type BrowserWindow, type IpcMainEvent, app, ipcMain, session, shell } from 'electron';
+import { type BrowserWindow, type IpcMainEvent, type WebFrameMain, app, ipcMain, session, shell } from 'electron';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { type DesktopAsk, RELOCK_HOOK } from '../../client/src/desktop.ts';
 import { CHANNELS, askOf, infoOf } from './bridge.ts';
 import { Config } from './config.ts';
-import { goneLine, logWith } from './crashes.ts';
+import { goneLine, logLine, logWith } from './crashes.ts';
 import { fenceOf, gamePlace, isGamePage, opensInBrowser, permits } from './fences.ts';
 import { GAME_URL_VARIABLE, gameAddress } from './gameAddress.ts';
 import { boxOver, openGameWindow } from './gameWindow.ts';
@@ -24,7 +24,7 @@ import { watchGraphics } from './graphicsWatch.ts';
 import { setMenu } from './menu.ts';
 import { switchesFor } from './switches.ts';
 import { startUpdater } from './updater.ts';
-import { followsFeed, transportOf } from './updates.ts';
+import { followsFeed, ownAppImage, transportOf } from './updates.ts';
 
 // The data folder keeps the name it was first made with, whatever the app is called later, so a new name never strands
 // a player's settings; `NOSHORES_USER_DATA` moves it, for a run that tests the app. A copy run from the source keeps
@@ -37,7 +37,7 @@ const log = (line: string) => {
   console.warn(`[no shores] ${line}`);
   try {
     const had = existsSync(LOG) ? readFileSync(LOG, 'utf8') : '';
-    writeFileSync(LOG, logWith(had, line.endsWith('\n') ? line : `${new Date().toISOString()} ${line}\n`));
+    writeFileSync(LOG, logWith(had, logLine(line, Date.now())));
   } catch {
     // A log that cannot be written is no reason to stop.
   }
@@ -76,11 +76,13 @@ const ownFile = (file: string): string | null => {
 const ownPackage = JSON.parse(ownFile(path.join(app.getAppPath(), 'package.json')) ?? '{}') as {
   noShores?: { signed?: boolean | string };
 };
+/** The AppImage this copy runs from, which it updates and starts again from; none for any other copy. */
+const appImage = ownAppImage(process.env, process.execPath);
 const transport = transportOf({
   packaged: app.isPackaged,
   platform: process.platform,
   configured: followsFeed(ownFile(path.join(process.resourcesPath, 'app-update.yml'))),
-  appImage: Boolean(process.env['APPIMAGE']),
+  appImage: appImage !== null,
   deb: ownFile(path.join(process.resourcesPath, 'package-type'))?.trim() === 'deb',
   // The release writes it from the command line, which may leave it a word.
   signed: ownPackage.noShores?.signed === true || ownPackage.noShores?.signed === 'true',
@@ -91,7 +93,7 @@ const restartArgs = () => process.argv.slice(1).filter((arg) => !arg.startsWith(
 /** Starts the app again once this one has gone: from its AppImage where it runs from one, as the folder it runs in
  *  is the AppImage's, and goes with it. */
 const relaunch = (args: readonly string[]) =>
-  app.relaunch({ args: [...restartArgs(), ...args], execPath: process.env['APPIMAGE'] ?? process.execPath });
+  app.relaunch({ args: [...restartArgs(), ...args], execPath: appImage ?? process.execPath });
 const gpuKey = async () => {
   const deadline = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000).unref());
   const info = (await Promise.race([app.getGPUInfo('basic').catch(() => null), deadline])) as { gpuDevice?: [] } | null;
@@ -147,7 +149,16 @@ const fromGame = (event: IpcMainEvent) =>
   event.senderFrame === event.sender.mainFrame &&
   isGamePage(event.senderFrame.url, game);
 
-function answer(ask: DesktopAsk): void {
+/** When the player's browser was last opened: a page that loops its address opens it once a second at most. */
+let openedAt = 0;
+const openOutside = (url: string) => {
+  if (Date.now() - openedAt < 1000) return;
+  openedAt = Date.now();
+  void shell.openExternal(url).catch(() => undefined);
+};
+
+/** Answers `ask`, which the game's top page `frame` sent. */
+function answer(ask: DesktopAsk, frame: WebFrameMain): void {
   switch (ask.ask) {
     case 'gpuAsked':
       watch.gpuAsked();
@@ -180,7 +191,9 @@ function answer(ask: DesktopAsk): void {
       return;
     case 'relock':
       // Run as a press, which the page's own hook needs; the hook takes the lock only if the game still wants it.
-      void window?.webContents.executeJavaScript(`globalThis.${RELOCK_HOOK}?.()`, true).catch(() => undefined);
+      // On the page that asked, never one loaded since, as a call waits for its page to load.
+      if (!frame.detached && isGamePage(frame.url, game))
+        void frame.executeJavaScript(`globalThis.${RELOCK_HOOK}?.()`, true).catch(() => undefined);
       return;
   }
 }
@@ -197,26 +210,31 @@ else {
   });
   ipcMain.on(CHANNELS.ask, (event, raw: unknown) => {
     const ask = fromGame(event) ? askOf(raw) : null;
-    if (ask) answer(ask);
+    if (ask && event.senderFrame) answer(ask, event.senderFrame);
+  });
+  // A site asking for a certificate of the player's is given none, never the first the system holds.
+  app.on('select-client-certificate', (event, _contents, _url, _list, choose) => {
+    event.preventDefault();
+    choose();
   });
   app.on('web-contents-created', (_event, contents) => {
     contents.setWindowOpenHandler(({ url }) => {
-      if (opensInBrowser(url)) void shell.openExternal(url);
+      if (opensInBrowser(url)) openOutside(url);
       return { action: 'deny' };
     });
     const fence = (event: { readonly url: string; readonly isMainFrame: boolean; preventDefault: () => void }) => {
       const way = fenceOf(event.url, event.isMainFrame, game);
       if (way === 'stay') return;
       event.preventDefault();
-      if (way === 'browser') void shell.openExternal(event.url);
+      if (way === 'browser') openOutside(event.url);
     };
     contents.on('will-navigate', fence);
     contents.on('will-redirect', fence);
     contents.on('will-attach-webview', (event) => event.preventDefault());
   });
   app.on('child-process-gone', (_event, details) => {
-    if (details.type !== 'GPU') return;
-    log(goneLine('gpu', details, Date.now(), watch.reported()?.description ?? ''));
+    if (details.type !== 'GPU' || details.reason === 'clean-exit') return;
+    log(goneLine('gpu', details, watch.reported()?.description ?? ''));
     void watch.gpuGone(`the GPU's process went: ${details.reason}`);
   });
   app.on('window-all-closed', () => app.quit());
@@ -237,8 +255,7 @@ else {
       origin: game.origin,
       kept: config.get().window,
       keep: (place) => void config.set({ window: place }),
-      gone: (reason, exitCode) =>
-        log(goneLine('renderer', { reason, exitCode }, Date.now(), watch.reported()?.description ?? '')),
+      gone: (reason, exitCode) => log(goneLine('renderer', { reason, exitCode }, watch.reported()?.description ?? '')),
       quit: () => app.quit(),
     });
     window.webContents.on('did-finish-load', tell);

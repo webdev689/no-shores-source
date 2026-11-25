@@ -45,6 +45,7 @@ test("only a web address goes to the player's browser", () => {
   assert.equal(opensInBrowser('javascript:alert(1)'), false);
   assert.equal(opensInBrowser('ms-settings:privacy'), false);
   assert.equal(opensInBrowser('https://user@example.com/'), false);
+  assert.equal(opensInBrowser('https://:secret@example.com/'), false);
 });
 
 test('the game may hold the pointer and the screen; nothing else is granted, and nothing to another page', () => {
