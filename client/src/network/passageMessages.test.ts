@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import {
@@ -124,8 +125,13 @@ test('a passage zone’s deal reads back from the snapshot, a hold under way by 
   assert.equal(passageSeenOf(Snapshot.getRootAsSnapshot(new flatbuffers.ByteBuffer(bare.asUint8Array()))), null);
 });
 
-test('the passages’ asks cross as the rules number them: begin by mouth, route and lamp', () => {
-  assert.deepEqual([ASKS.goOn, ASKS.kindle, ASKS.lightLamp, ASKS.goHome, ASKS.beginDive], [82, 83, 84, 85, 86]);
+test('the passages’ asks cross as the rules number them: begin by mouth, route and lamp', async () => {
+  const wire = await readFile(new URL('../../../crates/protocol/src/passage_wire.rs', import.meta.url), 'utf8');
+  const number = (name: string) => Number(new RegExp(`pub const PASSAGE_${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  assert.deepEqual(
+    [ASKS.goOn, ASKS.kindle, ASKS.lightLamp, ASKS.goHome, ASKS.beginDive, ASKS.open],
+    ['GO_ON', 'KINDLE', 'LIGHT', 'HOME', 'BEGIN', 'OPEN'].map(number),
+  );
   const bytes = inputBytes(1, {
     intent: new Float64Array(18),
     look: { anim: 'idle', frame: 0, facing: 0 },
@@ -134,5 +140,5 @@ test('the passages’ asks cross as the rules number them: begin by mouth, route
     ask: { kind: ASKS.beginDive, column: 2, slot: 1, node: 10 },
   });
   const ask = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).ask();
-  assert.deepEqual([ask?.kind(), ask?.column(), ask?.slot(), ask?.node()], [86, 2, 1, 10]);
+  assert.deepEqual([ask?.kind(), ask?.column(), ask?.slot(), ask?.node()], [ASKS.beginDive, 2, 1, 10]);
 });

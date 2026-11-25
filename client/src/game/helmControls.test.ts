@@ -11,7 +11,7 @@ function underGround(passage: LandSheet | null) {
   const opened: LandSheet[] = [];
   const playing = {
     flow: { mode: 'foot', node: 'passage-continent-1-w1-z3' },
-    foot: { fallen: false, dungeon: {}, node: {} },
+    foot: { fallen: false, dungeon: {}, mapless: true, node: {} },
     helmMap: { openLand: (sheet: LandSheet) => void opened.push(sheet) },
   } as unknown as Playing;
   const game = { landAt: () => undefined, change: () => undefined, groundAt: () => null, passageMap: () => passage };

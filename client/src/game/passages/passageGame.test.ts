@@ -46,10 +46,11 @@ const web = {
   modifiers: [],
   zones: [zoneAt(3, [1_500, 2_500]), zoneAt(7, [2_000, 3_000])],
 } as unknown as PassageWeb;
-const planOf = (number: number) => ({ zone: { number, onward: [], name: `Zone ${number}` } }) as unknown as PassagePlan;
+const planOf = (number: number) =>
+  ({ zone: { number, onward: [], name: `Zone ${number}` }, pieces: [] }) as unknown as PassagePlan;
 
-/** The parts of the game this test reaches past its face: the room module's door, the mouth whose card is open, the
- *  zone stood in, and the card's choice and the lamp's Home as E would make them. */
+/** The parts of the game this test reaches past its face: the room module's door, the mouth whose card is open and
+ *  where its door stands, the zone stood in, the card, and the card's choice and the lamp's Home as E would make them. */
 interface Inside {
   door: unknown;
   mouth: number | null;
@@ -59,6 +60,43 @@ interface Inside {
   home(ask: (asked: GearAsk) => void): void;
   cardAt: unknown;
   card: { open: boolean; show(choice: unknown): void };
+}
+
+/** `passages` reached past its face, through the card's and the zone's parts it splits into. */
+function insideOf(passages: PassageGame): Inside {
+  const inner = passages as unknown as Pick<Inside, 'door' | 'begin' | 'goOn' | 'home'>;
+  const card = passages.card as unknown as { mouth: number | null; cardAt: unknown };
+  const stood = passages.stood as unknown as { zone: unknown };
+  return {
+    get door() {
+      return inner.door;
+    },
+    set door(door) {
+      inner.door = door;
+    },
+    get mouth() {
+      return card.mouth;
+    },
+    set mouth(mouth) {
+      card.mouth = mouth;
+    },
+    get zone() {
+      return stood.zone;
+    },
+    set zone(zone) {
+      stood.zone = zone;
+    },
+    get cardAt() {
+      return card.cardAt;
+    },
+    set cardAt(opened) {
+      card.cardAt = opened;
+    },
+    begin: (route, lamp) => inner.begin(route, lamp),
+    goOn: (mouth, ask) => inner.goOn(mouth, ask),
+    home: (ask) => inner.home(ask),
+    card: passages.card.view as unknown as Inside['card'],
+  };
 }
 
 /** A foot in the room `room`, its gear as the room last said it, online or alone, its asks written down. */
@@ -94,13 +132,14 @@ function game(foot: unknown, now = () => Date.now()) {
     showDungeon: async () => undefined,
     companyPlaces: async () => [],
     tell: (words) => void held.told.push(words),
-    isles: { warm: async () => undefined, hasKit: () => held.kit },
+    isles: { warm: async () => undefined },
+    modelled: () => held.kit,
     fallback: () => () => undefined,
     now,
   });
   const played: WayPlayed[] = [];
   passages.ways.play = (way) => void played.push(way);
-  return { held, passages, played, inside: passages as unknown as Inside };
+  return { held, passages, played, inside: insideOf(passages) };
 }
 
 const zoneIn = (room: string, number: number, passed: readonly number[] = []) => ({
@@ -300,17 +339,22 @@ test('the mouths’ card closes once its place is left: walked away, or another 
   assert.equal(inside.card.open, false, 'in another room');
 });
 
-test('the pieces stand as boxes under ground, and above ground only until the islands’ passage pack has come', () => {
+test('a piece stands as boxes until its pack holds its module, under ground and above', () => {
   const foot = footIn('passage-e', { online: true, dive: null });
   const { held, inside, passages } = game(foot);
   foot.held.passage = { lampLit: false, open: false, lit: 0, broken: 0, done: false } as unknown as PassageSeenState;
-  inside.zone = zoneIn('passage-e', 3);
-  assert.equal(passages.pieces()?.boxed, true, 'under ground');
-  inside.zone = { ...zoneIn('passage-e', 3), isle: {} as IsleShown };
+  const lamp = { module: 'passage.lamp', kind: 'lamp', number: 0, at: [0, 0, 0], facing: 0 };
+  const plan = { ...planOf(3), pieces: [lamp] } as unknown as PassagePlan;
+  inside.zone = { ...zoneIn('passage-e', 3), entry: { plan, room: 'passage-e', patrol } };
+  held.kit = false;
+  assert.equal(passages.pieces()?.boxes.length, 1, 'under ground, the pack not come');
+  held.kit = true;
+  assert.equal(passages.pieces()?.boxes.length, 0, 'under ground, the pack come');
+  inside.zone = { ...zoneIn('passage-e', 3), entry: { plan, room: 'passage-e', patrol }, isle: {} as IsleShown };
   held.kit = false;
   const waiting = passages.pieces();
-  assert.equal(waiting?.boxed, true, 'above ground, the pack not come');
+  assert.equal(waiting?.boxes.length, 1, 'above ground, the pack not come');
   held.kit = true;
-  assert.equal(passages.pieces()?.boxed, false, 'the pack come');
+  assert.equal(passages.pieces()?.boxes.length, 0, 'the pack come');
   assert.notEqual(passages.pieces()?.key, waiting?.key, 'laid again');
 });

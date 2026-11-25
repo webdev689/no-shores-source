@@ -24,7 +24,14 @@ test('a week’s web reads whole: three mouths, twenty depths, every way on to a
   const lamps = web.zones.filter((zone) => zone.lamp !== null).map((zone) => zone.depth);
   assert.deepEqual([...new Set(lamps)], [5, 10, 15, 20]);
   const deepest = web.zones.find((zone) => zone.depth === 20);
-  assert.deepEqual([web.zones[0]?.levels, deepest?.levels], [[1, 4], [27, 30]], 'its foes’ levels, by depth');
+  assert.deepEqual(
+    [web.zones[0]?.levels, deepest?.levels],
+    [
+      [1, 4],
+      [27, 30],
+    ],
+    'its foes’ levels, by depth',
+  );
   assert.equal(door.web('continent-9', WEEK), null, 'an island with no passages has no web');
 });
 
