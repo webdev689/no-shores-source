@@ -35,3 +35,8 @@ so the keyless fallback the hand-off relies on is spent for the month. Neither t
 4 WARN, 1 FAIL. SkillsMP now PASSes here (its key is injected by the session's proxy for skillsmp.com), so that half
 holds only where no key is injected. Context7 alone FAILs: "Monthly quota exceeded", no CONTEXT7_API_KEY. It was not
 needed for the work. A key is the owner's to grant; nothing was changed.
+
+**Again, 2026-11-25 (the desktop app session, branch ccr-42a55a97-wkid9r):** install-all printed 22 PASS, 4 WARN,
+1 FAIL: Context7 alone, "Monthly quota exceeded", no CONTEXT7_API_KEY; SkillsMP passes on the proxy's key. This work
+reads Electron's and electron-builder's current docs, so it falls back to WebSearch and the projects' own pages. The
+key is the owner's to grant; nothing was changed.

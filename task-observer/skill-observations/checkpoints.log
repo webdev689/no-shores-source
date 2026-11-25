@@ -140,3 +140,4 @@
 2026-11-25T05:48:16Z no new observations (deploy of #205 verified live; r2.dev 429 logged as 0238, branch restart as 0237)
 2026-11-24 20:18 [no-shores-source] session-start scan: files=196 parsed=187 principles=0
 2026-11-25 11:53 [no-shores-source] session-start scan: files=215 parsed=206 principles=0
+2026-11-25 12:06 [no-shores-source] session-start scan: files=223 parsed=214 principles=0
