@@ -284,8 +284,11 @@ The decisions in [[Open Questions]] are not repeated here.
     picked. All 74 of its cues are picked by the owner, on two sound sheets
     (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
     the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
-    timpani on the owner's "Search for single notes"); in #208, not yet merged, published to R2 by freesound runs 171
-    and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
+    timpani on the owner's "Search for single notes"), published to R2 by freesound runs 171 and 175 and in the game
+    since #208 (merged on the owner's "Merge and deploy", 8babf491; CI run 1119 deployed the page and the site, the
+    rooms, accounts and bot unchanged). #208 also fixed the freesound workflow, which had failed on every branch since
+    #200 before it published (a stale apt index, and numpy where the runner has none). Not yet heard in the game.
+    Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
     centre on the owner's "Use it as it is". To change a pick: write its `picked` into
     `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
     the preview's partials) and write it on its cue, push so the freesound workflow publishes it, and take
