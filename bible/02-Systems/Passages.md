@@ -88,12 +88,19 @@ small zones across the island, twenty deep ([[Passages Web Out From the Patrol Z
   the island's coast as the world's layout draws it. On Saltmere the spine runs under the
   Grey Reach, past the Driftwood Moors at depth 10, and ends under the Weirlands by the Gullwing Vale at 20.
 - **The ways on**: each zone leads on to one to three zones of the next depth beside it across the spine, the nearest
-  always; a zone left without a way in is given one from the nearest. Ways lead deeper only.
+  always and two at least where two lie beside it, so a way is chosen at every depth but the last; a zone left
+  without a way in is given one from the nearest. Ways lead deeper only.
+- **The public way**: one zone a depth (`Zone::public`), from a zone of the first depth along one of each marked
+  zone's ways on, where players in public rooms meet.
 - **Each zone** is drawn its ground (under ground, a style by depth, chalk and barrow among them; above ground, a
-  hollow of six forms), its size, its deal (a lamp at every fifth depth, else a skirmish, a mission of seven, a vault,
-  a vein or a reliquary, by weight), its currents (none to three by depth, three in four a bane), its seed and a
-  descriptive name. Its foes' band is the island's raised by depth (`levels`): on Saltmere 1 to 4 at depth 1, 27 to
-  30 at depth 20.
+  hollow of six forms), its size (one step larger past depth 10, a lamp's zone and a vault medium at least), its
+  deal (a lamp at every fifth depth, else a skirmish, a mission of seven, a vault, a vein or a reliquary, by weight; a
+  vault only under ground, its draw above ground a mission), its currents (none to three by depth, three in four a
+  bane, each one its deal takes, none saying again what the week's two modifiers do: `Current::fits`,
+  `Current::restates`), its seed and its name (`names.rs`): under a place of the island's already named within 28 km
+  (`content/passages/saltmere.json`'s places), "Under Grey Point Light"; else its ground's and its deal's, "A chalk
+  cut held by the Tithe", no two zones of a web the same. Its foes' band is the island's raised by depth (`levels`):
+  on Saltmere 1 to 4 at depth 1, 27 to 30 at depth 20.
 - **The week's two modifiers** for an island's passages are drawn in gear (`week_modifiers`) from the runs' eight,
   two kinds, on their own stream.
 
@@ -113,10 +120,16 @@ passages' own pieces standing in it with their solids.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
   little and stepping down in shelves, each easing into the next over an 8 m bank; its walls rise 12 to 25 m within
-  5 m of its edge, too steep for a body. It is dressed from the islands' kit of its climate: cliffs along its walls,
-  each 3 m out along its own wall's normal, facing in, boulders at their feet, trees, shrubs and grass by its form, a
-  court's ruins, a strand's wrecks, all clear of the arrival by 5 m and of each band by 3 m past its 2.5 m spread. Its
-  mouths stand a metre inside its edge, its section's ring half a metre inside it.
+  5 m of its edge, walked up only aslant (the movement rules walk any slope along some way), and their ground ends 2 m
+  past their full rise, a wall of the ground no body climbs, the page drawing the land round the hollow there at its
+  lip's height (`drawnHeights`); the section is the square the ground is laid in (`Hollow::bounds`), so a body is
+  held by the ground and never killed for walking. Its posts are as many as its
+  room's most foes hold in bands of two (`Size::posts`: 3, 4 and 6), spread over the floor. It is dressed from the
+  islands' kit of its climate: cliffs along its walls, each 3 m out along its own wall's normal, facing in, boulders at
+  their feet, trees, shrubs and grass by its form, a court's ruins, a strand's wrecks, each keeping its footprint 5 m
+  from the arrival, 2.5 m from a mouth, 4.5 m from the lamp and 1 m past each band's 2.5 m spread, tried at up to
+  eight places. Its mouths stand a metre inside its edge, its floor's ring (`Hollow::ring`, where the page grows its
+  meadow) half a metre inside it.
 - **Laid where a body walks** (`Walk`): a zone is laid until a body, kept 0.5 m off every wall and solid and walking
   no steeper than 0.7, walks from the arrival to within 2.5 m of every onward mouth, the lamp and every spot, and
   within a blow (1.45 m) of every post and a Reckoning's collectors' spots: under ground from each next seed, above
@@ -159,7 +172,7 @@ passages' own pieces standing in it with their solids.
   band from depth 11. A lamp's guard is an Elite band at the first lamp, a Miniboss and an Elite band at the second and
   third, a Miniboss and two Elite bands at the fourth. A vault stands a dungeon's garrison with its Miniboss in the end
   room, and no cache chest of its own: its cache is the passage's. A zone's room stands at most nine foes at once, its
-  bands and its waves together (`ZONE_FOES_MOST`), bands past it not standing, so one player does its deal in about
+  bands and its waves together (`ZONE_FOES_MOST`); a hollow lays its posts for `Size::foes_most`, 7, 9 and 12 by size, bands past it not standing, so one player does its deal in about
   three minutes and a lamp comes about every fifteen. A guard never stands again by itself. A foe of a passage zone
   pays three quarters of a kill as it falls, its XP, Aurem and chances of a find (`lamps::KILL_SHARE`).
 - **The week's two modifiers** are the zone's run's, weighing the runs' hooks (`run.rs`); **the zone's currents**
@@ -385,7 +398,7 @@ and a file of one's own asks for any other. Every picture is drawn by the game's
 
 ## Limits
 
-- A hollow's solid dressing is thin beside the island's: a grove stands a few trees, a court few of its ruins, a
-  strand few wrecks, as the room lays them (`crates/passage/src/hollow.rs`).
+- A body may scramble aslant up a hollow's wall to its lip, where no foe follows (`crates/passage/src/hollow.rs`).
+- A small strand stands two of its five wrecks.
 - From the arrival in a narrow ravine, or by a strand's wreck, the eye behind the body can stand in rock or timber.
 - The pictures' hollows stand under a plain sky colour, and the way's frames over a plain ground.

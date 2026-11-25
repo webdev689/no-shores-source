@@ -1,11 +1,13 @@
 //! A week's web of an island's passages: three zones at the first depth, one behind each mouth, then three or four at
-//! each depth to the twentieth, each lying across the island along its spine;
-//! at their depths; and the ways on, each zone to one to three of the next depth's beside it, so ways cross and
-//! meet, every zone with a way in. It is drawn from the island and the week alone.
+//! each depth to the twentieth, each lying across the island along its spine at its depth; the ways on, each zone to
+//! one to three of the next depth's beside it (two at least where two lie beside it), so ways cross and meet, every
+//! zone with a way in; each zone's name; and the week's public way, a zone at each depth. It is drawn from the island
+//! and the week alone.
 
 use crate::island::Island;
-use crate::zone::{Current, Deal, Form, Ground, Mission, Size, Zone, names_of};
+use crate::zone::{Current, Deal, Form, Ground, Mission, Size, Zone};
 use crate::{DEPTHS, LAMP_CEILING_M, has_lamp};
+use gear::activities::Modifier;
 use isle::draws::{Draws, mix};
 
 /// How far apart zones of one depth lie across the spine, metres.
@@ -70,11 +72,13 @@ fn size_of(depth: u8, least: Size, draws: &mut Draws) -> Size {
     weighted(&weights, draws).max(least)
 }
 
-/// A deal for a zone that holds no lamp: a vault only under ground.
+/// A deal for a zone that holds no lamp: a vault only under ground, a mission in its place above.
 fn deal_of(under: bool, draws: &mut Draws) -> Deal {
+    let mission = |draws: &mut Draws| Deal::Mission(*draws.pick(&Mission::ALL).unwrap_or(&Mission::Hold));
     match weighted(&DEALS, draws) {
-        1 => Deal::Mission(*draws.pick(&Mission::ALL).unwrap_or(&Mission::Hold)),
+        1 => mission(draws),
         2 if under => Deal::Vault,
+        2 => mission(draws),
         3 => Deal::Vein,
         4 => Deal::Reliquary,
         _ => Deal::Skirmish,
@@ -86,6 +90,7 @@ impl Web {
     #[must_use]
     pub fn of(island: &'static Island, week: u64) -> Self {
         let seed = mix(island_seed(island), week);
+        let modifiers = gear::passages::week_modifiers(&island.id, week);
         let mut zones: Vec<Zone> = Vec::new();
         let mut depths: Vec<Vec<u16>> = Vec::new();
         for depth in 1..=DEPTHS {
@@ -95,7 +100,7 @@ impl Web {
             for lane in 0..width {
                 let number = u16::try_from(zones.len()).unwrap_or(u16::MAX);
                 let zone_seed = mix(seed, u64::from(depth) * 64 + lane as u64);
-                zones.push(Self::zone(island, (depth, lane, width), number, zone_seed));
+                zones.push(Self::zone(island, (depth, lane, width), (number, &modifiers), zone_seed));
                 row.push(number);
             }
             depths.push(row);
@@ -104,12 +109,31 @@ impl Web {
             let mut draws = Draws::of(seed, 100 + depth as u64);
             Self::link(&mut zones, (&depths[depth], &depths[depth + 1]), &mut draws);
         }
+        crate::names::name(island, &mut zones);
+        Self::mark_public_way(&mut zones, depths.first().map_or(&[], Vec::as_slice), &mut Draws::of(seed, 300));
         let mouths = depths.first().cloned().unwrap_or_default();
         Web { island, week, zones, mouths }
     }
 
-    /// One zone at a lane of a depth `width` zones wide: its ground drawn, laid along the spine.
-    fn zone(island: &Island, (depth, lane, width): (u8, usize, usize), number: u16, seed: u64) -> Zone {
+    /// The week's public way: a zone at the first depth, then at each depth one of the ways on from the last, so
+    /// players in public rooms meet along it.
+    fn mark_public_way(zones: &mut [Zone], first: &[u16], draws: &mut Draws) {
+        let mut at = draws.pick(first).copied();
+        while let Some(number) = at {
+            let Some(zone) = zones.get_mut(usize::from(number)) else { break };
+            zone.public = true;
+            at = draws.pick(&zone.onward).copied();
+        }
+    }
+
+    /// One zone at a lane of a depth `width` zones wide: its ground drawn, laid along the spine, its currents clear of
+    /// the week's `modifiers`; named once the web is whole.
+    fn zone(
+        island: &Island,
+        (depth, lane, width): (u8, usize, usize),
+        (number, modifiers): (u16, &[Modifier]),
+        seed: u64,
+    ) -> Zone {
         let mut draws = Draws::of(seed, 1);
         let lamp = has_lamp(depth);
         let (spine_at, way) = island.along(f64::from(depth));
@@ -130,14 +154,15 @@ impl Web {
         let deal = if lamp { Deal::Lamp } else { deal_of(under, &mut draws) };
         let least = if lamp || deal == Deal::Vault { Size::Medium } else { Size::Small };
         let size = size_of(depth, least, &mut draws);
-        let currents = Current::draw(depth, deal, &mut draws);
-        let name = (*draws.pick(names_of(&ground)).unwrap_or(&"A passage")).to_owned();
+        let currents = Current::draw(depth, deal, modifiers, &mut draws);
         let lane = u8::try_from(lane).unwrap_or(u8::MAX);
-        Zone { number, depth, lane, at, ground, size, deal, currents, seed, name, onward: Vec::new() }
+        let (name, onward, public) = (String::new(), Vec::new(), false);
+        Zone { number, depth, lane, at, ground, size, deal, currents, seed, name, onward, public }
     }
 
     /// The ways on from one depth's zones to the next's: each to one to three of those beside it across the spine,
-    /// the nearest always, then every zone of the next depth left without a way in given one from the nearest.
+    /// the nearest always and two at least where two lie beside it, so a way is chosen; then every zone of the next
+    /// depth left without a way in given one from the nearest.
     fn link(zones: &mut [Zone], (from, to): (&[u16], &[u16]), draws: &mut Draws) {
         let place = |row: &[u16], at: usize| if row.len() < 2 { 0.5 } else { at as f64 / (row.len() - 1) as f64 };
         let reach = 1.0 / (from.len().min(to.len()).max(2) - 1) as f64 + 1e-9;
@@ -149,7 +174,7 @@ impl Web {
                 .filter(|(gap, _)| *gap <= reach)
                 .collect();
             near.sort_by(|one, other| one.0.total_cmp(&other.0).then(one.1.cmp(&other.1)));
-            let count = (1 + draws.index(3)).min(near.len()).max(1);
+            let count = (1 + draws.index(3)).max(2).min(near.len()).max(1);
             let mut chosen: Vec<usize> = near.iter().take(count).map(|(_, next)| *next).collect();
             if chosen.is_empty() {
                 chosen.push(((here * (to.len() - 1) as f64).round() as usize).min(to.len() - 1));

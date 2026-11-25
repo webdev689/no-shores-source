@@ -5,6 +5,7 @@
 //! rises with depth to the top of the game's, so every island's deep is worth walking.
 
 pub mod island;
+mod names;
 pub mod plan;
 pub mod web;
 pub mod zone;

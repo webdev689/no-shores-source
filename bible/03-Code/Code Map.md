@@ -224,7 +224,8 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `sky` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use `movement` and `libm`;
   `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement` and `libm`; `reach` and
   `dungeon`, which use no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and `libm`; `passage`,
-  which may use `dungeon`, `isle`, `movement`, `serde`, `serde_json` and `libm`; and `gear`, which may use `serde`,
+  which may use `dungeon`, `gear` (the week's modifiers its currents keep clear of), `isle`, `movement`, `serde`,
+  `serde_json` and `libm`; and `gear`, which may use `serde`,
   `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client. Its core is `room`, which may use `combat`, `dungeon`, `foes`, `gear`,

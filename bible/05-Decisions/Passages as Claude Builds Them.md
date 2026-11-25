@@ -66,7 +66,9 @@ instances staying in their regions (below).
 | Mouths in the Saltgrass Downs | The three runs' sealed doors: the Chalk Adit's, the Beacon Stair's and the Tithe Barns'. Each leads to one of the three zones at depth 1 |
 | Width | Three or four zones at each depth past the first, drawn by the week |
 | The ways on | Each zone has one to three onward mouths, to zones of the next depth beside it on the island, so ways cross and meet; every zone has a way in. Ways lead deeper only: the mouth behind a player does not open from its side. Depth 20 has no way on |
-| Where zones lie | Across the island, from the patrol zone along a spine to the island's far side: on Saltmere from the Saltgrass Downs past the Moors' places (about depth 9) to the Vale's (depths 17 to 20); each zone's place is kept for the passage between zones to be shown |
+| The maze | The choice of route: a zone with two zones of the next depth beside it always has two ways on at least, so a way is chosen at every depth but the last (over a year, no zone above depth 20 offers one way on, against 31 in a hundred before); the page's map shows every way |
+| The public way | Each week marks one zone a depth, from a zone of the first depth along one way on at each depth after it, as its public way, so players in public rooms meet along it; it is in the web, for the page's map and the mouths' signs to show |
+| Where zones lie | Across the island, from the patrol zone along a spine to the island's far side: on Saltmere from the Saltgrass Downs, the spine nearest the Grey Reach's places at depth 10, to the Weirlands', where it ends by the Gullwing Vale at depth 20; each zone's place is kept for the passage between zones to be shown |
 | Landmark zones | The Moors' and the Vale's places (the Saltbreaker Hulks, Moorend, Grey Point Light, Moorhold, Drowned Men's Graves, the Gorse Moor, Wreckers' Cut, the Gorse Ledge; Gullwing, Weir Mill, Valeguard, Orchard Farm, the Old Stones, the Water Meadows, Hollow Coven, Valeguard Walls, the Weir Gorge, the Hollow Undercroft) stand as zones at the depths their distance gives, each dressed after its place. Each week shows a share of them at their depths; the Old Stones always hold the deepest lamp |
 | The week | The web, its zones and their deals are drawn from the island and the week (Tuesday 09:00 UTC, [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]) |
 | Not seen | Passage zones stand on no land: the sea, the overworld over the island and the held map's land show none. Only the passage between zones and the passages' own map, held in a passage zone, show the web |
@@ -81,11 +83,14 @@ no landmark zones ("The regions", above).
 | Kinds | Under ground, laid by the Forge in its blocks of 51.2 m (one, two or three blocks); above ground, a hollow of the island's own ground, walled by rock 12 to 25 m high, 38, 55 or 75 m across; about half each, landmark zones as their place is |
 | Under ground's styles | Two new to the passages, built in Blender: **chalk** (cut chalk with flint seams and shells in its walls, as the downs' chalk holds them) and **barrow** (ways lined with the grey-green stone, orthostats and lintels). Depths 1 to 5 also caverns and mines; 6 to 10 cells and mines; 11 to 15 crypt, halls and caverns; 16 to 20 sanctum, crypt and halls |
 | Above ground's shapes | A hollow (a round basin), a ravine (long and winding), shelves (terraces stepping down), a court (a ruined court of the grey stone), a strand (an old sea floor, dry, its wrecks inland), a grove; dressed from the island's kit of rocks, cliffs, trees and ruins |
-| Size | Small, medium and large, 40, 35 and 25 in a hundred shallow; past depth 10 one step larger |
-| Its deal | One each: a skirmish (its garrison), a mission (one of seven, below), a vault (a two-block dungeon to its Miniboss), a vein (the island's resource in six nodes, guarded), a reliquary (a chest under guard); a lamp's zone is its lamp. About 30, 35, 10, 12 and 13 in a hundred |
+| Size | Small, medium and large, 40, 35 and 25 in a hundred to depth 10, 15, 45 and 40 past it; a lamp's zone and a vault medium at least |
+| Its deal | One each: a skirmish (its garrison), a mission (one of seven, below), a vault (a two-block dungeon to its Miniboss), a vein (the island's resource in six nodes, guarded), a reliquary (a chest under guard); a lamp's zone is its lamp. Drawn about 30, 35, 10, 12 and 13 in a hundred; a vault only under ground, its draw above ground a mission, so across the web about 30, 40, 5, 12 and 13 |
+| Its walls | Rise 12 to 25 m within 5 m of its floor's edge; a body walks up them only aslant, and their ground ends 2 m past their top, a wall of the ground no body climbs, the land past it drawn at the lip's height. The room's section is the square the ground is laid in, so a body is held by the ground and never killed for walking |
+| Its posts | Above ground, as many as its room's most foes (7, 9 and 12 by size) hold in bands of two: 3, 4 and 6, spread over the floor, the first 14 m from the way in, none nearer another than 9 m |
+| Its dressing | Each piece keeps its footprint (half its base's diagonal) 5 m from the arrival, 2.5 m from a mouth's middle, 4.5 m from the lamp's and a body's room past each band's 2.5 m spread; each is tried at up to eight places before it is left out. A year's groves stand all their trees, courts 15 ruins, strands 2 to 5 wrecks |
 | The choice | Each onward mouth shows the deal and the currents of the zone it leads to, so the way is chosen |
 | The mouths | Open once the zone's deal is done while the player was in it; a gauntlet's are open from the start |
-| Names | Descriptive by kind and shape: "A chalk hollow", "A narrow cut", "A stone-lined way", "A dry strand"; a landmark zone by its place |
+| Names | Under a place already named within 28 km (the Grey Reach's at depth 10, the Weirlands' at 20, as `content/passages/saltmere.json` lists them): "Under Grey Point Light", "Under the Pearl Tomb". Else two parts, its ground and its deal: "A chalk cut held by the Tithe", "A narrow cut of the dead lamps". No two zones of a week's web share a name, so a dive of twenty meets twenty |
 
 ### The seven missions
 
@@ -104,9 +109,12 @@ no landmark zones ("The regions", above).
 | Call | Choice |
 |---|---|
 | The week's two | Drawn for each island and week from the runs' eight ([[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]): Burn, Brawler, Marksman, Lightswitch, Ironclad, Trickle, Juggler, Exposure, on the passages' own stream; on in every zone of the web |
-| Each zone's currents | Smaller, its own: none at depths 1 to 3, one at 4 to 8, two at 9 to 14, three at 15 to 20, each stronger with depth by s = 1 + (depth − 1) ÷ 19 |
-| Banes (three in four) | Hardened: foes stand 10%·s more health. Sharpened: foes' blows deal 10%·s more. Shielded: 15%·s more foes carry shields. Crowded: one more foe in each band, two past depth 14. Veteran: 25%·s of Minors stand as Majors. Gloom: a darkness zone. Frail: heals give 15%·s less. Spent: Arts recharge 15%·s slower |
-| Boons (one in four) | Kindled: players' blows deal 8%·s more. Bountiful: Vestiges drop 20%·s more often. Rich seam: a node gives one more |
+| Each zone's currents | Its own: none at depths 1 to 3, one at 4 to 8, two at 9 to 14, three at 15 to 20, each stronger with depth by s = 1 + (depth − 1) ÷ 19, felt where it first runs and at the deepest no stronger than the week's modifier of its kind |
+| Never twice | A current is never drawn where it says again what the week's two do: Sharpened under Lightswitch, Shielded under Ironclad, Frail under Exposure, Spent under Trickle, Kindled under Brawler or Marksman |
+| Only what the deal takes | A rich seam only on a vein; Crowded not on a vault (its dungeon garrison) or a lamp (its Elite bands, held to three); Veteran not there, nor on a Kindle, a Hold or an Ambush, whose foes come in waves alone |
+| Banes (three in four) | Hardened: foes stand 25%·s more health. Sharpened: foes' blows deal 25%·s more. Shielded: 25%·s more foes carry shields. Crowded: one more foe in each band and wave, two past depth 14. Veteran: 40%·s of Minors stand as Majors. Gloom: dark until the deal is done, no one rising but by a revive, a company all down falling back with its hauls lost. Frail: heals give 25%·s less. Spent: Arts recharge 25%·s slower |
+| Boons (one in four) | Kindled: players' blows deal 15%·s more. Bountiful: Vestiges drop 40%·s more often. Rich seam: a node gives one more |
+| Their words | Each says what it does, its numbers at the zone's depth: "Dark until the work is done: no one rises but by a revive, and a company all down falls back, its hauls lost." |
 
 ## Depth
 

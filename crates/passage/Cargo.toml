@@ -8,6 +8,7 @@ description = "The passages: each island's week's web of small procedural zones 
 
 [dependencies]
 dungeon = { path = "../dungeon" }
+gear = { path = "../gear" }
 isle = { path = "../isle" }
 movement = { path = "../movement" }
 serde.workspace = true

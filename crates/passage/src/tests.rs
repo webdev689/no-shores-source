@@ -250,3 +250,105 @@ fn every_zone_of_a_year_is_laid_where_a_body_walks_to_all_it_asks() {
     }
     assert!(fell_back.is_empty(), "{} zones kept a laying with misses: {fell_back:#?}", fell_back.len());
 }
+
+/// What a year of webs gives, printed: run with `--ignored --nocapture` to measure.
+#[test]
+#[ignore = "a measure, printed"]
+fn measure_the_webs() {
+    let mut one_way = (0, 0);
+    let mut names = std::collections::BTreeMap::<String, usize>::new();
+    let mut dive_repeats = 0.0;
+    let mut dives = 0.0;
+    for week in 2_900..2_952 {
+        let web = Web::of(saltmere(), week);
+        for zone in web.zones.iter().filter(|zone| zone.depth < DEPTHS) {
+            one_way.1 += 1;
+            one_way.0 += usize::from(zone.onward.len() == 1);
+        }
+        for zone in &web.zones {
+            *names.entry(zone.name.clone()).or_default() += 1;
+        }
+        // Each mouth's dive down the first way on at every depth.
+        for &mouth in &web.mouths {
+            let mut at = mouth;
+            let mut met = std::collections::BTreeSet::new();
+            let mut walked = 0;
+            while let Some(zone) = web.zone_of(at) {
+                met.insert(zone.name.clone());
+                walked += 1;
+                let Some(&next) = zone.onward.last() else { break };
+                at = next;
+            }
+            dive_repeats += f64::from(walked - met.len() as u32);
+            dives += 1.0;
+        }
+    }
+    let most = names.iter().max_by_key(|(_, count)| **count);
+    eprintln!(
+        "one way on: {} of {} ({:.0}%); {} names, the most met {most:?}; a dive repeats {:.1} names",
+        one_way.0,
+        one_way.1,
+        100.0 * one_way.0 as f64 / one_way.1 as f64,
+        names.len(),
+        dive_repeats / dives
+    );
+}
+
+#[test]
+fn a_years_webs_name_each_zone_apart_draw_no_vault_above_ground_and_offer_a_choice_of_ways() {
+    let (mut zones, mut one_way) = (0, 0);
+    for week in 2_900..2_952 {
+        let web = Web::of(saltmere(), week);
+        let mut names: Vec<&str> = web.zones.iter().map(|zone| zone.name.as_str()).collect();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), web.zones.len(), "week {week}: every zone's name its own");
+        for zone in &web.zones {
+            assert!(!zone.name.is_empty(), "week {week} zone {}: named", zone.number);
+            let open = matches!(zone.ground, Ground::Open { .. });
+            assert!(!(open && zone.deal == Deal::Vault), "week {week} zone {}: a vault above ground", zone.number);
+            if zone.depth < DEPTHS {
+                zones += 1;
+                one_way += usize::from(zone.onward.len() == 1);
+            }
+        }
+        // Under a named place only near one: the Grey Reach's at depth 10, the Weirlands' at 20.
+        let under: Vec<u8> =
+            web.zones.iter().filter(|zone| zone.name.starts_with("Under ")).map(|zone| zone.depth).collect();
+        assert!(under.iter().all(|depth| [10, 20].contains(depth)), "week {week}: under named places at {under:?}");
+        assert!(under.contains(&10) && under.contains(&20), "week {week}: {under:?}");
+    }
+    assert_eq!(one_way, 0, "of {zones} zones above the deepest, those that offer one way on");
+}
+
+#[test]
+fn a_zones_currents_never_say_again_what_the_weeks_modifiers_do_and_its_deal_takes_each() {
+    for week in 2_900..2_952 {
+        let web = Web::of(saltmere(), week);
+        let modifiers = gear::passages::week_modifiers(&saltmere().id, week);
+        for zone in &web.zones {
+            assert_eq!(zone.currents.len(), Current::count_at(zone.depth), "week {week} zone {}", zone.number);
+            for current in &zone.currents {
+                assert!(current.fits(zone.deal), "week {week} zone {}: {current:?} on {:?}", zone.number, zone.deal);
+                assert!(
+                    modifiers.iter().all(|modifier| !current.restates(*modifier)),
+                    "week {week} zone {}: {current:?} under {modifiers:?}",
+                    zone.number
+                );
+            }
+        }
+    }
+    assert!(Current::Spent.restates(gear::activities::Modifier::Trickle));
+    assert!(!Current::Veteran.fits(Deal::Vault) && !Current::Crowded.fits(Deal::Vault));
+}
+
+#[test]
+fn a_weeks_public_way_is_one_zone_a_depth_each_reached_from_the_last() {
+    for week in 2_900..2_952 {
+        let web = Web::of(saltmere(), week);
+        let way: Vec<&Zone> = web.zones.iter().filter(|zone| zone.public).collect();
+        let depths: Vec<u8> = way.iter().map(|zone| zone.depth).collect();
+        assert_eq!(depths, (1..=DEPTHS).collect::<Vec<_>>(), "week {week}: one a depth");
+        assert!(way.windows(2).all(|pair| pair[0].onward.contains(&pair[1].number)), "week {week}: a way");
+    }
+}
