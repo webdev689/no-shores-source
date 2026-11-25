@@ -4,7 +4,10 @@
 import { type DungeonLayout, readDungeon } from '../dungeonLayout.ts';
 import { groundHeight } from '../../islands/isleGround.ts';
 import { gridOf, type IsleShown, type Point2 } from '../../islands/islePlan.ts';
+import { MODULE_NAMES } from '../../islands/isleModules.ts';
+import type { IslePlacement } from '../../islands/islePlan.ts';
 import type { PassagePlan } from '../../rules/passageRules.ts';
+import { pieceModule, type PieceState } from './passagePieces.ts';
 
 /** The floor of every passage under ground, as the Forge lays it (crates/dungeon `FLOOR_M`). */
 export const UNDER_FLOOR_M = 0;
@@ -61,4 +64,14 @@ export function floorOf(plan: PassagePlan, heights: Float64Array | null): (x: nu
   if (!heights) throw new Error(`zone ${plan.zone.number} is above ground and was given no heights`);
   const grid = gridOf(heights);
   return (x, y) => groundHeight(grid, x, y);
+}
+
+/** A hollow with the passages' pieces standing in it as the islands' kit's modules, each as the deal stands for the
+ *  player (`pieceModule`): `done` whether the deal is done. */
+export function withPieces(isle: IsleShown, plan: PassagePlan, state: PieceState, done: boolean): IsleShown {
+  const placed = plan.pieces.flatMap((piece): IslePlacement[] => {
+    const module = MODULE_NAMES.indexOf(pieceModule(piece, state, done) ?? '');
+    return module < 0 ? [] : [[module, piece.at[0], piece.at[1], piece.at[2], piece.facing, 1, 1]];
+  });
+  return { ...isle, plan: { ...isle.plan, placements: [...isle.plan.placements, ...placed] } };
 }

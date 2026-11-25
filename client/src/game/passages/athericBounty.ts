@@ -8,6 +8,7 @@ import type { Node } from '../../ui/node.ts';
 import { RARITIES } from '../../player/gear.ts';
 import { gauge } from '../bountyTiles.ts';
 import { INK, words } from '../gearNodes.ts';
+import { iconNode } from '../journalIcons.ts';
 
 /** The Atheric rarity, whose colour the card's name wears. */
 const ATHERIC = RARITIES[4];
@@ -57,7 +58,14 @@ export function athericCardNode(card: AthericCard, size = 1): Node {
     children: [
       {
         width: 'grow',
-        text: { words: `${place + 1}. ${step.words}`, size, colour: step.state === 'done' ? INK.faint : INK.word },
+        gap: 6,
+        children: [
+          step.state === 'done' && iconNode('taken', 16),
+          {
+            width: 'grow',
+            text: { words: `${place + 1}. ${step.words}`, size, colour: step.state === 'done' ? INK.faint : INK.word },
+          },
+        ],
       },
       step.state === 'under way' &&
         step.target > 1 && {

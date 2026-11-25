@@ -44,6 +44,24 @@ code:
   - crates/protocol/src/passage_wire.rs#passages_of
   - crates/protocol/src/passage_wire.rs#seen_offset
   - crates/room-wasm/src/passage_room_door.rs#open_passage
+  - client/src/rules/passageRules.ts#startPassageDoor
+  - client/src/network/passageMessages.ts#passagesOf
+  - client/src/network/passageMessages.ts#passageSeenOf
+  - client/src/network/passageRoomDoor.ts#openPassageOn
+  - client/src/game/passages/passageGame.ts#PassageGame
+  - client/src/game/passages/passageEnter.ts#enterZone
+  - client/src/game/passages/passageReach.ts#mouthAt
+  - client/src/game/passages/passageHeard.ts#passageWordOf
+  - client/src/game/passages/passageZone.ts#zoneIsle
+  - client/src/game/passages/passageZone.ts#withPieces
+  - client/src/game/passages/passagePieces.ts#pieceMesh
+  - client/src/game/passages/pieceView.ts#piecesDrawer
+  - client/src/game/passages/passageWay.ts#wayAt
+  - client/src/game/passages/passageMap.ts#passageSheet
+  - client/src/game/passages/passageWords.ts#dealTracker
+  - client/src/game/passages/passagePanels.ts#MouthsCardView
+  - client/src/game/passages/athericBounty.ts#athericCards
+  - client/src/game/passages/passageShots.ts#zoneShot
 ---
 # Passages
 
@@ -178,5 +196,82 @@ clock's week is past the web's, the room refuses players: "The passage has shift
 
 ## In the browser
 
-room-wasm's passage door hands a page a week's web (`web_json`), a zone laid whole (`zone_plan_json`, under ground
-the Forge's layout as a dungeon's is handed over) and a hollow's heights, built by the same crate. A zone's room, its deal and the dive are opened as **On the wire** above says.
+### Reading the rules
+
+room-wasm's passage door (`startPassageDoor`, in an instance of the room module of its own) hands a page a week's web
+(`room_passage_web`), a zone laid whole (`room_passage_zone`, under ground the Forge's layout as a dungeon's is handed
+over) and a hollow's heights (`room_passage_heights`), built by the same crate; each is read whole and refused, saying
+why, where it does not read. An island with no passages, a zone the web lacks or a style the Forge does not lay yet
+answers empty, read as none. The gear's dive, haul, lamps and Atheric bounties (`passagesOf`) and the snapshot's
+`PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks 81 to 85 go
+as its other asks do, and a refusal is said in the room's words (171 to 178).
+
+### Played
+
+- **At a mouth**: E within 4 m of a run's sealed door in the patrol zone ("Into the passages", the layout's runs'
+  doors matched by name to the web's mouths) opens the mouths' card (`MouthsCardView`): the run's name; the zone
+  beyond (its name, depth, deal and currents) and the week's modifiers; the routes ("The public passage", and "Your
+  company's route" in a company, else "Your own route, alone"); Go in (E), "Begin at the second lamp" for each lamp lit
+  this week, and Close (Esc). A choice asks to begin, by the mouth's place, its route and the lamp.
+- **The room's yes**: an ask of the passages is answered in the gear (its count of answers moves on); a yes that
+  changed the dive (begun, gone on, or ended at a lamp's Home) plays the way between zones while the zone's room is
+  joined, and anything else says the refusal in a toast, as does no answer in 3 s.
+- **A zone's room**: the server's by its name, `passage-<island>-w<week>-z<zone>` (a company's route with
+  `--run-<instance>` after it, a member's room found as runs are), or, playing alone, the same room in the rooms'
+  worker opened from its ask (`open_passage`'s JSON), the character the last room let go of given to it so the dive
+  goes on. Under ground the zone is a dungeon to the page: its layout drawn by the dungeon's renderer and the body
+  predicted on the Forge's floor at 0 m among its walls and the pieces' solids; above ground its hollow is an island
+  to the islands' layer (`zoneIsle`), the body predicted on its heights among the solids, as a sea island's beach.
+- **In a zone**: the deal stands in the tracker (`dealTracker`: "Light the dead lamps 1/3", a hold's clock, then "Go on
+  through an open mouth"); near an onward mouth its sign shows the zone beyond and, shut, "Shut until this place's work
+  is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
+  the hold; once lit E there is Home. E held at a dead lamp kindles it. E let go ends a hold, as a gather's. The haul
+  stands on the right while anything is carried, with "Carried, not kept. Fall or leave, and it is lost."; the leave
+  held adds "What you carry is lost"; a respawn that empties it says "What you carried is lost."
+- **The pieces** stand as the deal stands for the player (`PieceState`): a mouth open or shut, the lamp and the dead
+  lamps lit (gold) or cold (grey), a tally post whole or broken, the reliquary shut or opened. Above ground they are
+  the islands' kit's `passage` modules, placed in the hollow (`withPieces`), and only the lamps' lights are drawn over
+  them as boxes; under ground they are plain boxes to their solids' sizes (`pieceMesh`) until the dungeon pack
+  `passage`, which `readModulePack` reads beside the styles' packs, is named in the dungeons' manifest.
+
+### The way between zones
+
+`wayOf` lays the way's rails and `wayAt` plays it, on the cinema's rails ([[Cinema]]); in the flow ([[Game]], "The
+flow") a mouth, a begin or a Home is `passing`, drawn over the island from the way's camera with the web's places and
+the way's dots over it, and on foot again once the way has played and the place has come.
+
+| Beat | Seconds | What is seen |
+|---|---|---|
+| Rise | 1.5 | From behind the character up to the island seen whole, framed as an island's side is framed from the ship (`frameSide`), every zone of the web inside the picture |
+| Draw | 2 | The way being taken drawn a dot at a time, 10 a leg, to the next zone's place |
+| Wait | until ready | Held over the island while the room gone to is not ready (`wayClock`) |
+| Down | 1.5 | Down to behind the character at their start, 3 m back from the arrival |
+| Walk | 1.5 | The character walks 3 m in, the camera settling 4.5 m behind and 2.2 m up |
+
+### The passages' map
+
+Held in a passage zone, the held map can show the web as a land sheet (`passageSheet`, [[Held Map]], "On land"):
+every zone a mark at its place by its deal's glyph, its lamp named, its currents under it, the way come a track and
+the ways on footpaths, "You" at the player's zone.
+
+### The Journal and the board
+
+The board's fourth pool is the passages', two a day, its tiles on a dark brass ground under a lamp's mark. The
+Journal's timers show each island's lamp of the day and its four lamps this week, gold once lit and grey while cold
+([[Interface]], "Journal"). Lanternfall's bounty, held or finished, is a card of its own under the board's in the
+Journal's bounties (`athericCards`): its name in the Atheric colour, the cold lantern and its words, then its steps,
+each done with a tick, under way with its count, or still to come.
+
+### Pictures
+
+`passageShots.ts`, which the game never imports, draws a zone of each kind with the game's own drawers onto a texture
+of its own (above ground under a plain sky, under ground in the dungeon's dark), the way's dots, the map, the mouths'
+card, the panels and Lanternfall's card.
+
+## Limits
+
+- Playing alone waits on the room door's `openPassage` (room-wasm's `room_open_passage`), which the server's
+  `roomDoor.ts` is to carry; until it does, a zone's room alone says it cannot open.
+- Under ground the pieces are boxes until the dungeon pack `passage` is named in the manifest.
+- Above ground the continent's land is drawn round the hollow as on any place on foot.
+- The way's camera ends over the zone's place on the island, and the foot's camera then stands in the zone's own frame.

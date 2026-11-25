@@ -19,13 +19,12 @@ import type { DungeonLayout } from '../dungeonLayout.ts';
 import type { Quest } from '../tasks.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { runInstance, runOf, sharedRun } from '../rooms.ts';
-import type { IslePlacement, IsleShown } from '../../islands/islePlan.ts';
-import { MODULE_NAMES } from '../../islands/isleModules.ts';
+import type { IsleShown } from '../../islands/islePlan.ts';
 import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor } from '../../rules/passageRules.ts';
 import { enterZone, type ZoneEntry } from './passageEnter.ts';
 import { haulOf, passageWordOf } from './passageHeard.ts';
 import { haulNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
-import { pieceModule, type PieceState } from './passagePieces.ts';
+import type { PieceState } from './passagePieces.ts';
 import { holdAt, homeSpot, mouthAt, onwardAt, passageRoomName } from './passageReach.ts';
 import { type Way, type WayFrame, wayAt, wayClock, wayOf } from './passageWay.ts';
 import {
@@ -38,7 +37,7 @@ import {
   type OnwardSign,
   type Route,
 } from './passageWords.ts';
-import { zoneIsle, zoneLayout } from './passageZone.ts';
+import { withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 
 /** How long the page waits on the room's answer to an ask of the passages before saying it did not come. */
 const ANSWER_WAIT_S = 3;
@@ -389,15 +388,8 @@ export class PassageGame {
     const [zone, pieces] = [this.inZone(), this.pieces()];
     if (!zone?.isle || !pieces) return [];
     const key = JSON.stringify([zone.entry.room, pieces.state, this.seen()?.done ?? false]);
-    if (this.shownIsle?.key !== key) {
-      const done = this.seen()?.done ?? false;
-      const placed = pieces.plan.pieces.flatMap((piece): IslePlacement[] => {
-        const module = MODULE_NAMES.indexOf(pieceModule(piece, pieces.state, done) ?? '');
-        return module < 0 ? [] : [[module, piece.at[0], piece.at[1], piece.at[2], piece.facing, 1, 1]];
-      });
-      const plan = { ...zone.isle.plan, placements: [...zone.isle.plan.placements, ...placed] };
-      this.shownIsle = { key, isle: { ...zone.isle, plan } };
-    }
+    if (this.shownIsle?.key !== key)
+      this.shownIsle = { key, isle: withPieces(zone.isle, pieces.plan, pieces.state, this.seen()?.done ?? false) };
     return [this.shownIsle.isle];
   }
 

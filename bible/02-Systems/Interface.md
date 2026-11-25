@@ -612,6 +612,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   any quest uses it with data alone. It reads what the player does, never a press of its own, so keys and touch tick it
   alike, and it writes the page only when its words change. At the larger step its words stand at 22 and it is 396 px
   wide (264 below).
+- **In a passage zone** ([[Passages]], "Played"): the zone's deal stands in the task tracker, a public event's steps
+  before it; an onward mouth's sign stands high in the view on coming near it; the haul is framed on the right while
+  anything is carried; and the leave held adds "What you carry is lost" under its place. At a run's sealed door the
+  mouths' card is drawn as an entrance's card is.
 - **A sea fight's task**: the fight's task in the tracker says to defeat their crews, counts the ships fighting the
   player still afloat and their men, and says they need not be sunk, as the rules strike a ship whose men are gone
   or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]). At sea DFO's messages are the
@@ -929,15 +933,18 @@ never while a press is held. Each press is an ask the room answers.
     for its card is cut short there and read whole to a screen reader with the rest of its card. With
     none to show (before any room's word, or a word not on the player's own character), it says why, the two banners
     resting over the line.
-  - **The bounties**: six slots three to a row under "Bounties", with how many are taken. A tile bears its bounty's own
+  - **The bounties**: eight slots three to a row under "Bounties", with how many are taken. A tile bears its bounty's own
     glyph, sixteen square (a dagger in the Tithe's coin sack, a sword under a chevron, a pick over ore, a horned skull,
     a cannon firing, a great fish, a wolf over the swell, a torch, steps down into the dark, a lantern) on its kind's
     ground, with no words on it (a bounty not drawn wears the mark of where it counts: two peaks, a wave, an arched
-    door): a gauge of its count while held, a gilded edge once done, its glyph dimmed with a drawn tick once turned in. A
+    door, a lamp): a gauge of its count while held, a gilded edge once done, its glyph dimmed with a drawn tick once turned in. A
     slot not taken is an empty frame. The hovered, focused or pressed tile, ringed white just outside its edge, has its
     card under the grid: its name, cut short where too long, its kind by its mark, its words, its count, and what it
     pays by its tier, XP and Aurem each by its glyph. Bounties are taken and turned in at the board alone. The column stands at the
     right wherever it fits beside the quests, as wide as its head; on a phone (under 600 px) it stands under them.
+    Under the board's, each Atheric bounty held or finished is a card of its own, as Destiny 1's exotic bounties stood
+    apart: Lanternfall's name in the Atheric colour, the cold lantern and its words, and its steps, each done with a
+    tick, the one under way with its gauge and count, those to come dimmed ([[Passages]], "The Journal and the board").
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
     time; This week's, a page of the week and the countdown to the weekly reset; Later's, its name alone. Each row
@@ -945,14 +952,16 @@ never while a press is held. Each press is an ask the room answers.
     tier's seas (calm water, a rearing wave, a maelstrom) with this character's tick or padlock, the day's modifier's
     icon on the Elite and the Abyss seas it is on, what it pays (the Vestige glyph and a chest), and each island's
     dungeon with its levels, read down its columns, the band this character's level falls in lit; and the bounties (a
-    sealed notice), their six a day said at the foot.
+    sealed notice), their eight a day said at the foot; and each island's lamp of the day (the passages' lamp, gold
+    once it has paid today, grey until then).
     Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
     burning eye), each its level, its tick or padlock, a "Playlist" mark whose words say it is queued from the
     Playlist beside any port, the Abyss's five revives (a heart) and its wipe (a skull), its
     modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
     Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
     an arc, Exposure's broken heart) and its pay (the Vestige
-    in its rarity, Essence, the boon's star); and the Abyss boon while held, by XP's glyph. Under Later, Breaches (a
+    in its rarity, Essence, the boon's star); the Abyss boon while held, by XP's glyph; and each island's four lamps in
+    its passages, each gold once lit this week and grey while cold. Under Later, Breaches (a
     rift). The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
     to a screen reader with its row as the focus takes it; the arrows step between the rows. Each countdown is drawn
     afresh each frame. The panel drops from under the hourglass, or with T, on its own ground, edged and ruled in

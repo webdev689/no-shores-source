@@ -19,11 +19,12 @@ import { DungeonView } from '../dungeonView.ts';
 import { viewOn } from '../../heldmap/heldMapLaw.ts';
 import { paintLand } from '../../heldmap/landLetters.ts';
 import { passageSheet } from './passageMap.ts';
+import { athericCardNode, athericCards } from './athericBounty.ts';
 import { haulNode, lampNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
 import { pieceMesh, type PieceState } from './passagePieces.ts';
 import { PieceView } from './pieceView.ts';
 import { RISE_S, DRAW_S, wayAt, wayOf } from './passageWay.ts';
-import { floorOf, zoneIsle, zoneLayout } from './passageZone.ts';
+import { floorOf, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 import { haulView, lampPrompt, mouthsChoice, onwardSign } from './passageWords.ts';
 
 const MAP_READ = 0x1;
@@ -71,6 +72,8 @@ export async function zoneShot(
   state: PieceState,
   view: { readonly width: number; readonly height: number },
   eye?: { readonly back: number; readonly up: number; readonly pitch: number },
+  /** Where the eye stands, in place of behind the arrival: its point on the ground and the bearing it looks along. */
+  stood?: { readonly at: readonly [number, number]; readonly yaw: number },
 ): Promise<string> {
   const door = await doorOf();
   const web = door.web(ISLAND, week);
@@ -96,16 +99,18 @@ export async function zoneShot(
   const heights = door.heights(ISLAND, week, plan.zone.number);
   const floor = floorOf(plan, heights);
   const pieces = new PieceView(gpu);
-  pieces.set(pieceMesh(plan.pieces, state));
+  // As the game stands them: above ground the kit's modules, only the lights drawn as boxes; under ground boxes.
+  pieces.set(pieceMesh(plan.pieces, state, kind === 'open'));
   // Above ground from over the arrival, its back to the rim's rock; under ground from behind it in the way in.
   const { back, up, pitch } =
     eye ?? (kind === 'open' ? { back: -4, up: 14, pitch: 0.45 } : { back: 14, up: 9, pitch: 0.3 });
-  const [x, y] = plan.sites.arrive;
-  const [east, south] = [Math.sin(plan.sites.facing), -Math.cos(plan.sites.facing)];
+  const [x, y] = stood?.at ?? plan.sites.arrive;
+  const yaw = stood?.yaw ?? plan.sites.facing;
+  const [east, south] = [Math.sin(yaw), -Math.cos(yaw)];
   const ground = floor(x, y) ?? 0;
   const shot: Shot = {
     eye: [x - east * back, y - south * back, ground + up],
-    yaw: plan.sites.facing,
+    yaw,
     pitch,
     fov: 1.1,
     near: 0.1,
@@ -118,7 +123,7 @@ export async function zoneShot(
     if (!heights) throw new Error('an open zone with no heights');
     const isles = new IslesView(gpu, ISLE_MANIFEST, null);
     const shown = zoneIsle(plan, heights, 'woodland');
-    if (shown) isles.show([shown]);
+    if (shown) isles.show([withPieces(shown, plan, state, false)]);
     draw = (pass) => isles.drawInto(pass, fromEye, shot, 0, shadow);
   } else {
     const layout = zoneLayout(plan);
@@ -260,4 +265,16 @@ export async function mapShot(width = 1000, height = 700): Promise<string> {
     reader.onload = () => resolve(String(reader.result));
     reader.readAsDataURL(blob);
   });
+}
+
+/** Lanternfall's bounty as the Journal's bounties show it, on its third step, 37 of 100 foes down. */
+export function athericShot(ui: Interface): Node {
+  const [card] = athericCards([{ id: 'lanternfall', step: 2, count: 37, finished: false }]);
+  const width = Math.min(320, ui.size.width - 32);
+  return {
+    width: 'grow',
+    height: 'grow',
+    padding: 24,
+    children: [card ? { width, children: [athericCardNode(card)] } : null],
+  };
 }
