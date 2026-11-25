@@ -151,3 +151,5 @@
 - 2026-11-25 foe arrivals: 2 observations logged
 2026-11-25T20:25:53Z checkpoint: observations 0253 written, 0181/0094/0086 extended
 2026-11-25 20:28 [no-shores-source] session-start scan: files=247 parsed=238 principles=0
+2026-11-25 16:19 [no-shores-source] session-start scan: files=233 parsed=224 principles=0
+2026-11-25 16:22 [no-shores-source] session-start scan: files=233 parsed=224 principles=0
