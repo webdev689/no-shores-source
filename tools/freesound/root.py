@@ -11,7 +11,10 @@ import shutil
 import subprocess
 import sys
 
-import numpy
+try:
+    import numpy
+except ImportError:  # publish.py reads ROOT on the freesound workflow's machine, which has no numpy
+    numpy = None
 
 RATE = 44100
 # A root as written: a note ("C3", "F#2", "Bb1") and, where it is off it, its cents (the game's rootNote reads it).
@@ -96,6 +99,8 @@ def main():
     paths = sys.argv[1:]
     if not paths:
         sys.exit(__doc__)
+    if numpy is None:
+        sys.exit('numpy is needed to measure a root')
     for path in paths:
         hertz = fundamental(decoded(path))
         if hertz is None:
