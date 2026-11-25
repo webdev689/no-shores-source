@@ -21,7 +21,7 @@ import {
   type PublicEvent,
   type PublicMark,
 } from '../network/publicMessages.ts';
-import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, elsewhereOf, inEvent, questOf, ringOf } from './publicLaw.ts';
+import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, inEvent, questOf, ringOf } from './publicLaw.ts';
 import { type Moments, PublicMoments } from './publicMoments.ts';
 import { SpireCourse } from './fissureSpires.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
@@ -361,9 +361,9 @@ export class PublicView {
   }
 
   /** The banner, as the law words it, with the page's own lines: the heroic chance's call as it opens, a carried
-   *  shard's errand, a store under attack, and what runs elsewhere on the island between events. */
+   *  shard's errand and a store under attack. */
   private bannerOf(event: PublicEvent, hasChest: boolean, bodies: PublicBodies, moments: Moments) {
-    const banner = bannerOf(event, this.zone, hasChest, [bodies.feet[0], bodies.feet[1]]);
+    const banner = bannerOf(event, this.zone, hasChest);
     if (!banner) return null;
     const carrying = event.marks.some((mark) => mark.kind === MARK.carried && mark.id === bodies.player);
     const objective = carrying
@@ -372,8 +372,7 @@ export class PublicView {
         ? `Store under attack · ${banner.objective}`
         : banner.objective;
     const heroic = banner.heroic && moments.call ? { ...banner.heroic, text: moments.call } : banner.heroic;
-    const elsewhere = banner.tone === 'next' ? elsewhereOf(event, this.zone) : '';
-    return { ...banner, objective, heroic, elsewhere };
+    return { ...banner, objective, heroic };
   }
 
   /** How the player stands again if they fall where they stand, where a Breach's room says (`breachFall`). */

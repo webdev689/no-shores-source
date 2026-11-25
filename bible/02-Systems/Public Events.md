@@ -192,8 +192,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   "Store under attack" before the objective. Over, for
   its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Its tone (gold, heroic orange, won green, failed red) runs
   down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed, the heroic
-  chance opening with an orange flare). A screen reader hears each beat (`announce`), never the
-  ticking clocks. In a view under 1024 px wide the tracker gives way to it while an event runs or has just ended (it
+  chance opening with an orange flare), and as the player steps onto the ground. A screen reader hears each beat and
+  each stepping on (`announce`), never the ticking clocks. In a view under 1024 px wide the tracker gives way to it while an event runs or has just ended (it
   holds the same objective), and at a phone's width (600 px) the place's name does too.
 - **The tracker** (`tasks.ts`) holds the steps while one runs: the shards still to carry or the Warden; the wave and
   the stores still standing; the heroic task; the bonus while it holds. After, "Open your chest (1:48)" while a chest

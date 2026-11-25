@@ -48,16 +48,6 @@ export function clockOf(ticks: number): string {
 }
 
 const placeOf = (zone: string, kind: number): string => PLACES[zone]?.[kind === PUBLIC_KIND.raid ? 1 : 0] ?? '';
-/** The place, and how far off it is from `from` (metres) where that is outside the ring of `radius` round `at`. */
-const placeFrom = (
-  place: string,
-  ground: readonly number[],
-  radius: number,
-  from: readonly [number, number] | null,
-) => {
-  const metres = from ? Math.hypot((ground[0] ?? 0) - from[0], (ground[1] ?? 0) - from[1]) : 0;
-  return from && metres > radius ? `${place} · ${Math.round(metres)} m` : place;
-};
 const over = (event: PublicEvent) => event.phase === PUBLIC_PHASE.won || event.phase === PUBLIC_PHASE.failed;
 const running = (event: PublicEvent) => event.kind !== PUBLIC_KIND.none && event.phase === PUBLIC_PHASE.running;
 
@@ -103,33 +93,12 @@ function failedWords(event: PublicEvent): string {
   return 'Time ran out: the Lattice sank back into the earth';
 }
 
-/** The banner for the zone's event `event` in `zone`: the one running or showing its result (its chest's words only
- *  where the player `hasChest`), else the next one's line, counted to the second in its last minute; where the player
- *  stands `from` outside its ground, how far off it is. Null where none is known. */
-export function bannerOf(
-  event: PublicEvent | null,
-  zone: string,
-  hasChest = false,
-  from: readonly [number, number] | null = null,
-): Banner | null {
-  if (!event) return null;
-  if (event.kind === PUBLIC_KIND.none || event.phase === PUBLIC_PHASE.waiting) {
-    if (event.nextKind === PUBLIC_KIND.none) return null;
-    const minutes = Math.max(1, Math.ceil(event.nextTicks / (TICKS_PER_SECOND * 60)));
-    return {
-      tone: 'next',
-      kicker: 'Next public event',
-      title: NAMES[event.nextKind] ?? '',
-      place: placeFrom(placeOf(zone, event.nextKind), event.nextGround, event.radius, from),
-      clock: event.nextTicks <= LAST_MINUTE_TICKS ? clockOf(event.nextTicks) : `in ${minutes} min`,
-      objective: '',
-      bar: null,
-      heroic: null,
-      bonus: null,
-    };
-  }
+/** The banner for the zone's event `event` in `zone`, running or showing its result (its chest's words only where
+ *  the player `hasChest`), shown on its ground (`inEvent`). Null between events. */
+export function bannerOf(event: PublicEvent | null, zone: string, hasChest = false): Banner | null {
+  if (!event || event.kind === PUBLIC_KIND.none || event.phase === PUBLIC_PHASE.waiting) return null;
   const title = NAMES[event.kind] ?? '';
-  const place = placeFrom(placeOf(zone, event.kind), event.ground, event.radius, over(event) ? null : from);
+  const place = placeOf(zone, event.kind);
   const heroicMet = event.heroic === HEROIC.met;
   if (over(event)) {
     const won = event.phase === PUBLIC_PHASE.won;
@@ -170,37 +139,6 @@ export function bannerOf(
     heroic,
     bonus: { text: BONUS[event.kind] ?? '', state: event.bonus ? 'holds' : 'lost' },
   };
-}
-
-/** The line naming what runs, or else what comes next, in the island's other zones, from the room's schedule read on
- *  from when `event`'s own next starts: "Elsewhere on Saltmere: the Grey Tithe Raid at Gullwing in 3 min". */
-export function elsewhereOf(event: PublicEvent, zone: string): string {
-  const place = ZONES.indexOf(zone as (typeof ZONES)[number]);
-  if (place < 0 || event.nextKind === PUBLIC_KIND.none) return '';
-  // The schedule repeats every two periods; a slot's event is the Fissure where its number and the zone's are even.
-  const cycle = 2 * PERIOD_MINUTES;
-  const parity = event.nextKind === PUBLIC_KIND.fissure ? 0 : 1;
-  const slot = (place + parity) % 2;
-  const now = place * ZONE_APART_MINUTES + slot * PERIOD_MINUTES - event.nextTicks / (TICKS_PER_SECOND * 60);
-  const countdown = COUNTDOWN_TICKS / (TICKS_PER_SECOND * 60);
-  const starts = ZONES.flatMap((other, its) =>
-    its === place
-      ? []
-      : [0, 1].map((each) => {
-          const kind = (each + its) % 2 === 0 ? PUBLIC_KIND.fissure : PUBLIC_KIND.raid;
-          const away = (((its * ZONE_APART_MINUTES + each * PERIOD_MINUTES - now) % cycle) + cycle) % cycle;
-          // Started `since` minutes ago: one starting this very minute is under way, not a cycle off.
-          const since = (cycle - away) % cycle;
-          return { kind, where: placeOf(other, kind).replace(/^The /, 'the '), away, left: countdown - since };
-        }),
-  );
-  const named = (kind: number) => `the ${(NAMES[kind] ?? '').replace(/^The /, '')}`;
-  const running = starts.filter((each) => each.left > 0).sort((one, other) => other.left - one.left)[0];
-  if (running) return `Elsewhere on Saltmere: ${named(running.kind)} at ${running.where}, under way`;
-  const next = [...starts].sort((one, other) => one.away - other.away)[0];
-  return next
-    ? `Elsewhere on Saltmere: ${named(next.kind)} at ${next.where} in ${Math.max(1, Math.ceil(next.away))} min`
-    : '';
 }
 
 /** The tracker's step for a chest of a `kind` event in `zone` still lying for the player, `left` seconds more. */

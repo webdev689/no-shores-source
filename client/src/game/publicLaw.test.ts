@@ -2,17 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
-import {
-  askedPublic,
-  bannerOf,
-  chestQuestOf,
-  clockOf,
-  compassOf,
-  elsewhereOf,
-  minuteShift,
-  questOf,
-  ringOf,
-} from './publicLaw.ts';
+import { askedPublic, bannerOf, chestQuestOf, clockOf, compassOf, minuteShift, questOf, ringOf } from './publicLaw.ts';
 
 const fissure = (more: Partial<PublicEvent> = {}): PublicEvent => ({
   kind: PUBLIC_KIND.fissure,
@@ -74,7 +64,7 @@ test('the raid running: its wave, the stores standing as its bar, the tithe-take
   assert.equal(lost?.bonus?.state, 'lost');
 });
 
-test('the result: won with its chest tier, or failed and why; the next event once it is over', () => {
+test('the result: won with its chest tier, or failed and why; no banner between events', () => {
   const won = bannerOf(fissure({ phase: PUBLIC_PHASE.won, heroic: HEROIC.met, ticksLeft: 600 }), 'gullwing-vale', true);
   assert.equal(won?.tone, 'won');
   assert.equal(won?.kicker, 'Event complete');
@@ -91,17 +81,8 @@ test('the result: won with its chest tier, or failed and why; the next event onc
   assert.equal(fell?.objective, 'Every store fell');
   const timed = bannerOf(fissure({ phase: PUBLIC_PHASE.failed }), 'gullwing-vale');
   assert.equal(timed?.objective, 'Time ran out: the Lattice sank back into the earth');
-  const next = bannerOf(
-    fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextTicks: 4 * 3600 + 10 }),
-    'gullwing-vale',
-  );
-  assert.equal(next?.tone, 'next');
-  assert.equal(next?.title, 'The Grey Tithe Raid');
-  assert.equal(next?.place, 'Gullwing');
-  assert.equal(next?.clock, 'in 5 min');
-  assert.equal(bannerOf(fissure({ kind: 0, phase: 0, nextTicks: 90 * 60 }), 'gullwing-vale')?.clock, 'in 2 min');
-  assert.equal(bannerOf(fissure({ kind: 0, phase: 0, nextTicks: 30 * 60 }), 'gullwing-vale')?.clock, '0:30');
-  assert.equal(bannerOf(fissure({ kind: 0, phase: 0, nextKind: 0 }), 'gullwing-vale'), null);
+  const waiting = fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextTicks: 30 * 60 });
+  assert.equal(bannerOf(waiting, 'gullwing-vale'), null, 'the next one is marked on the compass, not on a banner');
 });
 
 test('the tracker: the steps of the task now, each counting what is left', () => {
@@ -152,29 +133,9 @@ test('the dev address asks for an event, and the minute that starts it at once i
   assert.equal(minuteShift('overlook-social', 'raid', 5), null);
 });
 
-test('the last minute: the clock urgent; starting soon, counted to the second, and how far off it is', () => {
+test('the last minute: the clock urgent', () => {
   assert.equal(bannerOf(fissure({ ticksLeft: 59 * 60 }), 'saltgrass-downs')?.urgent, true);
   assert.equal(bannerOf(fissure({ ticksLeft: 61 * 60 }), 'saltgrass-downs')?.urgent, false);
-  const waiting = fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextTicks: 45 * 60 });
-  const soon = bannerOf(waiting, 'gullwing-vale', false, [400, 380]);
-  assert.equal(soon?.clock, '0:45');
-  assert.equal(soon?.place, 'Gullwing · 120 m');
-  assert.equal(bannerOf(fissure(), 'saltgrass-downs', false, [100, 210])?.place, 'The High Downs', 'on its ground');
-  assert.equal(bannerOf(fissure(), 'saltgrass-downs', false, [100, 300])?.place, 'The High Downs · 100 m');
-});
-
-test('elsewhere on Saltmere: what runs, or else what comes next, in the other zones, from the same schedule', () => {
-  const when = (nextKind: number, minutes: number) =>
-    fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextKind, nextTicks: minutes * 3600 });
-  assert.equal(
-    elsewhereOf(when(PUBLIC_KIND.raid, 4), 'saltgrass-downs'),
-    'Elsewhere on Saltmere: the Fissure at the Gorse Moor, under way',
-  );
-  assert.equal(
-    elsewhereOf(when(PUBLIC_KIND.fissure, 11), 'saltgrass-downs'),
-    'Elsewhere on Saltmere: the Fissure at the Water Meadows in 1 min',
-  );
-  assert.equal(elsewhereOf(when(PUBLIC_KIND.fissure, 11), 'nowhere'), '');
 });
 
 test('a chest waiting is a step of its own, with the time it still lies', () => {
@@ -193,27 +154,17 @@ test("the raid's next wave counts down in its objective while one is coming", ()
   assert.equal(bannerOf(raid({ nextWaveTicks: 0 }), 'driftwood-moors')?.objective, 'Hold the stores: wave 2 of 3');
 });
 
-test("the page's schedule is the room's: every minute of a day, the shift to each event and what runs elsewhere", async () => {
+test("the page's schedule is the room's: every minute of a day, the shift to each event", async () => {
   // Written by `cargo test -p room` (crates/room/src/public/schedule_tests.rs): each zone's [kind, start] a minute.
   const text = await readFile(new URL('../../../target/protocol/schedule.json', import.meta.url), 'utf8').catch(() => {
     throw new Error('run `cargo test -p room` first: it writes target/protocol/schedule.json');
   });
-  const { first, countdown, zones } = JSON.parse(text) as {
-    first: number;
-    countdown: number;
-    zones: Record<string, [number, number][]>;
-  };
+  const { first, zones } = JSON.parse(text) as { first: number; zones: Record<string, [number, number][]> };
   const slotOf = (zone: string, minute: number): [number, number] => {
     const slot = zones[zone]?.[minute - first];
     assert.ok(slot, `${zone} at ${minute} is in the file`);
     return slot;
   };
-  const where: Record<string, [string, string]> = {
-    'saltgrass-downs': ['the High Downs', 'Saltgrass'],
-    'gullwing-vale': ['the Water Meadows', 'Gullwing'],
-    'driftwood-moors': ['the Gorse Moor', 'Moorend'],
-  };
-  const named = (kind: number) => (kind === PUBLIC_KIND.fissure ? 'the Fissure' : 'the Grey Tithe Raid');
   const names = Object.keys(zones);
   assert.equal(names.length, 3);
   for (let minute = first; minute < first + 1440; minute += 1) {
@@ -225,24 +176,6 @@ test("the page's schedule is the room's: every minute of a day, the shift to eac
         const asked = kind === PUBLIC_KIND.fissure ? 'fissure' : 'raid';
         assert.equal(minuteShift(zone, asked, minute), shift, `${zone}'s next ${asked} from ${minute}`);
       }
-      // The zone's next event as the room tells it (crates/room/src/public/seen.rs), and the others' slots.
-      const [nextKind, nextStart] = slotOf(zone, slotOf(zone, minute)[1] + 15);
-      const event = fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextKind });
-      const shown = elsewhereOf({ ...event, nextTicks: (nextStart - minute) * 3600 }, zone);
-      const others = names.filter((other) => other !== zone).map((other) => ({ other, slot: slotOf(other, minute) }));
-      const placed = (other: string, kind: number) => where[other]?.[kind === PUBLIC_KIND.fissure ? 0 : 1];
-      const running = others
-        .filter(({ slot }) => minute - slot[1] < countdown)
-        .sort((one, two) => two.slot[1] - one.slot[1])[0];
-      const next = others
-        .map(({ other, slot }) => ({ other, slot: slotOf(other, slot[1] + 15) }))
-        .sort((one, two) => one.slot[1] - two.slot[1])[0];
-      const wanted = running
-        ? `Elsewhere on Saltmere: ${named(running.slot[0])} at ${placed(running.other, running.slot[0])}, under way`
-        : `Elsewhere on Saltmere: ${named(next?.slot[0] ?? 0)} at ${placed(next?.other ?? '', next?.slot[0] ?? 0)} in ${
-            (next?.slot[1] ?? 0) - minute
-          } min`;
-      assert.equal(shown, wanted, `${zone} at ${minute}`);
     }
   }
 });
