@@ -219,7 +219,7 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The Discord server, built by the bot** (#205, a draft for the owner's yes), on the owner's "push the discord to
+- **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
   its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
   [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new
   Server layout module plans and builds the whole server from the panel: 8 roles, 6 categories and 16 channels with
