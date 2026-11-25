@@ -1125,6 +1125,10 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
   Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
+- **Foes' voices** ([[The Grey Tithe and the Lattice Each Have Their Own Voice]]). A foe of the Grey Tithe or the
+  Lattice, by its faction, is heard in its faction's voice as it spots the player (the shared `foe.alert` until its
+  own is picked), as its blow swings, as it is struck, and as it falls; a killing blow is its death alone
+  (`voiceCue`, `combat/worldCues.ts`).
 - **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a cue a
   stride (1.7 m at a walk, 3.4 m at a gallop, 4.6 m boosted), at a walk, a gallop (over 8 m/s) or boosted (while the
   rider's boost runs: another player's as the room last stepped their body) on the ground, stone or water, a

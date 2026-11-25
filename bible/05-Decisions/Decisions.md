@@ -383,6 +383,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]
 - [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]
 - [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
+- [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 
 ## Replaced
 
