@@ -185,7 +185,7 @@ impl Room {
 /// a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
     let Some(section) = section else {
-        return over(floor, blocks, ground_around(blocks, first, GROUND_AROUND));
+        return over(floor, blocks, ground_around(blocks, first, GROUND_AROUND)).finish(floor);
     };
     if let Floor::Dungeon(_) = floor {
         return crate::dungeon_room::baked(floor, blocks, first, section);
@@ -194,12 +194,12 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     match floor {
         // A deck's mesh covers its ring alone: its planks and the walls round them.
         Floor::Deck(_) => NavMesh::bake_on(&walked, floor, ring_bounds(&section.ring), &navmesh::AGENT),
-        _ => over(floor, &walked, bounds),
+        _ => over(floor, &walked, bounds).finish(floor),
     }
 }
 
-/// A square round a place and its navmesh, baked as a node's own is round its first spawn.
-pub(crate) fn square(floor: &Floor, blocks: &[Block], middle: (f64, f64)) -> (navmesh::Bounds, NavMesh) {
+/// A square round a place and its navmesh, baked as a node's own is round its first spawn, a slice at a time.
+pub(crate) fn square_baking(floor: &Floor, blocks: &[Block], middle: (f64, f64)) -> (navmesh::Bounds, navmesh::Baking) {
     let (bounds, walked) = square_of(blocks, middle);
     (bounds, over(floor, &walked, bounds))
 }
@@ -216,12 +216,12 @@ pub(crate) fn square_of(blocks: &[Block], middle: (f64, f64)) -> (navmesh::Bound
     (bounds, blocks.iter().filter(inside).copied().collect())
 }
 
-/// A navmesh over `bounds`: on open ground, over the sea, or on the floor's own ground.
-fn over(floor: &Floor, walked: &[Block], bounds: navmesh::Bounds) -> NavMesh {
+/// A navmesh's bake over `bounds`: on open ground, over the sea, or on the floor's own ground.
+fn over(floor: &Floor, walked: &[Block], bounds: navmesh::Bounds) -> navmesh::Baking {
     match floor {
-        Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
-        Floor::Sea(_) => NavMesh::bake_over_sea(walked, bounds, &navmesh::AGENT),
-        _ => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
+        Floor::Flat => navmesh::Baking::flat(walked, bounds, &navmesh::AGENT),
+        Floor::Sea(_) => navmesh::Baking::over_sea(walked, bounds, &navmesh::AGENT),
+        _ => navmesh::Baking::on(walked, bounds, &navmesh::AGENT),
     }
 }
 
@@ -573,7 +573,7 @@ mod groups_tests;
 
 #[cfg(test)]
 #[path = "garrison_tests.rs"]
-mod garrison_tests;
+pub(crate) mod garrison_tests;
 
 #[cfg(test)]
 #[path = "gird_tests.rs"]

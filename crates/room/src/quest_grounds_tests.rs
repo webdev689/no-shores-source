@@ -54,7 +54,7 @@ fn every_roads_group_stands_in_full_within_its_place_in_its_node_as_baked() {
         assert!(room.restore_character(player, &crate::quests::quests_tests::on_goal(key).to_json()));
         let before: Vec<FighterId> = room.foes.keys().copied().collect();
         assert!(room.put_player(player, place.at[0], place.at[1] + 140.0));
-        room.tick();
+        crate::garrison::garrison_tests::run_baked(&mut room, 1);
         let new: Vec<[f64; 2]> = room
             .foes
             .iter()

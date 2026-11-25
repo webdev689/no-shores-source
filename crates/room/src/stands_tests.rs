@@ -1,7 +1,7 @@
 //! Where a garrison's groups stand: a post laid only where one stands, clearing the points round it alone; a patrol's
 //! foes' sites, each standing its group the first time a player comes near it, on a mesh baked round it.
 
-use super::garrison_tests::{clear, node, run, stand_player};
+use super::garrison_tests::{clear, node, run, run_baked, stand_player};
 use super::stands::{SITE_NEAR, first_post};
 use super::*;
 use crate::FoeSeen;
@@ -42,7 +42,7 @@ fn a_patrol_s_foes_site_stands_its_group_the_first_time_a_player_comes_within_15
     run(&mut room, 3);
     assert_eq!((room.garrison.len(), room.place_grounds()), (posts, 0), "nothing stands while no player is near");
     stand_player(&mut room, player, [SITE[0], SITE[1] + SITE_NEAR - 5.0]);
-    run(&mut room, 3);
+    run_baked(&mut room, 3);
     assert_eq!(room.garrison.len(), posts + 1, "its group stands");
     assert_eq!(room.place_grounds(), 1, "on a mesh baked round the site");
     let stood: Vec<FoeSeen> = room.foes_seen().skip(foes).collect();
@@ -77,7 +77,7 @@ fn a_site_s_group_never_stands_beside_a_player_but_waits_till_none_is_within_40_
     run(&mut room, 3);
     assert_eq!(room.garrison.len(), posts, "none stands within sight of a player beside it");
     stand_player(&mut room, player, [SITE[0], SITE[1] + CLEAR_AROUND + 5.0]);
-    run(&mut room, 3);
+    run_baked(&mut room, 3);
     assert_eq!(room.garrison.len(), posts + 1, "it stands once the player is past 40 m");
 }
 
@@ -89,7 +89,7 @@ fn the_same_site_stands_the_same_group_on_every_machine_and_only_in_a_patrol() {
         let foes = room.foes_seen().count();
         let player = room.join().unwrap();
         stand_player(&mut room, player, [SITE[0], SITE[1] + 100.0]);
-        run(&mut room, 3);
+        run_baked(&mut room, 3);
         room.foes_seen().skip(foes).map(|foe| (foe.foe_type, foe.rank, feet(&foe))).collect::<Vec<_>>()
     };
     assert!(!stood(NodeKind::Patrol).is_empty());

@@ -4,7 +4,7 @@
 // then every box placed. Every length comes out in whole CSS pixels, so every edge lands on whole screen pixels at the
 // interface's whole scale.
 import type { Box } from './quads.ts';
-import type { Align, Child, Laid, Node, Padding, Size, Span, Text } from './node.ts';
+import type { Align, Laid, Node, Padding, Size, Span, Text } from './node.ts';
 import { type Face, lineHeight, styled, widthOf, wrapped } from './text.ts';
 
 /** A node at work: its children in the flow and those floated, its size, the least it can shrink to, and its place. */
@@ -36,15 +36,38 @@ export const sidesOf = (padding: Padding | undefined): readonly [number, number,
   return padding;
 };
 
-const shownKids = (children: readonly Child[] | undefined): Node[] =>
-  (children ?? []).filter((child): child is Node => Boolean(child));
-
 function build(node: Node): Item {
   const kids: Item[] = [];
   const floats: Item[] = [];
-  for (const child of shownKids(node.children)) (child.float ? floats : kids).push(build(child));
-  return { node, kids, floats, pad: sidesOf(node.padding), w: 0, h: 0, least: 0, x: 0, y: 0, lines: [], content: 0 };
+  for (const child of node.children ?? NONE) if (child) (child.float ? floats : kids).push(build(child));
+  return { node, kids, floats, pad: sidesOf(node.padding), w: 0, h: 0, least: 0, x: 0, y: 0, lines: NONE, content: 0 };
 }
+
+const NONE: readonly never[] = [];
+
+/** Each of an item's children, those in the flow then those floated: every pass walks the tree every frame. */
+function eachKid(item: Item, visit: (kid: Item) => void): void {
+  for (const kid of item.kids) visit(kid);
+  for (const kid of item.floats) visit(kid);
+}
+
+/** The largest of `kids`' `side`, those `flowing` asks for, and 0 for none. */
+function most(kids: readonly Item[], side: 'w' | 'h' | 'least', flowing: (kid: Item) => boolean = everyKid): number {
+  let largest = 0;
+  for (const kid of kids) if (flowing(kid) && kid[side] > largest) largest = kid[side];
+  return largest;
+}
+
+/** The sum of `kids`' `side`, those `flowing` asks for. */
+function total(kids: readonly Item[], side: 'w' | 'h' | 'least', flowing: (kid: Item) => boolean = everyKid): number {
+  let sum = 0;
+  for (const kid of kids) if (flowing(kid)) sum += kid[side];
+  return sum;
+}
+
+const everyKid = (): boolean => true;
+const flowsAcross = (kid: Item): boolean => percentOf(kid.node.width) === null;
+const flowsDown = (kid: Item): boolean => percentOf(kid.node.height) === null;
 
 const percentOf = (size: Size | undefined): number | null =>
   typeof size === 'string' && size.endsWith('%') ? Number.parseFloat(size) / 100 : null;
@@ -61,11 +84,10 @@ const MOST_CACHED = 4096;
 function cached<Kept>(face: Face, text: Text, width: number | string, make: () => Kept): Kept {
   let kept = textCache.get(face);
   if (!kept) textCache.set(face, (kept = new Map()));
-  const words =
-    typeof text.words === 'string'
-      ? text.words
-      : text.words.map((span) => `${span.colour ?? ''}\u0001${span.style ?? ''}\u0001${span.words}`).join('\u0002');
-  const how = [text.size, text.tracking, text.wrap, text.ellipsis, text.balance, text.colour].join('|');
+  let words = '';
+  if (typeof text.words === 'string') words = text.words;
+  else for (const span of text.words) words += `${span.colour ?? ''}\u0001${span.style ?? ''}\u0001${span.words}\u0002`;
+  const how = `${text.size}|${text.tracking}|${text.wrap}|${text.ellipsis}|${text.balance}|${text.colour}`;
   const key = `${width}|${how}|${words}`;
   if (kept.has(key)) return kept.get(key) as Kept;
   const made = make();
@@ -170,7 +192,7 @@ const fitOf = (face: Face, text: Text): readonly [number, number] =>
 
 /** Pass one, leaves up: each node's width as its content needs it, and the least it can shrink to. */
 function fitWidths(face: Face, item: Item): void {
-  for (const kid of [...item.kids, ...item.floats]) fitWidths(face, kid);
+  eachKid(item, (kid) => fitWidths(face, kid));
   const { node, pad } = item;
   const across = pad[1] + pad[3];
   let fit = 0;
@@ -180,17 +202,15 @@ function fitWidths(face: Face, item: Item): void {
     fit = least = node.picture.pixel.width;
   } else {
     const row = node.direction !== 'column';
-    const flowing = item.kids.filter((kid) => percentOf(kid.node.width) === null);
-    const gaps = (node.gap ?? 0) * Math.max(0, item.kids.length - 1);
+    const { kids } = item;
+    const gaps = (node.gap ?? 0) * Math.max(0, kids.length - 1);
     if (row) {
       // A wrapping row would stand on one line, and can narrow to its widest child.
-      fit = flowing.reduce((sum, kid) => sum + kid.w, 0) + gaps;
-      least = node.wrap
-        ? Math.max(0, ...flowing.map((kid) => kid.w))
-        : flowing.reduce((sum, kid) => sum + kid.least, 0) + gaps;
+      fit = total(kids, 'w', flowsAcross) + gaps;
+      least = node.wrap ? most(kids, 'w', flowsAcross) : total(kids, 'least', flowsAcross) + gaps;
     } else {
-      fit = Math.max(0, ...flowing.map((kid) => kid.w));
-      least = Math.max(0, ...flowing.map((kid) => kid.least));
+      fit = most(kids, 'w', flowsAcross);
+      least = most(kids, 'least', flowsAcross);
     }
   }
   const sized = node.width;
@@ -300,12 +320,12 @@ function shareWidths(item: Item, view: Box): void {
   if (row && !node.wrap) shareMain(item.kids, room, node.gap ?? 0, 'w', true);
   else for (const kid of item.kids) crossSize(kid, room, 'w', true);
   for (const kid of item.floats) crossSize(kid, floatRoom(kid, view, 'w') ?? item.w, 'w', true);
-  for (const kid of [...item.kids, ...item.floats]) shareWidths(kid, view);
+  eachKid(item, (kid) => shareWidths(kid, view));
 }
 
 /** Pass three, leaves up: words wrapped to their widths, then each node's height as its content needs it. */
 function fitHeights(face: Face, item: Item): void {
-  for (const kid of [...item.kids, ...item.floats]) fitHeights(face, kid);
+  eachKid(item, (kid) => fitHeights(face, kid));
   const { node, pad } = item;
   const down = pad[0] + pad[2];
   let fit = 0;
@@ -318,20 +338,18 @@ function fitHeights(face: Face, item: Item): void {
   } else {
     const row = node.direction !== 'column';
     const gap = node.gap ?? 0;
-    const flowing = item.kids.filter((kid) => percentOf(kid.node.height) === null);
+    const { kids } = item;
     if (row && node.wrap) {
       const lines = wrappedRows(item);
-      fit =
-        lines.reduce((sum, line) => sum + Math.max(0, ...line.map((kid) => kid.h)), 0) +
-        gap * Math.max(0, lines.length - 1);
+      fit = lines.reduce((sum, line) => sum + most(line, 'h'), 0) + gap * Math.max(0, lines.length - 1);
       least = fit;
     } else if (row) {
-      fit = Math.max(0, ...flowing.map((kid) => kid.h));
-      least = Math.max(0, ...flowing.map((kid) => kid.least));
+      fit = most(kids, 'h', flowsDown);
+      least = most(kids, 'least', flowsDown);
     } else {
-      const gaps = gap * Math.max(0, item.kids.length - 1);
-      fit = flowing.reduce((sum, kid) => sum + kid.h, 0) + gaps;
-      least = flowing.reduce((sum, kid) => sum + kid.least, 0) + gaps;
+      const gaps = gap * Math.max(0, kids.length - 1);
+      fit = total(kids, 'h', flowsDown) + gaps;
+      least = total(kids, 'least', flowsDown) + gaps;
     }
   }
   if (typeof node.height === 'number') fit = least = node.height;
@@ -372,7 +390,7 @@ function shareHeights(item: Item, view: Box): void {
   if (column) shareMain(item.kids, room, node.gap ?? 0, 'h', !node.scroll);
   else if (!node.wrap) for (const kid of item.kids) crossSize(kid, room, 'h', false);
   for (const kid of item.floats) crossSize(kid, floatRoom(kid, view, 'h') ?? item.h, 'h', false);
-  for (const kid of [...item.kids, ...item.floats]) shareHeights(kid, view);
+  eachKid(item, (kid) => shareHeights(kid, view));
 }
 
 const startOf = (align: Align | undefined, free: number) =>
@@ -414,8 +432,8 @@ function place(
     let top = 0;
     const lines = wrappedRows(item);
     for (const line of lines) {
-      const across = line.reduce((sum, kid) => sum + kid.w, 0) + gap * (line.length - 1);
-      const tall = Math.max(0, ...line.map((kid) => kid.h));
+      const across = total(line, 'w') + gap * (line.length - 1);
+      const tall = most(line, 'h');
       let left = startOf(node.alignX, inner.width - across);
       for (const kid of line) {
         kid.x = inner.x + left;
@@ -426,10 +444,9 @@ function place(
     }
     content = Math.max(0, top - gap);
   } else {
-    const main =
-      item.kids.reduce((sum, kid) => sum + (column ? kid.h : kid.w), 0) + gap * Math.max(0, item.kids.length - 1);
+    const main = total(item.kids, column ? 'h' : 'w') + gap * Math.max(0, item.kids.length - 1);
     // What a node holds is as tall as its column, or as its row's tallest; it scrolls up and down either way.
-    content = column ? main : Math.max(0, ...item.kids.map((kid) => kid.h));
+    content = column ? main : most(item.kids, 'h');
     let along = startOf(column ? node.alignY : node.alignX, (column ? inner.height : inner.width) - main);
     for (const kid of item.kids) {
       if (column) {

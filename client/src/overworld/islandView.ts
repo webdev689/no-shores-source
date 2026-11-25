@@ -56,18 +56,20 @@ export function coastDistance(point: Point2, ring: readonly Point2[]): number {
 
 /** The point of a ring's coast nearest a point. */
 export function coastPoint(point: Point2, ring: readonly Point2[]): Point2 {
-  let nearest: { distance: number; at: Point2 } = { distance: Number.POSITIVE_INFINITY, at: point };
-  ring.forEach(([fromX, fromY], index) => {
-    const [toX, toY] = ring[(index + 1) % ring.length];
+  // Asked of every coast each frame at sea: the nearest is kept as numbers, and only it made a point.
+  let [nearest, atX, atY, found] = [Number.POSITIVE_INFINITY, 0, 0, false];
+  for (let index = 0; index < ring.length; index++) {
+    const [fromX, fromY] = ring[index]!;
+    const [toX, toY] = ring[(index + 1) % ring.length]!;
     const [edgeX, edgeY] = [toX - fromX, toY - fromY];
     const lengthSquared = edgeX * edgeX + edgeY * edgeY;
     const share = lengthSquared > 0 ? ((point[0] - fromX) * edgeX + (point[1] - fromY) * edgeY) / lengthSquared : 0;
     const clamped = Math.max(0, Math.min(1, share));
-    const onEdge: Point2 = [fromX + edgeX * clamped, fromY + edgeY * clamped];
-    const distance = Math.hypot(onEdge[0] - point[0], onEdge[1] - point[1]);
-    if (distance < nearest.distance) nearest = { distance, at: onEdge };
-  });
-  return nearest.at;
+    const [onX, onY] = [fromX + edgeX * clamped, fromY + edgeY * clamped];
+    const squared = (onX - point[0]) * (onX - point[0]) + (onY - point[1]) * (onY - point[1]);
+    if (squared < nearest) [nearest, atX, atY, found] = [squared, onX, onY, true];
+  }
+  return found ? [atX, atY] : point;
 }
 
 /** The island whose coast is nearest the ship, and how far it is; null when none is within the view's reach. */

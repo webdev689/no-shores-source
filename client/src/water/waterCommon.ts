@@ -18,34 +18,6 @@ export const SHORE_FLOOR_M = 0.5;
 /** How far from the coast its distance is kept (relief.rs COAST_REACH_M), metres; further cells hold this. */
 export const COAST_REACH_M = 6000;
 
-/** The cells of a window, row by row: each one's height, distance from the painted coast and height carried over it. */
-export interface WideCells {
-  readonly width: number;
-  readonly heights: Float32Array;
-  readonly coast: Float32Array;
-  readonly across: Float32Array;
-}
-
-/** The texels of the 1 km land's texture (rgba32float, read by WGSL wide_ground) for a rectangle of cells, row by
- *  row: height, distance from the coast, height carried over the coast, 0. */
-export function wideTexels(
-  cells: WideCells,
-  rect: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number },
-): Float32Array {
-  const { left, top, right, bottom } = rect;
-  const width = right - left;
-  const out = new Float32Array(width * (bottom - top) * 4);
-  for (let row = top; row < bottom; row++) {
-    for (let column = left; column < right; column++) {
-      const [from, to] = [row * cells.width + column, ((row - top) * width + column - left) * 4];
-      out[to] = cells.heights[from] ?? 0;
-      out[to + 1] = cells.coast[from] ?? 0;
-      out[to + 2] = cells.across[from] ?? 0;
-    }
-  }
-  return out;
-}
-
 /**
  * Noise, the sky's uniform and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise
  * (the distances to the nearest two of one jittered point a cell), each point dancing on its own clock when `time`
@@ -272,6 +244,23 @@ fn marked(marks: texture_2d<u32>, at: vec2f, first: u32, last: u32) -> f32 {
     cover += select(0.0, share, mark >= first && mark <= last);
   }
   return smoothstep(0.3, 0.7, cover);
+}
+
+// The river's (marks 1 and 2), road's (3), town's (4) and port's (5) cover at a point, as \`marked\` finds each, from
+// one read of the four texels round it.
+fn marks_at(marks: texture_2d<u32>, at: vec2f) -> vec4f {
+  let top = vec2i(textureDimensions(marks)) - 1;
+  let base = vec2i(floor(at));
+  let fraction = at - floor(at);
+  var cover = vec4f(0.0);
+  for (var corner_index = 0; corner_index < 4; corner_index++) {
+    let offset = vec2i(corner_index & 1, corner_index >> 1);
+    let mark = textureLoad(marks, clamp(base + offset, vec2i(0), top), 0).r;
+    let share = mix(1.0 - fraction.x, fraction.x, f32(offset.x)) * mix(1.0 - fraction.y, fraction.y, f32(offset.y));
+    let kinds = vec4<bool>(mark >= 1u && mark <= 2u, mark == 3u, mark == 4u, mark == 5u);
+    cover += select(vec4f(0.0), vec4f(share), kinds);
+  }
+  return smoothstep(vec4f(0.3), vec4f(0.7), cover);
 }
 
 `;
@@ -511,8 +500,13 @@ fn chop_set(first: i32, local: vec2f, flow: vec2f, footprint: f32) -> vec2f {
 }
 
 // Foam's lace: high inside the bubbles' cells, low along their walls, drifting with 'drift'. Where 'amount' is small
-// only the walls show; where it is 1 the foam is solid.
+// only the walls show; where it is 1 the foam is solid. A quad of pixels none of which shows lace (too little foam, or
+// past a 3 m footprint, drawn as a share alone) works none out; one that does, all of it, so its edges read true.
+@diagnostic(off, derivative_uniformity)
 fn foam_cover(local: vec2f, drift: vec2f, amount: f32, footprint: f32) -> f32 {
+  let wanted = select(0.0, 1.0, amount >= 0.04 && footprint < 3.0);
+  let along = min(1.0, wanted + abs(dpdxFine(wanted)));
+  if (min(1.0, along + abs(dpdyFine(along))) < 0.5) { return 0.0; }
   let time = frame.eye.w;
   let warp = (vec2f(value_noise(local * 0.25), value_noise(local * 0.25 + vec2f(31.0, 17.0))) - 0.5) * 3.2
     + (vec2f(value_noise(local * 1.0), value_noise(local * 1.0 + vec2f(5.0, 9.0))) - 0.5) * 0.9;

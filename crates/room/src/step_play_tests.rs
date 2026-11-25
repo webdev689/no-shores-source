@@ -6,6 +6,7 @@
 
 use super::*;
 use crate::asks::{Asked, NOT_YET, OUT_OF_REACH};
+use crate::garrison::garrison_tests::{baked_ground, run_baked};
 use crate::quests::foes_of;
 use crate::quests::quests_tests::{counted, joined, living, node_room, on_goal, run, shoot_dead, stand_at};
 use crate::steps::steps_tests::{changed, met, step_of};
@@ -32,7 +33,7 @@ fn a_defences_ward_stands_with_its_first_wave_coming_at_it_and_the_last_wave_fal
     run(&mut room, 2);
     assert!(room.foes.is_empty() && room.step_seen(player).ward.is_empty(), "past its reach, nothing stands");
     stand_at(&mut room, player, [0.0, 20.0]);
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     let ward = room.quests.wards.iter().next().copied().expect("its ward stands");
     assert!(room.foes_seen().all(|foe| foe.foe != ward), "in no snapshot");
     assert_eq!(room.step_seen(player).ward, [0.0, 0.0, 1.0], "sent its player whole");
@@ -75,7 +76,7 @@ fn a_ward_left_alone_falls_and_is_tried_again_10_then_20_s_on_its_foes_then_drop
         [600, 1200, 2400, 2400]
     );
     let (mut room, player, key, defend) = defence([0.0, 20.0]);
-    run(&mut room, 2);
+    run_baked(&mut room, 2);
     let ticks = left_to_fall(&mut room, player);
     eprintln!("a ward left alone falls in {:.0} s", f64::from(ticks) / 60.0);
     assert!((60 * 30..60 * 300).contains(&ticks), "the first wave alone fells it in {} s", ticks / 60);
@@ -116,7 +117,7 @@ fn a_wave_that_stands_nobody_counts_as_fallen_and_the_next_stands() {
     });
     let kind = Stepping::Defence(Defence::default());
     room.quests.steps.insert(player, Step { key, goal, fails: 0, kind });
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     assert_eq!(wave(&room, player).len(), foes_of(defend.waves[0].iter()).len(), "the wave after it stands");
     let goal = changed(gear_goal(key), |goal| {
         if let Goal::Defend(it) = goal {
@@ -126,7 +127,7 @@ fn a_wave_that_stands_nobody_counts_as_fallen_and_the_next_stands() {
     let (mut room, player, key, _) = defence([0.0, 20.0]);
     let kind = Stepping::Defence(Defence::default());
     room.quests.steps.insert(player, Step { key, goal, fails: 0, kind });
-    run(&mut room, 2);
+    run_baked(&mut room, 2);
     assert!(met(&room, player, key), "none stood: the goal met, not waiting forever");
 }
 
@@ -142,7 +143,7 @@ fn a_ward_and_its_wave_and_an_ambush_stand_only_within_the_rooms_cap_on_foes() {
     run(&mut room, 60);
     assert!(room.quests.wards.is_empty() && room.foes.is_empty(), "no room for its first wave: nothing stands");
     room.foes_most = first;
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     assert_eq!(room.quests.wards.len(), 1, "room for its first wave exactly: it stands");
     assert_eq!(room.living_foes(), first, "with that wave");
     let (key, goal) =
@@ -159,7 +160,7 @@ fn a_ward_and_its_wave_and_an_ambush_stand_only_within_the_rooms_cap_on_foes() {
     run(&mut room, 60);
     assert_eq!(room.step_seen(player).figures[1..3], at, "and not walking on");
     room.foes_most = crate::NODE_FOES_MOST;
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     assert_eq!(living(&room).len(), foes_of(escort.ambush.iter()).len(), "room: it stands");
     assert_eq!(room.step_seen(player).figures[5] as u8, HELD, "and holds its figure");
 }
@@ -173,7 +174,7 @@ fn a_ward_and_its_wave_leave_a_public_events_kept_places_to_the_event() {
     run(&mut room, 60);
     assert!(room.quests.wards.is_empty() && room.foes.is_empty(), "the event's kept places are not the road's");
     room.foes_most = crate::public::EVENT_ROOM + first;
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     assert_eq!(room.living_foes(), first, "room for its first wave beside them: it stands");
 }
 
@@ -181,7 +182,7 @@ fn a_ward_and_its_wave_leave_a_public_events_kept_places_to_the_event() {
 fn two_players_on_one_defence_have_their_waves_stand_apart() {
     let (mut room, one, key, _) = defence([0.0, 20.0]);
     let two = joined(&mut room, &on_goal(key), [0.0, 21.0]);
-    run(&mut room, 2);
+    run_baked(&mut room, 2);
     let at = |id: &FighterId| [room.foes[id].fighter.body.x, room.foes[id].fighter.body.y];
     let (ones, twos) = (wave(&room, one), wave(&room, two));
     assert!(!ones.is_empty() && !twos.is_empty(), "each their own wave");
@@ -200,7 +201,7 @@ fn puzzle() -> (Room, PlayerId, [usize; 3], &'static Puzzle) {
     let Goal::Puzzle(puzzle) = &goal.goal else { unreachable!("a puzzle") };
     let mut room = node_room(&puzzle.node, &[(puzzle.place.as_str(), [0.0, 0.0], 30.0)]);
     let player = joined(&mut room, &on_goal(key), [0.0, 20.0]);
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     (room, player, key, puzzle)
 }
 
@@ -271,7 +272,7 @@ fn a_puzzles_point_where_a_box_stands_is_nudged_onto_ground_a_player_stands_on()
     let (min_x, min_y, max_x, max_y) = (meant[0] - 2.0, meant[1] - 3.0, meant[0] + 2.0, meant[1] + 3.0);
     room.blocks = vec![movement::Block { min_x, min_y, max_x, max_y, top: 3.0, bottom: 0.0 }].into();
     let player = joined(&mut room, &on_goal(key), [0.0, 20.0]);
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     let points = room.step_seen(player).points;
     let first = [points[0], points[1]];
     let clear = !(min_x - 0.4..max_x + 0.4).contains(&first[0]) || !(min_y - 0.4..max_y + 0.4).contains(&first[1]);
@@ -279,23 +280,33 @@ fn a_puzzles_point_where_a_box_stands_is_nudged_onto_ground_a_player_stands_on()
 }
 
 #[test]
-fn a_places_mesh_is_the_nodes_own_where_its_square_holds_it_else_baked_one_a_tick_and_kept() {
+fn a_places_mesh_is_the_nodes_own_where_its_square_holds_it_else_baked_a_slice_a_tick_and_kept() {
     let mut room = node_room("elsewhere", &[]);
     let square = room.quests.square.expect("the node's square");
     let middle = [(square.min_x + square.max_x) / 2.0, (square.min_y + square.max_y) / 2.0];
     let place = |name: &str, at: [f64; 2]| Place { name: name.to_owned(), at, radius: 30.0 };
     let (home, east) = (place("Home", middle), place("East", [150.0, 0.0]));
     assert_eq!(room.ground_of(&home, 30.0), Some(0), "the node's own: its square holds all 30 m round the place");
-    assert_eq!(room.ground_of(&home, 40.0), Some(1), "not all 40 m round it: one baked round the place");
-    assert_eq!(room.ground_of(&east, 30.0), None, "no second this tick");
-    run(&mut room, 1);
-    assert_eq!((room.ground_of(&east, 30.0), room.ground_of(&home, 40.0)), (Some(2), Some(1)), "the next tick; kept");
-    assert_eq!(room.place_grounds(), 2);
+    assert_eq!(room.ground_of(&home, 40.0), None, "not all 40 m round it: one round the place begun");
+    assert_eq!(room.ground_of(&home, 40.0), None, "no second slice this tick");
+    // The bake under way goes on whichever place asks, and East waits its turn till it is whole.
+    let mut slices = 1;
+    loop {
+        room.clock += 1;
+        slices += 1;
+        if room.place_grounds() == 1 {
+            break;
+        }
+        assert_eq!(room.ground_of(&east, 30.0), None, "East waits while Home's is baked");
+    }
+    assert!(slices > 3, "Home's baked over {slices} ticks, not in one");
+    assert_eq!(room.ground_of(&home, 40.0), Some(1), "kept");
+    assert_eq!(baked_ground(&mut room, &east, 30.0), 2);
+    assert_eq!(room.ground_of(&home, 40.0), Some(1), "still kept");
     // A place named as another but standing elsewhere is not stood on the other's mesh.
     let twin = place("East", [-150.0, 0.0]);
-    assert_eq!(room.ground_of(&twin, 30.0), None, "its own, baked the next tick");
-    run(&mut room, 1);
-    assert_eq!(room.ground_of(&twin, 30.0), Some(3), "a mesh round it, not East's");
+    assert_eq!(baked_ground(&mut room, &twin, 30.0), 3, "a mesh round it, not East's");
+    assert_eq!(room.place_grounds(), 3);
 }
 
 #[test]
@@ -306,7 +317,7 @@ fn a_puzzles_points_are_checked_within_the_square_its_places_mesh_is_baked_over(
 #[test]
 fn a_defence_rejoined_stands_the_waves_already_fought_dropping_nothing_and_the_rest_as_any() {
     let (mut room, player, _, defend) = defence([0.0, 20.0]);
-    run(&mut room, 2);
+    run_baked(&mut room, 2);
     let first = wave(&room, player);
     assert!(!first.is_empty() && first.iter().all(|id| !room.quests.spoilless.contains(id)), "its first wave drops");
     let kept = gear::Character::from_json(&room.kept_character(player).expect("kept")).expect("a character");

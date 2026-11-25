@@ -101,14 +101,19 @@ function sectorSeen(
   spans: Uint8Array,
   sector: number,
 ): boolean {
-  const along = (axis: 0 | 1, quads: number) => ring.corner[axis] + fromEye[axis] + quads * ring.spacing;
-  const [column = 0, row = 0, lastColumn = 0, lastRow = 0] = spans.subarray(sector * 4, sector * 4 + 4);
-  return boxSeen(
-    planes,
-    [along(0, column - 1), along(1, row - 1), heights[0]],
-    [along(0, lastColumn + 1), along(1, lastRow + 1), heights[1]],
-  );
+  const [westEdge, northEdge] = [ring.corner[0] + fromEye[0], ring.corner[1] + fromEye[1]];
+  LOW[0] = westEdge + ((spans[sector * 4] ?? 0) - 1) * ring.spacing;
+  LOW[1] = northEdge + ((spans[sector * 4 + 1] ?? 0) - 1) * ring.spacing;
+  LOW[2] = heights[0];
+  HIGH[0] = westEdge + ((spans[sector * 4 + 2] ?? 0) + 1) * ring.spacing;
+  HIGH[1] = northEdge + ((spans[sector * 4 + 3] ?? 0) + 1) * ring.spacing;
+  HIGH[2] = heights[1];
+  return boxSeen(planes, LOW, HIGH);
 }
+
+/** A sector's box, laid afresh by each sector over the last's. */
+const LOW = new Float64Array(3);
+const HIGH = new Float64Array(3);
 
 /**
  * A frame's draws of the rings, four numbers each: the first of the order's quads drawn, how many, the first ring and
@@ -126,9 +131,12 @@ export function ringDraws(
   const draws: number[] = [];
   const fromEye = [-eye[0], -eye[1]] as const;
   const upright = [heights[0] - eye[2], heights[1] - eye[2]] as const;
-  let [last, joined] = ['', 0];
-  for (const [index, ring] of rings.entries()) {
-    const runs: number[] = [];
+  // This ring's runs and the ring before's, kept and swapped: a ring drawing the same runs joins the draws before.
+  let [runs, before] = [RUNS, BEFORE];
+  before.length = 0;
+  for (let index = 0; index < rings.length; index++) {
+    const ring = rings[index]!;
+    runs.length = 0;
     for (let sector = 0; sector < (index === 0 ? 2 : 1) * CLIPMAP_SECTORS; sector++) {
       const [first, end] = [order.starts[sector] ?? 0, order.starts[sector + 1] ?? 0];
       if (first === end || !sectorSeen(planes, ring, fromEye, upright, order.spans, sector)) continue;
@@ -136,14 +144,18 @@ export function ringDraws(
       if (tail >= 0 && (runs[tail] ?? 0) + (runs[tail + 1] ?? 0) === first) runs[tail + 1] = end - (runs[tail] ?? 0);
       else runs.push(first, end - first);
     }
-    const key = runs.join(' ');
-    if (index > 0 && key === last) {
-      for (let draw = draws.length - joined * 4; draw < draws.length; draw += 4)
+    if (index > 0 && sameRuns(runs, before)) {
+      for (let draw = draws.length - (runs.length / 2) * 4; draw < draws.length; draw += 4)
         draws[draw + 3] = (draws[draw + 3] ?? 0) + 1;
       continue;
     }
     for (let run = 0; run < runs.length; run += 2) draws.push(runs[run] ?? 0, runs[run + 1] ?? 0, index, 1);
-    [last, joined] = [key, runs.length / 2];
+    [runs, before] = [before, runs];
   }
   return draws;
 }
+
+const RUNS: number[] = [];
+const BEFORE: number[] = [];
+const sameRuns = (one: readonly number[], other: readonly number[]): boolean =>
+  one.length === other.length && one.every((value, place) => value === other[place]);

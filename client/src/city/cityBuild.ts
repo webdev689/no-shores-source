@@ -24,7 +24,7 @@ import { type CrystalInstances, crystalInstances } from './crystalInstances.ts';
 import { clearOfPlaza, type CrystalPlace, crystalLamps, greatLamp, worksGrowth, wreckCrust } from './overtaken.ts';
 import { meshSolid } from './solidMesh.ts';
 import { finished } from './steps.ts';
-import { boxReach, tiersReached } from './tiers.ts';
+import { type Reach, reachesWhole, reachFrom } from './tiers.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
 export const CHUNK_CELLS = 4;
@@ -424,18 +424,31 @@ export function* cityBuildSteps(
 /** The ranges of the crystal's small detail to draw: those of the chunks within the whole tier's reach of the eye
  *  (measured from the city's middle), joined where they meet, laid into `into` (emptied first). */
 export function detailRuns(chunks: readonly Chunk[], eye: readonly number[], into: Range[] = []): Range[] {
-  into.length = 0;
+  let laid = 0;
   for (const chunk of chunks) {
-    const middles = boxReach(
-      [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
-      [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
-    );
-    if (!chunk.detail.count || !tiersReached(middles.nearest, middles.farthest).has('whole')) continue;
-    const last = into[into.length - 1];
-    if (last && last.first + last.count === chunk.detail.first) last.count += chunk.detail.count;
-    else into.push({ first: chunk.detail.first, count: chunk.detail.count });
+    if (!chunk.detail.count || !reachesWhole(reachFrom(chunk.middlesLow, chunk.middlesHigh, eye, REACH).nearest))
+      continue;
+    laid = joinRun(into, laid, chunk.detail);
   }
+  into.length = laid;
   return into;
+}
+
+/** A chunk's reach, laid afresh by each chunk over the last's. */
+const REACH: Reach = { nearest: 0, farthest: 0 };
+
+/** Lays `range` after the first `laid` runs of `into`, joined to the last where it starts as that ends, reusing a
+ *  run already there; answers how many are laid. */
+function joinRun(into: Range[], laid: number, range: Range): number {
+  const last = laid > 0 ? into[laid - 1] : undefined;
+  if (last && last.first + last.count === range.first) {
+    last.count += range.count;
+    return laid;
+  }
+  const slot = into[laid];
+  if (slot) [slot.first, slot.count] = [range.first, range.count];
+  else into[laid] = { first: range.first, count: range.count };
+  return laid + 1;
 }
 
 /** Whether a solid is a terrace's retaining wall: a stone block a cell long (or a length of one a ramp cuts) and
@@ -467,14 +480,15 @@ export function rampWall(plan: CityPlan): (solid: Solid) => boolean {
     );
 }
 
-/** Ranges laid end to end in one buffer, joined where one starts as the last ends, so a run of chunks is one draw. */
-export function runs(ranges: readonly Range[]): Range[] {
-  const joined: Range[] = [];
-  for (const range of ranges) {
-    if (!range.count) continue;
-    const last = joined[joined.length - 1];
-    if (last && last.first + last.count === range.first) last.count += range.count;
-    else joined.push({ first: range.first, count: range.count });
+/** Ranges laid end to end in one buffer, joined where one starts as the last ends, so a run of chunks is one draw:
+ *  each item's range as `rangeOf` reads it, laid into `into` (emptied first, its runs reused, so a view keeps one
+ *  list a draw). */
+export function runs<Item>(items: readonly Item[], rangeOf: (item: Item) => Range, into: Range[] = []): Range[] {
+  let laid = 0;
+  for (const item of items) {
+    const range = rangeOf(item);
+    if (range.count) laid = joinRun(into, laid, range);
   }
-  return joined;
+  into.length = laid;
+  return into;
 }
