@@ -78,9 +78,9 @@ pub struct Piece {
     pub facing: f64,
 }
 
-/// How many of a deal's things stand in a zone.
-/// How many times a zone under ground is laid before the first laying stands though a body cannot walk it all.
+/// How many times a zone is laid before the laying a body walks most of stands, though it cannot walk it all.
 const WALK_TRIES: u32 = 8;
+/// How many of a deal's things stand in a zone.
 pub const KINDLES: usize = 3;
 pub const POSTS: usize = 3;
 pub const NODES: usize = 6;

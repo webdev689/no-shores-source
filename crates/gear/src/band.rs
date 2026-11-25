@@ -90,10 +90,10 @@ pub const SEA_PIECES: [f64; 4] = [3.0, 4.0, 5.0, 6.0];
 
 /// A passage zone: its foes felled and the seconds a scripted player takes over its deal to done, on foot
 /// (`room::deal_measure_tests::measure_the_deals`, six weeks' zones, three of each deal and lamp, those it did: about
-/// 5 foes and 184 s a zone, each deal weighed as the web deals it, 45 s a foe against a patrol's 25), and the passage
+/// 5 foes and 192 s a zone, each deal weighed as the web deals it, 45 s a foe against a patrol's 25), and the passage
 /// between zones, 1.5 s up, 2 s across and 1.5 s down and in (`Passages as Claude Builds Them`).
 pub const PASSAGE_FOES: f64 = 5.0;
-pub const PASSAGE_SECONDS: f64 = 184.0;
+pub const PASSAGE_SECONDS: f64 = 192.0;
 pub const PASSAGE_BETWEEN_SECONDS: f64 = 5.0;
 /// The passages' island, Saltmere's band, and its depths.
 pub const PASSAGE_BAND: (u8, u8) = (1, 4);

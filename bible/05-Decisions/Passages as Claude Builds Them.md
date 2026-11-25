@@ -184,13 +184,13 @@ passages measure 0.79 to 1.76 of the patrol zone's XP and 1.10 to 1.95 of its lo
 
 Replaced in part, the measure having felled by hand the foes its script could not reach: a body now walks to all a
 zone asks (`room::passages::passage_reach_tests`), and the script plays on foot, felling none by hand; in the zones it
-did it took 184 s a zone over about five foes, 45 s a foe against a patrol's 25. The caches come back as the
-passages' main pay, the ten-minute zone's times 184 s over its 635 s: at level 5 a skirmish 410 XP and 30 Aurem, a
-mission 520 and 39, a vault 810 and 61, a vein and a reliquary 200 and 15, a lamp 810 and 61; a skirmish's and a
-mission's Vestige and a vault's item at the same share of their chances; the reliquary's and the lamp's sure Vestige
-stand. Claude's call: the passages' lever on the band is what their foes pay as they fall, three quarters of a kill
+did it took 192 s a zone over about five foes, 45 s a foe against a patrol's 25. The caches come back as the
+passages' main pay, the ten-minute zone's times 0.31, about 192 s over its 635 s: at level 5 a skirmish 430 XP and
+33 Aurem, a mission 560 and 42, a vault 870 and 65, a vein and a reliquary 220 and 16, a lamp 870 and 65; a
+skirmish's and a mission's Vestige and a vault's item at the same share of their chances; the reliquary's and the
+lamp's sure Vestige stand. Claude's call: the passages' lever on the band is what their foes pay as they fall, three quarters of a kill
 (`lamps::KILL_SHARE`), as the dive pays through its caches, deeper paying more, and its kills are its way there. The
-passages measure 0.77 to 1.41 of the patrol zone's XP and 1.25 to 1.89 of its loot.
+passages measure 0.77 to 1.40 of the patrol zone's XP and 1.21 to 1.84 of its loot.
 
 ## As the rules play them
 

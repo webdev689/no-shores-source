@@ -165,34 +165,3 @@ fn every_zone_of_many_weeks_can_be_walked_to_all_its_deal_asks() {
     }
     assert!(failed.is_empty(), "{} unreached, the first: {:#?}", failed.len(), &failed[..failed.len().min(30)]);
 }
-
-#[test]
-#[ignore = "a probe"]
-fn probe_foes() {
-    let web = Web::of(passage::island("continent-1").expect("Saltmere"), 2_910);
-    let plan = Plan::of(&web, 25).expect("a plan");
-    let modifiers = gear::passages::week_modifiers("continent-1", 2_910);
-    let room =
-        Room::passage(&plan, (1, 4), modifiers, ("continent-1", 2_910, gear::dive::Route::Public)).expect("a room");
-    for (id, foe) in &room.foes {
-        let at = [foe.fighter.body.x, foe.fighter.body.y];
-        let floor = movement::Terrain::height_at(&room.floor, at[0], at[1]);
-        let near: Vec<String> = room
-            .blocks
-            .iter()
-            .filter(|block| {
-                at[0] > block.min_x - 1.5
-                    && at[0] < block.max_x + 1.5
-                    && at[1] > block.min_y - 1.5
-                    && at[1] < block.max_y + 1.5
-            })
-            .map(|block| {
-                format!(
-                    "[{:.1},{:.1}..{:.1},{:.1} top {:.1} bottom {:.1}]",
-                    block.min_x, block.min_y, block.max_x, block.max_y, block.top, block.bottom
-                )
-            })
-            .collect();
-        eprintln!("foe {id:?} at {at:.1?} z {:.2} floor {floor:.2}: {near:?}", foe.fighter.body.z);
-    }
-}

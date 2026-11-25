@@ -130,13 +130,18 @@ fn measure_the_deals() {
         done.iter().fold((0.0, 0), |(seconds, foes), (_, took, felled)| (seconds + took.unwrap_or(0.0), foes + felled));
     // Each deal's mean, weighed as the web deals it: a lamp's zone one in five, the rest by `web::DEALS`, a vault's
     // half going to a skirmish above ground.
+    // A deal with no zone done is left out of the weighing, the rest weighed up to the whole.
     let mean = |prefix: &str| {
         let of: Vec<f64> =
             done.iter().filter(|(key, ..)| key.starts_with(prefix)).filter_map(|(_, took, _)| *took).collect();
-        of.iter().sum::<f64>() / of.len().max(1) as f64
+        (!of.is_empty()).then(|| of.iter().sum::<f64>() / of.len() as f64)
     };
     let dealt = [("Skirmish", 0.35), ("Mission", 0.35), ("Vault", 0.05), ("Vein", 0.12), ("Reliquary", 0.13)];
-    let zone = 0.8 * dealt.iter().map(|(prefix, share)| mean(prefix) * share).sum::<f64>() + 0.2 * mean("Lamp");
+    let weighed: Vec<(f64, f64)> =
+        dealt.iter().filter_map(|(prefix, share)| mean(prefix).map(|took| (took, *share))).collect();
+    let others = weighed.iter().map(|(took, share)| took * share).sum::<f64>()
+        / weighed.iter().map(|(_, share)| share).sum::<f64>().max(1e-9);
+    let zone = 0.8 * others + 0.2 * mean("Lamp").unwrap_or(others);
     eprintln!(
         "Zones {}, {} not done; a zone {zone:.0} s as dealt; {foes} foes felled, {:.1} s a foe; {:.1} foes a zone",
         measured.len(),

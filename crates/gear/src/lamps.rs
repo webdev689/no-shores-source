@@ -28,19 +28,19 @@ pub enum Cache {
 }
 
 /// Each deal's cache at level 5, XP then Aurem: the passages' main pay, sized for a zone of about three minutes
-/// (`band::PASSAGE_SECONDS`), the ten-minute zone's cache times 184 s over its 635 s.
-pub const SKIRMISH_PAY: (u32, u32) = (410, 30);
-pub const MISSION_PAY: (u32, u32) = (520, 39);
-pub const VAULT_PAY: (u32, u32) = (810, 61);
-pub const VEIN_PAY: (u32, u32) = (200, 15);
-pub const RELIQUARY_PAY: (u32, u32) = (200, 15);
-pub const LAMP_PAY: (u32, u32) = (810, 61);
+/// (`band::PASSAGE_SECONDS`), the ten-minute zone's cache times 0.31, as 192 s over its 635 s.
+pub const SKIRMISH_PAY: (u32, u32) = (430, 33);
+pub const MISSION_PAY: (u32, u32) = (560, 42);
+pub const VAULT_PAY: (u32, u32) = (870, 65);
+pub const VEIN_PAY: (u32, u32) = (220, 16);
+pub const RELIQUARY_PAY: (u32, u32) = (220, 16);
+pub const LAMP_PAY: (u32, u32) = (870, 65);
 /// A skirmish's, a mission's, a reliquary's and a lamp's chance of a Vestige, before depth raises it.
-pub const SKIRMISH_VESTIGE: f64 = 0.097;
-pub const MISSION_VESTIGE: f64 = 0.145;
+pub const SKIRMISH_VESTIGE: f64 = 0.103;
+pub const MISSION_VESTIGE: f64 = 0.155;
 pub const RELIQUARY_VESTIGE: f64 = 1.0;
 /// A vault's chance of its Miniboss's item as itself.
-pub const VAULT_ITEM: f64 = 0.29;
+pub const VAULT_ITEM: f64 = 0.31;
 pub const LAMP_VESTIGE: f64 = 1.0;
 /// The share of a kill a passage zone's foe pays as it falls, its XP, Aurem and chances of a find: the passages pay
 /// through their caches, the lamp and the reliquary, deeper paying more, so their foes' pay is the band's lever.

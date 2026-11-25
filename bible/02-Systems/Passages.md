@@ -181,10 +181,10 @@ was done finds it done.
 
 - **A cache** is paid at the zone's level and depth (`Character::pay_cache`): its XP and Aurem times `pay_times` (1 at
   the first depth to 1.25 at the twentieth), its chances of finds times `find_times` (1 to 2); its finds go into the
-  haul. At level 5: a skirmish 410 XP and 30 Aurem and a Vestige about one time in ten; a mission 520 and 39 and a
-  Vestige about one time in seven; a vault 810 and 61, its Miniboss's item about one time in three and a Vestige as a
-  Miniboss's kill leaves one; a vein 200 and 15, its six nodes and two fragments; a reliquary 200 and 15, a sure
-  Vestige and two to five fragments, their stock rolled apart from their count; a lamp 810 and 61 and a sure Vestige.
+  haul. At level 5: a skirmish 430 XP and 33 Aurem and a Vestige about one time in ten; a mission 560 and 42 and a
+  Vestige about one time in six; a vault 870 and 65, its Miniboss's item about one time in three and a Vestige as a
+  Miniboss's kill leaves one; a vein 220 and 16, its six nodes and two fragments; a reliquary 220 and 16, a sure
+  Vestige and two to five fragments, their stock rolled apart from their count; a lamp 870 and 65 and a sure Vestige.
   A zone takes one player about three minutes over about five foes (`room::deal_measure_tests`), so its cache, the
   passages' main pay, is sized for that, and its foes' share of a kill keeps the passages inside the band
   ([[Activities]], "The band").

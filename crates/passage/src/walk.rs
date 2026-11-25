@@ -103,8 +103,8 @@ impl Grid {
     }
 }
 
-/// What is not reached, under ground: round the dungeon's rock, its own solids and `extra` (each min x, min y, max x, max y, top), on its
-/// one floor.
+/// What is not reached, under ground: round the dungeon's rock, its own solids and `extra` (each min x, min y, max x,
+/// max y, top), on its one floor.
 pub(crate) fn under(dungeon: &Dungeon, extra: &[[f64; 5]], from: [f64; 2], wanted: &[([f64; 2], f64)]) -> usize {
     let high = [dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M];
     let mut grid = Grid::over([0.0, 0.0], high);
@@ -120,8 +120,8 @@ pub(crate) fn under(dungeon: &Dungeon, extra: &[[f64; 5]], from: [f64; 2], wante
     grid.walked_to(from, wanted, |_, _| true)
 }
 
-/// What is not reached, above ground: over the hollow's heights no steeper than SLOPE, round the blocks that stand higher than a step,
-/// within the bounds of `ring`.
+/// What is not reached, above ground: over the hollow's heights no steeper than SLOPE, round the blocks that stand
+/// higher than a step, within the bounds of `ring`.
 pub(crate) fn open(
     ground: &impl Terrain,
     blocks: &[Block],
@@ -138,6 +138,12 @@ pub(crate) fn open(
     for block in blocks.iter().filter(tall) {
         grid.block([block.min_x, block.min_y, block.max_x, block.max_y]);
     }
-    let rise = |at: [f64; 2]| ground.height_at(at[0], at[1]);
-    grid.walked_to(from, wanted, |here, there| (rise(there) - rise(here)).abs() <= SLOPE * STEP_M)
+    // Each square's height read once.
+    let heights: Vec<f64> =
+        (0..grid.free.len()).map(|square| grid.centre(square)).map(|at| ground.height_at(at[0], at[1])).collect();
+    let square = |at: [f64; 2]| {
+        let column = ((at[0] - low[0]) / STEP_M) as usize;
+        ((at[1] - low[1]) / STEP_M) as usize * grid.columns + column
+    };
+    grid.walked_to(from, wanted, |here, there| (heights[square(there)] - heights[square(here)]).abs() <= SLOPE * STEP_M)
 }
