@@ -57,7 +57,11 @@ export const UNHEARD_MOST = 120;
 /** Opens a WebSocket to a room's address: the browser's own, or a test's stand-in. */
 export type Connect = (url: string) => WebSocket;
 
-/** Seconds before the next try to rejoin, after `tries` tries since the room last welcomed the player: 1, 2, 4, 8,
+/** How long a join must hold before the waits between tries start over: a room that welcomes the player and soon sends
+ *  them off (its accounts not answering) is tried again ever more slowly, not every second. */
+export const HELD_MS = 60_000;
+
+/** Seconds before the next try to rejoin, after `tries` tries since a join last held: 1, 2, 4, 8,
  *  then 15 at most. */
 export function rejoinWait(tries: number): number {
   return Math.min(15, 2 ** tries);
@@ -129,6 +133,8 @@ export class RoomConnection implements RoomLink {
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
   private tries = 0;
+  /** When the room last welcomed the player, by the page's clock. */
+  private welcomedAt = Date.now();
   private closed = false;
   private readonly measure = new LinkMeasure();
   private waiting: ReturnType<typeof setTimeout> | null = null;
@@ -208,6 +214,7 @@ export class RoomConnection implements RoomLink {
         return;
       }
       this.rejoining = true;
+      if (Date.now() - this.welcomedAt >= HELD_MS) this.tries = 0;
       this.waiting = setTimeout(() => this.rejoin(), rejoinWait(this.tries++) * 1000);
     });
   }
@@ -234,7 +241,7 @@ export class RoomConnection implements RoomLink {
     if (this.session !== null) socket.send(this.session);
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     [this.plates, this.welcomeUnheard] = [welcome.plates, welcome];
-    [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
+    [this.joins, this.welcomedAt, this.rejoining] = [this.joins + 1, Date.now(), false];
     this.measure.clear();
   }
 

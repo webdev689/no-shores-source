@@ -5,6 +5,7 @@ import { FromRoom, Joined, Plate, Snapshot } from '../../../generated/messages/t
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import {
   ELSEWHERE,
+  HELD_MS,
   RoomConnection,
   SHUT,
   type Snapshot as RoomSnapshot,
@@ -146,8 +147,8 @@ test('a rejoin starts the count of messages the room has not answered over once 
   assert.equal(connection.quiet, false);
 });
 
-test('tries that fail wait longer each time, and a welcome starts the waits over', async (context: TestContext) => {
-  context.mock.timers.enable({ apis: ['setTimeout'] });
+test('tries that fail wait longer each time, and a join that holds starts the waits over', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   const { connection, sockets } = await joined(3);
   sockets[0]?.closed(1006);
   for (let tries = 0; tries < 6; tries++) {
@@ -160,9 +161,29 @@ test('tries that fail wait longer each time, and a welcome starts the waits over
   assert.equal(connection.rejoining, true);
   sockets.at(-1)?.says({ player: 8 });
   assert.deepEqual([connection.player, connection.joins, connection.rejoining], [8, 2, false]);
+  context.mock.timers.tick(HELD_MS);
   sockets.at(-1)?.closed(1001);
   context.mock.timers.tick(waitMs(0));
   assert.equal(sockets.length, 8, 'a second, not fifteen, after a link that held');
+});
+
+test('a room that welcomes the player and soon closes is tried ever more slowly, not every second', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const { sockets } = await joined(3);
+  const waited: number[] = [];
+  for (let round = 0; round < 4; round++) {
+    context.mock.timers.tick(5_000);
+    sockets.at(-1)?.closed(1013);
+    const before = sockets.length;
+    let seconds = 0;
+    while (sockets.length === before) {
+      context.mock.timers.tick(1_000);
+      seconds += 1;
+    }
+    waited.push(seconds);
+    sockets.at(-1)?.says({ player: 3 });
+  }
+  assert.deepEqual(waited, [1, 2, 4, 8]);
 });
 
 test('a room that sends the player away, or a page that leaves, is never joined again', async (context: TestContext) => {
