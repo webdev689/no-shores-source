@@ -1,5 +1,5 @@
 ---
-id: 252
+id: 254
 title: "Auditing a branch that merged main: its own change is HEAD^2..HEAD, and path loops need a real parser"
 status: open
 type: open-source
