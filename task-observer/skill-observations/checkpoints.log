@@ -127,3 +127,5 @@
 2026-11-24 21:42 [no-shores-source] session-start scan: files=201 parsed=192 principles=0
 2026-11-24 17:23 [no-shores-source] session-start scan: files=188 parsed=179 principles=0
 2026-11-25T00:00Z checkpoint: 0216, 0217 written; 0214 actioned; 0033 extended
+2026-11-24 23:53 [no-shores-source] session-start scan: files=205 parsed=196 principles=0
+2026-11-25T00:23:50Z inspect panel, short lines: no new observations
