@@ -235,7 +235,8 @@ The decisions in [[Open Questions]] are not repeated here.
   with its name and time left ([[Public Events]]); the held map dots every other player in the room in their
   nameplate's colour, on land from the room's players and at sea from the sea's chart, which the room now sends every
   player once a second ([[Held Map]], [[Server]]). Tested offline: the full check on db8f26c3 (CI checks the head);
-  the windows pictured headless. Not played by hand or seen on a real GPU; the dots never pictured, as no second
+  pictured headless in the Downs: the windows, and the raid's panel on its ground, none 60 m off it, and its ring on
+  the map with its name and time left. Not played by hand or seen on a real GPU; the dots never pictured, as no second
   player stands in a headless world. Open for the owner: other zones' events are not on a zone's map, the compass
   still marks the event's ground from anywhere in the zone, and the tracker still counts a chest left lying.
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
