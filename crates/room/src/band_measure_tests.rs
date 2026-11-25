@@ -16,10 +16,15 @@ use std::collections::BTreeSet;
 const SWORD: u32 = 2;
 /// The longest one clear is let run: half an hour.
 const LONGEST_TICKS: u32 = 60 * 1_800;
-/// How near the player comes before swinging, metres, and how often the way is found again, ticks.
-const REACH_M: f64 = 1.6;
+/// How near the player comes before swinging, inside a blow's 1.1 m so a foe that stands still is struck, metres;
+/// and how often the way is found again, ticks.
+pub(super) const REACH_M: f64 = 1.0;
 const REPATH_TICKS: u32 = 15;
-const ON_FOOT_TICKS: u32 = 60;
+const ON_FOOT_TICKS: u32 = 15;
+/// How near a walk's next square a body comes before it makes for the one after, metres.
+const WALK_AHEAD_M: f64 = 0.3;
+/// How near its target a body on a walk's way makes straight for it, metres.
+const STRAIGHT_M: f64 = 2.0;
 /// How far forward a body leans while it swings within reach, a share of a step.
 const FACE_FORWARD: f64 = 0.05;
 /// A foe neither neared nor harmed in 20 s is out of the scripted player's reach (behind a wall it cannot path round,
@@ -39,34 +44,40 @@ pub(super) fn level_one(room: &mut Room) {
 /// The scripted player in a room: their id, the way they walk and the ticks played.
 pub(super) struct Walker {
     pub player: PlayerId,
-    way: Vec<[f64; 3]>,
+    /// A passage zone's ground as a body walks it (`passage::Walk`), whose ways it takes; elsewhere the navmesh's.
+    walk: Option<passage::Walk>,
+    way: Vec<[f64; 2]>,
     pub ticks: u32,
 }
 
 impl Walker {
-    pub(super) fn into(room: &mut Room) -> Self {
-        Walker { player: room.join().expect("a room with space"), way: Vec::new(), ticks: 0 }
+    pub(super) fn into(room: &mut Room, walk: Option<passage::Walk>) -> Self {
+        Walker { player: room.join().expect("a room with space"), walk, way: Vec::new(), ticks: 0 }
     }
 
     /// One tick played: held whole, walking toward `there` until within `stop` of it, swinging every half second
-    /// at it within a metre past `stop` when `swing`. The way is found on the navmesh, or in a passage zone on foot each second,
-    /// as its navmesh is coarser than a body under ground.
+    /// at it within a metre past `stop` when `swing`. In a passage zone the way is the walk's, square by square, found
+    /// again each quarter second or as it runs out; elsewhere the navmesh's, its points a metre apart.
     pub(super) fn step(&mut self, room: &mut Room, there: [f64; 3], stop: f64, swing: bool) {
         let me = *room.fighter(self.player).expect("in");
         let apart = libm::hypot(there[0] - me.body.x, there[1] - me.body.y);
         let from = [me.body.x, me.body.y, me.body.z];
-        if room.zone().is_some() {
-            if self.ticks.is_multiple_of(ON_FOOT_TICKS) {
-                let way = crate::passages::passage_reach_tests::on_foot(room, [from[0], from[1]], [there[0], there[1]]);
-                self.way = way.unwrap_or_default();
+        let near = if self.walk.is_some() { WALK_AHEAD_M } else { 1.0 };
+        if let Some(walk) = &self.walk {
+            if self.ticks.is_multiple_of(ON_FOOT_TICKS) || self.way.is_empty() {
+                let mut ways = walk.ways([from[0], from[1]], &[[there[0], there[1]]]);
+                self.way = ways.pop().unwrap_or_default();
             }
         } else if self.ticks.is_multiple_of(REPATH_TICKS) {
-            self.way = room.mesh_at(there).find_path(from, there).unwrap_or_default();
+            let way = room.mesh_at(there).find_path(from, there).unwrap_or_default();
+            self.way = way.into_iter().map(|point| [point[0], point[1]]).collect();
         }
-        while self.way.first().is_some_and(|point| libm::hypot(point[0] - me.body.x, point[1] - me.body.y) < 1.0) {
+        while self.way.first().is_some_and(|point| libm::hypot(point[0] - me.body.x, point[1] - me.body.y) < near) {
             self.way.remove(0);
         }
-        let toward = self.way.first().copied().filter(|_| apart > 3.0).unwrap_or(there);
+        // A navmesh's way is walked straight its last 3 m; a walk's to within a blow, round every corner till then.
+        let straight = apart <= if self.walk.is_none() { 3.0 } else { STRAIGHT_M };
+        let toward = self.way.first().copied().filter(|_| !straight).unwrap_or([there[0], there[1]]);
         room.set_fighter(self.player, combat::fighter::Fighter { health: me.health_max, ..me });
         let attack = (swing && self.ticks.is_multiple_of(30) && apart < stop + 1.0).then_some(Stroke::Down);
         let yaw = combat::sight::bearing([me.body.x, me.body.y], [toward[0], toward[1]]);
@@ -78,7 +89,8 @@ impl Walker {
         } else {
             0.0
         };
-        let controls = Controls { yaw, forward, ..Controls::default() };
+        // Running, as a player crosses a zone and chases a collector who runs.
+        let controls = Controls { yaw, forward, run: true, ..Controls::default() };
         let input = Input {
             sequence: self.ticks + 1,
             intent: Intent { controls, combat: CombatInput { attack, ..CombatInput::default() } },
@@ -94,7 +106,7 @@ impl Walker {
 
 fn clear_all(room: &mut Room) -> (usize, usize, f64) {
     level_one(room);
-    let mut walker = Walker::into(room);
+    let mut walker = Walker::into(room, None);
     let (mut felled, mut given_up) = (BTreeSet::new(), BTreeSet::new());
     let mut stalled = 0;
     // The foe walked to, the nearest it has been, its least health, and the tick either last fell.

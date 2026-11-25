@@ -109,26 +109,34 @@ fn lamp(dungeon: &Dungeon) -> Option<[f64; 2]> {
         .min_by(|one, other| apart(*one, middle).total_cmp(&apart(*other, middle)))
 }
 
-/// The zone laid under ground in its style, its `attempt`th laying (each from seeds of its own), or none for a style
-/// the Forge does not know.
-pub(crate) fn lay(zone: &Zone, style: &str, onward_count: usize, attempt: u32) -> Option<(Dungeon, Sites)> {
+/// The zone's layings under ground in its style, each from the next seed, the first first; a lamp's zone only where
+/// a room is tall enough to stand the lamp in, its seeds tried once in turn, else its first seed's alone. None for a
+/// style the Forge does not know.
+pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<impl Iterator<Item = (Dungeon, Sites)>> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();
-    let base = zone.forge_seed().wrapping_add(attempt.wrapping_mul(LAMP_TRIES));
-    let forged = |seed: u32| Dungeon::forge_within(seed, style, (blocks, blocks));
-    // A lamp's zone is laid again from the next seed until a room is tall enough to stand the lamp in.
+    let first = zone.forge_seed();
+    let forged = move |step: u32| Dungeon::forge_within(first.wrapping_add(step), style, (blocks, blocks));
     let tall_enough = |dungeon: &Dungeon| dungeon.rooms.iter().any(|room| room.height >= LAMP_CEILING_M);
-    let dungeon = if zone.has_lamp() {
-        let mut tries = (0..LAMP_TRIES).map(|step| forged(base.wrapping_add(step)));
-        tries.find(tall_enough).unwrap_or_else(|| forged(base))
-    } else {
-        forged(base)
-    };
+    let lamp = zone.has_lamp();
+    let tall = (0..LAMP_TRIES * 2).map(forged).filter(move |dungeon| !lamp || tall_enough(dungeon));
+    let mut tall = tall.peekable();
+    let laid: Box<dyn Iterator<Item = Dungeon>> =
+        if tall.peek().is_some() { Box::new(tall) } else { Box::new(std::iter::once(forged(0))) };
+    let zone = zone.clone();
+    Some(laid.map(move |dungeon| {
+        let sites = sites_of(&zone, &dungeon, onward_count);
+        (dungeon, sites)
+    }))
+}
+
+/// The sites of a zone laid in a dungeon: its arrival and way in, its onward mouths, its lamp, posts and spots.
+fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
     let (arrive, toward) = dungeon.arrival();
     let facing = libm::atan2(toward[0], -toward[1]);
     let way_in = Door { at: dungeon.exit_door(), facing: dungeon.way_in.side.opposite().bearing() };
-    let onward = onward(&dungeon, onward_count, way_in.at);
-    let lamp = if zone.has_lamp() { lamp(&dungeon) } else { None };
+    let onward = onward(dungeon, onward_count, way_in.at);
+    let lamp = if zone.has_lamp() { lamp(dungeon) } else { None };
     let clear = |place: [f64; 2]| {
         lamp.is_none_or(|lamp| apart(lamp, place) >= LAMP_CLEAR_M)
             && onward.iter().chain([&way_in]).all(|door| apart(door.at, place) >= SPOT_APART_M / 2.0)
@@ -140,6 +148,9 @@ pub(crate) fn lay(zone: &Zone, style: &str, onward_count: usize, attempt: u32) -
         .filter(|(number, _)| *number != dungeon.way_in.room)
         .map(|(_, room)| {
             let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
+            // A band stands on open floor: the middle of the room's cells no prop, fixture or landmark fills.
+            let open: Vec<usize> = cells.iter().copied().filter(|&cell| !dungeon.holds_solid(cell)).collect();
+            let cells = if open.is_empty() { cells } else { &open };
             let middle = cells.get(cells.len() / 2).map_or([0.0, 0.0], |&cell| dungeon.centre(cell));
             (room.walk, middle)
         })
@@ -156,5 +167,5 @@ pub(crate) fn lay(zone: &Zone, style: &str, onward_count: usize, attempt: u32) -
         .collect();
     floor.sort_by(|one, other| apart(*other, arrive).total_cmp(&apart(*one, arrive)).then(one[0].total_cmp(&other[0])));
     let spots = spots_of(&floor, crate::plan::spots_wanted(zone.deal));
-    Some((dungeon, Sites { arrive, facing, way_in, onward, lamp, posts, spots }))
+    Sites { arrive, facing, way_in, onward, lamp, posts, spots }
 }

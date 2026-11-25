@@ -6,7 +6,8 @@ code:
   - crates/passage/src/zone.rs#Zone
   - crates/passage/src/island.rs#Island
   - crates/passage/src/plan.rs#Plan
-  - crates/passage/src/under.rs#lay
+  - crates/passage/src/under.rs#layings
+  - crates/passage/src/walk.rs#Walk
   - crates/passage/src/hollow.rs#Hollow
   - crates/passage/src/lib.rs#levels
   - crates/gear/src/passages.rs#week_modifiers
@@ -106,13 +107,21 @@ passages' own pieces standing in it with their solids.
   the mouth behind; its onward mouths stand on rock walls of its rooms, the end room's portal wall first, then the
   rooms farthest along the way, each in a room of its own where there are enough, 9 m apart and 16 m from the way in,
   clear of torches, props, fixtures and landmarks; where a small dungeon cannot hold them so, they keep 6 m apart and
-  12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room, three cells or more each way.
+  12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room, three
+  cells or more each way; a lamp's zone is forged only from a seed with a room tall enough. A band's post is the
+  middle of a room's cells that no prop, fixture or landmark fills.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
-  little and stepping down in shelves; its walls rise 12 to 25 m within 5 m of its edge, too steep for a body. It is
-  dressed from the islands' kit of its climate: cliffs along its walls facing in, boulders at their feet, trees,
-  shrubs and grass by its form, a court's ruins, a strand's wrecks. Its mouths stand a metre inside its edge, its
-  section's ring half a metre inside it.
+  little and stepping down in shelves, each easing into the next over an 8 m bank; its walls rise 12 to 25 m within
+  5 m of its edge, too steep for a body. It is dressed from the islands' kit of its climate: cliffs along its walls,
+  each 3 m out along its own wall's normal, facing in, boulders at their feet, trees, shrubs and grass by its form, a
+  court's ruins, a strand's wrecks, all clear of the arrival by 5 m and of each band by 3 m past its 2.5 m spread. Its
+  mouths stand a metre inside its edge, its section's ring half a metre inside it.
+- **Laid where a body walks** (`Walk`): a zone is laid until a body, kept 0.5 m off every wall and solid and walking
+  no steeper than 0.7, walks from the arrival to within 2.5 m of every onward mouth, the lamp and every spot, and
+  within a blow (1.45 m) of every post and a Reckoning's collectors' spots: under ground from each next seed, above
+  ground dressed again, up to eight times, the laying that misses fewest kept. The page's door keeps the last zone it
+  laid, so a zone's plan, its heights and its local room are laid once.
 - **The pieces**: the way in, the onward mouths, the lamp (a plinth 1.6 m square in a ring of five standing stones
   3.5 m out), and what the deal stands on the spots farthest from the way in: three dead lamps for a Kindle, three
   tally posts for a Sever, six nodes for a vein, a reliquary.

@@ -8,9 +8,14 @@ use passage::{Door, Laid, Plan, Web, Zone};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
+/// A zone by its island, week and number.
+type PlanKey = (String, u64, u16);
+
 thread_local! {
     /// The last web built: a page asks for its zones in turn.
     static WEB: RefCell<Option<Web>> = const { RefCell::new(None) };
+    /// The last zone laid, by its island, week and number: a page asks for its plan, then its heights.
+    static PLAN: RefCell<Option<(PlanKey, Plan)>> = const { RefCell::new(None) };
 }
 
 /// The web an island's passages lay in a week, built once for every ask of that week; none for an island with none.
@@ -23,6 +28,18 @@ fn with_web<T>(island: &str, week: u64, use_web: impl FnOnce(&Web) -> T) -> Opti
         }
         built.as_ref().map(use_web)
     })
+}
+
+/// A zone of an island's week's web laid whole, laid once for every ask of it in turn; none where the web holds no
+/// such zone.
+pub(crate) fn with_plan<T>(island: &str, week: u64, number: u16, use_plan: impl FnOnce(&Plan) -> T) -> Option<T> {
+    let key = (island.to_owned(), week, number);
+    let laid = PLAN.with(|laid| laid.borrow().as_ref().is_some_and(|(kept, _)| *kept == key));
+    if !laid {
+        let plan = with_web(island, week, |web| Plan::of(web, number)).flatten()?;
+        PLAN.with(|laid| *laid.borrow_mut() = Some((key, plan)));
+    }
+    PLAN.with(|laid| laid.borrow().as_ref().map(|(_, plan)| use_plan(plan)))
 }
 
 fn door_json(door: &Door) -> Value {
@@ -90,8 +107,7 @@ pub fn web_json(island: &str, week: u64) -> String {
 /// as [west, north, east, south, top]. Empty for a zone the web does not hold.
 #[must_use]
 pub fn zone_plan_json(island: &str, week: u64, number: u16) -> String {
-    let json = |web: &Web| {
-        let plan = Plan::of(web, number)?;
+    let json = |plan: &Plan| {
         let ground = match &plan.ground {
             Laid::Under(dungeon) => json!({ "kind": "under", "layout": layout_json(dungeon, &plan.zone.name) }),
             Laid::Open(hollow) => {
@@ -138,7 +154,7 @@ pub fn zone_plan_json(island: &str, week: u64, number: u16) -> String {
             .to_string(),
         )
     };
-    with_web(island, week, json).flatten().unwrap_or_default()
+    with_plan(island, week, number, json).flatten().unwrap_or_default()
 }
 
 /// A piece's kind by name and its number among its kind's.
@@ -159,9 +175,9 @@ fn piece_kind(kind: passage::PieceKind) -> (&'static str, u8) {
 /// what a page predicts its body on, to the bit. Empty for a zone under ground or one the web does not hold.
 #[must_use]
 pub fn zone_heights(island: &str, week: u64, number: u16) -> Vec<u8> {
-    let floats = with_web(island, week, |web| match Plan::of(web, number).map(|plan| plan.ground) {
-        Some(Laid::Open(hollow)) => hollow.ground.to_floats(),
-        _ => Vec::new(),
+    let floats = with_plan(island, week, number, |plan| match &plan.ground {
+        Laid::Open(hollow) => hollow.ground.to_floats(),
+        Laid::Under(_) => Vec::new(),
     });
     floats.unwrap_or_default().iter().flat_map(|number| number.to_le_bytes()).collect()
 }

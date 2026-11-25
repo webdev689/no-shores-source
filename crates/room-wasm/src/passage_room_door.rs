@@ -46,8 +46,8 @@ pub(crate) fn open_mouths(room: &mut Room, island: &str, doors: &[Place], places
 /// no such zone.
 fn plan_of(text: &[u8]) -> Option<(Asked, passage::Plan)> {
     let asked = serde_json::from_slice::<Asked>(text).ok()?;
-    let web = passage::Web::of(passage::island(&asked.island)?, asked.week);
-    let plan = passage::Plan::of(&web, asked.zone)?;
+    // The door's last laying, when the page asked for the same zone's plan first.
+    let plan = crate::passage_door::with_plan(&asked.island, asked.week, asked.zone, passage::Plan::clone)?;
     Some((asked, plan))
 }
 

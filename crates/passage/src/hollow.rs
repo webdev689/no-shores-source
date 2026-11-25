@@ -7,7 +7,7 @@
 
 use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
 use crate::zone::{Form, Zone};
-use core::f64::consts::{PI, TAU};
+use core::f64::consts::{FRAC_PI_2, PI, TAU};
 use isle::Placement;
 use isle::catalog::{Role, catalog};
 use isle::draws::{Draws, Noise};
@@ -326,7 +326,12 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
         }
         walked = 0.0;
         let middle = [(pair[0][0] + pair[1][0]) / 2.0, (pair[0][1] + pair[1][1]) / 2.0];
-        let out = bearing([0.0, 0.0], middle);
+        // Out along the wall's own normal, the side the floor falls away on: a ravine's bends turn a bearing from
+        // its middle back over its floor.
+        let along = bearing(pair[0], pair[1]);
+        let side = |turn: f64| [middle[0] + libm::sin(turn), middle[1] - libm::cos(turn)];
+        let (left, right) = (along - FRAC_PI_2, along + FRAC_PI_2);
+        let out = if outline.inside(side(left)) < outline.inside(side(right)) { left } else { right };
         let at = [middle[0] + 3.0 * libm::sin(out), middle[1] - 3.0 * libm::cos(out)];
         if clear_of_mouths(at, 5.0) {
             let module = cliffs[draws.index(cliffs.len())];
@@ -422,9 +427,14 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
     placements
 }
 
-/// The zone laid above ground in its form, dressed from the islands' kit of `climate`: its `attempt`th dressing, each
-/// past the first drawn on draws of its own, its outline and sites the same.
-pub(crate) fn lay(zone: &Zone, form: Form, climate: &str, (onward_count, attempt): (usize, u32)) -> (Hollow, Sites) {
+/// The zone's layings above ground in its form, dressed from the islands' kit of `climate`: its outline, ground and
+/// sites laid once, each laying dressed anew, the first on the draws its sites left, each after on draws of its own.
+pub(crate) fn layings(
+    zone: &Zone,
+    form: Form,
+    climate: &str,
+    onward_count: usize,
+) -> impl Iterator<Item = (Hollow, Sites)> + use<> {
     let mut draws = Draws::of(zone.seed, 0x401);
     let outline = Outline::new(form, zone.size.across(), &mut draws);
     let rise = draws.between(WALL_RISE_M.0, WALL_RISE_M.1);
@@ -436,12 +446,14 @@ pub(crate) fn lay(zone: &Zone, form: Form, climate: &str, (onward_count, attempt
     };
     let wanted = crate::plan::spots_wanted(zone.deal);
     let sites = sites(&laying.outline, (onward_count, zone.has_lamp(), wanted), &mut draws);
-    let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str());
-    let mut dressing = if attempt == 0 { draws } else { Draws::of(zone.seed, 0x500 + u64::from(attempt)) };
-    let placements = dress(&laying, &sites, kit, &mut dressing);
-    let blocks = isle::dressing::blocks(&placements);
-    let ring = laying.outline.ring();
-    (Hollow { ground: laying.ground(), placements, blocks, ring }, sites)
+    let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str()).to_owned();
+    let (ground, ring, seed) = (laying.ground(), laying.outline.ring(), zone.seed);
+    (0..).map(move |attempt: u64| {
+        let mut dressing = if attempt == 0 { draws.clone() } else { Draws::of(seed, 0x500 + attempt) };
+        let placements = dress(&laying, &sites, &kit, &mut dressing);
+        let blocks = isle::dressing::blocks(&placements);
+        (Hollow { ground: ground.clone(), placements, blocks, ring: ring.clone() }, sites.clone())
+    })
 }
 
 /// The height of a hollow's floor at a point, for what stands on it.

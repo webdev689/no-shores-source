@@ -5,16 +5,15 @@
 //! foes brought down, none by hand. Run by hand, in release:
 //! `cargo test -p room --release measure_the_deals -- --ignored --nocapture`.
 
-use super::band_measure_tests::{Walker, level_one};
+use super::band_measure_tests::{REACH_M, Walker, level_one};
 use super::*;
 use crate::passages::PassageAsk;
 use passage::{Deal, Mission, PieceKind, Plan, Web};
 
 /// The longest one deal is let run: half an hour.
 const LONGEST_TICKS: u32 = 60 * 1_800;
-/// How near the player comes before swinging, how near a foe is fought before a dead lamp is held or a ring kept,
-/// and how near a dead lamp the player stands to hold it (m).
-const REACH_M: f64 = 1.6;
+/// How near a foe is fought before a dead lamp is held or a ring kept, and how near a dead lamp the player stands to
+/// hold it (m).
 const NEAR_M: f64 = 10.0;
 const AT_PIECE_M: f64 = 2.8;
 
@@ -41,9 +40,9 @@ fn objective(room: &Room) -> Option<([f64; 2], Option<u8>)> {
 
 /// Plays a zone's deal to done: the seconds it took and the foes felled; none, and the foes still standing, if it was
 /// not done in half an hour. No foe is felled but by the player's blows.
-fn play_the_deal(room: &mut Room) -> (Option<f64>, usize) {
+fn play_the_deal(room: &mut Room, walk: passage::Walk) -> (Option<f64>, usize) {
     level_one(room);
-    let mut walker = Walker::into(room);
+    let mut walker = Walker::into(room, Some(walk));
     let player = walker.player;
     let mut felled = std::collections::BTreeSet::new();
     while walker.ticks < LONGEST_TICKS {
@@ -118,7 +117,7 @@ fn measure_the_deals() {
             let modifiers = gear::passages::week_modifiers("continent-1", week);
             let route = ("continent-1", week, gear::dive::Route::Company);
             let Some(mut room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
-            let (seconds, felled) = play_the_deal(&mut room);
+            let (seconds, felled) = play_the_deal(&mut room, plan.walk());
             let shown = seconds.map_or("not done".to_owned(), |seconds| format!("{seconds:.0}"));
             eprintln!("| {key} | {} | {felled} | {shown} | week {week} zone {} |", zone.depth, zone.number);
             measured.push((key, seconds, felled));
@@ -149,4 +148,18 @@ fn measure_the_deals() {
         seconds / foes.max(1) as f64,
         foes as f64 / done.len().max(1) as f64
     );
+}
+
+#[test]
+#[ignore = "one zone's deal, by hand: TRACE_WEEK and TRACE_ZONE"]
+fn play_one_deal() {
+    let island = passage::island("continent-1").expect("Saltmere's passages");
+    let week: u64 = std::env::var("TRACE_WEEK").ok().and_then(|week| week.parse().ok()).unwrap_or(2_900);
+    let number: u16 = std::env::var("TRACE_ZONE").ok().and_then(|zone| zone.parse().ok()).unwrap_or(0);
+    let web = Web::of(island, week);
+    let plan = Plan::of(&web, number).expect("a plan");
+    let modifiers = gear::passages::week_modifiers("continent-1", week);
+    let route = ("continent-1", week, gear::dive::Route::Company);
+    let mut room = Room::passage(&plan, (1, 4), modifiers, route).expect("a room");
+    eprintln!("{:?}", play_the_deal(&mut room, plan.walk()));
 }

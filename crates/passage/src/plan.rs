@@ -79,11 +79,13 @@ pub struct Piece {
 }
 
 /// How many times a zone is laid before the laying a body walks most of stands, though it cannot walk it all.
-const WALK_TRIES: u32 = 8;
+const WALK_TRIES: usize = 8;
 /// How many of a deal's things stand in a zone.
 pub const KINDLES: usize = 3;
 pub const POSTS: usize = 3;
 pub const NODES: usize = 6;
+/// A Reckoning's collectors, each on a spot of its own (`room::passage_deal`).
+pub const COLLECTORS: usize = 3;
 
 /// How many spots a zone's deal needs: its things, and at least four for a hunt's round and a reckoning's runs.
 pub(crate) fn spots_wanted(deal: Deal) -> usize {
@@ -118,18 +120,18 @@ impl Plan {
         };
         // Laid again, up to WALK_TRIES times, until a body walks to everything it asks; else the laying that misses
         // fewest, the first of those.
+        let layings: Box<dyn Iterator<Item = Plan>> = match &zone.ground {
+            Drawn::Under { style } => Box::new(
+                crate::under::layings(&zone, style, onward)?
+                    .map(|(dungeon, sites)| laid(Ground::Under(Box::new(dungeon)), sites)),
+            ),
+            Drawn::Open { form } => Box::new(
+                hollow::layings(&zone, *form, &web.island.climate, onward)
+                    .map(|(hollow, sites)| laid(Ground::Open(Box::new(hollow)), sites)),
+            ),
+        };
         let mut best: Option<(usize, Plan)> = None;
-        for attempt in 0..WALK_TRIES {
-            let plan = match &zone.ground {
-                Drawn::Under { style } => {
-                    let (dungeon, sites) = crate::under::lay(&zone, style, onward, attempt)?;
-                    laid(Ground::Under(Box::new(dungeon)), sites)
-                }
-                Drawn::Open { form } => {
-                    let (hollow, sites) = hollow::lay(&zone, *form, &web.island.climate, (onward, attempt));
-                    laid(Ground::Open(Box::new(hollow)), sites)
-                }
-            };
+        for plan in layings.take(WALK_TRIES) {
             let missed = plan.unwalked();
             if missed == 0 {
                 return Some(plan);
@@ -141,37 +143,45 @@ impl Plan {
         best.map(|(_, plan)| plan)
     }
 
-    /// How many of the onward mouths, the lamp, the posts and the spots a body cannot walk to within use of from the
-    /// arrival, round every piece's solids (`walk.rs`), and one more for a zone with no post for its foes.
-    fn unwalked(&self) -> usize {
+    /// How many of the things a body must walk to (`wanted`) it cannot from the arrival (`walk.rs`), and one more for a
+    /// zone with no post for its foes.
+    pub(crate) fn unwalked(&self) -> usize {
+        usize::from(self.sites.posts.is_empty()) + self.walk().missed(self.sites.arrive, &self.wanted())
+    }
+
+    /// What a body must walk to within its reach: every onward mouth, the lamp and every spot within use, every post
+    /// and a Reckoning's collectors' spots, where foes stand, within a blow.
+    #[must_use]
+    pub fn wanted(&self) -> Vec<([f64; 2], f64)> {
         let sites = &self.sites;
-        let postless = usize::from(sites.posts.is_empty());
         let (far, blow) = (crate::walk::USE_M, crate::walk::BLOW_M);
-        let wanted: Vec<([f64; 2], f64)> = sites
-            .onward
-            .iter()
-            .map(|door| (door.at, far))
-            .chain(sites.lamp.map(|lamp| (lamp, far)))
-            .chain(sites.spots.iter().map(|&at| (at, far)))
-            .chain(sites.posts.iter().map(|&at| (at, blow)))
-            .collect();
+        let collectors = if self.zone.deal == Deal::Mission(Mission::Reckoning) { COLLECTORS } else { 0 };
+        let mouths = sites.onward.iter().map(|door| (door.at, far));
+        let spots = sites.lamp.iter().map(|&at| (at, far));
+        let spots = spots
+            .chain(sites.spots.iter().enumerate().map(|(nth, &at)| (at, if nth < collectors { blow } else { far })));
+        mouths.chain(spots).chain(sites.posts.iter().map(|&at| (at, blow))).collect()
+    }
+
+    /// The zone's ground as a body walks it, round every piece's solids.
+    #[must_use]
+    pub fn walk(&self) -> crate::walk::Walk {
         let solids = self.piece_solids();
-        postless
-            + match &self.ground {
-                Ground::Under(dungeon) => crate::walk::under(dungeon, &solids, sites.arrive, &wanted),
-                Ground::Open(hollow) => {
-                    let pieces = solids.iter().map(|&[min_x, min_y, max_x, max_y, top]| movement::Block {
-                        min_x,
-                        min_y,
-                        max_x,
-                        max_y,
-                        top,
-                        bottom: self.floor_at([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0]) - 0.5,
-                    });
-                    let blocks: Vec<movement::Block> = hollow.blocks.iter().copied().chain(pieces).collect();
-                    crate::walk::open(&hollow.ground, &blocks, &hollow.ring, (sites.arrive, &wanted))
-                }
+        match &self.ground {
+            Ground::Under(dungeon) => crate::walk::Walk::under(dungeon, &solids),
+            Ground::Open(hollow) => {
+                let pieces = solids.iter().map(|&[min_x, min_y, max_x, max_y, top]| movement::Block {
+                    min_x,
+                    min_y,
+                    max_x,
+                    max_y,
+                    top,
+                    bottom: self.floor_at([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0]) - 0.5,
+                });
+                let blocks: Vec<movement::Block> = hollow.blocks.iter().copied().chain(pieces).collect();
+                crate::walk::Walk::open(&hollow.ground, &blocks, &hollow.ring)
             }
+        }
     }
 
     /// The height of the floor at a point.
