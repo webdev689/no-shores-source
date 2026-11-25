@@ -20,9 +20,10 @@ RATE = 44100
 # A root as written: a note ("C3", "F#2", "Bb1") and, where it is off it, its cents (the game's rootNote reads it).
 ROOT = re.compile(r'[A-G](#|b)?-?\d([+-]\d{1,2})?')
 NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-# The lowest and highest fundamentals looked for, hertz: C1 to B5, the scores' whole range.
+# The lowest and highest fundamentals looked for, hertz: C1 to C8. A recording above the scores' range (B5) is played
+# down to it, so a cap there would name it an octave low.
 LOWEST_HZ = 32.0
-HIGHEST_HZ = 1000.0
+HIGHEST_HZ = 4200.0
 # A dip of YIN's normalised difference under this is a period; frames with none are not steady and are passed over.
 THRESHOLD = 0.15
 # A frame's length and its step, samples: two periods of the lowest note fit in its half.
