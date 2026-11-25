@@ -1,5 +1,5 @@
 ---
-id: 232
+id: 237
 title: "webgpu-shot's `frames` step hangs on the World Editor, which draws only on change, and the driver had no mouse-button steps to pan its 3D view or hold the aim"
 status: open
 type: open-source
