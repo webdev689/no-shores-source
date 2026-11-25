@@ -4,6 +4,7 @@
 // joined. Each frame the zone's deal stands in the tracker, its pieces as the deal stands, the haul on the right and
 // an onward mouth's sign on approach.
 import type { Flow } from '../flow.ts';
+import type { Alone } from '../scene.ts';
 import { Foot } from '../foot.ts';
 import { weekOf } from '../guild/guildLaw.ts';
 import type { FootContext, Uses } from '../footPlace.ts';
@@ -57,8 +58,9 @@ export interface PassageHost {
   readonly land: () => { readonly layouts: readonly NodeLayout[]; readonly nodes: readonly NodeInfo[] };
   readonly goInto: (entering: () => Promise<Foot>) => Promise<void>;
   readonly showDungeon: (layout: DungeonLayout, node: NodeInfo) => Promise<void>;
-  /** Asks for a hollow's kits before it is shown, as `showDungeon` awaits a dungeon's packs; never fails. */
-  readonly warmIsle: (isle: IsleShown) => Promise<void>;
+  /** The islands' layer: it asks for a hollow's kits before it is shown, as `showDungeon` awaits a dungeon's packs
+   *  (never failing), and says whether a kit's pack has come. */
+  readonly isles: { readonly warm: (isle: IsleShown) => Promise<void>; readonly hasKit: (kit: string) => boolean };
   /** Where the player's company's members play: none alone. */
   readonly companyPlaces: () => Promise<readonly string[]>;
   readonly climate: (continent: string) => string;
@@ -88,11 +90,12 @@ interface InZone {
   readonly passed: readonly number[];
 }
 
-/** The pieces as the deal stands for the player in a zone, and the key they are laid again by when it changes. */
+/** The pieces as the deal stands for the player in a zone, whether they stand as plain boxes (under ground, or above
+ *  while the islands' passage pack has not come), and the key they are laid again by when that changes. */
 interface Pieces {
   readonly plan: PassagePlan;
   readonly state: PieceState;
-  readonly lightsOnly: boolean;
+  readonly boxed: boolean;
   readonly done: boolean;
   readonly key: string;
 }
@@ -322,7 +325,7 @@ export class PassageGame {
         minute,
       };
       const isle = heights && zoneIsle(plan, heights, this.host.climate(dive.island));
-      const warmed = isle && this.host.warmIsle(isle);
+      const warmed = isle && this.host.isles.warm(isle);
       await this.host.goInto(() => enterZone(this.host.context, entry));
       this.setZone({ web, entry, isle, passed });
       const layout = zoneLayout(plan);
@@ -424,13 +427,15 @@ export class PassageGame {
   }
 
   /** The pieces' state as the deal stands for the player, and the zone's plan; null out of a zone. Above ground the
-   *  pieces stand as the islands' kit's modules (`isles`), and only their lights are drawn so. */
+   *  pieces stand as the islands' kit's modules (`isles`), as plain boxes only while its pack has not come. */
   pieces(): Pieces | null {
     const zone = this.inZone();
     if (!zone) return null;
     const seen = this.seen();
-    // Read again only on a new word of the room, and kept as it was while the word says the same.
-    if (this.laid?.zone === zone && this.laid.seen === seen) return this.laid.pieces;
+    const boxed = !zone.isle || !this.host.isles.hasKit('passage');
+    // Read again only on a new word of the room or the kit come, and kept as it was while they say the same.
+    if (this.laid?.zone === zone && this.laid.seen === seen && this.laid.pieces.boxed === boxed)
+      return this.laid.pieces;
     const bits = (set: number) => [0, 1, 2, 3, 4, 5, 6, 7].filter((bit) => (set >> bit) & 1);
     const open = seen?.open ? zone.entry.plan.zone.onward.map((unused, place) => place) : [];
     const state = {
@@ -439,10 +444,10 @@ export class PassageGame {
       kindled: bits(seen?.lit ?? 0),
       broken: bits(seen?.broken ?? 0),
     };
-    const [lightsOnly, done] = [zone.isle !== null, seen?.done ?? false];
-    const key = JSON.stringify([zone.entry.room, state, lightsOnly, done]);
+    const done = seen?.done ?? false;
+    const key = JSON.stringify([zone.entry.room, state, boxed, done]);
     const kept = this.laid?.zone === zone && this.laid.pieces.key === key ? this.laid.pieces : null;
-    const pieces = kept ?? { plan: zone.entry.plan, state, lightsOnly, done, key };
+    const pieces = kept ?? { plan: zone.entry.plan, state, boxed, done, key };
     this.laid = { zone, seen, pieces };
     return pieces;
   }
@@ -450,6 +455,13 @@ export class PassageGame {
   /** Whether the player stands in a hollow above ground, which is drawn alone, no land round it. */
   inHollow(): boolean {
     return !!this.inZone()?.isle;
+  }
+
+  /** The hollow the player stands in, drawn alone under its climate's sky where its zone lies on the island; null
+   *  out of one. */
+  hollowAir(): Alone | null {
+    const zone = this.inZone();
+    return zone?.isle ? { climate: zone.isle.climate, at: zone.entry.plan.zone.at } : null;
   }
 
   /** The hollow above ground the islands' layer draws while the player stands in it. */

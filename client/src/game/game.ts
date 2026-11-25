@@ -324,7 +324,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     showDungeon: (layout, node) => dungeons.show(layout, node, undefined, () => passages.pieces()),
     companyPlaces: () => companyPlaces(link),
     climate: (id) => continents.find((each) => each.id === id)?.climate ?? '',
-    ...{ fallback: wayOut, warmIsle: islesView.warm.bind(islesView) },
+    ...{ fallback: wayOut, isles: islesView },
   });
   const pieces = piecesDrawer(gpu, () => (dungeons.piecesFromPack() ? null : passages.pieces()));
   const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];

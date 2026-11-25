@@ -241,8 +241,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.eventProps.hang(here.outpost?.cloth() ?? null);
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
-    // A passage's hollow stands alone: none of the landmass's ground is near it to keep or draw.
-    const bare = parts.passages.inHollow();
+    // A passage's hollow stands alone, under its own climate's sky: none of the landmass's ground is near it.
+    const bare = parts.passages.hollowAir();
     if (!here.dungeon && !bare) {
       scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
       scene.keepMiddle([body.x, body.y], parts.closeSource);

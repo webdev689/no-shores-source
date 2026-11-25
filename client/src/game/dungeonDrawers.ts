@@ -4,7 +4,7 @@ import { cityClimate } from '../city/plan.ts';
 import { ENTRANCE_MODELS, type Entrance } from './entrances.ts';
 import { EntranceView } from './entranceView.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
+import { passagePieceLights, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
 import { loadStylePack, type ModulePack, PASSAGE_PACK } from './dungeonModules.ts';
 import type { PassagePlan } from '../rules/passageRules.ts';
 import type { PieceState } from './passages/passagePieces.ts';
@@ -101,13 +101,14 @@ export class DungeonDrawers {
     this.view.set(layout, climate, look ? [look[0], look[1]] : PLAIN_DOOR, props, packs, first?.lay);
   }
 
-  /** The passage zone's pieces from their pack as they stand now, and what they stand as; null with no pack. */
+  /** The passage zone's pieces from their pack as they stand now, the lights they burn, and what they stand as; null
+   *  with no pack. */
   private piecesLaid() {
     const now = this.passage?.now();
     if (!this.passage || !now) return null;
     const { pack, layout, climate } = this.passage;
     const lay = passagePiecesLaid(layout, pack, climate, now.plan.pieces, now.state, now.done);
-    return { lay, key: now.key };
+    return { lay, lights: passagePieceLights(now.plan.pieces, now.state), key: now.key };
   }
 
   /** Whether a passage zone's pieces are drawn from their pack, so their boxes are not. */
@@ -139,7 +140,7 @@ export class DungeonDrawers {
     this.view.setCache(foot.held.cache);
     this.view.setFinds(foot.finds.drawn);
     const laid = this.piecesLaid();
-    this.view.setPieces(laid?.lay ?? null, laid?.key ?? '');
+    this.view.setPieces(laid?.lay ?? null, laid?.key ?? '', laid?.lights);
     this.view.setEncounter(foot.held.encounter);
     const { figures } = shown;
     const light = (point: readonly [number, number, number]) => this.view.lightAt(point, time);

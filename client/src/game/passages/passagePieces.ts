@@ -97,7 +97,7 @@ export interface PieceMesh {
 
 /** Every piece's boxes turned to its facing (clockwise from north) and stood at its foot, in the zone's frame: four
  *  corners a face, each face its own normal. */
-export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState, lightsOnly = false): PieceMesh {
+export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState): PieceMesh {
   const vertices: number[] = [];
   const indices: number[] = [];
   for (const piece of pieces) {
@@ -106,10 +106,7 @@ export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState, li
       piece.at[0] + x * cosine - y * sine,
       piece.at[1] + x * sine + y * cosine,
     ];
-    const boxes = piecesBoxes(piece, state).filter(
-      (each) => !lightsOnly || each.colour === LIT || each.colour === COLD,
-    );
-    for (const { sides, foot, top, colour, glows } of boxes) {
+    for (const { sides, foot, top, colour, glows } of piecesBoxes(piece, state)) {
       const [west, north, east, south] = sides;
       const corners = [turned(west, north), turned(east, north), turned(east, south), turned(west, south)];
       const [low, high] = [piece.at[2] + foot, piece.at[2] + top];

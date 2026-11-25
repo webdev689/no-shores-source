@@ -1,28 +1,37 @@
-// Pictures of the passages headless, with nothing else of the game drawn: a zone of the week's web laid by the room
-// module as the page lays it and drawn by the game's own drawers onto a texture of its own (above ground the islands'
-// layer under a plain sky, under ground the dungeon's renderer in its dark), its pieces over it; the way between zones
-// as its camera frames the island, its dots over a plain ground (the island's land is the sea's view's, not drawn
-// here); and the passages' panels from fixtures, for `tools/uiShot.mjs`. The game never imports it.
+// Pictures of the passages headless, for `tools/uiShot.mjs` (`Passages.md` "Pictures"), each drawn by the game's own
+// drawers: a zone of a week's web laid by the room module as the page lays it (above ground the islands' ground,
+// modules and plants lit by the sky of the hollow's own climate, under ground the dungeon's scene lit by its torches
+// and the pieces' lights), its pieces over it; the way between zones as its camera frames the island, its dots over a
+// plain ground; the map; and the passages' panels. The game never imports it.
 import { REVERSED_DEPTH } from '../../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { ISLE_MANIFEST } from '../../islands/isleManifest.ts';
-import { IslesView } from '../../islands/isleView.ts';
+import type { IsleShown } from '../../islands/islePlan.ts';
+import { GROWTH_ROLES, IslesView } from '../../islands/isleView.ts';
 import { cityClimate } from '../../city/plan.ts';
 import { ShadowMap } from '../../shadow.ts';
-import { startPassageDoor } from '../../rules/passageRules.ts';
+import { startSkyLaw } from '../../sky/skyLaw.ts';
+import { SkyDriver } from '../../sky/skyDriver.ts';
+import { skyUniformFor } from '../../sky/skyUniform.ts';
+import { DAY_S } from '../../sky/worldClock.ts';
+import { type PassagePiece, type PassagePlan, type PassageZone, startPassageDoor } from '../../rules/passageRules.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { SAMPLES } from '../../water/waterView.ts';
 import { fromEyeMatrix, type Shot } from '../camera.ts';
-import { passagePiecesLaid, stylePacks } from '../dungeonDressing.ts';
+import { passagePieceLights, passagePiecesLaid, stylePacks } from '../dungeonDressing.ts';
 import { loadStylePack, PASSAGE_PACK } from '../dungeonModules.ts';
+import { DungeonScene } from '../dungeonScene.ts';
 import { DungeonView } from '../dungeonView.ts';
+import { IslesNature } from '../isleNature.ts';
+import { warmFlora } from '../../nature/flora.ts';
+import type { Drawer } from '../scene.ts';
 import { viewOn } from '../../heldmap/heldMapLaw.ts';
 import { paintLand } from '../../heldmap/landLetters.ts';
 import { passageSheet } from './passageMap.ts';
 import { athericCardNode, athericCards } from './athericBounty.ts';
 import { haulNode, lampNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
-import { pieceMesh, type PieceState } from './passagePieces.ts';
+import { pieceMesh, type PieceState, UNTOUCHED } from './passagePieces.ts';
 import { PieceView } from './pieceView.ts';
 import { RISE_S, DRAW_S, wayAt, wayOf } from './passageWay.ts';
 import { floorOf, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
@@ -30,8 +39,10 @@ import { haulView, lampPrompt, mouthsChoice, onwardSign } from './passageWords.t
 
 const MAP_READ = 0x1;
 const ISLAND = 'continent-1';
+/** The island's climate (content/world/layout.json), which the game dresses and lights its zones by. */
+const CLIMATE = 'temperate-coast';
+/** Behind a hollow, where the game draws its sky's dome with the water's backdrop. */
 const SKY: GPUColor = [0.55, 0.66, 0.78, 1];
-const DARK: GPUColor = [0.01, 0.01, 0.015, 1];
 
 async function doorOf() {
   const answer = await fetch('/room.wasm');
@@ -64,88 +75,172 @@ async function readBack(device: GPUDevice, target: GPUTexture): Promise<string> 
   });
 }
 
-/** Zone `number` of `week`'s web drawn from `shot` (the zone's metres), its pieces as `state` finds them, `width` by
- *  `height` pixels; the first zone of the kind asked when `number` is negative. */
-export async function zoneShot(
-  week: number,
-  kind: 'open' | 'under',
-  number: number,
-  state: PieceState,
-  view: { readonly width: number; readonly height: number },
-  eye?: { readonly back: number; readonly up: number; readonly pitch: number },
-  /** Where the eye stands, in place of behind the arrival: its point on the ground and the bearing it looks along. */
-  stood?: { readonly at: readonly [number, number]; readonly yaw: number },
-): Promise<string> {
+/** A zone of a week's web drawn as the game draws it, from the eye `asked` stands, as a PNG's data URL. */
+export async function zoneShot(asked: ZoneAsked): Promise<string> {
+  const { week, state = UNTOUCHED, done = false } = asked;
+  const view = asked.view ?? { width: 1280, height: 720 };
   const door = await doorOf();
   const web = door.web(ISLAND, week);
-  if (!web) throw new Error('no web');
-  const zones = web.zones.filter((zone) => zone.ground.kind === kind && door.plan(ISLAND, week, zone.number));
-  const zone = number >= 0 ? web.zones.find((each) => each.number === number) : zones[0];
+  if (!web) throw new Error(`no web in week ${week}`);
+  const ground = (zone: PassageZone) => (zone.ground.kind === 'open' ? zone.ground.form : zone.ground.style);
+  const zone = web.zones.find((each) =>
+    asked.number !== undefined
+      ? each.number === asked.number
+      : (!asked.ground || ground(each) === asked.ground) && (!asked.size || each.size === asked.size),
+  );
   const plan = zone && door.plan(ISLAND, week, zone.number);
-  if (!plan) throw new Error(`no ${kind} zone ${number} laid`);
+  if (!plan) throw new Error(`no zone laid in week ${week} as asked: ${JSON.stringify(asked)}`);
   const adapter = await navigator.gpu.requestAdapter();
   if (!adapter) throw new Error('no GPU adapter');
   const device = await adapter.requestDevice();
   const format: GPUTextureFormat = 'rgba8unorm';
-  const size = [view.width, view.height];
   const target = device.createTexture({
-    size,
+    size: [view.width, view.height],
     format,
     usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource,
   });
   const gpu = { device, format, context: { getCurrentTexture: () => target } } as unknown as Gpu;
-  const usage = TEXTURE_USAGE.renderAttachment;
-  const colour = device.createTexture({ size, format, usage, sampleCount: SAMPLES });
-  const depth = device.createTexture({ size, format: REVERSED_DEPTH.format, usage, sampleCount: SAMPLES });
   const heights = door.heights(ISLAND, week, plan.zone.number);
-  const floor = floorOf(plan, heights);
+  const shot = zoneEye(plan, floorOf(plan, heights), asked);
   const pieces = new PieceView(gpu);
-  // As the game stands them: above ground the kit's modules, only the lights drawn as boxes; under ground the
-  // passages' pack's, or boxes while it has not come.
-  const pack = kind === 'under' ? await loadStylePack(PASSAGE_PACK) : null;
-  if (!pack) pieces.set(pieceMesh(plan.pieces, state, kind === 'open'));
-  // Above ground from over the arrival, its back to the rim's rock; under ground from behind it in the way in.
-  const { back, up, pitch } =
-    eye ?? (kind === 'open' ? { back: -4, up: 14, pitch: 0.45 } : { back: 14, up: 9, pitch: 0.3 });
-  const [x, y] = stood?.at ?? plan.sites.arrive;
-  const yaw = stood?.yaw ?? plan.sites.facing;
-  const [east, south] = [Math.sin(yaw), -Math.cos(yaw)];
-  const ground = floor(x, y) ?? 0;
-  const shot: Shot = {
-    eye: [x - east * back, y - south * back, ground + up],
-    yaw,
-    pitch,
-    fov: 1.1,
-    near: 0.1,
-    far: 2_000,
-  };
-  const fromEye = fromEyeMatrix(shot, view.width / view.height);
-  const shadow = ShadowMap.none(gpu);
-  let draw: (pass: GPURenderPassEncoder) => void;
   if (plan.ground.kind === 'open') {
     if (!heights) throw new Error('an open zone with no heights');
-    const isles = new IslesView(gpu, ISLE_MANIFEST, null);
-    const shown = zoneIsle(plan, heights, 'woodland');
-    if (shown) isles.show([withPieces(shown, plan, state, false)]);
-    draw = (pass) => isles.drawInto(pass, fromEye, shot, 0, shadow);
+    const shown = zoneIsle(plan, heights, CLIMATE);
+    if (!shown) throw new Error('an open zone with no hollow');
+    await hollowFrames(
+      gpu,
+      withPieces(shown, plan, state, done),
+      shot,
+      { at: plan.zone.at, hour: asked.hour ?? 11 },
+      (isles) => {
+        // The pieces' boxes only while the islands' passage pack has not come, as the game stands them.
+        if (!isles.hasKit('passage')) pieces.set(pieceMesh(plan.pieces, state));
+        else pieces.clear();
+        return pieces;
+      },
+    );
   } else {
     const layout = zoneLayout(plan);
     if (!layout) throw new Error('an under zone with no layout');
+    const pack = await loadStylePack(PASSAGE_PACK);
     const dungeon = new DungeonView(gpu);
-    const climate = cityClimate('woodland');
-    const laid = pack && passagePiecesLaid(layout, pack, climate.climate, plan.pieces, state, false);
+    const climate = cityClimate(CLIMATE);
+    const laid = pack && passagePiecesLaid(layout, pack, climate.climate, plan.pieces, state, done);
     dungeon.set(layout, climate, [56, 2], {}, await stylePacks(layout), laid ?? undefined);
-    dungeon.setPieces(laid, 'shown');
-    draw = (pass) => dungeon.drawInto(pass, fromEye, shot.eye, 0);
+    dungeon.setPieces(laid, 'shown', pack ? passagePieceLights(plan.pieces, state) : []);
+    if (!pack) pieces.set(pieceMesh(plan.pieces, state));
+    const scene = new DungeonScene(gpu);
+    const drawers: Drawer[] = [
+      { drawInto: (pass, fromEye, eyed, time) => dungeon.drawInto(pass, fromEye, eyed.eye, time) },
+      { drawInto: (pass, fromEye, eyed) => pieces.drawInto(pass, fromEye, eyed) },
+    ];
+    for (let frame = 0; frame < 3; frame++) {
+      scene.draw(shot, view, 0, drawers);
+      await device.queue.onSubmittedWorkDone();
+      // Room for the dungeon's pictures to be painted before the next frame.
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
   }
+  const picture = await readBack(device, target);
+  // A device let go, so the software GPU keeps room for the next picture's.
+  device.destroy();
+  return picture;
+}
+
+/** What a zone's picture asks: the week, and the zone by its `number`, else the first laid of its `ground` (a form
+ *  above ground, a style under) and `size`; its pieces as `state` and `done` find them; `width` by `height` pixels;
+ *  the eye behind the arrival (`eye`, metres back and up and its pitch down), over the zone (`above`) or `distance`
+ *  from the first piece of a kind (`aim`), and above ground the world's hour. */
+export interface ZoneAsked {
+  readonly week: number;
+  readonly number?: number;
+  readonly ground?: string;
+  readonly size?: PassageZone['size'];
+  readonly state?: PieceState;
+  readonly done?: boolean;
+  readonly view?: { readonly width: number; readonly height: number };
+  readonly eye?: { readonly back: number; readonly up: number; readonly pitch: number };
+  readonly above?: boolean;
+  readonly aim?: { readonly kind: PassagePiece['kind']; readonly distance: number; readonly up: number };
+  readonly hour?: number;
+}
+
+/** The eye a zone's picture is drawn from, as `asked` stands it. */
+function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, asked: ZoneAsked): Shot {
+  const lens = { fov: 1.1, near: 0.1, far: 2_000 };
+  const piece = asked.aim && plan.pieces.find((each) => each.kind === asked.aim?.kind);
+  if (asked.aim && !piece) throw new Error(`zone ${plan.zone.number} has no ${asked.aim.kind}`);
+  if (piece && asked.aim) {
+    // In front of the piece, along its facing, looking back at it.
+    const [east, south] = [Math.sin(piece.facing), -Math.cos(piece.facing)];
+    const [x, y] = [piece.at[0] + east * asked.aim.distance, piece.at[1] + south * asked.aim.distance];
+    const eye: [number, number, number] = [x, y, (floor(x, y) ?? piece.at[2]) + asked.aim.up];
+    const pitch = Math.atan2(eye[2] - piece.at[2] - 1.2, asked.aim.distance);
+    return { eye, yaw: piece.facing + Math.PI, pitch, ...lens };
+  }
+  const yaw = plan.sites.facing;
+  if (asked.above) {
+    const reach = plan.ground.kind === 'open' ? Math.max(...plan.ground.ring.map(([x, y]) => Math.hypot(x, y))) : 40;
+    const back = reach * 0.9;
+    const [x, y] = [-Math.sin(yaw) * back, Math.cos(yaw) * back];
+    return { eye: [x, y, (floor(0, 0) ?? 0) + reach * 1.3], yaw, pitch: 0.95, ...lens };
+  }
+  const { back, up, pitch } = asked.eye ?? { back: 2, up: 1.8, pitch: 0.05 };
+  const [x, y] = plan.sites.arrive;
+  const [east, south] = [Math.sin(yaw), -Math.cos(yaw)];
+  return { eye: [x - east * back, y - south * back, (floor(x, y) ?? 0) + up], yaw, pitch, ...lens };
+}
+
+/** A hollow drawn as the game draws one: the islands' ground and modules and the land's own plants, lit and shadowed
+ *  by the sky of its own climate over where it lies in the world (`at`) at the world's `hour`, under no sea; `pieces`
+ *  answers what draws over it each frame. */
+async function hollowFrames(
+  gpu: Gpu,
+  shown: IsleShown,
+  shot: Shot,
+  { at, hour }: { readonly at: readonly [number, number]; readonly hour: number },
+  pieces: (isles: IslesView) => PieceView,
+): Promise<void> {
+  const { device } = gpu;
+  const law = fetch('/land.wasm')
+    .then((answer) => answer.arrayBuffer())
+    .then(startSkyLaw);
+  const sky = new SkyDriver(law, skyUniformFor(device), { seconds: () => (hour / 24) * DAY_S });
+  await law;
+  const isles = new IslesView(gpu, ISLE_MANIFEST, null, undefined, GROWTH_ROLES);
+  const nature = new IslesNature(gpu);
+  isles.show([shown]);
+  nature.show([shown]);
+  // The kits' packs and the plants' flora fetched first, as the game warms them before a place is shown.
+  await Promise.all([isles.warm(shown), warmFlora(shown.climate)]);
+  const shadow = new ShadowMap(gpu);
+  const { width, height } = gpu.context.getCurrentTexture();
+  const usage = TEXTURE_USAGE.renderAttachment;
+  const colour = device.createTexture({ size: [width, height], format: gpu.format, usage, sampleCount: SAMPLES });
+  const depth = device.createTexture({
+    size: [width, height],
+    format: REVERSED_DEPTH.format,
+    usage,
+    sampleCount: SAMPLES,
+  });
+  const ground = isles.groundAt(shot.eye[0], shot.eye[1]) ?? 0;
   for (let frame = 0; frame < 6; frame++) {
+    // A matrix of each frame's own, as the game's: the plants keep their tiles once a frame, known by it.
+    const fromEye = fromEyeMatrix(shot, width / height);
+    const { look } = sky.frame([shot.eye[0] + at[0], shot.eye[1] + at[1], shot.eye[2]], shown.climate, [], ground);
+    isles.show([shown]);
     const encoder = device.createCommandEncoder();
+    shadow.update(shot.eye, shot.yaw, Math.max(1, shot.eye[2] - ground), look.key);
+    shadow.cast(encoder, (cast) => {
+      isles.castInto(cast, fromEye, shot, 0, shadow);
+      nature.castInto(cast, fromEye, shot, 0, shadow);
+    });
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
           view: colour.createView(),
-          resolveTarget: target.createView(),
-          clearValue: kind === 'open' ? SKY : DARK,
+          resolveTarget: gpu.context.getCurrentTexture().createView(),
+          clearValue: SKY,
           loadOp: 'clear',
           storeOp: 'discard',
         },
@@ -157,24 +252,28 @@ export async function zoneShot(
         depthStoreOp: 'store',
       },
     });
-    draw(pass);
-    pieces.drawInto(pass, fromEye, shot);
+    isles.drawInto(pass, fromEye, shot, 0, shadow);
+    nature.drawInto(pass, fromEye, shot, 0, shadow);
+    pieces(isles).drawInto(pass, fromEye, shot);
     pass.end();
     device.queue.submit([encoder.finish()]);
     await device.queue.onSubmittedWorkDone();
-    // Room for the kits' packs to come before the next frame.
+    // Room for the kits' packs and the plants' forms to come before the next frame.
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
-  return readBack(device, target);
 }
 
-/** The passages' door this module opened, for the interface's pictures, which build without waiting. */
+/** The passages' door this module opened, for the interface's pictures, which build without waiting; and the moment
+ *  of the way between zones its picture shows (seconds from its start). */
 let shownWeb: Awaited<ReturnType<typeof doorOf>> | null = null;
-export async function loadDoor(): Promise<void> {
+let wayS = RISE_S + DRAW_S / 2;
+export async function loadDoor(wayAtS = RISE_S + DRAW_S / 2): Promise<void> {
   shownWeb = await doorOf();
+  wayS = wayAtS;
 }
 
-/** The way between zones while its leg is half drawn, framed over the island: its dots over a plain ground. */
+/** The way between zones at the moment `loadDoor` was given (its leg half drawn unless said), framed over the
+ *  island: its dots over a plain ground. */
 export function wayShot(ui: Interface): Node {
   const web = shownWeb?.web(ISLAND, 2_900);
   if (!web) return {};
@@ -190,7 +289,7 @@ export function wayShot(ui: Interface): Node {
     open: true,
     viewport: view,
   });
-  const frame = wayAt(way, RISE_S + DRAW_S / 2);
+  const frame = wayAt(way, wayS);
   return {
     ...wayDotsNode(
       frame,

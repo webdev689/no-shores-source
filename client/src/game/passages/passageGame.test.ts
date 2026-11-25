@@ -92,7 +92,7 @@ function game(foot: unknown, now = () => Date.now()) {
     companyPlaces: async () => [],
     climate: () => 'woodland',
     tell: (words) => void held.told.push(words),
-    warmIsle: async () => undefined,
+    isles: { warm: async () => undefined, hasKit: () => true },
     fallback: () => () => undefined,
     now,
   });

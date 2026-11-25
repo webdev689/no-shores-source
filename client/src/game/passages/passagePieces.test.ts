@@ -78,9 +78,3 @@ test('in the islands’ kit each piece stands as its module as the deal stands: 
   assert.equal(pieceModule(piece('lamp'), UNTOUCHED, false), 'passage.lamp');
   assert.equal(pieceModule(piece('node'), UNTOUCHED, false), null);
 });
-
-test('drawn over the kit’s modules, only the lamps’ lights stand: the lamp’s one box of its seven', () => {
-  const faces = (lightsOnly: boolean) => pieceMesh([piece('lamp')], UNTOUCHED, lightsOnly).indices.length / 6;
-  assert.equal(faces(true), 6);
-  assert.equal(faces(false), 42);
-});
