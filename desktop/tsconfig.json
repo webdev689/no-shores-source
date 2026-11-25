@@ -1,0 +1,25 @@
+{
+  // The desktop app's shell and its tests, checked as Node and Electron run them: strict, as the client is, with only
+  // erasable syntax, so Node runs the tests' TypeScript directly. The build (`tsconfig.build.json`) writes the shell
+  // out for Electron, its imports' `.ts` named `.js`.
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.cts", "release/**/*.ts"],
+  "exclude": ["node_modules", "out"]
+}

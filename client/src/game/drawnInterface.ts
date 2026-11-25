@@ -3,6 +3,7 @@
 // in and the pointer's look (the gauntlet) handed back to the page.
 import type { Gpu } from '../gpu.ts';
 import { eventsOn, type PageEvents } from '../ui/canvasEvents.ts';
+import { launcherStanding } from './launcher/launcher.ts';
 import { readFace } from '../ui/faceReader.ts';
 import { gauntletOver } from '../ui/gauntlet.ts';
 import type { Stack } from '../ui/stack.ts';
@@ -74,10 +75,10 @@ export class DrawnInterface {
     requestAnimationFrame((now) => {
       if (this.framing) return;
       // Heard by nothing while the world loads (the tap to start hears the page itself), so no key pressed then
-      // presses what takes the focus once the game's frames begin.
-      this.events.take();
+      // presses what takes the focus once the game's frames begin; but by the launcher, while it stands over all.
+      const taken = this.events.take();
       this.guard.run(() => {
-        this.ui?.frame(this.view, [], Math.min(0.1, (now - before) / 1000));
+        this.ui?.frame(this.view, launcherStanding() ? taken : [], Math.min(0.1, (now - before) / 1000));
         this.present(stack);
       });
       this.alone(stack, now);

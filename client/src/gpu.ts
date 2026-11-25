@@ -1,3 +1,5 @@
+import { askDesktop, type GpuReport } from './desktop.ts';
+
 /** What the client draws with: the GPU device and the canvas it presents to. */
 export interface Gpu {
   readonly device: GPUDevice;
@@ -13,16 +15,43 @@ export class GpuUnavailable extends Error {
 /** Starts WebGPU on a canvas. The game draws with WebGPU only, so a browser without it gets a clear reason. */
 export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
   if (!('gpu' in navigator)) {
+    askDesktop({ ask: 'gpu', report: gpuReportOf(null, 'this browser has no WebGPU') });
     throw new GpuUnavailable('This browser does not support WebGPU. Try a current Chrome, Edge or Safari.');
   }
-  const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+  askDesktop({ ask: 'gpuAsked' });
+  let adapter: GPUAdapter | null;
+  try {
+    adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+  } catch (error) {
+    askDesktop({ ask: 'gpu', report: gpuReportOf(null, String(error)) });
+    throw error;
+  }
   if (!adapter) {
+    askDesktop({ ask: 'gpu', report: gpuReportOf(null, '') });
     throw new GpuUnavailable('WebGPU is on, but no graphics adapter is available. Update your graphics drivers.');
   }
+  // The desktop app hears the device started only once its surface is drawn to, and why wherever it was not.
+  try {
+    const gpu = await openDevice(adapter, canvas);
+    askDesktop({ ask: 'gpu', report: gpuReportOf(adapter, '') });
+    return gpu;
+  } catch (error) {
+    askDesktop({ ask: 'gpu', report: gpuReportOf(adapter, String(error) || 'no reason given') });
+    throw error;
+  }
+}
+
+/** The device on `adapter`, and `canvas`'s surface configured to draw with it. */
+async function openDevice(adapter: GPUAdapter, canvas: HTMLCanvasElement): Promise<Gpu> {
   // The GPU's clock, where the adapter has one: the readout (`?perf`) times each pass with it, and the Auto resolution
   // reads the frame's GPU time from it.
   const requiredFeatures: GPUFeatureName[] = adapter.features.has('timestamp-query') ? ['timestamp-query'] : [];
   const device = await adapter.requestDevice({ requiredFeatures });
+  // A device lost early tells the desktop app its graphics API cannot draw here; WebGPU may hand out a device already
+  // lost in place of refusing one.
+  void device.lost.then(({ reason, message }) => {
+    if (reason !== 'destroyed') askDesktop({ ask: 'gpuLost', reason: message || 'no reason given' });
+  });
   // A validation error drops the work it was in without a word: each is said once, so a picture that stops says why.
   const said = new Set<string>();
   device.addEventListener('uncapturederror', (event) => {
@@ -42,6 +71,27 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
     usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource,
   });
   return { device, context, format };
+}
+
+/** What the adapter WebGPU gave says of itself, for the desktop app's watch over the API it launched with (nothing
+ *  is sent in a browser). Its backend, type and driver are said only where Chromium is asked to say them, as the app
+ *  asks; `error` is why the device would not start, empty where it did. */
+export function gpuReportOf(adapter: GPUAdapter | null, error: string): GpuReport {
+  const info = (adapter?.info ?? {}) as unknown as Record<string, unknown>;
+  const said = (field: string) => (typeof info[field] === 'string' ? (info[field] as string) : '');
+  const older = adapter as unknown as { readonly isFallbackAdapter?: boolean } | null;
+  return {
+    adapter: adapter !== null,
+    device: adapter !== null && error === '',
+    backend: said('backend'),
+    type: said('type'),
+    vendor: said('vendor'),
+    architecture: said('architecture'),
+    description: said('description'),
+    driver: said('driver'),
+    fallback: info['isFallbackAdapter'] === true || older?.isFallbackAdapter === true,
+    error,
+  };
 }
 
 /** A texture's whole view, made once and kept with it: a target drawn into every frame asks for it every frame, and

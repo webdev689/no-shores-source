@@ -234,11 +234,33 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[Forged Models]]); a public event's panel shows only on its ground, and the held map rings each running event
   with its name and time left ([[Public Events]]); the held map dots every other player in the room in their
   nameplate's colour, on land from the room's players and at sea from the sea's chart, which the room now sends every
-  player once a second ([[Held Map]], [[Server]]). Tested offline: the full check on db8f26c3 (CI checks the head);
-  pictured headless in the Downs: the windows, and the raid's panel on its ground, none 60 m off it, and its ring on
-  the map with its name and time left. Not played by hand or seen on a real GPU; the dots never pictured, as no second
-  player stands in a headless world. Open for the owner: other zones' events are not on a zone's map, the compass
-  still marks the event's ground from anywhere in the zone, and the tracker still counts a chest left lying.
+  player once a second ([[Held Map]], [[Server]]). Then an audit of the whole PR, each finding checked against the
+  code and fixed at its cause with a test: the sea's chart reaches every player at its tick and a sea opened again;
+  the land's map paints its sheet once for its view and what moves on it over a copy, ten times a second at most; the
+  public event's dead next-event banner is gone, and stepping onto its ground is read out; the sun comes through an
+  open building's panes; and no window is laid into a lower wing's gable (33 in 16 buildings). Tested offline: the
+  full check on the merged head before its push (the PR names the commit); pictured headless in the Downs: the
+  windows, and the raid's panel on its ground, none 60 m off it, and its ring on the map with its name and time left.
+  Not played by hand or seen on a real GPU; the dots and the light through the panes never pictured (no second
+  player stands in a headless world, and its sky gave no sun). Open for the owner: the camp gap's measure
+  ([[Open Questions]]), other zones' events are not on a zone's map, the compass still marks the event's ground from
+  anywhere in the zone, and the tracker still counts a chest left lying.
+- **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
+  owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
+  reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
+  [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
+  `noshores.online/play/?room=live` in a sandboxed window; WebGPU on Direct3D 12 then 11 on Windows, Metal on a Mac,
+  Vulkan three ways on Linux, watched from the game's own adapter report. It opens on a launcher in the game's look
+  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's
+  "Patch notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play.
+  Updates through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases
+  by hand from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their
+  tests; the PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on
+  SwiftShader with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank
+  window, a Windows or Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on
+  Ubuntu 23.10 or later. After a merge: the owner says when to cut the first release; the site's links to the
+  downloads and signing keys are open questions; performance is to be measured on a real GPU with `?perf`, in Chrome
+  and in the app, before any switch for it (an uncapped frame rate was proposed, not built).
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and

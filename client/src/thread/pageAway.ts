@@ -4,6 +4,7 @@
 // last), and its canvas (the page's, drawn on from here, its events heard as the page sends them). Each asks the page, through `send`, for what only a
 // page can do.
 import { canvasSize } from '../canvasSize.ts';
+import { desktopChanged, useDesktop } from '../desktop.ts';
 import { FrameGuard } from '../frameGuard.ts';
 import { hearFromAway, type PageEvents } from '../ui/canvasEvents.ts';
 import { type KeptSignIn, useSignIns } from '../ui/page.ts';
@@ -216,6 +217,7 @@ export function pageAway(start: Start, send: Send): Away {
   sized();
   const global = globalThis as unknown as Record<string, unknown>;
   const address = addressOf(start.href, send);
+  useDesktop(start.desktop, (ask) => send({ kind: 'desktop', ask }));
   Object.defineProperties(globalThis, {
     location: { value: address.location, configurable: true },
     history: { value: address.history, configurable: true },
@@ -315,6 +317,9 @@ export function pageAway(start: Start, send: Send): Away {
         case 'signIn':
           signing.get(message.id)?.(message.kept);
           signing.delete(message.id);
+          return;
+        case 'desktop':
+          desktopChanged(message.info);
           return;
         case 'qa': {
           const hook = global[message.hook] as ((...args: unknown[]) => unknown) | undefined;
