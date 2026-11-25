@@ -228,8 +228,16 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's town notes, each pictured headless before and after in the Saltgrass Downs: a taller room is lined over a
   lower one beside it (the tavern's upper floor saw sky there); a walk-in building's windows are holes through its
   wall and lining with clear panes, the owner's choice over tinted glass ([[Forged Models]], [[Cities]]); the signpost
-  41739's and the signboard 41700's boards are painted wood as a shop's sign is ([[Procedural Textures]]). Tested
-  offline: the full check on a7a48fb2. Not played by hand or seen on a real GPU.
+  41739's and the signboard 41700's boards are painted wood as a shop's sign is ([[Procedural Textures]]). Then the
+  owner's third notes ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]):
+  every building's window is its frame alone, 2 m wide at the frame's proportions, with no wall's margin round it
+  ([[Forged Models]]); a public event's panel shows only on its ground, and the held map rings each running event
+  with its name and time left ([[Public Events]]); the held map dots every other player in the room in their
+  nameplate's colour, on land from the room's players and at sea from the sea's chart, which the room now sends every
+  player once a second ([[Held Map]], [[Server]]). Tested offline: the full check on db8f26c3 (CI checks the head);
+  the windows pictured headless. Not played by hand or seen on a real GPU; the dots never pictured, as no second
+  player stands in a headless world. Open for the owner: other zones' events are not on a zone's map, the compass
+  still marks the event's ground from anywhere in the zone, and the tracker still counts a chest left lying.
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and
