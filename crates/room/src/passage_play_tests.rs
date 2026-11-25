@@ -20,12 +20,16 @@ fn with_current(current: Current) -> (u64, Plan, Room) {
     (week, plan, room)
 }
 
-/// The player fallen as the section kills a body past its ring, long enough to respawn, a find in their haul.
+/// The player fallen as the section kills a body past its ring, long enough to respawn, a find in their haul: the
+/// reach's death alone, the body's health untouched.
 fn section_dead(room: &mut Room, player: PlayerId) {
     let found = room.players.get_mut(&player).expect("in");
     found.character.gather(0);
-    (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
     found.standing = Standing::Dead { ticks: reach::RESPAWN_TICKS, fell: false };
+}
+
+fn standing_again(room: &Room, player: PlayerId) -> bool {
+    room.players[&player].standing == Standing::Inside
 }
 
 #[test]
@@ -34,14 +38,17 @@ fn a_respawn_after_the_section_killed_loses_the_haul_and_is_refused_in_gloom() {
     let player = diver(&mut room, week, &plan);
     section_dead(&mut room, player);
     room.step_dead(player, Input { respawn: true, ..Input::default() }, room.clock, &[]);
-    assert!(!room.players[&player].fighter.dead(), "stood again");
+    assert!(standing_again(&room, player), "stood again");
     assert!(dive(&room, player).is_some_and(|dive| dive.haul.is_empty()), "as any respawn, its haul lost");
 
     let (week, plan, mut room) = with_current(Current::Gloom);
     let player = diver(&mut room, week, &plan);
     section_dead(&mut room, player);
     room.step_dead(player, Input { respawn: true, ..Input::default() }, room.clock, &[]);
-    assert!(room.players[&player].fighter.dead(), "the Gloom takes no respawn");
+    assert!(!standing_again(&room, player), "the Gloom takes no respawn");
+    room.tick();
+    assert!(standing_again(&room, player), "alone and down in the dark, fallen back");
+    assert!(dive(&room, player).is_some_and(|dive| dive.haul.is_empty()), "its haul lost");
 }
 
 #[test]
@@ -216,7 +223,10 @@ fn a_reliquary_opens_to_e_held_and_calls_its_keepers_and_a_vein_is_its_nodes_gat
     run(&mut room, 1);
     assert!(room.passage_seen(player).is_some_and(|seen| !seen.done));
     for node in 0..u8::try_from(room.resource_nodes.len()).expect("few") {
-        kill_all(&mut room);
+        // Its first gather's wave comes while its bands stand.
+        if node > 0 {
+            kill_all(&mut room);
+        }
         let waves = room.zone().expect("a zone").round.waves;
         room.vein_gathered(player, node);
         assert_eq!(room.zone().expect("a zone").round.waves, waves + 1, "each gather calls a wave");

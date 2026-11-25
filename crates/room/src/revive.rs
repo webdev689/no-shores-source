@@ -103,11 +103,15 @@ impl Room {
     }
 
     /// Whether every player the room judges (those it keeps, where it keeps anyone) is down while the Court's Boss
-    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back.
+    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back; one the section
+    /// killed counts once it may respawn, as the darkness refuses it that.
     fn fallen_in_darkness(&self) -> bool {
         let keeps = self.players.values().any(|found| found.owner.is_some());
         let mut judged = self.players.values().filter(|found| !keeps || found.owner.is_some());
-        let lain = |found: &crate::players::Player| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN);
+        let lain = |found: &crate::players::Player| {
+            matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN)
+                || found.standing.may_respawn()
+        };
         (self.boss().is_some() || self.gloomy()) && !self.players.is_empty() && judged.all(lain)
     }
 

@@ -60,7 +60,11 @@ impl Room {
         let keeps = self.players.values().any(|found| found.owner.is_some());
         self.revives().is_some()
             && !self.players.is_empty()
-            && self.players.values().filter(|found| !keeps || found.owner.is_some()).all(|found| found.fighter.dead())
+            && self
+                .players
+                .values()
+                .filter(|found| !keeps || found.owner.is_some())
+                .all(|found| found.fighter.dead() || matches!(found.standing, reach::Standing::Dead { .. }))
             && !self.run.as_ref().is_some_and(|run| run.won)
     }
 

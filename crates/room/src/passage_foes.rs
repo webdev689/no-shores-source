@@ -148,11 +148,12 @@ impl Room {
             if let Some(first) = groups.first_mut() {
                 first.farthest = false;
                 if let Some(leader) = first.members.first_mut() {
-                    *leader = (ELITES[0], Elite);
+                    *leader = (roster(depth, self.strand()).elites[0], Elite);
                 }
             }
         }
-        let crowding = self.crowding();
+        // An Elite band is cut to three, Crowded's extra foes with it.
+        let crowding = if deal == Deal::Lamp { 0 } else { self.crowding() };
         let most = self.counted_most();
         let (mut standing, mut stood) = (0, 0);
         for (nth, group) in groups.into_iter().enumerate() {
@@ -318,7 +319,7 @@ impl Room {
 
     /// A wave of the Tithe: `size` of the zone's roster (two to four if none is asked, Crowded's more and a foe more
     /// for each player past the first), at the post or spot at least CLEAR_M from every player that is nearest one,
-    /// each hunting the nearest player; none while the zone has no room for them.
+    /// each hunting the nearest player; none while the zone's waves standing leave no room for them.
     pub(crate) fn call_wave(&mut self, size: Option<usize>) {
         let Some(zone) = self.zone() else { return };
         let (called, depth) = (u32::from(zone.round.waves) + zone.round.number * 32, zone.zone.depth);
@@ -326,7 +327,12 @@ impl Room {
         let mut draws = draws_of(self.world_seed ^ WAVE_STREAM ^ u64::from(called));
         let more = self.players.len().saturating_sub(1).min(WAVE_MORE_MOST);
         let size = size.unwrap_or_else(|| 2 + index(&mut draws, 3) + more) + self.crowding();
-        if self.living_foes() + size > self.zone_foes_most() + self.crowding() {
+        // Only the zone's waves count against its most here, so a reliquary's keepers and a vein's waves still come
+        // while its bands stand.
+        let waves = self.zone().map_or(0, |zone| {
+            zone.round.wave_foes.iter().filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead())).count()
+        });
+        if waves + size > self.zone_foes_most() + self.crowding() {
             return;
         }
         let players: Vec<(PlayerId, [f64; 3])> = self
