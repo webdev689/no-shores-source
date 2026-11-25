@@ -5,8 +5,8 @@
 // borrowed until then; what the room tells by its state (a slab rising or sinking, a mooring held); the music's sting
 // and the banner's beat; and the company's moments in words, a wipe saying why where the page knows it. The room
 // judges every one.
-import bank from '../../../content/audio/sounds.json' with { type: 'json' };
 import { EVENT } from '../combat/cues.ts';
+import { recorded } from '../soundSamples.ts';
 import type { HeardSound as Heard } from '../combat/worldSounds.ts';
 import type { BannerBeat } from '../combat/publicBanner.ts';
 import { BREACH_EVENT, type BreachSeen } from '../network/breachMessages.ts';
@@ -16,9 +16,6 @@ import { type BreachPlan, slabStands, spaceSocket } from './breachPlan.ts';
 import { ENCOUNTER, type Mooring, momentWords, shutOutWords, unwrittenBy } from './breachWords.ts';
 
 type Point = readonly [number, number, number];
-
-/** Whether the owner has picked a cue's recording (content/audio/sounds.json). */
-const pickedCue = (cue: string): boolean => cue in bank.sounds;
 
 /** Each moment's own recording (content/audio/freesound.json's `breach.*`), and the world's it plays until its own is
  *  picked (none where it was silent). A player carried into a shore is plunged under as the taken are. */
@@ -86,7 +83,7 @@ const SLAB_GAP_TICKS = 60;
 export function heardOf(
   sound: { readonly cue: string; readonly until: string | null },
   where: Point,
-  picked: (cue: string) => boolean = pickedCue,
+  picked: (cue: string) => boolean = recorded,
 ): Heard | null {
   const cue = picked(sound.cue) ? sound.cue : sound.until;
   if (!cue) return null;
@@ -156,7 +153,7 @@ export function momentSounds(
   seen: BreachSeen,
   had: readonly FightEvent[],
   places: MomentPlaces,
-  picked: (cue: string) => boolean = pickedCue,
+  picked: (cue: string) => boolean = recorded,
 ): Heard[] {
   const rewritten = had.filter((event) => event.kind === BREACH_EVENT.rewritten);
   const marked = rewritten.find((event) => Math.round(event.amount) === places.own) ?? rewritten[0];
@@ -181,7 +178,7 @@ export function slabSounds(
   plan: BreachPlan,
   from: number | null,
   to: number,
-  picked: (cue: string) => boolean = pickedCue,
+  picked: (cue: string) => boolean = recorded,
 ): Heard[] {
   // A jump of more than a second (a hidden page's frames stopped) was not seen moving, so it is not heard.
   if (from === null || to <= from || to - from > SLAB_GAP_TICKS) return [];
@@ -197,7 +194,7 @@ export function mooringSounds(
   before: readonly Mooring[] | null,
   now: readonly Mooring[],
   socket: (nth: number) => Point | null,
-  picked: (cue: string) => boolean = pickedCue,
+  picked: (cue: string) => boolean = recorded,
 ): Heard[] {
   if (!before) return [];
   return now.flatMap((state, nth) => {

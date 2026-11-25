@@ -76,6 +76,7 @@ test("a weapon's bars name what it does in a fight, a bow's with its ammunition,
   ]);
   assert.ok(sheetOf(item({ kind: kind('sword_and_shield') }))?.notes.includes('Blocks with its shield'));
   assert.equal(sheetOf(item({ kind: HORSE })), null, 'a horse has no stats');
+  assert.equal(sheetOf(item({ kind: kind('torso'), plain: true })), null, 'nor have plain clothes');
   assert.equal(sheetOf(item({ kind: 25 })), null, "a ship's hull is the ship's, not a body's");
   for (const row of sheetOf(item({ kind: kind('warhammer') }))?.rows ?? [])
     assert.ok(row.share > 0 && row.share <= 1, `${row.label} stands within its bar: ${row.share}`);

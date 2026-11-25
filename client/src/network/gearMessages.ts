@@ -191,6 +191,8 @@ export interface GearItem {
   readonly source: number;
   /** One of the prologue's own items, which its end takes back; none said is none. */
   readonly story?: boolean;
+  /** Plain clothes, with no stats, as the prologue's end dresses a player in; none said is none. */
+  readonly plain?: boolean;
 }
 
 export interface GearVestige {
@@ -401,6 +403,7 @@ function itemOf(item: GearItemTable): GearItem {
     element: item.element(),
     source: item.source(),
     story: item.story(),
+    plain: item.plain(),
   };
 }
 

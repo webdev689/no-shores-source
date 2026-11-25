@@ -47,28 +47,30 @@ const page = (url) => fetched(url);
 /** A preview's bytes, or null with the reason logged. */
 const audioOf = (url) => fetched(url, true);
 
-/** A picked sound, read from its own page for its credit, its preview kept as `picks/<cue>.mp3`. */
-async function pickOf(cue) {
-  const id = String(cue.picked);
+/** A picked sound, read from its own page for its credit, its preview kept as `picks/<cue>.mp3`, or, where the cue
+ *  picks several as its variations, `picks/<cue>.<number>.mp3`. */
+async function pickOf(cue, picked) {
+  const id = String(picked);
+  const name = Array.isArray(cue.picked) ? `${cue.id}.${id}` : cue.id;
   const sound = await page(`${SITE}/s/${id}/`);
   // Kept beside the picks, so how the credit was read can be checked later without Freesound.
   mkdirSync(join(out, 'pages'), { recursive: true });
-  if (sound) writeFileSync(join(out, 'pages', `pick-${cue.id}.html`), sound);
+  if (sound) writeFileSync(join(out, 'pages', `pick-${name}.html`), sound);
   const licence = sound && licenceLinkOf(sound);
   const preview = sound && previewOf(sound, id);
   const author = sound?.match(new RegExp(`/people/([A-Za-z0-9_.@+-]{1,80})/sounds/${id}/`))?.[1] ?? null;
-  const name = sound ? titleOf(sound, id, author ?? '') : null;
-  const pick = { id: cue.id, freesound: Number(id), name, author, licence, preview };
+  const title = sound ? titleOf(sound, id, author ?? '') : null;
+  const pick = { id: cue.id, freesound: Number(id), name: title, author, licence, preview };
   const audio = preview ? await audioOf(preview) : null;
   if (audio) {
     mkdirSync(join(out, 'picks'), { recursive: true });
-    writeFileSync(join(out, 'picks', `${cue.id}.mp3`), audio);
+    writeFileSync(join(out, 'picks', `${name}.mp3`), audio);
   }
   console.log(`${cue.id}: picked ${id}, ${pick.name} by ${author}, ${licence?.url ?? 'no allowed licence found'}`);
   return {
     ...pick,
     page: author ? `${SITE}/people/${author}/sounds/${id}/` : null,
-    file: audio ? `picks/${cue.id}.mp3` : null,
+    file: audio ? `picks/${name}.mp3` : null,
   };
 }
 
@@ -105,7 +107,7 @@ const save = () => {
 for (const cue of wanted.cues) {
   // A cue the owner picked a sound for is searched no more: its pick is read for its credit and its preview kept.
   if (cue.picked) {
-    picks.push(await pickOf(cue));
+    for (const picked of [cue.picked].flat()) picks.push(await pickOf(cue, picked));
     save();
     continue;
   }

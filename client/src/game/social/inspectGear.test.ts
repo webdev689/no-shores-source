@@ -66,3 +66,13 @@ test("another player's kept pieces stand in their slots, with their level, Defen
   const old = inspectedGear(details({ level: 3, defense: 0, attack: 0, emblem: 'overlook', worn: [] }));
   assert.deepEqual([old?.prestige, old?.arts], [0, undefined], 'a room that kept neither shows none');
 });
+
+test("another player's plain clothes come through plain, with no level or source shown", () => {
+  const shirt = { ...piece(3, false), rarity: 0, level: 1, defense: 0, plain: true };
+  const shown = { level: 2, defense: 0, attack: 0, emblem: 'overlook', worn: [shirt, piece(4, false)], prestige: 0 };
+  const gear = inspectedGear(details({ ...shown, art: 0, art_level: 1 }));
+  assert.deepEqual(
+    gear?.items.map((item) => item.plain),
+    [true, false],
+  );
+});

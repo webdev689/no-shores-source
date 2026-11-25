@@ -136,15 +136,26 @@ export function lookOutfit(look: IndexLook, keep: Outfit): Outfit {
   return { ...keep, armour, garments, dyes, right: look.weapon, left: null, drawn: !!look.weapon };
 }
 
-/** A plain figure: a shirt, breeches and boots, an iron sword worn at the hip, of a race and skin tone. */
+/** Plain clothes, each garment with its dye, by the piece they are worn as: a shirt for the torso, breeches and boots
+ *  for the legs. The shore dresses the player in them, and the prologue's end gives them as plain pieces. */
+export const PLAIN_CLOTHES = {
+  torso: [['shirt_long_v', 'White']],
+  legs: [
+    ['breeches', 'DarkBrown'],
+    ['boots', 'DarkBrown'],
+  ],
+} as const satisfies Readonly<Record<string, readonly (readonly [string, string])[]>>;
+const PLAIN_WORN = [...PLAIN_CLOTHES.torso, ...PLAIN_CLOTHES.legs];
+
+/** A plain figure: the plain shirt, breeches and boots, an iron sword worn at the hip, of a race and skin tone. */
 export const plainDress = (race: Race, tone: number): Dress => ({
   body: 'male',
   race,
   tone,
   outfit: {
     armour: {},
-    garments: ['shirt_long_v', 'breeches', 'boots'],
-    dyes: { shirt_long_v: 'White', breeches: 'DarkBrown', boots: 'DarkBrown' },
+    garments: PLAIN_WORN.map(([garment]) => garment),
+    dyes: Object.fromEntries(PLAIN_WORN),
     right: 'sword_iron',
     left: null,
     drawn: false,
