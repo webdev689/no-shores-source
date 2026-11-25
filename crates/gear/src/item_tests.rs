@@ -43,18 +43,19 @@ fn a_lesser_weapon_rises_with_its_level_and_stays_under_a_legendary() {
 
 #[test]
 fn armour_carries_destiny_1s_prestige_from_level_20() {
-    let prestige = |rarity, level, breach| {
+    let prestige = |rarity, level, breach: Option<bool>| {
         let mut item = Item::new(1, Kind::Torso, rarity, level, Slot::Torso);
-        item.breach = breach;
+        (item.breach, item.hard) = (breach.is_some(), breach == Some(true));
         let (_, total) = item.upgrades();
         (item.prestige(), upgraded(item, total as usize).prestige())
     };
-    assert_eq!(prestige(Rarity::Rare, 20, false), (13, 15));
-    assert_eq!(prestige(Rarity::Rare, 19, false), (0, 0), "a Rare below level 20 carries none");
-    assert_eq!(prestige(Rarity::Magic, 20, false), (0, 0));
-    assert_eq!(prestige(Rarity::Legendary, 20, false), (18, 27));
-    assert_eq!(prestige(Rarity::Legendary, 20, true), (18, 30), "a Breach's climbs to 30");
-    assert_eq!(prestige(Rarity::Atheric, 20, false), (21, 30));
+    assert_eq!(prestige(Rarity::Rare, 20, None), (13, 15));
+    assert_eq!(prestige(Rarity::Rare, 19, None), (0, 0), "a Rare below level 20 carries none");
+    assert_eq!(prestige(Rarity::Magic, 20, None), (0, 0));
+    assert_eq!(prestige(Rarity::Legendary, 20, None), (18, 27));
+    assert_eq!(prestige(Rarity::Legendary, 20, Some(false)), (19, 28), "a Breach's at Normal climbs to 28");
+    assert_eq!(prestige(Rarity::Legendary, 20, Some(true)), (21, 30), "and at Hard to 30");
+    assert_eq!(prestige(Rarity::Atheric, 20, None), (21, 30));
     assert_eq!(Item::new(1, Kind::SwordAndShield, Rarity::Atheric, 20, Slot::Melee).prestige(), 0, "nor a loadout");
 }
 

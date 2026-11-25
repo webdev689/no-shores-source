@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LINES_KEPT, PEEK_LINES, PEEK_MS } from '../../../../server/accounts/chatLaw.ts';
-import { ChatLog, peekShare } from './chatLog.ts';
+import { ChatLog, heardLocally, peekShare } from './chatLog.ts';
 
 test('a line shows whole for three quarters of its time, then fades to nothing', () => {
   assert.equal(peekShare(0), 1);
@@ -38,4 +38,11 @@ test('shut, the newest five show while young; the log keeps the newest two hundr
     Array.from({ length: PEEK_LINES }, (unused, index) => `line ${LINES_KEPT + 5 + index}`),
   );
   assert.deepEqual(log.peek(now + PEEK_MS * 2), [], 'gone once old');
+});
+
+test('Local is heard within earshot, and in a Breach’s run from anywhere in it', () => {
+  assert.ok(heardLocally([10, 0, 0], [0, 0, 0], false));
+  assert.ok(!heardLocally([280, 0, 0], [0, 0, 0], false), 'a shore far from the court, out of earshot');
+  assert.ok(heardLocally([280, 0, 0], [0, 0, 0], true), 'in a run, the court calls to its taken');
+  assert.ok(!heardLocally(undefined, [0, 0, 0], true), 'one not in the room is never heard');
 });

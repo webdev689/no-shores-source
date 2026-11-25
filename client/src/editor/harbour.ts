@@ -1,9 +1,17 @@
+import { HULL_NAMES, type HullName, SLOOP_HULL } from '../ships/hulls.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
-/** The Sloop's comings and goings in the World Editor: its model fetched once, the rules asked once to put it to
- *  sea, and both forgotten when it is brought in. `View` is what its model becomes once fetched. */
+/** The hull the editor's address asks it to sail (`?hull=brig`), by its number; the Sloop unless it names one. */
+export function askedHull(search: string): number {
+  const asked = new URLSearchParams(search).get('hull')?.toLowerCase() ?? '';
+  return Math.max(SLOOP_HULL, HULL_NAMES.indexOf(asked as HullName));
+}
+
+/** The comings and goings of the World Editor's ship of `hull`: its model fetched once, the rules asked once to put
+ *  it to sea, and both forgotten when it is brought in. `View` is what its model becomes once fetched. */
 export class Harbour<View> {
   private readonly load: () => Promise<View>;
+  private readonly hull: number;
   private readonly fail: (error: unknown) => void;
   private model: View | null = null;
   /** Its model is being fetched, or failed: a failed one is fetched again only once it is brought in. */
@@ -14,9 +22,10 @@ export class Harbour<View> {
   /** Each Sail's own number: an answer for one since brought in is dropped. */
   private voyage = 0;
 
-  constructor(load: () => Promise<View>, fail: (error: unknown) => void) {
+  constructor(load: () => Promise<View>, fail: (error: unknown) => void, hull = SLOOP_HULL) {
     this.load = load;
     this.fail = fail;
+    this.hull = hull;
   }
 
   get sailing(): Sailing | null {
@@ -34,7 +43,7 @@ export class Harbour<View> {
     if (!this.afloat && source && this.asked === 'no') {
       this.asked = 'asking';
       const voyage = this.voyage;
-      Sailing.putToSea(source, id, x, y, heading, time)
+      Sailing.putToSea(source, id, x, y, heading, time, this.hull)
         .then((answer) => {
           if (voyage !== this.voyage) return;
           if (typeof answer !== 'string') [this.afloat, this.asked] = [answer, 'no'];

@@ -33,16 +33,18 @@ pub fn metres_to_reach(east: f64, south: f64, reach: f64, [way_east, way_south]:
     if enter >= 0.0 { enter } else { f64::INFINITY }
 }
 
-/// The fastest closing of a voyage and a hostile, metres a second: the ship's way and the fastest rank's, so the
-/// warning holds whoever comes.
-const CLOSING_M_S: f64 = SHIP_SPEED_M_S + HOSTILE_WAY_M_S * FASTEST_WAY;
+/// The fastest closing of a voyage at `way` times a whole Sloop's (its hull's class, `naval::class`) and a hostile,
+/// metres a second: the fastest rank's way with its own, so the warning holds whoever comes.
+fn closing_m_s(way: f64) -> f64 {
+    SHIP_SPEED_M_S * way + HOSTILE_WAY_M_S * FASTEST_WAY
+}
 
 /// How far off a hostile may hold a voyage at its fastest pace, metres: its reach, and the warning at that pace closing
-/// as fast as any rank can. Past it no hostile slows the ship.
+/// as fast as any rank can on the fastest hull. Past it no hostile slows the ship.
 #[must_use]
 pub fn hold_reach_m() -> f64 {
     let most = crate::sea::PACES.iter().copied().max().unwrap_or(1);
-    REACH_M + WARN_S * CLOSING_M_S * f64::from(most)
+    REACH_M + WARN_S * closing_m_s(naval::class::FASTEST) * f64::from(most)
 }
 
 /// A rate down DFO's ladder of paces, by whole fives: none under five, where `held_pace` keeps to `FOE_PACE`.
@@ -51,20 +53,26 @@ pub fn step_down(rate: f64) -> f64 {
     libm::floor(rate / 5.0) * 5.0
 }
 
-/// The pace a ship set to `pace` sails at, at `at` heading `heading` (radians clockwise from north), with hostiles at
-/// `hostiles`, each with whether it would engage this ship (`holds`): its pace, held down as one's sight comes near
-/// along its way, and to 1 within the hold of one that would engage.
+/// The pace a ship set to `pace` sails at, at `at` heading `heading` (radians clockwise from north) at `way` times a
+/// whole Sloop's way, with hostiles at `hostiles`, each with whether it would engage this ship (`holds`): its pace,
+/// held down as one's sight comes near along its way, and to 1 within the hold of one that would engage.
 #[must_use]
-pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, hostiles: impl IntoIterator<Item = ([f64; 2], bool)>) -> u16 {
+pub fn held_pace(
+    pace: u16,
+    at: [f64; 2],
+    (heading, way): (f64, f64),
+    hostiles: impl IntoIterator<Item = ([f64; 2], bool)>,
+) -> u16 {
     if pace == 0 {
         return 0;
     }
+    let closing = closing_m_s(way);
     let way = [libm::sin(heading), -libm::cos(heading)];
     let (mut ratio, mut held) = (f64::INFINITY, false);
     for ([x, y], engages) in hostiles {
         let (east, south) = (x - at[0], y - at[1]);
         held |= engages && (east * east + south * south).sqrt() <= HOSTILE_NEAR_M;
-        ratio = ratio.min(metres_to_reach(east, south, REACH_M, way) / (WARN_S * CLOSING_M_S));
+        ratio = ratio.min(metres_to_reach(east, south, REACH_M, way) / (WARN_S * closing));
     }
     if held {
         return 1;
@@ -79,11 +87,11 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, hostiles: impl IntoItera
     rate
 }
 
-/// Whether a hostile ship holds a voyage at `at`, its hull at `hull` of whole, that it would meet: it is within its
-/// hold of it and bold, or chased by its player (`chased`, its number), or wary and one it would fall on
-/// (`wary_takes`). A ship beyond its hold, or one that will not engage, caps the pace only by the ladder.
+/// Whether a hostile ship holds a voyage at `at` of a ship of `hull`, its hull at that share of whole, that it would
+/// meet: it is within its hold of it and bold, or chased by its player (`chased`, its number), or wary and one it
+/// would fall on (`wary_takes`). A ship beyond its hold, or one that will not engage, caps the pace only by the ladder.
 #[must_use]
-pub fn holds(hostile: &Hostile, at: [f64; 2], chased: Option<u32>, hull: f64) -> bool {
+pub fn holds(hostile: &Hostile, at: [f64; 2], chased: Option<u32>, hull: (sailing::HullKind, f64)) -> bool {
     libm::hypot(hostile.x - at[0], hostile.y - at[1]) <= HOSTILE_NEAR_M
         && (hostile.bold || chased == Some(hostile.id) || wary_takes(hostile.commission, hostile.strength(), hull))
 }

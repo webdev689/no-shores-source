@@ -348,17 +348,24 @@ async function modulePage(guildId: string, moduleId: string): Promise<void> {
     enabled,
     element('label', { for: 'module-on' }, ['On']),
   ]);
+  // A module always on with nothing to set (the server layout) is only its plan and its acts: no form to save.
+  const settable = !shape.alwaysOn || Object.keys(shape.schema).length > 0;
+  const back = linkButton('Back', `#g=${guildId}`);
   show([
     bar(),
     windowOf(shape.title, [
       para(shape.blurb),
-      ...(shape.alwaysOn ? [] : [onSwitch]),
-      form.element,
-      element('div', { class: 'acts' }, [...(disabled ? [] : [save]), linkButton('Back', `#g=${guildId}`)]),
-      status,
-      element('p', { class: 'small' }, [
-        saved.updatedAt ? `Last saved ${when(saved.updatedAt)}.` : 'Never saved: these are the defaults.',
-      ]),
+      ...(settable
+        ? [
+            ...(shape.alwaysOn ? [] : [onSwitch]),
+            form.element,
+            element('div', { class: 'acts' }, [...(disabled ? [] : [save]), back]),
+            status,
+            element('p', { class: 'small' }, [
+              saved.updatedAt ? `Last saved ${when(saved.updatedAt)}.` : 'Never saved: these are the defaults.',
+            ]),
+          ]
+        : [element('div', { class: 'acts' }, [back])]),
     ]),
     ...(parts.actions.length ? [windowOf('Act', [element('div', { class: 'grid' }, parts.actions)])] : []),
     ...(parts.views.length ? [windowOf('Records', parts.views)] : []),

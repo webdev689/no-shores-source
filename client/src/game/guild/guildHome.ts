@@ -7,7 +7,7 @@ import type { GuildFace, Person } from '../../network/accounts.ts';
 import { TONES } from '../../plus/tones.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
-import { emblemOf } from '../emblemArt.ts';
+import { emblemOf } from '../../plus/emblemArt.ts';
 import { INK, emblemNode, words } from '../gearNodes.ts';
 import type { PlainContext } from '../menuPage.ts';
 import { placeWords } from '../rosterRows.ts';

@@ -1,5 +1,6 @@
-//! What others read over a player's ship at sea: the plate they wear over their head on land. The sea hears of no
-//! menu, so its plates never show one.
+//! What others read over a player's ship at sea, and what they see of it: the plate they wear over their head on land
+//! (the sea hears of no menu, so its plates never show one), and the ship as they keep it, its hull, its dress, its
+//! name and the emblem a flag that bears one flies.
 
 use super::Sea;
 use crate::PlayerId;
@@ -40,4 +41,29 @@ impl Sea {
         let tag = self.harbour.tags.get(&player).cloned().unwrap_or_default();
         Some(Plate { name, level, menu: false, tag })
     }
+
+    /// The ship a player sails as others see it: as their character keeps it, the Sloop as built and unnamed for one
+    /// the sea holds none of; none for a player not at sea.
+    #[must_use]
+    pub fn look(&self, player: PlayerId) -> Option<ShipLook> {
+        if !self.berths.contains_key(&player) {
+            return None;
+        }
+        let held = self.harbour.characters.get(&player);
+        let ship = held.and_then(|character| character.fleet.sailing());
+        let built = || gear::ship::fleet::KeptShip::new(gear::ship::fleet::SLOOP);
+        let ship = ship.cloned().unwrap_or_else(built);
+        let emblem = held.and_then(|character| gear::emblems::number_of(&character.emblem)).unwrap_or_default();
+        Some(ShipLook { hull: ship.hull, dress: ship.dress.numbers(), name: ship.name_numbers(), emblem })
+    }
+}
+
+/// A player's ship as others see it: its hull's number, each part's dress by its number (`ship::fleet::Part`'s
+/// order), its name's two words by their places in the shipyard's lists, and the emblem its player wears by its number.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ShipLook {
+    pub hull: u8,
+    pub dress: [u16; 4],
+    pub name: [u8; 2],
+    pub emblem: u16,
 }

@@ -495,7 +495,7 @@ impl Room {
     pub(crate) fn part(&mut self, player: PlayerId) {
         if let Some(gone) = self.players.remove(&player) {
             self.keep_casting(&gone);
-            self.keep_body(&gone);
+            self.keep_body(player, &gone);
         }
     }
 

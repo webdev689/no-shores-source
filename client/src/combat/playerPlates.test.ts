@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
-import { type PlatedPlayer, SOCIAL_REACH_M, aimedPlayer, levelInk, plateNode } from './playerPlates.ts';
+import { type PlatedPlayer, SOCIAL_REACH_M, aimedPlayer, levelInk, plateNode, plateWords } from './playerPlates.ts';
 
 const plate = (more: Partial<PlayerPlate> = {}): PlayerPlate => ({
   player: 7,
@@ -32,6 +32,8 @@ test('the square shows the level, gold for the levels past 20 that Prestige rais
       (each): each is string => typeof each === 'string',
     );
   assert.deepEqual(words(plateNode(placed(1, 2, { level: 27 }), 1)), ['27', 'Mariner']);
+  const rewritten = { ...placed(1, 2, { level: 27 }), marked: true };
+  assert.deepEqual(words(plateNode(rewritten, 1)), ['27', 'Mariner', 'Rewritten'], "a Breach's mark after the name");
 });
 
 test('the player under the crosshair within reach is aimed at, the nearest of several, never a guest', () => {
@@ -54,6 +56,15 @@ test('a plate is green for the company and blue for anyone else, and a menu open
   const busy = square(plateNode(placed(1, 0, { menu: true }), 1));
   assert.ok(busy && busy.picture, "three dots in a speech bubble in the square's place");
   assert.equal(plateNode(placed(1, 0, { name: '' }), 1).children?.[1], false, 'a guest shows no name');
+  const words = (node: ReturnType<typeof plateNode>) => JSON.stringify(node).match(/"words":"[^"]*"/g) ?? [];
+  const sailing = { ...placed(1, 0), vessel: 'the Grey Gull' };
+  assert.deepEqual(words(plateNode(sailing, 1)).slice(1), [
+    `"words":"${sailing.plate.name}"`,
+    '"words":"the Grey Gull"',
+  ]);
+  assert.deepEqual(words(plateNode({ ...sailing, plate: { ...sailing.plate, name: '' } }, 1)).slice(1), [
+    '"words":"the Grey Gull"',
+  ]);
 });
 
 test("a member's plate reads their guild's tag after their name, fainter; a guest's shows neither", () => {
@@ -67,4 +78,20 @@ test("a member's plate reads their guild's tag after their name, fainter; a gues
   assert.ok(tag && (tag.opacity ?? 1) < 1, 'the tag a shade fainter than the name');
   assert.deepEqual(words(plateNode(placed(2, 0, { name: '', tag: 'SALT' }), 1)), ['6'], "a guest's square alone");
   assert.deepEqual(words(plateNode(placed(3, 0), 1)), ['6', 'Mariner'], 'in no guild, the name alone');
+});
+
+test('a plate is laid as wide as every word it draws after its square, the Rewritten mark too', () => {
+  const words = (node: Node): string[] =>
+    [node.text?.words, ...(node.children ?? []).flatMap((child) => (child ? words(child) : []))].filter(
+      (said): said is string => said !== undefined,
+    );
+  for (const player of [
+    placed(1, 0),
+    placed(2, 0, { tag: 'SALT' }),
+    placed(3, 0, { name: '' }),
+    { ...placed(4, 0, { tag: 'SALT' }), marked: true },
+    { ...placed(5, 0, { name: '' }), marked: true },
+  ]) {
+    assert.equal(plateWords(player), words(plateNode(player, 1)).slice(1).join(' '), `player ${player.id}`);
+  }
 });

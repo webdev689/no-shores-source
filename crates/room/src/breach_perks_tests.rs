@@ -8,13 +8,13 @@ use crate::{FighterId, How, PlayerId, Room, loadout_arms};
 use combat::{BlowKind, Fighter, Ranged, Status, Verdict};
 use gear::{At, Item, Kind, Rarity, Slot};
 
-const HIT: Verdict = Verdict::Hit { damage: 10.0, poise: 0.0 };
-const KILL: Verdict = Verdict::Hit { damage: 5_000.0, poise: 0.0 };
-const WORN: u32 = 88;
+pub(super) const HIT: Verdict = Verdict::Hit { damage: 10.0, poise: 0.0 };
+pub(super) const KILL: Verdict = Verdict::Hit { damage: 5_000.0, poise: 0.0 };
+pub(super) const WORN: u32 = 88;
 
 /// A room with a player wearing a Breach's Legendary of `kind` whose first column offers `perk`, bought and chosen,
 /// held drawn if it is a weapon, and two hostile swordsmen before them.
-fn room_wearing(kind: Kind, perk: &str) -> (Room, PlayerId, [FighterId; 2]) {
+pub(super) fn room_wearing(kind: Kind, perk: &str) -> (Room, PlayerId, [FighterId; 2]) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
     let character = &mut room.players.get_mut(&player).expect("in").character;
@@ -46,7 +46,7 @@ fn room_wearing_unfit(kind: Kind, perk: &str) -> (Room, PlayerId, [FighterId; 2]
     (room, player, foes)
 }
 
-fn place(room: &mut Room, fighter: FighterId, x: f64, y: f64) {
+pub(super) fn place(room: &mut Room, fighter: FighterId, x: f64, y: f64) {
     let mut moved = *room.fighter(fighter).expect("in");
     moved.body.x = x;
     moved.body.y = y;

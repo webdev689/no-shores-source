@@ -23,9 +23,18 @@ const HRTF_WITHIN_M = 60;
 export const roomShare = (distance: number, near: number): number =>
   Math.min(1, Math.sqrt(near / Math.max(near, distance)));
 
+/** Each room's response by its sample rate, built once: the rooms are fixed, and building a long one takes tens of
+ *  milliseconds, which a place made anew at each doorway of a Breach's run would pay with no veil to hide it. */
+// shortcut: every room heard stays held (about 20 MB at 48 kHz if all are), let go only if rooms ever stop being fixed.
+const RESPONSES = new WeakMap<Room, Map<number, readonly [Float32Array, Float32Array]>>();
+
 /** A place's room: what is sent to it reverberates as the place does, into `out`. Answers the send. */
 export function roomOf(audio: BaseAudioContext, room: Room, random: Random, out: AudioNode): GainNode {
-  const [left, right] = roomResponse(audio.sampleRate, room, random);
+  const byRate = RESPONSES.get(room) ?? new Map<number, readonly [Float32Array, Float32Array]>();
+  RESPONSES.set(room, byRate);
+  const response = byRate.get(audio.sampleRate) ?? roomResponse(audio.sampleRate, room, random);
+  byRate.set(audio.sampleRate, response);
+  const [left, right] = response;
   const buffer = audio.createBuffer(2, left.length, audio.sampleRate);
   buffer.copyToChannel(left as Float32Array<ArrayBuffer>, 0);
   buffer.copyToChannel(right as Float32Array<ArrayBuffer>, 1);

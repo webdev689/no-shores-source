@@ -61,7 +61,12 @@ test("the sound's waking fetches the short sounds of play, and the ambience and 
   samples.wake(audio as unknown as AudioContext);
   await settled();
   assert.deepEqual(asked.sort(), ['hit.mp3', 'step1.mp3', 'step2.mp3']);
-  assert.ok(fetchedAtWake('ui.press') && !fetchedAtWake('amb.sea.rain') && !fetchedAtWake('story.wind'));
+  assert.ok(
+    fetchedAtWake('ui.press') &&
+      !fetchedAtWake('amb.sea.rain') &&
+      !fetchedAtWake('story.wind') &&
+      !fetchedAtWake('music.cello'),
+  );
   const out = {} as AudioNode;
   standIns();
   assert.equal(samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze'), null, 'silent until it comes');

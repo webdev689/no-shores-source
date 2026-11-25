@@ -20,8 +20,8 @@ const STRIDE: usize = 2;
 const MOST_ANSWERS: usize = 7;
 /// A valley's half-width, metres: a footpath's canyon.
 const VALLEY_HALF_M: f64 = 11.0;
-/// How far a mass's valley or climb keeps from the climbs already cut where it runs through the rock, past both their
-/// edges, metres: three cliffs' runs, so rock stands between them.
+/// How far a mass's valley or climb keeps from the climbs, runs and caverns already cut where it runs through the
+/// rock, past both their edges, metres: three cliffs' runs, so rock stands between them.
 const KEEP_OFF_M: f64 = 48.0;
 /// How far a valley may run from a mass's middle to the floor it reaches, metres, at the most.
 const VALLEY_REACH_M: f64 = 900.0;
@@ -78,9 +78,10 @@ pub fn reach_masses(field: &Field, sculpt: &mut Sculpt) -> Vec<[[f64; 7]; 2]> {
 /// The answer that reaches the most of a mass: a climb if one leaves no dead mass of it, else the valley reaching most
 /// of it, else the climb that does.
 fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> Option<Answer> {
-    let taken: Vec<[f64; 7]> = sculpt.climbs.iter().chain(&sculpt.runs).copied().collect();
+    let caverns = sculpt.roofed.iter().map(|&[x1, y1, x2, y2, half]| [x1, y1, x2, y2, half, 0.0, 0.0]);
+    let taken: Vec<[f64; 7]> = sculpt.climbs.iter().chain(&sculpt.runs).copied().chain(caverns).collect();
     // Where a capsule runs through the rock, not on the floors a valley joins or a climb starts from, it keeps off the
-    // climbs and runs; and all of it off the outcrops.
+    // climbs, runs and caverns (so a cavern's roof rests on whole rock); and all of it off the outcrops.
     let clear = |[from, to]: [[f64; 2]; 2], half: f64| {
         let steps = (distance(from, to) / CELL_M).ceil().max(1.0) as u32;
         let rock_clear = (0..=steps).all(|step| {

@@ -117,6 +117,34 @@ test('the fallen are told the seconds to Respawn, then may press it; never in th
   assert.deepEqual(revived, { offered: false, canRespawn: false, line: 'Cal is reviving you  60%' });
 });
 
+test('a Breach says how its fallen stand: in its own seconds, or revived by the company while its revives last', () => {
+  const lying = fighterView(seen(1, [0, 0, 0], 60).fighter ?? new Float64Array());
+  const breach = (ticks: number | null, revives: number) => fallenOf(lying, 1, word(), () => '', { ticks, revives });
+  assert.deepEqual(breach(600, -1), { offered: false, canRespawn: false, line: 'Standing again in 9 s' });
+  assert.equal(breach(null, 3)?.line, 'A company member can revive you · 3 revives left');
+  assert.equal(breach(null, 1)?.line, 'A company member can revive you · 1 revive left');
+  assert.equal(
+    breach(null, 0)?.line,
+    'No revives left. You stand again once the encounter is won or your company falls.',
+  );
+  const reviving = word({ reviving: [{ fallen: 1, reviver: 4, progress: 0.5 }] });
+  assert.equal(
+    fallenOf(lying, 1, reviving, () => 'Cal', { ticks: null, revives: 3 })?.line,
+    'Cal is reviving you  50%',
+  );
+  const fight = { others: new Map([[2, seen(2, [1, 0, 0], 0)]]), player: 1, reviving: false };
+  const kept = reviveHere(
+    fight,
+    word(),
+    [0, 0, 0],
+    true,
+    { held: () => true },
+    () => 'Ada',
+    () => false,
+  );
+  assert.deepEqual([kept.use, fight.reviving], [null, false], 'one its rules keep down offers nothing');
+});
+
 test('a fallen ally wears a lit mark over them, and none stands over the living or the strayed', () => {
   const others = new Map([
     [2, seen(2, [4, 5, 1], 0)],

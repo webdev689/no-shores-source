@@ -32,8 +32,8 @@
       { "who": "postmaster", "say": "Letters come here too. Sign for them, and they're yours." }
     ],
     "roundHarbour": [
-      { "who": "harbourmaster", "say": "The Shipwright's fittings are sold through me. Guns, hulls, sails, the lot." },
-      { "who": "harbourmaster", "say": "Keep her sound, and she'll bring you home." }
+      { "who": "harbourmaster", "say": "So the sea gave you back. You'll want a deck under you." },
+      { "who": "harbourmaster", "say": "The Sloop at the end of the quay is yours. Bring it back afloat." }
     ],
     "houseBegin": [
       { "who": "stormcaller", "say": "You'll hear all three of us. Start with the loudest. Me." }

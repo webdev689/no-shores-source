@@ -5,7 +5,17 @@ import type { PlayerPlate } from '../network/plateMessages.ts';
 import { SLOOP_HULL, plateOverM } from '../ships/hulls.ts';
 import { SEA_PLATE_RANGE_M, seaPlated, seaPlates } from './seaPlates.ts';
 
-const ship = (player: number, x: number): SeenShip => ({ player, x, y: 0, heading: 0, pace: 0 });
+const ship = (player: number, x: number): SeenShip => ({
+  player,
+  x,
+  y: 0,
+  heading: 0,
+  pace: 0,
+  hull: 0,
+  dress: [],
+  name: [],
+  emblem: 0,
+});
 const plate = (player: number, name: string, level: number): PlayerPlate => ({
   player,
   name,
@@ -28,6 +38,15 @@ test("each other player's ship wears their plate over its masthead, as drawn, an
     ],
   );
   assert.deepEqual(players[0]?.feet, [500, 0, plateOverM(SLOOP_HULL) * 5], 'over the masthead of a ship drawn 5 times');
+  assert.equal(players[0]?.vessel, undefined, 'an unnamed ship shows no name');
+});
+
+test("another player's ship wears its plate over its own hull's masthead, its name under the player's", () => {
+  const frigate = { ...ship(2, 500), hull: 3, name: [0, 1] };
+  const [plated] = seaPlated([frigate], plates, 2);
+  assert.deepEqual(plated?.feet, [500, 0, plateOverM(3) * 2], "over the Frigate's masthead");
+  assert.ok(plateOverM(3) > plateOverM(SLOOP_HULL), 'which stands higher than the Sloop’s');
+  assert.match(plated?.vessel ?? '', /^the \w+ \w+$/);
 });
 
 test('a ship wears its mark out to the distance ships are seen at, before the eye, and none past it or behind', () => {

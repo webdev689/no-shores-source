@@ -68,6 +68,47 @@ pub enum EventKind {
     Revived = 35,
     Checkpoint = 36,
     FellBack = 37,
+    /// A Breach's moments (`breach/`), the amount as each says: an encounter begun, gone to its next stage, won and
+    /// wiped (its number), the Breach cleared; a player marked Rewritten (their number), cleansed, carried through a
+    /// rift; the company unwritten (how many); the Lodestone taken, set down, grounded (1 where it broke a ward) and
+    /// held true; a bell woken, broken and rung (its place); a Husk fused (how many have); ground overtaken harming a
+    /// player; a mooring claimed; a desk marked and blotted, and the Scrivener writing itself; a Watcher seeing a
+    /// player (their number); a rift opened and closed, a Keeper fallen (the rift); a toll; the Steward taking, the way
+    /// back opening, the taken returned (the shore), and laid bare.
+    BreachBegun = 38,
+    BreachStage = 39,
+    BreachWon = 40,
+    BreachWiped = 41,
+    BreachCleared = 42,
+    Rewritten = 43,
+    Cleansed = 44,
+    Carried = 45,
+    Unwritten = 46,
+    LodestoneTaken = 47,
+    LodestoneDropped = 48,
+    Grounded = 49,
+    HeldTrue = 50,
+    BellWoke = 51,
+    BellBroken = 52,
+    BellRang = 53,
+    Fused = 54,
+    Overtaken = 55,
+    Claimed = 56,
+    DeskMarked = 57,
+    Blotted = 58,
+    WroteItself = 59,
+    Seen = 60,
+    RiftOpened = 61,
+    RiftClosed = 62,
+    KeeperFell = 63,
+    Tolled = 64,
+    Taken = 65,
+    WayBack = 66,
+    Returned = 67,
+    LaidBare = 68,
+    /// A player the gate's company would not hold, told to them alone: the amount why (`breach::gate::SHUT_FULL`,
+    /// `SHUT_LEVEL`, `SHUT_HARD`).
+    ShutOut = 69,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round
@@ -179,7 +220,8 @@ impl Room {
         let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let held = self.held_up(defender, suffer(&before, blow, &verdict));
-        let after = self.warded(defender, held);
+        let court = self.warded(defender, held);
+        let after = self.scrivener_warded(defender, court);
         self.set_fighter(defender, after);
         // The fight's heat follows what the players' side took and what it dealt and killed, their companions and
         // hands with them, each as the numbers combat is tuned for: what they dealt, a shield's share with it,

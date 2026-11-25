@@ -192,19 +192,16 @@ function groupsOf(week: ThisWeek): readonly Group[] {
       id: 'week',
       name: 'This week',
       reset: { icon: 'week', endsAt: week.week.endsAt, words: `The week turns at this time, ${local}` },
-      rows: [...weekly, ...boon],
-    },
-    {
-      id: 'later',
-      name: 'Later',
-      reset: null,
       rows: [
+        ...weekly,
+        ...boon,
         {
           id: 'breaches',
           icon: 'breach',
           name: 'Breaches',
-          lines: [[{ drawn: [icon('locked')], words: 'Not open yet.' }]],
-          words: 'Breaches come later.',
+          lines: [],
+          words:
+            'The Drowned Vale, at Normal and Hard: each encounter pays once a week at each tier. A company launches it from the Playlist beside any port.',
         },
       ],
     },

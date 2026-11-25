@@ -30,13 +30,11 @@ import { keepSites, siteOfWorld } from './guild/siteNames.ts';
 import { GameScene } from './scene.ts';
 import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
+import { FIRST_NODE } from './nodes.ts';
 import { Stack } from '../ui/stack.ts';
 import { DrawnInterface } from './drawnInterface.ts';
 import { startSocial } from './social/social.ts';
 
-/** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
- *  look round the world. */
-export const FIRST_NODE = 'overlook-social';
 /** The most ships of one hull drawn at sea in a frame: the player's, the room's and the friendly ships near it. */
 export const SEA_SHIPS = 16;
 
@@ -62,7 +60,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   if (link) void keepBinds(link);
   if (link) keepGuild(link);
   // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
-  const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
+  const { module: roomModule, hulls: builtHulls } = roomModuleFrom(base);
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   // The interface the game draws itself, once its face is read, alone until the game's frames begin.
@@ -114,7 +112,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   const views = { scene, figureView, eventProps, shipModels, forge, firstPerson, store, sloop };
   const modules = {
     roomModule,
-    builtSloop,
+    builtHulls,
     land,
     movement,
     seaWeather,

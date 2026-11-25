@@ -155,7 +155,8 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, source: Source, dice
         }
         item
     };
-    item.element = element::rolled(item.kind, item.rarity, dice);
+    // A Breach's weapon rolls none: it is made Normal's, and opened at Hard it is Forged with one (`element::forged`).
+    item.element = if item.breach { None } else { element::rolled(item.kind, item.rarity, dice) };
     Some(item)
 }
 

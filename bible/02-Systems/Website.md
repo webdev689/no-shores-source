@@ -27,6 +27,7 @@ code:
   - site/src/art/places.ts#town
   - site/src/art/heroScene.ts#heroLayers
   - site/src/art/logo.ts#iconSheet
+  - site/src/art/logo.ts#serverIconSheet
   - site/src/site.css
   - site/wrangler.jsonc
   - .github/workflows/site.yml
@@ -78,7 +79,9 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   (`gameScenes.ts`): the keepers at their counters in the arcades of Overlook's court, a duel by firelight with the fighters' edges lit by the
   brazier between them, and a dungeon's gate in a hillside. Every scene fills its frame; only the lights layer and the
   logo have clear cells. The logo is drawn cell for cell from
-  the game's own picture of it, shown at whole-number scale; the tab's icon is its first letter.
+  the game's own picture of it, shown at whole-number scale; the tab's icon is its first letter. The Discord server's
+  icon (`server-icon`) is that letter on a night with the moon's halo behind it, 112 pixels drawn nine times over,
+  the letter kept clear of the round crop Discord gives every server icon; the bot's layout sets it.
 - **Home, after DFO's.** The scene with the logo, the premise's first line, a line saying what the game is, Play and
   the Discord, and what it runs on; "What is No Shores?"; five numbered rows of what a player does, each a picture
   beside a few lines and its facts as tags (Overlook, a ship of your own, steel and the Arts, gear, dungeons, events

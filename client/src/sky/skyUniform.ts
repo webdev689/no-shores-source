@@ -35,6 +35,7 @@ export const SKY_GROUP = 3;
 export const SKY_WGSL = /* wgsl */ `
 struct Sky {
   key: vec4f,
+  // w: underground, how far off all is the dark (fog's colour), metres; 0 under the open sky.
   key_light: vec4f,
   sun: vec4f,
   moon: vec4f,
@@ -279,6 +280,9 @@ export interface SkyLook {
   readonly latitude: number;
   /** The moon's month, 0 new to a half full and back to 1. */
   readonly moonPhase: number;
+  /** Underground (a Breach's run), how far from the eye, metres, all is lost in the fog's colour, the dark: the
+   *  props fade into it from a third of the way. None under the open sky. */
+  readonly darkM?: number;
 }
 
 /** A lamp round the eye: where it is from the eye (metres east, south and up), how far it reaches, and its light. */
@@ -343,7 +347,7 @@ export function skyNumbers(
   const numbers = new Float32Array(VEC4S * 4);
   const rows: readonly (readonly number[])[] = [
     [...look.key, look.keyBright],
-    [...look.keyLight, 0],
+    [...look.keyLight, look.darkM ?? 0],
     [...look.sun, look.daylight],
     [...look.moon, look.moonLit],
     [...look.zenith, look.cloud],

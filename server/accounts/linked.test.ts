@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { linkedCharacter } from './linked.ts';
+import { PLEDGES_MAX, linkedCharacter, linkedPledges } from './linked.ts';
 import { sqliteForTests } from './sqliteForTests.ts';
 
 const DISCORD = '80351110224678912';
@@ -45,4 +45,32 @@ test('linked: a character no room kept yet has no level; one pledged to none, or
   assert.deepEqual(unpledged, { name: 'Ann', level: 4, faction: null });
   const unknown = await linkedCharacter(await withAccount('Ann', '{"allegiance":{"pledge":9}}'), DISCORD);
   assert.equal(unknown?.faction, null);
+});
+
+test('pledges: each linked Discord id gets its house or null, in one ask; an id linked to none is left out', async () => {
+  const database = sqliteForTests();
+  const accounts: Array<[string, string, string | null]> = [
+    ['a1', '801', '{"allegiance":{"pledge":3}}'],
+    ['a2', '802', '{"allegiance":{"pledge":0}}'],
+    ['a3', '803', null],
+    ['a4', '804', '{"allegiance":{"pledge":1}}'],
+  ];
+  for (const [id, discordId, body] of accounts) {
+    await database
+      .prepare("INSERT INTO accounts (id, username, discord_id, created_at) VALUES (?1, 'Ann', ?2, 1)")
+      .bind(id, discordId)
+      .run();
+    if (body !== null)
+      await database.prepare('INSERT INTO characters (account_id, body) VALUES (?1, ?2)').bind(id, body).run();
+  }
+  const found = await linkedPledges(database, ['801', '802', '803', '804', '805']);
+  assert.deepEqual(found, { '801': 'The Veiled', '802': null, '803': null, '804': 'Stormcallers' });
+  assert.deepEqual(await linkedPledges(database, ['805']), {});
+});
+
+test('pledges: more Discord ids than one ask may name answer nothing', async () => {
+  const database = await withAccount('Ann', '{"allegiance":{"pledge":2}}');
+  assert.deepEqual(await linkedPledges(database, [DISCORD]), { [DISCORD]: 'Lamplighters' });
+  const many = [DISCORD, ...Array.from({ length: PLEDGES_MAX }, (_unused, index) => String(index))];
+  assert.deepEqual(await linkedPledges(database, many), {});
 });

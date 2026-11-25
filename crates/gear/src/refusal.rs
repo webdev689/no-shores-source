@@ -1,5 +1,5 @@
-//! Why an ask is refused. A refusal's place in the list is its number on the wire, which the page reads in its own list
-//! (`gear.ts` `REFUSALS`), so a new one goes last.
+//! Why an ask is refused, each by its number: the room answers a refusal as its number plus one (`answer_code`), which
+//! the page reads in its own list (`gear.ts` `REFUSALS`), so a refusal's number never moves and a new one goes last.
 
 /// Why an ask was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -109,4 +109,15 @@ pub enum Refusal {
     NoHorn = 164,
     /// Past the account's limit on outpost asks, which the accounts answer so: never a refusal of the ask itself.
     TooManyAsks = 165,
+    /// The Harbourmaster's asks: the shipyard has no hull of that number (answered as 167); the player keeps no ship
+    /// of that hull, or none at all; no such dress; no word of the shipyard's lists has that place; the ship asked to
+    /// be sailed is the one sailed; the ship asked to be named bears that name already; and a free name asked for a
+    /// ship named already, which is the shipyard's renaming, asked as one.
+    NoSuchShip = 166,
+    NoShip = 167,
+    NoSuchDress = 168,
+    NoSuchName = 169,
+    Sailed = 170,
+    Called = 171,
+    Named = 172,
 }

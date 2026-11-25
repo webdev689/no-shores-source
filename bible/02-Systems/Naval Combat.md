@@ -19,7 +19,7 @@ code:
   - crates/naval/src/captain/aim.rs#Judgement
   - crates/naval/src/captain/odds.rs#odds
   - crates/naval/src/fight.rs#Fight
-  - crates/naval/src/fight.rs#sail_hurt
+  - crates/naval/src/fight_helm.rs#sail_hurt
   - crates/naval/src/boost.rs#Boost
   - crates/naval/src/fight_step.rs
   - crates/naval/src/fight_focus.rs#spread_after
@@ -83,7 +83,8 @@ code:
 ---
 # Naval Combat
 
-Broadsides, and rams, between players' Sloops and the enemy factions' captains, each in its rank's hull: DFO's naval
+Broadsides, and rams, between players' ships, each in the hull its player sails ([[Shipyard]]), and the enemy factions'
+captains, each in its rank's hull: DFO's naval
 combat, rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one
 captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. At sea a fight ends
 in a sinking and what floats, or in a captain striking and a boarding; a player who loses washes up at a port city,
@@ -111,12 +112,16 @@ sea's soundscape ([[Ambience]]).
   a shot or tunnels one through a hull.
 - **A gun is laid, not pointed.** A broadside fires square to the hull ([[Ship Guns Keep Square Broadsides]]); the
   gunner sets only the range, and the low arc that lands there is found within the carriage. Each gun's mouth rides
-  the ship's heel; the lay stays its upright hull's.
+  the ship's heel; the lay stays its upright hull's. Every ship's guns, a player's and a captain's
+  ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]), are each elevated for that range from their own
+  port and deck (`Lay::laid_on`), so a second gun deck throws as far as the first, and a captain's misjudged range is
+  as far off at every gun. Square, a battery longer than the ship it fires at throws its end guns' balls past that
+  ship's ends, the more so as the range opens.
 - **The guns** are DFO's swivel, three a side: 55 m/s, -10 to 14 degrees, 149 m at most from the ship's deck. A broadside
   ripples 0.09 s a gun, each ball from where its port is by then, scattered by the volley's seed (more for a poorer
   gunner). No battery bears within 35 degrees of its bow or 40 of its stern. Each side reloads on its own clock: a
   captain's 4 to 7.2 s by its crew left; the player's Sloop's ten hands load its guns in 5.6 s whole, up to 10.1 s with
-  none left ([[Crew]], "Hands").
+  none left ([[Crew]], "Hands"), another hull at its class's pace ([[Shipyard]]).
 - **The loads** are round, grape, chain and heated shot, with DFO's factors over round shot: grape is slower and wider
   and kills men (less as its flight lengthens), chain tears canvas, heated shot sets a ship alight. A loaded side drawn
   for a new load takes half its reload; one loading keeps its progress.
@@ -155,9 +160,9 @@ sea's soundscape ([[Ambience]]).
   where it struck (holed within 1.1 m of the water under it, 40% more; the hull above; the canvas), 85 to 115% by its
   own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
 - **A ship** has hull, canvas and men. A captain strikes at their rank's share of their hull (a Major's quarter) or with no
-  men left. Any ship, the player's Sloop too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
+  men left. Any ship, the player's too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
   by its seed (a player's by none) and settling slowly, then fast; going down, its guns are silent and its helm takes
-  no orders. The rest of the volley that made a captain strike cannot sink their ship. A player's Sloop never strikes. Fires
+  no orders. The rest of the volley that made a captain strike cannot sink their ship. A player's ship never strikes. Fires
   (three at most) burn hull, canvas and men for 15 s, each as strong against its ship as the ball that set it: 1.4
   hull a second times the shooter's level strength (a captain's) and what both ships' fittings made of the ball
   (`apply_burning`), so a fire keeps its worth as levels rise; a ball that does its target no harm, its ship four
@@ -287,8 +292,9 @@ Elite's or a Miniboss's mark, above a bar of their hull, red, orange or yellow b
 no plate covers another. A Boss's stands across the top of the screen with their faction's name. Out of a fight, each
 other player's ship wears the plate that player wears on land ([[Interface]], "Players").
 
-A hull changes the ship's size, its boxes, its sails, its handling, its stem and how many guns it carries, never its
-strength: the table above is the whole of it. A bigger box is struck more often, so its canvas and men are its class's
+For a captain, a hull changes the ship's size, its boxes, its sails, its handling, its stem and how many guns it
+carries, never its strength: the table above is the whole of it. A player's ship has its hull's class's numbers
+instead ([[Shipyard]], "Each hull's numbers"). A bigger box is struck more often, so its canvas and men are its class's
 times its rank's times its exposure: the fight's hit share on its box over the Sloop's, from the Sloop's guns at the
 duel's 110 m by a captain's gunners (the Schooner 1.44, the Brig 1.65, the Frigate 1.88). Its hull points take it too,
 less for a taller hull's hits holing it less often (the Schooner 1.39, the Brig 1.58, the Frigate 1.79), so the same
@@ -403,7 +409,7 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
   keeps them while it lasts; a player joining it fights in its weather, a fight among captains a player came on keeps
   its own, and what floats drifts down the wind of the fight it came from.
 - **Many in a fight** (`battle.rs`). Any player not fighting and not in Overlook's home waters who comes within 750 m of a ship of a fight joins it, a
-  fight with players in it too, their Sloop hove to under a number of their own; every player in it fights every
+  fight with players in it too, their ship hove to under a number of their own; every player in it fights every
   captain, and players never harm one another (a ball passes through a ship of its own flag). A hostile ship at sea
   within 750 m of a fight joins it on its own side, under sail where it lay: it fights players and captains of other
   factions. Each player sees the fight from their own ship: their view numbers it as the player's and the fight's first
@@ -443,9 +449,10 @@ whole bring the Tithe Sloop to strike.
 
 ## In the World Editor
 
-While sailing, `F` calls a Grey Tithe captain, a Major in their Sloop, onto the ring 650 to 1000 m round the Sloop, where the
-water floats it, heading across its waters on a slant; `F` again sends the captain off. The fight then steps the Sloop in its
-helm's place. Holding the right mouse aims as the game's fight does ("The aim, as DFO's"): the camera goes round to
+The editor sails the Sloop, or the hull its address names (`?hull=schooner`, `brig` or `frigate`), as that hull's
+rules and drawing. While sailing, `F` calls a Grey Tithe captain, a Major in their Sloop, onto the ring 650 to 1000 m
+round the ship, where the water floats it, heading across its waters on a slant; `F` again sends the captain off. The
+fight then steps the ship in its helm's place. Holding the right mouse aims as the game's fight does ("The aim, as DFO's"): the camera goes round to
 the battery's eye aboard on the side looked at and looks off it at the lay, and a drag up or down lays the range, unless the view's
 middle is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, `C` braces, and `Shift` bursts.
@@ -634,7 +641,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   pace is capped so the player takes 0.6 s of real time or more to reach its sight (750 m), closing at their ship's 12
   m/s and the fastest rank's 2.88, down DFO's ladder by fives, never under ×5. The player's way is judged along every leg of their course they would
   sail through that tick at their own pace, so no turn of a course slips past it. Within 700 m of a hostile ship that
-  would engage this player (bold, chased by them, one `wary_takes` would fall on their Sloop, or one in a clash, which a
+  would engage this player (bold, chased by them, one `wary_takes` would fall on their ship, or one in a clash, which a
   player in sight joins), it is held to ×1, the world's own time (`threat.rs`, `holds`); a wary ship
   that will not engage caps the pace by the ladder alone. A ship in Overlook's home waters is neither held nor slowed
   by any hostile ship, as none meets it there. The room sails
@@ -654,18 +661,18 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
 - **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
-  it, joins it: their Sloop heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
+  it, joins it: their ship heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and
   its captains choose whom to fight by their own law, the one each fights reckoned nearer ("How a fight ends"). It is
   won once every Tithe ship is beaten: each pays as a Tithe ship beaten, nothing is paid or lost for the friendly ship
   (`SeaFight::friends`), and one sunk lays nothing that floats. Afloat as the fight ends, it sails on for its port.
 - **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
-  them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's Sloop hove to
+  them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's ship hove to
   (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
   may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
   captain has sunk or gone; its last view is shown once, in the next snapshot however many ticks the room caught up before it (`Fights::sent`),
   and the players sail on from where it left them, keeping their
   hurts.
-- **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
+- **In the game** the view pans down over 1.5 s from the raised sea to their ship, every ship easing on the way from
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, C to
@@ -690,16 +697,21 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   the shorter way to a point abeam of its station at its height, and then straight in over the rail, square to the side
   (`wayAboard`).
 - **The eye** (`AimCamera`) eases over DFO's 0.22 s, smoothstepped, to its battery's station (`aimStation`), aboard as
-  Black Flag's is: over its own deck, its rail and guns along the foot of the view. Each hull's station is searched for
-  once a page (and as a sea fight opens): within 4 m of its battery's ends, in a gap of its rig no sail comes within
-  0.8 m of in any wind (a square yard braced at most 45° round its mast and bellied either way, a gaff swung to either
-  beam aft of its luff, a staysail swaying on its stay) nor within 0.8 m of a mast 0.4 m thick each side of its line,
-  with the way in from abeam as clear;
-  3 m over the deck at best and 1.7 m at least, 0.4 m over its rail, and high enough that the water at its guns' nearest
-  lay shows over the rail; near its battery's middle and its centreline. The Sloop's stands 2 m forward of its mast,
-  1.8 m out; the Schooner's under its main boom; the Brig's on its quarterdeck, aft of its main course; the Frigate's on
-  its centreline between its mizzen and its main. A hull whose rig left no such gap would keep an eye 1.5 m out past its
-  side, clear of its sails' swing. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
+  Black Flag's is: over its own deck, its rail and guns along the foot of the view
+  ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]). Each hull's station is searched for once a page
+  (and as a sea fight opens), its spots tried best first: within 4 m of its battery's ends, where no canvas comes
+  within a metre in any wind from ahead round to astern on either side, its sails set and trimmed as its rig trims
+  them (`byCanvas`: the canvas itself, so a square yard braced round its mast sweeps a wedge, not the box its swing
+  spans), nor within 0.8 m of a mast 0.4 m thick each side of its line, its way in from abeam passing through no sail;
+  2 m over the deck at best (a sailor's eye, under a square course's foot), 1.7 m at least, 0.4 m over its rail, its
+  rail's top at least 10° under the look to the water at its guns' nearest lay, so the rail stands at the foot of the
+  view (the rail read as the highest its deck stands within 2.5 m along its keel: the deck's grid holds where a body
+  stands, so a bulwark shows in it only by its posts); by its battery's middle, out toward the side laid at three
+  quarters of its half beam at best, so its masts' canvas keeps out of the view. Each stands within half a metre of
+  its guns' middle: the Sloop's 1.6 m forward of its mast, 2 m out; the Schooner's between its masts, 2.9 m out; the
+  Brig's between its masts, 3.6 m out and 1.2 m over its rail; the Frigate's forward of its mainmast, 4.3 m out and
+  0.9 m over its rail. A hull whose rig left no such spot would
+  keep an eye 1.5 m out past its side, clear of its sails' swing. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
   swell), from the same answer of the rules the frame draws the ship from, so the ship holds still in the view however
   unevenly the answers come; the view itself stays level, and narrows 15% as it eases in (`AIM_ZOOM`) in the sea's fights and the
   story's. Once it is there, no way round is looked for again, however the ship heels. A sinking ship's guns are silent:
@@ -793,13 +805,18 @@ browser by the same functions the room fires by (`preview`), among the ships the
 
 Alone, the fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders (up
 to a second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. A begin may name
-its captain's rank (a Major's unless it does), and the captain sails its hull; each ship's answer names its hull. Its state
+its captain's rank (a Major's unless it does), and the captain sails its hull, and the player's hull (the Sloop's
+unless it does); each ship's answer names its hull. Its state
 never crosses, so requests and answers are JSON. A scripted fight's fingerprint at the end of each leg is pinned
 natively and through WebAssembly, and the same fight's against each hull ([[Agree to the Bit]]). In a fleet room the
 room's crate holds the fight, and a browser predicts its own ship through `room-wasm` by the same steps.
 
 ## Limits
 
+- The aim's station keeps clear of the rig's canvas and masts, not its shrouds, stays or spars: one may cross a corner
+  of the view, as a Schooner's shroud does at the foot of its own. The Brig's and the Frigate's eyes stand among
+  their courses' height, between the wedges their braced yards sweep, so in some winds a course's edge shows at a
+  corner of the view.
 - A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
   not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
   or run, and each hull's hull points are scaled to an exact gunner's fire.

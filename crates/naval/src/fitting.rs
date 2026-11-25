@@ -236,7 +236,8 @@ impl Fight {
                 .min_by(|one, other| one.1.total_cmp(&other.1));
             if let Some((other_ship, _, _)) = target {
                 let point = [other_ship.ship.x, other_ship.ship.y, square.centre[2]];
-                return Some(lay_on(&vessel.ship, &vessel.pose, arms, side, vessel.guns.load, point));
+                let laid = lay_on(&vessel.ship, &vessel.pose, arms, side, vessel.guns.load, point);
+                return Some(laid.laid_on(point));
             }
         }
         None

@@ -169,8 +169,11 @@ jobs:
           done
           status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://$ZONE/no-such-page/")
           test "$status" = 404 || { echo "::error::an address with no page answered $status, not 404"; exit 1; }
+          # www's name is seconds old, and a resolver that asked too soon keeps "no such name" for the zone's 30 minutes,
+          # so it is reached at the bare domain's address, already answering, on the same Cloudflare edge.
           for attempt in $(seq 24); do
-            moved=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 "https://www.$ZONE/game/") || moved=""
+            moved=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 \
+              --connect-to "www.$ZONE:443:$ZONE:443" "https://www.$ZONE/game/") || moved=""
             if [ "$moved" = "301 https://$ZONE/game/" ]; then exit 0; fi
             sleep 10
           done

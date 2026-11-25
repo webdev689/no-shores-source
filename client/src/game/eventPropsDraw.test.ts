@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { PROP_MODULES } from '../city/eventProps.ts';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
+import manifest from '../../../content/modules/modules.json' with { type: 'json' };
 import { EVENT_LAMPS } from '../sky/lamps.ts';
-import { EventPropsDraw, PROPS_SHADER } from './eventPropsDraw.ts';
+import { EventPropsDraw } from './eventPropsDraw.ts';
+import { PROPS_SHADER } from './eventPropsShader.ts';
 import { MATERIALS, packLips } from './eventPropsPack.ts';
 import type { Gpu } from '../gpu.ts';
 
@@ -34,10 +37,17 @@ test("the drawer's materials are the modules' kit's, in its order", () => {
   const [listed, cloths] = ['MATERIALS', 'CLOTHS'].map((name) => new RegExp(tuple(name), 'm').exec(kit)?.[1]);
   assert.ok(listed && cloths, 'kit.py names its MATERIALS and its CLOTHS');
   const names = (text: string) => [...text.matchAll(/'([a-z_]+)'|\*CLOTHS/g)].map((found) => found[1] ?? '*');
-  assert.deepEqual(
-    names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name])),
-    [...MATERIALS],
-  );
+  const kits = names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name]));
+  assert.deepEqual(kits, [...MATERIALS]);
+});
+
+test("every material an event's or a Breach's piece wears is one the props' drawer draws", () => {
+  const drawn: readonly string[] = MATERIALS;
+  for (const name of PROP_MODULES) {
+    const module = manifest.modules.find((each) => each.name === name);
+    if (!module) continue;
+    for (const group of module.groups) assert.ok(drawn.includes(group.material), `${name}: ${group.material}`);
+  }
 });
 
 test('every material a module may wear has a colour of its own in the drawer, none left to the grey default', () => {

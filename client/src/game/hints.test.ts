@@ -8,6 +8,7 @@ import {
   HINTS,
   type OnFoot,
   type StripHint,
+  followHint,
   footHints,
   footStrip,
   hintsFor,
@@ -15,6 +16,7 @@ import {
   seaStrip,
   stripOf,
   withMapKey,
+  withFollow,
   withoutLeave,
 } from './hints.ts';
 import { standingOf } from './hudLaw.ts';
@@ -172,6 +174,37 @@ test('while a fall plays no key is listed; once death is told, Respawn; standing
   // Fallen in the fight: nothing until Respawn may be pressed, then Respawn.
   assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST, { canRespawn: false }).hints, []);
   assert.deepEqual(keysShown(standingOf('inside', 0), AT_REST, { canRespawn: true }), stripOf('dead'));
+  const waits = standingOf('dead', 30, true, true, null);
+  assert.deepEqual(keysShown(waits, AT_REST).hints, [ALL_CONTROLS], 'no Respawn where the place stands them itself');
+});
+
+test("bearing the Lodestone the strip lists each key once: the swing its Strike, the guard Hold True, an Art's Ground", () => {
+  const bearer = { charged: true };
+  assert.deepEqual(shown({ drawn: true, worn: 1, bearer }), [
+    'Right button Strike',
+    'Left button Hold True',
+    'V Dodge',
+    '3 Heal',
+    'R / Q / G Ground',
+    'K All controls',
+  ]);
+  assert.deepEqual(shown({ worn: 3, bearer: { charged: false } }), [
+    'Z Draw',
+    'Shift Run',
+    'Space Jump',
+    'Left button Hold True',
+    'R / Q / G Ground (charging)',
+    'M Hold to leave',
+    'K All controls',
+  ]);
+  assert.deepEqual(shown({ mounted: true, bearer }), shown({ mounted: true }), 'riding, as ever');
+});
+
+test('fallen in a Breach the follow key names whom the camera follows, first under the fallen strip', () => {
+  assert.deepEqual(words([followHint('Ada')]), ['F Following Ada · Next']);
+  assert.deepEqual(words([followHint('')]), ['F Follow']);
+  const none = keysShown(standingOf('inside', 0), AT_REST, { canRespawn: false });
+  assert.deepEqual(withFollow(none, 'Ada'), { title: 'Fallen', hints: [followHint('Ada')] });
 });
 
 test('at sea the keys shown follow what the player is doing, a fight first and its aim within it', () => {
@@ -202,6 +235,8 @@ test('every strip is a handful of keys, ends with the key to every control, and 
     { mounted: true },
     { mode: 'hang' },
     { mode: 'climb' },
+    { free: true, worn: 1, bearer: { charged: false } },
+    { free: true, worn: 3, drawn: true, bearer: { charged: true } },
   ];
   const strips = [...Object.values(HINTS), ...stances.map((foot) => footHints({ ...AT_REST, ...foot }))];
   const known: ReadonlySet<string> = new Set(BIND_IDS);

@@ -27,9 +27,13 @@ impl Room {
         self.entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, &self.blocks, ring, spawns, places);
     }
 
-    /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it.
+    /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it. Only Normal seas stand
+    /// a Breach's gate, as a run asks its zone's Normal room alone whether its gate opened.
     pub fn set_difficulty(&mut self, difficulty: Difficulty) {
         self.difficulty = difficulty;
+        if difficulty != Difficulty::Normal {
+            self.breach_gate = None;
+        }
         self.raise_garrison();
     }
 

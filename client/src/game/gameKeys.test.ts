@@ -9,8 +9,8 @@ import { padName } from './controls.ts';
 import { BINDS, type InputFrame } from '../player/input.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
-const dead = { standing: { kind: 'dead' } };
-const alive = { standing: { kind: 'inside' } };
+const dead = { standing: { kind: 'dead' }, fallen: true };
+const alive = { standing: { kind: 'inside' }, fallen: false };
 /** The game as `contextOf` reads it: its flow, and the sea and the foot as far as it looks at them. */
 const game = (flow: object, sea: object | null = null, foot: object | null = null) =>
   ({ flow, sea, foot }) as unknown as Playing;
@@ -31,9 +31,9 @@ test('the controls act where the player is: a window, dead, on foot, at the helm
   const boarded = (foot: object) => afloat({ fight: {}, boarding: { onDeck: true, foot } });
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(alive))), 'foot', "on a struck ship's deck");
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(dead))), 'dead');
-  // Fallen in a fight, the section's standing inside: Respawn's key and the pad's A act there too.
+  // Fallen in a fight, the section's standing inside: Respawn's key, the pad's A and Follow act there too.
   const fell = { standing: { kind: 'inside' }, fell: { offered: true, canRespawn: false, line: '' } };
-  assert.equal(contextOf(game({ mode: 'foot' }, null, fell)), 'dead', 'fallen on foot');
+  assert.equal(contextOf(game({ mode: 'foot' }, null, fell)), 'dead', 'fallen on foot, as the Follow key is read');
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(fell))), 'dead', 'fallen on a boarded deck');
 });
 
