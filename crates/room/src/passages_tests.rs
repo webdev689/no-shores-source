@@ -423,6 +423,11 @@ fn a_fallen_player_asks_the_passages_nothing() {
     (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
     assert_eq!(room.ask_passage(player, PassageAsk::GoHome), refusal(gear::Refusal::Fallen));
     assert!(dive(&room, player).is_some_and(|dive| !dive.homeward));
+
+    // Fallen as the reach keeps it, the body standing whole.
+    let (_, _, mut room, player) = lit_lamp();
+    room.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0, fell: false };
+    assert_eq!(room.ask_passage(player, PassageAsk::GoHome), refusal(gear::Refusal::Fallen), "fallen as it stands");
 }
 
 #[test]
