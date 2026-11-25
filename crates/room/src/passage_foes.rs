@@ -74,6 +74,13 @@ fn roster(depth: u8, strand: bool) -> Roster {
     }
 }
 
+/// The roster at a depth off a strand, its members and its Elites, as the band reckons their pay (`gear::band`).
+#[cfg(test)]
+pub(crate) fn roster_of(depth: u8) -> (&'static [(u8, Rank)], &'static [u8]) {
+    let Roster { members, elites } = roster(depth, false);
+    (members, elites)
+}
+
 /// A lamp's guard's Miniboss, or its Boss at the fourth: the Reeve, the Tithe-Mate, and one of the island's two Elite
 /// Dungeons' Bosses, the week's by turns.
 fn lamp_guard(lamp: u8, island: &str, week: u64) -> Option<(u8, Rank)> {

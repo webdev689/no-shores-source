@@ -198,3 +198,30 @@ fn a_body_follows_every_way_the_walk_finds_to_what_a_zone_asks() {
     }
     assert!(failed.is_empty(), "{} ways not followed, the first: {:#?}", failed.len(), &failed[..failed.len().min(20)]);
 }
+
+#[test]
+fn a_hollows_bands_walk_their_beats_a_spread_inside_its_floor() {
+    let island = passage::island("continent-1").expect("Saltmere's passages");
+    let mut failed = Vec::new();
+    for week in 2_900..2_906 {
+        let web = Web::of(island, week);
+        for zone in &web.zones {
+            let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            let passage::Laid::Open(hollow) = &plan.ground else { continue };
+            let modifiers = gear::passages::week_modifiers("continent-1", week);
+            let route = ("continent-1", week, gear::dive::Route::Public);
+            let Some(room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
+            for beat in room.garrison.iter().filter_map(|post| post.beat.as_ref()) {
+                let inward = |at: &[f64; 3]| {
+                    let edge = reach::distance_to_ring(&hollow.ring, at[0], at[1]);
+                    if reach::inside(&hollow.ring, at[0], at[1]) { edge } else { -edge }
+                };
+                let nearest = beat.way().iter().map(inward).fold(f64::INFINITY, f64::min);
+                if nearest < crate::garrison::SPREAD {
+                    failed.push(format!("week {week} zone {}: a beat {nearest:.1} m inside the floor", zone.number));
+                }
+            }
+        }
+    }
+    assert!(failed.is_empty(), "{} beats near a wall, the first: {:#?}", failed.len(), &failed[..failed.len().min(20)]);
+}
