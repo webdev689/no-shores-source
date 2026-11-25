@@ -35,17 +35,18 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+      # The runner's package index is as old as its image, and Ubuntu removes superseded packages, so it is read anew.
+      # Installed before the long search, so a fault in the machine fails the run in seconds.
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -q > /dev/null
+          sudo apt-get install -y -q ffmpeg > /dev/null
       - name: Test the page reader
         run: node --test tools/freesound/pages.test.mjs
       - name: Find the candidates
         env:
           ONLY: ${{ github.event.inputs.only }}
         run: node tools/freesound/candidates.mjs freesound-candidates
-      # The runner's package index is as old as its image, and Ubuntu removes superseded packages, so it is read anew.
-      - name: Install ffmpeg
-        run: |
-          sudo apt-get update -q > /dev/null
-          sudo apt-get install -y -q ffmpeg > /dev/null
       - name: Cut the long picks
         run: python3 -I tools/freesound/publish.py --cut freesound-candidates
       # The owner's picks, each named by its hash, staged for the publish job: one R2 already serves is not. The
