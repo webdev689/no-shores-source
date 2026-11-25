@@ -83,9 +83,7 @@ pub fn python_comments(text: &str) -> Vec<Comment> {
             }
             continue;
         }
-        let code = raw.trim_start();
-        if let Some(quotes) = ["\"\"\"", "'''"].into_iter().find(|quotes| code.starts_with(quotes)) {
-            let rest = &code[quotes.len()..];
+        if let Some((quotes, rest)) = docstring_opening(raw.trim_start()) {
             let opened = Comment { lines: vec![(line, rest.split(quotes).next().unwrap_or_default().to_owned())] };
             if rest.contains(quotes) {
                 comments.push(opened)
@@ -105,6 +103,29 @@ pub fn python_comments(text: &str) -> Vec<Comment> {
     }
     comments.extend(docstring.map(|(_, open)| open));
     comments
+}
+
+/// The quotes a docstring opens with on a Python line (from its first letter) and the text after them: a statement
+/// that is only a `"""` or `'''` string, raw or not, standing alone or after a one-line `def` or `class` header.
+fn docstring_opening(code: &str) -> Option<(&'static str, &str)> {
+    let statement = after_header(code).unwrap_or(code);
+    let unprefixed = statement.strip_prefix(['r', 'R', 'u', 'U']).unwrap_or(statement);
+    ["\"\"\"", "'''"].into_iter().find_map(|quotes| unprefixed.strip_prefix(quotes).map(|rest| (quotes, rest)))
+}
+
+/// What follows a `def` or `class` header's colon on its own line, its parameters' and annotations' colons passed.
+fn after_header(code: &str) -> Option<&str> {
+    let header = ["def ", "async def ", "class "].iter().any(|word| code.starts_with(word));
+    let mut depth = 0_i32;
+    for (at, ch) in code.char_indices().filter(|_| header) {
+        match ch {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth -= 1,
+            ':' if depth == 0 => return Some(code[at + 1..].trim_start()),
+            _ => {}
+        }
+    }
+    None
 }
 
 /// Where a Python line's `#` comment starts, outside its quotes.

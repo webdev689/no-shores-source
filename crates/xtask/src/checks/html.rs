@@ -15,7 +15,7 @@ const BRIDGE: [&str; 3] = ["client/src/ui/canvasEvents.ts", "client/src/ui/page.
 /// What builds, styles or writes into a page's elements, and what each is called in a problem. A line is read
 /// `normalized`, so `document['createElement'] ('div')` is read as `document.createElement('div')`, and a word that
 /// ends in a letter is read whole, so `new Image` is refused but `new ImageData` is not.
-const REFUSED: [(&str, &str); 45] = [
+const REFUSED: [(&str, &str); 46] = [
     ("createElement", "makes an element"),
     ("createElementNS", "makes an element"),
     ("createTextNode", "makes an element"),
@@ -57,6 +57,7 @@ const REFUSED: [(&str, &str); 45] = [
     (".style[", "styles an element"),
     ("cssText", "styles an element"),
     ("setProperty", "styles an element"),
+    ("attributeStyleMap", "styles an element"),
     ("adoptedStyleSheets", "wears a stylesheet"),
     ("styleSheets", "wears a stylesheet"),
     ("CSSStyleSheet", "wears a stylesheet"),

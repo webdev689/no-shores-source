@@ -122,6 +122,18 @@ fn python_docstrings_and_trailing_comments_are_read() {
 }
 
 #[test]
+fn raw_and_one_line_docstrings_are_read_but_an_assigned_string_is_not() {
+    let raw = "def match():\n    r\"\"\"Changed on 2026-11-14.\"\"\"\n";
+    assert_eq!(problems_in("forge/body.py", raw).len(), 1, "a raw docstring");
+    let one_line = "def sail(x: int) -> dict[str, int]: \"\"\"Fixed in #1674.\"\"\"\n";
+    assert_eq!(problems_in("forge/body.py", one_line).len(), 1, "a docstring after a one-line header");
+    let class = "class Hull(Base): '''See #1674.'''\n";
+    assert_eq!(problems_in("forge/body.py", class).len(), 1, "a class's");
+    let assigned = "TEXT = \"\"\"Changed on 2026-11-14.\"\"\"\n";
+    assert!(problems_in("forge/body.py", assigned).is_empty(), "a string assigned is data, not a comment");
+}
+
+#[test]
 fn python_comments_follow_the_same_rules() {
     let text = format!("{}x = 1\n# HULL-FIT tag\n", "# why\n".repeat(MAX_COMMENT_LINES + 1));
     let problems = problems_in("forge/body.py", &text);

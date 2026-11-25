@@ -3,10 +3,12 @@ use super::Problem;
 /// No file in git is bigger than this. Renders, bakes and builds are generated, and stored outside git.
 pub const MAX_BYTES: u64 = 1024 * 1024;
 
-/// Media, and builds that are not text (WebAssembly, the ship exporter's meshes), which the UTF-8 check skips.
-const MEDIA_EXTENSIONS: [&str; 28] = [
+/// Media, and builds that are not text (WebAssembly, the ship exporter's meshes, the module packs and any other
+/// binary bake), which the UTF-8 check skips.
+const MEDIA_EXTENSIONS: [&str; 30] = [
     "png", "jpg", "jpeg", "webp", "gif", "bmp", "tga", "dds", "ktx", "ktx2", "glb", "gltf", "fbx", "obj", "blend",
-    "wav", "ogg", "mp3", "flac", "mp4", "webm", "ttf", "otf", "woff", "woff2", "exr", "wasm", "mesh",
+    "wav", "ogg", "mp3", "flac", "mp4", "webm", "ttf", "otf", "woff", "woff2", "exr", "wasm", "mesh", "modules",
+    "bin",
 ];
 
 /// Pictures for the bible's own pages are the one place media may sit in git.
@@ -59,6 +61,12 @@ mod tests {
     #[test]
     fn a_small_build_is_a_problem() {
         let files = [("client/public/room.wasm".to_owned(), 900_000), ("tools/ships/sloop.mesh".to_owned(), 900_000)];
+        assert_eq!(check(&files).len(), 2);
+    }
+
+    #[test]
+    fn a_module_pack_or_a_binary_bake_is_a_problem() {
+        let files = [("tools/modules/out/town.modules".to_owned(), 40_000), ("content/land/node.BIN".to_owned(), 10)];
         assert_eq!(check(&files).len(), 2);
     }
 

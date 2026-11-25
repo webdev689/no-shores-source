@@ -83,6 +83,7 @@ fn a_script_that_styles_an_element_or_wears_a_sheet_is_refused() {
         "Object.assign(node.style, { left: '4px' });",
         "const shape = node.style; shape.cssText = 'left:4px';",
         "shape.setProperty('left', '4px');",
+        "node.attributeStyleMap.set('opacity', 0.5);",
         "document.adoptedStyleSheets = [sheet];",
         "const sheet = new CSSStyleSheet();",
         "document.styleSheets[0].insertRule('div{}');",
