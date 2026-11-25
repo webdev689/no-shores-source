@@ -72,9 +72,7 @@ test('a passage zone’s room fights its deal done to the same fingerprint throu
     );
     const yaw = nearest ? Math.atan2((nearest[0] ?? 0) - (own[0] ?? 0), -((nearest[1] ?? 0) - (own[1] ?? 0))) : 0;
     const near =
-      nearest !== null &&
-      apart(own, nearest) <= REACH_M &&
-      Math.abs((nearest[2] ?? 0) - (own[2] ?? 0)) <= REACH_M;
+      nearest !== null && apart(own, nearest) <= REACH_M && Math.abs((nearest[2] ?? 0) - (own[2] ?? 0)) <= REACH_M;
     const swing = near && tick % SWING_EVERY === 0 ? 1 : 0;
     const forward = nearest && !near ? 1 : 0;
     const intent = new Float64Array([forward, 0, yaw, 1, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
