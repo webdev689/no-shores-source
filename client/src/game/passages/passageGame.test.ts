@@ -261,6 +261,9 @@ test('a way on is asked of the room only once the zone beyond is laid, and playe
 test('a begin at a lamp the room refuses for its lamp says the player has not lit it this week', () => {
   const foot = footIn(patrol.id, { online: true, dive: null });
   const { held, inside, passages } = game(foot);
+  // The second lamp's zone laid, so the begin is asked of the room.
+  const lamped = { ...web, zones: [...web.zones, { ...zoneAt(5, [1_800, 2_800]), lamp: 2 }] };
+  inside.door = { web: () => lamped, plan: (island: string, week: number, zone: number) => planOf(zone) };
   inside.mouth = 0;
   inside.begin('public', 2);
   foot.held.gear = { ...foot.held.gear!, answered: 1, answer: 174 };
