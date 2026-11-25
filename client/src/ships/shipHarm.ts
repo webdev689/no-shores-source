@@ -211,7 +211,7 @@ export class ShipHarm {
 }
 
 /** Where a falling part's point goes as it lies (`Fallen`), in its frame: turned over its side about the line along
- *  it at `footZ` (a mast's foot; a torn sail drops instead, by `dropM`), drifted astern and sunk. */
+ *  it at `footZ` (a mast's foot; a torn sail drops instead, by `dropOf`), drifted astern and sunk. */
 export function fallenPoint(
   point: Point,
   lies: Fallen,

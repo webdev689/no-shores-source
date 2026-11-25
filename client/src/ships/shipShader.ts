@@ -23,7 +23,7 @@ export const MOST_YARDS = 12;
 export const MOST_MASTS = 4;
 /** A ship's uniforms: its place, look and paint (60 floats), then each yard's pivot and turn, then each mast's fall. */
 export const PLACE_FLOATS = 60 + MOST_YARDS * 4 + MOST_MASTS * 8;
-/** Where in its uniforms each yard's pivot and turn start, and each mast's fall (`mastFall`). */
+/** Where in its uniforms each yard's pivot and turn start, and each mast's fall (`mastFalls`). */
 export const YARD_FLOATS_AT = 60;
 export const MAST_FLOATS_AT = 60 + MOST_YARDS * 4;
 
