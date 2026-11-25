@@ -130,7 +130,7 @@ test('a passage zone opens for this week’s web or the last’s alone, and says
   );
 });
 
-test('a dive comes into a passage zone from its patrol zone at the mouth leading there, or at a lamp it lit', () => {
+test('a dive comes into a passage zone from its patrol zone at the mouth leading there, or begun at its lamp', () => {
   assert.equal(arrives(room(first), PATROL, null, null, diving({ zone: first })), true);
   assert.equal(arrives(room(first), `${PATROL}--elite`, null, null, diving({ zone: first, seas: 'elite' })), true);
   assert.equal(arrives(room(first), `${PATROL}--elite`, null, null, diving({ zone: first })), false, 'begun at Normal');
@@ -148,11 +148,18 @@ test('a dive comes into a passage zone from its patrol zone at the mouth leading
   assert.equal(arrives(room(first), PATROL, null, null, company), false);
   assert.equal(arrives(room(first, 'ab12cd34'), PATROL, null, null, company), true);
   assert.equal(arrives(room(first, 'ab12cd34'), PATROL, null, null, diving({ zone: first })), false);
-  // At a lamp lit this week, its zone counted begun.
-  const atLamp = { zone: lampZone.number, depth: lampZone.depth, lamp: 1 };
+  // Begun at a lamp, its zone counted begun: lit this week, or its foes at or under the player's level, which the
+  // rules judged as they began it there (`begin_dive`), the dive's depth the one it began at.
+  const atLamp = { zone: lampZone.number, depth: lampZone.depth, began: lampZone.depth, lamp: 1 };
   assert.equal(arrives(room(lampZone.number), PATROL, null, null, diving(atLamp, [1])), true);
-  assert.equal(arrives(room(lampZone.number), PATROL, null, null, diving(atLamp)), false, 'never lit');
+  assert.equal(arrives(room(lampZone.number), PATROL, null, null, diving(atLamp)), true, 'begun there by level');
   assert.equal(arrives(room(first), PATROL, null, null, diving({ ...atLamp, zone: first }, [1])), false);
+  const wentOn = { ...atLamp, began: 1 };
+  assert.equal(
+    arrives(room(lampZone.number), PATROL, null, null, diving(wentOn)),
+    false,
+    'come to its lamp by the way',
+  );
 });
 
 test('a dive goes on into a zone its last zone’s ways lead to, and rejoins its own room', () => {

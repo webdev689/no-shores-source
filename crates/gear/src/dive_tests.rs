@@ -45,14 +45,28 @@ fn a_dive_begins_at_a_mouth_with_its_haul_empty_and_ends_losing_it() {
 }
 
 #[test]
-fn a_dive_begins_at_a_lamp_only_where_it_was_lit_this_week_on_that_island() {
+fn a_dive_begins_at_a_lamp_lit_this_week_on_that_island_or_one_whose_foes_stand_at_the_players_level() {
+    // The second lamp stands at depth 10, its foes 7 to 10 on Saltmere.
+    let second = Start { depth: 10, ..start(30, Some(2)) };
     let mut character = Character::starting();
-    assert_eq!(character.begin_dive(&start(30, Some(2))), Err(Refusal::NoLamp));
+    assert_eq!(character.begin_dive(&second), Err(Refusal::NoLamp), "never lit, its foes over the player");
     character.activity.this_week(WEEK).passage_lamps.entry(ISLAND.to_owned()).or_default().insert(2);
-    assert_eq!(character.begin_dive(&start(30, Some(2))), Ok(()));
+    assert_eq!(character.begin_dive(&second), Ok(()));
     assert_eq!(character.passage.as_ref().map(|dive| dive.lamp), Some(2), "the lamp counted lit");
-    let other = Start { island: "continent-2", ..start(30, Some(2)) };
+    let other = Start { island: "continent-2", ..second };
     assert_eq!(character.begin_dive(&other), Err(Refusal::NoLamp), "another island's");
+    let mut levelled = Character::starting();
+    let xp = |level: u8| u32::try_from(crate::power::xp_for_level(level)).expect("fits");
+    levelled.earn_xp(xp(9), None);
+    assert_eq!(levelled.begin_dive(&second), Err(Refusal::NoLamp), "level 9, under its strongest");
+    levelled.earn_xp(xp(10) - xp(9), None);
+    assert_eq!(levelled.level(), 10);
+    assert_eq!(levelled.begin_dive(&second), Ok(()), "never lit, its foes at the player's level");
+    let dive = levelled.passage.as_ref().expect("begun");
+    assert_eq!((dive.lamp, dive.began, dive.depth), (2, 10, 10), "begun at its depth");
+    levelled.activity.this_week(WEEK).passage_lamps.entry(ISLAND.to_owned()).or_default().insert(4);
+    let fourth = Start { depth: 20, ..start(31, Some(4)) };
+    assert_eq!(levelled.begin_dive(&fourth), Err(Refusal::NoLamp), "the fourth lamp, lit or not");
 }
 
 #[test]
@@ -153,8 +167,8 @@ fn a_homeward_dive_keeps_its_haul_only_in_its_islands_patrol_zone() {
     }
 }
 
-/// A character of level 30: level 20 by XP, the rest by four Breach Legendary armour pieces worn, each at its most
-/// Prestige.
+/// A character of level 30: level 20 by XP, the rest by four Breach Legendary armour pieces won at Hard worn, each at
+/// its most Prestige.
 pub(crate) fn at_the_top() -> Character {
     let mut character = Character::starting();
     character.earn_xp(10_000_000, None);
@@ -162,6 +176,7 @@ pub(crate) fn at_the_top() -> Character {
     for (id, slot) in (900..).zip([Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs]) {
         let mut piece = crate::vestige::make(id, Rarity::Legendary, slot, 20, crate::Source::Breach, &dice);
         let mut piece = piece.take().expect("a piece");
+        piece.hard = true;
         (piece.xp, piece.bought) = (piece.xp_most(), u32::MAX);
         character.items.insert(id, (piece, crate::character::At::Worn(slot)));
     }

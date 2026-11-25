@@ -188,8 +188,7 @@ export interface Passages {
   readonly web: (island: string, week: number) => PassageWeb | null;
 }
 
-/** The dive and the lamps of a kept character's body, as `gear::dive::Dive` and `gear::activity::ThisWeek` keep them;
- *  empty for a body that does not read. */
+/** The dive of a kept character's body, as `gear::dive::Dive` keeps it; empty for a body that does not read. */
 interface Diving {
   readonly passage?: {
     readonly island?: unknown;
@@ -197,11 +196,12 @@ interface Diving {
     readonly route?: unknown;
     readonly mouth?: unknown;
     readonly zone?: unknown;
+    readonly depth?: unknown;
+    readonly began?: unknown;
     readonly lamp?: unknown;
     readonly homeward?: unknown;
     readonly seas?: unknown;
   } | null;
-  readonly activity?: { readonly this_week?: { readonly week?: unknown; readonly passage_lamps?: unknown } };
 }
 
 function divingOf(body: string | null): Diving {
@@ -213,18 +213,10 @@ function divingOf(body: string | null): Diving {
   }
 }
 
-/** Whether a body's character lit lamp `number` of an island's passages in `week`: its record of the week holds
- *  last week's lamps until something weekly is recorded, so its week must be the web's. */
-function lit(diving: Diving, island: string, week: number, number: number): boolean {
-  if (diving.activity?.this_week?.week !== week) return false;
-  const lamps = (diving.activity?.this_week?.passage_lamps as Record<string, unknown> | undefined)?.[island];
-  return Array.isArray(lamps) && lamps.includes(number);
-}
-
 /** Whether a kept character may come into the passage zone's room `room` from `from`: on a dive of its island, week
  *  and zone, by its route (a company's route's room for a company's dive, a public room for a public one); from the
  *  island's patrol zone, at the seas the dive began at, where it begins at the mouth leading to the zone or at the
- *  zone's lamp lit this week; from a passage zone of the same web and route whose ways on lead to it, as the dive went
+ *  zone's lamp; from a passage zone of the same web and route whose ways on lead to it, as the dive went
  *  on from it once its deal was done there; or from another public copy of its zone. */
 function intoPassage(room: string, from: string | null, passages: Passages): boolean {
   const to = passageRoom(room);
@@ -252,7 +244,9 @@ function intoPassage(room: string, from: string | null, passages: Passages): boo
     return false;
   const lamp = typeof dive.lamp === 'number' ? dive.lamp : 0;
   if (lamp === 0) return typeof dive.mouth === 'number' && web.mouths[dive.mouth]?.zone === to.zone;
-  return zone.lamp === lamp && lit(diving, to.island, to.week, lamp);
+  // Begun at the zone's lamp, still at the depth it began at: the rules begin a dive there only at a lamp lit this
+  // week or one whose zone's foes stand at or under the player's level (`begin_dive`), as only they can judge.
+  return zone.lamp === lamp && typeof dive.began === 'number' && dive.began === dive.depth;
 }
 
 /** Whether a kept character comes home to the patrol zone `to` out of the passage zone `left`, as the rules sent it

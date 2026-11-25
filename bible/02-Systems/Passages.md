@@ -292,7 +292,8 @@ lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; `Fallen`, a
   zone's room"). It opens from its name with `open_passage`, this week's web alone; last week's answers "The passage
   has shifted" and lays nothing.
 - **Arrivals** are judged by the dive the accounts keep with the character: into a zone from the patrol zone at the
-  seas the dive began at, at its mouth or a lamp lit this week, from a zone whose ways on lead to it, from another
+  seas the dive began at, at its mouth or begun at its lamp (still at the depth it began at, as only the rules begin
+  one there, lit this week or by the player's level), from a zone whose ways on lead to it, from another
   public copy of its zone, or back into its own room; out of a lamp's zone to the patrol zone at those seas, once the
   dive went home from that zone with its lamp lit this dive (the dive judged, not the week's lamps, which a week
   turned since may have cleared).
