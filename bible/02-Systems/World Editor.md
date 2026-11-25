@@ -92,7 +92,7 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Spawn (`X`) | Click inside a node to add a spawn; `Backspace` takes the last spawn of the node under the cursor |
 | City (`H`) | Click to move the port city's site there. Its Name and Motif (one of the nine) change it. A landmass's file names its city: the editor moves it, never adds or removes one |
 | Port city and nodes | The landmass's city and nodes. A row shows that one whole in both views and chooses it for the City or Node tool |
-| Undo, Redo (`Ctrl+Z`, `Ctrl+Y`) | Steps back or forward through the last 100 changes: strokes, and places added or removed. `Ctrl+Shift+Z` also redoes |
+| Undo, Redo (`Ctrl+Z`, `Ctrl+Y`) | Steps back or forward through the last 100 changes: strokes, and places added or removed. `Ctrl+Shift+Z` also redoes. With `Ctrl`, `Cmd` or `Alt` held, every other key is the browser's own, so its shortcuts choose no tool; a key typed with `AltGr` still reaches the mode |
 | Save | On the site, downloads `<landmass>.json`; under `npm run dev`, writes `content/world/land/<landmass>.json` |
 | 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
 | Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar. Within 3 km heights are true to scale; they ease to the chosen height by 30 km |
