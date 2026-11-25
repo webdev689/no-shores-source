@@ -77,26 +77,6 @@ fn walked(room: &Room, from: [f64; 2]) -> ([f64; 2], usize, Vec<usize>) {
 /// No square walked from.
 const NONE: usize = usize::MAX;
 
-/// A body's way on foot from `from` to the square walked to nearest `to`, its points from the start, each on the
-/// floor; none where nothing near `to` is walked to.
-pub(crate) fn on_foot(room: &Room, from: [f64; 2], to: [f64; 2]) -> Option<Vec<[f64; 3]>> {
-    let (low, columns, parents) = walked(room, from);
-    let point = |square: usize| {
-        let at = [low[0] + (square % columns) as f64 * WALK_STEP_M, low[1] + (square / columns) as f64 * WALK_STEP_M];
-        [at[0], at[1], movement::Terrain::height_at(&room.floor, at[0], at[1])]
-    };
-    let apart = |square: usize| libm::hypot(point(square)[0] - to[0], point(square)[1] - to[1]);
-    let reached = (0..parents.len()).filter(|&square| parents[square] != NONE);
-    let mut square = reached.min_by(|&one, &two| apart(one).total_cmp(&apart(two)))?;
-    let mut way = vec![point(square)];
-    while parents[square] != square {
-        square = parents[square];
-        way.push(point(square));
-    }
-    way.reverse();
-    Some(way)
-}
-
 /// What a zone's room asks to be reached that a body cannot walk to within use of from the arrival, each named.
 pub(crate) fn unreached(room: &Room) -> Vec<String> {
     let Some(zone) = room.zone() else { return vec!["no zone".to_owned()] };
@@ -164,4 +144,55 @@ fn every_zone_of_many_weeks_can_be_walked_to_all_its_deal_asks() {
         }
     }
     assert!(failed.is_empty(), "{} unreached, the first: {:#?}", failed.len(), &failed[..failed.len().min(30)]);
+}
+
+/// How near a square's middle a body comes before it walks on to the next, and how long it is given to, ticks.
+const AT_SQUARE_M: f64 = 0.2;
+const SQUARE_TICKS: u32 = 40;
+
+/// Where a body driven by the movement rules, square to square along `way` from its first square, falls behind:
+/// the square it could not reach and where it stood; none when it walks the whole way.
+fn follow(room: &Room, way: &[[f64; 2]]) -> Option<(usize, [f64; 2], [f64; 2])> {
+    let first = way.first()?;
+    let mut body = crate::standing_on(&room.floor, &room.blocks, first[0], first[1]);
+    for (nth, square) in way.iter().enumerate().skip(1) {
+        let mut ticks = 0;
+        while libm::hypot(square[0] - body.x, square[1] - body.y) > AT_SQUARE_M {
+            if ticks == SQUARE_TICKS {
+                return Some((nth, *square, [body.x, body.y]));
+            }
+            let yaw = combat::sight::bearing([body.x, body.y], *square);
+            let controls = movement::Controls { yaw, forward: 1.0, ..movement::Controls::default() };
+            body = movement::step_body(&body, &controls, &room.blocks, &room.floor, movement::TICK_SECONDS);
+            ticks += 1;
+        }
+    }
+    None
+}
+
+#[test]
+fn a_body_follows_every_way_the_walk_finds_to_what_a_zone_asks() {
+    let island = passage::island("continent-1").expect("Saltmere's passages");
+    let mut failed = Vec::new();
+    for week in 2_900..2_912 {
+        let web = Web::of(island, week);
+        for zone in &web.zones {
+            let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            let modifiers = gear::passages::week_modifiers("continent-1", week);
+            let route = ("continent-1", week, gear::dive::Route::Public);
+            let Some(room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
+            let wanted: Vec<[f64; 2]> = plan.wanted().iter().map(|(at, _)| *at).collect();
+            for (way, to) in plan.walk().ways(plan.sites.arrive, &wanted).iter().zip(&wanted) {
+                if let Some((nth, square, stood)) = follow(&room, way) {
+                    let under = matches!(zone.ground, passage::Ground::Under { .. });
+                    failed.push(format!(
+                        "week {week} zone {} under {under} to {to:.1?}: square {nth} of {} at {square:.2?}, stood {stood:.2?}",
+                        zone.number,
+                        way.len()
+                    ));
+                }
+            }
+        }
+    }
+    assert!(failed.is_empty(), "{} ways not followed, the first: {:#?}", failed.len(), &failed[..failed.len().min(20)]);
 }

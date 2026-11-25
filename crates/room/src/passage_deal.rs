@@ -49,7 +49,7 @@ impl Room {
         match deal {
             Deal::Mission(Mission::Kindle) => round.lit = vec![false; passage::plan::KINDLES],
             Deal::Mission(Mission::Reckoning) => {
-                for (nth, at) in (0..).zip(spots.iter().take(3)) {
+                for (nth, at) in (0..).zip(spots.iter().take(passage::plan::COLLECTORS)) {
                     round.targets.extend(self.stand_deal_foe((COLLECTOR, Major), *at, 0.0, 100 + nth));
                 }
                 round.found = vec![false; round.targets.len()];

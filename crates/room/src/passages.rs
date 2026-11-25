@@ -416,7 +416,7 @@ pub use passage_asks::{PassageAsk, PassageSeen};
 
 #[cfg(test)]
 #[path = "passage_reach_tests.rs"]
-pub(crate) mod passage_reach_tests;
+mod passage_reach_tests;
 #[cfg(test)]
 #[path = "passages_tests.rs"]
 mod passages_tests;

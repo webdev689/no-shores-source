@@ -41,9 +41,9 @@ fn objective(room: &Room) -> Option<([f64; 2], Option<u8>)> {
 
 /// Plays a zone's deal to done: the seconds it took and the foes felled; none, and the foes still standing, if it was
 /// not done in half an hour. No foe is felled but by the player's blows.
-fn play_the_deal(room: &mut Room) -> (Option<f64>, usize) {
+fn play_the_deal(room: &mut Room, walk: passage::Walk) -> (Option<f64>, usize) {
     level_one(room);
-    let mut walker = Walker::into(room);
+    let mut walker = Walker::into(room, Some(walk));
     let player = walker.player;
     let mut felled = std::collections::BTreeSet::new();
     while walker.ticks < LONGEST_TICKS {
@@ -118,7 +118,7 @@ fn measure_the_deals() {
             let modifiers = gear::passages::week_modifiers("continent-1", week);
             let route = ("continent-1", week, gear::dive::Route::Company);
             let Some(mut room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
-            let (seconds, felled) = play_the_deal(&mut room);
+            let (seconds, felled) = play_the_deal(&mut room, plan.walk());
             let shown = seconds.map_or("not done".to_owned(), |seconds| format!("{seconds:.0}"));
             eprintln!("| {key} | {} | {felled} | {shown} | week {week} zone {} |", zone.depth, zone.number);
             measured.push((key, seconds, felled));
@@ -149,4 +149,18 @@ fn measure_the_deals() {
         seconds / foes.max(1) as f64,
         foes as f64 / done.len().max(1) as f64
     );
+}
+
+#[test]
+#[ignore = "one zone's deal, by hand: TRACE_WEEK and TRACE_ZONE"]
+fn play_one_deal() {
+    let island = passage::island("continent-1").expect("Saltmere's passages");
+    let week: u64 = std::env::var("TRACE_WEEK").ok().and_then(|week| week.parse().ok()).unwrap_or(2_900);
+    let number: u16 = std::env::var("TRACE_ZONE").ok().and_then(|zone| zone.parse().ok()).unwrap_or(0);
+    let web = Web::of(island, week);
+    let plan = Plan::of(&web, number).expect("a plan");
+    let modifiers = gear::passages::week_modifiers("continent-1", week);
+    let route = ("continent-1", week, gear::dive::Route::Company);
+    let mut room = Room::passage(&plan, (1, 4), modifiers, route).expect("a room");
+    eprintln!("{:?}", play_the_deal(&mut room, plan.walk()));
 }

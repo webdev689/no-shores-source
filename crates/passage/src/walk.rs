@@ -1,6 +1,6 @@
 //! Whether a zone can be played: a body, kept clear of every wall and solid as the room's navmesh keeps its foes,
 //! walks from the arrival to within use of each thing the zone asks a player to reach. The check is the passages'
-//! own, so the server and every browser lay the same zone again where it fails.
+//! own, so the server and every browser lay the same zone again where it fails; the way it finds is a body's way.
 
 use dungeon::{CELL_M, Cell, Dungeon};
 use movement::{Block, Terrain};
@@ -18,20 +18,58 @@ const KEEP_M: f64 = 0.5;
 const SLOPE: f64 = 0.7;
 /// How far round its post a band stands (`room::garrison::SPREAD`), metres.
 pub const BAND_SPREAD_M: f64 = 2.5;
+/// No square walked from.
+const NONE: usize = usize::MAX;
 
-/// A grid of squares over the ground from its north-west corner: which a body may stand in.
-struct Grid {
+/// A zone's ground as a body walks it: a grid of squares from its north-west corner, which may be stood in, and
+/// above ground each square's height, a step between two taken where it is no steeper than SLOPE.
+#[derive(Debug)]
+pub struct Walk {
     low: [f64; 2],
     columns: usize,
     rows: usize,
     free: Vec<bool>,
+    heights: Option<Vec<f64>>,
 }
 
-impl Grid {
+impl Walk {
     fn over(low: [f64; 2], high: [f64; 2]) -> Self {
         let columns = ((high[0] - low[0]) / STEP_M).ceil().max(1.0) as usize;
         let rows = ((high[1] - low[1]) / STEP_M).ceil().max(1.0) as usize;
-        Grid { low, columns, rows, free: vec![true; columns * rows] }
+        Walk { low, columns, rows, free: vec![true; columns * rows], heights: None }
+    }
+
+    /// Under ground: round the dungeon's rock, its own solids and `extra` (each min x, min y, max x, max y, top), on
+    /// its one floor.
+    pub(crate) fn under(dungeon: &Dungeon, extra: &[[f64; 5]]) -> Self {
+        let mut walk = Walk::over([0.0, 0.0], [dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M]);
+        for (cell, kind) in dungeon.cells.iter().enumerate() {
+            if *kind == Cell::Rock {
+                let (x, y) = ((cell % dungeon.columns) as f64 * CELL_M, (cell / dungeon.columns) as f64 * CELL_M);
+                walk.block([x, y, x + CELL_M, y + CELL_M]);
+            }
+        }
+        for solid in dungeon.boxes().iter().chain(extra) {
+            walk.block([solid[0], solid[1], solid[2], solid[3]]);
+        }
+        walk
+    }
+
+    /// Above ground: over the hollow's heights, round the blocks that stand higher than a step, within the bounds of
+    /// `ring`.
+    pub(crate) fn open(ground: &impl Terrain, blocks: &[Block], ring: &[[f64; 2]]) -> Self {
+        let low = ring.iter().fold([f64::MAX; 2], |low, at| [low[0].min(at[0]), low[1].min(at[1])]);
+        let high = ring.iter().fold([f64::MIN; 2], |high, at| [high[0].max(at[0]), high[1].max(at[1])]);
+        let mut walk = Walk::over(low, high);
+        for block in blocks {
+            let floor = ground.height_at((block.min_x + block.max_x) / 2.0, (block.min_y + block.max_y) / 2.0);
+            if block.top - floor > movement::TUNING.step && block.bottom <= floor + movement::TUNING.step {
+                walk.block([block.min_x, block.min_y, block.max_x, block.max_y]);
+            }
+        }
+        let heights = (0..walk.free.len()).map(|square| walk.centre(square)).map(|at| ground.height_at(at[0], at[1]));
+        walk.heights = Some(heights.collect());
+        walk
     }
 
     fn centre(&self, square: usize) -> [f64; 2] {
@@ -55,23 +93,16 @@ impl Grid {
         }
     }
 
-    /// How many of `wanted` lie past their reach of every square walked to from `from` (all when no square is free), a
-    /// step from one square to the next taken where `joined` allows it.
-    fn walked_to(
-        &self,
-        from: [f64; 2],
-        wanted: &[([f64; 2], f64)],
-        joined: impl Fn([f64; 2], [f64; 2]) -> bool,
-    ) -> usize {
-        let apart = |one: [f64; 2], two: [f64; 2]| libm::hypot(one[0] - two[0], one[1] - two[1]);
-        let near_from = (0..self.free.len()).filter(|&square| self.free[square]);
-        let start =
-            near_from.min_by(|&one, &two| apart(self.centre(one), from).total_cmp(&apart(self.centre(two), from)));
-        let Some(start) = start else { return wanted.len() };
-        let mut reached = vec![false; self.free.len()];
-        reached[start] = true;
-        let mut stack = vec![start];
-        while let Some(square) = stack.pop() {
+    /// For each square, the square it was first walked to from out of the free square nearest `from` (that one its
+    /// own, NONE for a square not reached), nearest first.
+    fn flood(&self, from: [f64; 2]) -> Vec<usize> {
+        let apart = |square: usize| libm::hypot(self.centre(square)[0] - from[0], self.centre(square)[1] - from[1]);
+        let mut parents = vec![NONE; self.free.len()];
+        let free = (0..self.free.len()).filter(|&square| self.free[square]);
+        let Some(start) = free.min_by(|&one, &two| apart(one).total_cmp(&apart(two))) else { return parents };
+        parents[start] = start;
+        let mut queue = std::collections::VecDeque::from([start]);
+        while let Some(square) = queue.pop_front() {
             let (column, row) = (square % self.columns, square / self.columns);
             let beside = [
                 (column > 0).then(|| square - 1),
@@ -80,70 +111,62 @@ impl Grid {
                 (row + 1 < self.rows).then(|| square + self.columns),
             ];
             for next in beside.into_iter().flatten() {
-                if self.free[next] && !reached[next] && joined(self.centre(square), self.centre(next)) {
-                    reached[next] = true;
-                    stack.push(next);
+                let joined = self
+                    .heights
+                    .as_ref()
+                    .is_none_or(|heights| (heights[next] - heights[square]).abs() <= SLOPE * STEP_M);
+                if self.free[next] && parents[next] == NONE && joined {
+                    parents[next] = square;
+                    queue.push_back(next);
                 }
             }
         }
-        // Each wanted thing looks only at the squares round it.
-        let near = |(at, reach): ([f64; 2], f64)| {
-            let span = |middle: f64, start: f64, count: usize| {
-                let first = ((middle - reach - start) / STEP_M).floor().max(0.0) as usize;
-                first..(((middle + reach - start) / STEP_M).ceil().max(0.0) as usize).min(count)
-            };
-            span(at[1], self.low[1], self.rows).any(|row| {
-                span(at[0], self.low[0], self.columns).any(|column| {
-                    let square = row * self.columns + column;
-                    reached[square] && apart(self.centre(square), at) <= reach
-                })
+        parents
+    }
+
+    /// The squares round `at` within `reach`.
+    fn around(&self, at: [f64; 2], reach: f64) -> impl Iterator<Item = usize> + '_ {
+        let span = |middle: f64, start: f64, count: usize| {
+            let first = ((middle - reach - start) / STEP_M).floor().max(0.0) as usize;
+            first..(((middle + reach - start) / STEP_M).ceil().max(0.0) as usize).min(count)
+        };
+        let columns = span(at[0], self.low[0], self.columns);
+        span(at[1], self.low[1], self.rows)
+            .flat_map(move |row| columns.clone().map(move |column| row * self.columns + column))
+    }
+
+    /// How many of `wanted` lie past their reach of every square walked to from `from`.
+    pub(crate) fn missed(&self, from: [f64; 2], wanted: &[([f64; 2], f64)]) -> usize {
+        let parents = self.flood(from);
+        let near = |&(at, reach): &([f64; 2], f64)| {
+            self.around(at, reach).any(|square| {
+                parents[square] != NONE
+                    && libm::hypot(self.centre(square)[0] - at[0], self.centre(square)[1] - at[1]) <= reach
             })
         };
-        wanted.iter().filter(|&&wanted| !near(wanted)).count()
+        wanted.iter().filter(|wanted| !near(wanted)).count()
     }
-}
 
-/// What is not reached, under ground: round the dungeon's rock, its own solids and `extra` (each min x, min y, max x,
-/// max y, top), on its one floor.
-pub(crate) fn under(dungeon: &Dungeon, extra: &[[f64; 5]], from: [f64; 2], wanted: &[([f64; 2], f64)]) -> usize {
-    let high = [dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M];
-    let mut grid = Grid::over([0.0, 0.0], high);
-    for (cell, kind) in dungeon.cells.iter().enumerate() {
-        if *kind == Cell::Rock {
-            let (x, y) = ((cell % dungeon.columns) as f64 * CELL_M, (cell / dungeon.columns) as f64 * CELL_M);
-            grid.block([x, y, x + CELL_M, y + CELL_M]);
-        }
+    /// A body's way from `from` to the square walked to nearest each of `to`, square by square from the first, each
+    /// square's middle; none at all when no square is free.
+    #[must_use]
+    pub fn ways(&self, from: [f64; 2], to: &[[f64; 2]]) -> Vec<Vec<[f64; 2]>> {
+        let parents = self.flood(from);
+        let reached: Vec<usize> = (0..parents.len()).filter(|&square| parents[square] != NONE).collect();
+        let way = |to: [f64; 2]| {
+            let apart = |square: usize| libm::hypot(self.centre(square)[0] - to[0], self.centre(square)[1] - to[1]);
+            let Some(mut square) = reached.iter().copied().min_by(|&one, &two| apart(one).total_cmp(&apart(two)))
+            else {
+                return Vec::new();
+            };
+            let mut way = vec![self.centre(square)];
+            while parents[square] != square {
+                square = parents[square];
+                way.push(self.centre(square));
+            }
+            way.reverse();
+            way
+        };
+        to.iter().map(|&to| way(to)).collect()
     }
-    for solid in dungeon.boxes().iter().chain(extra) {
-        grid.block([solid[0], solid[1], solid[2], solid[3]]);
-    }
-    grid.walked_to(from, wanted, |_, _| true)
-}
-
-/// What is not reached, above ground: over the hollow's heights no steeper than SLOPE, round the blocks that stand
-/// higher than a step, within the bounds of `ring`.
-pub(crate) fn open(
-    ground: &impl Terrain,
-    blocks: &[Block],
-    ring: &[[f64; 2]],
-    (from, wanted): ([f64; 2], &[([f64; 2], f64)]),
-) -> usize {
-    let tall = |block: &&Block| {
-        let floor = ground.height_at((block.min_x + block.max_x) / 2.0, (block.min_y + block.max_y) / 2.0);
-        block.top - floor > movement::TUNING.step && block.bottom <= floor + movement::TUNING.step
-    };
-    let low = ring.iter().fold([f64::MAX; 2], |low, at| [low[0].min(at[0]), low[1].min(at[1])]);
-    let high = ring.iter().fold([f64::MIN; 2], |high, at| [high[0].max(at[0]), high[1].max(at[1])]);
-    let mut grid = Grid::over(low, high);
-    for block in blocks.iter().filter(tall) {
-        grid.block([block.min_x, block.min_y, block.max_x, block.max_y]);
-    }
-    // Each square's height read once.
-    let heights: Vec<f64> =
-        (0..grid.free.len()).map(|square| grid.centre(square)).map(|at| ground.height_at(at[0], at[1])).collect();
-    let square = |at: [f64; 2]| {
-        let column = ((at[0] - low[0]) / STEP_M) as usize;
-        ((at[1] - low[1]) / STEP_M) as usize * grid.columns + column
-    };
-    grid.walked_to(from, wanted, |here, there| (heights[square(there)] - heights[square(here)]).abs() <= SLOPE * STEP_M)
 }
