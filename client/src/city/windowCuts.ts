@@ -16,18 +16,47 @@ type Hole = { readonly box: Box; readonly along: 0 | 1 };
 /** The solids with every open building's lining cut round its windows; the rest as they are. */
 export function cutAtWindows(solids: readonly Solid[], pieces: readonly Piece[], buildings: BuildingTable): Solid[] {
   const openings = new Map<number, Opening[]>();
-  const holes = pieces
+  // Each open building's holes, and the box round them all: a lining is cut only by the building it stands in.
+  const windowed = pieces
     .filter((piece) => piece.open && piece.building && buildings[piece.model]?.glass)
-    .flatMap((piece) => {
+    .map((piece) => {
       const known = openings.get(piece.model) ?? openingsOf(buildings[piece.model]);
       openings.set(piece.model, known);
-      return known.map((opening) => holeOf(piece, opening));
+      const holes = known.map((opening) => holeOf(piece, opening));
+      const round = holes.reduce<Box>(
+        (box, { box: hole }) => [
+          Math.min(box[0], hole[0]),
+          Math.min(box[1], hole[1]),
+          Math.max(box[2], hole[2]),
+          Math.max(box[3], hole[3]),
+          Math.min(box[4], hole[4]),
+          Math.max(box[5], hole[5]),
+        ],
+        [Infinity, Infinity, -Infinity, -Infinity, Infinity, -Infinity],
+      );
+      return { holes, round };
     });
-  if (!holes.length) return [...solids];
-  return solids.flatMap((solid) =>
-    lining(solid) ? holes.reduce((kept, hole) => kept.flatMap((each) => cut(each, hole)), [solid]) : [solid],
-  );
+  return solids.flatMap((solid) => {
+    if (!lining(solid)) return [solid];
+    const box = boxOf(solid);
+    const near = windowed.filter(({ round }) => overlap(box, round));
+    return near.flatMap(({ holes }) => holes).reduce((kept, hole) => kept.flatMap((each) => cut(each, hole)), [solid]);
+  });
 }
+
+/** A solid's box square to the world, as it stands unturned. */
+const boxOf = (solid: Solid): Box => [
+  solid.at[0] - solid.size[0] / 2,
+  solid.at[1] - solid.size[1] / 2,
+  solid.at[0] + solid.size[0] / 2,
+  solid.at[1] + solid.size[1] / 2,
+  solid.at[2],
+  solid.at[2] + solid.size[2],
+];
+
+/** Whether two boxes share some volume. */
+const overlap = (a: Box, b: Box): boolean =>
+  a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3] && a[4] < b[5] && b[4] < a[5];
 
 /** Whether a solid is a room's lining: an upright block of plaster, square to the world. */
 const lining = (solid: Solid): boolean =>
@@ -72,17 +101,8 @@ export function holeOf(piece: Piece, { normal, fixed, middle, level }: Opening):
 
 /** A solid with a hole's box cut out of it, the whole of its depth: up to four pieces round the hole. */
 export function cut(solid: Solid, { box: hole, along }: Hole): Solid[] {
-  const [half0, half1] = [solid.size[0] / 2, solid.size[1] / 2];
-  const box: Box = [
-    solid.at[0] - half0,
-    solid.at[1] - half1,
-    solid.at[0] + half0,
-    solid.at[1] + half1,
-    solid.at[2],
-    solid.at[2] + solid.size[2],
-  ];
-  const overlaps = (from: number, to: number) => box[from] < hole[to] && hole[from] < box[to];
-  if (!(overlaps(0, 2) && overlaps(1, 3) && overlaps(4, 5))) return [solid];
+  const box = boxOf(solid);
+  if (!overlap(box, hole)) return [solid];
   const [start, end] = along === 0 ? [0, 2] : [1, 3];
   const [low, high] = [Math.max(box[4], hole[4]), Math.min(box[5], hole[5])];
   const changed = (changes: Readonly<Record<number, number>>): Box =>
