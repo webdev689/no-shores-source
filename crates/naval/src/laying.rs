@@ -80,10 +80,10 @@ pub fn lay_for(
     if let Some(point) = met {
         return Some(lay_on(ship, pose, arms, side, load, point).laid_on(point));
     }
-    let out = (square.centre[0] - ship.x) * square.dir[0] + (square.centre[1] - ship.y) * square.dir[1];
+    let out = (square.centre[0] - ship.x) * square.direction[0] + (square.centre[1] - ship.y) * square.direction[1];
     let range = (aim.range_m - out).max(0.0);
     let laid = lay(ship, pose, arms, side, load, range, None);
-    let point = [laid.centre[0] + laid.dir[0] * range, laid.centre[1] + laid.dir[1] * range, pose.heave];
+    let point = [laid.centre[0] + laid.direction[0] * range, laid.centre[1] + laid.direction[1] * range, pose.heave];
     Some(laid.laid_on(point))
 }
 
@@ -115,7 +115,7 @@ fn look_on(shooter: &Sighted, square: &Lay, [eye, look]: [[f64; 3]; 2], ships: &
     let ((share, on_rig), mark, middle) = met?;
     let met = [0, 1, 2].map(|axis| eye[axis] + (far[axis] - eye[axis]) * share);
     let point = if on_rig && square.shot != Shot::Chain { middle } else { met };
-    let (way, fire, from) = (carry_of(&mark.ship), square.dir, &shooter.ship);
+    let (way, fire, from) = (carry_of(&mark.ship), square.direction, &shooter.ship);
     // DFO's own flight time: the way out over 0.97 of the muzzle speed, the ball's speed along the water.
     let flown = libm::hypot(point[0] - from.x, point[1] - from.y) / (square.gun.speed * 0.97).max(1.0);
     let along = (way[0] * fire[0] + way[1] * fire[1]) * flown;

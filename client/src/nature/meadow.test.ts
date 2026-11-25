@@ -152,12 +152,13 @@ test('a poor patch grows short and dry grass, a lush one tall grass and flowers,
   assert.ok(pick(0, 1).scale / pick(0.9, 1).scale > 1.6, 'a bush stands over the grass');
 });
 
-test("the owner's green takes its ground's hue, a shade lighter; petals and dry stalks take only its light", () => {
+test("the owner's green takes its ground's hue, a shade darker; petals and dry stalks take only its light", () => {
   const meadow = [0.29, 0.42, 0.22];
   const lifted = texelOver(GREEN, meadow);
-  lifted.forEach((value, channel) =>
-    assert.ok(Math.abs(value - (meadow[channel] ?? 0) * (TONE[channel] ?? 1)) < 1e-9, `${channel}: ${value}`),
-  );
+  lifted.forEach((value, channel) => {
+    assert.ok(Math.abs(value - (meadow[channel] ?? 0) * (TONE[channel] ?? 1)) < 1e-9, `${channel}: ${value}`);
+    assert.ok(value < (meadow[channel] ?? 0), `channel ${channel} stands darker than its ground`);
+  });
   const petal = [0.8, 0.3, 0.6];
   const tinted = texelOver(petal, meadow);
   const ratios = tinted.map((value, channel) => value / (petal[channel] ?? 1));

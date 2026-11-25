@@ -175,11 +175,6 @@ export class Townsfolk {
     this.shapeId = this.keepers.length + count;
   }
 
-  /** How many townsfolk keep routines here, keepers and Shape aside. */
-  get townsfolk(): number {
-    return this.dresses.length;
-  }
-
   /** Where everyone stands and what they do at world time `worldS`, seconds: the keepers at their counters, the
    *  townsfolk, and Shape at his spot while he is here, idle, facing the plaza's middle. */
   peopleAt(worldS: number, { shape = null }: PlazaNow = {}): Townsperson[] {

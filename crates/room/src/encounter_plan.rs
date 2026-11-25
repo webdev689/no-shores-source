@@ -10,8 +10,7 @@ use movement::{Block, TUNING};
 
 /// The runes of a Litany, the fewest and the most.
 pub const LITANY_RUNES: (usize, usize) = (4, 6);
-/// The plates of a Weighing, and how far apart each two stand at the least (m): two cells, so no body holds two.
-pub const PLATES: usize = 3;
+/// How far apart each two of a Weighing's plates stand at the least (m): two cells, so no body holds two.
 pub const PLATES_APART_M: f64 = 2.0 * CELL_M;
 /// How far round from the way into a Weighing's room its plates stand at the most, as the cosine of the angle between
 /// the way in through its doorway and the way from the doorway to a plate: about 70 degrees either side, so a body

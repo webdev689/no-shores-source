@@ -9,11 +9,11 @@ import { BINDS } from '../player/input.ts';
 import { CONTROL_GROUPS, cellsOf, doesFor } from './controls.ts';
 import { ControlsSheet, columnsOf, slotId, spokenKeys } from './controlsSheet.ts';
 import { Rebinding } from './rebinding.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 
 /** The sheet hearing the page's keys, with a listener after it standing for the game. */
 function listening(may = () => true) {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const sheet = new ControlsSheet(new Rebinding());
   sheet.listen(may);
   const game: string[] = [];
@@ -189,7 +189,7 @@ test('the groups stand in columns in their order, each near an even share of the
 function bindingSheet() {
   BINDS.set(DEFAULTS);
   BINDS.device = 'keys';
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const opened = openIn(1280, 720);
   const { sheet, ui, root, step } = opened;
   sheet.listen(() => true);

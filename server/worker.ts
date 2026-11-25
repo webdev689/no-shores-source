@@ -146,7 +146,8 @@ export class RoomHost extends DurableObject<Env> {
 
   /** A Breach's word between its zone and its run (`breach.ts`): whether a run's gate opened, or how far it came. */
   async breachWord(kind: 'opened' | 'inside', text: string): Promise<boolean> {
-    return (await this.opened) === true && this.guarded(() => breachHeard(this.room, kind, text), false);
+    if ((await this.opened) !== true) return false;
+    return this.guarded(() => breachHeard(this.room, kind, text, Math.floor(Date.now() / MINUTE_MS)), false);
   }
 
   override async fetch(request: Request): Promise<Response> {

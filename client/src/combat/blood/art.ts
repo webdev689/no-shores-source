@@ -1,5 +1,6 @@
 import type { Cell, Tint } from './spray.ts';
 import { seeded } from '../../seeded.ts';
+import { smooth } from '../../sky/skyLook.ts';
 
 /** The marks' sheet: eight cells a row, one row a kind, each a splat drawn from noise and distance fields at the start
  *  from a fixed seed. Its colour is white ink whose darkness is the film's thickness, its alpha the shape. */
@@ -23,10 +24,6 @@ export const DISPLAY_GAMMA = 2.2;
 export const BLOOD_ABSORB_ENCODED = BLOOD_ABSORB.map((absorb) => absorb / DISPLAY_GAMMA);
 export const INK_DEPTH = 0.18;
 
-const smooth = (edge0: number, edge1: number, value: number): number => {
-  const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
-  return t * t * (3 - 2 * t);
-};
 const TAU = Math.PI * 2;
 const len = (x: number, y: number): number => Math.sqrt(x * x + y * y);
 const gaussOf = (first: number, second: number): number =>

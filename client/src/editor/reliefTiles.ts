@@ -15,7 +15,7 @@ export const MOST_TILES = 64;
 /** The finest and coarsest steps, metres; the map asks for none further out than the coarsest. */
 const FINEST_STEP_M = 2;
 const COARSEST_STEP_M = 16;
-/** The carving fades back into the natural land this far past a claim (Layouts.md), and a little more. */
+/** The carving fades back into the natural land this far past a claim, and a little more. */
 const CARVED_PAST_M = 200;
 
 export interface TileAsk {

@@ -28,28 +28,35 @@ const param = () => {
   });
 };
 
-/** A node of any kind: it connects, plays and stops, and has every parameter the ambience sets. */
-const node = (made: { count: number }) => {
+/** A node of any kind: it connects, plays and stops, and has every parameter the ambience sets. It keeps what it was
+ *  joined to, and whether it is joined still. */
+const node = (made: { count: number; nodes: unknown[] }) => {
   made.count++;
   const fake = {
+    joined: [] as unknown[],
+    live: true,
     gain: param(),
     frequency: param(),
     playbackRate: param(),
     positionX: param(),
     positionY: param(),
     positionZ: param(),
-    connect: (next: unknown) => next,
-    disconnect: () => undefined,
+    connect: (next: unknown) => (fake.joined.push(next), next),
+    disconnect: () => {
+      fake.live = false;
+    },
     start: () => undefined,
     stop: () => undefined,
     addEventListener: () => undefined,
   };
+  made.nodes.push(fake);
   return fake;
 };
+type FakeNode = ReturnType<typeof node>;
 
 /** A context of fake nodes, its time moved by hand. */
 function fakeAudio() {
-  const made = { count: 0 };
+  const made = { count: 0, nodes: [] as FakeNode[] };
   const audio = {
     currentTime: 0,
     sampleRate: 8000,
@@ -80,6 +87,12 @@ function fakeAudio() {
   return { audio: audio as unknown as BaseAudioContext, made, out: node(made) as unknown as AudioNode };
 }
 
+/** How many places sound: the nodes still joined to the ambience's own output, the node it joins to the page's. */
+function placesSounding({ made, out }: ReturnType<typeof fakeAudio>): number {
+  const outputs = made.nodes.filter((each) => each.joined.includes(out));
+  return made.nodes.filter((each) => each.live && outputs.some((output) => each.joined.includes(output))).length;
+}
+
 const world = { continents: [{ id: 'continent-3', climate: 'woodland' }] };
 const land = {
   heightAt: (x: number, y: number) => (y > 3000 ? -5 : 5),
@@ -107,19 +120,19 @@ test('a place fades in over the crossfade, the next crossfades over it, and the 
     }
   };
   step(1, () => ambience.onFoot(patrol, land, ear));
-  assert.equal(ambience.stats.places, 1);
+  assert.equal(placesSounding(fake), 1);
   step(CROSSFADE_S + 30, () => ambience.onFoot(patrol, land, ear));
   const voyage = { sailing: true, pace: 60, deck: true };
   step(CROSSFADE_S / 2, () => ambience.atSea(land, [0, 4000], ear, voyage, 0.1));
-  assert.equal(ambience.stats.places, 2, 'the woods fade while the sea comes in');
+  assert.equal(placesSounding(fake), 2, 'the woods fade while the sea comes in');
   step(CROSSFADE_S + 0.5, () => ambience.atSea(land, [0, 4000], ear, voyage, 0.1));
-  assert.equal(ambience.stats.places, 1, 'the woods let go once silent');
+  assert.equal(placesSounding(fake), 1, 'the woods let go once silent');
   step(CROSSFADE_S + 0.5, () => undefined);
-  assert.equal(ambience.stats.places, 0, 'nothing heard behind a veil');
+  assert.equal(placesSounding(fake), 0, 'nothing heard behind a veil');
   step(1, () => ambience.onFoot(patrol, land, ear));
   live = false;
   step(0.2, () => ambience.onFoot(patrol, land, ear));
-  assert.equal(ambience.stats.places, 0, 'silenced, it stops at once');
+  assert.equal(placesSounding(fake), 0, 'silenced, it stops at once');
 });
 
 test('beds whose recordings have not come make no new nodes while they wait', (context) => {
@@ -207,14 +220,14 @@ test('in a dungeon none of the open air is heard: the island fades out and no st
     }
   };
   step(1, false);
-  assert.equal(ambience.stats.places, 1, 'the island heard on its land');
+  assert.equal(placesSounding(fake), 1, 'the island heard on its land');
   SKY_NOW.current = {
     ...SKY_NOW.current,
     strikes: [{ x: 30, y: 0, atS: 1000, toGround: true, power: 1 }],
     worldS: 1000,
   };
   step(CROSSFADE_S + 30, true);
-  assert.equal(ambience.stats.places, 0, 'nothing of the island underground');
+  assert.equal(placesSounding(fake), 0, 'nothing of the island underground');
   assert.equal(thundered.mock.callCount(), 0, 'a strike overhead is not heard');
 });
 
@@ -332,7 +345,7 @@ test("by a Breach's gate its hollow is heard over the vale's own, and its Spire'
   };
   step(1, [0, 0, 6]);
   assert.deepEqual(keys.at(-1), ['woodland', 'breach.gate']);
-  assert.equal(ambience.stats.places, 2);
+  assert.equal(placesSounding(fake), 2);
   assert.equal(last.heard?.drives.fill, 0.5);
   assert.deepEqual(last.heard?.gate, { at: gate.gate, spire: gate.spire });
   step(CROSSFADE_S + 1, [200, 0, 6]);
@@ -371,8 +384,8 @@ test("a Breach's gate's hollow is let go with everything when the ambience may n
     ambience.frame(0.1);
   };
   step();
-  assert.equal(ambience.stats.places, 2, 'the vale and the hollow');
+  assert.equal(placesSounding(fake), 2, 'the vale and the hollow');
   live = false;
   step();
-  assert.equal(ambience.stats.places, 0, 'both let go');
+  assert.equal(placesSounding(fake), 0, 'both let go');
 });

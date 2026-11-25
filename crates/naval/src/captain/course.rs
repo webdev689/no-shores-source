@@ -6,7 +6,8 @@ use sailing::pose::frame;
 use sailing::ship::{Ship, length, off_run_deg};
 use std::f64::consts::{PI, TAU};
 
-pub const DEG: f64 = PI / 180.0;
+/// Radians in a degree, for dividing by: `to_degrees` multiplies by 180 / π instead, which rounds differently.
+pub const DEGREE: f64 = PI / 180.0;
 /// A ship that outruns it is led this long at most (seconds).
 pub const PURSUIT_LEAD_S: f64 = 20.0;
 /// Running, it takes a course within this many degrees of dead away, in steps of 15.
@@ -44,26 +45,26 @@ pub fn velocity_of(ship: &Ship) -> [f64; 2] {
     [forward[0] * ship.ahead + starboard[0] * ship.abeam, forward[1] * ship.ahead + starboard[1] * ship.abeam]
 }
 
-/// Where a ball of `speed` from `from` meets a target moving at `rel` to it: three passes of its flight, a laid
+/// Where a ball of `speed` from `from` meets a target moving at `relative` to it: three passes of its flight, a laid
 /// gun's way along the flat (0.97 of its speed).
 #[must_use]
-pub fn lead_point(from: [f64; 2], target: [f64; 2], rel: [f64; 2], speed: f64) -> [f64; 2] {
+pub fn lead_point(from: [f64; 2], target: [f64; 2], relative: [f64; 2], speed: f64) -> [f64; 2] {
     let mut point = target;
     for _ in 0..3 {
         let flight = distance(from, point) / (speed * 0.97).max(1.0);
-        point = [target[0] + rel[0] * flight, target[1] + rel[1] * flight];
+        point = [target[0] + relative[0] * flight, target[1] + relative[1] * flight];
     }
     point
 }
 
-/// Where the captain meets a ship moving at `vel` if it sails at `speed`, and the heading there: the first time both
-/// come to one point, or, if that ship outruns it, where that ship will be a while on.
+/// Where the captain meets a ship moving at `velocity` if it sails at `speed`, and the heading there: the first time
+/// both come to one point, or, if that ship outruns it, where that ship will be a while on.
 #[must_use]
-pub fn intercept(from: [f64; 2], speed: f64, target: [f64; 2], vel: [f64; 2]) -> ([f64; 2], f64) {
+pub fn intercept(from: [f64; 2], speed: f64, target: [f64; 2], velocity: [f64; 2]) -> ([f64; 2], f64) {
     let gap = [target[0] - from[0], target[1] - from[1]];
     let speed = speed.max(0.5);
-    let square = vel[0] * vel[0] + vel[1] * vel[1] - speed * speed;
-    let linear = 2.0 * (gap[0] * vel[0] + gap[1] * vel[1]);
+    let square = velocity[0] * velocity[0] + velocity[1] * velocity[1] - speed * speed;
+    let linear = 2.0 * (gap[0] * velocity[0] + gap[1] * velocity[1]);
     let constant = gap[0] * gap[0] + gap[1] * gap[1];
     let meet = if square.abs() < 1e-9 {
         (linear < 0.0).then(|| -constant / linear)
@@ -80,7 +81,7 @@ pub fn intercept(from: [f64; 2], speed: f64, target: [f64; 2], vel: [f64; 2]) ->
             .flatten()
     };
     let time = meet.unwrap_or_else(|| PURSUIT_LEAD_S.min(constant.sqrt() / speed));
-    let point = [target[0] + vel[0] * time, target[1] + vel[1] * time];
+    let point = [target[0] + velocity[0] * time, target[1] + velocity[1] * time];
     (point, heading_to(from, point))
 }
 
@@ -92,8 +93,8 @@ pub fn flee_course(me: [f64; 2], from: [f64; 2], wind: [f64; 2]) -> f64 {
     let mut best = (away, f64::NEG_INFINITY);
     let mut off = -FLEE_SPREAD_DEG;
     while off <= FLEE_SPREAD_DEG {
-        let heading = wrap(away + off * DEG);
-        let worth = point_of_sail(off_run_deg(frame(heading).0, wind)) * libm::cos(off * DEG);
+        let heading = wrap(away + off.to_radians());
+        let worth = point_of_sail(off_run_deg(frame(heading).0, wind)) * libm::cos(off.to_radians());
         if worth > best.1 + 1e-9 {
             best = (heading, worth);
         }
@@ -112,20 +113,25 @@ pub fn pass_reach(arms: &crate::arms::Arms) -> f64 {
     0.5 * ((high[1] - low[1]) / 2.0 + (high[0] - low[0]) / 2.0)
 }
 
-/// `want` bent clear of the hulls about it (`others`, each where it is, its way and its pass reach; the ship's `vel`,
-/// its heading `heading`, its pass reach `reach`): each that will pass within both reaches and `AVOID_SHIP_CLEAR` soon
-/// bends it by its urgency, to starboard for a hull off its bow, else away from where it will lie, up to
-/// `AVOID_SHIP_SWING_DEG` in all.
+/// `want` bent clear of the hulls about it (`others`, each where it is, its way and its pass reach; the ship's
+/// `velocity`, its heading `heading`, its pass reach `reach`): each that will pass within both reaches and
+/// `AVOID_SHIP_CLEAR` soon bends it by its urgency, to starboard for a hull off its bow, else away from where it will
+/// lie, up to `AVOID_SHIP_SWING_DEG` in all.
 #[must_use]
-pub fn traffic_course((me, heading, vel): ([f64; 2], f64, [f64; 2]), want: f64, others: &[Traffic], reach: f64) -> f64 {
-    let most = AVOID_SHIP_SWING_DEG * DEG;
+pub fn traffic_course(
+    (me, heading, velocity): ([f64; 2], f64, [f64; 2]),
+    want: f64,
+    others: &[Traffic],
+    reach: f64,
+) -> f64 {
+    let most = AVOID_SHIP_SWING_DEG.to_radians();
     let mut bend = None;
-    for &(other, other_vel, other_reach) in others {
+    for &(other, other_velocity, other_reach) in others {
         let gap = [other[0] - me[0], other[1] - me[1]];
         if length(gap[0], gap[1]) > AVOID_SHIP_RANGE {
             continue;
         }
-        let closing = [other_vel[0] - vel[0], other_vel[1] - vel[1]];
+        let closing = [other_velocity[0] - velocity[0], other_velocity[1] - velocity[1]];
         let square = closing[0] * closing[0] + closing[1] * closing[1];
         let nearest =
             if square > 1e-6 { (-(gap[0] * closing[0] + gap[1] * closing[1]) / square).max(0.0) } else { 0.0 };
@@ -141,7 +147,7 @@ pub fn traffic_course((me, heading, vel): ([f64; 2], f64, [f64; 2]), want: f64, 
         let urgency = (1.0 - pass / room) * (1.0 - nearest / AVOID_SHIP_S);
         let bearing = wrap(heading_to([0.0, 0.0], gap) - heading);
         let lies = wrap(heading_to([0.0, 0.0], then) - heading);
-        let way = if bearing.abs() < AVOID_HEAD_ON_DEG * DEG || lies <= 0.0 { 1.0 } else { -1.0 };
+        let way = if bearing.abs() < AVOID_HEAD_ON_DEG.to_radians() || lies <= 0.0 { 1.0 } else { -1.0 };
         let this = way * urgency * most;
         bend = Some(bend.map_or(this, |sum: f64| sum + this));
     }

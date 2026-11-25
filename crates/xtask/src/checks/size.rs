@@ -1,4 +1,4 @@
-use super::Problem;
+use super::{Problem, SCRIPT_EXTENSIONS};
 
 /// The most lines a source file may hold. A file that needs more is two modules.
 pub const MAX_LINES: usize = 600;
@@ -9,7 +9,7 @@ pub const MAX_TEST_LINES: usize = 800;
 /// `*_test.py`, too), and a script's `.test.` before any of the extensions the checks read.
 fn is_test_file(path: &str) -> bool {
     let name = path.rsplit('/').next().unwrap_or(path);
-    let script = [".ts", ".mts", ".cts", ".tsx", ".js", ".mjs", ".cjs"]
+    let script = SCRIPT_EXTENSIONS
         .iter()
         .any(|extension| name.strip_suffix(extension).is_some_and(|stem| stem.ends_with(".test")));
     path.contains("/tests/")

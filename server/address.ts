@@ -7,8 +7,7 @@ export function addressKey(address: string): string {
 }
 
 /** The address new guests are counted by: an IPv6 address by its /48, the block one tunnel or one customer is given,
- *  so many networks of one holder make ten guests an hour, not ten each
- *  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). */
+ *  so many networks of one holder make ten guests an hour, not ten each. */
 export function guestKey(address: string): string {
   return ipv6Prefix(address, 3);
 }

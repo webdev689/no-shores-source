@@ -27,7 +27,7 @@ test('a point on its deck lies forward along its heading and to starboard at its
 test('every hand of its crew stands on its deck, and the helm is behind its wheel aft', () => {
   const brig = new Brig([0, 0], 0);
   const place = { x: 0, y: 0, z: 0, heading: 0, pitch: 0, roll: 0 };
-  const crew = brig.crew(place, 0);
+  const crew = brig.crew(place);
   assert.equal(crew.length, 7);
   for (const hand of crew) {
     // Heading north, its deck's x is east and y south: the deck under each hand has a height.

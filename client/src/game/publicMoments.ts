@@ -10,14 +10,14 @@ import type { BannerBeat } from '../combat/publicBanner.ts';
 import { type ChestLike, type EventProp, type PropModule, type PropMoments, turnOf } from '../city/eventProps.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
+import { TICKS_A_SECOND } from './hudLaw.ts';
 import { CHEST_LIES_S } from './publicLaw.ts';
 
 type Point = readonly [number, number, number];
 
-/** The room's ticks a second, and the last minute's and the last ten seconds' ticks. */
-const TICKS_PER_SECOND = 60;
-const LAST_MINUTE_TICKS = 60 * TICKS_PER_SECOND;
-const LAST_TEN_TICKS = 10 * TICKS_PER_SECOND;
+/** The last minute's and the last ten seconds' ticks. */
+const LAST_MINUTE_TICKS = 60 * TICKS_A_SECOND;
+const LAST_TEN_TICKS = 10 * TICKS_A_SECOND;
 /** What the heroic chance calls as it opens, by event, and how long the call stands in the banner, seconds. */
 const CALLS: Readonly<Record<number, string>> = {
   [PUBLIC_KIND.fissure]: 'A crystal growth rises: break it!',
@@ -163,7 +163,7 @@ export class PublicMoments {
       !!before &&
       !!event &&
       event.ticksLeft <= LAST_TEN_TICKS &&
-      Math.ceil(event.ticksLeft / TICKS_PER_SECOND) < Math.ceil(before.ticksLeft / TICKS_PER_SECOND);
+      Math.ceil(event.ticksLeft / TICKS_A_SECOND) < Math.ceil(before.ticksLeft / TICKS_A_SECOND);
     // A raid won topples its banners; one already won when the page came stands toppled.
     if (event?.kind === PUBLIC_KIND.raid && event.phase === PUBLIC_PHASE.won)
       this.wonAt ??= before?.phase === PUBLIC_PHASE.running ? clock : -Infinity;

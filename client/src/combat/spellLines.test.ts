@@ -180,10 +180,11 @@ test("a rune ring is its element's stops alone: a dithered dark floor, a dotted 
 test('laid vertices are written over in place each frame and cut to what was laid', () => {
   const out = new Laid();
   out.quad(0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, [0.5, 0.5, 0.5], 1);
+  out.quad(0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, [0.5, 0.5, 0.5], 1);
   const kept = out.laid();
-  assert.equal(kept.length, 6 * MARK_FLOATS);
+  assert.equal(kept.length, 12 * MARK_FLOATS);
   out.clear();
-  out.vertex(9, 9, 9, [1, 1, 1], 1);
+  out.quad(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, [1, 1, 1], 1);
   assert.equal(out.laid(), kept, 'the same array');
-  assert.deepEqual(kept, [9, 9, 9, 1, 1, 1, 1]);
+  assert.deepEqual(kept, Array.from({ length: 6 }, () => [9, 9, 9, 1, 1, 1, 1]).flat());
 });

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { allSelected, emptyField, erased, moved, replaced, selected, typed } from './field.ts';
+import { allSelected, emptyField, erased, moved, replaced, typed } from './field.ts';
 
 test('typing goes in at the caret, over the selection, and no further than the most', () => {
   const start = { text: 'hello', caret: 2, anchor: 2 };
@@ -25,9 +25,9 @@ test('the caret moves by character, word and end, and Shift grows the selection'
   assert.equal(moved(field, -1, false, true).caret, 4);
   assert.equal(moved(field, 'start', false).caret, 0);
   const grown = moved(moved(field, -1, true), -1, true);
-  assert.equal(selected(grown), 'wo');
+  assert.deepEqual(grown, { text: 'one two', caret: 5, anchor: 7 });
   assert.equal(moved(grown, 1, false).caret, 7, 'an arrow without Shift goes to the selection’s end');
-  assert.equal(selected(allSelected(field)), 'one two');
+  assert.deepEqual(allSelected(field), { text: 'one two', caret: 7, anchor: 0 });
 });
 
 test('a field kept to its most never cuts a pair in half', () => {

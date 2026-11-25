@@ -61,11 +61,6 @@ test('the rate ladder steps by damage over max health, each rung inclusive at it
   assert.equal(bloodRate(30, 100), 50);
 });
 
-test('turning the blood down never turns a hit into nothing', () => {
-  assert.equal(bloodRate(1, 100, 0), 1);
-  assert.equal(bloodRate(1, 100, 0.5), 15);
-});
-
 test('a blow for 175 percent of a body is an overkill, and the heavy burst throws more drops', () => {
   assert.equal(isOverkill(174, 100), false);
   assert.equal(isOverkill(175, 100), true);

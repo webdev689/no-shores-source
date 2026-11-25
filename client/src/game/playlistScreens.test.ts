@@ -8,7 +8,7 @@ import { activitiesAt, gatesAt } from './activities.ts';
 import { type ActivityScreens, startActivityScreens } from './activityScreens.ts';
 import type { ActivityRecord, GearState } from '../network/gearMessages.ts';
 import { gearScreenOpen } from './gearScreen.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import { launchRoom, playlistScreenOf } from './playlistWords.ts';
 import { startedAtSea } from './rooms.ts';
 import { breachPlanOf } from './breachPlan.ts';
@@ -153,7 +153,7 @@ async function atSea(
   members = 1,
   roster?: () => Promise<unknown>,
 ) {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const [sockets, into] = [[] as FinderSocket[], [] as string[]];
   let look = () => undefined as void;
   const world = { now: NOW, onSea: true };

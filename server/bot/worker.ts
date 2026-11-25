@@ -16,7 +16,7 @@ import {
 import { GATEWAY_NAME } from './gateway.ts';
 import { corsFor, fail, json } from './http.ts';
 import { INTERACTION_PATH, interactionRoute } from './interactions.ts';
-import { type BotContext, type Vars, createConfigCache } from './kit.ts';
+import { type BotContext, type Vars, createConfigCache, errorWords } from './kit.ts';
 import { type Bucket, MEDIA_PATH, mediaKey, serveMedia } from './media.ts';
 import { panelRoute } from './panel.ts';
 import { REGISTRY, type Registry } from './registry.ts';
@@ -64,7 +64,6 @@ function restOf(vars: Vars, given: Fetch | undefined): Rest {
 }
 
 const configCaches = new WeakMap<Db, ReturnType<typeof createConfigCache>>();
-const said = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** The context a module runs in on the Worker: interactions, the clock and the panel's acts. */
 export function workerContext(env: Env, execution: Execution, now: () => number, over: Over = {}): BotContext {
@@ -83,7 +82,7 @@ export function workerContext(env: Env, execution: Execution, now: () => number,
     config: (guildId, moduleId) => held.get(guildId, moduleId),
     snapshot: (guildId) => readSnapshot(env.BOT_DB, guildId),
     later: (work) =>
-      execution.waitUntil(work.catch((error) => console.warn(`[bot] later work failed: ${said(error)}`))),
+      execution.waitUntil(work.catch((error) => console.warn(`[bot] later work failed: ${errorWords(error)}`))),
     async forget(guildId, moduleId) {
       held.forget(guildId, moduleId);
       const told = JSON.stringify({ guildId, module: moduleId });
@@ -152,13 +151,15 @@ export async function handle(request: Request, env: Env, execution: Execution, o
  * module's job that throws is logged and stops no other.
  */
 export async function tick(env: Env, nowMs: number, execution: Execution, over: Over = {}): Promise<void> {
-  await askGateway(env, '/ensure').catch((error) => console.warn(`[bot] the Gateway did not answer: ${said(error)}`));
+  await askGateway(env, '/ensure').catch((error) =>
+    console.warn(`[bot] the Gateway did not answer: ${errorWords(error)}`),
+  );
   const context = workerContext(env, execution, () => nowMs, over);
   for (const shape of (over.registry ?? REGISTRY).modules) {
     try {
       await shape.minute?.(context);
     } catch (error) {
-      console.warn(`[bot] ${shape.id}'s minute failed: ${said(error)}`);
+      console.warn(`[bot] ${shape.id}'s minute failed: ${errorWords(error)}`);
     }
   }
   if (new Date(nowMs).getUTCMinutes() !== 17) return;
@@ -173,7 +174,7 @@ export async function tick(env: Env, nowMs: number, execution: Execution, over: 
   await forgetLeftServers(env.BOT_DB, Math.floor(nowMs / 1000), async (ids) => {
     for (const id of ids)
       await env.BOT_MEDIA?.delete(mediaKey(id)).catch((error) =>
-        console.warn(`[bot] a picture stayed: ${said(error)}`),
+        console.warn(`[bot] a picture stayed: ${errorWords(error)}`),
       );
   });
 }

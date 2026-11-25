@@ -17,7 +17,6 @@ import {
   goalNodes,
   goalOf,
   linesBetween,
-  markedGoal,
   puzzlePoints,
   talkAt,
   trackedOf,
@@ -127,8 +126,8 @@ test('a smith whose ware a buy goal of the task asks is the one it lights, until
   assert.equal(buyAt(onTask(1, taskOf(1, 'wear-them')), 'armorsmith'), false, 'worn is no smith of theirs');
 });
 
-test("the HUD marks the task's first unmet goal standing somewhere in the node the player is in", () => {
-  // A task of two places in two nodes, made here: the mark in each node is its own goal's.
+test("the held map marks each node the task's goals name", () => {
+  // A task of two places in two nodes, made here.
   const goals: Goal[] = [
     { kind: 'reach', node: 'gullwing-vale', place: 'Weir Mill', text: 'Weir Mill' },
     { kind: 'reach', node: 'saltgrass-downs', place: 'Saltgrass', text: 'Saltgrass' },
@@ -137,10 +136,6 @@ test("the HUD marks the task's first unmet goal standing somewhere in the node t
   road.tasks.push({ id: 'two-nodes', task: 'Two nodes', goals });
   try {
     const both = onTask(STORM, taskOf(STORM, 'two-nodes'));
-    assert.equal(markedGoal(both, 'gullwing-vale'), goals[0]);
-    assert.equal(markedGoal(both, 'saltgrass-downs'), goals[1], 'not the first goal of another node');
-    assert.equal(markedGoal({ ...both, counts: [0, 1] }, 'saltgrass-downs'), null, 'met');
-    assert.equal(markedGoal(both, 'driftwood-moors'), null);
     assert.deepEqual(goalNodes(both), ['gullwing-vale', 'saltgrass-downs']);
   } finally {
     road.tasks.pop();
@@ -206,22 +201,7 @@ test("a defence shows its ward's health; a puzzle its points lit of all", () => 
   assert.equal(trackedOf(onTask(STORM, puzzle.task, [1], { points }))?.steps[puzzle.goal]?.done, true);
 });
 
-test("a varied step's goal names its mark, its points and the line it fails with", () => {
-  for (const [quest, kind] of [
-    [LAMP, 'escort'],
-    [STORM, 'race'],
-    [VEIL, 'tail'],
-    [LAMP, 'defend'],
-    [STORM, 'puzzle'],
-    [VEIL, 'unseen'],
-  ] as const) {
-    const { task, goal } = stepOf(quest, kind);
-    const named = goalsOf(quest, task)[goal];
-    const first = goalsOf(quest, task).find(
-      (each) => each.node === named?.node && (each.place ?? each.from ?? each.checkpoints),
-    );
-    assert.equal(markedGoal(onTask(quest, task), named?.node ?? ''), first, `a ${kind} stands somewhere marked`);
-  }
+test("a varied step's goal names its points and the line it fails with", () => {
   const puzzle = stepOf(VEIL, 'puzzle');
   const named = goalsOf(VEIL, puzzle.task)[puzzle.goal]?.points?.[0]?.name;
   const chest = onTask(VEIL, puzzle.task, [], { points: [{ x: 1, y: 2, lit: false }] });

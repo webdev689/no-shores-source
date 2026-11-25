@@ -74,10 +74,8 @@ test('the level meter is the room’s word: XP to the next below 20, Prestige pa
   const low = characterOf(state({ level: 5, toNext: 0.5, toNextNeeds: 2_500 }));
   assert.equal(low.toNext, 0.5);
   assert.equal(low.toNextWords, '2,500 XP to level 6');
-  assert.equal(low.fruitGrown, null);
-  const high = characterOf(state({ level: 21, prestige: 22, toNext: 22 / 32, toNextNeeds: 10, fruitGrowing: 0 }));
+  const high = characterOf(state({ level: 21, prestige: 22, toNext: 22 / 32, toNextNeeds: 10 }));
   assert.equal(high.toNextWords, '10 more Prestige for level 22');
-  assert.equal(high.fruitGrown, 0, 'the next Fruit just begun');
   const last = characterOf(state({ level: 30, prestige: 120 }));
   assert.deepEqual([last.toNext, last.toNextWords], [1, 'The highest level']);
 });

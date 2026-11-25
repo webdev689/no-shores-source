@@ -1,5 +1,5 @@
 //! The Breaches' perks at their Forged grade, which a piece won at Hard gives: each does what its plain grade does,
-//! more strongly ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]).
+//! more strongly.
 
 use super::breach_perks_tests::{HIT, KILL, WORN, place, room_wearing};
 use super::verbs_tests::{SWING, blow, shoot, stand, swing};

@@ -71,10 +71,6 @@ fn a_route_joins_every_pair_of_the_three_port_cities() {
         let serving = joined.iter().filter(|pair| pair.contains(&port)).count();
         assert_eq!(serving, 2, "{} trades with both others", traffic.ports[port].name);
     }
-    for route in &traffic.routes {
-        let names = (&traffic.ports[route.from_port].name, &traffic.ports[route.to_port].name);
-        eprintln!("{} to {}: {:.1} km, {} legs", names.0, names.1, route.length_m / 1_000.0, route.path.len() - 1);
-    }
 }
 
 #[test]
@@ -273,7 +269,6 @@ fn about_five_ships_are_in_view_of_overlook_and_leave_it_on_different_headings()
         .map(|step| traffic.ships_near(centre, 60_000.0, 1_795_000_000.0 + f64::from(step) * 86.4).len())
         .sum();
     let mean = seen as f64 / f64::from(samples);
-    eprintln!("{mean} ships within 60 km of Overlook's roadstead on the mean");
     assert!((4.0..=6.0).contains(&mean), "{mean} ships within 60 km on the mean");
     // The way from Overlook's roadstead to where each of its courses lies 60 km out.
     let ways: Vec<[f64; 2]> = traffic

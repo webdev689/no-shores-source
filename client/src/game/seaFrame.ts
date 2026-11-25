@@ -48,8 +48,6 @@ export interface SeaFrame {
   readonly sailing: boolean;
   readonly resumable: boolean;
   readonly pace: Pace;
-  /** Whether the view stands over an island's side, its landings marked. */
-  readonly overSide: boolean;
   /** Everyone aboard the player's Sloop once the view is down there, and whether the player sees through their own
    *  eyes on its deck. */
   readonly figures: readonly CardAt[];

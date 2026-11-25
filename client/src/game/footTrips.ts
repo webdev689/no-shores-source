@@ -180,11 +180,6 @@ export class Entrances {
     for (const number of this.entrances.keys()) this.namer?.(number);
   }
 
-  /** The name already asked for entrance `number`'s dungeon, if any; nothing is forged for it. */
-  knownName(number: number): string | undefined {
-    return this.names.get(number);
-  }
-
   /** The dungeon's name behind entrance `number`: an Elite Dungeon's node's own, or a patrol's dungeon's. */
   nameOf(module: WebAssembly.Module, patrol: NodeInfo, number: number): string {
     if (patrol.kind === 'dungeon') return patrol.name;

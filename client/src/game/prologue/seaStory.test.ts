@@ -80,7 +80,7 @@ export function storied(options: { land?: LandWorker; refused?: boolean } = {}) 
     lightning: new Lightning(17, () => undefined),
     land: options.land,
     marks: { drawInto: () => undefined } as unknown as MarkView,
-    dress: brig.crew({ x: 0, y: 0, z: 0, heading: 0, pitch: 0, roll: 0 }, 0)[0]?.dress,
+    dress: brig.crew({ x: 0, y: 0, z: 0, heading: 0, pitch: 0, roll: 0 })[0]?.dress,
   } as unknown as Story;
   /** Plays `beat` for `seconds`, each frame's shot and heads kept with its time. */
   const run = (beat: Beat, seconds: number, from = 0) => {

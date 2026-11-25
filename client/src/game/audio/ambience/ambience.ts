@@ -19,7 +19,7 @@ import { BREACH_HEARD } from './breachHeard.ts';
 import type { Random } from './dsp.ts';
 import { ambienceOf, fadeGain, nearness, phasesAt, stepLevel, underground, walkedOn, wayOf } from './law.ts';
 import { type Lay, type Point3, shoreOf } from './places.ts';
-import { type Heard, MOST_CALLS, ScapePlayer } from './player.ts';
+import { type Heard, ScapePlayer } from './player.ts';
 import { type FightHeard, seaFightCue } from './seaFight.ts';
 import { FAIR, phasesOfSun, rainLevel, shelterOf, thunderOf, weatherOf } from './weatherLaw.ts';
 
@@ -234,21 +234,6 @@ export class Ambience {
     if (gone.length === 0) return;
     for (const player of gone) player.stop();
     this.players = this.players.filter((player) => !gone.includes(player));
-  }
-
-  /** What it is playing: the places sounding, their beds playing recordings, and the calls sounding. */
-  get stats(): {
-    readonly places: number;
-    readonly sources: number;
-    readonly calls: number;
-    readonly mostCalls: number;
-  } {
-    return {
-      places: this.players.length + (this.hollow ? 1 : 0),
-      sources: this.players.reduce((sum, player) => sum + player.sources, 0),
-      calls: this.calls.count,
-      mostCalls: MOST_CALLS,
-    };
   }
 
   /** A Breach's gate's hollow, over the vale's own while the ear stands near the gate, fading as places do. */

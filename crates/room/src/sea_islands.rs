@@ -1,4 +1,4 @@
-//! The sea's procedural islands ([[Islands]]): rolled near players' ships in hostile waters, never in home waters, each
+//! The sea's procedural islands: rolled near players' ships in hostile waters, never in home waters, each
 //! a place and a seed that every machine builds the same island from (`isle`). A ship within `FIND_M` finds one; one
 //! is held while a ship is within `NEAR_M` of it or a player stands ashore on it, and fades `FADE_TICKS` after. A
 //! standing island's coast, out past its shallows, is land to every course and to the hostile ships' chart.
@@ -6,6 +6,7 @@
 use super::{Coast, Sailing, Sea};
 use crate::PlayerId;
 use crate::chart::Charted;
+use combat::sight::apart;
 use isle::Kind;
 use isle::draws::Draws;
 use std::collections::{BTreeMap, BTreeSet};
@@ -79,11 +80,6 @@ pub struct Islands {
     /// new number is a new visit, its nodes standing again for it. How many landings there have been.
     landed: BTreeMap<String, (u32, u32)>,
     landings: u32,
-}
-
-fn apart(one: [f64; 2], other: [f64; 2]) -> f64 {
-    let (along_x, along_y) = (one[0] - other[0], one[1] - other[1]);
-    (along_x * along_x + along_y * along_y).sqrt()
 }
 
 /// How far a point lies from a leg.

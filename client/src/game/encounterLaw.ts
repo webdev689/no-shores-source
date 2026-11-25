@@ -12,12 +12,12 @@ import { type EncounterSeen, RUNE, SEAL_KIND, SEAL_STATE, type SealSeen } from '
 import type { FightEvent } from '../network/messages.ts';
 import type { DungeonLayout, EncounterLayout, SealLayout } from './dungeonLayout.ts';
 import { markBeam } from './footGear.ts';
+import { TICKS_A_SECOND } from './hudLaw.ts';
+import { clockWords } from './tasks.ts';
 
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number];
 
-/** The room's ticks a second. */
-const TICKS_PER_SECOND = 60;
 /** Each seal's name, by its kind. */
 export const SEAL_NAMES: Readonly<Record<number, string>> = {
   [SEAL_KIND.litany]: 'The Litany',
@@ -113,14 +113,11 @@ function barOf(seal: SealSeen): { share: number; label: string } {
   return { share: seal.progress, label: `${Math.floor(seal.progress * 100)}%` };
 }
 
-/** A count of seconds as minutes and seconds, 1:00. */
-const minutes = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-
 /** The Court's Fury in the banner's bonus line: its weight once it has begun, its countdown in its last minute. */
 function furyOf(seen: EncounterSeen): Banner['bonus'] {
   if (seen.fury > 0) return { text: `Fury ×${(1 + seen.fury / 10).toFixed(1)}`, state: 'warns' };
-  const left = Math.ceil(seen.furyTicks / TICKS_PER_SECOND);
-  return seen.furyTicks > 0 && left <= FURY_WARNED_S ? { text: `Fury in ${minutes(left)}`, state: 'holds' } : null;
+  const left = Math.ceil(seen.furyTicks / TICKS_A_SECOND);
+  return seen.furyTicks > 0 && left <= FURY_WARNED_S ? { text: `Fury in ${clockWords(left)}`, state: 'holds' } : null;
 }
 
 /** The banner for an Elite Dungeon at the player's feet: the seal whose room the player stands in, else the nearest
@@ -148,7 +145,7 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
       seen.ward > 0
         ? { share: anchors / Math.max(1, seen.anchors.length), label: `${anchors} of ${seen.anchors.length}` }
         : null;
-    const clock = warned ? `${Math.ceil(seen.reckoningTicks / TICKS_PER_SECOND)}` : '';
+    const clock = warned ? `${Math.ceil(seen.reckoningTicks / TICKS_A_SECOND)}` : '';
     const tone: BannerTone = warned ? 'heroic' : 'running';
     return { ...plain, tone, kicker, title: COURT, clock, urgent: warned, objective, bar, bonus: furyOf(seen) };
   }
@@ -462,7 +459,7 @@ export function encounterMarks(
     }
   }
   if (boss && seen.slamTicks > 0) {
-    const coming = 1 - seen.slamTicks / (2 * TICKS_PER_SECOND);
+    const coming = 1 - seen.slamTicks / (2 * TICKS_A_SECOND);
     markRing(out, boss, plan.reach.slam - BAND_M * 2, plan.reach.slam, [...FURY, 0.6 + 0.4 * beat]);
     markRing(out, boss, 0, plan.reach.slam * Math.max(0, Math.min(1, coming)), [...FURY, 0.25]);
   }
