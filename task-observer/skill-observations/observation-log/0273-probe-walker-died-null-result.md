@@ -1,5 +1,5 @@
 ---
-id: 253
+id: 273
 title: "A presence probe's walker died in its first 20 s and was carried dead across the zone, then (respawning) strayed out of the section unseen, so the probe misreported both trees twice"
 status: open
 type: open-source
