@@ -74,6 +74,17 @@ export function leftByWayOut(body: string | null): boolean {
   }
 }
 
+/** Where a kept character's dive stands (its island, week, zone and route, `gear::dive::Dive`), as one text; empty
+ *  for none, or a body that does not read. */
+export function diveOf(body: string | null): string {
+  try {
+    const dive = (JSON.parse(body ?? 'null') as { passage?: Record<string, unknown> | null } | null)?.passage;
+    return dive ? JSON.stringify([dive.island, dive.week, dive.zone, dive.route]) : '';
+  } catch {
+    return '';
+  }
+}
+
 /** A session's token, as a browser sends it. */
 export const TOKEN = /^[0-9a-f]{64}$/;
 
@@ -90,6 +101,8 @@ interface Held {
   saving: boolean;
   /** The character as last saved, so a change that changed nothing (a refused ask) is not saved again. */
   saved: string | null;
+  /** Where the character's dive stands as last saved or being saved (`diveOf`). */
+  dive: string;
   /** The save under way, which a leaving player's last save waits for so it is never overtaken by an older one. */
   inFlight: Promise<unknown> | null;
   /** When the room was last told the player's guild, and which it was told (undefined before it was). */
@@ -114,6 +127,8 @@ export class Keeper {
   /** Whether a character that came from a room, kept as it was claimed, may arrive here by a way that needs no one
    *  here (`arrival.ts`); null where the room judges no arrival. */
   private arrives: ((from: string | null, body: string | null) => boolean) | null = null;
+  /** Whether no one comes in by their company playing here alone, as a passage zone takes only its dives. */
+  private alone = false;
   /** The accounts a run has let in, for as long as it lives: one back after the rest left a while finds it theirs. */
   private readonly admitted = new Set<string>();
   /** At a guild's outpost, its guild's key, and the accounts found to be its members. */
@@ -151,9 +166,11 @@ export class Keeper {
   }
 
   /** Judges where each kept character comes from: one that came by no way leading here is let go untouched, its
-   *  player sent away saying so, unless one of their company plays here (the Roster's join brings them in). */
-  judgingArrivals(arrives: (from: string | null, body: string | null) => boolean): this {
+   *  player sent away saying so, unless one of their company plays here (the Roster's join brings them in) and the
+   *  room is not `alone`. */
+  judgingArrivals(arrives: (from: string | null, body: string | null) => boolean, alone = false): this {
     this.arrives = arrives;
+    this.alone = alone;
     return this;
   }
 
@@ -252,6 +269,7 @@ export class Keeper {
       savedAt: now(),
       saving: false,
       saved: claimed.body,
+      dive: diveOf(claimed.body),
       inFlight: null,
       guildAt: 0,
     });
@@ -310,9 +328,10 @@ export class Keeper {
     const companions =
       this.company && characters ? await this.tried(() => characters.companions(account, this.name), here) : null;
     if (companions === undefined) return undefined;
-    // A run is full by the accounts it keeps, so a member's own older socket never counts against them.
+    // A run, or a public passage zone, is full by the accounts it keeps, so a member's own older socket never counts
+    // against them.
     const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
-    const full = this.company ? runFull(this.name, others.size + 1) : null;
+    const full = runFull(this.name, others.size + 1);
     // A playlist's run is the server's: its first player must be one the server drew it for (`finding.ts`).
     const drawn =
       this.admitted.size === 0 && characters && (nodeRoom(this.name.slice('node-'.length))?.playlist ?? null) !== null
@@ -327,6 +346,7 @@ export class Keeper {
       (drawn ? '' : FROM_THE_PLAYLIST) ||
       (outsider ? ANOTHER_GUILD : '');
     if (shut !== '' || !characters || !this.arrives || this.arrives(from, body)) return shut;
+    if (this.alone) return NO_WAY_HERE;
     // Come by no way that leads here, a player may still join one of their company who plays here.
     const company = companions ?? (await this.tried(() => characters.companions(account, this.name), here));
     if (company === undefined) return undefined;
@@ -386,10 +406,16 @@ export class Keeper {
     return this.admitted.size === 0 || companions.some((account) => this.admitted.has(account));
   }
 
-  /** Notes that a player's character changed. */
+  /** Notes that a player's character changed. A dive that moved (begun, gone on, gone home or ended) is saved at
+   *  once, not after SAVE_AFTER_CHANGE_MS: the room the player goes to next judges their arrival by the saved dive. */
   changed(player: number): void {
     const held = this.held.get(player);
-    if (held) held.changed = true;
+    if (!held) return;
+    held.changed = true;
+    const dive = diveOf(this.room.character(player));
+    if (dive === held.dive) return;
+    held.dive = dive;
+    void this.saveNow(player);
   }
 
   /** Saves each character that changed a while ago, or has gone unsaved long enough. */

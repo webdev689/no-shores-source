@@ -44,6 +44,8 @@ code:
   - crates/protocol/src/passage_wire.rs#passages_of
   - crates/protocol/src/passage_wire.rs#seen_offset
   - crates/room-wasm/src/passage_room_door.rs#open_passage
+  - server/roomNames.ts#passageRoom
+  - server/arrival.ts#arrives
 ---
 # Passages
 
@@ -175,6 +177,16 @@ the dead lamps lit and targets down, the ring's share held, the seconds left, th
 and the lamp lit for the player, and their hold under way. The asks are numbered 81 to 85 (`passage_wire`). A page or
 the host opens a zone's room with `open_passage` (the island, the week, the zone, the route and the minute); once the
 clock's week is past the web's, the room refuses players: "The passage has shifted".
+
+## On the server
+
+- **A zone's room** is named `passage-<island>-w<week>-z<zone>` for its first public room, `--2`, `--3` after it for
+  the next when one is full (eight accounts), and `--run-<instance>` for a company's route ([[Server]], "A passage
+  zone's room"). It opens from its name with `open_passage`, this week's web or last week's, the last refusing players.
+- **Arrivals** are judged by the dive the accounts keep with the character: into a zone from the patrol zone at the
+  dive's mouth or a lamp lit this week, from a zone whose ways on lead to it, or back into its own room; out of a
+  lamp's zone, its lamp lit, to the patrol zone.
+- **The dive is saved** the moment it moves, so the next zone's room reads it.
 
 ## In the browser
 

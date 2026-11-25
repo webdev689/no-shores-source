@@ -9,11 +9,14 @@ import { type Count, admitsFrom, counted } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import { OutpostHost, outpostGround } from './outpostHost.ts';
+import { openPassageRoom, passagesOf } from './passageHost.ts';
 import {
-  canonicalRoom,
+  entranceOf,
   isleRoom,
   nodeRoom,
+  passageRoom,
   privateRun,
+  roomName,
   runAsk,
   seaDungeonRoom,
   seaRoom,
@@ -67,25 +70,12 @@ async function sessionHash(token: string): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens, spelled as the room's one
- *  name (`canonicalRoom`). */
-function roomName(request: Request): string | null {
-  const name = /^\/room\/([a-z0-9-]{1,64})$/.exec(new URL(request.url).pathname)?.[1];
-  return name === undefined ? null : canonicalRoom(name);
-}
-
-/** The entrance a join into a patrol's room asks to stand at, `?entrance=<number>`: as a player comes out of that
- *  entrance's dungeon. Null for none, or a number that is not one. */
-function entranceOf(request: Request): number | null {
-  const asked = new URL(request.url).searchParams.get('entrance');
-  return asked !== null && /^[0-9]$/.test(asked) ? Number(asked) : null;
-}
-
 /**
  * One room on Cloudflare: a Durable Object for each room's name (`roomNames.ts`), keeping the room in WebAssembly:
  * `sea` the sea (with `--elite` or `--abyss` at a harder tier); `node-...` a node's room, a patrol's shared dungeon, or
  * a run (`--run-<instance>`, kept to one company); `sea-dungeon-...` a sea island's dungeon and `isle-...` an island a
- * sea rolled, each opened on that sea's word; `fleet-<name>` a fleet's place; `test-<name>` the Test Ground's course.
+ * sea rolled, each opened on that sea's word; `passage-...` a passage zone's room (`passageRoom`); `fleet-<name>` a
+ * fleet's place; `test-<name>` the Test Ground's course.
  * Each binary message on a player's WebSocket is an input. While anyone is in, it ticks the room with the clock and
  * sends each player each tick's snapshot. Its sockets live and die with it: the room is kept only in memory, so a
  * socket must never outlast it. A browser's one text message is its session's token, which keeps its character.
@@ -93,6 +83,8 @@ function entranceOf(request: Request): number | null {
 export class RoomHost extends DurableObject<Env> {
   private readonly room: RoomDoor = startRoomDoor(roomModule);
   private opened: Promise<boolean> | null = null;
+  /** Why the room did not open, told to whoever came: a passage zone of a week gone, or none its web holds. */
+  private why = '';
   private ticking: ReturnType<typeof setInterval> | null = null;
   /** Each player's socket, by its player's number, and their messages in the second they last sent in (`budget.ts`);
    *  a player let go of is gone from it, though their socket may still be closing. */
@@ -166,12 +158,16 @@ export class RoomHost extends DurableObject<Env> {
     if (this.closing) clearTimeout(this.closing);
     this.closing = null;
     this.opened ??= this.openRoom(roomName(request) ?? '').catch(() => false);
-    if (!(await this.opened)) {
+    const opened = await this.opened;
+    const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
+    if (!opened) {
       // Nothing opened, so nothing is lost by asking again on the next join.
       this.opened = null;
-      return new Response('No such room', { status: 404 });
+      if (this.why === '') return new Response('No such room', { status: 404 });
+      server.accept();
+      server.close(SHUT, this.why);
+      return new Response(null, { status: 101, webSocket: client });
     }
-    const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     // Past its sockets the room still takes one, to say why it closes: a page never reads a refused upgrade's status.
     if (this.players.size >= socketsMost(this.name)) {
       server.accept();
@@ -252,21 +248,22 @@ export class RoomHost extends DurableObject<Env> {
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, and a fleet room is the World Editor's.
     const seas = seaRoom(name);
-    const keeps =
-      name.startsWith('node-') || name.startsWith('sea-dungeon-') || name.startsWith('isle-') || seas !== null;
+    const keeps = ['node-', 'sea-dungeon-', 'isle-', 'passage-'].some((kind) => name.startsWith(kind)) || seas !== null;
     this.keeper = new Keeper(keeps ? accounts : null, room, name, (player, why, rejoinable) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       const code = why === undefined ? ELSEWHERE : rejoinable ? AGAIN : SHUT;
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
     });
     if (privateRun(name)) this.keeper.forCompany();
-    // A node's room, its dungeons' and its runs' judge where each kept character comes from.
+    // A node's room, its dungeons' and its runs' judge where each kept character comes from; a passage zone takes only
+    // the dives its ways lead in, whoever of their company plays here.
     const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
+    const passage = passageRoom(name);
     if (reached?.guild) this.keeper.forGuild(reached.guild);
-    if (reached) {
-      const reach = await this.reachOf(reached.id);
-      this.keeper.judgingArrivals((from, body) => arrives(name, from, shipOf(body), reach));
-    }
+    const reach = reached ? await this.reachOf(reached.id) : null;
+    const judge = (from: string | null, body: string | null) =>
+      arrives(name, from, shipOf(body), reach, passagesOf(this.room, body));
+    if (reached || passage) this.keeper.judgingArrivals(judge, passage !== null);
     // Every room on land, and the sea's flotsam and decks, roll their loot from seeds of their own that no player sees:
     // the sea's own seed shows in its islands'.
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
@@ -284,6 +281,8 @@ export class RoomHost extends DurableObject<Env> {
         this.room.keepCharacters()
       );
     if (name.startsWith('fleet-')) return this.room.openFleet(Date.now() / 1000);
+    if (passage) this.why = openPassageRoom(this.room, name, Math.floor(Date.now() / MINUTE_MS));
+    if (passage) return this.why === '' && this.room.reseed(seeds);
     const isle = /^isle-(.+)$/.exec(name)?.[1];
     if (isle !== undefined) return this.openIsland(isle);
     const node = /^node-(.+)$/.exec(name)?.[1];

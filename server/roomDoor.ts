@@ -45,6 +45,11 @@ export interface RoomDoor {
    *  crates/room-wasm/src/run_door.rs reads it), and a patrol's dungeon's from its patrol's node file's text, whose lock
    *  it keeps; false for an ask that does not read, a dungeon no rule lays, or a patrol's without its file. */
   openRun(ask: string, patrolText?: string): boolean;
+  /** Opens a passage zone's room from its ask (JSON: its island, the week of its web, its zone, its route and the Unix
+   *  minute it opens, as crates/room-wasm/src/passage_room_door.rs reads it); false for a zone no week's web holds. */
+  openPassage(ask: string): boolean;
+  /** An island's passages' web for a week, as JSON (`web_json`); empty for an island with none. */
+  passageWeb(island: string, week: number): string;
   /** What is on at a Unix minute, as JSON: the day's and the week's numbers, the minutes to the next of each, each
    *  island's dungeon of the day, the day's modifier, the week's two with their modifiers and levels, each island's
    *  band at each tier, the revives, and each modifier's name and words. */
@@ -246,6 +251,8 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_dungeon(address: number, length: number, dungeon: number): number;
   room_open_run(address: number, length: number, patrolAddress: number, patrolLength: number): number;
+  room_open_passage(address: number, length: number): number;
+  room_passage_web(week: number, address: number, length: number): bigint;
   room_activities(minute: number): bigint;
   room_gates(level: number, prologue: number): bigint;
   room_open_deck(hull: number, faction: number, rank: number, level: number): number;
@@ -371,6 +378,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
         lend(patrol, (patrolAt) => exports.room_open_run(address, length, patrolAt, patrol.length));
       return openWith(opens, ask);
     },
+    openPassage: (ask) => openWith(exports.room_open_passage, ask),
+    passageWeb: (island, week) =>
+      new TextDecoder().decode(
+        take(openWithAnswer((address, length) => exports.room_passage_web(week >>> 0, address, length), island)),
+      ),
     activities: (minute) => new TextDecoder().decode(take(exports.room_activities(minute >>> 0))),
     gates: (level, prologue) => new TextDecoder().decode(take(exports.room_gates(level >>> 0, prologue ? 1 : 0))),
     openDeck: (hull, faction, rank, level) => exports.room_open_deck(hull, faction, rank, level) === 1,
