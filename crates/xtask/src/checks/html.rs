@@ -3,7 +3,7 @@
 //! page's elements. Only the page's bridge (`BRIDGE`) may use what the scripts are refused, each for the little it
 //! must do on the page.
 
-use super::layers::{imports_of, resolve};
+use super::layers::{imports_of, resolve, script_stem};
 use super::{Problem, SCRIPT_EXTENSIONS, is_script};
 use std::collections::HashSet;
 
@@ -45,14 +45,14 @@ const REFUSED: [(&str, &str); 46] = [
     ("DOMParser", "writes HTML"),
     ("document.write", "writes HTML"),
     ("document.writeln", "writes HTML"),
-    (".textContent", "writes words into the page"),
+    ("textContent", "writes words into the page"),
     ("innerText", "writes words into the page"),
     ("outerText", "writes words into the page"),
     ("nodeValue", "writes words into the page"),
     ("setAttribute", "styles an element"),
     ("setAttributeNS", "styles an element"),
-    (".classList", "styles an element"),
-    (".className", "styles an element"),
+    ("classList", "styles an element"),
+    ("className", "styles an element"),
     (".style.", "styles an element"),
     (".style[", "styles an element"),
     ("cssText", "styles an element"),
@@ -101,12 +101,15 @@ fn test_side(path: &str) -> bool {
     stem(path).ends_with(".test") || stem(path).ends_with("ForTests")
 }
 
-/// The source `specifier` names from `from`, if it is one of `paths`, with or without its extension.
+/// The source `specifier` names from `from`, if it is one of `paths`, with or without its extension, in either
+/// language's spelling (`./aid.js` is `./aid.ts`).
 fn imported<'a>(from: &str, specifier: &str, paths: &HashSet<&'a str>) -> Option<&'a str> {
     let target = resolve(from, specifier.split(['?', '#']).next().unwrap_or(specifier));
     let found = paths.get(target.as_str());
+    let stem = script_stem(&target);
     found
         .or_else(|| SCRIPT_EXTENSIONS.iter().find_map(|ending| paths.get(format!("{target}{ending}").as_str())))
+        .or_else(|| SCRIPT_EXTENSIONS.iter().find_map(|ending| paths.get(format!("{stem}{ending}").as_str())))
         .copied()
 }
 
@@ -294,7 +297,16 @@ fn styled_beyond(css: &str, canvas: &str) -> Vec<String> {
         let end = text[start..].find("*/").map_or(text.len(), |at| start + at + 2);
         text.replace_range(start..end, "");
     }
+    // CSS passes the comment marks HTML keeps from old browsers by.
+    let text = text.replace("<!--", "").replace("-->", "");
     let own = format!("#{canvas}");
+    // A rule nested in another's (`body { &::before { ... } }`) styles what its own selector names.
+    let nested = text.split('}').filter_map(|rule| {
+        let (selectors, inside) = rule.split_once('{')?;
+        let (nested, _) = inside.rsplit_once('{')?;
+        Some(format!("{} {{ {} }}", selectors.trim(), nested.trim()))
+    });
+    let nested: Vec<String> = nested.collect();
     text.split('}')
         .flat_map(|rule| rule.split_once('{').map_or(rule, |(selectors, _)| selectors).split(','))
         .map(str::trim)
@@ -304,6 +316,7 @@ fn styled_beyond(css: &str, canvas: &str) -> Vec<String> {
                 && (canvas.is_empty() || *selector != own)
         })
         .map(str::to_owned)
+        .chain(nested)
         .collect()
 }
 
@@ -317,7 +330,10 @@ fn page_problems(html: &str) -> Vec<String> {
     let mut inside = String::new();
     let mut rest = html;
     while !rest.is_empty() {
-        let open = rest.find('<').unwrap_or(rest.len());
+        // A title, style or script holds text to its own end tag, a `<` or a comment's mark within it its text too.
+        let raw = matches!(inside.as_str(), "title" | "style" | "script");
+        let ends = format!("</{inside}");
+        let open = if raw { rest.to_ascii_lowercase().find(&ends) } else { rest.find('<') }.unwrap_or(rest.len());
         let words = rest[..open].trim();
         match inside.as_str() {
             "title" => {}

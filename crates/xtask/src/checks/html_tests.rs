@@ -61,6 +61,8 @@ fn a_script_that_puts_an_element_or_words_into_the_page_is_refused() {
         "const doc = new DOMParser().parseFromString('<div>x</div>', 'text/html');",
         "document.write('<b>x</b>');",
         "label.textContent = 'Name';",
+        "Object.assign(label, { textContent: 'Name' });",
+        "Reflect.set(label, 'className', 'menu');",
         "node.innerText = 'x';",
         "node.outerText = 'x';",
         "node.firstChild.nodeValue = 'x';",
@@ -154,6 +156,8 @@ fn a_test_and_its_aids_are_free_only_while_nothing_but_tests_reach_them() {
     assert_eq!(scripts(&[aid, test, game]).len(), 1);
     let bare = ("client/src/game/screens.ts", "import { made } from './pageForTests';");
     assert_eq!(scripts(&[aid, test, bare]).len(), 1);
+    let spelled = ("client/src/game/screens.ts", "import { made } from './pageForTests.js';");
+    assert_eq!(scripts(&[aid, test, spelled]).len(), 1, "spelled as the JavaScript it becomes");
     let between = ("client/src/ui/uiForTests.ts", "export * from '../game/pageForTests.ts';");
     let through = ("client/src/game/screens.ts", "import '../ui/uiForTests.ts';");
     assert_eq!(scripts(&[aid, between, through]).len(), 1);
@@ -220,10 +224,13 @@ fn a_page_links_no_stylesheet_and_styles_only_itself_and_its_canvas() {
         ("a style that writes words", "<style>body::before { content: 'menu' }</style>"),
         ("an imported sheet", "<style>@import url(/x.css); html { margin: 0 }</style>"),
         ("a rule held in a media query", "<style>@media (width > 1px) { html { margin: 0 } }</style>"),
+        ("a rule within HTML's comment marks", "<style><!-- body::before { content: 'menu' } --></style>"),
+        ("a rule nested in the page's", "<style>body { &::before { content: 'menu' } }</style>"),
     ] {
         assert!(page_refused(&page(head, &body)), "{way}");
     }
     assert!(!page_refused(&page("<link rel=\"icon\" href=\"/icon.png\">", &body)));
+    assert!(!page_refused(&page("<style><!-- html, body { margin: 0 } --></style>", &body)), "the page's own");
 }
 
 #[test]

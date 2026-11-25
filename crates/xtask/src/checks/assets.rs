@@ -13,8 +13,15 @@ const MEDIA_EXTENSIONS: [&str; 30] = [
 /// Pictures for the bible's own pages are the one place media may sit in git.
 const MEDIA_ALLOWED_UNDER: [&str; 1] = ["bible/Attachments/"];
 
+/// Builds, which no page of the bible shows: refused there too.
+const BUILT: [&str; 4] = ["wasm", "mesh", "modules", "bin"];
+
 fn is_media(path: &str) -> bool {
     path.rsplit_once('.').is_some_and(|(_, extension)| MEDIA_EXTENSIONS.contains(&extension.to_lowercase().as_str()))
+}
+
+fn is_built(path: &str) -> bool {
+    path.rsplit_once('.').is_some_and(|(_, extension)| BUILT.contains(&extension.to_lowercase().as_str()))
 }
 
 pub fn check(files: &[(String, u64)]) -> Vec<Problem> {
@@ -29,7 +36,7 @@ pub fn check(files: &[(String, u64)]) -> Vec<Problem> {
                 format!("{megabytes:.1} MB: files over 1 MB stay out of git"),
             ));
         }
-        if is_media(path) && !MEDIA_ALLOWED_UNDER.iter().any(|root| path.starts_with(root)) {
+        if is_media(path) && (is_built(path) || !MEDIA_ALLOWED_UNDER.iter().any(|root| path.starts_with(root))) {
             problems.push(Problem::new(
                 "assets",
                 path,
@@ -66,6 +73,12 @@ mod tests {
     #[test]
     fn a_module_pack_or_a_binary_bake_is_a_problem() {
         let files = [("tools/modules/out/town.modules".to_owned(), 40_000), ("content/land/node.BIN".to_owned(), 10)];
+        assert_eq!(check(&files).len(), 2);
+    }
+
+    #[test]
+    fn a_build_among_the_attachments_is_a_problem_still() {
+        let files = [("bible/Attachments/room.wasm".to_owned(), 900), ("bible/Attachments/sloop.mesh".to_owned(), 900)];
         assert_eq!(check(&files).len(), 2);
     }
 

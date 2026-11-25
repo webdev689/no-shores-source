@@ -93,6 +93,9 @@ fn history_in_a_comment_is_a_problem() {
         "// changed on 17 Nov 2026\n",
         "// changed on 3 September 2026\n",
         "// changed on 2026/11/14\n",
+        "// changed on November 17, 2026\n",
+        "// fixed in PR 1674\n",
+        "// the issue 210 asked for\n",
     ];
     for case in cases {
         assert_eq!(problems_in("crates/core/src/lib.rs", case).len(), 1, "{case}");
