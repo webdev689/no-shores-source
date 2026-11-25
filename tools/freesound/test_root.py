@@ -38,7 +38,8 @@ class Root(unittest.TestCase):
         self.assertEqual(root.note_of(hertz_of(37, -30)), ('C#2', -30))
 
     def test_a_sine_and_a_sawtooth_are_found_at_their_notes(self):
-        for midi, cents, shape in [(48, 0, 'sine'), (57, 12, 'saw'), (36, 0, 'saw'), (31, -8, 'sine'), (76, 0, 'saw')]:
+        tones = [(48, 0, 'sine'), (57, 12, 'saw'), (36, 0, 'saw'), (31, -8, 'sine'), (76, 0, 'saw'), (88, 4, 'sine')]
+        for midi, cents, shape in tones:
             with self.subTest(midi=midi, shape=shape):
                 hertz = root.fundamental(tone(hertz_of(midi, cents), shape))
                 self.assertIsNotNone(hertz)
