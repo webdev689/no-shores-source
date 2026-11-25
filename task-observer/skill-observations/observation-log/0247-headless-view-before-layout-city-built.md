@@ -1,5 +1,5 @@
 ---
-id: 241
+id: 247
 title: "A headless view taken before a zone's layouts' city is built shows none of its buildings, with no word that it is still building"
 status: open
 type: internal
