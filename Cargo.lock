@@ -400,6 +400,7 @@ dependencies = [
  "movement",
  "naval",
  "navmesh",
+ "passage",
  "reach",
  "sailing",
  "serde_json",
