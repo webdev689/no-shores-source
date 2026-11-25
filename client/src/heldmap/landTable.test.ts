@@ -43,3 +43,23 @@ test('the table takes the clear corner over the fewest marks, and a corner under
   const everywhere = [{ x: 0, y: 0, width: 800, height: 500 }];
   assert.equal(tablePlace(ink, size, 1, [], everywhere, null).corner, 'lower-left', 'with every corner covered');
 });
+
+test('the table names your company and other players after the arrow, each only while the map shows one', () => {
+  const sheet = { marks: [] };
+  assert.deepEqual(
+    tableRows(sheet, []).map((row) => row.glyph),
+    ['you'],
+  );
+  const others = [
+    { at: [0, 0] as const, company: true },
+    { at: [9, 9] as const, company: false },
+  ];
+  assert.deepEqual(
+    tableRows(sheet, others).map((row) => [row.glyph, row.word]),
+    [
+      ['you', 'You'],
+      ['company', 'Your company'],
+      ['player', 'Other players'],
+    ],
+  );
+});

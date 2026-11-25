@@ -51,6 +51,7 @@ code:
   - client/src/city/cityGround.ts#groundPlates
   - client/src/city/cityGround.ts#clearedGround
   - client/src/city/pictures.ts#pictureBook
+  - client/src/city/windowCuts.ts#cutAtWindows
   - client/src/city/painter.ts#CityPainter
   - client/src/city/cityShaders.ts#PULL_SHARE
   - client/src/city/ruins.ts#buildingRuin
@@ -276,7 +277,10 @@ the same way, fading to none above it, and so is its contact shade, so the walks
 cut its soles off; nothing at a body's height (a hit's star, a weapon's glow) moves in depth.
 
 **The pictures.** One texture array of at most 252 layers, each picture resampled to 128 texels square, sampled
-nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
+nearest up close and mipmapped far off. A building's windows are cut to their picture's frame as the city's climate
+turns the picture, a climate's turn holding its own kind of window. A window's panes are clear in its picture's alpha: an open building's
+windows draw them as nothing (`CLEAR_GLASS`), so they are seen through, its room's lining cut away behind each
+(`cutAtWindows`), while a closed building's windows are drawn whole. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
 warmer, a factor a channel, as its own layer. The ground's tiles and the solids' pictures come first, then the
 forged models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
 painted, and what is painted is kept for the next city. Gold, iron, bone, cloth and water are painted in the shader
@@ -293,7 +297,9 @@ flickering on its own, and each glowing solid is a lamp ([[Sky]]). Faces are lit
 little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.
 In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one, and each
 building's masses (its hull past where the masses are drawn) into the far one, a few boxes standing in for a model
-whose shadow at the far map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]).
+whose shadow at the far map's 1.2 m texels is the same; every face and plate is lit through both ([[Game]]). An open
+building's windows let the sun into its rooms through their clear panes: its models cast through a pass that reads
+their pictures (`MODEL_CLEAR_CAST_SHADER`), every other model through one that reads none.
 
 | Material | Temperate | Desert | Mountain | Swamp |
 |---|---|---|---|---|

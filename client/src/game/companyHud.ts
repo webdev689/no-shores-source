@@ -17,6 +17,14 @@ const LOOK_MS = 20_000;
 /** The Roster as the company's display last heard it, here or by the Social tab; null before it has, or for a guest. */
 let heardRoster: Roster | null = null;
 export const rosterNow = (): Roster | null => heardRoster;
+
+/** Whether a player's name is in the viewer's company, by the roster the company's display last heard: their
+ *  nameplate's green, else its blue. */
+export function ofCompany(): (name: string) => boolean {
+  const names = new Set((heardRoster?.company?.members ?? []).map((member) => member.name.toLowerCase()));
+  return (name) => name !== '' && names.has(name.toLowerCase());
+}
+
 /** A nameplate's size, its emblem drawn at twice its cells. */
 const PLATE_WIDTH = 240;
 const PLATE_HEIGHT = 48;

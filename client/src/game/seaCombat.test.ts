@@ -468,6 +468,7 @@ async function roomInFight() {
     islands: [],
     taken: [],
     friendlies: [],
+    charted: [],
     plates: [],
   };
   return { room, nothingFought: () => hand(empty as unknown as Snapshot) };

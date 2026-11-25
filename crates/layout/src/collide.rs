@@ -1,8 +1,8 @@
 //! What a body runs into in a layout, as boxes square to the world (west, north, east, south, top, bottom), the
-//! shape the movement rules stand bodies against: the walls, floors and stairs of the buildings walked into, each other
-//! building whole, each plinth and set piece, and each prop tall enough not to be stepped over; none for what lies
-//! wholly past the section. A box's bottom is its real underside, so a body walks under one that stands over its
-//! head, and an arch is its jambs and its head, so a body walks through it.
+//! shape the movement rules stand bodies against: the walls, floors, ceilings and stairs of the buildings walked into,
+//! each other building whole, each plinth and set piece, and each prop tall enough not to be stepped over; none for
+//! what lies wholly past the section. A box's bottom is its real underside, so a body walks under one that stands over
+//! its head, and an arch is its jambs and its head, so a body walks through it.
 
 use crate::Layout;
 use crate::book::{Book, Measure};
