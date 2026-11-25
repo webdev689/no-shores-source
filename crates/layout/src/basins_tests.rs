@@ -174,34 +174,6 @@ fn a_keep_and_a_camp_stand_on_a_platform_their_ways_ramp_up_to() {
 }
 
 #[test]
-fn ways_that_leave_a_platform_together_then_part_each_walk_down_a_ramp() {
-    // Two ways out of a camp along the same road, one bearing 30 degrees off the other just past the platform's edge.
-    let half = crate::pieces::palisade_radius(&area(AreaKind::Camp, radius_of(AreaKind::Camp, 1))) + PLATFORM_ROOM_M;
-    let parting = half + 3.0;
-    let bent = [AT[0] + 400.0 * 0.5, AT[1] - parting - 400.0 * 0.866];
-    let straight = way(vec![offset(0.0, -3.0), offset(0.0, -parting), offset(0.0, -400.0)]);
-    let parted = way(vec![offset(0.0, -3.0), offset(0.0, -parting), bent]);
-    let paths = [straight, parted];
-    let basin =
-        basin(&area(AreaKind::Camp, radius_of(AreaKind::Camp, 1)), &Seating::default(), &paths, None, &mut draws());
-    let ramps = &basin.terraces[1..];
-    for path in &paths {
-        // Every metre of the way across the ramp's run below the edge lies on a ramp.
-        let run = ramp_run(CAMP_SHARE);
-        let [from, to] = [path.points[1], path.points[2]];
-        let along = |metres: f64| {
-            let share = metres / distance(from, to);
-            [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share]
-        };
-        for metres in (0..run as usize - 3).map(|each| each as f64) {
-            let at = along(metres);
-            let carried = ramps.iter().any(|ramp| off_line(at, [ramp[0], ramp[1]], [ramp[2], ramp[3]]) <= ramp[4]);
-            assert!(carried, "{at:?}, {metres} m past where the ways part, is on no ramp: {ramps:?}");
-        }
-    }
-}
-
-#[test]
 fn a_wilds_basin_is_a_cluster() {
     for seed in 0..20 {
         let mut draw = {

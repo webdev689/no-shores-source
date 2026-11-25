@@ -1,5 +1,4 @@
-//! Saltmere's built patrol zone (saltgrass-downs) and the two cut from it (gullwing-vale and driftwood-moors, laid back
-//! by the tests alone, `support/cut_zones.rs`) as the bake lays them,
+//! Saltmere's three built patrol zones (saltgrass-downs, gullwing-vale and driftwood-moors) as the bake lays them,
 //! measured where a body walks and fights: every walked line inside its section and the rock beside a run on the
 //! rock's top outside it, a building run walked into and back out of the place it breaks off, the map's passages along
 //! each run's line, and each cavern's chamber facing its tunnel under a roof no higher than the rock round it.
@@ -17,9 +16,6 @@ use room::{Floor, standing_on};
 use std::path::Path;
 use std::sync::OnceLock;
 
-#[path = "support/cut_zones.rs"]
-mod cut_zones;
-
 const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
 
 fn root() -> std::path::PathBuf {
@@ -30,20 +26,15 @@ fn read(path: &str) -> String {
     std::fs::read_to_string(root().join(path)).expect("the world's files are in the repository")
 }
 
-/// Continent 1's layouts as the bake settles them, the cut zones laid back or not, and its ground as carved.
-fn settled(cut: bool) -> &'static (Vec<Layout>, Ground) {
+/// Continent 1's layouts as the bake settles them, Saltmere's three zones among them, and its ground as carved.
+fn settled() -> &'static (Vec<Layout>, Ground) {
     static SETTLED: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
-    static CUT: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
-    (if cut { &CUT } else { &SETTLED }).get_or_init(|| {
+    SETTLED.get_or_init(|| {
         let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
         let continent = world.continents.into_iter().find(|each| each.id == "continent-1").expect("continent 1");
-        let text = read("content/world/land/continent-1.json");
-        let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("its edits parse");
+        let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("its edits parse");
         let blocks = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
-        let mut builders = bake::builders(&root()).expect("the builders read");
-        if cut {
-            cut_zones::briefs(&mut builders.briefs);
-        }
+        let builders = bake::builders(&root()).expect("the builders read");
         let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
         city::settle(&mut landmass, &blocks).expect("its city settles");
         let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
@@ -52,17 +43,9 @@ fn settled(cut: bool) -> &'static (Vec<Layout>, Ground) {
 }
 
 fn zones() -> Vec<&'static Layout> {
-    let found: Vec<&Layout> = ZONES
-        .iter()
-        .filter_map(|id| settled(cut_zones::CUT.contains(id)).0.iter().find(|layout| layout.id == *id))
-        .collect();
-    assert_eq!(found.len(), ZONES.len(), "Saltmere's zone and the cut zones are laid");
+    let found: Vec<&Layout> = settled().0.iter().filter(|layout| ZONES.contains(&layout.id.as_str())).collect();
+    assert_eq!(found.len(), ZONES.len(), "Saltmere's three zones are laid");
     found
-}
-
-/// The ground a zone of `zones` is carved on.
-fn ground_of(layout: &Layout) -> &'static Ground {
-    &settled(cut_zones::CUT.contains(&layout.id.as_str())).1
 }
 
 /// How far a point lies outside a ring, metres (negative inside).
@@ -175,9 +158,9 @@ fn walked_to(floor: &Floor, blocks: &Blocks, from: [f64; 2], points: &[[f64; 2]]
 
 #[test]
 fn a_building_run_is_walked_into_from_its_place_and_back_out_to_it() {
+    let floor = Floor::Land(Box::new(settled().1.clone()));
     let mut walked = 0;
     for layout in zones() {
-        let floor = Floor::Land(Box::new(ground_of(layout).clone()));
         let blocks = Blocks::new(layout.boxes.iter().map(Block::from_floats).collect());
         for run in layout.runs.iter().filter(|run| run.kind.building()) {
             // A point on the place's floor 12 m back from the mouth.
@@ -216,9 +199,9 @@ fn a_runs_passages_on_the_map_follow_its_line_from_the_place_it_breaks_off() {
 
 #[test]
 fn a_caverns_chamber_faces_its_tunnel_under_a_roof_no_higher_than_the_rock_round_it() {
+    let ground = &settled().1;
     let mut caverns = 0;
     for layout in zones() {
-        let ground = ground_of(layout);
         for tunnel in layout.map.connections.iter().filter(|each| each.joined == Joined::Tunnel) {
             caverns += 1;
             let [mouth, middle] = [tunnel.points[0], tunnel.points[1]];

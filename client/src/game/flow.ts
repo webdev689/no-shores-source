@@ -7,7 +7,8 @@ export type Flow =
   | { readonly mode: 'story' }
   | { readonly mode: 'loading'; readonly words: string; readonly then: Flow }
   | { readonly mode: 'foot'; readonly node: string }
-  /** The way between passage zones (passages/passageWay.ts), played instead of the veil while the room changes. */
+  /** The way between passage zones, or across between two patrol zones (passages/passageWay.ts), played instead of
+   *  the veil while the room changes. */
   | { readonly mode: 'passing'; readonly then: Flow }
   | { readonly mode: 'sea' }
   | { readonly mode: 'landing'; readonly chosen: string | null };
@@ -32,6 +33,7 @@ export type Happening =
    *  the way only once it has played to its end (`wayAt`'s `done`) and the place has come. */
   | { readonly kind: 'onward'; readonly node: string }
   | { readonly kind: 'home'; readonly node: string }
+  | { readonly kind: 'cross'; readonly node: string }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }
   | { readonly kind: 'shut'; readonly why: string };
 
@@ -53,6 +55,7 @@ export function next(flow: Flow, happening: Happening): Flow {
       return flow.mode === 'loading' || flow.mode === 'passing' ? flow.then : flow;
     case 'onward':
     case 'home':
+    case 'cross':
       return flow.mode === 'foot' ? { mode: 'passing', then: { mode: 'foot', node: happening.node } } : flow;
     case 'return-to-ship':
       if (flow.mode !== 'foot') return flow;

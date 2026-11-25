@@ -1,5 +1,5 @@
 // Where a player stands on foot besides a node's own spawns: the address's `&spawn=` (a way to look at one place)
-// and the far side of a layout's gate, when the player goes through it.
+// and the far side of a layout's gate, when the player goes through it or across to another patrol area.
 import { passageAt } from '../layout/passage.ts';
 import { boundWord } from './controls.ts';
 import type { Happening } from './flow.ts';
@@ -34,8 +34,13 @@ export function gateWay(landmass: Pick<Landmass, 'layouts' | 'nodes'>, here: str
   return {
     offer: node.locked
       ? lockedWords(node.name)
-      : `${passage.into ? 'Enter' : 'Return to'} ${passage.name}  ${boundWord('use')}`,
-    happening: node.locked ? null : { kind: 'pass', node: node.id, name: node.name, into: passage.into },
+      : `${passage.across ? 'Go to' : passage.into ? 'Enter' : 'Return to'} ${passage.name}  ${boundWord('use')}`,
+    // Across to another patrol area the dive's rise plays over the island (flow.ts `passing`); else the veil.
+    happening: node.locked
+      ? null
+      : passage.across
+        ? { kind: 'cross', node: node.id }
+        : { kind: 'pass', node: node.id, name: node.name, into: passage.into },
     node: { ...node, spawns: [passage.arrive] },
     facing: bearingTo(passage.arrive, node.centre),
   };

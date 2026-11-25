@@ -139,6 +139,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       shut: () => screens.seasShut(),
       made: (map) => {
         if (opened) map.setWaters(opened);
+        map.regions.all = world.regions ?? [];
       },
       quest: () => quests.nodes,
     }),

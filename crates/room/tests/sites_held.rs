@@ -9,32 +9,17 @@ use room::{Floor, Input, NodeKind, PlayerId, Room, Section};
 use std::collections::BTreeSet;
 use std::path::Path;
 
-#[path = "support/cut_zones.rs"]
-mod cut_zones;
-
 /// How near a player comes to a site before its group stands, as the room has it.
 const SITE_NEAR_M: f64 = 150.0;
 
-/// Continent 1's patrol zones as the bake makes them, each with its layout's runs and its caverns' middles, and the
-/// zones cut from it as the tests lay them back (`support/cut_zones.rs`).
+/// Continent 1's patrol zones as the bake makes them, each with its layout's runs and its caverns' middles.
 fn zones() -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
-    let mut zones = zones_of(false);
-    zones.extend(zones_of(true).into_iter().filter(|(node, ..)| cut_zones::CUT.contains(&node.id.as_str())));
-    zones
-}
-
-/// Continent 1's patrol zones, the cut zones laid back or not.
-fn zones_of(cut: bool) -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = layout.continents.into_iter().find(|each| each.id == "continent-1").expect("the continent");
-    let text = read("content/world/land/continent-1.json");
-    let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("its edits parse");
-    let mut builders = bake::builders(&root).expect("the builders read");
-    if cut {
-        cut_zones::briefs(&mut builders.briefs);
-    }
+    let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("its edits parse");
+    let builders = bake::builders(&root).expect("the builders read");
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
     let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("the continent generates");
     city::settle(&mut landmass, &city).expect("its city settles");

@@ -328,6 +328,10 @@ pub fn builders(root: &Path) -> Result<Builders, String> {
     if briefs.is_file() {
         builders.briefs = layout::brief::Briefs::parse(&read_text(&briefs)?)?;
     }
+    let regions = root.join("content/world/regions.json");
+    if regions.is_file() {
+        builders.briefs.regions(&read_text(&regions)?)?;
+    }
     Ok(builders)
 }
 

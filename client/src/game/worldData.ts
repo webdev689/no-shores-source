@@ -1,4 +1,5 @@
 import { ruinedName } from '../ruinedName.ts';
+import { type MapRegion, regionsOf } from '../heldmap/mapRegions.ts';
 import { type Post, type StationInfo, type Ways, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
@@ -66,6 +67,8 @@ export interface WorldData {
   readonly continents: readonly ContinentInfo[];
   readonly cities: readonly CityInfo[];
   readonly nodes: readonly NodeInfo[];
+  /** Every island's three regions (`content/world/regions.json`), as the held map lights and sails for them. */
+  readonly regions?: readonly MapRegion[];
 }
 
 interface EditsFile {
@@ -139,7 +142,11 @@ export async function loadWorld(base: string): Promise<WorldData> {
     if (!response.ok) throw new Error(`world/${path}: ${response.status}`);
     return response.text();
   };
-  const [layoutText, openText] = await Promise.all([text('layout.json'), text('open.json')]);
+  const [layoutText, openText, regionsText] = await Promise.all([
+    text('layout.json'),
+    text('open.json'),
+    text('regions.json'),
+  ]);
   const open = JSON.parse(openText) as string[];
   const layout = JSON.parse(layoutText) as { continents: { id: string; outline: Point[]; climate?: string }[] };
   const continents = await Promise.all(
@@ -158,7 +165,7 @@ export async function loadWorld(base: string): Promise<WorldData> {
     if (sites.city) cities.push(sites.city);
     nodes.push(...sites.nodes);
   }
-  return { layoutText, continents, cities, nodes };
+  return { layoutText, continents, cities, nodes, regions: regionsOf(regionsText) };
 }
 
 /** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is

@@ -11,9 +11,6 @@ use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
 
-#[path = "support/cut_zones.rs"]
-mod cut_zones;
-
 /// How near a waypoint a body counts as there, and the door as reached, metres.
 const THERE_M: f64 = 1.5;
 const AT_DOOR_M: f64 = 3.0;
@@ -104,24 +101,17 @@ fn spokes_of(laid: &layout::Layout) -> Vec<[f64; 7]> {
     ramps.filter(|level| on_line([level[0], level[1]]) && on_line([level[2], level[3]])).copied().collect()
 }
 
-/// Continent 1's zones, and the two cut from Saltmere as the tests lay them back (`support/cut_zones.rs`).
 fn zones() -> Vec<Zone> {
-    let mut zones = zones_of("continent-1", false);
-    zones.extend(zones_of("continent-1", true).into_iter().filter(|zone| cut_zones::CUT.contains(&zone.id.as_str())));
-    zones
+    zones_of("continent-1")
 }
 
-fn zones_of(id: &str, cut: bool) -> Vec<Zone> {
+fn zones_of(id: &str) -> Vec<Zone> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = layout.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
-    let text = read(&format!("content/world/land/{id}.json"));
-    let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("the edits parse");
-    let mut builders = bake::builders(&root).expect("the builders read");
-    if cut {
-        cut_zones::briefs(&mut builders.briefs);
-    }
+    let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
+    let builders = bake::builders(&root).expect("the builders read");
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
     let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("the continent generates");
     city::settle(&mut landmass, &city).expect("its city settles");

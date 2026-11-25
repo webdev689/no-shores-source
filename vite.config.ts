@@ -81,6 +81,7 @@ function worldFiles(): Plugin {
         'layout.json',
         'briefs.json',
         'open.json',
+        'regions.json',
         ...(await listed('land')).map((file) => `land/${file}`),
         ...(await listed('rmb')).map((file) => `rmb/${file}`),
       ])

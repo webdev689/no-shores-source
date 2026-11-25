@@ -22,7 +22,7 @@ code:
 ---
 # Public Events
 
-Saltmere's patrol zone runs public events on a clock, as Destiny 1's do: the Fissure, where the Lattice pour out of
+Saltmere's patrol zones run public events on a clock, as Destiny 1's do: the Fissure, where the Lattice pour out of
 the ground until players seal it with crystal, and the Grey Tithe's raid on a hamlet's stores. The owner decided what
 they are ([[Public Events Run on a Clock, After Destiny 1]], [[Public Events Are Built in Full, on Claude's Autonomy]]);
 the numbers and the rest are Claude's ([[Public Events as Claude Builds Them]]). The server's room is the only
@@ -30,11 +30,10 @@ authority: the page draws what each snapshot says.
 
 ## How it works
 
-**The clock.** The zones that hold events are `ZONES` in `crates/room/src/public/mod.rs` (the bake's `EVENT_ZONES` and
-the page's `publicLaw.ts` name the same): the Saltgrass Downs alone, Saltmere's one patrol zone. It runs one event
-every 15 minutes of wall time, the Fissure and the raid in turn. A zone added to the list starts 5 minutes after the
-one before it and runs the other event, so the two would overlap for its last 3, and the page's line for what runs
-elsewhere on the island would name it; with one zone that line is empty. `schedule(zone, minute)` gives the
+**The clock.** Each of the three zones (`saltgrass-downs`, `gullwing-vale`, `driftwood-moors`) runs one event every 15
+minutes of wall time, the zones 5 minutes apart, so somewhere on Saltmere one begins every 5 minutes. A zone
+alternates its two, and the zone after it, starting 5 minutes later, runs the other one, so the two overlap for its
+last 3. `schedule(zone, minute)` gives the
 event a Unix minute falls in and the minute it starts; it is a pure function, so the room, the page and the tests agree.
 The host sets the room's minute about once a second; an event begins in the first tick its minute comes, and a room
 opened during one starts it with the countdown its start minute leaves, to the minute. A room keeps no event across
@@ -43,17 +42,17 @@ more than the countdown its start minute leaves, and one past its end is ended q
 its foes gone (unjumped, two minutes past its end). An event has 8 minutes; won or failed, its result shows for 12
 seconds, and the next is shown from then.
 
-**The grounds.** The layout marks them with its other sites ([[Layouts]]), in the zones that hold events alone: three
-stores in the first hamlet with room for them, on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of
+**The grounds.** The layout marks them with its other sites ([[Layouts]]), in the three zones alone: three stores in the
+first hamlet with room for them, on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of
 every building, set piece and prop and 2 m off every way; the point its raiders come in from, 36 m out toward the zone's
-nearest camp (from the shore where a zone has none); their two banners, 28 m out, 6 m either side; and in its first wilds
+nearest camp (the Vale has none: from the shore); their two banners, 28 m out, 6 m either side; and in its first wilds
 where its fissure opens, 12 m (or 9, or 15) from its middle beside the obelisk its battlefield stands there, on ground
 15.4 m east and west and 9.8 m north and south (the fissure's own mesh, square to the grid, its long side east and west)
 clear of the obelisk, the ruins and everything standing, and the spot its crystal growth rises, 14 to 20 m from the
 fissure. A store stands square to the grid as one of three stacks (the page draws store `n` as the stack after its own),
 and its box, which a body runs into on the page and in the room alike, covers that stack and the plundered one it turns
 into: 2.604 by 2.049 by 1.73 m high, 2.5 by 2.224 by 1.4 m, or 2.6 by 2.049 by 1.0 m; each is laid out in 2.604 by 2.224
-m, room for any of them. The bake writes a zone's grounds into its node file, for the zones that hold events only: the
+m, room for any of them. The bake writes a zone's grounds into its node file, for Saltmere's three zones only: the
 Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the middle of its stores, reaching 10
 m past the farthest (20 m at least), with its stores, approach and banners.
 
@@ -61,7 +60,8 @@ m past the farthest (20 m at least), with its stores, approach and banners.
 rectangle round each ground (the Fissure's circle and its growth's spot; the raid's circle, its approach and where its
 waves form) 16 m further, as far as a player shoots into the fight from, and joins them to the garrison's as parts of
 one mesh, with no way between them. Baking both grounds as Saltmere's real node files open, natively in a release
-build, measured once at commit 2b4cb9f1: 466 ms for the Saltgrass Downs. In Node's WebAssembly the room opens in 0.7 to 1.0 s, as "Limits" gives.
+build, measured once at commit 2b4cb9f1: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood
+Moors. In Node's WebAssembly the room opens in 0.7 to 1.0 s, as "Limits" gives.
 
 **Its foes**, its growth and its tithe-taker among them, stand at the event's level (the top of the island's band,
 raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the living
@@ -253,7 +253,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 
 ## Limits
 
-- A ground's mesh that overlaps the garrison's joins no way across the two; the Saltgrass Downs' does not.
+- A ground's mesh that overlaps the garrison's joins no way across the two; none of Saltmere's three does.
 - A zone's events wait for the host to set the room's minute, and a room never holds an event across its closing.
 - The door test's scripted players stand over Saltmere's band of 1 to 4 ("Agreement"). The events'
   pacing ([[Public Events as Claude Builds Them]], "The Fissure's waves", "The raid's waves") comes from scripted runs
@@ -268,7 +268,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
 - The stores, banners, fissures and growth spots are chosen before the layout stands its beacons and resource marks,
   climbs, cliff stairs, retaining walls, footbridges, talus and graves, so they could meet;
-  `crates/room/tests/grounds_planned.rs` holds the Saltgrass Downs' finished layout's grounds clear of every box but the
+  `crates/room/tests/grounds_planned.rs` holds Saltmere's three finished layouts' grounds clear of every box but the
   stores' own, and each fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
 - The fissure's chasm is drawn a little nearer the eye than the land at its mouth ([[Modules]], "Limits").
@@ -281,8 +281,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   the events cost a snapshot nothing.
 - Opening a zone's room bakes both its grounds' navmesh. Measured once in Node's WebAssembly, a release build of commit
   2f6ce090 opening the bake's own node files, fresh each time, three times each on a machine shared with other work:
-  the Saltgrass Downs 0.75 to 0.95 s (its garrison alone 0.14 to 0.21 s); the module's memory after it 48.8 MB (27.3
-  to 27.7 MB without the grounds), and a
+  Saltgrass Downs 0.75 to 0.95 s, Gullwing Vale 0.71 to 0.82 s, Driftwood Moors 0.85 to 1.0 s (their garrisons alone
+  0.14 to 0.21 s); the module's memory after it 48.8, 47.8 and 46.2 MB (27.3 to 27.7 MB without the grounds), and a
   WebAssembly memory never shrinks. Under the isolate's 128 MB, so the grounds are still baked as the room opens.
 - The page stands the fissure's spires on its movement's floor, which counts a box a step high; the room stands them
   on the bare ground. They agree because a fissure's ground is chosen clear of everything standing.

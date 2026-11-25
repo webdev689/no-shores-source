@@ -40,6 +40,88 @@
    }
   ], "runs": [{"name": "The Chalk Adit", "kind": "mine", "place": "rock"}, {"name": "The Beacon Stair", "kind": "ledge", "place": "rock"}, {"name": "The Tithe Barns", "kind": "keep", "place": "beyond"}]
  },
+ "gullwing-vale": {
+  "theme": "A river vale of water meadows and mills under a guarded keep, its old stones older than anyone remembers.",
+  "rock": "knoll",
+  "river": true,
+  "heights": true,
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Vale Mouth"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Gullwing",
+    "blocks": 2
+   },
+   {
+    "kind": "mill",
+    "name": "Weir Mill"
+   },
+   {
+    "kind": "keep",
+    "name": "Valeguard"
+   },
+   {
+    "kind": "farm",
+    "name": "Orchard Farm"
+   },
+   {
+    "kind": "shrine",
+    "name": "The Old Stones"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Water Meadows",
+    "level": 0
+   },
+   {
+    "kind": "coven",
+    "name": "Hollow Coven"
+   }
+  ], "runs": [{"name": "Valeguard Walls", "kind": "rampart", "place": "rock"}, {"name": "The Weir Gorge", "kind": "gorge", "place": "beyond"}, {"name": "The Hollow Undercroft", "kind": "undercroft", "place": "rock"}]
+ },
+ "driftwood-moors": {
+  "theme": "Gorse moor above a wreck-strewn strand, a lighthouse on the point and the drowned buried where the sea gave them back.",
+  "rock": "tor",
+  "heights": true,
+  "areas": [
+   {
+    "kind": "landing",
+    "name": "Driftwood Strand"
+   },
+   {
+    "kind": "hulks",
+    "name": "The Saltbreaker Hulks"
+   },
+   {
+    "kind": "hamlet",
+    "name": "Moorend",
+    "blocks": 1
+   },
+   {
+    "kind": "lighthouse",
+    "name": "Grey Point Light"
+   },
+   {
+    "kind": "ruin",
+    "name": "Moorhold"
+   },
+   {
+    "kind": "graveyard",
+    "name": "Drowned Men's Graves"
+   },
+   {
+    "kind": "wilds",
+    "name": "The Gorse Moor"
+   },
+   {
+    "kind": "camp",
+    "name": "Tithe Camp"
+   }
+  ], "runs": [{"name": "Moorhold", "kind": "keep", "place": "rock"}, {"name": "Wreckers' Cut", "kind": "gorge", "place": "beyond"}, {"name": "The Gorse Ledge", "kind": "ledge", "place": "rock"}]
+ },
  "burned-mill": {
   "theme": "A mill and its farm burned by the Grey Tithe, the millrace still turning a charred wheel.",
   "areas": [

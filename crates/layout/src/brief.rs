@@ -133,6 +133,10 @@ pub struct Brief {
     /// Whether its places stand at heights by their kind, its ways graded between them (`heights`).
     #[serde(default)]
     pub heights: bool,
+    /// The region of its island it lies in (`content/world/regions.json`, read by `Briefs::regions`): an instance
+    /// links only to a patrol area of its own region.
+    #[serde(default)]
+    pub region: Option<String>,
 }
 
 /// Every node's brief, by node id.
@@ -143,6 +147,34 @@ impl Briefs {
     /// Reads `content/world/briefs.json`.
     pub fn parse(text: &str) -> Result<Self, String> {
         serde_json::from_str(text).map(Self).map_err(|error| format!("the briefs: {error}"))
+    }
+
+    /// Reads `content/world/regions.json` into the briefs: each briefed node's region, by the region's name.
+    pub fn regions(&mut self, text: &str) -> Result<(), String> {
+        #[derive(Deserialize)]
+        struct Island {
+            regions: Vec<Region>,
+        }
+        #[derive(Deserialize)]
+        struct Region {
+            name: String,
+            nodes: Vec<String>,
+        }
+        let islands: Vec<Island> = serde_json::from_str(text).map_err(|error| format!("the regions: {error}"))?;
+        for region in islands.iter().flat_map(|island| &island.regions) {
+            for id in &region.nodes {
+                if let Some(brief) = self.0.get_mut(id) {
+                    brief.region = Some(region.name.clone());
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// The region a node lies in, where the regions name it.
+    #[must_use]
+    pub fn region_of(&self, id: &str) -> Option<&str> {
+        self.0.get(id).and_then(|brief| brief.region.as_deref())
     }
 
     /// A node's brief, or the plainest one for its kind when it has none.
@@ -165,7 +197,16 @@ fn plain(kind: land::sites::NodeKind) -> Brief {
         ],
         _ => vec![area(AreaKind::Entrance, "The Way In"), area(AreaKind::Arena, "The Heart")],
     };
-    Brief { theme: String::new(), areas, runs: Vec::new(), rock: None, stone: None, river: false, heights: false }
+    Brief {
+        theme: String::new(),
+        areas,
+        runs: Vec::new(),
+        rock: None,
+        stone: None,
+        river: false,
+        heights: false,
+        region: None,
+    }
 }
 
 #[cfg(test)]
@@ -187,15 +228,16 @@ mod tests {
     }
 
     #[test]
-    fn saltmeres_zone_has_three_runs_of_both_kinds_and_places() {
+    fn saltmeres_zones_have_three_runs_each_of_both_kinds_and_places() {
         let text = include_str!("../../../content/world/briefs.json");
         let briefs = Briefs::parse(text).unwrap_or_default();
-        assert!(!briefs.0.contains_key("gullwing-vale") && !briefs.0.contains_key("driftwood-moors"), "cut");
-        let runs = briefs.of("saltgrass-downs", NodeKind::Patrol).runs;
-        assert_eq!(runs.len(), 3);
-        assert!(runs.iter().any(|run| run.kind.building()) && runs.iter().any(|run| !run.kind.building()));
-        assert!(runs.iter().any(|run| run.place == RunPlace::Rock));
-        assert!(runs.iter().any(|run| run.place == RunPlace::Beyond));
+        for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors"] {
+            let runs = briefs.of(id, NodeKind::Patrol).runs;
+            assert_eq!(runs.len(), 3, "{id}");
+            assert!(runs.iter().any(|run| run.kind.building()) && runs.iter().any(|run| !run.kind.building()), "{id}");
+            assert!(runs.iter().any(|run| run.place == RunPlace::Rock), "{id}");
+            assert!(runs.iter().any(|run| run.place == RunPlace::Beyond), "{id}");
+        }
     }
 
     #[test]

@@ -61,11 +61,13 @@ use serde::Serialize;
 const MARGIN_M: f64 = 40.0;
 const RUNS_MARGIN_M: f64 = MARGIN_M + 52.0 * CELL_M;
 
-/// Another node a layout leads to or comes from: its id and the middle of its claim.
+/// Another node a layout leads to or comes from: its id, the middle of its claim, and whether it is another patrol
+/// area (one of the zones a patrol area links to besides its instances).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Link {
     pub id: String,
     pub towards: [f64; 2],
+    pub patrol: bool,
 }
 
 /// A node's layout.
@@ -475,7 +477,7 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
             };
             put(&mut areas, AreaKind::Landing, &landing.name, 0, None, &shoreward);
         }
-        for link in links {
+        for link in links.iter().filter(|link| !link.patrol) {
             put(&mut areas, AreaKind::Gate, "", 0, Some(link.id.clone()), &edge_pull(link.towards));
         }
         // A plot lies near the landing, the ground a guild builds on in reach of its ships.
@@ -487,6 +489,10 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
             let pull: &dyn Fn([f64; 2]) -> f64 =
                 if brief_area.kind == AreaKind::Plot { &near_landing } else { &|_| 0.0 };
             put(&mut areas, brief_area.kind, &brief_area.name, brief_area.blocks.unwrap_or(1), None, pull);
+        }
+        // The gates toward the other patrol areas come last, so the zone's own places stand where they would alone.
+        for link in links.iter().filter(|link| link.patrol) {
+            put(&mut areas, AreaKind::Gate, "", 0, Some(link.id.clone()), &edge_pull(link.towards));
         }
     } else {
         let entrance = brief.areas.iter().find(|area| area.kind == AreaKind::Entrance);

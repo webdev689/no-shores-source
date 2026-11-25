@@ -40,12 +40,15 @@ const WING_ON_WATER: &str = "its wing stands on water";
 const STOPS_SHORT: &str = "stops short of its door";
 const PAST_ITS_DOOR: &str = "a body gets past its door";
 
+/// Where a body walks round the door across its face: the runs there wait on the owner's call, and only Saltmere's
+/// zones have runs of their own yet.
+const WALKS_ROUND: &str = "a body walks round the door across its face";
 /// The failures known, each run with what it fails by and why, so a new one fails the test and one mended must be
 /// taken off this list (`cargo test --release -p room --test runs_everywhere -- --nocapture` names them).
-const KNOWN: [(&str, &str, &str); 1] = [("continent-1: saltgrass-downs Test Ledge", PAST_ITS_DOOR, UNSEEN)];
-/// A failure whose cause is not yet looked into: the run is the tests' own, not one the zone's brief names, and runs
-/// the briefs do not name wait on the owner's call; only the Saltgrass Downs has runs of its own yet.
-const UNSEEN: &str = "unchecked: the Downs' own ledge, the Beacon Stair, holds its door";
+const KNOWN: [(&str, &str, &str); 2] = [
+    ("continent-2: highwater-glen Test Ledge", STOPS_SHORT, "its way meets a face a body would climb"),
+    ("continent-5: lion-grasslands Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
+];
 
 /// Every patrol zone of one continent given every run, and what fails: each run by name, what it fails by, and how far.
 fn fails_on(only: &str) -> Vec<(String, &'static str, String)> {

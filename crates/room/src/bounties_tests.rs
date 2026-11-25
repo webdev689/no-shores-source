@@ -56,7 +56,7 @@ fn a_node_gathered_and_a_dungeon_cleared_count_on_the_island_the_room_stands_on(
         room.tick();
     }
     assert_eq!(count(&room, gatherer, 0), Some(1));
-    let mut dungeon = Room::dungeon("saltgrass-downs", 1, Some((1, 4))).expect("a patrol's dungeon");
+    let mut dungeon = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("a patrol's dungeon");
     assert_eq!(dungeon.island, Some("continent-1"));
     dungeon.set_minute(thursday);
     let (delver, unkept) = (holding(&mut dungeon, &[4, 5]), holding(&mut dungeon, &[4]));
@@ -72,7 +72,7 @@ fn a_node_gathered_and_a_dungeon_cleared_count_on_the_island_the_room_stands_on(
 #[test]
 fn a_shared_dungeon_counts_its_clear_once_a_day_for_each_account_however_often_its_cache_opens() {
     // Day 20,778's place 5 is "Clear 3 dungeons.", and day 20,779's is a clear too.
-    let mut dungeon = Room::dungeon("saltgrass-downs", 1, Some((1, 4))).expect("a patrol's dungeon");
+    let mut dungeon = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("a patrol's dungeon");
     dungeon.set_minute(FRIDAY_NINE);
     let delver = holding(&mut dungeon, &[5]);
     assert!(dungeon.own(delver, "ada"));
@@ -94,7 +94,7 @@ fn a_shared_dungeon_counts_its_clear_once_a_day_for_each_account_however_often_i
 
 #[test]
 fn each_run_of_a_dungeon_counts_its_clear_again() {
-    let of = crate::RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
+    let of = crate::RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
     let mut carried: Option<gear::Character> = None;
     for counted in [1, 2] {
         let mut run = Room::dungeon_run(&of, gear::Difficulty::Elite, FRIDAY_NINE).expect("an Elite run");

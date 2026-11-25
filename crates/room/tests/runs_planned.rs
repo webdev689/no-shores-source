@@ -1,6 +1,5 @@
 //! Saltmere's runs as the bake plans them: each zone's three runs are carved into its land, held in its section and
-//! walked as its ways, and no other node's layout or land changes for them. The two zones cut from Saltmere are laid
-//! back by the tests alone (`support/cut_zones.rs`), for the runs only they hold.
+//! walked as its ways, and no other node's layout or land changes for them.
 
 use land::sculpts::Sculpts;
 use layout::brief::Briefs;
@@ -9,22 +8,15 @@ use layout::paths::Tier;
 use layout::sites::SiteKind;
 use std::path::Path;
 
-#[path = "support/cut_zones.rs"]
-mod cut_zones;
-
 const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
 
-type Laid = (Vec<layout::Layout>, Vec<Vec<[f64; 2]>>, land::ground::Ground);
-
-/// Continent 1's layouts as the bake settles them with these briefs, the cut zones laid back or not, its nodes'
-/// claims and its ground as laid.
-fn continent_one(briefs: &Briefs, cut: bool) -> Laid {
+/// Continent 1's layouts as the bake settles them with these briefs, its nodes' claims and its ground as laid.
+fn continent_one(briefs: &Briefs) -> (Vec<layout::Layout>, Vec<Vec<[f64; 2]>>, land::ground::Ground) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
-    let text = read("content/world/land/continent-1.json");
-    let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("the edits parse");
+    let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
     let claims =
         edits.nodes.iter().map(|node| node.ring.iter().map(|point| [point.x as f64, point.y as f64]).collect());
     let claims = claims.collect();
@@ -36,39 +28,14 @@ fn continent_one(briefs: &Briefs, cut: bool) -> Laid {
     (layouts, claims, landmass.surface)
 }
 
-/// The briefs, the cut zones' among them or not.
-fn briefs(cut: bool) -> Briefs {
-    let mut briefs =
-        bake::builders(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).expect("the builders read").briefs;
-    if cut {
-        cut_zones::briefs(&mut briefs);
-    }
-    briefs
-}
-
-/// Continent 1 as it is, with the zones of Saltmere it lays, and as the tests lay the cut zones back, with those.
-fn saltmeres() -> &'static [(Laid, Vec<&'static str>)] {
-    static LAID: std::sync::OnceLock<Vec<(Laid, Vec<&'static str>)>> = std::sync::OnceLock::new();
-    LAID.get_or_init(|| {
-        [false, true]
-            .into_iter()
-            .map(|cut| {
-                let ids = ZONES.into_iter().filter(|id| cut_zones::CUT.contains(id) == cut).collect();
-                (continent_one(&briefs(cut), cut), ids)
-            })
-            .collect()
-    })
+fn briefs() -> Briefs {
+    bake::builders(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).expect("the builders read").briefs
 }
 
 #[test]
 fn saltmeres_runs_are_planned_and_open() {
-    for ((layouts, _, _), ids) in saltmeres() {
-        saltmeres_runs_open(layouts, ids);
-    }
-}
-
-fn saltmeres_runs_open(layouts: &[layout::Layout], ids: &[&str]) {
-    for &id in ids {
+    let (layouts, _, _) = continent_one(&briefs());
+    for id in ZONES {
         let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
         assert_eq!(laid.runs.len(), 3, "{id} has its three runs");
         for run in &laid.runs {
@@ -93,21 +60,15 @@ fn saltmeres_runs_open(layouts: &[layout::Layout], ids: &[&str]) {
 
 #[test]
 fn the_other_nodes_are_planned_as_before_and_no_run_raises_their_land() {
-    for cut in [false, true] {
-        others_as_before(cut);
-    }
-}
-
-fn others_as_before(cut: bool) {
-    let briefs = briefs(cut);
+    let briefs = briefs();
     let mut bare = briefs.clone();
     for id in ZONES {
         if let Some(brief) = bare.0.get_mut(id) {
             brief.runs.clear();
         }
     }
-    let (with, claims, _) = continent_one(&briefs, cut);
-    let (without, _, _) = continent_one(&bare, cut);
+    let (with, claims, _) = continent_one(&briefs);
+    let (without, _, _) = continent_one(&bare);
     for (now, was) in with.iter().zip(&without) {
         if !ZONES.contains(&now.id.as_str()) {
             let [now_text, was_text] = [now, was].map(|laid| serde_json::to_string(laid).unwrap_or_default());
@@ -166,12 +127,11 @@ type RunCheck<'a> = &'a dyn Fn(&layout::Layout, &layout::runs::Run, &dyn Fn([f64
 
 /// Each run of Saltmere's zones with its layout, its boxes and the ground's height under a point.
 fn each_run(check: RunCheck) {
-    for ((layouts, _, ground), ids) in saltmeres() {
-        let floor = |at: [f64; 2]| ground.height_at(at[0], at[1]);
-        for laid in layouts.iter().filter(|laid| ids.contains(&laid.id.as_str())) {
-            for run in &laid.runs {
-                check(laid, run, &floor);
-            }
+    let (layouts, _, ground) = continent_one(&briefs());
+    let floor = |at: [f64; 2]| ground.height_at(at[0], at[1]);
+    for laid in layouts.iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+        for run in &laid.runs {
+            check(laid, run, &floor);
         }
     }
 }
@@ -653,7 +613,7 @@ fn every_cavern_slab_is_carried() {
 
 #[test]
 fn no_loose_rock_lies_in_a_runs_stone_or_on_its_climb() {
-    let (layouts, _, _) = continent_one(&briefs(false), false);
+    let (layouts, _, _) = continent_one(&briefs());
     let mut found = Vec::new();
     for laid in &layouts {
         // Loose rock is rubble tipped as it fell; what a run built stands upright.

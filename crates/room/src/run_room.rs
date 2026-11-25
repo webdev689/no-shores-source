@@ -47,7 +47,7 @@ impl Room {
         let end_reeve = (REEVE, Rank::Miniboss);
         let mut room = match of {
             RunOf::Patrol { patrol, number } => {
-                let island = island_of(patrol).filter(|island| island.patrol == patrol)?;
+                let island = island_of(patrol).filter(|island| island.patrols.contains(&patrol.as_str()))?;
                 if *number >= dungeon::PER_PATROL {
                     return None;
                 }

@@ -219,9 +219,9 @@ mod tests {
             .revives()
     }
 
-    /// Saltgrass Downs' node file as a run reads it, locked or not.
-    fn saltgrass_downs(locked: bool) -> String {
-        json!({ "id": "saltgrass-downs", "kind": "patrol", "name": "Saltgrass Downs", "locked": locked }).to_string()
+    /// Gullwing Vale's node file as a run reads it, locked or not.
+    fn gullwing_vale(locked: bool) -> String {
+        json!({ "id": "gullwing-vale", "kind": "patrol", "name": "Gullwing Vale", "locked": locked }).to_string()
     }
 
     #[test]
@@ -230,8 +230,8 @@ mod tests {
         assert!(open(json!({ "place": "saltworm-warrens" }), 2));
         assert_ne!(crate::room_join(), 0);
         assert_eq!(revives(), 5);
-        let patrol = ask(json!({ "patrol": "saltgrass-downs", "number": 0 }), 1);
-        assert!(open_run(patrol.as_bytes(), saltgrass_downs(false).as_bytes()));
+        let patrol = ask(json!({ "patrol": "gullwing-vale", "number": 0 }), 1);
+        assert!(open_run(patrol.as_bytes(), gullwing_vale(false).as_bytes()));
         assert_eq!(revives(), -1, "an Elite run counts none");
         assert!(open(json!({ "seed": 4_242, "style": "caverns", "continent": "continent-4" }), 0));
         assert!(!open(json!({ "place": "krakens-grotto" }), 2), "not this week's Abyss");
@@ -253,15 +253,15 @@ mod tests {
 
     #[test]
     fn a_patrols_dungeons_run_opens_only_with_its_patrols_file_and_takes_no_player_while_the_patrol_is_locked() {
-        let run = ask(json!({ "patrol": "saltgrass-downs", "number": 0 }), 1);
-        assert!(open_run(run.as_bytes(), saltgrass_downs(true).as_bytes()));
+        let run = ask(json!({ "patrol": "gullwing-vale", "number": 0 }), 1);
+        assert!(open_run(run.as_bytes(), gullwing_vale(true).as_bytes()));
         assert_eq!(crate::room_join(), 0, "a locked patrol's run takes no player");
-        assert_eq!(crate::refusal().as_deref(), Some("Saltgrass Downs is locked"));
-        assert!(open_run(run.as_bytes(), saltgrass_downs(false).as_bytes()));
+        assert_eq!(crate::refusal().as_deref(), Some("Gullwing Vale is locked"));
+        assert!(open_run(run.as_bytes(), gullwing_vale(false).as_bytes()));
         assert_ne!(crate::room_join(), 0, "an open patrol's run takes them");
         assert_eq!(crate::refusal(), None);
         assert!(!open_run(run.as_bytes(), b""), "no patrol's file");
-        let other = json!({ "id": "highwater-fells", "kind": "patrol", "name": "Highwater Fells" }).to_string();
+        let other = json!({ "id": "saltgrass-downs", "kind": "patrol", "name": "Saltgrass Downs" }).to_string();
         assert!(!open_run(run.as_bytes(), other.as_bytes()), "another patrol's file");
     }
 
@@ -271,7 +271,7 @@ mod tests {
         assert_eq!([&on["day"], &on["week"], &on["untilDay"], &on["untilWeek"]], [20_778, 2_968, 1_440, 5_760]);
         assert_eq!(on["untilShapeGoes"], 3_600, "Friday 09:00: Shape has come, till Sunday 21:00");
         assert_eq!(on["ofTheDay"].as_array().map(Vec::len), Some(9));
-        assert_eq!(on["ofTheDay"][0], json!({ "continent": "continent-1", "patrol": "saltgrass-downs", "number": 1 }));
+        assert_eq!(on["ofTheDay"][0], json!({ "continent": "continent-1", "patrol": "gullwing-vale", "number": 0 }));
         assert_eq!(on["dayModifier"], "burn-shadow");
         let elite = json!({ "place": "forsaken-cistern", "modifiers": ["brawler"], "level": 26, "opens": 24 });
         assert_eq!(on["weekElite"], elite);

@@ -1,5 +1,4 @@
-//! Saltmere's walk-in buildings in its zone and the two cut from it (laid back by the tests, `support/cut_zones.rs`),
-//! as the bake lays them, walked by the movement rules: a body walks in
+//! Saltmere's walk-in buildings in its three zones, as the bake lays them, walked by the movement rules: a body walks in
 //! through every ground-floor door, and up to every upper floor.
 
 use layout::book::Measure;
@@ -7,9 +6,6 @@ use layout::seat::Seated;
 use movement::{Block, Blocks, Controls, Mode, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
-
-#[path = "support/cut_zones.rs"]
-mod cut_zones;
 
 /// A storey floor to floor, and the least room over a floor: a wing whose eaves leave both has an upper floor.
 const STOREY_M: f64 = 3.2;
@@ -21,32 +17,22 @@ struct Downs {
     buildings: Vec<(Seated, Measure)>,
 }
 
-/// Saltmere's zone and the cut zones as the bake lays them, each with its walk-in buildings.
+/// Saltmere's three zones as the bake lays them, each with its walk-in buildings.
 fn zones() -> Vec<(String, Downs)> {
-    let mut zones = zones_of(false, &["saltgrass-downs"]);
-    zones.extend(zones_of(true, &cut_zones::CUT));
-    zones
-}
-
-/// Continent 1's zones `ids` as the bake lays them, the cut zones laid back or not.
-fn zones_of(cut: bool, ids: &[&str]) -> Vec<(String, Downs)> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = layout.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
-    let text = read("content/world/land/continent-1.json");
-    let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("the edits parse");
-    let mut builders = bake::builders(&root).expect("the builders read");
-    if cut {
-        cut_zones::briefs(&mut builders.briefs);
-    }
+    let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
+    let builders = bake::builders(&root).expect("the builders read");
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
     let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("continent-1 generates");
     city::settle(&mut landmass, &city).expect("its city settles");
     let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
     let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("continent-1 bakes");
-    ids.iter()
-        .map(|&id| {
+    ["saltgrass-downs", "gullwing-vale", "driftwood-moors"]
+        .into_iter()
+        .map(|id| {
             let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
             let node = nodes.iter().find(|node| node.id == id).expect("the zone bakes");
             let blocks = Blocks::new(node.boxes.iter().map(Block::from_floats).collect());

@@ -392,14 +392,3 @@ fn each_houses_road_gives_its_lore_book_a_chapter_a_task_the_whole_of_it_as_the_
         assert_eq!(done, book.chapters.len(), "{}: the book whole as the road ends", road.id);
     }
 }
-
-#[test]
-fn a_task_kept_by_the_id_it_had_before_it_moved_reads_as_the_task_it_is_now() {
-    let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
-    kept["quests"]["roads"]["lamplighters"] =
-        serde_json::json!({ "task": "hold-gullwing", "counts": [1, 0], "done": false });
-    let back = Character::from_json(&kept.to_string()).expect("the character reads");
-    let road = &back.quests.roads["lamplighters"];
-    assert_eq!(road.task, "hold-saltgrass", "the Gullwing defence now held in Saltgrass");
-    assert!(road.counts.iter().all(|count| *count == 0), "begun afresh at its new place");
-}

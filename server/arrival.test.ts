@@ -249,3 +249,17 @@ test('a guild dungeon’s run is entered from its guild’s outpost alone, and l
   }
   assert.equal(cameOutOf(plot, plot, 0), false, 'the outpost itself is no run');
 });
+
+test("each of Saltmere's patrol zones is walked into from both others through their gates, at the same seas", () => {
+  const index = [
+    { id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['gullwing-vale', 'driftwood-moors'] },
+    { id: 'gullwing-vale', kind: 'patrol', continent: 'continent-1', gates: ['saltgrass-downs', 'driftwood-moors'] },
+    { id: 'driftwood-moors', kind: 'patrol', continent: 'continent-1', gates: ['saltgrass-downs', 'gullwing-vale'] },
+  ];
+  const continents = [{ id: 'continent-1', outline: COAST }];
+  const vale = reachOf(index, continents, 'gullwing-vale');
+  assert.deepEqual(vale?.gatedFrom, ['saltgrass-downs', 'driftwood-moors']);
+  assert.equal(arrives('node-gullwing-vale', 'node-saltgrass-downs', null, vale), true);
+  assert.equal(arrives('node-gullwing-vale--elite', 'node-driftwood-moors--elite', null, vale), true);
+  assert.equal(arrives('node-gullwing-vale--elite', 'node-saltgrass-downs', null, vale), false, 'at another tier');
+});

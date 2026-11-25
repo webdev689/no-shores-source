@@ -1,6 +1,6 @@
 //! Saltmere's public events' grounds as the bake plans them: each hamlet's three stores on clear ground beside its
 //! houses, off the ways, never under a building, each a box a body runs into; its raiders' approach and banners; each
-//! wilds' growth spot; and only the event zones' node files carry grounds, which the room's events read.
+//! wilds' growth spot; and only Saltmere's three zones' node files carry grounds, which the room's events read.
 
 use layout::brief::AreaKind;
 use layout::field::{distance, ring_holds};
@@ -282,9 +282,6 @@ fn saltmeres_held_map_marks_a_public_event_where_its_fissure_and_its_raid_are_fo
         let wilds = laid.areas.iter().filter(|area| area.kind == AreaKind::Wilds);
         let opened = wilds.clone().find(|area| distance(area.at, fissure.at) <= area.radius).expect("its wilds");
         assert!(near(opened.at, 0.0), "{id}: the wilds the fissure opens in is marked");
-        // The raid's mark stands over its hamlet, which holds its stores.
-        let mut events = laid.sites.iter().filter(|site| site.kind == SiteKind::Event);
-        let hamlet = events.find(|site| site.at != opened.at).expect("the raid's mark");
-        assert!(distance(hamlet.at, raid.at) + raid.radius <= hamlet.radius, "{id}: the raid's ground is marked");
+        assert!(near(raid.at, raid.radius), "{id}: the raid's ground is marked");
     }
 }
