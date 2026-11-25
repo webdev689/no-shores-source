@@ -145,3 +145,8 @@
 2026-11-25 17:33 [user] session-start scan: files=236 parsed=227 principles=0
 2026-11-25T15:41:10Z controller: 0231 new; 0229 and the 600-line entry extended
 2026-11-25T20:00:46Z controller: session paused to move accounts; 0231, 0232 actioned, 0196 extended
+2026-11-25 14:27 [no-shores-source] session-start scan: files=227 parsed=218 principles=0
+2026-11-25 14:27 [no-shores-source] session-start scan: files=227 parsed=218 principles=0
+2026-11-25 14:27 [no-shores-source] session-start scan: files=227 parsed=218 principles=0
+- 2026-11-25 foe arrivals: 2 observations logged
+2026-11-25T20:25:53Z checkpoint: observations 0253 written, 0181/0094/0086 extended

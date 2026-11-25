@@ -21,3 +21,10 @@ commands_verified: "page worker's report: about 5 frames a minute headless at lo
 - Long background jobs need an explicit timeout: the 10-minute default stopped a 30-minute bake, a preview server and
   a capture mid-run. A dev-only address needs a  build for built-page pictures. Two repo checks
   (layer imports, crate edges) show only in the full check; repo checks: 2556 files, no problems is the quick one to run first.
+
+- Worked round (2026-11-25, no-shores-source, foe arrivals #211): a 200-frame step of a raid scene failed ("200 frames
+  were not drawn in 10 minutes"; the driver's cap per frames step). What worked: a dev page with `&public=raid&speed=16`
+  and `&spawn=`; an `eval` setting `__play.until = () => false` so the play reads snapshots with no bots, then the real
+  `until` once the event shows; between pictures `__play.speed = 6` with `{ "frames": 50 }` or fewer, and 1 tick a
+  frame for 3 frames before each `shot`; pictures at 960x540; `self.__qaEye` placed from `__play.read` (whose points are
+  flat, so the height comes from the event's ground). Candidate for the Toolkit's Browser QA recipe.

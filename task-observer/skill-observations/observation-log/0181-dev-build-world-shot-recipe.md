@@ -9,7 +9,7 @@ target_file: ["bible/03-Code/Toolkit.md", "tools/claude-toolkit/webgpu-shot.cjs"
 siblings_checked: "checked: the island and dungeon module workers would meet the same gap for any model not yet on R2"
 area: "pictures of the game world with content not yet published"
 date: 2026-11-23
-session_context: "Guild outposts session: the outpost-page worker's OBSERVATIONS said its world shots needed an init clock shift (for the world's hour) and `waitFor 'All controls'` (else black frames), which it worked out itself; and that the outposts' meshes answered 404 on R2, so no structure drew. The modules workflow publishes meshes on any push that touches tools/modules, which had not run yet; the controller then routed each new mesh to /root/wt/bake-out through webgpu-shot.cjs's `routes`."
+session_context: "Foe arrivals session (2026-11-25): the plan's `routes` for the airship's and crown's six new meshes were passed over again and the game's worker fetched R2 (404); worked round as before, by an `init` wrapping `self.fetch` to a copy under `dist/local-modules/`, and a clock slowed 60 times from a set hour. Earlier, guild outposts session: the outpost-page worker's OBSERVATIONS said its world shots needed an init clock shift (for the world's hour) and `waitFor 'All controls'` (else black frames), which it worked out itself; and that the outposts' meshes answered 404 on R2, so no structure drew. The modules workflow publishes meshes on any push that touches tools/modules, which had not run yet; the controller then routed each new mesh to /root/wt/bake-out through webgpu-shot.cjs's `routes`."
 parked_until:
 resolved:
 resolution:
@@ -33,3 +33,8 @@ picture agent worked round it by wrapping `self.fetch` in the plan's `init` to s
 path the plan's route answers. Fix in the driver: the R2 route calls `route.fallback()` for a URL a plan route covers,
 or the plan's routes are added last. Also: the bare view needs about 10 frames, not 4, before the arrival blink opens,
 and a clock shift can land on a storm day; hold the clock at a clear hour.
+
+**Second instance (foe arrivals, 2026-11-25):** the same `routes` miss cost a capture run of some minutes before the
+404s showed. A second occurrence calls for the barrier, not a note: fix the driver so a plan's `routes` reach the
+game's worker (add them last, or have its R2 route `fallback()` for a covered URL), with a check in the driver that a
+routed URL was in fact served once, printed at the end.
