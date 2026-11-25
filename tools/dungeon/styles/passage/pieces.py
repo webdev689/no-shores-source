@@ -143,20 +143,26 @@ def mouth(shut, seed='passage.mouth'):
     found = _frame(seed)
     if shut:
         return gather(found, _slab(seed))
-    # The way on, dark past the reveal: rough rock far back in the opening, chips of it lying on the sill.
+    # The way on, lit faintly beyond the reveal, so an open mouth reads open from across a room: a far plane of
+    # light framed by rough rock at its sides and over it, chips of it lying on the sill.
     draw = random.Random(f'{seed} back')
-    back = block(-0.72, 0.37, -0.3, 0.72, 0.4, LINTEL_M, f'{seed} backing', wear=0.004, bevel=0.01)
+    light = block(-0.6, 0.38, -0.3, 0.6, 0.4, LINTEL_M - 0.2, f'{seed} light', wear=0.0, bevel=0.0)
+    back = []
     for row in range(5):
-        for column in range(3):
-            x = -0.46 + column * 0.46 + draw.uniform(-0.05, 0.05)
-            back += details.rock(x, 0.33, row * 0.47 - 0.1, (0.5, 0.1, 0.56), seed=f'{seed} back {row} {column}',
+        for column in (0, 2):
+            x = -0.62 + column * 0.62 + draw.uniform(-0.04, 0.04)
+            back += details.rock(x, 0.33, row * 0.47 - 0.1, (0.34, 0.1, 0.56), seed=f'{seed} back {row} {column}',
                                  detail=0, roughness=0.25)
+    for column in range(3):
+        x = -0.46 + column * 0.46 + draw.uniform(-0.05, 0.05)
+        back += details.rock(x, 0.33, LINTEL_M - 0.32, (0.5, 0.1, 0.3), seed=f'{seed} over {column}', detail=0,
+                             roughness=0.25)
     rubble = []
     for number in range(5):
         x = -0.52 + number * 0.26 + draw.uniform(-0.04, 0.04)
         rubble += details.rock(x, 0.18, -0.02, (0.22, 0.2, 0.065), seed=f'{seed} rubble {number}', detail=1,
                                roughness=0.3)
-    return gather(found, {'stoneAlt': back, 'stone': rubble})
+    return gather(found, {'stoneAlt': back, 'stone': rubble, 'glow': light})
 
 
 def way_in(seed='passage.way-in'):
