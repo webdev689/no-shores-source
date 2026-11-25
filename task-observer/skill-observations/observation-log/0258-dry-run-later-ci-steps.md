@@ -22,4 +22,6 @@ next step's fault waits another full run. And a failed run of my own (141) went 
 
 **Proposed:** Toolkit.md's CI section: when a long workflow fails, read every failed run you caused, and before pushing
 the fix run the later steps locally on the run's own artifact, under the runner's conditions (missing packages blocked).
-Protection in play: none yet; needs the owner's agreement as a rule.
+The same held for ci.yml: CI run 1098 stopped at the TypeScript lints (id-length on a parameter `at`) because I
+ran types and tests but not `npm run lint`; for a TS change, run each step in crates/xtask/src/toolchain.rs the change
+touches (format:check, lint, types, test). Protection in play: none yet; needs the owner's agreement as a rule.
