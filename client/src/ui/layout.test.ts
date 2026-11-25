@@ -329,3 +329,20 @@ test('room is shared out whole among many grown children of many sizes, and neve
     'the spare pixel goes where there is room for it',
   );
 });
+
+test('a scroll kept past the end of what a list now holds is laid at its end, never past it', () => {
+  const rows = (count: number): Node[] =>
+    Array.from({ length: count }, (_unused, index) => ({ id: `row-${index}`, height: 20 }));
+  const list = (count: number): Node => ({
+    id: 'list',
+    scroll: true,
+    direction: 'column',
+    height: 100,
+    children: rows(count),
+  });
+  const boxOf = (laid: readonly Laid[], id: string) => laid.find((each) => each.node.id === id)?.box;
+  const short = lay({ children: [list(2)] }, () => 500);
+  assert.equal(boxOf(short, 'row-0')?.y, boxOf(short, 'list')?.y, 'two rows fit: laid from the top');
+  const long = lay({ children: [list(20)] }, () => 500);
+  assert.equal(boxOf(long, 'row-19')?.y, 80, 'twenty: its last row at its foot');
+});

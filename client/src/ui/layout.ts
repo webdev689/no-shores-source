@@ -426,11 +426,19 @@ function place(
   };
   const gap = node.gap ?? 0;
   const column = node.direction === 'column';
-  const scrolled = node.scroll && node.id ? (context.scrollOf?.(node.id) ?? 0) : 0;
-  let content = 0;
-  if (node.wrap && !column) {
+  const asked = node.scroll && node.id ? (context.scrollOf?.(node.id) ?? 0) : 0;
+  const lines = node.wrap && !column ? wrappedRows(item) : null;
+  const main = total(item.kids, column ? 'h' : 'w') + gap * Math.max(0, item.kids.length - 1);
+  // What a node holds is as tall as its rows, its column, or its row's tallest; it scrolls up and down either way.
+  const content = lines
+    ? Math.max(0, lines.reduce((sum, line) => sum + most(line, 'h') + gap, 0) - gap)
+    : column
+      ? main
+      : most(item.kids, 'h');
+  // Scrolled no further than its end as it lies now: what it holds may have shrunk since the scroll was kept.
+  const scrolled = Math.max(0, Math.min(asked, content + pad[0] + pad[2] - item.h));
+  if (lines) {
     let top = 0;
-    const lines = wrappedRows(item);
     for (const line of lines) {
       const across = total(line, 'w') + gap * (line.length - 1);
       const tall = most(line, 'h');
@@ -442,11 +450,7 @@ function place(
       }
       top += tall + gap;
     }
-    content = Math.max(0, top - gap);
   } else {
-    const main = total(item.kids, column ? 'h' : 'w') + gap * Math.max(0, item.kids.length - 1);
-    // What a node holds is as tall as its column, or as its row's tallest; it scrolls up and down either way.
-    content = column ? main : most(item.kids, 'h');
     let along = startOf(column ? node.alignY : node.alignX, (column ? inner.height : inner.width) - main);
     for (const kid of item.kids) {
       if (column) {
