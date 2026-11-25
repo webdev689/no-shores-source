@@ -131,7 +131,7 @@ impl Room {
         let mut held = outpost.waiting.iter().chain(outpost.out.values());
         let carried = found.character.errand.is_some();
         if ask != OutpostAsk::Changed
-            && (carried || held.any(|errand| errand.player == player && errand.what != What::Changed))
+            && (carried || held.any(|errand| errand.account == account && errand.what != What::Changed))
         {
             return answer_code(Err(Refusal::AskInFlight));
         }
@@ -225,7 +225,10 @@ impl Room {
         if errand.what != What::Horn && !carried {
             return true;
         }
-        found.character.errand = None;
+        // A Horn is never carried: what the character carries then is another errand, still to be answered.
+        if carried {
+            found.character.errand = None;
+        }
         found.answer =
             settle(&mut found.character.materials, errand.what, answer).map_or(0, |none| answer_code(Err(none)));
         found.answered = found.answered.wrapping_add(1);
