@@ -172,3 +172,16 @@ export function pieceModule(piece: PassagePiece, state: PieceState, done: boolea
       return piece.module;
   }
 }
+
+/** The pieces that stand as plain boxes: each whose module `has` says its pack does not hold yet. */
+export function boxedPieces(
+  pieces: readonly PassagePiece[],
+  state: PieceState,
+  done: boolean,
+  has: (module: string) => boolean,
+): PassagePiece[] {
+  return pieces.filter((piece) => {
+    const module = pieceModule(piece, state, done);
+    return module !== null && !has(module);
+  });
+}

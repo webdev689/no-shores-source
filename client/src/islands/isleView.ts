@@ -229,9 +229,9 @@ export class IslesView {
     await Promise.all(urls.map(([kit, url]) => url && loadKitPack(kit, url)));
   }
 
-  /** Whether a kit's pack has come, so its modules are drawn. */
-  hasKit(kit: string): boolean {
-    return this.packs.has(kit);
+  /** Whether a kit's pack has come holding `module`, so it is drawn. */
+  hasModule(kit: string, module: string): boolean {
+    return this.packs.get(kit)?.pack.modules.has(module) ?? false;
   }
 
   /** The ground's height at a world point: the nearest shown island's there, null off every island. */

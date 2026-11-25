@@ -324,8 +324,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     showDungeon: (layout, node) => dungeons.show(layout, node, undefined, () => passages.pieces()),
     companyPlaces: () => companyPlaces(link),
     ...{ fallback: wayOut, isles: islesView },
+    modelled: (hollow, module) => (hollow ? islesView.hasModule('passage', module) : dungeons.hasPassageModule(module)),
   });
-  const pieces = piecesDrawer(gpu, () => (dungeons.piecesFromPack() ? null : passages.pieces()));
+  const pieces = piecesDrawer(gpu, () => passages.pieces());
   const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
   if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
   const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
