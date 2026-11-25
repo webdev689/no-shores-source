@@ -78,3 +78,15 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   draws (mithril); their own art waits (the owner: "Not now").
 - **The balance pass's open point** ([[The Balance and Economy Pass as Claude Shapes It]]): Conduit (Deepwatch) brings
   a Tenet back about every 27 s against 105.
+- **Foe arrivals** ([[Foe Arrivals as Claude Builds Them]]), each the owner's to say:
+  - The airship's and the crown's look and flight, once seen in the game: their size, the airship's 16 m hang and
+    8 s flight in, the crown's claw and its 6.4 m height.
+  - Whether the Lattice also come under crowns in patrol zones beyond the Fissure, as the Grey Tithe's airships come to
+    roaming players; they hold no ground in those zones ([[Enemies]], "Factions").
+  - Whether a site's group may be one of the smaller groups too: a smaller group up a run's ledge, facing away, is
+    not met by a player walking the run (`sites_held`), so sites stand bands.
+  - The arrivals' sounds are recordings already picked for other things (the bosun's whistle, the thunder's roll, the
+    ice's crack, a shield breaking); a sheet of the airship's own engines, hatch and the crown's forming would let the
+    owner pick their own.
+  - Whether the heroic raid is as hard as wanted: the room door's scripted pair loses its last wave (Marrow), and the
+    rules' own pair holds it ([[Public Events]], "Limits").

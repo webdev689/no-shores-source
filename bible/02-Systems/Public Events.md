@@ -80,7 +80,8 @@ navmesh at his own pace, keeping his way from tick to tick; their statuses still
 waves form and its raiders' home (the stores' middle) are put on the navmesh as it begins, at its nearest point.
 
 
-**The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
+**The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle, forming under a crown of
+its crystal over the crack ([[Enemies]], "Arrivals"): three foes and one more for
 each player seen at it beyond the first (six at most), drawn from Husks, Flickers, an Idol and a Ravager. Another
 comes when two or fewer of its foes stand, but never sooner than 30 seconds after the last, or 40 seconds after the
 last, while fewer than ten stand: the shards come at a pace a group must keep up with. Each of its
@@ -95,22 +96,23 @@ still standing shatters, sharing no kill, and it is won.
   walks through it: a box round it would stop every blow and shot at it. Broken in time, the event turns heroic: half of the shards
   still needed are added, every wave after holds an Elite (a Bulwark or a Ravager by turns), and the seal complete
   brings out the Warden (a Bulwark Miniboss, "The Warden of the Fissure"), posted where it climbs out 4 m from the
-  middle, clear of the spires that stand until it falls, who must fall to win; then the rest shatter.
+  middle under a crown of its own, clear of the spires that stand until it falls, who must fall to win; then the rest
+  shatter.
 - **Bonus:** sealed with at least half of the 8 minutes left; a Warden falling later keeps it.
 
-**The raid.** Its banners are planted and its first wave forms out of sight, 14 m beyond its approach, away from the
-hamlet, and marches in: two Collectors, two Runners and a
+**The raid.** Its banners are planted and its first wave is brought by a Grey Tithe airship, set down 14 m beyond its
+approach, away from the hamlet ([[Enemies]], "Arrivals"), and marches in: two Collectors, two Runners and a
 Crossbowman, the Runners and the Crossbowman Minors. The second brings two Collectors, an Enforcer, a Crossbowman and a
 Runner; the third two Collectors, an Enforcer, and a Marksman and a Reeve, both Elite; every other foe is a Major. One
 Runner more comes in each for each player on the ground beyond the first (three at most). A party of two or fewer on the ground meets each wave a rank
 lower where a type comes lower: the Runners, Collectors and Crossbowmen as Minors, the Marksman as a Major Crossbowman.
 A wave is broken when its foes have all fallen; the next comes 30 seconds later, or 30 seconds after that while the
-room has no room for it. Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's
+room has no room for it, each by airship, standing some 10 seconds after it is called. Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's
 middle on the side the raiders come from; one standing within 2.5 m of its store plunders it, alone in 20 seconds.
 A store plundered sends its Collectors to the next and loses the bonus. Every store plundered, the raid fails; the
 last wave broken with a store standing, the Tithe give up and march out, and it is won.
 - **Heroic.** With the second wave comes the Tithe-Taker, an Elite who never strikes, or as soon after it as the room
-  has room for him. He walks from where the waves form to
+  has room for him, by airship, his round's time counted from when he stands. He walks from where the waves form to
   each standing store, nearest first, counts it for 10 seconds, and walks back out, at the pace that makes his round
   50 seconds (1.2 to 3.5 m a second); his time up, he is gone wherever he stands. Killed before then, the event turns
   heroic: the third wave holds an Enforcer Elite and a Marksman Elite more (they come at once if it is already in,
@@ -160,7 +162,7 @@ a chest, with its tier. The browser reads it all in `client/src/network/publicMe
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
 snapshots, play a whole Fissure and a whole raid through the room's door
 (`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6: they win the Fissure, heroic, and
-meet the raid's heroic task and hold its stores, under `main`'s fight (its harm ×1.5 and ×0.75, its foes' pace and
+meet the raid's heroic task and fight it to its countdown's end, losing its last wave ("Limits"), under `main`'s fight (its harm ×1.5 and ×0.75, its foes' pace and
 their swings at seven eighths, and the swings' chain the room keeps whatever stroke is asked)
 ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
 [[The Audit's Leftovers Are Fixed as Claude Suggested]], [[The Balance and Economy Pass as Claude Shapes It]],
@@ -249,7 +251,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   Beside it, `&speed=<n>` runs n room ticks a drawn frame, `&bots=<n>` joins n scripted players that play the event
   as the rules' test plays it (`network/publicBots.ts`, the same `decide`; the browser's test proves they reach the
   rules' fingerprints), and `&heroic=0` leaves the heroic task alone. The bots and the page's own player stand at the
-  test's level 6 with Rare gear. The page puts `__play` on the window for a picture script: its `speed`, `putPlayer`,
+  test's level 6 with Rare gear: two bots seal the Fissure either way and, since each raid wave lands by airship some
+  10 s after it is called, hold the raid's stores either way (`server/public.test.ts`). The page puts `__play` on the window for a picture script: its `speed`, `putPlayer`,
   `read`, and `until` (a test of each tick's snapshot that stops the frame's ticks once met), and `__qaLook` turns
   the camera without arriving again, so the room plays on. None of it is in a production build.
 
@@ -257,7 +260,11 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 
 - A ground's mesh that overlaps the garrison's joins no way across the two; none of Saltmere's three does.
 - A zone's events wait for the host to set the room's minute, and a room never holds an event across its closing.
-- The door test's scripted players stand over Saltmere's band of 1 to 4 ("Agreement"). The events'
+- The door test's scripted players stand over Saltmere's band of 1 to 4 ("Agreement"). They take a foe as standing
+  while it is not dead (a sliver of health crosses as none) and wait 8 m from one still arriving, guarded: they seal
+  the Fissure heroic at tick 16,378, and meet the raid's heroic task but lose to its fourth wave, Marrow felling them
+  one at a time while he heals walking home, the stores at 732 per mille at its countdown's end; the rules' own
+  scripted pair holds the heroic raid. The events'
   pacing ([[Public Events as Claude Builds Them]], "The Fissure's waves", "The raid's waves") comes from scripted runs
   at levels 2 and 4 with plain and magic gear, two to four players, made at commit 6a483587: not kept in the
   repository, and not made against the rules as they stand (the great foes' health, the leash, the heroic third

@@ -21,12 +21,25 @@ code:
   - crates/room/src/dungeon_room.rs#stand_dungeon_garrison
   - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/garrison.rs#raise_garrison
-  - crates/room/src/garrison.rs#walk_beats
+  - crates/room/src/beat.rs#walk_beats
   - crates/room/src/beat.rs#Beat
   - crates/room/src/groups.rs#leader_of
   - crates/room/src/groups.rs#lead_groups
   - crates/room/src/groups.rs#give_ground
   - crates/room/src/groups.rs#arrive
+  - crates/room/src/arrivals.rs#by_airship
+  - crates/room/src/arrivals.rs#under_crown
+  - crates/room/src/arrivals.rs#as_called
+  - crates/room/src/arrivals.rs#keep_arrivals
+  - crates/room/src/reinforcements.rs#reinforce
+  - crates/room/src/reinforcements.rs#lift_away
+  - crates/room/src/smaller.rs#beside_bands
+  - crates/room/src/smaller.rs#varied
+  - client/src/combat/foeArrivals.ts#arrivalLook
+  - client/src/combat/airshipFlight.ts#shipPose
+  - client/src/combat/crownLife.ts#crownState
+  - client/src/combat/arrivalLooks.ts#layBeam
+  - client/src/game/arrivalsView.ts#ArrivalsView
   - crates/room-wasm/src/roster_door.rs#roster_json
   - client/src/rules/roster.ts#rankBand
   - client/src/rules/roster.ts#rankMark
@@ -46,9 +59,11 @@ how much it takes, how it defends and which telegraphed blows it throws. The own
 throws more often than an Elite, a Boss's called foes fall with it and a garrison leashes to its posts
 ([[Foes Leash to Their Posts and Fall With Their Boss]]), and that fewer plates show and their size goes with rank
 ([[Fewer Plates Show, Sized by Rank, After Destiny]]), and that garrisons fight in groups that lead, break and give
-ground, after Bungie's ([[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]); the roster, the
-numbers and how the groups do it are Claude's ([[The Enemies as Claude Builds Them]],
-[[Foe Groups as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
+ground, after Bungie's ([[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]), and that some foes
+stand already while others arrive, the Grey Tithe's by airship and the Lattice's under crystal, in varied groups and
+more present in patrol ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]);
+the roster, the numbers and how the groups and the arrivals do it are Claude's ([[The Enemies as Claude Builds Them]],
+[[Foe Groups as Claude Builds Them]], [[Foe Arrivals as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
 The Lattice, the next faction, has its types in the roster and comes out of the Fissure, a public event
 ([[Public Events]]); its look is drawn ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[Lattice]]).
 
@@ -69,7 +84,8 @@ Major at its own rank's strength but Thule, the boss ([[Prologue]]).
 The Grey Tithe holds the land: a garrison of its foes stands in every node but the social spaces, on every continent
 (below), and its Tithe-Taker comes only with its raid on a hamlet; its ships sail every water but Overlook's home
 waters. The Lattice hold none
-either: they pour out of a Fissure while it is open ([[Public Events]]), and their leaders are never screened.
+either: they come under its crowns out of a Fissure while it is open ([[Public Events]]), and their leaders are never
+screened.
 
 ## The roster
 
@@ -203,7 +219,7 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 | Kind | Groups |
 |---|---|
-| Patrol area | three or four groups of two to four, each foe a Runner, Collector or Crossbowman, Minor or Major |
+| Patrol area | three or four groups of two to four, each foe a Runner, Collector or Crossbowman, Minor or Major; and beside them two or three smaller groups (below), the square standing 16 at most |
 | Mission | the same, and a group of an Elite Enforcer and an Elite Reeve |
 | Dungeon | three or four groups of two to four Majors and Elites (a Runner, Collector, Crossbowman or Enforcer Major; an Enforcer or Marksman Elite), and a Reeve as a Miniboss alone at the farthest post |
 | World boss | High Assessor Corvane at the farthest post, with four Majors about him (Runners, Collectors, Crossbowmen or Enforcers) |
@@ -211,6 +227,11 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 - **Who stands where** is drawn from the room's seed, the course's mixed with the node's id, so every machine stands
   the same garrison in the same places.
+- **A patrol's smaller groups** (`smaller.rs`), drawn from a stream of their own after its bands, each kept only while
+  the square stands 16 or fewer: a lone Crossbowman sentry, a lone Runner scout, a Collector and a Runner, a Collector
+  and a Crossbowman, two Crossbowmen on watch, a Collector and two Runners; the lone foe a Major, the first of a pair
+  or three a Major and the rest Minors. The sentry and the watch hold their posts, their first facing the nearest spawn,
+  the rest round it facing out; the others walk beats as any group does.
 - **Levels and shields** ([[Garrisons Take the Gear Loop's Levels and Shields]]): each foe stands at a level drawn
   evenly from its island's band ([[Gear]], "Where foes stand"), raised by the difficulty its voyage set out at, and one foe in
   five, a Boss or a Miniboss never, with a shield of an element drawn evenly, holding half its health; both are drawn
@@ -237,7 +258,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes
-  have room, walks a beat over the lattice round it, and stands again as any cleared group does. A mission's, a dungeon's or a boss's node stands none.
+  have room, walks a beat over the lattice round it, and stands again as any cleared group does. A mission's, a
+  dungeon's or a boss's node stands none. A site's group is a band, never one of the smaller groups.
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
   post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
@@ -293,7 +315,7 @@ WebAssembly, so names, factions and weapons are read in one place.
   groups stand again the share rises, and they go back.
 - **A mission's waves**: as its garrison falls back, a wave comes, and another for its last stand, both at once if it
   gives up both at once: each a band drawn as its bands are (two to four Runners, Collectors and Crossbowmen, Minor or
-  Major), each wave its own, at the island's levels, a shield drawn as any foe's. It stands at the open point of the
+  Major), each wave its own, at the island's levels, a shield drawn as any foe's, brought by airship ("Arrivals"). It stands at the open point of the
   post lattice nearest the players that is at least 25 m from each of them, 20 m from every wave standing and 10 m from
   every foe and the place it keeps to, hunts the nearest player standing and seen, and holds there: its places are where
   it stood. A wave has its own leader and break, but no breaking point: it comes on whatever it loses. It never stands
@@ -302,15 +324,54 @@ WebAssembly, so names, factions and weapons are read in one place.
   garrison sent away calls none. No two places a garrison gives ground to stand within 1 m of each other or of a wave's
   where the floor round them has room: each is tried round three rings of twelve, 2.5 m apart, and in a pocket too small
   for them all the last go on their ring regardless.
-- **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
-  its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
+- **Standing again**: a group whose last foe has fallen stands again by airship under the open sky ("Arrivals"),
+  whole and idle at its places at its post and its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
   farmed: [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once
   no player stands within 40 m of its post and the room's living foes leave room for all of it. In a dungeon run a
   band whose fall won a checkpoint holds its ground instead while anyone is in the room; elsewhere, a mission's group
   among them, its checkpoint falls back as it stands again ([[Revives]]).
-- **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
+- **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a patrol's 32, 8 more
+  for what its airships bring (48 in a zone that holds public events); a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
   hold them back.
+
+## Arrivals
+
+Some foes stand already and others arrive, as in Destiny
+([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; every number Claude's,
+in [[Foe Arrivals as Claude Builds Them]]). Already standing: a garrison as its room opens, a site's or a quest's
+group as a player comes near, an escort's ambush and a step's watchers, a dungeon's bands, the prologue's boarders,
+companions, and a foe a page asks for. The rest arrive (`arrivals.rs`):
+
+- **By airship**, the Grey Tithe's, under the open sky (a node's land or an island's; nowhere else, where they stand as
+  they are stood): a garrison group standing again, a half-fallen patrol group's fallen, a mission's waves, the raid's
+  waves and its tithe-taker ([[Public Events]]), a quest defence's waves ([[Quests]]), and a patrol's own airship
+  groups (below). A ship carries six at most; it comes in toward the nearest living player (swung up to 0.6 rad off
+  that line), its flight 8 s; it hangs 16 m over the middle of its foes' places, lets the first down 1 s after it hangs
+  and each next 0.5 s after, each built over 1 s; it lingers 1.2 s after the last stands and flies on for 9 s. A ship
+  to ground another's is over (within 40 m) sets out 1.5 s later and hangs 8 m higher.
+- **Under a crown**, the Lattice's: the Fissure's waves and its Warden, the Sunken Gate's Waking and the Drowned
+  Vale's waves, a crown over each mouth or perch they come out of. It forms over 1.2 s; each foe begins forming 0.25 s
+  after the one before and forms over 1.3 s; it holds 0.6 s after the last and breaks over 0.8 s.
+- **Called**: a Boss's called foes are built where they stand, over 0.6 s.
+
+A foe arriving neither thinks nor steps, is in no foe's sight, and no blow, shot, spell or telegraphed blow touches
+it until it lands; it counts among the room's living foes. As it lands it takes up the hunt it came with at its
+target as it stands then. The room sends each foe's arrival (what brings it, its number, the tick it is let down and
+the tick it lands) and each airship and crown whole while it lasts (`ArrivalSeen`: where its ground is, the way it
+comes, how high it hangs, and the ticks it set out, hangs, lets its last go and is gone).
+
+**A patrol's airships** (`reinforcements.rs`), once a player roams 60 m or more from every spawn: the first 20 s
+after, then every 45 to 75 s, to each roaming player in turn, while fewer than three of their groups stand and the
+room has room. The group, half the time a band and else one of the smaller groups, is set down on ground the room has
+35 to 80 m from the player (as near 50 m as it can), 25 m from every player, 20 m from every foe and post and 60 m
+from every foes' site and quest place, so it adds to the ground between the zone's laid encounters. Where no ground
+reaches, one is baked round a 60 m cell 50 m from the player: the one ahead of them, else one an eighth of a turn
+either side of that way, then a quarter, and so on round to behind them, the first in the section that the room has no
+ground round yet; ten at most in a room, never while another place's ground is baking: the room bakes one at a time,
+some 45 ticks each ([[Navmesh]]), so a site's or a quest's waits at most one of the airships'. One the airships began
+is baked whole wherever the player goes meanwhile. A group brought walks a beat over its ground's lattice, never
+stands again, and once no player has come within 220 m of it for 90 s, its foes all idle, it is gone.
 
 ## On screen
 
@@ -356,6 +417,15 @@ WebAssembly, so names, factions and weapons are read in one place.
   grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the crew's own five types in the Test
   Ground's first foes' clothes. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the wreck dresses its
   crew as the Brig's hands ([[Prologue]]).
+- **Arriving**, a foe is drawn only once it is let down or begins forming, and wears no plate until it lands. A
+  Grey Tithe foe is built from the feet up as a player arriving is, each 2 by 2 cell white as it lands and then a
+  moment ember, in a beam from its airship's hatch, a ring of light at its feet and dust thrown up as it lands; a
+  Lattice foe forms from the head down, its cells landing in its crystal, a thread of its crown's light down to it.
+  The airship and the crown are the [[Modules]] `tithe-airship` and `lattice-crown`, drawn by the event props' drawer
+  as `arrivalsView.ts` flies and grows them (`airshipFlight.ts`, `crownLife.ts`): the ship banks, pitches and bobs, its
+  thrusters burn and its stacks smoke as hard as it drives (`arrivalLooks.ts`), its fires light the ground round it at
+  night; the crown grows out of its heart, its crystal drawn in out of the air, and breaks in the Lattice's wave, its
+  shards falling and sinking. Each is heard from recordings the owner picked ([[Foe Arrivals as Claude Builds Them]]).
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 
@@ -365,8 +435,12 @@ WebAssembly, so names, factions and weapons are read in one place.
   baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
   leaves the mesh more than 14 m from it; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
 - A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
-- A wave stands from nowhere, at least 25 m from every player: a node's land has no ships to bring it, and its room's
-  navmesh no ground beyond its square to walk it in from.
+- A wave is brought by airship and set down at least 25 m from every player: its room's navmesh has no ground beyond
+  its square to walk it in from.
+- An airship and a crown are the page's drawing alone: nothing meets a ship's hull, and the room knows only the
+  ground a ship brings its foes to and its ticks; on its way in and out the page keeps it 12 m over the land under it.
+- A patrol's airships bake ten grounds at most in a room, each kept as any place's is; past them, they set down only
+  on ground the room has.
 - A wave the room's limit leaves no room for does not come later, once foes have fallen, until its garrison holds its
   territory again.
 - A group's leader is fixed as it stands: a leader walking home or leashed still leads it.
