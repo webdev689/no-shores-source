@@ -250,12 +250,12 @@ export class Keeper {
       return false;
     }
     // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes.
-    // While the accounts hold what this room last saved of it, the room's own body of it is the newest, with what it
-    // gained since that save: this player takes that on, to be saved anew.
+    // While the accounts hold what this room last saved of it, and gave nothing back to it since (an errand's answer),
+    // the room's own body of it is the newest, with what it gained since that save: this player takes that on.
     let takenOn = false;
     for (const [other, kept] of this.held)
       if (kept.account === claimed.account) {
-        const newest = kept.saved === claimed.body ? this.room.character(other) : null;
+        const newest = kept.saved === claimed.body && body === claimed.body ? this.room.character(other) : null;
         this.held.delete(other);
         this.lost(other);
         if (newest !== null && newest !== body) takenOn ||= this.room.restoreCharacter(player, newest);

@@ -340,7 +340,6 @@ test('a scroll kept past the end of what a list now holds is laid at its end, ne
     height: 100,
     children: rows(count),
   });
-  const boxOf = (laid: readonly Laid[], id: string) => laid.find((each) => each.node.id === id)?.box;
   const short = lay({ children: [list(2)] }, () => 500);
   assert.equal(boxOf(short, 'row-0')?.y, boxOf(short, 'list')?.y, 'two rows fit: laid from the top');
   const long = lay({ children: [list(20)] }, () => 500);

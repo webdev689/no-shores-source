@@ -223,6 +223,21 @@ test('a second socket of one account takes on what the first gained since this r
   assert.equal(looked?.body, '{"aurem":40}', 'and saved under the new hold');
 });
 
+test('a second socket keeps the answer the accounts gave a carried errand over the first socket’s body', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  const carrying = '{"errand":{"rid":"node-a:1:1:0","what":{"deposit":50}}}';
+  room.held.set(1, carrying);
+  room.held.set(2, '{}');
+  const keeper = new Keeper(kept, room, 'node-a', () => undefined);
+  const [now, here] = [() => clock.now, () => true];
+  assert.equal(await keeper.signIn(1, token, now, here), true);
+  await keeper.due(clock.now + SAVE_UNCHANGED_MS);
+  room.held.set(1, '{"errand":{"rid":"node-a:1:1:0","what":{"deposit":50}},"aurem":40}');
+  assert.equal(await keeper.signIn(2, token, now, here), true);
+  assert.match(room.held.get(2) ?? '', /"answer":/, 'the errand answered, to be settled');
+});
+
 test('a run is full by its four accounts: a member signing in again is kept, a fifth account refused', async () => {
   const made = accounts();
   const tokens: Record<string, string> = {};
