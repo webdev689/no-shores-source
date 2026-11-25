@@ -115,4 +115,23 @@ fn every_ship_in_the_sea_rides_on_its_chart_once_a_second_however_far_off() {
     }
     snapshot_door::prepare();
     assert_eq!(chart_at_sea(one).len(), 2);
+    // Prepared again for each player at the same tick, as `snapshot` does, each is sent it.
+    for player in [one, far] {
+        let bytes = snapshot_door::snapshot(player);
+        let charted = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap().charted().map(|each| each.len());
+        assert_eq!(charted, Some(2), "player {player} at the same tick");
+    }
+    // A sea opened again charts its first snapshot, whatever the last one charted.
+    assert!(open_sea(layout.as_bytes(), 66));
+    let alone = room_join();
+    assert_eq!(input(alone, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!(chart_at_sea(alone).len(), 1);
+}
+
+#[test]
+fn the_seas_chart_goes_once_a_second_of_ticks() {
+    let ticks = u32::try_from(snapshot_door::CHART_EVERY_TICKS).unwrap();
+    assert!((f64::from(ticks) * movement::TICK_SECONDS - 1.0).abs() < 1e-12);
 }

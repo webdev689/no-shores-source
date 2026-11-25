@@ -25,12 +25,19 @@ enum Prepared {
 pub const PLAYERS_SEEN_M: f64 = 60_000.0;
 
 /// How often the sea's chart is sent, ticks: a second of them (`movement::TICK_SECONDS`).
-const CHART_EVERY_TICKS: u64 = 60;
+pub const CHART_EVERY_TICKS: u64 = 60;
 
-/// Whether the sea's chart is sent with the snapshot of `tick`, the last sent in the second `charted` (none before the
-/// first): once its clock has crossed into another second, however many ticks the room was stepped at once.
+/// Whether the sea's chart is sent with the snapshot of `tick`, the chart last sent with the snapshot of tick `charted`
+/// (none since the room opened): once its clock has crossed into another second, however many ticks the room was
+/// stepped at once, and to everyone the snapshot of that tick is prepared for.
 fn charting(charted: Option<u64>, tick: u64) -> bool {
-    charted != Some(tick / CHART_EVERY_TICKS)
+    charted.is_none_or(|at| at == tick || at / CHART_EVERY_TICKS != tick / CHART_EVERY_TICKS)
+}
+
+/// Forgets the snapshot prepared and the chart sent: the room they were of is closed, another opened in its place.
+pub fn forget() {
+    PREPARED.with(|kept| *kept.borrow_mut() = None);
+    CHARTED.set(None);
 }
 
 struct SeaParts {
@@ -112,7 +119,7 @@ impl SeaParts {
 
 thread_local! {
     static PREPARED: RefCell<Option<Prepared>> = const { RefCell::new(None) };
-    /// The second of the sea's clock its chart was last sent in.
+    /// The tick of the sea's clock its chart was last sent with.
     static CHARTED: Cell<Option<u64>> = const { Cell::new(None) };
 }
 
@@ -165,7 +172,7 @@ pub fn prepare() {
             let plates: Vec<_> = sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect();
             let chart = charting(CHARTED.get(), sea.clock());
             if chart {
-                CHARTED.set(Some(sea.clock() / CHART_EVERY_TICKS));
+                CHARTED.set(Some(sea.clock()));
             }
             let name = |player| plates.iter().find(|(each, _)| *each == player).map(|(_, plate)| plate.name.clone());
             let charted = sea.ships().filter(|_| chart);

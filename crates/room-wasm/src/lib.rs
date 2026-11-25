@@ -126,6 +126,7 @@ fn with_open<T>(use_open: impl FnOnce(&mut Opened) -> T) -> Option<T> {
 }
 
 fn keep(opened: Opened) {
+    snapshot_door::forget();
     OPEN.with(|open| *open.borrow_mut() = Some(opened));
 }
 
