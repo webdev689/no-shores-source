@@ -219,6 +219,22 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The desktop app** (branch `ccr-42a55a97-wkid9r`, its pull request waiting on the owner's yes to merge), on the
+  owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
+  reference ([[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]; every call in
+  [[The Desktop App as Claude Builds It]]; how it works in [[Desktop App]]). Electron 45 plays the game at
+  `noshores.online/play/` in a sandboxed window, so it is never a version behind the rooms. WebGPU runs on Direct3D 12
+  then 11 on Windows (Chromium gives WebGPU no Vulkan there, read in its source), Metal on a Mac, and on Linux on
+  Vulkan three ways in turn; DFO's guard is rebuilt for WebGPU from the game's own adapter report. Settings' Graphics
+  tab gains an App part. Updates through electron-updater from `noshores.online/download/`, which the site's Worker
+  answers from R2; installers released by hand from `main` (`desktop.yml`), the owner's yes each time. Tested offline
+  in a container with no GPU: the shell's, the bridge's and the site Worker's tests; the app in Electron 45.3.0 on
+  SwiftShader driven through Playwright and real X keys (the bridge, the watch, the fences, F11, Alt+Enter, F12,
+  closing, Settings' App part pictured); the packed AppImage's own main and preload. Not seen: any real GPU, an
+  installer on Windows or a Mac, an update installed, a Discord sign-in in the window, and Exit to Desktop's hold
+  driven by the mouse in the app (its close is tested in parts). After a merge, the owner says when to cut the first
+  release (Actions, `desktop`, run on `main`); the site's links to the downloads and signing keys are open questions.
+
 - **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
   its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
   [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new

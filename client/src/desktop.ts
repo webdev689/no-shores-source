@@ -80,6 +80,9 @@ export interface DesktopBridge {
 
 /** The bridge's name on the page's `window`. */
 export const BRIDGE_NAME = 'noShoresDesktop';
+/** The page's own hook the shell runs, as a press, to take the pointer's lock back: it takes it only while the game
+ *  still wants it, so a lock asked for before a menu opened is never taken under the menu. */
+export const RELOCK_HOOK = '__noShoresRelock';
 
 let info: DesktopInfo | null = null;
 let send: (ask: DesktopAsk) => void = () => undefined;

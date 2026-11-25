@@ -1,7 +1,7 @@
 // The page's side of the game in its worker: the page keeps what a browser allows nowhere else (the player's input,
 // the pointer's lock, the pad, typing, sound, storage, the address) and sends the game what it hears, doing what the
 // game asks of it. The game draws on the page's canvas from its worker.
-import { BRIDGE_NAME, type DesktopBridge } from '../desktop.ts';
+import { BRIDGE_NAME, type DesktopBridge, RELOCK_HOOK } from '../desktop.ts';
 import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { BROWSERS_SIGN_INS, stopped, touchesHeld } from '../ui/page.ts';
 import { drawSvgInPage } from '../ui/pictures.ts';
@@ -39,6 +39,8 @@ export class PageHost {
   /** Each hook's ask of the game, answered when the game answers. */
   private readonly asking = new Map<number, (answer: unknown) => void>();
   private readonly desktop = bridgeOf();
+  /** Whether the game last asked for the pointer's lock. */
+  private wantsLock = false;
 
   constructor(canvas: HTMLCanvasElement, worker: Worker) {
     [this.canvas, this.worker] = [canvas, worker];
@@ -56,6 +58,13 @@ export class PageHost {
         this.post({ kind: 'media', query, matches: change.matches }),
       );
     this.desktop?.onInfo((info) => this.post({ kind: 'desktop', info }));
+    if (this.desktop)
+      Object.assign(window, {
+        [RELOCK_HOOK]: () => {
+          if (this.wantsLock && document.pointerLockElement !== canvas)
+            void canvas.requestPointerLock()?.catch?.(() => undefined);
+        },
+      });
     new ResizeObserver(() => this.post({ kind: 'view', view: this.view() })).observe(canvas);
     addEventListener('resize', () => this.post({ kind: 'view', view: this.view() }));
     this.frame();
@@ -204,6 +213,7 @@ export class PageHost {
         else location[message.how](message.url);
         return;
       case 'lock':
+        this.wantsLock = message.locked;
         // A lock the page may not take without a press (as after Escape) the desktop app's shell takes for it.
         if (message.locked) void this.canvas.requestPointerLock()?.catch?.(() => this.desktop?.ask({ ask: 'relock' }));
         else if (document.pointerLockElement === this.canvas) document.exitPointerLock();

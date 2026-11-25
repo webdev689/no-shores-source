@@ -4,7 +4,7 @@
 import { type BrowserWindow, type IpcMainEvent, app, ipcMain, session, shell } from 'electron';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import type { DesktopAsk } from '../../client/src/desktop.ts';
+import { type DesktopAsk, RELOCK_HOOK } from '../../client/src/desktop.ts';
 import { CHANNELS, askOf, infoOf } from './bridge.ts';
 import { Config } from './config.ts';
 import { goneLine, logWith } from './crashes.ts';
@@ -161,9 +161,8 @@ function answer(ask: DesktopAsk): void {
       updater.download();
       return;
     case 'relock':
-      void window?.webContents
-        .executeJavaScript("document.getElementById('game')?.requestPointerLock()", true)
-        .catch(() => undefined);
+      // Run as a press, which the page's own hook needs; the hook takes the lock only if the game still wants it.
+      void window?.webContents.executeJavaScript(`globalThis.${RELOCK_HOOK}?.()`, true).catch(() => undefined);
       return;
   }
 }
