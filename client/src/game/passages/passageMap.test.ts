@@ -55,7 +55,7 @@ test('every zone of the week is a mark at its place, by its deal’s glyph, the 
   const [first, , third] = sheet.marks;
   assert.ok(first && third);
   assert.equal(third.at[0] - first.at[0], 2_000, 'each at its place on the island');
-  assert.ok(sheet.span && sheet.span >= 8_000, 'it opens on the whole web');
+  assert.ok(sheet.span && sheet.span < sheet.width, 'it opens round the player, the web drawn back to by the wheel');
 });
 
 test('lamps and currents are named under their zones, a lamp lit this week said to be lit', () => {

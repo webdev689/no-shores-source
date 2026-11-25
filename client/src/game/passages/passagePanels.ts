@@ -215,7 +215,7 @@ export function signNode(sign: OnwardSign, view: { readonly width: number; reado
 export function haulNode(haul: HaulView, view: { readonly width: number; readonly height: number }): Node | null {
   if (haul.lines.length === 0) return null;
   const size = sizesOf(view.width, view.height, 1).label;
-  return framed(
+  const panel = framed(
     'passage-haul',
     [
       words('CARRIED', size, INK.faint, { tracking: 2 }),
@@ -225,6 +225,8 @@ export function haulNode(haul: HaulView, view: { readonly width: number; readonl
     [1, 0.55],
     [1, 0],
   );
+  // Clear of the screen's right edge, as the tracker stands.
+  return { ...panel, float: { to: 'screen', at: [1, 0.55], anchor: [1, 0], x: -16 } };
 }
 
 /** The lamp's prompt where the use prompt stands: its key ringed as far as it is held (`held`, 0 to 1). */
