@@ -1,5 +1,5 @@
 ---
-id: 247
+id: 250
 title: "Driving the desktop app headless: Playwright's keys never reach Electron's shell, and a packed app cannot be attached"
 status: open
 type: open-source
