@@ -54,22 +54,30 @@ export function tapNode(
 }
 
 /** Shows the tap to start on `stack`; resolves on the first tap, click or key, and lets the screen fade once `ready`
- *  has resolved too. */
-export function tapToStart(stack: Stack, ready: Promise<unknown>, clock: () => number = pageClock): Promise<void> {
+ *  has resolved too. With `before` (the desktop app's launcher over it), it stands but hears nothing until then. */
+export function tapToStart(
+  stack: Stack,
+  ready: Promise<unknown>,
+  clock: () => number = pageClock,
+  before?: Promise<void>,
+): Promise<void> {
   const shown = new Eased(1);
   const words = { press: playedByTouch() ? 'Tap to start' : 'Click or press any key to start', loading: '' };
   let tap: () => void = () => undefined;
+  /** Whether a pad's button was down last frame: only one pressed anew taps, never one held from a press before. */
+  let padHeld = true;
   const removeLayer = stack.add((ui) => {
     // A pad's button is a key too; the pad is read as each frame is drawn.
-    if (padPressed()) tap();
+    const down = padPressed();
+    if (down && !padHeld) tap();
+    padHeld = down;
     return tapNode(ui, words, shown.value(clock()), clock());
   });
-  announce(`${TITLE}. ${words.press}`);
   untapped = true;
   return new Promise((resolve) => {
-    let tapped = false;
+    let [tapped, listening] = [false, false];
     tap = () => {
-      if (tapped) return;
+      if (tapped || !listening) return;
       tapped = true;
       untapped = false;
       removeEventListener('keydown', tap);
@@ -81,8 +89,15 @@ export function tapToStart(stack: Stack, ready: Promise<unknown>, clock: () => n
         resolve();
       });
     };
-    addEventListener('pointerdown', tap);
-    addEventListener('keydown', tap);
+    const listen = () => {
+      listening = true;
+      announce(`${TITLE}. ${words.press}`);
+      padHeld = padPressed();
+      addEventListener('pointerdown', tap);
+      addEventListener('keydown', tap);
+    };
+    if (before) void before.then(listen);
+    else listen();
   });
 }
 

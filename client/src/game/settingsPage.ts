@@ -1,13 +1,15 @@
-// The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at),
-// Audio (the volumes, and the recorded sounds' credits behind a press of their own), Controls (every control, bound
-// anew there as in the sheet K opens) and Account (the account and the players blocked or muted), down a rail with
-// Exit to Menu and Exit to Desktop at its foot, each held. The resolution and the volumes are kept in this browser,
-// the binds with the account.
+// The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at,
+// and in the desktop app its graphics API and version), Audio (the volumes, and the recorded sounds' credits behind a
+// press of their own), Controls (every control, bound anew there as in the sheet K opens) and Account (the account and
+// the players blocked or muted), down a rail with Exit to Menu and Exit to Desktop at its foot, each held. The
+// resolution and the volumes are kept in this browser, the binds with the account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
 import { PAGE, type Page } from '../ui/page.ts';
 import { button, choice, slider } from '../ui/controls.ts';
 import type { AccountPanel } from './accountTab.ts';
+import { API_LIST, desktopNodes } from './desktopSettings.ts';
 import { bindingColumns, bindingWords } from './controlsSheet.ts';
 import { fillNode } from './gearHold.ts';
 import { INK, words } from './gearNodes.ts';
@@ -57,6 +59,9 @@ const PRESS_WIDE = 54;
 const PANEL_LEAST = 200;
 /** The tab's panel, which scrolls beside the rail. */
 const LIST = 'settings-list';
+/** The page's drop-down lists, each shut as the page is shown again. */
+const RESOLUTION_LIST = 'resolution';
+const LISTS = [RESOLUTION_LIST, API_LIST];
 /** The credits' press in Audio and their way back. */
 const CREDITS = 'settings-credits';
 const CREDITS_BACK = 'settings-credits-back';
@@ -81,7 +86,7 @@ export class Settings {
   /** How many times a tab has been shown: a window that stayed open is told of only while the tab it was asked from
    *  still shows. */
   private shownTimes = 0;
-  /** Whether the panel goes back to its top, its list of resolutions shut, as the page is next drawn: a tab or the
+  /** Whether the panel goes back to its top, its lists shut, as the page is next drawn: a tab or the
    *  credits newly shown. */
   private toTop = false;
   /** The press to give the focus to, for the menu to take: the way back as the credits show, the credits' press as
@@ -134,7 +139,7 @@ export class Settings {
     const wide = sizes.name > 1;
     if (this.toTop) {
       ui.scrollBy(LIST, -Number.MAX_SAFE_INTEGER);
-      ui.store.set('resolution', false);
+      for (const list of LISTS) ui.store.set(list, false);
     }
     this.toTop = false;
     const body = this.credits
@@ -198,7 +203,7 @@ export class Settings {
 
   /** The tab shown's own parts. */
   private tabNode(context: PlainContext, toCredits: (shown: boolean) => void): Node {
-    if (this.tab === 'graphics') return graphicsNode(context);
+    if (this.tab === 'graphics') return graphicsNode(context.ui);
     if (this.tab === 'audio') return audioNode(context, () => toCredits(true));
     if (this.tab === 'controls') return controlsNode(context, this.rebinding);
     const panel = this.account();
@@ -292,9 +297,10 @@ function held(
   };
 }
 
-/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser. */
-function graphicsNode({ ui }: PlainContext): Node {
-  const { node, chosen } = choice(ui, 'resolution', resolution(), RESOLUTIONS);
+/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser; and in the
+ *  desktop app, the app's own graphics and version. The launcher shows the same. */
+export function graphicsNode(ui: Interface): Node {
+  const { node, chosen } = choice(ui, RESOLUTION_LIST, resolution(), RESOLUTIONS);
   if (chosen !== resolution()) setResolution(chosen);
   const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
   return column([
@@ -302,6 +308,7 @@ function graphicsNode({ ui }: PlainContext): Node {
     { height: 4 },
     settingRow('Resolution', { ...node, label: `Resolution, ${said}` }),
     hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
+    ...desktopNodes(ui, settingRow),
   ]);
 }
 

@@ -32,6 +32,7 @@ code:
   - site/wrangler.jsonc
   - .github/workflows/site.yml
   - site/www/worker.ts#toBareDomain
+  - site/worker.ts#download
   - site/_headers
 ---
 # Website
@@ -103,7 +104,8 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
 ## Where it is served
 
 The Worker `noshores-site` serves the site and the game at `noshores.online`
-([[noshores.online Is Served From Cloudflare, and the Game Is Played There]]): static files alone, the site's pages at
+([[noshores.online Is Served From Cloudflare, and the Game Is Played There]]): static files, with a script for the
+desktop app's downloads alone (below), the site's pages at
 the root and the game's client, built with its base at `/play/`, under `/play/`. An address with no file gets the
 site's own "Page not found" (`site/lost/`, served as `404.html`) with a 404; files the builds name by a hash of their
 bytes are kept by the browser for a year (`site/_headers`). `www.noshores.online` is a Worker of its own,
@@ -113,8 +115,14 @@ panel's sign-in live at one origin. A merge into `main` deploys it
 to, so no game is served on a protocol no room speaks. Run by hand from the Actions tab it deploys again, but only a
 commit whose own CI check passed. Before it deploys, every CORS rule of the game's R2 bucket
 (`overlook-forge`) that lets the published page read it is widened to the domain's two origins, and the accounts send
-a Discord sign-in back to the game there. The game is still published on GitHub Pages as well
+a Discord sign-in back to the game there. Each deploy also writes `play/patch-notes.json` from the merged pull
+requests' "Patch notes" sections, which the [[Desktop App]]'s launcher shows (`site/patchNotes.ts`). The game is still
+published on GitHub Pages as well
 ([[The World Editor Is on GitHub Pages]]).
+
+The [[Desktop App]]'s downloads are the one address a script answers (`site/worker.ts`, run for `/download/` alone):
+its installers and update feeds, read from R2 under `desktop/`, and the names that never move (`/download/windows`,
+`mac-arm64`, `mac-x64`, `linux-appimage`, `linux-deb`) sent to the newest of each. The site links to none of them yet.
 
 ## The Discord bot's panel
 

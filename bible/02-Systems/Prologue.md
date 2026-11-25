@@ -86,7 +86,8 @@ how its lines are written, [[Every Line Reads as Spoken, and the Lore Is Detaile
 
 **The way in.** The page shows black, the game's logo and "Click or press any key to start" ("Tap to start" on a
 touch screen) at once, and loads the world behind it. The tap wakes the browser's sound. Once both are done the intro
-begins. With `?at=<node>` the page goes straight to that node, as before, and plays no story.
+begins. In the [[Desktop App]] the launcher stands over it first, once a run, and the tap is heard only after Play.
+With `?at=<node>` the page goes straight to that node, and plays no story.
 
 **The director** (`Prologue`) plays the beats in the owner's order, each a module of its own, handing each what the
 last left: the camera's shot, the ships sighted, where the two ships met. A cutscene's beat is skipped by holding

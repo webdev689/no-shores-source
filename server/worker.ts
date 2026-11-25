@@ -25,6 +25,7 @@ import {
 } from './roomNames.ts';
 import { SEA_PORTS } from './seaPorts.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
+import { healthAnswer } from './health.ts';
 
 interface Env {
   readonly ROOMS: DurableObjectNamespace<RoomHost>;
@@ -589,11 +590,11 @@ export class RoomHost extends DurableObject<Env> {
   }
 }
 
-/** Sends `/room/<name>` to that room's object; a name is lowercase letters, digits and hyphens. */
+/** Sends `/room/<name>` to that room's object, a name lowercase letters, digits and hyphens; answers `/health`. */
 export default {
   fetch(request: Request, env: Env): Response | Promise<Response> {
     const name = roomName(request);
-    if (!name) return new Response('Not found', { status: 404 });
+    if (!name) return healthAnswer(request) ?? new Response('Not found', { status: 404 });
     return env.ROOMS.getByName(name).fetch(request);
   },
 } satisfies ExportedHandler<Env>;

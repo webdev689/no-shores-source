@@ -1,18 +1,23 @@
-// The website and the game at noshores.online: a Worker of static files alone, the site's pages at its root and the
-// game's client under /play/, gathered into target/served by .github/workflows/site.yml before it deploys. Its domain
-// is given by that deploy, once noshores.online is a zone of the Cloudflare account, so it has no workers.dev address;
+// The website and the game at noshores.online: the site's pages at its root and the game's client under /play/,
+// static files gathered into target/served by .github/workflows/site.yml before it deploys, and the desktop app's
+// downloads under /download/, read from the game's R2 bucket by worker.ts, which runs for those alone. Its domain is
+// given by that deploy, once noshores.online is a zone of the Cloudflare account, so it has no workers.dev address;
 // www.noshores.online is a Worker of its own that redirects here (www/).
 {
   "name": "noshores-site",
+  "main": "worker.ts",
   "compatibility_date": "2026-11-01",
   "send_metrics": false,
   "workers_dev": false,
   "preview_urls": false,
   // `/world` is answered as `/world/`, as the pages' links name them; an address with no file gets the site's own
-  // 404.html, with a 404; `_headers` keeps the files named by their hash for a year.
+  // 404.html, with a 404; `_headers` keeps the files named by their hash for a year. Only /download/ runs the script.
   "assets": {
     "directory": "../target/served",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
+    "run_worker_first": ["/download/*"],
   },
+  "r2_buckets": [{ "binding": "DOWNLOADS", "bucket_name": "overlook-forge" }],
 }
