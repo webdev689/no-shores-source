@@ -87,12 +87,15 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **Foe arrivals** ([[Foe Arrivals as Claude Builds Them]]), each the owner's to say:
   - The airship's and the crown's look and flight, once seen in the game: their size, the airship's 16 m hang and
     8 s flight in, the crown's claw and its 6.4 m height.
-  - Whether the Lattice also come under crowns in patrol zones beyond the Fissure, as the Grey Tithe's airships come to
-    roaming players; they hold no ground in those zones ([[Enemies]], "Factions").
+  - Whether the Lattice also hold territories in patrol zones beyond the Fissure, forming under crowns; they hold no
+    ground in those zones ([[Enemies]], "Factions").
+  - Which areas hold territories ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]):
+    Claude's call is every area but a landing, a gate, an entrance, a hamlet, a wilds, a Breach's hollow and a guild's
+    plot, so farms, mills, docks, lighthouses and towers hold Tithe groups too.
   - Whether a site's group may be one of the smaller groups too: a smaller group up a run's ledge, facing away, is
     not met by a player walking the run (`sites_held`), so sites stand bands.
   - The arrivals' sounds are recordings already picked for other things (a hull's creak, the thunder's roll, the
     ice's crack, a shield breaking); a sheet of the airship's own engines, hatch and the crown's forming would let the
     owner pick their own.
-  - Whether the heroic raid is as hard as wanted: the room door's scripted pair loses its last wave (Marrow), and the
-    rules' own pair holds it ([[Public Events]], "Limits").
+  - Whether the heroic raid is as hard as wanted: the room door's scripted pair loses its last wave (Marrow); the
+    room's own raid test and the page's two bots beside its player win it ([[Public Events]], "Limits").

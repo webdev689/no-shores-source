@@ -400,6 +400,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Desktop App as Claude Builds It]]
 - [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]
 - [[Foe Arrivals as Claude Builds Them]]
+- [[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]
 
 ## Replaced
 

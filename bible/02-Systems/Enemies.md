@@ -31,10 +31,9 @@ code:
   - crates/room/src/arrivals.rs#under_crown
   - crates/room/src/arrivals.rs#as_called
   - crates/room/src/arrivals.rs#keep_arrivals
-  - crates/room/src/reinforcements.rs#reinforce
-  - crates/room/src/reinforcements.rs#lift_away
+  - crates/room/src/stands.rs#stand_sites
+  - crates/room/src/stands.rs#lift_sites
   - crates/room/src/smaller.rs#beside_bands
-  - crates/room/src/smaller.rs#varied
   - client/src/combat/foeArrivals.ts#arrivalLook
   - client/src/combat/airshipFlight.ts#shipPose
   - client/src/combat/crownLife.ts#crownState
@@ -249,17 +248,26 @@ WebAssembly, so names, factions and weapons are read in one place.
   fight brought into it goes on, so it is somewhere to arrive, not to hide. A spell cast is a strike. Its leave comes
   back once the player has left it and come back, or has stood again (`Room::left_be`,
   [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]).
-- **Caverns and runs**: a patrol zone's layout marks foes' sites, and its room stands a group of the Grey Tithe at
-  each in its caverns (a coven's or a cave's area, at the area's middle) and on its runs' beats short of their end
-  arenas, which hold their objective's site ([[Layouts]], "Runs"); one in the garrison's own square stands none, its
-  ground held already. A site's group stands the first time a player comes within 150 m of it, none is within
-  40 m, and the room's living foes leave room for all of it, on a navmesh baked round the site then, a slice a tick, as
-  a quest's place's is ([[Navmesh]]), so a room opens as quickly as before. It is drawn as a
+- **Territories and runs** ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]): a patrol
+  zone's layout marks foes' sites, and its room stands a group of the Grey Tithe at each: its territories across the
+  zone, every area but where players arrive or pass (its landing, gates and entrances), where folk live (a hamlet),
+  where public events are fought (wilds), a Breach's hollow and a guild's plot, at the area's middle ([[Layouts]],
+  "How a layout is planned"); and its runs' beats short of their end arenas, which hold their objective's site ([[Layouts]], "Runs").
+  One in the garrison's own square stands none, its ground held already, and none within 60 m of the edge of a
+  public event's ground, which the event's own foes hold. A site's group stands when a player comes within 150 m of
+  it while it stands none, none is within 40 m, and the room's living foes leave room for all of it, on a navmesh
+  baked round the site then, a slice a tick, as a quest's place's is ([[Navmesh]]): within a second or two, a
+  keep's walls and floors within three. So a room opens as quickly as before. Saltmere's three zones hold 15 territories (Saltgrass
+  Downs five, Gullwing Vale five, Driftwood Moors five) beside their runs' beats. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes
-  have room, walks a beat over the lattice round it, and stands again as any cleared group does. A mission's, a
-  dungeon's or a boss's node stands none. A site's group is a band, never one of the smaller groups.
+  have room, walks a beat over the lattice round it, and stands again as any cleared group does, by airship under
+  the open sky once no player is within 40 m. One no player, standing or fallen, has come within 220 m of for 90 s,
+  its foes all idle and none arriving, is let go with its post, out of sight, cleared or not, and stands afresh,
+  already on the ground, when a player next comes within 150 m: so a zone's territories stand where its players are,
+  within the room's limit (`lift_sites`). A mission's, a dungeon's or a boss's node stands none. A site's group is a
+  band, never one of the smaller groups.
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
   post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
@@ -331,7 +339,7 @@ WebAssembly, so names, factions and weapons are read in one place.
   band whose fall won a checkpoint holds its ground instead while anyone is in the room; elsewhere, a mission's group
   among them, its checkpoint falls back as it stands again ([[Revives]]).
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a patrol's 32, 8 more
-  for what its airships bring (48 in a zone that holds public events); a course's room 12.
+  for its territories standing near its players (48 in a zone that holds public events); a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
   hold them back.
 
@@ -346,7 +354,8 @@ companions, and a foe a page asks for. The rest arrive (`arrivals.rs`):
 - **By airship**, the Grey Tithe's, under the open sky (a node's land or an island's; nowhere else, where they stand as
   they are stood): a garrison group standing again, a half-fallen patrol group's fallen, a mission's waves, the raid's
   waves and its tithe-taker ([[Public Events]]), a quest defence's waves ([[Quests]]), the War Horn's Assessor and his
-  four ([[Outposts]]), and a patrol's own airship groups (below). A ship carries six at most; it comes in toward the nearest living player (swung up to 0.6 rad off
+  four ([[Outposts]]), and a territory's group retaken (above). No foe comes on a timer
+  ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]). A ship carries six at most; it comes in toward the nearest living player (swung up to 0.6 rad off
   that line), its flight 8 s; it hangs 16 m over the middle of its foes' places, lets the first down 1 s after it hangs
   and each next 0.5 s after, each built over 1 s; it lingers 1.2 s after the last stands and flies on for 9 s. A ship
   to ground another's is over (within 40 m) sets out 1.5 s later and hangs 8 m higher.
@@ -361,21 +370,6 @@ counts among the room's living foes. As it lands it takes up the hunt it came wi
 target as it stands then. The room sends each foe's arrival (what brings it, its number, the tick it is let down and
 the tick it lands) and each airship and crown whole while it lasts (`ArrivalSeen`: where its ground is, the way it
 comes, how high it hangs, and the ticks it set out, hangs, lets its last go and is gone).
-
-**A patrol's airships** (`reinforcements.rs`), once a player roams 60 m or more from every spawn: the first 20 s
-after, then every 45 to 75 s, to each roaming player in turn, while fewer than three of their groups stand and the
-room has room. The group, half the time a band and else one of the smaller groups, is set down on ground the room has
-35 to 80 m from the player (as near 50 m as it can), 25 m from every player, 20 m from every foe and post and 60 m
-from every foes' site and quest place and from the edge of each public event's ground, running or not, so it adds to
-the ground between the zone's laid encounters. Where no ground
-reaches, one is baked round a 60 m cell 50 m from the player: the one ahead of them, else one an eighth of a turn
-either side of that way, then a quarter, and so on round to behind them, the first in the section that the room has no
-ground round yet; ten at most in a room, counted whichever place's turn finished each, never while another place's
-ground is baking nor the tick after another place waited for its turn: the room bakes one at a time, some 45 ticks
-each ([[Navmesh]]), so a site's or a quest's waits at most one of the airships'. One the airships began is baked whole
-wherever the player goes meanwhile. A group brought walks a beat over its ground's lattice (a sentry or a watch holds
-its post), never stands again, and once no player, standing or fallen, has come within 220 m of it for 90 s, its foes
-all idle, it is gone.
 
 ## On screen
 
@@ -447,8 +441,6 @@ all idle, it is gone.
   its square to walk it in from.
 - An airship and a crown are the page's drawing alone: nothing meets a ship's hull, and the room knows only the
   ground a ship brings its foes to and its ticks; on its way in and out the page keeps it 12 m over the land under it.
-- A patrol's airships bake ten grounds at most in a room, each kept as any place's is; past them, they set down only
-  on ground the room has.
 - A wave the room's limit leaves no room for does not come later, once foes have fallen, until its garrison holds its
   territory again.
 - A group's leader is fixed as it stands: a leader walking home or leashed still leads it.

@@ -845,7 +845,7 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   the three open in 0.62 to 0.95 s of WebAssembly and 0.57 to 0.78 s natively, as they do without (tested offline, on
   a machine shared with other builds); a site's group stands once a player first comes within 150 m of it and its
   navmesh is baked, a slice a tick over some 45 ticks, each 15 ms at most natively ([[Navmesh]], [[Enemies]],
-  "Caverns and runs").
+  "Territories and runs").
 - A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms
   of WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,
   the same after an hour open (tested offline).

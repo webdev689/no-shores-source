@@ -223,16 +223,21 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's "some enemies are already on the ground, while others come in from a dropship or spawn effect", the Grey
   Tithe's airships ("Large modified vessels retrofitted with combustible thrusters") and the Lattice's "crystallized
   structure that appears, as the enemies spawn below", with patrol groups varied and "present moreso"
-  ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]); every call in
-  [[Foe Arrivals as Claude Builds Them]], how it works in [[Enemies]] ("Arrivals"), [[Lattice]] and [[Modules]]. The
-  airship and the crown are Blender modules (`tools/modules/airship.py`, `crown.py`), published to R2 by the modules
-  workflow on the branch's pushes. Three read-only audits' 39 points are fixed, each with a test that fails on the code
-  before it, or answered in the pull request. Tested offline: every check on the merged head (`ab7a3244`); a walk of
-  each Saltmere zone's resources for 300 s brings four or five ships and meets 24 to 27 foes (main: none, 9 to 15);
-  the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the raid's
-  first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in
-  the game ([[Open Questions]], "Foe arrivals"); the door test's scripted pair loses the heroic raid's last wave,
-  pinned as it is.
+  ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]). The owner then turned
+  down the timed airships ("Thats a band aid") for territories across each zone
+  ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]): a group at every area but landings,
+  gates, entrances, hamlets, wilds, a Breach's hollow and a plot, standing as a player comes near, let go out of sight,
+  retaken by airship when cleared. Every call is in [[Foe Arrivals as Claude Builds Them]], how it works in [[Enemies]]
+  ("Arrivals", "Territories and runs"), [[Lattice]] and [[Modules]]. The airship and the crown are Blender modules
+  (`tools/modules/airship.py`, `crown.py`), published to R2 by the modules workflow on the branch's pushes. Three
+  read-only audits' 39 points are fixed, each with a test that fails on the code before it, or answered in the pull
+  request. Tested offline: every check before the territories on `ab7a3244`, and the room's, the layout's, the bake's
+  and the page's tests after them; a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
+  15); the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the
+  raid's first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the
+  deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in the game and which
+  areas hold territories ([[Open Questions]], "Foe arrivals"); the door test's scripted pair loses the heroic raid's
+  last wave, pinned as it is.
 - **The codebase audit** (#209, merged), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
