@@ -68,6 +68,9 @@ CAVE=$(python3 -c "import re,os;print(re.sub(r'\A---.*?---\s*','',open(os.path.e
 NOTE="CAVEMAN MODE ACTIVE (worker only): your final reply goes to the controller Claude, never to a person. Keep code, comments, commits, docs, ledger and report files in normal prose.
 Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there)."
 export TASK_OBSERVER_ROLE=worker WORKER_INBOX=$INBOX
+# A worker that ends its turn to wait on its own sub-agent (a reviewer) is woken by its result, never stopped after
+# the default 10 minutes with the review lost.
+export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
 work() {   # work <prompt> [-c]: one headless run, its output to the log
   claude "${@:2}" -p "$1" --append-system-prompt "$CAVE
 
@@ -83,4 +86,11 @@ left=$(git status --porcelain | grep -vc 'graphify-out/')
 if [ "$left" -gt 0 ]; then
   echo "WORKER $NAME UNCOMMITTED $left files: resumed once to commit" >> "$OUT/$NAME.log"
   work "Your run ended with $left files changed and not committed. Re-read your inbox, finish what your brief and inbox still ask, run the brief's checks, commit on your branch with the brief's trailer, write your report and give the final reply the brief asks for." -c
+fi
+# A run that ends with its report older than its last commit (an error, or a turn ended while it waited) is resumed
+# once to finish and write it, so the controller never reads the round before's report as this one's.
+REPORT="$OUT/$NAME.md"
+if [ ! -f "$REPORT" ] || [ "$(stat -c %Y "$REPORT")" -lt "$(git log -1 --format=%ct)" ]; then
+  echo "WORKER $NAME REPORT STALE: resumed once to finish and write it" >> "$OUT/$NAME.log"
+  work "Your run ended with your report ($REPORT) older than your last commit. Re-read your inbox, finish what your brief and inbox still ask (a review you started included), run the brief's checks, commit, write this round's report and give the final reply the brief asks for." -c
 fi

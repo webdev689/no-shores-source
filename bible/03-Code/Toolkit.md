@@ -85,12 +85,11 @@ Work that fans out goes to headless workers, each in its own git worktree.
   A read-only reviewer sub-agent in a worktree of its own links `node_modules`, `generated/`, `target/` and
   `client/public/` from the main checkout instead.
 - Every brief starts from `tools/claude-toolkit/workers/brief-common-template.md`.
-- A run that ends without its final reply's OBSERVATIONS line (and its INBOX line, where the brief asks for one), or
-  with tracked work left uncommitted, is resumed once with the finish steps; still unfinished, its log says
-  `WORKER <name> UNFINISHED`.
+- A run that ends with tracked work left uncommitted, or with its report (`~/wt/reports/<name>.md`) older than its last
+  commit, is resumed once with the finish steps; its log says `WORKER <name> UNCOMMITTED` or `REPORT STALE`. A worker
+  waits on its own sub-agents (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`), so a reviewer it ends its turn on wakes it.
 - A late change goes in the worker's inbox (`~/wt/reports/inbox-<name>.md`, under a `## <short heading>` line), not a
-  stop and `--resume`. A fresh run of a worker's name starts an empty inbox, keeping an earlier worker's aside. A worker
-  that ends with its edits uncommitted is resumed once, told to commit them.
+  stop and `--resume`. A fresh run of a worker's name starts an empty inbox, keeping an earlier worker's aside.
 - Stop one with TaskStop or `bash tools/claude-toolkit/workers/stop-worker.sh <name>`, never `pkill -f <pattern>`.
 - A worker's first three actions: one claude-mem search; `graphify update .` and one `graphify explain` or `path`;
   Serena `get_symbols_overview` on each source file it will change.
