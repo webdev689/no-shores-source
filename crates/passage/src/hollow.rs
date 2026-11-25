@@ -1,9 +1,10 @@
 //! A zone above ground: a hollow of the island's own ground walled by rock, its floor's outline of its form (a round
 //! basin, a long winding ravine, terraced shelves, a court squared by old walls, a long dry strand, a grove), its
 //! heights on a grid 2 m apart, its walls rising steeply out of its floor 12 to 25 m (a body walks up them only
-//! aslant, and its ground ends a little past their top, a wall of the ground no body climbs), its dressing of the islands' modules (cliffs along its walls, boulders at their feet, and its form's own growth,
-//! ruins or wrecks), its section and its sites, all from its seed. Its frame is its own: metres from the middle of its
-//! floor, x east, y south.
+//! aslant, and its ground ends a little past their top, a wall of the ground no body climbs), its dressing of the
+//! islands' modules (cliffs along its walls, boulders at their feet, and its form's own growth, ruins or wrecks), its
+//! section and its sites, all from its seed. Its frame is its own: metres from the middle of its floor, x east, y
+//! south.
 
 use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of};
 use crate::zone::{Form, Zone};
@@ -15,35 +16,36 @@ use isle::shape::smooth;
 use movement::{Block, Heights};
 
 /// How far apart the ground's heights are, and how far past the floor's farthest reach their grid is laid, metres:
-/// past the wall's lip, where its ground ends.
+/// past the wall's lip, where its ground ends for a body and the page draws its rim.
 pub const CELL_M: f64 = 2.0;
-const PAST_M: f64 = 10.0;
+const PAST_M: f64 = 24.0;
 /// The floor's height, and how far its ground rolls round it, metres.
 pub const FLOOR_M: f64 = 20.0;
 const ROLL_M: f64 = 0.7;
 /// How far out from the floor's edge its wall rises, metres, and how high it rises, least and most.
 const WALL_RUN_M: f64 = 5.0;
 const WALL_RISE_M: (f64, f64) = (12.0, 25.0);
-/// How far past its full rise a wall's ground runs before it ends, metres. Ground no steeper than a body walks up
-/// along some way holds no body, as the movement rules walk a slope, so the ground's end holds it: a body that
-/// scrambles up a wall aslant stands on its lip, inside the zone's bounds, and never past them.
+/// How far past its full rise a wall's ground runs before it ends, metres. The movement rules let a body walk up any
+/// slope if it goes aslant enough, so no steepness holds it; where the ground ends, a wall of the ground does. A body
+/// that scrambles up a wall aslant is held on its lip, inside the zone's bounds.
 const LIP_M: f64 = 2.0;
 /// A shelf's drop and how many a hollow of shelves has, and how wide the bank between two shelves runs: 8 m, so its
 /// steepest (half again its mean, 0.45) is walked up as the navmesh's 0.7 allows, and no shelf stands cut off.
 const SHELF_DROP_M: f64 = 2.4;
 const SHELVES: f64 = 3.0;
 const BANK_M: f64 = 8.0;
-/// How far inside the floor's edge its section's ring stands, and how many points round it has.
+/// How far inside the floor's edge its floor's ring stands, and how many points round it has.
 const RING_IN_M: f64 = 0.5;
 const RING_POINTS: usize = 64;
 /// How far inside the floor's edge a mouth's middle stands, its back to the rock: twice the ring's, so a body reaches
-/// its front inside the section wherever the ring's points fall.
+/// its front inside the floor's ring wherever the ring's points fall.
 const MOUTH_IN_M: f64 = 1.0;
 /// How far inside the edge a spot or a post keeps, and the lattice they are drawn from, metres.
 const SPOT_IN_M: f64 = 3.5;
 const LATTICE_M: f64 = 3.0;
-/// How far a piece of dressing's footprint keeps from the arrival, from a mouth's middle (a body's reach of it), from
-/// the lamp's middle (past its ring of stones) and past a band's spread round its post (a body's room), metres.
+/// How far a piece of dressing's footprint keeps from the arrival, from a mouth's middle or a spot (a body's reach of
+/// it), from the lamp's middle (past its ring of stones) and past a band's spread round its post (a body's room),
+/// metres.
 const ARRIVAL_CLEAR_M: f64 = 5.0;
 const MOUTH_CLEAR_M: f64 = 2.5;
 const LAMP_CLEAR_M: f64 = 4.5;
@@ -348,19 +350,21 @@ fn placed(name: &str, at: [f64; 3], turn: f64, scale: f64, lift: f64) -> Option<
 
 /// The hollow's dressing: cliffs along its wall facing in, clear of its mouths; boulders at the wall's foot; and its
 /// form's own: a grove's trees, a court's ruins, a strand's wrecks and drift, a hollow's grass and shrubs.
-fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Placement> {
+fn dress(laying: &Laying, (sites, wanted): (&Sites, usize), kit: &str, draws: &mut Draws) -> Vec<Placement> {
     let outline = &laying.outline;
     let book = catalog();
     let mut placements = Vec::new();
     let mouths: Vec<[f64; 2]> = sites.onward.iter().chain([&sites.way_in]).map(|door| door.at).collect();
     let clear_of_mouths = |at: [f64; 2], off: f64| mouths.iter().all(|mouth| apart(*mouth, at) >= off);
-    // A module's footprint, the round its turned base fills, kept clear of the arrival, the mouths, the lamp and where
-    // each band stands round its post, so a body walks in, sees the zone and reaches every mouth and foe.
+    // A module's footprint, the round its turned base fills, kept clear of the arrival, the mouths, the `wanted`
+    // spots the deal stands its things on, the lamp and where each band stands round its post, so a body walks in,
+    // sees the zone and reaches every mouth, thing and foe.
     let clear = |at: [f64; 2], module: u16, scale: f64| {
         let size = book.module(module).size;
         let reach = libm::hypot(size[0], size[1]) / 2.0 * scale;
         apart(sites.arrive, at) - reach >= ARRIVAL_CLEAR_M
             && clear_of_mouths(at, reach + MOUTH_CLEAR_M)
+            && sites.spots.iter().take(wanted).all(|spot| apart(*spot, at) - reach >= MOUTH_CLEAR_M)
             && sites.lamp.is_none_or(|lamp| apart(lamp, at) - reach >= LAMP_CLEAR_M)
             && sites.posts.iter().all(|post| apart(*post, at) - reach >= crate::walk::BAND_SPREAD_M + BAND_CLEAR_M)
     };
@@ -435,17 +439,12 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
             let (count, laid) = (2 + draws.index(3), placements.len());
             for _ in 0..count * PLACE_TRIES {
                 let at = outline.at_edge(draws.between(0.0, TAU), draws.between(2.0, reach * 0.8));
-                if placements.len() < laid + count
-                    && outline.inside(at) > 1.0
-                    && book.number(name).is_some_and(|module| clear(at, module, 1.0))
-                {
-                    placements.extend(placed(
-                        name,
-                        [at[0], at[1], laying.floor(at)],
-                        draws.between(0.0, TAU),
-                        1.0,
-                        1.0,
-                    ));
+                if placements.len() >= laid + count {
+                    break;
+                }
+                if outline.inside(at) > 1.0 && book.number(name).is_some_and(|module| clear(at, module, 1.0)) {
+                    let turn = draws.between(0.0, TAU);
+                    placements.extend(placed(name, [at[0], at[1], laying.floor(at)], turn, 1.0, 1.0));
                 }
             }
         }
@@ -491,7 +490,7 @@ pub(crate) fn layings(
     let ((ground, bounds), ring, seed) = (laying.ground(), laying.outline.ring(), zone.seed);
     (0..).map(move |attempt: u64| {
         let mut dressing = if attempt == 0 { draws.clone() } else { Draws::of(seed, 0x500 + attempt) };
-        let placements = dress(&laying, &sites, &kit, &mut dressing);
+        let placements = dress(&laying, (&sites, wanted), &kit, &mut dressing);
         let blocks = isle::dressing::blocks(&placements);
         let hollow = Hollow { ground: ground.clone(), placements, blocks, ring: ring.clone(), bounds: bounds.clone() };
         (hollow, sites.clone())

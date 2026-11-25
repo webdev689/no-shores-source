@@ -31,7 +31,7 @@ export function zoneIsle(plan: PassagePlan, heights: Float64Array, place: Point2
     id: -plan.zone.number,
     at: place,
     climate: plan.climate,
-    heights,
+    heights: drawnHeights(heights),
     ...(plan.zone.ground.kind === 'open'
       ? { ground: hollowGround(plan.zone.ground.form, plan.zone.name, plan.climate) }
       : {}),
@@ -55,6 +55,36 @@ export function zoneIsle(plan: PassagePlan, heights: Float64Array, place: Point2
       blocks: ground.blocks,
     },
   };
+}
+
+/** A hollow's heights as the page draws them: each cell that holds none (past a wall's lip, where its ground ends for
+ *  a body) drawn at the height of the nearest cell that holds one, so the rim round the hollow stands as land. The
+ *  body is still predicted on the heights as they come. */
+export function drawnHeights(heights: Float64Array): Float64Array {
+  const drawn = heights.slice();
+  const [columns, rows] = [drawn[3] ?? 0, drawn[4] ?? 0];
+  const height = (cell: number): number => drawn[5 + cell] ?? Number.NaN;
+  let front: number[] = [];
+  for (let cell = 0; cell < columns * rows; cell++) if (Number.isFinite(height(cell))) front.push(cell);
+  while (front.length > 0) {
+    const next: number[] = [];
+    for (const cell of front) {
+      const [column, row] = [cell % columns, Math.floor(cell / columns)];
+      const beside = [
+        column > 0 ? cell - 1 : -1,
+        column + 1 < columns ? cell + 1 : -1,
+        row > 0 ? cell - columns : -1,
+        row + 1 < rows ? cell + columns : -1,
+      ];
+      for (const other of beside) {
+        if (other < 0 || Number.isFinite(height(other))) continue;
+        drawn[5 + other] = height(cell);
+        next.push(other);
+      }
+    }
+    front = next;
+  }
+  return drawn;
 }
 
 /** The floor a body stands on at (x, y) of the zone's frame, as the room stands it: the Forge's floor under ground,

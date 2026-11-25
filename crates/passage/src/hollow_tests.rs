@@ -51,7 +51,8 @@ fn a_body_driven_at_a_hollows_wall_is_held_inside_its_bounds_by_the_ground() {
                         movement::step_body(&body, &controls, &hollow.blocks, &hollow.ground, movement::TICK_SECONDS);
                     if !within(&hollow.bounds, [body.x, body.y]) || !hollow.ground.stands_at(body.x, body.y) {
                         escaped.push(format!(
-                            "week {week} zone {} {:?} {:?}: from {start:.1?} aslant {aslant} run {run} jump {jump}, out at {:.1?}",
+                            "week {week} zone {} {:?} {:?}: from {start:.1?} aslant {aslant} run {run} jump {jump}, \
+                             out at {:.1?}",
                             plan.zone.number,
                             plan.zone.ground,
                             plan.zone.size,
