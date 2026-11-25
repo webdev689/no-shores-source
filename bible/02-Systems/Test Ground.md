@@ -281,8 +281,8 @@ XP; each item's nodes, column by column, bought and chosen, with what a node cos
 Vestiges, those lying for them on the ground, and the vault; and the answer to their last ask.
 
 - **Asks.** Its buttons wear an item in its slot, take one off, buy a node or choose among
-  those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to
-  an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes: the room
+  those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is used by
+  holding its button beside what is held, growing every piece worn. While the mouse is free the room in the page waits, but an ask still goes: the room
   runs on, the player standing still, until it has answered, a second of its time at most, so each answer shows at
   once. A refusal says why.
 - **The stall** stands south-east of the start, a sealed Vestige's mark over it as over a keeper ([[Game]], "Over

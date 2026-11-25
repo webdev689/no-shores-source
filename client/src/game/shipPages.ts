@@ -26,7 +26,7 @@ import {
 } from './gearNodes.ts';
 import { tileOf, vendorsOf } from './gearScreen.ts';
 import { shelvesNode } from './inventoryPage.ts';
-import { bar, nodeGrid } from './itemPage.ts';
+import { bar, nodeGrid } from './itemNodes.ts';
 import type { MenuContext } from './menuPage.ts';
 import { headingNode, hintNode, shipPage } from './menuPages.ts';
 import {
@@ -394,7 +394,7 @@ function officerPage(context: MenuContext, officer: GearOfficer): Node {
       officerHead(officerShown(officer), context.sizes.name, '', true),
       ...(perks.length > 0 ? [heading('Perks'), ...perks.map((perk) => traitNode(perk, size))] : []),
       heading('Nodes'),
-      nodeGrid(context, { ...officerAsItem(officer), rarity: officer.grade }, officerColumns(officer)),
+      nodeGrid(context, officerAsItem(officer), officerColumns(officer)),
     ],
   };
 }
