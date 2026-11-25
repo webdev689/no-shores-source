@@ -27,14 +27,15 @@ pub enum Cache {
     Lamp(u8),
 }
 
-/// Each deal's cache at level 5, XP then Aurem: the passages' main pay, sized for a zone of about three minutes
-/// (`band::PASSAGE_SECONDS`), the ten-minute zone's cache times 0.31, as 192 s over its 635 s.
-pub const SKIRMISH_PAY: (u32, u32) = (430, 33);
-pub const MISSION_PAY: (u32, u32) = (560, 42);
-pub const VAULT_PAY: (u32, u32) = (870, 65);
-pub const VEIN_PAY: (u32, u32) = (220, 16);
-pub const RELIQUARY_PAY: (u32, u32) = (220, 16);
-pub const LAMP_PAY: (u32, u32) = (870, 65);
+/// Each deal's cache at level 5, XP then Aurem: the passages' main pay, sized for a zone of about three and a half
+/// minutes (`band::PASSAGE_SECONDS`), the ten-minute zone's cache times 0.42: 202 s over its 635 s, and a third more,
+/// so the shallowest depth a player of level 5 plays for its pay keeps within the band of a patrol zone's hour.
+pub const SKIRMISH_PAY: (u32, u32) = (580, 45);
+pub const MISSION_PAY: (u32, u32) = (760, 57);
+pub const VAULT_PAY: (u32, u32) = (1180, 88);
+pub const VEIN_PAY: (u32, u32) = (300, 22);
+pub const RELIQUARY_PAY: (u32, u32) = (300, 22);
+pub const LAMP_PAY: (u32, u32) = (1180, 88);
 /// A skirmish's, a mission's, a reliquary's and a lamp's chance of a Vestige, before depth raises it.
 pub const SKIRMISH_VESTIGE: f64 = 0.103;
 pub const MISSION_VESTIGE: f64 = 0.155;

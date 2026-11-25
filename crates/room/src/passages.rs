@@ -91,6 +91,9 @@ pub(crate) struct Zone {
     pub held: Vec<HeldBand>,
     /// The most players seen in the zone at once, whom its Minibosses and Bosses stand toughened for.
     pub most_seen: usize,
+    /// Above ground, the hollow's floor's ring, which its bands' posts and beats keep inside as the section's ring does
+    /// under ground: the section reaches past the walls to the ground's end, where no foe walks.
+    pub floor: Option<Vec<[f64; 2]>>,
 }
 
 /// How far before a mouth's door a player home from a lamp stands, metres.
@@ -188,6 +191,7 @@ impl Room {
             veined: BTreeSet::new(),
             held: Vec::new(),
             most_seen: 1,
+            floor: if let Laid::Open(hollow) = &plan.ground { Some(hollow.ring.clone()) } else { None },
         })));
         room.foes_most = room.zone_foes_most();
         if let (Deal::Vault, Laid::Under(dungeon)) = (zone.deal, &plan.ground) {

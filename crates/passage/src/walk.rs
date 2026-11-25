@@ -41,7 +41,8 @@ impl Walk {
 
     /// Under ground: round the dungeon's rock, its own solids and `extra` (each min x, min y, max x, max y, top), on
     /// its one floor.
-    pub(crate) fn under(dungeon: &Dungeon, extra: &[[f64; 5]]) -> Self {
+    #[must_use]
+    pub fn under(dungeon: &Dungeon, extra: &[[f64; 5]]) -> Self {
         let mut walk = Walk::over([0.0, 0.0], [dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M]);
         for (cell, kind) in dungeon.cells.iter().enumerate() {
             if *kind == Cell::Rock {

@@ -184,7 +184,8 @@ passages' own pieces standing in it with their solids.
   stands the deck crew instead: Deckhands, Hookmen and Pistoleers, Bosuns past 10, led by a Bosun or a Tithe-Mate. A
   lamp's guard is an Elite band at the first lamp, the Reeve and an Elite band at the second, the Tithe-Mate and an
   Elite band at the third, and at the fourth one of the island's two Elite Dungeons' Bosses, the week's by turns, and
-  two Elite bands. A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
+  two Elite bands. Above ground a band's places and its beat keep inside the hollow's floor, its beat a band's spread
+  in from the floor's edge, as under ground they keep inside the section. A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
   Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
   (`lamps::KILL_SHARE`), and so of the officer and boon XP that follow it; Bountiful's more Vestiges are paid whole
@@ -222,7 +223,8 @@ passages' own pieces standing in it with their solids.
 A dead lamp kindles, a reliquary opens and the ring is held only while no foe stands within 8 m of it
 (`CONTEST_M`); a hold begun with one near is refused so (`FoesNear`). A wave is two to four of the zone's roster
 taking its currents (Crowded's more, Veteran's Majors, Hardened's health) standing at the post or spot nearest a
-player but 12 m from every one, each hunting the nearest player. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
+player but 12 m from every one, each hunting the nearest player. A wave's foe, and a deal's target, stands on the
+floor at the navmesh's point nearest its place, never on a dungeon's rock or on a solid's top. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
 and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, held the
 ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again; a player who came after
 it was done goes on once that round is done. A company's room does not begin again, and a member who comes after it
@@ -232,13 +234,13 @@ was done finds it done.
 
 - **A cache** is paid at the zone's level and depth (`Character::pay_cache`): its XP and Aurem times `pay_times` (1 at
   the first depth to 1.25 at the twentieth), its chances of finds times `find_times` (1 to 2); its finds go into the
-  haul. At level 5: a skirmish 430 XP and 33 Aurem and a Vestige about one time in ten; a mission 560 and 42 and a
-  Vestige about one time in six; a vault 870 and 65, its Miniboss's item about one time in three and a Vestige as a
-  Miniboss's kill leaves one; a vein 220 and 16, its six nodes and two fragments; a reliquary 220 and 16, a sure
-  Vestige and two to five fragments, their stock rolled apart from their count; a lamp 870 and 65 and a sure Vestige.
-  A zone takes one player about three minutes over about five foes (`room::deal_measure_tests`), so its cache, the
-  passages' main pay, is sized for that, and its foes' share of a kill keeps the passages inside the band
-  ([[Activities]], "The band").
+  haul. At level 5: a skirmish 580 XP and 45 Aurem and a Vestige about one time in ten; a mission 760 and 57 and a
+  Vestige about one time in six; a vault 1,180 and 88, its Miniboss's item about one time in three and a Vestige as a
+  Miniboss's kill leaves one; a vein 300 and 22, its six nodes and two fragments; a reliquary 300 and 22, a sure
+  Vestige and two to five fragments, their stock rolled apart from their count; a lamp 1,180 and 88 and a sure Vestige.
+  A zone takes one player about three and a half minutes over about six foes (`room::deal_measure_tests`), so its
+  cache, the passages' main pay, is sized for that and a third more, which with its foes' share of a kill keeps the
+  passages inside the band at every depth a player plays for its pay ([[Activities]], "The band").
 - **A lamp lit** (E held 2 s within 3 m of its plinth, once its guard is down, each player for themselves) keeps the
   haul: items as found, Vestiges carried or to the vault or the mail, materials added. The day's first lamp lit on an
   island whose zone's foes stand within three levels of the player pays a dungeon of the day's clear and a sure
@@ -435,7 +437,9 @@ and a file of one's own asks for any other. Every picture is drawn by the game's
 
 ## Limits
 
-- A body may scramble aslant up a hollow's wall to its lip, where no foe follows (`crates/passage/src/hollow.rs`).
+- A body may scramble aslant up a hollow's wall to its lip (`crates/passage/src/hollow.rs`). No foe walks there, but a
+  foe pressed into a hollow's cliff, backing off or fleeing, takes hold of it and climbs to its top, where only a
+  player who climbs after it reaches it.
 - A small strand stands two of its five wrecks.
 - From the arrival in a narrow ravine, or by a strand's wreck, the eye behind the body can stand in rock or timber.
 - The pictures' hollows stand under a plain sky colour, and the way's frames over a plain ground.

@@ -526,6 +526,36 @@ fn a_homeward_dive_joining_another_islands_patrol_zone_loses_its_haul() {
 }
 
 #[test]
+fn a_deals_foes_stand_on_a_dungeons_floor_never_on_a_solids_top() {
+    // A wave stands its foes round a post or a spot as far out as a band spreads; one whose place falls inside a jamb
+    // or a pillar stands beside it on the floor, never on its top where no player reaches it.
+    let mut high = Vec::new();
+    for week in 2_900..2_906 {
+        let web = web(week);
+        for zone in web.zones.iter().filter(|zone| matches!(zone.ground, passage::Ground::Under { .. })) {
+            let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            let modifiers = gear::passages::week_modifiers(ISLAND, week);
+            let Some(mut room) = Room::passage(&plan, BAND, modifiers, (ISLAND, week, Route::Public)) else { continue };
+            let middles: Vec<[f64; 2]> = plan.sites.posts.iter().chain(&plan.sites.spots).copied().collect();
+            for (nth, middle) in (0_u32..).zip(&middles) {
+                for turn in 0..8_u32 {
+                    let angle = core::f64::consts::TAU * f64::from(turn) / 8.0;
+                    let spread = crate::garrison::SPREAD;
+                    let at = [middle[0] + libm::sin(angle) * spread, middle[1] - libm::cos(angle) * spread];
+                    let member = (::foes::roster::RUNNER, ::foes::Rank::Minor);
+                    let Some(id) = room.stand_deal_foe(member, at, 0.0, nth * 8 + turn) else { continue };
+                    let z = room.foes[&id].fighter.body.z;
+                    if z > dungeon::FLOOR_M + movement::TUNING.step {
+                        high.push(format!("week {week} zone {} round {middle:.1?}: {z:.1} m up", zone.number));
+                    }
+                }
+            }
+        }
+    }
+    assert!(high.is_empty(), "{} stood up high, the first: {:#?}", high.len(), &high[..high.len().min(12)]);
+}
+
+#[test]
 fn a_kindles_next_wave_waits_for_the_last_to_be_down_and_a_zone_stands_nine_at_most() {
     let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Kindle), None, Route::Public);
     let player = diver(&mut room, week, &plan);

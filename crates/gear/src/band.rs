@@ -1,10 +1,9 @@
 //! The band: an hour of each activity at a level, reckoned on average from the rules' own pay and the measured times
 //! below, against a patrol zone's at the same level, the game's floor of play, so no activity is the one place worth
 //! playing ("I dont want it to be the goto where other content doesnt matter"). XP and Aurem stand within 0.7 and
-//! twice a patrol zone's, for a patrol's dungeon's own clear, the owner's, measured 0.73 of its Aurem; loot within
-//! three quarters and five times, for the owner's order asks harder content to drop more and better, and the week's
-//! Abyss Dungeon run again measured 4.5. Loot weighs each colour twice the one below, as each drops half as often or
-//! less. What is counted and the table are in `Activities` ("The band").
+//! twice a patrol zone's; loot within three quarters and five times, for the owner's order asks harder content to drop
+//! more and better. Loot weighs each colour twice the one below, as each drops half as often or less. What is counted
+//! and the table are in `Activities` ("The band").
 
 use crate::chests::{CHEST_AUREM, CHEST_FRAGMENTS, CHEST_RESOURCE, CHEST_XP, FIRST_HEROIC_ESSENCE};
 use crate::lamps::{
@@ -34,9 +33,9 @@ pub const PLAY_HOURS_A_WEEK: f64 = 14.0;
 const DAYS_A_WEEK: f64 = 7.0;
 
 /// The seconds a scripted player takes for each foe of a patrol zone's garrison, walking between its groups, and
-/// the foes it felled before the first stood again: `room::band_measure_tests::measure_the_pace`, 22 to 31 s and 11
-/// to 16 (three or four groups of two to four, `room::garrison`); the balance pass's "some 25 s a kill on foot".
-pub const PATROL_SECONDS_A_FOE: f64 = 25.0;
+/// the foes the garrison stands: `room::band_measure_tests::measure_the_pace`, 11.7 to 12.4 s and 9 to 15 over three
+/// zones (three or four groups of two to four, `room::garrison`).
+pub const PATROL_SECONDS_A_FOE: f64 = 12.0;
 pub const PATROL_FOES: f64 = 12.0;
 /// A cleared group stands again 120 s after it fell (`room::garrison::STAND_AGAIN`); the player gathers meanwhile.
 pub const STAND_AGAIN_SECONDS: f64 = 120.0;
@@ -54,17 +53,17 @@ pub const EVENT_SECONDS: f64 = 210.0;
 pub const CHEST_TIER_SHARES: [f64; 4] = [0.25, 0.25, 0.25, 0.25];
 
 /// A patrol's dungeon: its foes but its Reeve, and the seconds a scripted player takes for each, its rooms walked
-/// (`measure_the_pace`: 37 to 118 s a foe over nine dungeons, 55 the middle; 5 to 24 foes, the room holding 24);
-/// with its Reeve's 51 s (`measure_blows`), and the walk back out to the next of the patrol's three: Claude's minute.
-pub const DUNGEON_FOES: f64 = 14.0;
-pub const DUNGEON_SECONDS: f64 = 14.0 * 55.0 + 51.0;
+/// (`measure_the_pace`, nine dungeons: 7 to 22 foes, 17 on average; 21 to 38 s a foe, 28 over them all); with its
+/// Reeve's 51 s (`measure_blows`), and the walk back out to the next of the patrol's three: Claude's minute.
+pub const DUNGEON_FOES: f64 = 17.0;
+pub const DUNGEON_SECONDS: f64 = 17.0 * 28.0 + 51.0;
 pub const DUNGEON_WALK_SECONDS: f64 = 60.0;
-/// An Elite Dungeon's run at its foes' level: its foes but its Boss (the room's 24 most, less its Boss), at 36 to 57 s
-/// each (`measure_the_pace`, its seals broken), and its Boss's 106 s (`measure_blows`); a run found waits a minute
-/// at most (`Activities`, "Runs and companies"). Every activity is measured for one player: a company shares every
-/// kill, so its hour grows alike everywhere.
-pub const ELITE_FOES: f64 = 23.0;
-pub const ELITE_SECONDS: f64 = 23.0 * 45.0 + 106.0;
+/// An Elite Dungeon's run at its foes' level: its foes but its Boss, and the seconds a scripted player takes for each
+/// (`measure_the_pace`, six dungeons, their seals broken: 18 to 23 foes, 22 on average; 23 to 34 s a foe, 27 over
+/// them all), and its Boss's 106 s (`measure_blows`); a run found waits a minute at most (`Activities`, "Runs and
+/// companies"). Every activity is measured for one player: a company shares every kill, so its hour grows alike.
+pub const ELITE_FOES: f64 = 22.0;
+pub const ELITE_SECONDS: f64 = 22.0 * 27.0 + 106.0;
 pub const RUN_WAIT_SECONDS: f64 = 60.0;
 
 /// The sea: a ship sighted every four to six minutes and a fight of three and a half to four and a half
@@ -89,11 +88,11 @@ pub const SEA_FOES: [Foe; 4] = [Foe::Skirmisher, Foe::Swordsman, Foe::Brute, Foe
 pub const SEA_PIECES: [f64; 4] = [3.0, 4.0, 5.0, 6.0];
 
 /// A passage zone: its foes felled and the seconds a scripted player takes over its deal to done, on foot
-/// (`room::deal_measure_tests::measure_the_deals`, six weeks' zones, three of each deal and lamp, those it did: about
-/// 5 foes and 192 s a zone, each deal weighed as the web deals it, 45 s a foe against a patrol's 25), and the passage
+/// (`room::deal_measure_tests::measure_the_deals`, six weeks' zones, three of each deal and lamp, the 43 of 45 it did:
+/// 6.4 foes and 202 s a zone, each deal weighed as the web deals it, 38 s a foe against a patrol's 12), and the passage
 /// between zones, 1.5 s up, 2 s across and 1.5 s down and in (`Passages as Claude Builds Them`).
-pub const PASSAGE_FOES: f64 = 5.0;
-pub const PASSAGE_SECONDS: f64 = 192.0;
+pub const PASSAGE_FOES: f64 = 6.4;
+pub const PASSAGE_SECONDS: f64 = 202.0;
 pub const PASSAGE_BETWEEN_SECONDS: f64 = 5.0;
 /// The passages' island, Saltmere's band, and its depths.
 pub const PASSAGE_BAND: (u8, u8) = (1, 4);
