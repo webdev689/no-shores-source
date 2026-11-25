@@ -182,8 +182,10 @@ function divingOf(body: string | null): Diving {
   }
 }
 
-/** Whether a body's character lit lamp `number` of an island's passages this week. */
-function lit(diving: Diving, island: string, number: number): boolean {
+/** Whether a body's character lit lamp `number` of an island's passages in `week`: its record of the week holds
+ *  last week's lamps until something weekly is recorded, so its week must be the web's. */
+function lit(diving: Diving, island: string, week: number, number: number): boolean {
+  if (diving.activity?.this_week?.week !== week) return false;
   const lamps = (diving.activity?.this_week?.passage_lamps as Record<string, unknown> | undefined)?.[island];
   return Array.isArray(lamps) && lamps.includes(number);
 }
@@ -216,7 +218,7 @@ function intoPassage(room: string, from: string | null, passages: Passages): boo
   if (!patrol || patrol.id !== web.patrol || inside(patrol) || patrol.guild !== null) return false;
   const lamp = typeof dive.lamp === 'number' ? dive.lamp : 0;
   if (lamp === 0) return typeof dive.mouth === 'number' && web.mouths[dive.mouth]?.zone === to.zone;
-  return zone.lamp === lamp && diving.activity?.this_week?.week === to.week && lit(diving, to.island, lamp);
+  return zone.lamp === lamp && lit(diving, to.island, to.week, lamp);
 }
 
 /** Whether a kept character comes home to the patrol zone `patrol` out of the passage zone `left`: the patrol zone of
@@ -224,5 +226,5 @@ function intoPassage(room: string, from: string | null, passages: Passages): boo
 function litHome(left: NonNullable<ReturnType<typeof passageRoom>>, patrol: string, passages: Passages): boolean {
   const web = passages.web(left.island, left.week);
   const lamp = web?.zones.find((each) => each.number === left.zone)?.lamp ?? null;
-  return web?.patrol === patrol && lamp !== null && lit(divingOf(passages.body), left.island, lamp);
+  return web?.patrol === patrol && lamp !== null && lit(divingOf(passages.body), left.island, left.week, lamp);
 }

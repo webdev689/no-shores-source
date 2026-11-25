@@ -231,6 +231,7 @@ export class RoomHost extends DurableObject<Env> {
     const accounts = this.env.ACCOUNTS;
     const room = {
       character: (player: number) => this.guarded(() => this.room.character(player), null),
+      judgedMoved: (player: number) => this.guarded(() => this.room.judgedMoved(player), false),
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
       own: (player: number, account: string) => {
