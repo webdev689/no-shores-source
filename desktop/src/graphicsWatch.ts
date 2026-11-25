@@ -126,7 +126,7 @@ export interface GraphicsWatch {
 
 export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effects: WatchEffects): GraphicsWatch {
   const startedAt = effects.now();
-  const next = launch.named ? null : (launch.next[0] ?? null);
+  const next = launch.next[0] ?? null;
   /** A failure or sighting is kept under the backend, but never SwiftShader's or a launch named for itself. */
   const kept = launch.backend !== 'swiftshader' && !launch.named;
   let failing = false;
@@ -153,7 +153,7 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
       return;
     }
     if (told) await effects.tell(failedBox(launch.backend, next)).catch(() => undefined);
-    effects.restart(written ? [] : [`${BACKEND_ARGUMENT}${next}`]);
+    effects.restart(written ? [] : [`${BACKEND_ARGUMENT}${launch.next.join(',')}`]);
   }
 
   async function askPlayer(): Promise<void> {

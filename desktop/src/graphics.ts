@@ -71,9 +71,16 @@ export interface Desk {
   readonly wayland: boolean;
 }
 
-/** Whether the desktop the app opens on is Wayland's, from the variables a desktop session sets. */
-export const isWayland = (variables: Readonly<Record<string, string | undefined>>): boolean =>
-  variables['XDG_SESSION_TYPE'] === 'wayland' || Boolean(variables['WAYLAND_DISPLAY']);
+/** Whether Electron opens the app's windows on Wayland: as the player's `--ozone-platform` says, else by the hint,
+ *  Auto unless told, which takes Wayland only in a Wayland session (a console's compositor gets X11). */
+export function isWayland(variables: Readonly<Record<string, string | undefined>>, argv: readonly string[]): boolean {
+  const told = (name: string) => argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const platform = told('ozone-platform');
+  if (platform) return platform === 'wayland';
+  const hint = told('ozone-platform-hint') ?? 'auto';
+  const session = variables['XDG_SESSION_TYPE'] === 'wayland';
+  return hint === 'auto' ? session : hint === 'wayland' && (session || Boolean(variables['WAYLAND_DISPLAY']));
+}
 
 /** The desk's backends, in the order Auto tries them: the first is its default. */
 export function orderOf(desk: Desk): readonly Backend[] {
@@ -108,6 +115,8 @@ export interface Launch {
   readonly held: GraphicsFailure | null;
   /** Named for this launch alone, by the argument or the variable. */
   readonly named: boolean;
+  /** Every backend had failed: this launch tries them all again, its record cleared. */
+  readonly afresh: boolean;
 }
 
 /** Whether `backend` failed on record under this Chromium (a record's card is checked once the launch knows its own,
@@ -125,18 +134,26 @@ export function launchFor(input: {
   readonly variable: string | undefined;
 }): Launch {
   const order = orderOf(input.desk);
-  const named = input.argv.find((arg) => arg.startsWith(BACKEND_ARGUMENT))?.slice(BACKEND_ARGUMENT.length);
-  const asked = isBackend(named) ? named : isBackend(input.variable) ? input.variable : null;
-  if (asked) return { backend: asked, next: [], chosen: input.chosen, held: null, named: true };
+  // The argument (or the variable) names one backend, or the backends left in turn, comma between.
+  const argued = input.argv.find((arg) => arg.startsWith(BACKEND_ARGUMENT))?.slice(BACKEND_ARGUMENT.length);
+  const listed = [argued, input.variable].map((names) => names?.split(',') ?? []);
+  const asked = listed.find((names) => names.length > 0 && names.every(isBackend)) as Backend[] | undefined;
+  if (asked) {
+    const [backend = 'vulkan-skia', ...next] = asked;
+    return { backend, next, chosen: input.chosen, held: null, named: true, afresh: false };
+  }
   const own = backendsOf(input.chosen, input.desk);
   const preferred = [...own, ...order.filter((backend) => !own.includes(backend))];
   const left = preferred.filter((backend) => !failedOn(backend, input.failures, input.chromium));
-  // With every one failed, the default is tried as it comes: the game then says why it cannot draw.
-  const [backend = order[0] ?? 'vulkan-skia', ...next] = left;
+  // With every one failed, the player was told to mend the driver and open the app again: so each is tried again.
+  const afresh = left.length === 0;
+  const [backend = 'vulkan-skia', ...next] = afresh ? preferred : left;
   // The choice is held only while this launch takes another API than the one chosen.
   const holder =
-    own.length > 0 && !own.includes(backend) ? failedOn(own[0] ?? backend, input.failures, input.chromium) : null;
-  return { backend, next, chosen: input.chosen, held: holder, named: false };
+    !afresh && own.length > 0 && !own.includes(backend)
+      ? failedOn(own[0] ?? backend, input.failures, input.chromium)
+      : null;
+  return { backend, next, chosen: input.chosen, held: holder, named: false, afresh };
 }
 
 /** The failures to keep once a launch knows its card: one made on another card, or under another Chromium, is

@@ -27,8 +27,10 @@ import { startUpdater } from './updater.ts';
 import { followsFeed, transportOf } from './updates.ts';
 
 // The data folder keeps the name it was first made with, whatever the app is called later, so a new name never strands
-// a player's settings; `NOSHORES_USER_DATA` moves it, for a run that tests the app.
-app.setPath('userData', process.env['NOSHORES_USER_DATA'] ?? path.join(app.getPath('appData'), 'No Shores'));
+// a player's settings; `NOSHORES_USER_DATA` moves it, for a run that tests the app. A copy run from the source keeps
+// its own, so a dev page's graphics failures never hold the player's installed copy back.
+const DATA_NAME = app.isPackaged ? 'No Shores' : 'No Shores (dev)';
+app.setPath('userData', process.env['NOSHORES_USER_DATA'] ?? path.join(app.getPath('appData'), DATA_NAME));
 const DATA = app.getPath('userData');
 const LOG = path.join(DATA, 'app.log');
 const log = (line: string) => {
@@ -43,17 +45,22 @@ const log = (line: string) => {
 
 const config = new Config(DATA);
 const chromium = process.versions.chrome ?? 'unknown';
-const desk = { platform: process.platform, wayland: process.platform === 'linux' && isWayland(process.env) };
-const launchOf = () =>
+const desk = {
+  platform: process.platform,
+  wayland: process.platform === 'linux' && isWayland(process.env, process.argv),
+};
+/** The launch `argv` would bring: this one's, or the next's, which a restart starts without the backend's argument. */
+const launchOf = (argv: readonly string[]) =>
   launchFor({
     desk,
     chosen: config.get().graphics,
     failures: config.get().failures,
     chromium,
-    argv: process.argv,
+    argv,
     variable: process.env[BACKEND_VARIABLE],
   });
-const launch = launchOf();
+const launch = launchOf(process.argv);
+if (launch.afresh) config.set({ failures: [] });
 for (const [name, value] of switchesFor(launch.backend)) app.commandLine.appendSwitch(name, value);
 
 const address = gameAddress(process.env[GAME_URL_VARIABLE], app.isPackaged);
@@ -117,7 +124,7 @@ const info = () =>
     desk,
     chosen: config.get().graphics,
     launch,
-    next: launchOf(),
+    next: launchOf([]),
     report: watch.reported(),
     update: updater.update(),
   });

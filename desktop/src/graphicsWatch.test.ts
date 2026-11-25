@@ -26,6 +26,7 @@ const launchOf = (backend: Launch['backend'], next: Launch['next']): Launch => (
   chosen: 'auto',
   held: null,
   named: false,
+  afresh: false,
 });
 
 test('the default takes whatever card and API Chromium gives it', () => {
@@ -127,10 +128,14 @@ test('the same API reached another way is told as such', async () => {
   assert.match(run.told[0]?.detail ?? '', /reaching Vulkan another way/);
 });
 
-test('a failure that could not be kept starts the next backend for that launch alone', async () => {
-  const run = harness(launchOf('d3d12', ['d3d11']), windows, [], false);
+test('a failure that could not be kept starts the backends left in turn, by name', async () => {
+  const run = harness(launchOf('vulkan', ['vulkan-unlisted', 'vulkan-skia']), wayland, [], false);
   await run.watch.report({ ...card, adapter: false });
-  assert.deepEqual(run.restarts, [[`${BACKEND_ARGUMENT}d3d11`]]);
+  assert.deepEqual(run.restarts, [[`${BACKEND_ARGUMENT}vulkan-unlisted,vulkan-skia`]]);
+  const named = harness({ ...launchOf('vulkan-unlisted', ['vulkan-skia']), named: true }, wayland);
+  await named.watch.report({ ...card, adapter: false });
+  assert.deepEqual(named.restarts, [[`${BACKEND_ARGUMENT}vulkan-skia`]], 'a named launch with backends left goes on');
+  assert.deepEqual(named.failures(), [], 'and keeps nothing');
 });
 
 test('with no backend left the player is told what to do, and the app does not start again', async () => {

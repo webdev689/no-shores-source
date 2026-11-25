@@ -57,9 +57,10 @@ with a dev server or a local build); an installed copy takes only this machine's
 
 - **One copy at a time.** A second launch brings the first window forward.
 - **The data folder** is `No Shores` under the system's application data, whatever the app is called later, so a
-  new name never strands it; `NOSHORES_USER_DATA` moves it, for a run that tests the app. Beside the browser's data
-  it holds `config.json` (`config.ts`: the graphics API chosen, each backend's failures and sightings, the window's
-  place, whether updates are looked for), written whole or not at all, and `app.log`, the shell's log within 64 KB.
+  new name never strands it, and `No Shores (dev)` for a copy run from the source; `NOSHORES_USER_DATA` moves it,
+  for a run that tests the app. Beside the browser's data it holds `config.json` (`config.ts`: the graphics API
+  chosen, each backend's failures and sightings, the window's place, whether updates are looked for), written whole
+  or not at all, and `app.log`, the shell's log within 64 KB.
 - **The window** (`gameWindow.ts`) opens where it was left while a screen still shows it, else centred at 80% of
   the main screen, at most 1920 × 1080 and at least 960 × 600, and keeps its place, maximized and whole-screen state.
   It is sandboxed, isolated from its preload, with no Node and no `<webview>`. F11 and Alt+Enter make it whole-screen

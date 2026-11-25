@@ -100,7 +100,8 @@ a Linux container with no GPU, Mesa's software Vulkan (llvmpipe) and SwiftShader
   card ANGLE draws on, which `force_high_performance_gpu` sets.
 - **Linux.** WebGPU through OpenGL is offered by Wayland's platform alone (`ozone_platform_wayland.cc`), and entry 186
   of Chromium's GPU list (`software_rendering_list.json`) keeps it from every card but Intel's Gen12 and later on Mesa
-  22 and NVIDIA's from driver 535.183.01; `--ignore-gpu-blocklist=186` lifts that entry alone (`service_utils.cc`).
+  22 and NVIDIA's from driver 535.183.01; `--ignore-gpu-blocklist=186` lifts that entry (`service_utils.cc`), and
+  entry 186 of the driver-bug list too, which takes the same numbers (`gpu_util.cc`) but has no entry 186.
   Measured: with no switch an X11 desktop gave no adapter; with `Vulkan` Chromium ran its GPU process on Vulkan.
   [What's new in WebGPU 144](https://developer.chrome.com/blog/new-in-webgpu-144),
   [147 and 148](https://developer.chrome.com/blog/new-in-webgpu-147-148).

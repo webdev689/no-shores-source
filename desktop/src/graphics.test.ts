@@ -40,10 +40,16 @@ test('a player chooses an API only where there is more than one', () => {
   assert.deepEqual(choicesOf(mac), ['auto']);
 });
 
-test('a Wayland desktop is known by the variables its session sets', () => {
-  assert.equal(isWayland({ XDG_SESSION_TYPE: 'wayland' }), true);
-  assert.equal(isWayland({ WAYLAND_DISPLAY: 'wayland-0' }), true);
-  assert.equal(isWayland({ XDG_SESSION_TYPE: 'x11', DISPLAY: ':0' }), false);
+test('the app opens on Wayland as Electron picks it: by the session, or as the player told it', () => {
+  assert.equal(isWayland({ XDG_SESSION_TYPE: 'wayland' }, []), true);
+  assert.equal(isWayland({ XDG_SESSION_TYPE: 'x11', DISPLAY: ':0' }, []), false);
+  // A compositor started from a console sets a display but no Wayland session: Electron then opens on X11.
+  assert.equal(isWayland({ XDG_SESSION_TYPE: 'tty', WAYLAND_DISPLAY: 'wayland-1' }, []), false);
+  assert.equal(isWayland({ XDG_SESSION_TYPE: 'wayland' }, ['--ozone-platform=x11']), false);
+  assert.equal(isWayland({ XDG_SESSION_TYPE: 'wayland' }, ['--ozone-platform-hint=x11']), false);
+  assert.equal(isWayland({ XDG_SESSION_TYPE: 'tty' }, ['--ozone-platform=wayland']), true);
+  assert.equal(isWayland({ WAYLAND_DISPLAY: 'wayland-1' }, ['--ozone-platform-hint=wayland']), true);
+  assert.equal(isWayland({}, ['--ozone-platform-hint=wayland']), false);
 });
 
 test("Auto takes the platform's default, with the rest still to try", () => {
@@ -53,6 +59,7 @@ test("Auto takes the platform's default, with the rest still to try", () => {
     chosen: 'auto',
     held: null,
     named: false,
+    afresh: false,
   });
 });
 
@@ -75,9 +82,12 @@ test('a failure under another Chromium holds nothing: an update of the app tries
   assert.equal(launchFor({ ...plain, desk: windows, failures: [failed('d3d12', '150.0')] }).backend, 'd3d12');
 });
 
-test('with every backend failed the default is tried as it comes, with nothing after it', () => {
+test('with every backend failed, as the player was told, opening the app again tries them all afresh', () => {
   const launch = launchFor({ ...plain, desk: windows, failures: [failed('d3d12'), failed('d3d11')] });
-  assert.deepEqual([launch.backend, launch.next], ['d3d12', []]);
+  assert.deepEqual([launch.backend, launch.next, launch.afresh, launch.held], ['d3d12', ['d3d11'], true, null]);
+  const chosen = launchFor({ ...plain, desk: windows, chosen: 'd3d11', failures: [failed('d3d12'), failed('d3d11')] });
+  assert.deepEqual([chosen.backend, chosen.next], ['d3d11', ['d3d12']], "the player's choice first");
+  assert.equal(launchFor({ ...plain, desk: windows, failures: [failed('d3d12')] }).afresh, false);
 });
 
 test('an API the desk does not have is no choice there', () => {
@@ -137,7 +147,13 @@ test("a card is its vendor, device and driver: the active one, never a software 
   assert.equal(gpuKeyOf([]), null);
 });
 
-test('a choice is held only while the launch takes another API: with every backend failed, it runs the choice', () => {
-  const launch = launchFor({ ...plain, desk: windows, chosen: 'd3d12', failures: [failed('d3d12'), failed('d3d11')] });
-  assert.deepEqual([launch.backend, launch.held], ['d3d12', null]);
+test('the argument may name the backends left in turn, as a restart that could not keep its failure does', () => {
+  const launch = launchFor({
+    ...plain,
+    desk: wayland,
+    argv: ['app', `${BACKEND_ARGUMENT}vulkan-unlisted,vulkan-skia`],
+  });
+  assert.deepEqual([launch.backend, launch.next, launch.named], ['vulkan-unlisted', ['vulkan-skia'], true]);
+  const unknown = launchFor({ ...plain, desk: wayland, argv: ['app', `${BACKEND_ARGUMENT}vulkan,opengl`] });
+  assert.equal(unknown.named, false, 'a list with a backend the app does not know names nothing');
 });
