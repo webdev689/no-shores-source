@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { LaidRun } from '../../layout/layouts.ts';
 import type { PassagePlan, PassageWeb } from '../../rules/passageRules.ts';
-import { holdAt, homeSpot, mouthAt, onwardAt, passageRoomName } from './passageReach.ts';
+import { holdAt, homeSpot, mouthAt, onwardAt } from './passageReach.ts';
 
 const run = (name: string, door: readonly [number, number]): LaidRun => ({
   name,
@@ -47,10 +47,6 @@ test('in a zone, an onward mouth within 4 m and the lamp or a dead lamp within 3
   assert.equal(holdAt(plan, 34, 20), null, 'four metres off');
 });
 
-test('a zone’s room is named by its island, its web’s week and its number', () => {
-  assert.equal(passageRoomName('continent-1', 2921, 14), 'passage-continent-1-w2921-z14');
-});
-
-test('home, a player stands 3 m out from the mouth they began at, toward the patrol zone’s middle', () => {
-  assert.deepEqual(homeSpot([0, 0], [0, 100]), [0, 3]);
+test('home, a player stands 2 m out from the mouth they began at, toward the patrol zone’s middle', () => {
+  assert.deepEqual(homeSpot([0, 0], [0, 100]), [0, 2]);
 });

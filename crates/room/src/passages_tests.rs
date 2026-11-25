@@ -169,7 +169,7 @@ fn a_lamp_is_lit_for_each_player_once_its_guard_is_down_and_then_they_may_go_hom
     let number = passage::lamp_number(plan.zone.depth).expect("a lamp's depth");
     assert!(room.players[&player].character.activity.this_week.passage_lamps[ISLAND].contains(&number));
     assert_eq!(room.ask_passage(player, PassageAsk::GoHome), 0);
-    assert!(dive(&room, player).is_none(), "home");
+    assert!(dive(&room, player).is_some_and(|dive| dive.homeward), "home, the dive ending in the patrol zone");
 }
 
 #[test]
@@ -241,7 +241,10 @@ fn a_severs_tally_posts_and_a_reckonings_collectors_are_its_deal() {
 #[test]
 fn a_dive_begins_at_a_patrol_zones_mouth_within_reach_of_its_door() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
-    assert!(room.open_mouths(ISLAND, vec![[0.0, 0.0], [50.0, 0.0], [100.0, 0.0]]));
+    assert!(room.open_mouths(
+        ISLAND,
+        vec![([0.0, 0.0], [0.0, 20.0]), ([50.0, 0.0], [50.0, 20.0]), ([100.0, 0.0], [100.0, 20.0])]
+    ));
     let player = room.join().expect("joined");
     let begin = |mouth| PassageAsk::Begin { mouth, route: Route::Public, lamp: None };
     assert_eq!(room.ask_passage(player, begin(1)), gear::Refusal::NotAtMouth as u8 + 1);
@@ -330,4 +333,36 @@ fn a_company_all_down_in_a_gloomy_zone_falls_back_and_loses_its_haul() {
     room.tick();
     assert!(!room.players[&player].fighter.dead(), "fallen back");
     assert!(dive(&room, player).is_some_and(|dive| dive.haul.is_empty()));
+}
+
+#[test]
+fn a_player_home_from_a_lamp_stands_before_the_mouth_they_began_at_keeping_what_they_found() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    assert!(room.open_mouths(
+        ISLAND,
+        vec![([0.0, 0.0], [0.0, 20.0]), ([50.0, 0.0], [50.0, 20.0]), ([100.0, 0.0], [100.0, 20.0])]
+    ));
+    let player = room.join().expect("joined");
+    let mut character = room.players[&player].character.clone();
+    let start = gear::dive::Start {
+        island: ISLAND,
+        week: 2_900,
+        route: Route::Public,
+        mouth: 1,
+        zone: 4,
+        depth: 5,
+        lamp: None,
+    };
+    character.begin_dive(&start).expect("begun");
+    let dive = character.passage.as_mut().expect("diving");
+    (dive.lamp, dive.homeward) = (1, true);
+    dive.haul.materials.add(gear::character::Stuff::Fragments(gear::kinds::Stock::Weapon), 2);
+    let fragments = character.materials.weapon_fragments;
+    room.players.get_mut(&player).expect("here").character = character;
+    room.passage_arrived(player);
+    let found = &room.players[&player];
+    assert!(found.character.passage.is_none(), "the dive ends in the patrol zone");
+    assert_eq!(found.character.materials.weapon_fragments, fragments + 2, "keeping what it carried home");
+    let body = found.fighter.body;
+    assert!(libm::hypot(body.x - 50.0, body.y - 2.0) < 1e-9, "before the second mouth: {:?}", (body.x, body.y));
 }

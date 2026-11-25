@@ -1,3 +1,5 @@
+import { weekOf } from '../client/src/game/guild/guildLaw.ts';
+
 /** The difficulties a voyage sets out at, by the gear crate's numbers. */
 const SEAS = ['normal', 'elite', 'abyss'];
 /** A patrol's dungeons, by their numbers: `dungeon-0` to `dungeon-2`. */
@@ -110,6 +112,54 @@ export function runAsk(room: string, minute: number): string | null {
   return JSON.stringify({ dungeon, tier: named.seas, minute, ...playlist });
 }
 
+/** A passage zone's room: its island's continent's id, its web's week (`gear::clock::week_of`), its zone's number in
+ *  the web, then `--<copy>` (2 to 99) for a public room opened when the ones before it were full, or a company's
+ *  route's `--run-<instance>`. Numbers are spelled without leading zeros, so each room has one name. */
+const PASSAGE =
+  /^passage-(continent-[1-9])-w([1-9][0-9]{0,5})-z(0|[1-9][0-9]{0,2})(?:--([2-9]|[1-9][0-9])|--run-([a-z0-9]{8}))?$/;
+
+/** The most players a public passage zone's room holds; the next joins the next copy (`--2`, `--3`). */
+export const PASSAGE_MOST = 8;
+
+/** A passage zone's room by its whole name (`passage-...`): its island, week and zone, its copy (1 for the first
+ *  public room) and its route's instance (null for a public room). Null for any other spelling, so each room has one
+ *  name and no other spelling opens a fresh room, nor a public copy of a route. */
+export function passageRoom(name: string | null): {
+  readonly island: string;
+  readonly week: number;
+  readonly zone: number;
+  readonly copy: number;
+  readonly run: string | null;
+} | null {
+  const [, island = '', week = '', zone = '', copy, run] = PASSAGE.exec(name ?? '') ?? [];
+  if (island === '') return null;
+  return {
+    island,
+    week: Number(week),
+    zone: Number(zone),
+    copy: copy === undefined ? 1 : Number(copy),
+    run: run ?? null,
+  };
+}
+
+/** A passage zone's room's name: the first public room, a later copy, or a company's route by its instance. */
+export function passageRoomName(island: string, week: number, zone: number, after: number | string = 1): string {
+  const ending = typeof after === 'string' ? `--run-${after}` : after > 1 ? `--${after}` : '';
+  return `passage-${island}-w${week}-z${zone}${ending}`;
+}
+
+/** The ask `open_passage` opens a passage zone's room from, at the Unix minute `minute`, or why it opens none: a name
+ *  that is no passage's, or a week that is neither this week's nor the last (whose room still opens, to tell those
+ *  who come that the passage has shifted). */
+export function passageAsk(name: string, minute: number): { readonly ask: string } | { readonly why: string } {
+  const named = passageRoom(name);
+  if (!named) return { why: 'No such passage.' };
+  const week = weekOf(minute * 60_000);
+  if (named.week !== week && named.week !== week - 1) return { why: "That week's passages are gone." };
+  const route = named.run === null ? 'public' : 'company';
+  return { ask: JSON.stringify({ island: named.island, week: named.week, zone: named.zone, route, minute }) };
+}
+
 /** The letters a run's instance is drawn from: 36, so each of its 8 random bytes is taken modulo 36. */
 const INSTANCE = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -151,14 +201,19 @@ export const RUN_MOST = 4;
  *  holds twice a company, signed in or not: a member's rejoin may come before the room sees their old socket close,
  *  and a socket that never signs in is kept up to five seconds (`TOKEN_WAIT_MS`). */
 export function socketsMost(room: string): number {
-  return privateRun(room) ? RUN_MOST * 2 : 64;
+  if (privateRun(room)) return RUN_MOST * 2;
+  return passageRoom(room) ? PASSAGE_MOST * 2 : 64;
 }
 
-/** Why a run sends away a player whose account would make it more than RUN_MOST accounts, counting theirs; null for
- *  a run with room, or a room that is no run. */
+/** Why a run sends away a player whose account would make it more than RUN_MOST accounts, counting theirs, or a
+ *  public passage zone's room more than PASSAGE_MOST; null for a room with room, or one that is neither. */
 export function runFull(room: string, accounts: number): string | null {
-  return privateRun(room) && accounts > RUN_MOST ? 'This run is full.' : null;
+  if (privateRun(room)) return accounts > RUN_MOST ? 'This run is full.' : null;
+  return passageRoom(room) && accounts > PASSAGE_MOST ? PASSAGE_FULL : null;
 }
+
+/** Why a public passage zone's room sends away a ninth account: the page joins the next copy on it. */
+export const PASSAGE_FULL = 'This passage is full.';
 
 /** The other names a tier answers to in a node's room (`rough` for Elite, `storm` for Abyss), each by its own. */
 const TIER_ALIASES = new Map([
@@ -200,4 +255,18 @@ export function seaRoom(name: string): number | null {
   const difficulty = seas === undefined ? 0 : SEAS.indexOf(seas);
   if (sea !== 'sea' || more.length > 0 || difficulty < 0 || seas === SEAS[0]) return null;
   return difficulty;
+}
+
+/** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens, spelled as the room's one
+ *  name (`canonicalRoom`). */
+export function roomName(request: Request): string | null {
+  const name = /^\/room\/([a-z0-9-]{1,64})$/.exec(new URL(request.url).pathname)?.[1];
+  return name === undefined ? null : canonicalRoom(name);
+}
+
+/** The entrance a join into a patrol's room asks to stand at, `?entrance=<number>`: as a player comes out of that
+ *  entrance's dungeon. Null for none, or a number that is not one. */
+export function entranceOf(request: Request): number | null {
+  const asked = new URL(request.url).searchParams.get('entrance');
+  return asked !== null && /^[0-9]$/.test(asked) ? Number(asked) : null;
 }

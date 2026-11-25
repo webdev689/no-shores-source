@@ -233,7 +233,7 @@ export class Foot {
     into: { readonly number: number; readonly ask: DungeonAsk; readonly room: string },
     layout: DungeonLayout,
     seas: Difficulty = 'normal',
-    passage?: { readonly blocks: readonly Block[]; alone(heard: Heard): Promise<RoomLink> },
+    passage?: { readonly blocks: readonly Block[]; link(heard: Heard, session: string | null): Promise<RoomLink> },
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
@@ -243,9 +243,11 @@ export class Foot {
     const address = context.rooms?.(into.room);
     const dungeon = { patrol: outside.node, ...into, layout };
     return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
-      link: address
-        ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : await (passage?.alone(heard) ?? openAlone(module, outside.text, into, heard, seas)),
+      link: passage
+        ? await passage.link(heard, session)
+        : address
+          ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
+          : await openAlone(module, outside.text, into, heard, seas),
       boxes: passage?.blocks ?? seenBlocks(layout),
       text: outside.text,
       dungeon,

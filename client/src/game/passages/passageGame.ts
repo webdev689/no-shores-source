@@ -18,14 +18,14 @@ import type { Interface } from '../../ui/ui.ts';
 import type { DungeonLayout } from '../dungeonLayout.ts';
 import type { Quest } from '../tasks.ts';
 import type { NodeInfo } from '../worldData.ts';
-import { runInstance, runOf, sharedRun } from '../rooms.ts';
+import { passageRoomName, runInstance, sharedRun } from '../rooms.ts';
 import type { IsleShown } from '../../islands/islePlan.ts';
 import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor } from '../../rules/passageRules.ts';
 import { enterZone, type ZoneEntry } from './passageEnter.ts';
 import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
 import { haulNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
 import type { PieceState } from './passagePieces.ts';
-import { holdAt, homeSpot, mouthAt, onwardAt, passageRoomName } from './passageReach.ts';
+import { holdAt, homeSpot, mouthAt, onwardAt } from './passageReach.ts';
 import { type Way, type WayFrame, wayAt, wayClock, wayOf } from './passageWay.ts';
 import {
   dealTracker,
@@ -71,6 +71,8 @@ interface Asked {
   readonly dive: DiveState<GearItem> | null;
   readonly since: number;
   readonly yes: (dive: DiveState<GearItem> | null) => void;
+  /** Whether a done is its yes: a lamp's Home turns the dive homeward, which the gear does not carry. */
+  readonly done: boolean;
 }
 
 /** The zone the player stands in: its web, its entry and the island shown for it above ground. */
@@ -87,7 +89,9 @@ export class PassageGame {
   private zone: InZone | null = null;
   private asked: Asked | null = null;
   private sign: OnwardSign | null = null;
-  private way: { readonly way: Way; seconds: number; frame: WayFrame | null } | null = null;
+  /** The way under way; `home` while it runs back to the patrol zone, where it comes down to the body the room
+   *  stood, once its first snapshot has come. */
+  private way: { way: Way; seconds: number; frame: WayFrame | null; home: boolean; landed: boolean } | null = null;
   /** The patrol zone's mouth whose card stands open. */
   private mouth: number | null = null;
   /** What the haul held while the player stood, to say plainly what a respawn lost. */
@@ -217,14 +221,21 @@ export class PassageGame {
     const zone = this.zone;
     if (!foot || !zone) return;
     const mouth = this.gear()?.dive?.mouth ?? 0;
-    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, mouth), ask);
+    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, mouth), ask, true);
   }
 
   /** Sends `asked`, its yes (a dive changed: begun, gone on or ended) doing `yes`. */
-  private ask(foot: Foot, asked: GearAsk, yes: Asked['yes'], ask = (sent: GearAsk) => foot.gear?.ask(sent)): void {
+  private ask(
+    foot: Foot,
+    asked: GearAsk,
+    yes: Asked['yes'],
+    ask = (sent: GearAsk) => foot.gear?.ask(sent),
+    done = false,
+  ): void {
     const gear = foot.gear?.gear;
     if (this.asked || !gear) return;
-    this.asked = { answered: gear.answered, dive: gear.dive ?? null, since: this.host.now() / 1000, yes };
+    const since = this.host.now() / 1000;
+    this.asked = { answered: gear.answered, dive: gear.dive ?? null, since, yes, done };
     ask(asked);
   }
 
@@ -240,7 +251,10 @@ export class PassageGame {
     const work = async () => {
       const base = passageRoomName(dive.island, dive.week, dive.zone);
       const room =
-        dive.route === 1 ? (sharedRun(base, await this.host.companyPlaces()) ?? runOf(base, runInstance())) : base;
+        dive.route === 1
+          ? (sharedRun(base, await this.host.companyPlaces()) ??
+            passageRoomName(dive.island, dive.week, dive.zone, runInstance()))
+          : base;
       const minute = Math.floor(this.host.now() / 60_000);
       const entry = {
         plan,
@@ -276,7 +290,8 @@ export class PassageGame {
       .layouts.find((layout) => layout.id === patrol.id)
       ?.runs?.find((each) => each.name === run)?.door;
     const spawn = door ? homeSpot(door, patrol.centre) : (patrol.spawns[0] ?? patrol.centre);
-    const facing = Math.atan2(patrol.centre[0] - spawn[0], -(patrol.centre[1] - spawn[1]));
+    // Facing away from the door, as the room stands one coming home; online the room's own stand is where they are.
+    const facing = door ? Math.atan2(spawn[0] - door[0], -(spawn[1] - door[1])) : 0;
     const here = zone.web.zones.find((each) => each.number === zone.entry.plan.zone.number)?.at ?? patrol.centre;
     const work = async () => {
       await this.host.goInto(() => Foot.enter(this.host.context, { ...patrol, spawns: [spawn] }, facing));
@@ -305,7 +320,7 @@ export class PassageGame {
       arrive: { at: [to[0], to[1], 0], facing: 0 },
       viewport: { width: innerWidth, height: innerHeight },
     });
-    this.way = { way, seconds: 0, frame: null };
+    this.way = { way, seconds: 0, frame: null, home: happening.kind === 'home', landed: false };
     this.host.setFlow(after);
     this.host.setReady(false);
     document.exitPointerLock();
@@ -324,6 +339,15 @@ export class PassageGame {
   passing(seconds: number, ready: boolean): Shot | null {
     const playing = this.way;
     if (!playing) return null;
+    // The place has come once its room has stood the body: the walk in starts where the room put it.
+    const body = this.host.foot()?.fight.own;
+    const come = ready && !!body;
+    if (come && body && playing.home && !playing.landed) {
+      const facing = this.host.context.walker.player.facing;
+      playing.way = wayOf({ ...playing.way.ask, arrive: { at: [body.x, body.y, body.z], facing } });
+      playing.landed = true;
+    }
+    ready = come;
     playing.seconds = wayClock(playing.seconds, seconds, ready);
     const frame = wayAt(playing.way, playing.seconds);
     playing.frame = frame;
@@ -342,7 +366,8 @@ export class PassageGame {
     const foot = this.host.foot();
     const gear = foot?.gear?.gear ?? null;
     const asked = this.asked;
-    const heard = asked && gear && answerHeard(asked, gear, this.host.now() / 1000 - asked.since > ANSWER_WAIT_S);
+    const late = asked !== null && this.host.now() / 1000 - asked.since > ANSWER_WAIT_S;
+    const heard = asked && gear && answerHeard(asked, gear, late);
     if (asked && heard) {
       this.asked = null;
       // After this frame, so the foot's own frame runs on the place it was begun in before the way leaves it.

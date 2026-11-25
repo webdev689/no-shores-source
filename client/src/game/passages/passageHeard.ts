@@ -63,16 +63,18 @@ type DiveWhere = Pick<DiveState<unknown>, 'island' | 'week' | 'zone'>;
 const REFUSED = { first: 171, last: 178 } as const;
 
 /** What the room has said of an ask of the passages sent when it had answered `asked.answered` asks, its dive then
- *  `asked.dive`: yes once the dive has changed (begun, gone on or ended), whatever other asks it answered meanwhile;
+ *  `asked.dive`: yes once the dive has changed (begun, gone on or ended), whatever other asks it answered meanwhile,
+ *  or for an ask whose `done` is its yes, the next done;
  *  a refusal of the passages' own; unanswered once `late`; else nothing yet. */
 export function answerHeard(
-  asked: { readonly answered: number; readonly dive: DiveWhere | null },
+  asked: { readonly answered: number; readonly dive: DiveWhere | null; readonly done?: boolean },
   gear: { readonly answered: number; readonly answer: number; readonly dive?: DiveWhere | null },
   late: boolean,
 ): 'yes' | { readonly refused: number } | 'unanswered' | null {
   // Where the dive is, not its haul, which fills as the player finds things.
   const where = (dive: DiveWhere | null | undefined) => (dive ? `${dive.island} ${dive.week} ${dive.zone}` : 'none');
   if (where(gear.dive) !== where(asked.dive)) return 'yes';
+  if (asked.done && gear.answered !== asked.answered && gear.answer === 0) return 'yes';
   const refused = gear.answered !== asked.answered && gear.answer >= REFUSED.first && gear.answer <= REFUSED.last;
   if (refused) return { refused: gear.answer };
   return late ? 'unanswered' : null;

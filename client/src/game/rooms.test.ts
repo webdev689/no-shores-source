@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
+import { PASSAGE_FULL as SERVER_FULL, passageRoomName as serverPassageName } from '../../../server/roomNames.ts';
 import {
   accountOf,
+  PASSAGE_FULL,
+  passageRoomName,
   accountsFrom,
   dungeonRoom,
   nodeOfRoom,
@@ -251,4 +254,15 @@ test('a dungeon at Elite or Abyss and every Elite Dungeon is a run, joined where
     runInstance((bytes) => bytes.fill(35)),
     '99999999',
   );
+});
+
+test('a passage zone’s room is named as the server names it, every spelling: the first, a copy, a route', () => {
+  for (const after of [1, 2, 3, 9, 'a1b2c3d4'])
+    assert.equal(
+      passageRoomName('continent-1', 2921, 14, after),
+      serverPassageName('continent-1', 2921, 14, after),
+      String(after),
+    );
+  assert.equal(passageRoomName('continent-1', 2921, 14), 'passage-continent-1-w2921-z14');
+  assert.equal(PASSAGE_FULL, SERVER_FULL);
 });

@@ -87,13 +87,28 @@ fn the_weeks_lamps_pay_essence_from_the_second_and_a_weekly_roll_at_the_fourth()
 }
 
 #[test]
-fn going_home_needs_the_lamp_lit_and_ends_the_dive_keeping_the_haul() {
+fn going_home_needs_the_lamp_lit_and_keeps_the_haul_to_the_patrol_zone_before_its_mouth() {
     let mut character = diving();
     assert_eq!(character.go_home(0, None), Err(Refusal::NoLamp));
     assert_eq!(character.go_home(0, Some(1)), Err(Refusal::LampNotLit));
     character.light_lamp(zone(5), 1, (100, 14), &dice(1)).expect("lit");
     character.gather(4);
     assert_eq!(character.go_home(0, Some(1)), Ok(()));
+    assert_eq!(character.materials.resource(4), 3, "what was found since the lamp is kept");
+    assert!(character.passage.as_ref().is_some_and(|dive| dive.homeward), "the dive goes home");
+    assert_eq!(character.go_on(("continent-1", 2_900, 0), Some((3, 2)), true), Err(Refusal::NoDive), "and no further");
+    character.gather(4);
+    let mouth = character.passage.as_ref().map(|dive| dive.mouth);
+    assert_eq!(character.leave_passages(), mouth, "into the patrol zone before the mouth it began at");
     assert!(character.passage.is_none());
-    assert_eq!(character.materials.resource(4), 3);
+    assert_eq!(character.materials.resource(4), 6, "a find on the way out is kept with it");
+}
+
+#[test]
+fn leaving_the_passages_any_other_way_loses_the_haul() {
+    let mut character = diving();
+    character.gather(4);
+    assert_eq!(character.leave_passages(), None);
+    assert!(character.passage.is_none());
+    assert_eq!(character.materials.resource(4), 0);
 }

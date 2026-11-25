@@ -114,6 +114,16 @@ export function nodeOfRoom(room: string): {
 // A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule.
 export { runInstance, startedAtSea } from '../../../server/roomNames.ts';
 
+/** A passage zone's room as the servers name it (server/roomNames.ts `passageRoomName`): its island, its web's week
+ *  and its zone; `after` a public room's copy (`--2`, `--3` once the first is full) or a company's route's instance. */
+export function passageRoomName(island: string, week: number, zone: number, after: number | string = 1): string {
+  const ending = typeof after === 'string' ? `--run-${after}` : after > 1 ? `--${after}` : '';
+  return `passage-${island}-w${week}-z${zone}${ending}`;
+}
+
+/** What a public passage room says as it turns a player away for being full; the next copy is joined instead. */
+export const PASSAGE_FULL = 'This passage is full.';
+
 /** A run's room: the dungeon's room's name, then its instance. */
 export function runOf(base: string, instance: string): string {
   return `${base}--run-${instance}`;

@@ -48,12 +48,6 @@ export function holdAt(
   return piece.kind === 'lamp' ? { lamp: true } : { kindle: piece.number };
 }
 
-/** A passage zone's room as the servers name it: `passage-<island>-w<week>-z<zone>`, a company's route with
- *  `--run-<instance>` after it (the server finds or makes the instance). */
-export function passageRoomName(island: string, week: number, zone: number): string {
-  return `passage-${island}-w${week}-z${zone}`;
-}
-
 /** A zone as a place on foot, named for itself: its room's name, its one spawn its arrival, its section about its
  *  sites, and nothing of the patrol zone's own (its stations, foes, places or paths). */
 export function zonePlace(plan: PassagePlan, patrol: NodeInfo, room: string): NodeInfo {
@@ -76,7 +70,7 @@ export function zonePlace(plan: PassagePlan, patrol: NodeInfo, room: string): No
 }
 
 /** How far from a mouth's door the player stands on coming home, toward the patrol zone's middle, metres. */
-const HOME_STEP_M = 3;
+const HOME_STEP_M = 2;
 
 /** Where a player coming home stands: `HOME_STEP_M` out from the mouth's door toward the patrol zone's middle. */
 export function homeSpot(door: readonly [number, number], centre: readonly [number, number]): [number, number] {

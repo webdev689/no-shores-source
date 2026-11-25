@@ -159,6 +159,20 @@ patrol zone.
 | Bounties | A fourth pool on the board, the passages', two a day: light a lamp; finish three missions; bring down 25 foes; go 8 zones deep; open two reliquaries; gather a vein |
 | The band | Every activity's rewards an hour are measured at each level and kept within one band (`gear::band`), the passages' with their deaths counted; a change to any pay is checked against it |
 
+## As the rules play them
+
+| Call | Choice |
+|---|---|
+| A reliquary | Its chest opens itself once its guard is down, with no hold |
+| A vein | Done when its guard is down; its six nodes are gathered into the haul as a patrol's are, and its cache pays two fragments |
+| A Sever's posts | Tithe Enforcers standing still, named "Tally Post" |
+| A Reckoning's collectors | Walk away when found, and never fight back |
+| Taking part | Bringing down one of the deal's foes, lighting a dead lamp, holding the ring, or reaching the far mouth |
+| A vault's garrison | Takes no Crowded or Veteran; Hardened applies |
+| Drops | From the dungeons' content under ground, the world's above it |
+| The haul's size | At most 64 Vestiges and 64 items; a find past that is let go |
+| Going home | Asked of a lamp lit for the dive, wherever in its zone the player stands |
+
 ## The Atheric bounty: Lanternfall
 
 | Call | Choice |

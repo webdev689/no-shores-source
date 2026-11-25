@@ -79,6 +79,10 @@ pub struct Dive {
     pub paid: Vec<u16>,
     #[serde(default)]
     pub haul: Haul,
+    /// Whether the player has gone home from a lit lamp: the dive ends as they come into the patrol zone, before the
+    /// mouth it began at, keeping what they found on the way out.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub homeward: bool,
     /// Whether the player stands in a passage zone of the dive now, so what they find goes into the haul: set by the
     /// zone's room as they join it, never kept.
     #[serde(skip)]
@@ -130,6 +134,7 @@ impl Character {
             lamp,
             paid: Vec::new(),
             haul: Haul::default(),
+            homeward: false,
             here: false,
             unknown: UnknownKeys::new(),
         });
@@ -145,8 +150,8 @@ impl Character {
         to: Option<(u16, u8)>,
         open: bool,
     ) -> Result<u16, Refusal> {
-        let dive = self.passage.as_mut().filter(|dive| dive.island == island && dive.week == week && dive.zone == zone);
-        let dive = dive.ok_or(Refusal::NoDive)?;
+        let ours = |dive: &&mut Dive| dive.island == island && dive.week == week && dive.zone == zone && !dive.homeward;
+        let dive = self.passage.as_mut().filter(ours).ok_or(Refusal::NoDive)?;
         let (to, depth) = to.ok_or(Refusal::NoSuchMouth)?;
         if !(dive.done || open) {
             return Err(Refusal::DealNotDone);
@@ -179,9 +184,20 @@ impl Character {
         }
     }
 
-    /// Ends the dive and loses its haul, as joining any room that is not a passage zone of it does.
+    /// Ends the dive and loses its haul.
     pub fn end_dive(&mut self) {
         self.passage = None;
+    }
+
+    /// Leaves the passages, as joining any room that is not a passage zone of the dive does: a dive gone home keeps
+    /// what was found since its lamp and answers the mouth it began at; any other loses its haul.
+    pub fn leave_passages(&mut self) -> Option<u8> {
+        let homeward = self.passage.as_ref().filter(|dive| dive.homeward).map(|dive| dive.mouth);
+        if homeward.is_some() {
+            self.keep_haul();
+        }
+        self.end_dive();
+        homeward
     }
 
     /// A Vestige into the haul, while the player stands in a passage zone: whether it went there.

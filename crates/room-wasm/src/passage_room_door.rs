@@ -4,6 +4,7 @@
 
 use crate::{Opened, keep};
 use gear::dive::Route;
+use gear::quests::Place;
 use room::Room;
 use serde::Deserialize;
 
@@ -24,10 +25,18 @@ pub const SHIFTED: &str = "The passage has shifted";
 
 /// Lays a patrol zone's mouths into its island's passages: its runs' doors, matched by name to the island's mouths in
 /// their order. A patrol zone of no island with passages, or one missing a mouth's door, opens none.
-pub(crate) fn open_mouths(room: &mut Room, island: &str, doors: &[gear::quests::Place]) {
+pub(crate) fn open_mouths(room: &mut Room, island: &str, doors: &[Place], places: &[Place]) {
     let Some(passages) = passage::island(island) else { return };
-    let found: Option<Vec<[f64; 2]>> =
-        passages.mouths.iter().map(|mouth| doors.iter().find(|door| &door.name == mouth).map(|door| door.at)).collect();
+    let found: Option<Vec<([f64; 2], [f64; 2])>> = passages
+        .mouths
+        .iter()
+        .map(|mouth| {
+            let door = doors.iter().find(|door| &door.name == mouth)?.at;
+            // A mouth's front lies toward its run's end arena, the place named for the run.
+            let arena = places.iter().find(|place| &place.name == mouth).map_or(door, |place| place.at);
+            Some((door, arena))
+        })
+        .collect();
     if let Some(found) = found {
         room.open_mouths(island, found);
     }

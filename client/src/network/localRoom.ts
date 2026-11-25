@@ -3,7 +3,6 @@ import type { ArtState } from './artMessages.ts';
 import { readFromRoom } from './messages.ts';
 import type { GearMessage, RoomLink, Snapshot } from './roomConnection.ts';
 import { SnapshotKeeper } from './snapshots.ts';
-import { openPassageOn } from './passageRoomDoor.ts';
 import type { PortInfo } from '../rules/watersRules.ts';
 
 /** A course's stall, where a social space's asks are answered, and its resource nodes. */
@@ -183,7 +182,7 @@ export class LocalRoom implements RoomLink {
     gear: (gear: GearMessage) => void = () => undefined,
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!openPassageOn(door, ask)) throw new Error('the passage is not one a room can stand in');
+    if (!door.openPassage(ask)) throw new Error('the passage is not one a room can stand in');
     door.epoch(Date.now());
     return new LocalRoom(door, snapshot, gear);
   }

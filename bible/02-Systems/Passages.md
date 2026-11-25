@@ -47,7 +47,9 @@ code:
   - client/src/rules/passageRules.ts#startPassageDoor
   - client/src/network/passageMessages.ts#passagesOf
   - client/src/network/passageMessages.ts#passageSeenOf
-  - client/src/network/passageRoomDoor.ts#openPassageOn
+  - client/src/network/passageRoomDoor.ts#passageAsk
+  - client/src/game/rooms.ts#passageRoomName
+  - client/src/game/passages/passageEnter.ts#joinPassage
   - client/src/game/passages/passageGame.ts#PassageGame
   - client/src/game/passages/passageEnter.ts#enterZone
   - client/src/game/passages/passageReach.ts#mouthAt
@@ -62,6 +64,8 @@ code:
   - client/src/game/passages/passagePanels.ts#MouthsCardView
   - client/src/game/passages/athericBounty.ts#athericCards
   - client/src/game/passages/passageShots.ts#zoneShot
+  - server/roomNames.ts#passageRoom
+  - server/arrival.ts#arrives
 ---
 # Passages
 
@@ -175,7 +179,10 @@ was done finds it done.
   of an island is lit pays its week's lamp, a sure Vestige in a Boss's colours, from the second one Essence of each
   stock, from the third two, and at the fourth a roll as the week's Abyss Dungeon's first clear. Each is kept on
   `Today` and `ThisWeek` by island, begun anew as they are. **Going home** from a lit lamp keeps what was found since
-  and ends the dive.
+  and turns the dive homeward: no way on takes it further, and what is found on the way out goes into its haul. Its
+  patrol zone's room, as it takes the kept character, keeps that haul, ends the dive and stands the player 2 m before
+  the mouth the dive began at, toward its run's end arena, facing away from the door (`leave_passages`,
+  `stand_before_mouth`). Any other room the character joins ends the dive and loses its haul.
 - **The passages' bounties** are the board's fourth pool, two a day (`bounties::PASSAGES`), counting a lamp lit, a
   mission finished, a foe brought down in a passage, a zone reached at least 8 deep, a reliquary opened and a vein's
   every node gathered.
@@ -193,6 +200,16 @@ the dead lamps lit and targets down, the ring's share held, the seconds left, th
 and the lamp lit for the player, and their hold under way. The asks are numbered 81 to 85 (`passage_wire`). A page or
 the host opens a zone's room with `open_passage` (the island, the week, the zone, the route and the minute); once the
 clock's week is past the web's, the room refuses players: "The passage has shifted".
+
+## On the server
+
+- **A zone's room** is named `passage-<island>-w<week>-z<zone>` for its first public room, `--2`, `--3` after it for
+  the next when one is full (eight accounts), and `--run-<instance>` for a company's route ([[Server]], "A passage
+  zone's room"). It opens from its name with `open_passage`, this week's web or last week's, the last refusing players.
+- **Arrivals** are judged by the dive the accounts keep with the character: into a zone from the patrol zone at the
+  dive's mouth or a lamp lit this week, from a zone whose ways on lead to it, or back into its own room; out of a
+  lamp's zone, its lamp lit, to the patrol zone.
+- **The dive is saved** the moment it moves, so the next zone's room reads it.
 
 ## In the browser
 
@@ -213,15 +230,19 @@ as its other asks do, and a refusal is said in the room's words (171 to 178).
   beyond (its name, depth, deal and currents) and the week's modifiers; the routes ("The public passage", and "Your
   company's route" in a company, else "Your own route, alone"); Go in (E), "Begin at the second lamp" for each lamp lit
   this week, and Close (Esc). A choice asks to begin, by the mouth's place, its route and the lamp.
-- **The room's yes**: an ask of the passages is answered in the gear (its count of answers moves on); a yes that
-  changed the dive (begun, gone on, or ended at a lamp's Home) plays the way between zones while the zone's room is
-  joined, and anything else says the refusal in a toast, as does no answer in 3 s.
-- **A zone's room**: the server's by its name, `passage-<island>-w<week>-z<zone>` (a company's route with
-  `--run-<instance>` after it, a member's room found as runs are), or, playing alone, the same room in the rooms'
-  worker opened from its ask (`open_passage`'s JSON), the character the last room let go of given to it so the dive
-  goes on. Under ground the zone is a dungeon to the page: its layout drawn by the dungeon's renderer and the body
-  predicted on the Forge's floor at 0 m among its walls and the pieces' solids; above ground its hollow is an island
-  to the islands' layer (`zoneIsle`), the body predicted on its heights among the solids, as a sea island's beach.
+- **The room's yes**: an ask of the passages is yes once the dive has moved (begun, or gone on to another zone), or
+  for a lamp's Home once the room answers it done; it plays the way between zones while the room gone to is joined. A
+  passage refusal is said in a toast, as is no answer in 10 s; other asks answered meanwhile are not taken for it.
+- **A zone's room**: the server's by its name (`passageRoomName`, spelled as the server spells it): the first public
+  room, the next copy (`--2`, `--3`) when one says "This passage is full.", or a company's route's own, a member's
+  room found as runs are; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
+  JSON), the character the last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to
+  the page: its layout drawn by the dungeon's renderer and the body predicted on the Forge's floor at 0 m among its
+  walls and the pieces' solids; above ground its hollow is an island to the islands' layer (`zoneIsle`), the body
+  predicted on its heights among the solids, as a sea island's beach.
+- **Home**: the lamp's Home turns the dive homeward; the page joins the patrol zone's room as ever, and the way comes
+  down to where the room stands the player, 2 m before the mouth the dive began at and facing away from it, once its
+  first snapshot of the body has come.
 - **In a zone**: the deal stands in the tracker (`dealTracker`: "Light the dead lamps 1/3", a hold's clock, then "Go on
   through an open mouth"); near an onward mouth its sign shows the zone beyond and, shut, "Shut until this place's work
   is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
@@ -270,8 +291,6 @@ card, the panels and Lanternfall's card.
 
 ## Limits
 
-- Playing alone waits on the room door's `openPassage` (room-wasm's `room_open_passage`), which the server's
-  `roomDoor.ts` is to carry; until it does, a zone's room alone says it cannot open.
 - Under ground the pieces are boxes until the dungeon pack `passage` is named in the manifest.
 - Above ground the continent's land is drawn round the hollow as on any place on foot.
 - The way's camera ends over the zone's place on the island, and the foot's camera then stands in the zone's own frame.
