@@ -102,6 +102,17 @@ fn every_zone_lays_its_ground_mouths_lamp_and_deal() {
             let apart = |one: [f64; 2], other: [f64; 2]| libm::hypot(one[0] - other[0], one[1] - other[1]);
             assert!(apart(sites.arrive, sites.way_in.at) < 4.5, "{what}: a body comes in by its way in");
             assert!(sites.onward.iter().all(|door| apart(door.at, sites.way_in.at) >= 9.0), "{what}: on is away");
+            if let (plan::Ground::Under(dungeon), Some(lamp)) = (&plan.ground, sites.lamp) {
+                let cell =
+                    (lamp[1] / dungeon::CELL_M) as usize * dungeon.columns + (lamp[0] / dungeon::CELL_M) as usize;
+                let tallest = dungeon.rooms.iter().map(|room| room.height).fold(0.0, f64::max);
+                let wanted = tallest.min(3.8);
+                assert!(
+                    dungeon.ceilings[cell] >= wanted,
+                    "{what}: the lamp's ceiling {} under {wanted}",
+                    dungeon.ceilings[cell]
+                );
+            }
             if let plan::Ground::Open(hollow) = &plan.ground {
                 let inside = |point: [f64; 2]| within(&hollow.ring, point);
                 assert!(inside(sites.arrive), "{what}: arrives inside its section");

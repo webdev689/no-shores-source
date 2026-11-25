@@ -2,7 +2,8 @@
 //! way in as the mouth behind, its onward mouths on rock walls of the rooms farthest along its way, its lamp in its
 //! greatest room, its foes' posts in its rooms and its spots on their quiet floor.
 
-use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spread};
+use crate::LAMP_CEILING_M;
+use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
 use crate::zone::Zone;
 use dungeon::{CELL_M, Cell, Dungeon, SIDES, Side};
 
@@ -13,6 +14,8 @@ const PASSES: [(f64, f64, bool); 4] = [(16.0, 9.0, true), (16.0, 9.0, false), (1
 const MOUTH_CLEAR_M: f64 = 2.4;
 /// How far a mouth stands off its wall, as the exit door does, metres.
 const OFF_WALL_M: f64 = CELL_M / 2.0 - 0.02;
+/// How many seeds a lamp's zone is tried from for a room tall enough to stand it in.
+const LAMP_TRIES: u32 = 32;
 /// How far the lamp keeps its ring from anything else's spot or post, metres.
 const LAMP_CLEAR_M: f64 = 5.0;
 
@@ -90,9 +93,13 @@ fn onward(dungeon: &Dungeon, count: usize, way_in: [f64; 2]) -> Vec<Door> {
 /// cell nearest its middle.
 fn lamp(dungeon: &Dungeon) -> Option<[f64; 2]> {
     let way_in_room = dungeon.way_in.room;
-    let roomy = |room: &&dungeon::Room| room.width >= 3 && room.depth >= 3;
+    let roomy = |room: &dungeon::Room| room.width >= 3 && room.depth >= 3;
+    // The lamp stands 3.8 m high with its flame: a room tall enough first.
+    let tall = |room: &dungeon::Room| room.height >= LAMP_CEILING_M;
     let rooms = dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != way_in_room);
-    let (_, room) = rooms.max_by_key(|(number, room)| (roomy(room), room.cells.len(), usize::MAX - number))?;
+    let (_, room) = rooms.max_by_key(|(number, room)| {
+        (roomy(room) && tall(room), tall(room), roomy(room), room.cells.len(), usize::MAX - number)
+    })?;
     let middle =
         [(room.x as f64 + room.width as f64 / 2.0) * CELL_M, (room.y as f64 + room.depth as f64 / 2.0) * CELL_M];
     let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
@@ -106,7 +113,15 @@ fn lamp(dungeon: &Dungeon) -> Option<[f64; 2]> {
 pub(crate) fn lay(zone: &Zone, style: &str, onward_count: usize) -> Option<(Dungeon, Sites)> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();
-    let dungeon = Dungeon::forge_within(zone.forge_seed(), style, (blocks, blocks));
+    let forged = |seed: u32| Dungeon::forge_within(seed, style, (blocks, blocks));
+    // A lamp's zone is laid again from the next seed until a room is tall enough to stand the lamp in.
+    let tall_enough = |dungeon: &Dungeon| dungeon.rooms.iter().any(|room| room.height >= LAMP_CEILING_M);
+    let dungeon = if zone.has_lamp() {
+        let mut tries = (0..LAMP_TRIES).map(|step| forged(zone.forge_seed().wrapping_add(step)));
+        tries.find(tall_enough).unwrap_or_else(|| forged(zone.forge_seed()))
+    } else {
+        forged(zone.forge_seed())
+    };
     let (arrive, toward) = dungeon.arrival();
     let facing = libm::atan2(toward[0], -toward[1]);
     let way_in = Door { at: dungeon.exit_door(), facing: dungeon.way_in.side.opposite().bearing() };
@@ -138,6 +153,6 @@ pub(crate) fn lay(zone: &Zone, style: &str, onward_count: usize) -> Option<(Dung
         .filter(|at| clear(*at))
         .collect();
     floor.sort_by(|one, other| apart(*other, arrive).total_cmp(&apart(*one, arrive)).then(one[0].total_cmp(&other[0])));
-    let spots = spread(floor, SPOT_APART_M);
+    let spots = spots_of(&floor, crate::plan::spots_wanted(zone.deal));
     Some((dungeon, Sites { arrive, facing, way_in, onward, lamp, posts, spots }))
 }

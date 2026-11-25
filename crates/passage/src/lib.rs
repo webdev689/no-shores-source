@@ -22,6 +22,8 @@ pub use zone::{Current, Deal, Form, Ground, Mission, Size, Zone};
 /// How deep the web goes, and how often a lamp stands: in every zone at each multiple of it.
 pub const DEPTHS: u8 = 20;
 pub const LAMP_EVERY: u8 = 5;
+/// The least ceiling a lamp stands under, its flame and its frame, metres.
+pub const LAMP_CEILING_M: f64 = 3.8;
 /// The highest a passage's foes stand before the strongest of difficulties, the top of the players' levels.
 pub const LEVEL_TOP: u8 = 30;
 /// The most a foe's level reaches anywhere (`gear::world::FOE_LEVEL_MOST`).

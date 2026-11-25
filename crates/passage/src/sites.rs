@@ -50,6 +50,19 @@ pub(crate) fn spread(places: impl IntoIterator<Item = [f64; 2]>, apart: f64) -> 
     kept
 }
 
+/// The spots a zone's deal stands its things on, `SPOT_APART_M` apart, or closer in passes where its floor holds too
+/// few for the `wanted` its deal needs: a small dungeon still holds a vein's six nodes.
+pub(crate) fn spots_of(floor: &[[f64; 2]], wanted: usize) -> Vec<[f64; 2]> {
+    let mut spots = Vec::new();
+    for apart in [SPOT_APART_M, 5.0, 3.5] {
+        spots = spread(floor.iter().copied(), apart);
+        if spots.len() >= wanted {
+            break;
+        }
+    }
+    spots
+}
+
 /// The distance between two points.
 pub(crate) fn apart(one: [f64; 2], other: [f64; 2]) -> f64 {
     libm::hypot(one[0] - other[0], one[1] - other[1])

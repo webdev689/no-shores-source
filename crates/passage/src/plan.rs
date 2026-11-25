@@ -83,6 +83,17 @@ pub const KINDLES: usize = 3;
 pub const POSTS: usize = 3;
 pub const NODES: usize = 6;
 
+/// How many spots a zone's deal needs: its things, and at least four for a hunt's round and a reckoning's runs.
+pub(crate) fn spots_wanted(deal: Deal) -> usize {
+    let things = match deal {
+        Deal::Mission(Mission::Kindle) => KINDLES,
+        Deal::Mission(Mission::Sever) => POSTS,
+        Deal::Vein => NODES,
+        _ => 1,
+    };
+    things.max(4)
+}
+
 /// A zone laid whole.
 #[derive(Clone, Debug)]
 pub struct Plan {

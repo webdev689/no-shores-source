@@ -5,7 +5,7 @@
 
 use crate::island::Island;
 use crate::zone::{Current, Deal, Form, Ground, Mission, Size, Zone, names_of};
-use crate::{DEPTHS, has_lamp};
+use crate::{DEPTHS, LAMP_CEILING_M, has_lamp};
 use isle::draws::{Draws, mix};
 
 /// How far apart zones of one depth lie across the spine, metres.
@@ -117,8 +117,12 @@ impl Web {
         // Across the spine is the way turned a quarter: x east, y south.
         let at = [spine_at[0] - way[1] * across, spine_at[1] + way[0] * across];
         let ground = if draws.unit() < UNDER_SHARE {
-            let styles = STYLES[usize::from((depth - 1) / 5).min(STYLES.len() - 1)];
-            Ground::Under { style: (*draws.pick(styles).unwrap_or(&"caverns")).to_owned() }
+            let leg = STYLES[usize::from((depth - 1) / 5).min(STYLES.len() - 1)];
+            // A lamp's zone is laid only in a style with rooms tall enough to stand the lamp in.
+            let fits =
+                |key: &&&str| !lamp || dungeon::style_of(key).is_some_and(|style| style.heights.1 >= LAMP_CEILING_M);
+            let styles: Vec<&str> = leg.iter().filter(fits).copied().collect();
+            Ground::Under { style: (*draws.pick(&styles).unwrap_or(&"caverns")).to_owned() }
         } else {
             Ground::Open { form: weighted(&FORMS, &mut draws) }
         };
