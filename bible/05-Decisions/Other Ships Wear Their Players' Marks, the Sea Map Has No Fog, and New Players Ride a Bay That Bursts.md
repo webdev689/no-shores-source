@@ -28,7 +28,8 @@ ring in the ship's bar, the owner chose "Same as the ship", the option that read
 - The held map at sea has no fog of war: all of it shows from the first time it is raised ([[Held Map]]). This
   replaces the sea's fog in [[The Sea Is Navigated From the Helm With the Held Map]].
 - A new character is given the Bay, worn in the Mount slot, by the stranger with her 400 Aurem as the welcome tour
-  begins ([[Gear]], [[Quests]]).
+  begins ([[Gear]], [[Quests]]). Replaced in part by
+  [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]: the Tack gives it, as she is spoken with on the opening's round.
 - A rider taps the boost key for half again the horse's speed for 4 s, then 12 s to recharge, its ring in the bar at
   the bottom left; run stays as it is ([[Player]]).
 - A ship's boost and a horse's each have a detailed effect.

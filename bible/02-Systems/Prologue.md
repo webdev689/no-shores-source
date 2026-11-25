@@ -102,7 +102,9 @@ has played the story to its end (kept in the browser, `noshores.prologue`) sees 
 takes them straight to Overlook's social space. Every way onto foot comes after the story, played through or passed
 over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
 on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
-character, the page's word while the prologue pays nothing ([[The Server Is the Authority Over Everything]]). While the
+character, the page's word while the prologue pays nothing ([[The Server Is the Authority Over Everything]]). At
+that end the room takes back the story's items and dresses the player in plain clothes, a Plain Shirt and Plain
+Breeches with no stats, worn where nothing of their own is ([[Gear]], "Plain clothes"; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]). While the
 story plays the menu (I, O, or the pad's Start) opens only on the wreck, while the player plays it, and shuts as that
 ends. At its end the
 story lets go of what it alone drew with on the GPU (the Brig's and the Frigate's views, the birds, the fire and any
