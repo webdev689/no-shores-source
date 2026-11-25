@@ -67,7 +67,8 @@ plants' wind, gusts rolling downwind across the land as slowly as theirs (about 
 ## Its colour and light
 
 The owner's green is lighter and bluer than a grass ground, so each texel is moved by its ground: the biome's low
-ground over the ground the tall tuft's green would stand a shade lighter over, held between 0.5 and 1.6. A texel takes
+ground over the ground the tall tuft's green would stand a shade darker over
+([[The Meadow's Green Stands a Shade Darker]]), held between 0.5 and 1.6. A texel takes
 that ratio's hue as far as it is green and only its light where it is not, so the green becomes the ground's own and
 the petals and dry stalks keep their colours (`texelOver`). A patch's tint lightens or darkens it in four bands, each rounded to its middle, and
 from 0.12 of the reach to 0.6 it gives way to the ground's colour. It is lit as the plants are (the sky, the sun

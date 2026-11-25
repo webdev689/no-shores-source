@@ -395,6 +395,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Discord Is Claude's to Build, Organised and Unbloated]]
 - [[The Discord Server as Claude Builds It]]
 - [[The Meadow Grows Half as Thick]]
+- [[The Meadow's Green Stands a Shade Darker]]
 - [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
 - [[The Desktop App as Claude Builds It]]
 
