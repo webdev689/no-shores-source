@@ -12,6 +12,7 @@ test('the accounts the shell lets a sign-in through are the ones the game signs 
 
 test("the game's pages are those under its path at its origin", () => {
   assert.equal(isGamePage('https://noshores.online/play/', game), true);
+  assert.equal(isGamePage(LIVE_GAME, game), true);
   assert.equal(isGamePage('https://noshores.online/play', game), true);
   assert.equal(isGamePage('https://noshores.online/play/?at=overlook#code=1', game), true);
   assert.equal(isGamePage('https://noshores.online/player', game), false);

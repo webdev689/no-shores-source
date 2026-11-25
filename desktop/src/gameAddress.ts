@@ -1,10 +1,10 @@
 // The address the app plays the game at: the game as noshores.online serves it, the same build a browser plays, so
-// the app is never a version behind the rooms. `NOSHORES_GAME_URL` points it at another, a dev server or a local
-// build, to try a change in the app; a packaged copy takes only this machine's own addresses there, so nothing can
-// point an installed copy at another site.
+// the app is never a version behind the rooms, and online, on the live rooms and accounts. `NOSHORES_GAME_URL` points
+// it at another, a dev server or a local build, to try a change in the app; a packaged copy takes only this machine's
+// own addresses there, so nothing can point an installed copy at another site.
 
-/** The game as players reach it in a browser. */
-export const LIVE_GAME = 'https://noshores.online/play/';
+/** The game as noshores.online serves it, joining the live rooms and accounts (`?room=` names them). */
+export const LIVE_GAME = 'https://noshores.online/play/?room=live';
 /** The variable that points the app at another game. */
 export const GAME_URL_VARIABLE = 'NOSHORES_GAME_URL';
 

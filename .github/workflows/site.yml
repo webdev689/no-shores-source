@@ -57,6 +57,7 @@ jobs:
     permissions:
       contents: read
       checks: read
+      pull-requests: read
     concurrency:
       group: site
       cancel-in-progress: false
@@ -118,6 +119,16 @@ jobs:
         with:
           name: served
           path: target/served
+      # The desktop app's launcher reads the latest merged pull requests' patch notes beside the game.
+      - name: Write the patch notes
+        if: steps.zone.outputs.served == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${{ github.repository }}/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=100" \
+            | node site/patchNotes.ts > target/served/play/patch-notes.json
+          echo "patch notes: $(jq '.notes | length' target/served/play/patch-notes.json)"
       # Every rule of the bucket's that lets the page read it lets the domain too; the rest are left as they are. The
       # call replaces the whole list, so it is read first and put back only when an origin was missing.
       - name: Let the game's bucket answer the domain

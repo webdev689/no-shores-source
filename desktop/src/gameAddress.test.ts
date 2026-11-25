@@ -26,3 +26,10 @@ test('an address that is not a web one is never played', () => {
   assert.equal(gameAddress('file:///home/me/dist/index.html', false), LIVE_GAME);
   assert.equal(gameAddress('not an address', false), LIVE_GAME);
 });
+
+test('the live game is played online, on the rooms and accounts the game names live', async () => {
+  const { roomsFrom, accountsFrom } = await import('../../client/src/game/rooms.ts');
+  const room = new URL(LIVE_GAME).searchParams.get('room');
+  assert.notEqual(roomsFrom(room), null);
+  assert.notEqual(accountsFrom(room, null), null);
+});
