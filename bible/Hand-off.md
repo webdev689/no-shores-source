@@ -558,11 +558,11 @@ The decisions in [[Open Questions]] are not repeated here.
     `content/audio/freesound.json`, measure each pitched music pick's root with `tools/freesound/root.py` and write
     it on its cue, push so the freesound workflow publishes them, and take `sounds.json` from that run's artifact; a
     cue the owner marks "None" is searched again.
-  - **Its fidelity**, being finished by two workers (`wk-breach-look`, `wk-breach-modules`, not yet merged): the
-    run's own underground sky and its pieces' lamps, the shores drawn only while in play, the dark's fade, stained
-    glass, water, idle bells, chests that read as payable, the gate's void; and the Blender modules' fixes (the
-    court's solid pieces, the rifts' walls, the Ways' barricades and porches, the seals, the clutter, the rim). Judged
-    on SwiftShader pictures, never on a real GPU.
+  - **Its fidelity**: the run's own underground sky and its pieces' lamps (its floors measured to read, at sRGB 0.12
+    and over), the shores drawn only while in play, the dark's fade, stained glass, water, idle bells, chests that
+    read as payable, the gate's void; and its pieces made solid where they look it (the court, the rifts' walls, the
+    Ways' barricades and porches, the seals, the fight floors, the ledge rock), with windows, a torn rim and `glass`.
+    Judged on SwiftShader pictures drawn offline, never on a real GPU or in a live run.
   - **A comprehensive audit** of the whole raid (rules, server and wire, page, design and tests, the bible, the art):
     about seventy findings, each fixed with a test that fails without it, or left in Breaches' Limits.
   - Left for the owner:
@@ -581,6 +581,11 @@ The decisions in [[Open Questions]] are not repeated here.
     - The Drowned horse renders only by a hand forge run (`figures` =
       `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2); its first-person frames are in no workflow.
     - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
+  - The gate was tried in the Saltgrass Downs at the owner's word and reverted at their word; it stays in the Gullwing
+    Vale. Laying it there showed three latent flaws in the zones' layout, none showing as they stand, queued as their
+    own task: a beacon or resource node may stand inside a module, whose floors later level the ground under it; a
+    camp's palisade gap is narrower than the path grid passes at some turns (`blocked_by` widens a stake to a cell);
+    and fallen rock is kept off a run's stone and climb but not its line.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
