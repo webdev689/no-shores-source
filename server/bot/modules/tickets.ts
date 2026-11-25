@@ -80,6 +80,21 @@ async function closeVanished(context: BotContext, guildId: string, userId: strin
   return closed > 0;
 }
 
+const OPEN_ID = `${BOT_PREFIX}tickets:open`;
+/** How far back the button is looked for: the channel it lives in is the bot's to post in, so it is near the end. */
+const BUTTON_LOOKBACK = 50;
+
+/** The bot's own post of the Open a ticket button among a channel's latest messages, or '' when there is none. */
+async function buttonPostIn(context: BotContext, channelId: string): Promise<string> {
+  const page = await context.rest.get(`/channels/${channelId}/messages`, { query: { limit: BUTTON_LOOKBACK } });
+  if (!page.ok || !Array.isArray(page.json)) return '';
+  const botId = await botUserId(context.rest, String(context.vars.DISCORD_BOT_TOKEN ?? ''));
+  const opens = (message: Settings) =>
+    JSON.stringify(Array.isArray(message.components) ? message.components : []).includes(`"${OPEN_ID}"`);
+  const found = page.json.map(recordOf).find((message) => recordOf(message.author).id === botId && opens(message));
+  return found ? String(found.id) : '';
+}
+
 async function openTicket(context: BotContext, guildId: string, member: Member, config: Settings): Promise<string> {
   const userId = String(member?.user?.id ?? '');
   // The count and the claim are one statement, so a double press opens one ticket, not two.
@@ -301,17 +316,18 @@ export const ticketsModule: ServerModule = {
     },
   },
   actions: {
-    async post(context, guildId, input, actor, config) {
+    async post(context, _guildId, _input, _actor, config) {
       if (!config.panelChannel) return { ok: false, message: 'Choose the channel for the button first.' };
-      const posted = await postTo(context.rest, String(config.panelChannel), {
+      const channel = String(config.panelChannel);
+      const message = {
         embeds: [embed({ title: String(config.panelTitle ?? ''), description: String(config.panelText ?? '') })],
-        components: [
-          {
-            type: 1,
-            components: [{ type: 2, style: 1, label: 'Open a ticket', custom_id: `${BOT_PREFIX}tickets:open` }],
-          },
-        ],
-      });
+        components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Open a ticket', custom_id: OPEN_ID }] }],
+      };
+      // Posting again, after its words are changed, updates the button already there rather than adding another.
+      const kept = await buttonPostIn(context, channel);
+      if (kept && (await context.rest.patch(`/channels/${channel}/messages/${kept}`, message)).ok)
+        return { ok: true, message: 'The button is updated.' };
+      const posted = await postTo(context.rest, channel, message);
       return posted
         ? { ok: true, message: 'The button is posted.' }
         : { ok: false, message: 'The bot could not post in that channel.' };

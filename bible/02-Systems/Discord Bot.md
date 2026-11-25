@@ -79,8 +79,21 @@ code:
   - server/bot/migrations/20261125130000_feeds.sql
   - server/bot/migrations/20261125150000_panel_guilds.sql
   - server/bot/modules/game.ts#gameModule
+  - server/bot/modules/gameHouses.ts#houseRoleKeeping
   - server/bot/law/gameShape.ts#GAME_SHAPE
   - server/accounts/linked.ts#linkedCharacter
+  - server/accounts/linked.ts#linkedPledges
+  - server/bot/modules/layout.ts#layoutModule
+  - server/bot/law/layoutShape.ts#LAYOUT_SHAPE
+  - server/bot/layout/build.ts#build
+  - server/bot/layout/build.ts#planRows
+  - server/bot/layout/parts.ts#look
+  - server/bot/layout/parts.ts#walkChannels
+  - server/bot/layout/noShores.ts#CHANNELS
+  - server/bot/layout/noShores.ts#BOT_PERMISSIONS
+  - server/bot/layout/moduleSettings.ts#modulePlans
+  - server/bot/layout/messages.ts#guideMessage
+  - server/bot/migrations/20261125170000_layout_parts.sql
 ---
 # Discord Bot
 
@@ -169,7 +182,8 @@ raised and given back when the clock ends it. Very new accounts can be dealt wit
   the setting. Closing it posts its messages as a file in the transcript channel and deletes the channel; if the
   transcript cannot be read or posted, the ticket stays open and the closer is told why. A ticket whose channel is
   deleted by hand is closed.
-  `/ticket add` and `remove` let staff change who is in it.
+  `/ticket add` and `remove` let staff change who is in it. Posting the button again, after its words change, updates
+  the bot's own post among the channel's latest 50 messages, and posts afresh only once it is gone.
 - **Birthdays**: `/birthday set` keeps a day; at the setting's hour (UTC) the bot posts the message and gives the
   day's role, taken back the next day. 29 February is kept on the 28th in other years.
 - **Voice rooms**: joining the hub makes the member a room of their own and moves them in; an empty room is deleted,
@@ -196,10 +210,47 @@ it) and the name of the faction it is pledged to, or nothing when that Discord a
 id, email or gear leaves the accounts. A member not linked, or any member when the binding is missing or the accounts
 do not answer, gets the module's words for "not linked" in all three (empty by default). A linked character with no
 username, no level kept yet or no pledge shows nothing in that one. Welcome, goodbye, level-up and tag messages offer
-the three placeholders; where the module is off they show nothing.
+the three placeholders; where the module is off they show nothing. For up to 1000 Discord ids in one ask (`pledges`),
+the accounts also answer each linked one's faction name, or null for none; an id linked to none is left out.
+
+**House roles** name a role for each house, each house at most once. A linked member who joins gets their house's role
+at once. At minute 5 of every ten the bot sweeps each server where the module is on: it lists the members a page of
+1000 at a time, asks the accounts' `pledges` once a page, and gives each member their pledged house's role and takes
+every other house role the setting names; an unlinked or unpledged member loses them all. Bots, members still pending
+screening, and roles the setting does not name are never touched. A sweep makes at most 50 changes a server; a role
+Discord refuses, or one deleted since the setting named it, is passed over for the rest of the sweep and logged once. While the binding, its `pledges` or the accounts cannot answer, no role
+changes.
 
 `/link` answers privately how to link: open the game at `https://noshores.online/play/`, then in
 Settings open Account and press Sign in or link with Discord. The link itself is the accounts' own.
+
+## The server layout
+
+**Server layout** builds the No Shores server from the panel
+([[The Discord Is Claude's to Build, Organised and Unbloated]]; what it builds is in
+[[The Discord Server as Claude Builds It]]). It has no settings: its plan, a table, shows what a build would do to
+every role, channel, setting, module and message, changing nothing; its build, for the server's owner alone and asked
+to confirm, does it.
+
+- **Parts are made once.** Each role and channel the build makes or finds is kept by its key and Discord's id
+  (`layout_parts`): one renamed by hand is still the layout's, one deleted by hand is left out of every later build,
+  and one already there by the layout's name when the layout first meets it is adopted and left as its maker set it.
+  An adopted channel outside its layout category is moved into it, which is all Discord's own #general and voice room
+  need; Discord's own two categories, left empty, are removed. Only a part the build makes gets the layout's topic,
+  permissions and tags, as it is made.
+- **The bot gives only what it holds.** A role's permissions and a channel's are cut to the bot's own; what is cut is
+  named in the checklist, with an invite link that grants it (below).
+- **The server's settings are set once**: verification, notifications, the media filter, Discord's notices, only the
+  owner and the bot pinging everyone, and the icon (`noshores.online/art/server-icon.png`, only where the server has none).
+  The rules, updates and safety channels, the description and the welcome screen wait for Community.
+- **Modules are set while the layout wrote them last**: a module's settings are saved by the layout (`updated_by` is
+  `layout`) only while no one has saved them in the panel since; the Gateway is told at once.
+- **Messages go out through their modules**: the welcome guide and the code of conduct through announcements, the ping
+  buttons through role menus, the ticket button through tickets, each updated in place by a later build. The first
+  news and patch notes wait in the panel's announcements for the owner to send.
+- **The checklist** in #staff is what only the owner can do, updated by every build until it reads finished: a fuller
+  invite when the bot lacks a permission, turning on Community, turning on rules screening (with the rules to paste),
+  moving the bot's role above the roles it gives, and any part Discord refused.
 
 ## The deploy
 
@@ -232,6 +283,10 @@ The application's OAuth2 redirects must list both callbacks:
 address followed by `/v1/auth/discord/callback` for the panel's (on `workers.dev`, `noshores-bot`'s address on the
 same Cloudflare account). Its interactions endpoint is the bot's address followed by `/v1/discord/interactions`.
 
+The bot is invited with the permissions `BOT_PERMISSIONS` lists (`layout/noShores.ts`): what its modules use, and what
+the layout grants the moderators and denies members where only the bot posts, since a bot can grant only what it holds.
+The layout's checklist gives the invite link with them when the bot lacks any.
+
 ## The panel
 
 The bot is set up from its page on the [[Website]], `noshores.online/panel/` (`site/src/panel/`). A manager signs in
@@ -251,3 +306,9 @@ built by the message law. The page only draws what the panel's API answers; ever
 - While the Gateway is down, the roles' permissions in a server's snapshot stay as last seen until the server's next
   GUILD_CREATE or role event.
 - A server a person joins after signing in shows in their list once they sign in again.
+- A house role trails a switch of house or an unlink by up to ten minutes, longer while a sweep's 50 changes run out.
+- A build runs in one request: a part Discord refuses, or a rate limit longer than five seconds, is left for the next
+  build, which picks up where it stopped. One build runs in a server at a time: a second is turned away, and the
+  claim of a build that died is taken over after ten minutes.
+- The layout cannot turn on Community or rules screening (Discord keeps both for the owner, and its rules screening
+  has no API); its checklist says how.

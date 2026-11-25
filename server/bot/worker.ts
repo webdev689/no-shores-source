@@ -84,6 +84,11 @@ export function workerContext(env: Env, execution: Execution, now: () => number,
     snapshot: (guildId) => readSnapshot(env.BOT_DB, guildId),
     later: (work) =>
       execution.waitUntil(work.catch((error) => console.warn(`[bot] later work failed: ${said(error)}`))),
+    async forget(guildId, moduleId) {
+      held.forget(guildId, moduleId);
+      const told = JSON.stringify({ guildId, module: moduleId });
+      await askGateway(env, '/config', { method: 'POST', body: told }).catch(() => null);
+    },
   };
 }
 

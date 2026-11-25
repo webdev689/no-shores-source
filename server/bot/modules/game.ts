@@ -1,8 +1,10 @@
 // The game: a member's linked No Shores character in the bot's messages, read from the accounts through their
-// service binding, and /link, which says how to link one. The link itself is the accounts' own (Discord sign-in).
+// service binding, their house's role (`gameHouses.ts`), and /link, which says how to link one. The link itself is
+// the accounts' own (Discord sign-in).
 
 import { GAME_SLOTS } from '../law/gameShape.ts';
 import { privateReply } from '../kit.ts';
+import { houseRoleKeeping } from './gameHouses.ts';
 import type { ServerModule } from './module.ts';
 
 /** Where the game is played. */
@@ -14,6 +16,7 @@ const said = (error: unknown) => (error instanceof Error ? error.message : Strin
 
 export const gameModule: ServerModule = {
   id: 'game',
+  ...houseRoleKeeping,
   commands: [{ name: 'link', description: 'How to link your No Shores character', type: 1, contexts: [0] }],
   command: () => Promise.resolve(privateReply(LINK_WORDS)),
   slots: {
