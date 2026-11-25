@@ -6,7 +6,7 @@ import type { SeenShip } from '../network/messages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import { plateOverM } from '../ships/hulls.ts';
 import { calledOf } from './harbour/harbourModel.ts';
-import { rosterNow } from './companyHud.ts';
+import { ofCompany } from './companyHud.ts';
 
 /** How far across the water from the eye another player's ship wears its mark, metres: about where a ship drawn
  *  75 m long shrinks to a few pixels, past which a mark names a speck. */
@@ -26,13 +26,13 @@ export function seaPlated(
   plates: ReadonlyMap<number, PlayerPlate>,
   scale: number,
 ): PlatedPlayer[] {
-  const company = new Set((rosterNow()?.company?.members ?? []).map((member) => member.name.toLowerCase()));
+  const company = ofCompany();
   return others.flatMap((ship) => {
     const plate = plates.get(ship.player);
     if (!plate) return [];
     const feet = [ship.x, ship.y, plateOverM(ship.hull) * scale] as const;
     const vessel = calledOf(ship);
-    const ours = plate.name !== '' && company.has(plate.name.toLowerCase());
+    const ours = company(plate.name);
     return [{ id: ship.player, feet, plate, company: ours, ...(vessel && { vessel }) }];
   });
 }

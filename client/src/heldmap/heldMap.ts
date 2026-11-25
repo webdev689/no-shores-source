@@ -32,7 +32,7 @@ import { Kept, layoutKey } from './heldMapKept.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 import { GLYPH_HALF } from './landGlyphs.ts';
 import { paintLand } from './landLetters.ts';
-import type { LandSheet } from './landSheet.ts';
+import type { LandSheet, MapMarks } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
@@ -91,6 +91,8 @@ export interface HeldMapScene {
   readonly course: readonly Point2[];
   readonly quest?: readonly string[];
   readonly lit?: (glyph: string) => boolean;
+  /** On land, what moves on it: the other players and the public event running (`MapMarks`), in the world. */
+  readonly moving?: MapMarks;
 }
 
 type Phase =
@@ -458,7 +460,7 @@ export class HeldMap {
       };
       const [scale, covers] = [letterScale(this.ink), handsCover(sprite, this.ink)];
       const painting = { sheet: land, view: this.mapView, ink: this.ink, scale, covers, table: this.table, player };
-      this.table = paintLand(this.painter, this.lettering, inkAt, dpr, painting);
+      this.table = paintLand(this.painter, this.lettering, inkAt, dpr, { ...painting, moving: scene.moving });
     }
     return true;
   }

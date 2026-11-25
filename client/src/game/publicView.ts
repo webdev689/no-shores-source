@@ -21,7 +21,7 @@ import {
   type PublicEvent,
   type PublicMark,
 } from '../network/publicMessages.ts';
-import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, elsewhereOf, questOf, ringOf } from './publicLaw.ts';
+import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, elsewhereOf, inEvent, questOf, ringOf } from './publicLaw.ts';
 import { type Moments, PublicMoments } from './publicMoments.ts';
 import { SpireCourse } from './fissureSpires.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
@@ -317,8 +317,10 @@ export class PublicView {
           .map((mark) => ({ at: mark.at, share: mark.health, struck: moments.struck.has(mark.id) }))
       : [];
     const waiting = chests.filter((chest) => chest.opened === null);
+    // The panel and the tracker's steps show only on the event's ground (the owner's call); the map marks it elsewhere.
+    const here = inEvent(event, bodies.feet);
     const shown: PublicShown | null = event && {
-      banner: this.bannerOf(event, chests.length > 0, bodies, moments),
+      banner: here ? this.bannerOf(event, chests.length > 0, bodies, moments) : null,
       beat,
       places: [
         ...compassOf(event),
@@ -339,7 +341,9 @@ export class PublicView {
     const heard = stale ? [] : [...(sealed?.sounds ?? []), ...(breached?.sounds ?? [])];
     return {
       shown: withBreach(shown ?? sealed?.shown ?? null, breached ?? null),
-      quest: questOf(event, this.zone) ?? (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),
+      quest:
+        (here ? questOf(event, this.zone) : null) ??
+        (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),
       props,
       sounds: [...sounds, ...heard],
       sting: stale ? null : ((beat && STINGS[beat]) ?? sealed?.sting ?? breached?.sting ?? null),

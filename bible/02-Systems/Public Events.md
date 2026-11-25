@@ -173,6 +173,10 @@ The snapshot's `public_event` is kept by the fight (`Fighting.public`), and its 
 fight's, which read every event as a blow. Each frame on foot, `game/publicView.ts` turns them into what the player
 sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event alone.
 
+- **On its ground only** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): the banner and the tracker's steps show while the player stands inside the event's
+  ring (`inEvent`), running or showing its result; elsewhere neither shows, and the held map marks the event while it
+  runs, with its name and the time it has left ([[Held Map]]). Between events no banner shows anywhere. The compass
+  still marks the event's ground, and the tracker still counts a chest left lying.
 - **The banner** (`combat/publicBanner.ts`), drawn as nodes of the game's own interface as every part of the HUD is,
   stands in the compass's column under the compass and over the boss bar and the target's plate, so neither stands on
   it, 440 px wide at most or three quarters of a narrower view (in a view under 480 px high, two lines across three
@@ -185,15 +189,12 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   count: kill him before he goes") or "Heroic" once met, and the bonus ("seal it before 4:00", "lose no store"),
   struck through once lost. In the last minute the clock is red and pulses. A player carrying a shard reads
   "Carrying a shard: take it to the fissure"; a store under attack puts
-  "Store under attack" before the objective. Away from the ground, the metres to it stand beside the place. Over, for
-  its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Between events, one line: the next
-  event, where, and in how many minutes (m:ss in its last minute, counted on by the page), and under it what runs or
-  comes next elsewhere on Saltmere, from the same schedule. Its tone (gold, heroic orange, won green, failed red) runs
+  "Store under attack" before the objective. Over, for
+  its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Its tone (gold, heroic orange, won green, failed red) runs
   down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed, the heroic
-  chance opening with an orange flare, the next a minute off). A screen reader hears each beat (`announce`), never the
+  chance opening with an orange flare). A screen reader hears each beat (`announce`), never the
   ticking clocks. In a view under 1024 px wide the tracker gives way to it while an event runs or has just ended (it
-  holds the same objective), and at a phone's width (600 px) the place's name does too; neither to the next event's
-  line.
+  holds the same objective), and at a phone's width (600 px) the place's name does too.
 - **The tracker** (`tasks.ts`) holds the steps while one runs: the shards still to carry or the Warden; the wave and
   the stores still standing; the heroic task; the bonus while it holds. After, "Open your chest (1:48)" while a chest
   lies, over the two minutes it lies, its clock never read out. The page counts it, and the next event's last minute, on

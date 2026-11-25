@@ -12,8 +12,8 @@ export function layoutKey(
   scene: HeldMapScene,
   chosen: string | null,
 ): string {
-  const { ship, heading, places, knownIslands, quest } = scene;
-  const read = [ship, heading, places, knownIslands, chosen, quest];
+  const { ship, heading, places, knownIslands, quest, moving } = scene;
+  const read = [ship, heading, places, knownIslands, chosen, quest, moving];
   return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ...read]);
 }
 

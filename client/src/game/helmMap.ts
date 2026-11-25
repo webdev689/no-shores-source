@@ -12,6 +12,7 @@ import { boundWord } from './controls.ts';
 import type { WorldShown } from './worldShown.ts';
 import type { Sea } from './sea.ts';
 import type { Stack } from '../ui/stack.ts';
+import type { MapMarks } from '../heldmap/landSheet.ts';
 
 /** What the map at the helm draws over the finished picture. */
 export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
@@ -186,6 +187,7 @@ export class HelmMap {
       readonly at: Point2;
       readonly heading: number;
       readonly lit?: (glyph: string) => boolean;
+      readonly map?: () => MapMarks;
     },
   ): MapDraw | undefined {
     // A map raised at sea and carried ashore (washed up with it up) is put away at once.
@@ -199,8 +201,10 @@ export class HelmMap {
       this.landWanted = null;
     }
     const map = this.map;
+    const up = !!map?.shown && this.onLand;
     const scene = { ship: foot.at, heading: foot.heading, places: [], knownIslands: 0, course: [], lit: foot.lit };
-    const drawn = map?.shown && this.onLand ? map.frame(seconds, foot.viewport, foot.dpr, scene) : null;
+    const moving = up ? foot.map?.() : undefined;
+    const drawn = up && map ? map.frame(seconds, foot.viewport, foot.dpr, { ...scene, moving }) : null;
     return map && drawn ? (encoder, view) => map.draw(encoder, view, drawn) : undefined;
   }
 }

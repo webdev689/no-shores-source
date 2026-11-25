@@ -58,6 +58,7 @@ import { hearing, placingFolk, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
+import { mapMarksOf } from './mapMarks.ts';
 
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
@@ -544,7 +545,9 @@ export class Foot {
     const dark = arrivals.darkOf(fight.player, clock);
     const { quest, sting } = shownPublic;
     const props = [...(shownPublic.props ?? []), ...found.props];
-    return { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark, props, quest, sting };
+    const map = () => mapMarksOf(fight.public, this.otherPlayers);
+    const framed = { shot, figures, standing, marks, lit, hidden, swings, fight: fought, hints, dark };
+    return { ...framed, props, quest, sting, map };
   }
 
   /** Where the player stands with the section's edge, as the room said. */

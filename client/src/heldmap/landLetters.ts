@@ -5,11 +5,11 @@
 import type { Point2 } from '../overworld/ground.ts';
 import type { Rect, View } from './heldMapLaw.ts';
 import { GLYPH_HALF, paintGlyph } from './landGlyphs.ts';
-import type { GroundKind, LandSheet, Quad } from './landSheet.ts';
-import { barOf, paintTable, tablePlace, tableRows, tableSize } from './landTable.ts';
+import type { GroundKind, LandSheet, MapMarks, Quad } from './landSheet.ts';
+import { barOf, paintDot, paintTable, tablePlace, tableRows, tableSize } from './landTable.ts';
 import { FACE, INK, type KeyPlace } from './mapKey.ts';
 import { PORT_PX } from './mapLayout.ts';
-import { LIGHT_INK, paintArrow, type Painter, word } from './mapLetters.ts';
+import { LIGHT_INK, paintArrow, type Painter, ROUTE, word } from './mapLetters.ts';
 
 /** What a painting of the land asks: the sheet, the view of it (its metres), the map's size, how many times over its
  *  words and marks are drawn (`letterScale`), the gauntlets' cover over the map (ink pixels), where the table stood
@@ -22,6 +22,8 @@ export interface LandPainting {
   readonly covers: readonly Rect[];
   readonly table: KeyPlace | null;
   readonly player: { readonly at: Point2; readonly heading: number } | null;
+  /** What moves on the land, in the world: the other players and the public event running. */
+  readonly moving?: MapMarks;
 }
 
 /** The washes and inks of the land, as a surveyor colours a plan: the sea, each ground, the walks, what stands and
@@ -177,8 +179,23 @@ export function paintLand(
     taken.push(spot.box);
     local([x, spot.middle], () => word(painter, place.name, 0, 0, INK));
   }
+  // The public event running: ringed at its ground in the route's red-brown, its name and the time it has left beside.
+  const fromWorld = ([x, y]: Point2): Point2 => onMap([x - sheet.origin[0], y - sheet.origin[1]]);
+  for (const event of painting.moving?.events ?? []) {
+    local(fromWorld(event.at), () => {
+      painter.beginPath();
+      painter.arc(0, 0, GLYPH_HALF + 3, 0, 2 * Math.PI);
+      painter.strokeStyle = ROUTE;
+      painter.lineWidth = 1.6;
+      painter.stroke();
+      painter.textAlign = 'left';
+      word(painter, `${event.name} ${event.clock}`, GLYPH_HALF + 6, 0, ROUTE);
+    });
+  }
+  // Every other player in the room, then the player's own arrow over all.
+  for (const other of painting.moving?.others ?? []) local(fromWorld(other.at), () => paintDot(painter, other.company));
   if (player) local(onMap(player.at), () => paintArrow(painter, player.heading));
-  const rows = tableRows(sheet);
+  const rows = tableRows(sheet, painting.moving?.others);
   const size = tableSize(painter, sheet.name, rows);
   const box = { width: size.width * scale, height: size.height * scale };
   const place = tablePlace(ink, box, scale, taken, painting.covers, painting.table);

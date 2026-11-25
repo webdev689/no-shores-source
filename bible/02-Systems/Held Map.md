@@ -205,6 +205,11 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
     a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
+  - **What moves on it** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): every other player in the room the player stands in, a patrol zone's or a social
+    space's, wherever they are in it, a dot in their nameplate's square's colour, the company's green or the players'
+    blue, edged in the ink, under the player's arrow (`mapMarks.ts`); and the zone's public event while it runs, ringed
+    at its ground in the route's red-brown, its name and the time it has left beside it. The parchment is painted again
+    as they move, as it is for the player's own arrow.
   - **A lit coin.** A keeper's coin is lit as their mark over them is ([[Game]], "Over what a player can use";
     [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a quest step asks to speak with them, or
     letters wait at the Postmaster. It is ringed in the route's red-brown, a quarter wider than the coin, and a second
@@ -213,7 +218,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     never painted again for them, and the gauntlets cover them as they cover the coin.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
-    it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar
+    it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You", then "Your company" and "Other players" while the
+    map shows one; under them a bar
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.
 

@@ -61,6 +61,21 @@ const placeFrom = (
 const over = (event: PublicEvent) => event.phase === PUBLIC_PHASE.won || event.phase === PUBLIC_PHASE.failed;
 const running = (event: PublicEvent) => event.kind !== PUBLIC_KIND.none && event.phase === PUBLIC_PHASE.running;
 
+/** Whether `feet` stand in the zone's event, running or showing its result: on its ground, inside its ring. Its
+ *  panel and steps show only there; elsewhere the held map marks it (`mapEventOf`). */
+export function inEvent(event: PublicEvent | null, feet: readonly number[]): boolean {
+  if (!event || !(running(event) || (event.kind !== PUBLIC_KIND.none && over(event)))) return false;
+  return Math.hypot(event.ground[0] - (feet[0] ?? 0), event.ground[1] - (feet[1] ?? 0)) <= event.radius;
+}
+
+/** The zone's event as the held map marks it while it runs: its ground, its name and the time it has left. */
+export function mapEventOf(
+  event: PublicEvent | null,
+): { at: readonly [number, number]; name: string; clock: string } | null {
+  if (!event || !running(event)) return null;
+  return { at: [event.ground[0], event.ground[1]], name: NAMES[event.kind] ?? '', clock: clockOf(event.ticksLeft) };
+}
+
 /** What the player is to do now: carry shards, or kill the Warden; hold the stores through the wave, or break Marrow. */
 function objectiveOf(event: PublicEvent): string {
   if (event.kind === PUBLIC_KIND.fissure)
