@@ -219,7 +219,7 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The desktop app** (branch `ccr-42a55a97-wkid9r`, its pull request waiting on the owner's yes to merge), on the
+- **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
   reference ([[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]; every call in
   [[The Desktop App as Claude Builds It]]; how it works in [[Desktop App]]). Electron 45 plays the game at
@@ -232,8 +232,12 @@ The decisions in [[Open Questions]] are not repeated here.
   SwiftShader driven through Playwright and real X keys (the bridge, the watch, the fences, F11, Alt+Enter, F12,
   closing, Settings' App part pictured); the packed AppImage's own main and preload. Not seen: any real GPU, an
   installer on Windows or a Mac, an update installed, a Discord sign-in in the window, and Exit to Desktop's hold
-  driven by the mouse in the app (its close is tested in parts). After a merge, the owner says when to cut the first
-  release (Actions, `desktop`, run on `main`); the site's links to the downloads and signing keys are open questions.
+  driven by the mouse in the app (its close is tested in parts). A read-only audit's findings were each measured
+  first and fixed, among them a question left unanswered that recorded working graphics as failed, a slow page load
+  counted as a failure of the graphics, the Mac app's signature broken by the fuses, and an AppImage that could have
+  updated as a Debian package; three of its claims were checked and did not hold (the PR says which). After a merge,
+  the owner says when to cut the first release (Actions, `desktop`, run on `main`); the site's links to the downloads
+  and signing keys are open questions.
 
 - **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
   its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
