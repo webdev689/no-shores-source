@@ -67,3 +67,11 @@ test("the repository's pull request template, left unfilled, puts nothing on the
   assert.match(body, /^## Patch notes$/m);
   assert.equal(noteOf({ number: 1, title: 'A change', body, merged_at: '2026-11-25T00:00:00Z' }), null);
 });
+
+test("only a section's list items are notes: a footer after it, or words around them, never reach the launcher", () => {
+  const signed = `## Patch notes: The app\n\n- It installs.\n- It updates.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_1`;
+  assert.deepEqual(noteOf({ number: 1, title: 't', body: signed, merged_at: merged })?.lines, [
+    'It installs.',
+    'It updates.',
+  ]);
+});

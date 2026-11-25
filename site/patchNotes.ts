@@ -1,6 +1,7 @@
 // The patch notes the desktop app's launcher shows, written at each deploy from the pull requests merged into `main`.
 // A pull request's notes are its "## Patch notes" section, in plain words for players: an optional title after a
-// colon (else the pull request's own), then a line each. Markdown is taken out, as the game draws words alone.
+// colon (else the pull request's own), then a list item each; any other words there (a footer) are not notes.
+// Markdown is taken out, as the game draws words alone.
 //
 //     gh api 'repos/<owner>/<repo>/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=100' |
 //       node site/patchNotes.ts > <served>/play/patch-notes.json
@@ -22,6 +23,8 @@ export interface Pull {
 }
 
 const HEADING = /^##[ \t]+Patch notes(?:[ \t]*:[ \t]*(.*?))?[ \t]*$/im;
+/** A list item's line: a dash, star, plus or number before its words. */
+const LISTED = /^\s*(?:[-*+]|\d+\.)\s+\S/;
 
 /** `text` as plain words: links their words, emphasis and code marks gone, a list's mark taken off. */
 export function plainOf(text: string): string {
@@ -44,6 +47,7 @@ export function noteOf(pull: Pull): PatchNote | null {
   const end = after.search(/^#{1,6}[ \t]/m);
   const lines = (end < 0 ? after : after.slice(0, end))
     .split('\n')
+    .filter((line) => LISTED.test(line))
     .map(plainOf)
     .filter((line) => line !== '')
     .map((line) => line.slice(0, LINE_MOST))
