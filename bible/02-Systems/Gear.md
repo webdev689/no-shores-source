@@ -157,8 +157,9 @@ number is one of [[Gear as Claude Shapes It]].
   worn (the loadouts, the armour and the cloak, never a ship's module or a horse) 5,000 XP each, up to its last column,
   and is refused while none of them can grow ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]).
 - **Level and Prestige.** XP alone reaches level 20. Past it, the Prestige of the four armour pieces worn sets the
-  level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 30), an Atheric 21 to 30,
-  each climbing by equal steps over its upgrades, however many its grid holds (a ship's guns five, armour three).
+  level, to 30. A Rare at level 20 carries 13 to 15, a Legendary 18 to 27 (a Breach's to 28 from Normal, to 30
+  from Hard, [[Breaches]]), an Atheric 21 to 30, each climbing by equal steps over its upgrades, however many its
+  grid holds (a ship's guns five, armour three).
 - **Attack and Defense.** A weapon's blow is times 1.07 for each of the foe's levels up to its Attack ÷ 15, and
   falls to 0.67, 0.56, 0.47 and none as the player is one to four levels below the foe. A foe's health is its kind's
   times 1.07 for each of its levels, so a matched player fells it in the blows combat is tuned for. A foe's blow is
@@ -179,7 +180,7 @@ number is one of [[Gear as Claude Shapes It]].
   content's. Any other colour, a Legendary too, is a piece of a kind the slot takes in its content's set look, its look
   and traits rolled, never a trait twice ([[Every Drop Wears Its Content's Set, With Random Perks]]); a Legendary is
   level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
-  Breach's Legendary armour climbs to 30 Prestige. A Breach's armour or weapon rolls its perk columns from the
+  Breach's Legendary armour climbs to 28 Prestige from Normal (19, and 3 an upgrade) and to 30 from Hard (21). A Breach's armour or weapon rolls its perk columns from the
   Breaches' own perks ("Verbs", "The Breaches' perks"). A ship's Legendary module is a named one ([[Ship Power]]).
 - **Commons drop as themselves** ([[Commons Drop as Themselves, Never as Vestiges]]). A Vestige is Magic or finer:
   wherever a Vestige rolls Normal (a kill's, a Boss's or a Miniboss's, at sea too, a chest's, a first clear's, a
@@ -393,7 +394,14 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   Splinter (melee) Exposes the foe a riposte lands on and every other foe within 3 m of it. Shard Round (ranged)
   Charges a foe a shot lands on that was Exposed as it landed. Each is in the room's one door for statuses but
   Crystal Skin and Lattice Shell; every number is Claude's, in [[Gear as Claude Shapes It]] ("The Breaches'
-  perks"). No Breach is built yet, so only the rules and their tests make a Breach's piece.
+  perks"). A Breach's piece is made by a Breach Vestige, which the Drowned Vale pays ([[Breaches]], "Rewards").
+  On a piece won at Hard each is **Forged** ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]];
+  `Item::forges`, `Character::forged_trait`, `forged_on`): the same perk, one number about half again as strong, its
+  words `forged` in `traits.json`: Vein Strike 20%, Bloom 6 m, Crystal Sight past 15 m, Crystal Skin 15% softer,
+  Regrowth 8%, Lattice Shell 30% softer, Shardburst and Splinter 5 m, and the Exposes of Shatterpoint, Resonance,
+  Lattice Wall and Fracture and Shard Round's Charge half again as long. A perk worn on a Normal piece and a Hard one
+  counts once, Forged. The page shows a Forged perk's words, with "Forged" under it in a piece's perks, and its card
+  its short line at the Forged numbers (`forged_short`; Shardburst's names none, so keeps its own).
 - **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
   7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.
 
@@ -613,7 +621,8 @@ and its art (`gear::emblems`).
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
   (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Abyss
-  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of
+  difficulty, a resource gathered); each faction's first rank ([[Factions]]); a Breach's banner, at its last
+  encounter's first clear ([[Breaches]]); and the Tailor, who sells six a day of
   twelve, the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks
   and a piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
@@ -629,7 +638,8 @@ is a horse's hide, kept as its horse ("Horses").
 - **Kept and worn** as emblems are: a character keeps every dye and barding they have had and wears one of each. A
   new one keeps and wears the starts: Own Colours and Bare. One worn that is not kept, or of another kind, is the
   start again as the character is read.
-- **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); and the Tailor (dyes) and the
+- **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); a Breach's dye and barding,
+  each by chance at its last encounter's weekly clear, likelier at Hard ([[Breaches]]); and the Tailor (dyes) and the
   Tack (horses and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
   some from a level.
 - **Asks**: wearing a dye or barding kept, anywhere (55, its number in `item`); buying one of the day's at its
@@ -671,7 +681,10 @@ is a horse's hide, kept as its horse ("Horses").
   or none. It is rolled as the weapon is made, as a Vestige opens, a vendor stocks it, a faction sells it or the Test
   Ground grants it, by
   rarity: one in ten for Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and
-  Atheric; it is not guaranteed. Armour carries none. A blow carries the element of the loadout that struck it, none
+  Atheric; it is not guaranteed. A Breach's weapon won at Normal carries none, and one won at Hard (Forged) always
+  carries one, chosen evenly (`element::forged`,
+  [[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]). Armour carries none. A blow carries
+  the element of the loadout that struck it, none
   from the fists; a shot keeps the one it was loosed with.
 - **A foe's shield.** One foe in five that a garrison stands carries a shield of an element chosen evenly, holding half
   its health, drawn from its node's id, so its group stands with the same shields each time; a Boss or a Miniboss never
@@ -861,8 +874,11 @@ Officers ashore fight beside their player, as DFO's crew companions did
   woman's, and fails on any weapon or armour layer of the forge no item wears but a class's own (the class sword, axe,
   bow and staff, the archer's dark helm, the woman's horned one) and the laced boots, a garment. A gilded double
   pistolet's left gun is worn only by a named gilded double pistolet, Brass Chorus.
-- No Breach items exist yet, and no Breach drops one: a Breach's piece and its perks are in the rules alone. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
-  Vestige never opens to ([[Factions]]).
+- A Breach's pieces are rolled, never named: its Vestige opens to its armour and weapons at its tier ([[Breaches]]),
+  a weapon won at Hard named Forged after its set ("Lattice Sword (Forged)",
+  [[Breach Weapons Come Normal and Forged]]).
+  The factions' pieces (each one's cape, armour and two weapons) are the only named items a Vestige never opens to
+  ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them
   again. In the ride, about a tenth of the hide (its darkest texels) keeps the bay's colour under a coat: colour alone
   cannot tell it from the bridle, and the forge's ride `_uv` strips would make an exact mask. A coat leaves the mane

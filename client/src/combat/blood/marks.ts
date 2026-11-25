@@ -29,7 +29,6 @@ import {
   isOverkill,
   looksUp,
   plus,
-  scaleRate,
   sprayCount,
   sprayPattern,
   sprayRadius,
@@ -47,7 +46,7 @@ export type Surfaces = (from: Vector, direction: Vector, reach: number) => Surfa
 
 /** DFO's switch, `?blood=off`; the gore dial stays at DFO's default, normal: full density and 600 marks. */
 export const bloodOn = (search: string): boolean => new URLSearchParams(search).get('blood') !== 'off';
-export const GORE_NORMAL = { density: 1, capacity: 600 } as const;
+export const GORE_NORMAL = { capacity: 600 } as const;
 
 /** Blood spawns at the chest and looks 3 m down for a floor, 4 m up for a ceiling. A drip, a pool and a step look
  *  down from the knee, and a floor found more than a quarter metre above the feet is not the one they stand on. */
@@ -134,9 +133,6 @@ export interface BloodSettings {
   readonly surfaces: Surfaces;
   readonly random?: () => number;
   readonly enabled?: boolean;
-  readonly capacity?: number;
-  readonly density?: number;
-  readonly overkill?: boolean;
   readonly flight?: boolean;
 }
 
@@ -161,8 +157,6 @@ export class BloodMarks {
   readonly enabled: boolean;
   private readonly surfaces: Surfaces;
   private readonly random: () => number;
-  private readonly density: number;
-  private readonly overkill: boolean;
   private readonly flight: boolean;
   private readonly cells: Cell[] = atlasCells();
   private readonly mirror: Float32Array;
@@ -179,10 +173,8 @@ export class BloodMarks {
     this.surfaces = settings.surfaces;
     this.random = settings.random ?? Math.random;
     this.enabled = settings.enabled ?? true;
-    this.density = settings.density ?? GORE_NORMAL.density;
-    this.overkill = settings.overkill ?? true;
     this.flight = settings.flight ?? true;
-    this.ring = new DecalRing(settings.capacity ?? GORE_NORMAL.capacity, this.random);
+    this.ring = new DecalRing(GORE_NORMAL.capacity, this.random);
     this.mirror = new Float32Array(this.ring.capacity * QUAD_FLOATS);
   }
 
@@ -194,18 +186,12 @@ export class BloodMarks {
    *  the body's chunks, then the blow's own spray, whose pool it answers (null when nothing landed). */
   place(where: Vector, hit: BloodHit): Decal | null {
     if (!this.enabled) return null;
-    if (this.overkill && isOverkill(hit.damage, hit.healthMax)) {
+    if (isOverkill(hit.damage, hit.healthMax)) {
       const { heavy } = hit;
-      this.spray(
-        where,
-        burstCount(heavy, this.density),
-        burstReach(heavy, this.density),
-        burstRate(heavy, this.density),
-        hit.thrown,
-      );
+      this.spray(where, burstCount(heavy), burstReach(heavy), burstRate(heavy), hit.thrown);
       if (heavy && this.gibs.length < GIB_COUNT * MAX_BODIES) this.gibs.push(...throwGibs(where, this.random));
     }
-    const rate = bloodRate(hit.damage, hit.healthMax, this.density);
+    const rate = bloodRate(hit.damage, hit.healthMax);
     return this.spray(where, sprayCount(rate), sprayRadius(rate), rate, hit.thrown);
   }
 
@@ -414,8 +400,8 @@ export class BloodMarks {
     }
     this.spread();
     this.flyDrops(dt);
-    this.fall(this.gibs, dt, scaleRate(GIB_SPLASH_RATE, this.density));
-    this.fall(this.drips, dt, scaleRate(DRIP_SPLASH_RATE, this.density));
+    this.fall(this.gibs, dt, GIB_SPLASH_RATE);
+    this.fall(this.drips, dt, DRIP_SPLASH_RATE);
     if (this.drips.every((drip) => drip.still)) this.drips = [];
     if (this.gibs.every((gib) => gib.still)) this.gibs = [];
   }
@@ -471,16 +457,5 @@ export class BloodMarks {
       faller.still = true;
       if (this.enabled) this.spray(gibSprayFrom(faller), sprayCount(rate), sprayRadius(rate), rate, null);
     }
-  }
-
-  /** A room thrown away takes its blood with it; the ring stays the same ring. */
-  clear(): void {
-    this.ring.clear();
-    this.spreads = [];
-    this.gibs = [];
-    this.drips = [];
-    this.flying = [];
-    this.tracks = new Map();
-    this.dirty = [];
   }
 }

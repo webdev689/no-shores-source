@@ -2,7 +2,7 @@
 // at the goal (the room's own mark where it gives one); in a patrol whose gate leads to that zone, at the gate; on any
 // other land, across the water at the zone's landing, with a word to return to the ship; at sea, at that landing. A
 // goal with no single place points at the nearest place it can be done, and one done anywhere at nothing, its step
-// saying so. The rules judge every goal; this only points (bible: "Every Objective Has a Waypoint on the Compass").
+// saying so. The rules judge every goal; this only points.
 import type { QuestState } from '../../network/questMessages.ts';
 import type { LayoutArea } from '../../layout/layouts.ts';
 import type { NodeInfo } from '../worldData.ts';

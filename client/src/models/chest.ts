@@ -3,6 +3,7 @@
 // DFO's (x along it, y up, z out of its front, the latch's side, the origin on the floor under the base's middle); a
 // chest is laid in the game's, x across, y out of its front, z up. To open, the lid, the hinge and the latch turn
 // together about the hinge's line, the lid's top going back, as the model's own opening turns them.
+import { cross, minus, unit } from './vector.ts';
 
 type Point = readonly [number, number, number];
 
@@ -133,17 +134,6 @@ export function chestHinge(scale: number): Point {
   return [0, HINGE.out * scale, HINGE.up * scale];
 }
 
-const minus = (a: Point, b: Point): Point => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const cross = (a: Point, b: Point): Point => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0],
-];
-const unit = (a: Point): Point => {
-  const length = Math.hypot(a[0], a[1], a[2]) || 1;
-  return [a[0] / length, a[1] / length, a[2] / length];
-};
-
 /** Every face of a chest of `scale`, its lid swung `lid` radians open. */
 export function chestFaces(scale: number, lid = 0): ChestFace[] {
   const [cosine, sine] = [Math.cos(lid), Math.sin(lid)];
@@ -165,8 +155,8 @@ export function chestFaces(scale: number, lid = 0): ChestFace[] {
     for (let corner = 0; corner < triangles.length; corner += 3) {
       const corners = [place(triangles[corner]), place(triangles[corner + 1]), place(triangles[corner + 2])] as const;
       // Laying the model's frame in the game's swaps two axes, so the outside is now (c - a) x (b - a).
-      const normal = unit(cross(minus(corners[2], corners[0]), minus(corners[1], corners[0])));
-      faces.push({ part, corners, normal });
+      const [x, out, up] = unit(cross(minus(corners[2], corners[0]), minus(corners[1], corners[0])));
+      faces.push({ part, corners, normal: [x, out, up] });
     }
   }
   return faces;

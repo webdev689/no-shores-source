@@ -9,12 +9,12 @@ import type { Snapshot } from '../../../generated/messages/ts/overlook/wire/snap
  *  the zone's lamp; go home from it; begin a dive at the patrol zone's mouth `column`, by the route `slot` (0 public,
  *  1 a company's), at the lamp `node` lit this week (0 at the mouth); open the reliquary. */
 export const PASSAGE_ASKS = {
-  goOn: 82,
-  kindle: 83,
-  lightLamp: 84,
-  goHome: 85,
-  beginDive: 86,
-  open: 87,
+  goOn: 91,
+  kindle: 92,
+  lightLamp: 93,
+  goHome: 94,
+  beginDive: 95,
+  open: 96,
 } as const;
 
 /** What a dive carries and has not kept: its Vestiges and items as the gear's, its stocks (Weapon and Armor

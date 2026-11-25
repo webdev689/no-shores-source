@@ -5,7 +5,7 @@
 
 use crate::brain::Brain;
 use crate::factions::{CREW, GREY_TITHE, LATTICE, faction};
-use crate::ranks::{CORVANE, Phase, Rank, THULE, phase, phases, ranked};
+use crate::ranks::{CORVANE, Phase, Rank, SCRIVENER_PHASES, STEWARD_PHASES, THULE, phase, phases, ranked};
 use crate::roles::{Numbers, Role, numbers};
 use Domain::{Deck, Land};
 use Role::{Archer, Brute, Captain, Skirmisher, Swordsman};
@@ -94,12 +94,15 @@ pub const RAVAGER: u8 = 42;
 pub const BULWARK: u8 = 43;
 pub const HEART: u8 = 44;
 pub const TITHE_TAKER: u8 = 45;
-
+/// The Drowned Vale's own: a crystal bell (never moving or striking, the room keeps it), the Scrivener and the Steward.
+pub const BELL: u8 = 46;
+pub const SCRIVENER: u8 = 47;
+pub const STEWARD: u8 = 48;
 /// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases. The Brig's
 /// crew fight by a swordsman's and a skirmisher's numbers, as the boarders they fight do. Types 21 to 38 are the Elite
 /// Dungeons' Bosses, one each, in `gear::activities`' order. The Lattice fight by their roles' numbers in arms of the
-/// same reach; the Heart is a Boss with no phases of its own yet.
-pub const ROSTER: [FoeType; 45] = [
+/// same reach; the Heart is a Boss with no phases of its own yet, the Scrivener and the Steward each have theirs.
+pub const ROSTER: [FoeType; 48] = [
     row(RUNNER, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(COLLECTOR, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
     row(CROSSBOWMAN, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
@@ -160,6 +163,16 @@ pub const ROSTER: [FoeType; 45] = [
     row(BULWARK, LATTICE, Land, "Bulwark", Brute, "mace_iron", "shield_kite_iron", LEADER),
     row(HEART, LATTICE, Land, "Heart", Captain, "flail_iron", "", &[Rank::Boss]),
     row(TITHE_TAKER, GREY_TITHE, Land, "Tithe-Taker", Captain, "mace_iron", "", &[Rank::Elite]),
+    row(BELL, LATTICE, Land, "Bell", Brute, "", "", &[Rank::Minor]),
+    FoeType {
+        standoff: 1.5,
+        boss_phases: &SCRIVENER_PHASES,
+        ..row(SCRIVENER, LATTICE, Land, "The Scrivener", Archer, "bow_short_iron", "", &[Rank::Boss])
+    },
+    FoeType {
+        boss_phases: &STEWARD_PHASES,
+        ..row(STEWARD, LATTICE, Land, "The Steward", Captain, "flail_iron", "", &[Rank::Boss])
+    },
 ];
 
 /// The type a number names, or none.

@@ -86,7 +86,8 @@ how its lines are written, [[Every Line Reads as Spoken, and the Lore Is Detaile
 
 **The way in.** The page shows black, the game's logo and "Click or press any key to start" ("Tap to start" on a
 touch screen) at once, and loads the world behind it. The tap wakes the browser's sound. Once both are done the intro
-begins. With `?at=<node>` the page goes straight to that node, as before, and plays no story.
+begins. In the [[Desktop App]] the launcher stands over it first, once a run, and the tap is heard only after Play.
+With `?at=<node>` the page goes straight to that node, and plays no story.
 
 **The director** (`Prologue`) plays the beats in the owner's order, each a module of its own, handing each what the
 last left: the camera's shot, the ships sighted, where the two ships met. A cutscene's beat is skipped by holding
@@ -176,7 +177,8 @@ of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports st
 agreeing how they fell); then each place to visit, the camera flying to it as she names it and holding there
 while she and its keeper speak: the smiths' arcade, held on the Armorsmith's stall (whose keeper calls out before she
 names the arcade, as no one speaks three lines in a row) and then on the Weaponsmith's, the Mage, the Vault, the
-Tailor, the Tack, the Postmaster, the Harbourmaster in the Beacon Walk's market for the Shipwright, and the Hall of the Arts, turning to
+Tailor, the Tack, the Postmaster, the Harbourmaster in the Beacon Walk's market, who keeps a Sloop for the player ([[Shipyard]]), and the
+Hall of the Arts, turning to
 each house's chapel as she names it (Arlo Kestrel, Sable and Elder Maren Hale answering); then her farewell face to
 face. A place's eye (`welcome/framing.ts`) frames one counter, the one of its kind nearest the player: the first of a
 set of candidates round it whose lines to its keeper's head and its stall's front clear the node's solids (the blocks

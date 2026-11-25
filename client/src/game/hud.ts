@@ -435,7 +435,13 @@ export class Hud {
       noticesNode(ui, view, this.noticeStack.rows, clock, still),
       standing.kind === 'dead' &&
         standing.told &&
-        deathNode(ui, deathWords(standing.fell), standing.canRespawn, () => this.respawnWanted()),
+        deathNode(
+          ui,
+          deathWords(standing.fell, standing.waits, standing.respawnIn),
+          standing.canRespawn,
+          () => this.respawnWanted(),
+          !standing.waits,
+        ),
       standing.kind !== 'dead' && this.fallen && fallenNode(ui, this.fallen, () => this.respawnWanted()),
       this.veilNode(width, clock, still),
       !this.quiet && (this.leaving.node(view, this.title, this.leaveWarning) ?? this.usePrompt.node(view)),

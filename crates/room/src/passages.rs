@@ -282,7 +282,7 @@ mod passage_asks;
 #[path = "passage_deal.rs"]
 mod passage_deal;
 #[path = "passage_foes.rs"]
-mod passage_foes;
+pub(crate) mod passage_foes;
 #[path = "passage_holds.rs"]
 mod passage_holds;
 pub use passage_asks::{PassageAsk, PassageSeen};

@@ -5,7 +5,7 @@
 //! no ask to respawn: only an ally stands the fallen up there, and a company all down in the Court falls back to its
 //! checkpoint as the Court starts over. In an Abyss run every stand, revived or respawned, takes one of the company's
 //! revives (`abyss.rs`). A room with no section (the Test Ground, the prologue's wreck), whose page never asks, stands
-//! its fallen again as soon as they may.
+//! its fallen again as soon as they may, and a Breach as its rules say (`breach/fallen.rs`).
 
 use crate::players::GRACE;
 use crate::{EventKind, Input, PlayerId, Room};
@@ -64,7 +64,9 @@ impl Room {
             // One the section killed too stands again only by its own respawn, which ends that death as well.
             .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
             .filter(|(_, found)| unasked || found.respawn_asked)
+            .filter(|(id, _)| !self.breach_holds(**id))
             .map(|(id, found)| (*id, found.fighter.body))
+            .chain(self.breach_stands_now())
             .collect();
         for found in self.players.values_mut() {
             found.respawn_asked = false;
@@ -129,7 +131,7 @@ impl Room {
         self.respawning.revivals.clear();
         for id in players {
             let Some(lain) = self.players.get(&id).map(|found| found.fighter.body) else { continue };
-            let body = self.stand_again(lain.x, lain.y);
+            let body = self.stand_again(id, lain.x, lain.y);
             self.stand_up(id, body, None);
             // A company all down in a passage zone's dark is as good as respawned: its haul is lost.
             self.lose_haul(id);
@@ -139,7 +141,8 @@ impl Room {
 
     /// Each ally holding Use to revive holds on over the fallen player they were reviving while they stay in reach,
     /// else takes up the nearest within reach no one else revives; one let go of starts again from nothing. A hold
-    /// done stands the fallen player where they lay. In an Abyss run with no revive left no hold is taken up.
+    /// done stands the fallen player where they lay. In an Abyss run with no revive left no hold is taken up, nor in a
+    /// Breach on one its rules keep down (`breach/fallen.rs`), whose revives a hold done spends.
     fn keep_revivals(&mut self) {
         let at = |body: Body| [body.x, body.y, body.z];
         let revivers: Vec<(PlayerId, [f64; 3])> = self
@@ -158,15 +161,18 @@ impl Room {
         if self.revives() == Some(0) {
             return;
         }
-        let reached = |from: [f64; 3], lying: [f64; 3]| {
-            libm::hypot(lying[0] - from[0], lying[1] - from[1]) <= REVIVE_REACH_M
-                && (lying[2] - from[2]).abs() <= REVIVE_RISE_M
+        let reached = |reviver: PlayerId, from: [f64; 3], (lying, place): (PlayerId, [f64; 3])| {
+            libm::hypot(place[0] - from[0], place[1] - from[1]) <= REVIVE_REACH_M
+                && (place[2] - from[2]).abs() <= REVIVE_RISE_M
+                && self.breach_lets_revive(reviver, lying)
         };
         // Holds under way first, each its ally's while they stay in reach, so no newcomer takes one over.
         let mut revivals: BTreeMap<PlayerId, (PlayerId, u32)> = BTreeMap::new();
         for &(reviver, from) in &revivers {
             let kept = held.iter().find(|(_, (by, _))| *by == reviver).map(|(lying, (_, ticks))| (*lying, *ticks));
-            let kept = kept.filter(|(lying, _)| fallen.iter().any(|(id, place)| id == lying && reached(from, *place)));
+            let kept = kept.filter(|(lying, _)| {
+                fallen.iter().any(|&(id, place)| id == *lying && reached(reviver, from, (id, place)))
+            });
             if let Some((lying, ticks)) = kept {
                 revivals.insert(lying, (reviver, ticks + 1));
             }
@@ -175,7 +181,9 @@ impl Room {
             if revivals.values().any(|(by, _)| *by == reviver) {
                 continue;
             }
-            let free = fallen.iter().filter(|(id, place)| !revivals.contains_key(id) && reached(from, *place));
+            let free = fallen
+                .iter()
+                .filter(|&&(id, place)| !revivals.contains_key(&id) && reached(reviver, from, (id, place)));
             let far = |place: [f64; 3]| libm::hypot(place[0] - from[0], place[1] - from[1]);
             if let Some((lying, _)) = free.min_by(|one, two| far(one.1).total_cmp(&far(two.1))) {
                 revivals.insert(*lying, (reviver, 1));
@@ -185,9 +193,11 @@ impl Room {
             revivals.iter().filter(|(_, (_, ticks))| *ticks >= REVIVE_TICKS).map(|(id, (by, _))| (*id, *by)).collect();
         self.respawning.revivals = revivals;
         for (id, by) in done {
-            if !self.revive() {
+            // Asked again for each, so two finished on one tick spend no revive a Breach has not left.
+            if !self.revive() || !self.breach_lets_revive(by, id) {
                 continue;
             }
+            self.spend_breach_revive(id);
             let Some(lain) = self.players.get(&id).map(|found| found.fighter.body) else { continue };
             // On the floor they lay on, a ledge's or a pad's over the ground among them.
             let floor = movement::blocks::ground_at(&self.blocks, &self.floor, lain.x, lain.y, lain.z);
@@ -228,13 +238,14 @@ impl Room {
     /// A dead player's input: the body falls under its own weight (`lying_still`), the input taken without steering
     /// it, and one asking to respawn, once the section allows, stands it where a respawn stands a player.
     pub(crate) fn step_dead(&mut self, id: PlayerId, input: Input, seen: u64, view: &[(FighterId, Fighter)]) {
+        let may_respawn = self.may_respawn(id);
         let Some(found) = self.players.get_mut(&id) else { return };
         found.chain = crate::chain::Chain::default();
         found.shown = input.shown;
         found.remember(seen);
         let (lying, dead) = (crate::players::lying_still(&found.fighter), found.armed(found.fighter));
         found.fighter = player_tick(id, &dead, &lying, view, &self.blocks, &self.floor).0;
-        if input.respawn && found.standing.may_respawn() {
+        if input.respawn && found.standing.may_respawn() && may_respawn {
             let lain = found.fighter.body;
             self.respawn(id, lain);
         }
@@ -246,7 +257,7 @@ impl Room {
         if self.dark_at(lain.x, lain.y) || !self.revive() {
             return;
         }
-        let body = self.stand_again(lain.x, lain.y);
+        let body = self.stand_again(id, lain.x, lain.y);
         self.stand_up(id, body, None);
         self.lose_haul(id);
     }

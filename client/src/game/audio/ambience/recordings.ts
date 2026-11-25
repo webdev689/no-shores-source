@@ -28,6 +28,18 @@ export const BED_RECORDINGS = {
   'frogs.chorus': 'amb.wet.frogs',
   'insects.marsh': 'amb.swamp.insects',
   'wind.snow': 'amb.tundra.snow',
+  // A Breach's: its gate's hollow and the Spire's hum in the vale, and its run's spaces under it.
+  'breach.hollow': 'amb.breach.hollow',
+  'spire.hum': 'breach.spire.fill',
+  'breach.cave': 'amb.breach.cave',
+  'breach.drone': 'amb.breach.drone',
+  'breach.race': 'amb.breach.race',
+  'breach.pool': 'amb.breach.pool',
+  'breach.chapel': 'amb.breach.chapel',
+  'breach.streets': 'amb.breach.streets',
+  'breach.void': 'amb.breach.void',
+  'breach.hall': 'amb.breach.hall',
+  'breach.rift': 'amb.breach.rift',
 } as const;
 export type BedKey = keyof typeof BED_RECORDINGS;
 

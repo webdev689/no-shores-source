@@ -7,8 +7,7 @@ export function addressKey(address: string): string {
 }
 
 /** The address new guests are counted by: an IPv6 address by its /48, the block one tunnel or one customer is given,
- *  so many networks of one holder make ten guests an hour, not ten each
- *  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). */
+ *  so many networks of one holder make ten guests an hour, not ten each. */
 export function guestKey(address: string): string {
   return ipv6Prefix(address, 3);
 }
@@ -26,10 +25,4 @@ function ipv6Prefix(address: string, groups: number): string {
     .slice(0, groups)
     .map((group) => group.toLowerCase().replace(/^0+(?=.)/, ''))
     .join(':')}::/${groups * 16}`;
-}
-
-/** A session token's SHA-256, in hex: what the sea knows a ship played unkept by, never the token itself. */
-export async function sessionHash(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }

@@ -42,7 +42,7 @@ code:
   - crates/room/src/passage_asks.rs#passage_arrived
   - crates/room/src/passage_asks.rs#passage_seen
   - crates/room/src/run.rs#modded_blow
-  - crates/bake/src/lib.rs#doors_of
+  - crates/bake/src/sites.rs#doors_of
   - crates/protocol/src/passage_wire.rs#passages_of
   - crates/protocol/src/passage_wire.rs#seen_offset
   - crates/room-wasm/src/passage_room_door.rs#open_passage

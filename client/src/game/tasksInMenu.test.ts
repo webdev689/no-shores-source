@@ -12,7 +12,7 @@ import { OPEN_AT } from './gearScreen.ts';
 import { sampleGear } from './gearShots.ts';
 import { startGearWindow } from './gearWindow.ts';
 import { Hud } from './hud.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
 const face: Face = { glyph: () => block };
@@ -37,7 +37,7 @@ const EQUIP = {
 /** The HUD, the lesson tracked and kept in the menu while `inMenu`, under the Character page open on a view
  *  `width` by `height`: everything laid, in drawing order. */
 function laidWithMenu(width: number, height: number, inMenu: boolean, lesson = LESSON, close = false): Laid[] {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   Object.assign(globalThis, { devicePixelRatio: 1, innerWidth: width, innerHeight: height, setInterval: () => 0 });
   Object.assign(globalThis, { requestAnimationFrame: () => 0 });
   Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });

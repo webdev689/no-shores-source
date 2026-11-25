@@ -21,6 +21,7 @@ import { SAMPLES } from '../../water/waterView.ts';
 import { fromEyeMatrix, type Shot } from '../camera.ts';
 import { passagePieceLights, passagePiecesLaid, stylePacks } from '../dungeonDressing.ts';
 import { loadStylePack, PASSAGE_PACK } from '../dungeonModules.ts';
+import { runSky } from '../breachLook.ts';
 import { DungeonScene } from '../dungeonScene.ts';
 import { DungeonView } from '../dungeonView.ts';
 import { IslesNature } from '../isleNature.ts';
@@ -139,7 +140,8 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
       { drawInto: (pass, fromEye, eyed) => pieces.drawInto(pass, fromEye, eyed) },
     ];
     for (let frame = 0; frame < 3; frame++) {
-      scene.draw(shot, view, 0, drawers);
+      // Under ground the sky only says so, with no dark to fade into, as the game's dungeon frame has it.
+      scene.draw(shot, view, 0, drawers, { look: { ...runSky(0), darkM: 0 }, lamps: [] });
       await device.queue.onSubmittedWorkDone();
       // Room for the dungeon's pictures to be painted before the next frame.
       await new Promise((resolve) => setTimeout(resolve, 1500));

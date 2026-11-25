@@ -2464,6 +2464,845 @@
         6.0
       ],
       "picked": 547365
+    },
+    {
+      "id": "breach.begun",
+      "use": "A Breach encounter begins: a deep gong struck in stone halls",
+      "query": "deep gong",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "picked": 361495
+    },
+    {
+      "id": "breach.stage",
+      "use": "The company's checkpoint moves on: a heavy stone settling into place",
+      "query": "stone thud",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 574446
+    },
+    {
+      "id": "breach.seal",
+      "use": "An encounter won: the crystal seal over its doorway shatters and falls away",
+      "query": "glass shatter",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "skip": [
+        322603,
+        371094,
+        536763,
+        546669
+      ],
+      "picked": 453499
+    },
+    {
+      "id": "breach.rewritten",
+      "use": "A player is Rewritten: a whisper close at the ear, the Lattice's mark",
+      "query": "ghostly whisper",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 554372
+    },
+    {
+      "id": "breach.cleansed",
+      "use": "The Rewritten cleansed at the font or by Hold True: clear water poured over stone",
+      "query": "pouring water",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "skip": [
+        240468,
+        319963,
+        421184,
+        842163
+      ],
+      "picked": 119113
+    },
+    {
+      "id": "breach.unwritten",
+      "use": "A player unwritten: parchment torn through",
+      "query": "paper rip",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "skip": [
+        111120,
+        450045,
+        489968,
+        496140
+      ],
+      "picked": 814715
+    },
+    {
+      "id": "breach.stone.take",
+      "use": "The Lodestone taken up from its plinth: heavy stone lifted with a scrape",
+      "query": "heavy stone scrape",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 758580
+    },
+    {
+      "id": "breach.stone.drop",
+      "use": "The Lodestone set down: a heavy stone thudding onto rock",
+      "query": "stone drop",
+      "seconds": [
+        0.2,
+        3.0
+      ],
+      "skip": [
+        570534,
+        574445,
+        574446,
+        574447
+      ],
+      "picked": 61086
+    },
+    {
+      "id": "breach.stone.ground",
+      "use": "The Lodestone Grounded: a ward breaking, a pane of crystal bursting",
+      "query": "glass break",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "skip": [
+        245167,
+        447699,
+        546671,
+        778608
+      ],
+      "picked": 390729
+    },
+    {
+      "id": "breach.stone.hold",
+      "use": "Hold True raised round the Lodestone's bearer: a struck singing bowl ringing on",
+      "query": "singing bowl strike",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "picked": 271370
+    },
+    {
+      "id": "breach.bell.wake",
+      "use": "A Choir bell waking, played at each bell's own note: one small bell struck",
+      "query": "handbell",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "picked": 532649
+    },
+    {
+      "id": "breach.bell.ring",
+      "use": "A Choir bell ringing out, Rewriting the company: a church bell tolling hard",
+      "query": "church bell toll",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "picked": 160689
+    },
+    {
+      "id": "breach.bell.break",
+      "use": "A Choir bell broken: struck metal cracking apart",
+      "query": "bell crack",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "skip": [
+        249548,
+        249549,
+        418194,
+        638636
+      ],
+      "picked": 807434
+    },
+    {
+      "id": "breach.fused",
+      "use": "Husks fusing at a seam: wet, cracking flesh",
+      "query": "flesh squish crack",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 253798
+    },
+    {
+      "id": "breach.overtaken",
+      "use": "The ground round a fused seam overtaken: crystal crackling as it spreads",
+      "query": "ice crack",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "skip": [
+        262635,
+        591152,
+        665084,
+        819719
+      ],
+      "picked": 764657
+    },
+    {
+      "id": "breach.claimed",
+      "use": "A Bulwark claims a mooring: heavy chains dragged taut",
+      "query": "chain rattle",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 655585
+    },
+    {
+      "id": "breach.desk.marked",
+      "use": "The Scrivener marks a desk: a quill scratching",
+      "query": "pen writing",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 379886
+    },
+    {
+      "id": "breach.blotted",
+      "use": "A marked desk blotted by a player standing on it: a page slammed shut",
+      "query": "book slam",
+      "seconds": [
+        0.2,
+        2.0
+      ],
+      "picked": 256559
+    },
+    {
+      "id": "breach.wrote",
+      "use": "The Scrivener writes, unwriting the Rewritten: fast pen strokes on parchment",
+      "query": "pen writing paper",
+      "seconds": [
+        1.0,
+        5.0
+      ],
+      "picked": 257807
+    },
+    {
+      "id": "breach.seen",
+      "use": "A Watcher sees a player: a sharp, inhuman gasp",
+      "query": "creature gasp",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 738439
+    },
+    {
+      "id": "breach.rift.open",
+      "use": "A rift to a shore opens: water rushing in a sudden swell",
+      "query": "water rush whoosh",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "picked": 848658
+    },
+    {
+      "id": "breach.rift.shut",
+      "use": "A rift shuts: rushing water drawn back to nothing",
+      "query": "reverse whoosh",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 877675
+    },
+    {
+      "id": "breach.keeper.fell",
+      "use": "A Keeper falls in its shore: a stone figure crumbling",
+      "query": "stone crumble",
+      "seconds": [
+        1.0,
+        5.0
+      ],
+      "picked": 810962
+    },
+    {
+      "id": "breach.toll",
+      "use": "The Steward tolls: one huge, deep bell",
+      "query": "huge bell",
+      "seconds": [
+        3.0,
+        15.0
+      ],
+      "picked": 791503
+    },
+    {
+      "id": "breach.taken",
+      "use": "Players taken into a shore: plunged under water",
+      "query": "splash underwater",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "skip": [
+        718503
+      ],
+      "picked": 519008
+    },
+    {
+      "id": "breach.way.back",
+      "use": "The way back from a shore opens: water swirling away down a drain",
+      "query": "water drain",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "skip": [
+        190938,
+        478722
+      ],
+      "picked": 757255
+    },
+    {
+      "id": "breach.returned",
+      "use": "Players brought back from a shore: bursting up out of water",
+      "query": "water surface splash",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 583348
+    },
+    {
+      "id": "breach.laid.bare",
+      "use": "The Steward laid bare: its armour shattering",
+      "query": "metal shatter",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 592388
+    },
+    {
+      "id": "breach.wipe",
+      "use": "The company falls and its attempt is lost: a low boom fading out",
+      "query": "low boom",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "picked": 162850
+    },
+    {
+      "id": "breach.slab",
+      "use": "A slab of the Broken Stair rising or sinking: stone grinding on stone",
+      "query": "stone grinding",
+      "seconds": [
+        1.0,
+        5.0
+      ],
+      "picked": 182345
+    },
+    {
+      "id": "breach.mooring",
+      "use": "A mooring held: an old mechanism catching",
+      "query": "mechanism clunk",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 556749
+    },
+    {
+      "id": "breach.spire.fill",
+      "use": "The Spire filling at the Sunken Gate while its moorings are held, looped: a crystal hum",
+      "query": "crystal hum drone",
+      "seconds": [
+        5.0,
+        60.0
+      ],
+      "picked": 861428
+    },
+    {
+      "id": "breach.spire.woken",
+      "use": "The Spire woken and the gate opened: a great crystal resonance breaking",
+      "query": "glass resonance",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "skip": [
+        424452,
+        544401,
+        816081,
+        875761
+      ],
+      "picked": 418912
+    },
+    {
+      "id": "breach.chest",
+      "use": "A hidden chest of the run opening: an old lid creaking up",
+      "query": "chest open creak",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 377552
+    },
+    {
+      "id": "amb.breach.hollow",
+      "use": "The Sunken Gate's hollow in the vale, looped: wind moving round split stone",
+      "query": "canyon wind",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 540470
+    },
+    {
+      "id": "amb.breach.cave",
+      "use": "Under the vale, looped: a deep cave's air with far drips",
+      "query": "cave ambience",
+      "seconds": [
+        20.0,
+        300.0
+      ],
+      "picked": 270387
+    },
+    {
+      "id": "amb.breach.race",
+      "use": "The old mill race of the Descent, looped: water running hard in a stone channel",
+      "query": "water channel",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 710601
+    },
+    {
+      "id": "amb.breach.pool",
+      "use": "The drowned green, looped: still water lapping in a cavern",
+      "query": "cave water",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "skip": [
+        401161
+      ],
+      "picked": 68076
+    },
+    {
+      "id": "amb.breach.chapel",
+      "use": "The drowned chapel, looped: an empty stone church's air",
+      "query": "empty church",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 788451
+    },
+    {
+      "id": "amb.breach.streets",
+      "use": "The Unlit Ways, looped: a cold wind down empty stone streets",
+      "query": "empty street wind night",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 610641
+    },
+    {
+      "id": "amb.breach.void",
+      "use": "The dark under the Broken Stair and the court, looped: a deep wind from below",
+      "query": "deep wind howl",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 145777
+    },
+    {
+      "id": "amb.breach.hall",
+      "use": "The keep's hall, looped: a great stone hall's air",
+      "query": "castle hall ambience",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 657539
+    },
+    {
+      "id": "amb.breach.rift",
+      "use": "A rift's shore, looped: a far waterfall's roar",
+      "query": "distant waterfall",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 348827
+    },
+    {
+      "id": "amb.breach.drone",
+      "use": "Under every space of the run, looped: a low, slow drone",
+      "query": "dark drone",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "picked": 519122
+    },
+    {
+      "id": "amb.breach.drip",
+      "use": "A single drop of water falling in a cave",
+      "query": "water drop cave",
+      "seconds": [
+        0.2,
+        2.0
+      ],
+      "picked": 380885
+    },
+    {
+      "id": "amb.breach.stones",
+      "use": "Small stones trickling down rock",
+      "query": "pebbles falling",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 398698
+    },
+    {
+      "id": "amb.breach.chain",
+      "use": "An old chain clinking",
+      "query": "chain clink",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 489767
+    },
+    {
+      "id": "amb.breach.bell.far",
+      "use": "A bell far off in the drowned town",
+      "query": "distant bell",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "picked": 68262
+    },
+    {
+      "id": "amb.breach.bubbles",
+      "use": "Bubbles rising and breaking at still water",
+      "query": "bubbles water",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 567457
+    },
+    {
+      "id": "amb.breach.creak",
+      "use": "An old timber creaking",
+      "query": "wood creak",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 618083
+    },
+    {
+      "id": "amb.breach.crystal",
+      "use": "The Lattice's crystal ringing faintly",
+      "query": "glass chime",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "skip": [
+        562196,
+        735168,
+        842513,
+        878433
+      ],
+      "picked": 728699
+    },
+    {
+      "id": "amb.breach.whisper",
+      "use": "Whispers far off in the dark, no word clear",
+      "query": "whispers",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "picked": 446083
+    },
+    {
+      "id": "amb.breach.groan",
+      "use": "The rock groaning deep below",
+      "query": "earth rumble",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 389735
+    },
+    {
+      "id": "music.cello",
+      "use": "A cello's long bowed note, for the Drowned Vale's scores",
+      "query": "cello long note",
+      "seconds": [
+        3.0,
+        12.0
+      ],
+      "picked": 329777,
+      "root": "D2-8"
+    },
+    {
+      "id": "music.cello.short",
+      "use": "A cello's short bowed note, for the scores' ostinatos",
+      "query": "cello",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "picked": 372811,
+      "root": "F5-9"
+    },
+    {
+      "id": "music.bass",
+      "use": "A double bass's long bowed note, the scores' floor",
+      "query": "double bass",
+      "seconds": [
+        3.0,
+        12.0
+      ],
+      "picked": 383710,
+      "root": "G#1+2"
+    },
+    {
+      "id": "music.choir.low",
+      "use": "A men's choir holding one note, for the scores",
+      "query": "choir note",
+      "seconds": [
+        3.0,
+        15.0
+      ],
+      "skip": [
+        89287,
+        469222,
+        561253,
+        679210
+      ],
+      "picked": 147881,
+      "root": "C#5+10"
+    },
+    {
+      "id": "music.choir.high",
+      "use": "A women's choir holding one note, for the scores",
+      "query": "female choir",
+      "seconds": [
+        3.0,
+        15.0
+      ],
+      "picked": 819290,
+      "root": "G#2+15"
+    },
+    {
+      "id": "music.organ",
+      "use": "A pipe organ's low held note, for the chapel's scores",
+      "query": "pipe organ note",
+      "seconds": [
+        3.0,
+        15.0
+      ],
+      "picked": 205822,
+      "root": "C4-1"
+    },
+    {
+      "id": "music.horn",
+      "use": "A French horn's long note, for the Steward's score",
+      "query": "french horn note",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "picked": 362196,
+      "root": "F#3-3"
+    },
+    {
+      "id": "music.piano",
+      "use": "A soft felt piano's single note, for the quiet stretches",
+      "query": "piano single note",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "skip": [
+        448617
+      ],
+      "picked": 740920,
+      "root": "G5+12"
+    },
+    {
+      "id": "music.harp",
+      "use": "A harp's single plucked note",
+      "query": "harp note",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 653784,
+      "root": "C4"
+    },
+    {
+      "id": "music.bell",
+      "use": "A tubular bell's single note, for the scores' bells",
+      "query": "tubular bell",
+      "seconds": [
+        2.0,
+        12.0
+      ],
+      "picked": 85804,
+      "root": "F#3-45"
+    },
+    {
+      "id": "music.timpani",
+      "use": "A single timpani hit on one clear note",
+      "query": "timpani note",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "skip": [
+        267980,
+        427803,
+        573282,
+        687925
+      ],
+      "picked": 373932,
+      "root": "F#3-18"
+    },
+    {
+      "id": "music.taiko",
+      "use": "A single taiko drum hit, for the fights",
+      "query": "taiko hit",
+      "seconds": [
+        0.5,
+        4.0
+      ],
+      "picked": 441646
+    },
+    {
+      "id": "music.frame",
+      "use": "A single frame drum hit, for the fights' grooves",
+      "query": "frame drum",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 257146
+    },
+    {
+      "id": "music.boom",
+      "use": "A deep cinematic boom, for the scores' downbeats",
+      "query": "cinematic boom",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 879905
+    },
+    {
+      "id": "music.metal",
+      "use": "A struck metal hit with a long tail, for the scores' accents",
+      "query": "metal hit",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "picked": 406561
+    },
+    {
+      "id": "music.bowed",
+      "use": "A bowed cymbal's swell, for the scores' tension",
+      "query": "bowed cymbal",
+      "seconds": [
+        3.0,
+        20.0
+      ],
+      "picked": 372207
+    },
+    {
+      "id": "music.bowl",
+      "use": "A singing bowl ringing on, for the Lattice's colour",
+      "query": "singing bowl",
+      "seconds": [
+        3.0,
+        20.0
+      ],
+      "picked": 271370,
+      "root": "E5-28"
+    },
+    {
+      "id": "music.glass",
+      "use": "Glass rubbed into a singing tone, for the Lattice's colour",
+      "query": "singing wine glass",
+      "seconds": [
+        2.0,
+        10.0
+      ],
+      "picked": 62055,
+      "root": "B4+5"
+    },
+    {
+      "id": "music.waterphone",
+      "use": "A waterphone's eerie bowed tones, for the Ways' tension",
+      "query": "waterphone",
+      "seconds": [
+        2.0,
+        15.0
+      ],
+      "picked": 378249
+    },
+    {
+      "id": "music.drone",
+      "use": "A dark, slow drone holding one note under the scores, looped",
+      "query": "drone sustained note",
+      "seconds": [
+        20.0,
+        180.0
+      ],
+      "skip": [
+        155139,
+        708532,
+        799354,
+        845391
+      ],
+      "picked": 256250,
+      "root": "E6-1"
+    },
+    {
+      "id": "music.riser",
+      "use": "A reversed cymbal swelling up to a downbeat",
+      "query": "reverse cymbal",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "picked": 9523
     }
   ]
 }

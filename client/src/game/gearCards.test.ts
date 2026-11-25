@@ -13,6 +13,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   name: 0,
   resource: null,
   breach: false,
+  hard: false,
   xp: 0,
   xpMost: 0,
   bought: 0,
@@ -257,4 +258,25 @@ test("a rolled piece's card says its set's words for its kind", () => {
   const card = cardOf(item({ kind: 2, rarity: 0 }), null);
   assert.equal(card.name, 'Homespun Sword');
   assert.equal(card.words, words.sets.Homespun.Sword);
+});
+
+test("a Hard Breach piece's card shows its perks at their Forged grade, marked Forged", () => {
+  const breachPerk = {
+    kind: 3,
+    traits: ['vein_strike', 'bloom'],
+    xp: 0,
+    aurem: 0,
+    fragments: 0,
+    essence: 0,
+    resource: 0,
+  };
+  const piece = (hard: boolean) =>
+    item({ rarity: 3, level: 20, source: 6, breach: true, hard, columns: [breachPerk], chosen: [0] });
+  const [plain] = cardOf(piece(false)).traits;
+  const [forged] = cardOf(piece(true)).traits;
+  assert.equal(plain?.words, 'Blows and shots on an Exposed foe strike 15% harder.');
+  assert.equal(plain?.note, undefined);
+  assert.equal(forged?.words, 'Blows and shots on an Exposed foe strike 20% harder.');
+  assert.equal(forged?.note, 'Forged');
+  assert.equal(cardOf(piece(true)).name, 'Lattice Sword (Forged)');
 });

@@ -80,8 +80,12 @@ impl Character {
         character.arts = std::mem::take(&mut character.arts).kept();
         character.activity = std::mem::take(&mut character.activity).kept();
         character.crew = std::mem::take(&mut character.crew).kept();
-        character.fit_first_modules();
+        character.fleet.keep_whole();
+        if character.has_ship() {
+            character.fit_first_modules();
+        }
         character.allegiance = std::mem::take(&mut character.allegiance).kept();
+        character.dress_kept();
         character.quests = std::mem::take(&mut character.quests).kept();
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         let mut seen = std::collections::BTreeSet::new();

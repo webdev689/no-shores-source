@@ -84,7 +84,7 @@ export class Brig {
   }
 
   /** Its crew where they work, as it is placed; `moves` swaps a speaker's move (a cry, a cheer). */
-  crew(place: ShipPlace, clock: number, moves: Readonly<Record<string, string>> = {}): Actor[] {
+  crew(place: ShipPlace, moves: Readonly<Record<string, string>> = {}): Actor[] {
     return CREW.map((hand, index) => {
       const [x, y] = hand.at;
       const z = cellHeight(BRIG_DECK, x, y) ?? 2.3;

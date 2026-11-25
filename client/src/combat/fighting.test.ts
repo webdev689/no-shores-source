@@ -414,6 +414,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     public: null,
     encounter: null,
     outpost: 0,
+    breach: null,
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));
@@ -429,7 +430,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   const dressed: string[] = [];
   const casts: number[] = [];
   let fight: Fighting | null = null;
-  const kept = new SnapshotKeeper();
+  let kept = new SnapshotKeeper();
   const link = {
     player: door.join(),
     dressed: [],
@@ -467,7 +468,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   // A deploy: the room starts afresh, and the link joins it as its second player.
   [door, dressed.length, casts.length] = [after, 0, 0];
   // A new socket holds no snapshots of the room before.
-  kept.clear();
+  kept = new SnapshotKeeper();
   after.join();
   Object.assign(link, { player: door.join(), joins: 2 });
   answers.clear();
@@ -662,7 +663,7 @@ test('a respawn asked while the link joins its room again goes with the first in
   door.open(course.start, course.blocks);
   const asked: boolean[] = [];
   let fight: Fighting | null = null;
-  const kept = new SnapshotKeeper();
+  let kept = new SnapshotKeeper();
   const link = {
     player: door.join(),
     dressed: [],
@@ -691,7 +692,7 @@ test('a respawn asked while the link joins its room again goes with the first in
   fighting.askRespawn();
   for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
   assert.deepEqual(asked, [], 'nothing goes while it rejoins');
-  kept.clear();
+  kept = new SnapshotKeeper();
   Object.assign(link, { player: door.join(), joins: 2, rejoining: false });
   link.pump();
   for (let count = 0; count < 2; count += 1) {
@@ -699,4 +700,41 @@ test('a respawn asked while the link joins its room again goes with the first in
     link.pump();
   }
   assert.deepEqual(asked, [true, false], 'the respawn asked goes with the first input');
+});
+
+test("in a Breach's run each input is predicted on its own tick's blocks, and the Lodestone's bearer bare handed", () => {
+  let fight: Fighting | null = null;
+  const stone = { gate: false, seals: 0b1, stone: 2, bearer: 0 };
+  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => {
+    stone.bearer = fight ? room.player : 0;
+    fight?.receive({ ...snapshot, breach: stone } as unknown as Snapshot);
+  });
+  const real = startCombatRules(compiled);
+  real.setCourse(course.blocks);
+  const [stood, armed] = [[] as [number, number][], [] as number[]];
+  const rules: CombatRules = {
+    ...real,
+    setBreach: (open, tick) => stood.push([open, tick]) > 0,
+    predict: (fighter, intent, player, arms, view) => {
+      armed.push(arms);
+      return real.predict(fighter, intent, player, arms, view);
+    },
+  };
+  const fighting = new Fighting(rules, room);
+  fight = fighting;
+  fighting.arms = real.armsCode('sword_iron', null, true);
+  room.pump(TICK);
+  const steps = fighting.steps(movement);
+  for (let tick = 0; tick < 3; tick += 1) {
+    fighting.press(UNPRESSED);
+    steps.step({} as Body, STILL);
+    room.pump(TICK);
+  }
+  assert.ok(stood.length >= 3 && stood.every(([open]) => open === 0b1), 'its seals as the room last said');
+  const ticks = stood.map(([, tick]) => tick);
+  assert.ok(
+    ticks.every((tick, index) => index === 0 || tick >= (ticks[index - 1] ?? 0)),
+    `on, tick by tick: ${ticks}`,
+  );
+  assert.ok(armed.length > 0 && armed.every((arms) => arms === 0), 'bare handed while bearing it');
 });

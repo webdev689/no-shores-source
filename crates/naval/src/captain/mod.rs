@@ -19,8 +19,7 @@ use crate::ranks::Commission;
 use crate::shots::ShipId;
 use aim::{Aboard, Battery, Mark, RunOut, captain_guns, fire_window};
 use course::{
-    DEG, Traffic, distance, flee_course, heading_to, intercept, lead_point, pass_reach, traffic_course, velocity_of,
-    wrap,
+    Traffic, distance, flee_course, heading_to, intercept, lead_point, pass_reach, traffic_course, velocity_of, wrap,
 };
 use land::{Avoid, NAV_EVERY_S, avoid_land, course_clear};
 use odds::{Power, odds};
@@ -178,7 +177,7 @@ pub struct Captain {
     /// The ship its chase, its mark's velocity and its side presented are about.
     marked: Option<ShipId>,
     chase: Option<Chase>,
-    enemy_vel: Option<[f64; 2]>,
+    enemy_velocity: Option<[f64; 2]>,
     want_prev: Option<f64>,
     want_rate: f64,
     present: Option<Present>,
@@ -226,7 +225,7 @@ impl Captain {
             target: None,
             marked: None,
             chase: None,
-            enemy_vel: None,
+            enemy_velocity: None,
             want_prev: None,
             want_rate: 0.0,
             present: None,
@@ -305,7 +304,7 @@ impl Captain {
             numbers.push(standing.len() as f64);
             numbers.extend(standing.iter().flat_map(|(ship, at)| [f64::from(*ship), *at]));
         }
-        numbers.extend(self.enemy_vel.unwrap_or([0.0; 2]));
+        numbers.extend(self.enemy_velocity.unwrap_or([0.0; 2]));
         numbers.extend(self.run.numbers());
         numbers.extend(self.avoid.numbers());
         if let Some(present) = self.present {
@@ -417,7 +416,7 @@ impl Captain {
     /// Marks a new ship: what it remembered of another (its chase, its way, its side to it) is let go.
     fn mark(&mut self, ship: ShipId) {
         if self.marked.is_some_and(|marked| marked != ship) {
-            (self.chase, self.enemy_vel, self.present) = (None, None, None);
+            (self.chase, self.enemy_velocity, self.present) = (None, None, None);
         }
         self.marked = Some(ship);
     }
@@ -431,7 +430,7 @@ impl Captain {
         };
         self.want_prev = Some(want);
         let step = wrap(want - before);
-        if step.abs() > TRACK_JUMP_DEG * DEG {
+        if step.abs() > TRACK_JUMP_DEG.to_radians() {
             self.want_rate = 0.0;
             return 0.0;
         }
@@ -512,7 +511,7 @@ impl Captain {
     /// Its mark's velocity, smoothed.
     fn follow(&mut self, enemy: &Sighting, seconds: f64) {
         let now = velocity_of(&enemy.ship);
-        let smoothed = self.enemy_vel.get_or_insert(now);
+        let smoothed = self.enemy_velocity.get_or_insert(now);
         let share = 1.0 - libm::exp(-seconds / TARGET_VEL_TAU);
         *smoothed = [smoothed[0] + (now[0] - smoothed[0]) * share, smoothed[1] + (now[1] - smoothed[1]) * share];
     }
@@ -522,7 +521,7 @@ impl Captain {
         let length = vessel.arms.hull[1][0] - vessel.arms.hull[0][0];
         // Its turning circle at its own pace: a ship lying still is about to gather way.
         let paced = Ship { rung: SAILS_SET, ahead: own, abeam: 0.0, ..*vessel.ship };
-        let radius = (length * 0.5).max(own / (swing_rate(&paced, vessel.hull) * DEG).max(1e-6));
+        let radius = (length * 0.5).max(own / swing_rate(&paced, vessel.hull).to_radians().max(1e-6));
         let way = length_of(vessel.ship);
         land::lookout(vessel.arms.hull[1][0], (vessel.arms.hull[1][1] - vessel.arms.hull[0][1]) / 2.0, way, radius)
     }
@@ -530,7 +529,7 @@ impl Captain {
     /// Its rudder and its rung for `want`, leading a turning want by `lead` (radians a second): DFO's commanded swing
     /// as a share of its own, and the rung whose way is nearest its share of sail.
     fn helm(&mut self, vessel: &Own, want: f64, lead: f64) -> Helm {
-        let most = swing_rate(vessel.ship, vessel.hull) * DEG;
+        let most = swing_rate(vessel.ship, vessel.hull).to_radians();
         let error = self.avoid.helm_error(wrap(want - vessel.ship.heading));
         let command = (error / (4.0 * TURN_TAU) + lead).clamp(-most, most);
         let (forward, _) = frame(vessel.ship.heading);
@@ -563,7 +562,7 @@ impl Captain {
             place: [enemy.ship.x, enemy.ship.y],
             heading: Some(enemy.ship.heading),
             velocity: velocity_of(&enemy.ship),
-            smoothed: self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship)),
+            smoothed: self.enemy_velocity.unwrap_or_else(|| velocity_of(&enemy.ship)),
             level: enemy.level,
             arms: arms_of(enemy.hull),
         };

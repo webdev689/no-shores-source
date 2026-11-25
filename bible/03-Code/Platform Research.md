@@ -4,9 +4,10 @@ type: reference
 # Platform Research
 
 What the browsers and Cloudflare offer for the game's interface, its threads and its network, as researched on
-2026-11-20, with the sources each finding rests on. The decisions built on it:
-[[The Interface Uses No HTML, Now or Later]], [[Work Leaves the Main Thread Where It Can]],
-[[The Network Is Made Smaller and Readied for WebTransport]].
+2026-11-20, and what Electron and Chromium offer the [[Desktop App]], with the sources each
+finding rests on. The decisions built on it: [[The Interface Uses No HTML, Now or Later]],
+[[Work Leaves the Main Thread Where It Can]], [[The Network Is Made Smaller and Readied for WebTransport]],
+[[The Desktop App as Claude Builds It]].
 
 ## The interface
 
@@ -80,3 +81,50 @@ What the browsers and Cloudflare offer for the game's interface, its threads and
 - **Readiness.** A datagram holds about 1.1 KB; the rooms' snapshots are larger, lean on deflate's ordered history,
   and carry events that must not be lost. Inputs and events need a stream or a resend, and snapshots their deltas,
   before datagrams help.
+
+## The desktop app
+
+Read in the Chromium of Electron 45 (156, branch `8078`) where a source file is named, and tried in Electron 45.3.0 in
+a Linux container with no GPU, Mesa's software Vulkan (llvmpipe) and SwiftShader, where a result is said to be measured.
+
+- **Electron.** 45 runs Chromium 156 and Node 24; a new major comes every 8 weeks, and the newest three are
+  supported. Since 45 a sandboxed preload loads only Electron's own modules; since 42 the
+  `electron` package downloads its binary on first run, not at install; since 38 an app opens as Wayland's own on a
+  Wayland desktop. [Releases](https://releases.electronjs.org/),
+  [timelines](https://www.electronjs.org/docs/latest/tutorial/electron-timelines),
+  [breaking changes](https://www.electronjs.org/docs/latest/breaking-changes).
+- **WebGPU's API by platform** (`gpu/command_buffer/service/webgpu_decoder_impl.cc`, `CreatePreferredAdapter`):
+  Direct3D 12 on Windows, or Direct3D 11 with `--use-webgpu-adapter=d3d11` (which also takes `opengles` and
+  `swiftshader`, and no Vulkan); Metal on a Mac; on Linux Vulkan only where Chromium's own drawing is on Vulkan (the
+  `Vulkan` feature) or WebGPU reaches it through OpenGL, and no adapter at all otherwise. On Windows WebGPU takes the
+  card ANGLE draws on, which `force_high_performance_gpu` sets.
+- **Linux.** WebGPU through OpenGL is offered by Wayland's platform alone (`ozone_platform_wayland.cc`), and entry 186
+  of Chromium's GPU list (`software_rendering_list.json`) keeps it from every card but Intel's Gen12 and later on Mesa
+  22 and NVIDIA's from driver 535.183.01; `--ignore-gpu-blocklist=186` lifts that entry (`service_utils.cc`), and
+  entry 186 of the driver-bug list too, which takes the same numbers (`gpu_util.cc`) but has no entry 186.
+  Measured: with no switch an X11 desktop gave no adapter; with `Vulkan` Chromium ran its GPU process on Vulkan.
+  [What's new in WebGPU 144](https://developer.chrome.com/blog/new-in-webgpu-144),
+  [147 and 148](https://developer.chrome.com/blog/new-in-webgpu-147-148).
+- **WebGPU's own list** (`webgpu_blocklist_impl.cc`) blocks every CPU adapter and every Direct3D 11 one;
+  `--disable-dawn-features=adapter_blocklist` lifts it, and `--enable-unsafe-webgpu` lifts it with SwiftShader and
+  WebGPU's unsafe features beside.
+- **What the adapter says.** `GPUAdapterInfo` gives `vendor`, `architecture`, the subgroup sizes and
+  `isFallbackAdapter` (a CPU adapter); with `--enable-webgpu-developer-features` also `backend`, `type`, `driver`,
+  `description` and more. Measured: SwiftShader's adapter is `google`, `swiftshader`, `isFallbackAdapter: true`,
+  backend `vulkan`, type `CPU`. `app.getGPUInfo` holds nothing of WebGPU. [WebGPU](https://www.w3.org/TR/webgpu/).
+- **Secure contexts.** `navigator.gpu` is only in a secure context. Measured: `about:blank` is none in Electron; a
+  scheme registered as secure is one.
+- **SwiftShader** cannot present a worker's WebGPU canvas without a GPU's shared images. Measured: the game's device is
+  lost about 3 s in, in a bare Electron as in headless Chromium.
+- **Updates.** electron-updater replaces a Windows installer's copy, an AppImage, a Debian, RPM or Pacman package and a
+  signed Mac app (Squirrel.Mac requires the signature); an unsigned Windows copy updates while its feed names no
+  publisher. Block maps let NSIS, a Mac zip and an AppImage download only the changed parts. A generic feed asks for
+  one range at a time with `useMultipleRangeRequest: false`.
+  [Auto update](https://www.electron.build/v26/docs/features/auto-update/),
+  [Electron's autoUpdater](https://www.electronjs.org/docs/latest/api/auto-updater).
+- **Signing.** An unsigned Windows file shows "Windows protected your PC", and an EV certificate no longer skips
+  SmartScreen's reputation; Azure's Artifact Signing costs from $9.99 a month, for an individual only in the US or
+  Canada. A Mac app downloaded unsigned opens only from System Settings, Privacy & Security, since macOS Sequoia;
+  notarizing needs a Developer ID. [SmartScreen](https://learn.microsoft.com/windows/apps/package-and-deploy/smartscreen-reputation),
+  [Artifact Signing](https://learn.microsoft.com/en-us/azure/artifact-signing/quickstart),
+  [Apple](https://developer.apple.com/news/?id=saqachfa).

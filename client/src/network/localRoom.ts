@@ -332,8 +332,8 @@ export class LocalRoom implements RoomLink {
   }
 }
 
-/** The Sloop's build as the naval rules hold it, read through a door of its own on the compiled `room-wasm` module: the
- *  same rules the servers' sea rooms run (`RoomDoor.sloop`). */
-export function sloopBuildText(module: WebAssembly.Module): string {
-  return startRoomDoor(module).sloop();
+/** Each player's hull's build as the naval rules hold it, read through a door of its own on the compiled `room-wasm`
+ *  module: the same rules the servers' sea rooms run (`RoomDoor.hulls`). */
+export function hullBuildsText(module: WebAssembly.Module): string {
+  return startRoomDoor(module).hulls();
 }

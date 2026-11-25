@@ -130,6 +130,12 @@ test('a room whose gate shuts sends the player back to their ship, the veil sayi
   assert.deepEqual(next(landing, { kind: 'shut', why }), back, 'while the veil is up');
   assert.deepEqual(next({ mode: 'foot', node: 'tidewall' }, { kind: 'shut', why }), back);
   assert.deepEqual(next({ mode: 'sea' }, { kind: 'shut', why }), { mode: 'sea' });
+  const ashore = { node: 'overlook-social', name: 'Overlook' };
+  assert.deepEqual(
+    next({ mode: 'foot', node: 'tidewall' }, { kind: 'shut', why, ashore }),
+    { mode: 'loading', words: `${why} Returning to Overlook`, then: { mode: 'foot', node: 'overlook-social' } },
+    'one who keeps no ship yet goes back to Overlook, where the Harbourmaster has one',
+  );
 });
 
 test('a sea island’s dungeon is entered from the sea and left back to it, the veil saying why', () => {

@@ -4,8 +4,11 @@ import { test } from 'node:test';
 import { runAsk, runInstance } from '../roomNames.ts';
 import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
-import { FOUND_KEPT_MS, companionsOf, launchedFor } from './companies.ts';
+import { FOUND_KEPT_MS, companionsOf, companyRunOf, launchedFor } from './companies.ts';
 import {
+  BREACH_HARD_SHUT,
+  BREACH_LAUNCHED,
+  BREACH_RELAUNCH_MS,
   FINDING_MOST,
   Finder,
   type FinderSocket,
@@ -187,6 +190,7 @@ test('a seeker is their session’s account, the level their room last kept, and
     account: ids['Ada'],
     level: 24,
     prologue: true,
+    breaches: [],
     apart: [ids['Ben'], ids['Cal']].sort(),
   });
   const kept = await seekerOf(database, fresh, made.clock.now);
@@ -444,4 +448,60 @@ test('a playlist’s Launch is started at once, for its seeker alone, its Elite 
   await elsewhere.heard(elsewhere.opened(alone, true), tokens['Ada'] ?? '');
   await elsewhere.tick();
   assert.deepEqual(alone.sent, [], 'only a playlist launches: an Elite Dungeon’s search waits for its company');
+});
+
+test('a Breach is launched from its own zone at its tier’s level, Hard once Normal is won, never matched', async () => {
+  assert.equal(asked('/v1/find/node-gullwing-vale--breach-hard'), 'node-gullwing-vale--breach-hard');
+  assert.equal(asked('/v1/find/node-gullwing-vale--breach-easy'), null);
+  assert.equal(asked('/v1/find/node-overlook-social--breach-normal'), null, 'no Breach’s gate stands there');
+  const { tokens: hardy, finderOf: hardOf, kept, ids } = await world(['Cal', 'Eve'], 29);
+  const story = { prologue: true, breaches: ['drowned-vale/normal'] };
+  await kept.save(ids['Cal'] ?? '', 'room:Cal', JSON.stringify({ shown: { level: 29 }, story }));
+  const unwon = hardOf('node-gullwing-vale--breach-hard');
+  const hard = new FakeSocket();
+  await unwon.heard(unwon.opened(hard, true), hardy['Eve'] ?? '');
+  assert.deepEqual(hard.closed, [4003, BREACH_HARD_SHUT], 'Normal never won');
+  const launched = new FakeSocket();
+  await unwon.heard(unwon.opened(launched, true), hardy['Cal'] ?? '');
+  await unwon.tick();
+  assert.deepEqual(launched.sent, [JSON.stringify({ run: 'node-gullwing-vale--breach-hard--run-k3j4h5g6' })]);
+  const { tokens, finderOf } = await world(['Ada', 'Ben'], 28);
+  const under = finderOf('node-gullwing-vale--breach-hard');
+  assert.deepEqual((await seeking(under, tokens['Ada'] ?? '')).closed, [4003, 'A Breach at Hard opens at level 29.']);
+  const matched = finderOf('node-gullwing-vale--breach-normal');
+  assert.deepEqual((await seeking(matched, tokens['Ada'] ?? '')).closed, [4003, BREACH_LAUNCHED], 'never matched');
+  const normal = finderOf('node-gullwing-vale--breach-normal');
+  const launch = new FakeSocket();
+  await normal.heard(normal.opened(launch, true), tokens['Ben'] ?? '');
+  await normal.tick();
+  const run = 'node-gullwing-vale--breach-normal--run-k3j4h5g6';
+  assert.deepEqual(launch.sent, [JSON.stringify({ run })], 'launched at once');
+  assert.equal(runAsk(run, 1), null, 'a Breach’s run is no dungeon’s');
+});
+
+test('a Breach launched again by its company within half an hour is the run it launched, not a second', async () => {
+  const { made, tokens, ids, database } = await world(['Ada', 'Ben'], 27);
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  assert.equal((await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben'])).status, 200);
+  let instance = 0;
+  const base = 'node-gullwing-vale--breach-normal';
+  const finder = new Finder(base, {
+    seeker: (token) => seekerOf(database, token, made.clock.now),
+    found: (run, found) => foundRun(database, run, found, made.clock.now),
+    relaunched: (account, launched) => companyRunOf(database, account, launched, made.clock.now, BREACH_RELAUNCH_MS),
+    now: () => made.clock.now,
+    instance: () => `k3j4h5g${(instance += 1)}`,
+  });
+  const launch = async (name: string) => {
+    const socket = new FakeSocket();
+    await finder.heard(finder.opened(socket, true), tokens[name] ?? '');
+    await finder.tick();
+    return socket.sent;
+  };
+  const first = `${base}--run-k3j4h5g1`;
+  assert.deepEqual(await launch('Ben'), [JSON.stringify({ run: first })]);
+  assert.deepEqual(await launch('Ada'), [JSON.stringify({ run: first })], 'the company’s second Launch');
+  assert.equal(await launchedFor(database, ids['Ada'] ?? '', first, made.clock.now), true);
+  made.clock.now += BREACH_RELAUNCH_MS + 1;
+  assert.notDeepEqual(await launch('Ada'), [JSON.stringify({ run: first })], 'long after, a run of its own');
 });

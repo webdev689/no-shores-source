@@ -75,10 +75,10 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     with_weather(|swell, wind| {
         let waters = OpenSea { swell };
         // Out on the open sea a ship's step does not hang on the hour: only its pose does.
-        // A player sails the Sloop.
-        let hull = HullKind::Sloop.hull();
+        // A player sails the Sloop in a fleet room, which holds no characters.
+        let hull = HullKind::Sloop;
         let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, hull, *helm, hurts, &waters, wind, time).0);
-        let pose = pose_of(&ship, hull, &waters, time);
+        let pose = pose_of(&ship, hull.hull(), &waters, time);
         ship.to_floats().into_iter().chain(pose.to_floats()).collect()
     })
 }

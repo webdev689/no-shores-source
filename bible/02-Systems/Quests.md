@@ -30,7 +30,7 @@ code:
   - client/src/game/journalWords.ts#questCardsOf
   - client/src/game/characterPage.ts#NO_ART_WORDS
   - crates/protocol/src/quest_wire.rs#quests_of
-  - crates/bake/src/lib.rs#places_of
+  - crates/bake/src/sites.rs#places_of
   - client/src/game/quests/questBook.ts#trackedOf
   - client/src/game/quests/questBook.ts#linesBetween
   - client/src/game/quests/questWatch.ts#QuestWatch
@@ -85,8 +85,9 @@ group holds its
 place, fights there and walks back to its post as a garrison's group does.
 
 A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or
-2, in the Art's order), fragments to choose (`fragments`: how many choices), or the first horse (`horse`: the Bay,
-worn where none is, never a second). Which Art is the quest's house's.
+2, in the Art's order), fragments to choose (`fragments`: how many choices), the first horse (`horse`: the Bay,
+worn where none is, never a second), or the first ship (`ship`: the Sloop, never a second; [[Shipyard]]). Which Art is
+the quest's house's.
 Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy` and `wear`) pays a mission's
 clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Destiny 1 paid each mission done
 ([[Gear]], "A clear"; [[The Balance and Economy Pass as Claude Shapes It]]).
@@ -99,8 +100,9 @@ clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Des
 [[Prologue]]; its reward the 400 Aurem she gives and the Bay Horse, `"horse": true`, worn unless one is, never a
 second,
 [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]); **Find your way round Overlook**, speaking at each counter in turn
-(the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack, the Postmaster, and the Harbourmaster for
-the Shipwright), each keeper saying what their counter is for; **Arm yourself**, a Melee weapon bought of the
+(the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack and the Postmaster), each keeper saying what
+their counter is for; **Take your ship from the Harbourmaster**, its reward the Sloop (`"ship": true`), which a new
+player has none of until then ([[Shipyard]]); **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
 **Put them on**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
 bought and worn during the round meet both as the last keeper is heard; a buy or wear goal names a weapon's or
@@ -197,10 +199,9 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   once while one waits or is said, and not at all while the story or the welcome holds the screen. Everything else waits
   for the welcome to pass. The tracker runs the clock as m:ss for a race, a defence, a tail and an unseen step (down
   from the room's last word on it, which sets it afresh), shows a defended ward's health as a percentage, and is read
-  aloud as a clock starts, at each half minute and in its last 10 s, and as a ward's health passes each quarter. The
-  HUD's mark is named for the task's first unmet goal in the player's node. Figures glide between the room's words, a
-  quarry walking back when it noticed and one arrived standing where it is; the ward's plate stays in view as a fought
-  foe's; a lit point offers no Use. With no Art worn (and while the story is told, which says nothing of houses) the Character page says "Pledge to a house; its road gives its
+  aloud as a clock starts, at each half minute and in its last 10 s, and as a ward's health passes each quarter.
+  Figures glide between the room's words, a quarry walking back when it noticed and one arrived standing where it is;
+  the ward's plate stays in view as a fought foe's; a lit point offers no Use. With no Art worn (and while the story is told, which says nothing of houses) the Character page says "Pledge to a house; its road gives its
   Art.", and the Arts' screen shows all three locked.
 - **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
   ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with

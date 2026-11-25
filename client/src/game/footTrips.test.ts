@@ -71,14 +71,16 @@ test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entr
   assert.equal(tripAt(100, 104, { ...outside, patrol: { ...patrol, kind: 'mission' } }, trips), null, 'a patrol only');
 });
 
-test("a patrol's dungeons are named as their entrances are heard, behind the veil, not as a door is first reached", (context) => {
+test("a patrol's dungeons are named as their entrances are heard, not as a door is first reached", (context) => {
   if (!roomModule) return context.skip('room.wasm is not built: run `npm run wasm`');
+  // A module with nothing in it throws if it is asked to lay a dungeon, so a name it gives was forged before.
+  const empty = new WebAssembly.Module(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]));
   const entrances = new Entrances();
   entrances.namesFrom(roomModule, patrol);
-  assert.equal(entrances.knownName(0), undefined, 'none heard yet');
   entrances.heard([100, 100, 0, 0, 0, 400, 100, 0, 0, 2]);
-  assert.match(entrances.knownName(0) ?? '', /^The \w+ of the Saltgrass Downs$/, 'named as heard');
-  assert.match(entrances.knownName(1) ?? '', /^The \w+ of the Saltgrass Downs$/);
+  assert.match(entrances.nameOf(empty, patrol, 0), /^The \w+ of the Saltgrass Downs$/, 'named as heard');
+  assert.match(entrances.nameOf(empty, patrol, 1), /^The \w+ of the Saltgrass Downs$/);
+  assert.throws(() => new Entrances().nameOf(empty, patrol, 0), 'none is named before it is heard');
 });
 
 test('a dungeon is played as a place named for itself, its one spawn its way in', () => {
@@ -105,11 +107,12 @@ test("a point is named for the dungeon's room it stands in, and nothing in a cor
 });
 
 test('an Abyss run’s revives, the darkness and revives under way are heard from each snapshot, its wipe once it names this player', () => {
-  const held = { revives: -1, wiped: false, encounter: null, darkness: false, reviving: [] as readonly Reviving[] };
+  const nothing = { darkness: false, reviving: [] as readonly Reviving[], breach: null };
+  const held = { revives: -1, wiped: false, encounter: null, ...nothing };
   const reviving = [{ fallen: 7, reviver: 9, progress: 0.5 }];
   const said = { revives: 5, events: [] as FightEvent[], encounter: null, darkness: true, reviving };
   heardRun(held, said, 7);
-  assert.deepEqual(held, { revives: 5, wiped: false, encounter: null, darkness: true, reviving });
+  assert.deepEqual(held, { revives: 5, wiped: false, encounter: null, darkness: true, reviving, breach: null });
   heardRun(held, { ...said, events: [{ kind: EVENT.wiped, defender: 8 } as FightEvent] }, 7);
   assert.equal(held.wiped, false, 'another player’s word');
   heardRun(held, { ...said, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent] }, 7);

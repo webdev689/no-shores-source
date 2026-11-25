@@ -1,5 +1,5 @@
 // The Playlist screen a Playlist's mark beside a port opens, after the owner's reference, Destiny's Vanguard screen:
-// the four entries as crests on a dark chart (`playlistMap.ts`), the chosen one's card beside them or under them
+// its entries as crests on a dark chart (`playlistMap.ts`), the chosen one's card beside them or under them
 // (`playlistParts.ts`), and a footer bar with Find a Company or Stop finding, Launch and Close.
 import { motionReduced } from '../plus/kit.ts';
 import type { Child, Node } from '../ui/node.ts';
@@ -11,7 +11,7 @@ import { setGearScreenOpen } from './gearScreen.ts';
 import { iconNode } from './journalIcons.ts';
 import { drawChart, drawGround, spotShare } from './playlistMap.ts';
 import { type CrestLook, TILE, WORDS_WIDE, cardOf, crestOf, scrolledNode } from './playlistParts.ts';
-import type { PlaylistEntry, PlaylistScreenState } from './playlistWords.ts';
+import type { PlaylistEntry, PlaylistKind, PlaylistScreenState } from './playlistWords.ts';
 import { play } from './uiSounds.ts';
 
 export interface PlaylistPresses {
@@ -48,8 +48,17 @@ const CHART_STEP = 64;
 /** The list that scrolls: the card's column side by side, the crests and the card together stacked. */
 const SCROLLS = { besides: 'playlist-card-column', stacked: 'playlist-body' } as const;
 const stepped = (pixels: number) => Math.max(1, Math.round(pixels / CHART_STEP)) * CHART_STEP;
+/** The entry up or down takes the choice to: a playlist's and its week's dungeon, a Breach's two tiers. */
+const PAIRS: Readonly<Record<PlaylistKind, PlaylistKind>> = {
+  elite: 'week-elite',
+  'week-elite': 'elite',
+  abyss: 'week-abyss',
+  'week-abyss': 'abyss',
+  'breach-normal': 'breach-hard',
+  'breach-hard': 'breach-normal',
+};
 
-/** The Playlist screen over the world: "Playlist" and the port it was opened beside at its head, the four entries as
+/** The Playlist screen over the world: "Playlist" and the port it was opened beside at its head, its entries as
  *  crests on the chart and the chosen one's card, the wait while Find a Company finds, and Find a Company or Stop
  *  finding (F), Launch (E) and Close (Esc, the pad's B) on its footer. The pointer over a crest only lights it; a click,
  *  Enter, Space or the pad's A on it chooses it, the arrows choose the next (up and down between a playlist and its
@@ -83,7 +92,7 @@ export class PlaylistView {
         if (key === 'escape') presses.close();
         else if (key === 'pageup' || key === 'pagedown') this.paged += key === 'pageup' ? -1 : 1;
         else if (key === 'arrowleft' || key === 'arrowright') this.choose(this.chosen + (key === 'arrowleft' ? -1 : 1));
-        else if (key === 'arrowup' || key === 'arrowdown') this.choose(this.chosen ^ 2);
+        else if (key === 'arrowup' || key === 'arrowdown') this.choose(this.pairOf(this.chosen));
         else if (key === 'f' && finding !== null) {
           if (!launching) presses.stop();
         } else if (key === 'f' && entry && this.findable(entry)) presses.find(entry);
@@ -103,7 +112,7 @@ export class PlaylistView {
         ? shown.launching
           ? null
           : STOP
-        : shown.canFind && (entry?.launch.finds ?? null) !== null
+        : shown.canFind && (entry?.launch.finds ?? null) !== null && entry?.launch.seas !== 'breach'
           ? FIND
           : null;
     if (!opening && pressOf(search) !== pressOf(this.search)) this.focusNext = pressOf(search) ?? CLOSE;
@@ -123,13 +132,18 @@ export class PlaylistView {
     play('close');
   }
 
-  get open(): boolean {
-    return this.screen !== null;
-  }
-
   /** The entry chosen. */
   get entry(): PlaylistEntry | null {
     return this.screen?.entries[this.chosen] ?? null;
+  }
+
+  /** The entry over or under `place` on the chart: a playlist's week's dungeon, a Breach's other tier. */
+  private pairOf(place: number): number {
+    const entries = this.screen?.entries ?? [];
+    const kind = entries[place]?.kind;
+    const pair = kind && PAIRS[kind];
+    const found = entries.findIndex((entry) => entry.kind === pair);
+    return found >= 0 ? found : place;
   }
 
   private choose(place: number): void {
@@ -139,9 +153,10 @@ export class PlaylistView {
     this.focusNext = `${TILE}${this.chosen}`;
   }
 
-  /** Whether Find a Company is offered for an entry: it matches one, and the page may search. */
+  /** Whether Find a Company is offered for an entry: it matches one (a Breach is never matched), and the page may
+   *  search. */
   private findable(entry: PlaylistEntry): boolean {
-    return entry.launch.finds !== null && this.search.canFind;
+    return entry.launch.finds !== null && entry.launch.seas !== 'breach' && this.search.canFind;
   }
 
   /** The screen this frame over the world, its presses heard; nothing while it is shut. */
@@ -231,14 +246,16 @@ export class PlaylistView {
                     key: `playlist ground ${stepped(view.width - 40)} ${stepped(view.height / 2)}`,
                     source: { draw: drawGround },
                   },
-                  children: [0, 2].map((first) => ({
-                    width: 'grow',
-                    children: crests.slice(first, first + 2).map((crest) => ({
-                      width: '50%',
-                      alignX: 'center',
-                      children: [crest],
+                  children: crests
+                    .flatMap((_crest, first) => (first % 2 === 0 ? [first] : []))
+                    .map((first) => ({
+                      width: 'grow',
+                      children: crests.slice(first, first + 2).map((crest) => ({
+                        width: '50%',
+                        alignX: 'center',
+                        children: [crest],
+                      })),
                     })),
-                  })),
                 },
                 cardOf(entry, screen.note, size, 'grow'),
               ],
@@ -331,11 +348,12 @@ export class PlaylistView {
       finding
         ? !search.launching && pressNode(STOP, 'Stop finding', 'button', 'F', size)
         : findable && pressNode(FIND, 'Find a Company', 'primary', 'F', size),
-      // While a search or a launch runs, Launch is not offered: Stop finding or the wait stands in its place.
+      // While a search or a launch runs, Launch is not offered: Stop finding or the wait stands in its place. A
+      // Breach is a company's, so it is never offered alone.
       !finding &&
         pressNode(
           LAUNCH,
-          search.company ? 'Go with your company' : 'Go alone',
+          search.company ? 'Go with your company' : entry.launch.seas === 'breach' ? 'Launch' : 'Go alone',
           findable ? 'button' : 'primary',
           'E',
           size,

@@ -4,7 +4,8 @@ use naval::fight::{Aim, Orders};
 use naval::ranks::Commission;
 use protocol::fleet::orders_bytes;
 use protocol::wire::overlook::wire as messages;
-use room::fleet::{Call, Input, Levels, STANDING};
+use room::battle::QUIET;
+use room::fleet::{Call, Input, Levels};
 use sailing::ship::Helm;
 
 const AT: [f64; 3] = [200_000.0, 300_000.0, 0.5];
@@ -27,7 +28,7 @@ fn helm_at(sequence: u32) -> Helm {
 }
 
 fn orders(sequence: u32) -> Input {
-    Input { sequence, orders: Orders { helm: helm_at(sequence), ..STANDING }, put_to_sea: None, call: Call::None }
+    Input { sequence, orders: Orders { helm: helm_at(sequence), ..QUIET }, put_to_sea: None, call: Call::None }
 }
 
 /// A vessel as a snapshot shows it: its number, its ship's numbers, its pose's, its hurts, and its last orders taken.

@@ -1,7 +1,7 @@
 //! The body a player leaves a room with, kept with their character (`gear::left`): their health and healing charges
 //! for two minutes, their Anima and Tenets for ten, so leaving and coming back, to this room or another, heals nothing
-//! and readies nothing ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). One who left fallen comes back
-//! fallen, to stand again at a spawn; once the body no longer holds, whole, but in a passage zone without its haul.
+//! and readies nothing. One who left fallen comes back fallen, to stand again at a spawn; once the body no longer
+//! holds, whole, but in a passage zone without its haul.
 
 use crate::players::Player;
 use crate::{PlayerId, Room};

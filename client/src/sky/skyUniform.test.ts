@@ -40,3 +40,8 @@ test("the rain's rings read the share of what falls that is snow, not the snow l
   const row = 12 * 4;
   assert.equal(skyNumbers(falling, [])[row + 3], 0.25, 'beside the clouds next drift');
 });
+
+test("underground, how far off all is dark rides in the key light's last number; under the open sky, none", () => {
+  assert.equal(skyNumbers(AFTERNOON, [])[7], 0);
+  assert.equal(skyNumbers({ ...AFTERNOON, darkM: 120 }, [])[7], 120);
+});

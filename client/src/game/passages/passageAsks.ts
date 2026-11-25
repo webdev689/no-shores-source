@@ -11,7 +11,7 @@ const ANSWER_WAIT_S = 10;
 const UNANSWERED = 'Your room did not answer. Try again.';
 /** The room's refusal of an ask that needs a lamp (crates/gear `Refusal::NoLamp`, plus one), and what it means for a
  *  begin at a lamp: the player has not lit it this week. */
-const NO_LAMP = 174;
+const NO_LAMP = 177;
 const LAMP_NOT_LIT = 'You have not lit that lamp this week.';
 
 /** The player's gear as their room last said it, online or alone: a dive is played alone too. */

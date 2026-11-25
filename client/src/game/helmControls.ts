@@ -20,7 +20,8 @@ interface HelmGame {
 export function helmControls(playing: Playing, input: { lock(): void }, game: HelmGame) {
   const { landAt, change, groundAt } = game;
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
-   *  pointer let go to pan it, or in a passage zone the web's, under ground too; none in a dungeon, under no land. */
+   *  pointer let go to pan it, or in a passage zone the web's, under ground too; none in a dungeon or a Breach's run,
+   *  under no land. */
   const openMap = () => {
     const { flow, sea, foot } = playing;
     if (flow.mode === 'sea' && sea) playing.helmMap.open(sea);
@@ -28,7 +29,7 @@ export function helmControls(playing: Playing, input: { lock(): void }, game: He
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
       const passage = game.passageMap();
-      if (!passage && foot.dungeon) return;
+      if (!passage && foot.mapless) return;
       playing.helmMap.openLand(passage ?? landSheetOf(foot.node, playing.landmass, groundAt));
       document.exitPointerLock();
     }

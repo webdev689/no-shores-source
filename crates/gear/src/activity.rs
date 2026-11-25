@@ -59,8 +59,7 @@ pub struct Today {
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub faction_turned_in: BTreeSet<u8>,
     /// The sea islands' resource nodes gathered today, each island by its seed with its nodes' numbers, the latest
-    /// `ISLES_GATHERED_KEPT` islands kept: spent for the character until the day turns
-    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+    /// `ISLES_GATHERED_KEPT` islands kept: spent for the character until the day turns.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub gathered: Vec<(u64, Vec<u8>)>,
     /// Whether the Elite and the Abyss Playlist's daily rewards are taken today (`crate::playlist`).
@@ -102,6 +101,10 @@ pub struct ThisWeek {
     /// number in the week's web: each rolls once a week (`atheric_bounty.rs`).
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub passage_finds: BTreeMap<String, BTreeSet<u16>>,
+    /// Each Breach's finds paid this week at each tier ("drowned-vale/hard"), one bit each: its encounters in order,
+    /// then its hidden chests (`crate::breach`).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub breaches: BTreeMap<String, u16>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,

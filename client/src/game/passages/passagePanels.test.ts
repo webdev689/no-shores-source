@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fakePage } from '../pageForTests.ts';
+import { fakeWindow } from '../pageForTests.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import type { UiEvent } from '../../ui/ui.ts';
 import { fakeInterface } from '../../ui/uiForTests.ts';
@@ -45,7 +45,7 @@ function said(node: Child): string[] {
 }
 
 function card() {
-  fakePage();
+  fakeWindow();
   const went: string[] = [];
   const view = new MouthsCardView({
     go: (route, lamp) => void went.push(`${route}:${lamp ?? 'mouth'}`),

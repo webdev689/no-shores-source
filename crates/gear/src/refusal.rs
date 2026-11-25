@@ -1,5 +1,5 @@
-//! Why an ask is refused. A refusal's place in the list is its number on the wire, which the page reads in its own list
-//! (`gear.ts` `REFUSALS`), so a new one goes last.
+//! Why an ask is refused, each by its number: the room answers a refusal as its number plus one (`answer_code`), which
+//! the page reads in its own list (`gear.ts` `REFUSALS`), so a refusal's number never moves and a new one goes last.
 
 /// Why an ask was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -109,22 +109,33 @@ pub enum Refusal {
     NoHorn = 164,
     /// Past the account's limit on outpost asks, which the accounts answer so: never a refusal of the ask itself.
     TooManyAsks = 165,
+    /// The Harbourmaster's asks: the shipyard has no hull of that number (answered as 167); the player keeps no ship
+    /// of that hull, or none at all; no such dress; no word of the shipyard's lists has that place; the ship asked to
+    /// be sailed is the one sailed; the ship asked to be named bears that name already; and a free name asked for a
+    /// ship named already, which is the shipyard's renaming, asked as one.
+    NoSuchShip = 166,
+    NoShip = 167,
+    NoSuchDress = 168,
+    NoSuchName = 169,
+    Sailed = 170,
+    Called = 171,
+    Named = 172,
     /// The passages' asks (`dive.rs`): no dive under way, or one of another island or week; no onward mouth of that
     /// number; the zone's deal not done while the player was in it; no lamp to light here, or none lit this week to
     /// begin at; the lamp not lit for the player; the lamp's guard still standing; out of reach of the lamp or a
     /// mouth; asked outside a passage zone or its patrol zone (the room's); asked of a zone whose week's web has
     /// turned, but Home at a lamp already lit; a dead lamp or the lamp lit already; asked while fallen; a hold begun
     /// while a foe stands near its piece.
-    NoDive = 170,
-    NoSuchMouth = 171,
-    DealNotDone = 172,
-    NoLamp = 173,
-    LampNotLit = 174,
-    LampGuarded = 175,
-    NotAtMouth = 176,
-    NotInPassage = 177,
-    Shifted = 178,
-    AlreadyLit = 179,
-    Fallen = 180,
-    FoesNear = 181,
+    NoDive = 173,
+    NoSuchMouth = 174,
+    DealNotDone = 175,
+    NoLamp = 176,
+    LampNotLit = 177,
+    LampGuarded = 178,
+    NotAtMouth = 179,
+    NotInPassage = 180,
+    Shifted = 181,
+    AlreadyLit = 182,
+    Fallen = 183,
+    FoesNear = 184,
 }

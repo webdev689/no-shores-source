@@ -283,3 +283,36 @@ test('silenced mid-fight, its songs stop at once and schedule nothing more while
   frames(fight, 4);
   assert.equal(starts.length, stopped, 'though hushed every frame');
 });
+
+test("the Breach's instruments are fetched as it is first heard, held while it is, and let go on leaving it", () => {
+  const { audio } = fakeAudio();
+  const [fetched, released] = [[] as string[][], [] as string[][]];
+  const out = audio.createGain();
+  const director = new MusicDirector({
+    output: () => ({ audio, out }),
+    duck: () => undefined,
+    timed: false,
+    clock: () => 0,
+    prefetch: (unused, ids) => fetched.push([...ids]),
+    release: (ids) => released.push([...ids]),
+  });
+  const gate = { ...island, breach: { run: false, song: null, boss: null, piece: 2 } };
+  director.frame(island, 0.1);
+  assert.equal(fetched.length, 0, 'nowhere near a Breach');
+  for (let i = 0; i < 3; i++) director.frame(gate, 0.1);
+  assert.equal(fetched.length, 1, 'once, as its gate is first heard');
+  assert.ok(
+    fetched[0]?.includes('music.choir.low') && fetched[0].includes('music.taiko') && fetched[0].includes('music.piano'),
+  );
+  assert.ok(fetched[0]?.every((id) => id.startsWith('music.')));
+  director.frame(island, 0.1);
+  assert.deepEqual(released, fetched, 'let go on leaving');
+});
+
+test("the Drowned Vale's scores are built only once they are first asked for, the same ones after", () => {
+  const scores = overlookScores();
+  for (const name of ['breach', 'vale'] as const)
+    assert.ok(Object.getOwnPropertyDescriptor(scores, name)?.get, `${name} is built when asked for`);
+  assert.ok(Object.getOwnPropertyDescriptor(scores.bosses, 'steward')?.get);
+  assert.equal(overlookScores().breach, scores.breach, 'built once');
+});

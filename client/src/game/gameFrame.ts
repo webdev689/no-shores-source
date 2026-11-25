@@ -2,68 +2,49 @@
 // the eye, the held map over the sea while it is up, and the veil lifted once a place has loaded. `game.ts` boots the
 // pieces and keeps the travel; this draws what they hold, as `Playing` has it this frame.
 import { placingStrip } from './guild/decorPlacing.ts';
-import type { FirstPerson } from '../firstperson/firstPerson.ts';
-import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
-import { IDLE, type Input, type InputFrame, axis, handsFree } from '../player/input.ts';
-import type { Walker } from '../player/walker.ts';
-import type { ShipModels } from '../ships/shipModels.ts';
-import type { seaWeatherOn } from '../water/seaWeather.ts';
-import type { Ambience } from './audio/ambience/ambience.ts';
+import { IDLE, type InputFrame, axis, handsFree } from '../player/input.ts';
 import type { HelmMap } from './helmMap.ts';
 import { musiciansOf } from './audio/music/band.ts';
-import type { MusicDirector } from './audio/music/director.ts';
-import type { Charting } from './charting.ts';
-import type { WorldShown } from './worldShown.ts';
-import type { EventPropsDraw } from './eventPropsDraw.ts';
-import type { DungeonDrawers } from './dungeonDrawers.ts';
-import type { FigureView } from './figureView.ts';
-import { type Flow, type Happening, next, READY_WAIT_S } from './flow.ts';
+import { type Flow, next, READY_WAIT_S } from './flow.ts';
+import type { FrameParts } from './frameParts.ts';
 import { FrameGuard } from '../frameGuard.ts';
 import { PERF, perfOn, PerfMeter } from '../perfMeter.ts';
 import { autoChosen, heardFrame } from './renderScale.ts';
 import type { Foot } from './foot.ts';
 import { type Fallen, ReviveNotices } from './footRevive.ts';
-import type { FootView } from './footView.ts';
-import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { contextOf, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
-import { stripOf, withMapKey } from './hints.ts';
+import { stripOf, withFollow, withMapKey } from './hints.ts';
+import { runPlaceWords } from './breachWords.ts';
+import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
 import { binding } from './rebinding.ts';
 import { leaveOffered } from './leaveHold.ts';
 import { gearTakesKeys } from './gearScreen.ts';
-import type { Drain } from './drain.ts';
-import type { DrawnInterface } from './drawnInterface.ts';
 import { creationOpen } from './prologue/creation.ts';
-import type { Stack } from '../ui/stack.ts';
-import type { Hud } from './hud.ts';
 import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
-import { arrivalFacing } from './nodes.ts';
-import type { Drawer, GameScene, Overlay } from './scene.ts';
-import type { PassageGame } from './passages/passageGame.ts';
+import { arrivalFacing, FIRST_NODE } from './nodes.ts';
+import type { Drawer, Overlay } from './scene.ts';
 import type { Sea } from './sea.ts';
 import type { SeaWord } from './seaWord.ts';
 import { hideSeaHud, showSeaHud } from './seaHud.ts';
 import type { SeaShip } from './seaShips.ts';
-import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import { type AfterStory, clearOfEye, heldHud } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
-import { FIRST_NODE } from './gameBoot.ts';
 import { TOLD_MS } from './tripBack.ts';
 import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
-import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
-import { chatAtSea, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
+import { chatAtSea, chatInRun, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
 import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts';
 
@@ -97,62 +78,6 @@ export interface Playing {
   /** Why the player is not where their last trip went, shown until `until` (ms, `performance.now`). */
   told: { readonly words: string; readonly until: number } | null;
   shipScale: number;
-}
-
-/** What the frames draw with: the page's views and pieces, made once, and the travel they may call on. */
-export interface FrameParts {
-  readonly gpu: Gpu;
-  readonly canvas: HTMLCanvasElement;
-  readonly hud: Hud;
-  /** The interface the game draws, its layers, and death's grey drawn under it. */
-  readonly ui: DrawnInterface;
-  readonly stack: Stack;
-  readonly drain: Drain;
-  readonly input: Input;
-  readonly scene: GameScene;
-  readonly walker: Walker;
-  readonly firstPerson: FirstPerson;
-  readonly footView: FootView;
-  readonly shipModels: ShipModels;
-  readonly figureView: FigureView;
-  /** The public events' props, set from the event's view each frame on foot and emptied at sea. */
-  readonly eventProps: EventPropsDraw;
-  readonly traffic: FriendlyTraffic;
-  /** The people aboard every other ship drawn, at sea and seen from land. */
-  readonly crews: ShipPeople;
-  readonly shown: WorldShown;
-  readonly charting: Charting<Landmass>;
-  readonly seaWeather: ReturnType<typeof seaWeatherOn>;
-  readonly seaView: { reachM: number };
-  readonly waterline: Parameters<typeof showSeaHud>[3]['waterline'];
-  readonly builtSloop: () => SloopBuild | null;
-  readonly closeSource: Parameters<GameScene['keepClose']>[1];
-  readonly waterHere: () => FriendlyWater;
-  /** The leave held through: back to the ship on the room's yes, or told why not. */
-  readonly leave: () => void;
-  readonly travel: (happening: Happening, work: () => Promise<void>) => void;
-  readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
-  /** The story that opens the game, if it does, and the arrival at the first node it hands the player to: `resuming`,
-   *  where they last left the overworld or a social space (`relog.ts`). */
-  readonly story: StoryHost | null;
-  readonly arrive: (resuming?: boolean) => void;
-  /** The sea's islands kept, shown and walked ashore on, each frame; their drawer; and the ground the camera keeps
-   *  over, the islands' with the land's. */
-  readonly isleFrame: () => void;
-  readonly isles: Drawer;
-  readonly groundAt: (x: number, y: number) => number | null;
-  /** The world the music hears a node of, the music and the ambience that play as the game goes. */
-  readonly world: Parameters<MusicDirector['onFoot']>[0];
-  readonly music: MusicDirector;
-  readonly ambience: Ambience;
-  /** A patrol's dungeon entrances among the land's drawers, and a dungeon drawn as its own scene. */
-  readonly dungeons: DungeonDrawers;
-  /** What a frame on foot heeds first (`startActivities`): true when the room's gate sent the player away, and nothing
-   *  more of the place is drawn. */
-  readonly heed: (here: Foot) => boolean;
-  /** The passages as played (`passages/passageGame.ts`), and their pieces in a zone, drawn under the figures. */
-  readonly passages: PassageGame;
-  readonly pieces: Drawer;
 }
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
@@ -193,6 +118,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const [dead, wasDead] = [greyed(shown) || fallen !== null, drain.dead];
     if (greyed(shown) && !wasDead) document.exitPointerLock();
     drain.toward(dead);
+  };
+  /** Out of a Breach's run by any way (to another place on foot, or to the ship), its modules are let go, drawn and
+   *  read. */
+  const outOfRun = () => {
+    parts.eventProps.forget(ofRun);
+    releaseRunModules();
   };
   /** What the mount key says with no horse worn in the Mount slot. */
   const NO_HORSE = 'You have no horse.';
@@ -239,11 +170,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // An outpost's structures and decoration are drawn as the events' props are.
     parts.eventProps.set(here.outpost?.props(shown.props, listener) ?? shown.props ?? []);
     parts.eventProps.hang(here.outpost?.cloth() ?? null);
-    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
+    if (!here.run) outOfRun();
+    // A Breach's run is heard under the ground, as a dungeon is, but by its own spaces (`breachView.ts` tells them).
+    parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon || !!here.run);
     const { body } = walker.player;
     // A passage's hollow stands alone, under its own climate's sky: none of the landmass's ground is near it.
     const bare = parts.passages.hollowAir();
-    if (!here.dungeon && !bare) {
+    if (!here.mapless && !bare) {
       scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
       scene.keepMiddle([body.x, body.y], parts.closeSource);
     }
@@ -262,7 +195,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // is the tour's, never through the player's eyes.
     const hands =
       mapDraw ??
-      (walker.inFirstPerson && !told
+      (walker.inFirstPerson && !told && here.followable === null
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined);
     parts.isleFrame();
@@ -290,7 +223,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const guided = quests.guide(afoot, { nodes: playing.zones, layouts: playing.landmass.layouts });
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
-    const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    // A Breach's Rewritten are marked so on their plates.
+    const marked = new Set(here.held.breach?.marked.map((each) => each.player));
+    chatInRun(!!here.run);
+    const plated = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    const players = plated.map((each) => (marked.has(each.id) ? { ...each, marked: true } : each));
     const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: guided.at, players } };
     const fought = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     const under = (...args: Parameters<Drawer['drawInto']>) => (
@@ -341,18 +278,22 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const near = [...shown.figures, ...nodes, ...walking, ...crews];
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
+    else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain, carried);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);
-    hud.place(here.node.name, placeWords(here.node, here.roomName, here.held.revives, here.held.darkness));
+    const run = here.run && runPlaceWords(here.run.plan, here.held.breach, here.run.tier);
+    hud.place(here.node.name, run || placeWords(here.node, here.roomName, here.held.revives, here.held.darkness));
     // As E's other use, a gate takes no one while a menu or the held map is up, the player is down or in a dungeon.
-    const gated = paused || looking || here.fallen || here.dungeon;
+    const gated = paused || looking || here.fallen || here.mapless;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon but a passage zone's,
-    // whose map is the web's, as `openMap` has it.
-    const mapless = paused || here.fallen || (here.dungeon && !parts.passages.standsIn());
+    // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon or a Breach's run but a
+    // passage zone's, whose map is the web's, as `openMap` has it.
+    const mapless = paused || here.fallen || (here.mapless && !parts.passages.standsIn());
     const placing = placingStrip();
-    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? shown.hints : withMapKey(shown.hints))));
+    // Fallen in a Breach, the camera follows the company: its key, naming whom, is shown while anyone may be followed.
+    const strip = here.followable !== null ? withFollow(shown.hints, here.followable) : shown.hints;
+    hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? strip : withMapKey(strip))));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
     // nor while she speaks; fallen, it says why not.
     const refused = here.fallen ? refusedWords(FALLEN) : null;
@@ -369,9 +310,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
-    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player and its
-    // city, built a few steps a frame, whole.
-    return !!here.dungeon || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
+    // A dungeon's floor and a Breach's run are all there before the veil lifts; a node waits for the exact ground round
+    // the player and its city, built a few steps a frame, whole.
+    return here.mapless || (scene.closeReady(body.x, body.y) && playing.drawers.ready());
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
@@ -385,6 +326,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     parts.eventProps.set([]);
     parts.eventProps.hang(null);
+    outOfRun();
     // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
     if (!paused && !helmMap.shown) {
       const steer = axis(controls, 'steerLeft', 'steerRight');
@@ -459,8 +401,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       island: ISLANDS[landmass.id],
       region: REGION,
       clock,
-      build: parts.builtSloop,
-      waterline: parts.waterline,
+      build: parts.builtShip,
+      waterline: parts.waterline(),
       charting: charting.busy,
       friendly: fleet.marks,
       notices,

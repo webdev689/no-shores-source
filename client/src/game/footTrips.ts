@@ -9,6 +9,7 @@ import { RoomThread } from '../network/roomThread.ts';
 import type { Reviving } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { PassageSeenState } from '../network/passageMessages.ts';
+import type { BreachSeen } from '../network/breachMessages.ts';
 import { TIERS } from './activityWords.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { cacheOf } from './dungeonChest.ts';
@@ -34,7 +35,8 @@ export interface InDungeon {
   readonly passage?: boolean;
 }
 
-/** What going in and out asks of the game: the forged props' table once read, and the ways in and out. */
+/** What going in and out asks of the game: the forged props' table once read, and the ways in and out: a dungeon's,
+ *  and a Breach's run's from its gate and back to it. */
 export interface Trips {
   props(): PropTable | null;
   enter(number: number, name: string): void;
@@ -45,6 +47,10 @@ export interface Trips {
     tier: number,
     gate: { readonly x: number; readonly y: number; readonly facing: number },
   ): void;
+  enterBreach?(): void;
+  leaveBreach?(): void;
+  /** Says a word of the Breach's to the player: a refusal, a moment. */
+  tell?(words: string): void;
 }
 
 /** The name of the room a point stands in, or null in a corridor or past the grid: "the Ossuary". */
@@ -81,14 +87,17 @@ export function seaPlace(continent: string, layout: DungeonLayout): NodeInfo {
 }
 
 /** Takes a run's word from a snapshot: an Abyss run's revives left, whether it told this player their company fell,
- *  an Elite Dungeon's encounters, and the room's darkness and revives under way. */
+ *  an Elite Dungeon's encounters, the room's darkness and revives under way, and a Breach, in its run or at its gate. */
 export function heardRun(
-  held: Pick<Held, 'revives' | 'wiped' | 'encounter' | 'darkness' | 'reviving'>,
-  snapshot: Pick<Snapshot, 'revives' | 'events' | 'encounter' | 'darkness' | 'reviving'>,
+  held: Pick<Held, 'revives' | 'wiped' | 'encounter' | 'darkness' | 'reviving' | 'breach'>,
+  snapshot: Pick<Snapshot, 'revives' | 'events' | 'encounter' | 'darkness' | 'reviving'> & {
+    readonly breach?: BreachSeen | null;
+  },
   own: number | null,
 ): void {
   [held.revives, held.darkness, held.reviving] = [snapshot.revives, snapshot.darkness, snapshot.reviving];
   held.encounter = snapshot.encounter;
+  held.breach = snapshot.breach ?? null;
   if (snapshot.events.some((event) => event.kind === EVENT.wiped && event.defender === own)) held.wiped = true;
 }
 
@@ -191,11 +200,6 @@ export class Entrances {
     for (const number of this.entrances.keys()) this.namer?.(number);
   }
 
-  /** The name already asked for entrance `number`'s dungeon, if any; nothing is forged for it. */
-  knownName(number: number): string | undefined {
-    return this.names.get(number);
-  }
-
   /** The dungeon's name behind entrance `number`: an Elite Dungeon's node's own, or a patrol's dungeon's. */
   nameOf(module: WebAssembly.Module, patrol: NodeInfo, number: number): string {
     if (patrol.kind === 'dungeon') return patrol.name;
@@ -256,7 +260,8 @@ export function useOnFoot(
   return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted) ?? tripAt(x, y, here, trips);
 }
 
-/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters, no plot. */
+/** What a room has said of a place before it says anything: no entrances, no cache, no run, no encounters, no plot,
+ *  no Breach. */
 export const unheard = () => ({
   entrances: new Entrances(),
   cache: null,
@@ -267,4 +272,5 @@ export const unheard = () => ({
   encounter: null as EncounterSeen | null,
   plots: 0,
   passage: null as PassageSeenState | null,
+  breach: null as BreachSeen | null,
 });

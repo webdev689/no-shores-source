@@ -3,15 +3,31 @@ import { test } from 'node:test';
 import type { Child } from '../ui/node.ts';
 import type { UiEvent } from '../ui/ui.ts';
 import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import { type PlaylistSearch, PlaylistView } from './playlistScreen.ts';
 import { SAMPLE_SCREEN } from './playlistShots.ts';
+import type { PlaylistEntry } from './playlistWords.ts';
 
 const IDLE: PlaylistSearch = { canFind: true, finding: null, said: null, launching: false, company: false };
 
+/** The sample with a Breach's two tiers after its four, as the room module's plan adds them. */
+const WITH_BREACH = {
+  ...SAMPLE_SCREEN,
+  entries: [
+    ...SAMPLE_SCREEN.entries,
+    ...(['breach-normal', 'breach-hard'] as const).map((kind, tier) => ({
+      ...(SAMPLE_SCREEN.entries[0] as PlaylistEntry),
+      kind,
+      name: 'The Drowned Vale',
+      about: `${tier === 0 ? 'Normal' : 'Hard'} · Foes at level ${tier === 0 ? 26 : 30}`,
+      launch: { place: 'gullwing-vale', seas: 'breach' as const, playlist: null, finds: null, breach: tier },
+    })),
+  ],
+};
+
 /** The screen drawn on a page `width` by `height`, its presses written down. */
-function standing(width = 1600, height = 900, search: PlaylistSearch = IDLE) {
-  const { window } = fakePage();
+function standing(width = 1600, height = 900, search: PlaylistSearch = IDLE, shown = SAMPLE_SCREEN) {
+  const { window } = fakeWindow();
   const pressed: string[] = [];
   const view = new PlaylistView({
     launch: (entry) => void pressed.push(`launch ${entry.kind}`),
@@ -19,7 +35,7 @@ function standing(width = 1600, height = 900, search: PlaylistSearch = IDLE) {
     stop: () => void pressed.push('stop'),
     close: () => void pressed.push('close'),
   });
-  view.show(SAMPLE_SCREEN, search);
+  view.show(shown, search);
   const { ui, step } = fakeInterface(width, height);
   let built: Child = null;
   const frame = (events: UiEvent[] = []) =>
@@ -93,6 +109,14 @@ test('Find a Company is the primary press of a matched entry; Launch goes alone 
   const signedOut = standing(1600, 900, { ...IDLE, canFind: false });
   assert.equal(byId(signedOut.built(), 'playlist-find'), undefined);
   assert.equal(byId(signedOut.built(), 'playlist-launch')?.role, 'primary', 'with no search, Launch leads');
+  for (const company of [false, true]) {
+    const breach = standing(1600, 900, { ...IDLE, company }, WITH_BREACH);
+    breach.click('playlist-tile-4');
+    breach.frame();
+    assert.equal(breach.view.entry?.kind, 'breach-normal');
+    const label = byId(breach.built(), 'playlist-launch')?.label;
+    assert.equal(label, company ? 'Go with your company' : 'Launch', 'a Breach is never gone alone');
+  }
 });
 
 test('a shut entry says why in neutral ink with a padlock, on its crest and beside the resting Launch', () => {
@@ -184,8 +208,8 @@ test('no two crests overlap, side by side or stacked', () => {
     [800, 600],
     [390, 844],
   ] as const) {
-    const screen = standing(width, height);
-    const boxes = [0, 1, 2, 3].map((place) => screen.ui.boxOf(`playlist-tile-${place}`));
+    const screen = standing(width, height, IDLE, WITH_BREACH);
+    const boxes = [0, 1, 2, 3, 4, 5].map((place) => screen.ui.boxOf(`playlist-tile-${place}`));
     boxes.forEach((one, place) =>
       boxes.slice(place + 1).forEach((other) => {
         assert.ok(one && other);
@@ -331,6 +355,10 @@ test('up and down go between a playlist and the week’s dungeon under it', () =
   screen.key('ArrowUp');
   screen.frame();
   assert.equal(screen.view.entry?.kind, 'abyss');
+  const breach = standing(1600, 900, IDLE, WITH_BREACH);
+  for (const key of ['ArrowLeft', 'ArrowLeft', 'ArrowDown']) breach.key(key);
+  breach.frame();
+  assert.equal(breach.view.entry?.kind, 'breach-hard', "a Breach's Normal over its Hard");
 });
 
 test('a shut entry’s crest wears its padlock and no dot, though its reward waits', () => {

@@ -1,5 +1,5 @@
-//! The body a player left a room with, kept with their character so a return finds it as it was, as the owner chose
-//! ([[The Audit's Leftovers Are Fixed as Claude Suggested]]): leaving and coming back heals nothing.
+//! The body a player left a room with, kept with their character so a return finds it as it was, as the owner chose:
+//! leaving and coming back heals nothing.
 
 use serde::{Deserialize, Serialize};
 

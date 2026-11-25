@@ -6,6 +6,7 @@
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff};
 use crate::dice::{Dice, Purpose};
+use crate::element;
 use crate::emblems::Deed;
 use crate::item::{Item, NAMED_LEVEL, NONE_CHOSEN};
 use crate::kinds::{Group, Slot, Stock};
@@ -168,6 +169,8 @@ pub enum Ask {
         letter: u32,
     },
     TakeAllLetters,
+    /// One of the Harbourmaster's asks for the player's ships (`ship::shipyard`): at the Harbourmaster's counter.
+    Ship(crate::ship::shipyard::ShipAsk),
 }
 
 pub use crate::refusal::Refusal;
@@ -237,6 +240,7 @@ impl Character {
             Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
             Ask::TakeLetter { letter } => self.take_letter(letter, here),
             Ask::TakeAllLetters => self.take_all_letters(here),
+            Ask::Ship(ask) => self.ship_ask(ask, here),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens; a fragment choice left with
@@ -461,8 +465,12 @@ impl Character {
         }
         let rarity = vestige::opens_to(vestige.rarity, vestige.level, dice);
         let item_id = self.id_to_take();
-        let item = vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
+        let mut item = vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
             .ok_or(Refusal::NoSuchItem)?;
+        item.hard = vestige.hard && item.breach;
+        if item.hard {
+            item.element = element::forged(item.kind, dice);
+        }
         self.take_id();
         self.vestiges.remove(&id);
         let opened = item.rarity;

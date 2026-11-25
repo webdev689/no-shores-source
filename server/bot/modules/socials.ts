@@ -4,7 +4,7 @@
 
 import { escapeText, fillSlots } from '../law/message.ts';
 import { type Settings, recordOf } from '../law/settings.ts';
-import { type BotContext, postTo } from '../kit.ts';
+import { type BotContext, errorWords, postTo } from '../kit.ts';
 import { type Fetch, USER_AGENT } from '../rest.ts';
 import { serversWith } from './stats.ts';
 import type { ServerModule } from './module.ts';
@@ -369,9 +369,7 @@ async function readAll(context: BotContext, fetchFeed: Fetch, clock: () => numbe
       try {
         await readFeed(context, fetchFeed, read);
       } catch (error) {
-        context.log(
-          `[socials] a feed of ${read.guildId} failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        context.log(`[socials] a feed of ${read.guildId} failed: ${errorWords(error)}`);
       }
     }
   };

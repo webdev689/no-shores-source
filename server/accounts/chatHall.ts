@@ -13,13 +13,14 @@ import { starred } from './chatWords.ts';
 import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
 import { seaRoom } from '../roomNames.ts';
 
-/** How many sockets the hall holds signed in, and silent beside them; how many one account may hold; and how many
- *  lines the whole of World carries a second. */
+/** How many sockets the hall holds signed in, and silent beside them. */
 export const HALL_MOST = 2048;
 export const SILENT_MOST = 256;
 /** How many sockets one address may hold before they sign in: enough for a household's tabs, too few to fill the hall. */
 export const SILENT_FROM_ONE = 8;
+/** How many sockets one account may hold. */
 export const ACCOUNT_SOCKETS_MOST = 4;
+/** How many lines the whole of World carries a second. */
 export const WORLD_A_SECOND = 20;
 /** How many lines in a row may come too fast before the account's sockets are let go. */
 export const STRIKES_MOST = 20;

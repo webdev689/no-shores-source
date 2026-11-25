@@ -207,7 +207,7 @@ fn the_bands_passage_rosters_are_the_rooms() {
         crate::power::worth_of(role as u8).expect("paid")
     };
     for depth in 1..=passage::DEPTHS {
-        let (members, elites) = crate::passage_foes::roster_of(depth);
+        let (members, elites) = crate::passages::passage_foes::roster_of(depth);
         let members: Vec<_> = members.iter().map(|&(number, rank)| (pays(number), rank as u8)).collect();
         let elites: Vec<_> = elites.iter().map(|&number| pays(number)).collect();
         let (band_members, band_elites) = gear::band::passage_roster(depth);

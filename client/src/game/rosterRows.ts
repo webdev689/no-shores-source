@@ -33,14 +33,15 @@ export interface Action {
 
 /** The privacies, in the order the accounts number them. */
 export const PRIVACIES = ['Public', 'Friends Only', 'Invite Only', 'Closed'] as const;
-/** The most players a company holds: four, as an Elite Dungeon's run is for (`accounts/companies.ts`). */
-export const COMPANY_MOST = 4;
+/** The most players a company holds: eight, as a Breach's run is for (`accounts/companies.ts`). */
+export const COMPANY_MOST = 8;
 /** How many rows a column shows a page. */
 export const ROWS_A_PAGE = 14;
 /** The fewest a page shows, where the screen is too short for fourteen. */
 export const ROWS_LEAST = 6;
 
-/** Where a player is, in words: a node's name, a patrol's dungeon, and its difficulty past Normal; at sea; or away. */
+/** Where a player is, in words: a node's name, a patrol's dungeon, and its difficulty past Normal; a Breach's run
+ *  and its tier; at sea; or away. */
 export function placeWords(place: string | null): string {
   if (place === null) return 'Away';
   if (place === 'sea') return 'At sea';
@@ -48,12 +49,13 @@ export function placeWords(place: string | null): string {
   if (passage) return ['In the passages', ...(ISLANDS[passage.island] ? [ISLANDS[passage.island]] : [])].join(' · ');
   const node = nodeOfRoom(place);
   if (!node) return 'Playing';
-  const { id, seas, dungeon, run, guild } = node;
+  const { id, seas, dungeon, run, guild, breach } = node;
   const city = id.endsWith('-social') ? id.slice(0, -'-social'.length) : id;
   const name = city.replace(
     /(^|-)([a-z])/g,
     (_whole, gap: string, first: string) => `${gap ? ' ' : ''}${first.toUpperCase()}`,
   );
+  if (breach !== null) return [name, 'Breach', breach === 1 ? 'Hard' : 'Normal'].join(' · ');
   const tierName = `${seas[0]?.toUpperCase()}${seas.slice(1)}`;
   // A run of a guild's room is its guild dungeon, by its tier past Normal.
   if (run !== null && guild !== null)

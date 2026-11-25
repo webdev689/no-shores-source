@@ -8,14 +8,12 @@ use crate::random::Mulberry32;
 use crate::shots::{Flag, ShipId};
 use sailing::pose::{Pose, frame};
 use sailing::ship::Ship;
-use std::f64::consts::PI;
 
 /// Seconds between one gun of a broadside and the next.
 pub const RIPPLE_S: f64 = 0.09;
 /// A gun's reload alone at it, and how much longer each man short of a full crew makes it.
 pub const RELOAD_SINGLEHANDED: f64 = 1.4;
 pub const RELOAD_UNDERMANNED: f64 = 0.8;
-const DEGREE: f64 = PI / 180.0;
 
 /// The seconds a gun as loaded takes to load again: alone at it, or by a crew this share of its full number.
 #[must_use]
@@ -131,18 +129,44 @@ impl Guns {
 }
 
 /// A side laid: its guns' mouths in the world (through its heel), their middle, the direction it fires (square to its
-/// upright hull, east and south), its elevation (radians), the gun as loaded with its load, and its longest throw from
-/// that middle over the water under it.
+/// upright hull, east and south), its elevation (radians), the gun as loaded with its load, its longest throw from
+/// that middle over the water under it, and the point (east, south, up) its look laid it on, where a player lays it:
+/// each gun is then elevated for that range from its own port and deck; none where every gun takes the middle's
+/// elevation, as a captain's do.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Lay {
     pub side: Side,
     pub mouths: Vec<[f64; 3]>,
     pub centre: [f64; 3],
-    pub dir: [f64; 2],
+    pub direction: [f64; 2],
     pub elevation: f64,
     pub gun: Gun,
     pub shot: Shot,
     pub reach: f64,
+    pub on: Option<[f64; 3]>,
+}
+
+impl Lay {
+    /// The lay laid on `point`: each gun elevated for its range from its own port and deck, so a long battery's
+    /// guns, and a second gun deck's, throw to the range the look set as a short battery's do, still square.
+    #[must_use]
+    pub fn laid_on(self, point: [f64; 3]) -> Self {
+        Self { on: Some(point), ..self }
+    }
+
+    /// Gun `index`'s elevation: the middle's; or, laid on a point, the middle's moved by how its own port's range out
+    /// along the fire and height over the point differ from the middle's, so a lay set off its point (a captain's
+    /// misjudged elevation) is set off it at every gun.
+    #[must_use]
+    pub fn gun_elevation(&self, index: usize) -> f64 {
+        let (Some(on), Some(mouth)) = (self.on, self.mouths.get(index)) else { return self.elevation };
+        let (low, high) = (self.gun.min_elevation_deg.to_radians(), self.gun.max_elevation_deg.to_radians());
+        let from = |port: [f64; 3]| {
+            let range = (on[0] - port[0]) * self.direction[0] + (on[1] - port[1]) * self.direction[1];
+            elevation_for_range(range, self.gun.speed, port[2] - on[2], low, high)
+        };
+        (self.elevation + from(*mouth) - from(self.centre)).clamp(low, high)
+    }
 }
 
 /// `side` laid to throw `range` metres out along its fire, from its pose over still water at its heave: onto the
@@ -154,19 +178,20 @@ pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range:
     let guns = mouths.len().max(1) as f64;
     let centre = [0, 1, 2].map(|axis| mouths.iter().map(|mouth| mouth[axis]).sum::<f64>() / guns);
     let (_, starboard) = frame(ship.heading);
-    let dir = [starboard[0] * side.sign(), starboard[1] * side.sign()];
+    let direction = [starboard[0] * side.sign(), starboard[1] * side.sign()];
     let above = centre[2] - pose.heave;
-    let (low, high) = (gun.min_el_deg * DEGREE, gun.max_el_deg * DEGREE);
+    let (low, high) = (gun.min_elevation_deg.to_radians(), gun.max_elevation_deg.to_radians());
     let elevation = elevation_for_range(range, gun.speed, above - rise.unwrap_or(0.0), low, high);
-    Lay { side, mouths, centre, dir, elevation, gun, shot, reach: max_range(gun.speed, above, high) }
+    Lay { side, mouths, centre, direction, elevation, gun, shot, reach: max_range(gun.speed, above, high), on: None }
 }
 
 /// `side` laid on a point in the world: its range along its fire, its height under its guns' middle.
 #[must_use]
 pub fn lay_on(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, target: [f64; 3]) -> Lay {
     let square = lay(ship, pose, arms, side, shot, 0.0, None);
-    let range = (target[0] - square.centre[0]) * square.dir[0] + (target[1] - square.centre[1]) * square.dir[1];
-    let (low, high) = (square.gun.min_el_deg * DEGREE, square.gun.max_el_deg * DEGREE);
+    let range =
+        (target[0] - square.centre[0]) * square.direction[0] + (target[1] - square.centre[1]) * square.direction[1];
+    let (low, high) = (square.gun.min_elevation_deg.to_radians(), square.gun.max_elevation_deg.to_radians());
     let elevation = elevation_for_range(range, square.gun.speed, square.centre[2] - target[2], low, high);
     Lay { elevation, ..square }
 }
@@ -179,27 +204,27 @@ pub fn volley(lay: &Lay, carry: [f64; 3], skill: f64, seed: u32, clock: f64, sho
     let widen = widening(skill);
     (0..lay.mouths.len())
         .map(|index| {
-            let (dir, elevation) = scatter(
-                lay.dir,
-                lay.elevation,
+            let (direction, elevation) = scatter(
+                lay.direction,
+                lay.gun_elevation(index),
                 lay.gun.yaw_spread_deg * widen,
                 lay.gun.pitch_spread_deg * widen,
                 &mut draws,
             );
-            aimed(&Lay { dir, elevation, ..lay.clone() }, index, carry, clock, shooter)
+            aimed(&Lay { direction, elevation, on: None, ..lay.clone() }, index, carry, clock, shooter)
         })
         .collect()
 }
 
-/// Gun `index`'s ball as the lay lies, unscattered (the aim's): `RIPPLE_S` a gun after the first and from where its
-/// port is by then.
+/// Gun `index`'s ball as the lay lies, unscattered (the aim's), at that gun's elevation (`Lay::gun_elevation`):
+/// `RIPPLE_S` a gun after the first and from where its port is by then.
 #[must_use]
 pub fn aimed(lay: &Lay, index: usize, carry: [f64; 3], clock: f64, (shooter, flag): (ShipId, Flag)) -> Ball {
     let delay = index as f64 * RIPPLE_S;
     let mouth = lay.mouths[index];
     Ball {
         start: [0, 1, 2].map(|axis| mouth[axis] + carry[axis] * delay),
-        launch: launch_velocity(lay.dir, lay.elevation, lay.gun.speed, carry),
+        launch: launch_velocity(lay.direction, lay.gun_elevation(index), lay.gun.speed, carry),
         born: clock + delay,
         shooter,
         flag,
@@ -221,7 +246,7 @@ pub fn widening(skill: f64) -> f64 {
 /// across there (at least 2 m wide), and never under 1.6 m.
 #[must_use]
 pub fn zone_radius(gun: &Gun, skill: f64, range: f64) -> f64 {
-    let width = (2.0 * range * libm::tan(gun.yaw_spread_deg * widening(skill) * DEGREE)).max(2.0);
+    let width = (2.0 * range * libm::tan((gun.yaw_spread_deg * widening(skill)).to_radians())).max(2.0);
     (width / 2.0).max(1.6)
 }
 

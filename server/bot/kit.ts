@@ -46,6 +46,9 @@ export interface Vars {
   };
 }
 
+/** An error's words for a log line: its message, or the thing thrown when it is no Error. */
+export const errorWords = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
 /** The context a module runs in. `cache` and `memory` exist only in the Gateway object; `later` outlives the answer. */
 export interface BotContext {
   readonly vars: Vars;
@@ -279,7 +282,7 @@ export function deferred(
       try {
         data = await work();
       } catch (error) {
-        context.log(`[bot] a deferred answer failed: ${error instanceof Error ? error.message : String(error)}`);
+        context.log(`[bot] a deferred answer failed: ${errorWords(error)}`);
         data = { content: 'Something went wrong. Try again in a minute.' };
       }
       const path = `/webhooks/${String(interaction.application_id)}/${String(interaction.token)}/messages/@original`;

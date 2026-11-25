@@ -13,7 +13,7 @@ import { OPEN_AT, gearTakesKeys } from './gearScreen.ts';
 import { sampleGear } from './gearShots.ts';
 import { startGearWindow } from './gearWindow.ts';
 import { Hud } from './hud.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { readFile } from 'node:fs/promises';
 import { startCombatRules } from '../rules/combatRules.ts';
@@ -47,7 +47,7 @@ function menu(
   papers: ShipPanel | null = null,
   view = VIEW,
 ) {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
     innerWidth: view.width,
@@ -401,7 +401,17 @@ test('the Ship tab steps back from an officer’s page with Escape, and shows it
   const officer = { id: 4, post: 1, grade: 2, given: 0, family: 1, duty: 1, level: 3, toNext: 0.4, trained: 500 };
   const ship = {
     ...{ xp: 0n, level: 4, prestige: 9, attack: 100, defense: 60, toNext: 0.35, toNextNeeds: 1_200 },
-    ...{ stocks: [1, 2, 3, 4], hands: 18, handsMost: 24, offers: [], trim: [], pledge: 0 },
+    ...{
+      stocks: [1, 2, 3, 4],
+      hands: 18,
+      handsMost: 24,
+      offers: [],
+      trim: [],
+      pledge: 0,
+      fleet: [{ hull: 0, name: [255, 255], named: false, dress: [] }],
+      sailed: 0,
+      dresses: [],
+    },
     officers: [{ ...officer, trainedMost: 2_000, strength: 0.5, bought: 0, chosen: [255], columns, wage: 0 }],
   };
   const papers = { title: 'Your Sloop', parts: [{ heading: 'Vessel', rows: [['Hull', '9 / 9']] as const }] };
@@ -509,7 +519,7 @@ test("a keeper's coin and the account's mark are named in a card on hover, and o
 });
 
 test('with the menu open, Tab never reaches the sea bar under it, and Enter presses nothing there', () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   Object.assign(globalThis, { devicePixelRatio: 1, innerWidth: VIEW.width, innerHeight: VIEW.height });
   Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });
   const gear = sampleGear();

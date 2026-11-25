@@ -1,5 +1,6 @@
-//! Its hands boarding with their player: on a struck ship's deck, beside each player who comes over its rail, two of
-//! their ship's hands and as many more as its First Mate and its perks lead aboard, never more than it has left. They
+//! Its hands boarding with their player: on a struck ship's deck, beside each player who comes over its rail, as many
+//! of their ship's hands as its hull's class sends (two from a Sloop or a Schooner, three from a Brig, four from a
+//! Frigate) and as many more as its First Mate and its perks lead aboard, never more than it has left. They
 //! fight its crew on the players' side with a foe's own brain, by gear's power at their ship's level; a kill they have
 //! a hand in is their player's. Those who fall are men it has lost, kept with its hurts once the player is back aboard.
 
@@ -8,8 +9,6 @@ use crate::{PlayerId, Room};
 use ::foes::{Rank, foe_type};
 use combat::fighter::{FighterId, Side};
 
-/// How many hands come over its rail with each player before its First Mate and perks lead more.
-pub const HANDS_BOARD: u8 = 2;
 /// How far either side of their player along its rail hands come aboard, metres apart.
 const ALONG_M: f64 = 1.2;
 
@@ -20,10 +19,11 @@ pub struct Hand {
     pub level: u8,
 }
 
-/// How many hands board with a player whose ship has `hands` left and whose trim leads `more` aboard.
+/// How many hands board with a player whose ship has `hands` left: its hull's class's (`naval::class`) and as many
+/// more as its trim leads aboard.
 #[must_use]
-pub fn boarding(hands: u16, more: u8) -> u8 {
-    u8::try_from(hands.min(u16::from(HANDS_BOARD.saturating_add(more)))).unwrap_or(u8::MAX)
+pub fn boarding(hands: u16, class: u8, more: u8) -> u8 {
+    u8::try_from(hands.min(u16::from(class.saturating_add(more)))).unwrap_or(u8::MAX)
 }
 
 impl Room {

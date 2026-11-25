@@ -22,6 +22,8 @@ test('a chase plans again each half second while it is sighted, says whom, and e
   chase.metM = 750;
   const hostile: SeenHostile = { id: 3, x: 0, y: -8_000, heading: 0, faction: 1, rank: 4, hull: 2, sight: 25_920 };
   assert.deepEqual(chase.begin('hostile-3', [hostile], [0, 0]), meetingPoint([0, 0], hostile));
+  const schooner = new Chase({ speed: () => 13.8 });
+  assert.deepEqual(schooner.begin('hostile-3', [hostile], [0, 0]), meetingPoint([0, 0], hostile, 13.8), 'at its way');
   assert.equal(chase.begin('hostile-9', [hostile], [0, 0]), null, 'no such ship sighted');
   assert.equal(chase.words, 'Chasing the Tithe Brig.');
   assert.equal(chase.chasing, 3);
@@ -43,7 +45,7 @@ test('a chase plans again each half second while it is sighted, says whom, and e
 
 test('the room is told whom the ship chases, and told none when another course is set or it is lost', () => {
   const told: (number | null)[] = [];
-  const chase = new Chase((ship) => told.push(ship));
+  const chase = new Chase({ tell: (ship) => told.push(ship) });
   chase.metM = 750;
   const hostile: SeenHostile = { id: 4, x: 0, y: -8_000, heading: 0, faction: 1, rank: 1, sight: 25_920, way: 2.16 };
   chase.begin('hostile-4', [hostile], [0, 0]);
@@ -59,7 +61,7 @@ test('the room is told whom the ship chases, and told none when another course i
 
 test('each plan tells the room whom it chases again, so a room joined again learns it', () => {
   const told: (number | null)[] = [];
-  const chase = new Chase((ship) => told.push(ship));
+  const chase = new Chase({ tell: (ship) => told.push(ship) });
   const hostile: SeenHostile = { id: 6, x: 0, y: -8_000, heading: 0, faction: 1, rank: 2, sight: 25_920, way: 2.4 };
   chase.begin('hostile-6', [hostile], [0, 0]);
   chase.step(CHASE_EVERY_S, [hostile], [0, 0]);

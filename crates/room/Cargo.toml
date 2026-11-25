@@ -23,6 +23,10 @@ sailing = { path = "../sailing" }
 sky = { path = "../sky" }
 world = { path = "../world" }
 
+# Only to read the Breaches' plans and the modules they stand as the crate builds (build.rs).
+[build-dependencies]
+serde_json.workspace = true
+
 [dev-dependencies]
 bake = { path = "../bake" }
 layout = { path = "../layout" }

@@ -26,12 +26,13 @@ const shipSvg = (colour: string) =>
 
 /** How a public event's place is marked on the strip's foot: its colour, its size (CSS pixels), and how long its
  *  blink takes (seconds; none for none). The ground gold, its heroic task orange and blinking, a chest waiting a
- *  smaller gold, a store under attack red and blinking faster. */
+ *  smaller gold, a store under attack red and blinking faster, a Breach's gate in the deep's violet. */
 const PLACE_LOOKS: Readonly<Record<PlaceMark['kind'], { colour: string; size: number; blink: number | null }>> = {
   event: { colour: '#e9b44c', size: 13, blink: null },
   heroic: { colour: '#ff7a3d', size: 13, blink: 0.8 },
   chest: { colour: '#e9b44c', size: 10, blink: null },
   store: { colour: '#e0483c', size: 13, blink: 0.5 },
+  breach: { colour: '#b48cf0', size: 13, blink: null },
 };
 
 /** The houses' roads' mark: a brass diamond with a dark edge, where the task's next goal stands. */

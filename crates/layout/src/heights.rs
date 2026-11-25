@@ -36,7 +36,8 @@ pub const fn level_of(kind: AreaKind) -> f64 {
         | AreaKind::Graveyard
         | AreaKind::Coven
         | AreaKind::Cave
-        | AreaKind::Plot => 0.0,
+        | AreaKind::Plot
+        | AreaKind::Breach => 0.0,
         AreaKind::Wilds | AreaKind::Arena => 0.2,
         AreaKind::Farm => 0.25,
         AreaKind::Hamlet => 0.35,

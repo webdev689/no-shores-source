@@ -33,11 +33,12 @@ test('the townsfolk keep their routines on the ways after the keepers, dressed t
   const plaza = plazaOf(SOCIAL);
   const [folk, again] = [new Townsfolk(plaza, 11), new Townsfolk(plaza, 11)];
   const keepers = plaza.stations.length;
-  assert.ok(folk.townsfolk >= POSTS.filter((post) => post.keep === 'kept').length + 14);
+  const townsfolk = folk.peopleAt(0).length - keepers;
+  assert.ok(townsfolk >= POSTS.filter((post) => post.keep === 'kept').length + 14);
   const moves = new Set<string>();
   for (let second = 5_000_000; second < 5_000_600; second += 5) {
     const people = folk.peopleAt(second);
-    assert.equal(people.length, keepers + folk.townsfolk);
+    assert.equal(people.length, keepers + townsfolk, 'everyone here all day');
     assert.deepEqual(people, again.peopleAt(second), 'the same in another browser');
     for (const person of people.slice(keepers)) moves.add(person.anim);
   }
@@ -70,13 +71,14 @@ test('each keeper who deals with a player wears their own dress at their counter
 test('Shape stands at his spot facing the middle, then goes', () => {
   const folk = new Townsfolk({ ...plazaOf(SOCIAL), stations: PLAZA.stations }, 7);
   const spot = [1095, 2002.5] as const;
+  const away = folk.peopleAt(0);
   const here = folk.peopleAt(0, { shape: spot });
   const shape = here.at(-1);
-  assert.equal(here.length, PLAZA.stations.length + folk.townsfolk + 1);
+  assert.deepEqual(here.slice(0, -1), away, 'everyone else as they were');
   assert.deepEqual([shape?.x, shape?.y, shape?.anim], [1095, 2002.5, 'idle']);
   assert.equal(shape?.dress, KEEPERS.shape.dress);
   assert.ok(Math.abs((shape?.facing ?? 0) + Math.PI / 2) < 0.05, 'facing west, to the middle');
-  assert.equal(folk.peopleAt(0).length, PLAZA.stations.length + folk.townsfolk, 'gone when the room says he left');
+  assert.ok(!away.some((person) => person.id === shape?.id), 'gone when the room says he left');
 });
 
 test("Shape's spot is the visitor spot his week's place indexes, and none while he is away", () => {
@@ -114,7 +116,6 @@ const DRAWN_AT_WORK: Readonly<Record<string, readonly string[]>> = {
 test('every townsperson wears only garments their body is drawn in at work and at play, so none is left undrawn', () => {
   const folk = new Townsfolk(plazaOf(SOCIAL), 11);
   const people = folk.peopleAt(0).slice(plazaOf(SOCIAL).stations.length);
-  assert.equal(people.length, folk.townsfolk);
   for (const { dress } of people)
     for (const garment of dress.outfit.garments)
       assert.ok(DRAWN_AT_WORK[dress.body]?.includes(garment), `a ${dress.body} townsperson in ${garment}`);

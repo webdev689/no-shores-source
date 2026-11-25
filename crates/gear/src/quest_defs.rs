@@ -34,8 +34,8 @@ const ISLANDS: [&str; 2] = ["cove", "isle"];
 const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
-/// What a task gives as it is done: Aurem, its house's Art, a Tenet (1 or 2, 0 none), fragments to choose, and the
-/// first horse (`FIRST_HORSE`, the Bay).
+/// What a task gives as it is done: Aurem, its house's Art, a Tenet (1 or 2, 0 none), fragments to choose, the first
+/// horse (`FIRST_HORSE`, the Bay), and the first ship (the Sloop, `Character::give_first_ship`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
@@ -44,6 +44,7 @@ pub struct RewardDef {
     pub tenet: u8,
     pub fragments: u8,
     pub horse: bool,
+    pub ship: bool,
 }
 
 /// One task: its id and the ids it had before (a save of one is read as this), the tracker's words, the scenes played
@@ -322,7 +323,8 @@ fn raced(race: &Race) -> Option<&'static str> {
 ///
 /// # Panics
 ///
-/// Never for the file in the repository, which `the_quests_file_reads_whole` reads.
+/// Never for the file in the repository, which
+/// `the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_that_are` reads.
 #[must_use]
 pub fn quests() -> &'static QuestsDef {
     static READ: OnceLock<QuestsDef> = OnceLock::new();
@@ -365,7 +367,8 @@ struct Cast {
 ///
 /// # Panics
 ///
-/// Never for the file in the repository, which `the_quests_file_reads_whole` reads.
+/// Never for the file in the repository, which
+/// `the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_that_are` reads.
 #[must_use]
 pub fn speaker_place(key: &str) -> Option<usize> {
     static READ: OnceLock<Vec<String>> = OnceLock::new();

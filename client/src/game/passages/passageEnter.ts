@@ -10,6 +10,7 @@ import type { Block } from '../../rules/movementRules.ts';
 import type { IsleBlock, PassagePlan } from '../../rules/passageRules.ts';
 import { seenBlocks } from '../dungeonLayout.ts';
 import { Foot } from '../foot.ts';
+import { enterDungeon } from '../footEntries.ts';
 import { rulesOf } from '../footRoom.ts';
 import type { FootContext } from '../footPlace.ts';
 import type { NodeInfo } from '../worldData.ts';
@@ -116,7 +117,7 @@ export async function enterZone(context: FootContext, entry: ZoneEntry): Promise
     const arrived = { ...layout, arrival: { ...layout.arrival, x, y, bearing: plan.sites.facing } };
     const blocks = [...seenBlocks(layout), ...solidBlocks(plan.solids, 0)];
     const into = { number: plan.zone.number, ask: { place: room, name: plan.zone.name }, room };
-    return Foot.enterDungeon(context, { node: place, text: '' }, into, arrived, 'normal', {
+    return enterDungeon(context, { node: place, text: '' }, into, arrived, 'normal', {
       ask,
       blocks,
       link: (heard) => linked(heard.snapshot, heard.gear),

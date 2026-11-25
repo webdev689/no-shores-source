@@ -5,8 +5,9 @@
 //! player keeps it in sight, then gone. Its traffic id stays taken until its voyage would have ended, so the page never
 //! draws it twice; and two that parted meet again only once they have been out of range of each other.
 
-use crate::hostiles::{Hostile, Hostiles, apart, round_the_coast};
+use crate::hostiles::{Hostile, Hostiles, round_the_coast};
 use crate::sighting::{Chart, KEEP_SHARE};
+use combat::sight::apart;
 use naval::captain::ENGAGE_RANGE;
 use naval::captain::course::heading_to;
 use naval::ranks::{Commission, PLAYERS, Rank};

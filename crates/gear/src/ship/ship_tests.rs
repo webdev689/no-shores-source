@@ -22,9 +22,16 @@ fn carry(character: &mut Character, kind: Kind, rarity: Rarity, level: u8) -> u3
     id
 }
 
+/// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome.
+fn captain() -> Character {
+    let mut character = Character::starting();
+    assert!(character.give_first_ship());
+    character
+}
+
 #[test]
-fn a_new_ship_is_fitted_with_four_plain_modules_and_none_count_toward_the_character() {
-    let character = Character::starting();
+fn the_first_ship_is_fitted_with_four_plain_modules_and_none_count_toward_the_character() {
+    let character = captain();
     for slot in Slot::SHIP {
         let module = character.fitted(slot).expect("fitted");
         assert_eq!((module.rarity, module.level), (Rarity::Normal, 1));
@@ -39,7 +46,7 @@ fn a_new_ship_is_fitted_with_four_plain_modules_and_none_count_toward_the_charac
 
 #[test]
 fn a_kept_ship_is_fitted_once_and_its_modules_once_taken_off_stay_off() {
-    let mut character = Character::starting();
+    let mut character = captain();
     character.ask(Ask::TakeOff { slot: Slot::Guns }, Here::default(), &dice(0)).expect("off");
     let read = Character::from_json(&character.to_json()).expect("read");
     assert!(read.fitted(Slot::Guns).is_none());
@@ -55,7 +62,7 @@ fn a_kept_ship_is_fitted_once_and_its_modules_once_taken_off_stay_off() {
 
 #[test]
 fn its_level_climbs_by_its_own_experience_then_by_its_modules_prestige() {
-    let mut character = Character::starting();
+    let mut character = captain();
     character.earn_ship_xp(u32::try_from(power::xp_for_level(12)).expect("fits"));
     assert_eq!(character.ship_level(), 12);
     assert_eq!(character.level(), 1, "the ship's experience is not the player's");
@@ -72,7 +79,7 @@ fn its_level_climbs_by_its_own_experience_then_by_its_modules_prestige() {
 
 #[test]
 fn a_module_is_fitted_only_at_its_level_in_its_own_slot_and_one_atheric_among_its_modules() {
-    let mut character = Character::starting();
+    let mut character = captain();
     let guns = carry(&mut character, Kind::Guns, Rarity::Rare, 10);
     let here = Here::default();
     assert_eq!(character.ask(Ask::Wear { item: guns, slot: Slot::Guns }, here, &dice(0)), Err(Refusal::TooLow));
@@ -93,7 +100,7 @@ fn a_modules_nodes_are_paid_in_its_own_ship_materials() {
     assert_eq!(made_of(Kind::Guns), [ShipMaterial::Iron, ShipMaterial::Timber]);
     let price = price_of(Kind::Sails, Cost { aurem: 1, fragments: 2, resource: 3, essence: 4 });
     assert_eq!(price.0, [(ShipMaterial::Canvas, 2), (ShipMaterial::Timber, 3), (ShipMaterial::Heartwood, 4)]);
-    let mut character = Character::starting();
+    let mut character = captain();
     character.earn_ship_xp(u32::MAX);
     let guns = carry(&mut character, Kind::Guns, Rarity::Rare, 20);
     character.items.get_mut(&guns).expect("held").0.xp = u32::MAX / 2;
@@ -108,7 +115,7 @@ fn a_modules_nodes_are_paid_in_its_own_ship_materials() {
 
 #[test]
 fn a_module_dismantled_gives_back_its_own_material_and_no_fruit_feeds_one() {
-    let mut character = Character::starting();
+    let mut character = captain();
     let hull = carry(&mut character, Kind::Hull, Rarity::Atheric, 20);
     character.materials.fruit = 1;
     let _ = character.ask(Ask::Feed, Here::default(), &dice(0));
@@ -165,7 +172,7 @@ fn a_whole_coves_wreckage_holds_less_than_a_minor_ships_whole_lot_and_an_isles_m
 
 #[test]
 fn salvage_taken_fills_its_stocks_to_their_most_and_carries_its_module() {
-    let mut character = Character::starting();
+    let mut character = captain();
     character.materials.ship = ShipStock { timber: 199, ..ShipStock::default() };
     let found = salvage(Source::Breach, 20, 1.0, &dice(3));
     let taken = character.take_salvage(found.clone());
@@ -177,7 +184,7 @@ fn salvage_taken_fills_its_stocks_to_their_most_and_carries_its_module() {
 
 #[test]
 fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_the_ship_and_its_player_as_twenty_one_kills() {
-    let mut character = Character::starting();
+    let mut character = captain();
     character.earn_ship_xp(u32::try_from(power::xp_for_level(9)).expect("fits"));
     let wares = vendor::wares(Vendor::Shipwright, 3, character.ship_level());
     assert_eq!(wares.len(), vendor::WARES);
@@ -198,7 +205,7 @@ fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_the_ship_and_its
 
 #[test]
 fn ship_power_meets_a_hostile_ships_level_by_the_characters_own_law() {
-    let mut character = Character::starting();
+    let mut character = captain();
     character.earn_ship_xp(u32::MAX);
     let power = character.ship_power();
     assert!((power.harm_dealt(power.level + 4) - 0.0).abs() < 1e-12, "four levels under, its balls do nothing");
@@ -208,7 +215,7 @@ fn ship_power_meets_a_hostile_ships_level_by_the_characters_own_law() {
 
 #[test]
 fn infusion_raises_a_kept_module_to_the_fed_ones_level_keeping_its_nodes_for_aurem_and_material() {
-    let mut character = Character::starting();
+    let mut character = captain();
     let kept = character.fitted(Slot::Sails).expect("fitted").id;
     character.items.get_mut(&kept).expect("held").0.bought = 1;
     character.earn_ship_xp(u32::try_from(power::xp_for_level(6)).expect("fits"));
@@ -237,7 +244,7 @@ fn infusion_raises_a_kept_module_to_the_fed_ones_level_keeping_its_nodes_for_aur
 
 #[test]
 fn a_fitted_module_is_infused_no_higher_than_it_could_fit_it() {
-    let mut character = Character::starting();
+    let mut character = captain();
     let kept = character.fitted(Slot::Hull).expect("fitted").id;
     let fed = carry(&mut character, Kind::Hull, Rarity::Normal, 8);
     character.materials.aurem = 5_000;
@@ -251,7 +258,7 @@ fn a_fitted_module_is_infused_no_higher_than_it_could_fit_it() {
 
 #[test]
 fn a_modules_bought_node_that_no_longer_fits_is_given_back_in_its_own_materials_on_load() {
-    let mut character = Character::starting();
+    let mut character = captain();
     let id = carry(&mut character, Kind::Hull, Rarity::Legendary, 20);
     let mut hull = character.items[&id].0.clone();
     // A perk column that costs its two materials in different counts, so a swap of them would show.

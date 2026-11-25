@@ -5,6 +5,7 @@
 use crate::finds_wire::OPEN_FIND;
 use crate::lore_wire::FIND_LORE;
 use crate::messages;
+use crate::ship_wire::{BUY_SHIP, NAME_SHIP};
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
 use gear::{Ask, At, Kind, Rarity, Slot};
@@ -111,6 +112,10 @@ pub const OUTPOST_DELIVER: u8 = 77;
 pub const OUTPOST_TAKE: u8 = 78;
 pub const OUTPOST_HORN: u8 = 79;
 pub const OUTPOST_CHANGED: u8 = 80;
+/// A Breach's asks: take up and set down the Lodestone, and ask at the gate whether it is open (`room::breach`).
+pub const TAKE_LODESTONE: u8 = 82;
+pub const DROP_LODESTONE: u8 = 83;
+pub const ENTER_BREACH: u8 = 84;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -217,6 +222,10 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         OUTPOST_TAKE => Asked::Outpost(OutpostAsk::Take { slot: ask.slot(), count: ask.count() }),
         OUTPOST_HORN => Asked::Outpost(OutpostAsk::Horn),
         OUTPOST_CHANGED => Asked::Outpost(OutpostAsk::Changed),
+        BUY_SHIP..=NAME_SHIP => Asked::Gear(Ask::Ship(crate::ship_wire::ship_asked(ask)?)),
+        TAKE_LODESTONE => Asked::TakeLodestone,
+        DROP_LODESTONE => Asked::DropLodestone,
+        ENTER_BREACH => Asked::EnterBreach,
         _ => return crate::passage_wire::asked_of(ask),
     })
 }
@@ -312,6 +321,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
                 let item = u32::try_from(day).unwrap_or(u32::MAX);
                 args = messages::AskArgs { kind: TURN_IN_BOUNTY, item, node: place, ..args };
             }
+            Ask::Ship(ship) => args = crate::ship_wire::ship_ask_args(ship, args),
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::OpenChest { chest } => args = messages::AskArgs { kind: OPEN_CHEST, item: *chest, ..args },
@@ -324,6 +334,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
         Asked::Outpost(outpost) => args = outpost_args(*outpost, args),
         Asked::Passage(ask) => args = crate::passage_wire::ask_args(*ask, args),
+        Asked::TakeLodestone => args = messages::AskArgs { kind: TAKE_LODESTONE, ..args },
+        Asked::DropLodestone => args = messages::AskArgs { kind: DROP_LODESTONE, ..args },
+        Asked::EnterBreach => args = messages::AskArgs { kind: ENTER_BREACH, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -567,3 +580,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
 #[cfg(test)]
 #[path = "gear_wire_tests.rs"]
 mod gear_wire_tests;
+
+#[cfg(test)]
+#[path = "ask_wire_tests.rs"]
+mod ask_wire_tests;

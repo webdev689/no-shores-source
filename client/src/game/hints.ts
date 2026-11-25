@@ -26,6 +26,8 @@ export interface Strip {
 
 /** The strip's last entry wherever it shows: the key to every control. */
 export const ALL_CONTROLS: StripHint = ['controls', 'All controls'];
+/** Fallen in a Breach, the key that follows the next of the company, naming whom the camera follows (`name`). */
+export const followHint = (name: string): StripHint => ['follow', name ? `Following ${name} · Next` : 'Follow'];
 /** The click that takes the mouse to look round, shown while the mouse is free. */
 const LOOK: StripHint = ['Left button', 'Look round'];
 /** Held, the leave control takes the player back to their ship from wherever they stand on foot (`leaveHold.ts`). */
@@ -132,6 +134,23 @@ const STANCES = {
   ],
 } as const satisfies Record<string, readonly StripHint[]>;
 type Stance = keyof typeof STANCES;
+/** The Lodestone's bearer's keys at rest and with their bare hands up, in place of the stance's and the Arts': their
+ *  swing is its Strike, their guard raises Hold True drawn or not, and any Art's key Grounds it once it is charged. */
+const BEARER = {
+  away: [
+    ['ready', 'Draw'],
+    ['run', 'Run'],
+    ['jump', 'Jump'],
+    ['guard', 'Hold True'],
+  ],
+  melee: [
+    ['swing', 'Strike'],
+    ['guard', 'Hold True'],
+    ['dodge', 'Dodge'],
+    ['heal', 'Heal'],
+  ],
+} as const satisfies Record<string, readonly StripHint[]>;
+const GROUND_KEYS = 'anima / tenetOne / tenetTwo';
 
 /** Each stance's name, as the strip's head says it. */
 const STANCE_TITLES: Readonly<Record<Stance, string>> = {
@@ -194,8 +213,8 @@ export function hintsFor(hints: readonly StripHint[], device: Device, binds: Bin
 
 /** What the player is doing on foot, for the keys shown: the Art worn (its id, 0 for none, as in the prologue),
  *  whether a weapon is drawn and is one that shoots, whether it aims, whether Dusk Daggers are being aimed, whether
- *  the player rides, the body's mode (hanging from a ledge or climbing a wall among them), and whether the mouse is
- *  free for a click to take it. */
+ *  the player rides, the body's mode (hanging from a ledge or climbing a wall among them), whether the mouse is free
+ *  for a click to take it, and in a Breach whether they bear its Lodestone, its grounding charged or not. */
 export interface OnFoot {
   readonly worn: number;
   readonly drawn: boolean;
@@ -205,15 +224,17 @@ export interface OnFoot {
   readonly mounted: boolean;
   readonly mode: Mode;
   readonly free: boolean;
+  readonly bearer?: { readonly charged: boolean } | null;
 }
 
 /** What the player is doing on foot, read from the walker, the fight's frame and the fight; `free` while the mouse
- *  is not the view's. */
+ *  is not the view's, `bearer` while they bear a Breach's Lodestone. */
 export function onFoot(
   walker: Pick<Walker, 'you' | 'player'>,
   shown: Pick<PlayerFightFrame, 'rangedDrawn' | 'aiming'>,
   fight: Pick<Fighting, 'arts' | 'aimRing'>,
   free: boolean,
+  bearer: { readonly charged: boolean } | null = null,
 ): OnFoot {
   return {
     worn: fight.arts?.art ?? 0,
@@ -224,6 +245,7 @@ export function onFoot(
     mounted: walker.player.mounted,
     mode: walker.player.body.mode,
     free,
+    bearer,
   };
 }
 
@@ -246,15 +268,17 @@ const SHADOW: readonly StripHint[] = [
 ];
 
 /** The keys shown on foot: the click to look while the mouse is free, the stance's own, the Arts' while one is worn
- *  and nothing else holds the keys, the leave's at rest or riding, and the strip's last. */
+ *  and nothing else holds the keys (the bearer's own in place of both, at rest or with their hands up), the leave's
+ *  at rest or riding, and the strip's last. */
 export function footHints(foot: OnFoot): readonly StripHint[] {
   const stance = stanceOf(foot);
   const casts = foot.worn !== 0 && (stance === 'away' || stance === 'melee' || stance === 'ranged');
   const daggersWorn = spellNumber(foot.worn, DAGGERS) === SPELLS.duskDaggers;
+  const bearer = foot.bearer && (stance === 'away' || stance === 'melee') ? BEARER[stance] : null;
+  const ground: StripHint = [GROUND_KEYS, foot.bearer?.charged ? 'Ground' : 'Ground (charging)'];
   return [
     ...(foot.free ? [LOOK] : []),
-    ...STANCES[stance],
-    ...(casts ? (daggersWorn ? SHADOW : ARTS) : []),
+    ...(bearer ? [...bearer, ground] : [...STANCES[stance], ...(casts ? (daggersWorn ? SHADOW : ARTS) : [])]),
     ...(stance === 'away' || stance === 'mounted' ? [LEAVE] : []),
     ALL_CONTROLS,
   ];
@@ -264,18 +288,26 @@ export function footHints(foot: OnFoot): readonly StripHint[] {
 export const footStrip = (foot: OnFoot): Strip => ({ title: STANCE_TITLES[stanceOf(foot)], hints: footHints(foot) });
 
 /** The strip on foot as the player stands with the section and the fight: none while a fall plays out or a fall in
- *  the fight waits (no key does anything until Respawn is offered), Respawn's once it may be pressed, and otherwise
- *  what the player is doing asks. */
+ *  the fight waits (no key does anything until Respawn is offered), Respawn's once it may be pressed (none but the
+ *  sheet's where the place stands the fallen again of itself), and otherwise what the player is doing asks. */
 export function keysShown(
   standing: Standing,
   foot: OnFoot,
   fallen: { readonly canRespawn: boolean } | null = null,
 ): Strip {
   const none = { title: '', hints: [] };
+  if (standing.kind === 'dead' && standing.waits)
+    return standing.told ? { title: TITLES.dead, hints: [ALL_CONTROLS] } : none;
   if (standing.kind === 'dead') return standing.told ? stripOf('dead') : none;
   if (fallen) return fallen.canRespawn ? stripOf('dead') : none;
   return footStrip(foot);
 }
+
+/** Fallen in a Breach, `strip` under the fallen's name with the key that follows the company first (`followHint`). */
+export const withFollow = (strip: Strip, name: string): Strip => ({
+  title: TITLES.dead,
+  hints: [followHint(name), ...strip.hints],
+});
 
 /** `strip` without the leave held, where there is nothing to leave: the story, a struck ship's deck at sea. */
 export const withoutLeave = (strip: Strip): Strip => ({

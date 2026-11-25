@@ -31,20 +31,43 @@ impl Room {
     }
 
     /// A kept player leaving a run that counts revives: the share of their health they left with kept by account, 0
-    /// for one down, so coming back stands no one up whole, as `arts::keep_casting` keeps their Arts.
-    pub(crate) fn keep_body(&mut self, gone: &Player) {
+    /// for one down (a fall that killed them among them, though it leaves their health), so coming back stands no one
+    /// up whole, as `arts::keep_casting` keeps their Arts.
+    pub(crate) fn keep_body(&mut self, id: PlayerId, gone: &Player) {
         let Some(owner) = gone.owner.clone() else { return };
-        let Some(run) = self.run.as_mut().filter(|run| run.revives.is_some()) else { return };
         let fighter = gone.fighter;
-        let share = if fighter.dead() { 0.0 } else { fighter.health / fighter.health_max.max(f64::EPSILON) };
+        let share = if gone.living() { fighter.health / fighter.health_max.max(f64::EPSILON) } else { 0.0 };
+        // A Breach's run keeps more (`breach/rejoin.rs`), and its gate a fallen holder of its Waking.
+        if self.breach.is_some() {
+            self.keep_breach_body(id, owner, share, gone);
+            return;
+        }
+        if let Some(gate) = self.breach_gate.as_mut().filter(|gate| gate.fighting(id) && share <= 0.0) {
+            gate.left_down.insert(owner);
+            return;
+        }
+        let Some(run) = self.run.as_mut().filter(|run| run.revives.is_some()) else { return };
         run.left.insert(owner, share);
     }
 
     /// An account's body given back as it comes into the run again: down where it left down, so it stands again only
     /// by a revive or a respawn asked, each spending one, else at the share of its health it left with.
     pub(crate) fn give_body_back(&mut self, player: PlayerId, owner: &str) {
+        if self.breach.is_some() {
+            self.give_breach_back(player, owner);
+            return;
+        }
         let Some(share) = self.run.as_mut().and_then(|run| run.left.remove(owner)) else { return };
+        self.give_share(player, share, None);
+    }
+
+    /// A player's body given a share of its health, down for none, standing at `at` where one is given.
+    pub(crate) fn give_share(&mut self, player: PlayerId, share: f64, at: Option<[f64; 3]>) {
         let Some(found) = self.players.get_mut(&player) else { return };
+        if let Some([x, y, z]) = at {
+            (found.fighter.body.x, found.fighter.body.y, found.fighter.body.z) = (x, y, z);
+            found.stood = z;
+        }
         let fighter = &mut found.fighter;
         if share > 0.0 {
             fighter.health = fighter.health_max * share.min(1.0);

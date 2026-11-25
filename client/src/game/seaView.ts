@@ -11,7 +11,7 @@ import {
 } from '../overworld/overworldCamera.ts';
 import { dragCamera, keyTurn, zoomCamera } from '../overworld/overworldInput.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
-import type { Lying } from '../ships/deck.ts';
+import { type Deck, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
 import { CloseZoom } from './seaClose.ts';
 import { landingChoice } from './seaMarks.ts';
@@ -62,9 +62,13 @@ export class SeaView {
   /** What the view over an island's side says of the mark last clicked: that its node is locked. */
   said = '';
 
-  constructor(start: Point2, heading: number) {
+  /** The deck of the hull the player sails, whose wheel the helm's view stands behind. */
+  private readonly deckOf: () => Deck;
+
+  constructor(start: Point2, heading: number, deckOf: () => Deck = () => SLOOP_DECK) {
     this.camera = { ...initialCamera([start[0], start[1], 0], heading), tilt: FIRST_TILT };
     this.seaRig = this.camera;
+    this.deckOf = deckOf;
   }
 
   /** Over the ship, flying, over an island's side, or on the way to or from the helm. */
@@ -95,11 +99,6 @@ export class SeaView {
   /** The sea's shot `sea` brought in over it as close as it goes. */
   closest(sea: Shot, lying: Lying): Shot {
     return this.close.closest(sea, lying, this.camera.yaw, this.camera.tilt);
-  }
-
-  /** The ids of the landings marked over the island's side in view: the player has seen them. */
-  get landings(): string[] {
-    return this.side.map((mark) => mark.id);
   }
 
   /** The landings marked over the island's side in view. */
@@ -206,6 +205,7 @@ export class SeaView {
 
   /** The helm's view, the eye behind its wheel riding it as it lies, looking along its heading. */
   helmShot(lying: Lying, far: number): Shot {
-    return { eye: helmEye(lying), yaw: lying.heading, pitch: HELM.pitch, fov: FIELD_OF_VIEW, near: 0.3, far };
+    const eye = helmEye(lying, this.deckOf());
+    return { eye, yaw: lying.heading, pitch: HELM.pitch, fov: FIELD_OF_VIEW, near: 0.3, far };
   }
 }

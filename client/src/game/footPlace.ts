@@ -2,6 +2,7 @@
 // what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
 import type { PassageSeenState } from '../network/passageMessages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
+import type { BreachSeen } from '../network/breachMessages.ts';
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
@@ -15,6 +16,7 @@ import type { InputFrame } from '../player/input.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import type { InDungeon } from './footTrips.ts';
+import type { InBreach } from './breachView.ts';
 import type { Speak } from './footGear.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import type { EventProp } from '../city/eventProps.ts';
@@ -111,13 +113,20 @@ export function nodeAddress(
   return `${context.rooms(nodeRoom(node, seas, guild))}${joinAsk(asked, node.across)}`;
 }
 
-/** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out. */
+/** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out; or
+ *  launched for a Breach's run (`breach`), at its gate, where the zone's room stands them in the run's company. */
 export interface AtEntrance {
   readonly number: number;
   readonly x: number;
   readonly y: number;
   readonly facing: number;
+  readonly breach?: string;
 }
+
+/** What a room's address asks of it for a player arriving as `arriving` says: the entrance they stand before, or the
+ *  Breach's run they were launched for. */
+export const arrivalQuery = (arriving: AtEntrance): string =>
+  arriving.breach === undefined ? `?entrance=${arriving.number}` : `?breach=${encodeURIComponent(arriving.breach)}`;
 
 /** What the page hears of a room it joins: its snapshots, the player's gear, and whether it takes asks for foes. */
 export interface Heard {
@@ -127,7 +136,8 @@ export interface Heard {
 }
 
 /** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, the dungeon, the
- *  seas the room stands at, and at an outpost site whose outpost's room it is. */
+ *  seas the room stands at, and at an outpost site whose outpost's room it is; in a Breach's run, the run, and the
+ *  ground its blocks give in place of the land's; at a Breach's gate, the run its zone was joined for. */
 export interface Opened {
   readonly link: RoomLink;
   readonly boxes: readonly Block[];
@@ -135,6 +145,9 @@ export interface Opened {
   readonly dungeon: InDungeon | null;
   readonly seas: Difficulty;
   readonly outpost?: OutpostJoined | null;
+  readonly run?: InBreach;
+  readonly launchedFor?: string;
+  readonly groundAt?: (x: number, y: number) => number | null;
 }
 
 /** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache and
@@ -158,13 +171,17 @@ export interface Held {
   plots: number;
   /** In a passage zone, its deal as it stands for the player (none in any other room). */
   passage: PassageSeenState | null;
+  /** A Breach as its run or its gate's patrol zone last said; null in any other room. */
+  breach: BreachSeen | null;
 }
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
- *  or to stand where the kept character left this social space, logging back in (`relog.ts`). */
+ *  or at the gate of the Breach's run the player was launched for (`arrivalQuery`), or at the gate toward the patrol
+ *  zone `across` they came from; or to stand where the kept character left this social space, logging back in
+ *  (`relog.ts`). */
 export const joinAsk = (asked?: AtEntrance | 'relog', across?: string): string => {
   if (asked === 'relog') return '?relog=1';
-  return asked ? `?entrance=${asked.number}` : across ? `?from=${encodeURIComponent(across)}` : '';
+  return asked ? arrivalQuery(asked) : across ? `?from=${encodeURIComponent(across)}` : '';
 };
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */

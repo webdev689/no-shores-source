@@ -40,7 +40,9 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
   fails. One with no place yet is told "You are not in a place to speak in yet.", and a line the accounts could not
   answer for "That line could not be sent. Try again." (`UNSENT`).
 - **Local** is for land: it goes to everyone in the same room, and the page keeps a line only from a player whose figure
-  stands within 60 m across the ground, as far as a name over a head reads, and its own always. Said at sea, it is
+  stands within 60 m across the ground, as far as a name over a head reads, and its own always; in a Breach's run from
+  anyone in it, as its company calls across its spaces (the Steward's order to its taken, in shores far from its court:
+  `heardLocally`). Said at sea, it is
   refused ("Local is heard on land. At sea, say it to your water with /sea.").
 - **Region** is for the sea: it goes to every ship in the same water of the same sea room, and each line is marked with
   the water's name. Said on land, it is refused ("Region is heard at sea.").

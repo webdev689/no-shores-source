@@ -229,18 +229,6 @@ pub struct CellRect {
     pub bottom: usize,
 }
 
-impl CellRect {
-    #[must_use]
-    pub fn join(self, other: Self) -> Self {
-        Self {
-            left: self.left.min(other.left),
-            top: self.top.min(other.top),
-            right: self.right.max(other.right),
-            bottom: self.bottom.max(other.bottom),
-        }
-    }
-}
-
 fn weight(falloff: Falloff, fraction: f64) -> f64 {
     if fraction >= 1.0 {
         return 0.0;
@@ -303,17 +291,13 @@ pub fn dab(ground: &mut Grid, land: &[bool], stroke: &Stroke, point: Point) -> O
     Some(rect)
 }
 
-/// Applies every stroke in order; answers the cells they touched, if any.
-pub fn apply(ground: &mut Grid, land: &[bool], edits: &Edits) -> Option<CellRect> {
-    let mut touched: Option<CellRect> = None;
+/// Applies every stroke in order.
+pub fn apply(ground: &mut Grid, land: &[bool], edits: &Edits) {
     for stroke in &edits.strokes {
         for &point in &stroke.points {
-            if let Some(rect) = dab(ground, land, stroke, point) {
-                touched = Some(touched.map_or(rect, |was| was.join(rect)));
-            }
+            dab(ground, land, stroke, point);
         }
     }
-    touched
 }
 
 #[cfg(test)]

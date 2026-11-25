@@ -137,11 +137,6 @@ export class TaskTracker {
     }
   }
 
-  /** The quest shown now, if any. */
-  get quest(): Quest | null {
-    return this.shown;
-  }
-
   /** The tracker in a view `width` by `height` CSS pixels at `now` (seconds): at the right, under the place's name,
    *  its words a step larger where the view is 1500 by 900 or more; still when `still`. */
   node(

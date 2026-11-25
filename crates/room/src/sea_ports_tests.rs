@@ -5,6 +5,13 @@ use naval::damage::{Hurt, State};
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
 use naval::ranks::{Commission, GREY_TITHE, Rank};
 
+/// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
+pub(super) fn sailor() -> gear::Character {
+    let mut character = gear::Character::starting();
+    assert!(character.give_first_ship());
+    character
+}
+
 /// One square continent 100 km a side, its north-west corner 100 km from the frame's, and two port cities' roadsteads
 /// out at sea: the first 10 km east of where the tests' ships sail.
 pub(super) fn sea() -> Sea {
@@ -142,7 +149,7 @@ fn a_ships_hurts_are_kept_in_the_players_character_across_sessions() {
     let mut sea = sea();
     let player = sea.join();
     sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.ship = [5_000, 10_000, 2_500];
     assert!(sea.restore_character(player, &character.to_json()));
     assert_eq!(sea.kept(player), Some(([0.5, 1.0, 0.25], 0.0)));
@@ -196,7 +203,7 @@ fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_it_and_their_
     assert_eq!(pieces.len(), 3);
     assert!(pieces.iter().all(|piece| piece.level == 9), "rolled at its level");
     // Its ship brought onto them gathers them, each told with what it held, the ship's materials among it.
-    sea.harbour.characters.insert(player, gear::Character::starting());
+    sea.harbour.characters.insert(player, sailor());
     let mut held = Vec::new();
     for piece in pieces {
         let ship = &mut sea.berths.get_mut(&player).unwrap().sailing.as_mut().unwrap().ship;
@@ -285,7 +292,7 @@ fn a_ship_that_goes_down_counts_once_toward_the_sea_bounty_of_each_kept_player_w
         .position(|bounty| matches!(bounty.objective, gear::objectives::Objective::Sink { .. }))
         .and_then(|place| u8::try_from(place).ok())
         .expect("the board holds a sea bounty");
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.activity.today = gear::activity::Today { day, bounties: [(place, 0)].into(), ..Default::default() };
     assert!(sea.restore_character(player, &character.to_json()));
     let fought = &mut sea.fights.of_mut(player).unwrap().0;
@@ -330,7 +337,7 @@ fn a_repair_begun_unkept_stops_as_the_kept_character_comes_and_mends_nothing_of_
     sea.tick();
     sea.berths.get_mut(&player).unwrap().kept = [0.5; 3];
     assert_eq!(sea.repair(player), Ok(()), "by a port, played unkept");
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.ship = [1_000, 1_000, 1_000];
     character.ship_at = Some([50_000, 50_000]);
     assert!(sea.restore_character(player, &character.to_json()));

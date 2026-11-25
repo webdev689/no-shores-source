@@ -13,6 +13,7 @@ import os
 
 from mathutils import Matrix, Quaternion, Vector
 
+import barding
 import horse
 import poses
 from rig import Pose, offset, rest, solve_arm
@@ -41,7 +42,7 @@ RIDE = {'horseidle': 1, 'horsewalk': 8, 'horsegallop': 8}
 GAIT_OF = {'horseidle': 'idle', 'horsewalk': 'walk', 'horsegallop': 'gallop'}
 LEAN_OF = {'horseidle': 0.0, 'horsewalk': 0.0, 'horsegallop': 1.0}
 # the layers only the mounted animations draw: the horse, and each shop mount look's own pieces (barding.py) over it
-LOOK_LAYERS = tuple(f'horse_{look}' for look in ('warhorse', 'spectral', 'dawnfire', 'automaton'))
+LOOK_LAYERS = tuple(f'horse_{look}' for look in barding.LOOKS)
 LAYERS = ('horse', *LOOK_LAYERS)
 
 # the trunk and the head over the seat: a little round in the back and the chin up, no two sides alike. The lean is

@@ -33,7 +33,17 @@ impl Chart for OneWater {
 
 /// A player's ship at `at`, heading north at `pace`, fighting or not; its waters run at its pace.
 fn voyager(player: PlayerId, at: [f64; 2], pace: u16, fighting: bool) -> Voyager {
-    Voyager { player, at, heading: 0.0, pace, fighting, home: false, clock: f64::from(pace.max(1)), hull: 1.0 }
+    Voyager {
+        player,
+        at,
+        heading: 0.0,
+        pace,
+        fighting,
+        home: false,
+        clock: f64::from(pace.max(1)),
+        hull: 1.0,
+        hull_kind: sailing::HullKind::Sloop,
+    }
 }
 
 fn standing(id: u32, at: [f64; 2], heading: f64, bold: bool) -> Hostile {
@@ -99,9 +109,9 @@ fn a_ship_takes_the_sight_of_the_player_nearest_it_and_keeps_the_largest() {
     hostiles.tick(1.0, &[voyager(1, [0.0, 0.0], 0, false), far_off], &HOSTILE_WATER);
     assert_eq!(hostiles.sailing[0].sight_m, SIGHT_LEAST_M, "the nearer player is at rest");
     hostiles.tick(1.0, &[voyager(1, [0.0, 0.0], 100, false)], &HOSTILE_WATER);
-    assert!((hostiles.sailing[0].sight_m - sight_for(100.0)).abs() < 1e-9);
+    assert!((hostiles.sailing[0].sight_m - sight_for(100.0, 1.0)).abs() < 1e-9);
     hostiles.tick(1.0, &[voyager(1, [0.0, 0.0], 0, false)], &HOSTILE_WATER);
-    assert!((hostiles.sailing[0].sight_m - sight_for(100.0)).abs() < 1e-9, "kept once the player slows");
+    assert!((hostiles.sailing[0].sight_m - sight_for(100.0, 1.0)).abs() < 1e-9, "kept once the player slows");
 }
 
 #[test]
@@ -235,7 +245,7 @@ fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_its_meet
         for hostile in &hostiles.sailing {
             count += 1;
             let out = apart([hostile.x, hostile.y], ship.at);
-            let sight = sight_for(60.0);
+            let sight = sight_for(60.0, 1.0);
             assert!((hostile.sight_m - sight).abs() < 1e-9);
             assert!((0.9 * sight - 3.0..=sight + 3.0).contains(&out), "{out} m out");
             let bearing = heading_to(ship.at, [hostile.x, hostile.y]);
@@ -245,7 +255,7 @@ fn under_way_a_ship_comes_ahead_within_60_degrees_and_a_bold_one_within_its_meet
         }
     }
     assert!(count > 15 && bold > 0 && bold < count, "{count} ships, {bold} bold: a bold one within its meeting cone");
-    assert!((sight_for(60.0) - SIGHT_HOLD_S * (12.0 + 2.4) * 60.0).abs() < 1e-9);
+    assert!((sight_for(60.0, 1.0) - SIGHT_HOLD_S * (12.0 + 2.4) * 60.0).abs() < 1e-9);
 }
 
 #[test]

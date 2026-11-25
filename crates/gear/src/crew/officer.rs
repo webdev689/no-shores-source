@@ -74,8 +74,8 @@ pub struct Officer {
     pub bought: u32,
     pub chosen: Vec<u8>,
     pub duty: Duty,
-    /// The Unix minute a knockout's rest ends, kept with them so a return to any room keeps it
-    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); 0 when not resting.
+    /// The Unix minute a knockout's rest ends, kept with them so a return to any room keeps it;
+    /// 0 when not resting.
     #[serde(default, skip_serializing_if = "not_resting")]
     pub resting_until: u64,
 }

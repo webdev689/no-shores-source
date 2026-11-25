@@ -39,11 +39,27 @@ code:
   - client/src/game/audio/music/storyScore.ts#storyScores
   - client/src/game/audio/music/storyStorm.ts#stormSong
   - client/src/game/audio/music/storyBand.ts#THEME
+  - client/src/game/audio/music/sampled.ts#sampledNote
+  - client/src/game/audio/music/sampled.ts#rateOf
+  - client/src/game/audio/music/sampled.ts#playsOf
+  - client/src/soundSamples.ts#recordingOf
+  - client/src/game/audio/music/valeTakes.ts#valeSong
+  - client/src/game/audio/music/valeScore.ts#valeFights
+  - client/src/game/audio/music/valeBosses.ts#valeBosses
+  - client/src/game/audio/music/valeCalm.ts#valeCalm
+  - client/src/game/audio/music/breachHearing.ts#hearBreach
+  - client/src/game/audio/music/breachHearing.ts#momentOf
+  - client/src/game/audio/music/director.ts#askedSting
+  - client/src/game/audio/music/vale.ts#valeMusic
+  - client/src/game/audio/music/sampled.ts#lowpassInto
+  - tools/freesound/root.py
 ---
 # Music
 
 The game's music: DFO's own FM synthesiser playing scores written as notes in code, synthesised while the game runs
-([[Music and Ambience Come From DFO's Synthesiser]], [[Pick - Music]]). Out of danger a calm piece comes now and then,
+([[Music and Ambience Come From DFO's Synthesiser]], [[Pick - Music]]); the Drowned Vale's scores are written for
+instruments recorded on Freesound ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]), each played on
+its pick once the owner has picked it and on the synthesiser until then. Out of danger a calm piece comes now and then,
 at sea, in the social space and on the islands, with minutes of silence between pieces
 ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]); music comes as danger nears, grows into the
 fight a layer at a time on the bar line, and falls back to silence when it ends. A fight's music never plays the same
@@ -65,6 +81,22 @@ plays ([[The Fight Music Varies, Recombined From Takes]]). Nothing in it rings o
   beater's click or a skin's body. Every song is high-passed at 30 Hz. A song may play through a press: a compressor
   under a soft ceiling. The whole plays at 0.22 into the Music bus ([[Interface]]), under a soft ceiling of the
   music's own at -1 dBFS, so songs crossing and stings over them never clip.
+- **Sampled voices** (`sampled.ts`). A track may name a `music.*` cue of `content/audio/freesound.json`, its
+  envelope (attack, release) and its gain; a drum of a kit may too. Each note plays the pick's recording, fetched as
+  the world's recordings are (`recordingOf`), at playbackRate 2^((note - root)/12), into the track's level and place
+  as an FM note goes. The root is the pick's measured pitch with its cents ("C3-38", 38 cents flat of C3), which
+  `tools/freesound/root.py` finds by YIN over the preview's steady middle; it is written on the cue in
+  freesound.json and `publish.py` copies it onto the pick in `sounds.json`, where the page reads it. A textural or
+  percussive cue has none and plays from the note its score names its home. A note longer than the recording plays
+  on in further plays of its middle (from a quarter in), each crossfaded into the last at equal power. A drum plays
+  its recording `shift` semitones off, shaped as its kit drum is (rising over its attack, dying over its decay), the high ones
+  (metal, the bowed cymbal, the riser) cut a tenth of a second after their peak; a swell is started, or entered
+  part way, so its recording ends on the beat the kit drum's lands on. Each channel's sampled voices pass two
+  lowpasses in a row at 5.6 kHz (24 dB an octave; 8 kHz some 20 dB down), so no partial of a recording played high
+  passes the music's ceiling; the score's B5 ceiling, the 30 Hz high-pass and the soft ceilings hold for it as for
+  the FM bank. Until a recording has come, or while a pitched cue has no pick or no root, the track plays its FM
+  program, the drum the kit's own. The Breach's instruments are fetched as its gate or its run is first heard, and
+  let go on leaving it, so its fights open on recordings.
 - **The score format.** A score lays notes with `note(track, bar, beat, beats, pitch, velocity)` and drums with
   `hit(drum, bar, beat, velocity)`, beats in quarter notes. `tune` reads a line as text (`'A4:1.5 D5:.5 | r:1'`).
   Each track names its program, level, place and layer role, and may name its own voice. A drum may have a role of
@@ -72,7 +104,7 @@ plays ([[The Fight Music Varies, Recombined From Takes]]). Nothing in it rings o
   pitched sounds over B5 (`CEILING_NOTE`): a track that reaches past it plays an octave down, the whole of it where
   that keeps it at or over G3, its line kept whole, else only its notes over the ceiling. No drum rings: a struck tone
   over 1.5 kHz dies within a tenth of a second, in the bank and in every score's own kit.
-- **Writing helps** (`craft.ts`). A score names its plan of sections; writes its harmony a bar at a time
+- **Writing helps** (`craft.ts`). Writes its harmony a bar at a time
   (`'Em | C/D'`), a bar's chords split where its metre says; holds a chord that follows itself as one note; and
   checks each tune's bars against its metre, so a slip in one note's length cannot shift the rest.
 - **A score, written.** A fight score is a song written as takes (`makeForm`), set in `overlookScores` as a family's
@@ -136,7 +168,8 @@ const song = makeForm(
 
 ## The director
 
-Each frame it hears where the player is (the social space, an island and its climate, or the sea), the
+Each frame it hears where the player is (the social space, an island and its climate, a Breach's run, or the sea),
+the
 player's health, the blows they gave and took, and every foe's rank, alert, distance and health (an ally fighting on
 the players' side is no foe); at sea, the hostile ships within 1,000 m, the fight, whether it lies off a coast to land
 on, and the sky over it.
@@ -177,6 +210,21 @@ on, and the sky over it.
 - **Danger at sea.** A hostile ship closing brings in a sea song's tension; the fight, its fight. The song is chosen
   as the encounter begins and kept to its end: the storm for two hostile ships or one of Elite rank or over, else the
   sea fight.
+- **A Breach** (`hearBreach`, from the room's `BreachSeen` and the space the player stands over, `spaceAt`). In a
+  run the song of the encounter under way plays in place of the island family's, or, with none under way, the
+  song of the encounter fought in the space the player stands in (the Waking's between spaces); an encounter running
+  holds at least the tension (the page's), its foes bring the fight's layers as any fight does, and its moments
+  (begun, won, a wipe) are the cadence, victory and defeat of the encounter the room tells them of, wherever the
+  player stands (`momentOf`, `askedSting`); the Steward's encounter plays the Two Shores' cadence and defeat, and its
+  win, the Breach cleared, the Steward's fall. The zone hears no other company's clear, and an event of the zone's
+  own plays its own sting under its banner. The Scrivener and the Steward play their own boss
+  scores by the names over their bars, the Scrivener from its waking, the Steward's court from its encounter's start
+  whether or not the Steward is engaged; the Steward's fall is the Breach cleared. While a Watcher has seen the
+  company the Ways play their peak. Between encounters a calm piece comes after 20 s, and 45 to 120 s of silence
+  after one: the Descent's in the Descent, the Broken Stair's on the Stair, After the Bells elsewhere, never the
+  one begun last while there is another. At the Sunken
+  Gate, while the player's company holds the Waking and the Spire has not woken, the Waking's song plays as the
+  hollow's fight.
 - **The story.** While the [[Prologue]] plays, each beat tells the director what plays: a song of the story's own in
   the layers of the mood it asks; a silence, let ring out or cut at once (the crash, and the black after it); or the
   fight it plays, heard as any fight. At sea that is the sea's own fight song. On the wreck it is the Boarding's first
@@ -295,6 +343,28 @@ on, and the sky over it.
   - The deep, 54: the theme slowed on voices, a celesta glinting its first notes high.
   - The shore, 76: the theme raised to D major, its sixth a B natural, ending on D, which leads into Saltmere's G.
 
+- **The Drowned Vale** (`valeParts.ts`, `valeTakes.ts`, `valeScore.ts`, `valeBosses.ts`, `valeCalm.ts`;
+  [[The Drowned Vale as Claude Builds It]], "Its music"). One theme for the whole raid in D Phrygian, low (D, E
+  flat, F, G and home; then up to B flat and down through the mode), carried by the choir and the organ, its second
+  strain on the cello or the horn. Its band: a double bass, the organ and a drone under it all; the bells, the
+  Lattice's glass or the waterphone as the danger's colour over a taiko heartbeat and a bowed cymbal; the low cellos'
+  ostinato; taiko, frame drums and timpani for the fights; the high choir, booms, struck metal and a riser of noise
+  as the peak. Each fight is twelve takes of eight bars, four sections (a vamp, the theme, the strain, a breakdown
+  to the frame and the heartbeat under the theme's head) each in three feels (the bass held, struck or pulsing; the
+  heartbeat; the ostinato; the drums' grooves; where the bells toll or the waterphone sounds; the organ's voicing),
+  the third over turned chords. The Waking in D at 92 on the glass; the Mending in C at 100, driving hardest; the
+  Choir in E at 84 on the bells; the Unlit Ways in B flat at 66 with no drums, its four sections (creeping, held,
+  near, still) only its drone, the waterphone, a heartbeat, a low pulse and its peak; the Two Shores in E flat at 108
+  turning the tonic against its flat second. Each has a cadence (the minor four home into a boom), a victory
+  (through the flat sixth and seventh into the major) and a defeat (the theme's head falling on the cello). The
+  Scrivener's score in G at 112, 118 and 126 (its third phase lifted a half step), a last stand at 134, on the glass;
+  the Steward's in D at 120, 126 and 132, a last stand at 140, on the bells, the horn doubling the theme and the
+  choir under the strain, its fullest statement; each with a two-bar wake, a fall and the player's end, the
+  Steward's fall the theme in D major. The calm pieces, a minute and a half to two each: the Descent (the theme on
+  the cello in D over the felt piano and a singing bowl, the choir's counter-line), the Broken Stair (A, in 3/4 at
+  56, the piano over the harp) and After the Bells (the theme on the choir in G at 54), each closing on the world's
+  leitmotif.
+
 Loudness at the full Music volume, measured: the boss scores' first phases -18 to -18.5 dBFS, their later phases
 rising to -16, peaks -4 to -8 dBFS under a soft ceiling at -3; the families' fights -17.5 to -18 dBFS, peaks about
 -5 dBFS under a soft ceiling at -3, their peak layers half a decibel over the fight; the sea's fights -20 to -22
@@ -303,8 +373,8 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
 
 ## Limits
 
-- Every score is built as the game starts, all its takes at once: 100 to 170 ms in Node, not yet measured in a
-  browser.
+- Every score is built as the game starts, all its takes at once: some 240 ms in Node, not yet measured in a
+  browser; the Drowned Vale's (some 47,000 notes, about a tenth of a second more) as its plan loads.
 - One fight score, and one pair of calm pieces, serves every climate of its family: the coast and the highland share
   green's.
 - The calm pieces out of danger play while it is at sea, whether it is under way or hove to.
@@ -316,5 +386,8 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
   tension's layers, the fight's or the peak's, and every take heard, no two alike in the tension's layers; past that
   a long fight hears its pairings again.
 - The arranger's memory lasts while the game runs; a new session's first fight may open as the last session's did.
+- **The Drowned Vale's music is not yet heard on its instruments.** None of its 21 `music.*` cues is picked, so it
+  plays on the FM bank; no pick has a `root` yet. Its levels against the FM songs, the sampled voices' gains and the
+  loudness of every Vale song are not measured, and no take has been heard by the owner.
 - The loudness above is not yet measured across every take: a breakdown, or a take in another feel, may sit some
   decibels under it. No take has been heard by the owner on the sound sheet.

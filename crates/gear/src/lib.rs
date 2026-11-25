@@ -15,6 +15,7 @@ pub mod asks;
 pub mod atheric_bounty;
 pub mod band;
 pub mod bounties;
+pub mod breach;
 pub mod catalogue;
 pub mod character;
 mod character_json;

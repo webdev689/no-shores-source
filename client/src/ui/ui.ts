@@ -264,11 +264,6 @@ export class Interface {
     return this.free ? this.pointer : null;
   }
 
-  /** Whether the pointer is over the interface, so a click there is not the world's. */
-  get takesPointer(): boolean {
-    return this.pointer !== null && hitAt(this.laid, this.pointer.x, this.pointer.y) !== null;
-  }
-
   /** Whether the interface as it was last laid takes the pointer at `x`, `y` (the page's CSS pixels): asked by a
    *  page's own handler, which hears a click before the interface's next frame does. */
   takes(x: number, y: number): boolean {

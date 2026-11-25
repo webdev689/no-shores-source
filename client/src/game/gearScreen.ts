@@ -114,8 +114,6 @@ export interface Character {
   readonly prestige: number;
   readonly defense: number;
   readonly attack: readonly [number | null, number | null];
-  /** How far the next Fruit of Dagon has grown, past level 20's XP; null below it. */
-  readonly fruitGrown: number | null;
   readonly slots: readonly { readonly slot: number; readonly name: string; readonly worn: Tile | null }[];
 }
 
@@ -140,7 +138,6 @@ export function characterOf(state: GearState): Character {
     prestige: state.prestige,
     defense: state.defense,
     attack: [hand(0), hand(1)],
-    fruitGrown: state.fruitGrowing ?? null,
     slots: SLOTS.map((name, slot) => {
       const worn = state.items.find((item) => item.at === WORN + slot);
       return { slot, name: capital(name), worn: worn ? tileOf(worn) : null };
@@ -174,7 +171,7 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
   return {
     name: gearName(item),
     colour: colourOf(item.rarity),
-    kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}${item.breach ? ' · from a Breach' : ''}`,
+    kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}${item.breach ? ` · from a Breach${item.hard ? ', Hard' : ''}` : ''}`,
     numbers,
     columns: item.columns.map((column, index) => ({
       nodes: Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>
@@ -182,12 +179,12 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
       ).filter((node): node is NodeShown => node !== null),
     })),
     words: itemWords(item),
-    presses: module ? modulePresses(item, state) : gearPresses(item, state, atVault),
+    presses: module ? modulePresses(item, state) : gearPresses(item, atVault),
   };
 }
 
 /** What may be done with a piece of the player's own gear from its page. */
-function gearPresses(item: GearItem, state: GearState, atVault: boolean): Press[] {
+function gearPresses(item: GearItem, atVault: boolean): Press[] {
   const presses: Press[] = [];
   if (item.at >= WORN)
     presses.push({ label: 'Take off', ask: { kind: ASKS.takeOff, slot: item.at - WORN }, role: 'button' });

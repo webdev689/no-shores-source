@@ -30,13 +30,16 @@ specification ([[Pick - Crew and Ship Power]]).
 
 Other ships show their hands and captain on deck ([[Ships Show Their People, and Captains' Gunners Misjudge]]).
 
-- The player's Sloop carries ten hands (`LARGE_BOAT`). Balls cut them down as they cut a captain's men, at 3.2 blows a
-  man, and they load the ship's guns: whole, a side in 5.6 s, the pace one player alone always loaded it; thinned, slower, to
-  10.1 s with none left. The ship never strikes for want of them: the player is always aboard.
+- The player's ship carries its hull's hands ([[Shipyard]]): the Sloop ten (`LARGE_BOAT`), the Schooner 13, the Brig 20,
+  the Frigate 24. Balls cut them down as they cut a captain's men, at 3.2 blows a man, and they load the ship's guns:
+  whole, a side of the Sloop's in 5.6 s, the pace one player alone always loaded it, at its class's pace on another
+  hull; thinned, slower, to 10.1 s on the Sloop with none left. The ship never strikes for want of them: the player is
+  always aboard.
 - The share left is kept with its hurts until a port city repairs it, and the ship's panel shows its hands of its
   complement.
-- **Boarding** (`room::boarding_hands`): over a struck ship's rail with each player come two of their hands and as many
-  more as the player's First Mate and perks lead aboard, never more than their ship has left. They fight the struck ship's crew on the players'
+- **Boarding** (`room::boarding_hands`): over a struck ship's rail with each player come as many of their hands as their
+  hull's class sends (two from a Sloop or a Schooner, three from a Brig, four from a Frigate) and as many more as the
+  player's First Mate and perks lead aboard, never more than their ship has left. They fight the struck ship's crew on the players'
   side with a foe's own brain, as swordsmen of the deck roster at their ship's level, by gear's power as a matched
   player's; a kill they have a hand in is their player's, and the deck is won once that crew is down whoever of them
   stands. Each who falls is a man the player's ship has lost once the player is back aboard, or once they leave the

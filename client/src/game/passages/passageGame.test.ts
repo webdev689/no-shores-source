@@ -266,7 +266,7 @@ test('a begin at a lamp the room refuses for its lamp says the player has not li
   inside.door = { web: () => lamped, plan: (island: string, week: number, zone: number) => planOf(zone) };
   inside.mouth = 0;
   inside.begin('public', 2);
-  foot.held.gear = { ...foot.held.gear!, answered: 1, answer: 174 };
+  foot.held.gear = { ...foot.held.gear!, answered: 1, answer: 177 };
   passages.frame(false);
   assert.deepEqual(held.told, ['You have not lit that lamp this week.']);
 });

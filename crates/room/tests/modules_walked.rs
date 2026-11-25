@@ -317,3 +317,42 @@ fn a_body_walks_over_every_stone_bridge_both_ways() {
         }
     }
 }
+
+#[test]
+fn a_body_walks_from_the_sunken_gates_way_to_each_mooring_onto_the_dais_and_up_each_ledge_to_its_perch() {
+    let vale = vale();
+    let gate = module_of(&vale, "breach-gate");
+    let module = &city::modules::all()[city::modules::number_of("breach-gate").expect("named") as usize];
+    let socket = |name: &str| module.sockets.iter().find(|socket| socket.name == name).expect("the socket");
+    let way = socket("way");
+    let from = at(gate, [way.at[0] + way.facing[0] * 3.0, way.at[1] + way.facing[1] * 3.0]);
+    for name in ["mooring-south", "mooring-west", "mooring-east"] {
+        let mooring = socket(name);
+        let (body, passed) = walked(&vale, from, &[at(gate, [mooring.at[0], mooring.at[1]])], 40.0);
+        assert!(
+            passed == 1 && (body.z - gate.at[2] - mooring.at[2]).abs() < 0.05,
+            "toward {name} the body stops {:.1},{:.1} from the gate's middle, {:.2} m over its foot",
+            body.x - gate.at[0],
+            body.y - gate.at[1],
+            body.z - gate.at[2]
+        );
+    }
+    let dais = [[0.0, 12.0], [0.0, 2.5]].map(|point| at(gate, point));
+    let (body, passed) = walked(&vale, from, &dais, 40.0);
+    assert!(passed == dais.len() && body.z >= gate.at[2] + 1.15, "the dais's top is walked up to");
+    for name in ["perch-1", "perch-2"] {
+        let perch = socket(name);
+        let foot = [perch.at[0].signum() * 25.0, 26.0];
+        let up = [[perch.at[0].signum() * 18.0, 26.0], foot, [foot[0], 10.0], [perch.at[0], perch.at[1]]]
+            .map(|point| at(gate, point));
+        let (body, passed) = walked(&vale, from, &up, 60.0);
+        assert!(
+            passed == up.len() && (body.z - gate.at[2] - perch.at[2]).abs() < 0.05,
+            "toward {name} the body stops {:.1},{:.1} from the gate's middle, {:.2} m over its foot, past {passed}, {:?}",
+            body.x - gate.at[0],
+            body.y - gate.at[1],
+            body.z - gate.at[2],
+            body.mode
+        );
+    }
+}

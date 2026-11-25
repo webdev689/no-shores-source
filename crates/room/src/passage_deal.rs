@@ -10,7 +10,6 @@ use super::Round;
 use crate::{PlayerId, Room};
 use ::foes::Rank::Major;
 use ::foes::roster::{COLLECTOR, ENFORCER};
-use combat::fighter::FighterId;
 use combat::sight::apart;
 use gear::dive::Route;
 use gear::lamps::Cache;
@@ -115,10 +114,6 @@ impl Room {
             Some(_) => self.keep_cold_lamp(),
         }
         self.keep_veins();
-    }
-
-    fn standing_foe(&self, id: FighterId) -> bool {
-        self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead())
     }
 
     fn guards_down(&self) -> bool {

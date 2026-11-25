@@ -18,7 +18,7 @@ import {
 } from '../../player/gear.ts';
 import type { KeeperKind } from '../keepers.ts';
 import { KEEPERS } from '../keepers.ts';
-import { emblemOf } from '../emblemArt.ts';
+import { emblemOf } from '../../plus/emblemArt.ts';
 import { CRATES_MOST, type Card, cardOf } from '../gearCards.ts';
 import { vendorsOf } from '../gearScreen.ts';
 import { factionRows } from './factionRows.ts';
@@ -161,6 +161,7 @@ function horseWare(gear: GearState, coat: Cosmetic, number: number): Ware {
     name,
     resource: null,
     breach: false,
+    hard: false,
     xp: 0,
     xpMost: 0,
     bought: 0,

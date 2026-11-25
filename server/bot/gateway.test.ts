@@ -190,7 +190,6 @@ test('gateway core: hello, identify with the bot intents, then ready', async () 
   assert.equal(identify?.d.token, 'tok');
   assert.equal(identify?.d.intents, BOT_INTENTS);
   assert.equal(core.status.state, 'ready');
-  assert.equal(core.status.guilds, 1);
   assert.deepEqual(w.dispatched, ['READY']);
   assert.equal((await w.storage.get<{ id: string; seq: number; intents: number }>('session'))?.id, 'sess1');
 });

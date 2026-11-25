@@ -3,6 +3,7 @@
 //! Degrees where the mod keeps degrees.
 
 use crate::{Hull, SLOOP, SailKind, SailSize};
+use land::exact::lerp;
 
 /// Come Sail Away's handling: way (m/s) and its rate (m/s²), turn (degrees a second) and its rate, under oars and sail.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -71,11 +72,7 @@ pub fn sea_wind(wind: f64) -> f64 {
     if wind > 0.0 { WIND_RATED * (wind / WIND_RATED).clamp(WIND_SHARE[0], WIND_SHARE[1]) } else { 0.0 }
 }
 
-/// Unity's unclamped lerp, and its clamped one.
-fn lerp(from: f64, to: f64, share: f64) -> f64 {
-    from + (to - from) * share
-}
-
+/// Unity's clamped lerp, over `lerp`, its unclamped one.
 fn lerp_clamped(from: f64, to: f64, share: f64) -> f64 {
     lerp(from, to, share.clamp(0.0, 1.0))
 }

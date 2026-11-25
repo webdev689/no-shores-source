@@ -3,19 +3,17 @@
 //! no step bends a shot and none tunnels one through a hull. Metres east, south and up; radians unless named.
 
 use crate::random::Mulberry32;
-use std::f64::consts::PI;
 
 /// m/s².
 pub const GRAVITY: f64 = 9.81;
-const DEGREE: f64 = PI / 180.0;
 
-/// A ball's velocity leaving a gun laid along `dir` (east, south; any length) at `elevation`, at `speed`, from a deck
-/// moving at `carry`.
+/// A ball's velocity leaving a gun laid along `direction` (east, south; any length) at `elevation`, at `speed`, from a
+/// deck moving at `carry`.
 #[must_use]
-pub fn launch_velocity(dir: [f64; 2], elevation: f64, speed: f64, carry: [f64; 3]) -> [f64; 3] {
-    let length = (dir[0] * dir[0] + dir[1] * dir[1]).sqrt();
+pub fn launch_velocity(direction: [f64; 2], elevation: f64, speed: f64, carry: [f64; 3]) -> [f64; 3] {
+    let length = (direction[0] * direction[0] + direction[1] * direction[1]).sqrt();
     let ahead = libm::cos(elevation) * speed / if length > 0.0 { length } else { 1.0 };
-    [dir[0] * ahead + carry[0], dir[1] * ahead + carry[1], libm::sin(elevation) * speed + carry[2]]
+    [direction[0] * ahead + carry[0], direction[1] * ahead + carry[1], libm::sin(elevation) * speed + carry[2]]
 }
 
 /// Where a ball launched from `start` at `launch` is `time` seconds on.
@@ -62,23 +60,29 @@ pub fn elevation_for_range(range: f64, speed: f64, rise: f64, low: f64, high: f6
 /// The farthest a gun throws within its carriage: at its highest, or 45 degrees if it rises past that.
 #[must_use]
 pub fn max_range(speed: f64, rise: f64, high: f64) -> f64 {
-    range_at(high.min(45.0 * DEGREE), speed, rise)
+    range_at(high.min(45.0_f64.to_radians()), speed, rise)
 }
 
-/// `dir` (east, south) turned by `angle` toward starboard: clockwise seen from above, as a heading turns.
+/// `direction` (east, south) turned by `angle` toward starboard: clockwise seen from above, as a heading turns.
 #[must_use]
-pub fn turned(dir: [f64; 2], angle: f64) -> [f64; 2] {
+pub fn turned(direction: [f64; 2], angle: f64) -> [f64; 2] {
     let (sine, cosine) = (libm::sin(angle), libm::cos(angle));
-    [dir[0] * cosine - dir[1] * sine, dir[1] * cosine + dir[0] * sine]
+    [direction[0] * cosine - direction[1] * sine, direction[1] * cosine + direction[0] * sine]
 }
 
 /// A lay bent by the scatter: each axis by its spread (degrees) times the sum of two draws less one, so most balls
 /// fly near the lay and a few at its edge. Draws two for the yaw, then two for the elevation.
-pub fn scatter(dir: [f64; 2], elevation: f64, yaw_deg: f64, pitch_deg: f64, draws: &mut Mulberry32) -> ([f64; 2], f64) {
+pub fn scatter(
+    direction: [f64; 2],
+    elevation: f64,
+    yaw_deg: f64,
+    pitch_deg: f64,
+    draws: &mut Mulberry32,
+) -> ([f64; 2], f64) {
     let mut triangle = || draws.draw() + draws.draw() - 1.0;
-    let yaw = triangle() * yaw_deg * DEGREE;
-    let pitch = triangle() * pitch_deg * DEGREE;
-    (turned(dir, yaw), elevation + pitch)
+    let yaw = (triangle() * yaw_deg).to_radians();
+    let pitch = (triangle() * pitch_deg).to_radians();
+    (turned(direction, yaw), elevation + pitch)
 }
 
 /// A ball fired: where and when it leaves its gun, its launch velocity, which ship fired it and under what flag, the

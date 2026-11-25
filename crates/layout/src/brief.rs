@@ -57,6 +57,8 @@ pub enum AreaKind {
     Hulks,
     /// The ground a guild builds its outpost on: a level square, nothing standing on it.
     Plot,
+    /// A Breach's gate: the hollow its opening is fought in, sunk in the land before a cliff and its sealed doorway.
+    Breach,
 }
 
 /// One area a brief asks for.

@@ -57,10 +57,11 @@ export function pick(draw: number, tint: number): { variant: number; scale: numb
 }
 
 /** The green the art is anchored by: the tall tuft's mean. The owner's green is lighter and bluer than a grass ground,
- *  so each texel is moved by the ratio of its ground to the ground this green would stand a shade lighter over. */
+ *  so each texel is moved by the ratio of its ground to the ground this green would stand a shade darker over. */
 export const GREEN = spriteMean(MEADOW_SPRITES[0]?.picture ?? { rows: [], colours: [] });
-/** How much lighter than its ground a tuft's green stands, a channel each. */
-export const TONE = [1.18, 1.24, 1.08] as const;
+/** How a tuft's green stands against its ground, a channel each: a shade darker, as a green lighter than its ground
+ *  stood out too bright over the land. */
+export const TONE = [0.85, 0.89, 0.78] as const;
 /** The ratio is held to this span, so a ground far off grass's tints the art and never repaints it. */
 export const SHIFT = [0.5, 1.6] as const;
 /** A texel takes the ground's hue as far as it is green: its green over its larger other channel, times this. Petals

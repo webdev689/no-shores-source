@@ -62,6 +62,16 @@ pub fn rolled(kind: Kind, rarity: Rarity, dice: &Dice) -> Option<Element> {
     Element::ALL.get(dice.pick(Purpose::Element, 1, Element::ALL.len())).copied()
 }
 
+/// A Forged weapon's element (a Breach's weapon won at Hard): always one, chosen evenly as a rolled weapon's is; a
+/// Breach's weapon won at Normal carries none, as the owner decided.
+#[must_use]
+pub fn forged(kind: Kind, dice: &Dice) -> Option<Element> {
+    if !kind.weapon() {
+        return None;
+    }
+    Element::ALL.get(dice.pick(Purpose::Element, 1, Element::ALL.len())).copied()
+}
+
 /// The share of foes that stand with a shield, and the share of a foe's health its shield holds.
 pub const SHIELD_CHANCE: f64 = 0.2;
 pub const SHIELD_SHARE: f64 = 0.5;

@@ -1,7 +1,7 @@
 // Destiny's revive on foot as the page shows it; the room judges all of it (crates/room/src/revive.rs). E held over a
 // fallen ally beside the player holds a revive, its share the room's word, as a node's gather is shown. The player
-// fallen themselves is told how long until they may respawn, who is reviving them, or that the dark lets no one
-// respawn there.
+// fallen themselves is told how long until they may respawn, who is reviving them, that the dark lets no one respawn
+// there, or how a place whose own rules stand its fallen (a Breach's) stands them.
 import type { Reviving, SeenPlayer } from '../network/messages.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { PixelPicture } from '../combat/dropPictures.ts';
@@ -21,6 +21,13 @@ export interface FallenWord {
   darkness: boolean;
   reviving: readonly Reviving[];
   revives: number;
+}
+
+/** How the fallen stand again where a place's room says so (a Breach's, `breachFall`): after `ticks` lain, or never
+ *  of themselves (null), when a company member may still revive them while `revives` are left (-1 none counted). */
+export interface StandingAgain {
+  readonly ticks: number | null;
+  readonly revives: number;
 }
 
 type Point = readonly [number, number, number];
@@ -54,8 +61,8 @@ export function reviveUse(fallen: number, name: string): Use {
 
 /** E on foot over a fallen ally, where the player may use it (`able`): the revive's Use, and held, the fight's hold of
  *  it, sent with each input (`Fighting.reviving`), and how far it has gone as the room says; none, and no hold, where
- *  no fallen ally another does not revive lies within reach of `feet`, or in an Abyss run with no revive left, so E
- *  stays the cache's or the door's there. */
+ *  no fallen ally another does not revive lies within reach of `feet`, nor one the place's rules keep down (`may`, a
+ *  Breach's), or in an Abyss run with no revive left, so E stays the cache's or the door's there. */
 export function reviveHere(
   fight: { readonly others: ReadonlyMap<number, SeenPlayer>; readonly player: number; reviving: boolean },
   word: FallenWord,
@@ -63,8 +70,10 @@ export function reviveHere(
   able: boolean,
   use: { held(control: 'use'): boolean },
   nameOf: (id: number) => string,
+  may: (id: number) => boolean = () => true,
 ): { readonly use: Use | null; readonly share: number | null } {
-  const taken = (id: number) => word.reviving.some((each) => each.fallen === id && each.reviver !== fight.player);
+  const reviver = (id: number) => word.reviving.some((each) => each.fallen === id && each.reviver !== fight.player);
+  const taken = (id: number) => reviver(id) || !may(id);
   const fallen = able && word.revives !== 0 ? fallenNear(feet, fight.others, taken) : null;
   const found = fallen === null ? null : reviveUse(fallen, nameOf(fallen));
   fight.reviving = found?.revive !== undefined && use.held('use');
@@ -86,12 +95,13 @@ export interface Fallen {
 }
 
 /** The player's own fall, from the ticks they have lain and the room's word, with a reviver's name (`nameOf`, '' for a
- *  guest); null while they stand. */
+ *  guest), and as a place whose own rules stand its fallen says (`stands`); null while they stand. */
 export function fallenOf(
   own: FighterView | null,
   player: number,
   word: FallenWord,
   nameOf: (id: number) => string,
+  stands: StandingAgain | null = null,
 ): Fallen | null {
   if (own?.action.kind !== 'dead') return null;
   const reviving = word.reviving.find((each) => each.fallen === player);
@@ -100,10 +110,20 @@ export function fallenOf(
     const name = nameOf(reviving.reviver) || 'An ally';
     return { ...waits, line: `${name} is reviving you  ${Math.round(reviving.progress * 100)}%` };
   }
+  if (stands) return { ...waits, line: standsWords(stands, own.action.elapsed) };
   if (word.revives === 0) return { ...waits, line: 'No revives left. You stay down for the rest of the run.' };
   if (word.darkness) return { ...waits, line: 'Darkness zone. Only an ally can raise you.' };
   const left = Math.ceil(Math.max(0, RESPAWN_TICKS - own.action.elapsed) / 60);
   return { offered: true, canRespawn: left === 0, line: left > 0 ? `Respawn in ${left} s` : 'You fell.' };
+}
+
+/** How a place whose own rules stand its fallen stands the player who has lain `elapsed` ticks: in so many seconds,
+ *  or never of themselves, revived by the company while revives last. */
+function standsWords(stands: StandingAgain, elapsed: number): string {
+  if (stands.ticks !== null) return `Standing again in ${Math.ceil(Math.max(0, stands.ticks - elapsed) / 60)} s`;
+  if (stands.revives === 0) return 'No revives left. You stand again once the encounter is won or your company falls.';
+  const left = stands.revives > 0 ? ` · ${stands.revives} revive${stands.revives === 1 ? '' : 's'} left` : '';
+  return `A company member can revive you${left}`;
 }
 
 /** The mark over a fallen ally, after Destiny's Ghost and drawn new: a faceted shell of light round a glowing eye.

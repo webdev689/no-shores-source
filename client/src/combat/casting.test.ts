@@ -9,6 +9,7 @@ import {
   CAST_LOCKOUT_MOST_S,
   CastKeys,
   DAGGERS,
+  GROUND_SPELL,
   abilitiesAt,
   aimRingMesh,
   daggersAim,
@@ -141,4 +142,26 @@ test('with no mark the ring stands straight along the look at its reach, and its
   assert.deepEqual([spot[0], spot[2]], [asked[0], 0.5], 'on the ground there');
   const mesh = aimRingMesh({ at: [0, 0, 0], radius: 4, element: 3 });
   assert.ok(mesh.length > 0 && mesh.length % MARK_FLOATS === 0);
+});
+
+test("bearing the Lodestone, an Art's key grounds it once charged, ready Art or not, tells its caller it is no spell, and holds no key", () => {
+  const casting = new CastKeys();
+  const spent = state(1, 0, [0, 0]);
+  const bearing = (charged: boolean, pressed: readonly Action[] = ['tenetOne'], hands = true) =>
+    casting.frame(keys(pressed), 1 / 60, {
+      hands,
+      state: spent,
+      abilities: abilitiesAt(spent, 0, 0),
+      own: own(),
+      yaw: 0,
+      markOf: () => null,
+      floorAt,
+      bearer: { charged },
+    });
+  assert.deepEqual(bearing(true), { cast: { spell: GROUND_SPELL, aim: null }, ring: null, grounds: true });
+  assert.deepEqual(bearing(true).cast, { spell: GROUND_SPELL, aim: null }, 'no wait on the room after it');
+  assert.equal(bearing(false).cast, null, 'charging: nothing');
+  assert.equal(bearing(true, []).cast, null, 'no key pressed');
+  assert.equal(bearing(true, ['anima'], false).cast, null, 'the hands not free');
+  assert.equal(casting.waiting, false);
 });

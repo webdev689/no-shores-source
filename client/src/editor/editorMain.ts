@@ -1,4 +1,4 @@
-import { GpuUnavailable, startGpu, TEXTURE_USAGE, stopWhenLost } from '../gpu.ts';
+import { startGpu, TEXTURE_USAGE, stopWhenLost } from '../gpu.ts';
 import { startWorldRules, type WorldRules } from '../rules/worldRules.ts';
 import type { Node } from '../ui/node.ts';
 import { ask, saveFile, stopped } from '../ui/page.ts';
@@ -457,6 +457,6 @@ async function start(): Promise<void> {
 }
 
 start().catch((error: unknown) => {
-  const message = error instanceof GpuUnavailable || error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : String(error);
   stopped(message);
 });

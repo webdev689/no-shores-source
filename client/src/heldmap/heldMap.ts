@@ -265,6 +265,8 @@ export class HeldMap {
   private load(gauntlets: string | null): void {
     this.gauntlets = gauntlets;
     const failed = (why: unknown) => {
+      // The map since raised in other gauntlets is not this art's to let go.
+      if (this.gauntlets !== gauntlets) return;
       console.error('the held map could not be read:', why);
       this.gauntlets = undefined;
       this.close();

@@ -91,7 +91,8 @@ impl Room {
 
     /// What the run's modifiers weigh a blow by: Brawler a player's swing, Marksman a player's shot, Lightswitch a
     /// foe's swing or telegraphed blow on a player, Burn a foe's blow on a player wearing its Art, and an Elite
-    /// Dungeon's Fury any foe's blow on a player (`court.rs`); their product, 1 for none.
+    /// Dungeon's Fury any foe's blow on a player (`court.rs`), and a Breach's Hard and Hold True a foe's blow on a
+    /// player (`breach/`); their product, 1 for none.
     pub(crate) fn modded_blow(&self, blow: &Blow, defender: FighterId) -> f64 {
         let by_player = self.players.contains_key(&blow.striker);
         let on_player = self.players.get(&defender).filter(|_| self.foes.contains_key(&blow.striker));
@@ -118,6 +119,14 @@ impl Room {
                 times *= BURN_TIMES;
             }
             times *= self.fury_times();
+            times *= self.held_times(defender) * self.hard_times(defender);
+        }
+        // In a Breach: the Lodestone's Strike, and the Steward laid bare.
+        if by_player && melee && self.bears_lodestone(blow.striker) {
+            times *= crate::breach::lodestone_strike();
+        }
+        if by_player {
+            times *= self.bare_times(defender);
         }
         times
     }
@@ -131,7 +140,8 @@ impl Room {
     #[must_use]
     pub fn recharge_times(&self) -> f64 {
         let spent = self.current(Current::Spent).map_or(1.0, |strength| 1.0 + passage::zone::SPENT * strength);
-        spent * if self.modded(Modifier::Trickle) { TRICKLE_TIMES } else { 1.0 }
+        let trickle = if self.modded(Modifier::Trickle) { TRICKLE_TIMES } else { 1.0 };
+        spent * trickle / self.bare_recharge()
     }
 
     /// What a heal on a player gives, times: half under Exposure.

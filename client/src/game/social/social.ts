@@ -18,7 +18,6 @@ import { charge } from '../uiSounds.ts';
 import { promptChip } from '../usePrompt.ts';
 import {
   type Channel,
-  EARSHOT_M,
   type FromHall,
   HELP,
   NAME_MOST,
@@ -26,7 +25,7 @@ import {
   refusedWords,
 } from '../../../../server/accounts/chatLaw.ts';
 import { ChatLink } from './chatLink.ts';
-import { ChatLog } from './chatLog.ts';
+import { ChatLog, heardLocally } from './chatLog.ts';
 import { ChatPanel, type Relation } from './chatPanel.ts';
 import { type InteractRow, interactNode, interactRows, pressOf } from './interactMenu.ts';
 import { type Inspected, InspectWindow } from './inspectWindow.ts';
@@ -118,10 +117,11 @@ class Social {
 
   /** Whether a player named `name` stands near enough to be heard. */
   private near(name: string): boolean {
-    const there = this.standing.get(name)?.feet;
-    const own = this.own;
-    return !!there && !!own && Math.hypot(there[0] - own[0], there[1] - own[1]) <= EARSHOT_M;
+    return heardLocally(this.standing.get(name)?.feet, this.own, this.wholeRoom);
   }
+
+  /** Whether Local reaches the whole room: in a Breach's run (`heardLocally`). */
+  wholeRoom = false;
 
   /** Every other player as their plate is drawn on foot, kept to say whom a Local line is heard from. */
   plated(others: OtherPlayers, own: Point | null): PlatedPlayer[] {
@@ -369,6 +369,11 @@ export const chatOpen = (): boolean => social?.panel.open ?? false;
 /** Every other player's plate this frame on foot, the player's own feet at `own`. */
 export const platedPlayers = (others: OtherPlayers, own: Point | null): PlatedPlayer[] =>
   social?.plated(others, own) ?? [];
+
+/** Whether the player stands in a Breach's run, where Local reaches every player of the room. */
+export function chatInRun(run: boolean): void {
+  if (social) social.wholeRoom = run;
+}
 
 /** The player is at sea, their ship in `water` (null between waters or before it puts to sea). */
 export function chatAtSea(water: string | null): void {

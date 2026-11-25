@@ -88,9 +88,9 @@ test('an ask of the passages is answered yes by its dive changed, whatever other
     answerHeard(asked, { answered: 6, answer: 0, dive: { island: 'continent-1', week: 9, zone: 3 } }, false),
     'yes',
   );
-  assert.deepEqual(answerHeard(asked, { answered: 5, answer: 177, dive: null }, false), { refused: 177 });
-  assert.deepEqual(answerHeard(asked, { answered: 5, answer: 179, dive: null }, false), { refused: 179 }, 'shifted');
-  assert.deepEqual(answerHeard(asked, { answered: 5, answer: 181, dive: null }, false), { refused: 181 }, 'fallen');
+  assert.deepEqual(answerHeard(asked, { answered: 5, answer: 180, dive: null }, false), { refused: 180 });
+  assert.deepEqual(answerHeard(asked, { answered: 5, answer: 182, dive: null }, false), { refused: 182 }, 'shifted');
+  assert.deepEqual(answerHeard(asked, { answered: 5, answer: 184, dive: null }, false), { refused: 184 }, 'fallen');
   assert.equal(answerHeard(asked, { answered: 5, answer: 9, dive: null }, false), null, 'another ask refused');
   assert.equal(answerHeard(asked, { answered: 4, answer: 0, dive: null }, true), 'unanswered');
   const diving = { answered: 4, dive: { island: 'continent-1', week: 9, zone: 3 } };

@@ -2,15 +2,8 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { catalogArchives, catalogRecords } from './catalog.ts';
-import {
-  PALETTE_RGB,
-  climateArchive,
-  paintPicture,
-  pictureSize,
-  pictureUses,
-  summerOf,
-  type Picture,
-} from './picture.ts';
+import { PALETTE_RGB } from './palette.ts';
+import { climateArchive, paintPicture, pictureSize, pictureUses, summerOf, type Picture } from './picture.ts';
 import { TERRAIN_ARCHIVES } from './recipes/ground.ts';
 
 const table = <Table>(name: string): Table =>

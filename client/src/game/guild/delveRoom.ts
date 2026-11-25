@@ -30,11 +30,6 @@ export function delveBase(key: string, site: string, tier: number): string {
   return `node-${site}--guild-${key}${marked}`;
 }
 
-/** The guild dungeon's run's room: for a guild's key, a site, a tier and an instance. */
-export function delveRoom(key: string, site: string, tier: number, instance: string): string {
-  return `${delveBase(key, site, tier)}--run-${instance}`;
-}
-
 /** The guild dungeon a guild's companies delve in a week (`guildLaw.ts` `weekOf`): its seed and its style's key. */
 export function delveLaid(key: string, week: number): { readonly seed: number; readonly style: string } {
   const seed = named(`delve:${key}:${week}`);

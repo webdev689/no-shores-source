@@ -40,8 +40,6 @@ export function eachCellInRing(
   }
 }
 
-/** A rectangle of cells, inclusive of `left`/`top`, exclusive of `right`/`bottom`. */
-
 /** One connected piece of a continent's land: its label, its size in cells, and a point on it in metres. */
 export interface Piece {
   readonly label: number;

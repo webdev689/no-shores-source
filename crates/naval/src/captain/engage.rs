@@ -23,45 +23,45 @@ impl Captain {
         );
         let reach =
             lay(ship, vessel.pose, vessel.arms, Side::Starboard, vessel.guns.load, 0.0, None).reach + beam + depth;
-        let vel = self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship));
+        let enemy_velocity = self.enemy_velocity.unwrap_or_else(|| velocity_of(&enemy.ship));
         let own = pace(vessel.hull, vessel.wind, self.way_share(vessel));
         let (me, them) = ([ship.x, ship.y], [enemy.ship.x, enemy.ship.y]);
         let my = velocity_of(ship);
-        let rate = swing_rate(ship, vessel.hull).max(1.0) * DEG;
+        let rate = swing_rate(ship, vessel.hull).max(1.0).to_radians();
         // Its own way toward the enemy, and the range a turn of `turn` (radians) closes: its turning circle's advance
         // and its helm's ease, so it comes round to its broadside as the range comes to its reach, not after it.
         let toward = ((my[0] * (them[0] - me[0]) + my[1] * (them[1] - me[1])) / apart.max(1e-6)).max(0.0);
-        let closes = |turn: f64| toward * (libm::sin(turn.abs().min(90.0 * DEG)) / rate + 4.0 * TURN_TAU);
-        if apart - closes(90.0 * DEG) > (range * CLOSE_FROM).max(reach) {
+        let closes = |turn: f64| toward * (libm::sin(turn.abs().min(90.0_f64.to_radians())) / rate + 4.0 * TURN_TAU);
+        if apart - closes(90.0_f64.to_radians()) > (range * CLOSE_FROM).max(reach) {
             self.present = None;
-            return Plan { want: intercept(me, own, them, vel).1, sails: 1.0, track: false };
+            return Plan { want: intercept(me, own, them, enemy_velocity).1, sails: 1.0, track: false };
         }
-        let rel = [vel[0] - my[0], vel[1] - my[1]];
-        let away = (vel[0] * (them[0] - me[0]) + vel[1] * (them[1] - me[1])) / apart.max(1e-6);
-        if length(vel[0], vel[1]) > 0.3 {
-            let running = heading_to([0.0, 0.0], vel);
+        let relative = [enemy_velocity[0] - my[0], enemy_velocity[1] - my[1]];
+        let away = (enemy_velocity[0] * (them[0] - me[0]) + enemy_velocity[1] * (them[1] - me[1])) / apart.max(1e-6);
+        if length(enemy_velocity[0], enemy_velocity[1]) > 0.3 {
+            let running = heading_to([0.0, 0.0], enemy_velocity);
             let off_bow = wrap(heading_to(them, me) - running).abs();
-            if away > CHASE_AWAY * own && off_bow > ABAFT_DEG * DEG {
+            if away > CHASE_AWAY * own && off_bow > ABAFT_DEG.to_radians() {
                 let (_, starboard) = frame(running);
                 let side =
                     if (me[0] - them[0]) * starboard[0] + (me[1] - them[1]) * starboard[1] >= 0.0 { 1.0 } else { -1.0 };
                 let out = if apart > range * CHASE_SHEER { 0.0 } else { range };
                 self.present = None;
                 let berth = [them[0] + starboard[0] * side * out, them[1] + starboard[1] * side * out];
-                return Plan { want: intercept(me, own, berth, vel).1, sails: 1.0, track: false };
+                return Plan { want: intercept(me, own, berth, enemy_velocity).1, sails: 1.0, track: false };
             }
         }
-        let lead = lead_point(me, them, rel, vessel.guns.gun().speed);
+        let lead = lead_point(me, them, relative, vessel.guns.gun().speed);
         let reach_held = reach * aim::RUN_OUT_REACH;
-        let abeam_of = |side: Side| wrap(heading_to(me, lead) - side.sign() * 90.0 * DEG);
+        let abeam_of = |side: Side| wrap(heading_to(me, lead) - (side.sign() * 90.0).to_radians());
         let holds_lead = |present: Option<Present>, side: Side| {
-            let lead_d = distance(me, lead);
+            let to_lead = distance(me, lead);
             if present.is_some_and(|held| held.side == side && held.lays) {
-                return lead_d <= reach_held;
+                return to_lead <= reach_held;
             }
             let turn = wrap(abeam_of(side) - ship.heading);
             let round = turn.abs() / rate + 4.0 * TURN_TAU + aim::RUN_OUT_S;
-            lead_d - closes(turn) + away.max(0.0) * round <= reach_held
+            to_lead - closes(turn) + away.max(0.0) * round <= reach_held
         };
         let close_in = if away > 0.0 {
             libm::asin(((away + CHASE_MARGIN * own) / length_of(ship).max(0.5)).clamp(0.0, 1.0))
@@ -76,13 +76,13 @@ impl Captain {
                 return 0.0;
             }
             if apart < dead {
-                return -2.0 * RANGE_BEND_DEG * DEG;
+                return (-2.0 * RANGE_BEND_DEG).to_radians();
             }
-            let bent = ((apart - range) / range).clamp(-1.0, 1.0) * RANGE_BEND_DEG * DEG;
+            let bent = (((apart - range) / range).clamp(-1.0, 1.0) * RANGE_BEND_DEG).to_radians();
             if apart > range { bent.max(close_in) } else { bent }
         };
         let heading_for = |present: Option<Present>, side: Side| {
-            wrap(heading_to(me, lead) - side.sign() * (90.0 * DEG - bend(present, side)))
+            wrap(heading_to(me, lead) - side.sign() * (90.0_f64.to_radians() - bend(present, side)))
         };
         if self.present.is_none_or(|held| self.clock - held.at >= NAV_EVERY_S) {
             let look = self.lookout(vessel);
@@ -110,14 +110,14 @@ impl Captain {
         let window = fire_window(me, lead, Some(enemy.ship.heading), arms_of(enemy.hull), self.build.skill);
         let presented = vessel.guns.ready(present.side)
             && apart <= reach * PRESENT_WITHIN
-            && wrap(want - ship.heading).abs() < 30.0 * DEG
+            && wrap(want - ship.heading).abs() < 30.0_f64.to_radians()
             && window >= 0.0;
         if !presented {
             return Plan { want, sails: 1.0, track: true };
         }
         let (forward, _) = frame(ship.heading);
-        let wanted = vel[0] * forward[0]
-            + vel[1] * forward[1]
+        let wanted = enemy_velocity[0] * forward[0]
+            + enemy_velocity[1] * forward[1]
             + PRESENT_GAIN * ((lead[0] - me[0]) * forward[0] + (lead[1] - me[1]) * forward[1]);
         let best = (own * point_of_sail(off_run_deg(forward, vessel.wind))).max(0.5);
         Plan { want, sails: (wanted / best).clamp(PRESENT_SAILS, 1.0), track: true }

@@ -115,14 +115,6 @@ export interface CityPlant {
   readonly scale: number;
 }
 
-/** A ground picture laid on the land: four corners in world metres (north-west, north-east, south-east, south-west,
- *  on the ground), each corner's UV in pictures, and the ground record whose picture it wears. */
-export type Decal = {
-  readonly corners: readonly (readonly [number, number, number])[];
-  readonly uvs: readonly (readonly [number, number])[];
-  readonly record: number;
-};
-
 export type CityPlan = {
   readonly id: string;
   readonly name: string;
@@ -150,9 +142,8 @@ export type CityPlan = {
   /** Whether the city is a ruin, desolate and destroyed (the city crate's `ruins`); a port city's plan says false. */
   readonly ruined?: boolean;
   readonly wrecks?: readonly Wreck[];
-  /** Models placed in the world and pictures laid on the land, beside the blocks the cells stand. */
+  /** Models placed in the world, beside the blocks the cells stand. */
   readonly pieces?: readonly Piece[];
-  readonly decals?: readonly Decal[];
   /** Round ground kept clear of the wild: a camp's floor, a landing's shore, an arena. */
   readonly clearings?: readonly { readonly at: readonly [number, number]; readonly radius: number }[];
 };

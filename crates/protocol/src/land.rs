@@ -48,6 +48,8 @@ pub struct Snapshot<'snapshot> {
     pub encounter: Option<&'snapshot room::encounters::EncounterSeen>,
     /// At a guild's outpost, how many plots its room has stood (`Room::outpost_plot`); 0 in any other room.
     pub outpost: u32,
+    /// In a Breach's run or a room with a Breach's gate, the Breach (`Room::breach_seen`); none in any other room.
+    pub breach: Option<&'snapshot room::breach::seen::BreachSeen>,
     /// Whether the darkness holds the player it is sent to (`Room::darkness_for`), and each fallen player being
     /// revived.
     pub darkness: bool,
@@ -210,6 +212,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let passage = snapshot.passage.as_ref().map(|seen| crate::passage_wire::seen_offset(&mut builder, seen));
     let public_event = snapshot.public.map(|seen| crate::public_wire::public_offset(&mut builder, seen));
     let encounter = snapshot.encounter.map(|seen| crate::encounter_wire::encounter_offset(&mut builder, seen));
+    let breach = snapshot.breach.map(|seen| crate::breach_wire::breach_offset(&mut builder, seen));
     let reviving = (!snapshot.reviving.is_empty()).then(|| {
         let each: Vec<_> = (snapshot.reviving.iter())
             .map(|seen| {
@@ -238,6 +241,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         plates,
         encounter,
         outpost: snapshot.outpost,
+        breach,
         darkness: snapshot.darkness,
         reviving,
         passage,

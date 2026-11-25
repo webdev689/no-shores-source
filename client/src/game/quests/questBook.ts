@@ -1,7 +1,7 @@
 // The houses' roads as the page reads them (content/quests/quests.json): what the tracker shows of the quest walked
-// (with a running clock, and a puzzle's points lit), the talk goal a counter answers, the goal the HUD marks and the
-// nodes the held map marks, a varied step's goal (a puzzle's, a ward's, an ambush's), and the scenes each step of a
-// road says. The rules judge every goal and give every reward; the page only shows.
+// (with a running clock, and a puzzle's points lit), the talk goal a counter answers, the nodes the held map marks, a
+// varied step's goal (a puzzle's, a ward's, an ambush's), and the scenes each step of a road says. The rules judge
+// every goal and give every reward; the page only shows.
 import book from '../../../../content/quests/quests.json' with { type: 'json' };
 import type { QuestState } from '../../network/questMessages.ts';
 import type { Quest as Tracked, Step } from '../tasks.ts';
@@ -185,19 +185,6 @@ export function buyAt(state: QuestState | null | undefined, counter: string): bo
   const open = (goal: Goal, index: number) =>
     goal.kind === 'buy' && SMITH_OF[goal.slot ?? ''] === counter && !met(goal, now?.counts[index] ?? 0);
   return now?.task.goals.some(open) ?? false;
-}
-
-/** Whether a goal stands somewhere the room may mark: at a place, along a walk between two, or at checkpoints. */
-const placed = (goal: Goal): boolean =>
-  goal.place !== undefined || goal.from !== undefined || goal.checkpoints !== undefined;
-
-/** The goal the HUD's mark stands for in the node `node`: the task's first unmet goal standing somewhere there, as the
- *  room finds `quest_at` in its own node (the place, the figure walked with, the next checkpoint). */
-export function markedGoal(state: QuestState | null | undefined, node: string): Goal | null {
-  const now = walked(state);
-  const marked = (goal: Goal, index: number) =>
-    placed(goal) && goal.node === node && !met(goal, now?.counts[index] ?? 0);
-  return now?.task.goals.find(marked) ?? null;
 }
 
 /** The nodes the task's goals name, each once, which the held map marks. */

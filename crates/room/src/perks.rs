@@ -38,15 +38,36 @@ const SQUALL_STEP_S: f64 = 3.0;
 /// Kindling Links the nearest ally within this of its striker: the reach of the Sunwell, the Art that Links allies
 /// (metres).
 const KINDLING_M: f64 = 10.0;
+/// A Breach perk's number at its plain grade and at its Forged one, which a piece won at Hard gives (`Item::forges`).
+#[derive(Clone, Copy)]
+struct Graded<T> {
+    plain: T,
+    forged: T,
+}
+
+impl<T: Copy> Graded<T> {
+    const fn at(self, forged: bool) -> T {
+        if forged { self.forged } else { self.plain }
+    }
+}
+
 /// Vein Strike's blows on an Exposed foe deal this much; Bloom Exposes the foes within this of the slain (metres);
 /// Regrowth gives back this share of the most health on a kill.
-const VEIN_STRIKE_TIMES: f64 = 1.15;
-const BLOOM_M: f64 = 4.0;
-const REGROWTH_SHARE: f64 = 0.05;
+const VEIN_STRIKE_TIMES: Graded<f64> = Graded { plain: 1.15, forged: 1.2 };
+const BLOOM_M: Graded<f64> = Graded { plain: 4.0, forged: 6.0 };
+const REGROWTH_SHARE: Graded<f64> = Graded { plain: 0.05, forged: 0.08 };
+/// Crystal Sight Exposes a foe a shot lands on this far off or more (metres).
+const CRYSTAL_SIGHT_M: Graded<f64> = Graded { plain: LONG_SHOT_M, forged: 15.0 };
 /// Shardburst Exposes the foes within this of its wearer, and Splinter those within this of the foe a riposte lands
 /// on (metres).
-const SHARDBURST_M: f64 = 3.0;
-const SPLINTER_M: f64 = 3.0;
+const SHARDBURST_M: Graded<f64> = Graded { plain: 3.0, forged: 5.0 };
+const SPLINTER_M: Graded<f64> = Graded { plain: 3.0, forged: 5.0 };
+/// Crystal Skin's and Lattice Shell's blows taken, a trim.
+const CRYSTAL_SKIN_TAKEN: Graded<f64> = Graded { plain: 0.9, forged: 0.85 };
+const LATTICE_SHELL_TAKEN: Graded<f64> = Graded { plain: 0.8, forged: 0.7 };
+/// A Forged perk's Expose and Charge last this much of their own time: Shatterpoint's, Resonance's, Lattice Wall's,
+/// Fracture's and Shard Round's.
+const FORGED_LASTS: f64 = 1.5;
 
 /// What a player's verbs count from blow to blow, kept by the room alone: the ticks of their last two swings that
 /// landed, and each foe struck in a row with how many and the tick of the last (Exposing Strikes); the living foes
@@ -129,13 +150,13 @@ impl PerkCounts {
 /// gear's own rules give their more.
 #[must_use]
 pub fn trim_of(character: &Character, drawn: Slot) -> Trim {
-    trim_by(character.traits(drawn))
+    trim_by(character.traits(drawn), |id| character.forged_drawn_trait(id, drawn))
 }
 
-/// The trim these traits make together, each listed trait's own, a trait listed twice counted twice: a player's worn
-/// gear's, each once (`trim_of`), or one item's as its page shows it.
+/// The trim these traits make together, each listed trait's own, a trait listed twice counted twice, each at its
+/// Forged grade where `forged` says: a player's worn gear's, each once (`trim_of`), or one item's as its page shows it.
 #[must_use]
-pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>) -> Trim {
+pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>, forged: impl Fn(&str) -> bool) -> Trim {
     let mut trim = Trim::PLAIN;
     for id in traits {
         match id {
@@ -204,8 +225,8 @@ pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>) -> Trim {
             "lightbearer" => trim.drink_heal *= 1.15,
             "shade_step" => trim.veiled_dodge_stamina *= 0.8,
             // The Breaches' armour perks that trim: Crystal Skin's blows taken while hale, Lattice Shell's while low.
-            "crystal_skin" => trim.hale_taken *= 0.9,
-            "lattice_shell" => trim.low_taken *= 0.8,
+            "crystal_skin" => trim.hale_taken *= CRYSTAL_SKIN_TAKEN.at(forged(id)),
+            "lattice_shell" => trim.low_taken *= LATTICE_SHELL_TAKEN.at(forged(id)),
             _ => {}
         }
     }
@@ -248,7 +269,7 @@ impl Room {
         let shared_flame = if held.linked && self.perk_on(&blow, "shared_flame") { SHARED_FLAME_TIMES } else { 1.0 };
         let from_the_dark = held.veiled && self.perk_on(&blow, "from_the_dark");
         let veined = foe.statuses.has(Status::Expose) && self.perk_on(&blow, "vein_strike");
-        let vein_strike = if veined { VEIN_STRIKE_TIMES } else { 1.0 };
+        let vein_strike = if veined { VEIN_STRIKE_TIMES.at(self.forged_on(&blow, "vein_strike")) } else { 1.0 };
         let atheric = self.struck_harder(&blow, defender);
         let damage = blow.damage * trim.damage * staggered * low * attuned * exploited * thunderhead * shared_flame;
         let damage = damage * vein_strike * atheric;
@@ -279,24 +300,28 @@ impl Room {
         let back = |fighter: &mut combat::Fighter, stamina: f64| {
             fighter.stamina = (fighter.stamina + stamina).min(STAMINA);
         };
-        let (mut squall_step, mut exposes_striker, mut shardburst) = (false, false, false);
+        // Each Breach perk that goes off, by whether it is Forged.
+        let (mut squall_step, mut exposes_striker, mut shardburst) = (false, None, None);
         let guarding = self.striking(defender);
         if let Some(found) = self.players.get_mut(&defender) {
             let trim = found.fighter.trim;
             let character = &found.character;
+            let worn = |id: &str| character.has_trait(id).then(|| character.forged_trait(id));
             match verdict {
                 Verdict::Parried => {
                     back(&mut found.fighter, trim.parry_stamina);
-                    exposes_striker = character.has_trait("fracture");
+                    exposes_striker = worn("fracture");
                 }
                 Verdict::Blocked { .. } => {
                     back(&mut found.fighter, trim.block_stamina);
-                    exposes_striker = character.has_drawn_trait("lattice_wall", guarding);
+                    exposes_striker = character
+                        .has_drawn_trait("lattice_wall", guarding)
+                        .then(|| character.forged_drawn_trait("lattice_wall", guarding));
                 }
-                Verdict::GuardBroken { .. } => shardburst = character.has_trait("shardburst"),
+                Verdict::GuardBroken { .. } => shardburst = worn("shardburst"),
                 Verdict::Dodged { perfect: true } => {
                     squall_step = character.has_trait("squall_step");
-                    exposes_striker = character.has_trait("resonance");
+                    exposes_striker = worn("resonance");
                 }
                 _ => {}
             }
@@ -307,13 +332,18 @@ impl Room {
         }
         // Resonance on a perfect dodge and Fracture on a parry, the armour's, and Lattice Wall on a block, the
         // shield's: the foe is Exposed.
-        if exposes_striker && self.foes.contains_key(&striker) {
-            self.give(striker, Status::Expose, None, Some(defender));
+        if let Some(forged) = exposes_striker
+            && self.foes.contains_key(&striker)
+        {
+            let lasts = self.forged_lasts(striker, Status::Expose, forged);
+            self.give(striker, Status::Expose, lasts, Some(defender));
         }
         // Shardburst, the armour's: a foe breaking the wearer's guard Exposes every foe near the wearer.
-        if shardburst && self.foes.contains_key(&striker) {
+        if let Some(forged) = shardburst
+            && self.foes.contains_key(&striker)
+        {
             let around = self.fighter(defender).map(crate::spells::feet_of);
-            let near = around.map(|at| self.foes_near(at, SHARDBURST_M, crate::spells::SPELL_HEIGHT));
+            let near = around.map(|at| self.foes_near(at, SHARDBURST_M.at(forged), crate::spells::SPELL_HEIGHT));
             for foe in near.unwrap_or_default() {
                 self.give(foe, Status::Expose, None, Some(defender));
             }
@@ -377,13 +407,15 @@ impl Room {
             "shard_round",
         ]
         .map(|id| self.perk_on(blow, id));
+        let forged = |id: &str| self.forged_on(blow, id);
         let apart = self.fighter(blow.striker).zip(self.fighter(defender)).map(|(striker, foe)| {
             crate::spells::distance(crate::spells::feet_of(striker), crate::spells::feet_of(foe))
         });
         // Bloom spreads from where the slain fell, to every other living foe in reach.
         let bloomed: Vec<FighterId> = match self.fighter(defender).filter(|_| killed && bloom) {
             Some(slain) => {
-                let near = self.foes_near(crate::spells::feet_of(slain), BLOOM_M, crate::spells::SPELL_HEIGHT);
+                let reach = BLOOM_M.at(forged("bloom"));
+                let near = self.foes_near(crate::spells::feet_of(slain), reach, crate::spells::SPELL_HEIGHT);
                 near.into_iter().filter(|foe| *foe != defender).collect()
             }
             None => Vec::new(),
@@ -393,7 +425,8 @@ impl Room {
         // foe was Exposed as the shot landed, before this shot gives it anything.
         let splintered: Vec<FighterId> = match self.fighter(defender).filter(|_| landed && splinter && blow.riposte()) {
             Some(struck) => {
-                let near = self.foes_near(crate::spells::feet_of(struck), SPLINTER_M, crate::spells::SPELL_HEIGHT);
+                let reach = SPLINTER_M.at(forged("splinter"));
+                let near = self.foes_near(crate::spells::feet_of(struck), reach, crate::spells::SPELL_HEIGHT);
                 near.into_iter().filter(|foe| *foe != defender).collect()
             }
             None => Vec::new(),
@@ -401,8 +434,12 @@ impl Room {
         let shard_charges =
             shard && landed && self.fighter(defender).is_some_and(|foe| foe.statuses.has(Status::Expose));
         // Regrowth is the armour's, so a kill by any blow of the player's gives it, a spell's too.
-        let regrowth =
-            killed && self.players.get(&blow.striker).is_some_and(|found| found.character.has_trait("regrowth"));
+        let regrowth = self.players.get(&blow.striker).filter(|_| killed).and_then(|found| {
+            found.character.has_trait("regrowth").then(|| REGROWTH_SHARE.at(found.character.forged_trait("regrowth")))
+        });
+        // The Forged grades of the verbs that give the foe struck a status, and of Crystal Sight's reach.
+        let lasts_forged = [shatter && forged("shatterpoint"), shard && forged("shard_round")];
+        let sight_m = CRYSTAL_SIGHT_M.at(forged("crystal_sight"));
         let foes = &self.foes;
         let living = |foe: FighterId| foes.get(&foe).is_some_and(|found| !found.fighter.dead());
         let Some(found) = self.players.get_mut(&blow.striker) else { return };
@@ -413,19 +450,19 @@ impl Room {
                 // Thousand Cuts and Gathering Storm count the same rows, the one's blows struck harder by their place.
                 let row = if rows || cuts || storm { found.counts.in_row(defender, landed, clock) } else { 0 };
                 if rows && row > 0 && row % ROW_EXPOSES == 0 {
-                    given.push(Status::Expose);
+                    given.push((Status::Expose, false));
                 }
                 if storm && row > 0 && row % ROW_CHARGES == 0 {
-                    given.push(Status::Charge);
+                    given.push((Status::Charge, false));
                 }
                 if clap && matches!(verdict, Verdict::GuardBroken { .. }) {
-                    given.push(Status::Charge);
+                    given.push((Status::Charge, false));
                 }
                 if shatter && matches!(verdict, Verdict::GuardBroken { .. }) {
-                    given.push(Status::Expose);
+                    given.push((Status::Expose, lasts_forged[0]));
                 }
                 if splinter && landed && blow.riposte() {
-                    given.push(Status::Expose);
+                    given.push((Status::Expose, false));
                 }
                 if nightfall && landed && blow.riposte() {
                     to_players.push((blow.striker, Status::Veiled, NIGHTFALL_S));
@@ -434,25 +471,25 @@ impl Room {
             BlowKind::Shot(_) => {
                 let row = if storm { found.counts.shot_in_row(defender, landed) } else { 0 };
                 if row > 0 && row % ROW_CHARGES == 0 {
-                    given.push(Status::Charge);
+                    given.push((Status::Charge, false));
                 }
                 if landed && marked && found.counts.marks(defender, living) {
-                    given.push(Status::Expose);
+                    given.push((Status::Expose, false));
                 }
                 if landed && shocking && found.counts.shot_landed() {
-                    given.push(Status::Charge);
+                    given.push((Status::Charge, false));
                 }
                 // Crystal Sight measures from the shooter to the foe as the shot lands.
-                if landed && sight && apart.is_some_and(|apart| apart >= LONG_SHOT_M) {
-                    given.push(Status::Expose);
+                if landed && sight && apart.is_some_and(|apart| apart >= sight_m) {
+                    given.push((Status::Expose, false));
                 }
                 if shard_charges {
-                    given.push(Status::Charge);
+                    given.push((Status::Charge, lasts_forged[1]));
                 }
             }
             _ => {}
         }
-        let regrown = found.fighter.health_max * REGROWTH_SHARE;
+        let regrown = regrowth.map(|share| found.fighter.health_max * share);
         if killed && keen {
             to_players.push((blow.striker, Status::Crit, KEEN_EYE_S));
         }
@@ -465,16 +502,22 @@ impl Room {
         for (fighter, status, seconds) in to_players {
             self.give(fighter, status, Some(ticks(seconds)), Some(blow.striker));
         }
-        for status in given {
-            self.give(defender, status, None, Some(blow.striker));
+        for (status, forged) in given {
+            let lasts = self.forged_lasts(defender, status, forged);
+            self.give(defender, status, lasts, Some(blow.striker));
         }
         // The room's heal, so the dead take none and the run's healing factor counts.
-        if regrowth {
+        if let Some(regrown) = regrown {
             self.heal(blow.striker, regrown);
         }
         for foe in bloomed.into_iter().chain(splintered) {
             self.give(foe, Status::Expose, None, Some(blow.striker));
         }
+    }
+
+    /// How long a Breach perk gives a fighter a status: its own time (none said), or half again Forged.
+    fn forged_lasts(&self, fighter: FighterId, status: Status, forged: bool) -> Option<u32> {
+        forged.then(|| ticks(f64::from(self.lasts(fighter, status)) / 60.0 * FORGED_LASTS))
     }
 
     /// The living player nearest a player, within Kindling's reach of them, but for themselves.
@@ -499,3 +542,6 @@ mod faction_perks_tests;
 #[cfg(test)]
 #[path = "breach_perks_tests.rs"]
 mod breach_perks_tests;
+#[cfg(test)]
+#[path = "forged_perks_tests.rs"]
+mod forged_perks_tests;

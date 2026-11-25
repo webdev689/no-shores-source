@@ -223,6 +223,108 @@ The decisions in [[Open Questions]] are not repeated here.
   autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
   audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
   [[Passages as Claude Builds Them]]; how it works in [[Passages]].
+- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+  audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
+  regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
+  `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
+  checked before its fix. 231 files, about 1,450 lines out and 830 in: dead code, copies folded into one (`errorWords`,
+  `clockWords`, `apart`, `TICKS_A_SECOND`), comments that linked notes, short names spelled out, and three bugs, each
+  tested: a Breach gate open past its day in an empty zone, a stale held-map load closing the map, and the World
+  Editor's Land mode taking the browser's shortcuts (and, once fixed, missing a Mac's Option-typed `[`). An
+  independent review of the whole diff found no regression. Open for the owner, listed in the PR: whether Comments
+  Say Why's "who asked for what" covers the 158 comments that say a value is the owner's (or Claude's) call, and
+  whether the comments check should catch bible links (a new check). The same PR carries the owner's "tree sway/grass
+  sway is insanely fast when wind is high. Also reduce the amount of grass": the plants' gusts are reckoned from the
+  eye (`Gusts`), where reckoning them from the world's corner made the weather's slow turn whip them one to twelve
+  times a second, and the meadow grows half as thick ([[The Meadow Grows Half as Thick]], pictured before and after
+  at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
+  grass is too bright", the meadow's green stands a shade darker than its ground
+  ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
+- **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
+  owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
+  reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
+  [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
+  `noshores.online/play/?room=live` in a sandboxed window; WebGPU on Direct3D 12 then 11 on Windows, Metal on a Mac,
+  Vulkan three ways on Linux, watched from the game's own adapter report. It opens on a launcher in the game's look
+  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's
+  "Patch notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play.
+  Updates through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases
+  by hand from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their
+  tests; the PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on
+  SwiftShader with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank
+  window, a Windows or Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on
+  Ubuntu 23.10 or later. After a merge: the owner says when to cut the first release; the site's links to the
+  downloads and signing keys are open questions; performance is to be measured on a real GPU with `?perf`, in Chrome
+  and in the app, before any switch for it (an uncapped frame rate was proposed, not built).
+- **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
+  site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
+  have a ship until they reach the harbor master", "their own standard defined statistics" and
+  "customization options with a cost" ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]],
+  every call of Claude's in [[The Ships at the Harbourmaster as Claude Shapes Them]], the system in [[Shipyard]]). A
+  character keeps a fleet: the Sloop handed over by the welcome's Harbourmaster (a task of its own; at the counter to
+  one who pledged before it), the Schooner, Brig and Frigate bought from ship levels 7, 13 and 20; each hull with its
+  class's numbers (how long it lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does,
+  each gun elevated from its own deck, as a captain's are on the owner's "Captains aim gun by gun"
+  ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]); the aim's camera and arcs follow the hull
+  sailed, its eye between the masts beside the guns, near the rail, on the owner's answer to
+  "Brig and frigate arent correct", and the World Editor sails the hull its address names (`?hull=brig`); 33 dresses
+  sold, besides each part's start and the houses' six at rank 2, bought once and laid free; names from two word lists,
+  free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag. Asks 86 to 90, refusals
+  answered 167 to 173. Tested offline: the full check on fb959363 (CI checks the head), the counter pictured headless
+  (`harbourShots.ts`), each hull's held aim pictured in the World Editor (`?hull=`), a dressed Brig pictured at sea,
+  and 12 fights a row by hull ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the
+  owner: the prices, levels and class numbers, the word lists, a figurehead once one is modelled, and whether a
+  shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
+- **The first Breach, the Drowned Vale, polished** (#200, merged on the owner's "Merge and deploy", which deploys the
+  page, the site, the rooms and the bot), superseding #182, whose branch it merged whole, and merged with `main` up to
+  #205. The Breach itself: [[Breaches]] (its Limits say what waits), every call of Claude's in
+  [[The Drowned Vale as Claude Builds It]]. On it, the owner's three asks:
+  - **Forged perks** ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]): a Breach piece won at Hard rolls
+    the same perks at a Forged grade, about half again, and Hard armour is named "(Forged)"; the numbers are Claude's,
+    in [[Gear as Claude Shapes It]].
+  - **Its sound** ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]): each space of the run heard as
+    its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key,
+    tempo and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is
+    picked. All 74 of its cues are picked by the owner, on two sound sheets
+    (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
+    the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
+    timpani on the owner's "Search for single notes"); in #208, not yet merged, published to R2 by freesound runs 171
+    and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
+    centre on the owner's "Use it as it is". To change a pick: write its `picked` into
+    `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
+    the preview's partials) and write it on its cue, push so the freesound workflow publishes it, and take
+    `sounds.json` from that run's artifact; a search keeps to two common words (Freesound matches every word).
+  - **Its fidelity**: the run's own underground sky and its pieces' lamps (its floors measured to read, at sRGB 0.12
+    and over), the shores drawn only while in play, the dark's fade, stained glass, water, idle bells, chests that
+    read as payable, the gate's void; and its pieces made solid where they look it (the court, the rifts' walls, the
+    Ways' barricades and porches, the seals, the fight floors, the ledge rock), with windows, a torn rim and `glass`.
+    Judged on SwiftShader pictures drawn offline, never on a real GPU or in a live run.
+  - **A comprehensive audit** of the whole raid (rules, server and wire, page, design and tests, the bible, the art):
+    about seventy findings, each fixed with a test that fails without it, or left in Breaches' Limits.
+  - Left for the owner:
+    - Claude's reading of "Plenty of sounds come from freesound" (scores played on Freesound's recorded instruments).
+    - Whether a run's company is fixed at launch, or follows the accounts' company as it changes.
+    - Whether launching again within the gate's day returns the run whose gate stands open, not a new one.
+    - Whether the gate's state should outlive an eviction or a deploy (it is held in memory: either shuts it).
+    - Whether a member kicked from the company should be forgotten by the run that admitted them.
+    - Whether the Ways wait on every living player of the company, or only those in the Ways; and at Hard, whether
+      the fallen count (Claude's reading: the living alone).
+    - Hard's "no respawn" read as within a running encounter.
+    - New mechanics the audits proposed, not built: Keepers warded at Hard (so the crossing rule binds), Hard's seams
+      in a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad way to call the
+      Steward's order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale.
+    - Whether a Forged weapon should differ from its Normal one in more than its name, element and perk grades.
+    - The Drowned horse renders only by a hand forge run (`figures` =
+      `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2); its first-person frames are in no workflow.
+    - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
+  - The gate was tried in the Saltgrass Downs at the owner's word and reverted at their word; it stays in the Gullwing
+    Vale. Laying it there showed three latent flaws in the zones' layout, none showing as they stand, queued as their
+    own task: a beacon or resource node may stand inside a module, whose floors later level the ground under it; a
+    camp's palisade gap is narrower than the path grid passes at some turns (`blocked_by` widens a stake to a cell);
+    and fallen rock is kept off a run's stone and climb but not its line.
+  - Tested offline: `cargo xtask check` on a2940286; in CI, the full check on the PR's head 72144b89 and on main's
+    672294ee, which deployed the rooms, the accounts, the page and the site (CI run 1076; the bot unchanged, so not
+    deployed again). Not played live; the light tuned on SwiftShader pictures, never a real GPU.
 - **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
   its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
   [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new
@@ -609,7 +711,7 @@ The decisions in [[Open Questions]] are not repeated here.
     its set and kind ("Portwatch Helm"), Atherics and kept named pieces keeping theirs; every drop, Vestige and Shape's
     Legendaries rolled in a content's set look with random perks, the named Legendaries kept-only; faction pieces
     rolling the shared pool and one of their faction's nine perks; the Breaches' own pool of thirteen, a Breach piece
-    rolling its perk columns from it alone, never one twice (no Breach is built: the owner, "Lets just finish this");
+    rolling its perk columns from it alone, never one twice (the Drowned Vale pays them, #200);
     no metal name in anything a player reads (`client/src/metalWords.test.ts`); a faction blade's hilt, guard and
     trim in its faction's colour, the Veiled's a faint cold violet ([[Factions]], [[Sprite Forge]],
     [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and
@@ -618,7 +720,7 @@ The decisions in [[Open Questions]] are not repeated here.
   - Asked to wait before the merge, the owner added three calls: flavour text for every weapon and armour piece
     ([[Weapons and Armour Carry Flavour Text]]: `content/gear/words.json`, a line for each set and kind); commons drop
     as themselves, never as Vestiges ([[Commons Drop as Themselves, Never as Vestiges]]); and a Breach's Hard weapons
-    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (#182, stacked on #169) to
+    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (now #200) to
     build with its `Item.hard`. The owner relays that one: this session may not message another.
   - The faction blades' art is published (forge run 18: figure strips and first person's frames, after a first run
     failed on a missing scikit-image pin) and `content/forge/renders.json` points at it.

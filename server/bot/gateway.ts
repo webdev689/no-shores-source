@@ -4,7 +4,7 @@
 import { type Cache, type SqlLike, createCache } from './cache.ts';
 import { type Dispatcher, createDispatcher } from './dispatch.ts';
 import { GatewayCore, type SocketLike, type StorageLike } from './gatewayCore.ts';
-import { type BotContext, pruneMemory } from './kit.ts';
+import { type BotContext, errorWords, pruneMemory } from './kit.ts';
 import { REGISTRY, moduleHandlers } from './registry.ts';
 import { REST_TIMEOUT_MS, createRest } from './rest.ts';
 import type { Env } from './worker.ts';
@@ -44,7 +44,6 @@ export async function openSocket(url: string, waitMs = REST_TIMEOUT_MS): Promise
 
 const reply = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-const said = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export class BotGateway {
   readonly cache: Cache;
@@ -65,7 +64,7 @@ export class BotGateway {
       log: (line) => console.warn(line),
       config: (guildId, moduleId) => this.dispatcher.config(guildId, moduleId),
       snapshot: (guildId) => this.dispatcher.snapshot(guildId),
-      later: (work) => void work.catch((error) => console.warn(`[bot] later work failed: ${said(error)}`)),
+      later: (work) => void work.catch((error) => console.warn(`[bot] later work failed: ${errorWords(error)}`)),
       cache: this.cache,
       memory: this.memory,
     };
@@ -102,7 +101,7 @@ export class BotGateway {
         return reply(await this.core.ensure());
       case '/status':
         await this.core.load();
-        return reply({ ...this.core.status, live: this.core.live });
+        return reply(this.core.status);
       case '/restart':
         return reply(await this.core.restart());
       case '/stop':
@@ -125,7 +124,9 @@ export class BotGateway {
     await this.core.alarm();
     // the member counts that moved since their last write go down with the heartbeat, and the memory lets go of the
     // members no window holds any more
-    await this.dispatcher.flush().catch((error) => console.warn(`[bot] the counts were not written: ${said(error)}`));
+    await this.dispatcher
+      .flush()
+      .catch((error) => console.warn(`[bot] the counts were not written: ${errorWords(error)}`));
     pruneMemory(this.memory, Date.now());
   }
 }

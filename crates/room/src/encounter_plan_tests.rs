@@ -50,7 +50,7 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
             let pieces = seal.pieces.len();
             match seal.kind {
                 SealKind::Litany => assert!((4..=6).contains(&pieces), "{place}: four to six runes"),
-                SealKind::Weighing => assert_eq!(pieces, PLATES),
+                SealKind::Weighing => assert_eq!(pieces, 3, "{place}: three plates"),
                 SealKind::Holdfast | SealKind::Ascent => assert_eq!(pieces, 1),
             }
         }
