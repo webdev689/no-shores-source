@@ -19,3 +19,11 @@ answered (the worker's server), and webgpu-shot.cjs captured the worker's old bu
 the current code has were missing. Proposals: run-worker.sh stops the worker's servers when it reports (by the pids
 it started, or by cwd under the worktree); webgpu-shot.cjs prints which build it reached (fetch /src/<a file> or the
 page's version) before its steps; the Toolkit's recipe checks `readlink /proc/$(pgrep -f 'vite.*5173')/cwd` first.
+
+Recurred 2026-11-25, PR #209's before/after grass pictures, with no worker involved: one loop served each build with
+`npx vite preview ... --strictPort &` and stopped it with `kill $!`. That kills the npx wrapper, not Vite, so the
+"after" server kept 5173, the "before" server failed into its log, and the "before" picture was the "after" build.
+The port check before the loop used `ss`, which this container lacks, so it printed nothing and looked clear. Caught
+by reading the preview log before showing the owner; retaken after `pkill -f "vite preview --outDir"`. Third time
+for this shape: it wants the barrier proposed above (webgpu-shot.cjs printing, or asserting, the build it reached),
+not another line in the recipe.
