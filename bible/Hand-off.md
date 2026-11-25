@@ -223,7 +223,9 @@ The decisions in [[Open Questions]] are not repeated here.
   off; each speaker's name has a colour of their own in the dialogue box. Waiting on the owner: **the picks on the
   sound sheet "Overlook City Sounds"** (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC, picks kept in its `picks`
   store, read with ArtifactData), four new candidates each for the market crowd (`amb.social.crowd`) and the city's
-  hum (`amb.social.hum`), searched by the `freesound` workflow's run 143 on this branch. Once picked: set each cue's
+  hum (`amb.social.hum`): the crowd's from the `freesound` workflow's run 143 on this branch ("crowd chatter"), the
+  hum's from run 45533105199 ("medieval town ambience", on the owner's "Try again with the hum"; all four one
+  recordist's park in Zaltbommel). Once picked: set each cue's
   `picked` (and a `cut` for a long one, `mono` kept on the crowd) in `content/audio/freesound.json`, skip the old
   pick, push, and take the workflow's `sounds.json` into the branch. Until then the branch keeps the current picks,
   so the game plays them. Then the owner's yes to merge, which deploys the page and the rooms. `main` (#202) merged
