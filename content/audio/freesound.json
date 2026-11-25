@@ -1696,7 +1696,7 @@
     {
       "id": "amb.social.hum",
       "use": "A port city far below the plaza: its streets' murmur and work, no word clear, looped",
-      "query": "distant city ambience -park",
+      "query": "city in the distance -park",
       "seconds": [
         20,
         600
