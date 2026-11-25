@@ -68,6 +68,7 @@ fn zone_json(zone: &Zone, island: &str) -> Value {
         "currents": currents,
         "name": zone.name,
         "onward": zone.onward,
+        "public": zone.public,
         "lamp": passage::lamp_number(zone.depth),
         "levels": gear::world::island_levels(island).map(|band| passage::levels(band, zone.depth)),
     })
@@ -76,8 +77,9 @@ fn zone_json(zone: &Zone, island: &str) -> Value {
 /// An island's passages for a week as JSON: its patrol zone, its mouths (each its run's name and the zone it leads
 /// to), the week's two modifiers (each its key, name and words) and every zone: its number, depth, lane, place on the
 /// island (x, y), ground (under ground its style, above ground its form), size, deal, currents (key, name, words at
-/// its depth's strength, whether a boon), name, the zones its onward mouths lead to, its lamp's number and its
-/// foes' levels, lowest and highest, as its room stands them. Empty for an island with no passages.
+/// its depth's strength, whether a boon), name, the zones its onward mouths lead to, whether it lies on the week's
+/// public way, its lamp's number and its foes' levels, lowest and highest, as its room stands them. Empty for an
+/// island with no passages.
 #[must_use]
 pub fn web_json(island: &str, week: u64) -> String {
     let json = |web: &Web| {

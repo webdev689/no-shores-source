@@ -1,6 +1,7 @@
 //! A passage zone as the web draws it: its depth and place, its ground (under ground in a style and a number of the
 //! Forge's blocks, or a hollow above ground of a form and a size), its deal, its currents, its seed and its name.
 
+use gear::activities::Modifier;
 use isle::draws::Draws;
 
 /// A hollow's form above ground.
@@ -68,6 +69,22 @@ impl Size {
             Size::Medium => 55.0,
             Size::Large => 75.0,
         }
+    }
+
+    /// The most foes its room stands at once: 7, 9 and 12.
+    #[must_use]
+    pub fn foes_most(self) -> usize {
+        match self {
+            Size::Small => 7,
+            Size::Medium => 9,
+            Size::Large => 12,
+        }
+    }
+
+    /// How many posts a hollow of it lays: as many bands of the fewest, two, as its most foes hold.
+    #[must_use]
+    pub fn posts(self) -> usize {
+        self.foes_most() / 2
     }
 
     #[must_use]
@@ -177,15 +194,17 @@ pub enum Current {
     RichSeam,
 }
 
-/// A current's share of foes' health, damage, shields and so on at strength 1.
-pub const HARDENED: f64 = 0.10;
-pub const SHARPENED: f64 = 0.10;
-pub const SHIELDED: f64 = 0.15;
-pub const VETERAN: f64 = 0.25;
-pub const FRAIL: f64 = 0.15;
-pub const SPENT: f64 = 0.15;
-pub const KINDLED: f64 = 0.08;
-pub const BOUNTIFUL: f64 = 0.20;
+/// A current's share of foes' health, damage, shields and so on at strength 1: a quarter or more for a bane, so it is
+/// felt at the first depth it runs at, and at the deepest (strength 2) no more than the week's own modifier of its
+/// kind.
+pub const HARDENED: f64 = 0.25;
+pub const SHARPENED: f64 = 0.25;
+pub const SHIELDED: f64 = 0.25;
+pub const VETERAN: f64 = 0.40;
+pub const FRAIL: f64 = 0.25;
+pub const SPENT: f64 = 0.25;
+pub const KINDLED: f64 = 0.15;
+pub const BOUNTIFUL: f64 = 0.40;
 
 impl Current {
     pub const BANES: [Current; 8] = [
@@ -248,9 +267,13 @@ impl Current {
             Current::Hardened => format!("Foes have {}% more health.", share(HARDENED)),
             Current::Sharpened => format!("Foes' blows deal {}% more damage.", share(SHARPENED)),
             Current::Shielded => format!("{}% more foes carry shields.", share(SHIELDED)),
-            Current::Crowded => "Every band has more foes in it.".to_owned(),
+            Current::Crowded => "Every band and wave has one more foe in it, two past depth 14.".to_owned(),
             Current::Veteran => format!("{}% of the weakest foes stand as stronger ones.", share(VETERAN)),
-            Current::Gloom => "It is dark here.".to_owned(),
+            Current::Gloom => {
+                "Dark until the work is done: no one rises but by a revive, and a company all down falls back, \
+                               its hauls lost."
+                    .to_owned()
+            }
             Current::Frail => format!("Heals give {}% less.", share(FRAIL)),
             Current::Spent => format!("Arts take {}% longer to recharge.", share(SPENT)),
             Current::Kindled => format!("Your blows deal {}% more damage.", share(KINDLED)),
@@ -270,14 +293,48 @@ impl Current {
         }
     }
 
-    /// A zone's currents, three in four a bane, never one twice, and a rich seam only where there are nodes.
-    pub(crate) fn draw(depth: u8, deal: Deal, draws: &mut Draws) -> Vec<Current> {
+    /// Whether it says again what a week's modifier already does.
+    #[must_use]
+    pub fn restates(self, modifier: Modifier) -> bool {
+        matches!(
+            (self, modifier),
+            (Current::Sharpened, Modifier::Lightswitch)
+                | (Current::Shielded, Modifier::Ironclad)
+                | (Current::Frail, Modifier::Exposure)
+                | (Current::Spent, Modifier::Trickle)
+                | (Current::Kindled, Modifier::Brawler | Modifier::Marksman)
+        )
+    }
+
+    /// Whether a zone of this deal takes it: a rich seam only where there are nodes; Crowded only where bands or waves
+    /// of the passages' own stand (not a vault's dungeon garrison, nor a lamp's Elite bands, held to three); Veteran
+    /// only where such bands of Minors stand (not where foes come in waves alone).
+    #[must_use]
+    pub fn fits(self, deal: Deal) -> bool {
+        match self {
+            Current::RichSeam => deal == Deal::Vein,
+            Current::Crowded => !matches!(deal, Deal::Vault | Deal::Lamp),
+            Current::Veteran => !matches!(
+                deal,
+                Deal::Vault | Deal::Lamp | Deal::Mission(Mission::Kindle | Mission::Hold | Mission::Ambush)
+            ),
+            _ => true,
+        }
+    }
+
+    /// A zone's currents, three in four a bane, never one twice, each one its deal takes and none saying again what
+    /// the week's `modifiers` do.
+    pub(crate) fn draw(depth: u8, deal: Deal, modifiers: &[Modifier], draws: &mut Draws) -> Vec<Current> {
         let mut currents = Vec::new();
-        while currents.len() < Self::count_at(depth) {
+        // Far more draws than a zone needs: a bane's pool keeps at least four that fit any deal and any week.
+        for _ in 0..64 {
+            if currents.len() >= Self::count_at(depth) {
+                break;
+            }
             let pool: &[Current] = if draws.unit() < 0.75 { &Self::BANES } else { &Self::BOONS };
             let Some(&current) = draws.pick(pool) else { break };
-            let fits = current != Current::RichSeam || deal == Deal::Vein;
-            if fits && !currents.contains(&current) {
+            let restated = modifiers.iter().any(|modifier| current.restates(*modifier));
+            if current.fits(deal) && !restated && !currents.contains(&current) {
                 currents.push(current);
             }
         }
@@ -304,6 +361,8 @@ pub struct Zone {
     pub name: String,
     /// The zones of the next depth its onward mouths lead to, by number, in the order its mouths stand.
     pub onward: Vec<u16>,
+    /// Whether it lies on the week's public way, one zone a depth, where players in public rooms meet.
+    pub public: bool,
 }
 
 impl Zone {
@@ -317,29 +376,5 @@ impl Zone {
     #[must_use]
     pub fn forge_seed(&self) -> u32 {
         (self.seed ^ (self.seed >> 32)) as u32
-    }
-}
-
-/// The descriptive names a zone is called by, by its style under ground or its form above.
-pub(crate) fn names_of(ground: &Ground) -> &'static [&'static str] {
-    match ground {
-        Ground::Under { style } => match style.as_str() {
-            "chalk" => &["A chalk cut", "A flint seam", "A chalk working"],
-            "barrow" => &["A stone-lined way", "A barrow way", "A lintelled passage"],
-            "caverns" => &["A dripping cave", "A low cave"],
-            "mines" => &["An old working", "A propped adit"],
-            "cells" => &["A row of cells", "A cell block"],
-            "crypt" => &["A crypt", "A burial way"],
-            "halls" => &["A pillared hall", "A long hall"],
-            _ => &["A sanctum", "A quiet chapel"],
-        },
-        Ground::Open { form } => match form {
-            Form::Hollow => &["A grassy hollow", "A chalk hollow"],
-            Form::Ravine => &["A narrow cut", "A winding cleft"],
-            Form::Shelves => &["A stepped hollow", "A shelf of rock"],
-            Form::Court => &["A ruined court", "A walled court"],
-            Form::Strand => &["A dry strand", "A shell bed"],
-            Form::Grove => &["A thicket", "A hidden grove"],
-        },
     }
 }

@@ -138,7 +138,7 @@ pub fn passage_ground(plan: &Plan) -> Option<(Floor, Vec<Block>, Vec<[f64; 2]>)>
             (Floor::of_dungeon(dungeon)?, Vec::new(), vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]])
         }
         Laid::Open(hollow) => {
-            (Floor::Island(Box::new(hollow.ground.clone())), hollow.blocks.clone(), hollow.ring.clone())
+            (Floor::Island(Box::new(hollow.ground.clone())), hollow.blocks.clone(), hollow.bounds.clone())
         }
     };
     blocks.extend(piece_blocks(plan));
@@ -161,11 +161,13 @@ impl Room {
         let (floor, blocks, ring) = passage_ground(plan)?;
         let section = Section { ring, spawns: vec![sites.arrive], falls_kill: false };
         let arrive = (sites.arrive[0], sites.arrive[1]);
-        let mut room = if matches!(plan.ground, Laid::Under(_)) {
-            Self::node(floor, blocks, section)
-        } else {
-            let nav = navmesh::NavMesh::bake_on(&blocks, &floor, ring_bounds(&section.ring), &navmesh::AGENT);
-            Self::on(floor, blocks, vec![arrive], Some(section), nav)
+        let mut room = match &plan.ground {
+            Laid::Under(_) => Self::node(floor, blocks, section),
+            Laid::Open(hollow) => {
+                // Foes walk the floor alone: the navmesh is baked over it, not the walls the section holds too.
+                let nav = navmesh::NavMesh::bake_on(&blocks, &floor, ring_bounds(&hollow.ring), &navmesh::AGENT);
+                Self::on(floor, blocks, vec![arrive], Some(section), nav)
+            }
         };
         let zone = &plan.zone;
         room.facing = sites.facing;

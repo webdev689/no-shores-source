@@ -27,7 +27,7 @@ const look = (floor: Colour, more: { readonly paved?: boolean; readonly rock?: C
   ...more,
 });
 
-/** A hollow's ground by its form, and by its name where that says a ground (`crates/passage/src/zone.rs` names):
+/** A hollow's ground by its form, and by its name where that says a ground (`crates/passage/src/names.rs` names):
  *  a hollow the land's own grass, or chalk under chalk walls; a ravine stony earth; shelves turf, or bare rock; a
  *  court flagstones; a strand sand, or a shell bed's dry sea floor; a grove leaf litter. */
 export function hollowGround(form: string, name: string, climate: string): GroundLook {

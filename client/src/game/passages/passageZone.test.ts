@@ -7,7 +7,7 @@ import { MODULE_NAMES, roleOf } from '../../islands/isleModules.ts';
 import { gridOf, type Point2 } from '../../islands/islePlan.ts';
 import { hollowGround } from './hollowLook.ts';
 import { UNTOUCHED } from './passagePieces.ts';
-import { floorOf, UNDER_FLOOR_M, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
+import { drawnHeights, floorOf, UNDER_FLOOR_M, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 
 const door = startPassageDoor(
   new WebAssembly.Module(
@@ -128,13 +128,17 @@ test('a hollow’s floor grows the kit’s grass and shrubs, which stand nothing
         x >= (west ?? 0) && x <= (east ?? 0) && y >= (north ?? 0) && y <= (south ?? 0);
       assert.ok(!plan.ground.blocks.some(within), 'clear of every rock, ruin and wreck');
     }
-    assert.deepEqual(
-      zoneIsle(plan, heights)?.plan.placements.slice(laid),
-      added,
-      'the same each time',
-    );
+    assert.deepEqual(zoneIsle(plan, heights)?.plan.placements.slice(laid), added, 'the same each time');
     const across = Math.max(...plan.ground.ring.map(([x, y]) => Math.hypot(x, y)));
     grown.set(zone.ground.form, Math.max(grown.get(zone.ground.form) ?? 0, added.length / (across * across)));
   }
   assert.ok((grown.get('grove') ?? 0) > (grown.get('strand') ?? Infinity), 'a grove grows thicker than a strand');
+});
+
+test('a hollow is drawn with its rim where its ground ends for a body, its walked heights kept', () => {
+  // A grid of three by two: the west column holds heights, the rest none, past a wall's lip.
+  const heights = Float64Array.from([0, 0, 2, 3, 2, 5, Number.NaN, Number.NaN, 7, Number.NaN, Number.NaN]);
+  const drawn = drawnHeights(heights);
+  assert.deepEqual([...drawn.slice(5)], [5, 5, 5, 7, 7, 7], 'each drawn at its nearest held height');
+  assert.ok(Number.isNaN(heights[6] ?? 0), 'the heights the body walks keep their walls');
 });

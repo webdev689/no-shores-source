@@ -1,6 +1,6 @@
 //! What an island's passages are laid from, as content/passages names it: its patrol zone, the runs whose sealed doors
-//! are its mouths, the spine its web lies along from the patrol zone across the island (each point with the depth it
-//! is reached at), and the climate its hollows are dressed in.
+//! are its mouths, the places already named its zones may lie under, the spine its web lies along from the patrol zone
+//! across the island (each point with the depth it is reached at), and the climate its hollows are dressed in.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -15,6 +15,9 @@ pub struct Island {
     pub climate: String,
     /// The runs whose doors are its mouths, each leading to a zone of the first depth, in order.
     pub mouths: Vec<String>,
+    /// The places already named that a zone near them is called by: each where it stands (x, y) and its name, a
+    /// place inside a zone of the world at that zone's middle.
+    pub places: Vec<([f64; 2], String)>,
     /// Points (x, y) along the island from the patrol zone, each with the depth reached there, rising.
     pub spine: Vec<[f64; 3]>,
 }
@@ -25,6 +28,7 @@ struct IslandFile {
     patrol: String,
     climate: String,
     mouths: Vec<String>,
+    places: Vec<(f64, f64, String)>,
     spine: Vec<[f64; 3]>,
 }
 
@@ -34,7 +38,8 @@ const FILES: [&str; 1] = [include_str!("../../../content/passages/saltmere.json"
 fn read(text: &str) -> Result<Island, String> {
     let file: IslandFile = serde_json::from_str(text).map_err(|error| error.to_string())?;
     let (id, patrol, climate, mouths, spine) = (file.island, file.patrol, file.climate, file.mouths, file.spine);
-    Ok(Island { id, patrol, climate, mouths, spine })
+    let places = file.places.into_iter().map(|(x, y, name)| ([x, y], name)).collect();
+    Ok(Island { id, patrol, climate, mouths, places, spine })
 }
 
 /// Every island with passages.

@@ -1,11 +1,12 @@
 //! A zone above ground: a hollow of the island's own ground walled by rock, its floor's outline of its form (a round
 //! basin, a long winding ravine, terraced shelves, a court squared by old walls, a long dry strand, a grove), its
-//! heights on a grid 2 m apart, its walls rising steeply out of its floor 12 to 25 m (too steep for a body), its
-//! dressing of the islands' modules (cliffs along its walls, boulders at their feet, and its form's own growth,
-//! ruins or wrecks), its section and its sites, all from its seed. Its frame is its own: metres from the middle of its
-//! floor, x east, y south.
+//! heights on a grid 2 m apart, its walls rising steeply out of its floor 12 to 25 m (a body walks up them only
+//! aslant, and its ground ends a little past their top, a wall of the ground no body climbs), its dressing of the
+//! islands' modules (cliffs along its walls, boulders at their feet, and its form's own growth, ruins or wrecks), its
+//! section and its sites, all from its seed. Its frame is its own: metres from the middle of its floor, x east, y
+//! south.
 
-use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
+use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of};
 use crate::zone::{Form, Zone};
 use core::f64::consts::{FRAC_PI_2, PI, TAU};
 use isle::Placement;
@@ -14,7 +15,8 @@ use isle::draws::{Draws, Noise};
 use isle::shape::smooth;
 use movement::{Block, Heights};
 
-/// How far apart the ground's heights are, and how far past the floor's farthest reach the ground is laid, metres.
+/// How far apart the ground's heights are, and how far past the floor's farthest reach their grid is laid, metres:
+/// past the wall's lip, where its ground ends for a body and the page draws its rim.
 pub const CELL_M: f64 = 2.0;
 const PAST_M: f64 = 24.0;
 /// The floor's height, and how far its ground rolls round it, metres.
@@ -23,24 +25,35 @@ const ROLL_M: f64 = 0.7;
 /// How far out from the floor's edge its wall rises, metres, and how high it rises, least and most.
 const WALL_RUN_M: f64 = 5.0;
 const WALL_RISE_M: (f64, f64) = (12.0, 25.0);
+/// How far past its full rise a wall's ground runs before it ends, metres. The movement rules let a body walk up any
+/// slope if it goes aslant enough, so no steepness holds it; where the ground ends, a wall of the ground does. A body
+/// that scrambles up a wall aslant is held on its lip, inside the zone's bounds.
+const LIP_M: f64 = 2.0;
 /// A shelf's drop and how many a hollow of shelves has, and how wide the bank between two shelves runs: 8 m, so its
 /// steepest (half again its mean, 0.45) is walked up as the navmesh's 0.7 allows, and no shelf stands cut off.
 const SHELF_DROP_M: f64 = 2.4;
 const SHELVES: f64 = 3.0;
 const BANK_M: f64 = 8.0;
-/// How far inside the floor's edge its section's ring stands, and how many points round it has.
+/// How far inside the floor's edge its floor's ring stands, and how many points round it has.
 const RING_IN_M: f64 = 0.5;
 const RING_POINTS: usize = 64;
 /// How far inside the floor's edge a mouth's middle stands, its back to the rock: twice the ring's, so a body reaches
-/// its front inside the section wherever the ring's points fall.
+/// its front inside the floor's ring wherever the ring's points fall.
 const MOUTH_IN_M: f64 = 1.0;
 /// How far inside the edge a spot or a post keeps, and the lattice they are drawn from, metres.
 const SPOT_IN_M: f64 = 3.5;
 const LATTICE_M: f64 = 3.0;
-/// How far the dressing keeps from the arrival, and past a band's spread round its post: half the largest dressing's
-/// footprint and a body's room, metres.
+/// How far a piece of dressing's footprint keeps from the arrival, from a mouth's middle or a spot (a body's reach of
+/// it), from the lamp's middle (past its ring of stones) and past a band's spread round its post (a body's room),
+/// metres.
 const ARRIVAL_CLEAR_M: f64 = 5.0;
-const BAND_CLEAR_M: f64 = 3.0;
+const MOUTH_CLEAR_M: f64 = 2.5;
+const LAMP_CLEAR_M: f64 = 4.5;
+const BAND_CLEAR_M: f64 = 1.0;
+/// How many places a piece of dressing is tried at before it is left out.
+const PLACE_TRIES: usize = 8;
+/// How far apart a hollow's posts keep at least, metres.
+const POST_APART_M: f64 = 9.0;
 
 /// A zone laid above ground.
 #[derive(Clone, Debug)]
@@ -48,7 +61,10 @@ pub struct Hollow {
     pub ground: Heights,
     pub placements: Vec<Placement>,
     pub blocks: Vec<Block>,
+    /// The floor's ring, a little inside its edge.
     pub ring: Vec<[f64; 2]>,
+    /// The section's ring: the square its ground is laid in, which holds every place a body stands.
+    pub bounds: Vec<[f64; 2]>,
 }
 
 /// The floor's outline: how far inside it a point lies (negative outside), by its form.
@@ -126,7 +142,7 @@ impl Outline {
         [reach * libm::cos(angle), reach * libm::sin(angle)]
     }
 
-    /// The section's ring: the edge a little inside, round it.
+    /// The floor's ring: the edge a little inside, round it.
     fn ring(&self) -> Vec<[f64; 2]> {
         if self.form != Form::Ravine {
             return (0..RING_POINTS)
@@ -216,33 +232,44 @@ impl Laying {
         FLOOR_M + roll + shelves
     }
 
-    /// The ground's height at a point: the floor inside, its wall rising steeply past the edge, rough on its face.
-    fn height(&self, at: [f64; 2]) -> f64 {
+    /// The ground's height at a point: the floor inside, its wall rising steeply past the edge, rough on its face, and
+    /// none LIP_M past its full rise.
+    fn height(&self, at: [f64; 2]) -> Option<f64> {
         let inside = self.outline.inside(at);
         if inside >= 0.0 {
-            return self.floor(at);
+            return Some(self.floor(at));
+        }
+        if -inside > WALL_RUN_M + LIP_M {
+            return None;
         }
         let face = self.noise.fractal(at[0] / 6.0 + 40.0, at[1] / 6.0, 2) * 1.5;
-        self.floor(at) + self.rise * smooth(0.0, WALL_RUN_M, -inside) + face * smooth(0.0, 2.0, -inside)
+        Some(self.floor(at) + self.rise * smooth(0.0, WALL_RUN_M, -inside) + face * smooth(0.0, 2.0, -inside))
     }
 
-    fn ground(&self) -> Heights {
+    /// The ground's heights, and its bounds: the square they are laid in.
+    fn ground(&self) -> (Heights, Vec<[f64; 2]>) {
         let half = ((self.outline.farthest() + PAST_M) / CELL_M).ceil() * CELL_M;
         let cells = (2.0 * half / CELL_M) as usize;
         let mut heights = Vec::with_capacity(cells * cells);
         for row in 0..cells {
             for column in 0..cells {
-                let at = [-half + (column as f64 + 0.5) * CELL_M, -half + (row as f64 + 0.5) * CELL_M];
-                heights.push(Some(self.height(at)));
+                heights
+                    .push(self.height([-half + (column as f64 + 0.5) * CELL_M, -half + (row as f64 + 0.5) * CELL_M]));
             }
         }
-        Heights::new(-half, -half, CELL_M, cells, cells, heights).unwrap_or_else(|| unreachable!("a grid of its own"))
+        let ground = Heights::new(-half, -half, CELL_M, cells, cells, heights);
+        let bounds = vec![[-half, -half], [half, -half], [half, half], [-half, half]];
+        (ground.unwrap_or_else(|| unreachable!("a grid of its own")), bounds)
     }
 }
 
 /// The sites of a hollow: its way in at one end, its onward mouths round the far end, its lamp toward the far end,
-/// and its posts and spots on its floor.
-fn sites(outline: &Outline, (onward_count, lamp, wanted): (usize, bool, usize), draws: &mut Draws) -> Sites {
+/// and its posts (as many as `posts_wanted`) and spots on its floor.
+fn sites(
+    outline: &Outline,
+    (onward_count, lamp, wanted, posts_wanted): (usize, bool, usize, usize),
+    draws: &mut Draws,
+) -> Sites {
     let (way_in_at, ends): ([f64; 2], Vec<[f64; 2]>) = if outline.form == Form::Ravine {
         let reach = outline.half_width - MOUTH_IN_M;
         let ((first, back), (last, out)) = (outline.end(false), outline.end(true));
@@ -292,10 +319,28 @@ fn sites(outline: &Outline, (onward_count, lamp, wanted): (usize, bool, usize), 
         .filter(|at| onward.iter().chain([&way_in]).all(|door| apart(door.at, *at) >= SPOT_APART_M / 2.0))
         .collect();
     floor.sort_by(|one, other| apart(*one, arrive).total_cmp(&apart(*other, arrive)).then(one[0].total_cmp(&other[0])));
-    let posts = spread(floor.iter().copied().filter(|at| apart(*at, arrive) >= POST_OFF_WAY_IN_M), 9.0);
+    let off_way_in: Vec<[f64; 2]> =
+        floor.iter().copied().filter(|at| apart(*at, arrive) >= POST_OFF_WAY_IN_M).collect();
+    let posts = posts_of(&off_way_in, arrive, posts_wanted);
     floor.reverse();
     let spots = spots_of(&floor, wanted);
     Sites { arrive, facing: toward, way_in, onward, lamp, posts, spots }
+}
+
+/// `count` of `places` (the nearest the arrival first) spread over the floor: the nearest, then each the farthest
+/// from those taken and from the arrival, none nearer another than POST_APART_M; the nearest the way in first.
+fn posts_of(places: &[[f64; 2]], arrive: [f64; 2], count: usize) -> Vec<[f64; 2]> {
+    let mut posts: Vec<[f64; 2]> = places.first().copied().into_iter().take(count).collect();
+    while posts.len() < count {
+        let room = |at: &[f64; 2]| posts.iter().chain([&arrive]).map(|post| apart(*post, *at)).fold(f64::MAX, f64::min);
+        let Some(&next) = places.iter().max_by(|one, other| room(one).total_cmp(&room(other))) else { break };
+        if room(&next) < POST_APART_M {
+            break;
+        }
+        posts.push(next);
+    }
+    posts.sort_by(|one, other| apart(*one, arrive).total_cmp(&apart(*other, arrive)));
+    posts
 }
 
 /// A placement of a module by its name, where the contract holds it.
@@ -305,16 +350,23 @@ fn placed(name: &str, at: [f64; 3], turn: f64, scale: f64, lift: f64) -> Option<
 
 /// The hollow's dressing: cliffs along its wall facing in, clear of its mouths; boulders at the wall's foot; and its
 /// form's own: a grove's trees, a court's ruins, a strand's wrecks and drift, a hollow's grass and shrubs.
-fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Placement> {
+fn dress(laying: &Laying, (sites, wanted): (&Sites, usize), kit: &str, draws: &mut Draws) -> Vec<Placement> {
     let outline = &laying.outline;
     let book = catalog();
     let mut placements = Vec::new();
     let mouths: Vec<[f64; 2]> = sites.onward.iter().chain([&sites.way_in]).map(|door| door.at).collect();
     let clear_of_mouths = |at: [f64; 2], off: f64| mouths.iter().all(|mouth| apart(*mouth, at) >= off);
-    // Clear of the arrival and of where each band stands round its post, so a body walks in and reaches every foe.
-    let clear_of_bands = |at: [f64; 2]| {
-        apart(sites.arrive, at) >= ARRIVAL_CLEAR_M
-            && sites.posts.iter().all(|post| apart(*post, at) >= crate::walk::BAND_SPREAD_M + BAND_CLEAR_M)
+    // A module's footprint, the round its turned base fills, kept clear of the arrival, the mouths, the `wanted`
+    // spots the deal stands its things on, the lamp and where each band stands round its post, so a body walks in,
+    // sees the zone and reaches every mouth, thing and foe.
+    let clear = |at: [f64; 2], module: u16, scale: f64| {
+        let size = book.module(module).size;
+        let reach = libm::hypot(size[0], size[1]) / 2.0 * scale;
+        apart(sites.arrive, at) - reach >= ARRIVAL_CLEAR_M
+            && clear_of_mouths(at, reach + MOUTH_CLEAR_M)
+            && sites.spots.iter().take(wanted).all(|spot| apart(*spot, at) - reach >= MOUTH_CLEAR_M)
+            && sites.lamp.is_none_or(|lamp| apart(lamp, at) - reach >= LAMP_CLEAR_M)
+            && sites.posts.iter().all(|post| apart(*post, at) - reach >= crate::walk::BAND_SPREAD_M + BAND_CLEAR_M)
     };
     let ring = outline.ring();
     let mut walked = 0.0;
@@ -342,8 +394,11 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
     }
     let lay_many =
         |role: Role, count: usize, inward: (f64, f64), draws: &mut Draws, placements: &mut Vec<Placement>| {
-            let modules = book.of(kit, role);
-            for _ in 0..count {
+            let (modules, laid) = (book.of(kit, role), placements.len());
+            for _ in 0..count * PLACE_TRIES {
+                if placements.len() >= laid + count {
+                    return;
+                }
                 let Some(&module) = draws.pick(&modules) else { return };
                 let angle = draws.between(0.0, TAU);
                 let at = if outline.form == Form::Ravine {
@@ -353,12 +408,8 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
                 } else {
                     outline.at_edge(angle, draws.between(inward.0, inward.1))
                 };
-                if outline.inside(at) > 0.5
-                    && clear_of_mouths(at, 4.0)
-                    && clear_of_bands(at)
-                    && sites.lamp.is_none_or(|lamp| apart(lamp, at) >= 6.0)
-                {
-                    let scale = draws.between(0.8, 1.2);
+                let scale = draws.between(0.8, 1.2);
+                if outline.inside(at) > 0.5 && clear(at, module, scale) {
                     placements.push(Placement {
                         module,
                         at: [at[0], at[1], laying.floor(at)],
@@ -385,20 +436,15 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
         for name in
             ["common.ruin.wall", "common.ruin.column", "common.ruin.arch", "common.ruin.fallen", "common.ruin.statue"]
         {
-            for _ in 0..2 + draws.index(3) {
+            let (count, laid) = (2 + draws.index(3), placements.len());
+            for _ in 0..count * PLACE_TRIES {
                 let at = outline.at_edge(draws.between(0.0, TAU), draws.between(2.0, reach * 0.8));
-                if outline.inside(at) > 1.0
-                    && clear_of_mouths(at, 5.0)
-                    && clear_of_bands(at)
-                    && sites.lamp.is_none_or(|lamp| apart(lamp, at) >= 6.0)
-                {
-                    placements.extend(placed(
-                        name,
-                        [at[0], at[1], laying.floor(at)],
-                        draws.between(0.0, TAU),
-                        1.0,
-                        1.0,
-                    ));
+                if placements.len() >= laid + count {
+                    break;
+                }
+                if outline.inside(at) > 1.0 && book.number(name).is_some_and(|module| clear(at, module, 1.0)) {
+                    let turn = draws.between(0.0, TAU);
+                    placements.extend(placed(name, [at[0], at[1], laying.floor(at)], turn, 1.0, 1.0));
                 }
             }
         }
@@ -407,19 +453,13 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
         for name in
             ["common.wreck.bow", "common.wreck.stern", "common.wreck.ribs", "common.wreck.mast", "common.wreck.planks"]
         {
-            let at = outline.at_edge(draws.between(0.0, TAU), draws.between(4.0, reach * 0.7));
-            if outline.inside(at) > 2.0
-                && clear_of_mouths(at, 6.0)
-                && clear_of_bands(at)
-                && sites.lamp.is_none_or(|lamp| apart(lamp, at) >= 8.0)
-            {
-                placements.extend(placed(
-                    name,
-                    [at[0], at[1], laying.floor(at) - 0.3],
-                    draws.between(0.0, TAU),
-                    1.0,
-                    1.0,
-                ));
+            for _ in 0..PLACE_TRIES {
+                let at = outline.at_edge(draws.between(0.0, TAU), draws.between(4.0, reach * 0.7));
+                if outline.inside(at) > 2.0 && book.number(name).is_some_and(|module| clear(at, module, 1.0)) {
+                    let turn = draws.between(0.0, TAU);
+                    placements.extend(placed(name, [at[0], at[1], laying.floor(at) - 0.3], turn, 1.0, 1.0));
+                    break;
+                }
             }
         }
         lay_many(Role::Drift, 6, (1.0, reach * 0.8), draws, &mut placements);
@@ -445,14 +485,15 @@ pub(crate) fn layings(
         shelf_turn: draws.between(0.0, TAU),
     };
     let wanted = crate::plan::spots_wanted(zone.deal);
-    let sites = sites(&laying.outline, (onward_count, zone.has_lamp(), wanted), &mut draws);
+    let sites = sites(&laying.outline, (onward_count, zone.has_lamp(), wanted, zone.size.posts()), &mut draws);
     let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str()).to_owned();
-    let (ground, ring, seed) = (laying.ground(), laying.outline.ring(), zone.seed);
+    let ((ground, bounds), ring, seed) = (laying.ground(), laying.outline.ring(), zone.seed);
     (0..).map(move |attempt: u64| {
         let mut dressing = if attempt == 0 { draws.clone() } else { Draws::of(seed, 0x500 + attempt) };
-        let placements = dress(&laying, &sites, &kit, &mut dressing);
+        let placements = dress(&laying, (&sites, wanted), &kit, &mut dressing);
         let blocks = isle::dressing::blocks(&placements);
-        (Hollow { ground: ground.clone(), placements, blocks, ring: ring.clone() }, sites.clone())
+        let hollow = Hollow { ground: ground.clone(), placements, blocks, ring: ring.clone(), bounds: bounds.clone() };
+        (hollow, sites.clone())
     })
 }
 
@@ -461,3 +502,7 @@ pub(crate) fn layings(
 pub fn floor_at(hollow: &Hollow, at: [f64; 2]) -> f64 {
     movement::terrain::Terrain::height_at(&hollow.ground, at[0], at[1])
 }
+
+#[cfg(test)]
+#[path = "hollow_tests.rs"]
+mod tests;
