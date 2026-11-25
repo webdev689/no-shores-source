@@ -3,25 +3,27 @@
 // at a dead lamp kindles it. The room judges every ask; its yes plays the way between zones while the next room is
 // joined. Each frame the zone's deal stands in the tracker, its pieces as the deal stands, the haul on the right and
 // an onward mouth's sign on approach.
-import type { Flow } from '../flow.ts';
+import { arriving, type Flow } from '../flow.ts';
 import { Foot } from '../foot.ts';
 import { weekOf } from '../guild/guildLaw.ts';
 import type { FootContext, Uses } from '../footPlace.ts';
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import { HOLDING_LAMP, type DiveState, type PassageSeenState } from '../../network/passageMessages.ts';
 import type { GearItem } from '../../network/gearMessages.ts';
-import type { NodeLayout } from '../../layout/layouts.ts';
+import { type NodeLayout, placesOf } from '../../layout/layouts.ts';
+import { TIERS } from '../activityWords.ts';
 import { answerText } from '../../player/gear.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import type { DungeonLayout } from '../dungeonLayout.ts';
 import type { Quest } from '../tasks.ts';
 import type { NodeInfo } from '../worldData.ts';
-import { passageRoomName, runInstance, sharedRun } from '../rooms.ts';
+import { passageRoom, passageRoomName, runInstance, sharedRun } from '../rooms.ts';
 import type { IsleShown } from '../../islands/islePlan.ts';
+import type { Difficulty } from '../../heldmap/heldMap.ts';
 import type { LandSheet } from '../../heldmap/landSheet.ts';
 import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor } from '../../rules/passageRules.ts';
-import { enterZone, type ZoneEntry } from './passageEnter.ts';
+import { enterZone, onwardOrBack, type ZoneEntry } from './passageEnter.ts';
 import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
 import { passageSheet } from './passageMap.ts';
 import { haulNode, MouthsCardView, signNode } from './passagePanels.ts';
@@ -251,8 +253,8 @@ export class PassageGame {
     const foot = this.host.foot();
     const zone = this.zone;
     if (!foot || !zone) return;
-    const mouth = this.gear()?.dive?.mouth ?? 0;
-    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, mouth), ask);
+    const dive = this.gear()?.dive;
+    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, dive?.mouth ?? 0, TIERS[dive?.seas ?? 0]), ask);
   }
 
   /** Sends `asked`, its yes (a dive changed: begun, gone on, turned homeward or ended) doing `yes`. */
@@ -293,10 +295,7 @@ export class PassageGame {
         minute,
       };
       const isle = heights && zoneIsle(plan, heights, this.host.climate(dive.island));
-      await this.host.goInto(() => enterZone(this.host.context, entry));
-      this.setZone({ web, entry, isle, passed });
-      const layout = zoneLayout(plan);
-      if (layout) await this.host.showDungeon(layout, this.host.foot()?.node ?? patrol);
+      await onwardOrBack(() => this.standIn({ web, entry, isle, passed }), left && (() => this.standIn(left)));
     };
     this.pass(
       { kind: 'onward', node: passageRoomName(dive.island, dive.week, dive.zone) },
@@ -305,6 +304,34 @@ export class PassageGame {
       zone.at,
       work,
     );
+  }
+
+
+  /** Joins the zone `zone` stands for and stands the player there, its dungeon shown under ground. */
+  private async standIn(zone: InZone): Promise<void> {
+    await this.host.goInto(() => enterZone(this.host.context, zone.entry));
+    this.setZone(zone);
+    const layout = zoneLayout(zone.entry.plan);
+    if (layout) await this.host.showDungeon(layout, this.host.foot()?.node ?? zone.entry.patrol);
+  }
+
+  /** Back into the passage zone of the room `room`, as a log-in whose dive's zone held them last resumes there
+   *  (`relog.ts`): whether the page lays that zone, its patrol zone on the landmass open, and joined it. */
+  async resumeIn(room: string): Promise<boolean> {
+    const named = passageRoom(room);
+    const door = this.door;
+    const web = named && this.webOf(named.island, named.week);
+    const plan = named && door?.plan(named.island, named.week, named.zone);
+    const patrol = web && this.host.land().nodes.find((node) => node.id === web.patrol);
+    if (!named || !door || !web || !plan || !patrol) return false;
+    const { island, week, zone } = named;
+    const heights = plan.ground.kind === 'open' ? door.heights(island, week, zone) : null;
+    const minute = Math.floor(this.host.now() / 60_000);
+    const entry = { plan, heights, island, week, room, patrol, company: named.run !== null, minute };
+    this.host.setFlow(arriving(room, plan.zone.name));
+    const isle = heights && zoneIsle(plan, heights, this.host.climate(island));
+    await this.standIn({ web, entry, isle, passed: [] });
+    return true;
   }
 
   /** The way come this dive, on the island: the patrol zone's place, each zone passed, and the zone stood in. */
@@ -319,19 +346,19 @@ export class PassageGame {
     ];
   }
 
-  /** Home to the patrol zone, before the mouth the dive began at. */
-  private homeTo(zone: InZone, mouth: number): void {
+  /** Home to the patrol zone at the seas the dive began at, before the mouth it began at. */
+  private homeTo(zone: InZone, mouth: number, seas?: Difficulty): void {
     const patrol = zone.entry.patrol;
     const run = zone.web.mouths[mouth]?.run;
-    const door = this.host
-      .land()
-      .layouts.find((layout) => layout.id === patrol.id)
-      ?.runs?.find((each) => each.name === run)?.door;
-    const spawn = door ? homeSpot(door, patrol.centre) : (patrol.spawns[0] ?? patrol.centre);
+    const layout = this.host.land().layouts.find((each) => each.id === patrol.id);
+    const door = layout?.runs?.find((each) => each.name === run)?.door;
+    // Toward the run's end arena, the place named for it, as the room stands one coming home.
+    const arena = layout && placesOf(layout).find((place) => place.name === run)?.at;
+    const spawn = door ? homeSpot(door, arena ?? door) : (patrol.spawns[0] ?? patrol.centre);
     // Facing away from the door, as the room stands one coming home; online the room's own stand is where they are.
     const facing = door ? Math.atan2(spawn[0] - door[0], -(spawn[1] - door[1])) : 0;
     const work = async () => {
-      await this.host.goInto(() => Foot.enter(this.host.context, { ...patrol, spawns: [spawn] }, facing));
+      await this.host.goInto(() => Foot.enter(this.host.context, { ...patrol, spawns: [spawn] }, facing, seas));
       this.setZone(null);
     };
     this.pass({ kind: 'home', node: patrol.id }, zone.web, this.comeOf(zone, patrol), patrol.centre, work);

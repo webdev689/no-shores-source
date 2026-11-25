@@ -20,6 +20,7 @@ fn diver(room: &mut Room, zone: &passage::Zone) -> PlayerId {
         zone: zone.number,
         depth: zone.depth,
         lamp: None,
+        seas: gear::Difficulty::Normal,
     };
     character.begin_dive(&start).expect("begun");
     assert!(room.restore_character(player, &character.to_json()), "the gate lets them in");

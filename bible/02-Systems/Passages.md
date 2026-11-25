@@ -120,9 +120,10 @@ passages' own pieces standing in it with their solids.
 ## A dive
 
 - **A dive is kept with the character** (`gear::dive::Dive`): its island and week, its route, the patrol zone's
-  mouth it began at, the zone it is in and that zone's depth, whether the zone's deal was done while the player was in
-  it, the deepest lamp lit, the zones whose caches it was paid, and its haul. An old save reads with none; a later
-  build's keys are kept.
+  mouth it began at and the seas that zone's room was at (Home goes back to them), the zone it is in and that zone's
+  depth, whether the zone's deal was done while the player was in it, the deepest lamp lit, the zones whose caches it
+  was paid, and its haul. An old save reads with none, and a dive kept before its seas at Normal; a later build's
+  keys are kept.
 - **The haul** holds what is found in a passage zone: Vestiges picked up, items found as themselves, gathered
   resources, a cache's fragments, Vestiges left lying as the player goes on, and the cold lantern. While the player
   stands in a zone of their dive, the gear's own keeping (`pick_up`, `keep_found`, `gather`, `post`) sends each find
@@ -134,7 +135,9 @@ passages' own pieces standing in it with their solids.
 - **Going on** is asked within 4 m of an onward mouth, once the zone's deal was done while the player was in it, or
   at once from a Gauntlet; the dive is in the next zone from then, and the host moves the player there. Joining any
   room that is not the dive's zone ends the dive and loses its haul. A respawn asked for in a zone empties the haul
-  and stands the player at its arrival; a revive loses nothing.
+  and stands the player at its arrival; a revive loses nothing. A reload or a closed tab costs no more than a death:
+  logging in again, a character whose last room was its dive's zone goes back into it, on the same dive
+  ([[Accounts]], "Where a player logs back in").
 
 ## A zone's room
 
@@ -211,26 +214,29 @@ was done finds it done.
 
 ## On the wire
 
-The gear carries the dive (homeward or not) and its haul, each island's lamps lit this week and its day's lamp (each
+The gear carries the dive (homeward or not, and the seas it began at) and its haul, each island's lamps lit this week and its day's lamp (each
 only where the record is of the room's week and day), and
 the Atheric bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its key, done,
 the dead lamps lit and targets down, the ring's share held, the seconds left, the waves, whether the mouths are open
 and the lamp lit for the player, and their hold under way. The asks are numbered 82 to 86 (`passage_wire`), after
 the open-find ask's 81. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
 the route and the minute); once the
-clock's week is past the web's, the room refuses players: "The passage has shifted". The passages' refusals are
+week on its clock is past the web's, judged as each join comes, the room refuses players: "The passage has shifted". The passages' refusals are
 `Refusal`'s 170 to 180, answered one more: no dive, no such mouth, the deal not done, no lamp, the lamp not lit, the
 lamp guarded, out of reach, not in a passage; `Shifted`, every ask of a zone whose week's web has turned but Home at a
 lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; and `Fallen`, any ask while the player is down.
 
 ## On the server
 
-- **A zone's room** is named `passage-<island>-w<week>-z<zone>` for its first public room, `--2`, `--3` after it for
-  the next when one is full (eight accounts), and `--run-<instance>` for a company's route ([[Server]], "A passage
-  zone's room"). It opens from its name with `open_passage`, this week's web or last week's, the last refusing players.
+- **A zone's room** is named `passage-<island>-w<week>-z<zone>` for its first public room, `--2` to `--9` after it
+  for the next when one is full (eight accounts), and `--run-<instance>` for a company's route ([[Server]], "A passage
+  zone's room"). It opens from its name with `open_passage`, this week's web alone; last week's answers "The passage
+  has shifted" and lays nothing.
 - **Arrivals** are judged by the dive the accounts keep with the character: into a zone from the patrol zone at the
-  dive's mouth or a lamp lit this week, from a zone whose ways on lead to it, or back into its own room; out of a
-  lamp's zone, its lamp lit, to the patrol zone.
+  seas the dive began at, at its mouth or a lamp lit this week, from a zone whose ways on lead to it, from another
+  public copy of its zone, or back into its own room; out of a lamp's zone to the patrol zone at those seas, once the
+  dive went home from that zone with its lamp lit this dive (the dive judged, not the week's lamps, which a week
+  turned since may have cleared).
 - **The dive is saved** the moment it moves, a lamp lit and Home among it, so the next room reads it.
 
 ## In the browser
@@ -258,7 +264,10 @@ as its other asks do, and a refusal is said in the room's words (171 to 181).
   are not taken for it.
 - **A zone's room**: the server's by its name (`passageRoomName`, spelled as the server spells it): the first public
   room, the next copy (`--2`, `--3`) when one says "This passage is full.", or a company's route's own, a member's
-  room found as runs are; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
+  room found as runs are. A room is joined once the gear's dive names its zone: a room holds a player it has not
+  judged and sends its snapshots meanwhile, and says it is full only after the judge. A zone gone on to that refuses
+  the dive as come by no way there (the room left shut before the move was saved) sends the page back into the zone
+  it left, where the accounts still keep the dive; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
   JSON), the character the last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to
   the page, its layout drawn by the dungeon's renderer; above ground its hollow is an island to the islands' layer
   (`zoneIsle`, by an id no sea island has), stood on as a sea island's beach, and drawn alone: no land of the island
@@ -266,9 +275,10 @@ as its other asks do, and a refusal is said in the room's words (171 to 181).
   body is predicted on the zone's own ground from the same ask (`fighter_passage`, `set_passage`): the ground and
   blocks its room stands bodies on (`passage_ground`), under ground the Forge's floor and the pieces' solids, above
   ground the hollow's heights, its dressing's blocks and the pieces' solids.
-- **Home**: the lamp's Home turns the dive homeward; the page joins the patrol zone's room as ever, and the way comes
-  down to where the room stands the player, 2 m before the mouth the dive began at and facing away from it, once its
-  first snapshot of the body has come.
+- **Home**: the lamp's Home turns the dive homeward; the page joins the patrol zone's room at the seas the dive began
+  at, and the way comes down to where the room stands the player, 2 m before the mouth the dive began at toward its
+  run's end arena and facing away from the door (`stand_before_mouth`, `homeSpot` alone), once its first snapshot of
+  the body has come.
 - **In a zone**: the deal stands in the tracker (`dealTracker`: "Light the dead lamps 1/3", a hold's clock, then "Go on
   through an open mouth"); near an onward mouth its sign shows the zone beyond and, shut, "Shut until this place's work
   is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts

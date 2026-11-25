@@ -201,10 +201,10 @@ pub fn open_node(text: &[u8]) -> bool {
     true
 }
 
-/// Why the open room takes no player: a locked node's says so; None for any other room.
+/// Why the open room takes no player: a locked node's says so, a passage zone's once its week turned; else None.
 pub fn refusal() -> Option<String> {
     with_open(|opened| match opened {
-        Opened::Land { refusal, .. } => refusal.clone(),
+        Opened::Land { room, refusal, .. } => passage_room_door::refusal_of(room, refusal.as_deref()),
         Opened::Sea(_) | Opened::Fleet(_) => None,
     })
     .flatten()
@@ -485,7 +485,7 @@ pub extern "C" fn room_tick_seconds() -> f64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join() -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, refusal: None, .. } => room.join(),
+        Opened::Land { room, refusal: None, .. } if !room.shifted() => room.join(),
         Opened::Land { .. } => None,
         Opened::Sea(sea) => Some(sea.join()),
         Opened::Fleet(fleet) => fleet.join(),

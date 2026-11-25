@@ -113,7 +113,15 @@ export function nodeOfRoom(room: string): {
 
 // A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule; a
 // passage zone's room is named, and a full one's refusal said, as the servers name and say them.
-export { PASSAGE_FULL, passageRoomName, runInstance, startedAtSea } from '../../../server/roomNames.ts';
+export {
+  PASSAGE_COPIES,
+  PASSAGE_FULL,
+  passageRoom,
+  passageRoomName,
+  runInstance,
+  startedAtSea,
+} from '../../../server/roomNames.ts';
+export { NO_WAY_HERE } from '../../../server/arrival.ts';
 
 /** A run's room: the dungeon's room's name, then its instance. */
 export function runOf(base: string, instance: string): string {

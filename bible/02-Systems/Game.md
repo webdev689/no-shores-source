@@ -190,7 +190,8 @@ stranger's last moment plays there once the veil has fallen ([[Prologue]]); leav
 A returning player, past the title with the story played before, goes back where they last left the overworld or a
 social space ([[A Player Logs Back In Where They Left the Overworld or a Social Space]], `relog.ts`): the veil says
 "Returning to your ship" and they are aboard, the ship where the sea room kept it (offline, where the page kept it);
-or "Arriving at" the social space, standing where they left it. Online the accounts say which (`/v1/me`'s `place`),
+or "Arriving at" the social space, standing where they left it; online, a dive's passage zone that held them last
+takes them back on that dive. Online the accounts say which (`/v1/me`'s `place`),
 offline the browser's `noshores.place`; with none, or a social space not open, they arrive at Overlook ([[Accounts]],
 "Where a player logs back in").
 

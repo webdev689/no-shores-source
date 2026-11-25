@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { runInstance, sharedRun } from '../client/src/game/rooms.ts';
-import { type Passages, arrives } from './arrival.ts';
+import { NO_WAY_HERE, type Passages, arrives } from './arrival.ts';
 import { Keeper } from './keeping.ts';
 import { weekOf } from '../client/src/game/guild/guildLaw.ts';
 import { roomOf, world } from './keepingForTests.ts';
 import { openPassageRoom, passagesOf, webOf } from './passageHost.ts';
 import type { PassageWeb } from './arrival.ts';
 import {
+  PASSAGE_COPIES,
   PASSAGE_FULL,
   PASSAGE_MOST,
   RUN_MOST,
@@ -62,12 +63,14 @@ test('a passage zone’s room is named by its island, week and zone, a public co
     run: null,
   });
   assert.equal(passageRoom('passage-continent-1-w2900-z0--3')?.copy, 3);
+  assert.equal(passageRoom(`passage-continent-1-w2900-z0--${PASSAGE_COPIES}`)?.copy, PASSAGE_COPIES, 'the last copy');
   assert.equal(passageRoom('passage-continent-1-w2900-z7--run-ab12cd34')?.run, 'ab12cd34');
   for (const name of [
     'passage-continent-1-w02900-z12',
     'passage-continent-1-w2900-z012',
     'passage-continent-1-w2900-z12--1',
     'passage-continent-1-w2900-z12--100',
+    `passage-continent-1-w2900-z12--${PASSAGE_COPIES + 1}`,
     'passage-continent-1-w2900-z12--2--run-ab12cd34',
     'passage-continent-1-w2900-z12--run-ab12cd34--2',
     'passage-continent-1-w2900-z12--run-short',
@@ -111,7 +114,11 @@ test('a passage zone opens for this week’s web or the last’s alone, and says
     route: 'company',
     minute: MINUTE,
   });
-  assert.ok('ask' in passageAsk(room(4), MINUTE + 7 * 24 * 60), 'last week’s still opens, to say it shifted');
+  assert.deepEqual(
+    passageAsk(room(4), MINUTE + 7 * 24 * 60),
+    { why: 'The passage has shifted' },
+    'last week’s says it shifted, its zone never laid',
+  );
   assert.ok('why' in passageAsk(room(4), MINUTE + 14 * 24 * 60), 'two weeks on');
   assert.ok('why' in passageAsk(room(4), MINUTE - 7 * 24 * 60), 'next week’s');
   assert.ok('why' in passageAsk('passage-continent-1-w2900-z012', MINUTE));
@@ -125,7 +132,8 @@ test('a passage zone opens for this week’s web or the last’s alone, and says
 
 test('a dive comes into a passage zone from its patrol zone at the mouth leading there, or at a lamp it lit', () => {
   assert.equal(arrives(room(first), PATROL, null, null, diving({ zone: first })), true);
-  assert.equal(arrives(room(first), `${PATROL}--elite`, null, null, diving({ zone: first })), true);
+  assert.equal(arrives(room(first), `${PATROL}--elite`, null, null, diving({ zone: first, seas: 'elite' })), true);
+  assert.equal(arrives(room(first), `${PATROL}--elite`, null, null, diving({ zone: first })), false, 'begun at Normal');
   assert.equal(arrives(room(first, 2), PATROL, null, null, diving({ zone: first })), true, 'a later public copy');
   assert.equal(arrives(room(second), PATROL, null, null, diving({ zone: second })), false, 'mouth 0 leads elsewhere');
   assert.equal(arrives(room(second), PATROL, null, null, diving({ zone: second, mouth: 1 })), true);
@@ -165,6 +173,12 @@ test('a dive goes on into a zone its last zone’s ways lead to, and rejoins its
     assert.equal(arrives(room(elsewhere.number), room(first), null, null, astray), false, 'no way leads there');
   }
   assert.equal(arrives(room(first), room(first), null, null, diving({ zone: first })), true, 'a rejoin on its dive');
+  const full = diving({ zone: first });
+  assert.equal(arrives(room(first, 2), room(first), null, null, full), true, 'on to the next copy, one full');
+  assert.equal(arrives(room(first), room(first, 3), null, null, full), true, 'or back to an earlier');
+  assert.equal(arrives(room(next, 2), room(next), null, null, full), false, 'a copy of a zone it is not in');
+  const route = diving({ zone: first, route: 'company' });
+  assert.equal(arrives(room(first, 'ab12cd34'), room(first, 'zz12cd34'), null, null, route), false, 'a route is one');
   assert.equal(arrives(room(first), room(first), null, null, diving(null)), false, 'a rejoin whose dive ended');
   assert.equal(arrives(room(first), room(first), null, null, diving({ zone: next })), false, 'its dive went on');
   // Once the week turns, last week's web takes no one, whoever comes.
@@ -172,17 +186,30 @@ test('a dive goes on into a zone its last zone’s ways lead to, and rejoins its
   assert.equal(arrives(room(next), room(first), null, null, turned), false);
 });
 
-test('a lamp’s zone leads home to its patrol zone once its lamp is lit for the character', () => {
+test('a lamp’s zone leads home to its patrol zone, at the seas the dive began at, once Home sent it there', () => {
   const lampRoom = room(lampZone.number);
-  assert.equal(arrives(PATROL, lampRoom, null, null, diving(null, [1])), true);
-  assert.equal(arrives(PATROL, lampRoom, null, null, diving(null)), false, 'unlit');
-  assert.equal(arrives(PATROL, room(first), null, null, diving(null, [1])), false, 'no lamp stands there');
-  assert.equal(arrives(`${PATROL}--dungeon-0`, lampRoom, null, null, diving(null, [1])), false);
-  assert.equal(arrives('node-tidewall', lampRoom, null, null, diving(null, [1])), false);
+  const home = { zone: lampZone.number, depth: lampZone.depth, lamp: 1, homeward: true };
+  assert.equal(arrives(PATROL, lampRoom, null, null, diving(home, [1])), true);
+  assert.equal(arrives(PATROL, lampRoom, null, null, diving({ ...home, homeward: false }, [1])), false, 'not homeward');
+  assert.equal(arrives(PATROL, lampRoom, null, null, diving({ ...home, lamp: 0 }, [1])), false, 'unlit this dive');
+  assert.equal(arrives(PATROL, lampRoom, null, null, diving(null, [1])), false, 'on no dive');
+  assert.equal(arrives(PATROL, room(first), null, null, diving({ ...home, zone: first }, [1])), false, 'no lamp there');
+  assert.equal(
+    arrives(PATROL, lampRoom, null, null, diving({ ...home, zone: first }, [1])),
+    false,
+    'its dive elsewhere',
+  );
+  assert.equal(arrives(`${PATROL}--dungeon-0`, lampRoom, null, null, diving(home, [1])), false);
+  assert.equal(arrives('node-tidewall', lampRoom, null, null, diving(home, [1])), false);
   assert.equal(arrives(PATROL, lampRoom, null, null, null), false);
-  // Lamps lit in a week before this one's web are not this week's, though no weekly record rolled the week yet.
-  const lastWeek = JSON.stringify({ activity: { this_week: { week: WEEK - 1, passage_lamps: { [ISLAND]: [1] } } } });
-  assert.equal(arrives(PATROL, lampRoom, null, null, passagesOf(door, lastWeek, MINUTE * 60_000)), false, 'last week');
+  // A crafted page lands at Normal, lights the lamp and goes Home: it comes home at Normal, not at Abyss.
+  assert.equal(arrives(`${PATROL}--abyss`, lampRoom, null, null, diving(home, [1])), false, 'begun at Normal');
+  assert.equal(arrives(`${PATROL}--abyss`, lampRoom, null, null, diving({ ...home, seas: 'abyss' })), true);
+  assert.equal(arrives(PATROL, lampRoom, null, null, diving({ ...home, seas: 'abyss' })), false, 'begun at Abyss');
+  // Lit Monday, the week turned and a foe fell since, rolling the week's record: the dive still goes home.
+  const passage = { island: ISLAND, week: WEEK, route: 'public', mouth: 0, ...home };
+  const turned = JSON.stringify({ passage, activity: { this_week: { week: WEEK + 1, passage_lamps: {} } } });
+  assert.equal(arrives(PATROL, lampRoom, null, null, passagesOf(door, turned, (MINUTE + 7 * 24 * 60) * 60_000)), true);
 });
 
 test('a move of what the next room judges is saved at once, a find is not, nor read out of the room', async () => {
@@ -239,4 +266,68 @@ test('a move of what the next room judges is saved at once, a find is not, nor r
   const found = body({ lamp: 1, found: 2 }, [1]);
   await change(found, false);
   assert.equal(await saved(), found, 'the unsaved move saved');
+});
+
+test('a public zone keeps eight accounts though two sign in together, each errand answered meanwhile', async () => {
+  // Each body carries an outpost errand, asked again of the accounts between the judging and the keeping, which the
+  // test answers once both are judged.
+  const answers: (() => void)[] = [];
+  const body = '{"errand":{"rid":"node-x:1","what":{"deposit":5}}}';
+  const claimed = (token: string) => Promise.resolve({ account: token, body, from: null, name: null, tag: null });
+  const accounts = {
+    look: claimed,
+    claim: claimed,
+    release: () => Promise.resolve(true),
+    deposit: () => new Promise<'moved'>((answered) => answers.push(() => answered('moved'))),
+  } as unknown as ConstructorParameters<typeof Keeper>[0];
+  const kept = roomOf();
+  for (let player = 1; player <= PASSAGE_MOST + 1; player++) kept.held.set(player, '{}');
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(accounts, kept, room(first), (player, why) => void sent.push([player, why]));
+  const [now, here] = [() => 0, () => true];
+  const signing = (player: number) => keeper.signIn(player, `account-${player}`, now, here);
+  for (let player = 1; player < PASSAGE_MOST; player++) {
+    const signed = signing(player);
+    await new Promise((settled) => setTimeout(settled, 0));
+    answers.shift()?.();
+    assert.equal(await signed, true);
+  }
+  const together = [signing(PASSAGE_MOST), signing(PASSAGE_MOST + 1)];
+  await new Promise((settled) => setTimeout(settled, 0));
+  for (const answer of answers.splice(0)) answer();
+  assert.deepEqual(await Promise.all(together), [true, false], 'the eighth kept, the ninth not');
+  assert.deepEqual(sent, [[PASSAGE_MOST + 1, PASSAGE_FULL]]);
+});
+
+test('a room that dies between a go-on and its save leaves the dive where it was: the zone left takes it back', async () => {
+  const { kept, token } = await world();
+  const from = zoneOf(first);
+  const next = from?.onward[0] ?? -1;
+  const body = (zone: number) =>
+    JSON.stringify({ passage: { island: ISLAND, week: WEEK, route: 'public', mouth: 0, zone, lamp: 0 } });
+  const judging = (name: string, keeper: Keeper) =>
+    keeper.judgingArrivals(
+      (came, kept) => arrives(name, came, null, null, passagesOf(door, kept, MINUTE * 60_000)),
+      true,
+    );
+  const [now, here] = [() => 0, () => true];
+  // The dive in the first zone is saved there; then it goes on, its gear sent to the page, and the room dies before
+  // its save lands, so the accounts keep it in the zone it left.
+  const left = roomOf();
+  left.held.set(1, body(first));
+  const leftKeeper = new Keeper(kept, left, room(first), () => undefined);
+  assert.equal(await leftKeeper.signIn(1, token, now, here), true);
+  assert.equal(await leftKeeper.saveNow(1), true);
+  left.held.set(1, body(next));
+  const ahead = roomOf();
+  ahead.held.set(1, '{}');
+  const sent: (string | undefined)[] = [];
+  const aheadKeeper = judging(room(next), new Keeper(kept, ahead, room(next), (player, why) => void sent.push(why)));
+  assert.equal(await aheadKeeper.signIn(1, token, now, here), false, 'the next zone refuses the look');
+  assert.deepEqual(sent, [NO_WAY_HERE]);
+  // The zone left, opened again, takes the dive back as the accounts kept it.
+  const again = roomOf();
+  again.held.set(1, '{}');
+  const againKeeper = judging(room(first), new Keeper(kept, again, room(first), () => undefined));
+  assert.equal(await againKeeper.signIn(1, token, now, here), true);
 });

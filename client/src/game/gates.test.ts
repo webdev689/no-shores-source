@@ -65,4 +65,5 @@ test('a gate toward another patrol area offers to go there, arriving at its gate
   assert.equal(across?.offer, 'Go to The Vale  E');
   assert.deepEqual(across?.happening, { kind: 'cross', node: 'vale', name: 'The Vale' });
   assert.deepEqual(across?.node.spawns, [[-700, 0]], "at the Vale's gate toward the Downs");
+  assert.equal(across?.node.across, 'downs', 'its room stands the player at that gate too, online');
 });

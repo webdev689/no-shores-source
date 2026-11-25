@@ -1,7 +1,8 @@
 // Where a returning player arrives after the title, as the owner asked: wherever they last left the overworld or a
-// social space. Online the accounts say it (`/v1/me`), from the character the rooms kept, and the rooms stand the
-// player there; offline, where no room keeps a character, the page keeps it in the browser as it plays. One who has
-// just played the story through arrives at Overlook, where its welcome waits.
+// social space, or online the passage zone of a dive under way. Online the accounts say it (`/v1/me`), from the
+// character the rooms kept, and the rooms stand the player there; offline, where no room keeps a character, the page
+// keeps it in the browser as it plays. One who has just played the story through arrives at Overlook, where its
+// welcome waits.
 import type { LastPlace } from '../../../server/accounts/lastPlace.ts';
 import { arriving, type Flow } from './flow.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -17,7 +18,8 @@ const KEEP_EVERY_S = 10;
  *  there), facing as they did. */
 export type Resumed =
   | { readonly kind: 'sea'; readonly at?: Point; readonly heading?: number }
-  | { readonly kind: 'social'; readonly node: string; readonly at?: Point; readonly facing?: number };
+  | { readonly kind: 'social'; readonly node: string; readonly at?: Point; readonly facing?: number }
+  | { readonly kind: 'passage'; readonly room: string };
 
 const isPoint = (value: unknown): value is Point =>
   Array.isArray(value) && value.length === 2 && value.every((number) => Number.isFinite(number));
@@ -42,6 +44,7 @@ export function placeOf(text: string | null): Resumed | null {
 /** The accounts' word as a place to resume at; the rooms stand the player, so the page takes no spot from it. */
 export function placeHeard(heard: LastPlace | null | undefined): Resumed | null {
   if (!heard) return null;
+  if (heard.kind === 'passage') return heard;
   return heard.kind === 'sea' ? { kind: 'sea' } : { kind: 'social', node: heard.node, facing: heard.facing };
 }
 
@@ -96,12 +99,16 @@ export interface Resuming {
   readonly aboard: (at?: { readonly anchorage: Point; readonly heading: number }) => Promise<void>;
   readonly ashore: (node: NodeInfo, facing: number | null) => Promise<void>;
   readonly overlook: () => Promise<void>;
+  /** Into a dive's passage zone by its room: whether the page laid and joined it. */
+  readonly passage: (room: string) => Promise<boolean>;
   readonly flow: (flow: Flow) => void;
 }
 
-/** After the title: back aboard, or in the social space the player last stood in, else at Overlook. */
+/** After the title: back aboard, in the social space the player last stood in or the passage zone of their dive,
+ *  else at Overlook. */
 export async function resume(game: Resuming): Promise<void> {
   const kept = game.online ? placeHeard(await game.heard()) : game.kept();
+  if (kept?.kind === 'passage') return (await game.passage(kept.room).catch(() => false)) ? undefined : game.overlook();
   if (kept?.kind === 'sea') {
     game.flow({ mode: 'loading', words: 'Returning to your ship', then: { mode: 'sea' } });
     return game.aboard(kept.at && { anchorage: kept.at, heading: kept.heading ?? 0 });

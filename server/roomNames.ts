@@ -113,10 +113,13 @@ export function runAsk(room: string, minute: number): string | null {
 }
 
 /** A passage zone's room: its island's continent's id, its web's week (`gear::clock::week_of`), its zone's number in
- *  the web, then `--<copy>` (2 to 99) for a public room opened when the ones before it were full, or a company's
- *  route's `--run-<instance>`. Numbers are spelled without leading zeros, so each room has one name. */
-const PASSAGE =
-  /^passage-(continent-[1-9])-w([1-9][0-9]{0,5})-z(0|[1-9][0-9]{0,2})(?:--([2-9]|[1-9][0-9])|--run-([a-z0-9]{8}))?$/;
+ *  the web, then `--<copy>` (2 to `PASSAGE_COPIES`) for a public room opened when the ones before it were full, or a
+ *  company's route's `--run-<instance>`. Numbers are spelled without leading zeros, so each room has one name. */
+const PASSAGE = /^passage-(continent-[1-9])-w([1-9][0-9]{0,5})-z(0|[1-9][0-9]{0,2})(?:--([2-9])|--run-([a-z0-9]{8}))?$/;
+
+/** The most public copies of a passage zone's room, the first among them: the page tries each in turn, and no other
+ *  copy opens. The name's pattern spells one digit, so it holds to 9. */
+export const PASSAGE_COPIES = 9;
 
 /** The most players a public passage zone's room holds; the next joins the next copy (`--2`, `--3`). */
 export const PASSAGE_MOST = 8;
@@ -149,13 +152,14 @@ export function passageRoomName(island: string, week: number, zone: number, afte
 }
 
 /** The ask `open_passage` opens a passage zone's room from, at the Unix minute `minute`, or why it opens none: a name
- *  that is no passage's, or a week that is neither this week's nor the last (whose room still opens, to tell those
- *  who come that the passage has shifted). */
+ *  that is no passage's, last week's (whose ways lead elsewhere now, so its zone is never laid), or any other week but
+ *  this one. */
 export function passageAsk(name: string, minute: number): { readonly ask: string } | { readonly why: string } {
   const named = passageRoom(name);
   if (!named) return { why: 'No such passage.' };
   const week = weekOf(minute * 60_000);
-  if (named.week !== week && named.week !== week - 1) return { why: "That week's passages are gone." };
+  if (named.week === week - 1) return { why: 'The passage has shifted' };
+  if (named.week !== week) return { why: "That week's passages are gone." };
   const route = named.run === null ? 'public' : 'company';
   return { ask: JSON.stringify({ island: named.island, week: named.week, zone: named.zone, route, minute }) };
 }

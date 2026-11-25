@@ -97,8 +97,8 @@ export function rejoinOnGuild(here: () => AtOutpost | null, rejoin: (standing: A
   });
 }
 
-/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of or
- *  logging back in (`joinAsk`): at an outpost site, the room of the outpost of `guild`, or the wild site for none. */
+/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of, at
+ *  the gate toward the patrol area they cross from, or logging back in (`joinAsk`): at an outpost site, the room of the outpost of `guild`, or the wild site for none. */
 export function nodeAddress(
   context: FootContext,
   node: NodeInfo,
@@ -107,7 +107,7 @@ export function nodeAddress(
   guild: string | null,
 ): string | null {
   if (!context.rooms) return null;
-  return `${context.rooms(nodeRoom(node, seas, guild))}${joinAsk(asked)}`;
+  return `${context.rooms(nodeRoom(node, seas, guild))}${joinAsk(asked, node.across)}`;
 }
 
 /** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out. */
@@ -161,8 +161,10 @@ export interface Held {
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
  *  or to stand where the kept character left this social space, logging back in (`relog.ts`). */
-export const joinAsk = (asked?: AtEntrance | 'relog'): string =>
-  asked === 'relog' ? '?relog=1' : asked ? `?entrance=${asked.number}` : '';
+export const joinAsk = (asked?: AtEntrance | 'relog', across?: string): string => {
+  if (asked === 'relog') return '?relog=1';
+  return asked ? `?entrance=${asked.number}` : across ? `?from=${encodeURIComponent(across)}` : '';
+};
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
 export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;

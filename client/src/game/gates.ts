@@ -41,7 +41,7 @@ export function gateWay(landmass: Pick<Landmass, 'layouts' | 'nodes'>, here: str
       : passage.across
         ? { kind: 'cross', node: node.id, name: node.name }
         : { kind: 'pass', node: node.id, name: node.name, into: passage.into },
-    node: { ...node, spawns: [passage.arrive] },
+    node: { ...node, spawns: [passage.arrive], ...(passage.across ? { across: here } : {}) },
     facing: bearingTo(passage.arrive, node.centre),
   };
 }

@@ -59,6 +59,7 @@ pub fn diver(zone: u16) -> String {
         zone,
         depth: 1,
         lamp: None,
+        seas: gear::Difficulty::Normal,
     };
     character.begin_dive(&start).unwrap();
     character.to_json()
@@ -124,6 +125,15 @@ fn a_passage_zone_refuses_a_bad_ask_and_its_week_once_turned() {
     let later = passage_ask().replace("29230000", "29240000");
     assert!(open_passage(later.as_bytes()));
     assert_eq!(crate::refusal().as_deref(), Some(SHIFTED));
+}
+
+#[test]
+fn a_room_opened_in_its_week_refuses_a_join_once_the_week_turns_on_its_clock() {
+    assert!(open_passage(passage_ask().as_bytes()));
+    assert_ne!(room_join(), 0, "its week");
+    assert!(crate::gear_door::set_minute(29_240_000), "a minute of the next week");
+    assert_eq!(crate::refusal().as_deref(), Some(SHIFTED));
+    assert_eq!(room_join(), 0, "the week turned while it stood open");
 }
 
 /// The week's first zone of each ground, under ground then above it, by its number.

@@ -60,8 +60,8 @@ pub(crate) fn ground_of(text: &[u8]) -> Option<(room::Floor, Vec<movement::Block
 }
 
 /// Opens a passage zone's room from its ask's JSON: its foes at its island's band raised by depth, the week's two
-/// modifiers on, its clock at the ask's minute, and refusing players once the clock's week is past the web's. Answers
-/// whether the ask named a zone of an island's week's web.
+/// modifiers on, and its clock at the ask's minute. It refuses players once the week on its clock is past the web's,
+/// judged at each join (`refusal`). Answers whether the ask named a zone of an island's week's web.
 pub fn open_passage(text: &[u8]) -> bool {
     let Some((asked, plan)) = plan_of(text) else { return false };
     let Some(band) = gear::world::island_levels(&asked.island) else { return false };
@@ -70,9 +70,14 @@ pub fn open_passage(text: &[u8]) -> bool {
         return false;
     };
     room.set_minute(asked.minute);
-    let refusal = (gear::clock::week_of(asked.minute) > asked.week).then(|| SHIFTED.to_owned());
-    keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
+    keep(Opened::Land { room: Box::new(room), node: None, refusal: None, sent: Box::default() });
     true
+}
+
+/// Why a room on land takes no player: its own refusal, or a passage zone's once the week on its clock is past its
+/// web's, judged as each join comes.
+pub(crate) fn refusal_of(room: &Room, refusal: Option<&str>) -> Option<String> {
+    refusal.map(str::to_owned).or_else(|| room.shifted().then(|| SHIFTED.to_owned()))
 }
 
 /// Opens a passage zone's room from its ask's JSON written at `address`, `length` bytes long; 1 if it opened, 0 if

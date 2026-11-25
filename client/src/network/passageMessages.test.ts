@@ -40,6 +40,7 @@ test('a dive, its haul, the lamps lit on each island and the Atheric bounties re
   GearDive.addMouth(builder, 2);
   GearDive.addDone(builder, true);
   GearDive.addHomeward(builder, true);
+  GearDive.addSeas(builder, 2);
   GearDive.addHaul(builder, haul);
   const dive = GearDive.endGearDive(builder);
   const lit = GearIslandLamps.createLampsVector(builder, [1, 2]);
@@ -70,6 +71,7 @@ test('a dive, its haul, the lamps lit on each island and the Atheric bounties re
       lantern: 'lanternfall',
     },
     homeward: true,
+    seas: 2,
   });
   assert.deepEqual(read.islandLamps, [{ island: 'saltmere', lamps: [1, 2], dayLamp: true }]);
   assert.deepEqual(read.athericBounties, [{ id: 'lanternfall', step: 2, count: 37, finished: false }]);

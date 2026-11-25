@@ -257,7 +257,7 @@ pub unsafe extern "C" fn room_open_dungeon(address: *const u8, length: usize, nu
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join_at(number: u32) -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, refusal: None, .. } => {
+        Opened::Land { room, refusal: None, .. } if !room.shifted() => {
             usize::try_from(number).ok().and_then(|number| room.join_at(number))
         }
         Opened::Land { .. } | Opened::Sea(_) | Opened::Fleet(_) => None,

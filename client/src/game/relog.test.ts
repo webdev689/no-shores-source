@@ -76,6 +76,7 @@ function game(online: boolean, heard: Awaited<ReturnType<Resuming['heard']>>, ke
     ashore: (into, facing) =>
       Promise.resolve(void went.push(`ashore ${into.id} ${JSON.stringify(into.spawns)} ${facing}`)),
     overlook: () => Promise.resolve(void went.push('overlook')),
+    passage: (room) => Promise.resolve(room.endsWith('z12') && Boolean(went.push(`into ${room}`))),
     flow: (flow) => void flows.push(flow),
   };
   return { resuming, went, flows };
@@ -143,4 +144,14 @@ test('a join asks its room to stand the player before an entrance, or where they
   assert.equal(joinAsk('relog'), '?relog=1');
   assert.equal(joinAsk({ number: 2, x: 0, y: 0, facing: 0 }), '?entrance=2');
   assert.equal(joinAsk(), '');
+  assert.equal(joinAsk(undefined, 'gullwing-vale'), '?from=gullwing-vale', 'across from a patrol zone, at its gate');
+});
+
+test('back from the title online, a player whose dive’s zone held them last goes back into it', async () => {
+  const diving = game(true, { kind: 'passage', room: 'passage-continent-1-w2900-z12' });
+  await resume(diving.resuming);
+  assert.deepEqual(diving.went, ['into passage-continent-1-w2900-z12']);
+  const gone = game(true, { kind: 'passage', room: 'passage-continent-1-w2900-z11' });
+  await resume(gone.resuming);
+  assert.deepEqual(gone.went, ['overlook'], 'a zone the page cannot lay or join: Overlook');
 });

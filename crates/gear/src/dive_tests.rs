@@ -9,7 +9,16 @@ const ISLAND: &str = "continent-1";
 const WEEK: u64 = 2_900;
 
 fn start(zone: u16, lamp: Option<u8>) -> Start<'static> {
-    Start { island: ISLAND, week: WEEK, route: Route::Public, mouth: 1, zone, depth: 1, lamp }
+    Start {
+        island: ISLAND,
+        week: WEEK,
+        route: Route::Public,
+        mouth: 1,
+        zone,
+        depth: 1,
+        lamp,
+        seas: crate::Difficulty::Elite,
+    }
 }
 
 /// A character in the first zone of a dive, standing in its room.
@@ -108,10 +117,15 @@ fn an_old_save_reads_with_no_dive_and_a_later_builds_keys_are_kept() {
     assert_eq!(dive.unknown.get("later"), Some(&serde_json::json!(7)));
     assert_eq!(dive.haul.unknown.get("later"), Some(&serde_json::json!("kept")));
     assert!(!dive.here, "standing in a zone is never kept");
+    assert_eq!(dive.seas, crate::Difficulty::Elite, "the seas it began at are kept");
     let mut old = serde_json::to_value(Character::starting()).expect("written");
     old.as_object_mut().expect("an object").remove("passage");
     let read: Character = serde_json::from_value(old).expect("an old save reads");
     assert!(read.passage.is_none());
+    let mut unseasoned = serde_json::to_value(diving()).expect("written");
+    unseasoned["passage"].as_object_mut().expect("a dive").remove("seas");
+    let read: Character = serde_json::from_value(unseasoned).expect("a dive kept before its seas reads");
+    assert_eq!(read.passage.map(|dive| dive.seas), Some(crate::Difficulty::Normal));
 }
 
 #[test]

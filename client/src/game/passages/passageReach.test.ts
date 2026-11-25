@@ -47,6 +47,7 @@ test('in a zone, an onward mouth within 4 m and the lamp or a dead lamp within 3
   assert.equal(holdAt(plan, 34, 20), null, 'four metres off');
 });
 
-test('home, a player stands 2 m out from the mouth they began at, toward the patrol zone’s middle', () => {
+test('home, a player stands 2 m out from the mouth they began at, toward its run’s end arena, as the room does', () => {
   assert.deepEqual(homeSpot([0, 0], [0, 100]), [0, 2]);
+  assert.deepEqual(homeSpot([5, 5], [5, 5]), [5, 5], 'no arena apart from the door');
 });
