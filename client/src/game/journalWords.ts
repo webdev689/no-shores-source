@@ -87,7 +87,8 @@ export function questCardsOf(state: QuestState | null | undefined, quests: reado
 /** The Journal's bounties: those taken in the board's order, the board's slots, and what to say where none shows. */
 export interface BountyColumn {
   readonly taken: readonly BountyRow[];
-  /** The board's places, six, as the gear carries them; none before a board is heard or while it is shut. */
+  /** The bounties the board shows the player, as the gear carries them (the town's six, the pledged faction's three and
+   *  any other faction's held that day); none before a board is heard or while it is shut. */
   readonly slots: number;
   readonly said: string | null;
 }
@@ -97,7 +98,7 @@ export interface BountyColumn {
  *  changes). */
 export function bountyColumnOf(gear: GearState | null, day: number | null = null): BountyColumn {
   if (!gear?.bounties || (day !== null && gear.day !== day))
-    return { taken: [], slots: 0, said: 'Six a day, from the board in Overlook’s plaza.' };
+    return { taken: [], slots: 0, said: 'Posted each day on the board in Overlook’s plaza.' };
   if (gear.prologueDone === false) return { taken: [], slots: 0, said: 'The bounty board opens after the prologue.' };
   const taken = bountyRows(gear).filter((row) => row.state !== 'open');
   const said = taken.length > 0 ? null : 'None taken yet. Take them at the bounty board in Overlook’s plaza.';

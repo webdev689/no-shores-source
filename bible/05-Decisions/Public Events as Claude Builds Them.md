@@ -10,6 +10,10 @@ status: in force
 Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: a chest holds Essence only as a player's first
 heroic chest of the day, one of each stock, at any level.
 
+Replaced in part by [[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]: every
+chest is DFO's chest, its lid opening to 77 degrees, and a chest its player opens pours its Vestige out rather than
+putting it in the ten; the rows stay.
+
 ## What it settles
 
 Claude's choices for the public events ([[Public Events Run on a Clock, After Destiny 1]],

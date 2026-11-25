@@ -6,7 +6,7 @@ import type { Fighting } from '../combat/fighting.ts';
 import { type RoomLink, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, type Placed, viewOf } from '../player/figures.ts';
-import { OtherPlayers } from '../player/others.ts';
+import { OtherPlayers, type Others } from '../player/others.ts';
 import { PlacedLoop } from '../player/playerMoves.ts';
 import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
 import { type FoeType, rosterOf } from '../rules/roster.ts';
@@ -98,4 +98,20 @@ export function roomNote(link: RoomLink): string {
   if (link.rejoining) return 'Reconnecting…';
   if (link.open) return `In the room as player ${link.player}`;
   return `The room was lost: ${link.lost ?? 'playing on alone'}`;
+}
+
+/** How a social space's people are placed among `folk`, the figures the page draws, and taken away again, the forge
+ *  told to `forget` each one gone. */
+export function placingFolk(folk: Placed[], forget: (id: number) => void): Others {
+  return {
+    place: (dress, x, y, facing) => {
+      const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
+      folk.push(one);
+      return one;
+    },
+    remove: (one) => {
+      folk.splice(folk.indexOf(one) >>> 0, 1);
+      forget(one.id);
+    },
+  };
 }

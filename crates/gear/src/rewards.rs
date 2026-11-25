@@ -186,7 +186,7 @@ impl Character {
 
     /// Vestiges and items by their chances, coloured by `rank` at `level`, from `source`: the items kept, the
     /// Vestiges returned, a Normal one's item among the kept (`unsealed`).
-    fn loot(
+    pub(crate) fn loot(
         &mut self,
         (vestiges, items): (f64, f64),
         rank: u8,

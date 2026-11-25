@@ -221,10 +221,49 @@ function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: nu
   };
 }
 
+/** The ground a screen's figure stands on, `height` pixels tall: dark, lit in `glow` behind the figure and on the
+ *  floor it stands on. The keepers' and the bounty board's. */
+export function litGround(glow: string, height: number): NonNullable<Node['picture']> {
+  const rgb = channels(glow);
+  return {
+    key: `keeper ground ${rgb}`,
+    source: {
+      draw: (drawing, across, down) => {
+        const ground = drawing.createLinearGradient(0, 0, 0, down);
+        ground.addColorStop(0, '#08090c');
+        ground.addColorStop(0.7, '#0e1013');
+        ground.addColorStop(1, '#050608');
+        drawing.fillStyle = ground;
+        drawing.fillRect(0, 0, across, down);
+        const light = (x: number, y: number, wide: number, tall: number, alpha: number, reach: number) => {
+          drawing.save();
+          drawing.translate(x, y);
+          drawing.scale(1, tall / wide);
+          const lit = drawing.createRadialGradient(0, 0, 0, 0, 0, wide);
+          lit.addColorStop(0, rgba(rgb, alpha));
+          lit.addColorStop(reach, rgba(rgb, 0));
+          drawing.fillStyle = lit;
+          drawing.fillRect(-wide, -wide, 2 * wide, 2 * wide);
+          drawing.restore();
+        };
+        // The light behind the figure, and the floor it stands on.
+        light(across / 2, down * 0.58, across * 0.6, down * 0.55, 0.34, 0.72);
+        light(
+          across / 2,
+          down - 11 * (down / height) - 22 * (down / height),
+          across * 0.4,
+          22 * (down / height),
+          0.45,
+          0.7,
+        );
+      },
+    },
+  };
+}
+
 /** The keeper `width` by `height`: their mark and title above them, the figure on a floor lit in their colour. */
 function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, width: number, height: number): Node {
   const { forge, sizes } = context;
-  const rgb = channels(look.glow);
   const figure = keeperFigure(
     kind,
     forge,
@@ -241,40 +280,7 @@ function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, wid
     direction: 'column',
     alignX: 'center',
     alignY: 'end',
-    picture: {
-      key: `keeper ground ${rgb}`,
-      source: {
-        draw: (drawing, across, down) => {
-          const ground = drawing.createLinearGradient(0, 0, 0, down);
-          ground.addColorStop(0, '#08090c');
-          ground.addColorStop(0.7, '#0e1013');
-          ground.addColorStop(1, '#050608');
-          drawing.fillStyle = ground;
-          drawing.fillRect(0, 0, across, down);
-          const glow = (x: number, y: number, wide: number, tall: number, alpha: number, reach: number) => {
-            drawing.save();
-            drawing.translate(x, y);
-            drawing.scale(1, tall / wide);
-            const light = drawing.createRadialGradient(0, 0, 0, 0, 0, wide);
-            light.addColorStop(0, rgba(rgb, alpha));
-            light.addColorStop(reach, rgba(rgb, 0));
-            drawing.fillStyle = light;
-            drawing.fillRect(-wide, -wide, 2 * wide, 2 * wide);
-            drawing.restore();
-          };
-          // The keeper's light behind them, and the floor they stand on.
-          glow(across / 2, down * 0.58, across * 0.6, down * 0.55, 0.34, 0.72);
-          glow(
-            across / 2,
-            down - 11 * (down / height) - 22 * (down / height),
-            across * 0.4,
-            22 * (down / height),
-            0.45,
-            0.7,
-          );
-        },
-      },
-    },
+    picture: litGround(look.glow, height),
     children: [
       {
         gap: 11,

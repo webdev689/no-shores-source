@@ -207,6 +207,22 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the owner: the prices, levels and
   class numbers, the word lists, a figurehead once one is modelled, whether a captain's guns are elevated gun by gun
   too, and whether a shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
+- **The bounty board after the Bounty Tracker, and faction bounties** (#196, a draft for the owner's yes), on the
+  owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
+  ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
+  [[The Bounty Board as Claude Shapes It]]). Each faction posts three of its own four bounties a day, taken only by
+  those pledged to it, counting only with its cape worn, paying XP and its reputation (2,500, 3,750, 5,000 by tier),
+  kept in the day's record under keys of their own so a rollback of the rooms keeps them; the wire carries each
+  bounty's place and faction, so the merge deploys the page and the rooms together. The board is laid as a keeper's
+  screen, the board drawn where a keeper stands; every town bounty wears one writ, every faction's its emblem, 52 px
+  tiles (were 80), the card floating beside the tile pointed at, the refresh under the tiles; the Journal's column
+  takes the same. Then, on the owner's "Do a comprehensive audit on this", main (#179's guilds, #191) merged in and
+  five read-only audits, every finding measured first and fixed (the PR lists them). Tested offline: the full check
+  on the PR's head (the commit named there), the rules', wire's, room's and page's tests, pictures through the real
+  renderer at five sizes. Not yet: the board in the live game (the picture driver reaches no local room and the
+  offline page keeps no gear), a real GPU, a hand. Known: no card shows by touch, as none in the menu does. For the
+  owner ([[Open Questions]]): the faction bounties' design, one icon for every faction's bounties or each faction's
+  emblem as built, and whether a card gains a line of tale.
 - **The island view in rain, the Playlist over the island and the ships at a roadstead** (#191, merged on the owner's
   "Deploy", which deploys the page and the rooms). The owner's three reports:
   - "When its cloudy and raining. The overworld pan over the island is shrouded and you can only see the nodes": the
@@ -307,6 +323,30 @@ The decisions in [[Open Questions]] are not repeated here.
     renderer in the Saltgrass Downs. Not seen on a real GPU or played: the meadow's cost there is unmeasured (some
     180,000 tufts on open grass), and so is the boxing's in WebAssembly.
 
+- **Patrol chests, the same chests in every dungeon, and searchable containers** (#192, merged on the owner's "Merge
+  and deploy", which deploys the page and the rooms). The owner's ask ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]), built on "Take
+  autonomy", every call in [[Chests and Searchable Containers as Claude Builds Them]] after Destiny 1's loot chests. A
+  patrol's layout marks 12 to 24 chest places tucked against something tall (`layout::chests`); its room stands one
+  chest for every five, two to four, each moving to another place every 5 minutes, staggered; every dungeon (a
+  patrol's, an Elite Dungeon's at every tier, the playlists', a sea island's) stands one a block against a room's
+  wall, drawn again as its garrison stands again; one container in six (a dungeon's one in four) is searchable, 16
+  at most, none a body cannot stand beside. E held 1 s opens a chest, 1.5 s searches; each player opens each once,
+  kept for their account. A chest pays 30 Aurem at level 5, 2 to 4 of the island's resource and a Vestige one time in
+  four; a search 8 Aurem, the resource one time in two and a Vestige one time in twenty; no XP. Then the owner's
+  second word ([[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]): every chest
+  (the finds, the cache, the events' plain and heroic) is the owner's chest from DFO, its 50 points ported and built
+  in code (`models/chest.ts`, [[Pick - Chest]]), the Blender event chests gone; a chest's Vestige (a find's, the
+  cache's, an event chest its player opens) is poured out of it as its lid opens, as project-final's cache pours; Aurem
+  and materials still go straight to the player, and a search pours nothing. A patrol's chest looks the way its place
+  faces, and a page playing alone draws the drops lying for the player. The page draws a mark over each chest and searchable container, the feed's
+  "Chest" or "Searched the wardrobe", and plays alone as online. A read-only audit's
+  findings were each tested first and fixed. Tested offline: `cargo xtask check` on its head (the commit named in the
+  pull request); in the running game headless with no GPU, a chest opened (21 Aurem, 4 Brineglass) and a crate
+  searched (5 Aurem, 1 Brineglass) by holding E; pictured through the renderer (sent to the owner with the session's
+  report, not in git). Not yet: played by hand, a real GPU, a deployed room, the feed's lines in a live room. For the
+  owner: the bake may now read the dungeon crate's families (`crates.rs`'s list for `bake` gains `dungeon`); the
+  chest's source in DFO is named `Low_Poly_Chest_Mimic.fbx`, recorded there as the owner's supplied model; and the
+  `modules` workflow bakes on this branch with the four Blender chests taken out of the manifest by hand.
 - **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
   the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
   [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],

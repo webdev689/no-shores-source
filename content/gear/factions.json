@@ -1,5 +1,5 @@
 {
-  "about": "The factions a player pledges to, one for each Art, with Claude's numbers. Read by the rules (the gear crate) and the client alike. Prices in Aurem; reputation as XP counts it, earned from kills, clears, chests and bounties while the cape is worn.",
+  "about": "The factions a player pledges to, one for each Art, with Claude's numbers. Read by the rules (the gear crate) and the client alike. Prices in Aurem; reputation as XP counts it, earned from kills, clears, chests and bounties while the cape is worn. A faction's bounty pays its own reputation besides: bountyReputation for a first tier's, half again for a second's, twice for a third's.",
   "pledgeSwitchAurem": 2500,
   "reputationPerRank": 100000,
   "packagesFromRank": 3,
@@ -13,6 +13,7 @@
   "weaponAurem": 12000,
   "fragmentAurem": 7500,
   "fragmentRank": 1,
+  "bountyReputation": 2500,
   "factions": [
     {
       "id": 1,

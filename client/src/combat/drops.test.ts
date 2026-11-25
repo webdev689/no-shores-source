@@ -13,6 +13,7 @@ import {
   type Feel,
   LINE_M,
   PIXEL_M,
+  POURED_FEEL,
   RISE_S,
   arcsOf,
   lineLight,
@@ -39,6 +40,7 @@ const drop = (fields: Partial<GearDrop>): GearDrop => ({
   from: FROM,
   flying: 94,
   tier: 0,
+  poured: false,
   ...fields,
 });
 
@@ -86,9 +88,10 @@ test('a drop pops out of the body, bounces until it settles where the room threw
 });
 
 test('the room waits for the longest each drop can bounce, and no longer', () => {
-  for (const feel of [CRYSTAL_FEEL, AMMO_FEEL]) {
-    // Its highest pop, from a body a step over where it lands.
-    const longest = arcsOf(feel, feel.pop + feel.popMore, feel.leaves - feel.low + 0.5).reduce((sum, arc) => sum + arc);
+  for (const feel of [CRYSTAL_FEEL, AMMO_FEEL, POURED_FEEL]) {
+    // Its wait in a chest and its highest pop, from a body or a chest's foot a step over where it lands.
+    const arcs = arcsOf(feel, feel.pop + feel.popMore, feel.leaves - feel.low + 0.5);
+    const longest = feel.waitS + arcs.reduce((sum, arc) => sum + arc);
     assert.ok(longest <= feel.restS && longest > feel.restS - 1 / 60, `${longest} s against ${feel.restS} s`);
   }
 });
@@ -121,7 +124,7 @@ test('at the foot of every bounce, no frame of any drop dips into the ground', (
 });
 
 test('thrown up to a spot over the body, a drop pops high enough to land there, never jumping', () => {
-  for (const feel of [CRYSTAL_FEEL, AMMO_FEEL])
+  for (const feel of [CRYSTAL_FEEL, AMMO_FEEL, POURED_FEEL])
     for (const rise of [0, 0.5, 1.2, 2, 3]) {
       const rest = [0, 2, rise] as const;
       let [last, worst] = [motionAt(feel, FROM_FEET, rest, 3, 0).middle[2], 0];
@@ -131,7 +134,7 @@ test('thrown up to a spot over the body, a drop pops high enough to land there, 
         last = height;
       }
       assert.ok(worst < 0.02, `${rise} m up: ${worst} m in a millisecond`);
-      assert.ok(motionAt(feel, FROM_FEET, rest, 3, feel.restS).settled, `${rise} m up: settled in time`);
+      assert.ok(motionAt(feel, FROM_FEET, rest, 3, feel.restS - feel.waitS).settled, `${rise} m up: settled in time`);
     }
 });
 
@@ -322,4 +325,20 @@ test('a crystal frame, in more colours than a glyph has, is laid flat at its own
   assert.deepEqual(seen(solid, body), drawn(body));
   const nears = new Set(solid.filter((unused, index) => index % MARK_FLOATS === 1));
   assert.deepEqual([...nears], [0], 'no colour stands nearer the eye than another');
+});
+
+test("a Vestige poured out of a chest waits unseen as the lid opens, then leaves its mouth higher than a body's throw", () => {
+  const poured = drop({ poured: true, flying: Math.round(POURED_FEEL.restS * 60) });
+  const shown = new DropsShown();
+  assert.equal(shown.frame([poured], 10, EYE).marks.length, 0, 'still in the chest');
+  assert.equal(shown.frame([poured], 10 + POURED_FEEL.waitS - 0.01, EYE).marks.length, 0, 'until its mouth opens');
+  assert.ok(shown.frame([poured], 10 + POURED_FEEL.waitS + 0.01, EYE).marks.length > 0, 'then out');
+  const peak = (feel: Feel) =>
+    Math.max(...Array.from({ length: 100 }, (unused, k) => motionAt(feel, FROM, REST, 1, k / 100).middle[2]));
+  assert.ok(peak(POURED_FEEL) > peak(CRYSTAL_FEEL), 'popped higher');
+  assert.ok(
+    Math.abs(motionAt(POURED_FEEL, FROM, REST, 1, 0).middle[2] - FROM[2] - POURED_FEEL.leaves) < 1e-9,
+    'from its mouth',
+  );
+  assert.ok(POURED_FEEL.leaves < CRYSTAL_FEEL.leaves, "a chest's mouth is lower than a body's middle");
 });

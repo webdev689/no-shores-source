@@ -7,8 +7,8 @@
 
 import type { PixelPicture } from '../../combat/dropPictures.ts';
 
-/** A map's colours in order of its letters: outline, ground, body, light. */
-const LETTERS = 'abcd';
+/** A map's colours in order of its letters: outline, ground, body, light, and any more a picture of its own names. */
+const LETTERS = 'abcdefgh';
 const BRASS = ['#2a1b08', '#16110a', '#c08a3e', '#f3cf86'];
 const GOLD = ['#2a1b08', '#16110a', '#e0a526', '#ffe27a'];
 /** A sign's colours: the board's gold, every keeper's brass. */

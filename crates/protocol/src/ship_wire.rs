@@ -1,5 +1,5 @@
 //! The ship's part of a player's gear message: its own power, its materials, its hands and its officers, and at a
-//! pledged faction's counter in a social space the officers of the day.
+//! pledged faction's counter in a social space the officers of the day; and the Harbourmaster's asks.
 
 use crate::gear_wire::column_number;
 use crate::messages;
@@ -8,6 +8,49 @@ use gear::Character;
 use gear::crew::Officer;
 use gear::crew::recruit::{offers, wage};
 use gear::grid::{column_xp, cost};
+use gear::ship::shipyard::ShipAsk;
+
+/// The Harbourmaster's asks (`gear::ship::shipyard`), the hull's number in `column`: a hull bought, a ship kept sailed,
+/// a dress bought by its number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its
+/// words' places in `node` and `slot`, 255 for no first word; `count` 1 for a renaming, 0 for the first, free name).
+pub const BUY_SHIP: u8 = 86;
+pub const SAIL_SHIP: u8 = 87;
+pub const BUY_DRESS: u8 = 88;
+pub const DRESS_SHIP: u8 = 89;
+pub const NAME_SHIP: u8 = 90;
+
+/// One of the Harbourmaster's asks as the room takes it, or none for a number out of range.
+pub(crate) fn ship_asked(ask: &messages::Ask<'_>) -> Option<ShipAsk> {
+    let (hull, item) = (ask.column(), ask.item());
+    Some(match ask.kind() {
+        BUY_SHIP => ShipAsk::Buy { hull },
+        SAIL_SHIP => ShipAsk::Sail { hull },
+        BUY_DRESS => ShipAsk::BuyDress { dress: u16::try_from(item).ok()? },
+        DRESS_SHIP => ShipAsk::Dress { hull, dress: u16::try_from(item).ok()? },
+        NAME_SHIP => ShipAsk::Name { hull, first: ask.node(), second: ask.slot(), renaming: ask.count() > 0 },
+        _ => return None,
+    })
+}
+
+/// One of the Harbourmaster's asks as an input carries it.
+pub(crate) fn ship_ask_args<'built>(ask: ShipAsk, args: messages::AskArgs<'built>) -> messages::AskArgs<'built> {
+    match ask {
+        ShipAsk::Buy { hull } => messages::AskArgs { kind: BUY_SHIP, column: hull, ..args },
+        ShipAsk::Sail { hull } => messages::AskArgs { kind: SAIL_SHIP, column: hull, ..args },
+        ShipAsk::BuyDress { dress } => messages::AskArgs { kind: BUY_DRESS, item: u32::from(dress), ..args },
+        ShipAsk::Dress { hull, dress } => {
+            messages::AskArgs { kind: DRESS_SHIP, column: hull, item: u32::from(dress), ..args }
+        }
+        ShipAsk::Name { hull, first, second, renaming } => messages::AskArgs {
+            kind: NAME_SHIP,
+            column: hull,
+            node: first,
+            slot: second,
+            count: u32::from(renaming),
+            ..args
+        },
+    }
+}
 
 /// The hands its complement holds: its hull's class's (`naval::class`), the Sloop's for a player who keeps none.
 fn hands_most(character: &Character) -> f64 {

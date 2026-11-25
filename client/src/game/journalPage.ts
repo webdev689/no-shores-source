@@ -8,9 +8,9 @@ import { roomNow } from '../sky/worldClock.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { ThisWeek } from './activityWords.ts';
-import { type BountyRow, bountyWords, payOf } from './bountyBoard.ts';
-import { TileChoice, bountyCardNode, bountyTileNode, stateLine } from './bountyTiles.ts';
-import { FOCUS, INK, type Sizes, words } from './gearNodes.ts';
+import { payOf, serves } from './bountyBoard.ts';
+import { bountyCardNode, bountyTileNode, stateWords, tileSide } from './bountyTiles.ts';
+import { FOCUS, INK, words } from './gearNodes.ts';
 import { iconNode, pixelNode } from './journalIcons.ts';
 import { timersNode } from './journalTimers.ts';
 import { CARDS_A_PAGE, type QuestCard, bountyColumnOf, questCardsOf } from './journalWords.ts';
@@ -31,6 +31,9 @@ const MARK_PX = 48;
 const BANNER: readonly [number, number] = [16, 24];
 /** How high the timers stand: over the menu's window (`gearShell.ts`), as an item's page does. */
 const TIMERS_Z = 25;
+/** The gap between the bounties' tiles, and what a bounty pays before any room's word. */
+const TILE_GAP = 6;
+const NO_PAY = { xp: 0, aurem: 0, reputation: 0 } as const;
 /** What the page says with no card: before any room's word, or with none of the roads walked or done. */
 const NO_QUESTS = 'No quests held. Quests you take up are kept here.';
 
@@ -81,13 +84,12 @@ function questCard(ui: Interface, card: QuestCard, wide: boolean): Node {
   };
 }
 
-/** The Journal: its state between frames (whether the timers are down, the page of quests turned to, the bounty
- *  chosen), and each frame's nodes. */
+/** The Journal: its state between frames (whether the timers are down, the page of quests turned to), and each
+ *  frame's nodes. */
 export class Journal {
   /** Whether the timers are down over the page. */
   down = false;
   private pageAt = 0;
-  private readonly choice = new TileChoice();
   /** Where the focus goes once laid: to the timers' Close as they drop, back to the hourglass as they go up. */
   private focusing: string | null = null;
 
@@ -155,7 +157,7 @@ export class Journal {
       width: 'grow',
       gap: 16,
       wrap: room.width < 600,
-      children: [this.quests(ui, cards, room.width >= 900, wide), this.bounties(ui, gear, week, sizes)],
+      children: [this.quests(ui, cards, room.width >= 900, wide), this.bounties(ui, gear, week, plain)],
     };
     if (!this.down) return page;
     // The page dimmed over the whole of its room, and no further than the body shows it.
@@ -273,40 +275,44 @@ export class Journal {
     return { width: 'grow', direction: 'column', gap: 10, children: [head, ...rows] };
   }
 
-  /** The bounties taken: six slots three to a row under "Bounties" with how many are taken, each taken a tile with no
-   *  press, the chosen one's card under them; with none to show, why. */
-  private bounties(ui: Interface, gear: GearState | null, week: ThisWeek | null, sizes: Sizes): Node {
+  /** The bounties taken: a slot for each of the board's bounties shown, three to a row under "Bounties" with how many
+   *  are taken, each taken a tile with no press whose card the menu floats beside it while it is pointed at or holds
+   *  the keys; with none to show, why. */
+  private bounties(ui: Interface, gear: GearState | null, week: ThisWeek | null, plain: PlainContext): Node {
+    const { sizes } = plain;
     const column = bountyColumnOf(gear, week?.today.day ?? null);
-    const tile = sizes.name > 1 ? 88 : 64;
-    const ids = new Map(column.taken.map((row) => [row.place, `bounty-${row.place}`]));
-    const chosenPlace = this.choice.choose(ui, ids);
+    const wide = sizes.name > 1 && sizes.label > 1;
+    const side = tileSide(wide);
     const slots: Node[] = column.taken.map((row) => {
       const id = `bounty-${row.place}`;
+      plain.card(id, () =>
+        bountyCardNode(row, gear ? payOf(gear, row) : NO_PAY, sizes, {
+          serving: gear ? serves(gear, row.faction) : false,
+          ...(row.state !== 'held' && { said: { words: stateWords(row), icon: 'taken' } }),
+        }),
+      );
       const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
-      return bountyTileNode(row, id, tile, row.place === chosenPlace, lit);
+      return bountyTileNode(row, id, wide, { lit, shut: false, press: false });
     });
     for (let slot = column.taken.length; slot < column.slots; slot += 1)
-      slots.push({ role: 'well', width: tile, height: tile });
+      slots.push({ role: 'well', width: side, height: side });
     const lines: Child[] = [];
     for (let first = 0; first < slots.length; first += 3)
-      lines.push({ gap: 8, children: slots.slice(first, first + 3) });
-    const chosen = column.taken.find((row) => row.place === chosenPlace);
-    const foot = (row: BountyRow): Child =>
-      row.state === 'held' ? null : stateLine(bountyWords(row), 'taken', sizes.label);
-    const said: Child = chosen
-      ? bountyCardNode(chosen, gear ? payOf(gear, chosen) : { xp: 0, aurem: 0 }, foot(chosen), 'grow', sizes.label)
-      : column.said !== null && { width: 'grow', text: { words: column.said, colour: INK.faint } };
+      lines.push({ gap: TILE_GAP, children: slots.slice(first, first + 3) });
+    const said: Child = column.said !== null && { width: 'grow', text: { words: column.said, colour: INK.faint } };
     return {
       id: 'journal-bounties',
       role: 'panel',
-      width: 3 * tile + 2 * 8 + 24,
+      width: 3 * side + 2 * TILE_GAP + 24,
       direction: 'column',
       gap: 10,
       padding: 12,
       children: [
         {
+          // The count drops under the head where the column, three tiles wide, has no room for both.
           width: 'grow',
           gap: 10,
+          wrap: true,
           alignY: 'center',
           children: [
             { width: 'grow', ...words('BOUNTIES', 2, INK.word, { tracking: 3 }) },
@@ -318,7 +324,7 @@ export class Journal {
           ],
         },
         ...lines,
-        { width: 'grow', direction: 'column', children: [said] },
+        said,
       ],
     };
   }

@@ -51,6 +51,11 @@ test('a players own gear the server wrote reads back whole, every column spelled
     gear.bounties?.every((bounty) => bounty.name !== ''),
     'each its name',
   );
+  assert.deepEqual(
+    gear.bounties?.map((bounty) => [bounty.place, bounty.faction]),
+    [0, 1, 2, 3, 4, 5].map((place) => [place, 0]),
+    'the town’s six, by their places, pledged to none',
+  );
   assert.equal(gear.bountyXp, 2_500, 'at level 20');
   assert.equal(typeof gear.day, 'number');
   assert.deepEqual([gear.level, gear.answered, gear.answer, gear.atMage, gear.spent], [20, 7, 0, true, [0]]);
@@ -128,6 +133,11 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
     artXp: [700, 0, 0],
     artOwned: [0b101, 0, 0b11_1111],
   });
+  assert.deepEqual(
+    here.bounties?.map((bounty) => [bounty.place, bounty.faction]),
+    [...[0, 1, 2, 3, 4, 5].map((place) => [place, 0]), [9, 2], [10, 2], [11, 2]],
+    'the town’s six, then the Lamplighters’ three at their own places',
+  );
   assert.deepEqual(here.cosmetics, [23, 24, 14, 0], 'Ember Plate bought and the Lamplighters’ gold earned');
   assert.deepEqual(here.worn, { dye: 0, coat: 0, barding: 24 });
   assert.equal(here.cosmeticsSold?.length, 9, 'four the Tailor’s, four the Tack’s and its Bay Horse');
@@ -290,7 +300,7 @@ test("the ship's part of the gear message reads back: its power, materials, hand
 
 test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
   const read = (file: string) => readFile(new URL(`../../../crates/protocol/src/${file}`, import.meta.url), 'utf8');
-  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs'));
+  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs')) + (await read('finds_wire.rs'));
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual(
     [
@@ -309,11 +319,13 @@ test("the ship's, crew's, story's and bounties' asks carry the numbers the proto
       ASKS.takeLetter,
       ASKS.takeAllLetters,
       ASKS.findLore,
+      ASKS.openFind,
     ],
     [
       ...['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'],
       ...['STOP_GATHER', 'FINISH_PROLOGUE', 'TAKE_BOUNTY', 'TURN_IN_BOUNTY', 'TAKE_LETTER', 'TAKE_ALL_LETTERS'],
       'FIND_LORE',
+      'OPEN_FIND',
     ].map(number),
   );
   const numbers = Object.values(ASKS);
@@ -445,4 +457,9 @@ test('the lore found and lying in the node read back: each found by its number, 
   bare.finish(Gear.endGear(bare));
   const none = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array())));
   assert.deepEqual([none.lore, none.loreHere], [[], []], 'a room that sends none');
+});
+
+test('every ask has a number of its own, so the room never mistakes one for another', () => {
+  const numbers = Object.values(ASKS);
+  assert.equal(new Set(numbers).size, numbers.length);
 });

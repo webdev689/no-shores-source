@@ -44,12 +44,14 @@ export interface LayoutArea {
 /** A site a layout marks (the layout crate's `Site`): what it is for, where, how much ground it takes, and what it
  *  holds or leads to. */
 export interface LaidSite {
-  readonly kind: 'landing' | 'gate' | 'event' | 'beacon' | 'resource' | 'foes' | 'objective' | 'door';
+  readonly kind: 'landing' | 'gate' | 'event' | 'beacon' | 'resource' | 'foes' | 'objective' | 'door' | 'chest';
   readonly at: Point;
   readonly radius: number;
   readonly holds?: string;
   /** Where a resource's node stands: before its dressing, toward its path; none off the section's floor. */
   readonly node?: Point;
+  /** Which way a chest's place faces, radians clockwise from north. */
+  readonly facing?: number;
 }
 
 /** A run breaking off a patrol area, as the layout crate writes it: its kind, its mouth, its line and its beats. */
@@ -122,6 +124,10 @@ interface Placed {
   readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
   readonly paths?: readonly (readonly Point[])[];
+  /** A patrol's chest places (x, y, facing) and its props (model, box across, origin's height), of which a room
+   *  playing alone keeps those that hold things. */
+  readonly chests?: readonly (readonly [number, number, number])[];
+  readonly holderProps?: readonly (readonly [number, number, number, number, number, number])[];
 }
 
 /** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, its
@@ -145,8 +151,21 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
       kind === 'foes' && (holds === undefined || cavern(holds)) ? [at] : [],
     );
     const paths = laid.paths.map((path) => path.points);
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places: placesOf(laid), paths };
+    const finds = laid.kind === 'patrol' ? findsOf(laid) : {};
+    const places = placesOf(laid);
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places, paths, ...finds };
   });
+}
+
+/** A patrol's chest places, each x, y and the way it faces, and its props, each its model, its box across and its
+ *  origin's height, as a room playing alone takes them: it keeps those that hold things, as the bake does for the
+ *  server (crates/room-wasm finds_door.rs). */
+export function findsOf(laid: Pick<NodeLayout, 'sites' | 'props'>): Required<Pick<Placed, 'chests' | 'holderProps'>> {
+  const chests = laid.sites.flatMap(({ kind, at, facing }) =>
+    kind === 'chest' ? [[at[0], at[1], facing ?? 0] as const] : [],
+  );
+  const holderProps = laid.props.map(({ model, footprint, at }) => [model, ...footprint, at[2]] as const);
+  return { chests, holderProps };
 }
 
 /** A layout's bounds: its ring's, west, north, east and south. */

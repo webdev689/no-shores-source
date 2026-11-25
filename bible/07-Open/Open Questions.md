@@ -54,8 +54,16 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   ([[Factions and Vendors as Claude Shapes Them]]).
 - **A faction's rank 25.** Destiny 1's rank 25 opened a quest for an exotic class item; whether a faction's high ranks
   give anything beyond packages ([[Factions]]).
-- **Reputation's sources.** Reputation comes from kills alone while there are no bounties or activities; whether
-  those should give it when they come ([[Factions]]).
+- **Reputation's sources.** Whether bounties and activities should give reputation ([[Factions]]). Until the owner
+  says, Claude's calls stand: every deed's XP gives it with the cape worn
+  ([[The Balance and Economy Pass as Claude Shapes It]]), and a faction's own bounties pay it besides
+  ([[The Bounty Board as Claude Shapes It]]).
+- **The faction bounties.** Built on "take autonomy": three a day from each faction, taken only pledged to it,
+  counting only with its cape worn, paying XP and its reputation, and their twelve names
+  ([[The Bounty Board as Claude Shapes It]]). Whether that is the owner's design, and whether "their own standard icon
+  design" means one icon for every faction's bounties or, as built, each faction's emblem in one framed design.
+- **The bounties' cards.** Destiny's card carries a line of its bounty's tale under its task; none is written, as the
+  owner's "Not text bloat" stood, so whether each bounty gains one ([[The Bounty Board as Claude Shapes It]]).
 - **Shape's hours.** Shape is in Overlook from Friday 09:00 to Sunday 21:00 UTC; whether the evening he leaves on is
   another time or another zone's ([[Gear]], "Vendors").
 - **The Tack's wares.** The horse has the four bardings the forge draws and six coats laid on its colours; more

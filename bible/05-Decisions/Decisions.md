@@ -227,6 +227,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Story Is Nine Missions, With Side Quests Between Them]]
 - [[The Activities Are Built in Full, Before the Story's Missions]]
 - [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]
+- [[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]
+- [[The Bounty Board as Claude Shapes It]]
 - [[Plates as Claude Shows Them]]
 - [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]
 - [[Foe Groups as Claude Builds Them]]
@@ -366,6 +368,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[What a Body Meets Keeps to What Is Drawn]]
 - [[The Owner's Handcrafted Meadow Grows Over the Grass]]
 - [[The Meadow Art Is the Owner's, Its Tables Stay in Git, and the Grass Takes the Trees' Rain]]
+- [[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]]
+- [[Chests and Searchable Containers as Claude Builds Them]]
+- [[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]
 - [[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]
 - [[The Ships at the Harbourmaster as Claude Shapes Them]]
 

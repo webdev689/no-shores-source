@@ -117,7 +117,7 @@ fn a_kept_record_reads_without_the_new_keys_keeps_a_later_builds_and_drops_what_
         serde_json::json!({ "prologue": true, "missions": [1] })
     );
     let mut character = Character::starting();
-    character.activity.today(20_778).turned_in.extend([2, 9]);
+    character.activity.today(20_778).turned_in.extend([2, 19]);
     character.activity.today.bounties.insert(2, 3);
     character.activity.today.unknown.insert("streak".into(), serde_json::json!(4));
     let read = Character::from_json(&character.to_json()).expect("a character");

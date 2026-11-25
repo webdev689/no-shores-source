@@ -2,11 +2,12 @@
 //! player's own gear, written for them alone whenever it changes, with every column of every item's nodes spelled out
 //! so a browser draws them without the rules.
 
+use crate::finds_wire::OPEN_FIND;
 use crate::lore_wire::FIND_LORE;
 use crate::messages;
+use crate::ship_wire::{BUY_SHIP, NAME_SHIP};
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
-use gear::ship::shipyard::ShipAsk;
 use gear::{Ask, At, Kind, Rarity, Slot};
 use room::{Asked, Drop, Dropped, Grant, OutpostAsk, PlayerId, Room};
 
@@ -111,14 +112,6 @@ pub const OUTPOST_DELIVER: u8 = 77;
 pub const OUTPOST_TAKE: u8 = 78;
 pub const OUTPOST_HORN: u8 = 79;
 pub const OUTPOST_CHANGED: u8 = 80;
-/// The Harbourmaster's asks (`gear::ship::shipyard`), the hull's number in `column`: a hull bought, a ship kept sailed,
-/// a dress bought by its number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its
-/// words' places in `node` and `slot`, 255 for no first word; `count` 1 for a renaming, 0 for the first, free name).
-pub const BUY_SHIP: u8 = 86;
-pub const SAIL_SHIP: u8 = 87;
-pub const BUY_DRESS: u8 = 88;
-pub const DRESS_SHIP: u8 = 89;
-pub const NAME_SHIP: u8 = 90;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -215,6 +208,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
         FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
+        OPEN_FIND => Asked::Find { number: item },
         TO_SHIP => Asked::ToShip,
         CLAIM_GUILD_BOUNTY => Asked::ClaimGuild { slot: column },
         OUTPOST_DEPOSIT => Asked::Outpost(OutpostAsk::Deposit { count: ask.count() }),
@@ -224,38 +218,9 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         OUTPOST_TAKE => Asked::Outpost(OutpostAsk::Take { slot: ask.slot(), count: ask.count() }),
         OUTPOST_HORN => Asked::Outpost(OutpostAsk::Horn),
         OUTPOST_CHANGED => Asked::Outpost(OutpostAsk::Changed),
-        BUY_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Buy { hull: column })),
-        SAIL_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Sail { hull: column })),
-        BUY_DRESS => Asked::Gear(Ask::Ship(ShipAsk::BuyDress { dress: u16::try_from(item).ok()? })),
-        DRESS_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Dress { hull: column, dress: u16::try_from(item).ok()? })),
-        NAME_SHIP => Asked::Gear(Ask::Ship(ShipAsk::Name {
-            hull: column,
-            first: node,
-            second: ask.slot(),
-            renaming: ask.count() > 0,
-        })),
+        BUY_SHIP..=NAME_SHIP => Asked::Gear(Ask::Ship(crate::ship_wire::ship_asked(ask)?)),
         _ => return None,
     })
-}
-
-/// One of the Harbourmaster's asks as an input carries it.
-fn ship_ask_args<'built>(ask: ShipAsk, args: messages::AskArgs<'built>) -> messages::AskArgs<'built> {
-    match ask {
-        ShipAsk::Buy { hull } => messages::AskArgs { kind: BUY_SHIP, column: hull, ..args },
-        ShipAsk::Sail { hull } => messages::AskArgs { kind: SAIL_SHIP, column: hull, ..args },
-        ShipAsk::BuyDress { dress } => messages::AskArgs { kind: BUY_DRESS, item: u32::from(dress), ..args },
-        ShipAsk::Dress { hull, dress } => {
-            messages::AskArgs { kind: DRESS_SHIP, column: hull, item: u32::from(dress), ..args }
-        }
-        ShipAsk::Name { hull, first, second, renaming } => messages::AskArgs {
-            kind: NAME_SHIP,
-            column: hull,
-            node: first,
-            slot: second,
-            count: u32::from(renaming),
-            ..args
-        },
-    }
 }
 
 /// An outpost's ask's fields, as a browser writes them.
@@ -349,7 +314,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
                 let item = u32::try_from(day).unwrap_or(u32::MAX);
                 args = messages::AskArgs { kind: TURN_IN_BOUNTY, item, node: place, ..args };
             }
-            Ask::Ship(ship) => args = ship_ask_args(ship, args),
+            Ask::Ship(ship) => args = crate::ship_wire::ship_ask_args(ship, args),
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::OpenChest { chest } => args = messages::AskArgs { kind: OPEN_CHEST, item: *chest, ..args },
@@ -358,6 +323,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
+        Asked::Find { number } => args = messages::AskArgs { kind: OPEN_FIND, item: *number, ..args },
         Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
         Asked::Outpost(outpost) => args = outpost_args(*outpost, args),
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
@@ -461,7 +427,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
                 Dropped::Chest { tier, .. } => (3, 0, 0, *tier),
             };
             let flying = u8::try_from(drop.rests.saturating_sub(room.clock())).unwrap_or(u8::MAX);
-            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier };
+            let poured = drop.poured;
+            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier, poured };
             messages::GearDrop::create(&mut builder, &args)
         })
         .collect();
@@ -583,6 +550,9 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         abyss_playlist_taken: today.abyss_playlist,
         elite_playlist_clears: this_week.elite_playlist,
         abyss_playlist_clears: this_week.abyss_playlist,
+        chests: Some(crate::finds_wire::chests_of(&mut builder, room, player)),
+        searchables: Some(crate::finds_wire::searchables_of(&mut builder, room, player)),
+        opened: room.last_opened(player),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::{input_bytes, read_input};
+use gear::ship::shipyard::ShipAsk;
 use room::Input;
 
 fn asked_input(asked: Asked) -> Input {
@@ -41,6 +42,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::StopGather,
         Asked::Scavenge { wreck: 3 },
         Asked::FindLore { chapter: 300 },
+        Asked::Find { number: 70_001 },
         Asked::Grant(Grant::Vestige { rarity: Rarity::Legendary, slot: Slot::Arms, level: 18 }),
         Asked::Grant(Grant::Named("gullwing".to_owned())),
         Asked::Grant(Grant::Item { kind: Kind::Crossbow, rarity: Rarity::Rare, level: 9 }),

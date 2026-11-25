@@ -24,7 +24,14 @@ function compendiumOf(found: readonly number[], lore: LoreFile = SAMPLE_LORE, wi
   const compendium = new Compendium({ kept: () => kept }, read);
   const sizes = sizesOf(width, 900, 1);
   let built: Node = {};
-  const page = () => compendium.page({ ui, sizes, room: { width: width - 120, height: 700 }, holds: null as never });
+  const page = () =>
+    compendium.page({
+      ui,
+      sizes,
+      room: { width: width - 120, height: 700 },
+      holds: null as never,
+      card: () => undefined,
+    });
   const tree = (): Node => ({
     width: 'grow',
     height: 'grow',
