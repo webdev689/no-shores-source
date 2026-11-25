@@ -6,6 +6,8 @@
 use crate::areas::Area;
 use crate::book::Book;
 use crate::brief::AreaKind;
+use crate::field::CELL_M;
+use crate::paths::KEEP_OFF_M;
 use crate::seat::{Seated, Seating};
 use city::solids::{Material, Shape, Solid};
 use land::exact::{rand01, sin_cos};
@@ -279,20 +281,29 @@ pub fn palisade_radius(area: &Area) -> f64 {
     (area.radius * 0.55).clamp(16.0, 26.0)
 }
 
+/// How far either side of the line out through a camp's way in no stake stands, metres, measured along the grid's
+/// rows or columns, whichever lie more across the way in. The path grid blocks a square round each stake, square to
+/// the world, reaching a half cell and `KEEP_OFF_M` past it (`blocked_by`): this far apart along the grid, the gap's
+/// edge stakes leave a lane a cell wide between their squares at any turn of the camp, so a row or column of cells'
+/// middles leads in.
+const CAMP_GAP_HALF_M: f64 = CELL_M + KEEP_OFF_M;
+
 /// A camp behind a palisade: sharpened stakes in a ring with a gap toward the way in, tents round a fire ringed with
 /// stones, carts, crates and a siege engine under repair.
 fn camp(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let middle = area.at;
     let radius = palisade_radius(area);
     let stakes = (std::f64::consts::TAU * radius / 1.1) as u32;
+    let gap = CAMP_GAP_HALF_M / toward[0].abs().max(toward[1].abs());
     for stake in 0..stakes {
         let angle = std::f64::consts::TAU * f64::from(stake) / f64::from(stakes);
-        let at = ahead(middle, toward, radius, angle);
-        // The way in: a gap of a few stakes facing the path.
-        if !(0.28..=std::f64::consts::TAU - 0.28).contains(&angle) {
+        // Drawn for every stake, standing or not, so how wide the gap is moves no draw after it.
+        let height = 2.6 + kit.draw() * 1.0;
+        let (across, out) = sin_cos(angle);
+        if out > 0.0 && (radius * across).abs() < gap {
             continue;
         }
-        let height = 2.6 + kit.draw() * 1.0;
+        let at = ahead(middle, toward, radius, angle);
         kit.stand(Shape::Column { sides: 5, top: 0.15 }, at, [0.5, 0.5, height], angle, Material::Timber, 0.5);
     }
     fire(kit, middle, 1.6);
