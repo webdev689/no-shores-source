@@ -55,7 +55,8 @@ export const GLOW_KINDS: readonly Burning[] = [
 ];
 
 /** The faint light everywhere, by style: the crypt's cold grey-blue, the halls' plain grey, the cells' sickly green,
- *  the sanctum's pale gold, the caverns' deep teal and the mines' dusty brown. */
+ *  the sanctum's pale gold, the caverns' deep teal, the mines' dusty brown, the chalk's pale cream and the barrow's
+ *  grey-green. */
 export const MOODS: Readonly<Record<StyleKey, Colour>> = {
   crypt: [0.17, 0.2, 0.28],
   halls: [0.2, 0.2, 0.22],
@@ -63,6 +64,8 @@ export const MOODS: Readonly<Record<StyleKey, Colour>> = {
   sanctum: [0.26, 0.23, 0.17],
   caverns: [0.13, 0.24, 0.26],
   mines: [0.25, 0.2, 0.15],
+  chalk: [0.26, 0.25, 0.22],
+  barrow: [0.17, 0.22, 0.2],
 };
 
 /** Set in a cell's word for rock, over its look. */

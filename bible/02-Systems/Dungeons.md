@@ -110,6 +110,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 | Sanctum (`sanctum`) | 2 to 4 | rectangles 3 to 6; Ls, octagons 4 to 6; crosses 6 by 4 to 6 | 4.4 to 5.6 | arched | 124, 122 | Crypt | 43601, 43602 |
 | Caverns (`caverns`) | 2 to 4 | caves 3 to 6, and a few rectangles 3 to 6 | 4.4 to 5.6 | rough | 120, 119 | Crypt | 43603, 43604 |
 | Mines (`mines`) | 2 to 4 | galleries 5 to 8 by 2; stopes (caves) 3 to 5; a few rectangles 2 to 5 | 3.2 to 4.4 | flat | 119, 120 | Caverns | 43603, 43604 |
+| Chalk (`chalk`, in `PASSAGE_STYLES`: no patrol's or the sea's draw) | 3 to 5 | galleries 4 to 7 by 2; rectangles 3 to 5 by 3 to 4; Ls 4 to 6 | 3.2 to 4.0 | flat | 123, 120 | Barrow | 43603, 43604 |
+| Barrow (`barrow`, in `PASSAGE_STYLES`) | 3 to 5 | rectangles 2 to 4; alcoves 3 to 5 by 3 to 4; octagons 4 to 5 | 3.6 to 4.8 | arched | 124, 122 | Caverns | 43601, 43602 |
 
 - **A run, not a maze** ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]). A dungeon has a beginning, the
   way in's block and its first room; a middle, the blocks between; and an end, the last room of the last block, where
