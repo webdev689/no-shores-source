@@ -222,11 +222,21 @@ impl Character {
         held
     }
 
-    /// Keeps the haul at a lamp's Home: a find held as its bounty was brought to a lamp, its first step.
+    /// Keeps the haul at a lamp's Home: a find held as its bounty was brought to a lamp, its first step done. Only
+    /// that bounty is counted, so no other's lamp step is done without its lamp lit.
     pub(crate) fn keep_haul_home(&mut self) {
-        let Some((island, lamp)) = self.passage.as_ref().map(|dive| (dive.island.clone(), dive.lamp)) else { return };
-        if self.keep_haul() {
-            self.toward_bounties(Toward::Lamp { island: &island, lamp });
+        let Some(found) = self.passage.as_ref().and_then(|dive| dive.haul.lantern.clone()) else {
+            self.keep_haul();
+            return;
+        };
+        self.keep_haul();
+        let first = crate::atheric_bounty::bounties()
+            .iter()
+            .find(|bounty| bounty.id == found)
+            .and_then(|bounty| bounty.steps.first());
+        let brought = first.is_some_and(|step| step.kind == crate::atheric_bounty::StepKind::Lamp && step.count == 1);
+        if let Some(held) = self.atheric_bounties.held.get_mut(&found).filter(|held| brought && **held == (0, 0)) {
+            *held = (1, 0);
         }
     }
 

@@ -504,3 +504,20 @@ fn a_homeward_dive_joining_another_islands_patrol_zone_loses_its_haul() {
     assert!(found.character.passage.is_none());
     assert_eq!(found.character.materials.weapon_fragments, fragments, "lost");
 }
+
+#[test]
+fn a_kindles_next_wave_waits_for_the_last_to_be_down_and_a_zone_stands_nine_at_most() {
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Kindle), None, Route::Public);
+    let player = diver(&mut room, week, &plan);
+    run(&mut room, 1);
+    assert_eq!(room.passage_seen(player).map(|seen| seen.wave), Some(1), "the first wave");
+    for _ in 0..super::passage_deal::AGAIN_TICKS * 2 {
+        room.players.get_mut(&player).expect("in").fighter.health = 1e9;
+        room.tick();
+    }
+    assert_eq!(room.passage_seen(player).map(|seen| seen.wave), Some(1), "none while the first stands");
+    for deal in [Deal::Skirmish, Deal::Vault, Deal::Mission(Mission::Hunt)] {
+        let (_, _, room) = zone_room(deal, None, Route::Public);
+        assert!(room.living_foes() <= super::ZONE_FOES_MOST, "{deal:?}: {}", room.living_foes());
+    }
+}
