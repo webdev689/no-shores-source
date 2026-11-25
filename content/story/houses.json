@@ -24,7 +24,7 @@
       { "who": "tailor", "say": "Wear them proudly. Grey gets you mistaken for the Tithe." }
     ],
     "roundTack": [
-      { "who": "tack", "say": "Looking for a horse? I've a Bay here that's never thrown anyone." },
+      { "who": "tack", "say": "First horse is on me. This Bay's never thrown anyone." },
       { "who": "tack", "say": "Barding too, to dress them in. A good mount spares your legs." }
     ],
     "roundMail": [

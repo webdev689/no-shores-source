@@ -1,5 +1,5 @@
 import type { Details } from '../network/accounts.ts';
-import { HORSE, RARITIES, itemName, slotName } from '../player/gear.ts';
+import { RARITIES, itemName, slotName, statless } from '../player/gear.ts';
 import type { Node } from '../ui/node.ts';
 import { emblemOf } from './emblemArt.ts';
 import {
@@ -57,12 +57,13 @@ export function detailsNode(
       level,
       id: piece.id ?? 0,
       source: piece.source ?? 0,
+      plain: piece.plain === true,
     };
     // A piece the page cannot name still shows, by its slot.
     const pieceName = itemName(item) || slotName(piece.slot) || 'Piece';
     const element = elementNode(piece.element, 16);
-    // A horse carries no power.
-    const power = piece.kind === HORSE ? null : piece.attack ? `${piece.attack} Attack` : `${piece.defense} Defense`;
+    // A horse and plain clothes carry no power.
+    const power = statless(item) ? null : piece.attack ? `${piece.attack} Attack` : `${piece.defense} Defense`;
     const id = `worn-${index}`;
     return {
       width: pieceWidth,

@@ -1,5 +1,5 @@
 {
-  "about": "The quests the rules keep and the page shows: the opening, which ends in a pledge, and each house's line, which gives its Art, its Tenets one at a time and three fragments of the player's choosing. A task's goals are all met before the next task begins; its reward is given as it ends. Its scenes are in content/story/houses.json. bible/02-Systems/Quests.md says how each goal is judged.",
+  "about": "The quests the rules keep and the page shows: the opening, which ends in a pledge, and each house's line, which gives its Art, its Tenets one at a time and three fragments of the player's choosing. A task's goals are all met before the next task begins; its reward is given as it ends, and a goal's own (Aurem or the first horse) as it is met. Its scenes are in content/story/houses.json. bible/02-Systems/Quests.md says how each goal is judged.",
   "quests": [
     {
       "id": "house",
@@ -19,8 +19,7 @@
             }
           ],
           "reward": {
-            "aurem": 400,
-            "horse": true
+            "aurem": 400
           }
         },
         {
@@ -61,7 +60,10 @@
               "kind": "talk",
               "to": "tack",
               "scene": "roundTack",
-              "text": "The Tack"
+              "text": "The Tack",
+              "reward": {
+                "horse": true
+              }
             },
             {
               "kind": "talk",

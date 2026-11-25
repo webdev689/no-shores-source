@@ -269,8 +269,8 @@ impl Character {
     }
 
     /// Tells the quest walked of something the player did: each goal of its task not yet met that the event meets
-    /// counts once more; every goal met, the task's reward is given and the next begins at once, its counts at
-    /// nothing, or the quest is done. Whether anything counted.
+    /// counts once more, a goal's reward given as it is met; every goal met, the task's reward is given and the next
+    /// begins at once, its counts at nothing, or the quest is done. Whether anything counted.
     pub fn tell(&mut self, event: &Event<'_>) -> bool {
         let Some((quest, task)) = self.quest_now() else { return false };
         let def = &quests().quests[quest];
@@ -278,16 +278,26 @@ impl Character {
         self.quests = std::mem::take(&mut self.quests).kept();
         let Some(road) = self.quests.road_mut(quest) else { return false };
         let mut counted = false;
+        let mut met = Vec::new();
         for (count, goal) in road.counts.iter_mut().zip(goals) {
             if *count < goal.count && goal.met_by(event) {
                 *count += 1;
                 counted = true;
+                if *count == goal.count {
+                    met.push(goal.reward);
+                }
             }
         }
+        let unmet = road.counts.iter().zip(goals).any(|(count, goal)| *count < goal.count);
+        // A goal's own reward is given as it is met, before its task's.
+        for reward in met {
+            self.reward(def.faction, reward);
+        }
         // A task whose goals were all met as it was read (a count lowered since) is done at the next event.
-        if road.counts.iter().zip(goals).any(|(count, goal)| *count < goal.count) {
+        if unmet {
             return counted;
         }
+        let Some(road) = self.quests.road_mut(quest) else { return counted };
         match def.tasks.get(task + 1) {
             Some(next) => {
                 (road.task, road.counts, road.fought) = (next.id.clone(), vec![0; next.goals.len()], Vec::new())
@@ -310,8 +320,8 @@ impl Character {
         true
     }
 
-    /// Tells the quest walked of every piece worn, and of every slot a smith has sold a piece for, so a piece bought
-    /// or put on before its task was reached counts once it is.
+    /// Tells the quest walked of every piece worn but plain clothes, and of every slot a smith has sold a piece for, so
+    /// a piece bought or put on before its task was reached counts once it is.
     pub(crate) fn tell_held(&mut self) {
         // Told again until nothing more counts: a task met here may reach one the pieces held already meet.
         loop {
@@ -319,7 +329,8 @@ impl Character {
             let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
             let mut told = false;
             for slot in Slot::VESTIGE {
-                if wear && self.worn(slot).is_some() {
+                // Plain clothes are not what a wear goal asks put on: armour of the player's own.
+                if wear && self.worn(slot).is_some_and(|item| !item.plain) {
                     told |= self.tell(&Event::Worn(slot));
                 }
                 if buy && self.quests.bought.contains(&slot) {
@@ -332,10 +343,9 @@ impl Character {
         }
     }
 
-    /// A task's reward: its Aurem, the Bay, worn where no horse is (never a second: one horse of each coat), and of its
-    /// house's Art, the Art earned and worn at once, a Tenet earned, fragments
-    /// to choose. A fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem
-    /// instead.
+    /// A task's or a goal's reward: its Aurem, the Bay, worn where no horse is (never a second: one horse of each
+    /// coat), and of its house's Art, the Art earned and worn at once, a Tenet earned, fragments to choose. A fragment
+    /// beyond those the Art has left unowned and unchosen is its price at the counter in Aurem instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {
         self.materials.add_aurem(reward.aurem);
         if reward.horse && !self.keeps_horse(FIRST_HORSE) {
