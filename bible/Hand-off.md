@@ -219,15 +219,15 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The ships at the Harbourmaster**, #201 on branch `ccr-227e6a07-cigm8y` (main merged in), for the owner's yes to
-  merge, on the owner's "integrating all our current models into the harbormaster", "shouldnt have a ship until they
-  reach the harbor master", "their own standard defined statistics" and "customization options with a cost"
-  ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]], every call of Claude's in
-  [[The Ships at the Harbourmaster as Claude Shapes Them]], the system in [[Shipyard]]). A character keeps a fleet:
-  the Sloop handed over by the welcome's Harbourmaster (a task of its own; at the counter to one who pledged before
-  it), the Schooner, Brig and Frigate bought from ship levels 7, 13 and 20; each hull with its class's numbers (how
-  long it lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does, each gun elevated
-  from its own deck, as a captain's are on the owner's "Captains aim gun by gun"
+- **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
+  site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
+  have a ship until they reach the harbor master", "their own standard defined statistics" and
+  "customization options with a cost" ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]],
+  every call of Claude's in [[The Ships at the Harbourmaster as Claude Shapes Them]], the system in [[Shipyard]]). A
+  character keeps a fleet: the Sloop handed over by the welcome's Harbourmaster (a task of its own; at the counter to
+  one who pledged before it), the Schooner, Brig and Frigate bought from ship levels 7, 13 and 20; each hull with its
+  class's numbers (how long it lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does,
+  each gun elevated from its own deck, as a captain's are on the owner's "Captains aim gun by gun"
   ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]); the aim's camera and arcs follow the hull
   sailed, its eye between the masts beside the guns, near the rail, on the owner's answer to
   "Brig and frigate arent correct", and the World Editor sails the hull its address names (`?hull=brig`); 33 dresses
