@@ -28,4 +28,4 @@ Asked three things, the owner answered:
 - **The wind-up stays** as [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]] sets
   it.
 
-[[Combat]].
+[[Combat]], [[Game]].

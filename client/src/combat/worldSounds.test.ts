@@ -338,3 +338,16 @@ test("another rider's boost is heard as it begins, from their body as the room l
   for (const boosting of [0, 0, 4, 3.9]) sounds.frame(riding(boosting));
   assert.equal(played.filter((one) => one.id === 'horse.boost').length, 1);
 });
+
+test("the player's own hit foreseen is heard as it lands, and the room's word on it is not heard again", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  sounds.frame({ ...frameOf({ events: [] }), foreseen: [hit()] });
+  assert.deepEqual(
+    played.map(({ id }) => id),
+    ['hit.blade'],
+    'as it lands',
+  );
+  sounds.frame(frameOf({ events: [hit({ felt: true })] }));
+  assert.equal(played.length, 1, "nothing more on the room's word");
+});

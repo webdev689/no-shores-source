@@ -10,7 +10,7 @@ import type { Fired } from '../rules/combatRules.ts';
 import { type Action, type FighterView, type StatusName, fighterView } from '../rules/fighters.ts';
 import { audioPoint, listen } from '../listener.ts';
 import { playSample, rushOfCue } from '../soundSamples.ts';
-import { blowLook } from './cues.ts';
+import { blowLook, feltNow } from './cues.ts';
 import { HorseSounds, type Rider } from './horseSounds.ts';
 import type { Fighting } from './fighting.ts';
 import { elementOfArt } from './spellLooks.ts';
@@ -65,6 +65,8 @@ export interface WorldFrame {
   readonly quiet: boolean;
   readonly fight: HeardFight;
   readonly events: readonly FightEvent[];
+  /** The player's own hits foreseen this frame, heard as they land (`feltNow`). */
+  readonly foreseen?: readonly FightEvent[];
   readonly shots: { readonly fired: readonly Fired[]; readonly struck: readonly Struck[] };
   readonly eye: Point;
   readonly yaw: number;
@@ -198,7 +200,7 @@ export class WorldSounds {
     this.horses.frame(heardRiders(frame), frame.seconds, frame.ground, hear);
     const { fight, walker } = frame;
     const spellLook = (id: number) => elementOfArt(fight.spells.arts.get(id));
-    for (const event of frame.events) {
+    for (const event of feltNow(frame.foreseen ?? [], frame.events)) {
       const [striker, defender] = [byId.get(event.striker), byId.get(event.defender)];
       const look = blowLook(event, { player: fight.player, own: walker.look, spellLook });
       const arms = { striker: striker?.view.arms ?? 0, defender: defender?.view.arms ?? 0, look };

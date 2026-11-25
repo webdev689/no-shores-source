@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { CombatRules } from '../rules/combatRules.ts';
+import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { AttackFeel } from './attackFeel.ts';
 
@@ -40,4 +41,16 @@ test('a player swings with a player’s reach, and a crewman on their side with 
   ];
   feel.arcsMesh(0, strikers, drawn, [0, 0, 1.6], false);
   assert.deepEqual(asked, [true, false]);
+});
+
+test("the player's own hit foreseen holds as it lands, and the room's word on it holds nothing more", () => {
+  const feel = new AttackFeel({} as CombatRules, 1 / 60);
+  const hit: FightEvent = { tick: 1n, kind: 1, how: 1, striker: 1, defender: 7, amount: 10, stroke: 3 };
+  feel.frame([], null, 1, 1 / 60, new Set(), [hit]);
+  feel.frame([], null, 1, 0.02, new Set());
+  assert.equal(feel.shownSeconds(7, 0.02), 0, 'the foe held still as the blow landed');
+  for (let frame = 0; frame < 30; frame += 1) feel.frame([], null, 1, 1 / 60, new Set());
+  feel.frame([{ ...hit, felt: true }], null, 1, 1 / 60, new Set());
+  feel.frame([], null, 1, 0.02, new Set());
+  assert.ok(feel.shownSeconds(7, 0.02) > 0, "the room's word holds it no more");
 });

@@ -245,6 +245,10 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   blow. Only the drawing moves, never the rules or their clock (`combat/attackFeel.ts`). A player who asks for reduced
   motion keeps a still view: no kick, no shake, no lunge carrying the eye and no Anima push-in; the Anima's edge frame
   still shows. The feel's light is on too: the brightest marks and arcs light what stands round them ("Drawing").
+- **The player's own hits at once.** As the page predicts the player's swing, it judges the blow as the room judges it
+  among the fighters the player sees (`room-wasm`'s `hits_of`). On the tick the blow lands, each foe it hits flashes, is
+  heard struck and is held, and the room's word on that hit does none of these again (`feltNow`). Its damage, number,
+  blood and kick come with the room's word ([[The Drawing Click Swings, and the Player's Own Hits Show at Once]]).
 - **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole figure
   white for two, its outline white for two, then its outline for one in the blow's element's light (steel `#cfe0ff` for
   a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames only for a blow of
