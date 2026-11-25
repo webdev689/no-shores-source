@@ -1,16 +1,16 @@
 // What the player's worn gear looks like on their figure: every garment is armour, so a Normal piece is drawn as
-// clothes (but the prologue's own, its steel), a Magic one as clothes or light armour and a Rare or finer one as an
-// armour set, finer as it climbs; the cloak is a cloak, a faction's cape the formal cloak in its faction's dye; a
-// faction's armour and weapons are its own set and metal in its own colour; the hands hold what the gear wears; the
-// dye, coat and barding worn ride along. A named item wears the look written on it; a rolled one its content's sets
-// (`sourceLooks.ts`) by its level, name and number.
+// clothes (but the prologue's own, its steel, and plain clothes, the shore's shirt, breeches and boots), a Magic one
+// as clothes or light armour and a Rare or finer one as an armour set, finer as it climbs; the cloak is a cloak, a
+// faction's cape the formal cloak in its faction's dye; a faction's armour and weapons are its own set and metal in
+// its own colour; the hands hold what the gear wears; the dye, coat and barding worn ride along. A named item wears
+// the look written on it; a rolled one its content's sets (`sourceLooks.ts`) by its level, name and number.
 
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import { wornCosmetic } from '../forge/cosmetics.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
-import type { Wardrobe } from './dressing.ts';
+import { PLAIN_CLOTHES, type Wardrobe } from './dressing.ts';
 import { MELEE, RANGED_SLOT, gearHands, nearest, rung, worn, writtenLook } from './gear.ts';
 import { STORY_SET, nearestOwnFirst, rareSet, rolledArmourSet } from './sourceLooks.ts';
 
@@ -72,6 +72,12 @@ const DYES: Readonly<Record<number, readonly string[]>> = {
   4: ['Aquamarine', 'Blue'],
 };
 
+/** Plain clothes' garments and dyes, by the slot they are worn in. */
+const PLAIN_WORN: Readonly<Record<number, readonly (readonly [string, string])[]>> = {
+  [TORSO]: PLAIN_CLOTHES.torso,
+  [LEGS]: PLAIN_CLOTHES.legs,
+};
+
 /** Each faction's cape, by its item's id, and the dye of its faction it is drawn in. */
 const CAPE_DYES: ReadonlyMap<string, string> = new Map(factions.factions.map((each) => [each.cape, each.dye]));
 /** Each faction's armour and weapons, by the item's id: its faction's key, and the set and metal they are drawn in. */
@@ -118,6 +124,15 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit,
   for (const slot of [TORSO, LEGS, HEAD, ARMS]) {
     const item = worn(state, slot);
     if (!item) continue;
+    // Plain clothes are the shore's own, each garment in its dye.
+    if (item.plain) {
+      for (const [garment, dye] of PLAIN_WORN[slot] ?? []) {
+        if (garments.includes(garment)) continue;
+        garments.push(garment);
+        dyes[garment] = dye;
+      }
+      continue;
+    }
     const set = item.rarity >= MAGIC || item.story ? setOf(item, slot, wardrobe) : null;
     if (set) {
       const own = factionLook(item)?.key;

@@ -24,6 +24,9 @@ pub struct ShownPiece {
     pub gilded: bool,
     /// The content it came from (`Source`'s number), which its look follows.
     pub source: u8,
+    /// Plain clothes, which have no stats (`Item::plain`).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub plain: bool,
 }
 
 /// A character as others see it.
@@ -59,6 +62,7 @@ impl Character {
                 defense: item.defense().unwrap_or_default(),
                 gilded: item.fully_upgraded(),
                 source: item.source as u8,
+                plain: item.plain,
             })
             .collect();
         Shown {

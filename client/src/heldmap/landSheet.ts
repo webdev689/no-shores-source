@@ -9,6 +9,14 @@ export type Quad = readonly [Point2, Point2, Point2, Point2];
 export type Segment = readonly [Point2, Point2];
 
 /** A mark on the land: its glyph (landGlyphs.ts), where it stands, and what the map's table calls it. */
+/** What moves on the land's map, in the world: each other player in the room where they stand, and whether in the
+ *  viewer's company (their nameplate's green, else its blue); and the zone's public event while it runs, at its ground,
+ *  with its name and the time it has left. */
+export interface MapMarks {
+  readonly others: readonly { readonly at: Point2; readonly company: boolean }[];
+  readonly events: readonly { readonly at: Point2; readonly name: string; readonly clock: string }[];
+}
+
 export interface LandMark {
   readonly glyph: LandGlyph;
   readonly at: Point2;

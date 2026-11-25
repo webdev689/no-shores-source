@@ -28,7 +28,8 @@ ring in the ship's bar, the owner chose "Same as the ship", the option that read
 - The held map at sea has no fog of war: all of it shows from the first time it is raised ([[Held Map]]). This
   replaces the sea's fog in [[The Sea Is Navigated From the Helm With the Held Map]].
 - A new character is given the Bay, worn in the Mount slot, by the stranger with her 400 Aurem as the welcome tour
-  begins ([[Gear]], [[Quests]]).
+  begins ([[Gear]], [[Quests]]). Replaced in part by
+  [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]: the Tack gives it, as she is spoken with on the opening's round.
 - A rider taps the boost key for half again the horse's speed for 4 s, then 12 s to recharge, its ring in the bar at
   the bottom left; run stays as it is ([[Player]]).
 - A ship's boost and a horse's each have a detailed effect.
@@ -60,3 +61,6 @@ ring in the ship's bar, the owner chose "Same as the ship", the option that read
 | Whose horse shows the dust | Every rider a node draws, the player's own and each other player's, each from their own boost | Another player's fighter, sent to every page, begins with their body and its boost's clocks |
 | The horse's cues | `horse.<walk, gallop, boost>.<ground, stone, water>`, `horse.mount`, `horse.whinny` (as the rider mounts), `horse.dismount`, `horse.snort` (each 9 s a ridden horse stands) and `horse.boost`; a footstep's wood heard as stone | The footsteps' grounds but wood, which only the wreck's timber is, a cue a stride; the whinny greets the rider, the snort fills a stand |
 | Another rider's gait | A gallop over 8 m/s; boosted while their boost runs, and its start (`horse.boost`) as it begins, from their body as the room last stepped it | Their fighter, sent to every page, begins with their body and its boost's clocks |
+
+Replaced in part by [[The Grey Tithe and the Lattice Each Have Their Own Voice]]: a horse's strides are heard back to
+back, each as the last one's recording ends, not one each 1.7, 3.4 or 4.6 m.

@@ -82,7 +82,7 @@ test('the banner’s rows run its whole width: its clocks at the right, its bar 
   assert.ok(bar && bar.width > band.width / 2, `the bar runs over half the banner, ${bar?.width}`);
 });
 
-test('between events the banner is one line, with what runs elsewhere under it', () => {
+test("a banner of one line (an Elite Dungeon's or a Breach's between encounters) has its dim line under it", () => {
   const banner = new PublicBanner();
   const next: Banner = {
     ...shown,
@@ -96,7 +96,7 @@ test('between events the banner is one line, with what runs elsewhere under it',
   banner.update(next, 1);
   const words = wordsIn(banner.node(1280, 1));
   assert.ok(words.includes('Raid at Gullwing Vale'));
-  assert.ok(!words.includes('3 / 12 shards'), 'no bar between events');
+  assert.ok(!words.includes('3 / 12 shards'), 'no bar in one line');
   assert.ok(laidOf(banner.node(1280, 1) as Node).length > 0, 'it lays out');
   const line = banner.node(1280, 1) as Node;
   assert.deepEqual([line.width, line.maxWidth], ['fit', 440], 'as wide as its words, no wider than the banner');
@@ -170,4 +170,22 @@ test('a bonus that warns of harm reads in red under a filled red diamond, never 
     allOf(node).some((each) => each.picture?.key === 'diamond #e0483c #e0483c '),
     'its diamond filled red',
   );
+});
+
+test('a banner shown where none was, as the player steps onto the ground, is read out once, as at a beat', () => {
+  const said: string[] = [];
+  const page = globalThis as unknown as Record<string, unknown>;
+  page['document'] = { ariaNotify: (words: string) => said.push(words) };
+  try {
+    const banner = new PublicBanner();
+    banner.update(null, 0.016);
+    banner.update(shown, 0.016);
+    banner.update({ ...shown, clock: '0:59' }, 0.016);
+    banner.update(null, 0.016);
+    banner.update(shown, 0.016);
+  } finally {
+    delete page['document'];
+  }
+  const words = 'Public event: The Fissure. Carry shards to the fissure to seal it';
+  assert.deepEqual(said, [words, words], 'on stepping on, and on stepping on again');
 });

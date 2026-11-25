@@ -346,7 +346,8 @@ impl Character {
     }
 
     /// Buys a cosmetic its seller shows today, at its price in Aurem, from the level it is sold at: a coat as its horse,
-    /// to the pack, one of each.
+    /// to the pack, one of each. The first horse is given, never sold, to one whose road no longer leads to the Tack's
+    /// goal that gives it (`horse_goal_left`), worn where no horse is, as the Sloop is (`buy_ship`).
     pub(crate) fn buy_cosmetic(&mut self, number: u16, here: Here) -> Result<Option<Done>, Refusal> {
         let found = cosmetics().get(usize::from(number)).ok_or(Refusal::NoSuchCosmetic)?;
         if !here.social {
@@ -362,6 +363,11 @@ impl Character {
         }
         if horse && self.carried_in(crate::kinds::Slot::Mount) >= crate::character::CARRIED_MOST {
             return Err(Refusal::CarriedFull);
+        }
+        if horse && found.id == crate::horses::FIRST_HORSE && self.horse_goal_left() {
+            let worn = !self.may_ride();
+            self.give_horse(&found.id, worn);
+            return Ok(None);
         }
         if self.level() < level {
             return Err(Refusal::TooLow);

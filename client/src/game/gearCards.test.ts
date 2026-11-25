@@ -280,3 +280,10 @@ test("a Hard Breach piece's card shows its perks at their Forged grade, marked F
   assert.equal(forged?.note, 'Forged');
   assert.equal(cardOf(piece(true)).name, 'Lattice Sword (Forged)');
 });
+
+test('plain clothes show no level, no source and no stats on their card', () => {
+  const shirt = item({ id: 13, kind: 14, rarity: 0, level: 1, plain: true, source: 0 });
+  const card = cardOf(shirt);
+  assert.deepEqual([card.rows, card.big], [[], null]);
+  assert.notDeepEqual(cardOf({ ...shirt, plain: false }).rows, [], 'beside a Normal piece of its kind, which has them');
+});

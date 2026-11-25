@@ -12,7 +12,8 @@ import { cubicBezier } from '../ui/ease.ts';
 import type { Child, Node, Text } from '../ui/node.ts';
 import { drawMeter, thinBarNode } from './barDraw.ts';
 
-/** The banner's tone: an event running, one turned heroic, its result, or the next event's line between them. */
+/** The banner's tone: an event running, one turned heroic, its result, or one line, as an Elite Dungeon's or a
+ *  Breach's between its encounters. */
 export type BannerTone = 'running' | 'heroic' | 'won' | 'failed' | 'next';
 
 /** What the banner shows: a line over the name (what it is), the name, the place, a clock (the countdown, or how long
@@ -25,7 +26,7 @@ export interface Banner {
   readonly clock: string;
   /** The event's last minute: its clock red and pulsing. */
   readonly urgent?: boolean;
-  /** What runs or comes next elsewhere on the island, between events. */
+  /** A dim line under the rest: who stands inside a Breach's encounter, or its way on. */
   readonly elsewhere?: string;
   readonly objective: string;
   readonly bar: { readonly share: number; readonly label: string } | null;
@@ -123,14 +124,16 @@ export class PublicBanner {
   private beatAt = Number.NEGATIVE_INFINITY;
   private readonly meter = new Meter({ lossShown: false });
 
-  /** Shows `banner`, or hides it for none, `seconds` after the last frame; a `beat` slides it in afresh and is read
-   *  out on its own, never the ticking clocks. */
+  /** Shows `banner`, or hides it for none, `seconds` after the last frame; a `beat`, or the banner shown where none was
+   *  (the player stepping onto an event's ground), slides it in afresh and is read out on its own, never the ticking
+   *  clocks. */
   update(banner: Banner | null, seconds: number, beat: BannerBeat | null = null): void {
     this.time += seconds;
+    const afresh = banner !== null && this.shown === null;
     this.shown = banner;
     if (!banner) return;
     if (banner.bar) this.meter.set(banner.bar.share, seconds);
-    if (!beat) return;
+    if (!beat && !afresh) return;
     [this.beat, this.beatAt] = [beat, this.time];
     const objective =
       beat === 'heroic' || beat === 'missed' || beat === 'chance' ? banner.heroic?.text : banner.objective;

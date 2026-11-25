@@ -219,7 +219,68 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+- **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
+  the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
+  each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
+  and on stone, the boost, its neigh, the whinny, the snort, into and out of the saddle. The Grey Tithe: its four
+  alerts ("All"), four attack grunts and three pain grunts as variations, each credited, and its death. The Lattice:
+  its alert, attack, hurt and death ("No glass"). A stride is heard as the last one's recording ends (`HorseSounds`,
+  the sample's length), each hoofbeat cut to one stride of its recording, quiet to quiet, mono; a fixed 1.7, 3.4 or
+  4.6 m a stride had doubled the hoofbeats' pace at the Bay's 6 and 12 m/s. Foes never make a din: at most two foe
+  voices begin in 0.75 s besides a death, never kept back; one foe's swing or hurt once in 2 s; only a fighter's voice
+  that began counts, so a raid's alarm is never held (`WorldSounds.playHeard`). Nothing found in any wording for
+  walking, galloping and boosting in water, nor boosting on stone: each plays its gait's on the ground until it has
+  its own, on the owner's "yes play a sound in their place" (`hoofCue`). The sheet "Horse and Foe Sounds"
+  (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN) holds the picks in its `picks` store. Not heard in a browser:
+  whether it drops the MP3's 25 to 40 ms of padding as ffmpeg does (each stride decodes to its cut there).
+
+- **The five asks: plain clothes, the Tack's Bay, the welcome's camera, speakers' colours and the city's sounds**
+  (#206; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
+  every call there). The prologue's end gives a Plain Shirt and Plain Breeches with no stats (`Item::plain`), worn
+  where the torso and legs are bare; the Tack gives the Bay as she is spoken with on the round (a goal's own
+  `reward`, which may give Aurem or the horse, never a house's gifts nor the Sloop), and at her counter for nothing to
+  one who pledged before the round reached her; the face-to-face shot stands
+  2.8 m over the pair's feet, solved for the lens, their crowns no longer cut off; each speaker's name has a colour of
+  their own in the dialogue box. The city's sounds are settled: the crowd kept on the owner's "Keep"; the hum the
+  owner's pick from the sheet "Overlook City Sounds" (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound
+  824369 (an old-town alley in Stockholm, CC0, vhio), on R2 by the `freesound` run 45635457113, after seven searches
+  (parks and ghost towns refused; it came from "old town ambience -park -klankbeeld", searched beside the owner's own
+  "distant city"). Merged on the owner's "merge and deploy", which deploys the page, the site, the rooms and the bot. `main` with #201
+  (the Sloop), #209 (the audit) and #210 (the desktop app) merged in. Tested offline: the rules', wire's and page's tests, the new ones
+  failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and after
+  (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the prologue
+  before this are given no clothes (the owner's option gives them at its end).
+
+- **Three latent layout flaws, and the town's walls, windows and signs** (#207, merged on the owner's "Merge and
+  deploy", which deploys the page, the site, the rooms and the bot: CI run 1129 on main). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
+  metre off a module's foot; a camp's palisade gap is sized from the path grid; fallen rock keeps 1.2 m off each run's
+  way ([[Layouts]]). One departure from the brief, the owner's to confirm: the gap's 9 m half-chord
+  (`CELL_M + KEEP_OFF_M`) is measured along the grid axis more across the way in, not along the chord, since 9 m along
+  the chord still sealed 8 of 5,760 turns tested (18 m wide square to the grid, up to 25.5 m at 45 degrees). Then the
+  owner's town notes, each pictured headless before and after in the Saltgrass Downs: a taller room is lined over a
+  lower one beside it (the tavern's upper floor saw sky there); a walk-in building's windows are holes through its
+  wall and lining with clear panes, the owner's choice over tinted glass ([[Forged Models]], [[Cities]]); the signpost
+  41739's and the signboard 41700's boards are painted wood as a shop's sign is ([[Procedural Textures]]). Then the
+  owner's third notes ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]):
+  every building's window is its frame alone, 2 m wide at the frame's proportions, with no wall's margin round it
+  ([[Forged Models]]); a public event's panel shows only on its ground, and the held map rings each running event
+  with its name and time left ([[Public Events]]); the held map dots every other player in the room in their
+  nameplate's colour, on land from the room's players and at sea from the sea's chart, which the room now sends every
+  player once a second ([[Held Map]], [[Server]]). Then an audit of the whole PR, each finding checked against the
+  code and fixed at its cause with a test: the sea's chart reaches every player at its tick and a sea opened again;
+  the land's map paints its sheet once for its view and what moves on it over a copy, ten times a second at most; the
+  public event's dead next-event banner is gone, and stepping onto its ground is read out; the sun comes through an
+  open building's panes; and no window is laid into a lower wing's gable (33 in 16 buildings). Then the owner's "It
+  looks like its raining in interiors": a room's ceiling was drawn but no box a body meets, so the rain's shelter
+  left every top storey open; each ceiling is now a box over its room to its outer faces, and a shelter cell is dry
+  where a box reaches a tenth of it ([[Weather]], "Shelter"). Tested offline: the
+  full check on each head before its push, the last `a7ef2573`, and CI green on the head merged, `e77fdccb`; pictured headless in the Downs: the
+  windows, and the raid's panel on its ground, none 60 m off it, and its ring on the map with its name and time left.
+  Not played by hand or seen on a real GPU; the dots and the light through the panes never pictured (no second
+  player stands in a headless world, and its sky gave no sun). Open for the owner: the camp gap's measure
+  ([[Open Questions]]), the compass still marking the event's ground from anywhere in the zone, and the tracker still
+  counting a chest left lying. Another zone's events stay off a zone's map, on the owner's "Leave as is".
+- **The codebase audit** (#209, merged; CI run 1111 on main passed), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
   `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
@@ -236,18 +297,20 @@ The decisions in [[Open Questions]] are not repeated here.
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
   ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
-- **The desktop app** (#210, merged on the owner's "Merge and deploy"; its first release asked for on the owner's "Yes
-  run it", once main's head passes CI), kept on Electron ([[The Desktop App Stays on Electron]]); every call in
-  [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. It plays the game at
-  `noshores.online/play/?room=live` and opens on a launcher ([[The Desktop App Opens on a Launcher in the Game's Look]])
-  with the deployed patch notes and both servers, tested live in the app against the site after the deploy. A merge
-  that changes the app's own code now releases it once the commit passes CI
-  ([[The Desktop App Releases With Each Merge That Changes It]]; the pull request that wires it waits on the owner's
-  yes). Not seen: any real GPU, a Windows or Mac installer run, an update installed, a Discord sign-in in the window,
-  and the AppImage on Ubuntu 23.10 or later. Open: signing keys; performance to be measured on a real GPU with `?perf`
-  before any switch for it (an uncapped frame rate was proposed, not built); `shipTags.test.ts` fetches meshes from
-  R2's rate-limited public host on every CI run (one 429 failed #210's check until a re-run), and keeping them
-  between runs with `actions/cache` was proposed.
+- **The desktop app** (#210 and #212, merged on the owner's "Merge and deploy" and "merge and deploy"), kept on Electron
+  ([[The Desktop App Stays on Electron]]); every call in [[The Desktop App as Claude Builds It]], how it works in
+  [[Desktop App]]. It plays the game at `noshores.online/play/?room=live`. Its launcher stands in a window of its own
+  ([[The Launcher Stands in a Window of Its Own]]), with the deployed patch notes, both servers timed on an open
+  connection, and the graphics as Settings has them. Its first release (2026.1125.1836) went out by hand; a merge that
+  changes the app now releases it once the commit passes CI
+  ([[The Desktop App Releases With Each Merge That Changes It]]), and the website's Download page offers it
+  ([[The Website Offers the Desktop App's Downloads]]). On the owner's note that hits did not register at once: the
+  wreck's cutscenes leave no inputs waiting, the click that draws a weapon swings it, and the player's own hits flash,
+  sound and hold as they land ([[The Drawing Click Swings, and the Player's Own Hits Show at Once]]). Not seen: any real
+  GPU, a Windows or Mac installer run, an update installed, the hit fixes played by hand, a Discord sign-in in the
+  window, and the AppImage on Ubuntu 23.10 or later. Open: signing keys; performance to be measured on a real GPU with
+  `?perf` before any switch for it; `shipTags.test.ts` fetches meshes from R2's rate-limited public host on every CI
+  run, and keeping them between runs with `actions/cache` was proposed.
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and
@@ -280,7 +343,7 @@ The decisions in [[Open Questions]] are not repeated here.
     picked. All 74 of its cues are picked by the owner, on two sound sheets
     (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
     the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
-    timpani on the owner's "Search for single notes"); in #208, not yet merged, published to R2 by freesound runs 171
+    timpani on the owner's "Search for single notes"); in #208, merged (CI run 1119 on main passed), published to R2 by freesound runs 171
     and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
     centre on the owner's "Use it as it is". To change a pick: write its `picked` into
     `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
@@ -1034,6 +1097,14 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites. The
   dungeons session (#82) plans to move each patrol's dungeon entrances onto the layouts' places, and will
   coordinate before it touches the layout code.
+- **Latent layout flaws a re-roll exposes** (#207's description): five re-rolls of the Saltgrass Downs' brief (an area
+  added, moved or removed), the same failures on main's code and #207's. The Tithe Barns, a keep run beyond the
+  claim, gets a beat inside the section in four of five, failing four of `runs_planned`'s checks; a track grazes a
+  building's lining corner (`clearing::round_rooms` samples in tenths and bends at most three times); a gate's
+  palisade stops 11.3 m short of the rock; and with the Barrow Field removed, loose rock lies in the Beacon Stair's
+  stone and a run raises the Broken Causeway's claim 2 mm. Each wants its cause found before an area is added or
+  moved there. The 7 x 4 x 11 m block once seen on a Chalk Adit beat did not show in any of them; its source is
+  still unfound.
 - **Attack visuals**, left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the marks copied
   into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still lighting; `camera.ts`
   `shifted` keeping the HUD matrix's translation in float32 (about 0.25 m off far out).

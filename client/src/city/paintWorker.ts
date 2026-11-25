@@ -30,6 +30,8 @@ scope.addEventListener('message', (event) => {
     for (let texel = 0; texel < picture.rgba.length; texel += 4)
       for (let channel = 0; channel < 3; channel++)
         picture.rgba[texel + channel] = Math.min(255, Math.round(picture.rgba[texel + channel] * tint[channel]));
+  // A window's panes clear in its alpha, for an open building's to be seen through (pictures.ts CLEAR_GLASS).
+  picture?.glass?.forEach((pane, texel) => pane && (picture.rgba[texel * 4 + 3] = 0));
   const levels = picture ? levelsOf(resampled(picture.rgba, picture.width, picture.height), LAYER_SIZE) : null;
   scope.postMessage(
     { layer, levels, milliseconds: performance.now() - started },

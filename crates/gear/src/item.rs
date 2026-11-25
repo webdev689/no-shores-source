@@ -54,6 +54,9 @@ pub struct Item {
     /// One of the prologue's own items, which its end takes back (`crate::story::story_item`).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub story: bool,
+    /// Plain clothes, as the prologue's end dresses a player in (`crate::story::plain_item`): no stats, no nodes.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub plain: bool,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -82,6 +85,7 @@ impl Item {
             element: None,
             source: Source::World,
             story: false,
+            plain: false,
             unknown: crate::character::UnknownKeys::new(),
         };
         item.chosen = vec![NONE_CHOSEN; item.columns().len()];
@@ -121,10 +125,14 @@ impl Item {
         self
     }
 
-    /// Its columns of nodes; a cloak and a horse have none.
+    /// Its columns of nodes; a cloak, a horse and plain clothes have none.
     #[must_use]
     pub fn columns(&self) -> &'static [Column] {
-        if matches!(self.kind, Kind::Cloak | Kind::Horse) { &[] } else { columns(self.rarity, self.kind.weapon_grid()) }
+        if self.plain || matches!(self.kind, Kind::Cloak | Kind::Horse) {
+            &[]
+        } else {
+            columns(self.rarity, self.kind.weapon_grid())
+        }
     }
 
     /// The XP that unlocks its last column; it earns no more.
@@ -265,12 +273,12 @@ impl Item {
         self.stepped(start, most)
     }
 
-    /// Its Defense, if it is armour or a ship's hull, sails or rigging: 45 times its slot's share times its defense
-    /// level, which is 20 plus a third of its Prestige when it carries some, and otherwise rises as a lesser weapon's
-    /// Attack does.
+    /// Its Defense, if it is armour (plain clothes have none) or a ship's hull, sails or rigging: 45 times its slot's
+    /// share times its defense level, which is 20 plus a third of its Prestige when it carries some, and otherwise
+    /// rises as a lesser weapon's Attack does.
     #[must_use]
     pub fn defense(&self) -> Option<u32> {
-        if !self.kind.defends() {
+        if !self.kind.defends() || self.plain {
             return None;
         }
         let full = 45.0 * self.kind.defense_share();

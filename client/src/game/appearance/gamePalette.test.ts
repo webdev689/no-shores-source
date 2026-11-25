@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import factions from '../../../../content/gear/factions.json' with { type: 'json' };
 import { COSMETICS, cosmeticRamp, factionRamp } from '../../forge/cosmetics.ts';
-import { LIGHTNESS_TOLERANCE, PaletteSnap, type Rgb, oklab } from '../../forge/dyes.ts';
+import { LIGHTNESS_TOLERANCE, PaletteSnap, type Rgb } from '../../forge/dyes.ts';
+import { oklab } from '../../oklab.ts';
 import { GAME_PALETTE } from './gamePalette.ts';
 
 const PALETTE = GAME_PALETTE.map((colour) => colour.join());

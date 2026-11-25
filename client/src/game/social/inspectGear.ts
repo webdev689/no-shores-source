@@ -39,6 +39,7 @@ export function inspectedGear(found: Details): GearState | null {
     price: 0,
     element: piece.element,
     source: piece.source ?? 0,
+    plain: piece.plain === true,
   }));
   const art = shown.art ?? 0;
   const emblem = EMBLEMS.findIndex((each) => each.id === shown.emblem);
