@@ -215,6 +215,21 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The five asks: plain clothes, the Tack's Bay, the welcome's camera, speakers' colours and the city's sounds**
+  (#206, draft; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
+  every call there). The prologue's end gives a Plain Shirt and Plain Breeches with no stats (`Item::plain`), worn
+  where the torso and legs are bare; the Tack gives the Bay as she is spoken with on the round (a goal's own
+  `reward`); the face-to-face shot stands 2.8 m over the pair's feet, solved for the lens, their crowns no longer cut
+  off; each speaker's name has a colour of their own in the dialogue box. Waiting on the owner: **the picks on the
+  sound sheet "Overlook City Sounds"** (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC, picks kept in its `picks`
+  store, read with ArtifactData), four new candidates each for the market crowd (`amb.social.crowd`) and the city's
+  hum (`amb.social.hum`), searched by the `freesound` workflow's run 143 on this branch. Once picked: set each cue's
+  `picked` (and a `cut` for a long one, `mono` kept on the crowd) in `content/audio/freesound.json`, skip the old
+  pick, push, and take the workflow's `sounds.json` into the branch. Until then the branch keeps the current picks,
+  so the game plays them. Then the owner's yes to merge, which deploys the page and the rooms. Tested offline: the
+  rules', wire's and page's tests, the new ones failing first; the camera pictured headless before and after. Not
+  yet: played by hand, a real GPU, a deployed room; characters past the prologue before this are given no clothes.
+
 - **The inspect panel after Destiny 1's weapon page** (#202, merged on the owner's "merge and deploy", which deploys
   the page and the rooms). Built on the owner's "take some autonomy" from
   [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]; Claude's calls in
