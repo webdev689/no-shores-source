@@ -172,3 +172,12 @@ fn the_fourth_lamp_stands_cold_for_lanternfalls_last_step_and_is_kindled_under_w
     run(&mut room, crate::passages::passage_deal::WAVE_EVERY_TICKS + 2);
     assert_eq!(room.living_foes(), 0, "for any other it is a lamp like the rest");
 }
+
+#[test]
+fn a_company_member_already_at_the_lamp_has_its_deal_done_as_another_begins_there() {
+    let (week, plan, mut room) = zone_room(Deal::Lamp, Some(10), Route::Company);
+    let walker = joined(&mut room, &diving(week, &plan, Route::Company, None));
+    assert!(!room.mouths_open(walker), "the guard stands before them");
+    joined(&mut room, &diving(week, &plan, Route::Company, Some(2)));
+    assert!(room.mouths_open(walker), "the guard gone, the ways on are open for them too");
+}

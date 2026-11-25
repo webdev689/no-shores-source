@@ -275,13 +275,17 @@ impl Room {
         }
     }
 
-    /// A company's lamp begun at stands no guard: its guards go and its deal is done, paying no one, as the dive that
-    /// lit it was paid. A public room's guard stands for those who come the long way.
+    /// A company's lamp begun at stands no guard: its guards go and its deal is done for every member there, paying
+    /// no one, as the dive that lit it was paid. A public room's guard stands for those who come the long way.
     fn stand_down_guard(&mut self) {
         let Some(zone) = self.zone().filter(|zone| zone.route == Route::Company && zone.round.done_at.is_none()) else {
             return;
         };
-        let guards = zone.round.guards.clone();
+        let (guards, number) = (zone.round.guards.clone(), zone.zone.number);
+        for found in self.players.values_mut() {
+            found.character.dive_deal_done(number);
+            found.gear_changed = true;
+        }
         let clock = self.clock;
         for post in guards {
             let Some(found) = self.garrison.get_mut(post) else { continue };
