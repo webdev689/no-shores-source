@@ -1,5 +1,5 @@
 ---
-id: 237
+id: 241
 title: "The session's git rules say to restart a merged PR's branch from main with a force-with-lease push, but auto mode refuses that push"
 status: open
 type: open-source
