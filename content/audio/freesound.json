@@ -571,7 +571,7 @@
     {
       "id": "horse.gallop.water",
       "use": "A horse galloping through water, one stride cut from a run of them",
-      "query": "horse galloping water",
+      "query": "horse splashing water",
       "seconds": [
         1.0,
         30.0
@@ -607,7 +607,7 @@
     {
       "id": "horse.mount",
       "use": "A rider climbs into the saddle",
-      "query": "saddle creak",
+      "query": "horse saddle",
       "seconds": [
         0.3,
         4.0
@@ -1175,16 +1175,16 @@
     {
       "id": "foe.lattice.attack",
       "use": "One of the Lattice's blows swings: its crystal cracking",
-      "query": "crystal crack",
+      "query": "glass crack",
       "seconds": [
         0.1,
-        1.5
+        2.0
       ]
     },
     {
       "id": "foe.lattice.hurt",
       "use": "One of the Lattice struck: glass chipping",
-      "query": "glass chip",
+      "query": "glass hit",
       "seconds": [
         0.1,
         1.5
