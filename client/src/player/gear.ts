@@ -245,16 +245,27 @@ export function itemWords(
 }
 
 /** A trait's name and words: all it does (`words`), and for a perk that gives and takes, what it gives and what it
- *  costs apart (`gives`, `takes`), so a screen can set the cost apart. */
+ *  costs apart (`gives`, `takes`), so a screen can set the cost apart; and its short line, and its cost's, as a card
+ *  shows them. */
 export function traitOf(id: string): {
   readonly name: string;
   readonly words: string;
   readonly gives: string;
   readonly takes: string;
+  readonly short: string;
+  readonly shortTakes: string;
 } {
   const found = traits.traits.find((each) => each.id === id);
   const [gives, takes] = [found?.words ?? '', (found && 'takes' in found ? found.takes : '') ?? ''];
-  return { name: found?.name ?? id, words: takes ? `${gives} ${takes}` : gives, gives, takes };
+  const shortTakes = (found && 'short_takes' in found ? found.short_takes : '') ?? '';
+  return {
+    name: found?.name ?? id,
+    words: takes ? `${gives} ${takes}` : gives,
+    gives,
+    takes,
+    short: found?.short ?? id,
+    shortTakes,
+  };
 }
 
 /** An island's resource's name, by its place in the list. */

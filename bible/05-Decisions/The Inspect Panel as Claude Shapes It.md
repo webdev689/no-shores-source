@@ -47,7 +47,7 @@ is [[Interface]], and where the numbers come from is [[Gear]].
 
 | Choice | Chosen | Why |
 |---|---|---|
-| An item's card | Its picture (or its initials while there is none) beside its main number, "Against your …" under it where it compares, its lines, its rows, its perks close, its words | Destiny 2's card; the rows make a hover enough to judge a piece |
+| An item's card | Its picture (or its initials while there is none) beside its main number, "Against your …" under it where it compares, its lines, its rows, each perk its icon and short line (the owner's, [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]), its words | Destiny 2's card; the rows make a hover enough to judge a piece |
 | What a card compares | A carried piece's, a ware's, a vault's or a letter's card against the piece worn in its own slot, a module's against the module fitted; never a horse's | The compare the owner asked for, wherever a piece could be worn instead |
 | Compare on the page | A Compare press and C (a control of its own, rebound as any is; never with Ctrl or Cmd, which copy), the worn piece's card standing in the art's place while the page stays as it is, "Compare: on" while it shows, kept from page to page until the menu shuts | Destiny 2 holds a compare key; the page does not move, so the eye keeps its place |
 | Inspect | Another player's piece's card against the player's own in that slot, neither's nodes counted, "not counting nodes" said; at sea the sea's word on the player's gear | The room tells no one another's nodes; counting the player's own alone would mislead |

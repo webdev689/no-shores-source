@@ -69,6 +69,9 @@ export interface Trait {
   /** What a perk that gives and takes gives, and costs, apart; empty for any other. */
   readonly gives?: string;
   readonly takes?: string;
+  /** Its short line, and its cost's, as a card shows it beside its glyph (the owner's "a small perk description"). */
+  readonly short?: string;
+  readonly shortTakes?: string;
   /** A word on where it stands: an Atheric's intrinsic always on, its own node not yet chosen. */
   readonly note?: string;
   /** Whether it acts now; an Atheric's own node not yet chosen does not. */

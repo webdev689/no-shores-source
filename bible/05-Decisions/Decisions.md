@@ -375,6 +375,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Inspect Panel as Claude Shapes It]]
 - [[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]
 - [[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]
+- [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]
 
 ## Replaced
 

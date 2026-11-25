@@ -124,16 +124,36 @@ export function kindLine(
   };
 }
 
-/** A trait as a card or a page lists it: its column's glyph, its name and its words. What a perk that gives and takes
- *  costs stands apart, in the colour of a loss; a word says where an Atheric's perk stands, and its own node not yet
- *  chosen is drawn dim. */
-export function traitNode(trait: Trait, size: number, close = false): Node {
+/** A trait as a page lists it: its column's glyph, its name and its words; on a card (`short`), its glyph and its
+ *  short line alone. What a perk that gives and takes costs stands apart, in the colour of a loss; a word says where an
+ *  Atheric's perk stands, and its own node not yet chosen is drawn dim. */
+export function traitNode(trait: Trait, size: number, short = false): Node {
   const lit = trait.off ? INK.brass : INK.brassLit;
+  if (short)
+    return {
+      width: 'grow',
+      gap: 8,
+      padding: [1, 0],
+      alignY: 'center',
+      children: [
+        nodeGlyphNode(trait.kind, lit),
+        {
+          width: 'grow',
+          direction: 'column',
+          children: [
+            {
+              width: 'grow',
+              text: { words: trait.short ?? trait.name, size, colour: trait.off ? INK.faint : INK.word },
+            },
+            trait.shortTakes ? { width: 'grow', text: { words: trait.shortTakes, size, colour: INK.loss } } : null,
+          ],
+        },
+      ],
+    };
   return {
     width: 'grow',
     gap: 8,
-    // A card's perks stand closer than a page's, so the card stays short beside what it describes.
-    padding: close ? [1, 0] : [4, 0],
+    padding: [4, 0],
     children: [
       nodeGlyphNode(trait.kind, lit),
       {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { item, state } from '../network/gearForTests.ts';
-import { HORSE, KINDS } from '../player/gear.ts';
+import { HORSE, KINDS, traitOf } from '../player/gear.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
 import type { Child, Node, Span } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
@@ -112,6 +112,25 @@ test('a perk that gives and takes sets its cost apart, in the colour of a loss',
     ['Hair Trigger', 'Reloads 25% faster.', 'An aimed shot strikes 10% softer.'],
   );
   assert.equal(texts[2]?.colour, INK.loss);
+});
+
+test("a card's perk is its glyph and its short line, its cost apart in red: never its name or its whole words", () => {
+  const texts = textsOf(traitNode({ ...traitOf('hair_trigger'), kind: 1 }, 1, true));
+  assert.deepEqual(
+    texts.map((text) => [text.words, text.colour]),
+    [
+      ['Reload 25% faster', INK.word],
+      ['Aimed shot −10%', INK.loss],
+    ],
+  );
+  const own = textsOf(
+    traitNode({ ...traitOf('ebb'), kind: 4, note: 'Its own node: not yet chosen', off: true }, 1, true),
+  );
+  assert.deepEqual(
+    own.map((text) => [text.words, text.colour]),
+    [['Parry: +30 stamina', INK.faint]],
+    'no note, dim while it waits',
+  );
 });
 
 test('two presses of one name on an item’s page, as two like modules to infuse, each have their own id', () => {

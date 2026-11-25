@@ -868,7 +868,8 @@ never while a press is held. Each press is an ask the room answers.
 - **The card.** An item's name (its set's and its kind's, "Portwatch Helm", or a named piece's own; [[Gear]],
   "Names") on its rarity's band, its kind, pips and element; its picture in a sunk well (its initials while there is
   none) beside its main number large and its lines (level, Prestige, where it was earned); its fight numbers as rows
-  ("The stats", below); its chosen traits, set close; its words. A carried piece's card, a ware's, a vault cell's and a
+  ("The stats", below); its chosen traits, each its glyph and its short line, a cost's in the colour of a loss under it
+  ([[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]); its words. A carried piece's card, a ware's, a vault cell's and a
   letter's are set beside the piece worn in its own slot, a module's beside the module fitted, a horse's beside none
   (`wornFor`): the main number's change and each row's in green or red, and under the number "Against your" the worn
   piece's name; never a piece beside itself, the same object, whatever its id. Along its foot what its presses do.
