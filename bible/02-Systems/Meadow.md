@@ -47,8 +47,9 @@ close patch), the cells over the plants' changed tiles are read again, their old
 
 ## The tufts
 
-A cell holds 576 tufts where all of it is grass, about two and a quarter a square metre, drawn by the GPU from its grid
-alone. Each tuft's draws are a hash of its cell and its number, so a cell grows the same meadow whenever it comes back:
+A cell holds 288 tufts where all of it is grass, about one and an eighth a square metre
+([[The Meadow Grows Half as Thick]]), drawn by the GPU from its grid alone. Each tuft's draws are a hash of its cell
+and its number, so a cell grows the same meadow whenever it comes back:
 
 - where it stands in the cell, a little clustered, and whether it grows there (its grass share);
 - its height, 0.25 m to 0.72 m, and how lush its patch is: its own tint pulled a little over half way to noise over the cells at
