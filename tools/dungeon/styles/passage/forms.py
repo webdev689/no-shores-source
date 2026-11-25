@@ -107,6 +107,41 @@ def flags(inner, outer, count, seed, top=0.03, sink=0.03):
     return faces
 
 
+def laid_stone(outline, top, sink, slope=(0.0, 0.0), bevel=BEVEL):
+    """A flat stone laid in a floor: a convex outline [(x, y), ...] stood from `sink` under the floor to `top` at its
+    middle, its top worn round `bevel` in from its edge and half that down, and tipped by `slope` (its rise a metre
+    along x and along y), so no two stones catch the light alike."""
+    count = len(outline)
+    middle = (sum(x for x, _ in outline) / count, sum(y for _, y in outline) / count)
+
+    def inward(start, end):
+        normal = unit((start[1] - end[1], end[0] - start[0], 0.0))
+        between = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2)
+        toward = (middle[0] - between[0]) * normal[0] + (middle[1] - between[1]) * normal[1]
+        return normal if toward > 0 else mul(normal, -1.0)
+
+    normals = [inward(outline[number], outline[(number + 1) % count]) for number in range(count)]
+    inner = []
+    for number, (x, y) in enumerate(outline):
+        before, after = normals[number - 1], normals[number]
+        # Each edge moved in by the bevel: the corner moves along the two edges' bisector, farther the sharper it is.
+        reach = bevel / (1.0 + before[0] * after[0] + before[1] * after[1])
+        inner.append((x + (before[0] + after[0]) * reach, y + (before[1] + after[1]) * reach))
+
+    def lifted(corners, z):
+        return [(x, y, z + slope[0] * (x - middle[0]) + slope[1] * (y - middle[1])) for x, y in corners]
+
+    low = [(x, y, -sink) for x, y in outline]
+    edge, crown = lifted(outline, top - bevel / 2), lifted(inner, top)
+    faces = [facing(flat(crown), (0.0, 0.0, 1.0)), facing(flat(low), (0.0, 0.0, -1.0))]
+    for number in range(count):
+        after = (number + 1) % count
+        out = mul(normals[number], -1.0)
+        faces.append(facing(flat([low[number], low[after], edge[after], edge[number]]), out))
+        faces.append(facing(flat([edge[number], edge[after], crown[after], crown[number]]), add(out, (0.0, 0.0, 1.0))))
+    return faces
+
+
 def _clockwise(outline):
     area = sum(first[0] * second[1] - second[0] * first[1] for first, second in zip(outline, outline[1:] + outline[:1]))
     return area < 0

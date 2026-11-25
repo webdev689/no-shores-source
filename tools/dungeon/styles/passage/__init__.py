@@ -1,8 +1,9 @@
 """The passages' own pieces, built as a pack of their own beside the styles' (catalog.PASSAGE): the lamp that burns
 on nothing in its ring of five stones, the onward mouths open and shut, the way in from inside, the Kindle mission's
-dead lamp, the Grey Tithe's tally post whole and broken, and the reliquary shut and open. pieces.py makes them as
-faces by role, which the islands' kit (tools/islands/kits/passage.py) builds as well; here each role wears a
-dungeon part, and a passage zone's pictures dress them as any piece in it.
+dead lamp, the Grey Tithe's tally post whole and broken, the reliquary shut and open, and a Hold's ring of low
+stones laid in the floor. pieces.py makes them as faces by role, which the islands' kit
+(tools/islands/kits/passage.py) builds as well; here each role wears a dungeon part, and a passage zone's pictures
+dress them as any piece in it.
 """
 # The dungeon's part for each role: chalk wears the floor's picture (the chalk's own, in a chalk zone), roots the
 # timber, the slate and the cup marks the darker stone and the carving.
@@ -30,6 +31,7 @@ def shaped():
         'passage.tally-post.broken': pieces.tally_post(True),
         'passage.reliquary': pieces.reliquary(False),
         'passage.reliquary.open': pieces.reliquary(True),
+        'passage.ring': pieces.hold_ring(),
     }
 
 

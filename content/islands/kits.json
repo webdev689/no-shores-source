@@ -1792,6 +1792,15 @@
      0.45
     ]
    ]
+  },
+  "passage.ring": {
+   "role": "ruin",
+   "size": [
+    12.6,
+    12.6,
+    0.05
+   ],
+   "solids": []
   }
  },
  "climates": {

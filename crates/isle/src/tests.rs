@@ -62,7 +62,7 @@ fn the_grounds_bits_are_the_ones_the_page_pins() {
 
 const GROUND_41_DESERT: &str = "5372bca559dd7c59";
 
-const GOLDEN: [u64; 3] = [11_144_284_493_814_852_190, 2_909_213_143_875_111_928, 13_757_597_100_054_379_945];
+const GOLDEN: [u64; 3] = [11_144_284_493_814_852_190, 2_909_213_143_875_111_928, 8_242_008_013_292_094_504];
 
 #[test]
 fn seeds_and_climates_make_different_islands() {
