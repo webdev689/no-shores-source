@@ -51,11 +51,16 @@ function launched(read: Notes = notes, lastPlayed = '2026-11-22T00:00:00Z') {
     now: () => new Date('2026-11-25T12:00:00Z'),
   }).then(() => (played = true));
   const page = drawn((context) => stack.node(context.ui), { width: 1600, height: 900 });
-  return { page, local, session, opened, playing, played: () => played };
+  /** Ends the launcher as a player does, so its server checks stop whether the test passed or failed. */
+  const close = () => {
+    if (launcherStanding()) page.click(PLAY);
+    useDesktop(null, () => undefined);
+  };
+  return { page, local, session, opened, playing, played: () => played, close };
 }
 
 test('the launcher shows the notes newest first, new since last played marked, the servers, graphics and app', async () => {
-  const { page } = launched();
+  const { page, close } = launched();
   try {
     await settle();
     page.frame();
@@ -70,14 +75,13 @@ test('the launcher shows the notes newest first, new since last played marked, t
     assert.match(shows, /Version \| 2026\.1125\.1230/);
     assert.match(shows, /A server is not answering, so Play may not get in\. Bugs go in #bug-reports\./);
     assert.equal(page.ui.focusedId, PLAY, 'Play has the focus');
-    page.click(PLAY);
   } finally {
-    useDesktop(null, () => undefined);
+    close();
   }
 });
 
 test('the links open in the browser, and Play goes on, keeping when the player played and that it stood', async () => {
-  const { page, local, session, opened, playing, played } = launched();
+  const { page, local, session, opened, playing, played, close } = launched();
   try {
     page.frame();
     page.click('launcher-discord');
@@ -94,7 +98,7 @@ test('the links open in the browser, and Play goes on, keeping when the player p
     page.frame();
     assert.doesNotMatch(page.shows(), /PATCH NOTES/, 'gone');
   } finally {
-    useDesktop(null, () => undefined);
+    close();
   }
 });
 
@@ -104,9 +108,8 @@ test('with no notes to read, or only those kept, the launcher says so; a first l
     await settle();
     none.page.frame();
     assert.match(none.page.shows(), /No patch notes could be read\./);
-    none.page.click(PLAY);
   } finally {
-    useDesktop(null, () => undefined);
+    none.close();
   }
   const kept = launched({ ...notes, from: 'kept' }, '');
   try {
@@ -114,9 +117,8 @@ test('with no notes to read, or only those kept, the launcher says so; a first l
     kept.page.frame();
     assert.match(kept.page.shows(), /The site did not answer: these are the notes last read\./);
     assert.doesNotMatch(kept.page.shows(), /\| NEW/);
-    kept.page.click(PLAY);
   } finally {
-    useDesktop(null, () => undefined);
+    kept.close();
   }
 });
 
@@ -141,4 +143,21 @@ test('the servers are said together: checking, up, or one not answering', () => 
     'The servers are up.',
   );
   assert.match(serversWords([{ state: 'up', ms: 3 }, { state: 'down' }]), /not answering/);
+});
+
+test("the launcher's dropdowns open over it, and an option there is chosen", async () => {
+  const { resolution, setResolution } = await import('../renderScale.ts');
+  const before = resolution();
+  const { page, close } = launched();
+  try {
+    page.frame();
+    page.click('resolution');
+    const drawn = page.ui.laid.map((each) => each.node.id);
+    assert.ok(drawn.indexOf('resolution:list') > drawn.indexOf('launcher'), 'the list is drawn over the launcher');
+    page.click('resolution:0.75');
+    assert.equal(resolution(), '0.75');
+  } finally {
+    setResolution(before);
+    close();
+  }
 });

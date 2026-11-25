@@ -147,7 +147,8 @@ with keys, pad and mouse, with the world loading behind it and the title standin
   the site not answering, it shows the notes it kept, and says so. A note merged since the player last pressed Play
   is marked new as the menu marks what is new, with the count in its heading.
 - **Its right**: the servers Play joins, the rooms (`/health`, `server/health.ts`) and the accounts (`/v1/health`),
-  each asked and timed as it opens and every 30 s, up, not answering after 5 s, or being asked; then the graphics
+  each asked as it opens and every 30 s and timed on an open connection, as the game's link to its room is (a fresh one
+  also pays for setting the connection up): up, not answering after 5 s, or being asked; then the graphics
   exactly as Settings' Graphics tab has them (the resolution, and the App part below).
 - **Its foot**: what the servers say, and Play, which has the focus as it opens. Play keeps the time, for the next
   launch's new notes, and goes to the title, which hears the page only from then on (a pad's button held from Play

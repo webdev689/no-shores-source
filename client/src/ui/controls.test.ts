@@ -233,3 +233,41 @@ test("a choice's open list shuts on a press anywhere but on it", () => {
   assert.equal(ui.boxOf('pick:list'), null, 'a press on the empty ground shut it');
   assert.equal(chosen, 'a');
 });
+
+test('a choice inside a window floated over the screen opens its list over that window, and an option there is chosen', () => {
+  for (const layer of [20, 50]) {
+    const ui = new Interface(renderer());
+    let chosen = 'a';
+    const options = [
+      { value: 'a', words: 'Alpha' },
+      { value: 'b', words: 'Beta' },
+    ];
+    // A window floated over the whole view that takes the pointer, as the menu's and the launcher's are.
+    const build = (): Node => {
+      const made = choice(ui, 'pick', chosen, options);
+      chosen = made.chosen;
+      const window: Node = {
+        width: 400,
+        height: 300,
+        solid: true,
+        modal: true,
+        role: 'window',
+        float: { to: 'screen', z: layer },
+        padding: 10,
+        children: [made.node],
+      };
+      return { children: [window] };
+    };
+    ui.frame(VIEW, [], 0.016);
+    ui.draw(build());
+    ui.frame(VIEW, click(15, 15), 0.016);
+    ui.draw(build());
+    const beta = ui.boxOf('pick:b');
+    assert.ok(beta, `the list is open in a window at ${layer}`);
+    const drawn = ui.laid.map((each) => each.node.id);
+    assert.ok(drawn.indexOf('pick:list') > drawn.indexOf('pick'), `the list is drawn over its window at ${layer}`);
+    ui.frame(VIEW, click(beta.x + 2, beta.y + 2), 0.016);
+    ui.draw(build());
+    assert.equal(chosen, 'b', `an option over a window at ${layer} is chosen`);
+  }
+});
