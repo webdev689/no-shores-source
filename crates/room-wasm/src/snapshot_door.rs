@@ -4,12 +4,13 @@
 //! boarded go only to the player they are for, and a deck's own snapshot only to its boarders, each their own; and
 //! each player is sent only the ships near them: the hostile ships their ship keeps at sea (within `KEEP_SHARE` times
 //! its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in their fight; and
-//! only those walking the decks of the ships they are sent.
+//! only those walking the decks of the ships they are sent; and about once a second, every ship in the sea on its
+//! chart, for the held map.
 
 use crate::{Opened, with_open};
 use combat::shots::Line;
 use room::{FoeSeen, PlayerId, Room, Seen};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 /// A snapshot taken: a room on land's, cut for each player by what their screen showed; a fleet's bytes for
 /// everyone; or the sea's parts, to be cut for each player.
@@ -22,6 +23,15 @@ enum Prepared {
 /// How far off a player is sent the other players' ships, metres: the page's farthest view at sea
 /// (`client/src/game/sea.ts`, its horizon's `farM`).
 pub const PLAYERS_SEEN_M: f64 = 60_000.0;
+
+/// How often the sea's chart is sent, ticks: a second of them (`movement::TICK_SECONDS`).
+const CHART_EVERY_TICKS: u64 = 60;
+
+/// Whether the sea's chart is sent with the snapshot of `tick`, the last sent in the second `charted` (none before the
+/// first): once its clock has crossed into another second, however many ticks the room was stepped at once.
+fn charting(charted: Option<u64>, tick: u64) -> bool {
+    charted != Some(tick / CHART_EVERY_TICKS)
+}
 
 struct SeaParts {
     tick: u64,
@@ -102,6 +112,8 @@ impl SeaParts {
 
 thread_local! {
     static PREPARED: RefCell<Option<Prepared>> = const { RefCell::new(None) };
+    /// The second of the sea's clock its chart was last sent in.
+    static CHARTED: Cell<Option<u64>> = const { Cell::new(None) };
 }
 
 /// Takes the room's snapshot after its last tick: what happened since the last is taken with it.
@@ -150,6 +162,14 @@ pub fn prepare() {
                     (seen, finders.collect())
                 })
                 .collect();
+            let plates: Vec<_> = sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect();
+            let chart = charting(CHARTED.get(), sea.clock());
+            if chart {
+                CHARTED.set(Some(sea.clock() / CHART_EVERY_TICKS));
+            }
+            let name = |player| plates.iter().find(|(each, _)| *each == player).map(|(_, plate)| plate.name.clone());
+            let charted = sea.ships().filter(|_| chart);
+            let charted = charted.map(|(player, ship)| (player, [ship.x, ship.y], name(player).unwrap_or_default()));
             Prepared::Sea(Box::new(SeaParts {
                 tick: sea.clock(),
                 ships: sea.ships().collect(),
@@ -165,7 +185,8 @@ pub fn prepare() {
                     islands: Vec::new(),
                     taken: sea.taken(),
                     friendlies: sea.friendlies(),
-                    plates: sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect(),
+                    charted: charted.collect(),
+                    plates,
                     looks: sea.ships().filter_map(|(player, _)| Some((player, sea.look(player)?))).collect(),
                 },
                 deck_views,
@@ -217,6 +238,7 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                 friendlies: friendlies_seen(parts.own(player), &all.friendlies),
                 plates: all.plates.iter().filter(|(other, _)| sent(other)).cloned().collect(),
                 looks: all.looks.clone(),
+                charted: all.charted.clone(),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();

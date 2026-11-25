@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { PUBLIC_KIND, type PublicEvent } from '../network/publicMessages.ts';
 import type { OtherPlayers } from '../player/others.ts';
-import { mapMarksOf } from './mapMarks.ts';
+import { chartMarksOf, mapMarksOf } from './mapMarks.ts';
 
 const raid = (phase: number): PublicEvent => ({
   kind: PUBLIC_KIND.raid,
@@ -45,4 +45,22 @@ test('the land map marks every other player in the room in their nameplate colou
   assert.deepEqual(marks.events, [{ at: [50, 50], name: 'The Grey Tithe Raid', clock: '1:00' }]);
   assert.deepEqual(mapMarksOf(raid(2), others, () => false).events, [], 'over, it is marked no longer');
   assert.deepEqual(mapMarksOf(null, others, () => false).events, [], 'no event, none');
+});
+
+test('the sea map marks every other ship on the sea’s chart in its captain’s nameplate colour, never the player’s own', () => {
+  const charted = [
+    { player: 1, at: [10, 20] as const, name: 'Own_Ship' },
+    { player: 2, at: [4_000_000, 90_000] as const, name: 'Wren' },
+    { player: 3, at: [-5, 7] as const, name: '' },
+  ];
+  assert.deepEqual(
+    chartMarksOf(charted, 1, (name) => name === 'Wren'),
+    {
+      others: [
+        { at: [4_000_000, 90_000], company: true },
+        { at: [-5, 7], company: false },
+      ],
+      events: [],
+    },
+  );
 });

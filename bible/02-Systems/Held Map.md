@@ -99,6 +99,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   open every city is drawn as a port. The ship is a red-brown arrow along its heading, ringed in the parchment. The
   voyage under way is inked as a dashed red-brown line. Found islands (`setIsles`) are marked in the lighter ink under
   the words: a cove a small ring, an isle a wider ring with a tower in it (`paintIsle`, [[Island Drawing]]).
+- **Other ships** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]).
+  Every other player's ship in the sea's room, however far off, is a dot as on land (below), in their nameplate's
+  square's colour, over the words and under the ship's arrow (`chartMarksOf`, `dotInks`). The room sends the sea's
+  chart about once a second ([[Server]]); the map shows the last.
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands

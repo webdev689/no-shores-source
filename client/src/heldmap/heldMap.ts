@@ -36,7 +36,7 @@ import type { LandSheet, MapMarks } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
-import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
+import { dotInks, fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
 import type { MapWater, MapWaters } from './watersWash.ts';
 import { motionReduced } from '../plus/kit.ts';
 import type { Child } from '../ui/node.ts';
@@ -443,13 +443,14 @@ export class HeldMap {
     const land = this.land;
     const lettering = land ? null : this.laidOut.made(reads, () => this.layout(scene, sprite));
     const isles = lettering ? this.isleInks(lettering.scale) : [];
+    const others = lettering ? dotInks(scene.moving?.others ?? [], (x, y) => toInk(this.mapView, x, y), this.ink) : [];
     const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
-    const sea = [this.measuredFonts, lettering, isles, said, asked];
-    const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : sea]);
+    const sea = [this.measuredFonts, lettering, isles, others, said, asked];
+    const shape = JSON.stringify([width, height, inkAt, dpr, land ? [reads, scene.moving] : sea]);
     if (shape === this.letteredShape) return false;
     this.letteredShape = shape;
     if (lettering) {
-      paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
+      paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles, others);
       // While the prompt asks, it says what the pointer's words would.
       if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
       if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);

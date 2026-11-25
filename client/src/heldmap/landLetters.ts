@@ -6,10 +6,10 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { Rect, View } from './heldMapLaw.ts';
 import { GLYPH_HALF, paintGlyph } from './landGlyphs.ts';
 import type { GroundKind, LandSheet, MapMarks, Quad } from './landSheet.ts';
-import { barOf, paintDot, paintTable, tablePlace, tableRows, tableSize } from './landTable.ts';
+import { barOf, paintTable, tablePlace, tableRows, tableSize } from './landTable.ts';
 import { FACE, INK, type KeyPlace } from './mapKey.ts';
 import { PORT_PX } from './mapLayout.ts';
-import { LIGHT_INK, paintArrow, type Painter, ROUTE, word } from './mapLetters.ts';
+import { LIGHT_INK, paintArrow, paintDot, type Painter, ROUTE, word } from './mapLetters.ts';
 
 /** What a painting of the land asks: the sheet, the view of it (its metres), the map's size, how many times over its
  *  words and marks are drawn (`letterScale`), the gauntlets' cover over the map (ink pixels), where the table stood

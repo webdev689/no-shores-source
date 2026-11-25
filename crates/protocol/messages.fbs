@@ -313,6 +313,15 @@ table Friendly {
   hull: ubyte;
 }
 
+// A ship on the sea's chart (Snapshot.charted): its player's number, where it lies, and its captain's name, which the
+// page tells their company by.
+table Charted {
+  player: uint;
+  x: double;
+  y: double;
+  name: string;
+}
+
 // A hostile ship at sea, the Grey Tithe's: its number, where it is, its heading in radians clockwise from north, its
 // faction (1 the Grey Tithe), its rank (1 Minor to 5 Boss) and the hull its rank sails (0 the Sloop, 1 the Schooner,
 // 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop); then its level (0 none), the distance it is
@@ -634,6 +643,9 @@ table Snapshot {
   outpost: uint;
   // In a Breach's run or a patrol room with a Breach's gate, the Breach (BreachSeen); none in any other room.
   breach: BreachSeen;
+  // At sea, every ship in the room, the player's own among them, about once a second, for the held map: none in the
+  // snapshots between, nor in any other room.
+  charted: [Charted];
 }
 
 // What a room sends: exactly one of these is present.

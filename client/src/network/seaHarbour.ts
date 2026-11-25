@@ -62,6 +62,13 @@ export interface SeenFriendly {
   readonly hull: number;
 }
 
+/** A ship on the sea's chart: its player's number, where it lies (world metres), and its captain's name. */
+export interface SeenCharted {
+  readonly player: number;
+  readonly at: readonly [number, number];
+  readonly name: string;
+}
+
 export interface HarbourPart {
   readonly flotsam: readonly SeenFlotsam[];
   readonly kept: readonly SeenKept[];
@@ -72,6 +79,8 @@ export interface HarbourPart {
   /** Each traffic id the room has taken off its route, which the page draws no more, and those it keeps at sea. */
   readonly taken: readonly number[];
   readonly friendlies: readonly SeenFriendly[];
+  /** Every ship in the sea, the player's own among them, about once a second: empty in the snapshots between. */
+  readonly charted: readonly SeenCharted[];
 }
 
 /** The sea's part of a snapshot: empty from any other room. */
@@ -128,5 +137,10 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
       hull: friend.hull(),
     };
   });
-  return { flotsam, kept, told, decks, islands, taken, friendlies };
+  const charted = Array.from({ length: snapshot.chartedLength() }, (unused, index): SeenCharted => {
+    const ship = snapshot.charted(index);
+    if (!ship) throw new Error(`snapshot charted ${index} does not read`);
+    return { player: ship.player(), at: [ship.x(), ship.y()], name: ship.name() ?? '' };
+  });
+  return { flotsam, kept, told, decks, islands, taken, friendlies, charted };
 }

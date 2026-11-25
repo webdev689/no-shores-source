@@ -13,6 +13,7 @@ import type { WorldShown } from './worldShown.ts';
 import type { Sea } from './sea.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { MapMarks } from '../heldmap/landSheet.ts';
+import { chartMarksOf } from './mapMarks.ts';
 
 /** What the map at the helm draws over the finished picture. */
 export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
@@ -167,6 +168,7 @@ export class HelmMap {
           knownIslands: shown.knownIslands,
           course: here.course,
           quest: this.context.quest?.() ?? [],
+          moving: chartMarksOf(here.sighted?.charted ?? [], here.sighted?.own ?? -1),
         })
       : null;
     return map && drawn ? (encoder, view) => map.draw(encoder, view, drawn) : undefined;

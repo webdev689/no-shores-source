@@ -749,7 +749,8 @@ fn a_sea_snapshot_carries_the_traffic_ids_the_room_took_and_the_friendly_ships_i
     );
     let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &SeaHarbour::default());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
-    assert!(sea.taken().is_none() && sea.friendlies().is_none(), "none when there are none: the bytes as before");
+    let none = sea.taken().is_none() && sea.friendlies().is_none() && sea.charted().is_none();
+    assert!(none, "none when there are none: the bytes as before");
 }
 
 #[test]

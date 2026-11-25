@@ -3,6 +3,8 @@
 // parchment that its ink pass lays down with the ink, so the gauntlets holding the map cover them as they cover the
 // parchment.
 import { FACE, INK, paintKey } from './mapKey.ts';
+import { FILLS } from '../plus/tones.ts';
+import type { MapMarks } from './landSheet.ts';
 import {
   LINE,
   type Lettering,
@@ -97,6 +99,7 @@ export function paintLettering(
   scale: number,
   lettering: Lettering,
   isles: readonly IsleInk[] = [],
+  others: readonly DotInk[] = [],
 ): void {
   painter.setTransform(1, 0, 0, 1, 0, 0);
   painter.clearRect(0, 0, picture.width, picture.height);
@@ -112,6 +115,7 @@ export function paintLettering(
   };
   for (const mark of isles) local(mark.x, mark.y, () => paintIsle(painter, mark.isle));
   for (const letter of lettering.letters) local(letter.x, letter.y, () => paintLetter(painter, letter));
+  for (const other of others) local(other.x, other.y, () => paintDot(painter, other.company));
   const { ship } = lettering;
   if (ship) local(ship.x, ship.y, () => paintArrow(painter, ship.heading));
   if (lettering.key) paintKey(painter, lettering.key, lettering.scale);
@@ -189,6 +193,41 @@ function paintRing(painter: Painter, half: number, taller: number, colour: strin
   painter.closePath();
   painter.fill();
   painter.stroke();
+}
+
+/** Another player's dot on the map, in their nameplate's square's colour, edged in the ink; its radius, units. */
+export const DOT = { company: FILLS.green, player: FILLS.ally, radius: 3.2 } as const;
+
+/** Paints another player's dot at the origin. */
+export function paintDot(painter: Painter, company: boolean): void {
+  painter.beginPath();
+  painter.arc(0, 0, DOT.radius, 0, 2 * Math.PI);
+  painter.fillStyle = company ? DOT.company : DOT.player;
+  painter.fill();
+  painter.strokeStyle = INK;
+  painter.lineWidth = 1;
+  painter.stroke();
+}
+
+/** Another player's ship on the sea's sheet, ink pixels, and whether they are of the viewer's company. */
+export interface DotInk {
+  readonly x: number;
+  readonly y: number;
+  readonly company: boolean;
+}
+
+/** Other players' ships at sea (world metres) as their dots on the sheet `ink` (`inkOf`), those on it alone, to the
+ *  quarter pixel. */
+export function dotInks(
+  others: MapMarks['others'],
+  inkOf: (x: number, y: number) => readonly [number, number],
+  ink: { readonly width: number; readonly height: number },
+): DotInk[] {
+  return others.flatMap(({ at, company }) => {
+    const [x, y] = inkOf(at[0], at[1]);
+    const onSheet = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
+    return onSheet ? [{ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, company }] : [];
+  });
 }
 
 /** The ship's red-brown arrow, or the player's on land, along its heading (radians clockwise from north), ringed in

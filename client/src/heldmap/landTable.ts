@@ -4,29 +4,14 @@
 import type { Rect, View } from './heldMapLaw.ts';
 import { GLYPH_HALF, GLYPHS, type LandGlyph, paintGlyph } from './landGlyphs.ts';
 import type { LandSheet, MapMarks } from './landSheet.ts';
-import { FILLS } from '../plus/tones.ts';
 import { FACE, INK, KEY_FONT, keyCorners, type KeyPlace } from './mapKey.ts';
-import { paintArrow, type Painter } from './mapLetters.ts';
+import { paintArrow, paintDot, type Painter } from './mapLetters.ts';
 
 /** A row of the table: a glyph, the player's arrow or another player's dot (a company's green, else blue), and what
  *  it is. */
 export interface TableRow {
   readonly glyph: LandGlyph | 'you' | 'company' | 'player';
   readonly word: string;
-}
-
-/** Another player's dot on the map, in their nameplate's square's colour, edged in the ink; its radius, units. */
-export const DOT = { company: FILLS.green, player: FILLS.ally, radius: 3.2 } as const;
-
-/** Paints another player's dot at the origin. */
-export function paintDot(painter: Painter, company: boolean): void {
-  painter.beginPath();
-  painter.arc(0, 0, DOT.radius, 0, 2 * Math.PI);
-  painter.fillStyle = company ? DOT.company : DOT.player;
-  painter.fill();
-  painter.strokeStyle = INK;
-  painter.lineWidth = 1;
-  painter.stroke();
 }
 
 const PANEL = 'rgba(238, 222, 190, 0.94)';

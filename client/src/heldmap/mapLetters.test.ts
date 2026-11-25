@@ -3,7 +3,18 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { Lettering } from './mapLayout.ts';
 import { INK } from './mapKey.ts';
-import { COVE_HALF, fontOf, ISLE_HALF, LIGHT_INK, paintLettering, type Painter, PARCHMENT } from './mapLetters.ts';
+import {
+  COVE_HALF,
+  DOT,
+  dotInks,
+  fontOf,
+  ISLE_HALF,
+  LIGHT_INK,
+  paintLettering,
+  type Painter,
+  PARCHMENT,
+  ROUTE,
+} from './mapLetters.ts';
 import { levelColour } from './watersWash.ts';
 
 /** A 2D context that records what is painted, each word 6 pixels a letter wide. */
@@ -194,4 +205,27 @@ test('a place the quest names is ringed round its mark', () => {
   assert.ok(mark !== undefined);
   assert.deepEqual(arcs(true).length, 2, 'its mark and the ring');
   assert.ok((arcs(true)[1] ?? 0) > mark, 'the ring round the mark');
+});
+
+test('at sea each other player’s ship on the sheet is a dot in their nameplate’s colour, over the words, under the arrow', () => {
+  const ink = { width: 800, height: 500 };
+  const ship = (x: number, y: number) => ({ at: [x, y] as const, company: false });
+  const marks = [{ ...ship(1000, 2000), company: true }, ship(3001, 499), ship(-50, 0), ship(9000, 0)];
+  const others = dotInks(marks, (x, y) => [x / 10, y / 10], ink);
+  assert.deepEqual(
+    others,
+    [
+      { x: 100, y: 200, company: true },
+      { x: 300, y: 50, company: false },
+    ],
+    'those off the sheet are not dotted, and each lies to the quarter pixel',
+  );
+  const { painter, calls } = recorder();
+  paintLettering(painter, ink, { x: 0, y: 0 }, 1, { ...LETTERING, key: null }, [], others);
+  const dots = calls.flatMap((call, index) => (call.name === 'arc' && call.args[2] === DOT.radius ? [index] : []));
+  const filled = dots.map((index) => calls.slice(index).find((call) => call.name === 'fill')?.fillStyle);
+  assert.deepEqual(filled, [DOT.company, DOT.player]);
+  const lastWord = calls.findLastIndex((call) => call.name === 'fillText');
+  const arrow = calls.findLastIndex((call) => call.name === 'fill' && call.fillStyle === ROUTE);
+  assert.ok(dots.every((index) => index > lastWord && index < arrow));
 });
