@@ -484,7 +484,7 @@ impl Room {
     /// and the living foes leave room for it.
     pub(crate) fn keep_garrison(&mut self) {
         self.stand_sites();
-        self.reinforce();
+        self.lift_sites();
         self.lead_groups();
         self.walk_beats();
         // A wave that has fallen is gone: it never stands again.
@@ -525,10 +525,7 @@ use stands::farthest;
 #[path = "smaller.rs"]
 mod smaller;
 
-#[path = "reinforcements.rs"]
-mod reinforcements;
-pub(crate) use reinforcements::Brought;
-pub(crate) use smaller::varied;
+pub(crate) use stands::Site;
 
 #[path = "groups.rs"]
 mod groups;
@@ -565,7 +562,3 @@ mod stands_tests;
 #[cfg(test)]
 #[path = "clears_tests.rs"]
 mod clears_tests;
-
-#[cfg(test)]
-#[path = "reinforcements_tests.rs"]
-mod reinforcements_tests;

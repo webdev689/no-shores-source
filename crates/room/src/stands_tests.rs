@@ -1,10 +1,14 @@
 //! Where a garrison's groups stand: a post laid only where one stands, clearing the points round it alone; a patrol's
-//! foes' sites, each standing its group the first time a player comes near it, on a mesh baked round it.
+//! foes' sites, its territories, each standing its group as a player comes near it, on a mesh baked round it, let go
+//! once no player has come near for a while and standing afresh as one comes again, none by a public event's ground;
+//! and a cleared group come back by airship.
 
 use super::garrison_tests::{clear, node, run, run_baked, stand_player};
-use super::stands::{SITE_NEAR, first_post};
+use super::leash_tests::whole;
+use super::stands::{EVENT_CLEAR, LIFT_AFTER, LIFT_FAR, SITE_NEAR, first_post};
 use super::*;
 use crate::FoeSeen;
+use crate::arrivals::Bringer;
 
 /// A site far from the node's own square, which holds its spawns' end of the section.
 const SITE: [f64; 2] = [-150.0, -100.0];
@@ -59,9 +63,7 @@ fn a_patrol_s_foes_site_stands_its_group_the_first_time_a_player_comes_within_15
     clear(&mut room, post);
     stand_player(&mut room, player, [SITE[0], SITE[1] + SITE_NEAR - 5.0]);
     run(&mut room, STAND_AGAIN + 2);
-    // The groups the airships brought the roaming player meanwhile are no site's (`reinforcements.rs`).
-    let held = room.garrison.iter().filter(|post| !post.arrival).count();
-    assert_eq!(held, posts + 1, "it stands nowhere else");
+    assert_eq!(room.garrison.len(), posts + 1, "it stands nowhere else");
     let again: Vec<FoeSeen> = room.foes_seen().filter(|foe| room.garrison[post].standing.contains(&foe.foe)).collect();
     assert_eq!(again.len(), kept.len(), "a cleared site's group stands again as any garrison group does");
     for (new, old) in again.iter().zip(&kept) {
@@ -97,4 +99,93 @@ fn the_same_site_stands_the_same_group_on_every_machine_and_only_in_a_patrol() {
     assert!(!stood(NodeKind::Patrol).is_empty());
     assert_eq!(stood(NodeKind::Patrol), stood(NodeKind::Patrol));
     assert!(stood(NodeKind::Mission).is_empty(), "a mission's garrison is one encounter: no site stands in it");
+}
+
+#[test]
+fn a_site_s_group_no_player_comes_near_for_a_while_is_let_go_and_stands_afresh_as_one_comes_again() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    room.set_foe_sites(&[SITE]);
+    let (posts, foes) = (room.garrison.len(), room.foes_seen().count());
+    let player = room.join().unwrap();
+    let near = [SITE[0], SITE[1] + SITE_NEAR - 5.0];
+    stand_player(&mut room, player, near);
+    run_baked(&mut room, 3);
+    assert_eq!(room.garrison.len(), posts + 1, "its group stands");
+    let first = room.garrison[posts].standing.clone();
+    let drawn: Vec<(u8, u8)> = room.foes_seen().skip(foes).map(|foe| (foe.foe_type, foe.rank)).collect();
+    // Far off, out of sight: once the while is up and its foes are idle, they are gone with their post.
+    let away = [180.0, 180.0];
+    assert!(apart(away, SITE) > LIFT_FAR + SPREAD * 2.0);
+    let mut gone_at = None;
+    for tick in 0..LIFT_AFTER + 60 * 60 {
+        stand_player(&mut room, player, away);
+        whole(&mut room, player);
+        room.tick();
+        if first.iter().all(|id| !room.foes.contains_key(id)) {
+            gone_at = Some(tick);
+            break;
+        }
+    }
+    assert!(gone_at.is_some_and(|tick| tick >= LIFT_AFTER - 1), "let go after the while: {gone_at:?}");
+    assert_eq!(room.garrison.len(), posts, "its post with them");
+    // Come near again, it stands afresh, already on the ground: the same group, drawn from where the site is.
+    stand_player(&mut room, player, near);
+    run_baked(&mut room, 3);
+    assert_eq!(room.garrison.len(), posts + 1, "it stands again");
+    let again = room.garrison[posts].standing.clone();
+    assert!(again.iter().all(|id| !room.arriving(*id)), "already on the ground");
+    let seen: Vec<(u8, u8)> =
+        room.foes_seen().filter(|foe| again.contains(&foe.foe)).map(|foe| (foe.foe_type, foe.rank)).collect();
+    assert_eq!(seen, drawn);
+}
+
+#[test]
+fn no_site_stands_by_a_public_event_s_ground_which_its_event_holds() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    room.set_foe_sites(&[SITE]);
+    let middle = [SITE[0] + 40.0, SITE[1]];
+    assert!(apart(middle, SITE) <= 25.0 + EVENT_CLEAR);
+    let fissure = crate::public::FissureGround { at: middle, radius: 25.0, growth: [middle[0] + 10.0, middle[1]] };
+    room.open_public("saltgrass-downs", crate::public::Grounds { fissure: Some(fissure), raid: None }, None);
+    let posts = room.garrison.len();
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [SITE[0], SITE[1] + SITE_NEAR - 5.0]);
+    run_baked(&mut room, 3);
+    assert_eq!(room.garrison.len(), posts, "the event's own foes hold its ground");
+}
+
+#[test]
+fn a_cleared_group_and_a_half_fallen_group_s_fallen_come_back_by_airship() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    room.set_foe_sites(&[]);
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, -150.0]);
+    let post = room.garrison.iter().position(|post| post.members.len() >= 2).unwrap();
+    for id in room.garrison[post].standing.clone() {
+        let found = room.foes.get_mut(&id).unwrap();
+        (found.fighter.health, found.fighter.action) = (0.0, combat::fighter::Action::Dead { elapsed: 0 });
+    }
+    run(&mut room, STAND_AGAIN + 2);
+    let again = room.garrison[post].standing.clone();
+    assert!(again.iter().all(|id| room.arriving(*id)), "it comes back by airship");
+    let ship = room.arrival_of(again[0]).unwrap().from;
+    assert!(room.arrivals_seen().iter().any(|seen| seen.id == ship && seen.kind == Bringer::Airship));
+}
+
+#[test]
+fn a_site_whose_middle_lies_past_the_section_s_edge_stands_its_group_inside_it() {
+    // The fixture's section reaches 200 m each way: this middle lies 5 m past its west edge.
+    let past = [-205.0, -100.0];
+    let mut room = node(NodeKind::Patrol, "glade");
+    room.set_foe_sites(&[past]);
+    let posts = room.garrison.len();
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [-150.0, -100.0]);
+    run_baked(&mut room, 3);
+    assert_eq!(room.garrison.len(), posts + 1, "its group stands");
+    let section = room.section.clone().unwrap();
+    for id in &room.garrison[posts].standing {
+        let body = room.foes[id].fighter.body;
+        assert!(reach::inside(&section.ring, body.x, body.y), "inside the section: {:.1} {:.1}", body.x, body.y);
+    }
 }

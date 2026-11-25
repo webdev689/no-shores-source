@@ -204,7 +204,7 @@ pub struct Room {
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
     /// A patrol's foes' sites, each with whether its group has stood there yet (`stands.rs`).
-    pub(crate) foe_sites: Vec<([f64; 2], bool)>,
+    pub(crate) foe_sites: Vec<garrison::Site>,
     /// Since when no player has come near each half-fallen patrol group, by its first foe as it stood (`stands.rs`).
     pub(crate) unvisited: BTreeMap<FighterId, u64>,
     pub(crate) drops: Vec<Drop>,
@@ -263,8 +263,6 @@ pub struct Room {
     pub(crate) respawning: revive::Respawning,
     /// What brings foes now, the Tithe's airships and the Lattice's crowns, and the foes arriving (`arrivals.rs`).
     pub(crate) arrivals: arrivals::Arrivals,
-    /// A patrol's groups the airships brought (`reinforcements.rs`).
-    pub(crate) brought: garrison::Brought,
 }
 
 impl Room {
@@ -352,7 +350,6 @@ impl Room {
             breach_gate: None,
             respawning: revive::Respawning::default(),
             arrivals: arrivals::Arrivals::default(),
-            brought: garrison::Brought::default(),
         }
     }
 

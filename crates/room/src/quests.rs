@@ -51,8 +51,6 @@ pub(crate) struct QuestGround {
     pub square: Option<navmesh::Bounds>,
     pub grounds: Vec<QuestMesh>,
     pub baking: Option<(String, navmesh::Bounds, navmesh::Baking)>,
-    /// The last tick a place asked for its ground and waited, its turn taken or another's bake under way, and its name.
-    pub waited: Option<(u64, String)>,
     pub way_on: BTreeMap<FighterId, usize>,
     /// The lore read for what lies in its node (`lore.rs`): the file's, unless a test gives its own.
     pub lore: Option<&'static gear::lore::LoreDef>,
@@ -156,21 +154,15 @@ impl Room {
             return Some(had);
         }
         if self.quests.baked_at == Some(self.clock) {
-            self.quests.waited = Some((self.clock, place.name.clone()));
             return None;
         }
         self.quests.baked_at = Some(self.clock);
         let (floor, blocks) = (&self.floor, &self.blocks);
-        let (_, bounds, baking) = self.quests.baking.get_or_insert_with(|| {
+        let (_, _, baking) = self.quests.baking.get_or_insert_with(|| {
             let (bounds, baking) = square_baking(floor, blocks, (at[0], at[1]));
             (place.name.clone(), bounds, baking)
         });
-        let own = round(bounds, at);
-        let stepped = baking.step(floor);
-        if !own {
-            self.quests.waited = Some((self.clock, place.name.clone()));
-        }
-        let mesh = stepped?;
+        let mesh = baking.step(floor)?;
         let (name, bounds, _) = self.quests.baking.take()?;
         self.quests.grounds.push((name, bounds, mesh));
         round(&bounds, at).then_some(self.quests.grounds.len())

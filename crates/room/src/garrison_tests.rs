@@ -234,7 +234,7 @@ fn a_cleared_group_stands_again_two_minutes_after_its_last_fell_once_no_player_i
 fn a_node_s_room_holds_more_foes_than_a_course_s_counting_only_the_living_when_a_group_stands_again() {
     assert_eq!(Room::new(Vec::new(), (0.0, 0.0)).foes_most, FOES_MOST);
     assert_eq!((node(NodeKind::Mission, "glade").foes_most, FOES_MOST, NODE_FOES_MOST), (NODE_FOES_MOST, 12, 24));
-    // A patrol keeps room besides for the groups the airships bring.
+    // A patrol keeps room besides for its territories' groups.
     let mut room = node(NodeKind::Patrol, "glade");
     assert_eq!((room.foes_most, crate::PATROL_FOES_MOST), (crate::PATROL_FOES_MOST, 32));
     clear(&mut room, 0);

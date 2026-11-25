@@ -25,7 +25,8 @@ use std::collections::BTreeMap;
 /// for those called behind; and the ask that sends every foe away.
 pub const FOES_MOST: usize = 12;
 pub const NODE_FOES_MOST: usize = 24;
-/// A patrol's room holds this many: a node's and room for the groups the Tithe's airships bring (`reinforcements.rs`).
+/// A patrol's room holds this many: a node's, and room for its territories' groups standing near its players
+/// (`stands.rs`).
 pub const PATROL_FOES_MOST: usize = NODE_FOES_MOST + 8;
 /// An ask for a foe on the wire names its role in its low four bits, and in the bits above them the element of a
 /// shield it stands with, 0 for none.
