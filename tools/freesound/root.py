@@ -6,7 +6,6 @@ note; publish.py copies it onto the pick's entry in content/audio/sounds.json.
     python3 -I tools/freesound/root.py <preview.mp3>...
 
 It decodes a stranger's audio, so it runs where no key is held."""
-import re
 import shutil
 import subprocess
 import sys
@@ -14,8 +13,6 @@ import sys
 import numpy
 
 RATE = 44100
-# A root as written: a note ("C3", "F#2", "Bb1") and, where it is off it, its cents (the game's rootNote reads it).
-ROOT = re.compile(r'[A-G](#|b)?-?\d([+-]\d{1,2})?')
 NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 # The lowest and highest fundamentals looked for, hertz: C1 to B5, the scores' whole range.
 LOWEST_HZ = 32.0

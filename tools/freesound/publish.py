@@ -20,9 +20,6 @@ TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 from r2 import PUBLIC, put  # noqa: E402
 
-sys.path.insert(0, HERE)
-from root import ROOT  # noqa: E402
-
 REPO = os.path.dirname(TOOLS)
 MANIFEST = os.path.join(REPO, 'content', 'audio', 'sounds.json')
 WANTED = os.path.join(REPO, 'content', 'audio', 'freesound.json')
@@ -30,6 +27,9 @@ WANTED = os.path.join(REPO, 'content', 'audio', 'freesound.json')
 # plays at the game's own level. The sounds heard most vary a little in pitch each time (uiSounds.ts, play; the world's
 # steps, swings and blows in worldSounds.ts; every ambience recording in the ambience's player).
 CHANGES = 'Unchanged.'
+# A music cue's root as root.py writes it: a note ("C3", "F#2", "Bb1") and, where it is off it, its cents (the game's
+# rootNote reads it). Kept here, at the gate into sounds.json, so the publish needs none of root.py's numpy.
+ROOT = re.compile(r'[A-G](#|b)?-?\d([+-]\d{1,2})?')
 VARIED = re.compile(r'ui\.(hover|press|back)|(step|swing|hit|amb)\..+')
 VARIES = 'Its pitch varies a little each time it plays.'
 # The music's instruments (client/src/game/audio/music/sampled.ts) play a pick at many pitches.
