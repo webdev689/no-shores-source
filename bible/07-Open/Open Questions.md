@@ -78,6 +78,12 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   draws (mithril); their own art waits (the owner: "Not now").
 - **The balance pass's open point** ([[The Balance and Economy Pass as Claude Shapes It]]): Conduit (Deepwatch) brings
   a Tenet back about every 27 s against 105.
+- **Signing the desktop app.** Unsigned, its Windows installer meets "Windows protected your PC" and its Mac app opens
+  only from Privacy & Security, and cannot update itself. Signing takes the owner's accounts and keys: Apple's
+  Developer Program for a Mac (a Developer ID and notarizing), and for Windows a code-signing certificate or Azure's
+  Artifact Signing ([[Desktop App]], "Releases and downloads").
+- **The desktop app on the website.** Whether the site offers its downloads, and in what words ([[Desktop App]];
+  [[The Website's Words and the Bot's Month Are Approved]]).
 - **Foe arrivals** ([[Foe Arrivals as Claude Builds Them]]), each the owner's to say:
   - The airship's and the crown's look and flight, once seen in the game: their size, the airship's 16 m hang and
     8 s flight in, the crown's claw and its 6.4 m height.

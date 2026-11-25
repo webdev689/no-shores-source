@@ -25,7 +25,8 @@ decision, made in the same change as its entry here.
 | `client/src/game/audio/ambience/scapes.ts`, `law.ts`, `places.ts`, `recordings.ts` | The eleven ambiences as data, the recording each bed and call plays, and the pure laws: place to ambience, the time of day, breathing and gusts, call gaps, crossfades, and where each call stands |
 | `client/src/game/audio/ambience/dsp.ts` | The seeded die and the filters a place's room is cut from |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's keys and Destiny's pad as the player binds them, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, the crosshair, and the [[Arts]]' pictures |
-| `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
+| `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]), and tells the desktop app's shell the adapter it got |
+| `client/src/desktop.ts` | What the [[Desktop App]]'s shell and the game say to each other, read by both, and the game's side of it: what the shell told, and its asks, which do nothing in a browser |
 | `client/src/perfMeter.ts`, `gpuTimer.ts` | What the game's frames cost: the time between them, the script's, each pass's on the GPU, and the `?perf` readout ([[Game]], "Drawing") |
 | `client/src/face.ts`, `trueType.ts` | The glyphs Pixelify Sans misreads or lacks, drawn in code on its grid for the interface to draw, and made into a font for the held map's lettering ([[Interface]], "The face") |
 | `client/src/frustum.ts` | What a view sees: a view-projection's six planes, and whether a box, a sphere or a set of points reaches inside them, for every drawer that leaves out what is out of view |
@@ -83,6 +84,7 @@ decision, made in the same change as its entry here.
 | `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
 | `client/src/speech/` | The speech layer, which imports `plus` and `ui`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
 | `client/src/cinema/` | The cinema layer, which imports `water`, `combat`, `plus` and `ui`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
+| `client/src/game/launcher/` | The [[Desktop App]]'s launcher: its window, the patch notes it reads and marks new, and the servers it asks |
 | `client/src/game/prologue/` | The [[Prologue]]: the tap to start, the intro and title, character creation and the story mission's beats, run by its director |
 | `client/src/game/npc/` | The keepers' screen every counter of a social space opens, and Shape's: the keeper drawn in their dress with their words and band, the rows of wares each keeper sells, a faction's rows (`factionRows.ts`), the stock's clock ([[Interface]], [[Factions]]) |
 | `client/src/game/gearHints.ts` | What the menu's footer says each view's presses and keys do, the bounty board's and the Journal's among them ([[Interface]]) |
@@ -96,6 +98,7 @@ decision, made in the same change as its entry here.
 | `server/` | The [[Server]]'s Cloudflare shell ([[The Server's Shell Is in server]]): the Worker and its Durable Object, which keep each room in WebAssembly, Cloudflare's settings (`wrangler.jsonc`) and the shell's TypeScript settings, and the keeper that keeps each player's character with the accounts while they play |
 | `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the judge of the [[Names]] players set for others to read, the Roster (friends, companies, guilds, blocks, mutes, reports, where each player is), guilds' treasuries and outposts, the chat's hall and its law, the characters the rooms hold, Find a Company's queues, the linked character the [[Discord Bot]] reads, and the database's migrations |
 | `site/` | The [[Website]], built apart from the game by its own Vite config (`site/vite.config.ts`) into `target/site/`: one folder a page, each `index.html` naming its words, links and pictures by key |
+| `site/worker.ts` | The site's Worker, run for `/download/` alone: the [[Desktop App]]'s installers and update feeds read from R2, and the names that never move sent to the newest |
 | `site/src/siteMap.ts` | The site's pages, the outside places it links to (Play, the Discord) and its own address, each named once; adding a page is one entry here |
 | `site/src/words.ts` | Every word the site says, by page and name: the owner's premise passage by passage, and the lines from the decisions |
 | `site/src/page.ts`, `sitePlugin.ts` | A page made whole: the bar and the foot laid in, its words, links and pictures filled; and the Vite plugin that does it at serve and at build and writes the pictures into the build |
@@ -106,6 +109,9 @@ decision, made in the same change as its entry here.
 | `server/bot/law/` | The bot's law, platform-neutral so the website's panel imports it too: access levels from Discord permissions, the settings law, every module's declared settings, tables and acts, and the message law that builds what Discord is sent |
 | `server/bot/modules/` | The bot's modules, most one file each, a large one's parts beside it, and what a module is (`module.ts`) |
 | `server/bot/layout/` | The No Shores server's layout as data (roles, channels, settings, modules, messages) and the plan and build that make it (`build.ts`, `parts.ts`) |
+| `desktop/` | The [[Desktop App]]: its own package (Electron, its packing tools and the updater), the shell's TypeScript settings, and electron-builder's settings in `package.json`. Builds into `desktop/out/` (not in git) |
+| `desktop/src/` | The shell: its wiring (`main.ts`), the game's window and its keys, crashes and unreachable address (`gameWindow.ts`, `crashes.ts`), the fences and the game's address (`fences.ts`, `gameAddress.ts`), the bridge and its preload (`bridge.ts`, `preload.cts`), the graphics backends, their switches and the watch over a launch (`graphics.ts`, `switches.ts`, `graphicsWatch.ts`), the kept settings (`config.ts`), the window's place, the menu, and the updates (`updates.ts`, `updater.ts`) |
+| `desktop/release/` | A release's tools: its version from its commit's time, the check that it is whole, its upload order and Linux's two feeds made one, and the icon drawn by the site's code |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names and borders; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |

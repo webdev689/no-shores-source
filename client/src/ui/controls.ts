@@ -98,19 +98,20 @@ export function slider(
 }
 
 /** One of `options` chosen from a list that opens under it, and shuts on Escape or a press anywhere else; answers the
- *  node and the choice now. */
+ *  node, the choice now, and whether an option was picked this frame (the one already chosen among them). */
 export function choice(
   ui: Interface,
   id: string,
   chosen: string,
   options: readonly { readonly value: string; readonly words: string }[],
-): { node: Node; chosen: string } {
+): { node: Node; chosen: string; picked: boolean } {
   let now = chosen;
+  let picked = false;
   let open = ui.store.get(id) === true;
   if (ui.clicked(id)) open = !open;
   for (const option of options)
     if (ui.clicked(`${id}:${option.value}`)) {
-      now = option.value;
+      [now, picked] = [option.value, true];
       open = false;
     }
   if (open && (ui.escaped || ui.pressedAway(id))) open = false;
@@ -118,6 +119,7 @@ export function choice(
   const words = options.find((option) => option.value === now)?.words ?? now;
   return {
     chosen: now,
+    picked,
     node: {
       id,
       press: true,

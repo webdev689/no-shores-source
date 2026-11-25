@@ -18,7 +18,7 @@ to deploy. It stops at the first failing step, in the order a failure is cheapes
 2. **format**: rustfmt, then Prettier.
 3. **lints**: clippy on every crate and target, then ESLint; warnings are errors. Clippy also refuses clocks and
    every float method the platform may round its own way, such as `sin`, `exp` and `powf` ([[Agree to the Bit]]).
-4. **types**: TypeScript, strict, for the client, the server's shell and the tests.
+4. **types**: TypeScript, strict, for the client, the server's shell, the site, the desktop app's shell and the tests.
 5. **shaders**: every shader the client compiles, written out by `npm run shaders` into `target/shaders/` and
    validated as WGSL with naga, the front end wgpu builds on ([[Every Shader Is Checked Offline]]). WebGPU reports a
    shader that fails to compile only as a warning, so this is where a broken one is caught. A shader's code is the
