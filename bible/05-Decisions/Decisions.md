@@ -373,6 +373,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Every Chest Is DFO's Chest, and Its Vestige Pours Out as project-final's Cache Pours]]
 - [[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]
 - [[The Ships at the Harbourmaster as Claude Shapes Them]]
+- [[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]
 
 ## Replaced
 

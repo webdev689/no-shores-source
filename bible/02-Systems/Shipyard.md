@@ -85,22 +85,22 @@ waters, standing off at 300 m or closing to 150 m (`measure_fights_by_hull`, run
 
 | Hull, captain | Stand-off: won / sunk, median length, hull kept | Closing to 150 m: the same |
 |---|---|---|
-| Sloop, Major | 12 / 0 of 12, 206 s, 100% | 10 / 2 of 12, 257 s, 55% |
-| Sloop, Elite | 12 / 0 of 12, 242 s, 96% | 4 / 8 of 12, 225 s, 32% |
-| Sloop, Miniboss | 12 / 0 of 12, 261 s, 76% | 1 / 11 of 12, 162 s, 50% |
-| Schooner, Major | 12 / 0 of 12, 204 s, 98% | 10 / 2 of 12, 259 s, 55% |
+| Sloop, Major | 12 / 0 of 12, 206 s, 100% | 10 / 2 of 12, 257 s, 58% |
+| Sloop, Elite | 12 / 0 of 12, 242 s, 96% | 3 / 9 of 12, 209 s, 45% |
+| Sloop, Miniboss | 12 / 0 of 12, 261 s, 74% | 0 / 12 of 12, 160 s, none afloat |
+| Schooner, Major | 12 / 0 of 12, 204 s, 98% | 10 / 2 of 12, 259 s, 53% |
 | Schooner, Elite | 12 / 0 of 12, 215 s, 91% | 3 / 9 of 12, 186 s, 33% |
-| Schooner, Miniboss | 12 / 0 of 12, 251 s, 75% | 1 / 11 of 12, 150 s, 24% |
+| Schooner, Miniboss | 12 / 0 of 12, 251 s, 75% | 0 / 12 of 12, 150 s, none afloat |
 | Brig, Major | 12 / 0 of 12, 213 s, 97% | 10 / 2 of 12, 258 s, 67% |
-| Brig, Elite | 12 / 0 of 12, 233 s, 92% | 10 / 2 of 12, 279 s, 41% |
-| Brig, Miniboss | 12 / 0 of 12, 247 s, 78% | 2 / 10 of 12, 207 s, 26% |
+| Brig, Elite | 12 / 0 of 12, 233 s, 93% | 10 / 2 of 12, 279 s, 43% |
+| Brig, Miniboss | 12 / 0 of 12, 247 s, 80% | 1 / 11 of 12, 189 s, 30% |
 | Frigate, Major | 12 / 0 of 12, 237 s, 99% | 12 / 0 of 12, 232 s, 68% |
-| Frigate, Elite | 12 / 0 of 12, 234 s, 93% | 10 / 2 of 12, 280 s, 55% |
-| Frigate, Miniboss | 12 / 0 of 12, 256 s, 82% | 4 / 8 of 12, 238 s, 32% |
+| Frigate, Elite | 12 / 0 of 12, 234 s, 93% | 10 / 2 of 12, 280 s, 53% |
+| Frigate, Miniboss | 12 / 0 of 12, 256 s, 79% | 4 / 8 of 12, 238 s, 32% |
 
 Hull kept is the mean over the fights a ship came out of afloat, so a row with one win reads that one fight. Standing
 off, every hull wins every fight. Closing in, the Schooner fights as the Sloop does, its edge its speed; the Brig and
-the Frigate take ten Elites in twelve to the Sloop's four; the Frigate keeps the most of its hull against Majors and
+the Frigate take ten Elites in twelve to the Sloop's three; the Frigate keeps the most of its hull against Majors and
 Elites and takes the most Minibosses. Twelve fights a row leave a row's wins within two or so of chance. The measure's
 plain player lays for the water's range, never a look on a ship.
 
@@ -148,8 +148,6 @@ Dresses and the name's words cross the wire by their place in their lists, so bo
 - A broadside fires square ([[Ship Guns Keep Square Broadsides]]), so a battery longer than its target lands less of
   its weight on it as the range opens. Abeam of an Elite's Schooner, at 60 m every hull lands 96 to 98% of its weight
   against what the Sloop lands; at 150 m the Schooner 93%, the Brig 85%, the Frigate 79%.
-- A captain's battery takes its middle's elevation, so a Boss's Frigate's lower deck falls short. Laying each of its
-  guns too is the owner's to choose: it would make Minibosses and Bosses hit harder than their ranks were measured.
 - A captain sizing up a player's ship reckons its class's weight and reload, not its swing or how much of a long
   battery's weight lands, so a wary one rates a Frigate a little above what it throws.
 - A player joined to a companion in a place entered only from the sea (a sea island, a run begun at sea) is not asked

@@ -112,10 +112,11 @@ sea's soundscape ([[Ambience]]).
   a shot or tunnels one through a hull.
 - **A gun is laid, not pointed.** A broadside fires square to the hull ([[Ship Guns Keep Square Broadsides]]); the
   gunner sets only the range, and the low arc that lands there is found within the carriage. Each gun's mouth rides
-  the ship's heel; the lay stays its upright hull's. A player's guns are each elevated for that range from their own
-  port and deck (`Lay::laid_on`), so a second gun deck throws as far as the first; a captain's all take their
-  battery's middle's elevation. Square, a battery longer than the ship it fires at throws its end guns' balls past
-  that ship's ends, the more so as the range opens.
+  the ship's heel; the lay stays its upright hull's. Every ship's guns, a player's and a captain's
+  ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]), are each elevated for that range from their own
+  port and deck (`Lay::laid_on`), so a second gun deck throws as far as the first, and a captain's misjudged range is
+  as far off at every gun. Square, a battery longer than the ship it fires at throws its end guns' balls past that
+  ship's ends, the more so as the range opens.
 - **The guns** are DFO's swivel, three a side: 55 m/s, -10 to 14 degrees, 149 m at most from the ship's deck. A broadside
   ripples 0.09 s a gun, each ball from where its port is by then, scattered by the volley's seed (more for a poorer
   gunner). No battery bears within 35 degrees of its bow or 40 of its stern. Each side reloads on its own clock: a
@@ -448,9 +449,10 @@ whole bring the Tithe Sloop to strike.
 
 ## In the World Editor
 
-While sailing, `F` calls a Grey Tithe captain, a Major in their Sloop, onto the ring 650 to 1000 m round the Sloop, where the
-water floats it, heading across its waters on a slant; `F` again sends the captain off. The fight then steps the Sloop in its
-helm's place. Holding the right mouse aims as the game's fight does ("The aim, as DFO's"): the camera goes round to
+The editor sails the Sloop, or the hull its address names (`?hull=schooner`, `brig` or `frigate`), as that hull's
+rules and drawing. While sailing, `F` calls a Grey Tithe captain, a Major in their Sloop, onto the ring 650 to 1000 m
+round the ship, where the water floats it, heading across its waters on a slant; `F` again sends the captain off. The
+fight then steps the ship in its helm's place. Holding the right mouse aims as the game's fight does ("The aim, as DFO's"): the camera goes round to
 the battery's eye aboard on the side looked at and looks off it at the lay, and a drag up or down lays the range, unless the view's
 middle is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, `C` braces, and `Shift` bursts.
@@ -798,7 +800,8 @@ browser by the same functions the room fires by (`preview`), among the ships the
 
 Alone, the fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders (up
 to a second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. A begin may name
-its captain's rank (a Major's unless it does), and the captain sails its hull; each ship's answer names its hull. Its state
+its captain's rank (a Major's unless it does), and the captain sails its hull, and the player's hull (the Sloop's
+unless it does); each ship's answer names its hull. Its state
 never crosses, so requests and answers are JSON. A scripted fight's fingerprint at the end of each leg is pinned
 natively and through WebAssembly, and the same fight's against each hull ([[Agree to the Bit]]). In a fleet room the
 room's crate holds the fight, and a browser predicts its own ship through `room-wasm` by the same steps.

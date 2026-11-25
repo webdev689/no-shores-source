@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Harbour } from './harbour.ts';
+import { askedHull, Harbour } from './harbour.ts';
 import type { Sailing, SailSource } from './sailing.ts';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -101,4 +101,9 @@ test('an answer for a Sail since brought in is not taken by the next one', async
   await settle();
   assert.equal(failures.length, 0, 'the first answer is dropped');
   assert.equal(harbour.sailing?.place({ leftM: 0, topM: 0 } as Parameters<Sailing['place']>[0], 1).x, 5000);
+});
+
+test('the address names the hull the editor sails, the Sloop unless it names one', () => {
+  const asked = ['?hull=brig', '?hull=Frigate&room=x', '?hull=schooner', '', '?hull=galleon'].map(askedHull);
+  assert.deepEqual(asked, [2, 3, 1, 0, 0]);
 });

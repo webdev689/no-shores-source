@@ -103,6 +103,21 @@ test('a fight against each hull through WebAssembly fights to the same fingerpri
   }
 });
 
+test("a fight begun with the player's hull through WebAssembly sails it and lays its every gun", async () => {
+  const rules = await openSquare();
+  const sides = [0, 1, 2, 3].map((hull) => {
+    const begun = rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000, { hull });
+    const looked = rules.fightStep(ordersOf([0, 0, 90, 80]), 1000, 1, 0);
+    return [begun.player.hull_kind, looked.lay?.launches.length];
+  });
+  assert.deepEqual(sides, [
+    [0, 3],
+    [1, 5],
+    [2, 7],
+    [3, 10],
+  ]);
+});
+
 test('the fight door refuses a step with no fight and a look past its reach', async () => {
   const rules = await openSquare();
   rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000);

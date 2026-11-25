@@ -1,5 +1,6 @@
 import type { Helm, ShipFloats } from '../rules/landRules.ts';
 import { helmOf, isRungKey } from '../ships/helmKeys.ts';
+import { SLOOP_HULL } from '../ships/hulls.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import { Afloat } from './afloat.ts';
 
@@ -8,17 +9,19 @@ export const TICK_SECONDS = 1 / 60;
 /** The most ticks one step asks, the rules' own cap: a second's. Time spent waiting on the rules (behind a close-up
  *  being made) is caught up in the next step, up to this; the scene caps a frame at a tenth of a second. */
 export const MOST_TICKS = 60;
-/** Where a ship is sailed: the land's rules, over the open landmass; null when another landmass is open. */
+/** Where a ship is sailed: the land's rules, over the open landmass, as its `hull` (the Sloop unless given); null when
+ *  another landmass is open. */
 export interface SailSource {
-  sail(id: string, ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed | null>;
+  sail(id: string, ship: ShipFloats, helm: Helm, time: number, ticks: number, hull?: number): Promise<Sailed | null>;
 }
 
 const STILL: Helm = { steer: 0, climb: 0 };
 export { SAILS_RUNG } from './afloat.ts';
 
-/** The Sloop under the owner's hand in the World Editor: its numbers as the rules last answered them, the ticks the
- *  page owes it, and the rung presses waiting for a step. One step is with the rules at a time. */
+/** The ship under the owner's hand in the World Editor: its hull, its numbers as the rules last answered them, the
+ *  ticks the page owes it, and the rung presses waiting for a step. One step is with the rules at a time. */
 export class Sailing extends Afloat {
+  readonly hullKind: number;
   private readonly source: SailSource;
   private readonly id: string;
   private owed = 0;
@@ -27,13 +30,15 @@ export class Sailing extends Afloat {
   private inFlight: Promise<void> = Promise.resolve();
   private readonly presses: string[] = [];
 
-  private constructor(source: SailSource, id: string, sailed: Sailed) {
+  private constructor(source: SailSource, id: string, sailed: Sailed, hull: number) {
     super(sailed.ship, sailed.pose);
     this.source = source;
     this.id = id;
+    this.hullKind = hull;
   }
 
-  /** Puts it to sea at world (x, y), heading as the camera looks, or says why it cannot be. The rules decide. */
+  /** Puts a ship of `hull` to sea at world (x, y), heading as the camera looks, or says why it cannot be. The rules
+   *  decide. */
   static async putToSea(
     source: SailSource,
     id: string,
@@ -41,13 +46,14 @@ export class Sailing extends Afloat {
     y: number,
     heading: number,
     time: number,
+    hull = SLOOP_HULL,
   ): Promise<Sailing | string> {
     const turn = 2 * Math.PI;
     const within = ((heading % turn) + turn) % turn;
-    const sailed = await source.sail(id, new Float64Array([x, y, within, 0, 0, 0, 0, 0]), STILL, time, 0);
+    const sailed = await source.sail(id, new Float64Array([x, y, within, 0, 0, 0, 0, 0]), STILL, time, 0, hull);
     if (!sailed) return 'Open this landmass to sail on it.';
-    if (sailed.pose.aground) return 'The Sloop needs water deeper than its draught: put it to sea off the coast.';
-    return new Sailing(source, id, sailed);
+    if (sailed.pose.aground) return 'The ship needs water deeper than its draught: put it to sea off the coast.';
+    return new Sailing(source, id, sailed, hull);
   }
 
   /** A key pressed (not held down): a rung key waits for the next step. */
@@ -67,7 +73,7 @@ export class Sailing extends Afloat {
     this.pending = true;
     const helm = helmOf(held, this.presses.shift());
     this.inFlight = this.source
-      .sail(this.id, this.ship, helm, time - ticks * TICK_SECONDS, ticks)
+      .sail(this.id, this.ship, helm, time - ticks * TICK_SECONDS, ticks, this.hullKind)
       .then((sailed) => {
         this.pending = false;
         if (!sailed) return;

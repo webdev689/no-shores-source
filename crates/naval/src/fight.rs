@@ -225,8 +225,19 @@ impl Fight {
         waters: &impl Waters,
         time: f64,
     ) -> Result<Fight, String> {
+        Self::begin_in((ship, HullKind::Sloop), commission, seed, waters, time)
+    }
+
+    /// `begin` with the player's ship of `hull`, sound, its numbers its class's.
+    pub fn begin_in(
+        (ship, hull): (Ship, HullKind),
+        commission: Commission,
+        seed: u32,
+        waters: &impl Waters,
+        time: f64,
+    ) -> Result<Fight, String> {
         let mut fight = Fight::new(seed);
-        fight.put_to_sea(PLAYER, ship, waters, time);
+        fight.put_to_sea_kept(PLAYER, (ship, hull), [1.0; 3], waters, time);
         fight.call_captain(CAPTAIN, &ship, commission, waters, time)?;
         Ok(fight)
     }
@@ -328,8 +339,19 @@ impl Fight {
         waters: &impl Waters,
         time: f64,
     ) -> Result<Fight, String> {
+        Self::ambush_in((ship, HullKind::Sloop), captains, seed, waters, time)
+    }
+
+    /// `ambush` with the player's ship of `hull`, sound, its numbers its class's.
+    pub fn ambush_in(
+        (ship, hull): (Ship, HullKind),
+        captains: &[(Ship, Commission, u32)],
+        seed: u32,
+        waters: &impl Waters,
+        time: f64,
+    ) -> Result<Fight, String> {
         let mut fight = Fight { ambush: true, ..Fight::new(seed) };
-        fight.put_to_sea(PLAYER, ship, waters, time);
+        fight.put_to_sea_kept(PLAYER, (ship, hull), [1.0; 3], waters, time);
         if let Some(player) = fight.ships.get_mut(&PLAYER) {
             player.damage.least_hull = 1.0;
         }

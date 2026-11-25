@@ -290,14 +290,16 @@ export class LandSession {
     return this.climates.get(id) ?? null;
   }
 
-  /** A ship sailed over a landmass; null when another is open. */
-  sail(id: string, ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed | null> {
-    return this.then(async () => (this.openId === id ? this.worker.sail(ship, helm, time, ticks) : null));
+  /** A ship of `hull` sailed over a landmass; null when another is open. */
+  sail(id: string, ship: ShipFloats, helm: Helm, time: number, ticks: number, hull?: number): Promise<Sailed | null> {
+    return this.then(async () => (this.openId === id ? this.worker.sail(ship, helm, time, ticks, hull) : null));
   }
 
-  /** A fight begun round a ship over a landmass; null when another is open. */
-  fightBegin(id: string, ship: ShipFloats, seed: number, time: number): Promise<FightView | null> {
-    return this.then(async () => (this.openId === id ? this.worker.fightBegin(ship, seed, time) : null));
+  /** A fight begun round a ship of `hull` over a landmass; null when another is open. */
+  fightBegin(id: string, ship: ShipFloats, seed: number, time: number, hull?: number): Promise<FightView | null> {
+    return this.then(async () =>
+      this.openId === id ? this.worker.fightBegin(ship, seed, time, undefined, hull) : null,
+    );
   }
 
   /** The fight stepped by the player's orders; null when another landmass is open. */

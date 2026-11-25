@@ -200,13 +200,14 @@ The decisions in [[Open Questions]] are not repeated here.
   Sloop handed over by the welcome's Harbourmaster (a task of its own; at the counter to one who pledged before it),
   the Schooner, Brig and Frigate bought from ship levels 7, 13 and 20; each hull with its class's numbers (how long it
   lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does, each gun elevated from its
-  own deck; 33 dresses sold, besides each part's start and the houses' six at rank 2, bought once and laid free;
+  own deck, as a captain's are on the owner's "Captains aim gun by gun"
+  ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]); the aim's camera and arcs follow the hull
+  sailed, and the World Editor sails the hull its address names (`?hull=brig`); 33 dresses sold, besides each part's start and the houses' six at rank 2, bought once and laid free;
   names from two word lists, free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag.
   Asks 86 to 90, refusals answered 167 to 173. Tested offline: the full check on the branch's head as pushed, the
   counter pictured headless (`harbourShots.ts`), a dressed Brig pictured at sea, and 12 fights a row by hull
   ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the owner: the prices, levels and
-  class numbers, the word lists, a figurehead once one is modelled, whether a captain's guns are elevated gun by gun
-  too, and whether a shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
+  class numbers, the word lists, a figurehead once one is modelled, and whether a shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
 - **The bounty board after the Bounty Tracker, and faction bounties** (#196, a draft for the owner's yes), on the
   owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
   ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in

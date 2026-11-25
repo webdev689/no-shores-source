@@ -65,7 +65,9 @@ fn arcs_end_on_their_stops(lay: &Value) {
         let came = naval::ballistics::flight(start, velocity, end["time"].as_f64().unwrap_or(0.0));
         let point = [0, 1, 2].map(|axis| number(&end["point"], axis));
         let off = (0..3).map(|axis| (came[axis] - point[axis]) * (came[axis] - point[axis])).sum::<f64>().sqrt();
-        assert!(off < 0.01, "an arc ends {off} m from its stop");
+        // A splash stands on the swell, its time found by the clearance laid straight across a tick's piece: the
+        // swell's curve under that piece leaves its end up to a centimetre or two off the arc.
+        assert!(off < 0.02, "an arc ends {off} m from its stop");
     }
 }
 
@@ -282,6 +284,34 @@ fn a_fight_begun_with_captains_sets_each_where_it_is_given_and_shows_the_rest_in
     assert_eq!(others[0]["rank"], 3);
     assert_eq!(others[1]["faction"], 1, "the Grey Tithe");
     assert_eq!(others[1]["name"], "Tithe Sloop");
+}
+
+#[test]
+fn a_fight_begun_with_a_hull_sails_it_and_lays_its_every_gun() {
+    opened();
+    let begin = |hull: &str, captains: &str| {
+        let request = format!(
+            r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "hull": {hull}{captains} }}"#
+        );
+        answer(&fight_begin_json(request.as_bytes()))
+    };
+    for (hull, max_hull, guns) in [(0, 240.0, 3), (1, 300.0, 5), (2, 473.0, 7), (3, 579.0, 10)] {
+        let begun = begin(&hull.to_string(), "");
+        assert_eq!(
+            (begun["player"]["hull_kind"].as_u64(), begun["player"]["max_hull"].as_f64()),
+            (Some(hull), Some(max_hull))
+        );
+        let looked =
+            answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
+        assert_eq!(looked["lay"]["launches"].as_array().map(Vec::len), Some(guns), "hull {hull}'s side");
+        arcs_end_on_their_stops(&looked["lay"]);
+    }
+    let ambushed =
+        begin("3", r#", "captains": [{ "x": 180400, "y": 360000, "heading": 4.7, "faction": 1, "rank": 1 }]"#);
+    assert_eq!(ambushed["player"]["hull_kind"], 3, "an ambush sails the hull too");
+    for refused in ["4", "-1", "1.5", r#""brig""#] {
+        assert!(begin(refused, "")["error"].as_str().is_some(), "no hull is {refused}");
+    }
 }
 
 #[test]
