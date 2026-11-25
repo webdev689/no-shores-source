@@ -3075,12 +3075,17 @@
     {
       "id": "music.choir.low",
       "use": "A men's choir holding one note, for the scores",
-      "query": "male choir",
+      "query": "male choir note",
       "seconds": [
         3.0,
         15.0
       ],
-      "picked": 561253
+      "skip": [
+        89287,
+        469222,
+        561253,
+        679210
+      ]
     },
     {
       "id": "music.choir.high",
@@ -3118,12 +3123,14 @@
     {
       "id": "music.piano",
       "use": "A soft felt piano's single note, for the quiet stretches",
-      "query": "felt piano note",
+      "query": "piano single note",
       "seconds": [
         2.0,
         10.0
       ],
-      "picked": 448617
+      "skip": [
+        448617
+      ]
     },
     {
       "id": "music.harp",
@@ -3149,13 +3156,18 @@
     },
     {
       "id": "music.timpani",
-      "use": "A single timpani hit",
-      "query": "timpani hit",
+      "use": "A single timpani hit on one clear note",
+      "query": "timpani note",
       "seconds": [
         1.0,
         6.0
       ],
-      "picked": 427803
+      "skip": [
+        267980,
+        427803,
+        573282,
+        687925
+      ]
     },
     {
       "id": "music.taiko",
@@ -3239,13 +3251,18 @@
     },
     {
       "id": "music.drone",
-      "use": "A dark, slow drone under the scores, looped",
-      "query": "dark ambient drone",
+      "use": "A dark, slow drone holding one note under the scores, looped",
+      "query": "drone sustained note",
       "seconds": [
         20.0,
         180.0
       ],
-      "picked": 799354
+      "skip": [
+        155139,
+        708532,
+        799354,
+        845391
+      ]
     },
     {
       "id": "music.riser",
