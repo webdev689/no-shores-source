@@ -4,7 +4,7 @@
 //! course that ends in the water the ship is in. Taken, the ship lies on the course's last leg short of its end,
 //! heading along it, and sails the rest; the player's next roll for a hostile ship waits its first wait again.
 
-use super::{Coast, CourseRefused, Sea, leg_meets_land, on_land};
+use super::{COURSE_EVERY_TICKS, Coast, CourseRefused, Sea, leg_meets_land, on_land};
 use crate::PlayerId;
 
 /// What the sea tells a player of their travel: the code, the tick, and its outcome (0 taken, else
@@ -66,21 +66,16 @@ impl Sea {
         if self.hostiles.sailing.iter().any(|hostile| hostile.quarry == Some(player)) {
             return Err(TravelRefused::Chased);
         }
-        let &asked = points.last().ok_or(TravelRefused::Course(CourseRefused::BadCourse))?;
-        if self.chart.water_id(asked) == self.chart.water_id([ship.x, ship.y]) {
-            return Err(TravelRefused::OwnWater);
+        // The waters and the islands are searched for a player's travel at most once a course's wait, taken or not;
+        // a refused one keeps no course of theirs waiting.
+        let clock = self.clock;
+        let berth = self.berths.get_mut(&player).ok_or(TravelRefused::Course(CourseRefused::NoSuchPlayer))?;
+        if berth.travel_at.is_some_and(|at| clock < at + COURSE_EVERY_TICKS) {
+            return Err(TravelRefused::Course(CourseRefused::TooSoon));
         }
-        // The last leg lies in waters the player was never told of: it is judged against every standing island, and
-        // the place the ship would lie on it, before anything is set.
-        if let Some([start, end]) = last_leg(points, [ship.x, ship.y]) {
-            let (placed, _) = placed_on(start, end);
-            let islands: Vec<&Coast> = self.islands.coasts().collect();
-            let whole = |at: [f64; 2]| super::whole(&at);
-            let lies_on = whole(placed).is_some_and(|at| on_land(islands.iter().copied(), at));
-            let meets = whole(start).zip(whole(end));
-            if lies_on || meets.is_some_and(|(from, to)| leg_meets_land(islands.iter().copied(), from, to)) {
-                return Err(TravelRefused::Course(CourseRefused::CrossesLand));
-            }
+        berth.travel_at = Some(clock);
+        if let Some(refused) = self.refused_where(points, ship) {
+            return Err(refused);
         }
         self.course(player, points, pace).map_err(TravelRefused::Course)?;
         // The course as the room took it, to the whole metre, from where the ship lay.
@@ -94,6 +89,25 @@ impl Sea {
         sailing.course.drain(..sailing.course.len() - 1);
         self.hostiles.wait_first(player);
         Ok(())
+    }
+}
+
+impl Sea {
+    /// Why a travel by `points` from `ship` is refused where it goes: its end in the ship's own water, or its last leg,
+    /// in waters the player was never told of, across a standing island or ending the ship on one.
+    fn refused_where(&self, points: &[[f64; 2]], ship: super::Ship) -> Option<TravelRefused> {
+        let Some(&asked) = points.last() else { return Some(TravelRefused::Course(CourseRefused::BadCourse)) };
+        if self.chart.water_id(asked) == self.chart.water_id([ship.x, ship.y]) {
+            return Some(TravelRefused::OwnWater);
+        }
+        let [start, end] = last_leg(points, [ship.x, ship.y])?;
+        let (placed, _) = placed_on(start, end);
+        let islands: Vec<&Coast> = self.islands.coasts().collect();
+        let whole = |at: [f64; 2]| super::whole(&at);
+        let lies_on = whole(placed).is_some_and(|at| on_land(islands.iter().copied(), at));
+        let meets = whole(start).zip(whole(end));
+        let crosses = meets.is_some_and(|(from, to)| leg_meets_land(islands.iter().copied(), from, to));
+        (lies_on || crosses).then_some(TravelRefused::Course(CourseRefused::CrossesLand))
     }
 }
 
