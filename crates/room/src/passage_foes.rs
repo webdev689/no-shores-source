@@ -16,7 +16,7 @@ use ::foes::roster::{
 };
 use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
-use movement::Terrain;
+use movement::{TUNING, Terrain};
 use naval::random::Mulberry32;
 use passage::{Current, Deal, Form, Ground, Mission};
 use reach::Section;
@@ -55,6 +55,12 @@ const WAVE_MORE_MOST: usize = 3;
 const HEALTH_PER_PLAYER: f64 = 0.5;
 /// No held band stands, and no wave, nearer a player than this (m).
 pub(crate) const CLEAR_M: f64 = 12.0;
+/// How far from a deal's foe's place the mesh is looked for where none lies within 4 m of it (m): a wave's place, a
+/// band's spread round a spot in a dungeon's nook the mesh leaves out, can lie 6 m past it.
+const OFF_MESH_M: f64 = 8.0;
+/// How far off a solid's edge a deal's foe is placed where the mesh's point lies on it (m): past a cell of a
+/// dungeon's mesh.
+const EDGE_OFF_M: f64 = 0.5;
 
 /// Who stands in a zone: its bands' foes and its Elites.
 struct Roster {
@@ -172,11 +178,12 @@ impl Room {
         }
     }
 
-    /// Stands a band at a post, girded at the zone's levels, Hardened's health on it: whether it stood.
+    /// Stands a band at a post, girded at the zone's levels, Hardened's health on it, its places and its beat inside
+    /// the hollow's floor above ground and the section under it: whether it stood.
     fn stand_band(&mut self, group: &Group, at: [f64; 2], levels: (u8, u8)) -> bool {
-        let Some(section) = self.section.clone().map(|section| Section { spawns: Vec::new(), ..section }) else {
-            return false;
-        };
+        let floor = self.zone().and_then(|zone| zone.floor.clone());
+        let Some(section) = self.section.clone() else { return false };
+        let section = Section { ring: floor.unwrap_or(section.ring), spawns: Vec::new(), ..section };
         let spots: Vec<(f64, f64)> =
             self.zone().map(|zone| zone.sites.spots.iter().map(|at| (at[0], at[1])).collect()).unwrap_or_default();
         let nth = (self.garrison.len() as u64) << 8;
@@ -387,8 +394,21 @@ impl Room {
         nth: u32,
     ) -> Option<FighterId> {
         let levels = self.zone()?.levels;
-        let ground = [at[0], at[1], self.floor.height_at(at[0], at[1])];
-        let place = self.mesh_at(ground).nearest_point(ground).unwrap_or(ground);
+        // Placed on the floor's level: a dungeon's rock and solids stand as tall as its walls, and a place inside one
+        // read at its top finds no floor near and stands its foe up there, out of every player's reach.
+        let ground = [at[0], at[1], self.floor.floor_at(at[0], at[1])];
+        // In a nook the mesh leaves out it stands at the mesh's point nearest, further off; where no mesh is near, none.
+        let mesh = self.mesh_at(ground);
+        let place = mesh.nearest_point(ground).or_else(|| mesh.nearest_point_within(ground, OFF_MESH_M))?;
+        // The mesh is cut in cells, so its point can lie on a dungeon solid's very edge, where the ground reads the
+        // solid's top: the mesh's point nearest one a little off it, round it, is taken instead.
+        let on_floor = |point: &[f64; 3]| self.floor.height_at(point[0], point[1]) <= point[2] + TUNING.step;
+        let mut off_edge = (0..8).filter_map(|turn| {
+            let angle = core::f64::consts::TAU * f64::from(turn) / 8.0;
+            let point = [place[0] + libm::sin(angle) * EDGE_OFF_M, place[1] - libm::cos(angle) * EDGE_OFF_M, place[2]];
+            mesh.nearest_point(point)
+        });
+        let place = if on_floor(&place) { place } else { off_edge.find(on_floor).unwrap_or(place) };
         let id = self.stand_foe(::foes::foe_type(number)?, rank, place, facing, None);
         let (level, shield) =
             crate::garrison::gird_of(self.world_seed ^ BAND_STREAM ^ 2, nth, Some(levels), self.shield_chance());

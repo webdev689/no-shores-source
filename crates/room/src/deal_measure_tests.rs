@@ -1,6 +1,6 @@
 //! The time one player, and a company of four, takes over each passage zone's deal, measured for the band
 //! (`gear::band::PASSAGE_SECONDS`): the scripted player of `band_measure_tests` (a level 1 player with the starting
-//! sword, every foe at its level, held whole, its way found on the navmesh or else on foot) plays the deal to done as
+//! sword, every foe at its level, held whole, its way the zone's walk, `passage::Walk`) plays the deal to done as
 //! a player would: a Kindle's dead lamps held and a reliquary opened once no foe is near, a vein's nodes gathered, a
 //! Hold's ring stood in, a Gauntlet's far mouth walked to, every other deal's foes brought down, none by hand. Run by
 //! hand, in release:
@@ -154,6 +154,19 @@ fn play_the_deal(room: &mut Room, plan: &Plan, players: usize) -> (Option<f64>, 
         "not done: the objective {short:?} m off, {} foes standing, the nearest {nearest:.1} m",
         room.living_foes()
     );
+    // Each foe still standing, for its cause: how far off and how far up it stands, and its health left.
+    let mine = room.fighter(walkers[0].player).map(|fighter| fighter.body.z).unwrap_or_default();
+    for foe in room.foes.values().filter(|foe| !foe.fighter.dead()) {
+        let body = foe.fighter.body;
+        eprintln!(
+            "  standing: {:?} {:.1} m off, {:.1} m up, health {:.0} of {:.0}",
+            foe.brain.rank,
+            libm::hypot(body.x - me[0], body.y - me[1]),
+            body.z - mine,
+            foe.fighter.health,
+            foe.fighter.health_max
+        );
+    }
     (None, room.living_foes())
 }
 

@@ -272,21 +272,23 @@ need to keep all our content within this band", [[Passages Web Out From the Patr
   it (their kills, caches and lamps, the haul's finds less a death's share, one in twenty at the first depth to one in
   four at the twentieth). Each is reckoned from the rules' own pay, on average, never by dice; the day's and the
   week's rewards are spread over fourteen hours of play a week.
-- **The times** are named constants, each saying where it was measured: a scripted player in the room crate
-  (`room::band_measure_tests::measure_the_pace`, held whole, walking the navmesh to the nearest foe and swinging every
-  half second) took 25 s a foe in a patrol zone's garrison, 55 s in a patrol's dungeon and 45 s in an Elite Dungeon;
-  playing a passage zone's deal to done on foot (`room::deal_measure_tests::measure_the_deals`) it took 192 s a zone
-  over about five foes, 45 s a foe, in the zones it did, the room standing nine at most; a passage zone's foe pays
-  three quarters of a kill (`lamps::KILL_SHARE`); a Boss's and a Miniboss's fights are `measure_blows`'; the
-  sea's sightings and fights are the balance pass's. A run's level gap over its player lengthens its time by the share
+- **The times** are named constants, each saying where it was measured: one scripted player in the room crate
+  (`room::band_measure_tests::measure_the_pace`, held whole, walking to the nearest foe, a dungeon by the same walk a
+  passage zone under ground takes, and swinging every half second) took 12 s a foe in a patrol zone's garrison, 28 s
+  in a patrol's dungeon over 17 foes and 27 s in an Elite Dungeon over 22; playing a passage zone's deal to done
+  (`room::deal_measure_tests::measure_the_deals`) it took 202 s a zone over about six foes, 38 s a foe, in 43 of 45
+  zones, the two left each a foe that climbed a hollow's cliff ([[Passages]], "Limits"); a passage zone's foe pays
+  three quarters of a kill (`lamps::KILL_SHARE`); a Boss's and a Miniboss's fights are `measure_blows`'; the sea's
+  sightings and fights are the balance pass's. A run's level gap over its player lengthens its time by the share
   of a blow the gap leaves (`power::gap`). A lamp's zone, one in five of a dive, stands its guard alone; a vault is
   dealt only under ground, half the zones.
 - **Loot** is weighed by colour, each twice the one below, as each colour drops half or less as often.
 - **The band**, against a patrol zone's hour at the same level: XP and Aurem 0.7 to 2, loot 0.75 to 5
-  (`PAY_BAND`, `LOOT_BAND`). A patrol's dungeon's own clear measured 0.73 of a patrol zone's Aurem; the owner's order
-  asks harder content to drop more, so the week's Abyss Dungeon run again reaches 4.5 times its loot. A test fails for
-  any activity outside it, and another if the passages drop the most loot at any level or pay the most XP at every
-  level.
+  (`PAY_BAND`, `LOOT_BAND`), the owner's order asking harder content to drop more. A test fails for any activity
+  outside it, and another if the passages drop the most loot at any level or pay the most XP at every level. Two stand
+  outside it now, waiting on the owner: the sea at level 5 (0.65, 0.62 and 0.66 of the patrol zone's XP, Aurem and
+  loot) and the week's Abyss Dungeon run again at level 30 (2.15, 2.02 and 6.03). The passages stand at 0.79 to 1.55
+  of its XP, 0.73 to 1.43 of its Aurem and 1.03 to 1.96 of its loot.
 - **Not counted**: bounties and the Abyss boon, which pay alike whatever is played, and the cold lantern, a bounty's.
   Shapes come from the week's Abyss alone and are not loot here.
 
@@ -294,28 +296,31 @@ As the measuring printed it (`cargo test -p gear --release measure_the_band -- -
 
 | Level | Activity | XP | Aurem | Vestiges, Normal to Atheric | Items, Normal to Atheric | Materials | Essence | XP, Aurem, loot against the patrol zone |
 |---|---|---|---|---|---|---|---|---|
-| 10 | Patrol zone | 25275 | 2011 | 3.92/1.73/0.71/0.00/0.00 | 0.00/0.00/0.00/0.00/0.00 | 147 | 1.0 | 1.00, 1.00, 1.00 |
-| 10 | Patrol dungeon | 19889 | 1474 | 4.56/1.63/0.60/0.00/0.00 | 3.64/1.36/0.52/0.00/0.00 | 0 | 0.0 | 0.79, 0.73, 1.82 |
-| 10 | Sea | 22668 | 1710 | 0.22/0.06/0.02/0.00/0.00 | 4.35/1.35/0.43/0.00/0.00 | 62 | 0.0 | 0.90, 0.85, 0.90 |
-| 10 | Elite Playlist | 21631 | 1575 | 4.90/1.91/0.79/0.00/0.00 | 3.25/1.33/0.57/0.00/0.00 | 0 | 0.3 | 0.86, 0.78, 1.96 |
-| 10 | Passages, depth 10 | 24835 | 1842 | 7.43/2.53/0.88/0.00/0.00 | 0.78/0.29/0.11/0.00/0.00 | 36 | 0.1 | 0.98, 0.92, 1.74 |
-| 10 | Passages, depth 11 | 29365 | 2177 | 7.87/2.70/0.94/0.00/0.00 | 0.77/0.29/0.11/0.00/0.00 | 35 | 0.1 | 1.16, 1.08, 1.84 |
-| 10 | Passages, depth 12 | 22902 | 1705 | 5.41/1.87/0.66/0.00/0.00 | 0.51/0.19/0.07/0.00/0.00 | 24 | 0.1 | 0.91, 0.85, 1.27 |
-| 20 | Patrol zone | 42142 | 3365 | 3.73/1.60/0.64/0.27/0.12 | 0.00/0.00/0.00/0.00/0.00 | 147 | 1.0 | 1.00, 1.00, 1.00 |
-| 20 | Patrol dungeon | 33157 | 2469 | 4.36/1.56/0.57/0.22/0.08 | 3.44/1.28/0.51/0.21/0.08 | 0 | 0.0 | 0.79, 0.73, 1.75 |
-| 20 | Sea | 59691 | 4321 | 0.38/0.13/0.05/0.02/0.01 | 5.63/1.94/0.70/0.26/0.10 | 79 | 0.0 | 1.42, 1.28, 1.25 |
-| 20 | Elite Playlist | 34368 | 2528 | 4.63/1.79/0.73/0.31/0.14 | 3.00/1.23/0.55/0.25/0.11 | 0 | 0.3 | 0.82, 0.75, 2.01 |
-| 20 | Abyss Playlist | 40450 | 2991 | 5.20/2.01/0.82/0.35/0.16 | 3.38/1.38/0.62/0.28/0.13 | 0 | 0.4 | 0.96, 0.89, 2.26 |
-| 20 | Passages, depth 16 | 53575 | 4009 | 7.92/2.72/0.95/0.29/0.00 | 0.69/0.26/0.10/0.04/0.00 | 33 | 0.4 | 1.27, 1.19, 1.58 |
-| 20 | Passages, depth 17 | 58527 | 4397 | 7.80/2.68/0.93/0.29/0.10 | 0.67/0.25/0.10/0.04/0.02 | 33 | 0.4 | 1.39, 1.31, 1.68 |
-| 30 | Patrol zone | 59010 | 4718 | 3.73/1.60/0.64/0.27/0.12 | 0.00/0.00/0.00/0.00/0.00 | 147 | 1.0 | 1.00, 1.00, 1.00 |
-| 30 | Patrol dungeon | 46426 | 3464 | 4.36/1.56/0.57/0.22/0.08 | 3.44/1.28/0.51/0.21/0.08 | 0 | 0.0 | 0.79, 0.73, 1.75 |
-| 30 | Sea | 97754 | 7006 | 0.45/0.16/0.06/0.02/0.01 | 6.27/2.24/0.83/0.32/0.13 | 87 | 0.0 | 1.66, 1.48, 1.47 |
-| 30 | Elite Playlist | 47106 | 3480 | 4.63/1.79/0.73/0.31/0.14 | 3.00/1.23/0.55/0.25/0.11 | 0 | 0.3 | 0.80, 0.74, 2.01 |
-| 30 | Abyss Playlist | 62808 | 4640 | 6.11/2.36/0.96/0.41/0.18 | 4.01/1.64/0.74/0.34/0.15 | 0 | 0.4 | 1.06, 0.98, 2.66 |
-| 30 | Elite Dungeon of the week | 65517 | 4854 | 7.56/2.87/1.15/0.55/0.21 | 5.25/2.14/0.97/0.44/0.20 | 0 | 0.4 | 1.11, 1.03, 3.37 |
-| 30 | Abyss Dungeon of the week | 98643 | 7375 | 10.08/3.83/1.53/0.70/0.29 | 7.00/2.86/1.29/0.59/0.26 | 0 | 0.7 | 1.67, 1.56, 4.48 |
-| 30 | Passages, depth 20 | 78414 | 5884 | 7.66/2.64/0.92/0.34/0.11 | 0.64/0.24/0.10/0.04/0.02 | 31 | 0.7 | 1.33, 1.25, 1.71 |
+| 5 | Patrol zone | 20098 | 1610 | 4.96/2.01/0.79/0.00/0.00 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 5 | Sea | 13014 | 991 | 0.19/0.05/0.02/0.00/0.00 | 3.87/1.16/0.35/0.00/0.00 | 56 | 0.0 | 0.65, 0.62, 0.66 |
+| 5 | Passages, depth 4 | 15948 | 1179 | 6.75/2.24/0.76/0.00/0.00 | 0.24/0.09/0.03/0.00/0.00 | 36 | 0.0 | 0.79, 0.73, 1.22 |
+| 10 | Patrol zone | 30105 | 2384 | 4.96/2.01/0.79/0.00/0.00 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 10 | Patrol dungeon | 33205 | 2470 | 7.48/2.62/0.94/0.00/0.00 | 5.47/2.03/0.78/0.00/0.00 | 0 | 0.0 | 1.10, 1.04, 2.40 |
+| 10 | Sea | 22668 | 1710 | 0.22/0.06/0.02/0.00/0.00 | 4.35/1.35/0.43/0.00/0.00 | 62 | 0.0 | 0.75, 0.72, 0.76 |
+| 10 | Elite Playlist | 33059 | 2410 | 7.47/2.91/1.19/0.00/0.00 | 5.20/2.14/0.91/0.00/0.00 | 0 | 0.3 | 1.10, 1.01, 2.57 |
+| 10 | Passages, depth 10 | 30716 | 2296 | 7.55/2.56/0.88/0.00/0.00 | 0.74/0.28/0.11/0.00/0.00 | 34 | 0.1 | 1.02, 0.96, 1.47 |
+| 10 | Passages, depth 11 | 37737 | 2772 | 8.24/2.80/0.97/0.00/0.00 | 0.73/0.27/0.10/0.00/0.00 | 34 | 0.1 | 1.25, 1.16, 1.60 |
+| 10 | Passages, depth 12 | 29394 | 2168 | 5.65/1.94/0.68/0.00/0.00 | 0.49/0.18/0.07/0.00/0.00 | 22 | 0.1 | 0.98, 0.91, 1.10 |
+| 20 | Patrol zone | 50204 | 3994 | 4.75/1.88/0.72/0.29/0.13 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 20 | Patrol dungeon | 55359 | 4139 | 7.18/2.51/0.90/0.33/0.13 | 5.17/1.91/0.77/0.31/0.12 | 0 | 0.0 | 1.10, 1.04, 2.35 |
+| 20 | Sea | 59691 | 4321 | 0.38/0.13/0.05/0.02/0.01 | 5.63/1.94/0.70/0.26/0.10 | 79 | 0.0 | 1.19, 1.08, 1.08 |
+| 20 | Elite Playlist | 52526 | 3867 | 7.06/2.73/1.11/0.47/0.21 | 4.81/1.96/0.89/0.40/0.18 | 0 | 0.3 | 1.05, 0.97, 2.70 |
+| 20 | Abyss Playlist | 61791 | 4575 | 7.96/3.07/1.25/0.53/0.24 | 5.42/2.21/1.00/0.46/0.20 | 0 | 0.4 | 1.23, 1.15, 3.04 |
+| 20 | Passages, depth 16 | 70722 | 5194 | 8.89/3.18/1.18/0.41/0.00 | 1.36/0.60/0.29/0.13/0.00 | 31 | 0.4 | 1.41, 1.30, 1.78 |
+| 20 | Passages, depth 17 | 77261 | 5683 | 8.72/3.12/1.15/0.40/0.15 | 1.30/0.57/0.28/0.14/0.06 | 31 | 0.4 | 1.54, 1.42, 1.96 |
+| 30 | Patrol zone | 70302 | 5604 | 4.75/1.88/0.72/0.29/0.13 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
+| 30 | Patrol dungeon | 77513 | 5809 | 7.18/2.51/0.90/0.33/0.13 | 5.17/1.91/0.77/0.31/0.12 | 0 | 0.0 | 1.10, 1.04, 2.35 |
+| 30 | Sea | 97754 | 7006 | 0.45/0.16/0.06/0.02/0.01 | 6.27/2.24/0.83/0.32/0.13 | 87 | 0.0 | 1.39, 1.25, 1.27 |
+| 30 | Elite Playlist | 71992 | 5324 | 7.06/2.73/1.11/0.47/0.21 | 4.81/1.96/0.89/0.40/0.18 | 0 | 0.3 | 1.02, 0.95, 2.70 |
+| 30 | Abyss Playlist | 95990 | 7099 | 9.35/3.61/1.46/0.62/0.28 | 6.41/2.62/1.18/0.54/0.24 | 0 | 0.4 | 1.37, 1.27, 3.58 |
+| 30 | Elite Dungeon of the week | 100603 | 7449 | 11.66/4.45/1.79/0.82/0.33 | 8.29/3.38/1.53/0.70/0.31 | 0 | 0.4 | 1.43, 1.33, 4.53 |
+| 30 | Abyss Dungeon of the week | 151468 | 11315 | 15.54/5.93/2.38/1.06/0.45 | 11.05/4.51/2.04/0.93/0.41 | 0 | 0.7 | 2.15, 2.02, 6.03 |
+| 30 | Passages, depth 20 | 103504 | 7621 | 8.54/3.06/1.13/0.45/0.16 | 1.25/0.55/0.27/0.13/0.06 | 30 | 0.7 | 1.47, 1.36, 1.96 |
 
 ## Bounties
 
