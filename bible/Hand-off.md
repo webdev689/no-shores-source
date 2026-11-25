@@ -189,7 +189,11 @@ its system note.
   Tested offline at the head: 638 server and site tests, lint, types, format and `cargo xtask repo`; both Workers'
   `wrangler deploy --dry-run`; the site served by `wrangler dev` (404, redirects, caching); `cargo xtask check` in CI
   on the PR's head. `server/outpostReload.test.ts`'s three tests misreported once in a full parallel run and passed
-  alone and on the next run. Its first deploy's live checks are under Next.
+  alone and on the next run. Tested live after its deploy at dfb9217e: the four pages, the game at `/play/` (its
+  canvas), `/world` sent to `/world/`, an unknown address answered 404 by the site's page, `www` sent to the bare
+  domain with a 301, hashed files cached a year; the bot's `/health` answering from dfb9217e, and 24 slash commands
+  written to the application (its log). That deploy's `www` check failed in CI only because it looked the new name up
+  1.3 s after it was made and the runner kept the miss; `site.yml` now reaches `www` at the bare domain's address.
 - **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
   device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
   space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
@@ -761,9 +765,6 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **#194's first deploy, live** (unchecked until a hand-off says it was seen): `noshores.online`'s pages, the game at
-  `/play/`, `www` redirected, an unknown address answered by the 404 page; the bot's `/health` naming the merged
-  commit, and its slash commands listed in Discord.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
