@@ -50,8 +50,10 @@ Each book's eleven chapters come one as each task of its road is done, in the ro
 Together they tell where each Art came from.
 
 In a second category, "The Passages" (the lantern), "Longer Than the Chart" (grey-green, the lantern) holds one
-chapter, "The First Lamp", a Grey Tithe reckoning of the ways under Saltmere, found as the first lamp is lit. Its words keep to the owner's: no em or en dashes; and every bold and
-italic is closed, a document's every line set in and a break alone, or a check fails.
+chapter, "The First Lamp", a Grey Tithe reckoning of the ways under Saltmere, found as the first lamp is lit.
+
+The lore's words keep to the owner's: no em or en dashes; and every bold and italic is closed, a document's every line
+set in and a break alone, or a check fails.
 How they are written, detailed and shown rather than explained:
 [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 
