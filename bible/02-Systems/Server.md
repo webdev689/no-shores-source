@@ -851,7 +851,7 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   its room standing its fallen again unasked; the [[Game]] does both, and fights there. A server's node room takes no
   ask for a foe; only a room a page plays alone is told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
-  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 27 patrols lays all three
+  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 11 patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A
   patrol's room takes `?entrance=` only from a character that came out of that entrance's dungeon; a player who
   plays unkept stands there for up to five seconds, until the host stands them at a spawn. Movement has no ceilings;

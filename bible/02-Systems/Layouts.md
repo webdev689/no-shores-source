@@ -544,7 +544,7 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 
 ## Limits
 
-- Only Saltmere's three zones have runs; the other 24 zones' briefs name none yet.
+- Only Saltmere's three zones have runs; the other 8 zones' briefs name none yet.
 - Few mesas show their ledges: a second face needs a radius of 49 m, which only a wide basin's rim has room for, so
   most stand in one face under their flat top.
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.

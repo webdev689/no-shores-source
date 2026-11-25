@@ -99,8 +99,8 @@ reaches them at the next bake: a merge redeploys them, and locally `npm run bake
 Every island is cut into three regions
 ([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]],
 [[Passages as Claude Builds Them]], "The regions"), each holding its own nodes, as
-`content/world/regions.json` lists them: its name, its centre (its patrol zone's, or that of the patrol zone that
-stood there), its anchorage 3 km off the coast where the coast is nearest the centre, and its nodes, each in the
+`content/world/regions.json` lists them: its name, its centre (a point its nodes lie round: its patrol zone's where it
+has one), its anchorage 3 km off the coast where the coast is nearest the centre, and its nodes, each in the
 region whose centre is nearest. Each point of an island's land lies in the region whose centre is nearest. Saltmere's
 three are the Beacon Shore (Overlook and the Saltgrass Downs), the Weirlands (the Gullwing Vale) and the Grey Reach
 (the Driftwood Moors), a patrol zone in each; every other island keeps one patrol zone, the one by its port city, in

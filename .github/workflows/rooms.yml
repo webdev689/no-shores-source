@@ -59,10 +59,10 @@ jobs:
             tools/numbered.json content/world content/passages content/islands/kits.json content/testground
             content/gear content/arts content/modules content/dungeon content/lore content/quests
             content/story/cast.json content/ships/ships.json content/forged client/src/game/worldData.ts
-            client/src/game/nodes.ts client/src/ruinedName.ts client/src/player/binds.ts
-            client/src/game/guild/bannerLaw.ts client/src/game/guild/guildLaw.ts client/src/game/guild/outpostLaw.ts
-            content/guilds client/src/game/guild/outpostPlaces.ts client/src/game/guild/delveRoom.ts Cargo.toml
-            Cargo.lock rust-toolchain.toml package.json package-lock.json
+            client/src/overworld/regions.ts client/src/game/nodes.ts client/src/ruinedName.ts
+            client/src/player/binds.ts client/src/game/guild/bannerLaw.ts client/src/game/guild/guildLaw.ts
+            client/src/game/guild/outpostLaw.ts content/guilds client/src/game/guild/outpostPlaces.ts
+            client/src/game/guild/delveRoom.ts Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json
             .github/workflows/rooms.yml .github/deploy-ready.sh
         # The rooms cannot deploy without the token, so the page waits too: none is published on a protocol no room
         # speaks.
