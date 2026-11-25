@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { answerText } from '../../player/gear.ts';
 import type { PassageSeenState } from '../../network/passageMessages.ts';
 import type { PassageZone } from '../../rules/passageRules.ts';
 import { answerHeard, haulOf, passageWordOf, progressOf } from './passageHeard.ts';
@@ -100,4 +102,18 @@ test('an ask of the passages is answered yes by its dive changed, whatever other
   assert.equal(answerHeard(diving, found, false), null, 'another ask answered done is no Home');
   const homeward = { ...found, dive: { ...found.dive, homeward: true } };
   assert.equal(answerHeard(diving, homeward, false), 'yes', 'a Home turns the dive homeward');
+});
+
+test('the passages’ refusals are heard as the rules number them, each said in words of its own', async () => {
+  const rules = await readFile(new URL('../../../../crates/gear/src/refusal.rs', import.meta.url), 'utf8');
+  const number = (name: string) => Number(new RegExp(`^\\s+${name} = (\\d+),`, 'm').exec(rules)?.[1]);
+  // The room answers a refusal as its number plus one, 0 being yes.
+  const [first, last] = [number('NoDive') + 1, number('FoesNear') + 1];
+  const asked = { answered: 4, dive: null };
+  for (const answer of [first - 1, last + 1])
+    assert.equal(answerHeard(asked, { answered: 5, answer, dive: null }, false), null, `${answer} is none of theirs`);
+  for (let answer = first; answer <= last; answer++) {
+    assert.deepEqual(answerHeard(asked, { answered: 5, answer, dive: null }, false), { refused: answer });
+    assert.doesNotMatch(answerText(answer), /^Refused/, `${answer} has its words`);
+  }
 });
