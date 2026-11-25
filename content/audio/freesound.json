@@ -526,7 +526,7 @@
     {
       "id": "horse.walk.ground",
       "use": "A horse walking on earth or grass, one stride cut from a run of them",
-      "query": "horse hooves",
+      "query": "horse trotting",
       "seconds": [
         1.0,
         30.0
@@ -542,7 +542,7 @@
     {
       "id": "horse.walk.stone",
       "use": "A horse walking on stone, one stride cut from a run of them",
-      "query": "hooves on cobblestones",
+      "query": "horse cart cobblestone",
       "seconds": [
         1.0,
         30.0
@@ -557,7 +557,7 @@
     {
       "id": "horse.walk.water",
       "use": "A horse walking through water, one stride cut from a run of them",
-      "query": "horse in water",
+      "query": "horse river crossing",
       "seconds": [
         1.0,
         30.0
@@ -601,7 +601,7 @@
     {
       "id": "horse.gallop.water",
       "use": "A horse galloping through water, one stride cut from a run of them",
-      "query": "horse splash",
+      "query": "horse running water splash",
       "seconds": [
         1.0,
         30.0
@@ -635,7 +635,7 @@
     {
       "id": "horse.boost.stone",
       "use": "A horse boosted to its fastest gallop on stone, one stride cut from a run of them",
-      "query": "horse galloping road",
+      "query": "galloping horse asphalt",
       "seconds": [
         1.0,
         30.0
@@ -647,7 +647,7 @@
     {
       "id": "horse.boost.water",
       "use": "A horse boosted to its fastest gallop through water, one stride cut from a run of them",
-      "query": "horse water gallop",
+      "query": "horses running through water",
       "seconds": [
         1.0,
         30.0
