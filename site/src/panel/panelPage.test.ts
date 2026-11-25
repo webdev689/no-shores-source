@@ -278,6 +278,46 @@ test("a module's page saves its settings with their revision, and the bot's refu
   }, world.globals);
 });
 
+test("the server layout's page is its plan and its build, with no settings to save", async () => {
+  const overview = {
+    guild: { id: SERVER_A, name: 'No Shores', icon: null, memberCount: 3 },
+    level: 'owner',
+    modules: [],
+    channels: [],
+    roles: [],
+    emojis: [],
+  };
+  const plan = { rows: [{ part: 'Role', name: 'Moderator', state: 'Will be made' }] };
+  const world = browser(
+    `#g=${SERVER_A}&m=layout`,
+    (path, init) => {
+      if (path === '/v1/panel/me') return { user: { username: 'ann' }, guilds: [], owner: true };
+      if (path === `/v1/panel/g/${SERVER_A}`) return overview;
+      if (path.endsWith('/m/layout/v/plan')) return plan;
+      if (init.method === 'POST') return { ok: true, message: 'Made 8 roles and 22 channels.' };
+      return { config: {}, enabled: true, rev: 0, canEdit: true };
+    },
+    'panel-token',
+  );
+  await withDocument(async () => {
+    const root = new FakeElement('div');
+    startPanel(root as unknown as HTMLElement);
+    await settle(10);
+    assert.match(textOf(root), /Server layout/);
+    assert.equal(buttonsNamed(root, 'Save').length, 0, 'nothing to save');
+    assert.doesNotMatch(textOf(root), /Never saved/);
+    buttonsNamed(root, 'Show')[0]?.click();
+    await settle();
+    assert.match(textOf(root), /Moderator.*Will be made/);
+    buttonsNamed(root, 'Build the No Shores layout')[0]?.click();
+    await settle();
+    assert.match(world.confirms.asked[0] ?? '', /changes nothing made or saved by hand/);
+    const build = world.calls.find((call) => call.method === 'POST');
+    assert.equal(build?.path, `/v1/panel/g/${SERVER_A}/m/layout/a/build`);
+    assert.match(textOf(root), /Made 8 roles and 22 channels\./);
+  }, world.globals);
+});
+
 test('a sign-in that came back refused says why in words and clears the address', async () => {
   const world = browser('#error=denied', () => ({}));
   await withDocument(async () => {

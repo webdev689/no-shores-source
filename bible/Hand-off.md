@@ -189,7 +189,11 @@ its system note.
   Tested offline at the head: 638 server and site tests, lint, types, format and `cargo xtask repo`; both Workers'
   `wrangler deploy --dry-run`; the site served by `wrangler dev` (404, redirects, caching); `cargo xtask check` in CI
   on the PR's head. `server/outpostReload.test.ts`'s three tests misreported once in a full parallel run and passed
-  alone and on the next run. Its first deploy's live checks are under Next.
+  alone and on the next run. Tested live after its deploy at dfb9217e: the four pages, the game at `/play/` (its
+  canvas), `/world` sent to `/world/`, an unknown address answered 404 by the site's page, `www` sent to the bare
+  domain with a 301, hashed files cached a year; the bot's `/health` answering from dfb9217e, and 24 slash commands
+  written to the application (its log). That deploy's `www` check failed in CI only because it looked the new name up
+  1.3 s after it was made and the runner kept the miss; `site.yml` now reaches `www` at the bare domain's address.
 - **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
   device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
   space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
@@ -215,6 +219,23 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
+  its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
+  [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new
+  Server layout module plans and builds the whole server from the panel: 8 roles, 6 categories and 16 channels with
+  their permissions, topics and forum tags, the server's settings and icon, 16 modules set, the guide, the rules and
+  the buttons posted, Founder for the owner, and a checklist in #staff of what only the owner can do. House roles
+  follow each linked member's pledge (`gameHouses.ts`, the accounts' `pledges`); posting the tickets button again
+  updates it in place; the server icon is drawn by the site's art (`server-icon`). The same PR carries the site's
+  `www` check fix. Tested offline: the server and site tests, the layout's against a fake server (a first build, a
+  second, hand changes, Discord's own new server, Community, a bot lacking permissions, the plan), the icon's round
+  crop. Not tested live: no build has run on the real server. After the merge, the owner presses Build in the panel
+  and follows the checklist; the bot's first invite lacks Manage Threads, Mute Members and the two thread permissions,
+  so the checklist's first item is a fuller invite.
+- **The Discord application's settings** ([[Discord Bot]], "One Discord application"): its interactions endpoint
+  set to the bot's `/v1/discord/interactions` and its two redirects (unchecked whether done; the bot was invited).
+  The words still Claude's: the auto-mod rules' prefix `No Shores: ` and "The bot" on the bot's own cases. The
+  Porkbun key posted in an earlier chat should be rotated; it was never stored or used.
 - **An extreme performance pass, quality unchanged** (#203, merged on the owner's "merge and deploy", which deploys
   the page and the rooms), on the owner's "do an extreme performance pass while not reducing quality". Measured first:
   the page headless with the new performance probe ([[Toolkit]]), the rooms natively. The page: each frame's culls and
@@ -250,11 +271,6 @@ The decisions in [[Open Questions]] are not repeated here.
   perks (`short`, and `short_takes` for a cost, in `content/gear/traits.json`) waiting on the owner's check. Tested
   offline: the full `cargo xtask check` on f0240671 (the short lines, before #194 merged in), and CI on the PR's head;
   pictures rendered headless at 1280 by 720, 1600 by 900 and 1920 by 1080; not played by hand or on a real GPU.
-
-- **The Discord application's settings, after #194's first deploy** ([[Discord Bot]], "One Discord application"):
-  its interactions endpoint set to the bot's `/v1/discord/interactions`, its two redirects, and the bot invited to
-  the server with its permissions. The words still Claude's: the auto-mod rules' prefix `No Shores: ` and "The bot"
-  on the bot's own cases. The Porkbun key posted in an earlier chat should be rotated; it was never stored or used.
 - **The bounty board after the Bounty Tracker, and faction bounties** (#196, merged), on the
   owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
   ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
@@ -798,9 +814,6 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **#194's first deploy, live** (unchecked until a hand-off says it was seen): `noshores.online`'s pages, the game at
-  `/play/`, `www` redirected, an unknown address answered by the 404 page; the bot's `/health` naming the merged
-  commit, and its slash commands listed in Discord.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes

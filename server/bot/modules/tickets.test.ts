@@ -141,6 +141,35 @@ test('tickets: a ticket whose channel was deleted by hand is closed, so its memb
   assert.equal(countOf(bot.database, 'SELECT COUNT(*) AS count FROM tickets WHERE closed_at = 0'), 1);
 });
 
+test("tickets: posting the button again updates the bot's own post in place, and posts anew once it is gone", async () => {
+  const SUPPORT = '900000000000000072';
+  const bot = await standEngagement({ tickets: { panelChannel: SUPPORT, panelTitle: 'Need help?' } }, [ticketsModule]);
+  const actor = { id: MOD, name: 'Mod', roles: [], permissions: 0n, owner: true, mayGive: () => null };
+  const post = async () => ticketsModule.actions?.post?.(bot.context, GUILD, {}, actor, await bot.configOf('tickets'));
+  assert.equal((await post())?.ok, true);
+  const first = bot.world.posts(SUPPORT)[0];
+  assert.ok(first, 'the first press posts the button');
+  // Discord now holds that post, among a member's message and another bot's button
+  const kept = { ...first, id: '900000000000000500', author: { id: BOT_ID } };
+  const history = [
+    { id: '900000000000000502', author: { id: TARGET }, content: 'hello' },
+    { id: '900000000000000501', author: { id: OTHER }, components: first.components },
+    kept,
+  ];
+  bot.world.state.extra.push(['GET', new RegExp(`^/channels/${SUPPORT}/messages$`), () => Response.json(history)]);
+  const again = await post();
+  assert.deepEqual(again, { ok: true, message: 'The button is updated.' });
+  assert.equal(bot.world.posts(SUPPORT).length, 1, 'no second button');
+  assert.ok(
+    bot.world.state.calls.some(
+      (call) => call.method === 'PATCH' && call.path === `/channels/${SUPPORT}/messages/${kept.id}`,
+    ),
+  );
+  history.pop();
+  assert.equal((await post())?.message, 'The button is posted.');
+  assert.equal(bot.world.posts(SUPPORT).length, 2, 'posted anew once the old one is gone');
+});
+
 test('tickets: a transcript that cannot be read or posted keeps the ticket and its channel, and says why', async () => {
   const bot = await standEngagement({ tickets: { logChannel: LOGS } }, [ticketsModule]);
   await press(bot, TARGET, ['open']);
