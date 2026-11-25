@@ -6,7 +6,7 @@
 // goes to the menu's footer.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import { HORSE, RARITIES, STOCK_NAMES, WORN, isModule, isWeapon, resourceName } from '../player/gear.ts';
+import { RARITIES, STOCK_NAMES, WORN, isModule, isWeapon, resourceName, statless } from '../player/gear.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { cardNode, flavourNode, kindLine, traitNode } from './gearCard.ts';
@@ -196,13 +196,13 @@ function headNode(context: MenuContext, item: GearItem, detail: ReturnType<typeo
               edgeColour: 'rgba(0,0,0,0.55)',
             },
           },
-          // A horse has no level, as its card says none: it has no stats.
+          // A horse and plain clothes have no level, as their cards say none: they have no stats.
           kindLine(
             detail.kind,
             item.rarity,
             item.element,
             sizes.label,
-            item.kind === HORSE
+            statless(item)
               ? []
               : [{ role: 'chip', padding: [1, 8], children: [words(`Level ${item.level}`, sizes.label, INK.word)] }],
           ),

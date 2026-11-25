@@ -394,10 +394,13 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]
 - [[The Discord Is Claude's to Build, Organised and Unbloated]]
 - [[The Discord Server as Claude Builds It]]
+- [[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]
 - [[The Meadow Grows Half as Thick]]
 - [[The Meadow's Green Stands a Shade Darker]]
 - [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
 - [[The Desktop App as Claude Builds It]]
+- [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
+- [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 - [[The Playlist's Nodes Are Drawn in More Detail, and Move]]
 
 ## Replaced

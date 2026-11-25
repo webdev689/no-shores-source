@@ -19,6 +19,7 @@ import { RoomThread } from '../network/roomThread.ts';
 import {
   type SeenDeck,
   type SeenFlotsam,
+  type SeenCharted,
   type SeenFriendly,
   type SeenIsle,
   type SeenKept,
@@ -56,6 +57,9 @@ export class SeaRoom {
   /** The friendly ships the room keeps at sea, and each traffic id it has taken off its route. */
   friendlies: readonly SeenFriendly[] = [];
   taken: ReadonlySet<number> = new Set();
+  /** Every ship in the sea, the player's own among them, with its captain's name, as the room last charted them (about
+   *  once a second). */
+  charted: readonly SeenCharted[] = [];
   /** The room's last word on the player's body on deck, off the helm (the number of their last step it took), or
    *  null while they hold it; and how many words it has sent, so each is taken once. */
   onDeck: { readonly acknowledged: number; readonly body: Body } | null = null;
@@ -152,6 +156,7 @@ export class SeaRoom {
     this.plates = new Map(snapshot.plates.map((plate) => [plate.player, plate]));
     this.hostiles = snapshot.hostiles;
     [this.friendlies, this.taken] = [snapshot.friendlies, new Set(snapshot.taken)];
+    if (snapshot.charted.length > 0) this.charted = snapshot.charted;
     const walking = snapshot.players.find((seen) => seen.player === this.own);
     this.onDeck = walking ? { acknowledged: walking.acknowledged, body: walking.body } : null;
     this.words += 1;
@@ -351,7 +356,7 @@ export class SeaRoom {
    *  the room's word is gone with it: no ship of its is shown, and a fight in it is over, the ship having left it. */
   pump(seconds: number): void {
     if (this.link.rejoining) {
-      [this.ships, this.hostiles, this.friendlies, this.onDeck] = [[], [], [], null];
+      [this.ships, this.hostiles, this.friendlies, this.charted, this.onDeck] = [[], [], [], [], null];
       this.leaveFight();
     }
     this.link.pump(seconds);

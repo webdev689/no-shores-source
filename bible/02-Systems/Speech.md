@@ -22,8 +22,8 @@ types each line as it is heard, and short barks over a speaker's head, their wor
 
 ## How it works
 
-- **The cast.** `content/story/cast.json` names each speaker (the name shown, and their voice) and each voice's
-  numbers: its lowest pitch, how far above that a syllable may land, the muffle, the volume and a syllable's length.
+- **The cast.** `content/story/cast.json` names each speaker (the name shown, their voice, and the colour their name
+  is shown in) and each voice's numbers: its lowest pitch, how far above that a syllable may land, the muffle, the volume and a syllable's length.
   A mission's scenes are lists of lines, each a speaker, the words, and, if wanted, `kind: "bark"` and an emote,
   which a scene keeps as written but nothing shows.
   `castOf` and `scenesOf` refuse a speaker without a voice, a voice whose syllable is under 0.04 s, a line by someone
@@ -39,7 +39,11 @@ types each line as it is heard, and short barks over a speaker's head, their wor
   typed, never on a space or a mark, and neither a gap nor a slow frame stores up syllables to fire at once after it. With sound asleep
   or silenced, the words still show. A head with no point on the screen is silent, as its words are hidden.
 - **The dialogue box** stands bottom centre, clear of the vitals and over the sea bar, in the Enhanced Plus window
-  with the speaker's name in its header band, both at 22 px. A press finishes the typing, then moves on; a cutscene
+  with the speaker's name in its header band, both at 22 px. Each speaker's name is in their own colour
+  ([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]), one with none in the kit's brass: each reads at 4.5 to 1 or better on the box even over a white sky, no
+  two speakers share one, and two who speak in one scene are far apart (0.1 in OKLab, about five times the least the
+  eye tells apart; `cast.test.ts`). The house leaders are named in their house's hue, the stranger alone in sea-glass
+  teal, the Grey Tithe in greys. A keeper's own screen names its keeper in that screen's colour. A press finishes the typing, then moves on; a cutscene
   moves on by itself 1.6 s after a line is typed. A speaker whose name is empty is a voice from nowhere: no box, the
   words alone in the middle of the screen, faint. The game draws the box itself, as a layer put under every other of
   its interface, so the HUD's own layers (the menu, a window, the veil) stand over it, and the barks over heads stand

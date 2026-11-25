@@ -34,8 +34,9 @@ const ISLANDS: [&str; 2] = ["cove", "isle"];
 const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
-/// What a task gives as it is done: Aurem, its house's Art, a Tenet (1 or 2, 0 none), fragments to choose, the first
-/// horse (`FIRST_HORSE`, the Bay), and the first ship (the Sloop, `Character::give_first_ship`).
+/// What a task gives as it is done, or a goal as it is met: Aurem, its house's Art, a Tenet (1 or 2, 0 none),
+/// fragments to choose, the first horse (`FIRST_HORSE`, the Bay), and the first ship (the Sloop,
+/// `Character::give_first_ship`). A goal gives only Aurem and the horse.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
@@ -220,7 +221,8 @@ fn speaks(who: Option<&str>) -> bool {
 }
 
 impl GoalDef {
-    /// What is wrong with the goal, naming the field: a value none of its own, a count other than 1 on a step.
+    /// What is wrong with the goal, naming the field: a value none of its own, a count other than 1 on a step, a
+    /// reward of a house's.
     #[must_use]
     pub fn problem(&self) -> Option<String> {
         let text = &self.text;
@@ -258,6 +260,10 @@ impl GoalDef {
             Some(format!("{text}: {field} holds a value none of its own"))
         } else if self.count == 0 || once && self.count != 1 {
             Some(format!("{text}: count must be 1 on a step or a piece bought or worn, and 1 or more on any goal"))
+        } else if self.reward.art || self.reward.tenet > 0 || self.reward.fragments > 0 || self.reward.ship {
+            // A house's gifts come with its tasks, in their order (`house_problems`), and the Sloop with its task, the
+            // one `give_ship_due` looks for; a goal gives Aurem or the horse.
+            Some(format!("{text}: a goal's reward gives Aurem or the first horse, nothing of a house's nor the ship"))
         } else {
             None
         }

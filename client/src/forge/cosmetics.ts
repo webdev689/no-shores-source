@@ -4,7 +4,8 @@
 
 import catalogue from '../../../content/gear/cosmetics.json' with { type: 'json' };
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
-import { LIGHTNESS_TOLERANCE, PaletteSnap, type Rgb, oklab } from './dyes.ts';
+import { LIGHTNESS_TOLERANCE, PaletteSnap, type Rgb } from './dyes.ts';
+import { oklab } from '../oklab.ts';
 
 /** The three kinds of cosmetic. */
 export type CosmeticKind = 'dye' | 'coat' | 'barding';

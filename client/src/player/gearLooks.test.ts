@@ -3,9 +3,9 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { Outfit } from '../forge/outfit.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import type { Wardrobe } from './dressing.ts';
+import { type Wardrobe, plainDress } from './dressing.ts';
 import { readFromRoom } from '../network/messages.ts';
-import { KINDS, MELEE, RANGED_SLOT, WORN, itemName, weaponLook } from './gear.ts';
+import { KINDS, MELEE, RANGED_SLOT, WORN, itemName, itemWords, statless, weaponLook } from './gear.ts';
 import { SOURCES } from './sourceLooks.ts';
 import { gearOutfit, spareOutfit } from './gearLooks.ts';
 import { COSMETICS } from '../forge/cosmetics.ts';
@@ -304,4 +304,27 @@ test("a smith's ware is drawn as the piece it becomes once bought: its set or cl
     assert.ok(ware && bought, `ware ${place} bought`);
     assert.deepEqual(looks(ware), looks(bought), `ware ${place}, a ${KINDS[ware.kind]}`);
   }
+});
+
+test("plain clothes come as the room sends them, with no stats, named as they are and drawn as the shore's", async () => {
+  // gear_wire_tests.rs writes a new character's gear just past the prologue, its end having dressed them plain.
+  const bytes = await readFile(new URL('../../../target/protocol/gear_plain.bin', import.meta.url)).catch(() => {
+    throw new Error('gear_plain.bin is not written: run `cargo test -p protocol`');
+  });
+  const sent = readFromRoom(new Uint8Array(bytes));
+  assert.ok(sent?.kind === 'gear');
+  const clothes = sent.items.filter((each) => each.plain);
+  assert.deepEqual(
+    clothes.map((each) => [each.at - WORN, itemName(each), itemWords(each) !== '', each.defense, each.columns.length]),
+    [
+      [3, 'Plain Shirt', true, 0, 0],
+      [5, 'Plain Breeches', true, 0, 0],
+    ],
+  );
+  assert.ok(clothes.every(statless), 'no level or power shown');
+  const shore = plainDress('human', 0.5).outfit;
+  const dressed = gearOutfit(sent, { ...wardrobe, garments: [...wardrobe.garments, 'boots'] }, plain);
+  assert.deepEqual(dressed.garments, shore.garments, 'the shirt, the breeches and the boots');
+  assert.deepEqual(dressed.dyes, shore.dyes, 'in the shore’s dyes');
+  assert.deepEqual(dressed.armour, {}, 'no armour set');
 });

@@ -209,14 +209,16 @@ function rowOf(stat: Stat, stats: ItemStats, compared: ItemStats | null): StatRo
  *  piece it would replace or the choice of nodes it had. A weapon whose finish moves the body while it is drawn, or is
  *  set beside one that does, shows those numbers too. Null until the rules are given. */
 export function sheetOf(
-  item: Pick<GearItem, 'kind' | 'named' | 'rarity' | 'columns' | 'chosen' | 'bought'>,
+  item: Pick<GearItem, 'kind' | 'named' | 'rarity' | 'columns' | 'chosen' | 'bought' | 'plain'>,
   against: ItemStats | null = null,
   traits: readonly string[] = givenTraits(item),
 ): StatSheet | null {
   const stats = statsOf(item.kind, traits);
-  // A body's numbers are armour's and the cloak's (slots 2 to 6); a horse's or a ship module's are no one's.
+  // A body's numbers are armour's and the cloak's (slots 2 to 6); a horse's, plain clothes' or a ship module's are no
+  // one's.
   const worn = slotOf(item.kind);
-  if (!stats || (stats.loadout === LOADOUT.none && (worn < 2 || worn > 6 || item.kind >= KINDS.length))) return null;
+  const none = item.plain === true || worn < 2 || worn > 6 || item.kind >= KINDS.length;
+  if (!stats || (stats.loadout === LOADOUT.none && none)) return null;
   const compared = against && against.loadout === stats.loadout ? against : null;
   const body = statsOf(KINDS.indexOf('head'), []);
   const moved = (stat: Stat) =>
