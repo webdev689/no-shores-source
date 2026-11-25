@@ -55,8 +55,17 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
     });
     let lane_at = on_lane.expect("a lane through the Tithe's waters");
     let player = [lane_at[0] + 20_000.0, lane_at[1]];
-    let ship =
-        Voyager { player: 1, at: player, heading: 0.0, pace: 0, fighting: false, home: false, clock: 1.0, hull: 1.0 };
+    let ship = Voyager {
+        player: 1,
+        at: player,
+        heading: 0.0,
+        pace: 0,
+        fighting: false,
+        home: false,
+        clock: 1.0,
+        hull: 1.0,
+        hull_kind: sailing::HullKind::Sloop,
+    };
     let mut seen = std::collections::BTreeMap::new();
     for seed in 1..=30 {
         let mut hostiles = Hostiles::new(seed);
@@ -105,6 +114,7 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
         home: false,
         clock: 1.0,
         hull: 1.0,
+        hull_kind: sailing::HullKind::Sloop,
     };
     let elite = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Elite };
     let start = [edge[0] + 1_100.0, edge[1]];

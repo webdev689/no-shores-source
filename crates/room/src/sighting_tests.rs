@@ -2,11 +2,11 @@ use super::*;
 
 #[test]
 fn sight_is_half_a_minute_of_closing_head_on_and_never_under_five_kilometres() {
-    assert_eq!(sight_for(0.0), SIGHT_LEAST_M, "at rest counts as 1");
-    assert_eq!(sight_for(5.0), SIGHT_LEAST_M);
-    assert!((sight_for(20.0) - 8_640.0).abs() < 1e-9);
-    assert!((sight_for(60.0) - 25_920.0).abs() < 1e-9);
-    assert!((sight_for(100.0) - 43_200.0).abs() < 1e-9);
+    assert_eq!(sight_for(0.0, 1.0), SIGHT_LEAST_M, "at rest counts as 1");
+    assert_eq!(sight_for(5.0, 1.0), SIGHT_LEAST_M);
+    assert!((sight_for(20.0, 1.0) - 8_640.0).abs() < 1e-9);
+    assert!((sight_for(60.0, 1.0) - 25_920.0).abs() < 1e-9);
+    assert!((sight_for(100.0, 1.0) - 43_200.0).abs() < 1e-9);
 }
 
 #[test]

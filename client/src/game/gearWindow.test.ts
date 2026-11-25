@@ -401,7 +401,17 @@ test('the Ship tab steps back from an officer’s page with Escape, and shows it
   const officer = { id: 4, post: 1, grade: 2, given: 0, family: 1, duty: 1, level: 3, toNext: 0.4, trained: 500 };
   const ship = {
     ...{ xp: 0n, level: 4, prestige: 9, attack: 100, defense: 60, toNext: 0.35, toNextNeeds: 1_200 },
-    ...{ stocks: [1, 2, 3, 4], hands: 18, handsMost: 24, offers: [], trim: [], pledge: 0 },
+    ...{
+      stocks: [1, 2, 3, 4],
+      hands: 18,
+      handsMost: 24,
+      offers: [],
+      trim: [],
+      pledge: 0,
+      fleet: [{ hull: 0, name: [255, 255], named: false, dress: [] }],
+      sailed: 0,
+      dresses: [],
+    },
     officers: [{ ...officer, trainedMost: 2_000, strength: 0.5, bought: 0, chosen: [255], columns, wage: 0 }],
   };
   const papers = { title: 'Your Sloop', parts: [{ heading: 'Vessel', rows: [['Hull', '9 / 9']] as const }] };

@@ -13,7 +13,7 @@ import type { Cards } from '../player/cards.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import { type Gain, gainsOf } from './gains.ts';
 import { fineGlyph } from './gearGlyphs.ts';
 import {

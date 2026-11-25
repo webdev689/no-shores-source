@@ -17,7 +17,7 @@ import { artStage, focusOf } from './artStage.ts';
 import { ARTS, type Art, type ArtsAsk, artCard, artOf, emblemSvg, frameSvg } from './artsCards.ts';
 import { LEVEL_MOST, barWords, factionOf, levelOf, ready, shareWords } from './artLevels.ts';
 import { ARTS_HINTS, type ArtLook, artsRows, lookOf, pipsNode, stepped } from './artsRows.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import { cardNode } from './gearCard.ts';
 import { INK, elementNode, emblemNode, focusRing, svgNode, words } from './gearNodes.ts';
 import type { MenuContext } from './menuPage.ts';

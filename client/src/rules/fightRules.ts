@@ -148,21 +148,24 @@ export interface CaptainAt {
 }
 
 /** What a fight begins with besides the player's ship: `captains`, each set upon it where given; without, one called
- *  onto the ring, a Grey Tithe captain in its rank's hull (a Major's unless `rank` names one). */
+ *  onto the ring, a Grey Tithe captain in its rank's hull (a Major's unless `rank` names one); and the player's
+ *  `hull` (0 the Sloop, unless given, to 3 the Frigate). */
 export interface FightBegun {
   readonly rank?: number;
   readonly captains?: readonly CaptainAt[];
+  readonly hull?: number;
 }
 
 /** A fight's begin request. */
 export function beginRequest(ship: ShipFloats, seed: number, time: number, begun: FightBegun = {}): string {
-  const { rank, captains } = begun;
+  const { rank, captains, hull } = begun;
   return JSON.stringify({
     ship: [...ship],
     seed,
     time,
     ...(rank === undefined ? {} : { rank }),
     ...(captains ? { captains } : {}),
+    ...(hull === undefined ? {} : { hull }),
   });
 }
 

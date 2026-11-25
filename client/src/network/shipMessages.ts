@@ -1,5 +1,6 @@
-// The ship's part of a player's own gear message: the ship's level and stocks, and its officers, each with nodes
-// laid out as an item's.
+// The ship's part of a player's own gear message: the ship's level and stocks, its officers, each with nodes laid out
+// as an item's, and the ships kept, each with its name and dress.
+import type { GearKeptShip as GearKeptShipTable } from '../../../generated/messages/ts/overlook/wire/gear-kept-ship.ts';
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
 import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
 import type { GearColumn } from './gearMessages.ts';
@@ -25,9 +26,21 @@ export interface GearOfficer {
   readonly wage: number;
 }
 
+/** A ship kept (protocol's `GearKeptShip`): its hull's number (0 the Sloop to 3 the Frigate), its name's two words by
+ *  their places in content/gear/shipyard.json's lists (255 for none), whether it has been named once, and each part's
+ *  dress by its number in content/gear/ship_dress.json (paint, stripe, canvas, flag). */
+export interface GearKeptShip {
+  readonly hull: number;
+  readonly name: readonly number[];
+  readonly named: boolean;
+  readonly dress: readonly number[];
+}
+
 /** The ship's part of the gear message: its experience, level, Prestige, Attack and Defense and how far to its next;
  *  Timber, Canvas, Iron and Heartwood in `stocks`; its hands of its complement; its officers, the officers of the
- *  day at a pledged faction's counter, and its trim at sea (the gear crate's `ShipTrim::to_floats`, in its order). */
+ *  day at a pledged faction's counter, and its trim at sea (the gear crate's `ShipTrim::to_floats`, in its order); the
+ *  ships kept, in hull order (none before the Harbourmaster hands over the first), the hull sailed, and every dress
+ *  kept by its number. */
 export interface GearShip {
   readonly xp: bigint;
   readonly level: number;
@@ -44,6 +57,19 @@ export interface GearShip {
   readonly trim: readonly number[];
   /** The faction pledged to, 0 none: the one whose counter signs officers on. */
   readonly pledge: number;
+  readonly fleet: readonly GearKeptShip[];
+  readonly sailed: number;
+  readonly dresses: readonly number[];
+}
+
+/** A ship kept as a message holds it. */
+function keptOf(ship: GearKeptShipTable): GearKeptShip {
+  return {
+    hull: ship.hull(),
+    name: Array.from(ship.nameArray() ?? []),
+    named: ship.named(),
+    dress: Array.from(ship.dressArray() ?? []),
+  };
 }
 
 /** An officer as a message holds them. */
@@ -94,5 +120,12 @@ export function shipOf(
     offers: listed(ship.offersLength(), (index) => ship.offers(index), 'offer'),
     trim: Array.from(ship.trimArray() ?? []),
     pledge: ship.pledge(),
+    fleet: Array.from({ length: ship.fleetLength() }, (unused, index) => {
+      const kept = ship.fleet(index);
+      if (!kept) throw new Error(`kept ship ${index} is missing`);
+      return keptOf(kept);
+    }),
+    sailed: ship.sailed(),
+    dresses: Array.from(ship.dressesArray() ?? []),
   };
 }

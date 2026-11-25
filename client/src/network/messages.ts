@@ -54,13 +54,19 @@ export interface PlayerDress {
 }
 
 /** One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and its pace, 0
- *  at rest. */
+ *  at rest; and as its player keeps it: its hull's number, each part's dress (paint, stripe, canvas, flag) by its
+ *  number in content/gear/ship_dress.json, its name's two words by their places in content/gear/shipyard.json's lists
+ *  (255 for none), and the emblem its player wears by its number, which a flag that bears one flies. */
 export interface SeenShip {
   readonly player: number;
   readonly x: number;
   readonly y: number;
   readonly heading: number;
   readonly pace: number;
+  readonly hull: number;
+  readonly dress: readonly number[];
+  readonly name: readonly number[];
+  readonly emblem: number;
 }
 
 /** A hostile ship at sea, the Grey Tithe's: its number, where it is, its heading in radians clockwise
@@ -495,7 +501,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
     const ships = Array.from({ length: snapshot.shipsLength() }, (unused, index) => {
       const ship = snapshot.ships(index);
       if (!ship) throw new Error(`snapshot ship ${index} does not read`);
-      return { player: ship.player(), x: ship.x(), y: ship.y(), heading: ship.heading(), pace: ship.pace() };
+      const [dress, name] = [Array.from(ship.dressArray() ?? []), Array.from(ship.nameArray() ?? [])];
+      const [player, x, y, heading, pace] = [ship.player(), ship.x(), ship.y(), ship.heading(), ship.pace()];
+      return { player, x, y, heading, pace, hull: ship.hull(), dress, name, emblem: ship.emblem() };
     });
     const hostiles = Array.from({ length: snapshot.hostilesLength() }, (unused, index) => {
       const hostile = snapshot.hostiles(index);

@@ -93,7 +93,21 @@ test("a counter answers the task's unmet talk goal that names it, and no other",
 test('the opening hears the stranger, then the round of the counters, each keeper with a scene of their own', () => {
   assert.deepEqual(
     QUESTS[0]?.tasks.map((task) => task.id),
-    ['hear-the-stranger', 'find-your-way', 'arm-yourself', 'wear-them', 'hear-three-houses', 'choose-house'],
+    [
+      'hear-the-stranger',
+      'find-your-way',
+      'your-ship',
+      'arm-yourself',
+      'wear-them',
+      'hear-three-houses',
+      'choose-house',
+    ],
+  );
+  const ship = goalsOf(1, taskOf(1, 'your-ship'));
+  assert.deepEqual(
+    ship.map((goal) => [goal.kind, goal.to]),
+    [['talk', 'harbourmaster']],
+    'the Harbourmaster alone, who hands over the Sloop',
   );
   assert.ok(talkAt(onTask(1, 0), 'stranger'), 'her task waits on her');
   const round = goalsOf(1, taskOf(1, 'find-your-way'));

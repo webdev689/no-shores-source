@@ -7,7 +7,7 @@ import { edged } from '../combat/barDraw.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { BountyRow, Pay } from './bountyBoard.ts';
 import { bountyFaceNode, factionNamed, posterEmblem } from './bountyFaces.ts';
-import { SIGN_CELLS } from './emblemArt.ts';
+import { SIGN_CELLS } from '../plus/emblemArt.ts';
 import { cardFrame, type Tone } from './gearCard.ts';
 import { type Hint, INK, type Sizes, emblemNode, glyphNode, label, words } from './gearNodes.ts';
 import { type IconName, iconNode } from './journalIcons.ts';

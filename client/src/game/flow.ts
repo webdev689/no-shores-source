@@ -27,7 +27,7 @@ export type Happening =
   | { readonly kind: 'isle'; readonly node: string; readonly words: string }
   | { readonly kind: 'back' }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }
-  | { readonly kind: 'shut'; readonly why: string };
+  | { readonly kind: 'shut'; readonly why: string; readonly ashore?: { readonly node: string; readonly name: string } };
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
 export function arriving(node: string, name: string): Flow {
@@ -105,10 +105,19 @@ export function next(flow: Flow, happening: Happening): Flow {
     case 'story-ended':
       // The story hands the player to the game where it leaves them: Overlook's social space.
       return flow.mode === 'story' ? arriving(happening.node, happening.name) : flow;
-    case 'shut':
-      // A room whose gate shuts to the player sends them back to their ship, the veil saying why.
+    case 'shut': {
+      // A room whose gate shuts to the player sends them back to their ship, or ashore where one waits for them, the
+      // veil saying why.
       if (flow.mode !== 'foot' && flow.mode !== 'loading') return flow;
-      return { mode: 'loading', words: `${happening.why} Returning to your ship`, then: { mode: 'sea' } };
+      const { why, ashore } = happening;
+      if (ashore)
+        return {
+          mode: 'loading',
+          words: `${why} Returning to ${ashore.name}`,
+          then: { mode: 'foot', node: ashore.node },
+        };
+      return { mode: 'loading', words: `${why} Returning to your ship`, then: { mode: 'sea' } };
+    }
     case 'back':
       // Back from over an island's side to the helm.
       return flow.mode === 'landing' ? { mode: 'sea' } : flow;

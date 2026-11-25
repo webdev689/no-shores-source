@@ -178,9 +178,9 @@ export interface RoomDoor {
   /** The keeper has no character to give a player at sea (none kept, or the page plays unkept): the course held for
    *  them sails. */
   noneKept(player: number): void;
-  /** The Sloop's build as the naval rules hold it, as JSON: its name, hull and canvas whole, crew, guns on each side,
-   *  and the loads its guns take. */
-  sloop(): string;
+  /** Each player's hull's build as the naval rules hold it, as JSON, in the hulls' order: its name, hull and canvas
+   *  whole, crew, guns on each side and the loads its guns take, and its class (`naval::class`). */
+  hulls(): string;
   /** Every foe type the rules know (the Brig's crew among them, on the players' side), as JSON, in their order: each
    *  one's number (`type`), name, faction (`faction` and `faction_name`), domain (land or deck), role (`role` and
    *  `role_name`), ranks (their numbers, the plainest first), and its right and left forge layers. */
@@ -310,7 +310,7 @@ interface RoomExports {
   room_keep_characters(): number;
   room_none_kept(player: number): void;
   room_furnish(address: number, length: number): number;
-  room_sloop(): bigint;
+  room_hulls(): bigint;
   room_roster(): bigint;
   room_dungeon(address: number, length: number): bigint;
   room_main_ports(): bigint;
@@ -492,7 +492,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     keepCharacters: () => exports.room_keep_characters() === 1,
     noneKept: (player) => exports.room_none_kept(player),
-    sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
+    hulls: () => new TextDecoder().decode(take(exports.room_hulls())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
     dungeon: (patrol, name, number) => {
       const bytes = new TextEncoder().encode(JSON.stringify({ patrol, name, number }));

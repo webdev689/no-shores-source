@@ -247,6 +247,7 @@ fn a_task_kept_by_an_id_it_had_before_reads_as_the_task_it_became() {
 const TASK_IDS: &[(&str, &str)] = &[
     ("house", "hear-the-stranger"),
     ("house", "find-your-way"),
+    ("house", "your-ship"),
     ("house", "arm-yourself"),
     ("house", "wear-them"),
     ("house", "hear-three-houses"),

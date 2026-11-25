@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import { OUTLINE } from '../combat/dropPictures.ts';
 import { bountyFaceNode, bountyFacePixels, posterEmblem } from './bountyFaces.ts';
-import { SIGN_CELLS, emblemOf, emblemPixels } from './emblemArt.ts';
+import { SIGN_CELLS, emblemOf, emblemPixels } from '../plus/emblemArt.ts';
 
 const colourAt = (pixels: Uint8ClampedArray, x: number, y: number) => {
   const start = (y * SIGN_CELLS + x) * 4;

@@ -1,13 +1,18 @@
 // Returning to the ship, on the room's word: refused while fallen or within ten seconds of a foe's blow, so the ship
-// is no way out of a death or a fight; the room judges, the page leaves only on its yes.
+// is no way out of a death or a fight; before the accounts have said whose character the room holds; and to a player
+// who keeps no ship yet. The room judges, the page leaves only on its yes.
 
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
+import { answerText } from '../player/gear.ts';
 
-/** The room's answers to a return to the ship (`room::asks`): refused while fallen or just struck, and its yes, which
- *  no other ask gives, so another ask's done is never taken for it. */
+/** The room's answers to a return to the ship (`room::asks`): refused before the accounts have given the room its
+ *  character, while fallen or just struck, its yes, which no other ask gives, so another ask's done is never taken for
+ *  it, and refused to one who keeps no ship. */
+export const NOT_YET = 103;
 export const FALLEN = 105;
 export const FIGHTING = 106;
 export const TO_SHIP = 107;
+export const NO_SHIP = 109;
 /** How long the page waits on the room's answer before saying it did not come. */
 const ANSWER_WAIT_MS = 3000;
 const POLL_MS = 100;
@@ -19,15 +24,14 @@ export interface ShipAsker {
 }
 
 /** The answers the room gives a return to the ship: yes, or why not. */
-const ANSWERS: readonly number[] = [TO_SHIP, FALLEN, FIGHTING];
+const ANSWERS: readonly number[] = [TO_SHIP, NOT_YET, FALLEN, FIGHTING, NO_SHIP];
 /** What the page says when its room gave no answer: out of reach, or yet to send the player's gear. */
 const UNANSWERED = 'Your room did not answer. Try again.';
 
 /** Why the room refused a return to the ship, in words; null where it answered yes. */
 export function refusedWords(answer: number): string | null {
-  if (answer === FALLEN) return 'You cannot return to your ship while fallen.';
-  if (answer === FIGHTING) return 'You cannot return to your ship within ten seconds of being struck.';
-  return answer === TO_SHIP ? null : 'You cannot return to your ship now.';
+  if (answer === TO_SHIP) return null;
+  return ANSWERS.includes(answer) ? answerText(answer) : 'You cannot return to your ship now.';
 }
 
 /** Asks the room whether the player may return to their ship: null once it says yes, or with no room to ask (offline,

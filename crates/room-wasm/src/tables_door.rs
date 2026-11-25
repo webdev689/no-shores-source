@@ -1,5 +1,5 @@
-//! The rules' fixed tables the page reads from the room's module, whatever room is open: how long a tick is, the
-//! Sloop's build, the port cities and every enemy type.
+//! The rules' fixed tables the page reads from the room's module, whatever room is open: how long a tick is, each
+//! hull's build, the port cities and every enemy type.
 
 use crate::{deck_door, hand_over, roster_door};
 
@@ -9,10 +9,10 @@ pub extern "C" fn room_tick_seconds() -> f64 {
     movement::TICK_SECONDS
 }
 
-/// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).
+/// Each player's hull's build as the naval rules hold it, as JSON (`deck_door::hull_builds_json`).
 #[unsafe(no_mangle)]
-pub extern "C" fn room_sloop() -> u64 {
-    hand_over(deck_door::sloop_build_json().into_bytes())
+pub extern "C" fn room_hulls() -> u64 {
+    hand_over(deck_door::hull_builds_json().into_bytes())
 }
 
 /// The port cities' ids as JSON (`world::ports::MAIN_PORTS`): every other city is a ruin.

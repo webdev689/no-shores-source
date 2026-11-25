@@ -70,6 +70,14 @@ impl Power {
             reload: 1.0,
         }
     }
+
+    /// A player's ship of `hull` as a captain sizes it up: its class's build (`class.rs`), and its broadside's weight
+    /// and its reload as its class throws them.
+    #[must_use]
+    pub fn player_in(hull: sailing::HullKind, hull_share: f64) -> Self {
+        let class = crate::class::class_of(hull);
+        Self { might: class.broadside, reload: class.reload, ..Self::player(class.build(), hull_share) }
+    }
 }
 
 /// The share of a broadside's balls from a ship of `shooter`'s arms that strike one of `target`'s at `DUEL_RANGE`,
@@ -132,19 +140,22 @@ pub fn odds(one: &Power, other: &Power, [own, theirs]: [&Arms; 2]) -> f64 {
     }
 }
 
-/// Whether a wary captain of `commission` at `strength` (`Captain::raised`), sound, falls on a player's Sloop met at
-/// sea with `hull_share` of its hull left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one
-/// it outguns `WARY_ODDS` to one by their fighting powers.
+/// Whether a wary captain of `commission` at `strength` (`Captain::raised`), sound, falls on a player's ship of `hull`
+/// met at sea with `hull_share` of its hull left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`,
+/// or one it outguns `WARY_ODDS` to one by their fighting powers.
 #[must_use]
-pub fn wary_takes(commission: crate::ranks::Commission, strength: f64, hull_share: f64) -> bool {
+pub fn wary_takes(
+    commission: crate::ranks::Commission,
+    strength: f64,
+    (hull, hull_share): (sailing::HullKind, f64),
+) -> bool {
     if hull_share < super::GRAPPLE_HULL {
         return true;
     }
     let arms = crate::arms::arms_of(commission.hull());
     let mind = super::Captain::new(commission, 0, 0.0, arms).raised(strength);
-    let prize = Power::player(&crate::arms::LARGE_BOAT, hull_share);
-    let sloop = crate::arms::arms_of(sailing::HullKind::Sloop);
-    odds(&mind.power(&commission.damage_at(strength)), &prize, [arms, sloop]) >= super::WARY_ODDS
+    let prize = Power::player_in(hull, hull_share);
+    odds(&mind.power(&commission.damage_at(strength)), &prize, [arms, crate::arms::arms_of(hull)]) >= super::WARY_ODDS
 }
 
 #[cfg(test)]

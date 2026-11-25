@@ -56,6 +56,15 @@ test('a plate is green for the company and blue for anyone else, and a menu open
   const busy = square(plateNode(placed(1, 0, { menu: true }), 1));
   assert.ok(busy && busy.picture, "three dots in a speech bubble in the square's place");
   assert.equal(plateNode(placed(1, 0, { name: '' }), 1).children?.[1], false, 'a guest shows no name');
+  const words = (node: ReturnType<typeof plateNode>) => JSON.stringify(node).match(/"words":"[^"]*"/g) ?? [];
+  const sailing = { ...placed(1, 0), vessel: 'the Grey Gull' };
+  assert.deepEqual(words(plateNode(sailing, 1)).slice(1), [
+    `"words":"${sailing.plate.name}"`,
+    '"words":"the Grey Gull"',
+  ]);
+  assert.deepEqual(words(plateNode({ ...sailing, plate: { ...sailing.plate, name: '' } }, 1)).slice(1), [
+    '"words":"the Grey Gull"',
+  ]);
 });
 
 test("a member's plate reads their guild's tag after their name, fainter; a guest's shows neither", () => {

@@ -1,4 +1,4 @@
-import { MOTIFS } from '../emblemMotifs.ts';
+import { MOTIFS } from '../../plus/emblemMotifs.ts';
 
 /**
  * The signs drawn for guilds' banners beside the emblems' own, each at most 16 cells square, rows from the top: `#` in

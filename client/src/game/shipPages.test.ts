@@ -1,14 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { GearAsk, GearItem, GearOfficer, GearShip, GearState } from '../network/gearMessages.ts';
-import type { Node } from '../ui/node.ts';
-import { fakeInterface } from '../ui/uiForTests.ts';
-import type { UiEvent } from '../ui/ui.ts';
-import { Holds } from './gearHold.ts';
-import { sizesOf } from './gearNodes.ts';
+import type { GearOfficer, GearShip, GearState } from '../network/gearMessages.ts';
 import { sampleItem } from './gearShots.ts';
-import type { MenuContext } from './menuPage.ts';
-import { harbourPage, musterAt, shipTab } from './shipPages.ts';
+import { drawn } from './drawnForTests.ts';
+import { NO_SHIP_YET } from '../player/gear.ts';
+import { musterAt, shipTab, shipwrightPart } from './shipPages.ts';
 import { stationTitle } from './stationView.ts';
 
 const officer = (fields: Partial<GearOfficer>): GearOfficer => ({
@@ -45,6 +41,9 @@ const ship = (fields: Partial<GearShip> = {}): GearShip => ({
   offers: [officer({ id: 7, post: 4, wage: 1_500 }), officer({ id: 8, post: 3, wage: 16_000 })],
   trim: [],
   pledge: 2,
+  fleet: [{ hull: 0, name: [255, 255], named: false, dress: [] }],
+  sailed: 0,
+  dresses: [],
   ...fields,
 });
 
@@ -65,75 +64,6 @@ const gear = (fields: Partial<GearState> = {}): GearState =>
     ship: ship(),
     ...fields,
   }) as GearState;
-
-/** A page drawn frame by frame with the clock `now` for its holds; every ask it made, and each item it opened. */
-function drawn(state: GearState, page: (context: MenuContext) => Node) {
-  let now = 0;
-  const { ui, step } = fakeInterface();
-  const holds = new Holds(() => now);
-  const asked: GearAsk[] = [];
-  const opened: GearItem[] = [];
-  const context: MenuContext = {
-    ui,
-    gear: state,
-    ask: (ask) => asked.push(ask),
-    picture: () => null,
-    figure: null,
-    room: { width: 1180, height: 520 },
-    sizes: sizesOf(1280, 720, 1),
-    holds,
-    card: () => undefined,
-    inspect: (item) => opened.push(item),
-    details: () => undefined,
-    atVault: false,
-    forge: null,
-    dress: null,
-  };
-  let words: string[] = [];
-  const frame = (events: UiEvent[] = [], spent = 16) => {
-    now += spent;
-    step(() => {
-      holds.frame(ui);
-      const root = page(context);
-      holds.end();
-      words = wordsOf(root);
-      return { width: 'grow', height: 'grow', direction: 'column', children: [root] };
-    }, events);
-  };
-  const middle = (id: string) => {
-    const box = ui.boxOf(id);
-    assert.ok(box, `${id} is laid`);
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  };
-  const click = (id: string) => {
-    const point = middle(id);
-    frame([
-      { kind: 'pointer', ...point },
-      { kind: 'down', ...point, button: 0 },
-      { kind: 'up', ...point, button: 0 },
-    ]);
-    frame();
-  };
-  /** Held down for `held` milliseconds, then let go. */
-  const hold = (id: string, held: number) => {
-    const point = middle(id);
-    frame([
-      { kind: 'pointer', ...point },
-      { kind: 'down', ...point, button: 0 },
-    ]);
-    for (let spent = 0; spent < held; spent += 100) frame([], 100);
-    frame([{ kind: 'up', ...point, button: 0 }]);
-  };
-  frame();
-  frame();
-  return { ui, asked, opened, frame, click, hold, shows: () => words.join(' | ') };
-}
-
-function wordsOf(node: Node | null | false | undefined | ''): string[] {
-  if (!node) return [];
-  const own = node.text && typeof node.text.words === 'string' ? [node.text.words] : [];
-  return [...own, ...(node.children ?? []).flatMap((child) => wordsOf(child))];
-}
 
 const PAPERS = { title: 'Your Sloop', parts: [{ heading: 'Vessel', rows: [['Hull', '96 / 120']] as const }] };
 
@@ -161,6 +91,14 @@ test('without the room’s word on the ship, Manage shows its papers alone', () 
   const page = drawn(gear({ ship: null }), (context) => shipTab(context, PAPERS, ['manage', null], () => undefined));
   assert.match(page.shows(), /Your Sloop \| VESSEL/);
   assert.doesNotMatch(page.shows(), /SHIP LEVEL|MATERIALS/);
+});
+
+test('before the Harbourmaster hands over the first ship, the Ship tab says there is none', () => {
+  const shipless = gear({ ship: ship({ fleet: [] }) });
+  for (const part of ['manage', 'crew']) {
+    const page = drawn(shipless, (context) => shipTab(context, PAPERS, [part, null], () => undefined));
+    assert.equal(page.shows(), NO_SHIP_YET, part);
+  }
 });
 
 test('an officer’s duty is a click, their page a press, and paying them off is held', () => {
@@ -202,7 +140,7 @@ test('the muster stands only on the screen of the faction pledged to, and signs 
 });
 
 test('the Harbourmaster sells the Shipwright’s modules, each held to buy, and none the player cannot pay for', () => {
-  const page = drawn(gear(), (context) => harbourPage(context));
+  const page = drawn(gear(), (context) => shipwrightPart(context));
   assert.match(page.shows(), /Guns \| Normal Guns · level 2 \| .*2,400/);
   assert.match(page.shows(), /13,400 \| Not enough Aurem/);
   page.click('buy-2-0');

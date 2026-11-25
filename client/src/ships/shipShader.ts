@@ -55,7 +55,8 @@ struct Place {
   canvas: vec4f,
   // Its stripe's line in its frame: its height at its middle, its rise a metre toward its bow, and its half height.
   band: vec4f,
-  unused: vec4f,
+  // Its canvas's second colour, laid on every other cloth, and 1 where it is laid, 0 where not.
+  ink: vec4f,
   // Each yard's pivot on its centreline (x, y) and the cosine and sine of its brace.
   yards: array<vec4f, ${MOST_YARDS}>,
   // Each mast's fall, two a mast: its foot's height, the cosine and sine of its turn over its side, and 1 while it
@@ -156,7 +157,9 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
       colour = place.hull.rgb * clamp(grain / HULL_LIGHT, 0.6, 1.4);
     }
   } else if (drawn.part == SAIL_PART && place.canvas.w > 0.0) {
-    colour = place.canvas.rgb * clamp(grain / SAIL_LIGHT, 0.75, 1.15);
+    // A picture holds two cloths side by side, so the second half of each is every other cloth.
+    let other = place.ink.w > 0.0 && fract(drawn.uv.x) >= 0.5;
+    colour = select(place.canvas.rgb, place.ink.rgb, other) * clamp(grain / SAIL_LIGHT, 0.75, 1.15);
   }
   // The land's light: the sky's, what the water throws back onto its sides, the key light where the shadows and the
   // clouds let it, and the lamps near.
@@ -188,7 +191,7 @@ fn cast_vertex(
 `;
 
 let painted: Picture[] | null = null;
-/** Its parts' pictures, a layer a part in `SHIP_PARTS`' order, then a flag a side in `SHIP_SIDES`': painted once. */
+/** Its parts' pictures, a layer a part in `SHIP_PARTS`' order, then the flags (`flagPictures`): painted once. */
 function pictures(): Picture[] {
   painted ??= [...shipPictures(), ...flagPictures()];
   return painted;

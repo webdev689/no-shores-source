@@ -19,6 +19,7 @@ use naval::damage::{Damage, State};
 use naval::fight::{End, Event, Fight, Orders, PLAYER, Vessel};
 use naval::ranks::Commission;
 use naval::shots::ShipId;
+use sailing::HullKind;
 use sailing::ship::{Helm, SAILS_SET, Ship};
 use std::collections::BTreeMap;
 
@@ -167,13 +168,13 @@ impl SeaFight {
         ships.into_iter().any(|vessel| apart(at, [vessel.ship.x, vessel.ship.y]) <= ENGAGE_RANGE)
     }
 
-    /// A player's Sloop put into the fight hove to at `own`, with the hurts it keeps, under the next player's number:
-    /// the first `PLAYER`, the rest from `PLAYERS_FROM` on, none given twice.
-    fn put_in(&mut self, player: PlayerId, own: Ship, kept: [f64; 3], coasts: &[Coast], time: f64) {
+    /// A player's ship of `hull` put into the fight hove to at `own`, with the hurts it keeps, under the next player's
+    /// number: the first `PLAYER`, the rest from `PLAYERS_FROM` on, none given twice.
+    fn put_in(&mut self, (player, own, kept, hull): (PlayerId, Ship, [f64; 3], HullKind), coasts: &[Coast], time: f64) {
         let waters = CoastWaters { coasts, swell: &self.swell };
         let ship = self.given.map_or(PLAYER, |given| given.max(PLAYERS_FROM - 1) + 1);
         self.given = Some(ship);
-        self.fight.put_to_sea_kept(ship, own, kept, &waters, time);
+        self.fight.put_to_sea_kept(ship, (own, hull), kept, &waters, time);
         self.crews.insert(player, Crew { ship, orders: QUIET, furled_from: None });
         if !self.fought.contains(&player) {
             self.fought.push(player);
@@ -381,48 +382,45 @@ impl Fights {
         self.list.retain(|fought| !fought.crews.is_empty());
     }
 
-    /// A ship that met a player begins their fight under `weather`: the ship where it lay, under sail; their Sloop hove
-    /// to at `own`.
+    /// A ship that met a player begins their fight under `weather`: the ship where it lay, under sail; their own ship
+    /// hove to as `own` gives it.
     pub(crate) fn begin_met(
         &mut self,
-        (player, own, kept): (PlayerId, Ship, [f64; 3]),
+        own: (PlayerId, Ship, [f64; 3], HullKind),
         hostile: &Hostile,
         (weather, coasts): ((Swell, [f64; 2]), &[Coast]),
         time: f64,
     ) {
         let captain = ship_at(hostile.x, hostile.y, hostile.heading, SAILS_SET);
         let waters = CoastWaters { coasts, swell: &weather.0 };
-        let mut fight = Fight::meet(own, captain, hostile.commission, hostile.seed, &waters, time);
+        let mut fight = Fight::meet(own.1, captain, hostile.commission, hostile.seed, &waters, time);
         fight.raise(naval::fight::CAPTAIN, hostile.strength());
         let mut fought = SeaFight::new(fight, BTreeMap::from([(naval::fight::CAPTAIN, *hostile)]), weather);
-        fought.put_in(player, own, kept, coasts, time);
+        fought.put_in(own, coasts, time);
         self.list.push(fought);
     }
 
-    /// A fight among captains a player came on becomes theirs, under its own weather, their Sloop hove to at `own`.
+    /// A fight among captains a player came on becomes theirs, under its own weather, their ship hove to as `own` gives
+    /// it.
     pub(crate) fn begin_from_clash(
         &mut self,
         clash: Clash,
-        (player, own, kept): (PlayerId, Ship, [f64; 3]),
+        own: (PlayerId, Ship, [f64; 3], HullKind),
         coasts: &[Coast],
         time: f64,
     ) {
         let hostiles = clash.crews().iter().copied().collect();
         let friends = clash.friends().iter().copied().collect();
         let mut fought = SeaFight { friends, ..SeaFight::new(clash.fight, hostiles, (clash.swell, clash.wind)) };
-        fought.put_in(player, own, kept, coasts, time);
+        fought.put_in(own, coasts, time);
         self.list.push(fought);
     }
 
-    /// The first fight a player at `own` comes within `ENGAGE_RANGE` of; whether they joined one, their Sloop hove to.
-    pub(crate) fn join(
-        &mut self,
-        (player, own, kept): (PlayerId, Ship, [f64; 3]),
-        coasts: &[Coast],
-        time: f64,
-    ) -> bool {
-        let Some(fought) = self.list.iter_mut().find(|fought| fought.near([own.x, own.y])) else { return false };
-        fought.put_in(player, own, kept, coasts, time);
+    /// The first fight a player's ship (`own`) comes within `ENGAGE_RANGE` of; whether they joined one, their ship hove
+    /// to.
+    pub(crate) fn join(&mut self, own: (PlayerId, Ship, [f64; 3], HullKind), coasts: &[Coast], time: f64) -> bool {
+        let Some(fought) = self.list.iter_mut().find(|fought| fought.near([own.1.x, own.1.y])) else { return false };
+        fought.put_in(own, coasts, time);
         true
     }
 
@@ -451,7 +449,7 @@ impl Fights {
         met: Vec<(PlayerId, Hostile)>,
         ships: &[Voyager],
         (clashes, hostiles): (&mut Vec<Clash>, &mut Hostiles),
-        heave: &mut impl FnMut(PlayerId) -> Option<(PlayerId, Ship, [f64; 3])>,
+        heave: &mut impl FnMut(PlayerId) -> Option<(PlayerId, Ship, [f64; 3], HullKind)>,
         (coasts, weather, time): (&[Coast], &SeaWeather, f64),
     ) -> Vec<(Joined, Vec<PlayerId>)> {
         let mut joined = Vec::new();

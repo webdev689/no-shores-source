@@ -1,4 +1,4 @@
-use super::tests::{floating_for, met, sea, ticks, told, vessel_mut};
+use super::tests::{floating_for, met, sailor, sea, ticks, told, vessel_mut};
 use super::*;
 use crate::harbour::Repair;
 use crate::sea::decks::HOLD_TICKS;
@@ -41,7 +41,7 @@ fn back_at_sea_their_ship_lies_where_the_room_last_kept_it_not_where_the_page_fi
     let mut sea = sea();
     let player = sea.join();
     sea.course_anywhere(player, &[[40_000.0, 40_000.0]], 10).unwrap();
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.ship_at = Some([60_000, 50_000]);
     assert!(sea.restore_character(player, &character.to_json()));
     let ship = sea.ships().find(|(each, _)| *each == player).unwrap().1;
@@ -103,7 +103,7 @@ fn what_floats_is_gathered_only_by_a_player_whose_character_the_room_holds() {
     vessel.damage.scuttle();
     ticks(&mut sea, 22 * 60);
     assert_eq!(floating_for(&sea, player).count(), 3, "no character: every piece floats on beside it");
-    sea.harbour.characters.insert(player, gear::Character::starting());
+    sea.harbour.characters.insert(player, sailor());
     let pieces: Vec<[f64; 2]> = floating_for(&sea, player).map(|piece| piece.at).collect();
     if let Some(sailing) = sea.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut()) {
         sailing.ship.x = pieces[0][0];
@@ -117,7 +117,7 @@ fn what_floats_is_gathered_only_by_a_player_whose_character_the_room_holds() {
 fn on_a_deck_their_own_ship_takes_no_orders_and_a_late_character_reaches_the_deck() {
     let (mut sea, player) = boarded();
     assert_eq!(sea.orders(player, crate::battle::QUIET), Err(crate::sea::CourseRefused::Fighting));
-    let mut real = gear::Character::starting();
+    let mut real = sailor();
     real.materials.add_aurem(777);
     assert!(sea.restore_character(player, &real.to_json()));
     let on_deck = sea.deck_character(player).unwrap();
@@ -169,7 +169,7 @@ fn a_sea_that_keeps_characters_sails_no_course_before_the_keeper_answers_then_th
     assert_eq!(sea.course(player, &[[40_000.0, 40_000.0]], 10), Ok(()), "held, not refused");
     sea.tick();
     assert!(sea.ships().all(|(each, _)| each != player), "not at sea before the keeper answered");
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.ship_at = Some([60_000, 50_000]);
     assert!(sea.restore_character(player, &character.to_json()));
     sea.tick();
@@ -200,7 +200,7 @@ fn a_page_whose_character_is_not_kept_sails_its_held_course_once_the_keeper_says
     sea.none_kept(player);
     ticks(&mut sea, 31);
     assert_eq!(sea.course(player, &[[40_000.0, 40_000.0]], 10), Ok(()), "and sails as any ship does after");
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.ship_at = Some([60_000, 50_000]);
     let unkept_by_the_page = sea.join();
     sea.none_kept(unkept_by_the_page);
@@ -226,7 +226,7 @@ fn a_ship_puts_to_sea_only_by_a_port_citys_roadstead_and_a_new_character_lies_at
     sea.none_kept(by_east);
     sea.course(by_east, &[[58_000.0, 50_000.0]], 10).unwrap();
     for player in [new, by_east] {
-        assert!(sea.restore_character(player, &gear::Character::starting().to_json()));
+        assert!(sea.restore_character(player, &sailor().to_json()));
         let ship = sea.ships().find(|(each, _)| *each == player).unwrap().1;
         assert_eq!((ship.x, ship.y, ship.pace), (10_000.0, 10_000.0, 0));
         let moored =
@@ -236,7 +236,7 @@ fn a_ship_puts_to_sea_only_by_a_port_citys_roadstead_and_a_new_character_lies_at
     // Nor does the page's own start off Overlook's harbour, within reach of its roadstead, place it: the roadstead does.
     let off_harbour = sea.join();
     sea.course(off_harbour, &[[11_500.0, 11_000.0], [12_000.0, 12_000.0]], 10).unwrap();
-    assert!(sea.restore_character(off_harbour, &gear::Character::starting().to_json()));
+    assert!(sea.restore_character(off_harbour, &sailor().to_json()));
     let ship = sea.ships().find(|(each, _)| *each == off_harbour).unwrap().1;
     assert_eq!((ship.x, ship.y), (10_000.0, 10_000.0));
 }
@@ -293,7 +293,7 @@ fn a_ship_its_owner_sailed_comes_back_where_the_sea_last_had_it_wherever_the_pag
 #[test]
 fn a_character_given_back_mid_fight_ends_that_fight_and_the_ship_lies_where_the_room_last_kept_it() {
     let (mut sea, player) = met(700.0, Rank::Major); // the page put it to sea at (50 km, 50 km)
-    let mut character = gear::Character::starting();
+    let mut character = sailor();
     character.ship_at = Some([5_000, 6_000]);
     assert!(sea.restore_character(player, &character.to_json()));
     assert!(!sea.fights.fighting(player), "their fight from the page's spawn is over for them");
@@ -314,7 +314,7 @@ fn a_character_given_back_or_washed_up_or_hurt_or_repaired_at_sea_is_flagged_cha
     let player = sea.join();
     sea.course(player, &[[60_000.0, 50_000.0]], 10).unwrap();
     assert!(!change(&mut sea, player), "no character held, nothing to send");
-    assert!(sea.restore_character(player, &gear::Character::starting().to_json()));
+    assert!(sea.restore_character(player, &sailor().to_json()));
     assert!(change(&mut sea, player), "given back");
     assert!(!change(&mut sea, player), "once");
     sea.keep_hurts(player, [0.5, 1.0, 1.0]);
@@ -338,7 +338,7 @@ fn what_their_ship_gathers_at_sea_flags_their_character_changed() {
     vessel.damage.hull = 0.0;
     vessel.damage.scuttle();
     ticks(&mut sea, 22 * 60);
-    assert!(sea.restore_character(player, &gear::Character::starting().to_json()));
+    assert!(sea.restore_character(player, &sailor().to_json()));
     ticks(&mut sea, 20);
     assert!(change(&mut sea, player));
     ticks(&mut sea, 20);
@@ -368,7 +368,7 @@ fn a_sea_of_a_harder_tier_shuts_to_a_character_below_its_level_and_keeps_none() 
     let mut sea = sea();
     sea.set_difficulty(gear::Difficulty::Elite);
     let player = sea.join();
-    let low = gear::Character::starting();
+    let low = sailor();
     assert_eq!(sea.shut(&low).map(gear::gate::Shut::reason).as_deref(), Some("Elite seas open at level 10."));
     assert!(!sea.restore_character(player, &low.to_json()), "never given");
     assert!(!sea.harbour.characters.contains_key(&player), "nor held");
@@ -398,4 +398,16 @@ fn a_returning_ships_first_course_refused_keeps_where_the_sea_had_it_and_its_hea
     let ship = sea.ships().find(|(each, _)| *each == back).unwrap().1;
     let at = (left.x.round(), left.y.round(), left.heading);
     assert_eq!((ship.x, ship.y, ship.heading), at, "still where it was, to the metre a course starts at, as it faced");
+}
+
+#[test]
+fn the_sea_shuts_to_a_character_who_keeps_no_ship_and_keeps_none() {
+    let mut sea = sea();
+    let player = sea.join();
+    let shipless = gear::Character::starting();
+    assert_eq!(sea.shut(&shipless), Some(gear::gate::Shut::NoShip));
+    assert_eq!(sea.shut(&shipless).map(gear::gate::Shut::reason).as_deref(), Some(gear::gate::NO_SHIP));
+    assert!(!sea.restore_character(player, &shipless.to_json()), "never given");
+    assert!(!sea.harbour.characters.contains_key(&player), "nor held");
+    assert!(sea.restore_character(player, &sailor().to_json()), "handed the Sloop, it sails");
 }

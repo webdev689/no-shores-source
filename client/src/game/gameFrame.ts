@@ -49,7 +49,7 @@ import type { Sea } from './sea.ts';
 import type { SeaWord } from './seaWord.ts';
 import { hideSeaHud, showSeaHud } from './seaHud.ts';
 import type { SeaShip } from './seaShips.ts';
-import type { SloopBuild } from './shipPanel.ts';
+import type { HullBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import { type AfterStory, clearOfEye, heldHud } from './welcome/afterStory.ts';
@@ -127,8 +127,9 @@ export interface FrameParts {
   readonly charting: Charting<Landmass>;
   readonly seaWeather: ReturnType<typeof seaWeatherOn>;
   readonly seaView: { reachM: number };
-  readonly waterline: Parameters<typeof showSeaHud>[3]['waterline'];
-  readonly builtSloop: () => SloopBuild | null;
+  /** The waterline and the build of the hull the player sails. */
+  readonly waterline: () => Parameters<typeof showSeaHud>[3]['waterline'];
+  readonly builtShip: () => HullBuild | null;
   readonly closeSource: Parameters<GameScene['keepClose']>[1];
   readonly waterHere: () => FriendlyWater;
   /** The leave held through: back to the ship on the room's yes, or told why not. */
@@ -463,8 +464,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       island: ISLANDS[landmass.id],
       region: REGION,
       clock,
-      build: parts.builtSloop,
-      waterline: parts.waterline,
+      build: parts.builtShip,
+      waterline: parts.waterline(),
       charting: charting.busy,
       friendly: fleet.marks,
       notices,

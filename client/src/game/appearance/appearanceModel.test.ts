@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { COSMETICS } from '../../forge/cosmetics.ts';
 import type { GearState } from '../../network/gearMessages.ts';
 import { plainDress } from '../../player/dressing.ts';
-import { EMBLEMS } from '../emblemArt.ts';
+import { EMBLEMS } from '../../plus/emblemArt.ts';
 import { appearanceRows, cosmeticTiles, howHad, previewDress, previewedTile } from './appearanceModel.ts';
 
 const number = (id: string) => COSMETICS.findIndex((each) => each.id === id);

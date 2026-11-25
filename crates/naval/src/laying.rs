@@ -76,11 +76,15 @@ pub fn lay_for(
     let met = aim.ray.and_then(|ray| {
         look_on(shooter, &square, ray, ships).or_else(|| on_water(shooter, &square, ray, (waters, time)))
     });
+    // A player's guns are each elevated for the point laid on, so a long battery throws its weight as a short one does.
     if let Some(point) = met {
-        return Some(lay_on(ship, pose, arms, side, load, point));
+        return Some(lay_on(ship, pose, arms, side, load, point).laid_on(point));
     }
     let out = (square.centre[0] - ship.x) * square.direction[0] + (square.centre[1] - ship.y) * square.direction[1];
-    Some(lay(ship, pose, arms, side, load, (aim.range_m - out).max(0.0), None))
+    let range = (aim.range_m - out).max(0.0);
+    let laid = lay(ship, pose, arms, side, load, range, None);
+    let point = [laid.centre[0] + laid.direction[0] * range, laid.centre[1] + laid.direction[1] * range, pose.heave];
+    Some(laid.laid_on(point))
 }
 
 /// The point to lay on where the look's ray first meets a ship of another flag, its hull or its canvas, within the

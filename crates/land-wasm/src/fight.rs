@@ -1,5 +1,5 @@
-//! A fight over the open landmass: the player's Sloop and one hostile captain in its rank's hull, or the captains a
-//! begin request sets upon it (the naval crate's `Fight`). It stays here between calls, as the open landmass does; a
+//! A fight over the open landmass: the player's ship (the Sloop unless the begin request names its hull) and one
+//! hostile captain in its rank's hull, or the captains the request sets upon it (the naval crate's `Fight`). It stays here between calls, as the open landmass does; a
 //! request begins one, steps it, or ends it. Requests and answers are JSON: the fight's own numbers never cross, so a
 //! request carries only the player's orders.
 
@@ -15,9 +15,9 @@ use naval::fight::{Aim, CAPTAIN, Command, End, Event, Fight, Orders, PLAYER, Par
 use naval::guns::Shot;
 use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
-use sailing::TICK_SECONDS;
 use sailing::ship::{SAILS_SET, Ship};
 use sailing::waters::{LandWaters, Waters, sail_wind, sea_wind_at};
+use sailing::{HullKind, TICK_SECONDS};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 use std::f64::consts::TAU;
@@ -185,7 +185,7 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
     })
 }
 
-/// The editor's fight's two ships: the player's Sloop and the captain's, with the captain's command.
+/// The editor's fight's two ships: the player's and the captain's, with the captain's command.
 fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &Command), String> {
     let player = fight.vessel(PLAYER).ok_or("the fight has no player's ship")?;
     let captain = fight.vessel(CAPTAIN).ok_or("the fight has no captain")?;
@@ -325,6 +325,15 @@ fn begin(request: &[u8]) -> Result<Value, String> {
             .ok_or("a fight's rank is a whole number from 1 to 5")?,
     };
     let commission = Commission { rank, ..Commission::default() };
+    // The player's hull, the Sloop unless asked (0 the Sloop to 3 the Frigate).
+    let hull = match &request["hull"] {
+        Value::Null => HullKind::Sloop,
+        asked => asked
+            .as_u64()
+            .and_then(|number| u8::try_from(number).ok())
+            .and_then(HullKind::numbered)
+            .ok_or("a fight's hull is a whole number from 0 to 3")?,
+    };
     let captains = captains_of(&request, seed)?;
     OPEN.with(|open| {
         let open = open.borrow();
@@ -332,8 +341,8 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         let swell = Swell::default();
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
         let fight = match &captains {
-            Some(captains) => Fight::ambush(ship, captains, seed, &waters, time)?,
-            None => Fight::begin(ship, commission, seed, &waters, time)?,
+            Some(captains) => Fight::ambush_in((ship, hull), captains, seed, &waters, time)?,
+            None => Fight::begin_in((ship, hull), commission, seed, &waters, time)?,
         };
         let answer = view(&fight, &[], None, &waters, time);
         FIGHT.with(|slot| *slot.borrow_mut() = Some(fight));
