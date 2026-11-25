@@ -1,5 +1,5 @@
 // Returning to the ship, on the room's word: refused while fallen or within ten seconds of a foe's blow, as the owner
-// chose ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); the room judges, the page leaves only on its yes.
+// chose; the room judges, the page leaves only on its yes.
 
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 

@@ -1,9 +1,9 @@
-//! The Waking: a Breach's opening, fought at its gate in the patrol zone, in view of everyone there
-//! ([[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]). The host tells the room which players
+//! The Waking: a Breach's opening, fought at its gate in the patrol zone, in view of everyone there.
+//! The host tells the room which players
 //! came launched for which run, at which tier: their company. One company at a time holds the gate: the first whose
 //! living player steps onto a mooring stone while it is free. Its moorings held at once fill the Spire; fewer let it
 //! ebb; a Bulwark claims one left empty. Woken, the gate opens to that company alone; anyone else in the zone may fight
-//! beside them, and the foes drop nothing. The gate shows the zone the companies inside the run ([[Breaches]]).
+//! beside them, and the foes drop nothing. The gate shows the zone the companies inside the run.
 
 use super::plan::turned;
 use crate::players::Player;

@@ -1,5 +1,5 @@
 //! The Playlist beside each port: the Elite and the Abyss Playlist, each a queue for one of the 18 Elite Dungeons drawn
-//! when a company is found, at the playlist's tier ([[The Playlist and Its Dungeons as Claude Shapes Them]]). Players
+//! when a company is found, at the playlist's tier. Players
 //! are banded by five levels from the level it opens at, and every foe of a band's run stands at the band's first
 //! level raised by the tier, never past 32. Its modifiers turn with the day: the Elite Playlist carries the day's, the
 //! Abyss Playlist the day's and one more of another kind. Each playlist's first clear each day pays as the dungeon of

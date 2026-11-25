@@ -1,7 +1,7 @@
 // Every word the website says, by its page and name (`world.title`); a page names them and the build fills them in.
 // The premise is the owner's, word for word, split into passages and never reworded. Every other line says only what
-// a recorded decision says or what the game has built, each group naming its notes, and tells a newcomer plainly what
-// they will do. The lore is shown, not explained (The Game Shows the Mystery and Explains Almost None of It).
+// the game's decisions say or what the game has built, and tells a newcomer plainly what they will do. The lore is
+// shown, not explained.
 
 /** The owner's premise, passage by passage, as the owner wrote it. */
 const PREMISE = {
@@ -39,8 +39,6 @@ const PREMISE = {
 
 const SHELL = {
   'shell.brand': 'No Shores',
-  // Claude's line, from the owner's own words for the game in No Shores: "A proper pirate sandbox experience" and "A
-  // shared world instead of an MMO".
   'shell.tagline': 'A pirate sandbox in a shared world.',
   'shell.skip': 'Skip to the page',
   'shell.navLabel': 'The site',
@@ -54,14 +52,7 @@ const SHELL = {
   'shell.copyright': '© Vestige Studios',
 } as const;
 
-// Home. Its sources: No Shores and Overlook Is a Shared World After Destiny 1 (a shared world, Overlook the social
-// hub, gear-based power, weapon upgrades); The Sea Is a Patrol Zone, and the Ship Is Gear; Ships Have Their Own Power,
-// Modules and Crew Who Fight Beside You; Combat Is Soulframe's, With DFO's Enhanced AI; The Player's Swings Chain Side
-// Cut, Overhead and Thrust; Arts Are Overlook's Subclasses; Three Factions Keep the Arts, After Destiny 1; Gear and
-// Power Follow Destiny 1 Vanilla; Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week; Public Events
-// Run on a Clock, After Destiny 1; Guilds Gain Banners, Levels, Bounties and Outposts; Accounts Start as Guests, on
-// Cloudflare D1; WebGPU Only; Every Control Can Be Rebound, and the Pad Plays as Destiny's; and "action RPG" from the
-// owner's own description of the repository, "A shared world action-rpg".
+// Home.
 const HOME = {
   'home.title': 'No Shores: a pirate sandbox in a shared world',
   'home.description':
@@ -120,8 +111,7 @@ const HOME = {
   'home.doGuilds': 'Guilds and outposts',
   'home.gameLead': 'More about the game',
   'home.numbersHead': 'No Shores at a glance',
-  // The numbers band: the premise ("a vast ocean stretching between nine continents"; "Today, only three remain."),
-  // Arts Are Overlook's Subclasses (three Arts) and Dungeons (six styles).
+  // The numbers band: nine continents and three port cities from the premise, three Arts and six dungeon styles.
   'home.numberContinents': 'continents',
   'home.numberPorts': 'port cities remain',
   'home.numberArts': 'Arts to master',
@@ -161,10 +151,7 @@ const WORLD = {
   'world.ruinsAlt': 'A ruined port on the coast, overtaken by red and purple crystal.',
 } as const;
 
-// The Game. Its sources are Home's, and Islands (coves and guarded isles, their wreckage and dungeon doors), Ship
-// Power (the Shipwright's modules), Crew, Public Events (the Fissure, the Grey Tithe's raid, a chest for each player
-// who took part), Activities (Find a Company, private runs, bounties and the Journal), Guilds, Gear (five rarities,
-// Vestiges opened in a social space) and Accounts.
+// The Game.
 const GAME = {
   'game.title': 'The Game',
   'game.description':
