@@ -312,7 +312,7 @@ fn garrison_beside_the_square(at: [f64; 3], post_back: f64) -> (f64, f64) {
 
 #[test]
 fn a_garrison_foe_goes_for_a_player_close_by_on_an_event_grounds_own_square_but_not_for_one_far_off() {
-    // Close, 6 m off: the owner's rule, a foe gives up only on a player far away, wherever the player stands.
+    // Close, 6 m off: a foe gives up only on a player far away, wherever the player stands.
     let (was, now) = garrison_beside_the_square([FISSURE_AT[0], FISSURE_AT[1] + 39.0, 0.0], 0.0);
     assert!(now < was - 0.5, "it stood {was} m from a player close by and is still {now} m off");
     // Far, 25 m off, on ground its routes do not reach from its post: it lets them be.

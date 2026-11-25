@@ -6,6 +6,7 @@
 use super::{Coast, Sailing, Sea};
 use crate::PlayerId;
 use crate::chart::Charted;
+use combat::sight::apart;
 use isle::Kind;
 use isle::draws::Draws;
 use std::collections::{BTreeMap, BTreeSet};
@@ -79,11 +80,6 @@ pub struct Islands {
     /// new number is a new visit, its nodes standing again for it. How many landings there have been.
     landed: BTreeMap<String, (u32, u32)>,
     landings: u32,
-}
-
-fn apart(one: [f64; 2], other: [f64; 2]) -> f64 {
-    let (along_x, along_y) = (one[0] - other[0], one[1] - other[1]);
-    (along_x * along_x + along_y * along_y).sqrt()
 }
 
 /// How far a point lies from a leg.

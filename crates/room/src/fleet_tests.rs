@@ -2,16 +2,17 @@ use super::*;
 use naval::fight::{Hurts, sail_hurt};
 use naval::ranks::{Commission, GREY_TITHE, Rank};
 use naval::shots::ShotEvent;
+use sailing::ship::Helm;
 use sailing::waters::OpenSea;
 
 const AT: [f64; 3] = [200_000.0, 300_000.0, 0.5];
 
 fn orders(sequence: u32, helm: Helm) -> Input {
-    Input { sequence, orders: Orders { helm, ..STANDING }, put_to_sea: None, call: Call::None }
+    Input { sequence, orders: Orders { helm, ..QUIET }, put_to_sea: None, call: Call::None }
 }
 
 fn put(sequence: u32, at: [f64; 3]) -> Input {
-    Input { put_to_sea: Some(at), ..orders(sequence, STANDING.helm) }
+    Input { put_to_sea: Some(at), ..orders(sequence, QUIET.helm) }
 }
 
 const ROWING: Helm = Helm { steer: 0.3, climb: 0 };
@@ -60,7 +61,7 @@ fn orders_out_of_turn_or_past_what_a_helm_can_ask_are_refused() {
     assert_eq!(fleet.input(player, orders(1, Helm { steer: 2.0, ..ROWING })), Err(Refused::BadLook));
     assert_eq!(fleet.input(player, orders(1, Helm { climb: 2, ..ROWING })), Err(Refused::BadLook));
     let far = Aim { bearing_deg: 90.0, range_m: 2.0e5, ray: None };
-    let looked = Input { orders: Orders { aim: Some(far), ..STANDING }, ..orders(1, ROWING) };
+    let looked = Input { orders: Orders { aim: Some(far), ..QUIET }, ..orders(1, ROWING) };
     assert_eq!(fleet.input(player, looked), Err(Refused::BadLook));
     assert_eq!(fleet.input(player, put(1, [-5.0, AT[1], 0.0])), Err(Refused::BadLook), "outside the world");
     assert_eq!(fleet.input(player, put(1, [AT[0], f64::NAN, 0.0])), Err(Refused::BadLook));
@@ -101,7 +102,7 @@ fn time_in_harbour_is_not_banked_to_catch_up_on_at_sea() {
     }
     let honest = fleet.join().unwrap_or_default();
     let (to_wait, to_honest) = (AT, [AT[0] + 5000.0, AT[1], AT[2]]);
-    let helm = |sequence: u32| if sequence <= 3 { CLIMB } else { STANDING.helm };
+    let helm = |sequence: u32| if sequence <= 3 { CLIMB } else { QUIET.helm };
     let order = |sequence: u32, at| {
         let given = orders(sequence, helm(sequence));
         if sequence == 1 { Input { put_to_sea: Some(at), ..given } } else { given }
@@ -136,8 +137,8 @@ fn a_release_in_a_late_tick_is_their_last_order_of_it_so_it_is_judged_by_its_own
     fleet.tick();
     fleet.take_events();
     let aim = Some(Aim { bearing_deg: 90.0, range_m: 80.0, ray: None });
-    let fire = Input { orders: Orders { aim, fire: true, ..STANDING }, ..orders(2, STANDING.helm) };
-    let brace = |sequence| Input { orders: Orders { brace: true, ..STANDING }, ..orders(sequence, STANDING.helm) };
+    let fire = Input { orders: Orders { aim, fire: true, ..QUIET }, ..orders(2, QUIET.helm) };
+    let brace = |sequence| Input { orders: Orders { brace: true, ..QUIET }, ..orders(sequence, QUIET.helm) };
     for input in [fire, brace(3), brace(4)] {
         assert_eq!(fleet.input(player, input), Ok(()));
     }
@@ -175,7 +176,7 @@ fn their_ship_is_their_orders_stepped_by_the_rules_to_the_bit() {
     let whole = naval::fight::Hurts::from_numbers(sail, sail);
     let mut ship =
         Ship { x: AT[0], y: AT[1], heading: AT[2], ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    for helm in std::iter::once(STANDING.helm).chain(std::iter::once(CLIMB)).chain(std::iter::repeat_n(ROWING, 120)) {
+    for helm in std::iter::once(QUIET.helm).chain(std::iter::once(CLIMB)).chain(std::iter::repeat_n(ROWING, 120)) {
         ship = sail_hurt(&ship, &sailing::SLOOP, helm, whole, &waters, wind, 0.0).0;
     }
     let room = ship_of(&fleet, player).map(|ship| ship.to_floats().map(f64::to_bits));
@@ -242,7 +243,7 @@ fn one_room_fights_the_same_fight_for_the_same_orders() {
         for sequence in 34..600 {
             let fire = sequence % 97 == 0;
             let aim = Some(Aim { bearing_deg: 90.0, range_m: 80.0, ray: None });
-            let input = Input { orders: Orders { helm: ROWING, aim, fire, ..STANDING }, ..orders(sequence, ROWING) };
+            let input = Input { orders: Orders { helm: ROWING, aim, fire, ..QUIET }, ..orders(sequence, ROWING) };
             assert_eq!(fleet.input(player, input), Ok(()));
             fleet.tick();
         }

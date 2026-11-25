@@ -196,10 +196,12 @@ impl Room {
         gate.inside.insert(run.to_owned(), Inside { name: name.to_owned(), tier, encounter, heard: clock });
     }
 
-    /// Whether a run's gate has opened, for the host to let its company in.
+    /// Whether a run's gate stands open at the room's minute, for the host to let its company in. Its day is counted
+    /// here too, as an empty zone's room is asked without the tick that would shut it.
     #[must_use]
     pub fn breach_opened(&self, run: &str) -> bool {
-        self.breach_gate.as_ref().is_some_and(|gate| gate.opened.contains_key(run))
+        let opened = self.breach_gate.as_ref().and_then(|gate| gate.opened.get(run));
+        opened.is_some_and(|opened| self.minute < opened + OPENED_MINUTES)
     }
 
     /// Each tick in a room with a Breach's gate: the Waking, its foes, its fallen, and the word from runs gone stale.

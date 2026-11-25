@@ -31,7 +31,7 @@ pub(crate) const SPAWN_CLEAR: f64 = 25.0;
 /// A cleared group stands again this many ticks (120 s) after its last foe fell, once no player stands within
 /// CLEAR_AROUND metres of its post.
 pub(crate) const STAND_AGAIN: u64 = 120 * 60;
-/// A group with a Miniboss or a Boss stands again only 10 minutes after it fell, so neither is farmed: the owner's.
+/// A group with a Miniboss or a Boss stands again only 10 minutes after it fell, so neither is farmed.
 pub(crate) const GREAT_STAND_AGAIN: u64 = 600 * 60;
 pub(crate) const CLEAR_AROUND: f64 = 40.0;
 /// Posts are chosen on a lattice this many metres apart, this far inside the section's edge and the baked square's,
@@ -358,8 +358,8 @@ impl Room {
         for post in &mut self.garrison {
             for &(_, rank, _, _) in &post.members {
                 let (level, shield) = gird_of(seed, nth, levels, shield_chance);
-                // A Boss or a Miniboss never stands shielded, at the owner's word; the draw is still made, so every
-                // other foe's stays as it was.
+                // A Boss or a Miniboss never stands shielded; the draw is still made, so every other foe draws the
+                // same either way.
                 post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));
                 nth += 1;
             }

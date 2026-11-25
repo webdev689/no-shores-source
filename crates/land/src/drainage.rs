@@ -104,22 +104,10 @@ pub fn accumulate(routing: &Routing, own: &[f64]) -> Vec<f64> {
     total
 }
 
-/// One closed hollow the flood brimmed: its cells, its spill (the cell every other drains through) and its depth.
-#[derive(Debug)]
-pub struct Hollow {
-    pub cells: Vec<u32>,
-    pub outlet: u32,
-    pub deepest: f64,
-}
-
-/// Every hollow at least `min_depth` deep somewhere, whole.
+/// The cells of every closed hollow the flood brimmed, each hollow whole.
 #[must_use]
-pub fn hollows(routing: &Routing, ground: &[f64], width: usize, height: usize, min_depth: f64) -> Vec<Hollow> {
+pub fn hollows(routing: &Routing, ground: &[f64], width: usize, height: usize) -> Vec<Vec<u32>> {
     let count = width * height;
-    let mut position = vec![0_u32; count];
-    for (at, &cell) in routing.order.iter().enumerate() {
-        position[cell as usize] = at as u32;
-    }
     let wet = |index: usize| routing.filled[index] - ground[index] > 1e-6;
     let mut seen = vec![false; count];
     let mut found = Vec::new();
@@ -130,15 +118,10 @@ pub fn hollows(routing: &Routing, ground: &[f64], width: usize, height: usize, m
         }
         seen[start] = true;
         let mut cells = vec![start as u32];
-        let (mut deepest, mut outlet) = (0.0_f64, start);
         let mut at = 0;
         while at < cells.len() {
             let cell = cells[at] as usize;
             at += 1;
-            deepest = deepest.max(routing.filled[cell] - ground[cell]);
-            if position[cell] < position[outlet] {
-                outlet = cell;
-            }
             for direction in 0..8 {
                 let Some(next) = neighbour(cell, direction, width, height) else { continue };
                 if !seen[next] && wet(next) {
@@ -147,9 +130,7 @@ pub fn hollows(routing: &Routing, ground: &[f64], width: usize, height: usize, m
                 }
             }
         }
-        if deepest >= min_depth {
-            found.push(Hollow { cells, outlet: outlet as u32, deepest });
-        }
+        found.push(cells);
     }
     found
 }
@@ -166,9 +147,8 @@ mod tests {
         ground[12] = 2.0;
         let routing = route_flow(&ground, width, height, 100.0, &[false; 25]);
         assert!(routing.filled[12] >= 10.0, "the pit is filled to the rim");
-        let lakes = hollows(&routing, &ground, width, height, 0.5);
-        assert_eq!(lakes.len(), 1);
-        assert_eq!(lakes[0].cells, [12]);
+        let lakes = hollows(&routing, &ground, width, height);
+        assert_eq!(lakes, [[12]]);
         let rain = accumulate(&routing, &[1.0; 25]);
         let outflow: f64 = (0..25).filter(|&index| routing.receiver[index] == OUTLET).map(|index| rain[index]).sum();
         assert!((outflow - 25.0).abs() < 1e-9, "all the rain reaches an outlet");

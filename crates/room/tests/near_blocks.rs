@@ -94,7 +94,7 @@ fn bodies_among_a_patrol_areas_boxes_step_alike_with_and_without_the_grid() {
 }
 
 /// A tick's cost over the Saltgrass Downs' boxes, plain and through the grid: `cargo test --release -p room --test
-/// near_blocks -- --ignored --nocapture`. Movement.md quotes it.
+/// near_blocks -- --ignored --nocapture`.
 #[test]
 #[ignore = "a measurement, not a check"]
 #[allow(clippy::disallowed_methods, clippy::print_stdout, reason = "it times the ticks and reports them")]
@@ -122,7 +122,7 @@ fn a_ticks_cost_among_a_patrol_areas_boxes() {
 
 /// A node room's bake, with the Saltgrass Downs' boxes and without them, the quickest of three each, its first spawn
 /// moved to where the boxes stand thickest so its square holds the most of them: `cargo test --release -p room --test
-/// near_blocks -- --ignored --nocapture`. Navmesh.md quotes it. Its boxes may cost the bake no more than as much again.
+/// near_blocks -- --ignored --nocapture`. Its boxes may cost the bake no more than as much again.
 #[test]
 #[ignore = "a measurement, not a check"]
 #[allow(clippy::disallowed_methods, clippy::print_stdout, reason = "it times the bakes and reports them")]

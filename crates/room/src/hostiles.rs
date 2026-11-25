@@ -14,6 +14,7 @@ use crate::sighting::{
     along_lane, faction_of, hostile_chance, intercept_heading, level_in, meeting_arc, rank_for, sight_for,
     turned_toward, way_of,
 };
+use combat::sight::apart;
 use naval::captain::course::heading_to;
 use naval::captain::{ENGAGE_RANGE, Temper, temper_for};
 use naval::fight::SPAWN_TRIES;
@@ -115,11 +116,6 @@ impl Default for Hostiles {
     fn default() -> Self {
         Self::new(STREAM_SEED)
     }
-}
-
-pub(crate) fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
-    let (east, south) = (to[0] - from[0], to[1] - from[1]);
-    (east * east + south * south).sqrt()
 }
 
 /// The rate a ship sails at: the clock of the player nearest it that keeps it at sea, but real time where another

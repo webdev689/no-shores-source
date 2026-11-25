@@ -69,8 +69,8 @@ pub enum Asked {
     FindLore {
         chapter: u16,
     },
-    /// Asks to return to their ship: refused while fallen or within ten seconds of a foe's blow, as the owner chose;
-    /// the page leaves for the sea only on the room's word.
+    /// Asks to return to their ship: refused while fallen or within ten seconds of a foe's blow; the page leaves for
+    /// the sea only on the room's word.
     ToShip,
     /// Opens one's chest from a public event, by its number among one's drops, within `public::CHEST_REACH`.
     OpenChest {
