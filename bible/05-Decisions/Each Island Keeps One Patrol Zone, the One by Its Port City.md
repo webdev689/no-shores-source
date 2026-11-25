@@ -46,5 +46,8 @@ you.think would work into saltgrass and/or fold their items into passageways"
 - **What works from the zones that go is folded in**, into the Saltgrass Downs, into the passages, or both, as Claude
   judges.
 
+Replaced in part by [[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]: on Saltmere the
+three patrol zones stay, linked, and the houses' tasks stay where they were; the other islands' excess zones go.
+
 It builds on [[Every Island Is Seen Whole and Reached by Nodes]] and
 [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]].

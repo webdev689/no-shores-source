@@ -50,25 +50,5 @@
     [2363500, 1757500, 18.81],
     [2359214, 1787500, 19.33],
     [2331754, 1815317, 20.0]
-  ],
-  "landmarks": [
-    {"name": "The Saltbreaker Hulks", "at": [2344967, 1244844], "depth": 9, "ground": "open", "form": "strand"},
-    {"name": "Drowned Men's Graves", "at": [2345351, 1244364], "depth": 9, "ground": "under", "form": "barrow"},
-    {"name": "Wreckers' Cut", "at": [2344975, 1244099], "depth": 9, "ground": "open", "form": "ravine"},
-    {"name": "Grey Point Light", "at": [2344967, 1244172], "depth": 10, "ground": "open", "form": "shelves", "anchor": true},
-    {"name": "Moorhold", "at": [2345511, 1244812], "depth": 10, "ground": "under", "form": "halls"},
-    {"name": "Moorend", "at": [2345863, 1244380], "depth": 11, "ground": "open", "form": "court"},
-    {"name": "The Gorse Ledge", "at": [2345972, 1244431], "depth": 11, "ground": "open", "form": "shelves"},
-    {"name": "The Gorse Moor", "at": [2345223, 1245212], "depth": 11, "ground": "open", "form": "hollow"},
-    {"name": "Orchard Farm", "at": [2332045, 1815937], "depth": 18, "ground": "open", "form": "grove"},
-    {"name": "The Water Meadows", "at": [2331133, 1815729], "depth": 18, "ground": "open", "form": "hollow"},
-    {"name": "Weir Mill", "at": [2332477, 1815217], "depth": 18, "ground": "open", "form": "court"},
-    {"name": "The Weir Gorge", "at": [2332182, 1814702], "depth": 18, "ground": "open", "form": "ravine"},
-    {"name": "Gullwing", "at": [2332253, 1814865], "depth": 19, "ground": "open", "form": "court"},
-    {"name": "Hollow Coven", "at": [2332333, 1815745], "depth": 19, "ground": "under", "form": "caverns"},
-    {"name": "Valeguard", "at": [2331693, 1815361], "depth": 19, "ground": "under", "form": "halls"},
-    {"name": "Valeguard Walls", "at": [2331713, 1814604], "depth": 19, "ground": "open", "form": "shelves"},
-    {"name": "The Hollow Undercroft", "at": [2331857, 1814579], "depth": 19, "ground": "under", "form": "crypt"},
-    {"name": "The Old Stones", "at": [2331773, 1814545], "depth": 20, "ground": "open", "form": "hollow", "anchor": true}
   ]
 }

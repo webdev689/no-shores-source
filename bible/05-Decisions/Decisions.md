@@ -369,6 +369,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Each Island Keeps One Patrol Zone, the One by Its Port City]]
 - [[Passages Web Out From the Patrol Zone Across Its Island]]
 - [[Passages as Claude Builds Them]]
+- [[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]
 
 ## Replaced
 

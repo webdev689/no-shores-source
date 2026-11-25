@@ -1,11 +1,11 @@
 //! A week's web of an island's passages: three zones at the first depth, one behind each mouth, then three or four at
-//! each depth to the twentieth, each lying across the island along its spine; the week's share of its landmark zones
+//! each depth to the twentieth, each lying across the island along its spine;
 //! at their depths; and the ways on, each zone to one to three of the next depth's beside it, so ways cross and
 //! meet, every zone with a way in. It is drawn from the island and the week alone.
 
-use crate::island::{Island, Landmark};
+use crate::island::Island;
 use crate::zone::{Current, Deal, Form, Ground, Mission, Size, Zone, names_of};
-use crate::{DEPTHS, has_lamp};
+use crate::{DEPTHS, LAMP_CEILING_M, has_lamp};
 use isle::draws::{Draws, mix};
 
 /// How far apart zones of one depth lie across the spine, metres.
@@ -81,24 +81,6 @@ fn deal_of(under: bool, draws: &mut Draws) -> Deal {
     }
 }
 
-/// What stands at one place of a depth: a landmark, or a zone drawn there.
-enum Standing<'island> {
-    Landmark(&'island Landmark),
-    Drawn,
-}
-
-/// The landmarks a week shows at a depth: its anchors always, and of the rest one or two drawn by the week.
-fn landmarks_at<'island>(island: &'island Island, depth: u8, draws: &mut Draws) -> Vec<&'island Landmark> {
-    let here = island.landmarks.iter().filter(|mark| mark.depth == depth);
-    let (anchors, mut rest): (Vec<&Landmark>, Vec<&Landmark>) = here.partition(|mark| mark.anchor);
-    let mut shown = anchors;
-    let wanted = if draws.unit() < 0.4 { 2 } else { 1 };
-    while shown.len() < wanted && !rest.is_empty() {
-        shown.push(rest.remove(draws.index(rest.len())));
-    }
-    shown
-}
-
 impl Web {
     /// The web an island's passages lay in a week.
     #[must_use]
@@ -108,20 +90,12 @@ impl Web {
         let mut depths: Vec<Vec<u16>> = Vec::new();
         for depth in 1..=DEPTHS {
             let mut draws = Draws::of(seed, u64::from(depth));
-            let marks = landmarks_at(island, depth, &mut draws);
             let width = if depth == 1 { island.mouths.len().max(1) } else { 3 + usize::from(draws.unit() < 0.5) };
-            let width = width.max(marks.len()).min(5);
-            // The landmarks take the middle lanes: they lie by the spine itself.
-            let first_mark = (width - marks.len()) / 2;
             let mut row = Vec::new();
             for lane in 0..width {
-                let standing = lane
-                    .checked_sub(first_mark)
-                    .and_then(|at| marks.get(at))
-                    .map_or(Standing::Drawn, |mark| Standing::Landmark(mark));
                 let number = u16::try_from(zones.len()).unwrap_or(u16::MAX);
                 let zone_seed = mix(seed, u64::from(depth) * 64 + lane as u64);
-                zones.push(Self::zone(island, (depth, lane, width), number, zone_seed, standing));
+                zones.push(Self::zone(island, (depth, lane, width), number, zone_seed));
                 row.push(number);
             }
             depths.push(row);
@@ -134,50 +108,32 @@ impl Web {
         Web { island, week, zones, mouths }
     }
 
-    /// One zone at a lane of a depth `width` zones wide: a landmark's ground and place, or ground drawn and laid
-    /// along the spine.
-    fn zone(
-        island: &Island,
-        (depth, lane, width): (u8, usize, usize),
-        number: u16,
-        seed: u64,
-        standing: Standing,
-    ) -> Zone {
+    /// One zone at a lane of a depth `width` zones wide: its ground drawn, laid along the spine.
+    fn zone(island: &Island, (depth, lane, width): (u8, usize, usize), number: u16, seed: u64) -> Zone {
         let mut draws = Draws::of(seed, 1);
         let lamp = has_lamp(depth);
         let (spine_at, way) = island.along(f64::from(depth));
         let across = (lane as f64 - (width as f64 - 1.0) / 2.0) * LANE_M;
         // Across the spine is the way turned a quarter: x east, y south.
-        let drawn_at = [spine_at[0] - way[1] * across, spine_at[1] + way[0] * across];
-        let (ground, at, landmark) = match standing {
-            Standing::Landmark(mark) => {
-                let ground = match (&mark.style, mark.form) {
-                    (Some(style), _) => Ground::Under { style: style.clone() },
-                    (None, form) => Ground::Open { form: form.unwrap_or(Form::Hollow) },
-                };
-                (ground, mark.at, Some(mark.name.clone()))
-            }
-            Standing::Drawn => {
-                let ground = if draws.unit() < UNDER_SHARE {
-                    let styles = STYLES[usize::from((depth - 1) / 5).min(STYLES.len() - 1)];
-                    Ground::Under { style: (*draws.pick(styles).unwrap_or(&"caverns")).to_owned() }
-                } else {
-                    Ground::Open { form: weighted(&FORMS, &mut draws) }
-                };
-                (ground, drawn_at, None)
-            }
+        let at = [spine_at[0] - way[1] * across, spine_at[1] + way[0] * across];
+        let ground = if draws.unit() < UNDER_SHARE {
+            let leg = STYLES[usize::from((depth - 1) / 5).min(STYLES.len() - 1)];
+            // A lamp's zone is laid only in a style with rooms tall enough to stand the lamp in.
+            let fits =
+                |key: &&&str| !lamp || dungeon::style_of(key).is_some_and(|style| style.heights.1 >= LAMP_CEILING_M);
+            let styles: Vec<&str> = leg.iter().filter(fits).copied().collect();
+            Ground::Under { style: (*draws.pick(&styles).unwrap_or(&"caverns")).to_owned() }
+        } else {
+            Ground::Open { form: weighted(&FORMS, &mut draws) }
         };
         let under = matches!(ground, Ground::Under { .. });
         let deal = if lamp { Deal::Lamp } else { deal_of(under, &mut draws) };
         let least = if lamp || deal == Deal::Vault { Size::Medium } else { Size::Small };
         let size = size_of(depth, least, &mut draws);
         let currents = Current::draw(depth, deal, &mut draws);
-        let name = landmark.clone().unwrap_or_else(|| {
-            let names = names_of(&ground);
-            (*draws.pick(names).unwrap_or(&"A passage")).to_owned()
-        });
+        let name = (*draws.pick(names_of(&ground)).unwrap_or(&"A passage")).to_owned();
         let lane = u8::try_from(lane).unwrap_or(u8::MAX);
-        Zone { number, depth, lane, at, ground, size, deal, currents, seed, name, onward: Vec::new(), landmark }
+        Zone { number, depth, lane, at, ground, size, deal, currents, seed, name, onward: Vec::new() }
     }
 
     /// The ways on from one depth's zones to the next's: each to one to three of those beside it across the spine,

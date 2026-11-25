@@ -49,6 +49,8 @@ export interface LandSheet extends Relief {
   readonly ring: readonly Point2[];
   readonly places: readonly { readonly name: string; readonly at: Point2 }[];
   readonly marks: readonly LandMark[];
+  /** How much of it the map opens across, metres: 400 round the player unless said (the passages' web, whole). */
+  readonly span?: number;
 }
 
 /** The rise between two lines of the ground's relief, and between two index lines, metres. */

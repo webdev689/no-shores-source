@@ -51,7 +51,6 @@ fn zone_json(zone: &Zone) -> Value {
         "currents": currents,
         "name": zone.name,
         "onward": zone.onward,
-        "landmark": zone.landmark,
         "lamp": passage::lamp_number(zone.depth),
     })
 }
@@ -59,7 +58,7 @@ fn zone_json(zone: &Zone) -> Value {
 /// An island's passages for a week as JSON: its patrol zone, its mouths (each its run's name and the zone it leads
 /// to), the week's two modifiers (each its key, name and words) and every zone: its number, depth, lane, place on the
 /// island (x, y), ground (under ground its style, above ground its form), size, deal, currents (key, name, words at
-/// its depth's strength, whether a boon), name, the zones its onward mouths lead to, its landmark and its lamp's
+/// its depth's strength, whether a boon), name, the zones its onward mouths lead to and its lamp's
 /// number. Empty for an island with no passages.
 #[must_use]
 pub fn web_json(island: &str, week: u64) -> String {

@@ -1,7 +1,8 @@
-use crate::{Dungeon, STYLES, Shape};
+use crate::{Dungeon, EVERY_STYLE, Shape};
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
-    (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
+    (0..count)
+        .map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), EVERY_STYLE[seed as usize % EVERY_STYLE.len()]))
 }
 
 /// The rooms in the order the walk reaches them, as their purposes are drawn.
@@ -78,7 +79,7 @@ fn every_name_in_a_dungeon_is_its_own_a_purpose_used_again_taking_a_word_before_
 #[test]
 fn each_purpose_has_a_role_of_its_own_in_lower_case() {
     let mut roles = Vec::new();
-    for style in STYLES {
+    for style in EVERY_STYLE {
         let bank = style.purposes;
         assert_eq!(bank.rooms.len(), 6, "{}: six purposes between its way in and its end", style.key);
         for purpose in [bank.way_in].iter().chain(bank.rooms).chain([&bank.end]) {
@@ -89,7 +90,7 @@ fn each_purpose_has_a_role_of_its_own_in_lower_case() {
             assert!(!purpose.lays.is_empty(), "{} lays props", purpose.name);
         }
     }
-    assert_eq!(roles.len(), 48);
+    assert_eq!(roles.len(), 64);
 }
 
 #[test]

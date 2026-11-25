@@ -5,7 +5,7 @@
 //! ruins or wrecks), its section and its sites, all from its seed. Its frame is its own: metres from the middle of its
 //! floor, x east, y south.
 
-use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spread};
+use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
 use crate::zone::{Form, Zone};
 use core::f64::consts::{PI, TAU};
 use isle::Placement;
@@ -232,7 +232,7 @@ impl Laying {
 
 /// The sites of a hollow: its way in at one end, its onward mouths round the far end, its lamp toward the far end,
 /// and its posts and spots on its floor.
-fn sites(outline: &Outline, onward_count: usize, lamp: bool, draws: &mut Draws) -> Sites {
+fn sites(outline: &Outline, (onward_count, lamp, wanted): (usize, bool, usize), draws: &mut Draws) -> Sites {
     let (way_in_at, ends): ([f64; 2], Vec<[f64; 2]>) = if outline.form == Form::Ravine {
         let reach = outline.half_width - MOUTH_IN_M;
         let ((first, back), (last, out)) = (outline.end(false), outline.end(true));
@@ -284,7 +284,7 @@ fn sites(outline: &Outline, onward_count: usize, lamp: bool, draws: &mut Draws) 
     floor.sort_by(|one, other| apart(*one, arrive).total_cmp(&apart(*other, arrive)).then(one[0].total_cmp(&other[0])));
     let posts = spread(floor.iter().copied().filter(|at| apart(*at, arrive) >= POST_OFF_WAY_IN_M), 9.0);
     floor.reverse();
-    let spots = spread(floor, SPOT_APART_M);
+    let spots = spots_of(&floor, wanted);
     Sites { arrive, facing: toward, way_in, onward, lamp, posts, spots }
 }
 
@@ -415,7 +415,8 @@ pub(crate) fn lay(zone: &Zone, form: Form, climate: &str, onward_count: usize) -
         rise,
         shelf_turn: draws.between(0.0, TAU),
     };
-    let sites = sites(&laying.outline, onward_count, zone.has_lamp(), &mut draws);
+    let wanted = crate::plan::spots_wanted(zone.deal);
+    let sites = sites(&laying.outline, (onward_count, zone.has_lamp(), wanted), &mut draws);
     let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str());
     let placements = dress(&laying, &sites, kit, &mut draws);
     let blocks = isle::dressing::blocks(&placements);

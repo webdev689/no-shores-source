@@ -21,15 +21,12 @@ fn saltmere() -> &'static Island {
 const WEEKS: core::ops::Range<u64> = 2_900..2_916;
 
 #[test]
-fn saltmere_has_three_mouths_a_rising_spine_and_its_landmarks_at_their_depths() {
+fn saltmere_has_three_mouths_and_a_spine_rising_across_the_island() {
     let island = saltmere();
     assert_eq!(island.patrol, "saltgrass-downs");
     assert_eq!(island.mouths, ["The Chalk Adit", "The Beacon Stair", "The Tithe Barns"]);
     assert!(island.spine.windows(2).all(|pair| pair[1][2] > pair[0][2]), "the spine's depths rise");
     assert_eq!(island.spine.last().map(|point| point[2]), Some(f64::from(DEPTHS)));
-    assert!(island.landmarks.iter().all(|mark| (1..=DEPTHS).contains(&mark.depth)));
-    assert!(island.landmarks.iter().all(|mark| mark.style.is_some() != mark.form.is_some()), "under or open, not both");
-    assert_eq!(island.landmarks.len(), 18, "the Moors' eight and the Vale's ten");
     assert_eq!(super::island("saltgrass-downs"), Some(island), "found by its patrol zone too");
 }
 
@@ -71,15 +68,13 @@ fn a_weeks_web_runs_twenty_deep_each_zone_reached_and_leading_on() {
             assert_eq!(zone.currents.len(), Current::count_at(zone.depth));
             assert!(zone.currents.iter().all(|current| *current != Current::RichSeam || zone.deal == Deal::Vein));
         }
-        let named = |depth: u8, name: &str| web.at_depth(depth).any(|zone| zone.landmark.as_deref() == Some(name));
-        assert!(named(10, "Grey Point Light") && named(20, "The Old Stones"), "week {week}: the anchors stand");
     }
     assert_ne!(Web::of(saltmere(), 2_900), Web::of(saltmere(), 2_901), "the web turns with the week");
 }
 
 #[test]
 fn every_zone_lays_its_ground_mouths_lamp_and_deal() {
-    for week in WEEKS.take(4) {
+    for week in WEEKS {
         let web = Web::of(saltmere(), week);
         for zone in &web.zones {
             if let Ground::Under { style } = &zone.ground
@@ -107,6 +102,17 @@ fn every_zone_lays_its_ground_mouths_lamp_and_deal() {
             let apart = |one: [f64; 2], other: [f64; 2]| libm::hypot(one[0] - other[0], one[1] - other[1]);
             assert!(apart(sites.arrive, sites.way_in.at) < 4.5, "{what}: a body comes in by its way in");
             assert!(sites.onward.iter().all(|door| apart(door.at, sites.way_in.at) >= 9.0), "{what}: on is away");
+            if let (plan::Ground::Under(dungeon), Some(lamp)) = (&plan.ground, sites.lamp) {
+                let cell =
+                    (lamp[1] / dungeon::CELL_M) as usize * dungeon.columns + (lamp[0] / dungeon::CELL_M) as usize;
+                let tallest = dungeon.rooms.iter().map(|room| room.height).fold(0.0, f64::max);
+                let wanted = tallest.min(3.8);
+                assert!(
+                    dungeon.ceilings[cell] >= wanted,
+                    "{what}: the lamp's ceiling {} under {wanted}",
+                    dungeon.ceilings[cell]
+                );
+            }
             if let plan::Ground::Open(hollow) = &plan.ground {
                 let inside = |point: [f64; 2]| within(&hollow.ring, point);
                 assert!(inside(sites.arrive), "{what}: arrives inside its section");

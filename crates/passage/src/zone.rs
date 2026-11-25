@@ -304,8 +304,6 @@ pub struct Zone {
     pub name: String,
     /// The zones of the next depth its onward mouths lead to, by number, in the order its mouths stand.
     pub onward: Vec<u16>,
-    /// The landmark it stands as, by its name, or none.
-    pub landmark: Option<String>,
 }
 
 impl Zone {
