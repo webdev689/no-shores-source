@@ -162,7 +162,11 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   // clouds let it, and the lamps near.
   let ambient = sky_ambient(normal) * (1.0 + (BOUNCE / AMBIENT) * (1.0 - abs(normal.z)));
   let direct = max(dot(normal, sky_state.key.xyz), 0.0);
-  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0) * sky_dapple(drawn.from_eye);
+  // A face turned from the sun takes no shadow: its map is not read.
+  var sun = sky_dapple(drawn.from_eye);
+  if (direct > 0.0) {
+    sun *= sunlit(drawn.from_eye, normal);
+  }
   let light = ambient + sky_direct(normal, sun) + sky_lamps(drawn.from_eye, normal);
   return vec4f(colour * place.shade.x * light, 1.0);
 }

@@ -46,10 +46,9 @@ impl CompactField {
     }
 }
 
-/// Builds the open surface from the solid one and erodes it by the agent's radius.
-pub(crate) fn build(solid: &Heightfield, agent: &Agent) -> CompactField {
+/// The open surface over the solid, linked and measured: `erode` then trims it by the agent's radius.
+pub(crate) fn open(solid: &Heightfield, agent: &Agent) -> CompactField {
     let grid = solid.grid;
-    let climb = (agent.climb / grid.voxel).floor() as i64;
     let headroom = (agent.height / grid.voxel).ceil() as i64;
     // The topmost solid is open to the sky, so a high flat top is not ceilinged by the grid's own top.
     let columns = solid
@@ -68,17 +67,27 @@ pub(crate) fn build(solid: &Heightfield, agent: &Agent) -> CompactField {
         })
         .collect();
     let mut field = CompactField { grid, columns };
-    link(&mut field, climb, headroom);
+    link(&mut field, climb_of(agent, &grid), headroom);
     measure(&mut field);
+    field
+}
+
+/// Erodes the open surface by the agent's radius, then links and measures what is left.
+pub(crate) fn erode(field: &mut CompactField, agent: &Agent) {
+    let grid = field.grid;
     let erode_below = (agent.radius / grid.cell) * 2.0;
     for span in field.columns.iter_mut().flatten() {
         if span.walkable && f64::from(span.dist) < erode_below {
             span.walkable = false;
         }
     }
-    link(&mut field, climb, headroom);
-    measure(&mut field);
-    field
+    link(field, climb_of(agent, &grid), (agent.height / grid.voxel).ceil() as i64);
+    measure(field);
+}
+
+/// The most a body steps up or down between neighbouring spans, in voxels.
+fn climb_of(agent: &Agent, grid: &Grid) -> i64 {
+    (agent.climb / grid.voxel).floor() as i64
 }
 
 /// Links each walkable span to the first walkable span beside it within a climbable step whose shared headroom still

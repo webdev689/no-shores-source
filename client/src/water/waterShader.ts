@@ -84,6 +84,10 @@ fn wind_chop() -> f32 {
 // the hour.
 fn wind_caps(local: vec2f) -> f32 {
   let speed = length(sky_state.wind.xy) * (1.0 + 0.3 * sky_state.wind.z);
+  // Under a fresh breeze there are none, and their noise is not read.
+  if (speed <= 6.0) {
+    return 0.0;
+  }
   let patches = value_noise(local * 0.25) * 0.6 + value_noise(local * 0.5 + vec2f(7.0, 3.0)) * 0.4;
   let beat = sin(frame.eye.w * TAU / 6.0 + patches * 12.0) * 0.1;
   return smoothstep(0.62, 0.8, patches + beat) * smoothstep(6.0, 14.0, speed);
@@ -200,7 +204,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let thin = level + top - surface.rest - ground.x;
   // No water inside a ship's waterline: under its deck it is hidden anyway, and in its open hull it is not. Its
   // footprint is tested where the water is drawn, a metre or two from its rest place once the swell carries it.
-  let cover = wet_share(thin, length(ground.yz) * footprint, still, share) * (1.0 - hull_inside(surface.drawn.xy, footprint));
+  let hulls = hull_cover(surface.drawn.xy, footprint);
+  let cover = wet_share(thin, length(ground.yz) * footprint, still, share) * (1.0 - hulls.x);
 
   var normal = vec3f(0.0, 0.0, 1.0);
   var crest = 0.0;
@@ -222,9 +227,10 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     breaker = breaker_at(surface.offset, max(depth, 0.0), footprint);
     // The wind's chop, calmed where the sea is sheltered (a roadstead's glassy water); the sea's own height here, a
     // share of a moderate sea's, raises the share of crests that break white.
-    let height_here = frame.sea.x * shelter_at(surface.offset);
+    let sheltered = shelter_at(surface.offset);
+    let height_here = frame.sea.x * sheltered;
     let rise = clamp((height_here - 0.35) / 2.65, 0.0, 1.0);
-    let chop = wind_chop() * shelter_at(surface.offset);
+    let chop = wind_chop() * sheltered;
     // Held at 1.4: steeper, a storm's glints alias into blocks (each wave's footprint fade alone does not stop it).
     let slope = chop_slope(local, vec2f(0.0), min(chop, 1.4), footprint) + breaker.slope;
     rough = 0.2 * clamp(sqrt(chop), 0.3, 1.4);
@@ -236,9 +242,12 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     // a rough sea's and a storm's breaking white; read from far off as the share of the sea they cover.
     // How many of the sea's own spreads (its waves' root mean square) a crest stands above still water.
     let standing = swell.height / max(sqrt(swell.energy * 0.5), 1e-3);
-    // Broken into patches, as wind-blown caps are, never whole crest lines.
-    let broken = smoothstep(0.45, 0.8, value_noise(local * 0.045 + vec2f(frame.eye.w * 0.05, 0.0)));
-    let caps = smoothstep(mix(2.0, 1.1, rise), mix(2.6, 1.7, rise), standing) * smoothstep(0.8, 2.2, height_here) * broken * 0.85;
+    // Broken into patches, as wind-blown caps are, never whole crest lines; none in a sea under 0.8 m.
+    var caps = 0.0;
+    if (height_here > 0.8) {
+      let broken = smoothstep(0.45, 0.8, value_noise(local * 0.045 + vec2f(frame.eye.w * 0.05, 0.0)));
+      caps = smoothstep(mix(2.0, 1.1, rise), mix(2.6, 1.7, rise), standing) * smoothstep(0.8, 2.2, height_here) * broken * 0.85;
+    }
     whitecap = max(max(1.0 - smoothstep(0.28, 0.6, squeeze), caps), wind_caps(local));
     drift = breaker.toward_shore * frame.eye.w * 0.45 * breaker.broken;
   }
@@ -254,9 +263,15 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let edge = (1.0 - smoothstep(0.0, select(0.14, 0.06, fresh), thin)) * select(0.95, 0.5, fresh)
     * (1.0 - smoothstep(1.0, 6.0, footprint));
   let splashed = smoothstep(0.012, 0.04, abs(ripple.x)) * 0.6;
-  // A wake's foam is torn into streaks and patches as it spreads, never a painted line.
-  let torn = 0.45 + 0.55 * smoothstep(0.25, 0.75, value_noise(local * 0.12 + vec2f(frame.eye.w * 0.03, 0.0)));
-  let bow_wave = max(hull_foam(surface.drawn.xy), select(wake_at(surface.drawn.xy).foam * torn, 0.0, fresh));
+  // A wake's foam is torn into streaks and patches as it spreads, never a painted line. Fresh water has no wake.
+  var bow_wave = hulls.y;
+  if (!fresh) {
+    let wake = wake_at(surface.drawn.xy).foam;
+    if (wake > 0.0) {
+      let torn = 0.45 + 0.55 * smoothstep(0.25, 0.75, value_noise(local * 0.12 + vec2f(frame.eye.w * 0.03, 0.0)));
+      bow_wave = max(bow_wave, wake * torn);
+    }
+  }
   let amount = clamp(max(max(whitecap * 0.85, max(breaking, lingering)), max(max(edge, splashed), bow_wave)), 0.0, 1.0);
   // Too far off to hold its lace, foam is drawn as the share of the surface it would cover.
   let foam = mix(foam_cover(local, drift, amount, footprint), amount * 0.55, smoothstep(0.4, 3.0, footprint));

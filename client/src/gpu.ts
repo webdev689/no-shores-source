@@ -44,6 +44,15 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
   return { device, context, format };
 }
 
+/** A texture's whole view, made once and kept with it: a target drawn into every frame asks for it every frame, and
+ *  making a view is a call across to the GPU's process. */
+const VIEWS = new WeakMap<GPUTexture, GPUTextureView>();
+export function viewOf(texture: GPUTexture): GPUTextureView {
+  let view = VIEWS.get(texture);
+  if (!view) VIEWS.set(texture, (view = texture.createView()));
+  return view;
+}
+
 /** WebGPU's usage flags we use, by the specification's values: TypeScript's DOM types declare no constants for them. */
 export const TEXTURE_USAGE = {
   copySource: 0x01,

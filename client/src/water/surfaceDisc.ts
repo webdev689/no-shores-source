@@ -53,7 +53,10 @@ export function arcOf(seen: readonly boolean[]): readonly [number, number] | nul
 export function discDraws(planes: Planes, disc: Disc, levels: readonly [number, number], shiftM: number): number[] {
   const sectors = disc.segments / SECTOR_SEGMENTS;
   const width = (2 * Math.PI) / sectors;
-  const corners = new Float64Array(8 * 3);
+  const bearings = bearingsOf(sectors);
+  const corners = CORNERS;
+  const seen = SEEN;
+  seen.length = sectors;
   const draws: number[] = [];
   for (let first = 0; first < disc.rings; first += BAND_RINGS) {
     const last = Math.min(disc.rings, first + BAND_RINGS);
@@ -61,14 +64,16 @@ export function discDraws(planes: Planes, disc: Disc, levels: readonly [number, 
     const [near, far] = [ringRadius(disc, disc.rings - last), ringRadius(disc, disc.rings - first)];
     // An arc bulges past the straight edge between its ends by this much.
     const pad = shiftM + far * (1 - Math.cos(width / 2));
-    const seen = Array.from({ length: sectors }, (unused, sector) => {
+    for (let sector = 0; sector < sectors; sector++) {
       for (let corner = 0; corner < 8; corner++) {
-        const bearing = (sector + (corner & 1)) * width;
+        const bearing = (sector + (corner & 1)) * 2;
         const radius = corner & 2 ? far : near;
-        corners.set([Math.cos(bearing) * radius, Math.sin(bearing) * radius, levels[corner & 4 ? 1 : 0]], corner * 3);
+        corners[corner * 3] = bearings[bearing]! * radius;
+        corners[corner * 3 + 1] = bearings[bearing + 1]! * radius;
+        corners[corner * 3 + 2] = levels[corner & 4 ? 1 : 0];
       }
-      return pointsSeen(planes, corners, pad);
-    });
+      seen[sector] = pointsSeen(planes, corners, pad);
+    }
     const arc = arcOf(seen);
     if (!arc) continue;
     const [from, along] = [arc[0] * SECTOR_SEGMENTS, arc[1] * SECTOR_SEGMENTS];
@@ -83,4 +88,22 @@ export function discDraws(planes: Planes, disc: Disc, levels: readonly [number, 
     else draws.push(from, along, first, last - first);
   }
   return draws;
+}
+
+/** A band's eight corners and which sectors it shows in, laid afresh by each band over the last's. */
+const CORNERS = new Float64Array(8 * 3);
+const SEEN: boolean[] = [];
+/** The cosine and sine of each sector's edge round a circle of `sectors`, made once a count. */
+const BEARINGS = new Map<number, Float64Array>();
+function bearingsOf(sectors: number): Float64Array {
+  let made = BEARINGS.get(sectors);
+  if (!made) {
+    made = new Float64Array((sectors + 1) * 2);
+    for (let edge = 0; edge <= sectors; edge++) {
+      const bearing = edge * ((2 * Math.PI) / sectors);
+      [made[edge * 2], made[edge * 2 + 1]] = [Math.cos(bearing), Math.sin(bearing)];
+    }
+    BEARINGS.set(sectors, made);
+  }
+  return made;
 }

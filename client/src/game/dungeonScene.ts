@@ -6,7 +6,7 @@ import { fromEyeMatrix, type Shot } from './camera.ts';
 import { DepthCopy } from './depthCopy.ts';
 import { DrainView } from './drain.ts';
 import type { Drawer } from './scene.ts';
-import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { type Gpu, TEXTURE_USAGE, viewOf } from '../gpu.ts';
 import { perfZone, PERF, timedEncoder } from '../perfMeter.ts';
 import { sceneScale, sceneSize } from './renderScale.ts';
 import { Upscale } from './upscale.ts';
@@ -56,13 +56,13 @@ export class DungeonScene {
     const scaled = drawnAt.width !== size.width || drawnAt.height !== size.height;
     const targets = this.targetsOf(drawnAt.width, drawnAt.height, scaled);
     const canvas = this.gpu.context.getCurrentTexture();
-    const target = (targets.picture ?? canvas).createView();
+    const target = targets.picture ? viewOf(targets.picture) : canvas.createView();
     const encoder = timedEncoder(device);
     perfZone('main');
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: targets.colour.createView(),
+          view: viewOf(targets.colour),
           resolveTarget: target,
           clearValue: DARK,
           loadOp: 'clear',
@@ -70,7 +70,7 @@ export class DungeonScene {
         },
       ],
       depthStencilAttachment: {
-        view: targets.multidepth.createView(),
+        view: viewOf(targets.multidepth),
         depthClearValue: REVERSED_DEPTH.clearValue,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',

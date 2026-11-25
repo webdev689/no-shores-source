@@ -62,8 +62,17 @@ pub struct TownPad {
     pub level: f64,
 }
 
-/// Which courses pass near a bucket of the world: (is a road, which course, which segment).
-type CourseIndex = BTreeMap<(i64, i64), Vec<(bool, usize, usize)>>;
+/// Which courses pass near each bucket of the world, the rivers' and the roads' apart, each in the order laid.
+type CourseIndex = [BTreeMap<(i64, i64), Vec<Near>>; 2];
+
+/// A segment of a course near a bucket: which course, which segment, and the box (west, north, east, south) a metre
+/// past its widest reach. No point outside the box is within its reach, so a search passes it by unmeasured.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Near {
+    number: usize,
+    segment: usize,
+    reach: [f64; 4],
+}
 
 /// A landmass's ground with its places on it, indexed so a point finds the courses near it quickly. It is saved
 /// without its index, which is built again on load; one whose layers do not hold the same cells is refused.
@@ -241,7 +250,7 @@ impl Ground {
             seed: seed_of(seed, "grain"),
             pads: Pads::default(),
             sculpts: Sculpts::default(),
-            index: BTreeMap::new(),
+            index: Default::default(),
         };
         for town in &edits.towns {
             let outline = to_metres(&town.outline);
@@ -338,7 +347,7 @@ impl Ground {
             });
             self.roads.push(course.collect());
         }
-        self.index.clear();
+        self.index = Default::default();
         self.index_courses();
     }
 
@@ -349,11 +358,13 @@ impl Ground {
             let number = if is_road { number - self.rivers.len() } else { number };
             for (segment, pair) in course.windows(2).enumerate() {
                 let reach = pair[0].width.max(pair[1].width) / 2.0 + if is_road { SHOULDER_M } else { BANK_M };
-                let (west, north) = bucket(pair[0].x.min(pair[1].x) - reach, pair[0].y.min(pair[1].y) - reach);
-                let (east, south) = bucket(pair[0].x.max(pair[1].x) + reach, pair[0].y.max(pair[1].y) + reach);
+                let (low_x, low_y) = (pair[0].x.min(pair[1].x) - reach, pair[0].y.min(pair[1].y) - reach);
+                let (high_x, high_y) = (pair[0].x.max(pair[1].x) + reach, pair[0].y.max(pair[1].y) + reach);
+                let ((west, north), (east, south)) = (bucket(low_x, low_y), bucket(high_x, high_y));
+                let near = Near { number, segment, reach: [low_x - 1.0, low_y - 1.0, high_x + 1.0, high_y + 1.0] };
                 for column in west..=east {
                     for row in north..=south {
-                        self.index.entry((column, row)).or_default().push((is_road, number, segment));
+                        self.index[usize::from(is_road)].entry((column, row)).or_default().push(near);
                     }
                 }
             }
@@ -417,8 +428,10 @@ impl Ground {
     /// The nearest course of one kind within its reach of (x, y): the point there, and its distance.
     fn nearest(&self, x: f64, y: f64, roads: bool) -> Option<(CoursePoint, f64)> {
         let mut best: Option<(CoursePoint, f64)> = None;
-        for &(is_road, number, segment) in self.index.get(&bucket(x, y))? {
-            if is_road != roads {
+        for &Near { number, segment, reach: [west, north, east, south] } in
+            self.index[usize::from(roads)].get(&bucket(x, y))?
+        {
+            if x < west || x > east || y < north || y > south {
                 continue;
             }
             let course = if roads { &self.roads[number] } else { &self.rivers[number] };

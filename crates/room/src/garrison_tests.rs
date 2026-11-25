@@ -158,6 +158,34 @@ pub(super) fn run(room: &mut Room, ticks: u64) {
     }
 }
 
+/// Runs `ticks` of the room's ticks, not counting those that end with a place's mesh still baking (a slice a tick,
+/// `navmesh::Baking`): what waits on a mesh stands the tick it is whole, so a test counts only the ticks of play.
+pub(crate) fn run_baked(room: &mut Room, ticks: u64) {
+    let mut left = ticks;
+    for _ in 0..ticks + 600 {
+        if left == 0 {
+            return;
+        }
+        room.tick();
+        if room.quests.baking.is_none() {
+            left -= 1;
+        }
+    }
+    panic!("a place's mesh still baking after ten seconds");
+}
+
+/// The mesh round `place` (`Room::ground_of`), baked whole at once: the gate of a slice a tick lifted between its
+/// slices, and the room's clock and all else of it left as they are.
+pub(crate) fn baked_ground(room: &mut Room, place: &gear::quests::Place, reach: f64) -> usize {
+    for _ in 0..600 {
+        if let Some(ground) = room.ground_of(place, reach) {
+            return ground;
+        }
+        room.quests.baked_at = None;
+    }
+    panic!("{}'s mesh still baking after 600 slices", place.name);
+}
+
 #[test]
 fn a_cleared_group_stands_again_two_minutes_after_its_last_fell_once_no_player_is_within_40_m() {
     let mut room = node(NodeKind::Patrol, "glade");
@@ -531,7 +559,7 @@ fn a_quests_group_arriving_leaves_the_last_stand_its_leader_and_its_break() {
         levels: None,
     });
     let place = gear::quests::Place { name: "glade".to_owned(), at: [0.0, 0.0], radius: 48.0 };
-    let ground = room.ground_of(&place, 48.0).expect("a mesh round the glade");
+    let ground = baked_ground(&mut room, &place, 48.0);
     let stood = room.stand_arriving(ground, [0.0, 0.0], 48.0, &[(14, ::foes::Rank::Minor)], 2.0, 1);
     assert!(stood.is_some_and(|ids| ids.len() == 1), "the group stands");
     let encounter = room.encounter.as_ref().expect("an encounter");

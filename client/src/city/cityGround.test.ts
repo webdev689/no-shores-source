@@ -183,12 +183,15 @@ test('a made-up city is built: every piece of its blocks placed near, its masses
 
 test('ranges laid end to end join into one draw', () => {
   assert.deepEqual(
-    runs([
-      { first: 0, count: 4 },
-      { first: 4, count: 2 },
-      { first: 9, count: 1 },
-      { first: 10, count: 0 },
-    ]),
+    runs(
+      [
+        { first: 0, count: 4 },
+        { first: 4, count: 2 },
+        { first: 9, count: 1 },
+        { first: 10, count: 0 },
+      ],
+      (range) => range,
+    ),
     [
       { first: 0, count: 6 },
       { first: 9, count: 1 },

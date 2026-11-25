@@ -213,6 +213,8 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
   road.standAt(CAMP[0] ?? 0, (CAMP[1] ?? 0) + 160);
   assert.equal(road.foes.filter(near).length, 0, '160 m off, nothing stands');
   road.standAt(CAMP[0] ?? 0, (CAMP[1] ?? 0) + 149);
+  // The mesh round the camp is baked a slice a tick, so its group stands within a second or two.
+  for (let waited = 0; waited < 120 && road.foes.filter(near).length < 5; waited += 1) road.tick(1);
   assert.equal(road.foes.filter(near).length, 5, 'within 150 m, its group stands');
   assert.ok(downs.putPlayer(player, CAMP[0] ?? 0, (CAMP[1] ?? 0) - 1.3));
   // The camp's first foe stands 2.5 m north of its middle, 1.2 m before the player: the player turns to the nearest

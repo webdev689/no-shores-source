@@ -215,6 +215,20 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **An extreme performance pass, quality unchanged** (#203, merged on the owner's "merge and deploy", which deploys
+  the page and the rooms), on the owner's "do an extreme performance pass while not reducing quality". Measured first:
+  the page headless with the new performance probe ([[Toolkit]]), the rooms natively. The page: each frame's culls and
+  draw lists, the interface, figures' terms, marks and a ship's canvas laid into kept lists (the hub's and a patrol's
+  garbage cut some 60 to 80%, a patrol's mean frame halved, headless with no GPU); the plants' list a slice a frame
+  (its worst frame 52 to 14 ms in Node, [[Nature]]); textures' views and bind groups kept; shaders branching past work
+  multiplied by zero, foam's lace only in quads that show it, the city drawn before the ground it covers ([[Game]]).
+  The rooms: a place's navmesh baked a slice a tick, not in one tick of 130 to 390 ms (some 45 ticks, each 15 to 19 ms
+  at most natively, [[Navmesh]]), the watershed and the ear-clip touching only what can change, and the land's course
+  search passing far segments by, every mesh of the first landmass's 77 squares the same to the bit before and after;
+  the rooms' load measurements running again. Tests that read a stand in the tick a player came near now wait for the
+  mesh; the patrol site's agreement fingerprint is `4e39f0f0`, native and WebAssembly agreeing. Tested offline: `cargo
+  xtask check` on e3ea41eb, with main merged in; the sea's foam pictured headless. Not timed on a real GPU, nor the
+  rooms' slices in WebAssembly; not played.
 - **The inspect panel after Destiny 1's weapon page** (#202, merged on the owner's "merge and deploy", which deploys
   the page and the rooms). Built on the owner's "take some autonomy" from
   [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]; Claude's calls in
@@ -514,8 +528,9 @@ The decisions in [[Open Questions]] are not repeated here.
   sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the owner: whether
   sections may overlap (0.3 m new on continent 2, greystone-tors and hollow-crypt; 4.2 m before, highwater-fells and
   wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first stand bakes its
-  navmesh in one tick (130 to 270 ms natively); room memory with every site stood unmeasured; a cavern over 4 m below
-  the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids either way.
+  navmesh a slice a tick (15 to 19 ms at most natively, #203); room memory with every site stood unmeasured; a
+  cavern over 4 m below the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids
+  either way.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
@@ -863,8 +878,16 @@ The decisions in [[Open Questions]] are not repeated here.
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
   draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
-- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
-  140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
+- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake's slices in
+  WebAssembly (15 to 19 ms at most natively, some 45 ticks a place); playing alone walks no road, as it keeps no gear.
+- **After the performance pass** (#203): a node's room opens in 0.7 to 0.9 s natively on the roads' nodes, about 95%
+  of it navmesh bakes (the node's own square 370 to 510 ms), half of each bake reading the land's height and a quarter
+  stepping bodies over links. Baking a node's meshes with `npm run bake` would open a room at once but ship larger node
+  files: the owner's call, not asked yet. The bake's whole-field slices (the open floor, the regions, the polys, some
+  15 ms each natively) could be cut finer. The GPU audit's other ideas wait on a real GPU's timing; indexing the
+  city's quads was left, as it breaks their culling a quad at a time, and so was culling hulls on the CPU. A 10 s
+  window at the hub 30 s after loading still allocated some 400 MB over many sites, while the hub streamed in: measure
+  later after loading before taking it on.
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
   `server/garrison.test.ts`): its 13 foes stand all 1500 ticks, so nothing after a fall (drops, a group's break,
   fallback and last stand, waves) is checked natively against WebAssembly. Next: a scripted player that turns to its
@@ -935,8 +958,8 @@ The decisions in [[Open Questions]] are not repeated here.
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
     a rebound Details or Character. The clash finder sees neither.
   - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`).
-  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
-    scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
+  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), an island
+    room's hauls are kept and never told, and `RoomHost`
     (`server/worker.ts`) has no test.
   - Workflows (#180 adds `content/forged` to `ROOMS_CODE`, which the bake reads); the wreck's and the ships' workflows
     miss inputs they import (`tools/ships`, `shipPictures.ts`); a failed accounts deploy still lets the rooms record

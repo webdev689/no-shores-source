@@ -81,9 +81,19 @@ test('its sphere holds a mast fallen flat about its foot, so its shadow is cast 
 
 test("its canvas wears the sail's picture, and its flag the layer it is given", () => {
   const grid = new Float32Array(SAIL_COLUMNS * SAIL_ROWS * 3);
-  const bytes = canvasVertices([grid, grid], [grid, grid], [SHIP_PARTS.indexOf('sail'), 7]);
-  const partOf = (sail: number) => new DataView(bytes).getUint8(sail * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES + 24);
+  const view = canvasVertices([grid, grid], [grid, grid], [SHIP_PARTS.indexOf('sail'), 7]);
+  const partOf = (sail: number) => view.getUint8(sail * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES + 24);
   assert.deepEqual([partOf(0), partOf(1)], [SHIP_PARTS.indexOf('sail'), 7]);
+});
+
+test('a canvas laid again lays into the bytes it was given, the same as afresh, and only as many as it needs', () => {
+  const grid = Float32Array.from({ length: SAIL_COLUMNS * SAIL_ROWS * 3 }, (unused, index) => (index * 7) % 5);
+  const fresh = canvasVertices([grid, grid], [grid, grid]);
+  const kept = new DataView(new ArrayBuffer(fresh.byteLength * 2));
+  const laid = canvasVertices([grid, grid], [grid, grid], [], kept);
+  assert.equal(laid.buffer, kept.buffer);
+  assert.equal(laid.byteLength, fresh.byteLength);
+  assert.deepEqual(new Uint8Array(laid.buffer, 0, laid.byteLength), new Uint8Array(fresh.buffer));
 });
 
 test('its sphere holds its mesh and its sails twice over, and goes where it lies, turned and scaled', () => {

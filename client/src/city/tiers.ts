@@ -51,24 +51,48 @@ export function keeps(tier: Tier, distance: number, threshold: number): boolean 
   return threshold < toHulls;
 }
 
+/** How near and far a box comes to the eye. */
+export interface Reach {
+  nearest: number;
+  farthest: number;
+}
+
 /** The nearest and farthest a box (low and high corners, measured from the eye) reaches. */
-export function boxReach(low: readonly number[], high: readonly number[]): { nearest: number; farthest: number } {
+export function boxReach(low: readonly number[], high: readonly number[]): Reach {
+  return reachFrom(low, high, ORIGIN, { nearest: 0, farthest: 0 });
+}
+
+const ORIGIN = [0, 0, 0] as const;
+
+/** The nearest and farthest a box (its low and high corners, as `eye` is measured) reaches from `eye`, laid into
+ *  `out`, which a frame keeps for every box it asks of. */
+export function reachFrom(low: readonly number[], high: readonly number[], eye: readonly number[], out: Reach): Reach {
   let nearest = 0,
     farthest = 0;
   for (let axis = 0; axis < 3; axis++) {
-    const gap = Math.max(low[axis], 0, -high[axis]);
+    const from = low[axis] - eye[axis];
+    const to = high[axis] - eye[axis];
+    const gap = Math.max(from, 0, -to);
     nearest += gap * gap;
-    const most = Math.max(Math.abs(low[axis]), Math.abs(high[axis]));
+    const most = Math.max(Math.abs(from), Math.abs(to));
     farthest += most * most;
   }
-  return { nearest: Math.sqrt(nearest), farthest: Math.sqrt(farthest) };
+  out.nearest = Math.sqrt(nearest);
+  out.farthest = Math.sqrt(farthest);
+  return out;
 }
+
+/** Whether cells whose middles come from `nearest` to `farthest` of the eye may need each tier. */
+export const reachesWhole = (nearest: number): boolean => nearest < NEAR_M;
+export const reachesMasses = (nearest: number, farthest: number): boolean =>
+  nearest < FAR_M && farthest > NEAR_M - NEAR_BAND_M;
+export const reachesHulls = (farthest: number): boolean => farthest > FAR_M - FAR_BAND_M;
 
 /** The tiers a group of cells may need, from how near and far its cells' middles come. */
 export function tiersReached(nearest: number, farthest: number): Set<Tier> {
   const reached = new Set<Tier>();
-  if (nearest < NEAR_M) reached.add('whole');
-  if (nearest < FAR_M && farthest > NEAR_M - NEAR_BAND_M) reached.add('masses');
-  if (farthest > FAR_M - FAR_BAND_M) reached.add('hulls');
+  if (reachesWhole(nearest)) reached.add('whole');
+  if (reachesMasses(nearest, farthest)) reached.add('masses');
+  if (reachesHulls(farthest)) reached.add('hulls');
   return reached;
 }

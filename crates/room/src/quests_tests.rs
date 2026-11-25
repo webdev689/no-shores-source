@@ -6,6 +6,7 @@
 use super::*;
 use crate::arts::Cast;
 use crate::asks::{Asked, Counter, CounterKind, ResourceNode, answer_code};
+use crate::garrison::garrison_tests::{baked_ground, run_baked};
 use crate::{Floor, NodeKind, Section};
 use gear::asks::Refusal;
 use gear::quests::{Goal, GoalDef, GoalKind, TaskDef, keeper_key, quests};
@@ -211,7 +212,7 @@ fn a_kill_goals_group_stands_for_a_player_on_it_within_150_m_and_each_kill_they_
     run(&mut room, 2);
     assert!(room.foes.is_empty(), "160 m off; one on no such goal stands nothing");
     stand_at(&mut room, player, [0.0, 149.0]);
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     let group = living(&room);
     let mut names: Vec<&str> = group.iter().map(|id| room.foes[id].brain.foe_type.name).collect();
     names.sort_unstable();
@@ -406,7 +407,7 @@ fn a_group_300_m_from_the_spawn_stands_on_its_places_own_mesh_fights_there_and_w
     let mut room = node_room(node, &[(place, [0.0, -120.0], 48.0), ("The Middle", [0.0, 0.0], 70.0)]);
     assert_eq!(room.quests.grounds.len(), 0, "no mesh is baked before a group must stand");
     let player = joined(&mut room, &on_goal(key), [0.0, 25.0]);
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     let group = living(&room);
     assert_eq!(room.quests.grounds.len(), 1, "a mesh round the camp alone, where a group stands");
     assert_eq!(group.len(), group_names(goal).len());
@@ -450,7 +451,7 @@ fn a_patrols_own_garrison_stands_and_fights_the_same_whatever_meshes_its_places_
         let mut room = Room::garrisoned(Floor::Flat, Vec::new(), section, NodeKind::Patrol, id);
         room.set_places(places);
         if let Some(place) = baked {
-            room.ground_of(&place, place.radius);
+            baked_ground(&mut room, &place, place.radius);
         }
         let player = room.join().expect("a room with space");
         let post = room.garrison[0].at;
@@ -491,7 +492,7 @@ fn a_kill_goals_group_no_player_in_the_room_pursues_and_fighting_no_one_is_sent_
     let (node, place) = (goal.goal.node().expect("a node"), goal.goal.place().expect("a place"));
     let mut room = node_room(node, &[(place, [0.0, 0.0], 48.0)]);
     let player = joined(&mut room, &on_goal(key), [0.0, 149.0]);
-    run(&mut room, 1);
+    run_baked(&mut room, 1);
     let group = living(&room);
     assert!(!group.is_empty(), "it stands for the player on its goal");
     room.leave(player);

@@ -93,17 +93,33 @@ fn cells(bounds: Bounds, cell: f64) -> (usize, usize) {
     (across, down)
 }
 
-/// The ground's height at the centre of every cell of `bounds`, kept as a grid a path and a body read between the
-/// centres. None when the ground answers a height that is not a number.
-pub(crate) fn sample(ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Option<Heights> {
+/// How many rows of cells `bounds` holds at the agent's cell.
+pub(crate) fn rows(bounds: Bounds, agent: &Agent) -> usize {
+    cells(bounds, agent.cell_size).1
+}
+
+/// The ground's height at the middle of each cell of rows `rows` of `bounds` (those it holds), west to east, added to
+/// `heights`: the ground sampled a band of rows at a time.
+pub(crate) fn sample_rows(
+    ground: &dyn Terrain,
+    bounds: Bounds,
+    agent: &Agent,
+    rows: core::ops::Range<usize>,
+    heights: &mut Vec<Option<f64>>,
+) {
     let (cell, (cells_x, cells_y)) = (agent.cell_size, cells(bounds, agent.cell_size));
-    let heights = (0..cells_y)
-        .flat_map(|iy| (0..cells_x).map(move |ix| (ix, iy)))
-        .map(|(ix, iy)| {
+    for iy in rows.start.min(cells_y)..rows.end.min(cells_y) {
+        for ix in 0..cells_x {
             let (x, y) = (bounds.min_x + (ix as f64 + 0.5) * cell, bounds.min_y + (iy as f64 + 0.5) * cell);
-            Some(ground.height_at(x, y))
-        })
-        .collect();
+            heights.push(Some(ground.height_at(x, y)));
+        }
+    }
+}
+
+/// The ground sampled over every row of `bounds`, kept as a grid a path and a body read between the centres: none
+/// when the ground answered a height that is not a number.
+pub(crate) fn sampled(bounds: Bounds, agent: &Agent, heights: Vec<Option<f64>>) -> Option<Heights> {
+    let (cell, (cells_x, cells_y)) = (agent.cell_size, cells(bounds, agent.cell_size));
     Heights::new(bounds.min_x, bounds.min_y, cell, cells_x, cells_y, heights)
 }
 
