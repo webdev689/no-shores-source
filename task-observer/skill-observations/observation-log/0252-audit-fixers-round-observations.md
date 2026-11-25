@@ -1,5 +1,5 @@
 ---
-id: 244
+id: 252
 title: "Audit fixers' observations: no reviewer agent in a worktree worker, a python heredoc edit, git in $(...) refused, shared cores, layer table before dedupe"
 status: open
 type: internal
