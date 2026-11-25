@@ -1,6 +1,7 @@
 // Find a Company from the page: a socket to the accounts' finder for one run's base (server/accounts/finding.ts),
 // which sends the session's token, hears the run found, and says why a search ended that the page did not stop.
 import { nodeOfRoom, sharedRun } from './rooms.ts';
+import { clockWords } from './tasks.ts';
 
 /** The socket a search speaks through. */
 export type FinderSocket = Pick<WebSocket, 'send' | 'close' | 'addEventListener'>;
@@ -72,6 +73,6 @@ export function findCompany(
 
 /** The wait as the card shows it: "Finding a company · 0:23". */
 export function findingWords(since: number, now: number): string {
-  const seconds = Math.max(0, Math.floor((now - since) / 1000));
-  return `Finding a company · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  // Whole seconds waited, so the clock turns as each second ends.
+  return `Finding a company · ${clockWords(Math.floor((now - since) / 1000))}`;
 }

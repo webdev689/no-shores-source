@@ -60,7 +60,7 @@ impl SeaParts {
 
     /// The ships and hostile ships `player` is sent: none but their own before their ship is at sea.
     fn near(&self, player: PlayerId) -> (Vec<(PlayerId, room::sea::Ship)>, Vec<room::hostiles::Hostile>) {
-        let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
+        let own = self.own(player);
         let crew = self.crews.iter().find(|crew| crew.contains(&player));
         let seen = |(other, ship): &&(PlayerId, room::sea::Ship)| {
             *other == player
@@ -88,7 +88,7 @@ impl SeaParts {
 
     /// The islands `player` is told of: those in sight of their ship, and those they have found, wherever they lie.
     fn islands(&self, player: PlayerId) -> Vec<protocol::IsleSeen> {
-        let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
+        let own = self.own(player);
         let in_sight = |at: [f64; 2]| {
             own.is_some_and(|[x, y]| {
                 let (east, south) = (at[0] - x, at[1] - y);

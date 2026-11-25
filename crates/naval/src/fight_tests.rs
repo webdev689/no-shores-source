@@ -337,9 +337,9 @@ fn a_look_on_a_ship_off_its_bow_lays_its_guns_square_to_their_side_within_their_
     let aim = looked(&fight, hull.centre);
     let square = fight.laid(PLAYER, &Aim { ray: None, ..aim }, &Open, 0.0).expect("the starboard side bears");
     let laid = fight.laid(PLAYER, &aim, &Open, 0.0).expect("the starboard side bears");
-    let (low, high) = (laid.gun.min_el_deg.to_radians(), laid.gun.max_el_deg.to_radians());
+    let (low, high) = (laid.gun.min_elevation_deg.to_radians(), laid.gun.max_elevation_deg.to_radians());
     assert_ne!(laid.elevation, square.elevation, "laid on the ship its ray meets, not the water's 300 m");
-    assert_eq!((laid.side, laid.dir), (square.side, square.dir), "its guns fire square to their side");
+    assert_eq!((laid.side, laid.direction), (square.side, square.direction), "its guns fire square to their side");
     assert!((low..=high).contains(&laid.elevation), "{} within {low}..{high}", laid.elevation);
 }
 

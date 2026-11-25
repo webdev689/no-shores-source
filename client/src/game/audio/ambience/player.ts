@@ -183,11 +183,6 @@ export class ScapePlayer {
     if (heard.folk.length) this.steps(heard);
   }
 
-  /** How many beds play their recordings. */
-  get sources(): number {
-    return this.beds.filter((playing) => playing.chain?.play).length;
-  }
-
   /** Stops everything it plays. */
   stop(): void {
     for (const playing of this.beds) playing.chain?.play?.source.stop();

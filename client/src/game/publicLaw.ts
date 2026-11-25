@@ -6,19 +6,19 @@ import { STORE } from '../city/eventProps.ts';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
 import type { Banner } from '../combat/publicBanner.ts';
 import type { PlaceMark } from '../plus/compass.ts';
-import type { Quest, Step } from './tasks.ts';
+import { TICKS_A_SECOND } from './hudLaw.ts';
+import { clockWords, type Quest, type Step } from './tasks.ts';
 
 /** The zones that hold public events, in their places on the clock, each running one every `PERIOD_MINUTES`, the
  *  zones `ZONE_APART_MINUTES` apart (crates/room/src/public/mod.rs ZONES and schedule). */
 const ZONES = ['saltgrass-downs', 'gullwing-vale', 'driftwood-moors'] as const;
 const PERIOD_MINUTES = 15;
 const ZONE_APART_MINUTES = 5;
-/** The room's ticks a second; how long an event runs and a chest lies, its ticks (crates/room/src/public/mod.rs
- *  COUNTDOWN_MINUTES, crates/room/src/drops.rs); the last minute's, in which the clock is urgent. */
-const TICKS_PER_SECOND = 60;
-const COUNTDOWN_TICKS = 8 * 60 * TICKS_PER_SECOND;
+/** How long an event runs and a chest lies, its ticks (crates/room/src/public/mod.rs COUNTDOWN_MINUTES,
+ *  crates/room/src/drops.rs); the last minute's, in which the clock is urgent. */
+const COUNTDOWN_TICKS = 8 * 60 * TICKS_A_SECOND;
 export const CHEST_LIES_S = 120;
-const LAST_MINUTE_TICKS = 60 * TICKS_PER_SECOND;
+const LAST_MINUTE_TICKS = 60 * TICKS_A_SECOND;
 
 /** Each event's name, and where each zone fights it: its wilds for the Fissure, its hamlet for the raid. */
 const NAMES: Readonly<Record<number, string>> = {
@@ -43,8 +43,7 @@ const BONUS: Readonly<Record<number, string>> = {
 
 /** `ticks` as minutes and seconds, the seconds rounded up: 7:42. */
 export function clockOf(ticks: number): string {
-  const seconds = Math.max(0, Math.ceil(ticks / TICKS_PER_SECOND));
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  return clockWords(ticks / TICKS_A_SECOND);
 }
 
 const placeOf = (zone: string, kind: number): string => PLACES[zone]?.[kind === PUBLIC_KIND.raid ? 1 : 0] ?? '';
@@ -100,7 +99,7 @@ export function bannerOf(
   if (!event) return null;
   if (event.kind === PUBLIC_KIND.none || event.phase === PUBLIC_PHASE.waiting) {
     if (event.nextKind === PUBLIC_KIND.none) return null;
-    const minutes = Math.max(1, Math.ceil(event.nextTicks / (TICKS_PER_SECOND * 60)));
+    const minutes = Math.max(1, Math.ceil(event.nextTicks / (TICKS_A_SECOND * 60)));
     return {
       tone: 'next',
       kicker: 'Next public event',
@@ -166,8 +165,8 @@ export function elsewhereOf(event: PublicEvent, zone: string): string {
   const cycle = 2 * PERIOD_MINUTES;
   const parity = event.nextKind === PUBLIC_KIND.fissure ? 0 : 1;
   const slot = (place + parity) % 2;
-  const now = place * ZONE_APART_MINUTES + slot * PERIOD_MINUTES - event.nextTicks / (TICKS_PER_SECOND * 60);
-  const countdown = COUNTDOWN_TICKS / (TICKS_PER_SECOND * 60);
+  const now = place * ZONE_APART_MINUTES + slot * PERIOD_MINUTES - event.nextTicks / (TICKS_A_SECOND * 60);
+  const countdown = COUNTDOWN_TICKS / (TICKS_A_SECOND * 60);
   const starts = ZONES.flatMap((other, its) =>
     its === place
       ? []

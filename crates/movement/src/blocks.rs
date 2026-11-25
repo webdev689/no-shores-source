@@ -117,8 +117,8 @@ pub fn wall_ahead<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64) -> Op
 
 /// How deep a block runs along a bearing: across it east to west or north to south, whichever the bearing is nearer.
 fn depth_along(block: &Block, bearing: f64) -> f64 {
-    let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
-    if dir_x.abs() > dir_y.abs() { block.max_x - block.min_x } else { block.max_y - block.min_y }
+    let (direction_x, direction_y) = (libm::sin(bearing), -libm::cos(bearing));
+    if direction_x.abs() > direction_y.abs() { block.max_x - block.min_x } else { block.max_y - block.min_y }
 }
 
 /// The point a short reach past the body's radius along a bearing, where the wall ahead of it is looked for.

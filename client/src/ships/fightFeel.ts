@@ -35,8 +35,6 @@ export type FeelEvent =
 /** A room's event as the feel reads it: the sea's and the fleet's tell its tick, the World Editor's JSON none. */
 type TickTold<Event> = Event extends unknown ? Omit<Event, 'tick'> & { readonly tick?: number } : never;
 
-export { feelOf, type RoomEvent } from '../rules/feelEvents.ts';
-
 /** What the feel reads of a ship's numbers in the fight's view. */
 export type FeelVessel = Pick<FightVessel, 'fires' | 'sail' | 'max_sail'> &
   Partial<Pick<FightVessel, 'boost'>> & {
@@ -475,13 +473,13 @@ export class FightFeel {
     this.effects.glint(toWindow(middle), ports, 1, now, seconds);
   }
 
-  /** Its last volley's tally while it is shown, or null. */
   /** How long captain `number`'s `side` has stood run out at `now`, seconds; 0 while it is not. */
   ranOutFor(number: number, side: string, now: number): number {
     const since = this.ranOut.get(`${number} ${side}`);
     return since === undefined ? 0 : Math.max(0, now - since);
   }
 
+  /** Its last volley's tally while it is shown, or null. */
   tally(
     now: number,
   ): { readonly balls: number; readonly hits: number; readonly holed: number; readonly rig: number } | null {

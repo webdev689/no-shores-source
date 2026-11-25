@@ -131,7 +131,7 @@ fn a_chase_that_gains_nothing_for_150_seconds_is_given_up_and_the_player_spared(
 fn its_rudder_is_its_commanded_swing_as_a_share_of_its_own() {
     let deck = Deck::new();
     let mut mind = captain(Temper::Bold);
-    let most = swing_rate(&deck.ship, &SLOOP) * DEG;
+    let most = swing_rate(&deck.ship, &SLOOP).to_radians();
     let helm = mind.helm(&deck.own(), 0.2, 0.0);
     assert!((helm.steer - 0.2 / (4.0 * TURN_TAU) / most).abs() < 1e-12, "{}", helm.steer);
     assert_eq!(mind.helm(&deck.own(), std::f64::consts::PI / 2.0, 0.0).steer, 1.0);
@@ -166,7 +166,7 @@ fn inside_its_dead_zone_it_opens_the_range_hard() {
     let mut mind = captain(Temper::Bold);
     let plan = mind.engage(&deck.own(), &player_at(1.5, 0.0), 1.5, &open);
     let lead = lead_point([0.0, 0.0], [1.5, 0.0], [0.0, 2.5], crate::guns::SWIVEL.speed);
-    let wanted = wrap(heading_to([0.0, 0.0], lead) - (90.0 + 2.0 * RANGE_BEND_DEG) * DEG);
+    let wanted = wrap(heading_to([0.0, 0.0], lead) - (90.0 + 2.0 * RANGE_BEND_DEG).to_radians());
     assert!((wrap(plan.want - wanted)).abs() < 1e-9, "{} {}", plan.want, wanted);
 }
 

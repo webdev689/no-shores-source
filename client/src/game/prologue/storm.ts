@@ -126,7 +126,7 @@ export class StormDive implements Beat {
     const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
     const shot = this.leapt ? this.runShot(own, aspect) : this.pullShot();
     if (this.since >= PULL_S + RUN_S) this.done = true;
-    const actors = this.leapt ? [...brig.crew(own, tick.clock), youAtHelm(story, own, 'idle')] : [];
+    const actors = this.leapt ? [...brig.crew(own), youAtHelm(story, own, 'idle')] : [];
     return {
       shot,
       ships,

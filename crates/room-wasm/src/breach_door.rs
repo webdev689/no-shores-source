@@ -2,7 +2,7 @@
 //! opens), its plan as the page draws it, how far its company has come, and the host's words to a patrol's room that
 //! stands a Breach's gate: a player launched for a run, a run's company inside, and whether a run's gate has opened.
 
-use crate::{Opened, hand_over, keep, with_open};
+use crate::{Opened, hand_over, keep, on_land};
 use gear::breach::{BREACHES, Tier};
 use room::breach::plan::{SLAB_CYCLE, SLAB_STANDS, drowned_vale};
 use room::{PlayerId, Room};
@@ -28,14 +28,6 @@ struct RunWord {
     name: String,
     #[serde(default)]
     encounter: u8,
-}
-
-fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => Some(ask(room)),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
-    })
-    .flatten()
 }
 
 /// A patrol's Breach's gate stood in its node's room where the bake says the layout stood its module.

@@ -1,6 +1,6 @@
 //! The player's swings chain on the room's word, side cut, overhead and thrust (`client/src/combat/fighting.ts`'s
 //! `chained`, the same rule): a stroke the page asks out of turn becomes the chain's next, so a page cannot swing its
-//! strongest stroke over and over ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The page's own choice
+//! strongest stroke over and over. The page's own choice
 //! stands where its view of the soft lock's target, within EDGE_M of a stroke's reach, could have made it.
 
 use crate::FighterId;

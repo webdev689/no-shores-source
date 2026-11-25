@@ -54,12 +54,6 @@ export class SnapshotKeeper {
   private readonly held = new Map<bigint, Held>();
   private last = -1n;
 
-  /** Starts again, as a new welcome does: nothing held. */
-  clear(): void {
-    this.held.clear();
-    this.last = -1n;
-  }
-
   /** `snapshot` made whole, with only what happened since the last handed on; null for one to pass over. */
   whole(snapshot: Snapshot): Snapshot | null {
     if (snapshot.tick <= this.last) return null;

@@ -8,6 +8,7 @@ import { scaleCues, shownExaggeration } from './closeUp.ts';
 import { AIM_HIGHEST_LOOK, AimInput } from './aimInput.ts';
 import type { EditorDrawn, EditorFrame, EditorFrameView } from './editorFrame.ts';
 import { BRUSHES, LAND_TOOLS, landPanel, type LandPanelHandlers, type LandTool, SITE_TOOLS } from './landPanel.ts';
+import { landKey, MOVING_KEYS } from './landKeys.ts';
 import { LandSession } from './landSession.ts';
 import { LandStroke } from './landStroke.ts';
 import type { CellRect } from './landMask.ts';
@@ -533,17 +534,18 @@ export function startLandEditor(
   );
   window.addEventListener('keydown', (event) => {
     if (!active || editor.typing) return;
-    const key = event.key.toLowerCase();
-    const siteTool = event.ctrlKey || event.metaKey ? undefined : SITE_TOOLS.find(([, , letter]) => letter === key);
-    const moving = ['w', 'a', 's', 'd', 'shift', 'c', 'f', 'x', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
-    if ((walking || sailing) && moving.includes(key)) {
+    const typed = event.key.toLowerCase();
+    if ((walking || sailing) && MOVING_KEYS.includes(typed)) {
       event.preventDefault();
-      held.add(key);
-      if (sailing && !event.repeat) pressed.push(key);
+      held.add(typed);
+      if (sailing && !event.repeat) pressed.push(typed);
       requestFrame();
       return;
     }
-    if (key === 'g') toggleWalk();
+    const key = landKey(event);
+    const siteTool = SITE_TOOLS.find(([, , letter]) => letter === key);
+    if (key === 'undo' || key === 'redo') step(key === 'undo' ? -1 : 1);
+    else if (key === 'g') toggleWalk();
     else if (key === 'l') layoutsShown = !layoutsShown;
     else if (key === 'k') buildingsShown = !buildingsShown;
     else if (key === 'b') toggleSail();
@@ -552,14 +554,12 @@ export function startLandEditor(
     else if (key === 'backspace') {
       const world = pointer.inside && viewMode === '2d' ? worldAt(pointer.x, pointer.y) : null;
       tools.back(tool, world && [world.x, world.y]);
-    } else if ((event.ctrlKey || event.metaKey) && key === 'z') step(event.shiftKey ? 1 : -1);
-    else if ((event.ctrlKey || event.metaKey) && key === 'y') step(1);
-    else if (key === 'v') {
+    } else if (key === 'v') {
       viewMode = viewMode === '2d' ? '3d' : '2d';
       [walking, sailing] = [false, false];
     } else if (key === '[') radiusKm = Math.max(1, radiusKm - 5);
     else if (key === ']') radiusKm = Math.min(200, radiusKm + 5);
-    else if (/^[0-9]$/.test(key) || siteTool) {
+    else if (key !== null && (/^[0-9]$/.test(key) || siteTool)) {
       tool = siteTool?.[0] ?? LAND_TOOLS[(Number(key) + 9) % 10]?.[0] ?? tool;
       tools.draft = null;
     }

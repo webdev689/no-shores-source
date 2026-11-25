@@ -271,7 +271,7 @@ test('panel: while Discord is away, roles read a little while ago stand in; olde
   const answer = async (): Promise<RestResult> =>
     up
       ? { ok: true, status: 200, json: { roles: [] } }
-      : { ok: false, status: 503, code: 0, down: true, retryAfterMs: 0, message: 'down' };
+      : { ok: false, status: 503, code: 0, down: true, message: 'down' };
   const rest = { get: answer } as unknown as Rest;
   const context = { nowMs: 1_000_000, vars: {}, database: freshDatabase(), rest };
   const snapshot = { guildId: '900000000000000301', ownerId: '900000000000000302', roles: [] };

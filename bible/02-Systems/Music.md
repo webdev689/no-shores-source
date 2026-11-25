@@ -104,7 +104,7 @@ plays ([[The Fight Music Varies, Recombined From Takes]]). Nothing in it rings o
   pitched sounds over B5 (`CEILING_NOTE`): a track that reaches past it plays an octave down, the whole of it where
   that keeps it at or over G3, its line kept whole, else only its notes over the ceiling. No drum rings: a struck tone
   over 1.5 kHz dies within a tenth of a second, in the bank and in every score's own kit.
-- **Writing helps** (`craft.ts`). A score names its plan of sections; writes its harmony a bar at a time
+- **Writing helps** (`craft.ts`). Writes its harmony a bar at a time
   (`'Em | C/D'`), a bar's chords split where its metre says; holds a chord that follows itself as one note; and
   checks each tune's bars against its metre, so a slip in one note's length cannot shift the rest.
 - **A score, written.** A fight score is a song written as takes (`makeForm`), set in `overlookScores` as a family's

@@ -22,7 +22,8 @@ pub struct CrewNames {
 ///
 /// # Panics
 ///
-/// Never for the file in the repository, which `the_crews_names_read_whole` reads.
+/// Never for the file in the repository, which
+/// `the_crews_names_read_whole_and_every_post_has_perks_enough_for_a_veteran` reads.
 #[must_use]
 pub fn names() -> &'static CrewNames {
     static READ: OnceLock<CrewNames> = OnceLock::new();

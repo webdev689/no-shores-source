@@ -430,7 +430,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   const dressed: string[] = [];
   const casts: number[] = [];
   let fight: Fighting | null = null;
-  const kept = new SnapshotKeeper();
+  let kept = new SnapshotKeeper();
   const link = {
     player: door.join(),
     dressed: [],
@@ -468,7 +468,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   // A deploy: the room starts afresh, and the link joins it as its second player.
   [door, dressed.length, casts.length] = [after, 0, 0];
   // A new socket holds no snapshots of the room before.
-  kept.clear();
+  kept = new SnapshotKeeper();
   after.join();
   Object.assign(link, { player: door.join(), joins: 2 });
   answers.clear();
@@ -663,7 +663,7 @@ test('a respawn asked while the link joins its room again goes with the first in
   door.open(course.start, course.blocks);
   const asked: boolean[] = [];
   let fight: Fighting | null = null;
-  const kept = new SnapshotKeeper();
+  let kept = new SnapshotKeeper();
   const link = {
     player: door.join(),
     dressed: [],
@@ -692,7 +692,7 @@ test('a respawn asked while the link joins its room again goes with the first in
   fighting.askRespawn();
   for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
   assert.deepEqual(asked, [], 'nothing goes while it rejoins');
-  kept.clear();
+  kept = new SnapshotKeeper();
   Object.assign(link, { player: door.join(), joins: 2, rejoining: false });
   link.pump();
   for (let count = 0; count < 2; count += 1) {

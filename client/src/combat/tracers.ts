@@ -14,12 +14,13 @@ import { BODY, HOT, LIGHT, sprite } from './spellPixels.ts';
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number, number];
 
-/** A tick of the rules, and how fast an arrow or a bolt falls (crates/combat/src/shots.rs FALL), m/s². */
+/** A tick of the rules, seconds. */
 const TICK = 1 / 60;
+/** How fast an arrow or a bolt falls (crates/combat/src/shots.rs FALL), m/s². */
+const FALL = 6;
 /** A foe's ball still flying that no snapshot has carried on for this long was let go of unstopped (its shooter sent
  *  away, or the room lost): it is dropped, throwing no sparks. */
 const UNCARRIED_DROP = 1;
-const FALL = 6;
 /** The guns' numbers, as the combat crate numbers its ranged weapons: a Pistolet, a Thunderlock and a Double Pistolet
  *  fire balls. */
 const BALLS = new Set([3, 4, 5]);

@@ -70,7 +70,7 @@ impl Driver {
         self.play(room, controls, false)
     }
 
-    /// Plays `controls` until the standing is no longer `while_standing`; answers the ticks taken and the last seen.
+    /// Plays `controls` while `keep` holds of the standing; answers the ticks taken and the last seen.
     fn until(&mut self, room: &mut Room, controls: Controls, keep: impl Fn(Standing) -> bool) -> (u32, Seen) {
         let mut ticks = 0;
         loop {

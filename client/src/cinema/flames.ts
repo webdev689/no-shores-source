@@ -178,11 +178,6 @@ export class Flames {
     return id;
   }
 
-  /** Puts the fire `id` out. */
-  put(id: number): void {
-    this.fires.delete(id);
-  }
-
   /** Puts every fire out. */
   clear(): void {
     this.fires.clear();

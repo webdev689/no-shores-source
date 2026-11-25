@@ -51,17 +51,21 @@ fn go_over<B: Near + ?Sized>(
     blocks: &B,
     terrain: &dyn Terrain,
 ) -> Option<Body> {
-    let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
+    let (direction_x, direction_y) = (libm::sin(bearing), -libm::cos(bearing));
     let rise = ahead.block.top - body.z;
     let onto = TUNING.radius + 0.3;
-    if !room_to_stand(blocks, body.x + dir_x * onto, body.y + dir_y * onto, ahead.block.top) {
+    if !room_to_stand(blocks, body.x + direction_x * onto, body.y + direction_y * onto, ahead.block.top) {
         return None;
     }
-    let reach_over = if vault { clearing(&ahead.block, body, dir_x, dir_y) + 0.2 } else { onto };
-    if vault && !room_to_stand(blocks, body.x + dir_x * reach_over, body.y + dir_y * reach_over, body.z) {
+    let reach_over = if vault { clearing(&ahead.block, body, direction_x, direction_y) + 0.2 } else { onto };
+    if vault && !room_to_stand(blocks, body.x + direction_x * reach_over, body.y + direction_y * reach_over, body.z) {
         return None;
     }
-    let to = [body.x + dir_x * reach_over, body.y + dir_y * reach_over, if vault { body.z } else { ahead.block.top }];
+    let to = [
+        body.x + direction_x * reach_over,
+        body.y + direction_y * reach_over,
+        if vault { body.z } else { ahead.block.top },
+    ];
     if terrain.walled((body.x, body.y), (to[0], to[1])) {
         return None;
     }
@@ -79,19 +83,19 @@ fn go_over<B: Near + ?Sized>(
     })
 }
 
-/// How far a body goes along (`dir_x`, `dir_y`) before its radius clears the block's far side, head on or slantwise.
-/// A vault carries it that far and a little more, so it lands past the block wherever it met it from.
-fn clearing(block: &Block, body: &Body, dir_x: f64, dir_y: f64) -> f64 {
-    let out = |at: f64, dir: f64, low: f64, high: f64| {
-        if dir > 0.0 {
-            (high + TUNING.radius - at) / dir
-        } else if dir < 0.0 {
-            (low - TUNING.radius - at) / dir
+/// How far a body goes along (`direction_x`, `direction_y`) before its radius clears the block's far side, head on or
+/// slantwise. A vault carries it that far and a little more, so it lands past the block wherever it met it from.
+fn clearing(block: &Block, body: &Body, direction_x: f64, direction_y: f64) -> f64 {
+    let out = |at: f64, direction: f64, low: f64, high: f64| {
+        if direction > 0.0 {
+            (high + TUNING.radius - at) / direction
+        } else if direction < 0.0 {
+            (low - TUNING.radius - at) / direction
         } else {
             f64::INFINITY
         }
     };
-    out(body.x, dir_x, block.min_x, block.max_x).min(out(body.y, dir_y, block.min_y, block.max_y))
+    out(body.x, direction_x, block.min_x, block.max_x).min(out(body.y, direction_y, block.min_y, block.max_y))
 }
 
 /// Whether a lip `rise` over the feet, on a block `depth` deep, is vaulted rather than mantled.

@@ -70,8 +70,7 @@ import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts'
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
 /** The veil stays down until everything round the player is ready, or this long; and once it is, for this many frames
- *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen
- *  ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]). */
+ *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen. */
 const READY_WAIT_S = 20;
 
 /** What the frames read and change as the game goes: the flow, the mode's own pieces, the open landmass and its

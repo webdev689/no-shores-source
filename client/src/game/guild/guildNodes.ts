@@ -97,19 +97,6 @@ export function levelNode(level: number, share: number, xpWords: string, size: n
   };
 }
 
-/** A meter filled `share` of its length, in `colour`. */
-export function meterNode(share: number, colour: string, label: string): Node {
-  const filled = Math.round(Math.max(0, Math.min(1, share)) * 100);
-  return {
-    width: 'grow',
-    height: 8,
-    padding: 1,
-    role: 'well',
-    label,
-    children: [{ width: `${filled}%`, height: 'grow', fill: colour }],
-  };
-}
-
 /** A line of a checklist: its box, filled in brass once done, its words and, at the right, how far it has come. */
 export function checkNode(done: boolean, said: string, beside: Child, size: number): Node {
   return {

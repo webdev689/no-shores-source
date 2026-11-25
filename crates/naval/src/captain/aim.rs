@@ -4,7 +4,7 @@
 //! gunners misjudge as they lay it, by their want of skill and their rank: the mark's bearing as they fire, its way,
 //! and their elevation. A side run out too long unfired, or that loses its mark, is run in.
 
-use super::course::{DEG, distance, heading_to, lead_point, velocity_of, wrap};
+use super::course::{DEGREE, distance, heading_to, lead_point, velocity_of, wrap};
 use crate::arms::{Arms, Build, Side};
 use crate::ballistics::{GRAVITY, launch_velocity};
 use crate::gunnery::{Guns, Lay, lay, lay_on};
@@ -60,8 +60,8 @@ impl Judgement {
         Self {
             across_m: either(JUDGE_ACROSS_M),
             speed: either(JUDGE_SPEED),
-            course: either(JUDGE_COURSE_DEG) * DEG,
-            elevation: either(JUDGE_ELEVATION_DEG) * DEG,
+            course: either(JUDGE_COURSE_DEG).to_radians(),
+            elevation: either(JUDGE_ELEVATION_DEG).to_radians(),
         }
     }
 
@@ -114,7 +114,7 @@ pub fn fire_window(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, target
     let miss = extent * (FIRE_EXTENT_K + FIRE_EXTENT_SKILL * (1.0 - skill));
     let spread = SWIVEL.yaw_spread_deg * (1.5 - skill).clamp(0.4, 1.5);
     let range = distance(me, at).max(1.0);
-    BEAR_DEG.min(spread.max(libm::asin((miss / range).min(1.0)) / DEG))
+    BEAR_DEG.min(spread.max(libm::asin((miss / range).min(1.0)) / DEGREE))
 }
 
 /// The metres of a fight's range, centre to centre, that lie inside the two hulls along the line of fire from `me`
@@ -131,20 +131,20 @@ pub fn hull_span(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, own: &Ar
     [own_beam, depth]
 }
 
-/// Seconds until the bearing of `lead`, moving at `rel` to it, comes within `window` of `want_deg` off its bow;
+/// Seconds until the bearing of `lead`, moving at `relative` to it, comes within `window` of `want_deg` off its bow;
 /// never while it opens or stands.
 #[must_use]
-pub fn bears_within(ship: &Ship, lead: [f64; 2], rel: [f64; 2], want_deg: f64, window: f64) -> f64 {
+pub fn bears_within(ship: &Ship, lead: [f64; 2], relative: [f64; 2], want_deg: f64, window: f64) -> f64 {
     let (east, south) = (lead[0] - ship.x, lead[1] - ship.y);
     let square = east * east + south * south;
     if square < 1.0 {
         return 0.0;
     }
-    let error = wrap(heading_to([ship.x, ship.y], lead) - ship.heading - want_deg * DEG) / DEG;
+    let error = wrap(heading_to([ship.x, ship.y], lead) - ship.heading - want_deg.to_radians()) / DEGREE;
     if error.abs() <= window {
         return 0.0;
     }
-    let rate = ((east * rel[1] - south * rel[0]) / square - ship.turn * DEG) / DEG;
+    let rate = ((east * relative[1] - south * relative[0]) / square - ship.turn.to_radians()) / DEGREE;
     if rate.abs() < 1e-6 || rate.signum() == error.signum() {
         return f64::INFINITY;
     }
@@ -156,9 +156,9 @@ pub fn bears_within(ship: &Ship, lead: [f64; 2], rel: [f64; 2], want_deg: f64, w
 #[must_use]
 pub fn lay_passes(lay: &Lay, carry: [f64; 3], at: [f64; 2], band: [f64; 2]) -> bool {
     let start = lay.mouths[lay.mouths.len() / 2];
-    let launch = launch_velocity(lay.dir, lay.elevation, lay.gun.speed, carry);
-    let along = launch[0] * lay.dir[0] + launch[1] * lay.dir[1];
-    let out = (at[0] - start[0]) * lay.dir[0] + (at[1] - start[1]) * lay.dir[1];
+    let launch = launch_velocity(lay.direction, lay.elevation, lay.gun.speed, carry);
+    let along = launch[0] * lay.direction[0] + launch[1] * lay.direction[1];
+    let out = (at[0] - start[0]) * lay.direction[0] + (at[1] - start[1]) * lay.direction[1];
     if along <= 1e-6 || out <= 0.0 {
         return false;
     }
@@ -245,20 +245,20 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
     let top = mark.arms.hull[1][2];
     let band = [mark.level, mark.level + top];
     let skill = at.build.skill;
-    for (side, want) in [(Side::Starboard, 90.0), (Side::Port, -90.0)] {
+    for (side, want) in [(Side::Starboard, 90.0_f64), (Side::Port, -90.0)] {
         let gun = at.guns.gun();
         // Its gunners lead the mark by its way as they last saw it, as they misjudge it for the volley run out.
         let judged = run.out[side.index()].map_or_else(Judgement::default, |_| run.judged[side.index()]);
         let seen = judged.way(mark.smoothed);
-        let rel = [seen[0] - own[0], seen[1] - own[1]];
-        let lead = lead_point(me, mark.place, rel, gun.speed);
+        let relative = [seen[0] - own[0], seen[1] - own[1]];
+        let lead = lead_point(me, mark.place, relative, gun.speed);
         let range = distance(me, lead);
-        let error = wrap(heading_to(me, lead) - ship.heading - want * DEG).abs() / DEG;
+        let error = wrap(heading_to(me, lead) - ship.heading - want.to_radians()).abs() / DEGREE;
         let loaded = at.guns.ready(side);
         // Its reach out to the mark's near side, as a player's balls strike it.
         let [beam, depth] = hull_span(me, lead, mark.heading, at.arms, mark.arms);
         let reach = lay(ship, at.pose, at.arms, side, at.guns.load, 0.0, None).reach + beam + depth;
-        let lay_k = |share: f64| {
+        let laid_toward = |share: f64| {
             let target = [
                 me[0] + (lead[0] - me[0]) * share,
                 me[1] + (lead[1] - me[1]) * share,
@@ -270,18 +270,23 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
         // touch off, but never further off its beam than it ever fires (`BEAR_DEG`), so the broadside stays square
         // and no ball flies near its bow or stern; and as high or low as they misjudge their elevation.
         let misjudged = |share: f64| {
-            let laid = lay_k(share);
-            let off = libm::atan2(judged.across_m, range.max(1.0)).clamp(-BEAR_DEG * DEG, BEAR_DEG * DEG);
+            let laid = laid_toward(share);
+            let off =
+                libm::atan2(judged.across_m, range.max(1.0)).clamp((-BEAR_DEG).to_radians(), BEAR_DEG.to_radians());
             let (sine, cosine) = (libm::sin(off), libm::cos(off));
-            let dir = [laid.dir[0] * cosine - laid.dir[1] * sine, laid.dir[0] * sine + laid.dir[1] * cosine];
+            let direction = [
+                laid.direction[0] * cosine - laid.direction[1] * sine,
+                laid.direction[0] * sine + laid.direction[1] * cosine,
+            ];
             // Never past what its carriage depresses or raises to.
-            let (low, high) = (laid.gun.min_el_deg * DEG, laid.gun.max_el_deg * DEG);
-            Lay { elevation: (laid.elevation + judged.elevation).clamp(low, high), dir, ..laid }
+            let (low, high) = (laid.gun.min_elevation_deg.to_radians(), laid.gun.max_elevation_deg.to_radians());
+            Lay { elevation: (laid.elevation + judged.elevation).clamp(low, high), direction, ..laid }
         };
         // The mark's near side, where a ball laid past its middle's reach still strikes it.
         let toward = depth.min(range) / range.max(1e-6);
         let near = [lead[0] - (lead[0] - me[0]) * toward, lead[1] - (lead[1] - me[1]) * toward];
-        let strikes = || lay_passes(&lay_k(1.0), carry, lead, band) || lay_passes(&lay_k(1.0), carry, near, band);
+        let strikes =
+            || lay_passes(&laid_toward(1.0), carry, lead, band) || lay_passes(&laid_toward(1.0), carry, near, band);
         let window = fire_window(me, lead, mark.heading, mark.arms, skill);
         let Some(since) = run.out[side.index()] else {
             if run.run_in[side.index()] > clock - RUN_IN_S {

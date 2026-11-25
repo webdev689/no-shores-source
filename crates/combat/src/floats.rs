@@ -11,11 +11,11 @@ use movement::floats::{BODY_FLOATS, CONTROLS_FLOATS};
 use movement::{Body, Controls};
 
 /// The fight's own numbers after the body's: side, arms, weight, health and its most, stamina and its rest, poise,
-/// its most, its rest and its immunity, aim, target (id + 1, 0 none), the lock's away and unseen counts, the riposte's
-/// foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, the presses kept, the swap's ticks and a
-/// double pistolet's right shot gone, in one number), blows, might; then the action's kind and its numbers; then the
-/// shots its Ranged weapon has left (+ 1, 0 for none counted: a foe's never run dry); then its drinks (the healing
-/// charges held, the drink's press kept and held, in one number) and the meter toward the next charge.
+/// its most, its rest and its immunity, aim, target (id + 1, 0 none), an unused 0, the lock's unseen count, the
+/// riposte's foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, the presses kept, the swap's
+/// ticks and a double pistolet's right shot gone, in one number), blows, might; then the action's kind and its numbers;
+/// then the shots its Ranged weapon has left (+ 1, 0 for none counted: a foe's never run dry); then its drinks (the
+/// healing charges held, the drink's press kept and held, in one number) and the meter toward the next charge.
 pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS + 1 + 2;
 const ACTION_NUMBERS: usize = 10;
 /// A whole fighter: its body, the fight's numbers, its statuses, then its gear's trim.
@@ -242,7 +242,8 @@ impl Fighter {
             f64::from(self.poise_immune),
             self.aim,
             none_or_id(self.target),
-            // A slot pages already deployed read; the lock no longer counts a look turned away.
+            // Slot 13 of the fight's numbers is unused and always 0, so every number after it stays where the page
+            // reads it.
             0.0,
             f64::from(self.lock_unseen),
             riposte.0,

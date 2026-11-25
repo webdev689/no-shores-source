@@ -11,9 +11,8 @@ import { meadowLevels } from './meadowAtlas.ts';
 import { CELL_M, CLEAR_SQUARES, GRID, MEADOW_BIOMES, MeadowField, REACH_M, TUFTS } from './meadowField.ts';
 import { cardReach } from './meadowLaw.ts';
 import { FAR_FROM, FAR_VERTICES, MEADOW_FRAME_FLOATS, MEADOW_SHADER, NEAR_VERTICES } from './meadowShader.ts';
-import { GUST_PER_M } from './natureShader.ts';
 import type { NatureFrame } from './natureView.ts';
-import { plantWind } from './natureView.ts';
+import { GUSTS, plantWind } from './natureView.ts';
 
 /** The cells kept at once: every cell within the reach and the margin a cell is kept past it. */
 export const KEPT_CELLS = 512;
@@ -159,7 +158,7 @@ export class MeadowView {
     }
     const blowing = frame.wind ? { ...plantWind(null), way: frame.wind } : plantWind(SKY_NOW.current.reading);
     const way = blowing.way;
-    const gusts = ((anchor[0] * way[0] + anchor[1] * way[1]) * GUST_PER_M) % (Math.PI * 2);
+    const gusts = GUSTS.phaseAt(anchor, way, frame.eye);
     const floats = new Float32Array(MEADOW_FRAME_FLOATS);
     floats.set(frame.fromEye);
     floats.set([anchor[0] - eyeX, anchor[1] - eyeY, -eyeZ, frame.exaggeration], 16);

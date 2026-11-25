@@ -125,6 +125,15 @@ fn with_open<T>(use_open: impl FnOnce(&mut Opened) -> T) -> Option<T> {
     OPEN.with(|open| open.borrow_mut().as_mut().map(use_open))
 }
 
+/// Runs `ask` on a course's or node's room; None at sea, in a fleet or with no room open.
+pub(crate) fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => Some(ask(room)),
+        Opened::Sea(_) | Opened::Fleet(_) => None,
+    })
+    .flatten()
+}
+
 fn keep(opened: Opened) {
     OPEN.with(|open| *open.borrow_mut() = Some(opened));
 }

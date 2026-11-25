@@ -93,7 +93,7 @@ test('the warning counts down, death offers Respawn only once it may, and the vi
   hud.reach({ kind: 'warned', secondsLeft: 4.2 });
   let laid = frame(ui, hud, [{ kind: 'pointer', x: 5, y: 700 }]);
   assert.ok(words(laid).includes('RETURN TO THE AREA') && words(laid).includes('5'));
-  assert.equal(ui.takesPointer, false, 'the darkened edge is not the interface’s');
+  assert.equal(ui.takes(5, 700), false, 'the darkened edge is not the interface’s');
   let risen = 0;
   hud.onRespawn(() => (risen += 1));
   // A fall plays out before death is told; then the words say how.
@@ -152,11 +152,11 @@ test('a mark is pressed by its ring, its name and note under it; a held one poin
 test('the veil stands over all and takes the pointer until it is lifted', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   frame(ui, hud, [{ kind: 'pointer', x: 640, y: 360 }]);
-  assert.equal(ui.takesPointer, true, 'the HUD starts veiled');
+  assert.equal(ui.takes(640, 360), true, 'the HUD starts veiled');
   hud.veil(null);
   frame(ui, hud);
   frame(ui, hud);
-  assert.equal(ui.takesPointer, false);
+  assert.equal(ui.takes(640, 360), false);
 });
 
 test('a trip’s veil is the loading screen: the logo, LOADING and its words; failed, its words alone', () => {

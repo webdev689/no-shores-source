@@ -7,11 +7,11 @@ import type { Banner } from '../combat/publicBanner.ts';
 import { BREACH_EVENT, BREACH_PHASE, type BreachSeen, RIFT, STONE } from '../network/breachMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { BreachPlan } from './breachPlan.ts';
+import { TICKS_A_SECOND } from './hudLaw.ts';
+import { clockWords } from './tasks.ts';
 
 type Point = readonly [number, number, number];
 
-/** The room's ticks a second. */
-const TICKS_PER_SECOND = 60;
 /** The encounters by their place in the Breach's list (crates/room/src/breach/mod.rs). */
 export const ENCOUNTER = { waking: 0, mending: 1, choir: 2, ways: 3, shores: 4, steward: 5 } as const;
 /** The Mending's seams in the order the room counts them, and the shores, what was then what is, named as their
@@ -47,9 +47,7 @@ const WON: Readonly<Record<number, string>> = {
 
 /** Ticks as a clock: "0:12", "1:05"; empty for none. */
 export function ticksWords(ticks: number): string {
-  if (ticks <= 0) return '';
-  const seconds = Math.ceil(ticks / TICKS_PER_SECOND);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  return ticks <= 0 ? '' : clockWords(ticks / TICKS_A_SECOND);
 }
 
 const percent = (share: number) => `${Math.round(share * 100)}%`;
@@ -353,13 +351,13 @@ export function unwrittenBy(before: BreachSeen | null, seen: BreachSeen): string
   const most = FUSIONS_MOST[seen.tier] ?? FUSIONS_MOST[0];
   const fused = seen.counts.reduce((sum, count) => sum + count, 0) >= most;
   // The stone's own unwriting: its count ran out (no more needed, so none counts) while it still lies.
-  const ranOut = before.lyingTicks > 0 && before.lyingTicks <= TICKS_PER_SECOND && seen.lyingTicks === 0;
+  const ranOut = before.lyingTicks > 0 && before.lyingTicks <= TICKS_A_SECOND && seen.lyingTicks === 0;
   if (ranOut && seen.stone === STONE.lying) return 'the Lodestone lay too long';
   if (before.wipeTicks > 0) return 'seen by a Watcher';
   if (seen.encounter === ENCOUNTER.mending && fused) return `the seams fused ${most} times`;
   if (seen.encounter === ENCOUNTER.shores && fused) return `the Seam fused ${most} times`;
   const last = before.encounter === ENCOUNTER.steward && before.takings >= TAKINGS_MOST;
-  return last && before.takingTicks > 0 && before.takingTicks <= TICKS_PER_SECOND ? 'the Steward unwrote you' : null;
+  return last && before.takingTicks > 0 && before.takingTicks <= TICKS_A_SECOND ? 'the Steward unwrote you' : null;
 }
 
 /** Why the gate shut the player out of its company, in words: its company full, or Hard before the Breach is won at

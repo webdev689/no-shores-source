@@ -518,3 +518,19 @@ fn no_company_whose_gate_opened_takes_it_again_once_it_cleared_or_its_day_is_pas
         );
     }
 }
+
+#[test]
+fn a_gate_whose_day_is_past_answers_shut_before_its_room_ticks_again() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    woken(&mut room, &players);
+    room.set_minute(room.minute + gate::OPENED_MINUTES - 1);
+    assert!(room.breach_opened("run-a"), "open to the last minute of its day");
+    // An empty zone's room is asked without a tick, its host giving it the minute first.
+    room.set_minute(room.minute + 1);
+    assert!(!room.breach_opened("run-a"), "shut once its day is out");
+}

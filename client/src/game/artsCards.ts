@@ -10,6 +10,7 @@ import type { ArtState } from '../network/artMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
 import { GIVES, HEALS_A_SECOND, LEVEL_MOST, folded, fragmentWords, lastingAt, powerAt, scaled } from './artLevels.ts';
 import type { Card } from './gearCards.ts';
+import { clockWords } from './tasks.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
 export interface Spell {
@@ -136,7 +137,7 @@ export function fragmentNumbers(
 /** A recharge as a player reads one: under a minute in seconds ("38 s"), else minutes and seconds ("8:20"). */
 export function rechargeWords(seconds: number): string {
   const whole = Math.round(seconds);
-  return whole < 60 ? `${whole} s` : `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+  return whole < 60 ? `${whole} s` : clockWords(whole);
 }
 
 /** A spell's card: its name, whether it is the Anima or a Tenet and its element, its recharge large, its numbers at

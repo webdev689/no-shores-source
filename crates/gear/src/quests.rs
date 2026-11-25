@@ -92,8 +92,7 @@ pub struct Road {
     pub counts: Vec<u16>,
     pub done: bool,
     /// How many of each goal's waves the character has stood in this task: the waves of a defence come again on a
-    /// rejoin or a return, and those already fought drop nothing ([[The Audit's Leftovers Are Fixed as Claude
-    /// Suggested]]).
+    /// rejoin or a return, and those already fought drop nothing.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub fought: Vec<u16>,
     /// Keys this room does not know, from a later room's save, written back as read.

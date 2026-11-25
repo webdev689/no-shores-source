@@ -1,4 +1,4 @@
-use super::Problem;
+use super::{Problem, is_script};
 
 /// Where the Obsidian vault lives in the repository.
 pub const VAULT_ROOT: &str = "bible/";
@@ -92,9 +92,11 @@ enum Language {
 }
 
 fn language_of(path: &str) -> Option<Language> {
+    if is_script(path) {
+        return Some(Language::Script);
+    }
     match path.rsplit_once('.').map(|(_, extension)| extension) {
         Some("rs") => Some(Language::Rust),
-        Some("ts" | "mts" | "tsx" | "js" | "mjs" | "cjs") => Some(Language::Script),
         Some("py") => Some(Language::Python),
         _ => None,
     }

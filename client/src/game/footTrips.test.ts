@@ -69,14 +69,16 @@ test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entr
   assert.equal(tripAt(100, 104, { ...outside, patrol: { ...patrol, kind: 'mission' } }, trips), null, 'a patrol only');
 });
 
-test("a patrol's dungeons are named as their entrances are heard, behind the veil, not as a door is first reached", (context) => {
+test("a patrol's dungeons are named as their entrances are heard, not as a door is first reached", (context) => {
   if (!roomModule) return context.skip('room.wasm is not built: run `npm run wasm`');
+  // A module with nothing in it throws if it is asked to lay a dungeon, so a name it gives was forged before.
+  const empty = new WebAssembly.Module(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]));
   const entrances = new Entrances();
   entrances.namesFrom(roomModule, patrol);
-  assert.equal(entrances.knownName(0), undefined, 'none heard yet');
   entrances.heard([100, 100, 0, 0, 0, 400, 100, 0, 0, 2]);
-  assert.match(entrances.knownName(0) ?? '', /^The \w+ of the Saltgrass Downs$/, 'named as heard');
-  assert.match(entrances.knownName(1) ?? '', /^The \w+ of the Saltgrass Downs$/);
+  assert.match(entrances.nameOf(empty, patrol, 0), /^The \w+ of the Saltgrass Downs$/, 'named as heard');
+  assert.match(entrances.nameOf(empty, patrol, 1), /^The \w+ of the Saltgrass Downs$/);
+  assert.throws(() => new Entrances().nameOf(empty, patrol, 0), 'none is named before it is heard');
 });
 
 test('a dungeon is played as a place named for itself, its one spawn its way in', () => {

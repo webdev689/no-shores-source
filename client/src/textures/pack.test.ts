@@ -1,7 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { PALETTE_RGB, paintPicture, pictureArchives, pictureSize, pictureUses } from './picture.ts';
+import { PALETTE_RGB } from './palette.ts';
+import { paintPicture, pictureArchives, pictureSize, pictureUses } from './picture.ts';
 
 const table = <Table>(name: string): Table =>
   JSON.parse(readFileSync(new URL(`../../../content/forged/${name}.json`, import.meta.url), 'utf8')) as Table;

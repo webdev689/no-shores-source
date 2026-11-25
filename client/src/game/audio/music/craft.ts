@@ -1,29 +1,11 @@
-// What the family fight scores and Saltmere's theme share in their writing: notes named in a line, a song's plan of
-// sections, a progression written a bar at a time, and a roll. Each score keeps its own voicings: a chord is voiced
-// by hand, for its instruments and the lines around it, never by rule.
+// What the family fight scores and Saltmere's theme share in their writing: notes named in a line, a progression
+// written a bar at a time, and a roll. Each score keeps its own voicings: a chord is voiced by hand, for its
+// instruments and the lines around it, never by rule.
 
 import { type Tune, midiNote, tune } from './score.ts';
 
 /** Notes by name: 'E2 B2' is [40, 47]. */
 export const keys = (text: string): number[] => text.trim().split(/\s+/).map(midiNote);
-
-/** Where a bar lies in a song's plan: its section, its bar in that section, and which time the section comes (0 the
- *  first). */
-export interface Spot<S extends string> {
-  readonly section: S;
-  readonly inBar: number;
-  readonly pass: number;
-}
-
-/** A song's plan, its sections in order with their lengths in bars, as each bar's spot. */
-export function plan<S extends string>(sections: readonly (readonly [S, number])[]): Spot<S>[] {
-  const seen = new Map<S, number>();
-  return sections.flatMap(([section, bars]) => {
-    const pass = seen.get(section) ?? 0;
-    seen.set(section, pass + 1);
-    return Array.from({ length: bars }, (unused, inBar) => ({ section, inBar, pass }));
-  });
-}
 
 /** A chord in its bar: from `beat`, for `beats`. */
 export interface Held<C extends string> {
