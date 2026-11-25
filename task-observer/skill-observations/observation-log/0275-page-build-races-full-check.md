@@ -1,5 +1,5 @@
 ---
-id: 257
+id: 275
 title: "A page build started beside a running cargo xtask check deletes the generated messages the check's tests read"
 status: open
 type: internal
