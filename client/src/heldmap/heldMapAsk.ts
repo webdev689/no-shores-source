@@ -1,6 +1,6 @@
 // What the held map says of another water at sea: the water under the pointer, lit over its own cells and named by the
-// pointer, and the prompt a course into it raises, asking whether to travel there
-// ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). Which water the ship and a course's end lie in
+// pointer, and the prompt a course into it raises, asking whether to travel there.
+// Which water the ship and a course's end lie in
 // is the world crate's exact rule, the room's (`WaterJudge`); the page's grid of the waters, judged once a 4.8 km cell
 // (`MapWaters`), only lights the water under the pointer. What is said is painted in the map's own letters.
 import type { Point2 } from '../overworld/ground.ts';

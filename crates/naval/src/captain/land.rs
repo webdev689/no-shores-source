@@ -2,7 +2,7 @@
 //! keel and either side of it; a foul one it swings off by the least that sounds clear, and holds that until its
 //! own course has been clear a while; boxed in, it comes about to the more open side.
 
-use super::course::{DEG, wrap};
+use super::course::wrap;
 use sailing::pose::frame;
 use std::f64::consts::PI;
 
@@ -24,7 +24,7 @@ pub const NAV_EVERY_S: f64 = 0.25;
 pub struct Lookout {
     pub from: f64,
     pub near: f64,
-    pub dist: f64,
+    pub distance: f64,
     pub half: f64,
 }
 
@@ -33,33 +33,38 @@ pub struct Lookout {
 #[must_use]
 pub fn lookout(bow: f64, half_beam: f64, way: f64, turn_radius: f64) -> Lookout {
     let near = bow + turn_radius;
-    Lookout { from: bow * 0.5, near, dist: near + LOOKAHEAD_MIN.max(way * LOOKAHEAD_S), half: half_beam + SCAN_MARGIN }
+    Lookout {
+        from: bow * 0.5,
+        near,
+        distance: near + LOOKAHEAD_MIN.max(way * LOOKAHEAD_S),
+        half: half_beam + SCAN_MARGIN,
+    }
 }
 
-/// Whether `heading` from `pos` is water deep enough for it `dist` metres on, along its keel and either side.
+/// Whether `heading` from `position` is water deep enough for it `distance` metres on, along its keel and either side.
 #[must_use]
 pub fn course_clear(
-    pos: [f64; 2],
+    position: [f64; 2],
     heading: f64,
-    dist: f64,
+    distance: f64,
     is_water: &impl Fn(f64, f64) -> bool,
     look: &Lookout,
 ) -> bool {
-    if !dist.is_finite() {
+    if !distance.is_finite() {
         return false;
     }
     let (forward, starboard) = frame(heading);
     let mut along = look.from.max(0.0);
     loop {
-        let (x, y) = (pos[0] + forward[0] * along, pos[1] + forward[1] * along);
+        let (x, y) = (position[0] + forward[0] * along, position[1] + forward[1] * along);
         let (aside_x, aside_y) = (starboard[0] * look.half, starboard[1] * look.half);
         if !is_water(x, y) || !is_water(x + aside_x, y + aside_y) || !is_water(x - aside_x, y - aside_y) {
             return false;
         }
-        if along >= dist {
+        if along >= distance {
             return true;
         }
-        along = dist.min(along + if along < look.near { SCAN_STEP } else { SCAN_STEP * 2.0 });
+        along = distance.min(along + if along < look.near { SCAN_STEP } else { SCAN_STEP * 2.0 });
     }
 }
 
@@ -92,9 +97,9 @@ impl Avoid {
         if self.turn_side == 0.0 {
             return error;
         }
-        if error.abs() < 30.0 * DEG {
+        if error.abs() < 30.0_f64.to_radians() {
             self.turn_side = 0.0;
-        } else if error.signum() != self.turn_side && error.abs() > 90.0 * DEG {
+        } else if error.signum() != self.turn_side && error.abs() > 90.0_f64.to_radians() {
             return error - error.signum() * 2.0 * PI;
         }
         error
@@ -114,32 +119,33 @@ impl Avoid {
 }
 
 /// The open courses either side of it (45, 90 and 135 degrees off its heading) within its turning circle.
-fn room(pos: [f64; 2], heading: f64, look: &Lookout, is_water: &impl Fn(f64, f64) -> bool, side: f64) -> usize {
+fn room(position: [f64; 2], heading: f64, look: &Lookout, is_water: &impl Fn(f64, f64) -> bool, side: f64) -> usize {
     [45.0, 90.0, 135.0]
         .into_iter()
-        .filter(|off| course_clear(pos, wrap(heading + side * off * DEG), look.near, is_water, look))
+        .filter(|off| course_clear(position, wrap(heading + (side * off).to_radians()), look.near, is_water, look))
         .count()
 }
 
-/// `want` kept off the land, sounded each `NAV_EVERY_S` (`now` seconds, `pos` and `heading` the ship's). A turn of more
-/// than 120 degrees is made to the side with more room.
+/// `want` kept off the land, sounded each `NAV_EVERY_S` (`now` seconds, `position` and `heading` the ship's). A turn of
+/// more than 120 degrees is made to the side with more room.
 pub fn avoid_land(
     avoid: &mut Avoid,
-    (now, pos, heading): (f64, [f64; 2], f64),
+    (now, position, heading): (f64, [f64; 2], f64),
     want: f64,
     look: &Lookout,
     is_water: &impl Fn(f64, f64) -> bool,
 ) -> f64 {
     if now - avoid.at < NAV_EVERY_S {
-        return avoid.about.unwrap_or_else(|| wrap(want + avoid.swing * DEG));
+        return avoid.about.unwrap_or_else(|| wrap(want + avoid.swing.to_radians()));
     }
     let side = avoid.turn_side;
-    let course = sounded(avoid, (now, pos, heading), want, look, is_water);
+    let course = sounded(avoid, (now, position, heading), want, look, is_water);
     avoid.turn_side = side;
-    if wrap(course - heading).abs() <= 120.0 * DEG {
+    if wrap(course - heading).abs() <= 120.0_f64.to_radians() {
         avoid.turn_side = 0.0;
     } else if avoid.turn_side == 0.0 {
-        let (right, left) = (room(pos, heading, look, is_water, 1.0), room(pos, heading, look, is_water, -1.0));
+        let (right, left) =
+            (room(position, heading, look, is_water, 1.0), room(position, heading, look, is_water, -1.0));
         avoid.turn_side = if right == left {
             0.0
         } else if right > left {
@@ -153,14 +159,14 @@ pub fn avoid_land(
 
 fn sounded(
     avoid: &mut Avoid,
-    (now, pos, heading): (f64, [f64; 2], f64),
+    (now, position, heading): (f64, [f64; 2], f64),
     want: f64,
     look: &Lookout,
     is_water: &impl Fn(f64, f64) -> bool,
 ) -> f64 {
     let since = if avoid.at.is_finite() { now - avoid.at } else { 0.0 };
     avoid.at = now;
-    let sound = |course: f64| course_clear(pos, course, look.dist, is_water, look);
+    let sound = |course: f64| course_clear(position, course, look.distance, is_water, look);
     let want_clear = sound(want);
     if avoid.about.is_none() && avoid.swing == 0.0 {
         if want_clear {
@@ -172,7 +178,7 @@ fn sounded(
             *avoid = Avoid { at: now, ..Avoid::new() };
             return want;
         }
-        let swung = wrap(want + avoid.swing * DEG);
+        let swung = wrap(want + avoid.swing.to_radians());
         if avoid.about.is_none() && sound(swung) {
             return swung;
         }
@@ -183,14 +189,17 @@ fn sounded(
         }
     }
     for swing in AVOID_SWINGS {
-        let course = wrap(want + swing * DEG);
+        let course = wrap(want + swing.to_radians());
         if sound(course) {
             *avoid = Avoid { at: now, swing, about: None, clear_for: 0.0, turn_side: 0.0 };
             return course;
         }
     }
-    let side =
-        if room(pos, heading, look, is_water, 1.0) >= room(pos, heading, look, is_water, -1.0) { 1.0 } else { -1.0 };
+    let side = if room(position, heading, look, is_water, 1.0) >= room(position, heading, look, is_water, -1.0) {
+        1.0
+    } else {
+        -1.0
+    };
     let about = wrap(heading + side * (PI - 1e-3));
     *avoid = Avoid { at: now, swing: 0.0, about: Some(about), clear_for: 0.0, turn_side: 0.0 };
     about

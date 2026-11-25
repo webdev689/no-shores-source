@@ -1,26 +1,10 @@
-// The ways a social space's townsfolk walk, as a graph (the city crate's `Ways`): its named points joined by links,
-// the shortest way between two found by A* over the links' lengths. From off the ways a walker goes straight to the
-// nearest place on them, along them, and straight off them to where it is going.
+// The ways a social space's townsfolk walk, as a graph (the city crate's `Ways`): its points joined by links, the
+// shortest way between two found by A* over the links' lengths.
 import type { Ways } from '../nodes.ts';
 
 type Point = readonly [number, number];
 
-const NEAR = 1e-6;
 const apart = (one: Point, two: Point) => Math.hypot(two[0] - one[0], two[1] - one[1]);
-
-/** Where `place` falls on the line from `from` to `to`, nearest it: the share of the way along, 0 to 1. */
-function shareAlong(from: Point, to: Point, place: Point): number {
-  const along = [to[0] - from[0], to[1] - from[1]] as const;
-  const length = along[0] * along[0] + along[1] * along[1];
-  if (length < NEAR) return 0;
-  return Math.min(1, Math.max(0, ((place[0] - from[0]) * along[0] + (place[1] - from[1]) * along[1]) / length));
-}
-
-/** A place on the ways: where it is, and the two points of the link it lies on. */
-export interface OnWays {
-  readonly place: Point;
-  readonly link: readonly [number, number];
-}
 
 /** A smallest-first heap of numbered costs, for the search's open places. */
 class Heap {
@@ -62,13 +46,11 @@ class Heap {
 
 export class WayGraph {
   readonly points: readonly Point[];
-  readonly names: readonly string[];
   readonly links: readonly (readonly [number, number])[];
   private readonly joined: readonly (readonly number[])[];
 
   constructor(ways: Ways) {
     this.points = ways.points.map((point) => point.at);
-    this.names = ways.points.map((point) => point.name);
     this.links = ways.links;
     const joined = this.points.map(() => [] as number[]);
     for (const [one, two] of ways.links) {
@@ -82,52 +64,10 @@ export class WayGraph {
     return this.points[index] as Point;
   }
 
-  /** The point nearest `near`, by its place among the points; -1 on ways with none. */
-  nearestPoint(near: Point, among: (index: number) => boolean = () => true): number {
-    let best = -1;
-    for (let index = 0; index < this.points.length; index++)
-      if (among(index) && (best < 0 || apart(this.point(index), near) < apart(this.point(best), near))) best = index;
-    return best;
-  }
-
-  /** The place on the ways nearest `near`; null on ways with no link. */
-  onWays(near: Point): OnWays | null {
-    let best: OnWays | null = null;
-    for (const link of this.links) {
-      const [from, to] = [this.point(link[0]), this.point(link[1])];
-      const share = shareAlong(from, to, near);
-      const place: Point = [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
-      if (!best || apart(place, near) < apart(best.place, near)) best = { place, link };
-    }
-    return best;
-  }
-
   /** The points from one to another, both included, the shortest way by the links' lengths; none where no way
    *  joins them. */
   route(from: number, to: number): number[] {
     return this.search([[from, 0]], [[to, 0]], this.point(to));
-  }
-
-  /** The way from `from` to `to` by the ways: the points to walk to in turn, `to` the last; straight to it where the
-   *  ways have no link. */
-  between(from: Point, to: Point): Point[] {
-    const [start, end] = [this.onWays(from), this.onWays(to)];
-    if (!start || !end) return [to];
-    const middle: Point[] = [];
-    const sameLink = start.link[0] === end.link[0] && start.link[1] === end.link[1];
-    if (!sameLink) {
-      const ends = (place: OnWays) =>
-        place.link.map((index) => [index, apart(place.place, this.point(index))] as [number, number]);
-      for (const index of this.search(ends(start), ends(end), end.place)) middle.push(this.point(index));
-    }
-    const way: Point[] = [];
-    let behind = from;
-    for (const point of [start.place, ...middle, end.place, to]) {
-      if (apart(point, behind) < NEAR) continue;
-      way.push(point);
-      behind = point;
-    }
-    return way;
   }
 
   /** A* from the points `starts` (each with its cost to start from it) to any of `goals` (each with its cost on

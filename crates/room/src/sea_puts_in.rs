@@ -1,7 +1,6 @@
 //! Where a ship puts to sea, and comes back: a new one at a port's roadstead, never the page's own point, and one its
 //! owner sailed before where the sea last had it, as a ship sails nowhere while its player is away; and the sea's loot
-//! rolled on the host's own seeds, never the sea's, which its islands' seeds show
-//! ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+//! rolled on the host's own seeds, never the sea's, which its islands' seeds show.
 
 use super::{Point, Sea, whole};
 use crate::PlayerId;

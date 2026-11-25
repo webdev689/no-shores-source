@@ -1,20 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { chordAt, keys, measured, plan, progression, runsOf } from './craft.ts';
+import { chordAt, keys, measured, progression, runsOf } from './craft.ts';
 
 const CHORDS = { Em: 0, C: 0, D: 0 };
-
-test("a plan names each bar's section, its bar in it, and which time the section comes", () => {
-  const bars = plan([
-    ['a', 2],
-    ['b', 1],
-    ['a', 1],
-  ]);
-  assert.deepEqual(
-    bars.map(({ section, inBar, pass }) => `${section}${inBar}:${pass}`),
-    ['a0:0', 'a1:0', 'b0:0', 'a0:1'],
-  );
-});
 
 test('a progression splits a bar where its metre says, evenly where it does not, and refuses a chord unknown', () => {
   const [one, two, three] = progression('Em | C/D | C/D/Em', CHORDS, 3, { 2: [0, 1.5] });

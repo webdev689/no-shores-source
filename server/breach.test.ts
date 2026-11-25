@@ -11,6 +11,7 @@ import {
   GATE_SHUT,
   LAUNCH_ARRIVES_MS,
   breachAsked,
+  breachHeard,
   breachRoom,
   toldBreach,
 } from './breach.ts';
@@ -219,4 +220,15 @@ test('a Breach asks the room through its guard, so a trap closes the room rather
   };
   assert.equal(breachRoom(room, guarded).breachCompany(4, '{}'), false);
   assert.deepEqual(trapped, ['closed']);
+});
+
+test('a zone’s room is given the minute before it says whether a run’s gate opened, so a day out shuts it unticked', () => {
+  let minute = 0;
+  const room = {
+    minute: (now: number) => ((minute = now), true),
+    breachOpened: () => minute < 100,
+    breachInside: () => true,
+  } as unknown as RoomDoor;
+  assert.equal(breachHeard(room, 'opened', RUN, 99), true);
+  assert.equal(breachHeard(room, 'opened', RUN, 100), false, 'its day out, though the room never ticked');
 });

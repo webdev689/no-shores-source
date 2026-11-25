@@ -150,8 +150,7 @@ pub struct Brain {
 }
 
 impl Brain {
-    /// Whether it has ever given up a fight at its leash, so the foes it calls drop nothing
-    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+    /// Whether it has ever given up a fight at its leash, so the foes it calls drop nothing.
     #[must_use]
     pub fn has_leashed(&self) -> bool {
         self.leashed

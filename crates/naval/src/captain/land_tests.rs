@@ -5,7 +5,7 @@ fn headland(x: f64, y: f64) -> bool {
     !(y < -100.0 && (-50.0..=50.0).contains(&x))
 }
 
-const LOOK: Lookout = Lookout { from: 2.0, near: 20.0, dist: 150.0, half: 5.0 };
+const LOOK: Lookout = Lookout { from: 2.0, near: 20.0, distance: 150.0, half: 5.0 };
 
 #[test]
 fn a_course_is_clear_only_if_its_keel_and_both_sides_find_water_the_whole_way() {
@@ -19,7 +19,7 @@ fn a_course_is_clear_only_if_its_keel_and_both_sides_find_water_the_whole_way() 
 fn a_course_foul_of_land_swings_to_the_first_clear_one_and_holds_it() {
     let mut avoid = Avoid::new();
     let swung = avoid_land(&mut avoid, (0.0, [0.0, 0.0], 0.0), 0.0, &LOOK, &headland);
-    assert!(swung.abs() > 0.0 && course_clear([0.0, 0.0], swung, LOOK.dist, &headland, &LOOK));
+    assert!(swung.abs() > 0.0 && course_clear([0.0, 0.0], swung, LOOK.distance, &headland, &LOOK));
     // Within a quarter second the swing is kept without sounding again.
     assert_eq!(avoid_land(&mut avoid, (0.1, [0.0, 0.0], 0.0), 0.0, &LOOK, &headland), swung);
 }

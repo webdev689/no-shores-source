@@ -17,9 +17,6 @@ export const emptyField = (text = ''): FieldState => ({ text, caret: text.length
 const low = (state: FieldState) => Math.min(state.caret, state.anchor);
 const high = (state: FieldState) => Math.max(state.caret, state.anchor);
 
-/** The selected words. */
-export const selected = (state: FieldState): string => state.text.slice(low(state), high(state));
-
 /** `from` to `to` replaced by `text`, the caret then at `caret` (after the words put in, unless said), the field kept
  *  to `most` characters. */
 export function replaced(

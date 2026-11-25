@@ -79,11 +79,6 @@ export class BannerEditor {
     this.name = name;
   }
 
-  /** The banner as it stands. */
-  get banner(): Banner {
-    return this.draft;
-  }
-
   /** Why a choice may not stand with the rest of the banner as it is, or null when it may. */
   private why(part: Part, choice: string, level: number): string | null {
     if (part === 'staff' && !staffOpen(choice, level)) {

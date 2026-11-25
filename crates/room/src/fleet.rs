@@ -4,6 +4,7 @@
 //! than the room's clock, a few at most to catch up after a stall; a player whose orders stop has their helm stand.
 //! It has no network and no clock: whatever hosts it hands it orders and ticks, and sends out what it sees.
 
+use crate::battle::QUIET;
 use crate::players::{CATCH_UP, PLAYERS_MOST, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT};
 use crate::sea_weather::open_sea_at;
 use crate::{PlayerId, Refused};
@@ -12,7 +13,7 @@ use naval::fight::{Aim, End, Event, Fight, Orders};
 use naval::ranks::Commission;
 use naval::shots::ShipId;
 use sailing::TICK_SECONDS;
-use sailing::ship::{Helm, Ship};
+use sailing::ship::Ship;
 use sailing::waters::OpenSea;
 use std::collections::{BTreeMap, VecDeque};
 use std::f64::consts::TAU;
@@ -307,7 +308,7 @@ impl Fleet {
             if taken == 0 && found.stepped + VIEW_LAG < clock - found.joined {
                 found.stepped += 1;
                 if found.at_sea {
-                    orders.push((id, STANDING));
+                    orders.push((id, QUIET));
                 }
             }
         }
@@ -354,10 +355,6 @@ impl Fleet {
         std::mem::take(&mut self.events)
     }
 }
-
-/// A player's helm standing for a tick: no rudder, no rung, no fire, no brace, no look, no burst.
-pub const STANDING: Orders =
-    Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 
 #[cfg(test)]
 #[path = "fleet_tests.rs"]

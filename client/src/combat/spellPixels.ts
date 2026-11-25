@@ -123,20 +123,6 @@ export class Laid {
   readonly values: number[] = [];
   length = 0;
 
-  /** One vertex at `x`, `y`, `z` in `colour` (its red, green and blue) at `opacity`. */
-  vertex(x: number, y: number, z: number, colour: readonly number[], opacity: number): void {
-    const { values } = this;
-    let cursor = this.length;
-    values[cursor++] = x;
-    values[cursor++] = y;
-    values[cursor++] = z;
-    values[cursor++] = colour[0] ?? 0;
-    values[cursor++] = colour[1] ?? 0;
-    values[cursor++] = colour[2] ?? 0;
-    values[cursor++] = opacity;
-    this.length = cursor;
-  }
-
   /** A four-cornered piece, its corners `first` to `fourth` in turn round it (each its x, y and z, given flat so a
    *  piece builds no array), as two triangles in one colour. */
   quad(

@@ -1,10 +1,10 @@
-//! The Breaches, the raids: the hardest content, for a company of up to eight
-//! ([[The First Breach Follows the Vault of Glass, at Normal and Hard]]). Each is fought at Normal or Hard: Hard stands
+//! The Breaches, the raids: the hardest content, for a company of up to eight.
+//! Each is fought at Normal or Hard: Hard stands
 //! its foes higher, takes the fallen's own standing again away and leaves the company a few revives, and only its
-//! armour climbs to the most Prestige. Its opening is fought in its patrol zone and the rest in its own run
-//! ([[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]). Each encounter's first clear in a week,
+//! armour climbs to the most Prestige. Its opening is fought in its patrol zone and the rest in its own run.
+//! Each encounter's first clear in a week,
 //! at each tier, pays each character once; the Breach's own rewards (its banner, its dye and its horse) come from its
-//! last. The numbers are Claude's ([[The Drowned Vale as Claude Builds It]]).
+//! last. The numbers are Claude's.
 
 use crate::character::{Character, Stuff, Vestige};
 use crate::dice::{Dice, Purpose};
@@ -51,12 +51,6 @@ impl Tier {
             Tier::Normal => "Normal",
             Tier::Hard => "Hard",
         }
-    }
-
-    /// The tier of a key; none for any other.
-    #[must_use]
-    pub fn of_key(key: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tier| tier.key() == key)
     }
 
     /// The level every foe stands at, as Destiny 1's Vault of Glass stood at 26 and 30.

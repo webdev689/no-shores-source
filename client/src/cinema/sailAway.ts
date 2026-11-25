@@ -1,5 +1,5 @@
-// The ship seen sailing away to other waters, and arriving there
-// ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]): the camera leaves the helm on a rail out to a
+// The ship seen sailing away to other waters, and arriving there:
+// the camera leaves the helm on a rail out to a
 // three-quarter view behind and above the ship as it gets under way; holds as the ship sails off while the picture
 // fades to black, the travel asked as the fade begins; waits black while the room moves the ship and the page loads
 // the new waters round it; lifts on a low wide shot off its bow quarter that pans round to its stern; and hands the

@@ -12,7 +12,6 @@ import {
   emojiOf,
   escapeText,
   fillSlots,
-  messageEmpty,
   messageField,
   messagePayload,
   messageSize,
@@ -97,8 +96,8 @@ test('message law: an empty embed is never sent, a link that is not https is lef
   });
   assert.deepEqual(payload, { embeds: [{ color: 0x8a5a2b, title: 'x' }] });
   assert.equal(fillSlots('Hi {nmae}', { name: 'Ann' }), 'Hi {nmae}', 'a typo stays as written');
-  assert.equal(messageEmpty({ content: '  ', embeds: [embed()] }), true);
-  assert.equal(messageEmpty(words('Hello')), false);
+  assert.equal(payloadEmpty(messagePayload({ content: '  ', embeds: [embed()] })), true);
+  assert.equal(payloadEmpty(messagePayload(words('Hello'))), false);
   assert.equal(fillSlots('{constructor} {toString} {name}', { name: 'Ann' }), '{constructor} {toString} Ann');
 });
 

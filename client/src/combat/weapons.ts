@@ -169,15 +169,6 @@ export class WeaponRows {
     };
   }
 
-  /** What a screen reader says of each row shown. */
-  words(): readonly string[] {
-    const { hand, next } = this.rows;
-    const drawn = this.arms?.drawn ?? false;
-    return [hand && weaponWords(hand, true, drawn), next && weaponWords(next, false, drawn)].filter(
-      (said): said is string => !!said,
-    );
-  }
-
   /** The rows under a long brass rule: the weapon in hand, then the other loadout's; none with no weapon worn. */
   node(): Node | null {
     const { hand, next } = this.rows;

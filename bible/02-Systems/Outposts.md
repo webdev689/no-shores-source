@@ -21,7 +21,7 @@ code:
   - server/outpostHost.ts#OutpostHost
   - server/keeping.ts#forGuild
   - server/roomNames.ts#nodeRoom
-  - client/src/game/guild/delveRoom.ts#delveRoom
+  - client/src/game/guild/delveRoom.ts#delveBase
   - client/src/game/guild/delveRoom.ts#delveLaid
   - server/delveHost.ts#delveAsk
   - crates/room/src/outpost.rs

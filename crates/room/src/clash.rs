@@ -8,6 +8,7 @@ use crate::friendlies::{Friendlies, Friendly, friendly_commission};
 use crate::hostiles::{Hostile, Hostiles};
 use crate::sea::Coast;
 use crate::sea_weather::CoastWaters;
+use combat::sight::apart;
 use land::sea::Swell;
 use naval::captain::{ENGAGE_RANGE, Mode};
 use naval::fight::{CAPTAIN, Fight, Vessel};
@@ -115,11 +116,6 @@ impl Clash {
         let friends = friends.map(|(ship, friend)| Friendly { x: ship.x, y: ship.y, heading: ship.heading, ..friend });
         (tithe.collect(), friends.collect())
     }
-}
-
-fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
-    let (east, south) = (to[0] - from[0], to[1] - from[1]);
-    (east * east + south * south).sqrt()
 }
 
 /// One tick of the clashes at sea, each player's ship at `players`: each steps, with no orders, under its own weather

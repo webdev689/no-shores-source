@@ -12,6 +12,7 @@ use crate::friendlies::Friendly;
 use crate::hostiles::{Hostile, Hostiles, Voyager};
 use crate::sea::Coast;
 use crate::sea_weather::{CoastWaters, SeaWeather};
+use combat::sight::apart;
 use land::sea::Swell;
 use naval::captain::ENGAGE_RANGE;
 use naval::damage::{Damage, State};
@@ -39,7 +40,8 @@ pub enum BoardRefused {
     NoneAlongside,
 }
 
-/// Orders for a fight just begun: the helm amidships, no lay, nothing fired, braced or loaded, and no burst.
+/// Orders for a fight just begun, and a fleet's player standing for a tick: the helm amidships, no lay, nothing fired,
+/// braced or loaded, and no burst.
 pub const QUIET: Orders =
     Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 
@@ -139,11 +141,6 @@ fn friends_afloat(fought: &SeaFight) -> impl Iterator<Item = Friendly> + '_ {
     let afloat = |id: &ShipId| fought.fight.vessel(*id).filter(|vessel| crate::clash::afloat(vessel));
     let freed = fought.friends.iter().filter_map(move |(id, friend)| Some((afloat(id)?.ship, *friend)));
     freed.map(|(ship, friend)| Friendly { x: ship.x, y: ship.y, heading: ship.heading, ..friend })
-}
-
-fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
-    let (east, south) = (to[0] - from[0], to[1] - from[1]);
-    (east * east + south * south).sqrt()
 }
 
 impl SeaFight {

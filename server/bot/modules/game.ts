@@ -3,7 +3,7 @@
 // the accounts' own (Discord sign-in).
 
 import { GAME_SLOTS } from '../law/gameShape.ts';
-import { privateReply } from '../kit.ts';
+import { errorWords, privateReply } from '../kit.ts';
 import { houseRoleKeeping } from './gameHouses.ts';
 import type { ServerModule } from './module.ts';
 
@@ -11,8 +11,6 @@ import type { ServerModule } from './module.ts';
 export const GAME_URL = 'https://noshores.online/play/';
 /** /link's answer, in the account tab's own words (`client/src/game/accountTab.ts`). */
 export const LINK_WORDS = `Open the game at ${GAME_URL}, then in Settings open Account and press Sign in or link with Discord.`;
-
-const said = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export const gameModule: ServerModule = {
   id: 'game',
@@ -30,7 +28,7 @@ export const gameModule: ServerModule = {
       const found =
         accounts && user.id
           ? await accounts.linked(String(user.id)).catch((error: unknown) => {
-              context.log(`[bot] game: the accounts did not answer: ${said(error)}`);
+              context.log(`[bot] game: the accounts did not answer: ${errorWords(error)}`);
               return null;
             })
           : null;

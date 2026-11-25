@@ -132,10 +132,6 @@ export class PlaylistView {
     play('close');
   }
 
-  get open(): boolean {
-    return this.screen !== null;
-  }
-
   /** The entry chosen. */
   get entry(): PlaylistEntry | null {
     return this.screen?.entries[this.chosen] ?? null;

@@ -37,7 +37,6 @@ fn normal_stands_its_foes_at_26_and_hard_at_30_and_only_hard_counts_revives_and_
     assert_eq!((Tier::Normal.opens_at(), Tier::Hard.opens_at()), (25, 29));
     assert_eq!((Tier::Normal.revives(), Tier::Hard.revives()), (None, Some(5)));
     assert!(Tier::Normal.stands_again() && !Tier::Hard.stands_again());
-    assert_eq!(Tier::of_key("hard"), Some(Tier::Hard));
     assert_eq!(DROWNED_VALE.encounters.len(), 6);
     assert!(DROWNED_VALE.encounters[0].outside, "the Waking is fought in the patrol zone");
     assert!(DROWNED_VALE.encounters[1..].iter().all(|encounter| !encounter.outside));

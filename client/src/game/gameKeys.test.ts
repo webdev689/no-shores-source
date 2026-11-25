@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Controlled, contextOf, listenForControls, withoutTaken } from './gameKeys.ts';
 import { OPEN_AT, setGearScreenOpen } from './gearScreen.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import { PLACING_STRIP, placingNow, startPlacing } from './guild/decorPlacing.ts';
 import { keysOf } from './hints.ts';
 import { padName } from './controls.ts';
@@ -38,7 +38,7 @@ test('the controls act where the player is: a window, dead, on foot, at the helm
 });
 
 test('the repair key repairs at the helm and walking its own deck, never in a fight', () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const asked: string[] = [];
   const sea = {
     ...afloat(),
@@ -68,7 +68,7 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
 });
 
 test("the pad's Start opens the Character page in the story as the key does, for the teaching that asks for it", () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const opened: unknown[] = [];
   window.addEventListener(OPEN_AT, (event) => opened.push(event.detail));
   let pad: (pressed: Set<string>, buttons: Set<string>) => void = () => undefined;
@@ -94,7 +94,7 @@ test("the pad's Start opens the Character page in the story as the key does, for
 });
 
 test('while the stranger speaks her welcome Escape opens Settings; no other game key acts but Space', () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const changes: unknown[] = [];
   const opened: unknown[] = [];
   let pressed = 0;
@@ -146,7 +146,7 @@ test('while the stranger speaks her welcome Escape opens Settings; no other game
 });
 
 test('Escape opens Settings with nothing else over the game, and steps back from a landing instead', () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const [changes, opened]: [unknown[], unknown[]] = [[], []];
   let backed = 0;
   const playing = {
@@ -194,7 +194,7 @@ test('Escape opens Settings with nothing else over the game, and steps back from
 });
 
 test('Escape or B while a piece of decoration is placed lets it go first and opens nothing', () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const opened: unknown[] = [];
   window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
   const used: string[] = [];

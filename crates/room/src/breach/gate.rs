@@ -1,9 +1,9 @@
-//! The Waking: a Breach's opening, fought at its gate in the patrol zone, in view of everyone there
-//! ([[The Breach Opens in the Patrol Zone, and the Rest Is Its Own Instance]]). The host tells the room which players
+//! The Waking: a Breach's opening, fought at its gate in the patrol zone, in view of everyone there.
+//! The host tells the room which players
 //! came launched for which run, at which tier: their company. One company at a time holds the gate: the first whose
 //! living player steps onto a mooring stone while it is free. Its moorings held at once fill the Spire; fewer let it
 //! ebb; a Bulwark claims one left empty. Woken, the gate opens to that company alone; anyone else in the zone may fight
-//! beside them, and the foes drop nothing. The gate shows the zone the companies inside the run ([[Breaches]]).
+//! beside them, and the foes drop nothing. The gate shows the zone the companies inside the run.
 
 use super::plan::turned;
 use crate::players::Player;
@@ -196,10 +196,12 @@ impl Room {
         gate.inside.insert(run.to_owned(), Inside { name: name.to_owned(), tier, encounter, heard: clock });
     }
 
-    /// Whether a run's gate has opened, for the host to let its company in.
+    /// Whether a run's gate stands open at the room's minute, for the host to let its company in. Its day is counted
+    /// here too, as an empty zone's room is asked without the tick that would shut it.
     #[must_use]
     pub fn breach_opened(&self, run: &str) -> bool {
-        self.breach_gate.as_ref().is_some_and(|gate| gate.opened.contains_key(run))
+        let opened = self.breach_gate.as_ref().and_then(|gate| gate.opened.get(run));
+        opened.is_some_and(|opened| self.minute < opened + OPENED_MINUTES)
     }
 
     /// Each tick in a room with a Breach's gate: the Waking, its foes, its fallen, and the word from runs gone stale.

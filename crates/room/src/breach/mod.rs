@@ -1,9 +1,9 @@
-//! A Breach's run, as its room keeps it ([[The First Breach Follows the Vault of Glass, at Normal and Hard]]): the
+//! A Breach's run, as its room keeps it: the
 //! spaces its plan stands (`plan.rs`), walked from the Descent's arrival to the Steward's court; its encounters fought
 //! in turn, each waiting until a living player stands in its space, running, then won, its seal on opening; the stages
 //! a fallen player stands again at; how the fallen stand at each tier (`fallen.rs`); the Lodestone and the marks it
 //! cleanses (`lodestone.rs`); and each encounter's rules in a file of its own. Its opening, the Waking, is fought in
-//! the patrol zone (`gate.rs`). The numbers are Claude's ([[The Drowned Vale as Claude Builds It]]).
+//! the patrol zone (`gate.rs`). The numbers are Claude's.
 
 pub mod plan;
 

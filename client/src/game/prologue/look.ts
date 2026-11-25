@@ -111,7 +111,8 @@ export function armouredDress(look: Look): Dress {
       garments: plain.outfit.garments.filter((garment) => garment !== 'boots'),
       right: 'sword_steel',
       left: 'shield_kite_steel',
-      // Put away, as the owner asked: the sword sheathed at the hip, the shield slung on the back. A swing draws them.
+      // Put away, as the game holds its arms out of a fight: the sword sheathed at the hip, the shield slung on the
+      // back. A swing draws them.
       drawn: false,
     },
   };

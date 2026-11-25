@@ -4,12 +4,12 @@ import { HELP } from '../../../../server/accounts/chatLaw.ts';
 import type { Child } from '../../ui/node.ts';
 import { Stack } from '../../ui/stack.ts';
 import { fakeInterface, wordsIn } from '../../ui/uiForTests.ts';
-import { fakePage } from '../pageForTests.ts';
+import { fakeWindow } from '../pageForTests.ts';
 import { chatOpen, openChat, startSocial } from './social.ts';
 
 /** The chat of a page playing alone, its field open: each line typed and said, and what the band shows after. */
 function chat() {
-  fakePage();
+  fakeWindow();
   Object.assign(globalThis, { devicePixelRatio: 1 });
   const stack = new Stack();
   startSocial(

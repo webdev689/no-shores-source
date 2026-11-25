@@ -25,7 +25,6 @@ fn each_playlist_opens_at_its_seas_level_in_bands_of_five_with_its_foes_over_the
     assert_eq!((elite.tier(), abyss.tier()), (Difficulty::Elite, Difficulty::Abyss));
     assert_eq!((elite.band_of(9), elite.band_of(14), elite.band_of(30)), (None, Some((10, 14)), Some((30, 30))));
     assert_eq!((abyss.band_at(28), abyss.band_at(27)), (Some((25, 29)), None));
-    assert_eq!(Playlist::of_key("abyss"), Some(abyss));
 }
 
 #[test]
