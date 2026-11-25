@@ -147,3 +147,13 @@ test("of a ruin's thousand lamps the nearest are lit, nearest first, however the
     nearest,
   );
 });
+
+test('a lamp too faint to show takes no place among the lit: a bright one further off takes it', () => {
+  const faint = Array.from({ length: LAMPS_MOST }, (_unused, nth): LampPlace => ({
+    ...place(nth * 0.1),
+    light: [0.02, 0, 0],
+  }));
+  const lamps = lampsRound([0, 0, 0], [...faint, place(30, 9)], null, 0, 0);
+  assert.equal(lamps.length, 1);
+  assert.deepEqual(lamps[0]?.fromEye, [30, 0, 2]);
+});

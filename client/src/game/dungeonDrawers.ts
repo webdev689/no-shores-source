@@ -1,6 +1,9 @@
 // What the game draws of the patrols' dungeons: a patrol's entrances among its land's drawers, and a dungeon as its own
-// scene, its figures lit by its torches; and a Breach's run, its spaces over the dark as the event props draw them.
+// scene, its figures lit by its torches; and a Breach's run, its spaces over the dark as the event props draw them,
+// under its own sky and lamps.
 import { cityClimate } from '../city/plan.ts';
+import { EVENT_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { runLightAt, runSky } from './breachLook.ts';
 import { ENTRANCE_MODELS, type Entrance } from './entrances.ts';
 import { EntranceView } from './entranceView.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
@@ -17,8 +20,6 @@ import type { NodeInfo } from './worldData.ts';
 
 /** The door picture of Daggerfall's dungeon doors, where the props' table has not come. */
 const PLAIN_DOOR = [56, 2] as const;
-/** The light a Breach's run lights its figures by: a cool even light, as its crystal casts over the dark. */
-const RUN_LIGHT = [0.78, 0.8, 0.95] as const;
 
 export class DungeonDrawers {
   private readonly scene: DungeonScene;
@@ -111,12 +112,23 @@ export class DungeonDrawers {
     // What the eye holds is lit as a figure is, held under the sky's 1.2 so a torch beside it does not burn it white.
     const held = light(shown.shot.eye).map((part) => Math.min(1.2, part)) as [number, number, number];
     const over = { width: size.width, height: size.height, light: held };
-    this.scene.draw(shown.shot, size, time, drawers, after && ((encoder, view) => after(encoder, view, over)), drain);
+    // The dungeon's torches light its own shaders; the sky only says it is underground, with no dark to fade into.
+    const sky = { look: { ...runSky(time), darkM: 0 }, lamps: [] };
+    this.scene.draw(
+      shown.shot,
+      size,
+      time,
+      drawers,
+      sky,
+      after && ((encoder, view) => after(encoder, view, over)),
+      drain,
+    );
   }
 
   /** One frame in a Breach's run: its spaces and pieces as `props` draws them over the dark, the fight's blood under
-   *  the figures and its marks over them, and the figures lit as by the run's crystal; `after` and `drain` as a
-   *  dungeon's. */
+   *  the figures and its marks over them; all of it under the run's own sky (underground, no sun), lit by the lamps
+   *  nearest the eye of those the pieces give (EVENT_LAMPS) and the light `carried`, the figures lit as the stone
+   *  round them is; `after` and `drain` as a dungeon's. */
   drawRun(
     shown: FootFrame,
     size: { width: number; height: number },
@@ -125,19 +137,37 @@ export class DungeonDrawers {
     props: Drawer,
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void,
     drain = 0,
+    carried: {
+      readonly left: string | null | undefined;
+      readonly feet: readonly [number, number, number];
+    } | null = null,
   ): void {
     const { figures } = shown;
-    const light = () => RUN_LIGHT;
+    const { eye } = shown.shot;
+    const light = carriedLight(carried?.left);
+    const held = light && carried ? { light, feet: carried.feet } : null;
+    // Underground there is no daylight to put the lamps out.
+    const lamps = lampsRound(eye, EVENT_LAMPS.current, held, 0, time);
+    const sky = runSky(time);
     const drawers: Drawer[] = [
       props,
       fight.under,
       {
         drawInto: (pass, fromEye, shot, _now, shadow) =>
-          this.figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow, light),
+          this.figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
       },
       fight.over,
     ];
-    const over = { width: size.width, height: size.height, light: RUN_LIGHT };
-    this.scene.draw(shown.shot, size, time, drawers, after && ((encoder, view) => after(encoder, view, over)), drain);
+    const over = { width: size.width, height: size.height, light: runLightAt(sky, lamps) };
+    const drawn = { look: sky, lamps };
+    this.scene.draw(
+      shown.shot,
+      size,
+      time,
+      drawers,
+      drawn,
+      after && ((encoder, view) => after(encoder, view, over)),
+      drain,
+    );
   }
 }

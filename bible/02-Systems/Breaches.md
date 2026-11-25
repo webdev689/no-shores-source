@@ -125,15 +125,26 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   holding company, "Your company" to its own, its revives at Hard, the companies inside); further off it is one line
   under the zone's own; the compass marks the gate. The Spire's fill rises as a pillar of light the whole zone sees,
   and its company hears the tension music while it fills. The seal stands in its doorway until the gate opens to the
-  viewer's company, which is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its
-  company and those in the hollow. Within 60 m the hollow's own air stands at the gate over the vale's ambience, and
-  while the viewer's company holds the Waking the Spire hums at the Spire, louder as it fills; while the Waking runs,
-  each mooring newly held catches, and the Spire rings out on its waking for its company ([[Ambience]]). What changed
-  while the tab was hidden is not heard on its return.
+  viewer's company, which sees the doorway as the dark of the way in (the seal's shape black, a violet sheen low in
+  it) and is offered "Enter the Drowned Vale" there. The Waking's moments and stings reach only its company and those
+  in the hollow. Within 60 m the hollow's own air stands at the gate over the vale's ambience, and while the viewer's
+  company holds the Waking the Spire hums at the Spire, louder as it fills; while the Waking runs, each mooring newly
+  held catches, and the Spire rings out on its waking for its company ([[Ambience]]). What changed while the tab was
+  hidden is not heard on its return.
 - **In the run**: its spaces drawn over the dark from the plan (`room_breach`), only the Breach's modules loaded while
   there and let go on any way out (the seal's in the gate's zone too); heard underground, each space by its own
-  ambience ([[Ambience]]); its seals while shut, its
-  slabs fading in and out over a second, its bells, the hidden chests (shut, dimly lit, until they pay the player),
+  ambience ([[Ambience]]). It is lit as underground (`breachLook.ts`, `drawRun`): a sky of its own, with no sun or
+  moon, a cool light from above about three quarters of a clear noon's (so its floor reads, a median of at least 0.12
+  in sRGB where no lamp reaches), and everything fading into the dark from 40 m to black at 120 m; the lamps nearest
+  the eye (16, none too faint to show) of those its pieces give, each read from where the piece's crystal, fire and
+  glass lie (red at the seals, bells, the Seam and the clusters, as bright as the square of their glow; warm at the
+  Choir's candles and rose window, the shore's hearth and sconces, the Heart's lantern), pooling round what burns at
+  least twice as bright as the floor, and a carried torch or lantern; the figures in the same light as the stone,
+  fading into the dark with it. Every frame of the dungeons' scene writes the sky it is drawn under, so a dungeon
+  entered straight from the run draws under none of the run's. A shore is drawn only while a player stands in it, a
+  rift to it is opening or open, or the Steward's taken are there. Its seals while shut, its slabs fading in and out
+  over a second, its bells (a dim one asleep at each bell socket no bell foe holds), the hidden chests (the plain
+  chest dim while it will not pay, the heroic chest, its crystal alight, once it will, thrown open once it has),
   the Lodestone (lying, on its plinth, or turning 2.3 m over its bearer); each encounter's banner from the snapshot's
   Breach, with its limits and its clocks (fusions of 4, Hard 3; the round of 5; a desk's marking, a bell's ringing,
   the Scrivener's fury; the takings of 4; the court's mooring "held 1 of 2"); a teaching line as each encounter begins
@@ -177,6 +188,13 @@ crystal, the moorings, the ledges) and each space of the run (`tools/modules/bre
 triangles, its parts and sockets what the rules stand on, every piece's socket on its floor clear of every part; the
 dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of the forge (`barding.py`).
 
+Its light comes from its pieces as built: wherever a module wears crystal, glow (a flame) or glass, the page gathers
+it into lamps 3 m across (`moduleLights.ts`), one lamp for a light the grid cuts in two, and out of the piece's
+solids where crystal on a wall's faces gathers inside it, so a piece rebuilt lights where it now burns. Crystal on
+both faces of a wall thinner than 3 m gathers to one lamp, set out on one side only. Stained glass (`glass`) is
+drawn as leaded panes of ruby, cobalt, amber, green and pale, lit from behind; the drowned floors' water ripples
+slowly and glints with the lamps over it ([[Modules]], "In the game").
+
 ## Limits
 
 - **The Drowned horse is not rendered yet.** Its ridden strips come only from a forge run started by hand
@@ -207,4 +225,11 @@ dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of
   the way back, the mooring, its bareness) and is cut in a short view.
 - **Following a company member at the gate** follows them wherever they stand in the zone, the ground near them not
   kept loaded if they are far off.
-- **Played offline only**: tested by the rules' and the page's tests, never in a deployed room.
+- **The run's light casts no shadows**: a lamp lights every face turned to it within its reach, through anything
+  standing between (a face turned away takes none, so no wall is lit on its far side); only the 16 nearest the eye
+  light the run. In the Unlit Ways, red pools on both walls of a corridor where a crossing's crystal stands between
+  them, which is right, but a wall beyond another is lit as if the first were not there.
+- **Stained glass is on the page before any piece wears it**: until the modules are rebuilt with `glass`, the Choir's
+  rose window and the shore's lancets wear `glow` and read as a flat warm disc.
+- **Played offline only**: tested by the rules' and the page's tests, never in a deployed room; its light was
+  pictured by drawing the run's pieces through the page's own drawer and sky offline, never in a live run.

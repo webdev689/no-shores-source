@@ -27,6 +27,7 @@ import { mooringSounds, slabSounds, stingOf } from './breachMoments.ts';
 import { hearBreach } from './audio/music/breachHearing.ts';
 import { warmVale } from './audio/music/vale.ts';
 import { type BreachPlan, breachPlanOf, sealOpen, slabStands, socketAt, spaceAt, spaceSocket } from './breachPlan.ts';
+import { gateWay, idleBells, isShore, shoresShown } from './breachLook.ts';
 import { ENCOUNTER, type Mooring, breachCall, encounterName, encounterOn } from './breachWords.ts';
 import { gateBanner, gateLine, inSentence, runBanner, teachingWords, wonWords } from './breachWords.ts';
 import type { Use } from './footGear.ts';
@@ -130,8 +131,11 @@ const HIDDEN_CHESTS = [
   { space: 'ways', socket: 'heart', open: (seen: BreachSeen) => chestBit(seen, 2) },
   { space: 'stair', socket: 'chest-stair', open: () => true },
 ] as const;
-/** A hidden chest's glow while it is not yet open to pay (one waiting for the player glows as an event's chest). */
+/** A hidden chest's glow while it is not yet open to pay (one waiting for the player glows as an event's chest), and
+ *  the tier whose chest one open to pay is drawn as (the heroic, crystal set in it); a sleeping bell's glow. */
 const CHEST_GLOW = { shut: 0.25 } as const;
+const HEROIC_TIER = 3;
+const IDLE_BELL = 0.35;
 /** The way out once the Breach is cleared, the court's portal, ringed as a dungeon's lit portal shows the way. */
 const PORTAL = { colour: [0.72, 0.55, 1, 0.7] as const, inner: 2.2, outer: 2.5 };
 
@@ -309,8 +313,9 @@ export class BreachView {
   }
 
   /** A frame at the gate in the zone: its moorings' rings while the Waking runs and the Spire glowing as it fills, the
-   *  seal in its doorway but to the company it opened to, its banner (the player's own company named as theirs, its
-   *  line as it begins), its mark on the compass, and the music's tension for its company in the hollow. */
+   *  seal in its doorway (to the company it opened to, the dark of the way in), its banner (the player's own company
+   *  named as theirs, its line as it begins), its mark on the compass, and the music's tension for its company in the
+   *  hollow. */
   private gateFrame(
     plan: BreachPlan,
     seen: BreachSeen,
@@ -343,7 +348,10 @@ export class BreachView {
       markLine(marks, foot, tall, SPIRE.colour, SPIRE.least + seen.fill, here.clock, here.eye);
     }
     const door = this.gateSocket('gate');
-    const props = door && gate && !this.openToMe(seen) ? [prop('breach-seal', door, gate.turn * quarter)] : [];
+    // To the company it opened to, the doorway is the dark of the way in, filling its opening; to all else, sealed.
+    const seal = door && gate && prop('breach-seal', door, gate.turn * quarter);
+    const way = this.openToMe(seen) ? gateWay() : null;
+    const props = seal ? [way ? { ...seal, glow: 0, dark: way } : seal] : [];
     const spire = gate && ([gate.at[0], gate.at[1], gate.at[2] + SPIRE.footM + SPIRE.tallM / 2] as const);
     const mine = seen.holders.includes(here.own);
     // The ambience hears the gate's hollow, and the Spire's hum as it fills while the player's company holds it.
@@ -441,9 +449,10 @@ export class BreachView {
     return !!this.word && seen.openTo.includes(this.word.fight.player);
   }
 
-  /** The run's props: its spaces where its plan stands them, each seal while shut, each slab while it stands, a
-   *  crystal at each bell, the Lodestone on its plinth, lying, or over its bearer, turning, and the hidden chests,
-   *  shut (glowing while open to pay) until the room pays the player, their lids then thrown back. */
+  /** The run's props: its spaces where its plan stands them (a shore only while it is shown, `shoresShown`), each
+   *  seal while shut, each slab while it stands, a crystal at each bell, a dim one asleep at each bell socket no bell
+   *  stands at, the Lodestone on its plinth, lying, or over its bearer, turning, and the hidden chests, shut until the
+   *  room pays the player, their lids then thrown back: one open to pay is the heroic chest, its crystal glowing. */
   private runProps(
     plan: BreachPlan,
     seen: BreachSeen,
@@ -452,9 +461,12 @@ export class BreachView {
     clock: number,
   ): EventProp[] {
     const props: EventProp[] = [];
+    const bodies = [this.feet, ...[...word.fight.others.values()].map(({ body }): Point => [body.x, body.y, body.z])];
+    const shores = shoresShown(plan, seen, bodies);
+    const drawn = (key: string) => !isShore(plan, key) || shores.has(key);
     for (const space of plan.spaces) {
       const module = asProp(space.module);
-      if (module) props.push(prop(module, space.at, space.turn * quarter));
+      if (module && drawn(space.key)) props.push(prop(module, space.at, space.turn * quarter));
     }
     plan.seals.forEach((seal, number) => {
       if (seal.at && !sealOpen(seen.seals, number)) props.push(prop('breach-seal', seal.at, seal.turn * quarter));
@@ -464,10 +476,13 @@ export class BreachView {
       if (slab.at && slabStands(plan, slab.phase, tick))
         props.push(prop('breach-slab', slab.at, 0, slabRise(plan, slab.phase, tick)));
     // A bell is no figure, so it stands where the room last stood its foe.
+    const bells: Point[] = [];
     for (const bell of seen.bellFoes) {
       const kept = word.fight.foes.get(bell)?.view;
-      if (kept) props.push(prop('breach-bell', [kept.x, kept.y, kept.z], 0));
+      if (kept) bells.push([kept.x, kept.y, kept.z]);
     }
+    for (const bell of bells) props.push(prop('breach-bell', bell, 0));
+    for (const idle of idleBells(plan, drawn, bells)) props.push({ ...prop('breach-bell', idle, 0), glow: IDLE_BELL });
     const bearer = seen.stone === STONE.borne ? where(seen.bearer) : null;
     if (bearer) props.push(prop('breach-lodestone', [bearer[0], bearer[1], bearer[2] + BORNE_M], clock * BORNE_TURN));
     else if (seen.stone === STONE.plinth || seen.stone === STONE.lying)
@@ -476,9 +491,10 @@ export class BreachView {
       const spot = spaceSocket(plan, space, socket);
       if (!spot) return;
       const opened = this.counting?.chestOpened(nth, tick) ?? null;
-      const chest = chestProps({ id: nth, at: spot, tier: 1, opened });
-      // One not yet open to pay glows less than one waiting for the player.
-      const dim = opened === null && !open(seen);
+      // One open to pay (or that has paid) is the heroic chest, its crystal glowing; one not, the plain chest, dim.
+      const pays = opened !== null || open(seen);
+      const chest = chestProps({ id: nth, at: spot, tier: pays ? HEROIC_TIER : 1, opened });
+      const dim = !pays;
       props.push(...(dim ? chest.map((part) => ({ ...part, glow: CHEST_GLOW.shut })) : chest));
     });
     return props;

@@ -67,6 +67,10 @@ export function moduleSocket(module: number, name: string): Point {
   return modules[module]?.sockets.find((socket) => socket.name === name)?.at ?? [0, 0, 0];
 }
 
+/** Whether a module has a socket so named. */
+export const moduleHasSocket = (module: number, name: string): boolean =>
+  !!listed.modules[module]?.sockets.some((socket) => socket.name === name);
+
 /** The way a socket of a module faces out in its own frame (x east, y south), or south where it says none. */
 export function moduleSocketFacing(module: number, name: string): readonly [number, number] {
   const facing = listed.modules[module]?.sockets.find((socket) => socket.name === name)?.facing;

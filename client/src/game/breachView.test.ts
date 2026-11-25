@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { chestProps } from '../city/eventProps.ts';
 import { moduleNumber } from '../city/modules.ts';
 import { type BreachSeen, STONE } from '../network/breachMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
@@ -100,13 +101,23 @@ test("a run's frame stands its spaces, its seals still shut, its bells and the L
   const shown = view.frame(word(), [], [0, 0, 60], () => null, 0, []);
   assert.ok(shown);
   const modules = shown.props.map((prop) => prop.module);
-  for (const space of plan.spaces) assert.ok(modules.includes(space.module as never), space.key);
+  const shores = Object.values(plan.shores).flat();
+  for (const space of plan.spaces)
+    if (!shores.includes(space.key)) assert.ok(modules.includes(space.module as never), space.key);
+  assert.ok(!modules.some((name) => name.startsWith('breach-shore')), 'no shore while no one is in one or taken there');
   const shut = plan.seals.filter((_seal, number) => !sealOpen(SEEN.seals, number)).length;
   assert.equal(modules.filter((name) => name === 'breach-seal').length, shut, 'the first seal open, the rest shut');
   assert.deepEqual(
     shown.props.find((prop) => prop.module === 'breach-bell')?.at,
     [1, -150, 50],
     'a bell where its foe stands',
+  );
+  const bells = shown.props.filter((prop) => prop.module === 'breach-bell');
+  const sockets = [1, 2, 3, 4, 5, 6, 7].map((nth) => spaceSocket(plan, 'choir', `bell-${nth}`));
+  assert.deepEqual(
+    bells.slice(1).map((bell) => [bell.at, bell.glow < 0.5]),
+    sockets.map((socket) => [socket, true]),
+    "a dim bell asleep at each of the Choir's sockets no bell stands at",
   );
   assert.deepEqual(shown.props.find((prop) => prop.module === 'breach-lodestone')?.at, SEEN.stoneAt);
   assert.equal(shown.first, true);
@@ -266,11 +277,16 @@ test("the run's compass marks the stage reached, the way on, the way out and the
   assert.deepEqual([great?.sting, great?.shown?.mood], ['cadence', 'peak']);
 });
 
-test('every hidden chest stands shut at its socket, glowing while open to pay, its lid thrown once the room pays', () => {
+/** The chests' bodies as the events draw them, plain and heroic, named by whatever modules they are. */
+const [PLAIN_CHEST, HEROIC_CHEST] = [1, 3].map(
+  (tier) => chestProps({ id: 0, at: [0, 0, 0], tier, opened: null })[0]?.module,
+);
+
+test('every hidden chest stands shut at its socket, the heroic glowing while open to pay, its lid thrown once paid', () => {
   const { view, word, atTick } = inRun();
   const chests = (more: Partial<BreachSeen>, events: FightEvent[] = []) => {
     const props = view.frame(word(more), events, [0, 0, 60], () => null, 0, [])?.props ?? [];
-    const bodies = props.filter((prop) => prop.module === 'chest');
+    const bodies = props.filter((prop) => prop.module === PLAIN_CHEST || prop.module === HEROIC_CHEST);
     assert.deepEqual(
       bodies.map((prop) => prop.at),
       [
@@ -280,8 +296,14 @@ test('every hidden chest stands shut at its socket, glowing while open to pay, i
         spaceSocket(plan, 'stair', 'chest-stair'),
       ],
     );
-    const lids = props.filter((prop) => prop.module === 'chest-lid').map((prop) => prop.lid > 0);
-    return { lids, lit: bodies.map((prop) => prop.glow > 0.5) };
+    const lids = props.filter((prop) => prop.module.endsWith('-lid')).map((prop) => prop.lid > 0);
+    // One open to pay is the heroic chest, glowing; one not, the plain chest, dim.
+    const heroic = bodies.map((prop) => prop.module === HEROIC_CHEST);
+    assert.deepEqual(
+      heroic,
+      bodies.map((prop) => prop.glow > 0.5),
+    );
+    return { lids, lit: heroic };
   };
   assert.deepEqual(chests({}), { lids: [false, false, false, false], lit: [true, false, false, true] });
   assert.deepEqual(chests({ chests: 0b110 }).lit, [true, false, true, true], "the page's waits for the Choir won");
@@ -300,11 +322,21 @@ test("the gate's doorway stands sealed but to the company it opened to, and its 
   const { view, word } = inRun(true);
   await settled();
   const sealed = (more: Partial<BreachSeen>) =>
-    view.frame(word(more), [], [GATE_AT[0], GATE_AT[1] - 20, 3], () => null, 0, [])?.props.map((prop) => prop.at);
+    view
+      .frame(word(more), [], [GATE_AT[0], GATE_AT[1] - 20, 3], () => null, 0, [])
+      ?.props.map((prop) => [prop.at, prop.dark ?? null]);
   const door = socketAt('breach-gate', 'gate', GATE_AT, 0);
-  assert.deepEqual(sealed({}), [door]);
-  assert.deepEqual(sealed({ woken: true, openTo: [7] }), [], 'open to the player');
-  assert.deepEqual(sealed({ woken: true, openTo: [9] }), [door], "open to another's company");
+  assert.deepEqual(sealed({}), [[door, null]]);
+  // The dark fills the doorway's own opening (its half width, its height, its face in front of the seal's foot), so
+  // no facet of the seal stands proud of the jambs or leaves the recess showing.
+  const way = [3.6, 7.95, 0.5];
+  const dark = sealed({ woken: true, openTo: [7] })?.[0];
+  assert.deepEqual(dark?.[0], door, 'open to the player: the dark of the way in');
+  assert.deepEqual(
+    (dark?.[1] as number[] | null)?.map((side) => Math.round(side * 100) / 100),
+    way,
+  );
+  assert.deepEqual(sealed({ woken: true, openTo: [9] }), [[door, null]], "open to another's company");
   const marks: number[] = [];
   view.frame(word(), [], [GATE_AT[0], GATE_AT[1], 3], () => null, 0, marks);
   const west = socketAt('breach-gate', 'mooring-west', GATE_AT, 0);
