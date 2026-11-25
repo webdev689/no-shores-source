@@ -1,5 +1,5 @@
 ---
-id: 216
+id: 234
 title: "Exact-output performance refactors need a before/after digest of every real output; the project has no kept harness for it, so each session rebuilds one"
 status: open
 type: open-source

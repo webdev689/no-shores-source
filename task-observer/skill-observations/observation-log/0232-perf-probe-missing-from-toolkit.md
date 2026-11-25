@@ -1,5 +1,5 @@
 ---
-id: 214
+id: 232
 title: "The toolkit has no performance probe for the game's worker; a CDP probe (frame times, GPU call counts, CPU and allocation profiles, --trace-gc) found the hot spots, and stopping the heap sampler before the CPU profiler fakes a 455 ms frame"
 status: actioned
 type: open-source
