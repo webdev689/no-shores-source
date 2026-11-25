@@ -808,6 +808,10 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 
 ## Limits
 
+- The Frigate's eye stands on its centreline, 5.7 m over the water, and its station keeps the water at its nearest lay
+  only 0.2 m over its rail as the eye sees it: so its rail runs through the view's middle, where the rings lie, and
+  hides its arcs. The Schooner's two rail posts stand before its nearest rings. How each deck's view is framed is
+  the owner's to choose ([[Aiming a Ship Follows Black Flag, From Its Deck]]).
 - A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
   not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
   or run, and each hull's hull points are scaled to an exact gunner's fire.

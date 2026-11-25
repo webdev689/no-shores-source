@@ -204,10 +204,11 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]); the aim's camera and arcs follow the hull
   sailed, and the World Editor sails the hull its address names (`?hull=brig`); 33 dresses sold, besides each part's start and the houses' six at rank 2, bought once and laid free;
   names from two word lists, free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag.
-  Asks 86 to 90, refusals answered 167 to 173. Tested offline: the full check on the branch's head as pushed, the
-  counter pictured headless (`harbourShots.ts`), a dressed Brig pictured at sea, and 12 fights a row by hull
+  Asks 86 to 90, refusals answered 167 to 173. Tested offline: the full check on fb959363 (CI checks the head), the
+  counter pictured headless (`harbourShots.ts`), each hull's held aim pictured in the World Editor (`?hull=`), a dressed Brig pictured at sea, and 12 fights a row by hull
   ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the owner: the prices, levels and
-  class numbers, the word lists, a figurehead once one is modelled, and whether a shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
+  class numbers, the word lists, a figurehead once one is modelled, the Frigate's aim view (its rail runs through
+  the view's middle, where its rings lie: [[Naval Combat]], "Limits"), and whether a shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
 - **The bounty board after the Bounty Tracker, and faction bounties** (#196, a draft for the owner's yes), on the
   owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
   ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
