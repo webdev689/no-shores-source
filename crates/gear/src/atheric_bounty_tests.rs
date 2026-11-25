@@ -102,3 +102,19 @@ fn a_death_loses_the_lantern_with_the_haul() {
         .expect("lit");
     assert!(character.atheric_bounties.held.is_empty());
 }
+
+#[test]
+fn the_lantern_banked_by_a_lamps_home_has_its_first_step_done() {
+    let mut character = at_twenty();
+    character.passage.as_mut().expect("diving").lamp = 1;
+    let seed = (0..).find(|&seed| at_twenty().roll_find(SALTMERE, 20, Some(4), &Dice { seed, tick: 0, player: 0 }));
+    assert!(character.roll_find(SALTMERE, 20, Some(4), &Dice { seed: seed.expect("found"), tick: 0, player: 0 }));
+    character.go_home(0, Some(1)).expect("home");
+    assert_eq!(character.atheric_bounties.held.get("lanternfall"), Some(&(1, 0)), "brought to a lamp");
+
+    let mut character = at_twenty();
+    character.go_home(0, Some(0)).expect("home");
+    assert!(character.roll_find(SALTMERE, 20, Some(4), &Dice { seed: seed.expect("found"), tick: 0, player: 0 }));
+    character.leave_passages(Some(SALTMERE));
+    assert_eq!(character.atheric_bounties.held.get("lanternfall"), Some(&(1, 0)), "found on the way out, kept home");
+}

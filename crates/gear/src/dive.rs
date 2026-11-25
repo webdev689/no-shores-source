@@ -111,8 +111,8 @@ impl Character {
     }
 
     /// Begins a dive at a mouth of an island's patrol zone, its haul empty: at the zone behind the mouth, or at a
-    /// lamp's zone where the lamp was lit this week on that island, the lamp counted lit. A dive under way ends first,
-    /// its haul lost.
+    /// lamp's zone where the lamp was lit this week on that island, the lamp counted lit and its zone's cache paid. A
+    /// dive under way ends first, its haul lost.
     pub fn begin_dive(&mut self, start: &Start<'_>) -> Result<(), Refusal> {
         let mut lamp = 0;
         if let Some(number) = start.lamp {
@@ -132,7 +132,8 @@ impl Character {
             depth: start.depth,
             done: false,
             lamp,
-            paid: Vec::new(),
+            // Its lamp's zone paid its cache the dive that lit it.
+            paid: start.lamp.map(|_| start.zone).into_iter().collect(),
             haul: Haul::default(),
             homeward: false,
             here: false,
@@ -189,12 +190,14 @@ impl Character {
         self.passage = None;
     }
 
-    /// Leaves the passages, as joining any room that is not a passage zone of the dive does: a dive gone home keeps
-    /// what was found since its lamp and answers the mouth it began at; any other loses its haul.
-    pub fn leave_passages(&mut self) -> Option<u8> {
-        let homeward = self.passage.as_ref().filter(|dive| dive.homeward).map(|dive| dive.mouth);
+    /// Leaves the passages, as joining any room that is not a passage zone of the dive does: a dive gone home, come
+    /// into the room holding its island's mouths (`mouths_of`, the island whose mouths the room holds), keeps what was
+    /// found since its lamp and answers the mouth it began at; any other loses its haul.
+    pub fn leave_passages(&mut self, mouths_of: Option<&str>) -> Option<u8> {
+        let home = |dive: &&Dive| dive.homeward && mouths_of == Some(dive.island.as_str());
+        let homeward = self.passage.as_ref().filter(home).map(|dive| dive.mouth);
         if homeward.is_some() {
-            self.keep_haul();
+            self.keep_haul_home();
         }
         self.end_dive();
         homeward

@@ -34,7 +34,7 @@ fn a_dive_its_haul_and_the_lamps_cross_in_the_gear_and_a_zones_deal_in_the_snaps
     character.gather(3);
     character.activity.this_week(2_900).passage_lamps.entry("continent-1".to_owned()).or_default().insert(2);
     let mut builder = FlatBufferBuilder::new();
-    let (dive, lamps, _) = passages_of(&mut builder, &character, 0);
+    let (dive, lamps, _) = passages_of(&mut builder, &character, (0, 2_900));
     let args = messages::GearArgs { dive, island_lamps: lamps, ..messages::GearArgs::default() };
     let written = messages::Gear::create(&mut builder, &args);
     builder.finish_minimal(written);
@@ -76,9 +76,25 @@ fn a_dive_turned_homeward_crosses_homeward() {
     character.begin_dive(&start).expect("begun");
     character.passage.as_mut().expect("diving").homeward = true;
     let mut builder = FlatBufferBuilder::new();
-    let (dive, _, _) = passages_of(&mut builder, &character, 0);
+    let (dive, _, _) = passages_of(&mut builder, &character, (0, 2_900));
     let written = messages::Gear::create(&mut builder, &messages::GearArgs { dive, ..messages::GearArgs::default() });
     builder.finish_minimal(written);
     let gear = flatbuffers::root::<messages::Gear>(builder.finished_data()).expect("gear");
     assert!(gear.dive().expect("a dive").homeward());
+}
+
+#[test]
+fn last_weeks_lamps_cross_as_none_lit() {
+    let mut character = gear::Character::starting();
+    character.activity.this_week(2_900).passage_lamps.entry("continent-1".to_owned()).or_default().insert(2);
+    let mut builder = FlatBufferBuilder::new();
+    let (_, lamps, _) = passages_of(&mut builder, &character, (0, 2_901));
+    let args = messages::GearArgs { island_lamps: lamps, ..messages::GearArgs::default() };
+    let written = messages::Gear::create(&mut builder, &args);
+    builder.finish_minimal(written);
+    let gear = flatbuffers::root::<messages::Gear>(builder.finished_data()).expect("gear");
+    assert!(
+        gear.island_lamps()
+            .is_none_or(|lamps| lamps.iter().all(|island| island.lamps().is_none_or(|lit| lit.is_empty())))
+    );
 }

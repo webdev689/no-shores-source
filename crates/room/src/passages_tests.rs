@@ -366,3 +366,141 @@ fn a_player_home_from_a_lamp_stands_before_the_mouth_they_began_at_keeping_what_
     let body = found.fighter.body;
     assert!(libm::hypot(body.x - 50.0, body.y - 2.0) < 1e-9, "before the second mouth: {:?}", (body.x, body.y));
 }
+
+/// The room's answer to a refusal.
+fn refusal(refusal: gear::Refusal) -> u8 {
+    refusal as u8 + 1
+}
+
+/// The first minute of a week.
+fn week_begins(week: u64) -> u64 {
+    let mut minute = (week - 1) * gear::clock::WEEK_MINUTES;
+    while gear::clock::week_of(minute) < week {
+        minute += gear::clock::minutes_to_next_week(minute).max(1);
+    }
+    minute
+}
+
+/// A lamp's zone, its guard down, lit for one player standing at it.
+fn lit_lamp() -> (u64, Plan, Room, PlayerId) {
+    let (week, plan, mut room) = zone_room(Deal::Lamp, None, Route::Public);
+    let player = diver(&mut room, week, &plan);
+    let lamp = plan.sites.lamp.expect("a lamp");
+    stand_at(&mut room, player, [lamp[0] + 2.0, lamp[1]]);
+    kill_all(&mut room);
+    run(&mut room, 2);
+    assert_eq!(room.ask_passage(player, PassageAsk::LightLamp), 0);
+    run(&mut room, super::passage_asks::LAMP_TICKS + 1);
+    assert!(room.passage_seen(player).is_some_and(|seen| seen.lamp_lit));
+    (week, plan, room, player)
+}
+
+#[test]
+fn a_zone_whose_web_has_turned_refuses_all_but_home_at_a_lamp_lit() {
+    let (week, plan, mut room, player) = lit_lamp();
+    let late = diver(&mut room, week, &plan);
+    let body = room.players[&player].fighter.body;
+    stand_at(&mut room, late, [body.x, body.y]);
+    room.set_minute(week_begins(week + 1));
+    assert_eq!(room.ask_passage(late, PassageAsk::LightLamp), refusal(gear::Refusal::Shifted), "no lamp of last week");
+    assert_eq!(room.ask_passage(player, PassageAsk::GoHome), 0, "home from the lamp lit");
+
+    let (week, plan, mut room) = zone_room(Deal::Skirmish, None, Route::Public);
+    let player = diver(&mut room, week, &plan);
+    room.zone_mut().expect("a zone").round.took_part.insert(player);
+    kill_all(&mut room);
+    run(&mut room, 2);
+    stand_at(&mut room, player, plan.sites.onward.first().expect("a way on").at);
+    room.set_minute(week_begins(week + 1));
+    assert_eq!(room.ask_passage(player, PassageAsk::GoOn { mouth: 0 }), refusal(gear::Refusal::Shifted));
+    assert_eq!(dive(&room, player).map(|dive| dive.zone), Some(plan.zone.number), "still where it was");
+}
+
+#[test]
+fn a_fallen_player_asks_the_passages_nothing() {
+    let (_, _, mut room, player) = lit_lamp();
+    let found = room.players.get_mut(&player).expect("in");
+    (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    assert_eq!(room.ask_passage(player, PassageAsk::GoHome), refusal(gear::Refusal::Fallen));
+    assert!(dive(&room, player).is_some_and(|dive| !dive.homeward));
+}
+
+#[test]
+fn a_lamp_lit_already_is_refused_as_lit() {
+    let (_, _, mut room, player) = lit_lamp();
+    assert_eq!(room.ask_passage(player, PassageAsk::LightLamp), refusal(gear::Refusal::AlreadyLit));
+}
+
+#[test]
+fn a_gauntlets_time_runs_from_the_later_of_a_players_arrival_and_the_rounds_start() {
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Gauntlet), None, Route::Public);
+    let first = diver(&mut room, week, &plan);
+    let far = room.far_mouth().expect("a far mouth");
+    stand_at(&mut room, first, far);
+    run(&mut room, 2);
+    assert!(room.passage_seen(first).is_some_and(|seen| seen.done), "the first round");
+    stand_at(&mut room, first, plan.sites.arrive);
+    let second = diver(&mut room, week, &plan);
+    let keep = |room: &mut Room, ticks: u64| {
+        for _ in 0..ticks {
+            kill_all(room);
+            for id in [first, second] {
+                room.players.get_mut(&id).expect("in").fighter.health = 1e9;
+            }
+            room.tick();
+        }
+    };
+    keep(&mut room, super::passage_deal::AGAIN_TICKS + 2);
+    assert!(room.passage_seen(second).is_some_and(|seen| !seen.done), "the next round");
+    keep(&mut room, 60 * 60);
+    stand_at(&mut room, second, far);
+    keep(&mut room, 2);
+    assert!(dive(&room, second).is_some_and(|dive| dive.paid == [plan.zone.number]), "in time in its own round");
+}
+
+#[test]
+fn the_waves_called_never_overflow() {
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Kindle), None, Route::Public);
+    diver(&mut room, week, &plan);
+    run(&mut room, 1);
+    room.zone_mut().expect("a zone").round.waves = u8::MAX;
+    for _ in 0..super::passage_deal::AGAIN_TICKS {
+        kill_all(&mut room);
+        room.tick();
+    }
+    assert_eq!(room.zone().expect("a zone").round.waves, u8::MAX);
+}
+
+#[test]
+fn a_kindle_counts_toward_the_bounties_only_of_those_who_took_part() {
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Kindle), None, Route::Public);
+    let (fighter, idle) = (diver(&mut room, week, &plan), diver(&mut room, week, &plan));
+    for id in [fighter, idle] {
+        room.players.get_mut(&id).expect("in").character.atheric_bounties.held.insert("lanternfall".to_owned(), (1, 0));
+    }
+    let zone = room.zone_mut().expect("a zone");
+    zone.round.took_part.insert(fighter);
+    zone.round.lit.iter_mut().for_each(|lit| *lit = true);
+    run(&mut room, 2);
+    let held = |id: PlayerId| room.players[&id].character.atheric_bounties.held.get("lanternfall").copied();
+    assert_eq!((held(fighter), held(idle)), (Some((1, 1)), Some((1, 0))));
+}
+
+#[test]
+fn a_homeward_dive_joining_another_islands_patrol_zone_loses_its_haul() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    assert!(room.open_mouths("continent-2", vec![([0.0, 0.0], [0.0, 20.0])]));
+    let player = room.join().expect("joined");
+    let mut character = room.players[&player].character.clone();
+    let start = Start { island: ISLAND, week: 2_900, route: Route::Public, mouth: 0, zone: 4, depth: 5, lamp: None };
+    character.begin_dive(&start).expect("begun");
+    let dive = character.passage.as_mut().expect("diving");
+    (dive.lamp, dive.homeward) = (1, true);
+    dive.haul.materials.add(gear::character::Stuff::Fragments(gear::kinds::Stock::Weapon), 2);
+    let fragments = character.materials.weapon_fragments;
+    room.players.get_mut(&player).expect("here").character = character;
+    room.passage_arrived(player);
+    let found = &room.players[&player];
+    assert!(found.character.passage.is_none());
+    assert_eq!(found.character.materials.weapon_fragments, fragments, "lost");
+}

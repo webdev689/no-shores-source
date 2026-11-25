@@ -174,6 +174,14 @@ the haul's losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
 
 Replaced in part, by the table above: the caches' numbers in "Rewards".
 
+Replaced in part, to keep the owner's lamp about every 15 minutes at five zones: a zone's room stands at most nine
+foes, its bands and waves together, and a Kindle's and a Hold's wave comes every 30 s once the last is down; one
+player then does a zone's deal in about 145 s (`room::deal_measure_tests::measure_the_deals`), about eight foes, a lamp
+every twelve to fifteen minutes. The caches are set again to keep the band: at level 5 a skirmish 70 XP and 5 Aurem, a
+mission 90 and 7, a vault 140 and 10, a vein and a reliquary 40 and 3, a lamp 140 and 10; a Vestige 1 time in a
+hundred from a skirmish, 2 from a mission, 3 from a reliquary, 5 from a lamp, and a vault's item 1 time in 4. The
+passages measure 0.79 to 1.76 of the patrol zone's XP and 1.10 to 1.95 of its loot.
+
 ## As the rules play them
 
 | Call | Choice |

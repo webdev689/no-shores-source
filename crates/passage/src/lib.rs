@@ -56,16 +56,5 @@ pub fn strength(depth: u8) -> f64 {
     1.0 + f64::from(depth.clamp(1, DEPTHS) - 1) / f64::from(DEPTHS - 1)
 }
 
-/// What a deal's cache pays times at a depth: its XP and Aurem 1 to 1.25, its chances of finds 1 to 2.
-#[must_use]
-pub fn cache_pay(depth: u8) -> f64 {
-    1.0 + f64::from(depth.clamp(1, DEPTHS) - 1) / f64::from(4 * (DEPTHS - 1))
-}
-
-#[must_use]
-pub fn cache_finds(depth: u8) -> f64 {
-    strength(depth)
-}
-
 #[cfg(test)]
 mod tests;

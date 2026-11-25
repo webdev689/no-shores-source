@@ -187,6 +187,9 @@ const REFUSALS: Readonly<Record<number, string>> = {
   176: 'Not while its guard stands.',
   177: 'Come closer.',
   178: 'There is no passage here.',
+  179: 'The passage has shifted.',
+  180: 'It is lit already.',
+  181: 'Not while fallen.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

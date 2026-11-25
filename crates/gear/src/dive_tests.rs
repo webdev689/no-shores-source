@@ -113,3 +113,28 @@ fn an_old_save_reads_with_no_dive_and_a_later_builds_keys_are_kept() {
     let read: Character = serde_json::from_value(old).expect("an old save reads");
     assert!(read.passage.is_none());
 }
+
+#[test]
+fn a_dive_begun_at_a_lamp_is_never_paid_that_lamps_cache_again() {
+    let mut character = Character::starting();
+    character.activity.this_week(WEEK).passage_lamps.entry(ISLAND.to_owned()).or_default().insert(2);
+    character.begin_dive(&start(30, Some(2))).expect("begun");
+    character.passage.as_mut().expect("diving").here = true;
+    let at = crate::lamps::Zone { island: ISLAND, week: WEEK, zone: 30, depth: 10, level: 10 };
+    let dice = crate::dice::Dice { seed: 1, tick: 0, player: 0 };
+    let paid =
+        character.pay_cache(at, crate::lamps::Cache::Lamp(2), crate::Difficulty::Normal, crate::Source::World, &dice);
+    assert!(!paid, "its cache was paid the dive that lit it");
+}
+
+#[test]
+fn a_homeward_dive_keeps_its_haul_only_in_its_islands_patrol_zone() {
+    for (room, kept) in [(Some(ISLAND), 3), (Some("continent-2"), 0), (None, 0)] {
+        let mut character = diving();
+        character.passage.as_mut().expect("diving").homeward = true;
+        character.gather(4);
+        let answered = character.leave_passages(room);
+        assert_eq!((answered.is_some(), character.materials.resource(4)), (kept > 0, kept), "{room:?}");
+        assert!(character.passage.is_none());
+    }
+}

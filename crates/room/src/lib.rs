@@ -563,6 +563,8 @@ mod commons_tests;
 #[cfg(test)]
 mod course_tests;
 #[cfg(test)]
+mod deal_measure_tests;
+#[cfg(test)]
 mod faction_tests;
 #[cfg(test)]
 mod fair_tests;

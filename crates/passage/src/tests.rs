@@ -174,3 +174,40 @@ fn probe_webs() {
         );
     }
 }
+
+/// Saltmere's coast as the world's layout draws it, a ring of points in metres.
+fn saltmere_coast() -> Vec<[f64; 2]> {
+    let layout: serde_json::Value =
+        serde_json::from_str(include_str!("../../../content/world/layout.json")).expect("the layout reads");
+    let continents = layout["continents"].as_array().expect("continents");
+    let saltmere = continents.iter().find(|continent| continent["id"] == "continent-1").expect("Saltmere");
+    let points = saltmere["outline"].as_array().expect("an outline");
+    points.iter().map(|point| [point[0].as_f64().unwrap_or(0.0), point[1].as_f64().unwrap_or(0.0)]).collect()
+}
+
+/// How far a point lies from a ring's nearest edge, metres.
+fn from_edge(ring: &[[f64; 2]], point: [f64; 2]) -> f64 {
+    let apart = |[x1, y1]: [f64; 2], [x2, y2]: [f64; 2]| {
+        let (east, south) = (x2 - x1, y2 - y1);
+        let length = (east * east + south * south).max(1e-9);
+        let share = (((point[0] - x1) * east + (point[1] - y1) * south) / length).clamp(0.0, 1.0);
+        libm::hypot(point[0] - x1 - share * east, point[1] - y1 - share * south)
+    };
+    (0..ring.len()).map(|at| apart(ring[at], ring[(at + 1) % ring.len()])).fold(f64::INFINITY, f64::min)
+}
+
+#[test]
+fn every_zone_of_every_week_lies_on_saltmeres_land_clear_of_its_coast() {
+    // Two kilometres in, so a zone stays on land where the generated coast wanders off the drawn one.
+    const INLAND_M: f64 = 2_000.0;
+    let coast = saltmere_coast();
+    let mut at_sea = Vec::new();
+    for week in 2_900..3_000 {
+        for zone in &Web::of(saltmere(), week).zones {
+            if !within(&coast, zone.at) || from_edge(&coast, zone.at) < INLAND_M {
+                at_sea.push(format!("week {week} depth {} lane {}", zone.depth, zone.lane));
+            }
+        }
+    }
+    assert!(at_sea.is_empty(), "{} zones off the land, the first {:?}", at_sea.len(), at_sea.first());
+}

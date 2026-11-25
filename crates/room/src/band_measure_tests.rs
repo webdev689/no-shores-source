@@ -1,7 +1,8 @@
 //! The pace of play on foot measured for the band (`gear::band`): a level 1 player with the starting sword, held
 //! whole, walking the navmesh to the nearest foe standing and swinging every half second, clears a patrol zone's
-//! garrison, a patrol's dungeon, an Elite Dungeon (its seals broken) and passage zones of a week's web, every foe set
-//! to the player's level. What it prints is what `gear::band`'s times name. Run by hand, in release:
+//! garrison, a patrol's dungeon and an Elite Dungeon (its seals broken), every foe set to the player's level; a passage
+//! zone's deal is played to done in `deal_measure_tests`. What it prints is what `gear::band`'s times name. Run by
+//! hand, in release:
 //! `cargo test -p room --release measure_the_pace -- --ignored --nocapture`.
 
 use super::*;
@@ -10,7 +11,6 @@ use combat::arms::Stroke;
 use combat::{CombatInput, Intent};
 use gear::Difficulty;
 use movement::Controls;
-use passage::{Plan, Web};
 use std::collections::BTreeSet;
 
 const SWORD: u32 = 2;
@@ -24,7 +24,7 @@ const REPATH_TICKS: u32 = 15;
 const GIVE_UP_TICKS: u32 = 60 * 20;
 
 /// Every foe at level 1, its health as a level 1 foe's, so the player's blows land whole and the pace is the fight's.
-fn level_one(room: &mut Room) {
+pub(super) fn level_one(room: &mut Room) {
     for foe in room.foes.values_mut() {
         let times = gear::power::foe_health_times(1) / gear::power::foe_health_times(foe.level.max(1));
         foe.fighter.health *= times;
@@ -116,17 +116,6 @@ fn measure_the_pace() {
         crate::encounters::encounters_tests::unseal(&mut room);
         row(&format!("Elite Dungeon ({})", elite.id), clear_all(&mut room));
     }
-    let island = passage::island("continent-1").expect("Saltmere's passages");
-    for week in [2_900, 2_901] {
-        let web = Web::of(island, week);
-        for zone in web.zones.iter().filter(|zone| zone.depth % 4 == 1 && !passage::has_lamp(zone.depth)) {
-            let Some(plan) = Plan::of(&web, zone.number) else { continue };
-            let modifiers = gear::passages::week_modifiers("continent-1", week);
-            let route = ("continent-1", week, gear::dive::Route::Company);
-            let Some(mut room) = Room::passage(&plan, (1, 4), modifiers, route) else { continue };
-            row(&format!("Passage depth {} {:?}", zone.depth, zone.deal), clear_all(&mut room));
-        }
-    }
 }
 
 #[test]
@@ -138,8 +127,6 @@ fn the_bands_tables_are_the_rooms_and_the_passages_own() {
     }
     for depth in 1..=passage::DEPTHS {
         assert_eq!(band::passage_levels(band::PASSAGE_BAND, depth), passage::levels(band::PASSAGE_BAND, depth));
-        assert!((gear::lamps::pay_times(depth) - passage::cache_pay(depth)).abs() < 1e-12, "depth {depth}");
-        assert!((gear::lamps::find_times(depth) - passage::cache_finds(depth)).abs() < 1e-12, "depth {depth}");
     }
     assert_eq!(band::DEPTHS, passage::DEPTHS);
     assert_eq!(
