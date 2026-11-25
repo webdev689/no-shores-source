@@ -74,13 +74,14 @@ def standing_stone(width, thick, height, seed, sink=0.3, lean=(0.0, 0.0), sectio
         ring = []
         for number in range(points):
             turn = TAU * number / points
-            c, s = math.cos(turn), math.sin(turn)
+            cosine, sine = math.cos(turn), math.sin(turn)
             # A rounded rectangle: square-ish in its middle, its corners worn.
-            reach = 1.0 / max(abs(c) ** 4 + abs(s) ** 4, 1e-9) ** 0.25
+            reach = 1.0 / max(abs(cosine) ** 4 + abs(sine) ** 4, 1e-9) ** 0.25
             jitter = bulges[number] * draw.uniform(0.97, 1.03)
-            x = width / 2 * c * reach * swell * jitter * (1 - 0.35 * top)
-            y = thick / 2 * s * reach * swell * jitter * (1 - 0.2 * top)
-            ring.append((x + lean[0] * share, y + lean[1] * share, z - (0.12 * top * top * abs(c) if top else 0.0)))
+            x = width / 2 * cosine * reach * swell * jitter * (1 - 0.35 * top)
+            y = thick / 2 * sine * reach * swell * jitter * (1 - 0.2 * top)
+            crown = 0.12 * top * top * abs(cosine) if top else 0.0
+            ring.append((x + lean[0] * share, y + lean[1] * share, z - crown))
         rings.append(ring)
     middles = [shapes._centre(ring) for ring in rings]
     faces = shapes.sweep(rings, closed=True, outward=lambda corners, i: sub(shapes._centre(corners), middles[i]))
@@ -107,7 +108,7 @@ def flags(inner, outer, count, seed, top=0.03, sink=0.03):
 
 
 def _clockwise(outline):
-    area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(outline, outline[1:] + outline[:1]))
+    area = sum(first[0] * second[1] - second[0] * first[1] for first, second in zip(outline, outline[1:] + outline[:1]))
     return area < 0
 
 

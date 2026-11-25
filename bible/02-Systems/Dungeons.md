@@ -98,11 +98,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   style by its key (`style_of`): `Room::dungeon_run` stands its room as a run of its own (`RunOf::Sea`), the room
   module answers its layout to an ask by seed and style, and the page reads it with `askLayout`. A patrol's dungeon is
   the same laid by `of_patrol`'s.
-- **The styles**, each with its two dungeon picture sets ([[Procedural Textures]]). `STYLES` holds the six a patrol
-  or the sea draws; the passages' chalk and barrow stand apart in `PASSAGE_STYLES`, so no draw moves, and
-  `style_of` finds all eight. The first four are the Forge's crypt, hall, cells and temple; the Caverns and the
-  Mines are its cave and mine. Each style also names the style below it, which its last block may break into, and
-  its entrances, the forged mounds or cave mouths with a door:
+- **The styles**, each with its two dungeon picture sets ([[Procedural Textures]]). The first four are the Forge's
+  crypt, hall, cells and temple; the Caverns and the Mines are its cave and mine. Each style also names the style
+  below it, which its last block may break into, and its entrances, the forged mounds or cave mouths with a door:
 
 | Style (key) | Rooms a block | Its rooms' forms (sides in cells) | Ceilings (m) | Roof | Pictures | Below | Entrances |
 |---|---|---|---|---|---|---|---|
@@ -112,8 +110,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 | Sanctum (`sanctum`) | 2 to 4 | rectangles 3 to 6; Ls, octagons 4 to 6; crosses 6 by 4 to 6 | 4.4 to 5.6 | arched | 124, 122 | Crypt | 43601, 43602 |
 | Caverns (`caverns`) | 2 to 4 | caves 3 to 6, and a few rectangles 3 to 6 | 4.4 to 5.6 | rough | 120, 119 | Crypt | 43603, 43604 |
 | Mines (`mines`) | 2 to 4 | galleries 5 to 8 by 2; stopes (caves) 3 to 5; a few rectangles 2 to 5 | 3.2 to 4.4 | flat | 119, 120 | Caverns | 43603, 43604 |
-| Chalk (`chalk`), the passages' only | 3 to 5 | galleries 4 to 7 by 2; rectangles 3 to 5 by 3 to 4; Ls 4 to 6 | 3.2 to 4.0 | flat | 123, 120 | Barrow | 43603, 43604 |
-| Barrow (`barrow`), the passages' only | 3 to 5 | rectangles 2 to 4; alcoves 3 to 5 by 3 to 4; octagons 4 to 5 | 3.6 to 4.8 | arched | 124, 122 | Caverns | 43601, 43602 |
+| Chalk (`chalk`, in `PASSAGE_STYLES`: no patrol's or the sea's draw) | 3 to 5 | galleries 4 to 7 by 2; rectangles 3 to 5 by 3 to 4; Ls 4 to 6 | 3.2 to 4.0 | flat | 123, 120 | Barrow | 43603, 43604 |
+| Barrow (`barrow`, in `PASSAGE_STYLES`) | 3 to 5 | rectangles 2 to 4; alcoves 3 to 5 by 3 to 4; octagons 4 to 5 | 3.6 to 4.8 | arched | 124, 122 | Caverns | 43601, 43602 |
 
 - **A run, not a maze** ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]). A dungeon has a beginning, the
   way in's block and its first room; a middle, the blocks between; and an end, the last room of the last block, where

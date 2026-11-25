@@ -34,7 +34,7 @@ def marks(kit, spots, normal, seed):
 
 
 def drystone(kit, x0, x1, z0, z1, y0, y1, seed):
-    """Dry-stone walling: thin courses of flat stones laid without mortar, from x0 to x1 and z0 to z1, its face at y1."""
+    """Dry-stone walling: thin courses of flat stones laid without mortar, x0 to x1 and z0 to z1, its face at y1."""
     return kit.stones(x0, x1, z0, z1, y0, y1, block=(0.34, 0.66), course=(0.11, 0.18), joint=0.014, bevel=0.0,
                       proud=0.03, wear=0.006, alt=0.35, seed=seed)
 

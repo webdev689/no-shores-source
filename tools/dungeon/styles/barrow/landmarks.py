@@ -10,12 +10,12 @@ import random
 from styles.barrow.forms import drystone, marks, quartz, slab, upright
 from styles.crypt import ground
 
-W = 6.4
+SIDE = 6.4
 
 
 def _floor(kit, depth, part='floor'):
     """A level floor over the whole footprint at z 0."""
-    return ground.ground(kit, ground.steps(0.0, W, 16), ground.steps(0.0, depth, round(depth / 0.4)),
+    return ground.ground(kit, ground.steps(0.0, SIDE, 16), ground.steps(0.0, depth, round(depth / 0.4)),
                          lambda x, y: 0.0, lambda x, y: part)
 
 
@@ -32,7 +32,7 @@ def capstone_chamber(kit, entry):
     stones showing the dark cist inside; before it an offering slab, cupped, with two candles and white quartz."""
     module = entry['module']
     draw = random.Random(module)
-    made = _floor(kit, W)
+    made = _floor(kit, SIDE)
     stones = [((1.68, 3.25), 0.34, 3.0, 90), ((4.72, 3.25), 0.34, 3.0, 90), ((3.2, 4.62), 0.32, 2.7, 0),
               ((2.08, 1.86), 0.34, 1.05, 0), ((4.32, 1.86), 0.34, 1.05, 0)]
     for number, ((x, y), thick, wide, turn) in enumerate(stones):
@@ -69,7 +69,7 @@ def stone_ring(kit, entry):
     brazier burns."""
     module = entry['module']
     draw = random.Random(module)
-    made = _floor(kit, W)
+    made = _floor(kit, SIDE)
     for number in range(9):
         angle = math.radians(40 * number + 20)
         x, y = 3.2 + 2.5 * math.sin(angle), 3.2 - 2.5 * math.cos(angle)
@@ -94,7 +94,7 @@ def sealed_forecourt(kit, entry):
     module = entry['module']
     draw = random.Random(module)
     made = _floor(kit, 3.2)
-    made.append(drystone(kit, 0.0, W, 0.0, 3.3, 0.0, 0.5, f'{module} wall'))
+    made.append(drystone(kit, 0.0, SIDE, 0.0, 3.3, 0.0, 0.5, f'{module} wall'))
     for number, x in enumerate((0.45, 1.25, 2.05, 4.35, 5.15, 5.95)):
         made.append(upright(kit, 0.62, 0.3, draw.uniform(2.5, 3.3), f'{module} façade {number}', at=(x, 0.52, 0.0),
                             sections=6, points=10, part='stoneAlt' if number % 2 else 'stone'))

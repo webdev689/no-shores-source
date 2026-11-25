@@ -238,7 +238,8 @@ def tally_post(broken, seed='passage.tally-post'):
         wood += shapes.box(-0.29, -0.028, 1.45, 0.29, 0.028, 1.52)
         for number, x in enumerate((-0.25, -0.13, 0.13, 0.25)):
             found = gather(found, _stick(x, 1.38, draw.uniform(0.26, 0.34), f'{seed} stick {number}'))
-        found = gather(found, {'slate': move(slate, at=(0.0, 0.0, 0.95)), 'carve': move(scratches, at=(0.0, 0.0, 0.95))})
+        hung = (0.0, 0.0, 0.95)
+        found = gather(found, {'slate': move(slate, at=hung), 'carve': move(scratches, at=hung)})
         found['iron'] += shapes.cone((0.0, -0.1, 1.2), (0.0, -0.075, 1.2), 0.008, 0.0, sides=4)
         return found
     splinters = []

@@ -21,13 +21,13 @@ def _rough_shaft(kit, half_x, half_y, seed, part='stone', points=10):
         ring = []
         for number in range(points):
             turn = math.tau * number / points
-            c, s = math.cos(turn), math.sin(turn)
-            square = 1.0 / max(abs(c) ** 4 + abs(s) ** 4, 1e-9) ** 0.25
+            cosine, sine = math.cos(turn), math.sin(turn)
+            square = 1.0 / max(abs(cosine) ** 4 + abs(sine) ** 4, 1e-9) ** 0.25
             wander = swell * reach[(number + round(z * 3)) % points]
-            ring.append((half_x * c * square * wander, half_y * s * square * wander, z))
+            ring.append((half_x * cosine * square * wander, half_y * sine * square * wander, z))
         rings.append(ring)
-    faces = sweep(rings, closed=True, outward=lambda corners, i: (sum(p[0] for p in corners), sum(p[1] for p in corners),
-                                                                   0.0))
+    faces = sweep(rings, closed=True, outward=lambda corners, i: (sum(point[0] for point in corners),
+                                                                   sum(point[1] for point in corners), 0.0))
     return kit.mesh(faces, part, 'shaft', 40.0, False)
 
 

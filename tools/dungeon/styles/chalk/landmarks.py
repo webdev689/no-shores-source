@@ -9,7 +9,7 @@ import random
 from styles.chalk import forms
 from styles.crypt import ground
 
-W = 6.4
+SIDE = 6.4
 
 
 def _cockle(kit, x, y, z, size, draw, part='bone'):
@@ -33,7 +33,7 @@ def shell_bed(kit, entry):
     """A bank of shells heaped against the wall to near the roof, spilling down to the floor where a pool still
     lies: cockles, whelks and scallops by the hundred, flints sticking out of it."""
     draw = random.Random(entry['module'])
-    lumps = ground.bumps(draw, 22, (0.0, 0.0, W, 1.9), (0.04, 0.16), (0.25, 0.6))
+    lumps = ground.bumps(draw, 22, (0.0, 0.0, SIDE, 1.9), (0.04, 0.16), (0.25, 0.6))
 
     def spill(x):
         return min(1.0, max(0.0, (x - 0.62) / 0.5), max(0.0, (5.78 - x) / 0.5))
@@ -47,7 +47,7 @@ def shell_bed(kit, entry):
         dip = ((x - 3.2) / 0.55) ** 2 + ((y - 2.5) / 0.12) ** 2
         return -0.03 * max(0.0, 1 - dip) ** 0.5 if dip < 1 else 0.0
 
-    xs = ground.steps(0.0, W, 32, (0.6, 5.8))
+    xs = ground.steps(0.0, SIDE, 32, (0.6, 5.8))
     # The pool's basin dips only at grid points well inside its water, so its edge lies on the level floor.
     ys = ground.steps(0.0, 3.2, 16, (1.2, 2.0, 2.3, 2.5, 2.7))
     made = ground.ground(kit, xs, ys, height, lambda x, y: 'bone' if y < 1.75 else 'floor')
@@ -56,7 +56,7 @@ def shell_bed(kit, entry):
     made.append(kit.polygon(pool, part='water'))
     for number in range(150):
         y = draw.uniform(0.15, 1.9)
-        low, high = (0.15, W - 0.15) if y < 1.15 else (0.75, 5.65)
+        low, high = (0.15, SIDE - 0.15) if y < 1.15 else (0.75, 5.65)
         x = draw.uniform(low, high)
         size = draw.uniform(0.05, 0.12)
         z = height(x, y)
@@ -68,7 +68,7 @@ def shell_bed(kit, entry):
         else:
             made.append(_cockle(kit, x, y, z, size, draw))
     for number in range(9):
-        x, y = draw.uniform(0.4, W - 0.4), draw.uniform(0.2, 1.0)
+        x, y = draw.uniform(0.4, SIDE - 0.4), draw.uniform(0.2, 1.0)
         made.append(kit.rock(x, y, height(x, y) - 0.05, (0.14, 0.1, 0.12), seed=f'{entry["module"]} flint {number}',
                              detail=1, roughness=0.38, part='stoneAlt'))
     return kit.join(made, entry['module'])
@@ -96,9 +96,9 @@ def chalk_figure(kit, entry):
     """A face of knapped flint, dark, with a figure cut into it and filled white with chalk: a walker holding a staff
     in each hand. A step of chalk before it holds two candles and the shells laid there."""
     draw = random.Random(entry['module'])
-    made = ground.ground(kit, ground.steps(0.0, W, 16), ground.steps(0.0, 3.2, 8), lambda x, y: 0.0,
+    made = ground.ground(kit, ground.steps(0.0, SIDE, 16), ground.steps(0.0, 3.2, 8), lambda x, y: 0.0,
                          lambda x, y: 'floor')
-    made.append(kit.box(0.04, 0.0, 0.0, W - 0.04, 0.38, 3.05, part='stoneAlt'))
+    made.append(kit.box(0.04, 0.0, 0.0, SIDE - 0.04, 0.38, 3.05, part='stoneAlt'))
     for column in range(25):
         for row in range(12):
             x, z = 0.08 + column * 0.25, 0.02 + row * 0.25
@@ -126,14 +126,14 @@ def fallen_shaft(kit, entry):
     edge_in = 0.7
 
     def height(x, y):
-        edge = min(x - edge_in, W - edge_in - x, y - edge_in, W - edge_in - y)
+        edge = min(x - edge_in, SIDE - edge_in - x, y - edge_in, SIDE - edge_in - y)
         if edge <= 0:
             share = max(0.0, edge / edge_in + 1)
             return 0.02 * share * share * (3 - 2 * share)
         fall = min(1.0, edge / 0.6) ** 1.3
         return 0.02 + fall * (0.82 * math.exp(-((x - 3.2) ** 2 + (y - 3.2) ** 2) / 2.6) + ground.lumps(heaped, x, y))
 
-    lines = [0.0, 0.3] + ground.steps(edge_in, W - edge_in, 25) + [W - 0.3, W]
+    lines = [0.0, 0.3] + ground.steps(edge_in, SIDE - edge_in, 25) + [SIDE - 0.3, SIDE]
     made = ground.ground(kit, lines, lines, height, lambda x, y: 'stone' if height(x, y) > 0.1 else 'floor')
     for number, (x, y, lean, turn) in enumerate(((2.6, 2.7, 18, 30), (3.8, 2.6, 24, 140), (3.6, 3.85, 12, 250),
                                                  (2.7, 3.7, 28, 320))):
