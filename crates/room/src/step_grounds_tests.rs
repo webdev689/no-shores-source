@@ -6,6 +6,7 @@
 
 use super::*;
 use crate::asks::Asked;
+use crate::garrison::garrison_tests::{baked_ground, run_baked};
 use crate::quests::quest_grounds_tests::{first_landmass, opened};
 use crate::quests::quests_tests::{every_goal, on_goal};
 use gear::quests::{GoalKind, Place};
@@ -274,11 +275,10 @@ fn every_puzzles_points_stand_on_ground_the_player_reaches_from_its_place_and_ar
         let node = node_of(goal);
         let place = place_of(node, &puzzle.place);
         let (mut room, player) = on_step(node, key, place.at);
-        run_once(&mut room);
-        run_once(&mut room);
+        run_baked(&mut room, 2);
         let points = room.step_seen(player).points;
         let reach = puzzle.points.iter().map(|point| point.at + POINT_NUDGE).fold(0.0, f64::max);
-        let ground = room.ground_of(&place, reach).expect("its place's mesh");
+        let ground = baked_ground(&mut room, &place, reach);
         let mesh = room.mesh_by(ground);
         let middle = crate::quests::held_near(mesh, &room.floor, place.at, place.radius).expect("its place's ground");
         for (at, point) in points.chunks(3).enumerate() {
@@ -317,8 +317,7 @@ fn every_defences_waves_stand_in_full_and_come_at_its_ward() {
         let node = node_of(goal);
         let place = place_of(node, &defend.place);
         let (mut room, player) = on_step(node, key, place.at);
-        run_once(&mut room);
-        run_once(&mut room);
+        run_baked(&mut room, 2);
         for (wave, members) in defend.waves.iter().enumerate() {
             let Some(Step { kind: Stepping::Defence(defence), .. }) = room.quests.steps.get(&player) else {
                 panic!("{}: its defence runs", goal.text)
@@ -362,9 +361,7 @@ fn every_defences_waves_stand_in_full_and_come_at_its_ward() {
 /// middle; `Err` seen, this far; none where no body stands on the way.
 fn walked_in(node: &bake::NodeFile, key: [usize; 3], place: &Place, way: &[[f64; 2]]) -> Option<Result<f64, f64>> {
     let (mut room, player) = on_step_where(node, key, way[0])?;
-    for _ in 0..3 {
-        run_once(&mut room);
-    }
+    run_baked(&mut room, 3);
     let (step, mut along) = (movement::TUNING.walk * movement::TICK_SECONDS, 0.0);
     while along <= way_length(way) + step {
         let at = along_way(way, along).0;
@@ -398,9 +395,7 @@ fn every_unseen_steps_watch_faces_out_round_its_middle_so_a_walk_round_their_sig
         let node = node_of(goal);
         let place = place_of(node, &unseen.place);
         let (mut room, _) = on_step(node, key, node.spawns.first().copied().expect("a spawn"));
-        for _ in 0..3 {
-            run_once(&mut room);
-        }
+        run_baked(&mut room, 3);
         let watching = room.quests.steps.values().flat_map(|step| match &step.kind {
             Stepping::Unseen(Watched { watchers: Some(ids), .. }) => {
                 ids.iter().filter_map(|id| room.foes.get(id)).collect()

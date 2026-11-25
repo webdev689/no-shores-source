@@ -6,7 +6,6 @@ use crate::grid::Grid;
 use crate::pads::Pads;
 use crate::sculpts::Sculpts;
 use serde::Deserialize;
-use std::collections::BTreeMap;
 
 /// A ground as it is saved: everything but the course index.
 #[derive(Debug, Deserialize)]
@@ -50,7 +49,7 @@ impl TryFrom<SavedGround> for Ground {
             pads,
             sculpts,
             seed,
-            index: BTreeMap::new(),
+            index: Default::default(),
         };
         ground.index_courses();
         Ok(ground)
@@ -99,7 +98,7 @@ impl Ground {
             pads: self.pads.within(west, north, east, south),
             sculpts: self.sculpts.within(west, north, east, south),
             seed: self.seed,
-            index: BTreeMap::new(),
+            index: Default::default(),
         };
         window.index_courses();
         window

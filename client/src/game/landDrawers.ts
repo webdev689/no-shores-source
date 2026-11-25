@@ -84,6 +84,7 @@ function layoutDrawer(
     view,
     planted: (tileX, tileY) => planted(tileX, tileY),
     drawer: {
+      coversGround: view.coversGround,
       prepare: (shot) => {
         follow([shot.eye[0], shot.eye[1]], tables !== null);
         view.prepare();

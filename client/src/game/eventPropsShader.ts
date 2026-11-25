@@ -314,7 +314,11 @@ fn shade(in: Out) -> vec4f {
   // Only a face lying flat ripples: a fountain's jet is no pool.
   if in.material == WATER && facing.z > 0.7 { facing = normalize(facing + vec3f(water_ripple(in.local), 0.0)); }
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
-  let sun = select(1.0, sunlit(in.from_eye, facing), direct > 0.0) * sky_dapple(in.from_eye);
+  // A face turned from the sun takes no shadow: its map is not read.
+  var sun = sky_dapple(in.from_eye);
+  if (direct > 0.0) {
+    sun *= sunlit(in.from_eye, facing);
+  }
   if in.material == CRYSTAL {
     return vec4f(crystal_colour(facing, in.from_eye, in.glow, sun), 1.0);
   }

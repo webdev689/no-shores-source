@@ -135,10 +135,12 @@ fn a_player_walked_into_each_cavern_and_along_each_run_of_saltmere_meets_the_gro
             room.tick();
             assert!(stood_at(&room, &known, site).is_empty(), "{}: none stands before a player is near", node.id);
             assert!(room.put_player(player, site[0], site[1] + 100.0));
-            room.tick();
-            room.tick();
-            let group = stood_at(&room, &known, site);
-            assert!(group.len() >= 2, "{}: the cavern's group stands at {site:?}", node.id);
+            // Its place's mesh is baked a slice a tick, so the group stands within a second or two.
+            let group = (0..120).find_map(|_| {
+                room.tick();
+                Some(stood_at(&room, &known, site)).filter(|group| group.len() >= 2)
+            });
+            let group = group.unwrap_or_else(|| panic!("{}: the cavern's group stands at {site:?}", node.id));
             assert!(room.put_player(player, site[0], site[1]));
             assert!(meets(&mut room, player, &group), "{}: the cavern's group at {site:?} meets the player", node.id);
             caverns_met += 1;

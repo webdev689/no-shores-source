@@ -25,13 +25,14 @@ const SIDES = [
  * left unscaled counts a radius as little as half of itself and hides a sphere still on screen.
  */
 export function viewPlanes(matrix: ArrayLike<number>, out: Planes = new Float64Array(SIDES.length * 4)): Planes {
-  const term = (row: number, column: number): number => matrix[column * 4 + row] ?? 0;
-  SIDES.forEach(([withW, row, sign], plane) => {
+  for (let plane = 0; plane < SIDES.length; plane++) {
+    const [withW, row, sign] = SIDES[plane]!;
     for (let column = 0; column < 4; column++)
-      out[plane * 4 + column] = withW * term(3, column) + sign * term(row, column);
-    const length = Math.hypot(out[plane * 4] ?? 0, out[plane * 4 + 1] ?? 0, out[plane * 4 + 2] ?? 0) || 1;
-    for (let column = 0; column < 4; column++) out[plane * 4 + column] = (out[plane * 4 + column] ?? 0) / length;
-  });
+      out[plane * 4 + column] = withW * (matrix[column * 4 + 3] ?? 0) + sign * (matrix[column * 4 + row] ?? 0);
+    const [alongX, alongY, alongZ] = [out[plane * 4]!, out[plane * 4 + 1]!, out[plane * 4 + 2]!];
+    const length = Math.sqrt(alongX * alongX + alongY * alongY + alongZ * alongZ) || 1;
+    for (let column = 0; column < 4; column++) out[plane * 4 + column] = out[plane * 4 + column]! / length;
+  }
   return out;
 }
 
@@ -40,7 +41,9 @@ export function viewPlanes(matrix: ArrayLike<number>, out: Planes = new Float64A
  *  the whole box. A box that straddles or surrounds the view is seen. */
 export function boxSeen(planes: Planes, low: ArrayLike<number>, high: ArrayLike<number>): boolean {
   for (let plane = 0; plane < planes.length; plane += 4) {
-    const [alongX, alongY, alongZ] = [planes[plane] ?? 0, planes[plane + 1] ?? 0, planes[plane + 2] ?? 0];
+    const alongX = planes[plane] ?? 0;
+    const alongY = planes[plane + 1] ?? 0;
+    const alongZ = planes[plane + 2] ?? 0;
     const x = alongX >= 0 ? (high[0] ?? 0) : (low[0] ?? 0);
     const y = alongY >= 0 ? (high[1] ?? 0) : (low[1] ?? 0);
     const z = alongZ >= 0 ? (high[2] ?? 0) : (low[2] ?? 0);
@@ -64,13 +67,16 @@ export function sphereSeen(planes: Planes, x: number, y: number, z: number, radi
  *  thin wedge turned across the axes. */
 export function pointsSeen(planes: Planes, points: ArrayLike<number>, pad = 0): boolean {
   for (let plane = 0; plane < planes.length; plane += 4) {
-    const distance = (point: number): number =>
-      (planes[plane] ?? 0) * (points[point] ?? 0) +
-      (planes[plane + 1] ?? 0) * (points[point + 1] ?? 0) +
-      (planes[plane + 2] ?? 0) * (points[point + 2] ?? 0) +
-      (planes[plane + 3] ?? 0);
+    const alongX = planes[plane] ?? 0;
+    const alongY = planes[plane + 1] ?? 0;
+    const alongZ = planes[plane + 2] ?? 0;
+    const offset = planes[plane + 3] ?? 0;
     let inside = false;
-    for (let point = 0; point + 2 < points.length && !inside; point += 3) inside = !(distance(point) < -pad);
+    for (let point = 0; point + 2 < points.length && !inside; point += 3) {
+      const distance =
+        alongX * (points[point] ?? 0) + alongY * (points[point + 1] ?? 0) + alongZ * (points[point + 2] ?? 0) + offset;
+      inside = !(distance < -pad);
+    }
     if (!inside) return false;
   }
   return true;

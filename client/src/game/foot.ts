@@ -18,7 +18,7 @@ import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
 import type { Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
-import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
+import { cameraFollowed, playerCamera, shownBody, withBlocks } from '../player/player.ts';
 import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
 import { type OtherPlayers, ridersOf } from '../player/others.ts';
@@ -350,7 +350,7 @@ export class Foot {
     const { feel } = this;
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
-    const blocks = [...this.boxes, ...(this.outpost?.walls ?? []), ...(this.context.cameraBlocks ?? [])];
+    const blocks = withBlocks(this.boxes, this.outpost?.walls, this.context.cameraBlocks);
     // Fallen in a Breach, the camera follows a living member of the company (`followCamera.ts`), once the player's own
     // fall has played.
     const breach = { run: this.run !== null, seen: this.held.breach, player: fight.player };
