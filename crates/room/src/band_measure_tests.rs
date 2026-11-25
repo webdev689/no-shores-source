@@ -56,11 +56,11 @@ impl Walker {
         let apart = libm::hypot(there[0] - me.body.x, there[1] - me.body.y);
         let from = [me.body.x, me.body.y, me.body.z];
         if room.zone().is_some() {
-            if self.ticks % ON_FOOT_TICKS == 0 {
+            if self.ticks.is_multiple_of(ON_FOOT_TICKS) {
                 let way = crate::passages::passage_reach_tests::on_foot(room, [from[0], from[1]], [there[0], there[1]]);
                 self.way = way.unwrap_or_default();
             }
-        } else if self.ticks % REPATH_TICKS == 0 {
+        } else if self.ticks.is_multiple_of(REPATH_TICKS) {
             self.way = room.mesh_at(there).find_path(from, there).unwrap_or_default();
         }
         while self.way.first().is_some_and(|point| libm::hypot(point[0] - me.body.x, point[1] - me.body.y) < 1.0) {
@@ -68,7 +68,7 @@ impl Walker {
         }
         let toward = self.way.first().copied().filter(|_| apart > 3.0).unwrap_or(there);
         room.set_fighter(self.player, combat::fighter::Fighter { health: me.health_max, ..me });
-        let attack = (swing && self.ticks % 30 == 0 && apart < stop + 1.0).then_some(Stroke::Down);
+        let attack = (swing && self.ticks.is_multiple_of(30) && apart < stop + 1.0).then_some(Stroke::Down);
         let yaw = combat::sight::bearing([me.body.x, me.body.y], [toward[0], toward[1]]);
         // A body turns only as it moves (`movement::step`): within reach a swing leans in a little, to face its foe.
         let forward = if apart > stop {

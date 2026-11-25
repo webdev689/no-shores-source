@@ -142,9 +142,10 @@ impl Plan {
     }
 
     /// How many of the onward mouths, the lamp, the posts and the spots a body cannot walk to within use of from the
-    /// arrival, round every piece's solids (`walk.rs`).
+    /// arrival, round every piece's solids (`walk.rs`), and one more for a zone with no post for its foes.
     fn unwalked(&self) -> usize {
         let sites = &self.sites;
+        let postless = usize::from(sites.posts.is_empty());
         let (far, blow) = (crate::walk::USE_M, crate::walk::BLOW_M);
         let wanted: Vec<([f64; 2], f64)> = sites
             .onward
@@ -155,21 +156,22 @@ impl Plan {
             .chain(sites.posts.iter().map(|&at| (at, blow)))
             .collect();
         let solids = self.piece_solids();
-        match &self.ground {
-            Ground::Under(dungeon) => crate::walk::under(dungeon, &solids, sites.arrive, &wanted),
-            Ground::Open(hollow) => {
-                let pieces = solids.iter().map(|&[min_x, min_y, max_x, max_y, top]| movement::Block {
-                    min_x,
-                    min_y,
-                    max_x,
-                    max_y,
-                    top,
-                    bottom: self.floor_at([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0]) - 0.5,
-                });
-                let blocks: Vec<movement::Block> = hollow.blocks.iter().copied().chain(pieces).collect();
-                crate::walk::open(&hollow.ground, &blocks, &hollow.ring, (sites.arrive, &wanted))
+        postless
+            + match &self.ground {
+                Ground::Under(dungeon) => crate::walk::under(dungeon, &solids, sites.arrive, &wanted),
+                Ground::Open(hollow) => {
+                    let pieces = solids.iter().map(|&[min_x, min_y, max_x, max_y, top]| movement::Block {
+                        min_x,
+                        min_y,
+                        max_x,
+                        max_y,
+                        top,
+                        bottom: self.floor_at([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0]) - 0.5,
+                    });
+                    let blocks: Vec<movement::Block> = hollow.blocks.iter().copied().chain(pieces).collect();
+                    crate::walk::open(&hollow.ground, &blocks, &hollow.ring, (sites.arrive, &wanted))
+                }
             }
-        }
     }
 
     /// The height of the floor at a point.
