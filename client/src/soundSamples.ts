@@ -306,10 +306,19 @@ export function playSample(
 /** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
 export const rushOfCue = (id: string): number => samples.rushOf(id);
 
-/** Every Freesound recording's credit, by name; DFO's own sounds owe none. */
+/** A Freesound recording's credit beside its file, as a cue of several picks (its variations) keeps one for each. */
+type Credit = Omit<SoundCredit, 'changes'> & { readonly freesound: number };
+
+/** Every Freesound recording's credit, by name, each of a cue's variations its own; DFO's own sounds owe none. */
 export function soundCredits(): SoundCredit[] {
   return Object.values(bank.sounds)
-    .flatMap((sound) => ('freesound' in sound ? [sound] : []))
+    .flatMap((sound) =>
+      'freesound' in sound
+        ? [sound]
+        : 'credits' in sound
+          ? (sound.credits as readonly Credit[]).map((each) => ({ ...each, changes: sound.changes }))
+          : [],
+    )
     .map(({ name, author, licence, licenceUrl, page, changes }) => ({
       name,
       author,

@@ -309,3 +309,35 @@ test("a foe's faction voices its swing and its hurt, and a blow that kills it is
   sounds.frame(frameOf({ foe: foeAt(5, { faction: 3 }), events: [hit(), hit({ kind: EVENT.killed })] }));
   assert.deepEqual(heard(), ['foe.lattice.death'], 'no hurt beside it');
 });
+
+test('one foe cries out at most once in two seconds, however often it is struck', () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const voices = () => played.map(({ id }) => id).filter((id) => id.startsWith('foe.'));
+  sounds.frame(frameOf());
+  for (let frame = 0; frame < 60; frame++) sounds.frame(frameOf({ events: [hit()] }));
+  assert.deepEqual(voices(), ['foe.tithe.hurt'], 'struck every frame for a second: one cry');
+  for (let frame = 0; frame < 70; frame++) sounds.frame(frameOf());
+  sounds.frame(frameOf({ events: [hit()] }));
+  assert.deepEqual(voices(), ['foe.tithe.hurt', 'foe.tithe.hurt'], 'and another past two seconds');
+});
+
+test('at most two foe voices begin at once, the dying first', () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const fight = frameOf();
+  const ids = [FOE, FOE + 1, FOE + 2, FOE + 3];
+  for (const id of ids) fight.fight.foes.set(id, foeAt(5, { id }));
+  sounds.frame(fight);
+  const struck = ids.map((defender) => hit({ defender }));
+  sounds.frame({ ...fight, events: [...struck, hit({ kind: EVENT.killed, defender: FOE + 3 })] });
+  assert.deepEqual(
+    played
+      .map(({ id }) => id)
+      .filter((id) => id.startsWith('foe.'))
+      .sort(),
+    ['foe.tithe.death', 'foe.tithe.hurt'],
+    'the death, though last of five, and one hurt',
+  );
+  assert.equal(played.filter(({ id }) => id === 'hit.blade').length, 4, 'every blow still heard');
+});

@@ -526,28 +526,40 @@
     {
       "id": "horse.walk.ground",
       "use": "A horse walking on earth or grass, one stride cut from a run of them",
-      "query": "horse walking",
+      "query": "horse hooves walking",
       "seconds": [
         1.0,
         30.0
+      ],
+      "skip": [
+        264469,
+        465911,
+        581833,
+        813383
       ]
     },
     {
       "id": "horse.walk.stone",
       "use": "A horse walking on stone, one stride cut from a run of them",
-      "query": "horse walking cobblestone",
+      "query": "horse hooves stone",
       "seconds": [
         1.0,
         30.0
+      ],
+      "skip": [
+        479797
       ]
     },
     {
       "id": "horse.walk.water",
       "use": "A horse walking through water, one stride cut from a run of them",
-      "query": "horse walking water",
+      "query": "horse wading",
       "seconds": [
         1.0,
         30.0
+      ],
+      "skip": [
+        479696
       ]
     },
     {
@@ -557,24 +569,43 @@
       "seconds": [
         1.0,
         30.0
-      ]
+      ],
+      "picked": 197212,
+      "skip": [
+        403025,
+        403026,
+        574316
+      ],
+      "cut": [
+        0.715,
+        0.5
+      ],
+      "mono": true
     },
     {
       "id": "horse.gallop.stone",
       "use": "A horse galloping on stone, one stride cut from a run of them",
-      "query": "horse galloping cobblestone",
+      "query": "horse gallop street",
       "seconds": [
         1.0,
         30.0
+      ],
+      "skip": [
+        479769
       ]
     },
     {
       "id": "horse.gallop.water",
       "use": "A horse galloping through water, one stride cut from a run of them",
-      "query": "horse splashing water",
+      "query": "horse galloping river",
       "seconds": [
         1.0,
         30.0
+      ],
+      "skip": [
+        25819,
+        479696,
+        479729
       ]
     },
     {
@@ -584,24 +615,43 @@
       "seconds": [
         1.0,
         30.0
-      ]
+      ],
+      "picked": 490751,
+      "skip": [
+        165532,
+        466208,
+        792860
+      ],
+      "cut": [
+        1.145,
+        0.5
+      ],
+      "mono": true
     },
     {
       "id": "horse.boost.stone",
       "use": "A horse boosted to its fastest gallop on stone, one stride cut from a run of them",
-      "query": "horse running cobblestone",
+      "query": "horse running road",
       "seconds": [
         1.0,
         30.0
+      ],
+      "skip": [
+        479727
       ]
     },
     {
       "id": "horse.boost.water",
       "use": "A horse boosted to its fastest gallop through water, one stride cut from a run of them",
-      "query": "horse running water",
+      "query": "horse running river",
       "seconds": [
         1.0,
         30.0
+      ],
+      "skip": [
+        209419,
+        479692,
+        479729
       ]
     },
     {
@@ -611,6 +661,11 @@
       "seconds": [
         0.3,
         4.0
+      ],
+      "picked": 642555,
+      "skip": [
+        322449,
+        445699
       ]
     },
     {
@@ -620,6 +675,12 @@
       "seconds": [
         0.5,
         3.0
+      ],
+      "picked": 439670,
+      "skip": [
+        321957,
+        322445,
+        419231
       ]
     },
     {
@@ -629,7 +690,8 @@
       "seconds": [
         0.3,
         4.0
-      ]
+      ],
+      "picked": 321981
     },
     {
       "id": "horse.snort",
@@ -638,6 +700,12 @@
       "seconds": [
         0.3,
         2.0
+      ],
+      "picked": 116267,
+      "skip": [
+        475480,
+        529463,
+        868302
       ]
     },
     {
@@ -647,6 +715,12 @@
       "seconds": [
         0.5,
         4.0
+      ],
+      "picked": 322450,
+      "skip": [
+        321957,
+        448090,
+        751206
       ]
     },
     {
@@ -1130,10 +1204,16 @@
     {
       "id": "foe.tithe.alert",
       "use": "A Grey Tithe raider spots the player: a rough shout, no word clear",
-      "query": "man shout angry",
+      "query": "battle cry",
       "seconds": [
         0.3,
         3.0
+      ],
+      "skip": [
+        203594,
+        221670,
+        368824,
+        623441
       ]
     },
     {
@@ -1143,6 +1223,12 @@
       "seconds": [
         0.1,
         1.5
+      ],
+      "picked": [
+        695379,
+        695378,
+        695383,
+        695382
       ]
     },
     {
@@ -1152,6 +1238,14 @@
       "seconds": [
         0.1,
         1.5
+      ],
+      "picked": [
+        547209,
+        464486,
+        129346
+      ],
+      "skip": [
+        464487
       ]
     },
     {
@@ -1161,6 +1255,12 @@
       "seconds": [
         0.3,
         3.0
+      ],
+      "picked": 547209,
+      "skip": [
+        243382,
+        396801,
+        648983
       ]
     },
     {
@@ -1170,33 +1270,57 @@
       "seconds": [
         0.3,
         3.0
+      ],
+      "picked": 499608,
+      "skip": [
+        104346,
+        208740,
+        499607
       ]
     },
     {
       "id": "foe.lattice.attack",
-      "use": "One of the Lattice's blows swings: its crystal cracking",
-      "query": "glass crack",
+      "use": "One of the Lattice's blows swings: an inhuman snarl, no glass",
+      "query": "monster attack growl",
       "seconds": [
         0.1,
         2.0
+      ],
+      "skip": [
+        203381,
+        219840,
+        390729,
+        418194
       ]
     },
     {
       "id": "foe.lattice.hurt",
-      "use": "One of the Lattice struck: glass chipping",
-      "query": "glass hit",
+      "use": "One of the Lattice struck: an inhuman cry of pain, no glass",
+      "query": "monster pain",
       "seconds": [
         0.1,
-        1.5
+        2.0
+      ],
+      "skip": [
+        38009,
+        204118,
+        699266,
+        865789
       ]
     },
     {
       "id": "foe.lattice.death",
-      "use": "One of the Lattice falls: its crystal shattering",
-      "query": "glass shatter",
+      "use": "One of the Lattice falls: an inhuman death cry, no glass",
+      "query": "monster death",
       "seconds": [
         0.3,
         3.0
+      ],
+      "skip": [
+        156579,
+        219940,
+        686849,
+        758207
       ]
     },
     {

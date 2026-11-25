@@ -103,6 +103,12 @@ const FRESH_TICKS = 10;
 /** An Anima's release is heard once a caster in this long (seconds): a Tempest's later orbs are the same cast. */
 const ONE_RELEASE_S = 2;
 const FOE_ALERT = 2;
+/** Foes' voices, so a fight is never a din of them: at most FOE_VOICES begin within VOICE_WINDOW_S seconds, the dying
+ *  first, then an alert, a hurt and a swing (`VOICE_RANK`); and one foe's swing or hurt is heard once in VOICE_GAP_S. */
+const FOE_VOICES = 2;
+const VOICE_WINDOW_S = 0.75;
+const VOICE_GAP_S = 2;
+const VOICE_RANK: Readonly<Record<string, number>> = { death: 0, alert: 1, hurt: 2, attack: 3 };
 /** The rules' tick, seconds. */
 const TICK_S = 1 / 60;
 
@@ -159,6 +165,9 @@ export class WorldSounds {
   private crates: number | null = null;
   private down = false;
   private voices: { readonly source: AudioBufferSourceNode; readonly distance: number }[] = [];
+  /** When each foe voice in the last VOICE_WINDOW_S began, and when each foe last spoke, on `clock`. */
+  private voiceStarts: number[] = [];
+  private readonly spoke = new Map<number, number>();
   /** The seconds into a cue's recording its rush comes, which a swing's whoosh is started that far ahead of its blow
    *  for. */
   private readonly rush: (cue: string) => number;
@@ -218,7 +227,28 @@ export class WorldSounds {
     const down = own?.action.kind === 'dead' || fight.standing.kind === 'dead';
     if (this.down && !down) hear('respawn', walker.feet, fight.player);
     this.down = down;
-    if (output) for (const one of heard) this.sound(output, one.cue, one.at, one.key, frame.eye, one.short ?? false);
+    if (output)
+      for (const one of this.gated(heard)) this.sound(output, one.cue, one.at, one.key, frame.eye, one.short ?? false);
+  }
+
+  /** The sounds of `heard` to play: every one but foes' voices, and of those only what the gate lets through
+   *  (`FOE_VOICES`). */
+  private gated<T extends { readonly cue: string; readonly key: number | null }>(heard: readonly T[]): T[] {
+    this.voiceStarts = this.voiceStarts.filter((began) => this.clock - began < VOICE_WINDOW_S);
+    const moment = (cue: string) => cue.slice(cue.lastIndexOf('.') + 1);
+    const rank = (one: T) => VOICE_RANK[moment(one.cue)] ?? 0;
+    const voices = heard.filter((one) => one.cue.startsWith('foe.')).sort((one, two) => rank(one) - rank(two));
+    const letThrough = new Set<T>();
+    for (const one of voices) {
+      if (this.voiceStarts.length >= FOE_VOICES) break;
+      const last = one.key === null ? undefined : this.spoke.get(one.key);
+      const often = moment(one.cue) === 'attack' || moment(one.cue) === 'hurt';
+      if (often && last !== undefined && this.clock - last < VOICE_GAP_S) continue;
+      this.voiceStarts.push(this.clock);
+      if (one.key !== null) this.spoke.set(one.key, this.clock);
+      letThrough.add(one);
+    }
+    return heard.filter((one) => !one.cue.startsWith('foe.') || letThrough.has(one));
   }
 
   /** Every fighter this frame: the player at their walker's feet, the others and the foes where they are drawn. */
@@ -292,7 +322,11 @@ export class WorldSounds {
       if (alert === FOE_ALERT && kept.alert !== FOE_ALERT)
         hear(voice ? voiceCue(voice, 'alert', recorded) : 'foe.alert', at, id);
     }
-    for (const id of this.kept.keys()) if (!present.has(id)) this.kept.delete(id);
+    for (const id of this.kept.keys())
+      if (!present.has(id)) {
+        this.kept.delete(id);
+        this.spoke.delete(id);
+      }
   }
 
   /** The shots: the player's own as their ticks let them go, everyone else's as a snapshot first carries them (each

@@ -61,21 +61,31 @@ def is_mp3(data):
     return data[:3] == b'ID3' or (len(data) > 1 and data[0] == 0xFF and data[1] >= 0xE0)
 
 
+def picked_of(entry):
+    """A cue's picks, in order: one Freesound number, or a list of them the game plays as variations."""
+    picked = entry.get('picked')
+    return picked if isinstance(picked, list) else [picked] if picked else []
+
+
+def pick_file(cue, entry, sound):
+    """Where a download keeps a pick's preview: by its cue alone, or by its number too where the cue picks several."""
+    return f'picks/{cue}.{sound}.mp3' if isinstance(entry.get('picked'), list) else f'picks/{cue}.mp3'
+
+
 def picks_read(download):
     """Each pick of the download, read and checked against the list: (cue, its pick, its bytes, its cue's entry)."""
     with open(os.path.join(download, 'picks.json')) as file:
         picks = json.load(file)
     with open(WANTED) as file:
         cues = {cue['id']: cue for cue in json.load(file)['cues']}
-    wanted = {cue: each.get('picked') for cue, each in cues.items()}
-    picked = {cue for cue, sound in wanted.items() if sound}
+    wanted = {cue: picked_of(each) for cue, each in cues.items()}
     # Every pick the list names, and no other: an older download would drop one from the game unsaid.
-    if {pick['id'] for pick in picks} != picked:
-        sys.exit(f'the download holds {sorted(pick["id"] for pick in picks)}, the list picks {sorted(picked)}')
+    held = sorted((pick['id'], pick['freesound']) for pick in picks)
+    listed = sorted((cue, sound) for cue, sounds in wanted.items() for sound in sounds)
+    if held != listed:
+        sys.exit(f'the download holds {held}, the list picks {listed}')
     for pick in picks:
         cue = pick['id']
-        if wanted.get(cue) != pick['freesound']:
-            sys.exit(f'{cue}: the download picked {pick["freesound"]}, the list {wanted.get(cue)}')
         licence = pick.get('licence') or {}
         if not (pick.get('name') and pick.get('author') and pick.get('page') and licence.get('url') and pick.get('file')):
             sys.exit(f'{cue}: not read whole, so not published: {pick}')
@@ -83,8 +93,8 @@ def picks_read(download):
         allowed = LICENCES.get(licence.get('name'))
         if not (allowed and allowed.fullmatch(licence['url'])):
             sys.exit(f'{cue}: {licence} is not a licence the owner allows')
-        if pick['file'] != f'picks/{cue}.mp3':
-            sys.exit(f'{cue}: its file is {pick["file"]!r}, not picks/{cue}.mp3')
+        if pick['file'] != pick_file(cue, cues[cue], pick['freesound']):
+            sys.exit(f'{cue}: its file is {pick["file"]!r}, not {pick_file(cue, cues[cue], pick["freesound"])}')
         with open(os.path.join(download, pick['file']), 'rb') as file:
             data = file.read()
         if not is_mp3(data):
@@ -113,11 +123,15 @@ def kept_key(before, cue, pick, entry):
     published = before.get(cue, {})
     cut, said = cut_of(entry), published.get('changes', '')
     same_file = said.startswith(cut) if cut else not said.startswith('Cut to')
-    return published['key'] if published.get('freesound') == pick['freesound'] and same_file else None
+    # A cue of several picks keeps each one's file beside its credit, in the same order.
+    kept = dict(zip((each['freesound'] for each in published.get('credits', [])), published.get('keys', [])))
+    if published.get('freesound'):
+        kept[published['freesound']] = published['key']
+    return kept.get(pick['freesound']) if same_file else None
 
 
-def cut_path(download, cue):
-    return os.path.join(download, 'picks', f'{cue}.cut.mp3')
+def cut_path(download, pick):
+    return os.path.join(download, pick['file'][: -len('.mp3')] + '.cut.mp3')
 
 
 def main():
@@ -132,7 +146,7 @@ def main():
         for cue, pick, data, entry in picks_read(download):
             if entry.get('cut') and not kept_key(before, cue, pick, entry):
                 start, seconds = entry['cut']
-                with open(cut_path(download, cue), 'wb') as file:
+                with open(cut_path(download, pick), 'wb') as file:
                     file.write(cut(data, start, seconds, entry.get('mono', False)))
                 print(f'{cue}: cut', flush=True)
         return
@@ -140,23 +154,30 @@ def main():
     for cue, pick, data, entry in picks_read(download):
         key = kept_key(before, cue, pick, entry)
         if not key and entry.get('cut'):
-            if not os.path.exists(cut_path(download, cue)):
+            if not os.path.exists(cut_path(download, pick)):
                 sys.exit(f'{cue}: not cut yet: run publish.py --cut first, in a step that holds no key')
-            with open(cut_path(download, cue), 'rb') as file:
+            with open(cut_path(download, pick), 'rb') as file:
                 data = file.read()
         licence = pick['licence']
-        sounds[cue] = {
-            'key': key or put(data, 'sounds', 'mp3', 'audio/mpeg'),
+        credit = {
             'freesound': pick['freesound'],
             'name': pick['name'],
             'author': pick['author'],
             'licence': licence['name'],
             'licenceUrl': licence['url'],
             'page': pick['page'],
-            'changes': changes_of(cue, entry),
         }
+        key = key or put(data, 'sounds', 'mp3', 'audio/mpeg')
+        if isinstance(entry.get('picked'), list):
+            # Several picks are one cue's variations: their files, and each one's credit, in the list's order.
+            sound = sounds.setdefault(cue, {'keys': [], 'credits': [], 'changes': changes_of(cue, entry)})
+            sound['keys'].append(key)
+            sound['credits'].append(credit)
+        else:
+            sounds[cue] = {'key': key, **credit, 'changes': changes_of(cue, entry)}
     # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
-    sounds.update({cue: sound for cue, sound in before.items() if 'freesound' not in sound and cue not in sounds})
+    own = {cue: sound for cue, sound in before.items() if 'freesound' not in sound and 'credits' not in sound}
+    sounds.update({cue: sound for cue, sound in own.items() if cue not in sounds})
     manifest = {
         'about': "The owner's picks, kept on R2 by their hash: Freesound's, each with its credit, written by "
         "tools/freesound/publish.py, and DFO's own, by tools/freesound/own.py. The game plays each in place of its "

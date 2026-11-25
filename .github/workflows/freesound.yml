@@ -35,8 +35,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-      - name: Test the page reader
-        run: node --test tools/freesound/pages.test.mjs
+      - name: Test the page reader and the publish
+        run: node --test tools/freesound/pages.test.mjs && python3 -I tools/freesound/test_publish.py
       - name: Find the candidates
         env:
           ONLY: ${{ github.event.inputs.only }}
