@@ -406,8 +406,8 @@ Overlook's ([[Only Overlook's Social Space Opens for Now]]); and its gates: the 
 lead to, each with a layout of its own, as the [[Game]]'s passages go. The index lists each node's id, kind, name,
 continent, rect and gates, which the host reads to judge arrivals. A locked node's room opens but takes no player, and so does
 each dungeon's room of a locked patrol, its runs among them, which open only with the patrol's file. The bake takes
-about 18 s for the nine continents' 99 nodes, a few at a time, and writes about 50 MB in all, a patrol area's file
-the largest at about 1.6 MB (the Gullwing Vale's, its boxes keeping to what is drawn, [[Layouts]], "Boxes"). `server`, `server:bundle` and
+about 11 s for the nine continents' 90 nodes, a few at a time, and writes about 32 MB in all, a patrol area's file
+the largest at about 1.5 MB (the Saltgrass Downs', its boxes keeping to what is drawn, [[Layouts]], "Boxes"). `server`, `server:bundle` and
 `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
 `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`, of at
 most 64 characters.
@@ -788,7 +788,7 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   its room standing its fallen again unasked; the [[Game]] does both, and fights there. A server's node room takes no
   ask for a foe; only a room a page plays alone is told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
-  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 27 patrols lays all three
+  crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the nine patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A
   patrol's room takes `?entrance=` only from a character that came out of that entrance's dungeon; a player who
   plays unkept stands there for up to five seconds, until the host stands them at a spawn. Movement has no ceilings;
@@ -804,11 +804,11 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   [[Prologue]]'s wreck is played so.
 - A node's room bakes its foes' navmesh over a 70 m square of its land and every box in it, its layout's and its
   city's where any reach in, never its whole section; a foe that chases a player off it walks straight. A node's room
-  opens in 0.15 to 0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned
-  nodes (tested offline, on an idle machine); Saltmere's three zones, baking their public events' grounds too, in
-  0.71 to 1.0 s ([[Public Events]]). Their caverns' and runs' foes' sites stand nothing as a room opens: with them
-  the three open in 0.62 to 0.95 s of WebAssembly and 0.57 to 0.78 s natively, as they do without (tested offline, on
-  a machine shared with other builds); a site's group stands in the tick a player first comes within 150 m of it,
+  opens in 0.15 to 0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the garrisoned
+  nodes (tested offline, on an idle machine); the Saltgrass Downs, baking its public
+  events' grounds too, in 0.75 to 0.95 s ([[Public Events]]). Its runs' foes' sites stand nothing as its room opens: a
+  zone with them opened in 0.62 to 0.95 s of WebAssembly and 0.57 to 0.78 s natively, as without (tested offline, on
+  a machine shared with other builds; unchecked with its seven gates); a site's group stands in the tick a player first comes within 150 m of it,
   which bakes its navmesh, 130 to 270 ms natively, one such bake a tick ([[Enemies]], "Caverns and runs").
 - A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms
   of WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,

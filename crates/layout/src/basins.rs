@@ -38,8 +38,6 @@ const PLATFORM_ROOM_M: f64 = 6.0;
 /// A ramp's half-width, metres, and how steep it rises at most, a rise a metre, where the massif's level stands
 /// highest (the highland's at its roughest, `TALLEST_LEVEL_M`): lower massifs' ramps are gentler.
 pub(crate) const RAMP_HALF_M: f64 = 4.5;
-/// How near two ramps' bearings run (the cosine of the angle between them) for one to serve the way the other climbs.
-const SAME_WAY: f64 = 0.9;
 pub const RAMP_STEEPEST: f64 = 0.25;
 pub(crate) const TALLEST_LEVEL_M: f64 = 44.0;
 /// How far a terrace's edge runs from its level down to the floor, metres, as the land crate cuts a climb's.
@@ -322,6 +320,20 @@ fn ends(capsule: [f64; 7]) -> [[f64; 2]; 2] {
     [[capsule[0], capsule[1]], [capsule[2], capsule[3]]]
 }
 
+/// The point `run` metres along a way from `from`, walking its `points` in turn; none if it ends sooner.
+fn run_along(from: [f64; 2], points: &[[f64; 2]], run: f64) -> Option<[f64; 2]> {
+    let (mut at, mut left) = (from, run);
+    for &next in points {
+        let step = distance(at, next);
+        if step >= left {
+            let share = left / step.max(1e-9);
+            return Some([at[0] + (next[0] - at[0]) * share, at[1] + (next[1] - at[1]) * share]);
+        }
+        (at, left) = (next, left - step);
+    }
+    None
+}
+
 /// A level platform round an area's middle (`half` its reach, `share` its level), with a ramp up to it wherever a way
 /// crosses its edge or ends short of it, or else one toward the nearest way; none where a building stands across its
 /// edge.
@@ -342,38 +354,38 @@ fn platform(
         let length = distance(from, to).max(1e-9);
         [(to[0] - from[0]) / length, (to[1] - from[1]) / length]
     };
-    // A ramp from `run` metres out along `out` up to just inside the edge at `edge`, unless one already arrives there
-    // along the same way: two ways meeting the edge side by side from different bearings each climb their own.
+    // A ramp from `run` metres out along `out` up to just inside the edge at `edge`, unless one already lies along
+    // it, its top and its foot each within a ramp's half-width: ways leaving the edge together that part within a
+    // ramp's run each climb their own, or one would step off the side of the other's.
     let ramp = |terraces: &mut Vec<[f64; 7]>, edge: [f64; 2], out: [f64; 2]| {
         let foot = [edge[0] + out[0] * run, edge[1] + out[1] * run];
         let top = [edge[0] - out[0] * 2.0, edge[1] - out[1] * 2.0];
         let served = terraces[1..].iter().any(|other| {
-            let along = unit([other[0], other[1]], [other[2], other[3]]);
-            distance([other[2], other[3]], top) <= 2.0 * RAMP_HALF_M
-                && -(along[0] * out[0] + along[1] * out[1]) >= SAME_WAY
+            distance([other[2], other[3]], top) <= RAMP_HALF_M && distance([other[0], other[1]], foot) <= RAMP_HALF_M
         });
         if !served {
             terraces.push([foot[0], foot[1], top[0], top[1], RAMP_HALF_M, 0.0, share]);
         }
     };
     for path in paths {
-        for pair in path.points.windows(2) {
-            let (inside, outside) = match (distance(pair[0], middle) < half, distance(pair[1], middle) < half) {
-                (true, false) => (pair[0], pair[1]),
-                (false, true) => (pair[1], pair[0]),
-                _ => continue,
-            };
+        for (number, pair) in path.points.windows(2).enumerate() {
+            // The way's points from where it leaves the platform on, walked outward.
+            let (inside, outside, onward): (_, _, Vec<[f64; 2]>) =
+                match (distance(pair[0], middle) < half, distance(pair[1], middle) < half) {
+                    (true, false) => (pair[0], pair[1], path.points[number + 1..].to_vec()),
+                    (false, true) => (pair[1], pair[0], path.points[..=number].iter().rev().copied().collect()),
+                    _ => continue,
+                };
             // Where the way crosses the edge: |inside + t (outside - inside) - middle| = half, t in 0..1.
             let span = [outside[0] - inside[0], outside[1] - inside[1]];
             let from = [inside[0] - middle[0], inside[1] - middle[1]];
             let (square, along) = (span[0] * span[0] + span[1] * span[1], from[0] * span[0] + from[1] * span[1]);
             let rest = from[0] * from[0] + from[1] * from[1] - half * half;
             let share_of = (-along + (along * along - square * rest).max(0.0).sqrt()) / square.max(1e-9);
-            ramp(
-                &mut terraces,
-                [inside[0] + span[0] * share_of, inside[1] + span[1] * share_of],
-                unit(inside, outside),
-            );
+            let edge = [inside[0] + span[0] * share_of, inside[1] + span[1] * share_of];
+            // Down toward where the way stands a ramp's run on, so the ramp follows the way as it bends.
+            let toward = run_along(edge, &onward, run).unwrap_or(outside);
+            ramp(&mut terraces, edge, unit(edge, toward));
         }
         for end in [path.points.first(), path.points.last()].into_iter().flatten() {
             let off = distance(*end, middle);

@@ -160,7 +160,7 @@ fn the_fallen_lie_until_they_ask_to_respawn_and_may_once_they_have_lain_four_sec
 
 #[test]
 fn in_an_abyss_run_a_revive_spends_one_of_the_company_s_revives_and_with_none_left_no_one_stands() {
-    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
+    let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
     let mut room = Room::dungeon_run(&of, gear::Difficulty::Abyss, 29_919_420).expect("an Abyss run");
     room.send_foes_away();
     let (mut ally, mut fallen) = (Page::join(&mut room), Page::join(&mut room));

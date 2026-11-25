@@ -187,16 +187,15 @@ mod tests {
     }
 
     #[test]
-    fn saltmeres_zones_have_three_runs_each_of_both_kinds_and_places() {
+    fn saltmeres_zone_has_three_runs_of_both_kinds_and_places() {
         let text = include_str!("../../../content/world/briefs.json");
         let briefs = Briefs::parse(text).unwrap_or_default();
-        for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors"] {
-            let runs = briefs.of(id, NodeKind::Patrol).runs;
-            assert_eq!(runs.len(), 3, "{id}");
-            assert!(runs.iter().any(|run| run.kind.building()) && runs.iter().any(|run| !run.kind.building()), "{id}");
-            assert!(runs.iter().any(|run| run.place == RunPlace::Rock), "{id}");
-            assert!(runs.iter().any(|run| run.place == RunPlace::Beyond), "{id}");
-        }
+        assert!(!briefs.0.contains_key("gullwing-vale") && !briefs.0.contains_key("driftwood-moors"), "cut");
+        let runs = briefs.of("saltgrass-downs", NodeKind::Patrol).runs;
+        assert_eq!(runs.len(), 3);
+        assert!(runs.iter().any(|run| run.kind.building()) && runs.iter().any(|run| !run.kind.building()));
+        assert!(runs.iter().any(|run| run.place == RunPlace::Rock));
+        assert!(runs.iter().any(|run| run.place == RunPlace::Beyond));
     }
 
     #[test]

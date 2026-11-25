@@ -264,6 +264,8 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("stormcallers", "bring-storm-home"),
     ("stormcallers", "run-down-moor-camp"),
     ("stormcallers", "race-river-road"),
+    ("stormcallers", "run-down-tithe-camp"),
+    ("stormcallers", "race-downs-road"),
     ("lamplighters", "walk-strand"),
     ("lamplighters", "put-out-false"),
     ("lamplighters", "bring-tobin-moorend"),
@@ -281,6 +283,8 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("lamplighters", "hold-gullwing"),
     ("lamplighters", "find-lens-buyer"),
     ("lamplighters", "set-grey-point"),
+    ("lamplighters", "carry-light-saltgrass"),
+    ("lamplighters", "set-old-beacon"),
     ("veiled", "meet-wren-follow"),
     ("veiled", "lift-collectors-tallies"),
     ("veiled", "wait-under-valeguard"),
@@ -297,6 +301,8 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("veiled", "follow-reckoner"),
     ("veiled", "empty-moorhold"),
     ("veiled", "follow-wren-coven"),
+    ("veiled", "empty-chalkpit-ruin"),
+    ("veiled", "follow-wren"),
 ];
 
 #[test]

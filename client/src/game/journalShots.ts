@@ -72,14 +72,14 @@ const LIGHTSWITCH = modifier('lightswitch', 'Lightswitch', 'Foes’ melee deals 
 const JUGGLER = modifier('juggler', 'Juggler', 'No ammunition drops.');
 const BRAWLER = modifier('brawler', 'Brawler', 'Melee deals 50% more damage.');
 const ISLES: readonly [string, number, number][] = [
-  ['gullwing-vale 0', 1, 4],
-  ['greystone-tors 1', 4, 7],
-  ['oakshade-weald 2', 7, 10],
-  ['ochre-wastes 0', 10, 13],
-  ['lion-grasslands 0', 13, 16],
-  ['rainshadow-canopy 2', 16, 19],
-  ['horsehead-mounds 1', 19, 22],
-  ['blackwater-marsh 1', 22, 26],
+  ['saltgrass-downs 1', 1, 4],
+  ['highwater-fells 0', 4, 7],
+  ['elder-thicket 0', 7, 10],
+  ['ochre-wastes 1', 10, 13],
+  ['lion-grasslands 2', 13, 16],
+  ['emerald-tangle 0', 16, 19],
+  ['kurgan-plateau 2', 19, 22],
+  ['bogmire-sloughs 0', 22, 26],
   ['whitewind-tundra 0', 26, 30],
 ];
 

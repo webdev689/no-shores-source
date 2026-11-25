@@ -131,8 +131,8 @@ test('a landmass with a city and nodes opens, edits, undoes, saves and reopens u
   tools.finish();
   tools.press('spawn', [east + 100, south + 100], 10);
   tools.press('city', [east + 50, south], 10);
-  assert.equal(places().nodes?.length, 12);
-  assert.deepEqual(places().nodes?.[11]?.spawns, [
+  assert.equal(places().nodes?.length, 10);
+  assert.deepEqual(places().nodes?.[9]?.spawns, [
     [east, south],
     [east + 100, south + 100],
   ]);

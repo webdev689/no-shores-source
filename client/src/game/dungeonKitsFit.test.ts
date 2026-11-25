@@ -35,13 +35,14 @@ function patrolDungeon(id: string, number: number): DungeonLayout {
   return askDungeon(module, id, node.name, number);
 }
 /** Real dungeons of every style, and the ones the game was seen in with a pilaster through a picture or a piece and
- *  an arch in a cave's rock. */
+ *  an arch in a cave's rock: those were laid for patrol zones since cut, and are laid here by their ids and names. */
 const LAYOUTS: readonly DungeonLayout[] = [
   patrolDungeon('saltgrass-downs', 1),
-  patrolDungeon('gullwing-vale', 1),
-  patrolDungeon('gullwing-vale', 0),
-  patrolDungeon('greystone-tors', 0),
-  patrolDungeon('greystone-tors', 2),
+  patrolDungeon('highwater-fells', 0),
+  askDungeon(module, 'gullwing-vale', 'The Gullwing Vale', 1),
+  askDungeon(module, 'gullwing-vale', 'The Gullwing Vale', 0),
+  askDungeon(module, 'greystone-tors', 'The Greystone Tors', 0),
+  askDungeon(module, 'greystone-tors', 'The Greystone Tors', 2),
   ...Array.from({ length: 30 }, (_unused, patrol) =>
     [0, 1, 2].map((number) => askDungeon(module, `patrol-${patrol}`, 'The Patrol', number)),
   ).flat(),

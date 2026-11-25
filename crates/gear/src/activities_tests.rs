@@ -15,7 +15,7 @@ const LAND: [&str; 9] = [
 ];
 
 #[test]
-fn the_places_are_each_islands_patrols_and_elite_dungeons_as_its_land_file_holds_them() {
+fn the_places_are_each_islands_patrol_and_elite_dungeons_as_its_land_file_holds_them() {
     for (island, text) in ISLAND_PLACES.iter().zip(LAND) {
         let file: serde_json::Value = serde_json::from_str(text).expect("a land file");
         let ids = |kind: &str| -> Vec<String> {
@@ -23,39 +23,40 @@ fn the_places_are_each_islands_patrols_and_elite_dungeons_as_its_land_file_holds
             let of_kind = nodes.iter().filter(|node| node["kind"] == kind);
             of_kind.map(|node| node["id"].as_str().expect("an id").to_owned()).collect()
         };
-        assert_eq!(ids("patrol"), island.patrols, "{}", island.continent);
+        assert_eq!(ids("patrol"), [island.patrol], "{}: its one patrol zone", island.continent);
         assert_eq!(ids("dungeon"), island.elite.iter().map(|elite| elite.id).collect::<Vec<_>>());
     }
     assert_eq!(ISLAND_PLACES.map(|island| island.continent), crate::world::ISLANDS.map(|(id, ..)| id));
     assert_eq!(elite_dungeons().count(), 18);
     assert_eq!(island_of("saltworm-warrens").map(|island| island.continent), Some("continent-7"));
-    assert_eq!(island_of("gullwing-vale").map(|island| island.continent), Some("continent-1"));
-    assert_eq!(elite_dungeon("gullwing-vale"), None, "a patrol is no Elite Dungeon");
+    assert_eq!(island_of("saltgrass-downs").map(|island| island.continent), Some("continent-1"));
+    assert_eq!(island_of("gullwing-vale"), None, "a patrol zone cut from its island");
+    assert_eq!(elite_dungeon("saltgrass-downs"), None, "a patrol is no Elite Dungeon");
 }
 
 #[test]
-fn each_island_draws_one_of_its_patrols_dungeons_each_day_the_same_for_everyone() {
+fn each_island_draws_one_of_its_patrol_zones_three_dungeons_each_day_the_same_for_everyone() {
     let drawn: Vec<(&str, usize)> =
         ISLAND_PLACES.iter().map(|island| dungeon_of_the_day(20_778, island.continent).expect("an island")).collect();
     assert_eq!(
         drawn,
         [
-            ("gullwing-vale", 0),
-            ("highwater-fells", 2),
-            ("elder-thicket", 2),
-            ("sunscorched-barrens", 2),
-            ("thunderhoof-grasslands", 1),
-            ("emerald-tangle", 1),
-            ("greywind-steppe", 2),
-            ("bogmire-sloughs", 2),
+            ("saltgrass-downs", 1),
+            ("highwater-fells", 0),
+            ("elder-thicket", 0),
+            ("ochre-wastes", 1),
+            ("lion-grasslands", 2),
+            ("emerald-tangle", 0),
+            ("kurgan-plateau", 2),
+            ("bogmire-sloughs", 0),
             ("whitewind-tundra", 0),
         ]
     );
-    assert_eq!(dungeon_of_the_day(20_775, "continent-1"), Some(("saltgrass-downs", 2)), "Tuesday's");
+    assert_eq!(dungeon_of_the_day(20_775, "continent-1"), Some(("saltgrass-downs", 0)), "Tuesday's");
     assert_eq!(dungeon_of_the_day(20_778, "continent-0"), None);
     for island in &ISLAND_PLACES {
         let seen: BTreeSet<_> = (0..365).map(|day| dungeon_of_the_day(20_000 + day, island.continent)).collect();
-        assert_eq!(seen.len(), 9, "{}: all nine of its dungeons in a year", island.continent);
+        assert_eq!(seen.len(), 3, "{}: all three of its dungeons in a year", island.continent);
     }
 }
 

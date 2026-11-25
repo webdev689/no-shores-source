@@ -98,7 +98,7 @@ fn the_fallen_stand_at_the_band_fallen_farthest_along_and_every_player_is_told_a
 
 #[test]
 fn in_a_run_a_band_holds_the_ground_its_fall_won_while_anyone_is_in_it_and_stands_again_once_it_empties() {
-    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
+    let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
     let mut room = Room::dungeon_run(&of, gear::Difficulty::Elite, 29_919_420).expect("an Elite run");
     let player = room.join().expect("in");
     let post = 1;
@@ -180,7 +180,7 @@ fn a_mission_lays_a_checkpoint_at_each_post_and_its_fallen_stand_at_the_cleared_
 
 #[test]
 fn an_abyss_wipe_stands_every_band_again_so_its_fallen_begin_again_at_the_way_in() {
-    let of = RunOf::Patrol { patrol: "gullwing-vale".into(), number: 1 };
+    let of = RunOf::Patrol { patrol: "saltgrass-downs".into(), number: 0 };
     let mut room = Room::dungeon_run(&of, gear::Difficulty::Abyss, 29_919_420).expect("an Abyss run");
     let players = [room.join().expect("in"), room.join().expect("in")];
     clear(&mut room, 1);

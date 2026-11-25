@@ -1,4 +1,5 @@
-//! The detail of Saltmere's three zones as the bake plans them: each zone's outcrops in the shape its brief names, no
+//! The detail of Saltmere's zone as the bake plans them, and of the two zones cut from it, laid back by the tests alone
+//! (`support/cut_zones.rs`) for what only they hold: each zone's outcrops in the shape its brief names, no
 //! outcrop a spire the close-up would draw as a point or burying what stands, a whaleback's long ends clad in fallen
 //! rock, and every run its brief asks for still found; continent 1's basins shaped by their kinds, what stands on a
 //! terrace on its level; no claim holding a mass of rock that nothing reaches; the Gullwing Vale's river in its
@@ -16,21 +17,34 @@ use layout::paths::{off_line, segments_apart};
 use std::path::Path;
 use std::sync::OnceLock;
 
+#[path = "support/cut_zones.rs"]
+mod cut_zones;
+
 const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
 
 /// A continent's layouts as the bake settles them, its biome's key, and its ground as they leave it.
 fn settled(id: &str) -> (Vec<Layout>, Option<&'static str>, Ground) {
-    settled_by(id, &|_| {})
+    settled_by(id, false, &|_| {})
 }
 
-/// A continent's layouts as the bake settles them with its briefs changed, its biome's key, and its ground.
-fn settled_by(id: &str, change: &dyn Fn(&mut layout::brief::Briefs)) -> (Vec<Layout>, Option<&'static str>, Ground) {
+/// A continent's layouts as the bake settles them, the cut zones laid back or not, with its briefs changed, its
+/// biome's key, and its ground.
+fn settled_by(
+    id: &str,
+    cut: bool,
+    change: &dyn Fn(&mut layout::brief::Briefs),
+) -> (Vec<Layout>, Option<&'static str>, Ground) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = world.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
-    let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
+    let text = read(&format!("content/world/land/{id}.json"));
+    let text = if cut { cut_zones::edits(&text) } else { text };
+    let edits = land::edits::parse(&text).expect("the edits parse");
     let mut builders = bake::builders(&root).expect("the builders read");
+    if cut {
+        cut_zones::briefs(&mut builders.briefs);
+    }
     change(&mut builders.briefs);
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
     let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
@@ -45,12 +59,25 @@ fn laid_one() -> &'static (Vec<Layout>, Option<&'static str>, Ground) {
     LAID.get_or_init(|| settled("continent-1"))
 }
 
+/// Continent 1 with the cut zones laid back, as they stood.
+fn laid_cut() -> &'static (Vec<Layout>, Option<&'static str>, Ground) {
+    static LAID: OnceLock<(Vec<Layout>, Option<&'static str>, Ground)> = OnceLock::new();
+    LAID.get_or_init(|| settled_by("continent-1", true, &|_| {}))
+}
+
 fn continent_one() -> &'static [Layout] {
     &laid_one().0
 }
 
+/// A zone of Saltmere, from the island as it is or, for a cut zone, as the tests lay it back.
 fn zone(id: &str) -> &'static Layout {
-    continent_one().iter().find(|laid| laid.id == id).expect("the zone lays out")
+    let laid = if cut_zones::CUT.contains(&id) { &laid_cut().0 } else { continent_one() };
+    laid.iter().find(|laid| laid.id == id).expect("the zone lays out")
+}
+
+/// The ground a zone stands on, as `zone` lays it.
+fn ground_of(id: &str) -> &'static Ground {
+    if cut_zones::CUT.contains(&id) { &laid_cut().2 } else { &laid_one().2 }
 }
 
 #[test]
@@ -83,8 +110,9 @@ fn no_outcrop_is_a_spire() {
 }
 
 #[test]
-fn saltmere_keeps_its_nine_runs() {
-    let briefs = bake::builders(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).expect("the builders").briefs;
+fn saltmere_and_the_cut_zones_keep_their_nine_runs() {
+    let mut briefs = bake::builders(&Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")).expect("the builders").briefs;
+    cut_zones::briefs(&mut briefs);
     let mut found = 0;
     for id in ZONES {
         let laid = zone(id);
@@ -312,10 +340,9 @@ fn no_headstone_stands_in_anything() {
 
 #[test]
 fn no_claim_holds_a_dead_mass() {
-    let ground = &laid_one().2;
     let mut dead = Vec::new();
     for id in ZONES {
-        let laid = zone(id);
+        let (laid, ground) = (zone(id), ground_of(id));
         let field = layout::field::Field::read(ground, &laid.sculpt.claim, 40.0);
         let sculpts = Sculpts::from(vec![laid.sculpt.clone()]);
         for mass in layout::masses::dead_masses(&field, &sculpts, laid.sculpt.rise) {
@@ -327,7 +354,7 @@ fn no_claim_holds_a_dead_mass() {
 
 #[test]
 fn the_vales_river_lies_in_its_section() {
-    let ground = &laid_one().2;
+    let ground = ground_of("gullwing-vale");
     let vale = zone("gullwing-vale");
     let field = layout::field::Field::read(ground, &vale.sculpt.claim, 456.0);
     let [_, north, _, south] = layout::field::bounds_of(&vale.sculpt.claim);
@@ -347,8 +374,8 @@ fn the_vales_river_lies_in_its_section() {
 
 #[test]
 fn no_other_node_is_raised_or_claimed_by_the_vales_wing() {
-    let (with, _, with_ground) = laid_one();
-    let (without, _, without_ground) = settled_by("continent-1", &|briefs| {
+    let (with, _, with_ground) = laid_cut();
+    let (without, _, without_ground) = settled_by("continent-1", true, &|briefs| {
         briefs.0.get_mut("gullwing-vale").expect("the vale has a brief").river = false;
     });
     let vale = zone("gullwing-vale");
@@ -398,10 +425,9 @@ fn no_other_node_is_raised_or_claimed_by_the_vales_wing() {
 
 #[test]
 fn every_ruin_by_a_mass_lookout_stands_on_level_rock_clear_of_outcrops() {
-    let ground = &laid_one().2;
     let (mut ruins, mut failed) = (0, Vec::new());
     for id in ZONES {
-        let laid = zone(id);
+        let (laid, ground) = (zone(id), ground_of(id));
         let stumps: Vec<[f64; 2]> = laid
             .seating
             .solids

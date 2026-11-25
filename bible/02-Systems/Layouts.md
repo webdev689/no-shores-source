@@ -53,12 +53,13 @@ no brief is open ground to arrive on and fight over; an outpost site's is a land
 The Plot, The Muster Ground), and it links to no patrol area. A plot is the ground a guild builds on: a square 64 m a
 side, axis-aligned round its middle, on flat dry ground within 250 m of the landing where the land allows. Nothing
 stands on it: no beacon or resource is marked there, a way ends at its rim, and four low stones stand just outside its
-corners. Of the 99 drawn nodes, the 90 that are not outpost sites each have their own. A brief may also carry hints:
-`rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
-Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
-and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (Saltmere's
-three zones, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's
-height, sets its own height in place of its kind's (the Vale's Water Meadows lie by the river at 0). A layout
+corners. Of the 81 drawn nodes, the 72 that are not outpost sites each have their own. A brief may also carry hints:
+`rock`, the shape its outcrops stand in where its climate's would not suit it (whalebacks, knolls or tors: the
+Saltgrass Downs' whalebacks); `stone`, the stone its cliffs and rubble wear (the Downs' chalk); and `river`, that a
+river runs through it, which carries the claim along the river (below; no zone's brief names one now, and a test's
+own brief keeps it walked). `heights` stands its places at heights (the Saltgrass Downs,
+[[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's height, sets
+its own height in place of its kind's (a meadow by its river at 0). A layout
 carries its `stone` out with it, and the client wears it (below).
 
 ## How a layout is planned
@@ -197,7 +198,7 @@ from the sea, fresh water and the claim's edge), then:
    else a valley 22 m wide through the deepest point that joins two existing floors over walked land, keeps 48 m off
    every climb past both edges and off every outcrop, and reaches most of the mass, running at the levels of the
    floors it joins so it never cuts a raised floor down; else the climb that reaches most. On Saltmere the Downs take
-   six climbs, the Vale four valleys across the rock round its keep, the Moors three valleys and three climbs.
+   six climbs.
 7. **The great works**, across and along the canyons, so they make the ways and the bounds, each where a work as wide
    as the great wall would keep 12 m off every outcrop (the outcrops are placed first): a colossal
    ruined wall of ashlar dammed across the longest track's straightest run (the next run's where its wall would
@@ -270,7 +271,7 @@ from the sea, fresh water and the claim's edge), then:
 ## Runs
 
 A patrol area's brief may name its runs ([[Patrol Zones Stay as Built and Gain Linear Combat Areas]]): one-way linear
-combat areas that break off it, where missions will run later. Saltmere's three zones have three each: in the open
+combat areas that break off it, where missions will run later. The Saltgrass Downs has three: in the open
 (a gorge, a ledge, a rampart) or through a large building (a keep, a mine, an undercroft), in the zone's own rock or
 out past its edge.
 
@@ -340,7 +341,7 @@ out past its edge.
   known and named with their reasons, so a new one fails CI ([[The Audit's Leftovers Are Fixed as Claude Suggested]]):
   on the savanna a body walks round a rampart's door across its face, and at highwater-glen a ledge's way meets a
   face a body would climb. They wait on the owner's call on the
-  runs there; only Saltmere's zones have runs of their own yet.
+  runs there; only the Saltgrass Downs has runs of its own yet.
 
 ## Laid on the land
 
@@ -351,8 +352,8 @@ land ([[Land]], [[Server]]). Every prop and stone that stood on the ground as it
 laid, by as far as the pads and roads moved it (`follow_ground`), and what stands on one (a lantern's cage on its
 post) moves with it; a pile in the water, a battlement or a building's plinth keeps its height. A bridge's timbers
 move together, by as far as the land under its deck's higher end moved, never one length on its own. The streets' and paths' heights
-are then read from the ground as it lies. Saltmere's ten
-layouts are planned and laid in about 0.65 s natively. The bake and the land's worker settle them alike; a node's
+are then read from the ground as it lies. Saltmere's eight
+layouts are planned and laid in well under a second natively. The bake and the land's worker settle them alike; a node's
 file takes its section, spawns and boxes from its layout.
 
 ## Boxes
@@ -424,10 +425,9 @@ it bends on the ground (3 m) or in height (0.25 m), so a way held flat across a 
 there; a terrace stands its area's level higher, a ramp's foot at the level of the land under it; a lookout's climb
 starts at its floor's share of the massif's height, and a pocket opens at its way's. What was stood on the land
 before the carving is lifted onto it, and the great works stand on the land as carved. A retaining wall stands only where a cliff rises from the
-floor: past a raised floor's edge the land may fall away instead. In each of Saltmere's zones every way and climb is
+floor: past a raised floor's edge the land may fall away instead. In the Saltgrass Downs every way and climb is
 walked without a step a body cannot take, and none is carved steeper than a track climbs but up a basin's ramp
-(`crates/room/tests/map_planned.rs`). The Vale stands its keep highest,
-then its shrine, its hamlet and its farm, its mill, meadows and coven by the river.
+(`crates/room/tests/map_planned.rs`).
 
 With heights a shrine, a keep and every cavern stand handcrafted [[Modules]] in place of their blocks, set pieces
 and dressing, and every river crossing a stone bridge in place of a timber one. A way's points within 2 m past a
@@ -447,8 +447,7 @@ top landing 3 m onto the high floor, past where the slot and the floor blend. Th
 most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 24 m there, its slot's
 floor runs from its start to the stair's foot without a step, and no land stands over the steps as they climb. Up to
 three are cut, 60 m apart, each keeping every stair cut before it climbing and its slot off every run's line. The
-stair's top landing (3 m, from the high floor's edge) stands at the highest the land does under it. The map joins each ledge's two nearest places by a `Stair`. In the Vale they climb from the
-ways below Gullwing, Valeguard and the Old Stones straight up onto their floors.
+stair's top landing (3 m, from the high floor's edge) stands at the highest the land does under it. The map joins each ledge's two nearest places by a `Stair`.
 
 With heights a gate stands in a cleft of the rock, a floor of 14 m reach where its way arrives and its gorge leaves,
 and once the land is carved its palisade runs on from its last stakes, a stake every 1.1 m, until each side meets the
@@ -460,7 +459,7 @@ the rock round it, which stands whole right beside a roofed floor ([[Land]]), an
 stands round its edges, so no roof stands over the massif (1 m thick at the least);
 the tunnel's roof starts 4 m in, where the cliff the
 tunnel opens in stands whole, and a tunnel mouth of rock frames the opening at the floor. The
-map takes the cavern as a roofed space joined to its area by a tunnel. In the Vale the Hollow Coven opens into one.
+map takes the cavern as a roofed space joined to its area by a tunnel. No zone with heights has a coven or a cave now.
 Every coven's and cave's area marks a foes' site at its middle, where its room stands a group ([[Enemies]],
 "Caverns and runs").
 
@@ -515,7 +514,7 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 
 ## Limits
 
-- Only Saltmere's three zones have runs; the other 24 zones' briefs name none yet.
+- Only the Saltgrass Downs has runs; the other eight patrol zones' briefs name none yet.
 - Few mesas show their ledges: a second face needs a radius of 49 m, which only a wide basin's rim has room for, so
   most stand in one face under their flat top.
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.
