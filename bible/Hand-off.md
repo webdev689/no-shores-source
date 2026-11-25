@@ -215,6 +215,13 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **Three latent layout flaws fixed** (#207, a draft for the owner's yes once its checks pass), on the owner's brief
+  after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a metre off a module's foot; a camp's
+  palisade gap is sized from the path grid; fallen rock keeps 1.2 m off each run's way ([[Layouts]]). One departure
+  from the brief, the owner's to confirm: the gap's 9 m half-chord (`CELL_M + KEEP_OFF_M`) is measured along the
+  grid axis more across the way in, not along the chord, since 9 m along the chord still sealed 8 of 5,760 turns
+  tested (18 m wide square to the grid, up to 25.5 m at 45 degrees). Every stake now draws its height, standing or
+  not. The re-roll it makes in continent 1's camp zones exposed nothing (`cargo test -p room`, all passed).
 - **The Discord application's settings, after #194's first deploy** ([[Discord Bot]], "One Discord application"):
   its interactions endpoint set to the bot's `/v1/discord/interactions`, its two redirects, and the bot invited to
   the server with its permissions. The words still Claude's: the auto-mod rules' prefix `No Shores: ` and "The bot"
@@ -878,6 +885,14 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites. The
   dungeons session (#82) plans to move each patrol's dungeon entrances onto the layouts' places, and will
   coordinate before it touches the layout code.
+- **Latent layout flaws a re-roll exposes** (#207's description): five re-rolls of the Saltgrass Downs' brief (an area
+  added, moved or removed), the same failures on main's code and #207's. The Tithe Barns, a keep run beyond the
+  claim, gets a beat inside the section in four of five, failing four of `runs_planned`'s checks; a track grazes a
+  building's lining corner (`clearing::round_rooms` samples in tenths and bends at most three times); a gate's
+  palisade stops 11.3 m short of the rock; and with the Barrow Field removed, loose rock lies in the Beacon Stair's
+  stone and a run raises the Broken Causeway's claim 2 mm. Each wants its cause found before an area is added or
+  moved there. The 7 x 4 x 11 m block once seen on a Chalk Adit beat did not show in any of them; its source is
+  still unfound.
 - **Attack visuals**, left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the marks copied
   into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still lighting; `camera.ts`
   `shifted` keeping the HUD matrix's translation in float32 (about 0.25 m off far out).
