@@ -14,9 +14,16 @@ import { MARK_FLOATS } from '../combat/marks.ts';
 import type { FightEvent } from '../network/messages.ts';
 import bank from '../../../content/audio/sounds.json' with { type: 'json' };
 import { BREACH_HEARD } from './audio/ambience/breachHeard.ts';
+import { MOMENT_CUES, heardOf } from './breachMoments.ts';
 import { breachPlanOf, runPlace, sealOpen, slabStands, socketAt, spaceSocket } from './breachPlan.ts';
 import { type BreachOn, BreachView, bearing, breachFall, gateOf, withBreach } from './breachView.ts';
 import type { NodeInfo } from './worldData.ts';
+
+/** A moment as the page plays it: its own recording once the owner has picked it, else the world's it borrows. */
+function moment(event: number, at: readonly [number, number, number] | null) {
+  assert.ok(at, 'the moment has its place');
+  return heardOf(MOMENT_CUES[event]!, at);
+}
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const module = new WebAssembly.Module(
@@ -203,7 +210,7 @@ test('a moment told to every player is heard once where its number places it; on
   const events = toldAll(BREACH_EVENT.bellBroken, 2, [7, 9, 11]);
   const where = (id: number) => (id === 11 ? ([5, 5, 60] as const) : null);
   const shown = view.frame(word({ encounter: 2 }), events, [0, 0, 60], where, 0, []);
-  assert.deepEqual(shown?.sounds, [{ cue: 'shield.break', at: spaceSocket(plan, 'choir', 'bell-3'), whole: true }]);
+  assert.deepEqual(shown?.sounds, [moment(BREACH_EVENT.bellBroken, spaceSocket(plan, 'choir', 'bell-3'))]);
   view.frame(word(), toldAll(BREACH_EVENT.wiped, 1, [7, 9, 11]), [0, 0, 60], () => null, 0, []);
   assert.deepEqual(told, ['Your company fell.'], 'an attempt lost, said once');
 });
@@ -218,7 +225,9 @@ test("the Waking's moments at the gate are its company's and theirs in its hollo
   assert.equal(view.frame(word(held), begun, near, () => null, 0, [])?.sting, 'cadence', 'in its hollow');
   assert.equal(view.frame(word({ ...held, holders: [7, 9] }), begun, far, () => null, 0, [])?.sting, 'cadence');
   const claimed = view.frame(word(held), toldAll(BREACH_EVENT.claimed, 1, [7, 9]), far, () => null, 0, []);
-  assert.deepEqual(claimed?.sounds, [{ cue: 'foe.alert', at: socketAt('breach-gate', 'mooring-south', GATE_AT, 0) }]);
+  assert.deepEqual(claimed?.sounds, [
+    moment(BREACH_EVENT.claimed, socketAt('breach-gate', 'mooring-south', GATE_AT, 0)),
+  ]);
 });
 
 test("the gate's moorings are held by the living of the company holding it, which its banner names, revives and all", async () => {
@@ -351,13 +360,13 @@ test('a mark is heard once a frame at the player it marks, a sighting at the one
   const heard = (events: FightEvent[]) => view.frame(word({ encounter: 4 }), events, [0, 0, 60], where, 0, [])?.sounds;
   // A ring Rewrites three, each told to all three.
   const ring = [9, 11, 7].flatMap((marked) => toldAll(BREACH_EVENT.rewritten, marked, [7, 9, 11]));
-  assert.deepEqual(heard(ring), [{ cue: 'element.cosmic', at: [0, 0, 60] }], 'once, at the player among them');
+  assert.deepEqual(heard(ring), [moment(BREACH_EVENT.rewritten, [0, 0, 60])], 'once, at the player among them');
   const others = [9, 11].flatMap((marked) => toldAll(BREACH_EVENT.rewritten, marked, [7, 9, 11]));
-  assert.deepEqual(heard(others), [{ cue: 'element.cosmic', at: [3, 3, 60] }]);
-  assert.deepEqual(heard(toldAll(BREACH_EVENT.seen, 9, [7, 9])), [{ cue: 'foe.alert', at: [3, 3, 60] }]);
+  assert.deepEqual(heard(others), [moment(BREACH_EVENT.rewritten, [3, 3, 60])]);
+  assert.deepEqual(heard(toldAll(BREACH_EVENT.seen, 9, [7, 9])), [moment(BREACH_EVENT.seen, [3, 3, 60])]);
   assert.deepEqual(told, ['A Watcher saw Ada.']);
   const keeper = spaceSocket(plan, plan.shores['shores']?.[1] ?? '', 'keeper');
-  assert.deepEqual(heard(toldAll(BREACH_EVENT.keeperFell, 1, [7])), [{ cue: 'kill', at: keeper, whole: true }]);
+  assert.deepEqual(heard(toldAll(BREACH_EVENT.keeperFell, 1, [7])), [moment(BREACH_EVENT.keeperFell, keeper)]);
 });
 
 test('each bell wakes at its own note, by its place, so the order is heard as it is seen', () => {
