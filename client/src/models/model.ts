@@ -24,6 +24,8 @@ export type ModelPart = {
   readonly record: number;
   readonly start: number;
   readonly count: number;
+  /** A window's panes seen through: an open building's glass, its picture's glass texels drawn as nothing. */
+  readonly clear?: boolean;
 };
 
 /**

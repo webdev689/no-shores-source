@@ -388,6 +388,28 @@ pub fn river_wing(field: &Field, claim: &[[f64; 2]], avoid: &[Vec<[f64; 2]>]) ->
 pub const WALKED_SLOPE: f64 = 1.0;
 
 #[cfg(test)]
+impl Field {
+    /// Level dry land `columns` by `rows` cells from its north-west corner, all of it claimed and far from water.
+    pub(crate) fn level(west: f64, north: f64, columns: usize, rows: usize) -> Self {
+        let count = columns * rows;
+        Self {
+            west,
+            north,
+            columns,
+            rows,
+            height: vec![5.0; count],
+            water: vec![Water::Dry; count],
+            slope: vec![0.0; count],
+            claimed: vec![true; count],
+            to_sea: vec![FAR_M; count],
+            to_fresh: vec![FAR_M; count],
+            inside: vec![FAR_M; count],
+            seaward: [0.0, -1.0],
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

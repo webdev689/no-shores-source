@@ -4,7 +4,14 @@ import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { shadowLayouts } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { MASS_CAST_SHADER, MASS_SHADER, MODEL_CAST_SHADER, MODEL_SHADER, PLATE_SHADER } from './cityShaders.ts';
+import {
+  MASS_CAST_SHADER,
+  MASS_SHADER,
+  MODEL_CAST_SHADER,
+  MODEL_CLEAR_CAST_SHADER,
+  MODEL_SHADER,
+  PLATE_SHADER,
+} from './cityShaders.ts';
 
 /** WebGPU's buffer usages: the groundwork's, and the index and storage usages it does not name, by the
  *  specification's values. */
@@ -21,6 +28,8 @@ export type CityPipelines = {
   readonly plates: GPURenderPipeline;
   /** The models' and solids' depth along the sun, into the shadow maps. */
   readonly modelsCast: GPURenderPipeline;
+  /** An open building's shadow, through its windows' clear panes. */
+  readonly modelsClearCast: GPURenderPipeline;
   /** The masses' and hulls' depth along the sun, into the far shadow map. */
   readonly massesCast: GPURenderPipeline;
 };
@@ -80,6 +89,7 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
   const targets = [{ format }];
   const modelModule = device.createShaderModule({ code: MODEL_SHADER });
   const castModule = device.createShaderModule({ code: MODEL_CAST_SHADER });
+  const clearCastModule = device.createShaderModule({ code: MODEL_CLEAR_CAST_SHADER });
   const modelBuffers: GPUVertexBufferLayout[] = [
     {
       arrayStride: 36,
@@ -158,6 +168,13 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
     modelsCast: device.createRenderPipeline({
       layout: castLayout,
       vertex: { module: castModule, entryPoint: 'model_cast', buffers: modelBuffers },
+      primitive: castPrimitive,
+      depthStencil: castDepth,
+    }),
+    modelsClearCast: device.createRenderPipeline({
+      layout: castLayout,
+      vertex: { module: clearCastModule, entryPoint: 'model_clear_cast', buffers: modelBuffers },
+      fragment: { module: clearCastModule, entryPoint: 'model_clear_cast_fragment', targets: [] },
       primitive: castPrimitive,
       depthStencil: castDepth,
     }),

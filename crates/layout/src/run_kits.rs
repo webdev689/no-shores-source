@@ -8,10 +8,10 @@ use crate::field::distance;
 use crate::halls::WALL_M;
 use crate::paths::off_line;
 use crate::pieces::{Kit, turn_along};
-use crate::rocks::{keep_off, loose, stone};
+use crate::rocks::{Kept, keep_off, loose, stone};
 use crate::run_climbs::off_print;
 use crate::run_halls::{ROOM_SHARE, roomed};
-use crate::runs::{Beat, Run, half_of};
+use crate::runs::{Beat, Run, WAY_CLEAR_M, half_of};
 use crate::skyline::{carved_at, tower_stump};
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::Sculpts;
@@ -39,7 +39,7 @@ const fn masonry(kind: RunKind) -> bool {
 const WALL_LENGTH_M: f64 = 5.0;
 
 /// Builds a run's mouth, beats, dressing and door, then leaves out any of its pieces whose box would stand within
-/// 1.2 m of its line under head height: a body meets a solid's box, which for a piece turned or leaning reaches
+/// `WAY_CLEAR_M` of its line under head height: a body meets a solid's box, which for a piece turned or leaning reaches
 /// further than the piece.
 pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     let first = kit.into.solids.len();
@@ -68,12 +68,13 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     });
     crate::run_climbs::build(kit, run, carved);
     // Its own loose rock (cover's boulders, a stump's fallen courses) keeps off the rest of what it built.
-    let built: Vec<[f64; 6]> =
+    let boxes: Vec<[f64; 6]> =
         kit.into.solids[first..].iter().filter(|solid| !loose(solid)).map(Solid::bounds).collect();
-    keep_off(kit.into, first, &built);
+    keep_off(kit.into, first, &Kept { boxes, ways: Vec::new() });
 }
 
-/// Whether a solid's box stands within 1.2 m of a run's way (its line and on to its door) under head height (2.2 m over `floor`).
+/// Whether a solid's box stands within `WAY_CLEAR_M` of a run's way (its line and on to its door) under head height
+/// (2.2 m over `floor`).
 fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     // An arch is boxed as its jambs and head (collide.rs), and the kits stand its jambs clear of the line; rock by its
     // parts' boxes.
@@ -92,10 +93,11 @@ fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     near_way(run, [west, north, east, south])
 }
 
-/// Whether a footprint comes within 1.2 m of a run's way (its line and on to its door).
+/// Whether a footprint comes within `WAY_CLEAR_M` of a run's way (its line and on to its door).
 fn near_way(run: &Run, [west, north, east, south]: [f64; 4]) -> bool {
+    let keep = WAY_CLEAR_M;
     let near =
-        |at: [f64; 2]| at[0] >= west - 1.2 && at[0] <= east + 1.2 && at[1] >= north - 1.2 && at[1] <= south + 1.2;
+        |at: [f64; 2]| at[0] >= west - keep && at[0] <= east + keep && at[1] >= north - keep && at[1] <= south + keep;
     run.way().windows(2).any(|pair| {
         let length = distance(pair[0], pair[1]);
         let steps = (length / 0.5).ceil().max(1.0) as usize;
