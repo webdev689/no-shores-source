@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-t="game.title"></title>
+    <meta name="description" data-t-content="game.description" />
+    <link rel="stylesheet" href="/src/site.css" />
+  </head>
+  <body>
+    <!--site:top-->
+    <main id="main">
+      <header class="page-head">
+        <h1 data-t="game.title"></h1>
+        <p class="lede" data-t="game.lede"></p>
+        <p class="buttons"><a class="button button-gold button-big" data-to="play" data-t="home.play"></a></p>
+      </header>
+
+      <section class="scene" id="overlook" aria-labelledby="overlook-title">
+        <img class="frame" data-art="overlook-court" data-t-alt="game.portAlt" />
+        <div>
+          <h2 id="overlook-title" data-t="game.portHead"></h2>
+          <p data-t="game.portStart"></p>
+          <p data-t="game.portPlayers"></p>
+        </div>
+      </section>
+
+      <section class="scene" id="sea" aria-labelledby="sea-title">
+        <img class="frame" data-art="under-sail" data-t-alt="game.seaAlt" loading="lazy" />
+        <div>
+          <h2 id="sea-title" data-t="game.seaHead"></h2>
+          <p data-t="game.seaSail"></p>
+          <p data-t="game.seaWaters"></p>
+          <p data-t="game.seaFight"></p>
+          <p data-t="game.seaShip"></p>
+          <p data-t="game.seaIslands"></p>
+        </div>
+      </section>
+
+      <section class="scene" id="combat" aria-labelledby="combat-title">
+        <img class="frame" data-art="duel" data-t-alt="game.fightAlt" loading="lazy" />
+        <div>
+          <h2 id="combat-title" data-t="game.fightHead"></h2>
+          <p data-t="game.fightTiming"></p>
+          <p data-t="game.fightSwings"></p>
+          <p data-t="game.fightFoes"></p>
+        </div>
+      </section>
+
+      <section class="scene" id="arts" aria-labelledby="arts-title">
+        <img class="frame" data-art="arts" data-t-alt="game.artsAlt" loading="lazy" />
+        <div>
+          <h2 id="arts-title" data-t="game.artsHead"></h2>
+          <p data-t="game.artsThree"></p>
+          <p data-t="game.artsParts"></p>
+          <p data-t="game.artsFactions"></p>
+          <p data-t="game.artsCape"></p>
+        </div>
+      </section>
+
+      <section class="scene" id="gear" aria-labelledby="gear-title">
+        <img class="frame" data-art="gear" data-t-alt="game.gearAlt" loading="lazy" />
+        <div>
+          <h2 id="gear-title" data-t="game.gearHead"></h2>
+          <p data-t="game.gearPower"></p>
+          <p data-t="game.gearNodes"></p>
+          <p data-t="game.gearVestiges"></p>
+        </div>
+      </section>
+
+      <section class="scene" id="activities" aria-labelledby="activities-title">
+        <img class="frame" data-art="dungeon" data-t-alt="game.doAlt" loading="lazy" />
+        <div>
+          <h2 id="activities-title" data-t="game.doHead"></h2>
+          <p data-t="game.doDungeons"></p>
+          <p data-t="game.doEvents"></p>
+          <p data-t="game.doGroups"></p>
+          <p data-t="game.doGuilds"></p>
+        </div>
+      </section>
+
+      <section class="start" aria-labelledby="play-title">
+        <h2 class="section-title" id="play-title" data-t="game.playHead"></h2>
+        <ul class="steps">
+          <li><p data-t="game.playBrowser"></p></li>
+          <li><p data-t="game.playControls"></p></li>
+          <li><p data-t="game.playAccount"></p></li>
+        </ul>
+      </section>
+
+      <section class="passage closing">
+        <p class="buttons">
+          <a class="button button-gold button-big" data-to="play" data-t="home.play"></a>
+          <a class="button button-big" data-to="discord" data-t="home.discord"></a>
+        </p>
+      </section>
+    </main>
+    <!--site:foot-->
+  </body>
+</html>

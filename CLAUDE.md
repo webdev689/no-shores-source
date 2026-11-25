@@ -12,7 +12,7 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
 - **Done means `cargo xtask check` passes in CI on the pull request's head.** Before a push, run `cargo xtask repo`
   and the tests of what changed (after `npm ci` once); CI runs the whole check, and a merge waits for it to be green.
 - **Ask before merging or deploying.** A pull request for each change; merge into `main`, deploy or release only
-  after the owner says yes, every time. A merge deploys the page and the rooms, so its yes covers them.
+  after the owner says yes, every time. A merge deploys the page, the site, the rooms and the bot, so its yes covers them.
 - **Follow the rules** in `bible/00-Rules/Rules.md`. A new rule or check needs the owner's agreement.
 - **Verify before claiming.** Before saying something is not in the source, check the file it would be in; until
   then call the claim "unchecked". Say "tested offline" or "tested live"; never call something fixed without the
