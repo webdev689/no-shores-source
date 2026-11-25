@@ -119,6 +119,20 @@ test('each picture is the same at every build and under 64 KB', () => {
   }
 });
 
+test("the Discord server's icon fits Discord's limit, and the round crop Discord gives it never reaches the letter", () => {
+  const icon = PICTURES['server-icon']?.();
+  assert.ok(icon && icon.width === icon.height && icon.width <= 1024, 'square, at most 1024 pixels');
+  const night = new Set(['#060a14', '#0a1222', '#0f1b31', '#0e182c', '#132039', '#192a48', '#b4c1d6']);
+  const middle = icon.width / 2;
+  let nearest = Infinity;
+  icon.cells.forEach((ink, cell) => {
+    if (night.has(ink)) return;
+    const away = Math.hypot((cell % icon.width) + 0.5 - middle, Math.floor(cell / icon.width) + 0.5 - middle);
+    nearest = Math.min(nearest, middle - away);
+  });
+  assert.ok(nearest >= icon.width * 0.06, `the letter comes within ${nearest} pixels of the round edge`);
+});
+
 test('every picture a page names exists and has words for its alt text, or is marked as decoration', () => {
   for (const page of SITE_PAGES)
     for (const [tag] of source(page).matchAll(/<img\b[^>]*>/g))
