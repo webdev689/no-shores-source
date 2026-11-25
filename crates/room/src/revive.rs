@@ -143,6 +143,8 @@ impl Room {
             let Some(lain) = self.players.get(&id).map(|found| found.fighter.body) else { continue };
             let body = self.stand_again(lain.x, lain.y);
             self.stand_up(id, body, None);
+            // A company all down in a passage zone's dark is as good as respawned: its haul is lost.
+            self.lose_haul(id);
         }
         self.court_start_over();
     }

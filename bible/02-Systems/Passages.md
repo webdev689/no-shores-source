@@ -80,7 +80,7 @@ The passages web out from an island's patrol zone across the island, a dive twen
 - **The week's two modifiers** are the zone's run's, weighing the runs' hooks (`run.rs`); **the zone's currents**
   weigh them too at the depth's strength: Kindled and Sharpened a blow, Shielded the share shielded, Frail a heal, Spent
   a recharge, Hardened every foe's health, Crowded and Veteran each band, Gloom a darkness while the deal runs (no
-  respawn, only a revive, and a company all down falls back to the arrival), Bountiful more Vestiges from a kill, Rich
+  respawn, only a revive, and a company all down falls back to the arrival, its hauls lost), Bountiful more Vestiges from a kill, Rich
   Seam one more from a node.
 
 ## The deal
@@ -93,13 +93,14 @@ The passages web out from an island's patrol zone across the island, a dive twen
 | Hold | Its ring (6 m round its first spot) is held 90 s by a living player; a wave every 20 s |
 | Hunt | The marked band, an Elite leading it on a round of the spots, is down |
 | Reckoning | Its three collectors are down; each, once a player comes within 12 m, runs to the spot farthest from them |
-| Gauntlet | A player reaches the farthest onward mouth; past 90 s it is late, and pays no cache |
+| Gauntlet | A player reaches the farthest onward mouth; past 90 s from each one's own arrival it is late, and pays no cache |
 | Ambush | Its three waves are beaten, each called as the last is down; its mouths are barred until then |
 | Sever | Its three tally posts, foes standing still at their pieces, are down; each is guarded |
 
 A wave is two to four of the bands' foes standing at the post or spot nearest a player but 12 m from every one, each
-hunting the nearest player. Done, the deal pays each player in the zone its cache, once a dive, and has it done for
-their dive. In a public room it begins again 60 s on, its guards and targets standing again; a player who came after
+hunting the nearest player. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
+and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, held the
+ring or reached the far mouth. In a public room it begins again 60 s on, its guards and targets standing again; a player who came after
 it was done goes on once that round is done. A company's room does not begin again, and a member who comes after it
 was done finds it done.
 
@@ -120,7 +121,7 @@ was done finds it done.
 - **Lanternfall** comes only from the first Atheric bounty, its data in `content/gear/atheric_bounties.json`: the
   cold lantern drops into the haul from a cache past depth 14, 3 times in a hundred, or from the fourth lamp's, 12, for a
   character of level 20 or more on Saltmere who holds none and has not finished its bounty. Kept at a lamp, the bounty
-  is held and its first step done; then five Kindles on Saltmere, 100 foes brought down there with a thunderlock, and
+  is held and its first step done; then five Kindle missions finished on Saltmere, 100 foes brought down there with a thunderlock, and
   the fourth lamp lit; the last step done, Lanternfall is kept as found. No Vestige or Shape gives it.
 
 ## On the wire

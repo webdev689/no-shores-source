@@ -54,7 +54,7 @@ pub(crate) enum Held {
 /// Where a deal stands in its round: when it began and was done, its guards' posts, and its mission's progress (the
 /// dead lamps lit; the targets standing, a hunt's marked band's, a reckoning's collectors, a sever's tally posts; the
 /// collectors found; the ticks the ring was held; the waves called and those standing; whether the far mouth was
-/// reached, and whether late).
+/// reached, and whether late), and who took part.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Round {
     pub number: u32,
@@ -69,6 +69,9 @@ pub(crate) struct Round {
     pub wave_foes: Vec<FighterId>,
     pub reached: bool,
     pub late: bool,
+    /// The players who took part: struck down one of its foes, lit a dead lamp, held the ring or reached the far
+    /// mouth. Only they are paid its cache.
+    pub took_part: BTreeSet<PlayerId>,
 }
 
 /// A passage zone's room's own: its web's island, week and route, the zone, its levels, sites and pieces, the deal's
@@ -85,6 +88,8 @@ pub(crate) struct Zone {
     pub round: Round,
     pub lit: BTreeSet<PlayerId>,
     pub holds: BTreeMap<PlayerId, Hold>,
+    /// The tick each player came into the zone, which a Gauntlet's time runs from.
+    pub arrived: BTreeMap<PlayerId, u64>,
     pub veined: BTreeSet<PlayerId>,
 }
 
@@ -167,6 +172,7 @@ impl Room {
             round: Round::default(),
             lit: BTreeSet::new(),
             holds: BTreeMap::new(),
+            arrived: BTreeMap::new(),
             veined: BTreeSet::new(),
         })));
         if let (Deal::Vault, Laid::Under(dungeon)) = (zone.deal, &plan.ground) {

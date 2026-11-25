@@ -5,7 +5,7 @@
 use crate::{PassageAsk, PlayerId, Room, standing_on};
 use combat::fighter::Action;
 use gear::dive::{Route, Start};
-use passage::{Deal, Laid, Mission, PieceKind, Plan, Web};
+use passage::{Deal, Mission, PieceKind, Plan, Web};
 
 const ISLAND: &str = "continent-1";
 const BAND: (u8, u8) = (1, 4);
@@ -101,6 +101,8 @@ fn a_skirmish_done_pays_its_cache_once_opens_the_mouths_and_lets_the_player_go_o
     stand_at(&mut room, player, mouth);
     assert_eq!(room.ask_passage(player, PassageAsk::GoOn { mouth: 0 }), gear::Refusal::DealNotDone as u8 + 1);
     let xp = room.players[&player].character.xp;
+    // Killed by hand here, so no blow of theirs marks them as taking part.
+    room.zone_mut().expect("a zone").round.took_part.insert(player);
     kill_all(&mut room);
     run(&mut room, 2);
     let seen = room.passage_seen(player).expect("a zone");
@@ -269,7 +271,6 @@ fn a_hardened_zones_foes_stand_with_more_health() {
     let other = Room::passage(&plain, BAND, modifiers, (ISLAND, week, Route::Public)).expect("a room");
     let most = |room: &Room| room.foes.values().map(|foe| foe.fighter.health_max).sum::<f64>();
     assert!(most(&room) > most(&other), "{} against {}", most(&room), most(&other));
-    let _ = Laid::Under;
 }
 
 #[test]
@@ -285,4 +286,48 @@ fn a_hunt_begun_again_stands_its_marked_band_again_and_no_band_still_standing_tw
     assert!(room.passage_seen(player).is_some_and(|seen| seen.done), "the marked band down");
     run(&mut room, super::passage_deal::AGAIN_TICKS + 1);
     assert_eq!(room.living_foes(), standing, "the marked band again, the rest as they stood");
+}
+
+#[test]
+fn a_cache_pays_only_those_who_took_part_and_a_late_gauntlet_pays_none() {
+    let (week, plan, mut room) = zone_room(Deal::Skirmish, None, Route::Public);
+    let fighter = diver(&mut room, week, &plan);
+    let idle = diver(&mut room, week, &plan);
+    room.zone_mut().expect("a zone").round.took_part.insert(fighter);
+    kill_all(&mut room);
+    run(&mut room, 2);
+    assert!(dive(&room, fighter).is_some_and(|dive| dive.paid == [plan.zone.number]));
+    assert!(dive(&room, idle).is_some_and(|dive| dive.paid.is_empty() && dive.done), "its mouths open, no cache");
+
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Gauntlet), None, Route::Public);
+    let player = diver(&mut room, week, &plan);
+    run(&mut room, super::passage_deal::GAUNTLET_TICKS + 2);
+    let far = room.far_mouth().expect("a far mouth");
+    stand_at(&mut room, player, far);
+    run(&mut room, 2);
+    assert!(room.passage_seen(player).is_some_and(|seen| seen.done));
+    assert!(dive(&room, player).is_some_and(|dive| dive.paid.is_empty()), "late: no cache");
+}
+
+#[test]
+fn a_company_all_down_in_a_gloomy_zone_falls_back_and_loses_its_haul() {
+    let gloomy = (2_900..2_990).find_map(|week| {
+        let web = web(week);
+        let zone = web
+            .zones
+            .iter()
+            .find(|zone| zone.deal == Deal::Skirmish && zone.currents.contains(&passage::Current::Gloom))?;
+        Plan::of(&web, zone.number).map(|plan| (week, plan))
+    });
+    let (week, plan) = gloomy.expect("a gloomy skirmish");
+    let modifiers = gear::passages::week_modifiers(ISLAND, week);
+    let mut room = Room::passage(&plan, BAND, modifiers, (ISLAND, week, Route::Public)).expect("a room");
+    let player = diver(&mut room, week, &plan);
+    room.players.get_mut(&player).expect("in").character.gather(0);
+    let found = room.players.get_mut(&player).expect("in");
+    (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: combat::tuning::RESPAWN });
+    found.respawn_asked = true;
+    room.tick();
+    assert!(!room.players[&player].fighter.dead(), "fallen back");
+    assert!(dive(&room, player).is_some_and(|dive| dive.haul.is_empty()));
 }

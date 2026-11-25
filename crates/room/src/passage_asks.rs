@@ -191,6 +191,9 @@ impl Room {
                     if let Some(lit) = self.zone_mut().and_then(|zone| zone.round.lit.get_mut(usize::from(nth))) {
                         *lit = true;
                     }
+                    if let Some(zone) = self.zone_mut() {
+                        zone.round.took_part.insert(player);
+                    }
                 }
                 Held::Lamp => {
                     let (Some(lamp), dice, when) = (
@@ -229,6 +232,10 @@ impl Room {
             {
                 (dive.here, dive.depth) = (true, depth);
                 dive.done |= done;
+                let clock = self.clock;
+                if let Some(zone) = self.zone_mut() {
+                    zone.arrived.insert(player, clock);
+                }
                 self.saw(player, &Feat::Passage(Deed::Deep(depth)));
             }
             _ => {
@@ -254,6 +261,9 @@ impl Room {
     pub(crate) fn passage_kill(&mut self, player: PlayerId, hand: gear::Slot) {
         let Some(island) = self.zone().map(|zone| zone.island) else { return };
         self.saw(player, &Feat::Passage(Deed::Felled));
+        if let Some(zone) = self.zone_mut() {
+            zone.round.took_part.insert(player);
+        }
         let Some(found) = self.players.get_mut(&player) else { return };
         let weapon = found.character.worn(hand).map(|item| item.kind);
         if found.character.toward_bounties(gear::atheric_bounty::Toward::Felled { island, weapon }) {

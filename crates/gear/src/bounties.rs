@@ -1,7 +1,7 @@
 //! The bounty board: eight bounties a day, the same for everyone, drawn by the clock's day (`crate::activities`), two
-//! on land, two at sea, two in dungeons and two in the passages, each taken and turned in at the board by the day of the board shown, and
-//! paying XP and Aurem once at the character's level, more for a bigger task, as Destiny 1's bounties paid in three
-//! tiers.
+//! on land, two at sea, two in dungeons and two in the passages, each taken and turned in at the board by the day of
+//! the board shown, and paying XP and Aurem once at the character's level, more for a bigger task, as Destiny 1's
+//! bounties paid in three tiers.
 
 use crate::activities::{BOUNTY_DRAWS, drawn};
 use crate::activity::BOUNTIES;

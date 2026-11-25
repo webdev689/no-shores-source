@@ -158,29 +158,48 @@ impl Room {
             }
             Deal::Mission(Mission::Reckoning) => self.run_collectors(),
             Deal::Mission(Mission::Gauntlet) => {
-                let late = since > GAUNTLET_TICKS;
-                let far = self.far_mouth();
-                let reached = far.is_some_and(|far| {
-                    self.players.values().any(|player| {
+                let Some(far) = self.far_mouth() else { return };
+                // Each player's 90 s run from their own arrival; the deal is late only if every one there was late.
+                let clock = self.clock;
+                let reachers: Vec<(PlayerId, bool)> = self
+                    .players
+                    .iter()
+                    .filter(|(_, player)| {
                         !player.fighter.dead()
                             && apart([player.fighter.body.x, player.fighter.body.y], far) <= REACHED_M
                     })
-                });
-                if let Some(zone) = self.zone_mut() {
-                    zone.round.reached = reached;
-                    zone.round.late = late;
+                    .map(|(id, _)| {
+                        let came = zone.arrived.get(id).copied().unwrap_or(began);
+                        (*id, clock.saturating_sub(came) > GAUNTLET_TICKS)
+                    })
+                    .collect();
+                if let Some(zone) = self.zone_mut()
+                    && !reachers.is_empty()
+                {
+                    zone.round.reached = true;
+                    zone.round.late = reachers.iter().all(|(_, late)| *late);
+                    zone.round.took_part.extend(reachers.iter().map(|(id, _)| *id));
                 }
             }
             _ => {}
         }
     }
 
-    /// Hold's ring: round its first spot, held while a player stands in it, alive.
-    fn ring_held(&self) -> bool {
+    /// Hold's ring: round its first spot, held while a player stands in it, alive; those in it take part.
+    fn ring_held(&mut self) -> bool {
         let Some(ring) = self.zone().and_then(|zone| zone.sites.spots.first().copied()) else { return false };
-        self.players.values().any(|player| {
-            !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], ring) <= RING_M
-        })
+        let holding: Vec<PlayerId> = self
+            .players
+            .iter()
+            .filter(|(_, player)| {
+                !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], ring) <= RING_M
+            })
+            .map(|(id, _)| *id)
+            .collect();
+        if let Some(zone) = self.zone_mut() {
+            zone.round.took_part.extend(&holding);
+        }
+        !holding.is_empty()
     }
 
     /// The onward mouth farthest from the way in, Gauntlet's goal.
@@ -306,12 +325,13 @@ impl Room {
             Deal::Lamp => passage::lamp_number(depth).map(Cache::Lamp),
         };
         let players: Vec<PlayerId> = self.players.keys().copied().collect();
+        let took_part = zone.round.took_part.clone();
         let at = gear::lamps::Zone { island, week, zone: number, depth, level: levels.1 };
         for player in players {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             found.character.dive_deal_done(number);
-            if let Some(cache) = cache {
+            if let Some(cache) = cache.filter(|_| took_part.contains(&player)) {
                 found.character.pay_cache(at, cache, difficulty, source, &dice);
             }
             found.gear_changed = true;
