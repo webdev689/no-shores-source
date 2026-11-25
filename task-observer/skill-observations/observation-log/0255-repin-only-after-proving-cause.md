@@ -1,5 +1,5 @@
 ---
-id: 248
+id: 255
 title: "A pinned fingerprint that moves with a wire change is re-pinned only once switching the change off restores the old one"
 status: open
 type: internal
