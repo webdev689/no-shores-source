@@ -211,3 +211,42 @@ fn every_zone_of_every_week_lies_on_saltmeres_land_clear_of_its_coast() {
     }
     assert!(at_sea.is_empty(), "{} zones off the land, the first {:?}", at_sea.len(), at_sea.first());
 }
+
+/// How long `Plan::of` takes over every zone of twelve weeks, printed: mean and worst. Run by hand, in release:
+/// `cargo test -p passage --release time_the_layings -- --ignored --nocapture`.
+#[test]
+#[ignore = "a measurement, printed by hand in release"]
+#[allow(clippy::disallowed_methods, reason = "it times the layings and reports them")]
+fn time_the_layings() {
+    let mut took = Vec::new();
+    for week in 2_900..2_912 {
+        let web = Web::of(saltmere(), week);
+        for zone in &web.zones {
+            let start = std::time::Instant::now();
+            let plan = Plan::of(&web, zone.number);
+            took.push((start.elapsed().as_secs_f64() * 1_000.0, week, zone.number, plan.is_some()));
+        }
+    }
+    let mean = took.iter().map(|(ms, ..)| ms).sum::<f64>() / took.len() as f64;
+    let worst = took.iter().copied().max_by(|one, two| one.0.total_cmp(&two.0)).expect("zones");
+    eprintln!("{} zones: mean {mean:.2} ms, worst {:.1} ms (week {} zone {})", took.len(), worst.0, worst.1, worst.2);
+}
+
+#[test]
+fn every_zone_of_a_year_is_laid_where_a_body_walks_to_all_it_asks() {
+    let mut fell_back = Vec::new();
+    for week in 2_900..2_952 {
+        let web = Web::of(saltmere(), week);
+        for zone in &web.zones {
+            let plan = Plan::of(&web, zone.number).expect("a plan");
+            let missed = plan.unwalked();
+            if missed > 0 {
+                fell_back.push(format!(
+                    "week {week} zone {} {:?} {:?}: {missed} missed",
+                    zone.number, zone.ground, zone.deal
+                ));
+            }
+        }
+    }
+    assert!(fell_back.is_empty(), "{} zones kept a laying with misses: {fell_back:#?}", fell_back.len());
+}
