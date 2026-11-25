@@ -2,7 +2,7 @@
 // candidates round it, out before it first, whose lines to its keeper's head and its stall's front clear the node's
 // solids (the blocks the camera's boom keeps clear of) with both in the view. The Hall of the Arts is an interior, so
 // it is seen from inside, up under its roof by its door, down the nave to the three chapels, turning to each house's
-// as she names it. Her farewell is seen from the side, both faces in the view.
+// as she names it. Her first lines and her farewell are seen from the side, from over the pair's heads, both whole.
 import { lookAt } from '../../cinema/rail.ts';
 import { blockReach } from '../../player/boom.ts';
 import type { Block } from '../../rules/movementRules.ts';
@@ -47,10 +47,15 @@ const CHAPEL_TURNS = [0, 25, -25, 35, -35];
 /** How far below its target the view looks, a share of its lens: what it frames stands in the view's upper part,
  *  clear of the dialogue box over its lower middle. */
 const RAISE = 0.2;
-/** How far from the pair the face-to-face eye stands, and how far down the view the feet of whoever it frames stand
- *  (a share of its height; the pair, or a house's keeper): above the dialogue box, whose top is 43% down at 960x540. */
-const FACES_M = 6;
+/** How far down the view the feet of whoever a shot frames stand (a share of its height; the pair, or a house's
+ *  keeper): above the dialogue box, whose top is 43% down at 960x540. */
 const FEET_SHARE = 0.36;
+/** The face-to-face shot: the eye's heights over the pair's feet, tried in turn, above their heads so it looks down on
+ *  them a little; and how far down the view their crowns stand, clear of its top, the pair whole between. */
+const FACES_UPS_M = [2.8, 3.4, 2.4];
+const CROWN_SHARE = 0.14;
+/** A figure's crown over its feet, metres. */
+export const CROWN_M = HEAD_M + 0.2;
 /** The view a framing is checked against: the widest screen the game is laid out for. */
 const CHECKED = { width: 16, height: 9 };
 
@@ -185,20 +190,45 @@ export function hallShot(place: Place, kinds: readonly string[], own: Shot): Sho
   return firstSeeing(near, [its, banner], place.blocks);
 }
 
-/** Her farewell seen from the side of the pair, the side nearer the player's view first, else the one a solid leaves
- *  clear: level with their faces, both in the view. */
+/** How far off a pair an eye `up` metres over their feet stands, and how far below the horizon it looks, for their
+ *  crowns to stand `CROWN_SHARE` and their feet `FEET_SHARE` down a view `fov` tall. */
+export function facesFraming(up: number, fov: number): { readonly away: number; readonly pitch: number } {
+  const half = Math.tan(fov / 2);
+  // Each one's angle off the view's middle, downward: both above it, so less than nothing.
+  const feet = Math.atan((FEET_SHARE - 0.5) * 2 * half);
+  const crown = Math.atan((CROWN_SHARE - 0.5) * 2 * half);
+  const seen = (away: number) => Math.atan(up / away) - Math.atan((up - CROWN_M) / away);
+  // The nearer the eye, the taller the pair stands in the view: halved until the pair fills the span between.
+  let [near, far] = [0.5, 100];
+  for (let step = 0; step < 48; step++) {
+    const away = (near + far) / 2;
+    if (seen(away) > feet - crown) near = away;
+    else far = away;
+  }
+  const away = (near + far) / 2;
+  return { away, pitch: Math.atan(up / away) - feet };
+}
+
+/** Her first lines and her farewell seen from the side of the pair, the side nearer the player's view first, else the
+ *  one a solid leaves clear, from over their heads: both whole above the dialogue box, their faces in the view. */
 export function facesShot(own: Shot, stranger: Point3, player: Point3, blocks: readonly Block[]): Shot {
   const middle: Point3 = [(stranger[0] + player[0]) / 2, (stranger[1] + player[1]) / 2, (stranger[2] + player[2]) / 2];
   const [acrossX, acrossY] = [player[0] - stranger[0], player[1] - stranger[1]];
   const length = Math.hypot(acrossX, acrossY) || 1;
-  const sides = [1, -1].map((side): Point3 => [
-    middle[0] - (acrossY / length) * FACES_M * side,
-    middle[1] + (acrossX / length) * FACES_M * side,
-    middle[2] + HEAD_M,
-  ]);
-  const toOwn = (eye: Point3) => Math.hypot(eye[0] - own.eye[0], eye[1] - own.eye[1]);
-  sides.sort((one, two) => toOwn(one) - toOwn(two));
+  const toOwn = (side: number) =>
+    Math.hypot(middle[0] - (acrossY / length) * side - own.eye[0], middle[1] + (acrossX / length) * side - own.eye[1]);
+  const sides = [1, -1].sort((one, two) => toOwn(one) - toOwn(two));
+  const shots = sides.flatMap((side) =>
+    FACES_UPS_M.map((up): Shot => {
+      const { away, pitch } = facesFraming(up, own.fov);
+      const eye: Point3 = [
+        middle[0] - (acrossY / length) * away * side,
+        middle[1] + (acrossX / length) * away * side,
+        middle[2] + up,
+      ];
+      return { ...own, eye, yaw: lookAt(eye, middle).yaw, pitch };
+    }),
+  );
   const faces = [stranger, player].map((feet): Point3 => [feet[0], feet[1], feet[2] + HEAD_M]);
-  const shots = sides.map((eye) => standing(own, eye, middle));
   return firstSeeing(shots, faces, blocks) ?? (shots[0] as Shot);
 }
