@@ -52,6 +52,7 @@ fn diver(room: &mut Room, week: u64, plan: &Plan) -> PlayerId {
         zone: plan.zone.number,
         depth: plan.zone.depth,
         lamp: None,
+        seas: gear::Difficulty::Normal,
     };
     character.begin_dive(&start).expect("begun");
     assert!(room.restore_character(player, &character.to_json()), "the gate lets them in");
@@ -352,6 +353,7 @@ fn a_player_home_from_a_lamp_stands_before_the_mouth_they_began_at_keeping_what_
         zone: 4,
         depth: 5,
         lamp: None,
+        seas: gear::Difficulty::Normal,
     };
     character.begin_dive(&start).expect("begun");
     let dive = character.passage.as_mut().expect("diving");
@@ -497,7 +499,16 @@ fn a_homeward_dive_joining_another_islands_patrol_zone_loses_its_haul() {
     assert!(room.open_mouths("continent-2", vec![([0.0, 0.0], [0.0, 20.0])]));
     let player = room.join().expect("joined");
     let mut character = room.players[&player].character.clone();
-    let start = Start { island: ISLAND, week: 2_900, route: Route::Public, mouth: 0, zone: 4, depth: 5, lamp: None };
+    let start = Start {
+        island: ISLAND,
+        week: 2_900,
+        route: Route::Public,
+        mouth: 0,
+        zone: 4,
+        depth: 5,
+        lamp: None,
+        seas: gear::Difficulty::Normal,
+    };
     character.begin_dive(&start).expect("begun");
     let dive = character.passage.as_mut().expect("diving");
     (dive.lamp, dive.homeward) = (1, true);

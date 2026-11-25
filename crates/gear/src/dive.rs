@@ -9,6 +9,7 @@
 use crate::character::{Character, Materials, Stuff, UnknownKeys, Vestige};
 use crate::item::Item;
 use crate::refusal::Refusal;
+use crate::world::Difficulty;
 use serde::{Deserialize, Serialize};
 
 /// The most a haul holds of Vestiges and of items, so a dive never grows a save without end; past them a find is let
@@ -83,6 +84,9 @@ pub struct Dive {
     /// mouth it began at, keeping what they found on the way out.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub homeward: bool,
+    /// The seas of the patrol zone it began at, the room it goes home to.
+    #[serde(default)]
+    pub seas: Difficulty,
     /// Whether the player stands in a passage zone of the dive now, so what they find goes into the haul: set by the
     /// zone's room as they join it, never kept.
     #[serde(skip)]
@@ -91,8 +95,8 @@ pub struct Dive {
     pub unknown: UnknownKeys,
 }
 
-/// Where a dive begins: the island and week, its route, the patrol zone's mouth, the zone and its depth, and the lamp
-/// it begins at, if it begins at one.
+/// Where a dive begins: the island and week, its route, the patrol zone's mouth, the zone and its depth, the lamp it
+/// begins at, if it begins at one, and the seas of the patrol zone it begins from.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Start<'a> {
     pub island: &'a str,
@@ -102,6 +106,7 @@ pub struct Start<'a> {
     pub zone: u16,
     pub depth: u8,
     pub lamp: Option<u8>,
+    pub seas: Difficulty,
 }
 
 impl Character {
@@ -136,6 +141,7 @@ impl Character {
             paid: start.lamp.map(|_| start.zone).into_iter().collect(),
             haul: Haul::default(),
             homeward: false,
+            seas: start.seas,
             here: false,
             unknown: UnknownKeys::new(),
         });

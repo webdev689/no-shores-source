@@ -289,8 +289,8 @@ table GearHaul {
 
 // A dive under way: its island (a continent's id) and the week of its web, the zone it is in and that zone's depth,
 // the deepest lamp lit (0 none), its route (0 public, 1 a company's), the patrol zone's mouth it began at, whether the
-// zone's deal was done while they were in it (its mouths open for them), its haul, and whether it is homeward (a
-// lamp's Home taken, no way on).
+// zone's deal was done while they were in it (its mouths open for them), its haul, whether it is homeward (a lamp's
+// Home taken, no way on), and the seas of the patrol zone it began at, which Home goes to (0 Normal, 1 Elite, 2 Abyss).
 table GearDive {
   island: string;
   week: uint;
@@ -302,6 +302,7 @@ table GearDive {
   done: bool;
   haul: GearHaul;
   homeward: bool;
+  seas: ubyte;
 }
 
 // An island's passages' lamps for a player: the island, the lamps lit this week by number (1 to 4), and whether the

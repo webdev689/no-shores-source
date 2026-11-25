@@ -120,7 +120,8 @@ impl Room {
             None => web.mouths.get(usize::from(mouth)).and_then(|number| web.zone_of(*number)),
         };
         let Some(zone) = zone else { return refused(Refusal::NoSuchMouth) };
-        let start = Start { island, week, route, mouth, zone: zone.number, depth: zone.depth, lamp };
+        let (depth, seas) = (zone.depth, self.difficulty);
+        let start = Start { island, week, route, mouth, zone: zone.number, depth, lamp, seas };
         let Some(found) = self.players.get_mut(&player) else { return refused(Refusal::NoDive) };
         found.gear_changed = true;
         answer_code(found.character.begin_dive(&start))

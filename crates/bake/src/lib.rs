@@ -68,6 +68,10 @@ pub struct NodeFile {
     /// In a patrol area, each run's name and the place of its sealed door, where an island's passages begin.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub doors: Vec<Place>,
+    /// In a patrol area, its gates crossing to another patrol area, each named for the node it leads to: a player
+    /// crossing from that node arrives here.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub crossings: Vec<Place>,
     /// At an outpost site, the ground its guilds build on and gather at.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outpost: Option<OutpostGround>,
@@ -142,6 +146,13 @@ pub fn places_of(layout: &layout::Layout) -> Vec<Place> {
     let named = |name: &str| layout.areas.iter().any(|area| area.name == name);
     let runs = layout.runs.iter().filter(|run| !named(&run.name));
     areas.chain(runs.map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M })).collect()
+}
+
+/// A layout's gates crossing to another patrol area, each named for the node it leads to, at its middle.
+#[must_use]
+pub fn crossings_of(layout: &layout::Layout) -> Vec<Place> {
+    let crossing = layout.areas.iter().filter(|area| area.crosses);
+    crossing.filter_map(|area| Some(Place { name: area.leads_to.clone()?, at: area.at, radius: area.radius })).collect()
 }
 
 /// A layout's runs' sealed doors, each its run's name and its door's middle, reached from 0 m.
@@ -275,6 +286,7 @@ pub fn nodes_of(
             places,
             paths,
             doors: Vec::new(),
+            crossings: Vec::new(),
             outpost: None,
         }
     };
@@ -300,11 +312,11 @@ pub fn nodes_of(
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
         let grounds = laid.and_then(grounds_of);
-        let doors = laid.map(doors_of).unwrap_or_default();
+        let (doors, crossings) = (laid.map(doors_of).unwrap_or_default(), laid.map(crossings_of).unwrap_or_default());
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
         let outpost =
             laid.filter(|_| node.kind == NodeKind::Outpost).and_then(|layout| outpost_of(layout, &cut.ground));
-        NodeFile { grounds, gates, resources, chests, holders, foes, places, paths, doors, outpost, ..cut }
+        NodeFile { grounds, gates, resources, chests, holders, foes, places, paths, doors, crossings, outpost, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);

@@ -27,8 +27,16 @@ fn every_ask_of_the_passages_crosses_as_it_was_asked() {
 #[test]
 fn a_dive_its_haul_and_the_lamps_cross_in_the_gear_and_a_zones_deal_in_the_snapshot() {
     let mut character = gear::Character::starting();
-    let start =
-        Start { island: "continent-1", week: 2_900, route: Route::Company, mouth: 2, zone: 14, depth: 4, lamp: None };
+    let start = Start {
+        island: "continent-1",
+        week: 2_900,
+        route: Route::Company,
+        mouth: 2,
+        zone: 14,
+        depth: 4,
+        lamp: None,
+        seas: gear::Difficulty::Abyss,
+    };
     character.begin_dive(&start).expect("begun");
     character.passage.as_mut().expect("diving").here = true;
     character.gather(3);
@@ -45,6 +53,7 @@ fn a_dive_its_haul_and_the_lamps_cross_in_the_gear_and_a_zones_deal_in_the_snaps
         (Some("continent-1"), 14, 4, 1, 2)
     );
     assert!(!dive.homeward(), "a dive going on is not homeward");
+    assert_eq!(dive.seas(), 2, "begun from the patrol zone at Abyss, it goes home there");
     assert_eq!(dive.haul().and_then(|haul| haul.resources()).map(|resources| resources.get(3)), Some(3));
     let lamps = gear.island_lamps().expect("lamps");
     assert_eq!(lamps.get(0).lamps().map(|lit| lit.iter().collect::<Vec<u8>>()), Some(vec![2]));
@@ -71,8 +80,16 @@ fn a_dive_its_haul_and_the_lamps_cross_in_the_gear_and_a_zones_deal_in_the_snaps
 #[test]
 fn a_dive_turned_homeward_crosses_homeward() {
     let mut character = gear::Character::starting();
-    let start =
-        Start { island: "continent-1", week: 2_900, route: Route::Public, mouth: 1, zone: 5, depth: 5, lamp: None };
+    let start = Start {
+        island: "continent-1",
+        week: 2_900,
+        route: Route::Public,
+        mouth: 1,
+        zone: 5,
+        depth: 5,
+        lamp: None,
+        seas: gear::Difficulty::Normal,
+    };
     character.begin_dive(&start).expect("begun");
     character.passage.as_mut().expect("diving").homeward = true;
     let mut builder = FlatBufferBuilder::new();

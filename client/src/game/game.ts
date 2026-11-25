@@ -344,14 +344,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     behindVeil(playing.flow.mode === 'loading' ? playing.flow.words : '', () =>
       resuming
         ? resume({
-            online: rooms !== null,
-            heard,
-            kept: placeKept,
-            nodes: playing.landmass.nodes,
-            aboard: goSea,
-            ashore,
-            overlook,
-            flow,
+            ...{ online: rooms !== null, heard, kept: placeKept, nodes: playing.landmass.nodes, aboard: goSea },
+            ...{ ashore, overlook, flow, passage: (room: string) => passages.resumeIn(room) },
           })
         : overlook(),
     );

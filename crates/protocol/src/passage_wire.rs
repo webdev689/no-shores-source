@@ -110,6 +110,11 @@ pub fn passages_of<'built>(
             done: dive.done,
             haul: Some(haul),
             homeward: dive.homeward,
+            seas: gear::Difficulty::ALL
+                .iter()
+                .position(|seas| *seas == dive.seas)
+                .and_then(|at| u8::try_from(at).ok())
+                .unwrap_or(0),
         };
         messages::GearDive::create(builder, &args)
     });

@@ -130,7 +130,7 @@ no landmark zones ("The regions", above).
 | Call | Choice |
 |---|---|
 | Its guard | The zone's garrison; once it is down, each player lights the lamp for themselves, holding E 2 s at its plinth |
-| Then | Home, to the Saltgrass Downs before the mouth they came in by, or On: the zone's onward mouths |
+| Then | Home, to the Saltgrass Downs at the seas the dive began at, before the mouth they came in by, or On: the zone's onward mouths |
 | Beginning at a lamp | A lamp lit this week on an island is offered at that island's mouths: "Begin at the second lamp" stands the player in that lamp's zone, the lamp counted lit, the haul empty |
 
 ## Routes
@@ -139,6 +139,7 @@ no landmark zones ("The regions", above).
 |---|---|
 | Public | One shared room for each zone and week, up to eight players, the next opening when it is full. Its deal begins again 60 s after it is done; each player is paid a zone's cache once in a dive |
 | Company | A room for each zone of a company's route, joined by its members who come that way; one player alone has their own route |
+| A reload or a closed tab | Costs no more than a death: logging in again with the dive's zone the last room that held the character goes back into that zone, on the same dive, its haul kept |
 
 ## The passage between zones
 

@@ -69,12 +69,15 @@ export function zonePlace(plan: PassagePlan, patrol: NodeInfo, room: string): No
   };
 }
 
-/** How far from a mouth's door the player stands on coming home, toward the patrol zone's middle, metres. */
+/** How far from a mouth's door the player stands on coming home, toward its run's end arena, metres, as the room
+ *  stands them (`BEFORE_MOUTH_M`). */
 const HOME_STEP_M = 2;
 
-/** Where a player coming home stands: `HOME_STEP_M` out from the mouth's door toward the patrol zone's middle. */
-export function homeSpot(door: readonly [number, number], centre: readonly [number, number]): [number, number] {
-  const [east, south] = [centre[0] - door[0], centre[1] - door[1]];
-  const length = Math.hypot(east, south) || 1;
+/** Where a player coming home stands: `HOME_STEP_M` out from the mouth's door toward `toward`, its run's end arena;
+ *  at the door itself when the two are one. */
+export function homeSpot(door: readonly [number, number], toward: readonly [number, number]): [number, number] {
+  const [east, south] = [toward[0] - door[0], toward[1] - door[1]];
+  const length = Math.hypot(east, south);
+  if (length < 1e-6) return [door[0], door[1]];
   return [door[0] + (east / length) * HOME_STEP_M, door[1] + (south / length) * HOME_STEP_M];
 }

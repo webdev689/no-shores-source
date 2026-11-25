@@ -10,6 +10,8 @@ import {
   type Reach,
   arrives,
   cameOutOf,
+  crossingAsked,
+  crossingsOf,
   reachOf,
   shipOf,
   toCoast,
@@ -298,4 +300,27 @@ test("each of Saltmere's patrol zones is walked into from both others through th
   assert.equal(arrives('node-gullwing-vale', 'node-saltgrass-downs', null, vale), true);
   assert.equal(arrives('node-gullwing-vale--elite', 'node-driftwood-moors--elite', null, vale), true);
   assert.equal(arrives('node-gullwing-vale--elite', 'node-saltgrass-downs', null, vale), false, 'at another tier');
+});
+
+test('a player crossing from a patrol zone joins the next at the gate toward the one left, once it keeps them so', () => {
+  const text = JSON.stringify({
+    id: 'saltgrass-downs',
+    crossings: [{ name: 'gullwing-vale', at: [40, -20], radius: 18 }],
+  });
+  const crossings = crossingsOf(text);
+  assert.deepEqual(crossings, [{ name: 'gullwing-vale', at: [40, -20] }]);
+  assert.deepEqual(crossingsOf('{"id":"tidewall"}'), [], 'a file with none');
+  assert.deepEqual(crossingsOf('not JSON'), []);
+  const asked = (query: string) =>
+    crossingAsked(new Request(`https://rooms/room/node-saltgrass-downs${query}`), crossings);
+  assert.deepEqual(asked('?from=gullwing-vale'), { name: 'gullwing-vale', at: [40, -20] });
+  assert.equal(asked('?from=tidewall'), null, 'no gate leads there');
+  assert.equal(asked(''), null);
+  // Kept as come from that node at the same seas, the player stays at its gate; else the landing stands them.
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale', 'gullwing-vale'), true);
+  assert.equal(cameOutOf('node-saltgrass-downs--elite', 'node-gullwing-vale--elite', 'gullwing-vale'), true);
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--elite', 'gullwing-vale'), false, 'other seas');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'sea', 'gullwing-vale'), false, 'landed from the sea');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-tidewall', 'gullwing-vale'), false, 'from elsewhere');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--dungeon-0', 'gullwing-vale'), false);
 });

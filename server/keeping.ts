@@ -234,11 +234,14 @@ export class Keeper {
     if (own !== null) this.room.restoreCharacter(player, own);
     const body = claimed.body === null ? null : await this.answered(claimed.account, claimed.body, here);
     const given = body === null || this.room.restoreCharacter(player, body);
-    if (!here() || !given || this.held.has(player)) {
-      // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.
+    // Another sign-in may have been kept while the errand was asked again: the room is judged full again, at last.
+    const full = this.fullWith(claimed.account);
+    if (!here() || !given || this.held.has(player) || full !== null) {
+      // Gone already, full now, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null).catch(() => false);
       // A run keeps no one unkept, and joining again would find the same body.
-      if (this.closed && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
+      if (full !== null && here()) this.lost(player, full);
+      else if (this.closed && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
       return false;
     }
     // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes
@@ -310,6 +313,13 @@ export class Keeper {
     if (left && (await this.outsider(held.account, here)) && here()) this.lost(player, ANOTHER_GUILD);
   }
 
+  /** Why a run, or a public passage zone, is full with `account` kept too; null while it has room. It is full by the
+   *  accounts it keeps, so a member's own older socket never counts against them. */
+  private fullWith(account: string): string | null {
+    const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
+    return runFull(this.name, others.size + 1);
+  }
+
   /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its
    *  company, and where it came from; undefined when the accounts cannot say who the company is. Nothing waits
    *  between this and keeping it. */
@@ -322,10 +332,7 @@ export class Keeper {
     const companions =
       this.company && characters ? await this.tried(() => characters.companions(account, this.name), here) : null;
     if (companions === undefined) return undefined;
-    // A run, or a public passage zone, is full by the accounts it keeps, so a member's own older socket never counts
-    // against them.
-    const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
-    const full = runFull(this.name, others.size + 1);
+    const full = this.fullWith(account);
     // A playlist's run is the server's: its first player must be one the server drew it for (`finding.ts`).
     const drawn =
       this.admitted.size === 0 && characters && (nodeRoom(this.name.slice('node-'.length))?.playlist ?? null) !== null

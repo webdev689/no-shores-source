@@ -46,6 +46,8 @@ export interface NodeInfo {
    *  (layouts.ts `findsOf`). */
   readonly chests?: readonly (readonly [number, number, number])[];
   readonly holderProps?: readonly (readonly [number, number, number, number, number, number])[];
+  /** Gone to across a crossing gate, the patrol area crossed from: its room stands the player at its gate toward it. */
+  readonly across?: string;
 }
 
 /** A continent's port city, as its edits file names it. */

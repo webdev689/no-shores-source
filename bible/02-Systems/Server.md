@@ -579,7 +579,10 @@ so every decision is Rust and the shell only carries bytes and time.
   its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. They
   stay there only once the room keeps their character as come out of that entrance's dungeon or its run: one whose
   character came from anywhere else, who sends no token within five seconds or who plays unkept is stood at the next
-  spawn (`outOfDoor`). In a social space's room, `?relog=1` asks, once the room keeps the character, to stand the
+  spawn (`outOfDoor`). Across a crossing gate from another patrol zone, `?from=<node id>` stands them at the room's
+  gate toward that node, as its node file lists its crossings (`bake::crossings_of`), and they stay there only once
+  the room keeps their character as come from that node's room at the same seas, else at the next spawn
+  (`outOfDoor`). In a social space's room, `?relog=1` asks, once the room keeps the character, to stand the
   player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
@@ -648,29 +651,32 @@ so every decision is Rust and the shell only carries bytes and time.
 
 - **Its name** (`passageRoom`): `passage-<island>-w<week>-z<zone>`, the island's continent's id, its web's week as
   `gear::clock::week_of` counts it and the zone's number in the web ([[Passages]]), each number without leading
-  zeros. That is the zone's first public room; `--2` to `--99` after it are the next public rooms, each opened when
-  the ones before were full, and `--run-<instance>` a company's route, a run as any other (`privateRun`). Any other
+  zeros. That is the zone's first public room; `--2` to `--9` after it (`PASSAGE_COPIES`, as many as the page tries)
+  are the next public rooms, each opened when the ones before were full, and `--run-<instance>` a company's route, a run as any other (`privateRun`). Any other
   spelling is no room, so no other spelling opens a fresh room, nor a public copy of a route. A page may join any
   copy by its number; each dive is still paid a zone's cache once.
 - **Opening** (`passageHost.ts`): the first join opens the room from its name with the room module's
-  `open_passage`, its ask the island, week, zone, route and the minute (`passageAsk`). Last week's web still opens,
-  and its room refuses every join with "The passage has shifted"; a week neither this one nor the last ("That week's
-  passages are gone.") and a zone the web does not hold ("No such passage.") open nothing, and the host takes the
-  socket only to close it with 4003 and why.
+  `open_passage`, its ask the island, week, zone, route and the minute (`passageAsk`). Last week's web ("The passage
+  has shifted"), any other week but this one ("That week's passages are gone.") and a zone the web does not hold ("No
+  such passage.") open nothing, the zone never laid, and the host takes the socket only to close it with 4003 and
+  why. A room opened in its week refuses every join with "The passage has shifted" once the week on its clock turns,
+  judged as each join comes (`refusal`).
 - **Who comes in**: it keeps characters as a node's room does. A public room holds eight accounts (`PASSAGE_MOST`),
-  judged as each signs in, and a ninth is closed with 4003 and "This passage is full.", for the page to join the next
-  copy; its sockets are held to sixteen. As in a run, no one plays before the room keeps their character, and it
+  judged as each signs in and again as each is kept, so two signing in together never make nine, and a ninth is
+  closed with 4003 and "This passage is full.", for the page to join the next copy; its sockets are held to sixteen. As in a run, no one plays before the room keeps their character, and it
   keeps no one unkept. A route keeps to its company and its four accounts as a run does. A
   company's member taking its route joins the room of a member already in that zone's route, as the page finds it
   among the company's places (`sharedRun`), else the page draws a new instance (`runInstance`).
 - **Arrivals** (`arrives`, judged from the keeper's copy of the character, never the page's): only a character on a
   dive (`gear::dive::Dive`) of the room's island, week and zone, by its route (a company's dive into a route, a public
-  one into a public room), and only from the island's patrol zone where the dive begins at the mouth leading to the
-  zone or at the zone's lamp lit this week; from a passage zone of the same web and route whose ways on lead to it,
-  where the rules went on only once its deal was done; or rejoining its own room with the dive still in it. Once the
-  week turns, last week's rooms take no one, whoever is still in them. No company playing there lets
-  anyone else in. Out of a lamp's zone a character comes to the island's patrol zone once that lamp is lit for it this
-  week. The web is laid by the room's own module (`room_passage_web`).
+  one into a public room), and only from the island's patrol zone at the seas the dive began at (`Dive::seas`), where
+  the dive begins at the mouth leading to the zone or at the zone's lamp lit this week; from a passage zone of the
+  same web and route whose ways on lead to it, where the rules went on only once its deal was done; from another
+  public copy of its zone, as a full one sends the page on; or rejoining its own room with the dive still in it. Once
+  the week turns, last week's rooms take no one, whoever is still in them. No company playing there lets anyone else
+  in. Out of a lamp's zone a character comes home to the island's patrol zone at the seas its dive began at, once its
+  dive went home from that zone (`go_home`, its lamp lit this dive): the dive is judged, not the week's lamps, which a
+  week turned since may have cleared. The web is laid by the room's own module (`room_passage_web`).
 - **What an arrival is judged by is saved at once** when it moves (`Keeper.changed`): the dive's island, week, zone,
   route, lamp and Home, and the lamps lit this week with their week. The room keeps a mark of these for each player,
   set from the character as restored and compared as their gear changes (`crates/room/src/judged.rs`), and the host

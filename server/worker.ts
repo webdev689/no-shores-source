@@ -3,8 +3,8 @@ import course from '../content/testground/course.json' with { type: 'json' };
 import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
-import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
-import { addressKey } from './address.ts';
+import { type Listed, arrives, cameOutOf, crossingAsked, crossingsOf, reachOf, shipOf } from './arrival.ts';
+import { addressKey, sessionHash } from './address.ts';
 import { type Count, admitsFrom, counted } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
@@ -64,12 +64,6 @@ const AGAIN = 1013;
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
 
-/** A session token's SHA-256, in hex: what the sea knows a ship played unkept by, never the token itself. */
-async function sessionHash(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
 /**
  * One room on Cloudflare: a Durable Object for each room's name (`roomNames.ts`), keeping the room in WebAssembly:
  * `sea` the sea (with `--elite` or `--abyss` at a harder tier); `node-...` a node's room, a patrol's shared dungeon, or
@@ -98,9 +92,10 @@ export class RoomHost extends DurableObject<Env> {
       signed: boolean;
       spoke: boolean;
       token: string | null;
-      /** The entrance a player was joined before, until the room learns whether they came out of its dungeon; and whether
-       *  they log back in here (`?relog=1`), to stand where their kept character left this social space. */
-      door: number | null;
+      /** The entrance a player was joined before, or the crossing gate by the node it leads to, until the room learns
+       *  whether they came out of its dungeon or across from that node; and whether they log back in here
+       *  (`?relog=1`), to stand where their kept character left this social space. */
+      door: number | string | null;
       relog?: boolean;
       /** At sea, the water their ship lay in as the accounts last took it (unset till they do), which the chat's Region
        *  is; and the word on it in flight, so each is said after the last. */
@@ -125,6 +120,8 @@ export class RoomHost extends DurableObject<Env> {
   private readonly ashore = new Set<number>();
   /** At a guild's outpost, what stands its plot and runs its players' errands with the accounts. */
   private outpost: OutpostHost | null = null;
+  /** A patrol zone's gates crossing to the others, where a player crossing from one joins (`?from=`). */
+  private crossings: ReturnType<typeof crossingsOf> = [];
 
   /** The sea's word on its island `id`, for that island's room: empty unless this is the open sea and it stands. */
   async islandWord(id: number): Promise<string> {
@@ -185,6 +182,8 @@ export class RoomHost extends DurableObject<Env> {
     const entrance = entranceOf(request);
     const atDoor = entrance === null ? 0 : this.guarded(() => this.room.joinAt(entrance), 0);
     const player = atDoor || this.guarded(() => this.room.join(), 0);
+    const across = atDoor ? null : crossingAsked(request, this.crossings);
+    if (across && player) this.guarded(() => this.room.putPlayer(player, across.at[0], across.at[1]), false);
     if (player === 0) {
       // A full room, or a locked node's, still takes the socket, to say why it closes.
       const locked = this.guarded(() => this.room.refusal(), null);
@@ -194,7 +193,7 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    const door = atDoor ? entrance : null;
+    const door = atDoor ? entrance : (across?.name ?? null);
     const relog = new URL(request.url).searchParams.get('relog') === '1';
     const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door, relog };
     this.players.set(server, held);
@@ -311,6 +310,7 @@ export class RoomHost extends DurableObject<Env> {
     const named = nodeRoom(node);
     if (!named) return false;
     const text = await this.nodeText(named.id);
+    this.crossings = named.dungeon === null && named.run === null ? crossingsOf(text) : [];
     // A guild's outpost opens only on a node whose file has an outpost's ground; the bare node is the wild site.
     const ground = named.guild !== null && text !== null ? outpostGround(text) : null;
     if (named.guild !== null && !ground) return false;
@@ -332,15 +332,16 @@ export class RoomHost extends DurableObject<Env> {
     return index.ok ? reachOf((await index.json()) as Listed[], layout.continents, id) : null;
   }
 
-  /** Stands a player joined before an entrance at a spawn, as an ordinary join, unless the room keeps their character
-   *  as come out of that entrance's dungeon or run, by its exit door or its open portal. */
+  /** Stands a player joined before an entrance or at a crossing gate at a spawn, as an ordinary join, unless the room
+   *  keeps their character as come out of that entrance's dungeon or run, by its exit door or its open portal, or as
+   *  come across from the node the gate leads to. */
   private outOfDoor(socket: WebSocket): void {
     const held = this.players.get(socket);
     if (!held || held.door === null) return;
     const door = held.door;
     held.door = null;
     const cameOut = cameOutOf(this.name, this.keeper?.cameFrom(held.player) ?? null, door);
-    if (!cameOut || !this.keeper?.leftByWayOut(held.player))
+    if (!cameOut || (typeof door === 'number' && !this.keeper?.leftByWayOut(held.player)))
       this.guarded(() => this.room.standAtSpawn(held.player), false);
   }
 

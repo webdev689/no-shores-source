@@ -203,7 +203,7 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
       if (account === LAPSED) return refused(401, LAPSED);
       if (!account) return refused(401, 'Not signed in.');
       // Where its character logs back in, for the page to go after the title (`lastPlace.ts`).
-      return json({ account: shown(account), place: await lastPlace(database, account.id) });
+      return json({ account: shown(account), place: await lastPlace(database, account.id, now) });
     }
     case 'POST /v1/register': {
       const account = await signedIn(request, database, now);

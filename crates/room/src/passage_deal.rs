@@ -425,7 +425,7 @@ impl Room {
     }
 
     /// Whether the clock's week is past the zone's web's: its ways lead elsewhere now.
-    pub(crate) fn shifted(&self) -> bool {
+    pub fn shifted(&self) -> bool {
         self.zone().is_some_and(|zone| gear::clock::week_of(self.minute) > zone.week)
     }
 
