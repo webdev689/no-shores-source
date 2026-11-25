@@ -15,6 +15,10 @@ import type { Stack } from '../ui/stack.ts';
 import type { MapMarks } from '../heldmap/landSheet.ts';
 import { chartMarksOf } from './mapMarks.ts';
 
+/** How often the land's map gathers again what moves on it, seconds: each gathering may paint its parchment again
+ *  and send it to the GPU, however many players move. */
+const MARKS_EVERY_S = 0.1;
+
 /** What the map at the helm draws over the finished picture. */
 export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
 
@@ -47,6 +51,8 @@ export class HelmMap {
    *  land's. */
   private landWanted: LandSheet | null = null;
   private onLand = false;
+  /** What moves on the land's map as last gathered, and the seconds since. */
+  private marks: { readonly moving: MapMarks | undefined; since: number } | null = null;
 
   private readonly context: HelmMapContext;
 
@@ -205,7 +211,10 @@ export class HelmMap {
     const map = this.map;
     const up = !!map?.shown && this.onLand;
     const scene = { ship: foot.at, heading: foot.heading, places: [], knownIslands: 0, course: [], lit: foot.lit };
-    const moving = up ? foot.map?.() : undefined;
+    if (this.marks) this.marks.since += seconds;
+    if (!up) this.marks = null;
+    else if (!this.marks || this.marks.since >= MARKS_EVERY_S) this.marks = { moving: foot.map?.(), since: 0 };
+    const moving = this.marks?.moving;
     const drawn = up && map ? map.frame(seconds, foot.viewport, foot.dpr, { ...scene, moving }) : null;
     return map && drawn ? (encoder, view) => map.draw(encoder, view, drawn) : undefined;
   }

@@ -53,6 +53,7 @@ export type Painter = Pick<
   | 'scale'
   | 'rect'
   | 'clip'
+  | 'drawImage'
 > & {
   font: string;
   fillStyle: string | CanvasGradient | CanvasPattern;

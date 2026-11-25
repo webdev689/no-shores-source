@@ -212,8 +212,10 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
   - **What moves on it** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): every other player in the room the player stands in, a patrol zone's or a social
     space's, wherever they are in it, a dot in their nameplate's square's colour, the company's green or the players'
     blue, edged in the ink, under the player's arrow (`mapMarks.ts`); and the zone's public event while it runs, ringed
-    at its ground in the route's red-brown, its name and the time it has left beside it. The parchment is painted again
-    as they move, as it is for the player's own arrow.
+    at its ground in the route's red-brown, its name and the time it has left beside it; a player off the map is
+    neither dotted nor named in the table. They are gathered ten times a second, to the whole pixel, and painted, with
+    the player's arrow, over a copy of the land's sheet (`LandLettering`), which is painted again only when the view or
+    the table's rows change; none of them covers the table.
   - **A lit coin.** A keeper's coin is lit as their mark over them is ([[Game]], "Over what a player can use";
     [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a quest step asks to speak with them, or
     letters wait at the Postmaster. It is ringed in the route's red-brown, a quarter wider than the coin, and a second
