@@ -197,8 +197,6 @@ export function createRest(options: {
   };
 }
 
-/** Discord's error code for "this user takes no direct messages from this bot". */
-export const CANNOT_DM = 50007;
 /** Discord's error codes for a resource that is gone. */
 export const UNKNOWN = Object.freeze({
   CHANNEL: 10003,
