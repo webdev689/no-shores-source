@@ -398,6 +398,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Meadow's Green Stands a Shade Darker]]
 - [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
 - [[The Desktop App as Claude Builds It]]
+- [[The Playlist's Nodes Are Drawn in More Detail, and Move]]
 
 ## Replaced
 

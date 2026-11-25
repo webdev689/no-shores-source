@@ -13,8 +13,11 @@ function drawnBy(picture: Picture): string[] {
   const context = new Proxy({} as Record<string, unknown>, {
     get:
       (_held, name: string) =>
-      (...args: unknown[]) =>
-        calls.push(`${name}(${args.map(String).join(',')})`),
+      (...args: unknown[]) => {
+        calls.push(`${name}(${args.map(String).join(',')})`);
+        // A gradient asked for takes its stops, and they are noted too.
+        return { addColorStop: (...stop: unknown[]) => calls.push(`addColorStop(${stop.map(String).join(',')})`) };
+      },
     set: (_held, name: string, value: unknown) => (calls.push(`${name}=${String(value)}`), true),
   }) as unknown as OffscreenCanvasRenderingContext2D;
   const source = picture.source as { draw: (context: OffscreenCanvasRenderingContext2D, w: number, h: number) => void };
@@ -89,4 +92,36 @@ test("the guild's own outposts are marked by a star over the ring and in words, 
     calls.some((call, index) => call === `fillStyle=${colour}` && calls[index + 1]?.startsWith('fillRect('));
   assert.ok(filled(hexOf('navy')) && filled(hexOf('gold')), 'its cloth and its device in their colours');
   assert.match(named(ownNamed), /Your guild's outpost · raised/, 'its note says it is the guild’s own');
+});
+
+test("the Playlist's mark is its shield drawn, its ticks turning and a ring spreading from it; still under reduced motion", () => {
+  const ui = (seconds: number) =>
+    ({
+      clicked: () => false,
+      hovered: () => false,
+      focusOn: () => undefined,
+      age: () => seconds,
+    }) as unknown as Interface;
+  const mark = {
+    ...{ id: 'overlook-playlist', kind: 'playlist', name: 'Playlist', note: '1.2 km', x: 100, y: 100, sizePx: 40 },
+    ...{ locked: false, chosen: false, named: false, arrowDegrees: null },
+  } as unknown as ScreenMark;
+  const ringAt = (seconds: number) => markNodes(ui(seconds), [mark], () => undefined)[0];
+  const child = (seconds: number, key: string) =>
+    (ringAt(seconds)?.children ?? []).find((each) => !!each && each.picture?.key.startsWith(key)) || undefined;
+  const calls = drawnBy(ringAt(1)?.picture as Picture);
+  assert.ok(
+    calls.some((call) => call.startsWith('quadraticCurveTo(')),
+    'its shield',
+  );
+  assert.ok(!calls.some((call) => call.startsWith('fillText(')), 'no glyph');
+  assert.ok((child(1, 'mark dial')?.picture?.turn ?? 0) < (child(2, 'mark dial')?.picture?.turn ?? 0), 'turning');
+  assert.ok(Number(child(1.5, 'mark ripple')?.width) > Number(child(0.5, 'mark ripple')?.width), 'spreading');
+  Object.assign(globalThis, { matchMedia: () => ({ matches: true }) });
+  try {
+    assert.equal(child(2, 'mark dial')?.picture?.turn, 0, 'its ticks still');
+    assert.equal(child(1.5, 'mark ripple'), undefined, 'no ring');
+  } finally {
+    Reflect.deleteProperty(globalThis, 'matchMedia');
+  }
 });

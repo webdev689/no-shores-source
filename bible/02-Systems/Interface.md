@@ -4,7 +4,7 @@ status: live
 code:
   - client/src/ui/paint.ts#PaintedRole
   - client/src/game/playlistScreen.ts#PlaylistView
-  - client/src/game/playlistMap.ts#drawCrest
+  - client/src/game/playlistCrest.ts#drawCrest
   - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
@@ -350,7 +350,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   map, the land's view or the Islands mode's island to its right, its overlays' marks drawn on the GPU and their names
   in the interface; a captain's fight shows the game's own readout over the view.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
-  writes a PNG, hearing a shot's events on its second frame, once the first has laid what they press. `ui/gallery.ts`
+  writes a PNG, hearing a shot's events on its second frame, once the first has laid what they press; a frame is
+  1/60 s, and the page asks for reduced motion unless the shots ask for `"motion": true`. `ui/gallery.ts`
   holds what a screen is mostly built of: a window under a header panel, presses at rest, primary, warn and disabled,
   words in a span's colour wrapping across a break, at two sizes, with a halo and with a hard shadow, a chip, a field
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
@@ -1175,28 +1176,35 @@ gone into, and the card says "The week turned. Try again.".
 A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
 Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, its parts in
 `playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
-beside ("Beside Overlook") over a brass rule; then six crests, the Elite Playlist (three chevrons) and
-the Abyss Playlist (an eye of the deep) above, the Elite Dungeon of the week (crossed blades under a star) and the
-Abyss Dungeon of the week (a crown over the deep) below their playlists, a fifth smaller; and the Breach, the Drowned
-Vale at Normal and at Hard (an arch under a crystal spire, ringed and violet at Hard), between them in the middle,
-up and down choosing its tier (`playlistBreach.ts`, [[Breaches]]). A Breach is launched for the company, never
-searched for. A crest is a shield, brass
-for Elite, violet for Abyss, grey while its entry is shut; at its shoulder a gold dot while a reward of it waits, or a
-padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines, broken before "of"), and its
-level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10" before it), or, shut, why in
-neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator ends or starts a line. The chosen crest's name is lit over a
-brass rule as wide as the name, its shield drawn 8% larger with a brighter glow; a crest under the pointer or the
-focus glows a little.
+beside ("Beside Overlook") over a brass rule; then six crests, the Elite Playlist (three chevrons under a pip) and the
+Abyss Playlist (an eye of the deep, rays over it) above, the Elite Dungeon of the week (two swords crossed under a
+star) and the Abyss Dungeon of the week (a jewelled crown over the deep) below their playlists, a fifth smaller; and
+the Breach, the Drowned Vale at Normal and at Hard (an arch of laid stones under a crystal spire, ringed and violet at
+Hard), between them in the middle, up and down choosing its tier (`playlistBreach.ts`, [[Breaches]]). A Breach is
+launched for the company, never searched for. A crest (`playlistCrest.ts`,
+[[The Playlist's Nodes Are Drawn in More Detail, and Move]]) is a shield of worked metal, brass for Elite, violet for
+Abyss, grey while its entry is shut: its rim lit from the top left with five studs and a gem at its head, its device
+raised over a field lit toward its head; at its shoulder a gold dot while a reward of it waits, a ring growing from
+the dot and fading every 2 s, or a padlock while it is shut. Under it its name in capitals (a week's dungeon's on two
+lines, broken before "of"), and its level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From
+level 10" before it), or, shut, why in neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no
+separator ends or starts a line. The chosen crest's name is lit over a brass rule as wide as the name, its shield drawn
+8% larger, its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps a
+crest's shield once as it is lit or chosen. The crests rise into place one after another as the screen opens. Each
+part is a picture drawn once and turned, faded or grown as it moves; under reduced motion nothing moves.
 
 On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
-before its edges, faint stars, two wide rings, a ring round each crest's spot and dotted lines from each playlist to
-the Breach between them and to its week's dungeon, and from the Breach's Normal to its Hard), each shield's middle on its spot, its words wrapped to 2.2 times a playlist's
-shield; the chart's picture is drawn again only at 64-pixel steps of the screen. The chosen entry's card stands beside
-it in a column that grows to the footer and scrolls. Narrower, the crests stand two by two over the chart's ground
-(its stars and rings, no spots), each its half of a row, and the card under them, the two scrolling together. A list
-taller than its room (`scrolledNode`) fades its foot into the card's ground while more lies below, so a line cut there
-fades out, and keeps a thin brass bar in a gutter at its right whose thumb stands where the list does; the wheel over
-it, Page Up and Page Down, and the pad's right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
+before its edges, faint stars, two wide rings, and dotted lines from each playlist to the Breach between them and to
+its week's dungeon, and from the Breach's Normal to its Hard), each shield's middle on its spot over a dial of its own:
+an inner ring and an outer one ticked every 5 degrees with a diamond at each quarter, turning 3 degrees a second while
+its entry is open, dim at rest, brighter lit, and brightest chosen, three arcs turning against it; laid under the
+crests and their words. Each crest's words wrap to 2.2 times a playlist's shield; the chart's picture is drawn again
+only at 64-pixel steps of the screen. The chosen entry's card stands beside it in a column that grows to the footer
+and scrolls. Narrower, the crests stand two by two over the chart's ground (its stars and rings, no dials), each its
+half of a row, and the card under them, the two scrolling together. A list taller than its room (`scrolledNode`) fades
+its foot into the card's ground while more lies below, so a line cut there fades out, and keeps a thin brass bar in a
+gutter at its right whose thumb stands where the list does; the wheel over it, Page Up and Page Down, and the pad's
+right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
 
 The card: its name on a brass band (balanced over two lines where it is long) with its level and what its runs drop
 by its content's name, never a metal's ("Drops Elite Dungeon gear", "Drops Abyss Dungeon gear", from

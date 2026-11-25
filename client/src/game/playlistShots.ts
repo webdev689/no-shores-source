@@ -1,10 +1,12 @@
 // Pictures of the Playlist screen, headless (`tools/uiShot.mjs`): the screen as a Playlist's mark opens it beside a
-// port, over a sample day and week and a character's record. The game never imports it.
+// port, over a sample day and week and a character's record; and the mark itself beside its port's. The game never
+// imports it.
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { type PlaylistSearch, PlaylistView } from './playlistScreen.ts';
 import type { PlaylistScreenState } from './playlistWords.ts';
 import { breachEntries } from './playlistBreach.ts';
+import { markNodes, type ScreenMark } from './hudMarks.ts';
 
 const BURN = {
   key: 'burn-shadow',
@@ -159,3 +161,23 @@ export const playlistShutShot = screenShot({}, 3);
 export const playlistLaunchingShot = screenShot({ finding: 'Launching…', launching: true, company: true });
 export const playlistRefusedShot = screenShot({ said: 'The accounts did not answer. Try again.' }, 1);
 export const playlistBreachShot = screenShot({}, 4, BREACH_SCREEN);
+
+/** The Playlist's mark beside Overlook's port over the sea, at a near mark's size, a far one's, and the near one chosen
+ *  with its name and note. */
+export const playlistMarkShot = (ui: Interface): Node => {
+  const mark = (id: string, kind: 'port' | 'playlist', x: number, sizePx: number, chosen = false): ScreenMark => ({
+    ...{ id, kind, name: kind === 'port' ? 'Overlook' : 'Playlist', note: '1.2 km', x, y: 0, sizePx },
+    ...{ chosen, named: chosen, arrowDegrees: null, locked: false },
+  });
+  const [width, height] = [ui.size.width, ui.size.height];
+  const row = (marks: readonly ScreenMark[], down: number) => marks.map((one) => ({ ...one, y: height * down }));
+  const marks = [
+    ...row(
+      [mark('overlook-port', 'port', width * 0.2, 48), mark('overlook-playlist', 'playlist', width * 0.2 + 52, 48)],
+      0.3,
+    ),
+    ...row([mark('far-port', 'port', width * 0.55, 22), mark('far-playlist', 'playlist', width * 0.55 + 26, 22)], 0.3),
+    ...row([mark('near-playlist', 'playlist', width * 0.4, 72, true)], 0.65),
+  ];
+  return { width, height, fill: '#16324a', children: markNodes(ui, marks, () => undefined) };
+};

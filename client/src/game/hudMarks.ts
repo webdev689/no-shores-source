@@ -4,12 +4,14 @@
 // grey with a lock when locked, and an arrow on its ring's edge pointing the way while it is held at the picture's
 // edge. Each is a press: choosing it calls `chosen`.
 import { CANVAS_FACE } from '../face.ts';
+import { motionReduced } from '../plus/kit.ts';
 import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { ownOutpostColours } from './guild/guildHeld.ts';
 import { KIND_WORDS, type MarkKind } from './hudLaw.ts';
+import { drawMarkDial, drawMarkRipple, drawPlaylistEmblem } from './playlistMark.ts';
 import type { HostileLook } from './seaHostiles.ts';
 
 /** A mark on the screen: a node, a port or a hostile ship, where it stands in CSS pixels, its size there, and what it
@@ -41,13 +43,18 @@ const GLYPHS: Record<MarkKind, string> = {
   boss: '☠',
   outpost: '⚑',
   port: '⚓︎',
-  playlist: '☰',
+  playlist: 'playlist',
   hostile: '',
   quest: '!',
 };
 /** A locked node's glyph, in the place of its kind's: drawn as a padlock (`lockAt`), since no face the page loads holds
  *  one and a system's would come in its own colours. */
 const LOCK_GLYPH = 'lock';
+/** The Playlist's glyph: its shield drawn (`playlistMark.ts`), as the Playlist screen's crests are. */
+const PLAYLIST_GLYPH = GLYPHS.playlist;
+/** The Playlist's mark moves: its dial's ticks turning, degrees a second, dim at rest and bright under the pointer or
+ *  chosen; and a ring spreading from it every so many seconds, to so many times the ring's size, at its brightest. */
+const PLAYLIST_MOTION = { turn: 8, rest: 0.55, lit: 1, every: 2.4, reach: 1.9, ripple: 0.5 } as const;
 
 /** Each kind's colour, and a locked node's. */
 const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
@@ -152,6 +159,7 @@ function ring(
         if (outlined) return flagAt(context, middle, (size * unit) / 16, colour, ink);
         context.fillStyle = ink;
         if (glyph === LOCK_GLYPH) return lockAt(context, middle, cell, ink);
+        if (glyph === PLAYLIST_GLYPH) return drawPlaylistEmblem(context, middle, width);
         context.font = `${glyphPx(size) * unit}px ${CANVAS_FACE}`;
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -250,6 +258,9 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
         picture: ring(glyph, colour, size, { hovered, chosen: mark.chosen, outlined: own !== null }, own?.device),
         children: [
+          ...(mark.kind === 'playlist' && !mark.locked
+            ? playlistMotion(colour, size, ui.age(id), ui.hovered(id) || mark.chosen)
+            : []),
           look?.emblem ? emblemNode(look.emblem, size) : null,
           look?.badge ? badgeNode(look.badge) : null,
           // Not by its colours alone: a light star over the ring marks the guild's own.
@@ -279,6 +290,46 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
     ];
     return shown.filter((node): node is Node => Boolean(node));
   });
+}
+
+/** The Playlist's mark's motion over its ring, `size` pixels, `seconds` after it was first laid: its dial's ticks
+ *  turning, brighter while `lit`, and the ring spreading from it; the ticks still and no ring under reduced motion. */
+function playlistMotion(colour: string, size: number, seconds: number, lit: boolean): Node[] {
+  const still = motionReduced();
+  const side = texels(size);
+  const { turn, rest, every, reach, ripple } = PLAYLIST_MOTION;
+  const spread = (seconds % every) / every;
+  const grown = Math.round(size * (1 + (reach - 1) * spread));
+  const tint = (alpha: number) => `rgba(255,255,255,${Math.round(alpha * 100) / 100})`;
+  const dial: Node = {
+    width: size,
+    height: size,
+    through: true,
+    float: { at: [0.5, 0.5], anchor: [0.5, 0.5] },
+    picture: {
+      key: `mark dial ${colour} ${side}`,
+      pixel: { width: side, height: side },
+      source: { draw: drawMarkDial(colour) },
+      turn: still ? 0 : (seconds * turn) % 360,
+      tint: tint(lit ? PLAYLIST_MOTION.lit : rest),
+    },
+  };
+  if (still) return [dial];
+  return [
+    dial,
+    {
+      width: grown,
+      height: grown,
+      through: true,
+      float: { at: [0.5, 0.5], anchor: [0.5, 0.5] },
+      picture: {
+        key: `mark ripple ${colour} ${side}`,
+        pixel: { width: side, height: side },
+        source: { draw: drawMarkRipple(colour) },
+        tint: tint(ripple * (1 - spread)),
+      },
+    },
+  ];
 }
 
 /** A hostile ship's emblem in its ring, 62% of it across and its pixels kept hard. */

@@ -9,6 +9,7 @@ code:
   - client/src/game/seaMarks.ts#landingChoice
   - client/src/game/seaMarks.ts#playlistPort
   - client/src/game/seaMarks.ts#landfallMarks
+  - client/src/game/playlistMark.ts#drawPlaylistEmblem
   - client/src/overworld/seaRoute.ts#planSeaRoute
   - client/src/overworld/voyage.ts#shipAt
   - client/src/overworld/islandView.ts#frameSide
@@ -85,13 +86,16 @@ size from the sea camera and from the bird's-eye view. On the screen it is held 
 to be held stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a
 pointer picks the nearest.
 
-Each port city's harbour has a Playlist mark (`<city>-playlist`, a list in amber, '☰' drawn in the game's face), at
-sea within the port's sight and over its island's side however the island is reached, docking or going ashore
+Each port city's harbour has a Playlist mark (`<city>-playlist`): the Playlist screen's shield in small, bearing a
+list's three lines, in an amber ring ticked as a dial, its ticks turning 8 degrees a second and brighter under the
+pointer or chosen, an amber ring spreading from it every 2.4 s, all still under reduced motion (`playlistMark.ts`,
+[[The Playlist's Nodes Are Drawn in More Detail, and Move]]). It stands at sea within the port's sight and over its
+island's side however the island is reached, docking or going ashore
 ([[The Playlist Shows Over Its Island, Not Only at Sea]]), open whether or not the city's social space is. It is laid
 beside its city's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left: at
 sea its port's, never thinned away by it and shown while it is; over the side its social space's, or on its harbour
-where that is not shown. Over the side the view is framed on the nodes alone (`landfallMarks`), so going ashore far
-from the harbour never stretches the view to show it: the Playlist waits at the picture's edge. Choosing it opens the
+where that is not shown. Over the side the view is framed on the nodes alone (`landfallMarks`), so going ashore far from
+the harbour never stretches the view to show it: the Playlist waits at the picture's edge. Choosing it opens the
 Playlist screen ([[Interface]], "The Playlist") rather than sailing there or landing.
 
 A locked node's mark ([[World Map]], "Seen whole, reached by nodes") is grey, with a lock for its glyph and "Locked"

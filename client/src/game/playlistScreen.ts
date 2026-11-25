@@ -10,7 +10,17 @@ import { INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import { iconNode } from './journalIcons.ts';
 import { drawChart, drawGround, spotShare } from './playlistMap.ts';
-import { type CrestLook, TILE, WORDS_WIDE, cardOf, crestOf, scrolledNode } from './playlistParts.ts';
+import {
+  type CrestLook,
+  type CrestMotion,
+  DIAL_WIDE,
+  TILE,
+  WORDS_WIDE,
+  cardOf,
+  crestOf,
+  dialOf,
+  scrolledNode,
+} from './playlistParts.ts';
 import type { PlaylistEntry, PlaylistKind, PlaylistScreenState } from './playlistWords.ts';
 import { play } from './uiSounds.ts';
 
@@ -189,16 +199,37 @@ export class PlaylistView {
     // Stacked, two crests share a row, each its words' width, and the two rows leave the card room below.
     const most = besides ? Infinity : Math.min((view.width - 40) / 2 / WORDS_WIDE, view.height / 9);
     const playlistSide = Math.floor(Math.min(CREST * scale, most));
+    const [opened, still] = [ui.age('playlist-screen'), motionReduced()];
+    const looks = screen.entries.map((_one, place): CrestLook => {
+      const id = `${TILE}${place}`;
+      return place === this.chosen ? 'chosen' : ui.hovered(id) || (ui.focused(id) && ui.keyFocused) ? 'lit' : 'rest';
+    });
     const crests = screen.entries.map((one, place) => {
       const weekly = one.kind === 'week-elite' || one.kind === 'week-abyss';
       const side = Math.floor(playlistSide * (weekly ? 0.8 : 1));
-      const id = `${TILE}${place}`;
-      const look: CrestLook =
-        place === this.chosen ? 'chosen' : ui.hovered(id) || (ui.focused(id) && ui.keyFocused) ? 'lit' : 'rest';
+      const motion: CrestMotion = { opened, swept: ui.age(`${TILE}${place}-sweep`), still };
       // Side by side a crest's words wrap a little over twice its side; stacked, each has its half of a row.
       const wide = besides ? Math.floor(playlistSide * WORDS_WIDE) : Math.floor((view.width - 40) / 2) - 8;
-      return crestOf(one, place, look, size, side, wide, besides ? spotShare(one.kind) : null);
+      return crestOf(
+        one,
+        place,
+        looks[place] ?? 'rest',
+        size,
+        side,
+        wide,
+        besides ? spotShare(one.kind) : null,
+        motion,
+      );
     });
+    // On the chart each crest stands on its dial, every dial the same size, as the chart's rings were.
+    const dials = besides
+      ? screen.entries.flatMap((one, place) =>
+          dialOf(one, place, looks[place] ?? 'rest', Math.round(playlistSide * DIAL_WIDE), spotShare(one.kind), {
+            opened,
+            still,
+          }),
+        )
+      : [];
     const middle: Node = besides
       ? {
           width: 'grow',
@@ -214,7 +245,7 @@ export class PlaylistView {
                 key: `playlist chart ${stepped(view.width - cardWide - 80)} ${stepped(view.height - 170)}`,
                 source: { draw: drawChart },
               },
-              children: crests,
+              children: [...dials, ...crests],
             },
             scrolledNode(
               ui,
@@ -282,7 +313,7 @@ export class PlaylistView {
           direction: 'column',
           width: view.width,
           height: view.height,
-          opacity: motionReduced() ? 1 : Math.min(1, 0.25 + ui.age('playlist-screen') * 4),
+          opacity: still ? 1 : Math.min(1, 0.25 + opened * 4),
           float: { to: 'screen', z: 20 },
           children: [
             {

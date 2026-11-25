@@ -200,6 +200,17 @@ test('the footer and the card stay on the screen at every size, searching or not
     }
 });
 
+test('on the chart each crest stands on its dial, laid under the crests; stacked, no dials', () => {
+  const chart = byId(standing(1600, 900).built(), 'playlist-chart');
+  const laid = (chart?.children ?? []).filter((child) => !!child);
+  const dials = laid.flatMap((child, place) => (child.picture?.key.startsWith('playlist dial') ? [place] : []));
+  const crests = laid.flatMap((child, place) => (child.id?.startsWith('playlist-tile-') ? [place] : []));
+  assert.equal(dials.length, SAMPLE_SCREEN.entries.length, 'one each');
+  assert.ok(Math.max(...dials) < Math.min(...crests), 'under the crests and their words');
+  const stacked = nodesOf(standing(800, 900).built()).filter((node) => node.picture?.key.startsWith('playlist dial'));
+  assert.equal(stacked.length, 0);
+});
+
 test('no two crests overlap, side by side or stacked', () => {
   for (const [width, height] of [
     [1600, 900],
