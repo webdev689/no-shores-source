@@ -22,7 +22,7 @@ import { runInstance, runOf, sharedRun } from '../rooms.ts';
 import type { IsleShown } from '../../islands/islePlan.ts';
 import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor } from '../../rules/passageRules.ts';
 import { enterZone, type ZoneEntry } from './passageEnter.ts';
-import { haulOf, passageWordOf } from './passageHeard.ts';
+import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
 import { haulNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
 import type { PieceState } from './passagePieces.ts';
 import { holdAt, homeSpot, mouthAt, onwardAt, passageRoomName } from './passageReach.ts';
@@ -40,7 +40,7 @@ import {
 import { withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 
 /** How long the page waits on the room's answer to an ask of the passages before saying it did not come. */
-const ANSWER_WAIT_S = 3;
+const ANSWER_WAIT_S = 10;
 const UNANSWERED = 'Your room did not answer. Try again.';
 
 /** What the passages ask of the game. */
@@ -94,6 +94,8 @@ export class PassageGame {
   private carried = 0;
   private wasDown = false;
   private useHeld = false;
+  /** Whether E let go of was told the room once already, so it is not told again each frame until it is heard. */
+  private letGo = false;
   /** The hollow shown, its pieces as last laid, and what they were laid for. */
   private shownIsle: { readonly key: string; readonly isle: IsleShown } | null = null;
   readonly card: MouthsCardView;
@@ -153,13 +155,16 @@ export class PassageGame {
     this.sign = null;
     if (!plan || !this.zone) return null;
     // E let go of ends a hold under way, as a gather's does.
-    if (seen?.holding && !this.useHeld) ask({ kind: ASKS.stopGather });
+    if (seen?.holding && !this.useHeld && !this.letGo) ask({ kind: ASKS.stopGather });
+    this.letGo = !!seen?.holding && !this.useHeld;
     const held = holdAt(plan, x, y);
     if (held && 'lamp' in held) {
       const lit = seen?.lampLit ?? false;
       const prompt = lampPrompt(lit, !lit && !(seen?.done ?? false));
       if (lit) return { words: prompt.deed, run: () => this.home(ask) };
       const share = seen?.holding?.target === HOLDING_LAMP ? seen.holding.share : undefined;
+      if (prompt.under === 'Not while its guard stands')
+        return { words: prompt.under, run: () => undefined, idle: true };
       return { words: prompt.deed, run: () => ask({ kind: ASKS.lightLamp }), held: share };
     }
     if (held && 'kindle' in held) {
@@ -337,15 +342,16 @@ export class PassageGame {
     const foot = this.host.foot();
     const gear = foot?.gear?.gear ?? null;
     const asked = this.asked;
-    if (asked && gear && gear.answered !== asked.answered) {
+    const heard = asked && gear && answerHeard(asked, gear, this.host.now() / 1000 - asked.since > ANSWER_WAIT_S);
+    if (asked && heard) {
       this.asked = null;
-      const changed = JSON.stringify(gear.dive ?? null) !== JSON.stringify(asked.dive);
-      if (gear.answer === 0 && changed) asked.yes(gear.dive ?? null);
-      else if (gear.answer !== 0) this.host.tell(answerText(gear.answer));
-    } else if (asked && this.host.now() / 1000 - asked.since > ANSWER_WAIT_S) {
-      this.asked = null;
-      this.host.tell(UNANSWERED);
+      // After this frame, so the foot's own frame runs on the place it was begun in before the way leaves it.
+      if (heard === 'yes') setTimeout(() => asked.yes(gear?.dive ?? null));
+      else this.host.tell(heard === 'unanswered' ? UNANSWERED : answerText(heard.refused));
     }
+    // A zone left by another way (the ship, a join) is no longer the one a way starts from.
+    if (this.zone && foot && this.host.flow().mode === 'foot' && foot.node.id !== this.zone.entry.room)
+      this.zone = null;
     if (!this.zone || foot?.node.id !== this.zone.entry.room) return;
     const down = foot.fallen;
     const carried = haulView(haulOf(gear?.dive?.haul)).lines.length;

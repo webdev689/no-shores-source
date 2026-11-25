@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { PassageSeenState } from '../../network/passageMessages.ts';
 import type { PassageZone } from '../../rules/passageRules.ts';
-import { haulOf, passageWordOf, progressOf } from './passageHeard.ts';
+import { answerHeard, haulOf, passageWordOf, progressOf } from './passageHeard.ts';
 
 const zone = (extra: Partial<PassageZone> = {}): PassageZone => ({
   number: 4,
@@ -71,4 +71,19 @@ test('the haul is said by name: stocks and resources counted, Vestiges counted, 
   );
   assert.equal(haul.materials[0]?.name, 'Weapon Fragments');
   assert.deepEqual(haulOf(undefined), { items: [], vestiges: 0, materials: [], lantern: false });
+});
+
+test('an ask of the passages is answered yes by its dive changed, whatever other asks were answered first', () => {
+  const asked = { answered: 4, dive: null };
+  assert.equal(answerHeard(asked, { answered: 5, answer: 0, dive: null }, false), null, 'another ask’s done');
+  assert.equal(
+    answerHeard(asked, { answered: 6, answer: 0, dive: { island: 'continent-1', week: 9, zone: 3 } }, false),
+    'yes',
+  );
+  assert.deepEqual(answerHeard(asked, { answered: 5, answer: 177, dive: null }, false), { refused: 177 });
+  assert.equal(answerHeard(asked, { answered: 5, answer: 9, dive: null }, false), null, 'another ask refused');
+  assert.equal(answerHeard(asked, { answered: 4, answer: 0, dive: null }, true), 'unanswered');
+  const diving = { answered: 4, dive: { island: 'continent-1', week: 9, zone: 3 } };
+  const found = { answered: 5, answer: 0, dive: { island: 'continent-1', week: 9, zone: 3 } };
+  assert.equal(answerHeard(diving, found, false), null, 'a find in the haul is no way on');
 });
