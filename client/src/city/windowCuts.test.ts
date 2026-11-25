@@ -10,9 +10,9 @@ const buildings = JSON.parse(
   readFileSync(new URL('../../../content/forged/buildings.json', import.meta.url), 'utf8'),
 ) as BuildingTable;
 
-const plaster = (at: readonly [number, number, number], size: readonly [number, number, number]): Solid => ({
+const plaster = (foot: readonly [number, number, number], size: readonly [number, number, number]): Solid => ({
   shape: 'block',
-  at,
+  at: foot,
   size,
   turn: 0,
   lean: 0,
