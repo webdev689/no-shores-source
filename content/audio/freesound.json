@@ -2478,7 +2478,7 @@
     {
       "id": "breach.stage",
       "use": "The company's checkpoint moves on: a heavy stone settling into place",
-      "query": "stone block thud",
+      "query": "stone thud",
       "seconds": [
         0.5,
         4.0
@@ -2487,7 +2487,7 @@
     {
       "id": "breach.seal",
       "use": "An encounter won: the crystal seal over its doorway shatters and falls away",
-      "query": "crystal shatter",
+      "query": "glass shatter",
       "seconds": [
         1.0,
         6.0
@@ -2512,7 +2512,7 @@
     {
       "id": "breach.cleansed",
       "use": "The Rewritten cleansed at the font or by Hold True: clear water poured over stone",
-      "query": "water poured on stone",
+      "query": "pouring water",
       "seconds": [
         0.5,
         4.0
@@ -2527,7 +2527,7 @@
     {
       "id": "breach.unwritten",
       "use": "A player unwritten: parchment torn through",
-      "query": "parchment tear",
+      "query": "paper rip",
       "seconds": [
         0.3,
         3.0
@@ -2552,7 +2552,7 @@
     {
       "id": "breach.stone.drop",
       "use": "The Lodestone set down: a heavy stone thudding onto rock",
-      "query": "rock drop on stone",
+      "query": "stone drop",
       "seconds": [
         0.2,
         3.0
@@ -2567,7 +2567,7 @@
     {
       "id": "breach.stone.ground",
       "use": "The Lodestone Grounded: a ward breaking, a pane of crystal bursting",
-      "query": "magic crystal shatter",
+      "query": "glass break",
       "seconds": [
         0.5,
         4.0
@@ -2637,7 +2637,7 @@
     {
       "id": "breach.overtaken",
       "use": "The ground round a fused seam overtaken: crystal crackling as it spreads",
-      "query": "crystal growing crackle",
+      "query": "ice crack",
       "seconds": [
         0.5,
         4.0
@@ -2661,7 +2661,7 @@
     {
       "id": "breach.desk.marked",
       "use": "The Scrivener marks a desk: a quill scratching",
-      "query": "quill pen scratch",
+      "query": "pen writing",
       "seconds": [
         0.5,
         4.0
@@ -2752,7 +2752,7 @@
     {
       "id": "breach.way.back",
       "use": "The way back from a shore opens: water swirling away down a drain",
-      "query": "whirlpool water",
+      "query": "water drain",
       "seconds": [
         1.0,
         6.0
@@ -2824,7 +2824,7 @@
     {
       "id": "breach.spire.woken",
       "use": "The Spire woken and the gate opened: a great crystal resonance breaking",
-      "query": "magic crystal hum",
+      "query": "glass resonance",
       "seconds": [
         2.0,
         10.0
@@ -2879,7 +2879,7 @@
     {
       "id": "amb.breach.pool",
       "use": "The drowned green, looped: still water lapping in a cavern",
-      "query": "underground lake ambience",
+      "query": "cave water",
       "seconds": [
         20.0,
         180.0
@@ -3011,7 +3011,7 @@
     {
       "id": "amb.breach.crystal",
       "use": "The Lattice's crystal ringing faintly",
-      "query": "glass shimmer",
+      "query": "glass chime",
       "seconds": [
         0.5,
         4.0
@@ -3057,7 +3057,7 @@
     {
       "id": "music.cello.short",
       "use": "A cello's short bowed note, for the scores' ostinatos",
-      "query": "cello spiccato",
+      "query": "cello",
       "seconds": [
         0.2,
         1.5
@@ -3066,7 +3066,7 @@
     {
       "id": "music.bass",
       "use": "A double bass's long bowed note, the scores' floor",
-      "query": "double bass long note",
+      "query": "double bass",
       "seconds": [
         3.0,
         12.0
@@ -3075,7 +3075,7 @@
     {
       "id": "music.choir.low",
       "use": "A men's choir holding one note, for the scores",
-      "query": "male choir note",
+      "query": "choir note",
       "seconds": [
         3.0,
         15.0
