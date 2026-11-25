@@ -697,16 +697,21 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   the shorter way to a point abeam of its station at its height, and then straight in over the rail, square to the side
   (`wayAboard`).
 - **The eye** (`AimCamera`) eases over DFO's 0.22 s, smoothstepped, to its battery's station (`aimStation`), aboard as
-  Black Flag's is: over its own deck, its rail and guns along the foot of the view. Each hull's station is searched for
-  once a page (and as a sea fight opens): within 4 m of its battery's ends, in a gap of its rig no sail comes within
-  0.8 m of in any wind (a square yard braced at most 45° round its mast and bellied either way, a gaff swung to either
-  beam aft of its luff, a staysail swaying on its stay) nor within 0.8 m of a mast 0.4 m thick each side of its line,
-  with the way in from abeam as clear;
-  3 m over the deck at best and 1.7 m at least, 0.4 m over its rail, and high enough that the water at its guns' nearest
-  lay shows over the rail; near its battery's middle and its centreline. The Sloop's stands 2 m forward of its mast,
-  1.8 m out; the Schooner's under its main boom; the Brig's on its quarterdeck, aft of its main course; the Frigate's on
-  its centreline between its mizzen and its main. A hull whose rig left no such gap would keep an eye 1.5 m out past its
-  side, clear of its sails' swing. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
+  Black Flag's is: over its own deck, its rail and guns along the foot of the view
+  ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]). Each hull's station is searched for once a page
+  (and as a sea fight opens), its spots tried best first: within 4 m of its battery's ends, where no canvas comes
+  within a metre in any wind from ahead round to astern on either side, its sails set and trimmed as its rig trims
+  them (`byCanvas`: the canvas itself, so a square yard braced round its mast sweeps a wedge, not the box its swing
+  spans), nor within 0.8 m of a mast 0.4 m thick each side of its line, its way in from abeam passing through no sail;
+  2 m over the deck at best (a sailor's eye, under a square course's foot), 1.7 m at least, 0.4 m over its rail, its
+  rail's top at least 10° under the look to the water at its guns' nearest lay, so the rail stands at the foot of the
+  view (the rail read as the highest its deck stands within 2.5 m along its keel: the deck's grid holds where a body
+  stands, so a bulwark shows in it only by its posts); by its battery's middle, out toward the side laid at three
+  quarters of its half beam at best, so its masts' canvas keeps out of the view. Each stands within half a metre of
+  its guns' middle: the Sloop's 1.6 m forward of its mast, 2 m out; the Schooner's between its masts, 2.9 m out; the
+  Brig's between its masts, 3.6 m out and 1.2 m over its rail; the Frigate's forward of its mainmast, 4.3 m out and
+  0.9 m over its rail. A hull whose rig left no such spot would
+  keep an eye 1.5 m out past its side, clear of its sails' swing. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
   swell), from the same answer of the rules the frame draws the ship from, so the ship holds still in the view however
   unevenly the answers come; the view itself stays level, and narrows 15% as it eases in (`AIM_ZOOM`) in the sea's fights and the
   story's. Once it is there, no way round is looked for again, however the ship heels. A sinking ship's guns are silent:
@@ -808,10 +813,10 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 
 ## Limits
 
-- The Frigate's eye stands on its centreline, 5.7 m over the water, and its station keeps the water at its nearest lay
-  only 0.2 m over its rail as the eye sees it: so its rail runs through the view's middle, where the rings lie, and
-  hides its arcs. The Schooner's two rail posts stand before its nearest rings. How each deck's view is framed is
-  the owner's to choose ([[Aiming a Ship Follows Black Flag, From Its Deck]]).
+- The aim's station keeps clear of the rig's canvas and masts, not its shrouds, stays or spars: one may cross a corner
+  of the view, as a Schooner's shroud does at the foot of its own. The Brig's and the Frigate's eyes stand among
+  their courses' height, between the wedges their braced yards sweep, so in some winds a course's edge shows at a
+  corner of the view.
 - A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
   not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
   or run, and each hull's hull points are scaled to an exact gunner's fire.

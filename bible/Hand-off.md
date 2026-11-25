@@ -225,15 +225,15 @@ The decisions in [[Open Questions]] are not repeated here.
   long it lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does, each gun elevated
   from its own deck, as a captain's are on the owner's "Captains aim gun by gun"
   ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]); the aim's camera and arcs follow the hull
-  sailed, and the World Editor sails the hull its address names (`?hull=brig`); 33 dresses sold, besides each part's
-  start and the houses' six at rank 2, bought once and laid free; names from two word lists, free once then 250 Aurem;
-  every ship seen by others in its hull, dress, name and flag. Asks 86 to 90, refusals answered 167 to 173. Tested
-  offline: the full check on fb959363 (CI checks the head), the counter pictured headless (`harbourShots.ts`), each
-  hull's held aim pictured in the World Editor (`?hull=`), a dressed Brig pictured at sea, and 12 fights a row by hull
-  ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the owner: the prices, levels and
-  class numbers, the word lists, a figurehead once one is modelled, the Frigate's aim view (its rail runs through the
-  view's middle, where its rings lie: [[Naval Combat]], "Limits"), and whether a shipless player may join a companion
-  where only the sea leads ([[Shipyard]], "Limits").
+  sailed, its eye between the masts beside the guns, near the rail, on the owner's answer to
+  "Brig and frigate arent correct", and the World Editor sails the hull its address names (`?hull=brig`); 33 dresses
+  sold, besides each part's start and the houses' six at rank 2, bought once and laid free; names from two word lists,
+  free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag. Asks 86 to 90, refusals
+  answered 167 to 173. Tested offline: the full check on fb959363 (CI checks the head), the counter pictured headless
+  (`harbourShots.ts`), each hull's held aim pictured in the World Editor (`?hull=`), a dressed Brig pictured at sea,
+  and 12 fights a row by hull ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the
+  owner: the prices, levels and class numbers, the word lists, a figurehead once one is modelled, and whether a
+  shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
 - **The inspect panel after Destiny 1's weapon page** (#202, merged on the owner's "merge and deploy", which deploys
   the page and the rooms). Built on the owner's "take some autonomy" from
   [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]; Claude's calls in

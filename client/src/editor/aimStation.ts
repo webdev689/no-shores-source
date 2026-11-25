@@ -1,11 +1,11 @@
 // Where the eye stands while a broadside is laid, for each hull, as Black Flag's does: aboard, over its deck near its
-// battery, its rail and guns along the foot of the view, in a gap of its rig no sail comes into whatever the wind,
-// as high as that gap allows, and placed so the water at its guns' nearest lay shows over its rail. A hull whose rig
+// battery, its rail and guns along the foot of the view, where no canvas comes within a metre whatever the wind,
+// as high as that allows, and placed so the water at its guns' nearest lay shows over its rail. A hull whose rig
 // leaves no such gap keeps an eye out past its side, clear of its hull and every sail's swing.
 import { type Deck, HULL_DECKS, cellHeight } from '../ships/deck.ts';
 import { hullBox, hullMouths, hullPaint, hullSails, hullWaterline } from '../ships/hulls.ts';
-import type { SailCorners } from '../ships/sails.ts';
-import { BELLY_M, STAY_SWAY_M, type Swing, swingOf } from './shipClear.ts';
+import { type SailCorners, SailRig } from '../ships/sails.ts';
+import { abeamOut, BELLY_M, type Swing, swingOf } from './shipClear.ts';
 
 type Point = readonly [number, number, number];
 
@@ -30,17 +30,26 @@ const OUT_MOST_M = 12;
 /** The rules' guns depress to this, radians: the swivel's lowest elevation. */
 export const LOWEST_ELEVATION = (10 * Math.PI) / 180;
 
-/** A square yard is braced at most this far round its mast (`squareBrace`), radians. */
-const BRACED_MOST = Math.PI / 4;
-/** How far an eye over the deck keeps from any of its rig, and its masts' half thickness, metres. */
+/** How far an eye over the deck keeps from its masts, and their half thickness, metres. */
 const RIG_CLEAR_M = 0.8;
 const MAST_M = 0.4;
-/** An eye over the deck stands this high over it at best, this high at least, and this far over its rail. */
-const BEST_OVER_DECK_M = 3;
+/** An eye over the deck stands this high over it at best (a sailor's eye, under a square course's foot), this high
+ *  at least and at most, and this far over its rail. */
+const BEST_OVER_DECK_M = 2;
 const LEAST_OVER_DECK_M = 1.7;
+const MOST_OVER_DECK_M = 5;
 const OVER_RAIL_M = 0.4;
-/** The water at its guns' nearest shows this far over its rail. */
-const SIGHT_OVER_RAIL_M = 0.2;
+/** The share of its half beam out toward the side laid an eye over the deck stands at best, so its rail stands at the
+ *  foot of the view and its masts' canvas, centred on its keel, keeps out of it. */
+const BEST_OUT_SHARE = 0.75;
+/** The way in to the eye passes no nearer than this to any canvas, metres: it never goes through a sail. */
+const WAY_CLEAR_M = 0.3;
+/** Its rail's top stands at least this far under the look to the water at its guns' nearest lay, radians, so the
+ *  rail stands at the foot of the view. */
+const RAIL_UNDER_SIGHT = (10 * Math.PI) / 180;
+/** The rail a spot sees over is the highest its deck stands within this far along its keel, metres: the deck's grid
+ *  holds where a body stands, so a bulwark shows in it only where its cap is walked, by its posts. */
+const RAIL_ROWS_M = 2.5;
 /** How finely the deck is searched, metres, and how far past its battery's ends. */
 const SEARCH_STEP_M = 0.25;
 const PAST_BATTERY_M = 4;
@@ -60,42 +69,75 @@ export function clearOfSail(sail: SailCorners, along: number, up: number): numbe
   return Math.sqrt(Math.max(0, reach * reach - ahead * ahead));
 }
 
-/** Whether a point over the deck (along, out, up) stands within `RIG_CLEAR_M` of where a sail swinging as `swing`
- *  can come in any wind: a square sail braced at most 45° round its mast and bellied either way, a gaff swung to
- *  either beam aft of its luff, a staysail swaying on its stay; or within `RIG_CLEAR_M` of the mast it sets on, as
- *  thick as `MAST_M` each side of its line. */
-function inRig(swing: Swing, [along, out, up]: Point, pad = RIG_CLEAR_M): boolean {
-  const mast = swing.kind !== 'stay' && Math.abs(along - swing.pivot) < MAST_M + pad && Math.abs(out) < MAST_M + pad;
-  if (mast) return true;
-  if (up < swing.low - pad || up > swing.high + pad) return false;
-  if (swing.kind === 'stay')
-    return along > swing.along[0] - pad && along < swing.along[1] + pad && Math.abs(out) < STAY_SWAY_M + pad;
-  if (Math.abs(out) > swing.reach + pad) return false;
-  const [fore, aft] =
-    swing.kind === 'gaff'
-      ? [swing.pivot + BELLY_M, swing.pivot - swing.reach]
-      : [
-          swing.pivot + swing.reach * Math.sin(BRACED_MOST) + BELLY_M,
-          swing.pivot - swing.reach * Math.sin(BRACED_MOST) - BELLY_M,
-        ];
-  return along < fore + pad && along > aft - pad;
+/** Whether a point (along, out, up) stands within `RIG_CLEAR_M` of a mast its rig sets on, as thick as `MAST_M` each
+ *  side of its line. */
+const byMast = (swings: readonly Swing[], [along, out]: Point): boolean =>
+  swings.some(
+    (swing) =>
+      swing.kind !== 'stay' &&
+      Math.abs(along - swing.pivot) < MAST_M + RIG_CLEAR_M &&
+      Math.abs(out) < MAST_M + RIG_CLEAR_M,
+  );
+
+const canvases = new Map<number, (point: Point, within?: number) => boolean>();
+/** The 27 cells round a point's own, as offsets of a cell each way, its own among them. */
+const NEIGHBOURS: readonly Point[] = [-1, 0, 1].flatMap((along) =>
+  [-1, 0, 1].flatMap((out) => [-1, 0, 1].map((up): Point => [along, out, up])),
+);
+
+/** Whether any of a hull's canvas comes within `SWING_CLEAR_M` of a point in its frame, or of its mirror on the other
+ *  side, in any wind from ahead round to astern on either side, its sails set and trimmed to it as its rig trims them:
+ *  the canvas itself, which a square yard braced round its mast sweeps as a wedge, not the box its swing spans. */
+export function byCanvas(hull: number): (point: Point, within?: number) => boolean {
+  const kept = canvases.get(hull);
+  if (kept) return kept;
+  const cells = new Map<string, number[]>();
+  const cellOf = (point: Point) => point.map((value) => Math.floor(value / SWING_CLEAR_M)).join(',');
+  for (let offDeg = -180; offDeg <= 180; offDeg += 10) {
+    const rig = new SailRig(hullSails(hull));
+    for (let step = 0; step < 60; step++) rig.step(0.1, { offDeg, set: true }, step * 0.1);
+    for (const points of rig.canvas())
+      for (let index = 0; index + 2 < points.length; index += 3) {
+        const point: Point = [points[index] ?? 0, points[index + 1] ?? 0, points[index + 2] ?? 0];
+        const cell = cells.get(cellOf(point));
+        if (cell) cell.push(...point);
+        else cells.set(cellOf(point), [...point]);
+      }
+  }
+  const near = (point: Point, within: number): boolean =>
+    NEIGHBOURS.some((offset) => {
+      const cell = cells.get(
+        cellOf([
+          point[0] + offset[0] * SWING_CLEAR_M,
+          point[1] + offset[1] * SWING_CLEAR_M,
+          point[2] + offset[2] * SWING_CLEAR_M,
+        ]),
+      );
+      if (!cell) return false;
+      for (let index = 0; index + 2 < cell.length; index += 3) {
+        const gap = Math.hypot(cell[index] - point[0], cell[index + 1] - point[1], cell[index + 2] - point[2]);
+        if (gap <= within) return true;
+      }
+      return false;
+    });
+  const either = (point: Point, within = SWING_CLEAR_M) =>
+    near(point, within) || near([point[0], -point[1], point[2]], within);
+  canvases.set(hull, either);
+  return either;
 }
 
-/** Whether a point in a hull's frame stands within `pad` of where its rig can come in any wind (`inRig`). */
-export const inItsRig = (hull: number, point: Point, pad = RIG_CLEAR_M): boolean =>
-  hullSails(hull).some((sail) => inRig(swingOf(sail), point, pad));
-
-/** The highest the deck or its rail stands across `deck` at `along`. */
-function railAt(deck: Deck, along: number): number {
+/** The highest `deck` stands within `RAIL_ROWS_M` of `along`: the rail an eye there sees over. */
+export function railAt(deck: Deck, along: number): number {
   let rail = -Infinity;
-  for (let column = 0; column < deck.columns; column++)
-    rail = Math.max(rail, cellHeight(deck, deck.west + (column + 0.5) * deck.cell, -along) ?? -Infinity);
+  for (let row = along - RAIL_ROWS_M; row <= along + RAIL_ROWS_M; row += deck.cell)
+    for (let column = 0; column < deck.columns; column++)
+      rail = Math.max(rail, cellHeight(deck, deck.west + (column + 0.5) * deck.cell, -row) ?? -Infinity);
   return rail;
 }
 
-/** The eye over the deck that scores best, or null where no spot near the battery is clear of the rig: high over the
- *  deck, near its battery's middle, toward its centreline, and with the water at `nearestM` out showing over its
- *  rail. */
+/** The eye over the deck that scores best, or null where no spot near the battery is clear of the rig: a sailor's
+ *  height over the deck, by its battery's middle, out toward the side laid, and with the water at `nearestM` out
+ *  showing over its rail. Its spots are tried best first, as the rig is felt at each of them. */
 function deckEye(hull: number, battery: readonly number[], nearestM: number): Point | null {
   const deck = HULL_DECKS[hull];
   if (!deck) return null;
@@ -103,7 +145,7 @@ function deckEye(hull: number, battery: readonly number[], nearestM: number): Po
   const [first, last] = [Math.min(...battery) - PAST_BATTERY_M, Math.max(...battery) + PAST_BATTERY_M];
   const middle = mean(battery);
   const halfBeam = Math.abs(hullBox(hull)[1][1]);
-  let best: { readonly eye: Point; readonly score: number } | null = null;
+  const spots: { readonly eye: Point; readonly score: number }[] = [];
   for (let along = first; along <= last; along += SEARCH_STEP_M) {
     const rail = railAt(deck, along);
     // In whole steps, so its centreline is out 0 exactly and not a hair to port.
@@ -112,22 +154,27 @@ function deckEye(hull: number, battery: readonly number[], nearestM: number): Po
       const out = share * halfBeam;
       const under = cellHeight(deck, out, -along);
       if (under === null) continue;
-      for (let over = LEAST_OVER_DECK_M; over <= BEST_OVER_DECK_M + 2; over += 0.1) {
+      for (let over = LEAST_OVER_DECK_M; over <= MOST_OVER_DECK_M; over += 0.1) {
         const up = under + over;
-        const score = Math.abs(over - BEST_OVER_DECK_M) + 0.35 * Math.abs(along - middle) + Math.abs(share);
-        if (up < rail + OVER_RAIL_M || (best && score >= best.score)) continue;
-        // The look down to the nearest lay, where it passes over the rail.
-        const atRail = up - (up * (halfBeam - out)) / Math.max(1e-6, nearestM - out);
-        if (atRail < rail + SIGHT_OVER_RAIL_M) continue;
-        // The eye and the way in to it from abeam, square over its rail (`wayAboard`), clear of the rig.
-        let clear = true;
-        for (let across = out; clear && across <= halfBeam + 1; across += SEARCH_STEP_M)
-          for (const swing of swings) if (inRig(swing, [along, across, up])) clear = false;
-        if (clear) best = { eye: [along, out, up], score };
+        // The look down to the nearest lay, and down to the rail's top at its side: the rail well under it.
+        const [toLay, toRail] = [Math.atan2(up, nearestM - out), Math.atan2(up - rail, halfBeam - out)];
+        if (up < rail + OVER_RAIL_M || toRail < toLay + RAIL_UNDER_SIGHT) continue;
+        const score =
+          Math.abs(over - BEST_OVER_DECK_M) + 0.35 * Math.abs(along - middle) + Math.abs(BEST_OUT_SHARE - share);
+        spots.push({ eye: [along, out, up], score });
       }
     }
   }
-  return best?.eye ?? null;
+  spots.sort((one, other) => one.score - other.score);
+  const canvas = byCanvas(hull);
+  // The eye clear of the rig, and the way in to it from abeam (`wayAboard`), square over its rail, through no sail.
+  const clear = ([along, out, up]: Point) => {
+    if (byMast(swings, [along, out, up]) || canvas([along, out, up])) return false;
+    for (let across = out; across <= abeamOut(hull, [along, out, up]); across += SEARCH_STEP_M)
+      if (canvas([along, across, up], WAY_CLEAR_M)) return false;
+    return true;
+  };
+  return spots.find(({ eye }) => clear(eye))?.eye ?? null;
 }
 
 const stations = new Map<number, AimStation>();
