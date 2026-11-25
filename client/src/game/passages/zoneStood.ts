@@ -11,6 +11,7 @@ import type { LandSheet } from '../../heldmap/landSheet.ts';
 import type { PassagePiece, PassagePlan, PassageWeb } from '../../rules/passageRules.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
+import { lampCold as coldFor } from './athericBounty.ts';
 import { gearOf } from './passageAsks.ts';
 import type { ZoneEntry } from './passageEnter.ts';
 import { haulOf, passageWordOf } from './passageHeard.ts';
@@ -118,7 +119,9 @@ export class ZoneStood {
     const word = zone && passageWordOf(zone.entry.plan.zone, gear?.dive, this.seen(), gear?.spent.length);
     if (!zone || !word) return null;
     const nodes = zone.entry.plan.pieces.filter((piece) => piece.kind === 'node').length;
-    const round = { nodes, public: gear?.dive?.route === 0 };
+    const lamp = zone.entry.plan.zone.lamp;
+    const lampCold = lamp !== null && coldFor(gear?.athericBounties, zone.web.island, lamp);
+    const round = { nodes, public: gear?.dive?.route === 0, lampCold };
     return dealTracker(zone.entry.plan.zone, { ...word, ...round }, this.host.now());
   }
 

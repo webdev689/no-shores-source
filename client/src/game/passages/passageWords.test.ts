@@ -138,6 +138,9 @@ test('the lamp is held to light; lit, it offers Home or going on', () => {
   assert.equal(lampPrompt(false, false).deed, 'Light the lamp');
   assert.match(lampPrompt(false, true).under ?? '', /guard/);
   assert.equal(lampPrompt(true, false).deed, 'Home');
+  const cold = lampPrompt(false, false, true);
+  assert.deepEqual([cold.deed, cold.under], ['Kindle the lamp', 'Gone cold for you: the Tithe come while you hold']);
+  assert.match(lampPrompt(false, true, true).under ?? '', /guard/, 'its guard first, cold or not');
 });
 
 test('the haul lists what is carried and warns that a fall or leaving loses it; empty, it says nothing', () => {
@@ -210,6 +213,8 @@ test('the tracker says the depth and the next lamp, the lamp to light, and no wa
     NOW,
   );
   assert.deepEqual(lighting.steps.at(-1), { text: 'Light the lamp', done: false });
+  const cold = dealTracker(deepest, word({ done: true }, { openMouths: [], lampLit: false, lampCold: true }), NOW);
+  assert.deepEqual(cold.steps.at(-1), { text: 'Kindle the cold lamp', done: false }, 'Lanternfall’s last step');
   const lit = dealTracker(deepest, word({ done: true }, { openMouths: [], open: true, lampLit: true }), NOW);
   assert.deepEqual(
     lit.steps.map((step) => [step.text, step.done]),

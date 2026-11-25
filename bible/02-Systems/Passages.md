@@ -364,7 +364,8 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
   Gauntlet, Ambush, Sever) on its sign, the card, the tracker and the map. Near an onward mouth its sign shows a Gauntlet's far mouth as its goal ("The Gauntlet's far mouth: reach it in
   time."), the zone beyond, whether it lies on the week's public way, its foes' levels ("Foes 15 to 18", in the loss's colour where the strongest stands three or more over the
   player) and, shut, "Shut until this place's work is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
-  the hold; once lit E there is Home. E held at a dead lamp kindles it. E let go ends a hold, as a gather's. The haul
+  the hold; once lit E there is Home. The fourth lamp standing cold for one on Lanternfall's last step says "Kindle
+  the lamp" ("Gone cold for you: the Tithe come while you hold"), and the tracker "Kindle the cold lamp". E held at a dead lamp kindles it. E let go ends a hold, as a gather's. The haul
   stands on the right while anything is carried, its first five lines and then "and 4 more" (on a phone's narrow view two, under the tracker), no wider than the view,
   with "Carried, not kept. Fall or leave, and it is lost."; the leave held adds "What you carry is lost"; a respawn
   that empties it says "What you carried is lost." The cold lantern found stands a moment low in the view (on a narrow one in

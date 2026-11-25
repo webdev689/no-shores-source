@@ -47,6 +47,17 @@ export function athericCards(held: readonly AthericBountyState[] | undefined): A
   });
 }
 
+/** Whether lamp `lamp` of `island`'s passages stands cold for the player: the lamp the last step of a bounty they
+ *  hold kindles, as the rules judge it (crates/gear `Character::lamp_cold`). */
+export function lampCold(held: readonly AthericBountyState[] | undefined, island: string, lamp: number): boolean {
+  return bounties.some((bounty) => {
+    const state = held?.find((each) => each.id === bounty.id && !each.finished);
+    const last = bounty.steps[bounty.steps.length - 1];
+    const lit = last && 'lamp' in last ? last.lamp : undefined;
+    return !!state && state.step === bounty.steps.length - 1 && bounty.island === island && lit === lamp;
+  });
+}
+
 /** The card as the Journal draws it: the Atheric's name in its rarity's colour, the find and its words, each step a
  *  line, the one under way with its gauge and count. */
 export function athericCardNode(card: AthericCard, size = 1): Node {

@@ -39,6 +39,8 @@ export interface PassageWord {
   readonly deal: DealProgress;
   /** Whether they have lit this zone's lamp; null in a zone with none. */
   readonly lampLit: boolean | null;
+  /** Whether the zone's lamp stands cold for them, to be kindled as their Atheric bounty's last step. */
+  readonly lampCold?: boolean;
   /** The onward mouths open, by their number. */
   readonly openMouths: readonly number[];
   /** Whether the zone's mouths stand open for the player, its deal done while they were in it: so at the deepest,
@@ -231,11 +233,15 @@ export interface LampPrompt {
 /** How long the lamp is held to light it, seconds. */
 export const LAMP_HOLD_S = 2;
 
-export function lampPrompt(lit: boolean, guarded: boolean): LampPrompt {
+export function lampPrompt(lit: boolean, guarded: boolean, cold = false): LampPrompt {
   if (lit) return { lit, deed: 'Home', under: 'Or go on: the ways on are open' };
-  return guarded
-    ? { lit, deed: 'Light the lamp', under: 'Not while its guard stands' }
-    : { lit, deed: 'Light the lamp', under: 'What you carry is kept once it burns' };
+  const deed = cold ? 'Kindle the lamp' : 'Light the lamp';
+  if (guarded) return { lit, deed, under: 'Not while its guard stands' };
+  return {
+    lit,
+    deed,
+    under: cold ? 'Gone cold for you: the Tithe come while you hold' : 'What you carry is kept once it burns',
+  };
 }
 
 /** The haul as its panel shows it: a line each, and the warning while anything is carried. */
@@ -300,7 +306,8 @@ export function dealTracker(zone: PassageZone, word: PassageWord, now: number): 
   const steps = dealSteps(zone, word);
   const open = word.open ?? word.openMouths.length > 0;
   const lit = word.lampLit === true;
-  if (zone.lamp !== null) steps.push({ text: 'Light the lamp', done: lit });
+  if (zone.lamp !== null)
+    steps.push({ text: word.lampCold && !lit ? 'Kindle the cold lamp' : 'Light the lamp', done: lit });
   const onward = zone.onward.length > 0;
   if (zone.lamp !== null && lit) steps.push({ text: onward ? 'Go on, or Home from the lamp' : 'Home from the lamp' });
   else if (open && onward) steps.push({ text: 'Go on through an open mouth' });

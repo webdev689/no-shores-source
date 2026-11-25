@@ -21,6 +21,7 @@ import type { IsleShown } from '../../islands/islePlan.ts';
 import type { Difficulty } from '../../heldmap/heldMap.ts';
 import type { LandSheet } from '../../heldmap/landSheet.ts';
 import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor } from '../../rules/passageRules.ts';
+import { lampCold } from './athericBounty.ts';
 import { gearOf, PassageAsks } from './passageAsks.ts';
 import { enterZone, onwardOrBack } from './passageEnter.ts';
 import { MouthsCard } from './mouthsCard.ts';
@@ -142,7 +143,8 @@ export class PassageGame {
     const share = held && seen?.holding?.target === heldTarget(held) ? seen.holding.share : undefined;
     if (held && 'lamp' in held) {
       const lit = seen?.lampLit ?? false;
-      const prompt = lampPrompt(lit, !lit && !(seen?.done ?? false));
+      const cold = lampCold(gearOf(this.host.foot())?.athericBounties, zone.web.island, plan.zone.lamp ?? 0);
+      const prompt = lampPrompt(lit, !lit && !(seen?.done ?? false), cold);
       if (lit) return { words: prompt.deed, run: () => this.home(ask) };
       if (prompt.under === 'Not while its guard stands')
         return { words: prompt.under, run: () => undefined, idle: true };
