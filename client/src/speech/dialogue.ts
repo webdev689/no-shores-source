@@ -1,5 +1,5 @@
-// The dialogue box, bottom centre in the Enhanced Plus kit: the speaker's name over their words, typed as they are
-// heard. A speaker with no name is a voice from nowhere, its words alone in the middle of the screen. Drawn by the game
+// The dialogue box, bottom centre in the Enhanced Plus kit: the speaker's name, in their own colour, over their
+// words, typed as they are heard. A speaker with no name is a voice from nowhere, its words alone in the middle of the screen. Drawn by the game
 // as a layer of its interface under every other, so the HUD, the menu and every window stand over the words; a
 // screen reader hears each line once it is typed whole. The pacing is the conversation's (conversation.ts); this file
 // only shows it and sounds it.
@@ -52,9 +52,9 @@ const shownBoxes = new Set<DialogueBox>();
 /** Whether a dialogue box holds the screen: a named speaker's words are up. */
 export const speaking = (): boolean => shownBoxes.size > 0;
 
-/** The box for `name`'s words, or the voice from nowhere's words alone for a speaker with no name, in a view `width`
- *  wide. */
-export function dialogueNode(name: string, words: readonly Span[], width: number): Node {
+/** The box for `name`'s words, their name in `colour` (the kit's brass for none), or the voice from nowhere's words
+ *  alone for a speaker with no name, in a view `width` wide. */
+export function dialogueNode(name: string, words: readonly Span[], width: number, colour: string | null = null): Node {
   if (name === '')
     return {
       width: Math.min(BOX_WIDTH_PX, width - 44),
@@ -84,7 +84,7 @@ export function dialogueNode(name: string, words: readonly Span[], width: number
               words: name,
               size: 2,
               leading: 33,
-              colour: TONES.brassHi,
+              colour: colour ?? TONES.brassHi,
               edge: 'shadow',
               edgeColour: TONES.outline,
             },
@@ -107,8 +107,9 @@ export class DialogueBox {
   private talk: Conversation | null = null;
   private cast: Cast | null = null;
   private shownIndex = -1;
-  /** Who speaks the line shown, "" for a voice from nowhere. */
+  /** Who speaks the line shown, "" for a voice from nowhere, and the colour their name is shown in. */
   private name = '';
+  private colour: string | null = null;
   private told = '';
   private onLine: ((line: Line, index: number) => void) | undefined;
   private resolve: (() => void) | null = null;
@@ -179,7 +180,8 @@ export class DialogueBox {
     const talk = this.talk;
     if (!talk?.line) return null;
     const words = typedSpans(talk.typing.visible, talk.typing.hidden);
-    return { width: 'grow', height: 'grow', through: true, children: [dialogueNode(this.name, words, ui.size.width)] };
+    const box = dialogueNode(this.name, words, ui.size.width, this.colour);
+    return { width: 'grow', height: 'grow', through: true, children: [box] };
   }
 
   /** Brings the box up to the conversation: a new line's speaker, the line told once typed whole, or the end. */
@@ -193,7 +195,7 @@ export class DialogueBox {
     }
     if (talk.index !== this.shownIndex) {
       this.shownIndex = talk.index;
-      this.name = this.cast.speakers[line.who].name;
+      ({ name: this.name, colour: this.colour } = this.cast.speakers[line.who]);
       if (this.name === '') shownBoxes.delete(this);
       else shownBoxes.add(this);
       this.onLine?.(line, talk.index);
