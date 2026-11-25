@@ -292,13 +292,13 @@ test('a kick or a lead judged again as it is written: one who moved on meanwhile
     deps,
     (sql) => sql.startsWith('DELETE FROM company_members'),
     async () => {
-      deps.database = real;
+      Object.assign(deps, { database: real });
       await ben.ask('company/leave');
       await ben.ask('company/join', { name: 'Cal' });
     },
   );
   assert.equal((await ada.ask('company/kick', { name: 'Ben' })).status, 404, 'he had gone');
-  deps.database = real;
+  Object.assign(deps, { database: real });
   assert.deepEqual(names((await ben.roster()).company?.members ?? []).sort(), ['Ben', 'Cal', 'Dee'], 'still in Cal’s');
   await ben.ask('company/leave');
   await ben.ask('company/join', { name: 'Cal' });
@@ -306,12 +306,12 @@ test('a kick or a lead judged again as it is written: one who moved on meanwhile
     deps,
     (sql) => sql.startsWith('UPDATE companies SET leader_id = ?1'),
     async () => {
-      deps.database = real;
+      Object.assign(deps, { database: real });
       await dee.ask('company/leave');
     },
   );
   assert.equal((await cal.ask('company/lead', { name: 'Dee' })).status, 404, 'she had gone');
-  deps.database = real;
+  Object.assign(deps, { database: real });
   assert.deepEqual({ ...(await leaderOf(real, 'Cal')) }, { leads: 1, member: 1 }, 'the lead stays with a member');
 });
 
