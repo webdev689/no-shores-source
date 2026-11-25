@@ -1696,7 +1696,7 @@
     {
       "id": "amb.social.hum",
       "use": "A port city far below the plaza: its streets' murmur and work, no word clear, looped",
-      "query": "medieval town ambience",
+      "query": "distant city",
       "seconds": [
         20,
         600
@@ -1705,13 +1705,9 @@
         760377,
         787823,
         832577,
-        837047,
-        450676,
-        852764,
-        381677,
-        859168,
-        711134
-      ]
+        837047
+      ],
+      "picked": 450676
     },
     {
       "id": "amb.land.breeze",
