@@ -123,11 +123,6 @@ export class Intro implements Beat {
     this.done = true;
   }
 
-  /** Where the camera stands when the beat after takes it up. */
-  get shot(): Shot | null {
-    return this.lastShot;
-  }
-
   /** The theme, whole, over the cloud, Saltmere and the title. */
   music(): Hearing {
     return sung('theme', 'peak');

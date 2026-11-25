@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Child } from '../ui/node.ts';
 import type { UiEvent } from '../ui/ui.ts';
 import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import { type PlaylistSearch, PlaylistView } from './playlistScreen.ts';
 import { SAMPLE_SCREEN } from './playlistShots.ts';
 import type { PlaylistEntry } from './playlistWords.ts';
@@ -27,7 +27,7 @@ const WITH_BREACH = {
 
 /** The screen drawn on a page `width` by `height`, its presses written down. */
 function standing(width = 1600, height = 900, search: PlaylistSearch = IDLE, shown = SAMPLE_SCREEN) {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const pressed: string[] = [];
   const view = new PlaylistView({
     launch: (entry) => void pressed.push(`launch ${entry.kind}`),

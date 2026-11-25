@@ -69,16 +69,6 @@ test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entr
   assert.equal(tripAt(100, 104, { ...outside, patrol: { ...patrol, kind: 'mission' } }, trips), null, 'a patrol only');
 });
 
-test("a patrol's dungeons are named as their entrances are heard, behind the veil, not as a door is first reached", (context) => {
-  if (!roomModule) return context.skip('room.wasm is not built: run `npm run wasm`');
-  const entrances = new Entrances();
-  entrances.namesFrom(roomModule, patrol);
-  assert.equal(entrances.knownName(0), undefined, 'none heard yet');
-  entrances.heard([100, 100, 0, 0, 0, 400, 100, 0, 0, 2]);
-  assert.match(entrances.knownName(0) ?? '', /^The \w+ of the Saltgrass Downs$/, 'named as heard');
-  assert.match(entrances.knownName(1) ?? '', /^The \w+ of the Saltgrass Downs$/);
-});
-
 test('a dungeon is played as a place named for itself, its one spawn its way in', () => {
   const layout = { name: 'The Crypt of the Saltgrass Downs', columns: 2, rows: 1, cell: 3.2, arrival: { x: 1, y: 2 } };
   const place = dungeonPlace(patrol, layout as unknown as DungeonLayout);

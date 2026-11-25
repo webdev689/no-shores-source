@@ -255,7 +255,7 @@ export class Battle implements Beat {
       shot: shown.shot,
       ships,
       hulls: shown.hulls,
-      actors: own ? [...brig.crew(own, tick.clock, { gunner: 'chop' }), youAtHelm(story, own, 'idle')] : [],
+      actors: own ? [...brig.crew(own, { gunner: 'chop' }), youAtHelm(story, own, 'idle')] : [],
       heads,
       // The balls and effects with the ships; the aim and the see-through puffs after the water, as at sea.
       drawers: [

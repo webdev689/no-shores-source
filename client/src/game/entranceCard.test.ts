@@ -4,10 +4,10 @@ import type { Child } from '../ui/node.ts';
 import type { UiEvent } from '../ui/ui.ts';
 import { fakeInterface } from '../ui/uiForTests.ts';
 import { EntranceCardView } from './entranceCard.ts';
-import { fakePage } from './pageForTests.ts';
+import { fakeWindow } from './pageForTests.ts';
 
 test('the pad’s B closes an entrance’s card, as Escape does', () => {
-  fakePage();
+  fakeWindow();
   const pressed: string[] = [];
   const view = new EntranceCardView({
     enter: () => void pressed.push('enter'),

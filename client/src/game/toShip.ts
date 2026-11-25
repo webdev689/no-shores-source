@@ -1,5 +1,5 @@
-// Returning to the ship, on the room's word: refused while fallen or within ten seconds of a foe's blow, as the owner
-// chose; the room judges, the page leaves only on its yes.
+// Returning to the ship, on the room's word: refused while fallen or within ten seconds of a foe's blow, so the ship
+// is no way out of a death or a fight; the room judges, the page leaves only on its yes.
 
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 

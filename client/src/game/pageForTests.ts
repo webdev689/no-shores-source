@@ -47,7 +47,7 @@ class Listeners {
 }
 
 /** A fresh window's listeners laid over the globals the menu reads, with a document of its own. */
-export function fakePage(): { readonly window: Listeners } {
+export function fakeWindow(): { readonly window: Listeners } {
   const window = new Listeners();
   Object.assign(globalThis, {
     document: Object.assign(new Listeners(), { hidden: false, exitPointerLock: () => undefined }),

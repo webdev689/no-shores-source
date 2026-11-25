@@ -97,11 +97,6 @@ export class SeaView {
     return this.close.closest(sea, lying, this.camera.yaw, this.camera.tilt);
   }
 
-  /** The ids of the landings marked over the island's side in view: the player has seen them. */
-  get landings(): string[] {
-    return this.side.map((mark) => mark.id);
-  }
-
   /** The landings marked over the island's side in view. */
   get sideMarks(): readonly Mark[] {
     return this.side;

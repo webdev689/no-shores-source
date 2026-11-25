@@ -1,7 +1,7 @@
-// Where a returning player arrives after the title, as the owner asked: wherever they last left the overworld or a
-// social space. Online the accounts say it (`/v1/me`), from the character the rooms kept, and the rooms stand the
-// player there; offline, where no room keeps a character, the page keeps it in the browser as it plays. One who has
-// just played the story through arrives at Overlook, where its welcome waits.
+// Where a returning player arrives after the title: wherever they last left the overworld or a social space, so they
+// play on from where they stopped. Online the accounts say it (`/v1/me`), from the character the rooms kept, and the
+// rooms stand the player there; offline, where no room keeps a character, the page keeps it in the browser as it
+// plays. One who has just played the story through arrives at Overlook, where its welcome waits.
 import type { LastPlace } from '../../../server/accounts/lastPlace.ts';
 import { arriving, type Flow } from './flow.ts';
 import type { NodeInfo } from './worldData.ts';

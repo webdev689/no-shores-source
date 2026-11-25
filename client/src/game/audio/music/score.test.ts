@@ -193,8 +193,11 @@ test('every layer a score names plays somewhere in it, and each fight song grows
     );
 });
 
+/** The beats a minute a song plays at, as its ticks run. */
+const tempoOf = (song: Song): number => Math.round(60 / (song.secondsPerTick * TICKS_PER_BEAT));
+
 test('the scores keep their tempos and lengths: phases drive harder, the sea in its own meters', () => {
-  const bpm = (songs: readonly Song[]) => songs.map((song) => song.beatsPerMinute);
+  const bpm = (songs: readonly Song[]) => songs.map(tempoOf);
   assert.deepEqual(bpm(wrath.phases), [132, 138, 150]);
   assert.deepEqual(bpm(reckoning.phases), [136, 142, 152]);
   assert.deepEqual(bpm(boarding.phases), [138, 144, 152]);
@@ -261,7 +264,7 @@ test('each family fight plays all six layers in a metre and tempo of its own', (
         song.notes.some((note) => note.role === role),
         `${song.name}: the ${role} layer plays`,
       );
-  const metres = familySongs.map((song) => `${song.ticksPerBar} ticks at ${song.beatsPerMinute}`);
+  const metres = familySongs.map((song) => `${song.ticksPerBar} ticks at ${tempoOf(song)}`);
   assert.equal(new Set(metres).size, familySongs.length, metres.join(', '));
 });
 
@@ -271,7 +274,7 @@ test("each family's cadence, victory and defeat is two to eight bars of its figh
       const bars = sting.durationTicks / sting.ticksPerBar;
       assert.ok(bars >= 2 && bars <= 8, `${sting.name} is ${bars} bars`);
       assert.equal(sting.ticksPerBar, score.song.ticksPerBar, `${sting.name} keeps its fight's metre`);
-      assert.equal(sting.beatsPerMinute, score.song.beatsPerMinute, `${sting.name} keeps its fight's tempo`);
+      assert.equal(sting.secondsPerTick, score.song.secondsPerTick, `${sting.name} keeps its fight's tempo`);
       assert.ok(
         sting.notes.some((note) => note.tick === 0),
         `${sting.name} speaks on its first beat`,

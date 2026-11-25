@@ -42,6 +42,7 @@ import { chime as rarityChime, play } from './uiSounds.ts';
 import { type BreachOn, type BreachParts, BreachView, withBreach } from './breachView.ts';
 import type { StandingAgain } from './footRevive.ts';
 import type { Use } from './footGear.ts';
+import { TICKS_A_SECOND } from './hudLaw.ts';
 
 type Point = readonly [number, number, number];
 
@@ -73,9 +74,8 @@ const CHEST_KEPT_S = 6;
 const STALE_S = 2;
 /** The player's own shard taken chimes as a Vestige of this rarity does coming to rest. */
 const SHARD_CHIME = 3;
-/** The room's ticks a second, and an event's last minute in them. */
-const TICKS_PER_SECOND = 60;
-const LAST_MINUTE_TICKS = 60 * TICKS_PER_SECOND;
+/** An event's last minute, in the room's ticks. */
+const LAST_MINUTE_TICKS = 60 * TICKS_A_SECOND;
 /** The ring's colour once the heroic task is met. */
 const RING_HEROIC = [1, 0.48, 0.24] as const;
 
@@ -352,7 +352,7 @@ export class PublicView {
   private counted(event: PublicEvent | null, wall: number): PublicEvent | null {
     if (!event) return null;
     if (this.nextWord?.ticks !== event.nextTicks) this.nextWord = { ticks: event.nextTicks, at: wall };
-    const gone = Math.round((wall - this.nextWord.at) * TICKS_PER_SECOND);
+    const gone = Math.round((wall - this.nextWord.at) * TICKS_A_SECOND);
     return gone > 0 ? { ...event, nextTicks: Math.max(0, event.nextTicks - gone) } : event;
   }
 
