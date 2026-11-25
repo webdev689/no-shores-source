@@ -9,7 +9,7 @@ import type { GearLetter } from '../../network/mailMessages.ts';
 import { RARITIES, SLOTS } from '../../player/gear.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import { cardFrame, cardName, cardNode, rarityTone } from '../gearCard.ts';
-import { cardOf } from '../gearCards.ts';
+import { cardOf, wornFor } from '../gearCards.ts';
 import {
   type Hint,
   INK,
@@ -135,7 +135,7 @@ function heldTile(context: MenuContext, row: LetterRow): Node | null {
   const module = item ? moduleGlyph(item.kind) : null;
   context.card(id, () =>
     item
-      ? cardNode(cardOf(item), module ? null : context.picture(item), TAKE_HINTS, sizes)
+      ? cardNode(cardOf(item, wornFor(context.gear, item)), module ? null : context.picture(item), TAKE_HINTS, sizes)
       : vestigeCard(context, row, vestige?.slot ?? 0, vestige?.level ?? 0),
   );
   const icon = module

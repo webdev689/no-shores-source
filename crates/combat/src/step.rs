@@ -525,7 +525,7 @@ fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
 }
 
 /// The share of its pace a fighter keeps while it aims a ranged weapon.
-const AIM_PACE: f64 = 0.5;
+pub const AIM_PACE: f64 = 0.5;
 
 /// Controls that hold the body still where it stands, but let it fall.
 fn still(controls: Controls) -> Controls {

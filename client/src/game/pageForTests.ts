@@ -9,15 +9,16 @@ export class FakeEvent {
   readonly key: string;
   readonly code: string;
   readonly repeat = false;
-  readonly ctrlKey = false;
+  readonly ctrlKey: boolean;
   readonly metaKey = false;
   readonly altKey = false;
   readonly detail: unknown;
-  constructor(type: string, init: { key?: string; code?: string; detail?: unknown } = {}) {
+  constructor(type: string, init: { key?: string; code?: string; detail?: unknown; ctrlKey?: boolean } = {}) {
     this.type = type;
     this.key = init.key ?? '';
     this.code = init.code ?? '';
     this.detail = init.detail;
+    this.ctrlKey = init.ctrlKey ?? false;
   }
   preventDefault(): void {
     this.defaultPrevented = true;

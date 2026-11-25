@@ -57,7 +57,8 @@ fn a_horse_is_never_upgraded_or_dismantled_but_goes_to_the_vault() {
         character.ask(Ask::Buy { item: id, column: 0, node: 0 }, Here::default(), &DICE),
         Err(Refusal::NoSuchNode)
     );
-    assert_eq!(character.ask(Ask::Feed { item: id }, Here::default(), &DICE), Err(Refusal::FullOfXp));
+    let _ = character.ask(Ask::Feed, Here::default(), &DICE);
+    assert_eq!(character.item(id).map(|item| item.xp), Some(0), "a Fruit grows no horse");
     assert_eq!(character.ask(Ask::Store { item: id }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
     assert_eq!(character.at(id), Some(At::Vault));
 }
