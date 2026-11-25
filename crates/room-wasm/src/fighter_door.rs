@@ -59,6 +59,16 @@ pub fn set_dungeon(text: &[u8]) -> bool {
     true
 }
 
+/// Keeps a passage zone's ground for predicting a fighter without a room, from the JSON ask `room_open_passage` takes
+/// (its island, week and zone): under ground the Forge's floor and the pieces' solids, above ground the hollow's
+/// heights and its blocks, as `Room::passage` stands bodies on them. Answers whether the ask named a zone.
+pub fn set_passage(text: &[u8]) -> bool {
+    let Some((floor, blocks)) = crate::passage_room_door::ground_of(text) else { return false };
+    FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor);
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(blocks));
+    true
+}
+
 /// Keeps a ship's deck for predicting a fighter without a room, from its grid's numbers (`Heights::from_floats`), in
 /// place of any ground: its deck room's own floor, to the bit. Numbers that are not a grid keep open ground; answers
 /// whether they were one.
@@ -195,6 +205,17 @@ pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u3
 pub unsafe extern "C" fn fighter_dungeon(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_dungeon(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the passage zone asked for by the JSON written at `address` for predicting (`set_passage`); 1 if it was one,
+/// 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_passage(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_passage(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Keeps the deck whose grid's numbers are written at `address` for predicting; 1 if they were a grid, 0 if not.

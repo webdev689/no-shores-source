@@ -168,12 +168,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   /** Whether the view was in the player's eyes before the land's held map took it there; null while it has not. */
   let eyesBeforeMap: boolean | null = null;
 
-  /** The drawers that stand on the open landmass this frame (`standingDrawers`). */
+  /** The drawers that stand on the open landmass this frame (`standingDrawers`); none of its own in a passage's
+   *  hollow, which stands alone. */
   const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) => {
     const entrances = playing.foot && parts.dungeons.entrancesOf(playing.foot);
     const drawn = standingDrawers(
       {
-        ...playing.drawers,
+        ...(parts.passages.inHollow() ? { city: null, layouts: null, nature: null } : playing.drawers),
         isles: parts.isles,
         shipModels: parts.shipModels,
         figureView: parts.figureView,
@@ -233,7 +234,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const eye = playing.after.seen?.eye ?? null;
     parts.passages.frame(heard.held('use'));
     const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
-    const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
+    const shown = { ...own, shot: parts.passages.wayShot(playing.after.shot(own.shot, seconds)) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
@@ -243,7 +244,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.eventProps.hang(here.outpost?.cloth() ?? null);
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
-    if (!here.dungeon) {
+    // A passage's hollow stands alone: none of the landmass's ground is near it to keep or draw.
+    const bare = parts.passages.inHollow();
+    if (!here.dungeon && !bare) {
       scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
       scene.keepMiddle([body.x, body.y], parts.closeSource);
     }
@@ -326,6 +329,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       carried,
       drain: drain.share,
       dark: shown.dark,
+      bare,
     };
     const ships = [...moored.ships, ...fleet.ships];
     // Each material node as the forge draws it, standing while the room stands it for the player, or gathered.
@@ -500,11 +504,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   /** A frame of the way between passage zones, over the island; once it has played and the place has come, the
    *  player arrives on foot. */
-  const passingFrame = (seconds: number, size: { width: number; height: number }) => {
+  const passingFrame = (controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     // A room gone to that shuts sends the player to their ship, as it would on foot, before its body ever comes.
     if (playing.foot && parts.heed(playing.foot)) return;
     const shot = parts.passages.passing(seconds, playing.ready);
-    if (shot) scene.draw(shot, size, clock, seconds, []);
+    // From the way down the place is drawn as on foot, held still while the flow is not yet on foot.
+    if (shot === 'place' && playing.foot) footFrame(playing.foot, controls, seconds, size);
+    else if (shot && shot !== 'place') scene.draw(shot, size, clock, seconds, []);
     else playing.foot?.arrive(clock);
   };
 
@@ -563,7 +569,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
       else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
       else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
-      else if (shown?.mode === 'passing') passingFrame(seconds, size);
+      else if (shown?.mode === 'passing') passingFrame(controls, seconds, size);
     });
     settled &&= placed;
     // Only on foot is there a place to leave: a hold under way goes with the place it was begun in.

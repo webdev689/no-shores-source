@@ -4,7 +4,11 @@ import { cityClimate } from '../city/plan.ts';
 import { ENTRANCE_MODELS, type Entrance } from './entrances.ts';
 import { EntranceView } from './entranceView.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { stylePacks } from './dungeonDressing.ts';
+import { passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
+import { loadStylePack, type ModulePack, PASSAGE_PACK } from './dungeonModules.ts';
+import type { PassagePlan } from '../rules/passageRules.ts';
+import type { PieceState } from './passages/passagePieces.ts';
+import type { Climate } from '../textures/climate.ts';
 import { DungeonScene } from './dungeonScene.ts';
 import { DungeonView } from './dungeonView.ts';
 import type { Gpu } from '../gpu.ts';
@@ -18,6 +22,9 @@ import type { NodeInfo } from './worldData.ts';
 /** The door picture of Daggerfall's dungeon doors, where the props' table has not come. */
 const PLAIN_DOOR = [56, 2] as const;
 
+/** A passage zone's pieces as they stand for the player now: its plan, the deal's state and whether it is done. */
+export type PiecesNow = () => { readonly plan: PassagePlan; readonly state: PieceState; readonly done: boolean } | null;
+
 export class DungeonDrawers {
   private readonly scene: DungeonScene;
   private readonly view: DungeonView;
@@ -29,6 +36,13 @@ export class DungeonDrawers {
   private readonly assets: Promise<CityAssets | null>;
   /** The forged props' table, once read. */
   props: PropTable | null = null;
+  /** The passage zone shown under ground, its pieces laid from the passages' pack while it has come. */
+  private passage: {
+    readonly now: PiecesNow;
+    readonly pack: ModulePack;
+    readonly layout: DungeonLayout;
+    readonly climate: Climate;
+  } | null = null;
 
   constructor(
     gpu: Gpu,
@@ -65,16 +79,40 @@ export class DungeonDrawers {
   /** Draws this dungeon of `patrol` from now on, its exit door wearing the door picture its entrance's model wears,
    *  once the packs of the styles it wears and the props' table have come: the room stands its props as solids, so
    *  none may be left undrawn. */
-  async show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): Promise<void> {
-    const [packs, loaded] = await Promise.all([stylePacks(layout), this.assets]);
+  async show(
+    layout: DungeonLayout,
+    patrol: NodeInfo,
+    entrance: Entrance | undefined,
+    pieces?: PiecesNow,
+  ): Promise<void> {
+    const passages = pieces ? loadStylePack(PASSAGE_PACK) : Promise.resolve(null);
+    const [packs, loaded, pack] = await Promise.all([stylePacks(layout), this.assets, passages]);
     const props = loaded?.tables.props ?? this.props ?? {};
     const look = entrance && props[ENTRANCE_MODELS[entrance.model] ?? -1]?.doorLook;
-    this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR, props, packs);
+    const climate = this.climateOf(patrol);
+    this.passage = pieces && pack ? { now: pieces, pack, layout, climate: climate.climate } : null;
+    const first = this.piecesLaid();
+    this.view.set(layout, climate, look ? [look[0], look[1]] : PLAIN_DOOR, props, packs, first?.lay);
+  }
+
+  /** The passage zone's pieces from their pack as they stand now, and what they stand as; null with no pack. */
+  private piecesLaid() {
+    const now = this.passage?.now();
+    if (!this.passage || !now) return null;
+    const { pack, layout, climate } = this.passage;
+    const lay = passagePiecesLaid(layout, pack, climate, now.plan.pieces, now.state, now.done);
+    return { lay, key: JSON.stringify([now.plan.zone.number, now.state, now.done]) };
+  }
+
+  /** Whether a passage zone's pieces are drawn from their pack, so their boxes are not. */
+  piecesFromPack(): boolean {
+    return this.passage !== null;
   }
 
   /** Lets go of the dungeon last drawn and the scene's targets, once the player is somewhere that is no dungeon. */
   forget(): void {
     this.view.clear();
+    this.passage = null;
     this.scene.release();
     this.entranceView.clear();
     this.shownEntrances = null;
@@ -93,6 +131,8 @@ export class DungeonDrawers {
     drain = 0,
   ): void {
     this.view.setCache(foot.held.cache);
+    const laid = this.piecesLaid();
+    this.view.setPieces(laid?.lay ?? null, laid?.key ?? '');
     this.view.setEncounter(foot.held.encounter);
     const { figures } = shown;
     const light = (point: readonly [number, number, number]) => this.view.lightAt(point, time);

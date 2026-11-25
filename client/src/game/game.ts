@@ -314,16 +314,18 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     },
   });
 
-  const passages = new PassageGame({
+  const passages: PassageGame = new PassageGame({
     ...{ module: roomModule, context: footContext, goInto, tell, now: () => Date.now() },
     ...{ foot: () => playing.foot, flow: () => playing.flow, land: () => playing.landmass },
     setFlow: (flow) => void (playing.flow = flow),
     setReady: (ready) => void ([playing.ready, playing.waited] = [ready, 0]),
-    showDungeon: (layout, node) => dungeons.show(layout, node, undefined),
+    showDungeon: (layout, node) => dungeons.show(layout, node, undefined, () => passages.pieces()),
     companyPlaces: () => companyPlaces(link),
     climate: (id) => continents.find((each) => each.id === id)?.climate ?? '',
     failed: (why) => travel({ kind: 'shut', why }, goSea),
   });
+  // Under ground a passage's pieces are the dungeon's own once their pack has come; until then, boxes.
+  const pieces = piecesDrawer(gpu, () => (dungeons.piecesFromPack() ? null : passages.pieces()));
   const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
   if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
   const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
@@ -588,7 +590,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
-      ...{ world, music, ambience, dungeons, passages, pieces: piecesDrawer(gpu, () => passages.pieces()) },
+      ...{ world, music, ambience, dungeons, passages, pieces },
       heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),
     },
     playing,

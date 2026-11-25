@@ -26,7 +26,7 @@ import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
 import { haulNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
 import type { PieceState } from './passagePieces.ts';
 import { holdAt, homeSpot, mouthAt, onwardAt } from './passageReach.ts';
-import { type Way, type WayFrame, wayAt, wayClock, wayOf } from './passageWay.ts';
+import { settledShot, type Way, type WayFrame, wayAt, wayClock, wayOf } from './passageWay.ts';
 import {
   dealTracker,
   haulView,
@@ -71,8 +71,6 @@ interface Asked {
   readonly dive: DiveState<GearItem> | null;
   readonly since: number;
   readonly yes: (dive: DiveState<GearItem> | null) => void;
-  /** Whether a done is its yes: a lamp's Home turns the dive homeward, which the gear does not carry. */
-  readonly done: boolean;
 }
 
 /** The zone the player stands in: its web, its entry and the island shown for it above ground. */
@@ -89,9 +87,8 @@ export class PassageGame {
   private zone: InZone | null = null;
   private asked: Asked | null = null;
   private sign: OnwardSign | null = null;
-  /** The way under way; `home` while it runs back to the patrol zone, where it comes down to the body the room
-   *  stood, once its first snapshot has come. */
-  private way: { way: Way; seconds: number; frame: WayFrame | null; home: boolean; landed: boolean } | null = null;
+  /** The way under way, which comes down to the body the room stood once its first snapshot has come (`landed`). */
+  private way: { way: Way; seconds: number; frame: WayFrame | null; landed: boolean } | null = null;
   /** The patrol zone's mouth whose card stands open. */
   private mouth: number | null = null;
   /** What the haul held while the player stood, to say plainly what a respawn lost. */
@@ -221,21 +218,15 @@ export class PassageGame {
     const zone = this.zone;
     if (!foot || !zone) return;
     const mouth = this.gear()?.dive?.mouth ?? 0;
-    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, mouth), ask, true);
+    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, mouth), ask);
   }
 
-  /** Sends `asked`, its yes (a dive changed: begun, gone on or ended) doing `yes`. */
-  private ask(
-    foot: Foot,
-    asked: GearAsk,
-    yes: Asked['yes'],
-    ask = (sent: GearAsk) => foot.gear?.ask(sent),
-    done = false,
-  ): void {
+  /** Sends `asked`, its yes (a dive changed: begun, gone on, turned homeward or ended) doing `yes`. */
+  private ask(foot: Foot, asked: GearAsk, yes: Asked['yes'], ask = (sent: GearAsk) => foot.gear?.ask(sent)): void {
     const gear = foot.gear?.gear;
     if (this.asked || !gear) return;
     const since = this.host.now() / 1000;
-    this.asked = { answered: gear.answered, dive: gear.dive ?? null, since, yes, done };
+    this.asked = { answered: gear.answered, dive: gear.dive ?? null, since, yes };
     ask(asked);
   }
 
@@ -310,17 +301,21 @@ export class PassageGame {
   ): void {
     const after = next(this.host.flow(), happening);
     if (after === this.host.flow()) return;
-    const eye = this.host.context.walker.player.body;
     const zones = web.zones.map((each) => each.at);
+    // A zone's own frame stands at its place on the island; the patrol zone's is the world's.
+    const origin = happening.kind === 'onward' ? ([to[0], to[1], 0] as const) : undefined;
+    const [left, body] = [this.inZone() ? from : [0, 0], this.host.context.walker.player.body];
+    const eye = { x: body.x + (left[0] ?? 0), y: body.y + (left[1] ?? 0), z: body.z };
     const way = wayOf({
       from: { eye: [eye.x, eye.y - 4, eye.z + 2.2], look: [eye.x, eye.y, eye.z + 1.4], fov: 1.1 },
       come: [from],
       to,
       framed: zones,
-      arrive: { at: [to[0], to[1], 0], facing: 0 },
+      arrive: { at: [0, 0, 0], facing: 0 },
       viewport: { width: innerWidth, height: innerHeight },
+      origin,
     });
-    this.way = { way, seconds: 0, frame: null, home: happening.kind === 'home', landed: false };
+    this.way = { way, seconds: 0, frame: null, landed: false };
     this.host.setFlow(after);
     this.host.setReady(false);
     document.exitPointerLock();
@@ -334,15 +329,16 @@ export class PassageGame {
     );
   }
 
-  /** One frame of the way between zones, `seconds` long: the camera's shot, or null once it has played and the place
-   *  has come (`ready`), when the flow goes on foot. */
-  passing(seconds: number, ready: boolean): Shot | null {
+  /** One frame of the way between zones, `seconds` long: the camera's shot over the island, `place` from the way
+   *  down (drawn as the place on foot, `wayShot`), or null once it has played and the place has come (`ready`), when
+   *  the flow goes on foot. */
+  passing(seconds: number, ready: boolean): Shot | 'place' | null {
     const playing = this.way;
     if (!playing) return null;
     // The place has come once its room has stood the body: the walk in starts where the room put it.
     const body = this.host.foot()?.fight.own;
     const come = ready && !!body;
-    if (come && body && playing.home && !playing.landed) {
+    if (come && body && !playing.landed) {
       const facing = this.host.context.walker.player.facing;
       playing.way = wayOf({ ...playing.way.ask, arrive: { at: [body.x, body.y, body.z], facing } });
       playing.landed = true;
@@ -356,7 +352,16 @@ export class PassageGame {
       this.host.setFlow(next(this.host.flow(), { kind: 'loaded' }));
       return null;
     }
-    return { ...frame.shot, near: 0.5, far: 60_000 };
+    return frame.inPlace ? 'place' : { ...frame.shot, near: 0.5, far: 60_000 };
+  }
+
+  /** The foot's camera while the way comes down in the place's own frame, settling into `own` as the character walks
+   *  in; `own` itself otherwise. */
+  wayShot(own: Shot): Shot {
+    // A way left by another road (its room shut, the player sent to their ship) is over.
+    if (this.host.flow().mode !== 'passing') this.way = null;
+    const frame = this.way?.frame;
+    return frame?.inPlace ? { ...own, ...settledShot(frame.shot, own, frame.walked) } : own;
   }
 
   /** Each frame on foot, before the foot's own: whether E is held (`useHeld`), the room's answer to an ask awaited,
@@ -399,7 +404,12 @@ export class PassageGame {
 
   /** The pieces' state as the deal stands for the player, and the zone's plan; null out of a zone. Above ground the
    *  pieces stand as the islands' kit's modules (`isles`), and only their lights are drawn so. */
-  pieces(): { readonly plan: PassagePlan; readonly state: PieceState; readonly lightsOnly: boolean } | null {
+  pieces(): {
+    readonly plan: PassagePlan;
+    readonly state: PieceState;
+    readonly lightsOnly: boolean;
+    readonly done: boolean;
+  } | null {
     const zone = this.inZone();
     if (!zone) return null;
     const seen = this.seen();
@@ -411,7 +421,12 @@ export class PassageGame {
       kindled: bits(seen?.lit ?? 0),
       broken: bits(seen?.broken ?? 0),
     };
-    return { plan: zone.entry.plan, state, lightsOnly: zone.isle !== null };
+    return { plan: zone.entry.plan, state, lightsOnly: zone.isle !== null, done: seen?.done ?? false };
+  }
+
+  /** Whether the player stands in a hollow above ground, which is drawn alone, no land round it. */
+  inHollow(): boolean {
+    return !!this.inZone()?.isle;
   }
 
   /** The hollow above ground the islands' layer draws while the player stands in it. */

@@ -42,17 +42,29 @@ pub(crate) fn open_mouths(room: &mut Room, island: &str, doors: &[Place], places
     }
 }
 
+/// The zone a passage ask names, laid whole, with the ask: none where its island has no passages or its week's web
+/// no such zone.
+fn plan_of(text: &[u8]) -> Option<(Asked, passage::Plan)> {
+    let asked = serde_json::from_slice::<Asked>(text).ok()?;
+    let web = passage::Web::of(passage::island(&asked.island)?, asked.week);
+    let plan = passage::Plan::of(&web, asked.zone)?;
+    Some((asked, plan))
+}
+
+/// A passage zone's ground from its ask's JSON (its island, week and zone), as its room stands bodies on it
+/// (`room::passage_ground`): its floor and its blocks. None where the ask names no zone.
+pub(crate) fn ground_of(text: &[u8]) -> Option<(room::Floor, Vec<movement::Block>)> {
+    let (_, plan) = plan_of(text)?;
+    let (floor, blocks, _) = room::passage_ground(&plan)?;
+    Some((floor, blocks))
+}
+
 /// Opens a passage zone's room from its ask's JSON: its foes at its island's band raised by depth, the week's two
 /// modifiers on, its clock at the ask's minute, and refusing players once the clock's week is past the web's. Answers
 /// whether the ask named a zone of an island's week's web.
 pub fn open_passage(text: &[u8]) -> bool {
-    let Ok(asked) = serde_json::from_slice::<Asked>(text) else { return false };
-    let (Some(passages), Some(band)) = (passage::island(&asked.island), gear::world::island_levels(&asked.island))
-    else {
-        return false;
-    };
-    let web = passage::Web::of(passages, asked.week);
-    let Some(plan) = passage::Plan::of(&web, asked.zone) else { return false };
+    let Some((asked, plan)) = plan_of(text) else { return false };
+    let Some(band) = gear::world::island_levels(&asked.island) else { return false };
     let modifiers = gear::passages::week_modifiers(&asked.island, asked.week);
     let Some(mut room) = Room::passage(&plan, band, modifiers, (&asked.island, asked.week, asked.route)) else {
         return false;

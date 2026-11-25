@@ -147,3 +147,14 @@ test('rules that lay a fighter, an intent or a glance out otherwise than the pag
     assert.throws(() => checkSizes({ ...PAGE_SIZES, ...wrong }), /Reload the page/, JSON.stringify(wrong));
   assert.equal(roomWasmAt('/game/'), `/game/room.wasm?v=${PROTOCOL}`);
 });
+
+test('a passage zone’s ask stands the prediction on its own ground, under ground and above it, and anything else is refused', () => {
+  const rules = startCombatRules(compiled);
+  // Saltmere's week 2900: zone 0 is under ground and zone 1 a hollow (crates/room-wasm passage_room_door_tests.rs).
+  for (const zone of [0, 1]) {
+    const ask = JSON.stringify({ island: 'continent-1', week: 2900, zone, route: 'public', minute: 29_230_000 });
+    assert.equal(rules.setPassage(ask), true, `zone ${zone}`);
+  }
+  assert.equal(rules.setPassage('not an ask'), false);
+  assert.equal(rules.setPassage(JSON.stringify({ island: 'continent-1', week: 2900, zone: 9999 })), false);
+});

@@ -3,8 +3,9 @@
 // so far shows as dots, and the way being taken is drawn a dot at a time over 2 s from one zone's place to the next,
 // while the room changes behind it; the camera comes down to the new zone's way in over 1.5 s, and the character walks
 // 3 m in from its mouth over 1.5 s, the camera settling behind them. The player's inputs are held throughout. A lamp's
-// Home plays the same, the dots running back to the patrol zone. Every point is the world's: a zone's frame stands at
-// its place on the island (`PassageZone.at`), at the height of the ground there.
+// Home plays the same, the dots running back to the patrol zone. Over the island every point is the world's; the way
+// comes down in the place's own frame (a zone's stands at its place on the island, `PassageZone.at`), so the camera
+// lands where the foot's own camera stands, and in the walk it settles into it.
 import { type RailKey, type RailShot, railShot } from '../../cinema/rail.ts';
 import { frameSide } from '../../overworld/islandView.ts';
 import { eyeFor, FIELD_OF_VIEW, poseOf, projectPoint, type Viewport } from '../../overworld/overworldCamera.ts';
@@ -31,8 +32,9 @@ export type WayBeat = 'rise' | 'draw' | 'down' | 'walk' | 'done';
 
 /** What the way is played from: the camera as it stood in the zone left, the places of the way so far (the patrol
  *  zone's first, then each zone passed), the place of the zone gone to (the patrol zone's for Home), every place on
- *  the island to frame (every zone of the web and the patrol zone), where the character walks in to (the zone's
- *  arrival, the world's, and its bearing, clockwise from north) and the picture's shape. */
+ *  the island to frame (every zone of the web and the patrol zone), where the character walks in to (the arrival in
+ *  the place's own frame, and its bearing, clockwise from north), the picture's shape, and where the place's own
+ *  frame stands in the world (none: the world's own). */
 export interface WayAsk {
   readonly from: { readonly eye: Vec3; readonly look: Vec3; readonly fov: number };
   readonly come: readonly Point2[];
@@ -41,6 +43,7 @@ export interface WayAsk {
   readonly arrive: { readonly at: Vec3; readonly facing: number };
   readonly viewport: Viewport;
   readonly heightAt?: (x: number, y: number) => number;
+  readonly origin?: Vec3;
 }
 
 /** A dot of the way: where it is on the island, and whether it is of the leg being taken. */
@@ -49,11 +52,14 @@ export interface WayDot {
   readonly taking: boolean;
 }
 
-/** The way at one moment: its beat, the camera, the dots shown, the character's place and bearing (null until they
- *  walk in), and whether the player's inputs are held. */
+/** The way at one moment: its beat, the camera (in the place's own frame from the way down), the dots shown, the
+ *  character's place and bearing (null until they walk in), whether the player's inputs are held, and how far the
+ *  walk in has gone (0 to 1). */
 export interface WayFrame {
   readonly beat: WayBeat;
   readonly shot: RailShot;
+  readonly inPlace: boolean;
+  readonly walked: number;
   readonly dots: readonly WayDot[];
   readonly body: { readonly at: Vec3; readonly facing: number } | null;
   readonly held: boolean;
@@ -103,8 +109,10 @@ export function wayOf(ask: WayAsk): Way {
     { at: 0, eye: ask.from.eye, look: ask.from.look, fov: ask.from.fov },
     { at: RISE_S, eye: over.eye, look: over.look, fov: FIELD_OF_VIEW },
   ];
+  const [x, y, z] = ask.origin ?? [0, 0, 0];
+  const placed = (point: Vec3): Vec3 => [point[0] - x, point[1] - y, point[2] - z];
   const down: RailKey[] = [
-    { at: 0, eye: over.eye, look: over.look, fov: FIELD_OF_VIEW },
+    { at: 0, eye: placed(over.eye), look: placed(over.look), fov: FIELD_OF_VIEW },
     { at: DOWN_S, eye: start.eye, look: start.look, fov: ask.from.fov },
   ];
   const dotted = (from: Point2, to: Point2): Vec3[] =>
@@ -126,18 +134,20 @@ export function wayAt(way: Way, seconds: number): WayFrame {
     ...way.come.map((point) => ({ at: point, taking: false })),
     ...way.leg.slice(0, taken).map((point) => ({ at: point, taking: true })),
   ];
+  const island = { inPlace: false, walked: 0, body: null, held: true } as const;
   if (seconds < RISE_S)
-    return { beat: 'rise', shot: railShot(way.rise, seconds, ask.from.fov), dots: shown(0), body: null, held: true };
+    return { ...island, beat: 'rise', shot: railShot(way.rise, seconds, ask.from.fov), dots: shown(0) };
   const overhead = railShot(way.rise, RISE_S, ask.from.fov);
   // The draw holds its last moment too: `wayClock` waits there while the room gone to is not ready.
   if (seconds <= DRAWN_AT) {
     const taken = Math.ceil(((seconds - RISE_S) / DRAW_S) * LEG_DOTS);
-    return { beat: 'draw', shot: overhead, dots: shown(taken), body: null, held: true };
+    return { ...island, beat: 'draw', shot: overhead, dots: shown(taken) };
   }
   const start = startOf(ask.arrive);
   if (seconds < WALK_AT) {
     const shot = railShot(way.down, seconds - DOWN_AT, ask.from.fov);
-    return { beat: 'down', shot, dots: [], body: { at: start, facing: ask.arrive.facing }, held: true };
+    const body = { at: start, facing: ask.arrive.facing };
+    return { beat: 'down', shot, inPlace: true, walked: 0, dots: [], body, held: true };
   }
   const share = Math.min(1, (seconds - WALK_AT) / WALK_S);
   const [east, south] = along(ask.arrive.facing);
@@ -146,7 +156,25 @@ export function wayAt(way: Way, seconds: number): WayFrame {
   const { eye, look } = behind(walkedTo, ask.arrive.facing);
   const shot = railShot([{ at: 0, eye, look, fov: ask.from.fov }], 0, ask.from.fov);
   const beat = seconds >= WAY_S ? 'done' : 'walk';
-  return { beat, shot, dots: [], body: { at: walkedTo, facing: ask.arrive.facing }, held: beat !== 'done' };
+  const body = { at: walkedTo, facing: ask.arrive.facing };
+  return { beat, shot, inPlace: true, walked: share, dots: [], body, held: beat !== 'done' };
+}
+
+/** The way's camera settled `share` (0 to 1) of the way into the foot's own `own`, its yaw the shorter way round: at 1
+ *  it is the foot's own, so the way hands the camera over where it stands. */
+export function settledShot(
+  shot: RailShot,
+  own: Pick<RailShot, 'yaw' | 'pitch' | 'fov'> & { readonly eye: readonly [number, number, number] },
+  share: number,
+): RailShot {
+  const blend = (from: number, to: number) => from + (to - from) * share;
+  const turn = Math.atan2(Math.sin(own.yaw - shot.yaw), Math.cos(own.yaw - shot.yaw));
+  return {
+    eye: [blend(shot.eye[0], own.eye[0]), blend(shot.eye[1], own.eye[1]), blend(shot.eye[2], own.eye[2])],
+    yaw: shot.yaw + turn * share,
+    pitch: blend(shot.pitch, own.pitch),
+    fov: blend(shot.fov, own.fov),
+  };
 }
 
 /** The way's clock moved on by `elapsed`: it waits over the island, the leg drawn, until the room gone to is ready. */

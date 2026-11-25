@@ -82,7 +82,7 @@ pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
 pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
-pub use passages::{PassageAsk, PassageSeen};
+pub use passages::{PassageAsk, PassageSeen, passage_ground};
 pub use perks::trim_of;
 pub use plates::Plate;
 pub use players::{

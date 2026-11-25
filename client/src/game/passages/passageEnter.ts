@@ -1,7 +1,7 @@
 // Into a passage zone's room on foot, the server's by its name or, playing alone, the same room in the rooms' worker
-// opened from its ask (`open_passage`): under ground the zone's layout is a dungeon's, the body predicted on the Forge's
-// floor among its walls and the pieces' solids; above ground on the hollow's heights among the solids, as a sea
-// island's beach is stood on.
+// opened from its ask (`open_passage`): under ground the zone's layout is a dungeon's, above ground its hollow is stood
+// on as a sea island's beach is; either way the body is predicted on the zone's own ground from the same ask
+// (`setPassage`), as its room stands bodies on it.
 import { passageAsk } from '../../network/passageRoomDoor.ts';
 import type { GearState } from '../../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../../network/roomConnection.ts';
@@ -10,6 +10,7 @@ import type { Block } from '../../rules/movementRules.ts';
 import type { IsleBlock, PassagePlan } from '../../rules/passageRules.ts';
 import { seenBlocks } from '../dungeonLayout.ts';
 import { Foot } from '../foot.ts';
+import { rulesOf } from '../footRoom.ts';
 import type { FootContext } from '../footPlace.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { PASSAGE_FULL } from '../rooms.ts';
@@ -70,13 +71,9 @@ function joiner(context: FootContext, snapshot: (seen: Snapshot) => void, gear: 
 export async function enterZone(context: FootContext, entry: ZoneEntry): Promise<Foot> {
   const { plan, island, week, room, company, minute } = entry;
   const place = zonePlace(plan, entry.patrol, room);
+  const ask = passageAsk(island, week, plan.zone.number, company, minute);
   const alone = async (snapshot: (seen: Snapshot) => void, gear?: (sent: GearState) => void) =>
-    RoomThread.openPassage(
-      await context.roomModule,
-      passageAsk(island, week, plan.zone.number, company, minute),
-      snapshot,
-      gear,
-    );
+    RoomThread.openPassage(await context.roomModule, ask, snapshot, gear);
   const linked = (snapshot: (seen: Snapshot) => void, gear: (sent: GearState) => void) =>
     context.rooms ? joinPassage(room, joiner(context, snapshot, gear)) : alone(snapshot, gear);
   const layout = zoneLayout(plan);
@@ -86,6 +83,7 @@ export async function enterZone(context: FootContext, entry: ZoneEntry): Promise
     const blocks = [...seenBlocks(layout), ...solidBlocks(plan.solids, 0)];
     const into = { number: plan.zone.number, ask: { place: room, name: plan.zone.name }, room };
     return Foot.enterDungeon(context, { node: place, text: '' }, into, arrived, 'normal', {
+      ask,
       blocks,
       link: (heard) => linked(heard.snapshot, heard.gear),
     });
@@ -99,11 +97,14 @@ export async function enterZone(context: FootContext, entry: ZoneEntry): Promise
   // The hollow's ground stands under its walls everywhere, so its solids reach down past it.
   const boxes = solidBlocks(plan.solids, -100);
   try {
-    return await Foot.onDeck(context, place, Array.from(entry.heights), open, {
+    const foot = await Foot.onDeck(context, place, Array.from(entry.heights), open, {
       boxes,
       facing: plan.sites.facing,
       gear,
     });
+    // The deck's grid stood the step; the fight predicts on the hollow's own ground and blocks, as its room does.
+    if (!(await rulesOf(context)).combat.setPassage(ask)) throw new Error('the passage’s ground did not load');
+    return foot;
   } catch (error) {
     link.close?.();
     throw error;

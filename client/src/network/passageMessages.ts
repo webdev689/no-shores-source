@@ -40,6 +40,8 @@ export interface DiveState<Item> {
   readonly mouth: number;
   readonly done: boolean;
   readonly haul: HaulState<Item>;
+  /** A lamp's Home taken: no way on, and the patrol zone's room keeps the haul. */
+  readonly homeward: boolean;
 }
 
 /** An island's passages' lamps for a player: the lamps lit this week by number (1 to 4), and whether the day's lamp
@@ -95,6 +97,7 @@ export function passagesOf<Item>(gear: Gear, itemOf: (item: GearItemTable) => It
       resources: Array.from(haul?.resourcesArray() ?? []),
       lantern: haul?.lantern() ?? '',
     },
+    homeward: dive.homeward(),
   };
   const islandLamps = Array.from({ length: gear.islandLampsLength() }, (unused, index) => {
     const lamps = gear.islandLamps(index);

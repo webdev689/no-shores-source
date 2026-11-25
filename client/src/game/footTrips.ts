@@ -19,7 +19,7 @@ import type { Block, MovementRules } from '../rules/movementRules.ts';
 import { type Speak, type Use, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Heard, Held } from './footPlace.ts';
-import type { Snapshot } from '../network/roomConnection.ts';
+import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** A dungeon the player plays in: the place outside it (a patrol, an Elite Dungeon's node, or a sea island's
@@ -150,13 +150,20 @@ export function standInDungeon(movement: MovementRules, combat: CombatRules, ask
   if (!combat.setDungeon(ask)) throw new Error('the dungeon’s ground did not load');
 }
 
-/** Stands both rules on open ground at 0 m among `blocks`, as a passage zone under ground stands bodies on the
- *  Forge's floor among its walls and pieces. */
-export function standOnCourse(movement: MovementRules, combat: CombatRules, blocks: readonly Block[]): void {
+/** A passage zone under ground as a dungeon's way in takes it: its ask (`passageAsk`'s JSON), the blocks seen of it
+ *  (its walls and pieces) and how its room is joined. */
+export interface PassageInto {
+  readonly ask: string;
+  readonly blocks: readonly Block[];
+  link(heard: Heard, session: string | null): Promise<RoomLink>;
+}
+
+/** Stands the fight's rules on the passage zone an ask names as its room stands bodies (`setPassage`); the movement
+ *  rules, which only find the floor, on open ground at 0 m among `blocks`. */
+export function standInPassage(movement: MovementRules, combat: CombatRules, passage: PassageInto): void {
   movement.setGround(null);
-  movement.setCourse(blocks);
-  combat.setGround(null);
-  combat.setCourse(blocks);
+  movement.setCourse(passage.blocks);
+  if (!combat.setPassage(passage.ask)) throw new Error('the passage’s ground did not load');
 }
 
 /** A patrol's entrances as its room last gave them, and each one's dungeon's name, asked of the room's module once:

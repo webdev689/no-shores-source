@@ -44,6 +44,7 @@ fn a_dive_its_haul_and_the_lamps_cross_in_the_gear_and_a_zones_deal_in_the_snaps
         (dive.island(), dive.zone(), dive.depth(), dive.route(), dive.mouth()),
         (Some("continent-1"), 14, 4, 1, 2)
     );
+    assert!(!dive.homeward(), "a dive going on is not homeward");
     assert_eq!(dive.haul().and_then(|haul| haul.resources()).map(|resources| resources.get(3)), Some(3));
     let lamps = gear.island_lamps().expect("lamps");
     assert_eq!(lamps.get(0).lamps().map(|lit| lit.iter().collect::<Vec<u8>>()), Some(vec![2]));
@@ -65,4 +66,19 @@ fn a_dive_its_haul_and_the_lamps_cross_in_the_gear_and_a_zones_deal_in_the_snaps
     builder.finish_minimal(written);
     let read = flatbuffers::root::<messages::PassageSeen>(builder.finished_data()).expect("a deal");
     assert_eq!((read.deal(), read.lit(), read.wave(), read.holding()), (Some("kindle"), 0b101, 2, NOT_HOLDING));
+}
+
+#[test]
+fn a_dive_turned_homeward_crosses_homeward() {
+    let mut character = gear::Character::starting();
+    let start =
+        Start { island: "continent-1", week: 2_900, route: Route::Public, mouth: 1, zone: 5, depth: 5, lamp: None };
+    character.begin_dive(&start).expect("begun");
+    character.passage.as_mut().expect("diving").homeward = true;
+    let mut builder = FlatBufferBuilder::new();
+    let (dive, _, _) = passages_of(&mut builder, &character, 0);
+    let written = messages::Gear::create(&mut builder, &messages::GearArgs { dive, ..messages::GearArgs::default() });
+    builder.finish_minimal(written);
+    let gear = flatbuffers::root::<messages::Gear>(builder.finished_data()).expect("gear");
+    assert!(gear.dive().expect("a dive").homeward());
 }
