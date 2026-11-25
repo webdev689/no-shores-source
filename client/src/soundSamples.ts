@@ -274,6 +274,9 @@ export class Samples {
 /** The game's one bank of recordings. */
 const samples = new Samples(bank);
 
+/** Whether a cue has a recording the owner picked. */
+export const recorded = (id: string): boolean => Object.hasOwn(bank.sounds, id);
+
 /** Starts fetching the recordings, once the page's sound has woken. */
 export function loadSamples(audio: BaseAudioContext): void {
   samples.wake(audio);

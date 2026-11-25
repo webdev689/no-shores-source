@@ -134,8 +134,11 @@ test("the player's sword cuts a foe where the foe stands, the listener at the ey
   sounds.frame(frameOf({ events: [hit()] }));
   assert.deepEqual(
     played.map(({ id, at }) => [id, at]),
-    [['hit.blade', [5, 0, 0]]],
-    "east, up and south are the listener's x, y and z",
+    [
+      ['hit.blade', [5, 0, 0]],
+      ['foe.tithe.hurt', [5, 0, 0]],
+    ],
+    "east, up and south are the listener's x, y and z; the Grey Tithe's foe cries out",
   );
   const rate = played[0]?.rate ?? 0;
   assert.ok(rate !== 1 && Math.abs(rate - 1) <= 0.04, 'a blow strays a little in pitch');
@@ -153,7 +156,10 @@ test("at sea the ambience counts the listener's frame from the player's ship: a 
   listen(output.audio, [0, 3, 2], 0, ship);
   assert.deepEqual(
     played.map((sound) => sound.at),
-    [[505, 0, -700]],
+    [
+      [505, 0, -700],
+      [505, 0, -700],
+    ],
   );
   assert.deepEqual([listener.positionX.value, listener.positionY.value, listener.positionZ.value], [500, 2, -697]);
 });
@@ -220,7 +226,7 @@ test('an unpicked cue plays nothing and takes no voice', () => {
     () => ((asked += 1), null),
   );
   sounds.frame(frameOf({ events: [hit()] }));
-  assert.equal(asked, 1);
+  assert.equal(asked, 2, 'the blow and the foe’s hurt, each asked once');
 });
 
 test('at most sixteen sounds at once: the farthest gives way to a nearer one, a farther one is not heard', () => {
@@ -290,4 +296,16 @@ test("another rider's boost is heard as it begins, from their body as the room l
   };
   for (const boosting of [0, 0, 4, 3.9]) sounds.frame(riding(boosting));
   assert.equal(played.filter((one) => one.id === 'horse.boost').length, 1);
+});
+
+test("a foe's faction voices its swing and its hurt, and a blow that kills it is heard as its death alone", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const heard = () => played.map(({ id }) => id).filter((id) => id.startsWith('foe.'));
+  sounds.frame(frameOf({ foe: foeAt(5, { faction: 1 }) }));
+  sounds.frame(frameOf({ foe: foeAt(5, { faction: 1 }), events: [hit()] }));
+  assert.deepEqual(heard(), ['foe.tithe.hurt']);
+  played.length = 0;
+  sounds.frame(frameOf({ foe: foeAt(5, { faction: 3 }), events: [hit(), hit({ kind: EVENT.killed })] }));
+  assert.deepEqual(heard(), ['foe.lattice.death'], 'no hurt beside it');
 });

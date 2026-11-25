@@ -525,92 +525,92 @@
     },
     {
       "id": "horse.walk.ground",
-      "use": "A horse walking on earth or grass, one stride",
-      "query": "horse walk dirt",
+      "use": "A horse walking on earth or grass, one stride cut from a run of them",
+      "query": "horse walking",
       "seconds": [
-        0.3,
-        1.5
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.walk.stone",
-      "use": "A horse walking on stone, one stride",
-      "query": "horse walk cobblestone",
+      "use": "A horse walking on stone, one stride cut from a run of them",
+      "query": "horse walking cobblestone",
       "seconds": [
-        0.3,
-        1.5
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.walk.water",
-      "use": "A horse walking through water, one stride",
-      "query": "horse walk water splash",
+      "use": "A horse walking through water, one stride cut from a run of them",
+      "query": "horse walking water",
       "seconds": [
-        0.3,
-        1.5
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.gallop.ground",
-      "use": "A horse galloping on earth or grass, one stride",
-      "query": "horse gallop dirt",
+      "use": "A horse galloping on earth or grass, one stride cut from a run of them",
+      "query": "horse galloping",
       "seconds": [
-        0.3,
-        1.2
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.gallop.stone",
-      "use": "A horse galloping on stone, one stride",
-      "query": "horse gallop cobblestone",
+      "use": "A horse galloping on stone, one stride cut from a run of them",
+      "query": "horse galloping cobblestone",
       "seconds": [
-        0.3,
-        1.2
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.gallop.water",
-      "use": "A horse galloping through water, one stride",
-      "query": "horse gallop water splash",
+      "use": "A horse galloping through water, one stride cut from a run of them",
+      "query": "horse galloping water",
       "seconds": [
-        0.3,
-        1.2
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.boost.ground",
-      "use": "A horse boosted to its fastest gallop on earth or grass, one stride",
-      "query": "horse gallop fast dirt",
+      "use": "A horse boosted to its fastest gallop on earth or grass, one stride cut from a run of them",
+      "query": "horse running",
       "seconds": [
-        0.2,
-        1.0
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.boost.stone",
-      "use": "A horse boosted to its fastest gallop on stone, one stride",
-      "query": "horse gallop fast cobblestone",
+      "use": "A horse boosted to its fastest gallop on stone, one stride cut from a run of them",
+      "query": "horse running cobblestone",
       "seconds": [
-        0.2,
-        1.0
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.boost.water",
-      "use": "A horse boosted to its fastest gallop through water, one stride",
-      "query": "horse gallop fast water splash",
+      "use": "A horse boosted to its fastest gallop through water, one stride cut from a run of them",
+      "query": "horse running water",
       "seconds": [
-        0.2,
-        1.0
+        1.0,
+        30.0
       ]
     },
     {
       "id": "horse.mount",
       "use": "A rider climbs into the saddle",
-      "query": "saddle leather creak",
+      "query": "saddle creak",
       "seconds": [
         0.3,
-        2.0
+        4.0
       ]
     },
     {
@@ -625,10 +625,10 @@
     {
       "id": "horse.dismount",
       "use": "A rider gets down from the saddle",
-      "query": "dismount horse",
+      "query": "saddle leather",
       "seconds": [
         0.3,
-        2.0
+        4.0
       ]
     },
     {
@@ -643,10 +643,10 @@
     {
       "id": "horse.boost",
       "use": "A rider's boost begins: the horse kicks off",
-      "query": "horse neigh gallop start",
+      "query": "horse neigh",
       "seconds": [
-        0.3,
-        2.0
+        0.5,
+        4.0
       ]
     },
     {
@@ -1126,6 +1126,78 @@
         856777
       ],
       "picked": 858795
+    },
+    {
+      "id": "foe.tithe.alert",
+      "use": "A Grey Tithe raider spots the player: a rough shout, no word clear",
+      "query": "man shout angry",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "foe.tithe.attack",
+      "use": "A Grey Tithe raider's effort as its blow swings: a short grunt",
+      "query": "male attack grunt",
+      "seconds": [
+        0.1,
+        1.5
+      ]
+    },
+    {
+      "id": "foe.tithe.hurt",
+      "use": "A Grey Tithe raider struck: a pained grunt",
+      "query": "male pain grunt",
+      "seconds": [
+        0.1,
+        1.5
+      ]
+    },
+    {
+      "id": "foe.tithe.death",
+      "use": "A Grey Tithe raider falls: a dying cry",
+      "query": "male death scream",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "foe.lattice.alert",
+      "use": "One of the Lattice spots the player: a crystalline shriek",
+      "query": "glass screech",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "foe.lattice.attack",
+      "use": "One of the Lattice's blows swings: its crystal cracking",
+      "query": "crystal crack",
+      "seconds": [
+        0.1,
+        1.5
+      ]
+    },
+    {
+      "id": "foe.lattice.hurt",
+      "use": "One of the Lattice struck: glass chipping",
+      "query": "glass chip",
+      "seconds": [
+        0.1,
+        1.5
+      ]
+    },
+    {
+      "id": "foe.lattice.death",
+      "use": "One of the Lattice falls: its crystal shattering",
+      "query": "glass shatter",
+      "seconds": [
+        0.3,
+        3.0
+      ]
     },
     {
       "id": "respawn",

@@ -18,6 +18,8 @@ import {
   stepsBetween,
   struckCue,
   swingCue,
+  VOICES,
+  voiceCue,
 } from './worldCues.ts';
 
 /** Arms codes as the combat crate packs them: the melee class, the shooting weapon a byte up, the left hand two. */
@@ -224,6 +226,8 @@ test('every cue the world can play is one the Freesound list searches for', () =
         for (const striker of [arms(SWORD), arms(MACE), arms(FISTS, BOW), arms(FISTS, PISTOLET)])
           cuesOf({ kind, how, crit: true }, striker, arms(SWORD, 0, SHIELD), look).forEach(add);
   cuesOf({ kind: EVENT.blocked }).forEach(add);
+  for (const voice of Object.values(VOICES))
+    for (const moment of ['alert', 'attack', 'hurt', 'death'] as const) add(voiceCue(voice, moment, () => true));
   for (const kind of Object.values(SPELLS)) spellCues(kind).forEach(add);
   statusCues({}, { crit: 1, expose: 1, charge: 1, haste: 1, linked: 1, veiled: 1 }).forEach(add);
   for (const ground of [
@@ -249,4 +253,16 @@ test('every cue the world can play is one the Freesound list searches for', () =
     [],
     'and every one searched for plays somewhere',
   );
+});
+
+test("a foe faction's voice is its own at each moment, its alert the shared one until its own is recorded", () => {
+  assert.deepEqual(VOICES, { 1: 'tithe', 3: 'lattice' }, 'the Grey Tithe and the Lattice');
+  const none = () => false;
+  assert.equal(voiceCue('lattice', 'alert', none), 'foe.alert', 'no foe falls silent on spotting the player');
+  assert.equal(
+    voiceCue('lattice', 'alert', (cue) => cue === 'foe.lattice.alert'),
+    'foe.lattice.alert',
+  );
+  for (const moment of ['attack', 'hurt', 'death'] as const)
+    assert.equal(voiceCue('tithe', moment, none), `foe.tithe.${moment}`, 'silent until picked, never stood in for');
 });
