@@ -323,6 +323,16 @@
         ],
         "discs": [],
         "glows": []
+      },
+      "passage.ring": {
+        "size": [
+          12.6,
+          12.6,
+          0.05
+        ],
+        "boxes": [],
+        "discs": [],
+        "glows": []
       }
     }
   }

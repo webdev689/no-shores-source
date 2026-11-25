@@ -1,8 +1,8 @@
 """The passages' pieces as {role: faces}, sized to content/dungeon/kits.json's `passage` contract (the same sizes the
 islands' kit holds): the lamp that burns on nothing in its ring of five stones, the mouths onward (open and shut),
-the way in seen from inside, the Kindle mission's dead lamp, the Grey Tithe's tally post whole and broken, and the
-reliquary shut and open. The grey-green stone is `stone` (its worn faces `stoneAlt`), the old iron `iron`, what the
-game lights `glow`, the pecked cup marks `carve`.
+the way in seen from inside, the Kindle mission's dead lamp, the Grey Tithe's tally post whole and broken, the
+reliquary shut and open, and a Hold's ring. The grey-green stone is `stone` (its worn faces `stoneAlt`), the old
+iron `iron`, what the game lights `glow`, the pecked cup marks `carve`.
 """
 import math
 import random
@@ -21,6 +21,12 @@ FLAME_M = 3.2
 # A mouth's opening: half its width and the lintel's underside.
 OPENING_HALF_M = 0.68
 LINTEL_M = 2.36
+# A Hold's ring: its stones laid on 6 m round its middle (RING_M in crates/passage/src/plan.rs), how many, and the
+# most a stone's top stands over the floor at its middle, kept with its tip under the walk zone's foot (envelope.py's
+# WALK_LOW_M) so a body walks over it.
+HOLD_RING_M = 6.0
+HOLD_STONES = 32
+HOLD_TOP_M = 0.038
 
 
 def lamp(seed='passage.lamp'):
@@ -301,3 +307,36 @@ def reliquary(open_, seed='passage.reliquary'):
     lock += shapes.ring((0.0, -0.442, 0.5), 0.03, 0.006, axis=(0.0, 1.0, 0.0), sides=8, tube_sides=3)
     return gather({'stoneAlt': plinth, 'stone': body + move(lid, at=lift), 'iron': move(straps + hasp, at=lift) + lock,
                    'earth': dust}, *marks)
+
+
+def hold_ring(seed='passage.ring'):
+    """A Hold's ring: worn flat stones of the grey-green stone laid end to end in the floor on its 6 m, their joints
+    running to its middle, their tops just proud of the floor so a body walks over them."""
+    draw = random.Random(seed)
+    found = []
+    # Each stone's length and the joint after it, metres round the ring, drawn and then fitted to go once round.
+    lengths = [draw.uniform(0.75, 1.35) for _ in range(HOLD_STONES)]
+    joints = [draw.uniform(0.08, 0.17) for _ in range(HOLD_STONES)]
+    fit = math.tau * HOLD_RING_M / (sum(lengths) + sum(joints))
+    along = 0.0
+    for length, joint in zip(lengths, joints):
+        half = length * fit / 2
+        turn = math.degrees((along + half) / HOLD_RING_M)
+        along += (length + joint) * fit
+        reach = HOLD_RING_M + draw.uniform(-0.03, 0.03)
+        across = draw.uniform(0.17, 0.25)
+        near, far = half * (1 - across / reach), half * (1 + across / reach)
+        # Laid at the ring's north, its length along x, every corner knocked off unevenly: further along its length
+        # than across its end, so its end keeps a straight run.
+        corners = [(-near, -reach + across), (near, -reach + across), (far, -reach - across), (-far, -reach - across)]
+        outline = []
+        for corner, (x, y) in enumerate(corners):
+            for other in (corners[corner - 1], corners[(corner + 1) % 4]):
+                leg = draw.uniform(0.06, 0.2) if other == corners[corner ^ 1] else draw.uniform(0.05, 0.12)
+                share = leg / math.hypot(other[0] - x, other[1] - y)
+                outline.append((x + (other[0] - x) * share, y + (other[1] - y) * share))
+        slope = (draw.uniform(-0.01, 0.01), draw.uniform(-0.01, 0.01))
+        stone = forms.laid_stone(outline, draw.uniform(0.032, HOLD_TOP_M), 0.25, slope, bevel=0.045)
+        role = 'stone' if draw.random() < 0.6 else 'stoneAlt'
+        found.append({role: move(stone, turn=turn)})
+    return gather(*found)
