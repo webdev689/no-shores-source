@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { addressOf, HeardEvents, KeptStorage, pageAway } from './pageAway.ts';
 import type { Start, ToPage } from './pageOps.ts';
 import { BROWSERS_SIGN_INS, SIGN_INS, useSignIns } from '../ui/page.ts';
+import { type DesktopInfo, askDesktop, desktop, useDesktop } from '../desktop.ts';
 
 test('storage reads what the page had and sends each change on at once', () => {
   const sent: ToPage[] = [];
@@ -159,7 +160,15 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
       console.error = quiet;
     }
     assert.deepEqual(framed, ['reported Error: a layer failed', 'the game']);
+    // What the desktop app's shell tells the page reaches the game, and the game's asks go back by the page.
+    assert.equal(desktop(), null, 'started in a browser');
+    const told = { version: '2026.1125.1230', platform: 'linux' } as DesktopInfo;
+    away.heard({ kind: 'desktop', info: told });
+    assert.equal(desktop(), told);
+    askDesktop({ ask: 'drawn' });
+    assert.deepEqual(sent.at(-1), { kind: 'desktop', ask: { ask: 'drawn' } });
   } finally {
+    useDesktop(null, () => undefined);
     for (const [name, descriptor] of before)
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);
       else delete (globalThis as Record<string, unknown>)[name];

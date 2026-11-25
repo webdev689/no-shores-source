@@ -13,7 +13,7 @@ const graphics: DesktopGraphics = {
   running: '',
   adapter: '',
   held: false,
-  restart: false,
+  restart: null,
 };
 
 test('what the app draws with is said as far as the game has learned it', () => {
@@ -87,9 +87,9 @@ test('on Windows the App part offers the graphics API, says what it draws with, 
 });
 
 test('a choice waiting on a restart, or an update ready, offers Restart now; one to download, Download', () => {
-  const restart = graphicsWith({ ...windows, graphics: { ...windows.graphics, chosen: 'd3d11', restart: true } });
+  const restart = graphicsWith({ ...windows, graphics: { ...windows.graphics, chosen: 'd3d11', restart: 'd3d11' } });
   try {
-    assert.match(restart.page.shows(), /The change comes into force when the app starts again\./);
+    assert.match(restart.page.shows(), /Started again, the app draws with Direct3D 11\./);
     restart.page.click('desktop-restart');
     assert.deepEqual(restart.asked, [{ ask: 'restart' }]);
     const ready = graphicsWith({ ...windows, update: { state: 'ready', version: '2026.1201.930' } });
@@ -128,6 +128,65 @@ test('a choice whose every way failed on this card says so', () => {
   const { page } = graphicsWith({ ...windows, graphics: { ...windows.graphics, chosen: 'd3d11', held: true } });
   try {
     assert.match(page.shows(), /Direct3D 11 could not start on this card, so the app draws with another\./);
+  } finally {
+    useDesktop(null, () => undefined);
+  }
+});
+
+test('a restart reaching the same API another way says so', () => {
+  const { page } = graphicsWith({
+    ...windows,
+    platform: 'linux',
+    graphics: { ...windows.graphics, choices: ['auto'], launched: 'vulkan', restart: 'vulkan' },
+  });
+  try {
+    assert.match(page.shows(), /Started again, the app reaches Vulkan another way\./);
+  } finally {
+    useDesktop(null, () => undefined);
+  }
+});
+
+test('an update to download and a choice waiting on a restart offer both presses', () => {
+  const both = graphicsWith({
+    ...windows,
+    graphics: { ...windows.graphics, chosen: 'd3d11', restart: 'd3d11' },
+    update: { state: 'manual', version: '2026.1201.930' },
+  });
+  try {
+    both.page.click('desktop-download');
+    both.page.click('desktop-restart');
+    assert.deepEqual(both.asked, [{ ask: 'download' }, { ask: 'restart' }]);
+  } finally {
+    useDesktop(null, () => undefined);
+  }
+});
+
+test('picking the held API again asks for it again, to try it anew', () => {
+  const { page, asked } = graphicsWith({ ...windows, graphics: { ...windows.graphics, chosen: 'd3d11', held: true } });
+  try {
+    page.click('graphics-api');
+    page.click('graphics-api:d3d11');
+    page.frame();
+    assert.deepEqual(asked, [{ ask: 'graphics', api: 'd3d11' }]);
+  } finally {
+    useDesktop(null, () => undefined);
+  }
+});
+
+test("shown again, Settings shuts the API's list", () => {
+  const asked: DesktopAsk[] = [];
+  useDesktop(windows, (ask) => asked.push(ask));
+  try {
+    const settings = new Settings(() => null, fakePage().page, new Rebinding());
+    settings.show('graphics');
+    const page = drawn((context) => settings.node(context));
+    page.frame();
+    page.click('graphics-api');
+    assert.ok(page.ui.boxOf('graphics-api:list'), 'the list is open');
+    settings.show('graphics');
+    page.frame();
+    page.frame();
+    assert.equal(page.ui.boxOf('graphics-api:list'), null, 'shown anew, its list is shut');
   } finally {
     useDesktop(null, () => undefined);
   }

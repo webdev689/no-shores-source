@@ -27,6 +27,8 @@ test('only the asks the shell answers pass, each in its own shape', () => {
   assert.equal(askOf('restart'), null);
   assert.equal(askOf(null), null);
   assert.deepEqual(askOf({ ask: 'drawn', extra: 'dropped' }), { ask: 'drawn' });
+  assert.deepEqual(askOf({ ask: 'gpuLost', reason: 'x'.repeat(500) }), { ask: 'gpuLost', reason: 'x'.repeat(200) });
+  assert.deepEqual(askOf({ ask: 'gpuLost', reason: 7 }), { ask: 'gpuLost', reason: '' });
 });
 
 test('a report is read field by field, its words cut short, anything else at its default', () => {
@@ -57,12 +59,12 @@ test('the game is told the choice, what was launched, what it draws with and on 
     running: 'D3D12',
     adapter: 'NVIDIA GeForce RTX 4070',
     held: false,
-    restart: false,
+    restart: null,
   });
   assert.equal(info.platform, 'windows');
 });
 
-test('a choice the next launch would bring needs a restart; one held by a failure needs none and says so', () => {
+test('a restart names the API the next launch would bring; one held by a failure needs none and says so', () => {
   const launch = launchFor({ ...plain, chosen: 'auto' });
   const chosen = launchFor({ ...plain, chosen: 'd3d11' });
   assert.equal(
@@ -75,7 +77,7 @@ test('a choice the next launch would bring needs a restart; one held by a failur
       report: null,
       update: { state: 'none' },
     }).graphics.restart,
-    true,
+    'd3d11',
   );
   const failures = [{ backend: 'd3d11', gpu: null, chromium: '156', reason: 'no adapter', at: '' }] as const;
   const held = launchFor({ ...plain, chosen: 'd3d11', failures });
@@ -88,5 +90,5 @@ test('a choice the next launch would bring needs a restart; one held by a failur
     report: null,
     update: { state: 'none' },
   });
-  assert.deepEqual([info.graphics.restart, info.graphics.held, info.graphics.adapter], [false, true, '']);
+  assert.deepEqual([info.graphics.restart, info.graphics.held, info.graphics.adapter], [null, true, '']);
 });

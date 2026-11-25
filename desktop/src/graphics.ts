@@ -3,7 +3,7 @@
 // there); Metal on a Mac; Vulkan on Linux, its only API there, reached in one of three ways. Each launch takes the
 // first backend in the player's order that has not failed on this card, its driver and this Chromium; the watch over
 // the launch (`graphicsWatch.ts`) records a failure and starts the next. Auto is the platform's own order.
-import type { GraphicsApi } from '../../client/src/desktop.ts';
+import { API_NAMES, type GraphicsApi } from '../../client/src/desktop.ts';
 import type { GraphicsFailure } from './config.ts';
 
 /** What the shell launches Chromium on. On Linux, Vulkan three ways: Chromium's own way, through OpenGL, which it
@@ -61,14 +61,7 @@ export const API_OF: Readonly<Record<Backend, Exclude<GraphicsApi, 'auto'>>> = {
  *  the game. */
 export const MAY_DRAW_BLANK: ReadonlySet<Backend> = new Set(['d3d11', 'vulkan-unlisted', 'vulkan-skia']);
 
-/** The names the player reads. */
-export const API_NAMES: Readonly<Record<GraphicsApi, string>> = {
-  auto: 'Auto',
-  d3d12: 'Direct3D 12',
-  d3d11: 'Direct3D 11',
-  vulkan: 'Vulkan',
-  metal: 'Metal',
-};
+/** The name the player reads for a backend: its API's. */
 export const nameOf = (backend: Backend): string => API_NAMES[API_OF[backend]];
 
 /** Where the app runs: its platform, and on Linux whether the desktop is Wayland's, where Chromium opens its windows

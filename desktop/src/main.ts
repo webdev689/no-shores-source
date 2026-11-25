@@ -144,6 +144,10 @@ function answer(ask: DesktopAsk): void {
     case 'gpu':
       void watch.report(ask.report).then(tell);
       return;
+    case 'gpuLost':
+      log(`graphics: WebGPU lost the device: ${ask.reason}`);
+      void watch.gpuGone(`WebGPU lost the device: ${ask.reason}`);
+      return;
     case 'drawn':
       void watch.drawn();
       return;
@@ -202,7 +206,7 @@ else {
   app.on('child-process-gone', (_event, details) => {
     if (details.type !== 'GPU') return;
     log(goneLine('gpu', details, Date.now(), watch.reported()?.description ?? ''));
-    void watch.gpuGone(details.reason);
+    void watch.gpuGone(`the GPU's process went: ${details.reason}`);
   });
   app.on('window-all-closed', () => app.quit());
   void app.whenReady().then(async () => {

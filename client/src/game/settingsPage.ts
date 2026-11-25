@@ -8,7 +8,7 @@ import type { Child, Node } from '../ui/node.ts';
 import { PAGE, type Page } from '../ui/page.ts';
 import { button, choice, slider } from '../ui/controls.ts';
 import type { AccountPanel } from './accountTab.ts';
-import { desktopNodes } from './desktopSettings.ts';
+import { API_LIST, desktopNodes } from './desktopSettings.ts';
 import { bindingColumns, bindingWords } from './controlsSheet.ts';
 import { fillNode } from './gearHold.ts';
 import { INK, words } from './gearNodes.ts';
@@ -58,6 +58,9 @@ const PRESS_WIDE = 54;
 const PANEL_LEAST = 200;
 /** The tab's panel, which scrolls beside the rail. */
 const LIST = 'settings-list';
+/** The page's drop-down lists, each shut as the page is shown again. */
+const RESOLUTION_LIST = 'resolution';
+const LISTS = [RESOLUTION_LIST, API_LIST];
 /** The credits' press in Audio and their way back. */
 const CREDITS = 'settings-credits';
 const CREDITS_BACK = 'settings-credits-back';
@@ -82,7 +85,7 @@ export class Settings {
   /** How many times a tab has been shown: a window that stayed open is told of only while the tab it was asked from
    *  still shows. */
   private shownTimes = 0;
-  /** Whether the panel goes back to its top, its list of resolutions shut, as the page is next drawn: a tab or the
+  /** Whether the panel goes back to its top, its lists shut, as the page is next drawn: a tab or the
    *  credits newly shown. */
   private toTop = false;
   /** The press to give the focus to, for the menu to take: the way back as the credits show, the credits' press as
@@ -135,7 +138,7 @@ export class Settings {
     const wide = sizes.name > 1;
     if (this.toTop) {
       ui.scrollBy(LIST, -Number.MAX_SAFE_INTEGER);
-      ui.store.set('resolution', false);
+      for (const list of LISTS) ui.store.set(list, false);
     }
     this.toTop = false;
     const body = this.credits
@@ -297,7 +300,7 @@ function held(
  *  desktop app, the app's own graphics and version. */
 function graphicsNode(context: PlainContext): Node {
   const { ui } = context;
-  const { node, chosen } = choice(ui, 'resolution', resolution(), RESOLUTIONS);
+  const { node, chosen } = choice(ui, RESOLUTION_LIST, resolution(), RESOLUTIONS);
   if (chosen !== resolution()) setResolution(chosen);
   const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
   return column([

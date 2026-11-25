@@ -55,13 +55,18 @@ export function failedBox(backend: Backend, next: Backend): Box {
   };
 }
 
-/** Whether the player sees the game drawn by `backend`; the safe answer, the default, is to go back. */
-export function seenBox(backend: Backend, next: Backend): Box {
+/** Whether the player sees the game drawn by `backend`; the safe answer, the default, is to go back to `next`, or,
+ *  with no backend left, to be told what to do. */
+export function seenBox(backend: Backend, next: Backend | null): Box {
+  const detail =
+    next === null
+      ? 'If the window is blank, choose It is blank, and No Shores says what to do.'
+      : `If the window is blank, choose Go back, and No Shores starts again ${againWith(backend, next)}. With no answer in ${ASK_WITHIN_MS / 1000} seconds, it does so once.`;
   return {
     type: 'question',
     message: 'Can you see the game?',
-    detail: `If the window is blank, choose Go back, and No Shores starts again ${againWith(backend, next)}. With no answer in ${ASK_WITHIN_MS / 1000} seconds, it does so once.`,
-    buttons: ['I can see it', 'Go back'],
+    detail,
+    buttons: ['I can see it', next === null ? 'It is blank' : 'Go back'],
     defaultId: 1,
     cancelId: 1,
   };
@@ -112,6 +117,8 @@ export interface GraphicsWatch {
   readonly report: (report: GpuReport) => Promise<void>;
   /** The game has drawn: the player may now be asked whether they see it. */
   readonly drawn: () => Promise<void>;
+  /** The GPU went from under the game (its process ended, or WebGPU lost the device), `reason` saying how: early in
+   *  the launch, that fails it. */
   readonly gpuGone: (reason: string) => Promise<void>;
   /** The game's own words for what it draws with, once it has said. */
   readonly reported: () => GpuReport | null;
@@ -150,7 +157,7 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
   }
 
   async function askPlayer(): Promise<void> {
-    if (asked || next === null || !kept || !MAY_DRAW_BLANK.has(launch.backend)) return;
+    if (asked || !kept || !MAY_DRAW_BLANK.has(launch.backend)) return;
     asked = true;
     const gpu = await effects.gpuKey();
     const seen = effects.seen();
@@ -169,7 +176,10 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
         effects.keepSeen([...seen.filter((one) => !known(one)), { backend: launch.backend, gpu, chromium }]);
       effects.log(`graphics: the player sees the game drawn by ${launch.backend}`);
     } else if (answer === 1) await fail('the player saw no game', { told: false });
-    else await fail(`the player did not answer within ${ASK_WITHIN_MS / 1000} s`, { told: false, keep: false });
+    // Unanswered, a launch with a backend left tries it once; with none, nothing is said over what may be a game.
+    else if (next !== null)
+      await fail(`the player did not answer within ${ASK_WITHIN_MS / 1000} s`, { told: false, keep: false });
+    else effects.log(`graphics: the player did not say whether they see the game drawn by ${launch.backend}`);
   }
 
   return {
@@ -194,7 +204,7 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
       if (heard && !failing) await askPlayer();
     },
     async gpuGone(reason) {
-      if (effects.now() - startedAt <= GPU_GONE_WITHIN_MS) await fail(`the GPU's process went: ${reason}`);
+      if (effects.now() - startedAt <= GPU_GONE_WITHIN_MS) await fail(reason);
     },
     reported: () => heard,
   };

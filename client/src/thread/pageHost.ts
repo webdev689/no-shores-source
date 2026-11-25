@@ -6,6 +6,7 @@ import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { BROWSERS_SIGN_INS, stopped, touchesHeld } from '../ui/page.ts';
 import { drawSvgInPage } from '../ui/pictures.ts';
 import { AudioHost } from './audioHost.ts';
+import { PointerLock } from './pointerLock.ts';
 import {
   EVENT_FIELDS,
   HEARD,
@@ -39,32 +40,25 @@ export class PageHost {
   /** Each hook's ask of the game, answered when the game answers. */
   private readonly asking = new Map<number, (answer: unknown) => void>();
   private readonly desktop = bridgeOf();
-  /** Whether the game last asked for the pointer's lock. */
-  private wantsLock = false;
+  private readonly lock: PointerLock;
 
   constructor(canvas: HTMLCanvasElement, worker: Worker) {
     [this.canvas, this.worker] = [canvas, worker];
     this.events = new CanvasEvents(canvas);
+    const desktop = this.desktop;
+    this.lock = new PointerLock(canvas, document, desktop && (() => desktop.ask({ ask: 'relock' })));
     this.audio = new AudioHost((reply, transfer) => this.post({ kind: 'audio', reply }, transfer));
     worker.addEventListener('message', (message: MessageEvent<ToPage>) => this.asked(message.data));
     for (const type of HEARD)
       addEventListener(type, (event) => this.heard(event), { passive: type !== 'wheel' ? undefined : false });
     document.addEventListener('visibilitychange', () => this.post({ kind: 'hidden', hidden: document.hidden }));
-    document.addEventListener('pointerlockchange', () =>
-      this.post({ kind: 'lock', locked: document.pointerLockElement === canvas }),
-    );
+    document.addEventListener('pointerlockchange', () => this.post({ kind: 'lock', locked: this.lock.changed() }));
     for (const query of MEDIA)
       matchMedia(query).addEventListener('change', (change) =>
         this.post({ kind: 'media', query, matches: change.matches }),
       );
     this.desktop?.onInfo((info) => this.post({ kind: 'desktop', info }));
-    if (this.desktop)
-      Object.assign(window, {
-        [RELOCK_HOOK]: () => {
-          if (this.wantsLock && document.pointerLockElement !== canvas)
-            void canvas.requestPointerLock()?.catch?.(() => undefined);
-        },
-      });
+    if (this.desktop) Object.assign(window, { [RELOCK_HOOK]: () => this.lock.again() });
     new ResizeObserver(() => this.post({ kind: 'view', view: this.view() })).observe(canvas);
     addEventListener('resize', () => this.post({ kind: 'view', view: this.view() }));
     this.frame();
@@ -169,7 +163,7 @@ export class PageHost {
   }
 
   private heard(event: Event): void {
-    const locked = document.pointerLockElement === this.canvas;
+    const locked = this.lock.held;
     // A gesture is the one moment a browser lets sound start; the game hears it after.
     if (event.type === 'pointerdown' || event.type === 'keydown') this.audio.wake();
     if (event instanceof KeyboardEvent) {
@@ -213,10 +207,7 @@ export class PageHost {
         else location[message.how](message.url);
         return;
       case 'lock':
-        this.wantsLock = message.locked;
-        // A lock the page may not take without a press (as after Escape) the desktop app's shell takes for it.
-        if (message.locked) void this.canvas.requestPointerLock()?.catch?.(() => this.desktop?.ask({ ask: 'relock' }));
-        else if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+        this.lock.want(message.locked);
         return;
       case 'capture':
         try {

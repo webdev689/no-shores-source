@@ -48,6 +48,8 @@ export function askOf(value: unknown): DesktopAsk | null {
       const report = reportOf(value['report']);
       return report ? { ask: 'gpu', report } : null;
     }
+    case 'gpuLost':
+      return { ask: 'gpuLost', reason: textOf(value['reason']) };
     case 'graphics':
       return GRAPHICS_APIS.includes(value['api'] as GraphicsApi)
         ? { ask: 'graphics', api: value['api'] as GraphicsApi }
@@ -92,7 +94,7 @@ export function infoOf(state: {
       running: report?.backend ?? '',
       adapter,
       held: state.next.held !== null,
-      restart: state.next.backend !== launch.backend,
+      restart: state.next.backend === launch.backend ? null : API_OF[state.next.backend],
     },
     update: state.update,
   };

@@ -30,17 +30,28 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
     askDesktop({ ask: 'gpu', report: gpuReportOf(null, '') });
     throw new GpuUnavailable('WebGPU is on, but no graphics adapter is available. Update your graphics drivers.');
   }
-  // The GPU's clock, where the adapter has one: the readout (`?perf`) times each pass with it, and the Auto resolution
-  // reads the frame's GPU time from it.
-  const requiredFeatures: GPUFeatureName[] = adapter.features.has('timestamp-query') ? ['timestamp-query'] : [];
-  let device: GPUDevice;
+  // The desktop app hears the device started only once its surface is drawn to, and why wherever it was not.
   try {
-    device = await adapter.requestDevice({ requiredFeatures });
+    const gpu = await openDevice(adapter, canvas);
+    askDesktop({ ask: 'gpu', report: gpuReportOf(adapter, '') });
+    return gpu;
   } catch (error) {
     askDesktop({ ask: 'gpu', report: gpuReportOf(adapter, String(error) || 'no reason given') });
     throw error;
   }
-  askDesktop({ ask: 'gpu', report: gpuReportOf(adapter, '') });
+}
+
+/** The device on `adapter`, and `canvas`'s surface configured to draw with it. */
+async function openDevice(adapter: GPUAdapter, canvas: HTMLCanvasElement): Promise<Gpu> {
+  // The GPU's clock, where the adapter has one: the readout (`?perf`) times each pass with it, and the Auto resolution
+  // reads the frame's GPU time from it.
+  const requiredFeatures: GPUFeatureName[] = adapter.features.has('timestamp-query') ? ['timestamp-query'] : [];
+  const device = await adapter.requestDevice({ requiredFeatures });
+  // A device lost early tells the desktop app its graphics API cannot draw here; WebGPU may hand out a device already
+  // lost in place of refusing one.
+  void device.lost.then(({ reason, message }) => {
+    if (reason !== 'destroyed') askDesktop({ ask: 'gpuLost', reason: message || 'no reason given' });
+  });
   // A validation error drops the work it was in without a word: each is said once, so a picture that stops says why.
   const said = new Set<string>();
   device.addEventListener('uncapturederror', (event) => {

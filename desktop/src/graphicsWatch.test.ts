@@ -185,12 +185,34 @@ test('Go back fails the backend without a second notice; no answer starts the ne
   assert.deepEqual([silent.failures().length, silent.restarts], [0, [[`${BACKEND_ARGUMENT}d3d12`]]]);
 });
 
-test('the default, the last backend left, and a launch named for itself never ask', async () => {
-  for (const launch of [
-    launchOf('d3d12', ['d3d11']),
-    launchOf('d3d11', []),
-    { ...launchOf('d3d11', ['d3d12']), named: true },
-  ]) {
+test('the last backend left asks too: a blank window is told what to do, and no answer changes nothing', async () => {
+  const blank = harness(launchOf('d3d11', []), windows, [1]);
+  await blank.watch.report({ ...card, backend: 'D3D11' });
+  await blank.watch.drawn();
+  assert.match(blank.asked[0]?.detail ?? '', /says what to do/);
+  assert.deepEqual(
+    [blank.told.map((box) => box.message), blank.failures().length, blank.restarts],
+    [['No Shores could not start your graphics card'], 1, []],
+  );
+  const silent = harness(launchOf('d3d11', []), windows);
+  await silent.watch.report({ ...card, backend: 'D3D11' });
+  const asking = silent.watch.drawn();
+  await silent.pass(0);
+  await silent.pass(ASK_WITHIN_MS + 1);
+  await asking;
+  assert.deepEqual([silent.asked.length, silent.told, silent.failures(), silent.restarts], [1, [], [], []]);
+});
+
+test("a GPU WebGPU lost early fails the launch with WebGPU's words", async () => {
+  const run = harness(launchOf('vulkan', ['vulkan-unlisted']), wayland);
+  await run.watch.report({ ...card, backend: 'vulkan' });
+  await run.watch.gpuGone('WebGPU lost the device: the driver reset');
+  assert.equal(run.failures()[0]?.reason, 'WebGPU lost the device: the driver reset');
+  assert.equal(run.restarts.length, 1);
+});
+
+test('the default and a launch named for itself never ask', async () => {
+  for (const launch of [launchOf('d3d12', ['d3d11']), { ...launchOf('d3d11', ['d3d12']), named: true }]) {
     const run = harness(launch, windows);
     await run.watch.report({ ...card, backend: launch.backend === 'd3d12' ? 'D3D12' : 'D3D11' });
     await run.watch.drawn();

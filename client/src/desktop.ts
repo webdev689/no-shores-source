@@ -21,9 +21,19 @@ export interface DesktopGraphics {
   /** Whether the choice failed on this card and the app runs another, until the card, its driver or the app's
    *  Chromium changes. */
   readonly held: boolean;
-  /** Whether the choice takes a restart to come into force. */
-  readonly restart: boolean;
+  /** The API the app draws with once started again, where that is another backend than this launch's (a choice made,
+   *  or a failure kept or dropped, that takes a restart); null where a restart changes nothing. */
+  readonly restart: GraphicsApi | null;
 }
+
+/** The names the player reads for each API. */
+export const API_NAMES: Readonly<Record<GraphicsApi, string>> = {
+  auto: 'Auto',
+  d3d12: 'Direct3D 12',
+  d3d11: 'Direct3D 11',
+  vulkan: 'Vulkan',
+  metal: 'Metal',
+};
 
 /** An update of the app itself (the game updates with the site, as in a browser). */
 export type DesktopUpdate =
@@ -63,6 +73,8 @@ export type DesktopAsk =
   /** The game is asking WebGPU for its adapter: a launch whose graphics hang says nothing after this. */
   | { readonly ask: 'gpuAsked' }
   | { readonly ask: 'gpu'; readonly report: GpuReport }
+  /** WebGPU lost the game's device, as a driver that cannot draw with the launch's API does. */
+  | { readonly ask: 'gpuLost'; readonly reason: string }
   /** The game has started and drawn: a blank window would show by now. */
   | { readonly ask: 'drawn' }
   | { readonly ask: 'graphics'; readonly api: GraphicsApi }
@@ -88,7 +100,6 @@ export const RELOCK_HOOK = '__noShoresRelock';
 
 let info: DesktopInfo | null = null;
 let send: (ask: DesktopAsk) => void = () => undefined;
-const listeners = new Set<(info: DesktopInfo) => void>();
 
 /** The shell as the game starts: what it told, and where the game's asks go. */
 export function useDesktop(told: DesktopInfo | null, asks: (ask: DesktopAsk) => void): void {
@@ -98,17 +109,10 @@ export function useDesktop(told: DesktopInfo | null, asks: (ask: DesktopAsk) => 
 /** What the shell tells as it changes. */
 export function desktopChanged(told: DesktopInfo): void {
   info = told;
-  for (const listener of listeners) listener(told);
 }
 
 /** The shell as it last told, or null in a browser. */
 export const desktop = (): DesktopInfo | null => info;
-
-/** Hears each change the shell tells; answers how to stop hearing it. */
-export function onDesktop(listener: (info: DesktopInfo) => void): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
 
 /** Asks the shell, where there is one. */
 export function askDesktop(ask: DesktopAsk): void {
