@@ -109,18 +109,20 @@ fn lamp(dungeon: &Dungeon) -> Option<[f64; 2]> {
         .min_by(|one, other| apart(*one, middle).total_cmp(&apart(*other, middle)))
 }
 
-/// The zone laid under ground in its style, or none for a style the Forge does not know.
-pub(crate) fn lay(zone: &Zone, style: &str, onward_count: usize) -> Option<(Dungeon, Sites)> {
+/// The zone laid under ground in its style, its `attempt`th laying (each from seeds of its own), or none for a style
+/// the Forge does not know.
+pub(crate) fn lay(zone: &Zone, style: &str, onward_count: usize, attempt: u32) -> Option<(Dungeon, Sites)> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();
+    let base = zone.forge_seed().wrapping_add(attempt.wrapping_mul(LAMP_TRIES));
     let forged = |seed: u32| Dungeon::forge_within(seed, style, (blocks, blocks));
     // A lamp's zone is laid again from the next seed until a room is tall enough to stand the lamp in.
     let tall_enough = |dungeon: &Dungeon| dungeon.rooms.iter().any(|room| room.height >= LAMP_CEILING_M);
     let dungeon = if zone.has_lamp() {
-        let mut tries = (0..LAMP_TRIES).map(|step| forged(zone.forge_seed().wrapping_add(step)));
-        tries.find(tall_enough).unwrap_or_else(|| forged(zone.forge_seed()))
+        let mut tries = (0..LAMP_TRIES).map(|step| forged(base.wrapping_add(step)));
+        tries.find(tall_enough).unwrap_or_else(|| forged(base))
     } else {
-        forged(zone.forge_seed())
+        forged(base)
     };
     let (arrive, toward) = dungeon.arrival();
     let facing = libm::atan2(toward[0], -toward[1]);

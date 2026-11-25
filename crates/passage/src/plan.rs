@@ -79,6 +79,8 @@ pub struct Piece {
 }
 
 /// How many of a deal's things stand in a zone.
+/// How many times a zone under ground is laid before the first laying stands though a body cannot walk it all.
+const WALK_TRIES: u32 = 8;
 pub const KINDLES: usize = 3;
 pub const POSTS: usize = 3;
 pub const NODES: usize = 6;
@@ -109,19 +111,65 @@ impl Plan {
     pub fn of(web: &Web, number: u16) -> Option<Self> {
         let zone = web.zone_of(number)?.clone();
         let onward = zone.onward.len();
-        let (ground, sites) = match &zone.ground {
-            Drawn::Under { style } => {
-                let (dungeon, sites) = crate::under::lay(&zone, style, onward)?;
-                (Ground::Under(Box::new(dungeon)), sites)
-            }
-            Drawn::Open { form } => {
-                let (hollow, sites) = hollow::lay(&zone, *form, &web.island.climate, onward);
-                (Ground::Open(Box::new(hollow)), sites)
-            }
+        let laid = |ground: Ground, sites: Sites| {
+            let mut plan = Plan { zone: zone.clone(), ground, sites, pieces: Vec::new() };
+            plan.pieces = plan.stand_pieces();
+            plan
         };
-        let mut plan = Plan { zone, ground, sites, pieces: Vec::new() };
-        plan.pieces = plan.stand_pieces();
-        Some(plan)
+        // Laid again, up to WALK_TRIES times, until a body walks to everything it asks; else the laying that misses
+        // fewest, the first of those.
+        let mut best: Option<(usize, Plan)> = None;
+        for attempt in 0..WALK_TRIES {
+            let plan = match &zone.ground {
+                Drawn::Under { style } => {
+                    let (dungeon, sites) = crate::under::lay(&zone, style, onward, attempt)?;
+                    laid(Ground::Under(Box::new(dungeon)), sites)
+                }
+                Drawn::Open { form } => {
+                    let (hollow, sites) = hollow::lay(&zone, *form, &web.island.climate, (onward, attempt));
+                    laid(Ground::Open(Box::new(hollow)), sites)
+                }
+            };
+            let missed = plan.unwalked();
+            if missed == 0 {
+                return Some(plan);
+            }
+            if best.as_ref().is_none_or(|(fewest, _)| missed < *fewest) {
+                best = Some((missed, plan));
+            }
+        }
+        best.map(|(_, plan)| plan)
+    }
+
+    /// How many of the onward mouths, the lamp, the posts and the spots a body cannot walk to within use of from the
+    /// arrival, round every piece's solids (`walk.rs`).
+    fn unwalked(&self) -> usize {
+        let sites = &self.sites;
+        let (far, blow) = (crate::walk::USE_M, crate::walk::BLOW_M);
+        let wanted: Vec<([f64; 2], f64)> = sites
+            .onward
+            .iter()
+            .map(|door| (door.at, far))
+            .chain(sites.lamp.map(|lamp| (lamp, far)))
+            .chain(sites.spots.iter().map(|&at| (at, far)))
+            .chain(sites.posts.iter().map(|&at| (at, blow)))
+            .collect();
+        let solids = self.piece_solids();
+        match &self.ground {
+            Ground::Under(dungeon) => crate::walk::under(dungeon, &solids, sites.arrive, &wanted),
+            Ground::Open(hollow) => {
+                let pieces = solids.iter().map(|&[min_x, min_y, max_x, max_y, top]| movement::Block {
+                    min_x,
+                    min_y,
+                    max_x,
+                    max_y,
+                    top,
+                    bottom: self.floor_at([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0]) - 0.5,
+                });
+                let blocks: Vec<movement::Block> = hollow.blocks.iter().copied().chain(pieces).collect();
+                crate::walk::open(&hollow.ground, &blocks, &hollow.ring, (sites.arrive, &wanted))
+            }
+        }
     }
 
     /// The height of the floor at a point.

@@ -19,6 +19,9 @@ const LONGEST_TICKS: u32 = 60 * 1_800;
 /// How near the player comes before swinging, metres, and how often the way is found again, ticks.
 const REACH_M: f64 = 1.6;
 const REPATH_TICKS: u32 = 15;
+const ON_FOOT_TICKS: u32 = 60;
+/// How far forward a body leans while it swings within reach, a share of a step.
+const FACE_FORWARD: f64 = 0.05;
 /// A foe neither neared nor harmed in 20 s is out of the scripted player's reach (behind a wall it cannot path round,
 /// on a ledge above, or in rock); it is given up, and its 20 s are not counted.
 const GIVE_UP_TICKS: u32 = 60 * 20;
@@ -33,16 +36,73 @@ pub(super) fn level_one(room: &mut Room) {
     }
 }
 
+/// The scripted player in a room: their id, the way they walk and the ticks played.
+pub(super) struct Walker {
+    pub player: PlayerId,
+    way: Vec<[f64; 3]>,
+    pub ticks: u32,
+}
+
+impl Walker {
+    pub(super) fn into(room: &mut Room) -> Self {
+        Walker { player: room.join().expect("a room with space"), way: Vec::new(), ticks: 0 }
+    }
+
+    /// One tick played: held whole, walking toward `there` until within `stop` of it, swinging every half second
+    /// at it within a metre past `stop` when `swing`. The way is found on the navmesh, or in a passage zone on foot each second,
+    /// as its navmesh is coarser than a body under ground.
+    pub(super) fn step(&mut self, room: &mut Room, there: [f64; 3], stop: f64, swing: bool) {
+        let me = *room.fighter(self.player).expect("in");
+        let apart = libm::hypot(there[0] - me.body.x, there[1] - me.body.y);
+        let from = [me.body.x, me.body.y, me.body.z];
+        if room.zone().is_some() {
+            if self.ticks % ON_FOOT_TICKS == 0 {
+                let way = crate::passages::passage_reach_tests::on_foot(room, [from[0], from[1]], [there[0], there[1]]);
+                self.way = way.unwrap_or_default();
+            }
+        } else if self.ticks % REPATH_TICKS == 0 {
+            self.way = room.mesh_at(there).find_path(from, there).unwrap_or_default();
+        }
+        while self.way.first().is_some_and(|point| libm::hypot(point[0] - me.body.x, point[1] - me.body.y) < 1.0) {
+            self.way.remove(0);
+        }
+        let toward = self.way.first().copied().filter(|_| apart > 3.0).unwrap_or(there);
+        room.set_fighter(self.player, combat::fighter::Fighter { health: me.health_max, ..me });
+        let attack = (swing && self.ticks % 30 == 0 && apart < stop + 1.0).then_some(Stroke::Down);
+        let yaw = combat::sight::bearing([me.body.x, me.body.y], [toward[0], toward[1]]);
+        // A body turns only as it moves (`movement::step`): within reach a swing leans in a little, to face its foe.
+        let forward = if apart > stop {
+            1.0
+        } else if swing {
+            FACE_FORWARD
+        } else {
+            0.0
+        };
+        let controls = Controls { yaw, forward, ..Controls::default() };
+        let input = Input {
+            sequence: self.ticks + 1,
+            intent: Intent { controls, combat: CombatInput { attack, ..CombatInput::default() } },
+            arms: SWORD,
+            seen: room.clock(),
+            ..Input::default()
+        };
+        room.input(self.player, input).expect("in order");
+        room.tick();
+        self.ticks += 1;
+    }
+}
+
 fn clear_all(room: &mut Room) -> (usize, usize, f64) {
     level_one(room);
-    let player = room.join().expect("a room with space");
+    let mut walker = Walker::into(room);
     let (mut felled, mut given_up) = (BTreeSet::new(), BTreeSet::new());
-    let (mut way, mut ticks, mut stalled): (Vec<[f64; 3]>, u32, u32) = (Vec::new(), 0, 0);
+    let mut stalled = 0;
     // The foe walked to, the nearest it has been, its least health, and the tick either last fell.
     let mut chased: Option<(FighterId, f64, f64, u32)> = None;
-    while ticks < LONGEST_TICKS {
+    while walker.ticks < LONGEST_TICKS {
         level_one(room);
-        let me = *room.fighter(player).expect("in");
+        let ticks = walker.ticks;
+        let me = *room.fighter(walker.player).expect("in");
         let near = |foe: &Foe| libm::hypot(foe.fighter.body.x - me.body.x, foe.fighter.body.y - me.body.y);
         let alive = room.foes.iter().filter(|(id, foe)| !foe.fighter.dead() && !given_up.contains(*id));
         let Some((&id, target)) = alive.min_by(|one, two| near(one.1).total_cmp(&near(two.1))) else { break };
@@ -61,31 +121,10 @@ fn clear_all(room: &mut Room) -> (usize, usize, f64) {
             Some((was, ..)) if was == id => {}
             _ => chased = Some((id, apart, health, ticks)),
         }
-        if ticks % REPATH_TICKS == 0 {
-            way = room.nav.find_path([me.body.x, me.body.y, me.body.z], there).unwrap_or_default();
-        }
-        while way.first().is_some_and(|point| libm::hypot(point[0] - me.body.x, point[1] - me.body.y) < 1.0) {
-            way.remove(0);
-        }
-        let toward = way.first().copied().filter(|_| apart > 3.0).unwrap_or(there);
-        room.set_fighter(player, combat::fighter::Fighter { health: me.health_max, ..me });
-        let attack = (ticks % 30 == 0 && apart < REACH_M + 1.0).then_some(Stroke::Down);
-        let yaw = combat::sight::bearing([me.body.x, me.body.y], [toward[0], toward[1]]);
-        let controls = Controls { yaw, forward: if apart > REACH_M { 1.0 } else { 0.0 }, ..Controls::default() };
-        let combat = CombatInput { attack, ..CombatInput::default() };
-        let input = Input {
-            sequence: ticks + 1,
-            intent: Intent { controls, combat },
-            arms: SWORD,
-            seen: room.clock(),
-            ..Input::default()
-        };
-        room.input(player, input).expect("in order");
-        room.tick();
-        ticks += 1;
+        walker.step(room, there, REACH_M, true);
         felled.extend(room.foes.iter().filter(|(_, foe)| foe.fighter.dead()).map(|(id, _)| *id));
     }
-    (felled.len(), given_up.len(), f64::from(ticks.saturating_sub(stalled)) / 60.0)
+    (felled.len(), given_up.len(), f64::from(walker.ticks.saturating_sub(stalled)) / 60.0)
 }
 
 fn row(name: &str, (felled, given_up, seconds): (usize, usize, f64)) {
@@ -129,6 +168,7 @@ fn the_bands_tables_are_the_rooms_and_the_passages_own() {
         assert_eq!(band::passage_levels(band::PASSAGE_BAND, depth), passage::levels(band::PASSAGE_BAND, depth));
     }
     assert_eq!(band::DEPTHS, passage::DEPTHS);
+    assert_eq!(passage::BAND_SPREAD_M, crate::garrison::SPREAD, "a band's spread round its post");
     assert_eq!(
         passage::island("continent-1").and_then(|_| gear::world::island_levels("continent-1")),
         Some(band::PASSAGE_BAND)

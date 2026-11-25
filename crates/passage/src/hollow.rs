@@ -23,9 +23,11 @@ const ROLL_M: f64 = 0.7;
 /// How far out from the floor's edge its wall rises, metres, and how high it rises, least and most.
 const WALL_RUN_M: f64 = 5.0;
 const WALL_RISE_M: (f64, f64) = (12.0, 25.0);
-/// A shelf's drop and how many a hollow of shelves has.
+/// A shelf's drop and how many a hollow of shelves has, and how wide the bank between two shelves runs: 8 m, so its
+/// steepest (half again its mean, 0.45) is walked up as the navmesh's 0.7 allows, and no shelf stands cut off.
 const SHELF_DROP_M: f64 = 2.4;
 const SHELVES: f64 = 3.0;
+const BANK_M: f64 = 8.0;
 /// How far inside the floor's edge its section's ring stands, and how many points round it has.
 const RING_IN_M: f64 = 0.5;
 const RING_POINTS: usize = 64;
@@ -35,6 +37,10 @@ const MOUTH_IN_M: f64 = 1.0;
 /// How far inside the edge a spot or a post keeps, and the lattice they are drawn from, metres.
 const SPOT_IN_M: f64 = 3.5;
 const LATTICE_M: f64 = 3.0;
+/// How far the dressing keeps from the arrival, and past a band's spread round its post: half the largest dressing's
+/// footprint and a body's room, metres.
+const ARRIVAL_CLEAR_M: f64 = 5.0;
+const BAND_CLEAR_M: f64 = 3.0;
 
 /// A zone laid above ground.
 #[derive(Clone, Debug)]
@@ -198,8 +204,12 @@ impl Laying {
         let roll = self.noise.fractal(x / 18.0, y / 18.0, 3) * ROLL_M;
         let shelves = if self.outline.form == Form::Shelves {
             let along = x * libm::cos(self.shelf_turn) + y * libm::sin(self.shelf_turn);
-            let step = ((along / self.outline.reach + 1.0) / 2.0 * SHELVES).floor().clamp(0.0, SHELVES - 1.0);
-            -step * SHELF_DROP_M
+            let shelf = ((along / self.outline.reach + 1.0) / 2.0 * SHELVES).clamp(0.0, SHELVES - 1.0);
+            let whole = shelf.floor();
+            // The bank's share of a shelf, eased into the next shelf down over its last stretch.
+            let bank = (BANK_M * SHELVES / (2.0 * self.outline.reach)).min(0.5);
+            let into = (((shelf - whole) - (1.0 - bank)) / bank).clamp(0.0, 1.0);
+            -(whole + into * into * (3.0 - 2.0 * into)) * SHELF_DROP_M
         } else {
             0.0
         };
@@ -301,6 +311,11 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
     let mut placements = Vec::new();
     let mouths: Vec<[f64; 2]> = sites.onward.iter().chain([&sites.way_in]).map(|door| door.at).collect();
     let clear_of_mouths = |at: [f64; 2], off: f64| mouths.iter().all(|mouth| apart(*mouth, at) >= off);
+    // Clear of the arrival and of where each band stands round its post, so a body walks in and reaches every foe.
+    let clear_of_bands = |at: [f64; 2]| {
+        apart(sites.arrive, at) >= ARRIVAL_CLEAR_M
+            && sites.posts.iter().all(|post| apart(*post, at) >= crate::walk::BAND_SPREAD_M + BAND_CLEAR_M)
+    };
     let ring = outline.ring();
     let mut walked = 0.0;
     let cliffs = book.of(kit, Role::Cliff);
@@ -335,6 +350,7 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
                 };
                 if outline.inside(at) > 0.5
                     && clear_of_mouths(at, 4.0)
+                    && clear_of_bands(at)
                     && sites.lamp.is_none_or(|lamp| apart(lamp, at) >= 6.0)
                 {
                     let scale = draws.between(0.8, 1.2);
@@ -368,6 +384,7 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
                 let at = outline.at_edge(draws.between(0.0, TAU), draws.between(2.0, reach * 0.8));
                 if outline.inside(at) > 1.0
                     && clear_of_mouths(at, 5.0)
+                    && clear_of_bands(at)
                     && sites.lamp.is_none_or(|lamp| apart(lamp, at) >= 6.0)
                 {
                     placements.extend(placed(
@@ -388,6 +405,7 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
             let at = outline.at_edge(draws.between(0.0, TAU), draws.between(4.0, reach * 0.7));
             if outline.inside(at) > 2.0
                 && clear_of_mouths(at, 6.0)
+                && clear_of_bands(at)
                 && sites.lamp.is_none_or(|lamp| apart(lamp, at) >= 8.0)
             {
                 placements.extend(placed(
@@ -404,8 +422,9 @@ fn dress(laying: &Laying, sites: &Sites, kit: &str, draws: &mut Draws) -> Vec<Pl
     placements
 }
 
-/// The zone laid above ground in its form, dressed from the islands' kit of `climate`.
-pub(crate) fn lay(zone: &Zone, form: Form, climate: &str, onward_count: usize) -> (Hollow, Sites) {
+/// The zone laid above ground in its form, dressed from the islands' kit of `climate`: its `attempt`th dressing, each
+/// past the first drawn on draws of its own, its outline and sites the same.
+pub(crate) fn lay(zone: &Zone, form: Form, climate: &str, (onward_count, attempt): (usize, u32)) -> (Hollow, Sites) {
     let mut draws = Draws::of(zone.seed, 0x401);
     let outline = Outline::new(form, zone.size.across(), &mut draws);
     let rise = draws.between(WALL_RISE_M.0, WALL_RISE_M.1);
@@ -418,7 +437,8 @@ pub(crate) fn lay(zone: &Zone, form: Form, climate: &str, onward_count: usize) -
     let wanted = crate::plan::spots_wanted(zone.deal);
     let sites = sites(&laying.outline, (onward_count, zone.has_lamp(), wanted), &mut draws);
     let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str());
-    let placements = dress(&laying, &sites, kit, &mut draws);
+    let mut dressing = if attempt == 0 { draws } else { Draws::of(zone.seed, 0x500 + u64::from(attempt)) };
+    let placements = dress(&laying, &sites, kit, &mut dressing);
     let blocks = isle::dressing::blocks(&placements);
     let ring = laying.outline.ring();
     (Hollow { ground: laying.ground(), placements, blocks, ring }, sites)
