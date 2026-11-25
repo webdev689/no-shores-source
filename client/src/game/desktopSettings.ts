@@ -4,7 +4,7 @@
 import { API_NAMES, type DesktopInfo, GRAPHICS_APIS, type GraphicsApi, askDesktop, desktop } from '../desktop.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { button, choice } from '../ui/controls.ts';
-import type { PlainContext } from './menuPage.ts';
+import type { Interface } from '../ui/ui.ts';
 import { PRESS_PADDING, headingNode, hintNode } from './menuPages.ts';
 
 /** The graphics API's list, which Settings shuts as it is shown again. */
@@ -43,7 +43,7 @@ export function updateWords(update: DesktopInfo['update']): string {
 }
 
 /** The App part's rows, or none in a browser. `row` lays a setting's name beside its control, as Settings does. */
-export function desktopNodes({ ui }: PlainContext, row: (name: string, ...children: Child[]) => Node): Child[] {
+export function desktopNodes(ui: Interface, row: (name: string, ...children: Child[]) => Node): Child[] {
   const info = desktop();
   if (!info) return [];
   const { graphics, update } = info;

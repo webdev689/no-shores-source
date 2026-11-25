@@ -28,10 +28,11 @@ export class StoryHost {
   private readonly ready = new Promise<Started | null>((resolve) => (this.started = resolve));
   private readonly canvas: HTMLCanvasElement;
 
-  /** The story on `canvas`, its pointer let alone while `covered` (the sheet of every control over it takes it). */
-  constructor(stack: Stack, canvas: HTMLCanvasElement, covered: () => boolean = () => false) {
+  /** The story on `canvas`, its pointer let alone while `covered` (the sheet of every control over it takes it), its
+   *  title heard only once `before` (the desktop app's launcher) has gone. */
+  constructor(stack: Stack, canvas: HTMLCanvasElement, covered: () => boolean = () => false, before?: Promise<void>) {
     this.canvas = canvas;
-    void tapToStart(stack, this.ready).then(async () => (this.story = await this.ready));
+    void tapToStart(stack, this.ready, undefined, before).then(async () => (this.story = await this.ready));
     canvas.addEventListener('pointerdown', () => covered() || this.story?.prologue.press());
     // A touch held anywhere on the view skips, so it is heard from the window.
     addEventListener('pointerdown', (event) => event.pointerType === 'touch' && this.story?.prologue.touch(true));

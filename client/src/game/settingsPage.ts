@@ -5,6 +5,7 @@
 // resolution and the volumes are kept in this browser, the binds with the account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
 import { PAGE, type Page } from '../ui/page.ts';
 import { button, choice, slider } from '../ui/controls.ts';
 import type { AccountPanel } from './accountTab.ts';
@@ -202,7 +203,7 @@ export class Settings {
 
   /** The tab shown's own parts. */
   private tabNode(context: PlainContext, toCredits: (shown: boolean) => void): Node {
-    if (this.tab === 'graphics') return graphicsNode(context);
+    if (this.tab === 'graphics') return graphicsNode(context.ui);
     if (this.tab === 'audio') return audioNode(context, () => toCredits(true));
     if (this.tab === 'controls') return controlsNode(context, this.rebinding);
     const panel = this.account();
@@ -297,9 +298,8 @@ function held(
 }
 
 /** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser; and in the
- *  desktop app, the app's own graphics and version. */
-function graphicsNode(context: PlainContext): Node {
-  const { ui } = context;
+ *  desktop app, the app's own graphics and version. The launcher shows the same. */
+export function graphicsNode(ui: Interface): Node {
   const { node, chosen } = choice(ui, RESOLUTION_LIST, resolution(), RESOLUTIONS);
   if (chosen !== resolution()) setResolution(chosen);
   const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
@@ -308,7 +308,7 @@ function graphicsNode(context: PlainContext): Node {
     { height: 4 },
     settingRow('Resolution', { ...node, label: `Resolution, ${said}` }),
     hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
-    ...desktopNodes(context, settingRow),
+    ...desktopNodes(ui, settingRow),
   ]);
 }
 
