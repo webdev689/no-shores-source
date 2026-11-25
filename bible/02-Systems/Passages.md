@@ -254,8 +254,8 @@ was done finds it done.
   `stand_before_mouth`). Any other room the character joins, another island's patrol zone among them, ends the dive
   and loses its haul.
 - **The passages' bounties** are the board's fourth pool, two a day (`bounties::PASSAGES`), counting a lamp lit, a
-  mission finished, a foe brought down in a passage, a zone reached at least 8 deep, a reliquary opened and a vein's
-  every node gathered. A deal counts, toward them and the Atheric bounties, only for those its cache paid, once a zone
+  mission finished, a foe brought down in a passage, a zone reached at least 8 deep, a reliquary opened and a vein
+  gathered. A deal counts, toward them and the Atheric bounties, only for those its cache paid, once a zone
   a dive, so a public round camped counts nothing more and a late Gauntlet nothing. A depth counts as a player goes
   on into a zone, as the zones the dive has gone into from the depth it began at (`Dive::zones_deep`), so a begin at
   a lamp reaches no depth by itself. They are the town's, at places 15 and 16 after the factions' 6 to 14 (`PASSAGE_PLACES_FROM`,
