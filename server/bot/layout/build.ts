@@ -4,6 +4,7 @@
 // modules' own acts, which update a post in place; and what only the server's owner can do is kept as a checklist in
 // the staff channel, updated by every build.
 
+import { THREADS } from '../dispatch.ts';
 import { PERMISSION, type PermissionName } from '../law/access.ts';
 import { moduleOf } from '../law/modules.ts';
 import { type Settings, defaults, recordOf, validate } from '../law/settings.ts';
@@ -172,7 +173,7 @@ async function freshSnapshot(walk: Walk): Promise<void> {
   const channels = await context.rest.get(`/guilds/${guildId}/channels`);
   if (channels.ok && Array.isArray(channels.json)) walk.channels = channels.json.map(recordOf);
   stored.roles = walk.roles.map(roleOf);
-  stored.channels = walk.channels.filter((channel) => ![10, 11, 12].includes(Number(channel.type))).map(channelOf);
+  stored.channels = walk.channels.filter((channel) => !THREADS.has(Number(channel.type))).map(channelOf);
   stored.updatedAt = Math.floor(context.now() / 1000);
   await writeSnapshot(context.database, stored);
 }

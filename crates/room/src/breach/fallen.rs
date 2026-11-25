@@ -2,8 +2,7 @@
 //! Stair, or between encounters) a fallen player stands again of themselves after a while, at either tier, at the
 //! furthest stage reached. Inside one, at Normal they stand again after longer, at its stage; at Hard never of
 //! themselves. At either tier the game's revive stands them sooner where they lie (`revive.rs`); at Hard each revive
-//! spends one of the attempt's shared revives, and with none left the fallen stay down
-//! ([[The First Breach Follows the Vault of Glass, at Normal and Hard]]).
+//! spends one of the attempt's shared revives, and with none left the fallen stay down.
 
 use super::{Breach, Phase};
 use crate::{PlayerId, Room};

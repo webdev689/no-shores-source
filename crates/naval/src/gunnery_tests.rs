@@ -68,12 +68,12 @@ const LEVEL: Pose = Pose { heave: 0.0, pitch: 0.0, roll: 0.0, aground: false };
 fn a_side_is_laid_square_to_its_hull_for_its_range() {
     let laid = lay(&sailing_north(0.0), &LEVEL, &SLOOP_ARMS, Side::Starboard, Shot::Round, 50.0, None);
     // Heading north, its starboard guns bear east.
-    assert!(near(laid.dir[0], 1.0) && laid.dir[1].abs() < 1e-12);
+    assert!(near(laid.direction[0], 1.0) && laid.direction[1].abs() < 1e-12);
     let rise = laid.centre[2];
     let landed = crate::ballistics::range_at(laid.elevation, SWIVEL.speed, rise);
     assert!((landed - 50.0).abs() < 1e-6, "{landed}");
     let port = lay(&sailing_north(0.0), &LEVEL, &SLOOP_ARMS, Side::Port, Shot::Round, 50.0, None);
-    assert!(near(port.dir[0], -1.0));
+    assert!(near(port.direction[0], -1.0));
 }
 
 #[test]
@@ -107,12 +107,12 @@ fn its_muzzles_ride_its_heel() {
     let upright = lay(&sailing_north(0.0), &LEVEL, &SLOOP_ARMS, Side::Starboard, Shot::Round, 50.0, None);
     let leaning = lay(&sailing_north(0.0), &heeled, &SLOOP_ARMS, Side::Starboard, Shot::Round, 50.0, None);
     assert!(leaning.mouths[0][2] < upright.mouths[0][2], "its starboard ports go down");
-    assert!(near(leaning.dir[0], 1.0), "the lay stays the upright hull's");
+    assert!(near(leaning.direction[0], 1.0), "the lay stays the upright hull's");
 }
 
 #[test]
 fn the_landing_zone_is_as_wide_as_the_crew_scatters_the_gun() {
     assert_eq!(zone_radius(&SWIVEL, 0.6, 10.0), 1.6, "never under 1.6 m");
-    let wide = 200.0 * libm::tan(1.3 * 0.9 * DEGREE);
+    let wide = 200.0 * libm::tan((1.3_f64 * 0.9).to_radians());
     assert!((zone_radius(&SWIVEL, 0.6, 200.0) - wide).abs() < 1e-9);
 }

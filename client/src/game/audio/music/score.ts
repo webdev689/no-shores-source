@@ -105,7 +105,6 @@ export interface Form {
  *  with a `form` plays its takes as the arranger chooses them; one without loops whole. */
 export interface Song {
   readonly name: string;
-  readonly beatsPerMinute: number;
   readonly secondsPerTick: number;
   readonly ticksPerBar: number;
   readonly durationTicks: number;
@@ -378,7 +377,6 @@ export function makeSong<T extends string, D extends string>(
   }
   return {
     name,
-    beatsPerMinute: bpm,
     secondsPerTick: 60 / (bpm * TICKS_PER_BEAT),
     ticksPerBar: beatsPerBar * TICKS_PER_BEAT,
     durationTicks: length,

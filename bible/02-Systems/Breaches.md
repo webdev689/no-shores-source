@@ -73,11 +73,13 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   refused is told why (`ShutOut`). The gate stands only in the Gullwing Vale's room at Normal seas, its doorway shut by
   rock behind its seal. Everyone in the zone sees the Waking, and the companies inside the run by the name of their run's first player, tier and encounter.
 - **Into the run.** The run's room lets a character in only once the zone's room says its company's gate opened
-  (`server/breach.ts`), and its first player must be one the run was launched for. Its spaces are the plan's
-  (`content/dungeon/breach-drowned-vale.json`): each a module stood at a point of the run's own frame and turned whole
-  quarters, no two sharing ground, laid over the dark, a fall into which kills. Bodies vault in the run but never climb
-  (`Floor::Dark`), so its walls and the Ways' bars hold. Its three seals open as their encounters are won; the Broken
-  Stair's six slabs come and go on an 11 s measure, standing 7 s of it. The run tells the zone how far it has come.
+  (`server/breach.ts`), and its first player must be one the run was launched for. The zone's room judges a gate's day
+  by the minute its host gives it as it is asked, so a zone no one stands in, which does not tick, still shuts it. Its
+  spaces are the plan's (`content/dungeon/breach-drowned-vale.json`): each a module stood at a point of the run's own
+  frame and turned whole quarters, no two sharing ground, laid over the dark, a fall into which kills. Bodies vault in
+  the run but never climb (`Floor::Dark`), so its walls and the Ways' bars hold. Its three seals open as their
+  encounters are won; the Broken Stair's six slabs come and go on an 11 s measure, standing 7 s of it. The run tells the
+  zone how far it has come.
 - **The Lodestone.** The Breach's relic, taken from its plinth within 2.5 m and set down again. Its bearer fights bare
   handed: their swing is its Strike (three times a blow); Guard raises Hold True (4 m round the bearer, 6 s at most,
   10 s to rest), which cleanses the Rewritten and halves a foe's blow there; the Art key Grounds it once charged

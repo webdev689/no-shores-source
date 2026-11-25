@@ -2,7 +2,8 @@ use super::*;
 use naval::fight::{Aim, Fight, Orders, Refusal};
 use naval::guns::SWIVEL;
 use naval::ranks::{Commission, GREY_TITHE, Rank};
-use room::fleet::{Call, Input, Levels, STANDING};
+use room::battle::QUIET;
+use room::fleet::{Call, Input, Levels};
 use sailing::ship::{Helm, Ship};
 use sailing::waters::OpenSea;
 
@@ -26,10 +27,10 @@ fn looked() -> Input {
 #[test]
 fn orders_read_back_as_their_number_helm_look_fire_load_putting_to_sea_and_call() {
     assert_eq!(read_orders(&orders_bytes(&looked())), Ok(looked()));
-    let plain = Input { sequence: 2, orders: STANDING, put_to_sea: None, call: Call::SendOff };
+    let plain = Input { sequence: 2, orders: QUIET, put_to_sea: None, call: Call::SendOff };
     assert_eq!(read_orders(&orders_bytes(&plain)), Ok(plain));
     let ray_less = Input {
-        orders: Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 10.0, ray: None }), ..STANDING },
+        orders: Orders { aim: Some(Aim { bearing_deg: 90.0, range_m: 10.0, ray: None }), ..QUIET },
         call: Call::None,
         ..plain
     };

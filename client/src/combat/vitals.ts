@@ -13,13 +13,10 @@ import type { Node } from '../ui/node.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { poiseTrackOf, type PoiseState } from './foePlate.ts';
-import { LOW_SHARE, lowShare, Meter } from '../plus/meter.ts';
+import { lowShare, Meter } from '../plus/meter.ts';
 import { drawCells, drawMeter, hatch, mix, paintBox, type Pen, ring, span, thinBarNode } from './barDraw.ts';
 import { barLength } from './hudLayout.ts';
 import { ownBuffs, StatusRow } from './statusIcons.ts';
-
-/** Health at or under this share of the whole warns (the kit's low law, which a ship's hull keeps too). */
-export const LOW_HEALTH = LOW_SHARE;
 
 export type VitalName = 'health' | 'stamina' | 'poise';
 const VITALS: readonly [VitalName, string][] = [
@@ -66,7 +63,8 @@ export function vitalMost(own: FighterView | null): Record<VitalName, number> {
   return { health: own?.healthMax ?? 100, stamina: STAMINA_WHOLE, poise: own?.poiseMax ?? 40 };
 }
 
-/** Whether the health warns: some left, but no more than `LOW_HEALTH` of it. */
+/** Whether the health warns: some left, but no more than `LOW_SHARE` of it (the kit's low law, which a ship's hull
+ *  keeps too). */
 export const healthLow = (own: FighterView | null): boolean =>
   !!own && lowShare(own.health / Math.max(1, own.healthMax));
 

@@ -28,7 +28,6 @@ pub mod model {
     pub const GREAT_SHIP: u32 = 41513;
     pub const OBELISK: u32 = 43071;
     pub const LOG: u32 = 41722;
-    pub const POST: u32 = 41901;
     pub const SIEGE: u32 = 41402;
     pub const STATUE: u32 = 62324;
     pub const FENCES: [u32; 2] = [41206, 41207];

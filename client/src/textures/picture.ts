@@ -14,9 +14,8 @@ import { snowsOver } from './recipes/wallFamilies.ts';
 import { paintsWall, paintWall, wallSeed, wallWindowBox, winterOver, type WindowBox } from './recipes/walls.ts';
 import { SCALE, type Surface } from './surface.ts';
 
-export { DRESSING_ARCHIVE, climateArchive, type Climate, type Season } from './climate.ts';
-export { pictureSize, type PictureSize } from './catalog.ts';
-export { PALETTE_RGB } from './palette.ts';
+export { climateArchive, type Climate, type Season } from './climate.ts';
+export { pictureSize } from './catalog.ts';
 export type { PictureUse } from './recipe.ts';
 
 /** A painted picture: RGBA, the top row first, every texel opaque; `glass` 1 a texel for a window's panes (top row

@@ -5,7 +5,7 @@
 
 import { recordOf } from './law/settings.ts';
 import type { Cache, CachedMember } from './cache.ts';
-import { createConfigCache } from './kit.ts';
+import { createConfigCache, errorWords } from './kit.ts';
 import type { DispatchHandler } from './registry.ts';
 import type { EventData } from './modules/module.ts';
 import {
@@ -22,7 +22,7 @@ import {
 } from './store.ts';
 
 /** Thread channel types: they come and go constantly and are never a setting's target. */
-const THREADS = new Set([10, 11, 12]);
+export const THREADS = new Set([10, 11, 12]);
 /** How long a module's settings are trusted without a save from the panel, in milliseconds. */
 export const CONFIG_KEEP_MS = 5 * 60_000;
 /** How often a server's member count alone is written: joins and leaves change it in memory, and it is written at most
@@ -250,8 +250,6 @@ export function createDispatcher(deps: DispatchDeps): Dispatcher {
       for (const id of ids) cache.dropMessage(id);
     },
   };
-
-  const said = (error: unknown) => (error instanceof Error ? error.message : String(error));
   return {
     async flush() {
       for (const id of [...dirty]) {
@@ -264,13 +262,13 @@ export function createDispatcher(deps: DispatchDeps): Dispatcher {
       try {
         await keep[type]?.(data);
       } catch (error) {
-        log(`[bot] keeping the snapshot on ${type} failed: ${said(error)}`);
+        log(`[bot] keeping the snapshot on ${type} failed: ${errorWords(error)}`);
       }
       for (const handler of added[type] ?? []) {
         try {
           await handler(type, data);
         } catch (error) {
-          log(`[bot] a ${type} handler failed: ${said(error)}`);
+          log(`[bot] a ${type} handler failed: ${errorWords(error)}`);
         }
       }
     },

@@ -3,7 +3,7 @@
 //! answer back (`room_outpost_answered`); it says each time it stood the plot anew (`room_outpost_stood`), and which
 //! player is leaving while their errands settle (`room_outpost_parting`).
 
-use crate::{Opened, hand_over, with_open};
+use crate::{hand_over, on_land};
 use room::{Errand, Room, What};
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -16,14 +16,6 @@ struct Told {
     muster: [f64; 2],
     #[serde(default)]
     ids: String,
-}
-
-fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => Some(ask(room)),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
-    })
-    .flatten()
 }
 
 /// Makes the open room on land a guild's outpost, from the text in `bytes` (`Told`); false for text that is not one, or

@@ -2,8 +2,8 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { catalogArchives, catalogRecords } from './catalog.ts';
+import { PALETTE_RGB } from './palette.ts';
 import {
-  PALETTE_RGB,
   climateArchive,
   paintPicture,
   pictureSize,

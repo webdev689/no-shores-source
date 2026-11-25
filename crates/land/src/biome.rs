@@ -20,7 +20,7 @@ pub const LAPSE_C_PER_M: f64 = 0.0065;
 pub const SNOW_C: f64 = -2.0;
 
 /// A profile's range height is doubled: World 2.0 adds it to Daggerfall's own relief, which this land has no copy
-/// of, so the range here carries the mountains' whole height. Doubled, the steppe's equals the old placeholder.
+/// of, so the range here carries the mountains' whole height. Doubled, the steppe's equals `PLACEHOLDER`'s.
 const fn biome(
     key: &'static str,
     temperature_c: f64,

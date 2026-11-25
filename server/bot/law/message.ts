@@ -426,7 +426,3 @@ export const asEdit = (payload: Payload): Payload & { content: string; component
   components: [],
   ...payload,
 });
-
-/** Whether a saved message would post anything at all. */
-export const messageEmpty = (message: unknown, vars: Readonly<Record<string, string>> = {}): boolean =>
-  payloadEmpty(messagePayload(message, vars, 0));

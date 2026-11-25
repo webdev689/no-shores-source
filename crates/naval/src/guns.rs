@@ -8,8 +8,8 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Gun {
     pub speed: f64,
-    pub min_el_deg: f64,
-    pub max_el_deg: f64,
+    pub min_elevation_deg: f64,
+    pub max_elevation_deg: f64,
     pub reload_s: f64,
     pub yaw_spread_deg: f64,
     pub pitch_spread_deg: f64,
@@ -23,8 +23,8 @@ pub struct Gun {
 /// DFO's swivel, the small boats' gun. Its carriage depresses to -10 degrees, so a ship alongside is still under fire.
 pub const SWIVEL: Gun = Gun {
     speed: 55.0,
-    min_el_deg: -10.0,
-    max_el_deg: 14.0,
+    min_elevation_deg: -10.0,
+    max_elevation_deg: 14.0,
     reload_s: 4.0,
     yaw_spread_deg: 1.3,
     pitch_spread_deg: 0.8,

@@ -5,7 +5,7 @@
 //! back out through the shore's own. In each shore its Keeper waits; its fall Rewrites everyone there while they stay.
 //! The Seam tolls, unwriting the Rewritten, and the Lattice fuses at it; those left in a shut shore are unwritten. Both
 //! Keepers fallen and no one in a shore, the Steward's door opens. At Hard the Lodestone's last bearer through a rift
-//! may not carry it through again until another has ([[Breaches]]).
+//! may not carry it through again until another has.
 
 use super::{Breach, SHORES};
 use crate::{EventKind, PlayerId, Room};

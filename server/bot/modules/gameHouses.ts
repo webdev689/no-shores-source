@@ -5,7 +5,7 @@
 
 import { PLEDGES_MAX } from '../../accounts/linked.ts';
 import { type Settings, recordOf } from '../law/settings.ts';
-import type { BotContext } from '../kit.ts';
+import { type BotContext, errorWords } from '../kit.ts';
 import { type RestResult, UNKNOWN } from '../rest.ts';
 import type { ServerModule } from './module.ts';
 import { serversWith } from './stats.ts';
@@ -14,8 +14,6 @@ import { serversWith } from './stats.ts';
 export const HOUSES_MINUTE = 5;
 /** The most roles one sweep gives or takes in a server; the rest wait for the next sweep. */
 export const HOUSE_CHANGES_A_SWEEP = 50;
-
-const said = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** A role to give a member, or to take from them. */
 interface Change {
@@ -46,7 +44,7 @@ async function pledgesOf(context: BotContext, userIds: string[]): Promise<Record
     return null;
   }
   return accounts.pledges(userIds).catch((error: unknown) => {
-    context.log(`[bot] game: the accounts did not answer: ${said(error)}`);
+    context.log(`[bot] game: the accounts did not answer: ${errorWords(error)}`);
     return null;
   });
 }

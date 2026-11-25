@@ -160,10 +160,7 @@ export class Calm implements Beat {
     return {
       shot,
       ships,
-      actors: [
-        ...brig.crew(own, tick.clock, { gunner: 'idle', bosun: 'idle', lookout: 'idle' }),
-        youAtHelm(story, own, 'idle'),
-      ],
+      actors: [...brig.crew(own, { gunner: 'idle', bosun: 'idle', lookout: 'idle' }), youAtHelm(story, own, 'idle')],
       heads: brig.heads(own),
       land: false,
       heard: { at: 'sea', deck: true, sailing: false },

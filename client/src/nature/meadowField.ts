@@ -9,8 +9,8 @@ import { type GroundAt, smooth } from './ground.ts';
 /** A cell's side, metres, and its grid's samples a side, a cell's edges shared with its neighbours'. */
 export const CELL_M = 16;
 export const GRID = 9;
-/** Tufts a cell holds where its ground is all grass: about two and a quarter a square metre. */
-export const TUFTS = 576;
+/** Tufts a cell holds where its ground is all grass: about one and an eighth a square metre. */
+export const TUFTS = 288;
 /** How far from the eye the meadow is drawn, metres: as far as the plants' grass. */
 export const REACH_M = 160;
 /** A cell is kept while its nearest point lies within the reach and this, so a step back and forth fills none again. */

@@ -40,10 +40,10 @@ pub fn erode(elevation: &Grid, uplift: &Grid, land: &[bool], rain_mm: f64, steps
         let gathered = crate::drainage::accumulate(&routing, &rain);
         // The lakes are the hollows of the ground the flood routed, found before any cell is cut: afterwards every
         // cut cell would sit under its old filled level and look flooded.
-        let pools = hollows(&routing, &ground, width, height, 0.0);
+        let pools = hollows(&routing, &ground, width, height);
         let mut pool_of = vec![usize::MAX; count];
         for (pool, hollow) in pools.iter().enumerate() {
-            for &cell in &hollow.cells {
+            for &cell in hollow {
                 pool_of[cell as usize] = pool;
             }
         }
@@ -88,8 +88,8 @@ pub fn erode(elevation: &Grid, uplift: &Grid, land: &[bool], rain_mm: f64, steps
             load[receiver as usize] += load[cell];
         }
         for (pool, hollow) in pools.iter().enumerate() {
-            let lay = held[pool] / (hollow.cells.len() as f64 * area);
-            for &cell in &hollow.cells {
+            let lay = held[pool] / (hollow.len() as f64 * area);
+            for &cell in hollow {
                 let cell = cell as usize;
                 ground[cell] += lay.min(routing.filled[cell] - ground[cell]);
             }

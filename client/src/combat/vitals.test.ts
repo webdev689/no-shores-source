@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
 import { LOSS_DRAIN, LOSS_HOLD, LOSS_HOLD_MOST, type Loss, stepLoss } from '../plus/barLoss.ts';
+import { LOW_SHARE } from '../plus/meter.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import { allOf, wordsIn } from './nodes.test.ts';
@@ -10,7 +11,6 @@ import {
   CHARGE_FLASH_SECONDS,
   chargesShown,
   healthLow,
-  LOW_HEALTH,
   REST_SECONDS,
   Vitals,
   vitalOf,
@@ -63,7 +63,7 @@ test('a percentage is never 0% while anything is left, and never over 100%', () 
 });
 
 test('the health warns once it is a quarter or less, but not at none', () => {
-  assert.equal(LOW_HEALTH, 0.25);
+  assert.equal(LOW_SHARE, 0.25);
   assert.equal(healthLow({ ...fighter, health: 50 }), true);
   assert.equal(healthLow({ ...fighter, health: 51 }), false);
   assert.equal(healthLow({ ...fighter, health: 0 }), false);

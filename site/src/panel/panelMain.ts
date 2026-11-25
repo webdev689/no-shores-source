@@ -147,7 +147,9 @@ function signInPage(error = ''): void {
     windowOf('The No Shores bot', [
       ...(words ? [element('p', { class: 'warn', role: 'alert' }, [words])] : []),
       element('div', { class: 'doors' }, [door]),
-      element('p', { class: 'small' }, ['The bot asks Discord who you are, and nothing else.']),
+      element('p', { class: 'small' }, [
+        'The bot asks Discord who you are and which servers you are in, and nothing else.',
+      ]),
     ]),
   ]);
 }

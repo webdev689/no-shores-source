@@ -119,10 +119,6 @@ export class DialogueBox {
     this.removeLayer = stack.under((ui) => this.node(ui));
   }
 
-  get open(): boolean {
-    return this.talk !== null;
-  }
-
   /** Plays the lines in turn; resolves once the last has been read. `auto` advances by itself after each line has
    *  been typed and held (for cutscenes); otherwise `advance()` moves on. A speaker whose name is "" is a voice from
    *  nowhere: no box, the words alone, centred, faint. */

@@ -323,24 +323,18 @@ pub(crate) fn dress(
                     .all(|edge| point_to_segment(corner, [ring[edge], ring[(edge + 1) % ring.len()]]) >= FROM_EDGE_M)
         });
         let blocked = [
-            (!in_ring, "the ring's edge"),
-            (lines.iter().any(|&line| segment_to_rect(line, rect) < CLEAR_M + PAST_WAY_M), "a way"),
-            (ways.points.iter().any(|point| point_to_rect(point.at, rect) < FROM_POINT_M), "a way point"),
-            (posts.iter().any(|post| point_to_rect(post.at, rect) < FROM_POST_M), "a post"),
-            (post_lines.iter().any(|&line| segment_to_rect(line, rect) < OFF_POST_LINE_M), "a walk to a post"),
-            (
-                arrivals.iter().chain(&laid.spots).any(|&arrival| point_to_rect(arrival, rect) < FROM_ARRIVAL_M),
-                "an arrival",
-            ),
-            (counters.iter().any(|&counter| point_to_rect(counter, rect) < FROM_COUNTER_M), "a counter"),
-            (standing.iter().any(|&other| rect_gap(rect, other) < FROM_STANDING_M), "what stands"),
-            (placed.iter().any(|&other| rect_gap(rect, other) < BETWEEN_M), "another piece"),
+            !in_ring,
+            lines.iter().any(|&line| segment_to_rect(line, rect) < CLEAR_M + PAST_WAY_M),
+            ways.points.iter().any(|point| point_to_rect(point.at, rect) < FROM_POINT_M),
+            posts.iter().any(|post| point_to_rect(post.at, rect) < FROM_POST_M),
+            post_lines.iter().any(|&line| segment_to_rect(line, rect) < OFF_POST_LINE_M),
+            arrivals.iter().chain(&laid.spots).any(|&arrival| point_to_rect(arrival, rect) < FROM_ARRIVAL_M),
+            counters.iter().any(|&counter| point_to_rect(counter, rect) < FROM_COUNTER_M),
+            standing.iter().any(|&other| rect_gap(rect, other) < FROM_STANDING_M),
+            placed.iter().any(|&other| rect_gap(rect, other) < BETWEEN_M),
         ]
-        .into_iter()
-        .find_map(|(blocks, what)| blocks.then_some(what));
-        if let Some(_what) = blocked {
-            #[cfg(test)]
-            eprintln!("left out: {} at {}, {} by {_what}", placing.name, placing.toward, placing.across);
+        .contains(&true);
+        if blocked {
             continue;
         }
         let Some(stood) = stand_at(placing.name, "front", at, frame.level, facing) else { continue };

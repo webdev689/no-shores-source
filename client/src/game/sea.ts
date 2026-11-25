@@ -520,7 +520,6 @@ export class Sea {
       sailing: this.passage.sailing,
       resumable: this.resumable,
       pace: this.passage.pace,
-      overSide: view.kind === 'landing',
     };
   }
 

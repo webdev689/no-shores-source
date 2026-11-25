@@ -129,7 +129,7 @@ the scene's pass with depth, and never smaller than a speck however far off.
 
 ### Fire
 
-`Flames.light` lights a fire from half a metre to four metres tall and gives its id; `put` puts it out. Given `along`,
+`Flames.light` lights a fire from half a metre to four metres tall and gives its id; `clear` puts every fire out. Given `along`,
 the run in metres of an edge burning from its base (a rail, a fallen spar, a sail's foot), the fire burns all along that
 edge, its flames, smoke and embers spread over its length; without it a fire is round.
 

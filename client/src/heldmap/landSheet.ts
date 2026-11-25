@@ -63,13 +63,6 @@ export interface LandSheet extends Relief {
 export const RELIEF_M = 10;
 export const INDEX_M = 50;
 
-/** The ground a `width` by `depth` rectangle covers, its middle at `middle`, turned `turn` radians clockwise from
- *  north (its own x east and y south at 0), as the city stands its solids. */
-export function footprint(middle: Point2, width: number, depth: number, turn: number): Quad {
-  const [across, deep] = [width / 2, depth / 2];
-  return boxPrint(middle, [-across, -deep, across, deep], turn);
-}
-
 /** The ground a box covers, `[west, north, east, south]` in its own frame about `middle`, turned `turn` radians
  *  clockwise from north: a module's part, as the module stands. */
 export function boxPrint(middle: Point2, [west, north, east, south]: readonly number[], turn: number): Quad {

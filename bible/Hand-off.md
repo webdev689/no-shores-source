@@ -248,6 +248,23 @@ The decisions in [[Open Questions]] are not repeated here.
   player stands in a headless world, and its sky gave no sun). Open for the owner: the camp gap's measure
   ([[Open Questions]]), other zones' events are not on a zone's map, the compass still marks the event's ground from
   anywhere in the zone, and the tracker still counts a chest left lying.
+- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+  audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
+  regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
+  `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
+  checked before its fix. 231 files, about 1,450 lines out and 830 in: dead code, copies folded into one (`errorWords`,
+  `clockWords`, `apart`, `TICKS_A_SECOND`), comments that linked notes, short names spelled out, and three bugs, each
+  tested: a Breach gate open past its day in an empty zone, a stale held-map load closing the map, and the World
+  Editor's Land mode taking the browser's shortcuts (and, once fixed, missing a Mac's Option-typed `[`). An
+  independent review of the whole diff found no regression. Open for the owner, listed in the PR: whether Comments
+  Say Why's "who asked for what" covers the 158 comments that say a value is the owner's (or Claude's) call, and
+  whether the comments check should catch bible links (a new check). The same PR carries the owner's "tree sway/grass
+  sway is insanely fast when wind is high. Also reduce the amount of grass": the plants' gusts are reckoned from the
+  eye (`Gusts`), where reckoning them from the world's corner made the weather's slow turn whip them one to twelve
+  times a second, and the meadow grows half as thick ([[The Meadow Grows Half as Thick]], pictured before and after
+  at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
+  grass is too bright", the meadow's green stands a shade darker than its ground
+  ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
 - **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
   reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in

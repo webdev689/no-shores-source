@@ -42,7 +42,7 @@ function figureBox(
 }
 
 test('the shot at the helm keeps the crew off the player: none nearer the lens covers them, on any screen', () => {
-  const crew = new Brig([0, 0], 0).crew(PLACE, 0);
+  const crew = new Brig([0, 0], 0).crew(PLACE);
   const you = onDeck(PLACE, ...helmInShip());
   for (const view of SCREENS) {
     const { eye, look } = creationEye(view.width / view.height);
@@ -63,7 +63,7 @@ test('the shot at the helm keeps the crew off the player: none nearer the lens c
 });
 
 test('the first shot at the helm has no hand standing close before the lens', () => {
-  const crew = new Brig([0, 0], 0).crew(PLACE, 0);
+  const crew = new Brig([0, 0], 0).crew(PLACE);
   const { eye, look } = creationEye();
   const [eyeWorld, lookWorld] = [onDeck(PLACE, ...eye), onDeck(PLACE, ...look)];
   const shot = { ...CREATION_LENS, eye: eyeWorld, ...lookAt(eyeWorld, lookWorld) };

@@ -103,10 +103,6 @@ test('under the pointer a press is lit, held it sinks, and a disabled one is nei
   ui.frame(VIEW, [{ kind: 'down', x: 65, y: 15, button: 0 }], 0.016);
   assert.equal(ui.stateOf('two'), 'active');
   assert.equal(ui.stateOf('three', true), 'disabled');
-  assert.equal(ui.takesPointer, true);
-  ui.draw(presses());
-  ui.frame(VIEW, [{ kind: 'pointer', x: 300, y: 250 }], 0.016);
-  assert.equal(ui.takesPointer, false, 'the empty view is the world’s');
 });
 
 test('Tab walks focus round what acts, skipping the disabled; arrows go to the nearest that way; Enter presses', () => {
@@ -213,10 +209,10 @@ test('words laid over the world let the pointer through, and all they hold, so a
   };
   step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
   step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
-  assert.equal(ui.takesPointer, false);
+  assert.equal(ui.takes(10, 10), false);
   assert.equal(ui.hovered('held'), false);
   step(ui, root, [{ kind: 'pointer', x: 110, y: 5 }]);
-  assert.equal(ui.takesPointer, false, 'the words too');
+  assert.equal(ui.takes(110, 5), false, 'the words too');
 });
 
 test('words drawn with a wider edge stand their halo that many pixels out all round, one unless said', () => {

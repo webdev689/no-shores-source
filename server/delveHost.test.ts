@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { delveLaid, delveRoom } from '../client/src/game/guild/delveRoom.ts';
+import { delveBase, delveLaid } from '../client/src/game/guild/delveRoom.ts';
 import { weekOf } from '../client/src/game/guild/guildLaw.ts';
+import { runOf } from '../client/src/game/rooms.ts';
 import { delveAsk } from './delveHost.ts';
 import { delveInstance } from './roomNames.ts';
 
@@ -16,6 +17,8 @@ const SITE = JSON.stringify({
 });
 /** A run's instance laid for the week of MINUTE, or `back` weeks before it. */
 const laidFor = (back = 0) => delveInstance(weekOf(MINUTE * 60_000) - back, 'abcd1234');
+/** The room of the guild's run at `tier`, its instance `instance`, as the page names it. */
+const runRoom = (tier: number, instance: string) => runOf(delveBase(KEY, 'oakfast-landing', tier), instance);
 const gate = (tier: number) => ({ id: 2, kind: 'gate', tier, building: 0, x: 2, y: 2, turn: 0 });
 
 /** The ask for a run's room, the outpost's gate at `tier` (none for null), the site's file `site`. */
@@ -30,7 +33,7 @@ function asked(room: string, tier: number | null, site: string | null = SITE) {
 }
 
 test('a guild dungeon’s run opens as the week’s sea island dungeon of its guild, in its site’s continent', async () => {
-  const { ask, read } = asked(delveRoom(KEY, 'oakfast-landing', 1, laidFor()), 2);
+  const { ask, read } = asked(runRoom(1, laidFor()), 2);
   const { seed, style } = delveLaid(KEY, weekOf(MINUTE * 60_000));
   assert.deepEqual(JSON.parse((await ask) ?? 'null'), {
     dungeon: { seed, style, continent: 'continent-4' },
@@ -42,7 +45,7 @@ test('a guild dungeon’s run opens as the week’s sea island dungeon of its gu
 });
 
 test('it opens only while its guild’s gate stands at its tier or higher, on an outpost’s site', async () => {
-  const run = (tier: number) => delveRoom(KEY, 'oakfast-landing', tier, laidFor());
+  const run = (tier: number) => runRoom(tier, laidFor());
   assert.notEqual(await asked(run(2), 3).ask, null, 'at the gate’s own tier');
   assert.notEqual(await asked(run(0), 3).ask, null, 'or lower');
   assert.equal(await asked(run(2), 2).ask, null, 'never higher');
@@ -55,7 +58,7 @@ test('it opens only while its guild’s gate stands at its tier or higher, on an
 });
 
 test('a run is laid for the week its name carries: last week’s for one opened before the turn, never another', async () => {
-  const run = (back: number) => delveRoom(KEY, 'oakfast-landing', 1, laidFor(back));
+  const run = (back: number) => runRoom(1, laidFor(back));
   const { seed, style } = delveLaid(KEY, weekOf(MINUTE * 60_000) - 1);
   assert.deepEqual(JSON.parse((await asked(run(1), 2).ask) ?? 'null').dungeon, {
     seed,

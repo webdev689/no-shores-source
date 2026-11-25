@@ -10,7 +10,7 @@ import { FLORA, type LoadedFlora, loadFlora, MESH_VERTEX_BYTES } from './flora.t
 import { FORM_BLOCK_BYTES, FORM_FLOATS, type FormBuffers, formBuffers, type Part } from './forms.ts';
 import { Kept } from './kept.ts';
 import { type Cast, TREE } from './kinds.ts';
-import { FRAME_FLOATS, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
+import { FRAME_FLOATS, GUST_PER_M, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
 import { standIn } from '../standIns.ts';
 
 /** The camera a frame is drawn from. */
@@ -51,6 +51,31 @@ export function plantWind(
     speed > 0.1 ? [weather.wind[0] / speed, weather.wind[1] / speed] : DEFAULT_WIND;
   return { way, bend: Math.min(2.2, Math.max(0.1, Math.sqrt(speed / BREEZE_MS))), gust: weather.gust };
 }
+
+/**
+ * The gusts' phase over the ground, as the plants and the meadow read it: reckoned from the eye and carried along as
+ * the eye moves, so a turn of the wind swings it only by how far a plant stands from the eye. Reckoned from the
+ * world's corner, hundreds of kilometres off, the weather's slow turn set every plant gusting several times a second.
+ */
+export class Gusts {
+  private from: readonly [number, number] = [0, 0];
+  private phase = 0;
+
+  /** The phase at `anchor` (world metres east and south) for a wind blowing `way` (a unit vector), the eye at `eye`. */
+  phaseAt(anchor: readonly number[], way: readonly [number, number], eye: readonly number[]): number {
+    const [east, south] = [eye[0] ?? 0, eye[1] ?? 0];
+    this.phase += ((east - this.from[0]) * way[0] + (south - this.from[1]) * way[1]) * GUST_PER_M;
+    this.phase %= Math.PI * 2;
+    this.from = [east, south];
+    return (
+      (this.phase + (((anchor[0] ?? 0) - east) * way[0] + ((anchor[1] ?? 0) - south) * way[1]) * GUST_PER_M) %
+      (Math.PI * 2)
+    );
+  }
+}
+
+/** The gusts every plant view reads, so the trees and the grass gust together. */
+export const GUSTS = new Gusts();
 /** How much higher than the plants' reach the eye may stand over the ground below before nothing is drawn, metres. */
 const HIGH_MARGIN_M = 2000;
 /** How long after a biome's flora failed to come a view asks for it again, milliseconds. */
@@ -65,7 +90,6 @@ export function asksFlora(
 ): boolean {
   return loading?.cast !== cast || (loading.retryAt !== null && now >= loading.retryAt);
 }
-const GUST_PER_M = 0.035;
 /** Each form block's dynamic offset, one array a block made once: a draw hands the same array again. */
 const BLOCK_OFFSETS: number[][] = [];
 const blockOffset = (block: number): number[] => (BLOCK_OFFSETS[block] ??= [block * FORM_BLOCK_BYTES]);
@@ -285,7 +309,7 @@ export class NatureView {
     const { reading } = SKY_NOW.current;
     const blowing = frame.wind ? { ...BREEZE, way: frame.wind } : plantWind(reading);
     const wind = blowing.way;
-    const gusts = ((packed.anchor[0] * wind[0] + packed.anchor[1] * wind[1]) * GUST_PER_M) % (Math.PI * 2);
+    const gusts = GUSTS.phaseAt(packed.anchor, wind, frame.eye);
     const { floats } = this;
     floats.set(frame.fromEye);
     floats[16] = eastFromAnchor;

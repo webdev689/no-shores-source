@@ -133,7 +133,7 @@ impl Shields {
     }
 }
 
-/// The ship's perks merged into another by the perk pass ([[The Perk Pass as Claude Shapes It]]), each with the one it
+/// The ship's perks merged into another by the perk pass, each with the one it
 /// merged into: a kept rolled module offering one offers that in its place.
 const MERGED: [(&str, &str); 14] = [
     ("topgallants", "flying_jib"),

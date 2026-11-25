@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type FeelEvent, type FeelShip, FightFeel, feelOf, frameOf } from './fightFeel.ts';
+import { feelOf } from '../rules/feelEvents.ts';
+import { type FeelEvent, type FeelShip, FightFeel, frameOf } from './fightFeel.ts';
 import { hullSails } from './hulls.ts';
 import { SailRig } from './sails.ts';
 

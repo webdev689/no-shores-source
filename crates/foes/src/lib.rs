@@ -112,7 +112,7 @@ pub trait Spots {
     fn near(&self, point: [f64; 3], radius: f64) -> Vec<Spot>;
 }
 
-/// No spots anywhere: open ground, and tests.
+/// No spots anywhere, as on open ground; only the tests use it.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct NoSpots;
 

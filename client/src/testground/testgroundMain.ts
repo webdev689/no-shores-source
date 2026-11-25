@@ -1,6 +1,6 @@
 import '../keptNames.ts';
 import { FirstPerson } from '../firstperson/firstPerson.ts';
-import { type Gpu, GpuUnavailable, TEXTURE_USAGE, startGpu, stopWhenLost } from '../gpu.ts';
+import { type Gpu, TEXTURE_USAGE, startGpu, stopWhenLost } from '../gpu.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { crosshairOf } from '../combat/reticle.ts';
@@ -561,6 +561,6 @@ async function start(): Promise<void> {
 }
 
 start().catch((error: unknown) => {
-  const message = error instanceof GpuUnavailable || error instanceof Error ? error.message : String(error);
+  const message = error instanceof Error ? error.message : String(error);
   stopped(message);
 });

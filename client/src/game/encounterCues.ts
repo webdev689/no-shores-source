@@ -7,11 +7,10 @@ import { type EncounterSeen, SEAL_KIND } from '../network/encounterMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { EncounterLayout } from './dungeonLayout.ts';
 import { FLASH_S } from './encounterLaw.ts';
+import { TICKS_A_SECOND } from './hudLaw.ts';
 
 type Point = readonly [number, number, number];
 
-/** The room's ticks a second. */
-const TICKS_PER_SECOND = 60;
 /** The Reckoning's seconds that tick as it comes, and the share of its strength a relic is refused under. */
 const TICKED_S = 3;
 const RELIC_WARNED = 0.3;
@@ -59,7 +58,7 @@ export class EncounterCues {
     const boss = seen.boss ? where(seen.boss) : null;
     // A Reckoning shown: each of its last seconds ticks once, and as it lands it booms at its light and flashes.
     if (seen.reckoningTicks > 0) this.shownAt = seen.reckoningAt;
-    const left = Math.ceil(seen.reckoningTicks / TICKS_PER_SECOND);
+    const left = Math.ceil(seen.reckoningTicks / TICKS_A_SECOND);
     if (seen.reckoningTicks > 0 && left <= TICKED_S && left !== this.ticked) ui.push('tab');
     this.ticked = seen.reckoningTicks > 0 ? left : 0;
     for (const event of events) {

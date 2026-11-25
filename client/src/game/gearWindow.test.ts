@@ -13,7 +13,7 @@ import { OPEN_AT, gearTakesKeys } from './gearScreen.ts';
 import { sampleGear } from './gearShots.ts';
 import { startGearWindow } from './gearWindow.ts';
 import { Hud } from './hud.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { readFile } from 'node:fs/promises';
 import { startCombatRules } from '../rules/combatRules.ts';
@@ -47,7 +47,7 @@ function menu(
   papers: ShipPanel | null = null,
   view = VIEW,
 ) {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
     innerWidth: view.width,
@@ -519,7 +519,7 @@ test("a keeper's coin and the account's mark are named in a card on hover, and o
 });
 
 test('with the menu open, Tab never reaches the sea bar under it, and Enter presses nothing there', () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   Object.assign(globalThis, { devicePixelRatio: 1, innerWidth: VIEW.width, innerHeight: VIEW.height });
   Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });
   const gear = sampleGear();

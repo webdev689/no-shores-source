@@ -6,7 +6,7 @@ import { type Level, atLeast } from './law/access.ts';
 import type { PanelUser } from './auth.ts';
 import { randomHex } from './crypto.ts';
 import { fail, json, readCapped } from './http.ts';
-import type { Vars } from './kit.ts';
+import { type Vars, errorWords } from './kit.ts';
 import type { PanelContext } from './panel.ts';
 import { scrubPicture } from './scrub.ts';
 import { type Snapshot, audit } from './store.ts';
@@ -177,7 +177,7 @@ async function upload(
     await bucket.put(mediaKey(fresh), clean, { httpMetadata: { contentType: kind.type } });
   } catch (error) {
     await database.prepare('DELETE FROM media WHERE id = ?').bind(fresh).run();
-    context.bot.log(`[bot] a picture was not kept: ${error instanceof Error ? error.message : String(error)}`);
+    context.bot.log(`[bot] a picture was not kept: ${errorWords(error)}`);
     return fail('media-down', 503, cors, 'The picture could not be kept. Try again.');
   }
   await record('media.upload', fresh, { type: kind.type, bytes: clean.length });

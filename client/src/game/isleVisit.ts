@@ -105,11 +105,6 @@ export class IsleLanding {
   cancel(): void {
     this.pending = null;
   }
-
-  /** The island the ship's landing is under way to, if any. */
-  get toward(): number | null {
-    return this.pending;
-  }
 }
 
 /** The veil's words for walking ashore on an island: anchored off it, or washed up on its beach. */

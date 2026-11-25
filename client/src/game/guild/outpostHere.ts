@@ -14,7 +14,7 @@ import type { NodeInfo } from '../worldData.ts';
 import { ghostOf, letGo, placingNow } from './decorPlacing.ts';
 import { accountsHeld, guildLanded } from './guildHeld.ts';
 import { ridAnswered, withRid } from './outpostAsks.ts';
-import { type Decor, kindOf, pieceOf, type Plot, type Standing, tierName } from './outpostLaw.ts';
+import { type Decor, kindOf, pieceOf, type Standing, tierName } from './outpostLaw.ts';
 import type { AtEntrance, FootContext, Opened, OutpostJoined } from '../footPlace.ts';
 import { HOLD_MS } from '../gearHold.ts';
 import { type Ground, type Placed, decorPlaceOf, placeOf, plotBoxes, socketOf } from './outpostPlaces.ts';
@@ -210,21 +210,6 @@ export class OutpostHere {
     const tier = (event as CustomEvent<number>).detail;
     if (typeof tier === 'number') this.delveAt(tier);
   };
-
-  /** The plot as last read, none before or where none is raised. */
-  get plot(): Plot | null {
-    return this.seen?.plot ?? null;
-  }
-
-  /** The outpost as last read. */
-  get outpost(): OutpostSeen | null {
-    return this.seen;
-  }
-
-  /** The ground the plot stands on. */
-  get groundOf(): Ground {
-    return this.ground;
-  }
 
   /** Reads the plot again, keeping only the latest answer, and walls it. */
   readonly look = (): void => {

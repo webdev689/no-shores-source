@@ -20,7 +20,7 @@ import { vaultOf } from './gearCards.ts';
 import { sampleGear, sampleItem } from './gearShots.ts';
 import { startGearWindow } from './gearWindow.ts';
 import { rowsOf } from './npc/npcWares.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
 const face: Face = { glyph: () => block };
@@ -40,7 +40,7 @@ function renderer(): UiRenderer {
 
 /** The menu on a fake page with `gear`, a frame at a time, the keys pressed on the page, and every ask it made. */
 function menu(gear: GearState, view = VIEW) {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
     innerWidth: view.width,

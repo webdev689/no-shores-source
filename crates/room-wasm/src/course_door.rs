@@ -2,18 +2,9 @@
 //! page puts it, every foe sent away, a checkpoint, the player stood somewhere at once, and a block stood or taken
 //! after the room opened (the room crate's `course.rs`). Each answers nothing but whether it was done.
 
-use super::{Opened, with_open};
+use super::on_land;
 use movement::Block;
 use room::{PlayerId, Room};
-
-/// Runs `ask` on a course's or node's room; None at sea, in a fleet or with no room open.
-fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => Some(ask(room)),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
-    })
-    .flatten()
-}
 
 /// Stands a foe of the roster where the page puts it (`Room::stand_foe_at`); its number, or 0 when none stood.
 pub fn stand_foe(foe_type: u8, rank: u8, at: (f64, f64), facing: f64, level: u8) -> u32 {

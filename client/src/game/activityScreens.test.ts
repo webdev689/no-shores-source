@@ -8,7 +8,7 @@ import { type ActivityScreens, type ScreensFoot, startActivityScreens } from './
 import type { ActivityRecord, GearState } from '../network/gearMessages.ts';
 import { SEARCH_LOST } from './companyFinder.ts';
 import { gearScreenOpen } from './gearScreen.ts';
-import { FakeEvent, fakePage } from './pageForTests.ts';
+import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const bytes = await readFile(
@@ -60,7 +60,7 @@ function drawn(screens: ActivityScreens, width = 1280, height = 900) {
 const still = { now: () => FRIDAY_NINE * 60_000, every: () => undefined };
 
 test('This Week reads the last word a room sent of the character, kept at sea, and turns with the minute', async () => {
-  fakePage();
+  fakeWindow();
   let clock = FRIDAY_NINE * 60_000;
   let look = () => undefined as void;
   let here: ScreensFoot | null = standing(gearAt(12, { ...nothing, cleared: [1] }));
@@ -85,7 +85,7 @@ test('This Week reads the last word a room sent of the character, kept at sea, a
 });
 
 test('at sea the Journal reads the sea’s word of the character as it counts, and on foot the room’s again', async () => {
-  fakePage();
+  fakeWindow();
   let look = () => undefined as void;
   let here: ScreensFoot | null = standing(gearAt(12, nothing));
   let sea: GearState | null = null;
@@ -114,7 +114,7 @@ test('at sea the Journal reads the sea’s word of the character as it counts, a
 });
 
 test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goes in, Escape closes it', async () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const entered: unknown[][] = [];
   const here = standing(gearAt(12, nothing));
   const trips = { enter: (...given: unknown[]) => void entered.push(given) };
@@ -144,7 +144,7 @@ test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goe
 });
 
 test('the card leads each modifier with its icon, its words as large as the menu’s on the same screen', async () => {
-  fakePage();
+  fakeWindow();
   const here = standing(gearAt(12, nothing));
   const screens = startActivityScreens(module, [vale], () => here, nowhere, null, still);
   await module;
@@ -161,7 +161,7 @@ test('the card leads each modifier with its icon, its words as large as the menu
 });
 
 test('a shut card says why and does not go in, and before the rules are read E goes straight in', async () => {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const entered: unknown[][] = [];
   const trips = { enter: (...given: unknown[]) => void entered.push(given) };
   const young = standing(gearAt(9, nothing));
@@ -180,7 +180,7 @@ test('a shut card says why and does not go in, and before the rules are read E g
 });
 
 test('the card goes when its player falls or leaves the place, and gives the keys back', async () => {
-  fakePage();
+  fakeWindow();
   let look = () => undefined as void;
   let here: ScreensFoot | null = standing(gearAt(12, nothing));
   const clock = { now: still.now, every: (run: () => void) => void (look = run) };
@@ -200,7 +200,7 @@ test('the card goes when its player falls or leaves the place, and gives the key
 });
 
 test('the seas a level shuts are read from the rules by the last word of the character, and none before', async () => {
-  fakePage();
+  fakeWindow();
   let look = () => undefined as void;
   let here: ScreensFoot | null = null;
   const clock = { now: still.now, every: (run: () => void) => void (look = run) };
@@ -250,7 +250,7 @@ async function finding(
   minute = FRIDAY_NINE,
   online: typeof link | null = link,
 ) {
-  const { window } = fakePage();
+  const { window } = fakeWindow();
   const [sockets, entered] = [[] as FinderSocket[], [] as unknown[][]];
   const time = { now: minute * 60_000 };
   let look = () => undefined as void;
