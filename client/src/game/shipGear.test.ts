@@ -79,6 +79,9 @@ const ship = (fields: Partial<GearShip>): GearShip => ({
   offers: [],
   trim: [],
   pledge: 0,
+  fleet: [],
+  sailed: 0,
+  dresses: [],
   ...fields,
 });
 

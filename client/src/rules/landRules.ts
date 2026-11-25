@@ -175,9 +175,16 @@ export interface LandRules {
   cityPlan(): string | null;
   /** The open landmass's nodes' layouts, as a JSON list. */
   layouts(): string;
-  /** The ship sailed `ticks` ticks from the swell's `time`, in the weather's wind at world time `world` (seconds), and
-   *  its pose after. */
-  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
+  /** The ship, of `hull` (0 the Sloop, unless given, to 3 the Frigate), sailed `ticks` ticks from the swell's `time`,
+   *  in the weather's wind at world time `world` (seconds), and its pose after. */
+  sail(
+    ship: ShipFloats,
+    helm: Helm,
+    time: number,
+    ticks: number,
+    world: number,
+    hull?: number,
+  ): { ship: ShipFloats; pose: Pose };
   /** A fight begun round the ship: a Grey Tithe captain put to sea in its rank's hull (a Major's unless `begun` names a
    *  rank), or `begun`'s captains set upon it where given, every chance drawn from `seed`. */
   fightBegin(ship: ShipFloats, seed: number, time: number, begun?: FightBegun): FightView;
@@ -365,8 +372,9 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     fightEnd: () => {
       exports.land_fight_end();
     },
-    sail: (ship, helm, time, ticks, world) => {
-      const request = new Float64Array([...ship, helm.steer, helm.climb, time, ticks, world]);
+    sail: (ship, helm, time, ticks, world, hull) => {
+      const asked = hull === undefined ? [] : [hull];
+      const request = new Float64Array([...ship, helm.steer, helm.climb, time, ticks, world, ...asked]);
       const packed = send(exports.land_sail, new Uint8Array(request.buffer));
       const address = Number(packed >> 32n);
       const length = Number(packed & 0xffff_ffffn);

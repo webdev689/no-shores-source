@@ -565,7 +565,7 @@ fn met_head_on(bold: bool) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], 60).unwrap();
-    let sight = crate::sighting::sight_for(60.0);
+    let sight = crate::sighting::sight_for(60.0, 1.0);
     let ahead = [50_000.0, 400_000.0 - 0.9 * sight];
     let hostile = Hostile { sight_m: sight, ..Hostile::standing(1, 7, Commission::default(), ahead, PI, bold) };
     sea.hostiles.sailing.push(hostile);
@@ -611,7 +611,7 @@ fn come_for_on(course: &[[f64; 2]], at: [f64; 2], heading: f64, bold: bool) -> (
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, course, 60).unwrap();
-    let sight = crate::sighting::sight_for(60.0);
+    let sight = crate::sighting::sight_for(60.0, 1.0);
     let hostile =
         Hostile { sight_m: sight, ..Hostile::standing(SET_AT_SEA, 7, Commission::default(), at, heading, bold) };
     sea.hostiles.sailing.push(hostile);
@@ -632,7 +632,7 @@ fn fight_within_ten_minutes(sea: &mut Sea) -> Option<usize> {
 fn a_bold_ship_sighted_within_its_meeting_cone_meets_a_voyage_that_holds_its_course() {
     // A Major 6 degrees off his course, 0.95 of his sight ahead, heading across it: he sails on north at x60.
     let off = 6.0_f64.to_radians();
-    let out = 0.95 * crate::sighting::sight_for(60.0);
+    let out = 0.95 * crate::sighting::sight_for(60.0, 1.0);
     let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
     let (mut sea, player) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
     let mut least = 60;
@@ -649,7 +649,7 @@ fn a_bold_ship_sighted_within_its_meeting_cone_meets_a_voyage_that_holds_its_cou
 fn a_bold_ship_off_its_meeting_cone_cannot_meet_a_voyage_that_holds_its_course() {
     // A Major 30 degrees off his course, outside its cone: its way cannot meet his.
     let off = 30.0_f64.to_radians();
-    let out = 0.95 * crate::sighting::sight_for(60.0);
+    let out = 0.95 * crate::sighting::sight_for(60.0, 1.0);
     let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
     let (mut sea, _) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
     assert!(fight_within_ten_minutes(&mut sea).is_none(), "it cannot reach him");

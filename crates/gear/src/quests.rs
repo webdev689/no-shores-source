@@ -332,12 +332,15 @@ impl Character {
         }
     }
 
-    /// A task's reward: its Aurem, the Bay, worn where no horse is (never a second: one horse of each coat), and of its
-    /// house's Art, the Art earned and worn at once, a Tenet earned, fragments
+    /// A task's reward: its Aurem, the Bay, worn where no horse is (never a second: one horse of each coat), the Sloop
+    /// to one who keeps no ship, and of its house's Art, the Art earned and worn at once, a Tenet earned, fragments
     /// to choose. A fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem
     /// instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {
         self.materials.add_aurem(reward.aurem);
+        if reward.ship {
+            self.give_first_ship();
+        }
         if reward.horse && !self.keeps_horse(FIRST_HORSE) {
             let worn = !self.may_ride();
             self.give_horse(FIRST_HORSE, worn);
@@ -365,6 +368,30 @@ impl Character {
                 _ => self.materials.add_aurem(factions().fragment_aurem),
             }
         }
+    }
+
+    /// Hands the Sloop to a player who keeps no ship but has walked past a task that gives it, as a save kept between
+    /// its reward and the ship's coming, or a task moved, would leave them.
+    pub(crate) fn give_ship_due(&mut self) {
+        if self.has_ship() {
+            return;
+        }
+        let passed = quests().quests.iter().enumerate().any(|(quest, def)| {
+            let Some(road) = self.quests.road(quest) else { return false };
+            let now = def.tasks.iter().position(|task| task.id == road.task);
+            let given = def.tasks.iter().position(|task| task.reward.ship);
+            given.is_some_and(|given| road.done || now.is_some_and(|now| now > given))
+        });
+        if passed {
+            self.give_first_ship();
+        }
+    }
+
+    /// Whether the task that hands over the first ship is off the player's road: in a quest they no longer walk, as a
+    /// pledge to a house before the Harbourmaster leaves the opening behind.
+    pub(crate) fn ship_task_left(&self) -> bool {
+        let giving = quests().quests.iter().position(|def| def.tasks.iter().any(|task| task.reward.ship));
+        giving.is_some_and(|quest| self.quest_walked() != Some(quest))
     }
 
     /// Speaks with a keeper at their counter, by the number ask 64 sends, when a goal of the task the player is on

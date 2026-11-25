@@ -15,7 +15,8 @@
 // steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "init": "js
 // run before the page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each step one of
 // { "wait": seconds }, { "waitFor": "words shown" }, { "key": "Escape" }, { "click": [x, y] }, { "move": [x, y] }
-// (the pointer brought there, no button: a hover),
+// (the pointer brought there, no button: a hover), { "down": [x, y, "right"] } and { "up": "right" } (a button pressed
+// there and let go after the steps between, a "move" between them a drag; "left" unless named),
 // { "wheel": [x, y, deltaY, notches] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
 // { "press": "<node id>" }, { "ui": "out.json" }, { "eval": "js" }, { "shot": "out.png" }. The page has no HTML to
 // read, so `waitFor`, `clickText` and `press` read the game's own interface (`ui/seen.ts`: `__ui()`, in the worker or
@@ -25,7 +26,8 @@
 // frame at full speed, its interface still laid, for a check of what it does rather than how it looks; it takes no
 // picture. A held key acts at the page's slow headless frames: an arrow turns the
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
-// writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
+// writes (a panel, a note) only after one has drawn; the World Editor draws only when something changes, so on its
+// page that waits for a change: give it a `wait`. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
 // waits minutes behind. The console's errors are printed, and so is every shader that fails to compile: WebGPU
 // reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing; so is every WebGPU
@@ -280,6 +282,10 @@ async function main() {
     }
     else if (step.click) await page.mouse.click(step.click[0], step.click[1]);
     else if (step.move) await page.mouse.move(step.move[0], step.move[1], { steps: 4 });
+    else if (step.down) {
+      await page.mouse.move(step.down[0], step.down[1]);
+      await page.mouse.down({ button: step.down[2] ?? 'left' });
+    } else if (step.up) await page.mouse.up({ button: step.up });
     else if (step.wheel) {
       await page.mouse.move(step.wheel[0], step.wheel[1]);
       for (let notch = 0; notch < (step.wheel[3] ?? 1); notch++) {

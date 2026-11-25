@@ -201,9 +201,12 @@ pub struct Character {
     /// The experience the ship has earned in sea fights, which raises it to level 20 (`ship.rs`).
     #[serde(default)]
     pub ship_xp: u64,
-    /// Whether the ship has been fitted with its first modules; a ship never fitted is, as it is read.
+    /// Whether the ship has been fitted with its first modules; a ship kept but never fitted is, as it is read.
     #[serde(default)]
     pub ship_fitted: bool,
+    /// The ships kept and the one sailed (`ship::fleet`); a save from before fleets keeps the Sloop.
+    #[serde(default = "crate::ship::fleet::Fleet::kept_before", deserialize_with = "crate::ship::fleet::lenient")]
+    pub fleet: crate::ship::fleet::Fleet,
     /// Its named officers (`crew.rs`).
     #[serde(default)]
     pub crew: crate::crew::Crew,
@@ -280,7 +283,7 @@ impl Character {
         }
     }
 
-    /// A new player, arriving with no weapon and no armour: only their ship's first modules.
+    /// A new player, arriving with no weapon, no armour and no ship: the Harbourmaster hands over their first.
     #[must_use]
     pub fn starting() -> Self {
         Self::new_player(false)
@@ -293,8 +296,8 @@ impl Character {
         Self::new_player(true)
     }
 
-    /// The Test Ground's player: kitted, every Art mastered, and at a quest's `kept` task, as a character kept before:
-    /// no stranger stands on the Test Ground, and its stall serves the houses.
+    /// The Test Ground's player: kitted, every Art mastered, the Sloop kept, and at a quest's `kept` task, as a
+    /// character kept before: no stranger stands on the Test Ground, and its stall serves the houses.
     #[must_use]
     pub fn test_grounds() -> Self {
         let mut character = Self::kitted();
@@ -306,6 +309,7 @@ impl Character {
             }
         }
         character.quests = std::mem::take(&mut character.quests).kept();
+        character.give_first_ship();
         character
     }
 
@@ -328,6 +332,7 @@ impl Character {
             ship_at: None,
             ship_xp: 0,
             ship_fitted: false,
+            fleet: crate::ship::fleet::Fleet::none(),
             crew: crate::crew::Crew::default(),
             scavenged: Vec::new(),
             allegiance: crate::factions::Allegiance::default().kept(),
@@ -353,7 +358,6 @@ impl Character {
             let id = character.take_id();
             character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }
-        character.fit_first_modules();
         character.earn_due();
         character
     }

@@ -13,7 +13,7 @@ import { BINDS } from '../player/input.ts';
 import type { Child, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
 import { elementSvg } from '../player/elementGlyphs.ts';
-import { BAND_CELLS, type Emblem, SIGN_CELLS, type Shape, emblemPixels, plateEnd } from './emblemArt.ts';
+import { BAND_CELLS, type Emblem, SIGN_CELLS, type Shape, emblemPixels, plateEnd } from '../plus/emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
 import { keyName } from './controls.ts';
 import { fineGlyph, glyphSvg, growthSvg, nodeGlyphSvg } from './gearGlyphs.ts';

@@ -3,9 +3,11 @@
 //! Defense from its hull, sails and rigging, by the character's own sums and shares (`item.rs`, `power.rs`). Ship
 //! power decides every fight of ship against ship; character power everything on foot, and the two are never summed.
 
+pub mod fleet;
 pub mod found;
 pub mod infuse;
 pub mod materials;
+pub mod shipyard;
 pub mod trim;
 
 #[cfg(test)]
@@ -140,14 +142,18 @@ impl Character {
     }
 
     /// Fits a ship that has never been fitted with the plain modules every ship is built with: level 1 and Normal, as
-    /// a new player's gear is. A ship once fitted is left as it is, though its modules are taken off or dismantled.
+    /// a new player's gear is, each in a slot that wears none yet (one bought before the ship was had keeps its slot).
+    /// A ship once fitted is left as it is, though its modules are taken off or dismantled.
     pub(crate) fn fit_first_modules(&mut self) {
         if self.ship_fitted {
             return;
         }
         for kind in Kind::MODULES {
-            let id = self.take_id();
             let slot = kind.slot();
+            if self.worn(slot).is_some() {
+                continue;
+            }
+            let id = self.take_id();
             self.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), At::Worn(slot)));
         }
         self.ship_fitted = true;

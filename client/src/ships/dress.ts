@@ -1,6 +1,7 @@
 // The sides a ship sails for, and the colours each dresses one model of a hull in: its hull's paint, the stripe
 // along its gunports, its canvas and the flag at its masthead. A side's colours are the painter's, laid over the
-// same pictures every hull wears.
+// same pictures every hull wears; a player's ship may wear its own instead (`fleetDress.ts`).
+import type { Painted } from './fleetDress.ts';
 
 /** Whose a ship is: a player's, a friendly merchantman's or the Grey Tithe's. */
 export const SHIP_SIDES = ['player', 'friendly', 'tithe'] as const;
@@ -57,10 +58,12 @@ export function factionSide(faction: number): ShipSide {
   return faction === 0 ? 'friendly' : 'tithe';
 }
 
-/** How a ship is drawn: its side, and how light (1 as painted, less for another player's in the World Editor). */
+/** How a ship is drawn: its side, how light (1 as painted, less for another player's in the World Editor), and a
+ *  player's own paint and flag in place of its side's (`fleetDress.ts`), none for the side's. */
 export interface ShipLook {
   readonly side: ShipSide;
   readonly shade?: number;
+  readonly painted?: Painted;
 }
 
 export const PLAYER_LOOK: ShipLook = { side: 'player' };

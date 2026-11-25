@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MOTIFS } from '../emblemMotifs.ts';
+import { MOTIFS } from '../../plus/emblemMotifs.ts';
 import { LORE, blocksOf, chapterAt, chaptersOf, heardOf, shelfOf, spansOf } from './loreBook.ts';
 import { SAMPLE_LORE } from './loreForTests.ts';
 

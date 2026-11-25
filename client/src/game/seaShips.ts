@@ -1,12 +1,15 @@
 // The ships at sea as drawn: each riding the swell the page draws through its inertia and heeling into its turns, as
 // the World Editor's Sloop does, its bow slamming into crests and throwing spray, its sails set while it is under way
 // and filled by the weather's wind, each in its own hull and its side's colours; and each one's footprint on the
-// water, which the sea leaves out along its own hull line and foams along, its wake and bow wave behind it.
+// water, which the sea leaves out along its own hull line and foams along, its wake and bow wave behind it. A
+// player's ship, theirs or another's, is drawn in the hull they sail and the dress they keep, as the room says.
 import type { SeenHostile, SeenShip } from '../network/messages.ts';
 import type { SeenFriendly } from '../network/seaHarbour.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import type { Swell } from '../rules/landRules.ts';
-import { factionSide, type ShipSide } from '../ships/dress.ts';
+import { type Deck, HULL_DECKS, SLOOP_DECK } from '../ships/deck.ts';
+import { factionSide, type ShipLook, type ShipSide } from '../ships/dress.ts';
+import { paintedOf } from '../ships/fleetDress.ts';
 import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { captainAtSea, plainCrew, type ShipCrew } from '../ships/shipCrew.ts';
@@ -35,6 +38,8 @@ export interface SeaHull {
   readonly shown: (hull: number) => number;
   /** Makes every hull's model and its shell tags ready; awaited behind the sea's veil. */
   readonly warm?: () => Promise<unknown>;
+  /** Each hull's way on a course against the Sloop's, as the room's rules build its class; the Sloop's until known. */
+  readonly way?: (hull: number) => number;
   readonly marks: MarkDrawer;
 }
 
@@ -64,18 +69,23 @@ export function heelShare(hull: number): number {
   return hullWaterline(SLOOP_HULL).beamM / hullWaterline(hull).beamM;
 }
 
-/** A ship at sea and whose it is: its hull, its side, who sails it and who is seen aboard (none for the player's own,
- *  whose people are its own). */
+/** A ship at sea and whose it is: its hull, how it is drawn, who sails it and who is seen aboard (none for the
+ *  player's own, whose people are its own). */
 interface Sailing {
   readonly who: string;
   readonly lies: Lies;
   readonly hull: number;
-  readonly side: ShipSide;
+  readonly look: ShipLook;
   readonly crew?: ShipCrew;
 }
 
-/** Every ship at sea but the player's: each other player's Sloop, then each captain's ship, then each friendly ship
- *  the room keeps off its route, where the room has it. */
+/** How a player's ship is drawn, as the room says they keep it: the player's side in their own dress. */
+export function playerLook(ship: Pick<SeenShip, 'dress' | 'emblem'> | null): ShipLook {
+  return { side: 'player', painted: paintedOf(ship?.dress ?? [], ship?.emblem ?? 0) };
+}
+
+/** Every ship at sea but the player's: each other player's in their own hull and dress, then each captain's ship,
+ *  then each friendly ship the room keeps off its route, where the room has it. */
 function round(
   others: readonly SeenShip[],
   hostiles: readonly SeenHostile[],
@@ -86,22 +96,22 @@ function round(
     ...others.map((ship) => ({
       who: `player-${ship.player}`,
       lies: { ...ship, underWay: ship.pace > 0 },
-      hull: SLOOP_HULL,
-      side: 'player' as const,
+      hull: shown(ship.hull),
+      look: playerLook(ship),
       crew: plainCrew(`player-${ship.player}`),
     })),
     ...hostiles.map((hostile) => ({
       who: `hostile-${hostile.id}`,
       lies: { ...hostile, underWay: true },
       hull: shown(hullOfCaptain(hostile)),
-      side: factionSide(hostile.faction),
+      look: { side: factionSide(hostile.faction) },
       crew: captainAtSea(`hostile-${hostile.id}`, hostile.faction, hostile.rank),
     })),
     ...friendlies.map((friend) => ({
       who: `friendly-${friend.traffic}`,
       lies: { ...friend, underWay: true },
       hull: shown(friend.hull),
-      side: 'friendly' as const,
+      look: { side: 'friendly' as ShipSide },
       crew: plainCrew(`friendly-${friend.traffic}`),
     })),
   ];
@@ -120,10 +130,27 @@ export class SeaShips {
 
   /** Each hull's own line at its waterline, read from its mesh. */
   private readonly lines: Pick<HullLines, 'line'>;
+  /** The player's own ship as the room last said, none before it has. */
+  private readonly ownSeen: () => SeenShip | null;
 
-  constructor(shown: (hull: number) => number = (hull) => hull, lines: Pick<HullLines, 'line'> = new HullLines()) {
+  constructor(
+    shown: (hull: number) => number = (hull) => hull,
+    lines: Pick<HullLines, 'line'> = new HullLines(),
+    ownSeen: () => SeenShip | null = () => null,
+  ) {
     this.shown = shown;
     this.lines = lines;
+    this.ownSeen = ownSeen;
+  }
+
+  /** The hull the player's own ship is drawn as: the one they sail, as the room says, the Sloop before it says. */
+  ownHull(): number {
+    return this.shown(this.ownSeen()?.hull ?? SLOOP_HULL);
+  }
+
+  /** The deck of the hull the player sails, which they walk and whose wheel they take, as the room's own is. */
+  ownDeck(): Deck {
+    return HULL_DECKS[this.ownSeen()?.hull ?? SLOOP_HULL] ?? SLOOP_DECK;
   }
 
   /** Where the ship `who` is drawn, `scale` times its size, `seconds` on at `time`: on the swell at its hull's
@@ -136,7 +163,7 @@ export class SeaShips {
     water: SeaWater,
     seconds: number,
     time: number,
-    hull = SLOOP_HULL,
+    hull = who === 'own' ? this.ownHull() : SLOOP_HULL,
   ): ShipPlace {
     const last = this.swings.get(who);
     const turn =
@@ -200,7 +227,7 @@ export class SeaShips {
     water: SeaWater,
     friendlies: readonly SeenFriendly[] = [],
   ): SeaShip[] {
-    const riding = ({ who, lies, hull, side, crew }: Sailing, place: ShipPlace | null): SeaShip => {
+    const riding = ({ who, lies, hull, look, crew }: Sailing, place: ShipPlace | null): SeaShip => {
       const wind = { offDeg: windOff(lies.heading, windBearing), set: lies.underWay };
       let rigged = this.rigs.get(who);
       if (!rigged || rigged.hull !== hull) {
@@ -211,14 +238,14 @@ export class SeaShips {
       }
       rigged.rig.step(seconds, wind, time);
       const placed = place ?? this.placeOf(who, lies, scale, water, seconds, time, hull);
-      return { hull, place: placed, rig: rigged.rig, look: { side }, ...(crew ? { crew } : {}) };
+      return { hull, place: placed, rig: rigged.rig, look, ...(crew ? { crew } : {}) };
     };
     const ships = round(others, hostiles, this.shown, friendlies);
     const sailing = new Set(['own', ...ships.map((ship) => ship.who)]);
     for (const who of this.rigs.keys()) if (!sailing.has(who)) this.rigs.delete(who);
     for (const who of this.swings.keys()) if (!sailing.has(who)) this.swings.delete(who);
     for (const who of this.rides.keys()) if (!sailing.has(who)) this.rides.delete(who);
-    const player = { who: 'own', lies: own.lies, hull: SLOOP_HULL, side: 'player' as const };
+    const player = { who: 'own', lies: own.lies, hull: this.ownHull(), look: playerLook(this.ownSeen()) };
     return [riding(player, own.place), ...ships.map((ship) => riding(ship, null))];
   }
 
@@ -245,6 +272,7 @@ export class SeaShips {
       footprint(ship.who, ship.lies, ship.hull),
     );
     const away = (mask: HullMask) => Math.hypot(mask.x - own.x, mask.y - own.y);
-    return [footprint('own', own, SLOOP_HULL), ...near.sort((one, other) => away(one) - away(other))].slice(0, HULLS);
+    const footprints = [footprint('own', own, this.ownHull()), ...near.sort((one, other) => away(one) - away(other))];
+    return footprints.slice(0, HULLS);
   }
 }

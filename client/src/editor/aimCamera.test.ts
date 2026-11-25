@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { lookReach } from './aim.ts';
 import { AIM_CAM_TAU, type AimAsk, AimCamera, type AimShip, type Laid } from './aimCamera.ts';
-import { aimStation, inItsRig, LOWEST_ELEVATION } from './aimStation.ts';
+import { aimStation, byCanvas, LOWEST_ELEVATION } from './aimStation.ts';
 import { orbitClearance } from './shipClear.ts';
+import { HULL_DECKS, cellHeight } from '../ships/deck.ts';
 import { hullBox, SLOOP_HULL } from '../ships/hulls.ts';
 
 // Heading north: starboard is east, forward is north (south negative).
@@ -42,15 +43,21 @@ test('pressing aim eases the view out to its battery over a fifth of a second, n
   assert.ok(gap(aimed.eye, ON_STARBOARD) < 0.01, 'three seconds on it stands at the battery');
 });
 
-/** Whether a point in the world stands inside any part of the ship at `SHIP` (its hull or a sail's swing). */
-/** Whether a point in the world stands where its hull is (under its rail) or where its rig can come: an eye aboard
- *  stands over its deck, clear of both, and comes in over its rail. */
+/** Whether a point in the world stands where the ship at `SHIP` is (under its deck or rail) or in its canvas in any
+ *  wind: an eye aboard stands over its deck, clear of both, and comes in over its rail. */
 const inside = (hull: number, point: readonly number[]) => {
   const local = [SHIP.y - (point[1] ?? 0), (point[0] ?? 0) - SHIP.x, point[2] ?? 0] as const;
   const [low, high] = hullBox(hull);
   const [along, out, up] = local;
-  const underRail = along > low[0] && along < high[0] && Math.abs(out) < high[1] && up < high[2] - 1;
-  return underRail || inItsRig(hull, local, 0);
+  const deck = HULL_DECKS[hull];
+  // Past the deck's edge, its rail's height across that row; past its ends, its hull's top but a metre.
+  const across = deck
+    ? Array.from({ length: deck.columns }, (_unused, column) => deck.west + (column + 0.5) * deck.cell)
+    : [];
+  const rail = Math.max(...across.map((x) => (deck && cellHeight(deck, x, -along)) ?? -Infinity));
+  const top = (deck && cellHeight(deck, out, -along)) ?? (rail > -Infinity ? rail : high[2] - 1);
+  const underRail = along > low[0] && along < high[0] && Math.abs(out) < high[1] && up < top;
+  return underRail || byCanvas(hull)(local, 0.25);
 };
 
 test('from the far beam, out to the battery and home again, the eye goes round the ship, never through its rig', () => {

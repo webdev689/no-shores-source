@@ -288,13 +288,19 @@ table Flying {
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
-// sailed at, held down near a hostile, 0 at rest.
+// sailed at, held down near a hostile, 0 at rest; and as its player keeps it: its hull's number, each part's dress
+// (as GearKeptShip numbers them), its name's two words, and the emblem its player wears by its number, which a flag
+// that bears one flies.
 table Ship {
   player: uint;
   x: double;
   y: double;
   heading: double;
   pace: ushort;
+  hull: ubyte;
+  dress: [ushort];
+  name: [ubyte];
+  emblem: ushort;
 }
 
 // A friendly ship of the traffic the room has taken off its route: its traffic id, where it is, its heading in radians

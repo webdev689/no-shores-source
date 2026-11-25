@@ -2,7 +2,7 @@
 // (characterPage.ts) is found by, which takes the focus back once the screen closes.
 import type { Node } from '../ui/node.ts';
 import { rarityNumber } from './appearance/appearanceModel.ts';
-import type { Emblem } from './emblemArt.ts';
+import type { Emblem } from '../plus/emblemArt.ts';
 import { cardNode } from './gearCard.ts';
 import { INK, type Sizes, emblemNode, hintsNode } from './gearNodes.ts';
 

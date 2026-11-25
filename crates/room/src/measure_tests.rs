@@ -165,7 +165,7 @@ fn measure(way: Way) {
         }
     }
     let seconds = |ticks: usize| ticks as f64 / TICKS_A_SECOND as f64;
-    eprintln!("{way:?}; sight at x60: {:.0} m; players by water: {counts:?}", sight_for(60.0));
+    eprintln!("{way:?}; sight at x60: {:.0} m; players by water: {counts:?}", sight_for(60.0, 1.0));
     for kind in ["home", "grey tithe", "lattice"] {
         let of_kind: Vec<PlayerId> = players.iter().filter(|each| each.1 == kind).map(|each| each.0).collect();
         let total = of_kind.len().max(1) as f64;

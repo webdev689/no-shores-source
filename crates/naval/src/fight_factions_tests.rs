@@ -6,6 +6,7 @@ use crate::gunnery::reload_seconds;
 use crate::guns::SWIVEL;
 use crate::ranks::{GREY_TITHE, PLAYERS, Rank};
 use crate::shots::ShotEvent;
+use sailing::ship::SAILS_SET;
 use sailing::waters::Spot;
 
 /// Deep, still water everywhere.

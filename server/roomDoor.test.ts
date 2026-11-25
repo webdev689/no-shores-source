@@ -409,7 +409,7 @@ test('a sea where a Tithe ship attacks a friendly ship and a player joins them s
     friendly ||= others.some((other) => other.faction === 0);
   }
   assert.ok(friendly, 'the player fights beside the friendly ship');
-  assert.equal(hash.toString(16).padStart(16, '0'), '2905558be09d8e59');
+  assert.equal(hash.toString(16).padStart(16, '0'), 'b83a9706368fa925');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
@@ -641,7 +641,11 @@ test('a sea that keeps characters sails a course only once the keeper has answer
   };
   assert.deepEqual(ships(), [], 'held for the keeper');
   const character = JSON.parse(room.character(kept) ?? 'null') as { ship_at: [number, number] | null };
-  assert.equal(room.restoreCharacter(kept, JSON.stringify({ ...character, ship_at: [60_000, 40_000] })), true);
+  const shipless = JSON.stringify({ ...character, ship_at: [60_000, 40_000] });
+  assert.equal(room.restoreCharacter(kept, shipless), false, 'a new character keeps no ship, and the sea shuts to it');
+  // Handed the Sloop, as the welcome's Harbourmaster hands it over.
+  const fleet = { ships: [{ hull: 0 }], sailed: 0, dress: [] };
+  assert.equal(room.restoreCharacter(kept, JSON.stringify({ ...character, ship_at: [60_000, 40_000], fleet })), true);
   room.noneKept(unkept);
   room.tick();
   assert.deepEqual(ships(), [

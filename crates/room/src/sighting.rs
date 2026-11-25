@@ -61,11 +61,11 @@ pub trait Chart {
     fn lane(&self, at: [f64; 2]) -> Option<(f64, [f64; 2])>;
 }
 
-/// How far a ship is sighted from a player sailing at `pace` (0, at rest, counts as 1): half a minute of the two
-/// closing head-on, and never under `SIGHT_LEAST_M`.
+/// How far a ship is sighted from a player sailing at `pace` (0, at rest, counts as 1) at `way` times a whole Sloop's
+/// way (its hull's class, `naval::class`): half a minute of the two closing head-on, and never under `SIGHT_LEAST_M`.
 #[must_use]
-pub fn sight_for(pace: f64) -> f64 {
-    (SIGHT_HOLD_S * (SHIP_SPEED_M_S + HOSTILE_WAY_M_S) * pace.max(1.0)).max(SIGHT_LEAST_M)
+pub fn sight_for(pace: f64, way: f64) -> f64 {
+    (SIGHT_HOLD_S * (SHIP_SPEED_M_S * way + HOSTILE_WAY_M_S) * pace.max(1.0)).max(SIGHT_LEAST_M)
 }
 
 /// The faction a roll in this water sends: the Grey Tithe's in every water but home, which sends none. The Lattice's

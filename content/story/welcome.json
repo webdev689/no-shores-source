@@ -30,8 +30,8 @@
       { "who": "postmaster", "say": "Letters too. I keep it all until you come for it." }
     ],
     "tourHarbour": [
-      { "who": "stranger", "say": "The harbour's stall. Whatever your ship needs, the Harbourmaster knows who makes it." },
-      { "who": "harbourmaster", "say": "Bring her in battered. She'll go out better than she came." }
+      { "who": "stranger", "say": "The Harbourmaster. Ships, and everything that keeps them afloat." },
+      { "who": "harbourmaster", "say": "Come and find me. I've a Sloop that wants a captain." }
     ],
     "tourHall": [{ "who": "stranger", "say": "The Hall of the Arts. Three houses, three chapels, and no two agree." }],
     "tourHallStorm": [

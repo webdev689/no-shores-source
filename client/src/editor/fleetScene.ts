@@ -78,7 +78,7 @@ export class FleetScene {
    *  lays is kept for the next step (`look`). */
   aimCamera(orbit: Orbit, view: LandView, shown: number, aiming: boolean, seconds: number): Orbit {
     const speaks = aiming && this.play.session.own()?.state === 'afloat';
-    const how = { shown, aiming: speaks };
+    const how = { shown, aiming: speaks, hull: SLOOP_HULL };
     const aimed = easedAimOf(this.aimEye, orbit, this.play, view, how, this.lay, seconds);
     this.aimed = aimed.look;
     return aimed.orbit;

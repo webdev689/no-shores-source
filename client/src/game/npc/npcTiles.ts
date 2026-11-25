@@ -6,7 +6,7 @@ import { WORN } from '../../player/gear.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import { bardingPicture } from '../appearance/bardingTile.ts';
 import { ARTS, emblemSvg, fragmentSvg } from '../artsCards.ts';
-import { emblemOf } from '../emblemArt.ts';
+import { emblemOf } from '../../plus/emblemArt.ts';
 import { cardFrame, cardName, cardNode, rarityTone } from '../gearCard.ts';
 import { fillNode, quiver, washNode } from '../gearHold.ts';
 import {
