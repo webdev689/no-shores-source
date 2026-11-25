@@ -1,6 +1,6 @@
 // The forged models a city's blocks stand, each built once and laid into one buffer the near cells instance from:
 // a vertex is its position, normal and UV in the model's frame and its picture's layer in the city's array.
-import { buildingModel } from '../models/buildings.ts';
+import { buildingModel, type WindowFrameOf } from '../models/buildings.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
@@ -28,10 +28,11 @@ export function modelKeyOf(
 export function forgedModel(
   tables: { readonly buildings: BuildingTable; readonly props: PropTable },
   key: ModelKey,
+  frameOf?: WindowFrameOf,
 ): ForgedModel | null {
   const [kind, id] = key.split(':');
   if (kind === 'prop') return propModel(tables.props, Number(id));
-  return buildingModel(tables.buildings, Number(id), { open: kind === 'open' });
+  return buildingModel(tables.buildings, Number(id), { open: kind === 'open', frameOf });
 }
 
 /** Where each model sits in the shared buffers. */

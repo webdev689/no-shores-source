@@ -9,8 +9,10 @@ import {
   pictureSize,
   pictureUses,
   summerOf,
+  windowFrameOf,
   type Picture,
 } from './picture.ts';
+import { CLIMATES, SEASONS } from './climate.ts';
 import { TERRAIN_ARCHIVES } from './recipes/ground.ts';
 
 const table = <Table>(name: string): Table =>
@@ -167,6 +169,45 @@ test("a signpost's and a signboard's board is painted wood as a shop's sign is, 
     ).length;
     assert.ok(signLike / texels > 0.9, `${archive}.${record}: ${((100 * signLike) / texels).toFixed(0)}% a sign's`);
   }
+});
+
+test("a building's window stands where windowFrameOf says, its glass inside, in every climate's turn of it", () => {
+  // A climate's turn of a picture can hold another kind of window (a shuttered one turned arched): each its own box.
+  const glass = new Set(
+    Object.values(table<Record<string, { glass?: readonly number[] }>>('buildings')).flatMap((measure) =>
+      measure.glass ? [`${measure.glass[0]}.${measure.glass[1]}`] : [],
+    ),
+  );
+  let checked = 0;
+  for (const [archive, record] of [...glass].map((key) => key.split('.').map(Number))) {
+    const turns = new Set(
+      CLIMATES.flatMap((climate) => SEASONS.map((season) => climateArchive(archive, record, climate, season))),
+    );
+    for (const turned of turns) {
+      const box = windowFrameOf(turned, record);
+      assert.ok(box, `${turned}.${record} has a window`);
+      const picture = paint(turned, record);
+      let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+      picture.glass?.forEach((pane, texel) => {
+        if (!pane) return;
+        const [x, y] = [texel % picture.width, Math.floor(texel / picture.width)];
+        [left, top, right, bottom] = [
+          Math.min(left, x),
+          Math.min(top, y),
+          Math.max(right, x + 1),
+          Math.max(bottom, y + 1),
+        ];
+      });
+      // Its frame inside the box, two texels at most, so what a building lays is the window and no wall round it.
+      const inside = [left - box[0], top - box[1], box[2] - right, box[3] - bottom];
+      assert.ok(
+        inside.every((margin) => margin >= 0 && margin <= 2),
+        `${turned}.${record}: glass ${[left, top, right, bottom]} in ${box.join(',')}`,
+      );
+      checked++;
+    }
+  }
+  assert.ok(checked >= 30, `${checked} pictures`);
 });
 
 test('the uses carry a record to every climate and season it turns into, the ground aside', () => {

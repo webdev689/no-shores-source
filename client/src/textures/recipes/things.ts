@@ -219,12 +219,16 @@ function paintBuilding(surf: Surface, mats: Materials, materialName: string, ctx
   return glazed;
 }
 
+/** Where a thing's wall named a window lays its leaded window, texels: left, top, right, bottom, its frame inside. */
+export const glazedBox = (width: number): readonly [number, number, number, number] => [14, 36, width - 14, 80];
+
 /** A leaded window in a wall the forged world names a window, tall enough to hold one. Answers whether it painted
  *  one. */
 function glazeWhereNamed(surf: Surface, mats: Materials, ctx: RecipeContext): boolean {
   if (!ctx.uses.has('window') || ctx.height < 96) return false;
   const index = mats.index;
-  windowAt(surf, 14, 36, ctx.width - 14, 80, {
+  const [left, top, right, bottom] = glazedBox(ctx.width);
+  windowAt(surf, left, top, right, bottom, {
     kind: 'lattice',
     pitch: 11,
     frame: index.iron,

@@ -2,8 +2,9 @@
 // and where, every building's masses and hull, its solids and ground, grouped by chunks of cells so the view culls
 // and picks tiers a chunk at a time. All positions are metres from the city's middle, so the GPU's floats keep
 // their precision. The work goes a step at a time (`cityBuildSteps`), so a frame can take a few and leave the rest.
+import type { WindowFrameOf } from '../models/buildings.ts';
 import type { BuildingTable, KitTable, PropTable } from '../models/tables.ts';
-import { type ForgedTables, pictureUses, type PictureUse } from '../textures/picture.ts';
+import { climateArchive, type ForgedTables, pictureUses, type PictureUse, windowFrameOf } from '../textures/picture.ts';
 import { type RmbBlock, groundTiles, placed } from './blocks.ts';
 import { buildingMassesOf, type Placed } from './cityBuildings.ts';
 import {
@@ -186,8 +187,11 @@ export function* cityBuildSteps(
   const keys = [...new Set(placedPieces.map((piece) => piece.key))].sort();
   const modelIndex = new Map(keys.map((key, k) => [key, k]));
   const models: ReturnType<typeof forgedModel>[] = [];
+  // A window is its picture's window and frame alone, as the city's climate turns the picture.
+  const frameOf: WindowFrameOf = ([archive, record]) =>
+    windowFrameOf(climateArchive(archive, record, climate.climate, climate.season), record);
   for (const key of keys) {
-    models.push(forgedModel(tables, key));
+    models.push(forgedModel(tables, key, frameOf));
     yield;
   }
   const wants = new Map<string, PictureWant>();
@@ -285,6 +289,7 @@ export function* cityBuildSteps(
       plan.works.filter((solid) => !crusting(solid)),
       plan.pieces ?? [],
       tables.buildings,
+      frameOf,
     ),
     ...plan.social.solids,
     ...heaps,

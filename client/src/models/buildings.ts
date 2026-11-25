@@ -11,8 +11,8 @@ import { randomFromSeed } from './random.ts';
 
 /** A flat roof's parapet: its height and its thickness (m). */
 const PARAPET_M = [0.35, 0.2];
-/** A window: its side, a storey's height, its sill over the storey's floor and the clearance at a run's ends (m). */
-const WINDOW_M = [1.6, 3.2, 0.9, 0.5];
+/** A window: its width, a storey's height, its sill over the storey's floor and the clearance at a run's ends (m). */
+const WINDOW_M = [2, 3.2, 0.9, 0.5];
 /** How far inside a wall's outer face a walked-into room's lining shows its face (m): the layout crate's
  *  interiors.rs INSET_M + LINING_M, and a hand more so the picture lies over the lining. */
 const LINING_FACE_M = 0.243;
@@ -45,6 +45,7 @@ function sides(
   block: Block,
   plan: Plan,
   holesOf: (run: Run) => readonly Pane[] = () => [],
+  size?: WindowSize,
 ): Run[] {
   const { blockAt, xAt, zAt } = plan;
   const laid: Run[] = [];
@@ -93,7 +94,7 @@ function sides(
       for (const [low, high] of spans) {
         const [from, to] = [run.along(start), run.along(k)];
         const wall: Run = { normal: run.normal, fixed: run.fixed, from, to, low, high };
-        wallAround(add, look, wall, holesOf(wall));
+        wallAround(add, look, wall, holesOf(wall), size);
         laid.push(wall);
       }
       start = k;
@@ -125,20 +126,46 @@ function near(door: MeasuredDoor, corners: readonly (readonly number[])[]): bool
 const glassOf = ({ wing, top, base }: Block, measure: BuildingMeasure): readonly number[] | undefined =>
   !wing.steps && !wing.platform && wing.low === undefined && top - base >= 2.6 ? measure.glass : undefined;
 
+/** Where a window picture's window stands in it, texels (left, top, right, bottom): its frame, without the wall
+ *  painted round it (the textures' windowFrameOf, turned to the city's climate). None: the whole picture. */
+export type WindowFrameOf = (picture: readonly number[]) => readonly [number, number, number, number] | null;
+
+/** A building's window: its width and height (m), and the share of its picture it shows (left, top, right, bottom). */
+type WindowSize = { readonly width: number; readonly height: number; readonly crop: readonly number[] };
+
+/** A window WINDOW_M[0] wide at its frame's proportions, or narrower where a storey holds no more over its sill. */
+function windowSize(glass: readonly number[], frameOf?: WindowFrameOf): WindowSize {
+  const [, , wide, tall] = glass;
+  const [left, top, right, bottom] = frameOf?.(glass) ?? [0, 0, wide, tall];
+  const [width, storey, sill] = WINDOW_M;
+  const proportion = (bottom - top) / (right - left);
+  const scale = Math.min(1, (storey - sill - 0.3) / (width * proportion));
+  const crop = [left / wide, top / tall, right / wide, bottom / tall];
+  return { width: width * scale, height: width * proportion * scale, crop };
+}
+
 /** A window through an open building's wall, in its own frame (x right, y up, z forward): its wall's outer face
- *  (`normal`, and `fixed` across it), its middle along that face and its sill's height, WINDOW_SIDE_M square. */
-export type Opening = { readonly normal: readonly number[]; readonly fixed: number } & Pane;
-export const WINDOW_SIDE_M = WINDOW_M[0];
+ *  (`normal`, and `fixed` across it), its middle along that face, its sill's height, and its width and height. */
+export type Opening = Pane & {
+  readonly normal: readonly number[];
+  readonly fixed: number;
+  readonly width: number;
+  readonly height: number;
+};
 
 /** Where an open building's windows go through its walls, as `buildingModel` cuts them. */
-export function openingsOf(measure: BuildingMeasure): Opening[] {
+export function openingsOf(measure: BuildingMeasure, frameOf?: WindowFrameOf): Opening[] {
   const plan = planOf(measure);
+  const size = measure.glass && windowSize(measure.glass, frameOf);
+  if (!size) return [];
   return plan.masses.flatMap((block) =>
     glassOf(block, measure)
       ? sides(partBuilder(), measure.walls[0] ?? measure.looks[0], block, plan).flatMap((run) =>
-          panesOf(run, block.base, measure.doors ?? []).map((pane) => ({
+          panesOf(run, block.base, measure.doors ?? [], size).map((pane) => ({
             normal: run.normal,
             fixed: run.fixed,
+            width: size.width,
+            height: size.height,
             ...pane,
           })),
         )
@@ -146,12 +173,17 @@ export function openingsOf(measure: BuildingMeasure): Opening[] {
   );
 }
 
-/** A window on a wall's run, WINDOW_M[0] square: its middle along the run and its sill's height. */
+/** A window on a wall's run: its middle along the run and its sill's height. */
 type Pane = { readonly middle: number; readonly level: number };
 
 /** A wall's run laid whole, or round its windows' holes (an open building's, whose windows are seen through). */
-function wallAround(add: PartBuilder, look: readonly number[], run: Run, holes: readonly Pane[]): void {
-  const side = WINDOW_M[0];
+function wallAround(
+  add: PartBuilder,
+  look: readonly number[],
+  run: Run,
+  holes: readonly Pane[],
+  size?: WindowSize,
+): void {
   const piece = (from: number, to: number, low: number, high: number): void => {
     if (to - from < 1e-6 || high - low < 1e-6) return;
     const corners = run.normal[0]
@@ -170,53 +202,73 @@ function wallAround(add: PartBuilder, look: readonly number[], run: Run, holes: 
     add.quad(look, corners, run.normal);
   };
   let low = run.low;
-  for (const level of [...new Set(holes.map((hole) => hole.level))].sort((a, b) => a - b)) {
-    piece(run.from, run.to, low, level);
-    let along = run.from;
-    for (const middle of holes
-      .filter((hole) => hole.level === level)
-      .map((hole) => hole.middle)
-      .sort((a, b) => a - b)) {
-      piece(along, middle - side / 2, level, level + side);
-      along = middle + side / 2;
+  if (size)
+    for (const level of [...new Set(holes.map((hole) => hole.level))].sort((a, b) => a - b)) {
+      piece(run.from, run.to, low, level);
+      let along = run.from;
+      for (const middle of holes
+        .filter((hole) => hole.level === level)
+        .map((hole) => hole.middle)
+        .sort((a, b) => a - b)) {
+        piece(along, middle - size.width / 2, level, level + size.height);
+        along = middle + size.width / 2;
+      }
+      piece(along, run.to, level, level + size.height);
+      low = level + size.height;
     }
-    piece(along, run.to, level, level + side);
-    low = level + side;
-  }
   piece(run.from, run.to, low, run.high);
 }
 
 /** Where a wall's run takes its windows: a storey apart, clear of the run's ends and of every door. */
-function panesOf(run: Run, base: number, doors: readonly MeasuredDoor[]): Pane[] {
-  const [side, storey, sill, clear] = WINDOW_M;
+function panesOf(run: Run, base: number, doors: readonly MeasuredDoor[], { width, height }: WindowSize): Pane[] {
+  const [, storey, sill, clear] = WINDOW_M;
   const length = run.to - run.from;
-  const count = Math.floor((length - clear * 2 + storey - side) / storey);
+  const count = Math.floor((length - clear * 2 + storey - width) / storey);
   const panes: Pane[] = [];
   if (count < 1) return panes;
   const first = run.from + (length - (count - 1) * storey) / 2;
   const off = run.fixed + (run.normal[0] + run.normal[2]) * 0.003;
   const point = (along: number, y: number): number[] => (run.normal[0] ? [off, y, along] : [along, y, off]);
-  for (let level = base + sill; level + side <= run.high - 0.3; level += storey) {
+  for (let level = base + sill; level + height <= run.high - 0.3; level += storey) {
     if (level < run.low) continue;
     for (let k = 0; k < count; k++) {
       const middle = first + k * storey;
-      const [left, right] = [middle - side / 2, middle + side / 2];
-      const corners = [point(left, level), point(right, level), point(right, level + side), point(left, level + side)];
+      const [left, right] = [middle - width / 2, middle + width / 2];
+      const corners = [
+        point(left, level),
+        point(right, level),
+        point(right, level + height),
+        point(left, level + height),
+      ];
       if (!doors.some((door) => near(door, corners))) panes.push({ middle, level });
     }
   }
   return panes;
 }
 
-/** Windows along a wall's run, each its glass's whole picture laid once just off the wall; in an open building
+/** Windows along a wall's run, each its picture's window and frame laid once just off the wall; in an open building
  *  laid again on its room's lining, facing in. */
-function windows(add: PartBuilder, glass: readonly number[], run: Run, panes: readonly Pane[], inside = false): void {
-  const side = WINDOW_M[0];
+function windows(
+  add: PartBuilder,
+  glass: readonly number[],
+  run: Run,
+  panes: readonly Pane[],
+  { width, height, crop }: WindowSize,
+  inside = false,
+): void {
   const off = run.fixed + (run.normal[0] + run.normal[2]) * 0.003;
   const point = (along: number, y: number): number[] => (run.normal[0] ? [off, y, along] : [along, y, off]);
+  // A corner's place on the picture, 0 or 1 across and down, within the share the window shows.
+  const shown = (mapping: readonly (readonly number[])[]): number[][] =>
+    mapping.map(([across, down]) => [crop[0] + across * (crop[2] - crop[0]), crop[1] + down * (crop[3] - crop[1])]);
   for (const { middle, level } of panes) {
-    const [left, right] = [middle - side / 2, middle + side / 2];
-    const corners = [point(left, level), point(right, level), point(right, level + side), point(left, level + side)];
+    const [left, right] = [middle - width / 2, middle + width / 2];
+    const corners = [
+      point(left, level),
+      point(right, level),
+      point(right, level + height),
+      point(left, level + height),
+    ];
     // Upright and unmirrored as one faces the wall: its left is the run's start on a wall facing -x or +z.
     const flip = run.normal[2] < 0 || run.normal[0] > 0;
     if (inside) {
@@ -225,40 +277,44 @@ function windows(add: PartBuilder, glass: readonly number[], run: Run, panes: re
       const within = (along: number, y: number): number[] => (run.normal[0] ? [back, y, along] : [along, y, back]);
       add.quadUv(
         glass,
-        [within(right, level), within(left, level), within(left, level + side), within(right, level + side)],
+        [within(right, level), within(left, level), within(left, level + height), within(right, level + height)],
         run.normal.map((value) => -value),
-        flip
-          ? [
-              [0, 1],
-              [1, 1],
-              [1, 0],
-              [0, 0],
-            ]
-          : [
-              [1, 1],
-              [0, 1],
-              [0, 0],
-              [1, 0],
-            ],
+        shown(
+          flip
+            ? [
+                [0, 1],
+                [1, 1],
+                [1, 0],
+                [0, 0],
+              ]
+            : [
+                [1, 1],
+                [0, 1],
+                [0, 0],
+                [1, 0],
+              ],
+        ),
       );
     }
     add.quadUv(
       glass,
       corners,
       run.normal,
-      flip
-        ? [
-            [1, 1],
-            [0, 1],
-            [0, 0],
-            [1, 0],
-          ]
-        : [
-            [0, 1],
-            [1, 1],
-            [1, 0],
-            [0, 0],
-          ],
+      shown(
+        flip
+          ? [
+              [1, 1],
+              [0, 1],
+              [0, 0],
+              [1, 0],
+            ]
+          : [
+              [0, 1],
+              [1, 1],
+              [1, 0],
+              [0, 0],
+            ],
+      ),
     );
   }
 }
@@ -351,7 +407,7 @@ function parapet(add: PartBuilder, look: readonly number[], block: Block, blockA
 }
 
 /** Each model buildingModel built with its doors, to its table and id: withoutDoors builds it again with none. */
-const built = new WeakMap<ForgedModel, { table: BuildingTable; id: number }>();
+const built = new WeakMap<ForgedModel, { table: BuildingTable; id: number; frameOf?: WindowFrameOf }>();
 
 /**
  * The building's model: its plan's masses, each side that stands in the open walled, its pitched wings roofed (the
@@ -362,7 +418,7 @@ const built = new WeakMap<ForgedModel, { table: BuildingTable; id: number }>();
 export function buildingModel(
   table: BuildingTable,
   id: number,
-  { doors = true, open = false }: { doors?: boolean; open?: boolean } = {},
+  { doors = true, open = false, frameOf }: { doors?: boolean; open?: boolean; frameOf?: WindowFrameOf } = {},
 ): ForgedModel | null {
   const measure: BuildingMeasure | undefined = table[id];
   if (!measure) return null;
@@ -372,6 +428,7 @@ export function buildingModel(
     trim = measure.walls[1] ?? wall,
     roof = measure.roofs[0] ?? trim;
   const plan = planOf(measure);
+  const size = measure.glass && windowSize(measure.glass, frameOf);
   const random = randomFromSeed(seedOf(id));
   const gabled = random.next() < 0.5;
   let stacks = 0;
@@ -380,10 +437,11 @@ export function buildingModel(
     const span = Math.min(block.x1 - block.x0, block.z1 - block.z0);
     const pitched = roofOf(block, plan, fit, measure.doors ?? []);
     const glass = glassOf(block, measure);
-    const panes = (run: Run): Pane[] => (glass ? panesOf(run, block.base, measure.doors ?? []) : []);
+    const panes = (run: Run): Pane[] => (glass && size ? panesOf(run, block.base, measure.doors ?? [], size) : []);
     // An open building's windows are holes through its wall, seen through from either side.
-    const runs = sides(parts, block.top - block.base < 1.2 ? trim : wall, block, plan, open ? panes : undefined);
-    if (glass) for (const run of runs) windows(parts, glass, run, panes(run), open);
+    const look = block.top - block.base < 1.2 ? trim : wall;
+    const runs = sides(parts, look, block, plan, open ? panes : undefined, size);
+    if (glass && size) for (const run of runs) windows(parts, glass, run, panes(run), size, open);
     if (wing.low !== undefined)
       parts.box(
         trim,
@@ -454,7 +512,7 @@ export function buildingModel(
   const clear = (part: ModelPart): ModelPart =>
     open && glass && part.archive === glass[0] && part.record === glass[1] ? { ...part, clear: true } : part;
   const model = { ...doored, parts: doored.parts.map(clear) };
-  built.set(model, { table, id });
+  built.set(model, { table, id, frameOf });
   return model;
 }
 
@@ -462,5 +520,5 @@ export function buildingModel(
  *  interior), or null for a model it did not build. */
 export function withoutDoors(model: ForgedModel): ForgedModel | null {
   const source = built.get(model);
-  return source ? buildingModel(source.table, source.id, { doors: false }) : null;
+  return source ? buildingModel(source.table, source.id, { doors: false, frameOf: source.frameOf }) : null;
 }

@@ -9,9 +9,9 @@ import type { Materials } from './materials.ts';
 import type { Job, PictureUse, RecipeContext } from './recipe.ts';
 import { paintTerrain, TERRAIN_ARCHIVES } from './recipes/ground.ts';
 import { paintPainting, paintRoom } from './recipes/rooms.ts';
-import { paintThing } from './recipes/things.ts';
+import { glazedBox, paintThing } from './recipes/things.ts';
 import { snowsOver } from './recipes/wallFamilies.ts';
-import { paintWall, wallSeed, winterOver } from './recipes/walls.ts';
+import { paintsWall, paintWall, wallSeed, wallWindowBox, winterOver, type WindowBox } from './recipes/walls.ts';
 import { SCALE, type Surface } from './surface.ts';
 
 export { DRESSING_ARCHIVE, climateArchive, type Climate, type Season } from './climate.ts';
@@ -152,6 +152,16 @@ export function paintPicture(archive: number, record: number, frame: number, use
   // a winter picture is finished as its summer one, so the two differ only where the snow lies
   const picture = finish(job.surf, job.mats, own, record, job.finish);
   return { ...picture, glass: job.window ? glassOf(job.surf, job.mats) : null };
+}
+
+/** Where a window picture's window stands in it, its frame round it, texels (left, top, right, bottom), as its recipe
+ *  lays it: what a building lays as its window, without the wall painted round it. Null where none is laid. */
+export function windowFrameOf(archive: number, record: number): WindowBox | null {
+  const size = pictureSize(archive, record);
+  if (!size) return null;
+  const own = summerOf(archive) ?? archive;
+  if (paintsWall(own)) return wallWindowBox(own, record, size.width, size.height);
+  return size.height >= 96 ? glazedBox(size.width) : null;
 }
 
 /** A snowed roof: snow over nearly all of it, the roof showing through in the hollows where it lies thinnest. */

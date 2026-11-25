@@ -1,7 +1,7 @@
 // An open building's rooms are lined just inside its walls (the layout crate's interiors.rs). Where its model's
 // windows go through a wall (buildings.ts openingsOf), the lining is cut away round each, so the window is seen
 // through from the room and into it.
-import { openingsOf, WINDOW_SIDE_M, type Opening } from '../models/buildings.ts';
+import { openingsOf, type Opening, type WindowFrameOf } from '../models/buildings.ts';
 import type { BuildingTable } from '../models/tables.ts';
 import type { Piece, Solid } from './plan.ts';
 
@@ -14,13 +14,18 @@ type Box = [number, number, number, number, number, number];
 type Hole = { readonly box: Box; readonly along: 0 | 1 };
 
 /** The solids with every open building's lining cut round its windows; the rest as they are. */
-export function cutAtWindows(solids: readonly Solid[], pieces: readonly Piece[], buildings: BuildingTable): Solid[] {
+export function cutAtWindows(
+  solids: readonly Solid[],
+  pieces: readonly Piece[],
+  buildings: BuildingTable,
+  frameOf?: WindowFrameOf,
+): Solid[] {
   const openings = new Map<number, Opening[]>();
   // Each open building's holes, and the box round them all: a lining is cut only by the building it stands in.
   const windowed = pieces
     .filter((piece) => piece.open && piece.building && buildings[piece.model]?.glass)
     .map((piece) => {
-      const known = openings.get(piece.model) ?? openingsOf(buildings[piece.model]);
+      const known = openings.get(piece.model) ?? openingsOf(buildings[piece.model], frameOf);
       openings.set(piece.model, known);
       const holes = known.map((opening) => holeOf(piece, opening));
       const round = holes.reduce<Box>(
@@ -64,7 +69,7 @@ const lining = (solid: Solid): boolean =>
 
 /** A window's opening in the world, through its wall from the outer face to past the lining, its building turned a
  *  whole quarter at a time as interiors.rs turns its rooms. */
-export function holeOf(piece: Piece, { normal, fixed, middle, level }: Opening): Hole {
+export function holeOf(piece: Piece, { normal, fixed, middle, level, width, height }: Opening): Hole {
   const quarter = (((Math.round(piece.yaw / 90) % 4) + 4) % 4) as 0 | 1 | 2 | 3;
   const [cosine, sine] = (
     [
@@ -78,10 +83,7 @@ export function holeOf(piece: Piece, { normal, fixed, middle, level }: Opening):
     piece.at[0] + x * cosine + z * sine,
     piece.at[1] + x * sine - z * cosine,
   ];
-  const [deep, side] = [
-    fixed - (normal[0] + normal[2]) * LINING_DEPTH_M,
-    [middle - WINDOW_SIDE_M / 2, middle + WINDOW_SIDE_M / 2],
-  ];
+  const [deep, side] = [fixed - (normal[0] + normal[2]) * LINING_DEPTH_M, [middle - width / 2, middle + width / 2]];
   const corners = [fixed, deep].flatMap((across) =>
     side.map((along) => (normal[0] ? world(across, along) : world(along, across))),
   );
@@ -93,7 +95,7 @@ export function holeOf(piece: Piece, { normal, fixed, middle, level }: Opening):
     Math.max(...easts),
     Math.max(...souths),
     bottom,
-    bottom + WINDOW_SIDE_M,
+    bottom + height,
   ];
   const eastward = normal[0] ? cosine : sine;
   return { box, along: Math.abs(eastward) > 0.5 ? 1 : 0 };

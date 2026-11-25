@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { openingsOf, WINDOW_SIDE_M } from '../models/buildings.ts';
+import { openingsOf } from '../models/buildings.ts';
 import type { BuildingTable } from '../models/tables.ts';
 import type { Solid } from './plan.ts';
 import { cut, cutAtWindows, holeOf } from './windowCuts.ts';
@@ -51,7 +51,7 @@ test("an open building's lining is cut behind each of its windows, at any quarte
     const inward = opening.fixed - (opening.normal[0] + opening.normal[2]) * 0.14;
     const [x, z] = opening.normal[0] ? [inward, opening.middle] : [opening.middle, inward];
     const [cosine, sine] = [Math.cos((yaw * Math.PI) / 180), Math.sin((yaw * Math.PI) / 180)];
-    const middle = [100 + x * cosine + z * sine, 200 + x * sine - z * cosine, 10 + opening.level + WINDOW_SIDE_M / 2];
+    const middle = [100 + x * cosine + z * sine, 200 + x * sine - z * cosine, 10 + opening.level + opening.height / 2];
     const hole = holeOf(piece, opening);
     assert.ok(
       [0, 1].every((axis) => middle[axis] > hole.box[axis] && middle[axis] < hole.box[axis + 2]),
