@@ -315,7 +315,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
         showLandmass(await openLandmass(land, world, landTexts, continent));
     },
   });
-
   const passages: PassageGame = new PassageGame({
     ...{ module: roomModule, context: footContext, goInto, tell, now: () => Date.now() },
     ...{ foot: () => playing.foot, flow: () => playing.flow, land: () => playing.landmass },
@@ -551,8 +550,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const fighting = () => footView.shown.fight;
   const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
   stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore));
-  // Inspect sets another player's pieces beside the player's own, at sea the sea's word on them.
-  inspectAgainst({ roomModule }, () => fed()?.gear ?? null);
+  inspectAgainst({ roomModule }, () => fed()?.gear ?? null); // at sea the sea's word on the player's own pieces
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   stack.add(passages.layer);
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
