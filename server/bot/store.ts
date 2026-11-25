@@ -391,6 +391,7 @@ export const SERVER_TABLES = [
   'giveaways',
   'guild_config',
   'invite_joins',
+  'layout_parts',
   'levels',
   'media',
   'mod_cases',
