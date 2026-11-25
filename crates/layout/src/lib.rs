@@ -14,6 +14,7 @@ mod clearing;
 mod climbs;
 pub mod collide;
 pub mod compose;
+pub mod crossings;
 pub mod dressing;
 pub mod field;
 pub mod grounds;
@@ -148,7 +149,7 @@ pub fn plan(
     let seed = seed_of(0x1A70, &node.id);
     let field = Field::read(ground, &claim_of(node), MARGIN_M);
     let patrol = node.kind == NodeKind::Patrol;
-    let (areas, wanted) = place_areas(node, &field, brief, links, seed);
+    let (mut areas, wanted) = place_areas(node, &field, brief, links, seed);
     let moduled = modules::standing(&areas, brief.heights);
     let mut seating = compose::stand(&areas, (&wanted, &moduled), book, (ground, &field), (seed, brief.heights));
     let mut buildings = std::mem::take(&mut seating.buildings);
@@ -402,7 +403,9 @@ pub fn plan(
         walkable && field::ring_holds(&ring, x, y) && collide::stands_clear(&seated, [x, y], carved_height(x, y))
     };
     let spawns = spawns::round(anchor, &stands);
-    let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
+    let mut ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
+    let mut basins = basins;
+    crossings::add(links, (&mut areas, &mut basins), (&mut sites, &mut ways));
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
     let land = spaces::Land {
         floor: &|at| ground.height_at(at[0], at[1]) + raise(at),
@@ -489,10 +492,6 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
             let pull: &dyn Fn([f64; 2]) -> f64 =
                 if brief_area.kind == AreaKind::Plot { &near_landing } else { &|_| 0.0 };
             put(&mut areas, brief_area.kind, &brief_area.name, brief_area.blocks.unwrap_or(1), None, pull);
-        }
-        // The gates toward the other patrol areas come last, so the zone's own places stand where they would alone.
-        for link in links.iter().filter(|link| link.patrol) {
-            put(&mut areas, AreaKind::Gate, "", 0, Some(link.id.clone()), &edge_pull(link.towards));
         }
     } else {
         let entrance = brief.areas.iter().find(|area| area.kind == AreaKind::Entrance);

@@ -144,6 +144,7 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | On foot in a patrol | E at an entrance's door, offered as "Enter" and the dungeon's name | The veil, "Entering" the dungeon, then on foot at its way in |
 | In a dungeon | E at its exit door, offered as "Leave" | The veil, "Leaving" the dungeon, then before its entrance's door, facing out |
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
+| On foot in a patrol zone | E in the basin of a gate toward another patrol zone, offered as "Go to" and its name | Passing: the way between zones, its leg from one zone's place to the other's, then on foot at that zone's gate toward the one left ([[Layouts]], "Gates") |
 | On foot in a passage zone | Through an open onward mouth | Passing: the way between zones in place of the veil ([[Passages in the Browser]], "The way between zones"), then on foot at the next zone's way in |
 | On foot at a lit lamp | Home | Passing, the way running back to the patrol zone, then on foot there |
 | Passing | The way played and the place come | On foot there |

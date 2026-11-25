@@ -204,7 +204,8 @@ const BANK_REACH_M: f64 = 12.0;
 
 /// Where a bridge's deck runs over a river and at what height: 3 m past each bank and on out along a lower bank (2 m
 /// at a time) until its two ends' land stands within 0.15 m, 0.3 m over the land at its higher end; its ends, its way
-/// and its deck's height. None where the banks lie together.
+/// and its deck's height. None where the banks lie together, or where a bridge laid before already carries the
+/// crossing, both its ends on that bridge's deck: two ways over the river at one place cross by one bridge.
 fn deck_over(kit: &Kit, [from, to]: [[f64; 2]; 2]) -> Option<([[f64; 2]; 2], [f64; 2], f64)> {
     let length = distance(from, to);
     if length < 1.0 {
@@ -223,6 +224,12 @@ fn deck_over(kit: &Kit, [from, to]: [[f64; 2]; 2]) -> Option<([[f64; 2]; 2], [f6
         }
     }
     let (start, end) = (ahead(from, way, -back, 0.0), ahead(to, way, on, 0.0));
+    let carried = kit.into.bridges.iter().any(|&[x1, y1, x2, y2, half]| {
+        [start, end].iter().all(|&at| crate::paths::off_line(at, [x1, y1], [x2, y2]) <= half)
+    });
+    if carried {
+        return None;
+    }
     Some(([start, end], way, kit.height(start).max(kit.height(end)) + 0.3))
 }
 

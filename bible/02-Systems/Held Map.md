@@ -137,6 +137,13 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Choosing.** A click picks the place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
+- **The regions** ([[World Map]], "Regions"). At sea, the land of the island whose waters the ship is in is lit by
+  region as the pointer passes over it: the land's cells of the waters' grid whose middle lies nearest that region's
+  centre, lit as another water is (`mapRegions.ts`), and the region's name written where the pointer came onto it, in
+  the face and ink the waters' names are lettered in. Its land lit, no water is; off it, the water under the pointer is
+  lit again. A click on a region's land (no place's mark within 16 px) chooses its anchorage, named for the region:
+  the way there is planned and inked as any course is, and sailed at the sea's own pace, the course judged by the
+  waters' rules as any other ([[Sailing]]). Another island's land lights nothing.
 - **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
   pointer, when it is not the one the ship is in, is lit (the pad's cursor stands only in the interface's windows, so the pad lights none): its sea brightened a little with the
   parchment's light and its edge with the other waters softly lined in the ink, where its cells' share crosses a half

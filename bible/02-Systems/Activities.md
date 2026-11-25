@@ -88,7 +88,8 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 | Breaches | Later | | Campaign's end |
 
 - **Draws** are `gear::activities`, seeded by the clock's day or week number alone, so every room and page sees the
-  same. Each island's dungeon of the day is one of its patrols' nine, evenly; the day's modifier is one of the eight,
+  same. Each island's dungeon of the day is one of its patrol zones' dungeons (Saltmere's nine, three on every
+  other island), evenly; the day's modifier is one of the eight,
   and Burn's Art one of the three. The week's two are two of the 18 Elite Dungeons, never the same one; the Elite's
   has one modifier, the Abyss's three of different kinds.
 - **The dungeon of the day** carries one modifier of the day at Elite and Abyss.

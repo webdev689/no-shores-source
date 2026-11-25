@@ -1,7 +1,8 @@
-// The regions of an island on the held map at sea ([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones
-// Stay, Linked]]): every island is cut into three, each point of its land in the region whose centre is nearest
-// (`content/world/regions.json`). The regions of the island whose waters the ship is in light as the pointer passes
-// over their land, named in the waters' own letters, and a click on one sets a course to its anchorage.
+// The regions of an island on the held map at sea
+// ([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]): every island is cut into
+// three, each point of its land in the region whose centre is nearest (`content/world/regions.json`). The regions of
+// the island whose waters the ship is in light as the pointer passes over their land, named in the waters' own
+// letters, and a click on one sets a course to its anchorage.
 import type { Point2 } from '../overworld/ground.ts';
 import type { HoverSaid, WaterJudge } from './heldMapAsk.ts';
 import { fontOf, type Painter, word } from './mapLetters.ts';
