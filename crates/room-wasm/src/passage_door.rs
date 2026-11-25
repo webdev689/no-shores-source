@@ -109,6 +109,7 @@ pub fn web_json(island: &str, week: u64) -> String {
 #[must_use]
 pub fn zone_plan_json(island: &str, week: u64, number: u16) -> String {
     let json = |plan: &Plan| {
+        let climate = &passage::island(island)?.climate;
         let ground = match &plan.ground {
             Laid::Under(dungeon) => json!({ "kind": "under", "layout": layout_json(dungeon, &plan.zone.name) }),
             Laid::Open(hollow) => {
@@ -139,7 +140,7 @@ pub fn zone_plan_json(island: &str, week: u64, number: u16) -> String {
         Some(
             json!({
                 "zone": zone_json(&plan.zone, island),
-                "climate": web.island.climate,
+                "climate": climate,
                 "ground": ground,
                 "sites": {
                     "arrive": sites.arrive,
