@@ -292,3 +292,60 @@ fn a_waves_foes_take_the_zones_currents() {
     let alone = room.zone().expect("a zone").round.wave_foes.len();
     assert!(crowded > alone, "Crowded's more in a wave: {crowded} against {alone}");
 }
+
+#[test]
+fn a_band_held_back_stands_for_a_company_and_never_for_one_alone() {
+    let held = (2_900..2_990).find_map(|week| {
+        let web = web(week);
+        web.zones.iter().filter(|zone| zone.deal == Deal::Skirmish).find_map(|zone| {
+            let plan = Plan::of(&web, zone.number)?;
+            let room = room_of(week, &plan);
+            room.zone().is_some_and(|zone| !zone.held.is_empty()).then_some((week, plan))
+        })
+    });
+    let (week, plan) = held.expect("a skirmish with a band held back");
+    let guards = |room: &Room| room.zone().expect("a zone").round.guards.len();
+    let mut alone = room_of(week, &plan);
+    let player = diver(&mut alone, week, &plan);
+    let before = guards(&alone);
+    for _ in 0..3 {
+        kill_all(&mut alone);
+        alone.players.get_mut(&player).expect("in").fighter.health = 1e9;
+        alone.tick();
+    }
+    assert_eq!(guards(&alone), before, "no band more for one alone");
+    let mut company = room_of(week, &plan);
+    for _ in 0..4 {
+        diver(&mut company, week, &plan);
+    }
+    run(&mut company, 2);
+    assert!(guards(&company) > before, "a band more for a company of four");
+}
+
+#[test]
+fn a_deals_own_waves_are_held_apart_from_its_bands_and_a_strand_hunt_is_led_by_the_deck_crew() {
+    let (week, mut plan) = plan_where(|zone| zone.deal == Deal::Vein);
+    plan.zone.currents.push(Current::Crowded);
+    let mut room = room_of(week, &plan);
+    let player = diver(&mut room, week, &plan);
+    run(&mut room, 1);
+    for node in 0..u8::try_from(room.resource_nodes.len()).expect("few") {
+        room.vein_gathered(player, node);
+    }
+    let zone = room.zone().expect("a zone");
+    let waves =
+        zone.round.wave_foes.iter().filter(|id| room.foes.get(id).is_some_and(|foe| !foe.fighter.dead())).count();
+    let most = match zone.zone.size {
+        passage::Size::Small => 7,
+        passage::Size::Medium => 9,
+        passage::Size::Large => 12,
+    };
+    assert!(waves <= most + room.crowding(), "{waves} waves' foes past {most}");
+    let strand = passage::Ground::Open { form: passage::Form::Strand };
+    let (week, plan) = plan_where(|zone| zone.deal == Deal::Mission(Mission::Hunt) && zone.ground == strand);
+    let room = room_of(week, &plan);
+    let post = room.zone().expect("a zone").round.guards[0];
+    let leader = room.garrison[post].standing[0];
+    let deck = [foes::roster::BOSUN, foes::roster::TITHE_MATE];
+    assert!(deck.contains(&room.foes[&leader].brain.foe_type.number), "the deck crew's Elite leads it");
+}

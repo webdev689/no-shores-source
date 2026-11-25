@@ -263,3 +263,17 @@ fn one_account_is_one_player_in_a_run_and_a_second_socket_comes_in_as_the_first_
     room.tick();
     assert!(room.players[&again].fighter.dead(), "down, as she was, with none left");
 }
+
+#[test]
+fn one_the_section_killed_holds_the_run_up_while_a_revive_is_left_and_not_once_none_is() {
+    for (revives, wipes) in [(2, false), (0, true)] {
+        let mut room = abyss_run();
+        let (felled, strayed) = (room.join().expect("in"), room.join().expect("in"));
+        room.run.as_mut().expect("a run").revives = Some(revives);
+        let found = room.players.get_mut(&felled).expect("in");
+        (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+        room.players.get_mut(&strayed).expect("in").standing = reach::Standing::Dead { ticks: 0, fell: false };
+        room.tick();
+        assert_eq!(!wiped(&room.take_events()).is_empty(), wipes, "{revives} revives left");
+    }
+}

@@ -48,7 +48,7 @@ const DECK_DEEP: [(u8, Rank); 4] = [(DECKHAND, Major), (HOOKMAN, Major), (PISTOL
 /// depth 10, the Reeve past 15; on a strand the Bosun and the Tithe-Mate.
 const ELITES: [u8; 4] = [ENFORCER, MARKSMAN, TITHE_TAKER, REEVE];
 const DECK_ELITES: [u8; 2] = [BOSUN, TITHE_MATE];
-/// The most foes a zone stands at once, its bands and its waves together, by its size: small, medium and large.
+/// The most foes a zone's bands stand, and apart from them its waves, by its size: small, medium and large.
 const FOES_MOST: [usize; 3] = [7, 9, 12];
 /// How many more foes a zone stands for each player in it past the first, and a wave brings, at most this many more.
 const FOES_PER_PLAYER: usize = 3;
@@ -105,7 +105,7 @@ impl Room {
     /// more for each player in it past the first.
     pub(crate) fn zone_foes_most(&self) -> usize {
         let bands = self.zone().map_or(0, |zone| zone.round.guards.len());
-        self.counted_most() + self.crowding() * bands
+        self.counted_most() + self.band_crowding() * bands
     }
 
     /// The most foes, Crowded's not counted: the size's, and three more for each player in the zone past the first.
@@ -152,8 +152,7 @@ impl Room {
                 }
             }
         }
-        // An Elite band is cut to three, Crowded's extra foes with it.
-        let crowding = if deal == Deal::Lamp { 0 } else { self.crowding() };
+        let crowding = self.band_crowding();
         let most = self.counted_most();
         let (mut standing, mut stood) = (0, 0);
         for (nth, group) in groups.into_iter().enumerate() {
@@ -221,7 +220,7 @@ impl Room {
         let Some((members, farthest, at)) = self.zone().and_then(|zone| zone.held.first().cloned()) else { return };
         let group = Group { members, leads: false, farthest };
         // The bands stood, their foes fallen or not, hold the zone's most: only more players stand more.
-        let crowding = self.crowding();
+        let crowding = self.band_crowding();
         let counted = |members: usize| members.saturating_sub(crowding);
         let guards = self.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
         let stood: usize =
@@ -295,6 +294,12 @@ impl Room {
         (number, if raised { Major } else { rank })
     }
 
+    /// How many of a band's foes Crowded added, which its most does not count: none in a lamp's, whose Elite bands are
+    /// cut to three, Crowded's extra foes with them.
+    fn band_crowding(&self) -> usize {
+        if self.zone().is_some_and(|zone| zone.zone.deal == Deal::Lamp) { 0 } else { self.crowding() }
+    }
+
     /// How many more foes Crowded stands in each band and wave: one, two past depth 14.
     pub(crate) fn crowding(&self) -> usize {
         let depth = self.zone().map_or(1, |zone| zone.zone.depth);
@@ -332,7 +337,7 @@ impl Room {
         let waves = self.zone().map_or(0, |zone| {
             zone.round.wave_foes.iter().filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead())).count()
         });
-        if waves + size > self.zone_foes_most() + self.crowding() {
+        if waves + size > self.counted_most() + self.crowding() {
             return;
         }
         let players: Vec<(PlayerId, [f64; 3])> = self

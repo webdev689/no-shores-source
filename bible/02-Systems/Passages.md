@@ -171,9 +171,9 @@ passages' own pieces standing in it with their solids.
   Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
   (`lamps::KILL_SHARE`).
-- **The most foes** a zone stands at once is by its size: 7, 9 and 12 (small, medium, large), Crowded's extra foes not
-  counted, so it holds as many bands; a band past it is held back. Its bands are held to it, and its waves apart from
-  them, so a reliquary's keepers and a vein's waves come while its bands stand. It rises
+- **The most foes** a zone's bands stand is by its size: 7, 9 and 12 (small, medium, large), Crowded's extra foes not
+  counted, so it holds as many bands; a band past it is held back. Its waves are held to the same most apart from the
+  bands (Crowded's more in a wave on top), so a reliquary's keepers and a vein's waves come while its bands stand. It rises
   by three for each player in the zone past the first (`zone_foes_most`), and a band held back stands once the bands
   stood leave room for it and no player is within 12 m of its post. A wave brings a foe more for each player past the
   first, three at most, and a Miniboss or a Boss stands with half its health more for each, the most players seen at
