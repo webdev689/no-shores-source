@@ -88,15 +88,16 @@ async function builders(): Promise<{ rmbText: string; buildersText: string }> {
   const index = JSON.parse(rmbText) as { blocks: readonly (readonly [string, string, ...unknown[]])[] };
   const files = [...new Set(index.blocks.map((row) => row[1]))].sort();
   const forged = (name: string) => readFile(new URL(`../../../content/forged/${name}`, import.meta.url), 'utf8');
-  const [blockFiles, buildings, props, parts, briefs] = await Promise.all([
+  const [blockFiles, buildings, props, parts, briefs, regions] = await Promise.all([
     Promise.all(files.map((file) => content(`rmb/${file}`))),
     forged('buildings.json'),
     forged('props.json'),
     forged('parts.json'),
     content('briefs.json'),
+    content('regions.json'),
   ]);
   const tables = `{"buildings":${buildings},"props":${props},"parts":${parts}}`;
-  const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${tables},"briefs":${briefs}`;
+  const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${tables},"briefs":${briefs},"regions":${regions}`;
   return { rmbText, buildersText };
 }
 

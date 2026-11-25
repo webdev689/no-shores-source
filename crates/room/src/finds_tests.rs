@@ -265,7 +265,7 @@ fn where_the_chests_stand_comes_from_the_rooms_loot_seed_so_no_player_foresees_i
 
 #[test]
 fn every_dungeon_stands_a_chest_in_a_room_of_each_block_against_a_wall_clear_of_rock_and_every_solid() {
-    let patrols = ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra", "sunken-fen", "aurora-wastes"];
+    let patrols = ["saltgrass-downs", "lion-grasslands", "whitewind-tundra", "bogmire-sloughs", "ochre-wastes"];
     let (mut blocks, mut stood) = (0, 0);
     for patrol in patrols {
         for number in 0..dungeon::PER_PATROL {
