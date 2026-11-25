@@ -64,19 +64,13 @@ impl Room {
             // One the section killed too stands again only by its own respawn, which ends that death as well.
             .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
             .filter(|(_, found)| unasked || found.respawn_asked)
-            .filter(|(_, found)| !self.dark_at(found.fighter.body.x, found.fighter.body.y))
             .map(|(id, found)| (*id, found.fighter.body))
             .collect();
         for found in self.players.values_mut() {
             found.respawn_asked = false;
         }
         for (id, lain) in fallen {
-            if !self.revive() {
-                continue;
-            }
-            let body = self.stand_again(lain.x, lain.y);
-            self.stand_up(id, body, None);
-            self.lose_haul(id);
+            self.respawn(id, lain);
         }
         let gone: Vec<FighterId> = self
             .foes
@@ -109,11 +103,15 @@ impl Room {
     }
 
     /// Whether every player the room judges (those it keeps, where it keeps anyone) is down while the Court's Boss
-    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back.
+    /// stands, the last of them for RESPAWN, so the company sees itself fall before it falls back; one the section
+    /// killed counts once it may respawn, so a Gloom that refuses it that does not leave it lying.
     fn fallen_in_darkness(&self) -> bool {
         let keeps = self.players.values().any(|found| found.owner.is_some());
         let mut judged = self.players.values().filter(|found| !keeps || found.owner.is_some());
-        let lain = |found: &crate::players::Player| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN);
+        let lain = |found: &crate::players::Player| {
+            matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN)
+                || found.standing.may_respawn()
+        };
         (self.boss().is_some() || self.gloomy()) && !self.players.is_empty() && judged.all(lain)
     }
 
@@ -238,9 +236,19 @@ impl Room {
         found.fighter = player_tick(id, &dead, &lying, view, &self.blocks, &self.floor).0;
         if input.respawn && found.standing.may_respawn() {
             let lain = found.fighter.body;
-            let body = self.stand_again(lain.x, lain.y);
-            self.stand_up(id, body, None);
+            self.respawn(id, lain);
         }
+    }
+
+    /// A fallen player stands again by their own respawn, however they fell: not in a darkness, taking a run's
+    /// revive where it counts them, and in a passage zone with its haul lost.
+    fn respawn(&mut self, id: PlayerId, lain: Body) {
+        if self.dark_at(lain.x, lain.y) || !self.revive() {
+            return;
+        }
+        let body = self.stand_again(lain.x, lain.y);
+        self.stand_up(id, body, None);
+        self.lose_haul(id);
     }
 }
 

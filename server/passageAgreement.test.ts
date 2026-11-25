@@ -64,13 +64,17 @@ test('a passage zone’s room fights its deal done to the same fingerprint throu
   let own: ArrayLike<number> = [0, 0];
   let living: (readonly number[])[] = [];
   for (let tick = 1; tick <= RUN_TICKS; tick++) {
-    // It runs at the nearest living foe as its snapshots show them, and swings once it is near.
+    // It runs at the nearest living foe as its snapshots show them, and swings once it is near: within reach along the
+    // ground and in height, so a body that climbed a rock above a foe goes on rather than swinging at it.
     const nearest = living.reduce<readonly number[] | null>(
       (best, foe) => (best === null || apart(own, foe) < apart(own, best) ? foe : best),
       null,
     );
     const yaw = nearest ? Math.atan2((nearest[0] ?? 0) - (own[0] ?? 0), -((nearest[1] ?? 0) - (own[1] ?? 0))) : 0;
-    const near = nearest !== null && apart(own, nearest) <= REACH_M;
+    const near =
+      nearest !== null &&
+      apart(own, nearest) <= REACH_M &&
+      Math.abs((nearest[2] ?? 0) - (own[2] ?? 0)) <= REACH_M;
     const swing = near && tick % SWING_EVERY === 0 ? 1 : 0;
     const forward = nearest && !near ? 1 : 0;
     const intent = new Float64Array([forward, 0, yaw, 1, 0, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);

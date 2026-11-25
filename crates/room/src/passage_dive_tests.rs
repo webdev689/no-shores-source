@@ -160,9 +160,9 @@ fn the_fourth_lamp_stands_cold_for_lanternfalls_last_step_and_is_kindled_under_w
             room.tick();
         }
     };
-    hold(&mut room, super::LAMP_TICKS + 1);
+    hold(&mut room, crate::passages::passage_holds::LAMP_TICKS + 1);
     assert!(room.passage_seen(holder).is_some_and(|seen| !seen.lamp_lit), "no routine light");
-    hold(&mut room, super::KINDLE_TICKS - super::LAMP_TICKS);
+    hold(&mut room, crate::passages::passage_holds::KINDLE_TICKS - crate::passages::passage_holds::LAMP_TICKS);
     assert!(room.passage_seen(holder).is_some_and(|seen| seen.lamp_lit), "kindled as a dead lamp is");
     assert!(room.players[&holder].character.atheric_bounties.finished.contains("lanternfall"));
 

@@ -33,7 +33,9 @@ code:
   - content/gear/atheric_bounties.json
   - crates/room/src/passages.rs#passage
   - crates/room/src/passages.rs#open_mouths
-  - crates/room/src/passages.rs#stand_bands
+  - crates/room/src/passage_foes.rs#stand_bands
+  - crates/room/src/passage_foes.rs#zone_foes_most
+  - crates/room/src/passage_holds.rs#keep_holds
   - crates/room/src/passage_deal.rs#keep_passage
   - crates/room/src/passage_deal.rs#deal_done
   - crates/room/src/passage_asks.rs#ask_passage
@@ -137,7 +139,8 @@ passages' own pieces standing in it with their solids.
   laid, so a zone's plan, its heights and its local room are laid once.
 - **The pieces**: the way in, the onward mouths, the lamp (a plinth 1.6 m square in a ring of five standing stones
   3.5 m out), and what the deal stands on the spots farthest from the way in: three dead lamps for a Kindle, three
-  tally posts for a Sever, six nodes for a vein, a reliquary.
+  tally posts for a Sever, six nodes for a vein, a reliquary, a Hold's ring (no solid, its 6 m drawn on the floor in
+  low stones while the pack has no `passage.ring` module).
 
 ## A dive
 
@@ -160,8 +163,11 @@ passages' own pieces standing in it with their solids.
   at once from a Gauntlet; the dive is in the next zone from then, and the host moves the player there. Joining any
   room that is not the dive's zone ends the dive and loses its haul. The sea is not such a room: it never ends a
   dive, only marks it as kept by the sea (`Dive::sailed`), and the dive is judged in whatever room the character
-  next lands in; a homeward one landed by sea in its patrol zone keeps its haul and stands where it landed. A respawn asked for in a zone empties the haul
-  and stands the player at its arrival; a revive loses nothing. A reload or a closed tab costs no more than a death:
+  next lands in; a homeward one landed by sea in its patrol zone keeps its haul and stands where it landed. A respawn
+  asked for in a zone empties the haul and stands the player at its arrival, however the body fell, and is refused in
+  Gloom, where a company all down (the section's dead among them) falls back; a revive loses nothing. A body left
+  fallen comes back fallen, and past its two minutes whole, its haul lost. A reload or a closed tab costs no more
+  than a death:
   logging in again, a character whose last room was its dive's zone goes back into it, on the same dive
   ([[Accounts]], "Where a player logs back in").
 
@@ -171,15 +177,26 @@ passages' own pieces standing in it with their solids.
   ring, its spawn at the arrival facing in, the hollow's dressing and every piece's solids as blocks, its navmesh, its
   place for the gates (`Place::Passage`, gated as a patrol zone is) and its island. Drops come from the dungeons'
   content under ground, the world's above it.
-- **Its foes** are the Grey Tithe's bands on the sites' posts at the island's band raised by depth
-  (`passage::levels`): two to four Minors and Majors, led by an Elite in one band in three from depth 6 and in every
-  band from depth 11. A lamp's guard is an Elite band at the first lamp, a Miniboss and an Elite band at the second and
-  third, a Miniboss and two Elite bands at the fourth. A vault stands a dungeon's garrison with its Miniboss in the end
-  room, and no cache chest of its own: its cache is the passage's. A zone's room stands at most nine foes at once, its
-  bands and its waves together (`ZONE_FOES_MOST`), bands past it not standing, so one player does its deal in about
-  three minutes and a lamp comes about every fifteen; a hollow lays its posts for `Size::foes_most`, 7, 9 and 12 by
-  size. A guard never stands again by itself. A foe of a passage zone
-  pays three quarters of a kill as it falls, its XP, Aurem and chances of a find (`lamps::KILL_SHARE`).
+- **Its foes** (`passage_foes.rs`) are the Grey Tithe's bands on the sites' posts at the island's band raised by
+  depth (`passage::levels`): two to four of the depth's roster (Runners, Collectors and Crossbowmen, Minors and Majors,
+  at 1 to 5; Enforcers among them from 6; Majors alone past 10), led by an Elite in one band in three from depth 6 and
+  in every band from depth 11 (the Enforcer or the Marksman, the Tithe-Taker too past 10, the Reeve past 15). A strand
+  stands the deck crew instead: Deckhands, Hookmen and Pistoleers, Bosuns past 10, led by a Bosun or a Tithe-Mate. A
+  lamp's guard is an Elite band at the first lamp, the Reeve and an Elite band at the second, the Tithe-Mate and an
+  Elite band at the third, and at the fourth one of the island's two Elite Dungeons' Bosses, the week's by turns, and
+  two Elite bands. A vault stands a dungeon's garrison with its Miniboss in the end room (the Reeve to depth 10, the
+  Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
+  A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
+  (`lamps::KILL_SHARE`).
+- **The most foes** a zone's bands stand is by its size (`Size::foes_most`): 7, 9 and 12 (small, medium, large), a
+  hollow laying half as many posts (`Size::posts`); Crowded's extra foes are not counted, so it holds as many bands,
+  and a band past it is held back. Its waves are held to the same most apart from the
+  bands (Crowded's more in a wave on top), so a reliquary's keepers and a vein's waves come while its bands stand. It rises
+  by three for each player in the zone past the first (`zone_foes_most`), and a band held back stands once the bands
+  stood leave room for it and no player is within 12 m of its post. A wave brings a foe more for each player past the
+  first, three at most, and a Miniboss or a Boss stands with half its health more for each, the most players seen at
+  once, as a public event's waves and great foes do ([[Public Events]]). Every one who takes part is paid the whole
+  cache.
 - **The week's two modifiers** are the zone's run's, weighing the runs' hooks (`run.rs`); **the zone's currents**
   weigh them too at the depth's strength: Kindled and Sharpened a blow, Shielded the share shielded, Frail a heal, Spent
   a recharge, Hardened every foe's health, Crowded and Veteran each band, Gloom a darkness while the deal runs (no
@@ -190,18 +207,21 @@ passages' own pieces standing in it with their solids.
 
 | Deal | Done when |
 |---|---|
-| Skirmish, vault, reliquary, lamp | Its guard is down (a reliquary's chest opens itself) |
-| Vein | Its guard is down; its six nodes are gathered as a patrol's, into the haul |
+| Skirmish, vault, lamp | Its guard is down |
+| Reliquary | Its chest is opened, E held 5 s within 3 m (`passage_holds.rs`); the first hold calls a wave, its keepers |
+| Vein | Its six nodes are gathered, by any who take part, each gather calling a wave of two, into the haul as a patrol's |
 | Kindle | Its three dead lamps are lit, E held 3 s at each within 3 m; a wave comes every 30 s meanwhile, once the last is down |
-| Hold | Its ring (6 m round its first spot) is held 90 s by a living player; a wave every 30 s, once the last is down |
-| Hunt | The marked band, an Elite leading it on a round of the spots, is down |
-| Reckoning | Its three collectors are down; each, once a player comes within 12 m, runs to the spot farthest from them |
-| Gauntlet | A player reaches the farthest onward mouth; past 90 s from each one's arrival or the round's start, the later, it is late, and pays no cache |
+| Hold | Its ring (a piece at its first spot, 6 m round, drawn on the floor) is held 90 s by a living player; a wave every 30 s, once the last is down |
+| Hunt | The marked band, "The Marked", an Elite, leading it on a round of the spots, is down |
+| Reckoning | Its three collectors, each named "Collector", are down; each, once a player comes within 12 m, runs to the spot farthest from them |
+| Gauntlet | A player whose dive is here and not done, having stood within 6 m of the arrival this round, reaches the farthest onward mouth (marked in the sites, `Sites::far_mouth`); past 90 s from each one's arrival or the round's start, the later, it is late, and pays no cache; the page's seconds left run the same |
 | Ambush | Its three waves are beaten, each called as the last is down; its mouths are barred until then |
-| Sever | Its three tally posts, foes standing still at their pieces, are down; each is guarded |
+| Sever | Its three tally posts, struck as foes standing still at their pieces and drawn as the posts alone, are broken; each is guarded |
 
-A wave is two to four of the bands' foes standing at the post or spot nearest a player but 12 m from every one, each
-hunting the nearest player. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
+A dead lamp kindles, a reliquary opens and the ring is held only while no foe stands within 8 m of it
+(`CONTEST_M`); a hold begun with one near is refused so (`FoesNear`). A wave is two to four of the zone's roster
+taking its currents (Crowded's more, Veteran's Majors, Hardened's health) standing at the post or spot nearest a
+player but 12 m from every one, each hunting the nearest player. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
 and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, held the
 ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again; a player who came after
 it was done goes on once that round is done. A company's room does not begin again, and a member who comes after it
@@ -254,13 +274,15 @@ The gear carries the dive (homeward or not, and the seas it began at) and its ha
 only where the record is of the room's week and day), and
 the Atheric bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its key, done,
 the dead lamps lit and targets down, the ring's share held, the seconds left, the waves, whether the mouths are open
-and the lamp lit for the player, and their hold under way. The asks are numbered 82 to 86 (`passage_wire`), after
-the open-find ask's 81. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
+and the lamp lit for the player (their dive in the zone having lit it), and their hold under way (a dead lamp's
+number, 253 for a reliquary, 255 for the lamp). The asks are numbered 82 to 87 (`passage_wire`), after the open-find
+ask's 81, the reliquary's open 87. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
 the route and the minute); once the
 week on its clock is past the web's, judged as each join comes, the room refuses players: "The passage has shifted". The passages' refusals are
-`Refusal`'s 170 to 180, answered one more: no dive, no such mouth, the deal not done, no lamp, the lamp not lit, the
+`Refusal`'s 170 to 181, answered one more: no dive, no such mouth, the deal not done, no lamp, the lamp not lit, the
 lamp guarded, out of reach, not in a passage; `Shifted`, every ask of a zone whose week's web has turned but Home at a
-lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; and `Fallen`, any ask while the player is down.
+lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; `Fallen`, any ask while the player is down; and
+`FoesNear`, a hold begun with a foe within 8 m of its piece.
 
 ## On the server
 

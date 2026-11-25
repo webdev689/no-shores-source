@@ -1,41 +1,26 @@
 //! A passage zone as a room: its ground laid as the `passage` crate lays it (under ground the Forge's dungeon, above
 //! ground the hollow's heights), its section and spawn at the sites' arrival, its blocks (the hollow's dressing and
 //! every piece's solids), its navmesh, and its foes: bands of the Grey Tithe on the sites' posts at the zone's levels
-//! (`passage::levels`), Elites among them by depth, a vault's Miniboss in its end room as a dungeon's Reeve stands.
+//! (`passage::levels`), the depth's roster and Elites among them (`passage_foes.rs`), a vault's Miniboss in its end
+//! room as a dungeon's Reeve stands.
 //! Its deal is run each tick (`passage_deal.rs`), its asks answered in turn (`passage_asks.rs`), and the week's two
 //! modifiers and the zone's currents weigh its fight through the runs' hooks (`run.rs`). A patrol zone with passages
 //! keeps its mouths here too: the doors of its runs, where a dive begins.
 
-use crate::garrison::{Group, draws_of, index, node_seed, ring_bounds};
+use crate::garrison::{node_seed, ring_bounds};
 use crate::run::Run;
 use crate::{Floor, PlayerId, Room};
-use ::foes::Rank::{self, Elite, Major, Miniboss, Minor};
-use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, MARKSMAN, REEVE, RUNNER};
 use combat::fighter::FighterId;
 use gear::activities::Modifier;
 use gear::dive::Route;
 use movement::Block;
-use naval::random::Mulberry32;
-use passage::{Current, Deal, Laid, Mission, Piece, PieceKind, Plan, Sites};
+use passage::{Current, Deal, Laid, Piece, PieceKind, Plan, Sites};
 use reach::Section;
 use std::collections::{BTreeMap, BTreeSet};
 
-/// The bands' foes, as a patrol's: Minors and Majors of the Tithe's walkers, collectors and crossbowmen.
-const BANDS: [(u8, Rank); 6] = [
-    (RUNNER, Minor),
-    (RUNNER, Major),
-    (COLLECTOR, Minor),
-    (COLLECTOR, Major),
-    (CROSSBOWMAN, Minor),
-    (CROSSBOWMAN, Major),
-];
-/// An Elite standing in a band, by turns.
-const ELITES: [u8; 2] = [ENFORCER, MARKSMAN];
-/// The most foes a zone stands at once, its bands and its waves together, so one player does its deal in about three
-/// minutes (`deal_measure_tests`) and a lamp comes about every fifteen.
-pub(crate) const ZONE_FOES_MOST: usize = 9;
-/// The stream a zone's bands are drawn on, apart from its waves'.
+/// The streams a zone's bands and its waves are drawn on, apart.
 const BAND_STREAM: u64 = 0x7061_7373;
+const WAVE_STREAM: u64 = 0x7761_7665;
 
 /// A hold of E under way at a piece: its target (a dead lamp's number, or the lamp), the tick it began, where the
 /// body stood and its health then.
@@ -51,6 +36,7 @@ pub(crate) struct Hold {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Held {
     Kindle(u8),
+    Reliquary,
     Lamp,
 }
 
@@ -75,10 +61,18 @@ pub(crate) struct Round {
     /// The players who took part: struck down one of its foes, lit a dead lamp, held the ring or reached the far
     /// mouth. Only they are paid its cache.
     pub took_part: BTreeSet<PlayerId>,
+    /// A Gauntlet's runners who stood at the arrival in this round, whose reaching the far mouth counts.
+    pub set_out: BTreeSet<PlayerId>,
+    /// Whether a reliquary was opened, and a vein's nodes gathered, by their numbers.
+    pub opened: bool,
+    pub gathered: BTreeSet<u8>,
 }
 
+/// A band the zone's most foes held back: its foes (kind and rank), whether it holds its post, and its post.
+pub(crate) type HeldBand = (Vec<(u8, ::foes::Rank)>, bool, [f64; 2]);
+
 /// A passage zone's room's own: its web's island, week and route, the zone, its levels, sites and pieces, the deal's
-/// round, the players its lamp is lit for, the holds under way, and those counted as having gathered its vein.
+/// round, the holds under way, and those counted as having gathered its vein.
 #[derive(Debug)]
 pub(crate) struct Zone {
     pub island: &'static str,
@@ -89,11 +83,14 @@ pub(crate) struct Zone {
     pub sites: Sites,
     pub pieces: Vec<Piece>,
     pub round: Round,
-    pub lit: BTreeSet<PlayerId>,
     pub holds: BTreeMap<PlayerId, Hold>,
     /// The tick each player came into the zone, which a Gauntlet's time runs from.
     pub arrived: BTreeMap<PlayerId, u64>,
     pub veined: BTreeSet<PlayerId>,
+    /// The bands the zone's most foes held back, stood in turn once there is room.
+    pub held: Vec<HeldBand>,
+    /// The most players seen in the zone at once, whom its Minibosses and Bosses stand toughened for.
+    pub most_seen: usize,
 }
 
 /// How far before a mouth's door a player home from a lamp stands, metres.
@@ -173,7 +170,6 @@ impl Room {
         room.facing = sites.facing;
         room.place = Some(gear::gate::Place::Passage);
         room.world_seed = node_seed(&format!("passage:{island}:{week}:{}", zone.number)) ^ zone.seed;
-        room.foes_most = ZONE_FOES_MOST;
         room.run = Some(Run { modifiers: modifiers.to_vec(), ..Run::default() });
         room.source = if matches!(plan.ground, Laid::Under(_)) { gear::Source::Dungeon } else { gear::Source::World };
         room.island = Some(island);
@@ -187,23 +183,25 @@ impl Room {
             sites: sites.clone(),
             pieces: plan.pieces.clone(),
             round: Round::default(),
-            lit: BTreeSet::new(),
             holds: BTreeMap::new(),
             arrived: BTreeMap::new(),
             veined: BTreeSet::new(),
+            held: Vec::new(),
+            most_seen: 1,
         })));
+        room.foes_most = room.zone_foes_most();
         if let (Deal::Vault, Laid::Under(dungeon)) = (zone.deal, &plan.ground) {
             // shortcut: Crowded and Veteran weigh the passages' own bands, not a vault's dungeon garrison; extend the
             // dungeon's garrison stand if a vault should take them.
-            room.stand_dungeon_garrison(dungeon, Some(levels), (REEVE, Miniboss));
+            room.stand_dungeon_garrison(dungeon, Some(levels), passage_foes::vault_miniboss(zone.depth));
             room.cache = None;
+            let guards: Vec<usize> = (0..room.garrison.len()).collect();
+            room.harden(&guards);
+            if let Some(zone) = room.zone_mut() {
+                zone.round.guards = guards;
+            }
         } else {
             room.stand_bands(levels);
-        }
-        let guards: Vec<usize> = (0..room.garrison.len()).collect();
-        room.harden(&guards);
-        if let Some(zone) = room.zone_mut() {
-            zone.round.guards = guards;
         }
         room.lay_deal();
         if zone.deal == Deal::Vein {
@@ -277,145 +275,21 @@ impl Room {
     pub(crate) fn gloomy(&self) -> bool {
         self.current(Current::Gloom).is_some() && self.zone().is_some_and(|zone| zone.round.done_at.is_none())
     }
-
-    /// The bands on the sites' posts, as many as the room's most foes allow: a lamp's guard as the design gives it
-    /// (an Elite band at the first lamp, a Miniboss and an Elite band at the second and third, a Miniboss and two Elite
-    /// bands at the fourth); any other zone's a band of Minors and Majors on each post, from depth 6 one band in three
-    /// led by an Elite and from depth 11 every band; none for a deal whose foes come in waves alone.
-    fn stand_bands(&mut self, levels: (u8, u8)) {
-        let Some(zone) = self.zone() else { return };
-        let (deal, depth, posts) = (zone.zone.deal, zone.zone.depth, zone.sites.posts.clone());
-        let lamp = passage::lamp_number(depth);
-        let mut draws = draws_of(self.world_seed ^ BAND_STREAM);
-        let mut groups: Vec<Group> = match (deal, lamp) {
-            (Deal::Lamp, Some(1)) => vec![self.band(&mut draws, depth, Some(true))],
-            (Deal::Lamp, Some(number)) => {
-                let boss = Group { members: vec![(REEVE, Miniboss)], leads: false, farthest: true };
-                let elites = if number >= 4 { 2 } else { 1 };
-                core::iter::once(boss).chain((0..elites).map(|_| self.band(&mut draws, depth, Some(true)))).collect()
-            }
-            (Deal::Mission(Mission::Kindle | Mission::Hold | Mission::Ambush), _) => Vec::new(),
-            _ => (0..posts.len()).map(|nth| self.band(&mut draws, depth, (nth % 3 == 0).then_some(false))).collect(),
-        };
-        if deal == Deal::Mission(Mission::Hunt) {
-            // The marked band walks a round of the spots; the rest hold their posts.
-            if let Some(first) = groups.first_mut() {
-                first.farthest = false;
-                if let Some(leader) = first.members.first_mut() {
-                    *leader = (ELITES[0], Elite);
-                }
-            }
-        }
-        let section = self.section.clone().map(|section| Section { spawns: Vec::new(), ..section });
-        let Some(section) = section else { return };
-        let spots: Vec<(f64, f64)> =
-            self.zone().map(|zone| zone.sites.spots.iter().map(|at| (at[0], at[1])).collect()).unwrap_or_default();
-        let mut beats = draws_of(self.world_seed ^ BAND_STREAM ^ 1);
-        let mut standing = 0;
-        let near_lamp = self.zone().and_then(|zone| zone.sites.lamp);
-        for (nth, group) in groups.iter().enumerate() {
-            let at = match (nth, near_lamp) {
-                (0, Some(lamp)) if deal == Deal::Lamp => lamp,
-                _ => posts.get(nth).copied().unwrap_or(posts.first().copied().unwrap_or_default()),
-            };
-            if standing + group.members.len() > self.foes_most {
-                break;
-            }
-            let lattice: &[(f64, f64)] = if group.farthest { &[] } else { &spots };
-            let at = if nth == 0 && deal == Deal::Lamp { [at[0] + 4.5, at[1]] } else { at };
-            if let Some(post) = self.post_at(group, (at[0], at[1]), (&section, lattice), (&mut draws, &mut beats)) {
-                standing += post.members.len();
-                self.garrison.push(post);
-            }
-        }
-        self.gird_and_stand(Some(levels));
-    }
-
-    /// A band of the Tithe at a depth: two to four of the patrol's, one or two more where Crowded runs, Veteran's share
-    /// of its Minors standing as Majors, and led by an Elite where `elite` says (an Elite band, led and its rest
-    /// Elites too, for Some(true)), or as its depth makes it (from 6 one band in three, from 11 every band).
-    fn band(&self, draws: &mut Mulberry32, depth: u8, elite: Option<bool>) -> Group {
-        let size = 2 + index(draws, 3) + self.crowding(depth);
-        let veteran = self.current(Current::Veteran).map_or(0.0, |strength| passage::zone::VETERAN * strength);
-        let mut members: Vec<(u8, Rank)> = (0..size)
-            .map(|_| {
-                let (number, rank) = BANDS[index(draws, BANDS.len())];
-                let raised = rank == Minor && draws.draw() < veteran;
-                (number, if raised { Major } else { rank })
-            })
-            .collect();
-        let led = match elite {
-            Some(true) => true,
-            Some(false) => depth >= 6,
-            None => depth >= 11,
-        };
-        if led {
-            let elite_type = ELITES[index(draws, ELITES.len())];
-            members[0] = (elite_type, Elite);
-            if elite == Some(true) {
-                members.truncate(3);
-                for member in members.iter_mut().skip(1) {
-                    member.1 = Elite;
-                }
-            }
-        }
-        Group { members, leads: false, farthest: true }
-    }
-
-    /// How many more foes Crowded stands in each band: one, two past depth 14.
-    fn crowding(&self, depth: u8) -> usize {
-        match self.current(Current::Crowded) {
-            Some(_) if depth > 14 => 2,
-            Some(_) => 1,
-            None => 0,
-        }
-    }
-
-    /// Hardened's share more health on every foe standing at these garrison posts, as they stand.
-    pub(crate) fn harden(&mut self, posts: &[usize]) {
-        let Some(strength) = self.current(Current::Hardened) else { return };
-        let standing: Vec<FighterId> =
-            posts.iter().filter_map(|&post| self.garrison.get(post)).flat_map(|post| post.standing.clone()).collect();
-        for id in standing {
-            if let Some(foe) = self.foes.get_mut(&id) {
-                foe.grow(1.0 + passage::zone::HARDENED * strength);
-            }
-        }
-    }
-
-    /// A foe stood for the deal outside its bands (a wave's, a target's), at the zone's levels and the currents' weight.
-    pub(crate) fn stand_deal_foe(
-        &mut self,
-        (number, rank): (u8, Rank),
-        at: [f64; 2],
-        facing: f64,
-        nth: u32,
-    ) -> Option<FighterId> {
-        let levels = self.zone()?.levels;
-        let ground = [at[0], at[1], self.floor.height_at(at[0], at[1])];
-        let place = self.mesh_at(ground).nearest_point(ground).unwrap_or(ground);
-        let id = self.stand_foe(::foes::foe_type(number)?, rank, place, facing, None);
-        let (level, shield) =
-            crate::garrison::gird_of(self.world_seed ^ BAND_STREAM ^ 2, nth, Some(levels), self.shield_chance());
-        self.gird(id, self.at_seas(level), shield);
-        if let Some(strength) = self.current(Current::Hardened)
-            && let Some(foe) = self.foes.get_mut(&id)
-        {
-            foe.grow(1.0 + passage::zone::HARDENED * strength);
-        }
-        self.foes.get_mut(&id)?.brain.posted_at(place, facing);
-        Some(id)
-    }
 }
-
-use movement::Terrain;
 
 #[path = "passage_asks.rs"]
 mod passage_asks;
 #[path = "passage_deal.rs"]
 mod passage_deal;
+#[path = "passage_foes.rs"]
+mod passage_foes;
+#[path = "passage_holds.rs"]
+mod passage_holds;
 pub use passage_asks::{PassageAsk, PassageSeen};
 
+#[cfg(test)]
+#[path = "passage_play_tests.rs"]
+mod passage_play_tests;
 #[cfg(test)]
 #[path = "passage_reach_tests.rs"]
 mod passage_reach_tests;

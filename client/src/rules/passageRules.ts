@@ -91,9 +91,9 @@ export interface PassageDoorSite {
   readonly facing: number;
 }
 
-export type PieceKind = 'way-in' | 'mouth' | 'lamp' | 'kindle' | 'post' | 'node' | 'reliquary';
+export type PieceKind = 'way-in' | 'mouth' | 'lamp' | 'kindle' | 'post' | 'node' | 'reliquary' | 'ring';
 
-const PIECE_KINDS: readonly PieceKind[] = ['way-in', 'mouth', 'lamp', 'kindle', 'post', 'node', 'reliquary'];
+const PIECE_KINDS: readonly PieceKind[] = ['way-in', 'mouth', 'lamp', 'kindle', 'post', 'node', 'reliquary', 'ring'];
 
 /** One of the passages' own pieces standing in a zone: its module's name, its kind and number among its kind, its
  *  foot's middle and the bearing its front faces. */
@@ -128,6 +128,8 @@ export interface PassagePlan {
     readonly facing: number;
     readonly wayIn: PassageDoorSite;
     readonly onward: readonly PassageDoorSite[];
+    /** The onward mouth farthest from the way in, by its place among them: a Gauntlet's goal. */
+    readonly far: number | null;
     readonly lamp: Point2 | null;
     readonly posts: readonly Point2[];
     readonly spots: readonly Point2[];
@@ -303,6 +305,7 @@ export function readPassagePlan(answer: string): PassagePlan | null {
       facing: finite(sites.facing, "arrival's facing"),
       wayIn: doorOf(sites.wayIn, 'way in'),
       onward,
+      far: sites.far === null || sites.far === undefined ? null : whole(sites.far, 'far mouth'),
       lamp: sites.lamp === null ? null : point(sites.lamp, "lamp's place"),
       posts: list(sites.posts, 'posts', (each) => point(each, 'a post')),
       spots: list(sites.spots, 'spots', (each) => point(each, 'a spot')),

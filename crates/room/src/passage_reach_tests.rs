@@ -2,9 +2,11 @@
 //! of each thing its deal asks a player to reach (the ring, the far mouth, the lamp, the dead lamps, every onward
 //! mouth) and to within a blow of every foe it stands.
 
-use super::passage_asks::{HOLD_REACH_M, MOUTH_REACH_M};
-use super::passage_deal::{REACHED_M, RING_M};
+use super::passage_asks::MOUTH_REACH_M;
+use super::passage_deal::REACHED_M;
+use super::passage_holds::HOLD_REACH_M;
 use crate::Room;
+use passage::plan::RING_M;
 use passage::{Deal, Mission, PieceKind, Plan, Web};
 
 /// How near a foe a body comes to strike it: a blow's reach and the foe's half-width, metres.

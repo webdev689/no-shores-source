@@ -13,10 +13,10 @@ use protocol::wire::overlook::wire as messages;
 pub const PASSAGE_ASK: &str =
     r#"{ "island": "continent-1", "week": 2900, "zone": ZONE, "route": "public", "minute": 29230000 }"#;
 /// Both tests hold this value; a change to the passages' rooms, the foes or the fight changes it in both, on purpose.
-pub const PASSAGE_HASH: &str = "c2d4fe41";
+pub const PASSAGE_HASH: &str = "77c308cf";
 /// The tick the deal was done at, in both.
-pub const PASSAGE_DONE: u32 = 5_603;
-const RUN_TICKS: u32 = 6_000;
+pub const PASSAGE_DONE: u32 = 6_578;
+const RUN_TICKS: u32 = 7_000;
 const SWING_EVERY: u32 = 20;
 /// A glance's health's place among a foe's numbers, and how near a foe stands to be swung at (m).
 const HEALTH: usize = 10;
@@ -79,14 +79,17 @@ fn a_passage_zones_room_fights_its_deal_done_to_the_same_fingerprint_natively_as
     let (mut hash, mut kept, mut done_at) = (0x811c_9dc5_u32, FoesKept::default(), 0);
     let mut own: Vec<f64> = Vec::new();
     for tick in 1..=RUN_TICKS {
-        // It runs at the nearest living foe as its snapshots show them, and swings once it is near.
-        let at = if own.len() >= 2 { [own[0], own[1]] } else { [0.0, 0.0] };
+        // It runs at the nearest living foe as its snapshots show them, and swings once it is near: within reach along
+        // the ground and in height, so a body that climbed a rock above a foe goes on rather than swinging at it.
+        let (at, height) = if own.len() >= 3 { ([own[0], own[1]], own[2]) } else { ([0.0, 0.0], 0.0) };
         let living = kept.0.values().filter(|numbers| numbers[HEALTH] > 0.0);
-        let nearest = living
-            .map(|numbers| [numbers[0], numbers[1]])
-            .min_by(|one, two| combat::sight::apart(at, *one).total_cmp(&combat::sight::apart(at, *two)));
-        let yaw = nearest.map_or(0.0, |foe| combat::sight::bearing(at, foe));
-        let near = nearest.is_some_and(|foe| combat::sight::apart(at, foe) <= REACH_M);
+        let nearest = living.map(|numbers| [numbers[0], numbers[1], numbers[2]]).min_by(|one, two| {
+            combat::sight::apart(at, [one[0], one[1]]).total_cmp(&combat::sight::apart(at, [two[0], two[1]]))
+        });
+        let yaw = nearest.map_or(0.0, |foe| combat::sight::bearing(at, [foe[0], foe[1]]));
+        let near = nearest.is_some_and(|foe| {
+            combat::sight::apart(at, [foe[0], foe[1]]) <= REACH_M && (foe[2] - height).abs() <= REACH_M
+        });
         let forward = if nearest.is_some() && !near { 1.0 } else { 0.0 };
         let controls = Controls { yaw, forward, run: true, ..Controls::default() };
         let swing = near && tick % SWING_EVERY == 0;
