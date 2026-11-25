@@ -24,7 +24,8 @@ export function haulOf(haul: HaulState<GearItem> | undefined): PassageHaul {
 const counted = (bits: number) => [...bits.toString(2)].filter((bit) => bit === '1').length;
 
 /** How far the zone's deal is, as its tracker counts it: the dead lamps lit, the tally posts or collectors down, the
- *  waves beaten, a hold's or a gauntlet's seconds left; a gauntlet past its time with its mouth unreached is late. */
+ *  waves beaten, a hold's or a gauntlet's seconds left; a gauntlet past its time with its mouth unreached is late; a
+ *  round done before the player came (its mouths shut for them), the seconds until it begins again. */
 export function progressOf(zone: PassageZone, seen: PassageSeenState): DealProgress {
   const count =
     zone.deal === 'kindle'
@@ -36,15 +37,17 @@ export function progressOf(zone: PassageZone, seen: PassageSeenState): DealProgr
           : null;
   const timed = !seen.done && (zone.deal === 'hold' || zone.deal === 'gauntlet');
   const late = zone.deal === 'gauntlet' && !seen.done && seen.left <= 0;
-  return { done: seen.done, count, seconds: timed && !late ? seen.left : null, late };
+  const again = seen.done && !seen.open ? seen.left : null;
+  return { done: seen.done, count, seconds: timed && !late ? seen.left : null, late, again };
 }
 
 /** The room's word on the player in `zone`: none until the room has said it. Its mouths are open for the player all
- *  together, once its deal was done while they were in it. */
+ *  together, once its deal was done while they were in it; `gathered` the nodes they have gathered in its room. */
 export function passageWordOf(
   zone: PassageZone,
   dive: DiveState<GearItem> | null | undefined,
   seen: PassageSeenState | null | undefined,
+  gathered = 0,
 ): PassageWord | null {
   if (!seen) return null;
   return {
@@ -52,7 +55,9 @@ export function passageWordOf(
     deal: progressOf(zone, seen),
     lampLit: zone.lamp === null ? null : seen.lampLit,
     openMouths: seen.open ? zone.onward.map((unused, place) => place) : [],
+    open: seen.open,
     haul: haulOf(dive?.haul),
+    gathered,
   };
 }
 

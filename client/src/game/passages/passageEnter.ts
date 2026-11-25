@@ -34,6 +34,12 @@ export interface ZoneEntry {
 export const solidBlocks = (solids: readonly IsleBlock[], bottom: number): Block[] =>
   solids.map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top, bottom }));
 
+/** A hollow's boxes for the foot (the camera, the crosshair, the shots' marks): its dressing's blocks and its pieces'
+ *  solids, as a sea island's are its modules' blocks. Its ground stands under its walls everywhere, so they reach down
+ *  past it. None under ground. */
+export const hollowBoxes = (plan: PassagePlan): Block[] =>
+  plan.ground.kind === 'open' ? solidBlocks([...plan.ground.blocks, ...plan.solids], -100) : [];
+
 /** The most copies of a public zone's room tried before the page gives up on it. */
 const COPIES = 9;
 const SETTLE_MS = 10_000;
@@ -94,8 +100,7 @@ export async function enterZone(context: FootContext, entry: ZoneEntry): Promise
   const heard = (snapshot: Snapshot) => hear(snapshot);
   const link = await linked(heard, (sent) => (gear.gear = sent));
   const open = (received: (snapshot: Snapshot) => void) => ((hear = received), link);
-  // The hollow's ground stands under its walls everywhere, so its solids reach down past it.
-  const boxes = solidBlocks(plan.solids, -100);
+  const boxes = hollowBoxes(plan);
   try {
     const foot = await Foot.onDeck(context, place, Array.from(entry.heights), open, {
       boxes,

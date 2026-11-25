@@ -50,7 +50,7 @@ import { inspectAgainst } from './social/social.ts';
 import { rejoinOnGuild } from './footPlace.ts';
 import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
-import { companyPlaces, nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
+import { companyPlaces, nodeOfRoom, passageRoom, seaRoomName, startedAtSea } from './rooms.ts';
 import { PassageGame } from './passages/passageGame.ts';
 import { piecesDrawer } from './passages/pieceView.ts';
 import { Sea } from './sea.ts';
@@ -323,7 +323,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     setReady: (ready) => void ([playing.ready, playing.waited] = [ready, 0]),
     showDungeon: (layout, node) => dungeons.show(layout, node, undefined, () => passages.pieces()),
     companyPlaces: () => companyPlaces(link),
-    climate: (id) => continents.find((each) => each.id === id)?.climate ?? '',
     failed: (why) => travel({ kind: 'shut', why }, goSea),
   });
   const pieces = piecesDrawer(gpu, () => (dungeons.piecesFromPack() ? null : passages.pieces()));
@@ -393,6 +392,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       return 'You are in their company. Go to them once the fight is over.';
     if (playing.flow.mode === 'foot' && playing.foot?.fallen)
       return 'You are in their company. Go to them once you respawn.';
+    if (passageRoom(place)) return 'They are in the passages: go in at a mouth on your company’s route.';
     const where = nodeOfRoom(place);
     const node = where && (startedAtSea(place) ? world : playing.landmass).nodes.find((each) => each.id === where.id);
     if (!where || !node)

@@ -23,6 +23,8 @@ test('a week’s web reads whole: three mouths, twenty depths, every way on to a
   assert.equal(Math.max(...web.zones.map((zone) => zone.depth)), 20);
   const lamps = web.zones.filter((zone) => zone.lamp !== null).map((zone) => zone.depth);
   assert.deepEqual([...new Set(lamps)], [5, 10, 15, 20]);
+  const deepest = web.zones.find((zone) => zone.depth === 20);
+  assert.deepEqual([web.zones[0]?.levels, deepest?.levels], [[1, 4], [27, 30]], 'its foes’ levels, by depth');
   assert.equal(door.web('continent-9', WEEK), null, 'an island with no passages has no web');
 });
 
@@ -34,6 +36,7 @@ test('every zone the Forge lays reads whole, its ground as its kind, its heights
     const plan = door.plan('continent-1', WEEK, zone.number);
     if (!plan) continue;
     assert.equal(plan.ground.kind, zone.ground.kind);
+    assert.equal(plan.climate, 'woodland', 'the climate its hollow is dressed in, which the page draws');
     assert.equal(plan.pieces.filter((piece) => piece.kind === 'mouth').length, zone.onward.length);
     assert.equal(
       plan.pieces.some((piece) => piece.kind === 'lamp'),

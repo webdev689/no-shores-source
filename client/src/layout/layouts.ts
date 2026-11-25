@@ -116,6 +116,12 @@ export function placesOf(layout: Pick<NodeLayout, 'areas' | 'runs'>): NodePlace[
   return [...areas, ...runs.map(({ name, mouth }) => ({ name, at: mouth, radius: RUN_REACH_M }))];
 }
 
+/** A layout's runs' sealed doors, each its run's name and its door's middle, reached from 0 m, as the bake's
+ *  `doors_of` writes them: where its room lays the passages' mouths. */
+export function doorsOf(layout: Pick<NodeLayout, 'runs'>): NodePlace[] {
+  return (layout.runs ?? []).map(({ name, door }) => ({ name, at: door, radius: 0 }));
+}
+
 /** A node as the game holds it: its id, its section, its spawns, its section's middle and its places. */
 interface Placed {
   readonly id: string;
@@ -125,6 +131,7 @@ interface Placed {
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   readonly foes?: readonly Point[];
   readonly places?: readonly NodePlace[];
+  readonly doors?: readonly NodePlace[];
   readonly paths?: readonly (readonly Point[])[];
   /** A patrol's chest places (x, y, facing) and its props (model, box across, origin's height), of which a room
    *  playing alone keeps those that hold things. */
@@ -154,8 +161,8 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
     );
     const paths = laid.paths.map((path) => path.points);
     const finds = laid.kind === 'patrol' ? findsOf(laid) : {};
-    const places = placesOf(laid);
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places, paths, ...finds };
+    const [places, doors] = [placesOf(laid), doorsOf(laid)];
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, foes, places, doors, paths, ...finds };
   });
 }
 

@@ -29,7 +29,7 @@ fn door_json(door: &Door) -> Value {
     json!({ "at": door.at, "facing": door.facing })
 }
 
-fn zone_json(zone: &Zone) -> Value {
+fn zone_json(zone: &Zone, island: &str) -> Value {
     let ground = match &zone.ground {
         passage::Ground::Under { style } => json!({ "kind": "under", "style": style }),
         passage::Ground::Open { form } => json!({ "kind": "open", "form": form.key() }),
@@ -52,14 +52,15 @@ fn zone_json(zone: &Zone) -> Value {
         "name": zone.name,
         "onward": zone.onward,
         "lamp": passage::lamp_number(zone.depth),
+        "levels": gear::world::island_levels(island).map(|band| passage::levels(band, zone.depth)),
     })
 }
 
 /// An island's passages for a week as JSON: its patrol zone, its mouths (each its run's name and the zone it leads
 /// to), the week's two modifiers (each its key, name and words) and every zone: its number, depth, lane, place on the
 /// island (x, y), ground (under ground its style, above ground its form), size, deal, currents (key, name, words at
-/// its depth's strength, whether a boon), name, the zones its onward mouths lead to and its lamp's
-/// number. Empty for an island with no passages.
+/// its depth's strength, whether a boon), name, the zones its onward mouths lead to, its lamp's number and its
+/// foes' levels, lowest and highest, as its room stands them. Empty for an island with no passages.
 #[must_use]
 pub fn web_json(island: &str, week: u64) -> String {
     let json = |web: &Web| {
@@ -75,14 +76,14 @@ pub fn web_json(island: &str, week: u64) -> String {
             "week": web.week,
             "mouths": mouths,
             "modifiers": modifiers,
-            "zones": web.zones.iter().map(zone_json).collect::<Vec<_>>(),
+            "zones": web.zones.iter().map(|zone| zone_json(zone, &web.island.id)).collect::<Vec<_>>(),
         })
         .to_string()
     };
     with_web(island, week, json).unwrap_or_default()
 }
 
-/// A zone laid whole as JSON: the zone (as `web_json` gives it), its ground (under ground the Forge's layout as a
+/// A zone laid whole as JSON: the zone (as `web_json` gives it), the climate its hollow is dressed in, its ground (under ground the Forge's layout as a
 /// dungeon's is given, above ground every module set in it as [number, x, y, z, turn, scale, lift], the blocks its
 /// modules stand as and its section's ring), its sites (where a body arrives and faces, the way in, the onward
 /// mouths in the zone's order, the lamp, the foes' posts and the spots) and its pieces (each its module's name, its
@@ -121,7 +122,8 @@ pub fn zone_plan_json(island: &str, week: u64, number: u16) -> String {
             .collect();
         Some(
             json!({
-                "zone": zone_json(&plan.zone),
+                "zone": zone_json(&plan.zone, island),
+                "climate": web.island.climate,
                 "ground": ground,
                 "sites": {
                     "arrive": sites.arrive,
@@ -222,6 +224,9 @@ mod tests {
         assert_eq!(web["modifiers"].as_array().unwrap().len(), 2);
         let zones = web["zones"].as_array().unwrap();
         assert_eq!(zones.last().unwrap()["depth"], 20);
+        // Each zone's foes' levels as its room stands them: the island's band raised by depth.
+        assert_eq!(zones[0]["levels"], json!([1, 4]));
+        assert_eq!(zones.last().unwrap()["levels"], json!([27, 30]));
         for zone in zones {
             let number = zone["number"].as_u64().unwrap() as u16;
             let text = zone_plan_json("continent-1", 2_900, number);
@@ -231,6 +236,7 @@ mod tests {
                 continue;
             }
             let plan: Value = serde_json::from_str(&text).unwrap_or_else(|_| panic!("zone {number}'s plan reads"));
+            assert_eq!(plan["climate"], "woodland", "zone {number} is drawn in the climate it is dressed in");
             assert_eq!(plan["sites"]["onward"].as_array().unwrap().len(), zone["onward"].as_array().unwrap().len());
             let heights = zone_heights("continent-1", 2_900, number);
             assert_eq!(

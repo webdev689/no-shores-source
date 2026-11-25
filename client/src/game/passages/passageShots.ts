@@ -125,7 +125,7 @@ export async function zoneShot(
   if (plan.ground.kind === 'open') {
     if (!heights) throw new Error('an open zone with no heights');
     const isles = new IslesView(gpu, ISLE_MANIFEST, null);
-    const shown = zoneIsle(plan, heights, 'woodland');
+    const shown = zoneIsle(plan, heights);
     if (shown) isles.show([withPieces(shown, plan, state, false)]);
     draw = (pass) => isles.drawInto(pass, fromEye, shot, 0, shadow);
   } else {

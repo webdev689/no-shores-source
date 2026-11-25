@@ -40,11 +40,11 @@ export type ModuleMesh = {
   readonly bounds: Bounds;
 };
 
-/** A style's pieces by name: `<style>.<piece>` for its kit, and each of its landmarks by its `module`. */
 /** The passages' own pieces' pack (tools/dungeon/styles/passage), built beside the styles' and worn in any of them. */
 export const PASSAGE_PACK = 'passage';
 /** A pack's key in the manifest: a style's, or the passages'. */
 export type PackKey = StyleKey | typeof PASSAGE_PACK;
+/** A style's pieces by name: `<style>.<piece>` for its kit, and each of its landmarks by its `module`. */
 export type ModulePack = {
   readonly style: PackKey;
   readonly modules: ReadonlyMap<string, ModuleMesh>;

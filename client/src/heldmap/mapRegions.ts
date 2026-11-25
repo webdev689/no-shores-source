@@ -10,6 +10,9 @@ import { fontOf, type Painter, word } from './mapLetters.ts';
 import { INK } from './mapKey.ts';
 import type { MapWaters } from './watersWash.ts';
 
+/** Half a region's name's height, ink units at the lettering's scale 1, kept clear of the map's edge. */
+const NAME_HIGH = 12;
+
 /** The region whose centre is nearest a point, of those given. */
 function nearest(regions: readonly MapRegion[], [x, y]: Point2): MapRegion | null {
   let best: MapRegion | null = null;
@@ -84,12 +87,19 @@ export function regionCells(waters: MapWaters, regions: readonly MapRegion[], re
 }
 
 /** Paints a region's name as a water's is lettered, in the waters' face and the map's ink, centred at `x`, `y` (ink
- *  units, in the painter's ink transform, `scale` the lettering's). */
-export function paintRegion(painter: Painter, name: string, x: number, y: number, scale: number): void {
+ *  units, in the painter's ink transform, `scale` the lettering's), kept whole inside the map `ink`. */
+export function paintRegion(
+  painter: Painter,
+  name: string,
+  [x, y]: readonly [number, number],
+  ink: { readonly width: number; readonly height: number },
+  scale: number,
+): void {
   painter.save();
-  painter.translate(x, y);
-  painter.scale(scale, scale);
   painter.font = fontOf('water');
+  const [half, high] = [(painter.measureText(name).width * scale) / 2, NAME_HIGH * scale];
+  painter.translate(Math.max(half, Math.min(x, ink.width - half)), Math.max(high, Math.min(y, ink.height - high)));
+  painter.scale(scale, scale);
   painter.textAlign = 'center';
   painter.textBaseline = 'middle';
   word(painter, name, 0, 0, INK);
@@ -101,6 +111,8 @@ export function paintRegion(painter: Painter, name: string, x: number, y: number
 export class MapRegions {
   all: readonly MapRegion[] = [];
   lit: { readonly region: MapRegion; readonly x: number; readonly y: number } | null = null;
+  /** The map's view and place the name was stood by. */
+  private seenOn = '';
 
   /** The region of the ship's island (at `ship`, judged by the waters' rules) whose land lies under a world point. */
   under(
@@ -121,7 +133,7 @@ export class MapRegions {
     waters: { readonly waters: MapWaters; readonly judge: WaterJudge } | null,
     ship: Point2,
     view: { readonly left: number; readonly top: number; readonly scale: number },
-    ink: { readonly x: number; readonly y: number },
+    ink: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
     ask: {
       readonly pointer: { readonly x: number; readonly y: number } | null;
       cellsNow(waters: MapWaters): Uint8Array;
@@ -131,9 +143,17 @@ export class MapRegions {
     // While the waters are away (a pan, the land's map), the region lit stays lit, and is judged again after.
     if (!waters) return null;
     const inked = ask.pointer && { x: ask.pointer.x - ink.x, y: ask.pointer.y - ink.y };
-    const world = inked && [view.left + inked.x / view.scale, view.top + inked.y / view.scale];
+    const onMap = inked && inked.x >= 0 && inked.y >= 0 && inked.x <= ink.width && inked.y <= ink.height;
+    const world = onMap && [view.left + inked.x / view.scale, view.top + inked.y / view.scale];
     const region = world && inked ? this.under(waters, ship, world) : null;
-    if (region === (this.lit?.region ?? null)) return region ? null : water;
+    // As a water's words do, the name stands where the pointer came in until the map moves, then anew by it.
+    const seenOn = JSON.stringify([view, ink]);
+    const moved = seenOn !== this.seenOn;
+    this.seenOn = seenOn;
+    if (region === (this.lit?.region ?? null)) {
+      if (region && inked && moved) this.lit = { region, ...inked };
+      return region ? null : water;
+    }
     this.lit = region && inked ? { region, ...inked } : null;
     return region ? regionCells(waters.waters, this.all, region) : ask.cellsNow(waters.waters);
   }

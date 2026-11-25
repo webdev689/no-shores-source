@@ -55,6 +55,8 @@ interface Inside {
   zone: unknown;
   begin(route: 'public' | 'company', lamp: number | null): void;
   home(ask: (asked: GearAsk) => void): void;
+  cardAt: unknown;
+  card: { open: boolean; show(choice: unknown): void };
 }
 
 /** A foot in the room `room`, its gear as the room last said it, online or alone, its asks written down. */
@@ -89,7 +91,6 @@ function game(foot: unknown, now = () => Date.now()) {
     goInto: async () => undefined,
     showDungeon: async () => undefined,
     companyPlaces: async () => [],
-    climate: () => 'woodland',
     tell: (words) => void held.told.push(words),
     failed: (why) => void held.told.push(why),
     now,
@@ -215,4 +216,43 @@ test('held in a zone, the map shows the web, the way come a track and "You" at t
   assert.deepEqual(track.at(-1), you);
   assert.equal(track.length, 3, 'the patrol zone, the zone passed and the zone stood in');
   assert.ok(sheet.marks.some((mark) => mark.word === patrol.name));
+});
+
+test('a begin at a lamp the room refuses for its lamp says the player has not lit it this week', () => {
+  const foot = footIn(patrol.id, { online: true, dive: null });
+  const { held, inside, passages } = game(foot);
+  inside.mouth = 0;
+  inside.begin('public', 2);
+  foot.held.gear = { ...foot.held.gear!, answered: 1, answer: 174 };
+  passages.frame(false);
+  assert.deepEqual(held.told, ['You have not lit that lamp this week.']);
+});
+
+test('Home in a dive already turned homeward goes home at once, with no ask left waiting on the room', async () => {
+  const dive = { island: 'continent-1', week: 2_900, zone: 7, mouth: 0, homeward: true };
+  const asks: GearAsk[] = [];
+  const { inside, played } = game(footIn('passage-g', { online: true, dive }, asks));
+  inside.zone = zoneIn('passage-g', 7, [3]);
+  inside.home((asked) => void asks.push(asked));
+  assert.deepEqual(asks, [], 'nothing for the room to change');
+  assert.equal(played[0]?.to, patrol.centre);
+});
+
+test('the mouths’ card closes once its place is left: walked away, or another room', () => {
+  const foot = footIn(patrol.id, { online: true, dive: null });
+  const { held, inside, passages } = game(foot);
+  const open = () => {
+    inside.card.show({ run: 'The Halls', beyond: {}, modifiers: [], routes: [], starts: [] });
+    [inside.mouth, inside.cardAt] = [0, { foot, door: [4, 5] }];
+  };
+  open();
+  passages.frame(false);
+  assert.equal(inside.card.open, true, 'at its door it stays');
+  inside.cardAt = { foot, door: [40, 5] };
+  passages.frame(false);
+  assert.equal(inside.card.open, false, 'walked 36 m away');
+  open();
+  held.foot = footIn('passage-h', { online: true, dive: null });
+  passages.frame(false);
+  assert.equal(inside.card.open, false, 'in another room');
 });

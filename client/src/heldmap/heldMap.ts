@@ -372,7 +372,7 @@ export class HeldMap {
     const waters = this.land || this.press?.panning ? null : this.waters;
     const hovered = waters && this.ask.hover(waters.waters, waters.judge, this.mapView, this.ink, scene.ship);
     const lit = this.regions.hover(waters, scene.ship, this.mapView, this.ink, this.ask, hovered?.cells ?? null);
-    if (lit) this.view.setLit(lit);
+    if (lit) this.view.setLit(lit, this.regions.lit !== null);
     const scaled = (rect: Rect, down: number): Rect => ({
       x: rect.x * dpr,
       y: (rect.y + down) * dpr,
@@ -457,7 +457,7 @@ export class HeldMap {
     if (lettering) {
       paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
       // While the prompt asks, it says what the pointer's words would.
-      if (said?.region && !asked) paintRegion(this.painter, said.line, said.x, said.y, lettering.scale);
+      if (said?.region && !asked) paintRegion(this.painter, said.line, [said.x, said.y], this.ink, lettering.scale);
       else if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
       if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
     } else if (land) {

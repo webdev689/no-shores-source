@@ -71,8 +71,8 @@ test('in a passage zone with anything carried, the leave says the haul is lost u
   const view = { width: 1280, height: 720 };
   assert.ok(
     said(hold.node(view, 'A chalk cut', 'What you carry is lost')).includes(
-      'Leave A chalk cut. What you carry is lost',
+      'Leave a chalk cut. What you carry is lost',
     ),
   );
-  assert.ok(said(hold.node(view, 'A chalk cut')).includes('Leave A chalk cut'));
+  assert.ok(said(hold.node(view, 'A chalk cut')).includes('Leave a chalk cut'));
 });

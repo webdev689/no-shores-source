@@ -207,6 +207,18 @@ passages measure 0.77 to 1.40 of the patrol zone's XP and 1.21 to 1.84 of its lo
 | Going home | Asked of a lamp lit for the dive, wherever in its zone the player stands |
 | The passages' bounties on the board | The town's, at places 15 and 16 after the factions' 6 to 14, so no place a save keeps changes meaning: the town's six stay 0 to 5. They are drawn as the board's fourth pool, kept under the town's keys, and shown in the town's row after its six, in its one design, their card's mark a lamp |
 
+## The page in a zone
+
+| Call | Choice |
+|---|---|
+| Foes too strong | A zone's foes' levels are said in the loss's colour once its strongest stands three or more levels over the player, where their blows begin to fall away (`power::gap`) |
+| The map's names | A zone's kind (a lamp by its place) and its foes' levels, beside its mark or not at all; its currents are left to its sign, so a name fits by its mark |
+| The missions' marks | The objective's ringed disc with a device for each kind: a flame for a Kindle, a ring for a Hold, a crosshair for a Hunt, three tallies for a Reckoning, an hourglass for a Gauntlet, two bars for an Ambush, a broken post for a Sever |
+| The missions' bounty | "Finish 3 passage missions: a Kindle, Hold, Hunt, Reckoning, Gauntlet, Ambush or Sever.", so it names what the page shows |
+| The mouths' card | Closes 10 m from its door, past the 4 m it opens within |
+| The haul's panel | Five lines, then "and 4 more" |
+| The cold lantern found | Its name and words stand 6 s low in the view, on a phone's in the haul's place |
+
 ## The Atheric bounty: Lanternfall
 
 | Call | Choice |

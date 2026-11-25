@@ -347,8 +347,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const gated = paused || looking || here.fallen || here.dungeon;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
-    const mapless = paused || here.fallen || here.dungeon;
+    // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon but a passage zone's,
+    // whose map is the web's, as `openMap` has it.
+    const mapless = paused || here.fallen || (here.dungeon && !parts.passages.standsIn());
     const placing = placingStrip();
     hud.strip(looking ? stripOf('landMap') : (placing ?? (mapless ? shown.hints : withMapKey(shown.hints))));
     // The leave held through takes the player to their ship: not under a window, the sheet, the held map or the chat,
