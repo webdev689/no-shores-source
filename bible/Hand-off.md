@@ -219,24 +219,27 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): eleven
-  of the owner's picks are on R2 and in `sounds.json` (the `freesound` run 45664528450): the gallop and the boost on
-  the ground, each cut to one stride, the boost's neigh, the whinny, the snort, into and out of the saddle, the Grey
-  Tithe's death, its four attack grunts and three pain grunts as variations (a cue may list several picks, each with
-  its credit), and the Lattice's alert. Foes never make a din: at most two foe voices start in any 0.75 s, a death
-  first, and one foe's attack or pain grunt waits 2 s before the next (`WorldSounds.gated`). Still on the sheet "Horse
-  and Foe Sounds" (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN, picks in its `picks` store): walking on the
-  ground (five new) and on stone (one), galloping on stone (one), the Tithe's alert and the Lattice's attack, hurt and
-  death; walking, galloping and boosting in water and boosting on stone found nothing in any wording, Freesound holding
-  almost no horse there. Open for the owner: whether those play the ground's hoofbeat until a recording turns up. Once
-  picked: set each cue's `picked` in `content/audio/freesound.json`, a hoofbeat's with a `cut` of one stride, push,
-  and take the run's `sounds.json`.
+- **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
+  the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
+  each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
+  and on stone, the boost, its neigh, the whinny, the snort, into and out of the saddle. The Grey Tithe: its four
+  alerts ("All"), four attack grunts and three pain grunts as variations, each credited, and its death. The Lattice:
+  its alert, attack, hurt and death ("No glass"). A stride is heard as the last one's recording ends (`HorseSounds`,
+  the sample's length), each hoofbeat cut to one stride of its recording, quiet to quiet, mono; a fixed 1.7, 3.4 or
+  4.6 m a stride had doubled the hoofbeats' pace at the Bay's 6 and 12 m/s. Foes never make a din: at most two foe
+  voices begin in 0.75 s besides a death, never kept back; one foe's swing or hurt once in 2 s; only a fighter's voice
+  that began counts, so a raid's alarm is never held (`WorldSounds.playHeard`). Silent, nothing found in any wording:
+  walking, galloping and boosting in water, and boosting on stone. Open for the owner: whether those play the
+  ground's hoofbeat until a recording turns up. The sheet "Horse and Foe Sounds"
+  (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN) holds the picks in its `picks` store. Not heard in a browser:
+  whether it drops the MP3's 25 to 40 ms of padding as ffmpeg does (each stride decodes to its cut there).
 
 - **The five asks: plain clothes, the Tack's Bay, the welcome's camera, speakers' colours and the city's sounds**
   (#206, draft; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
   every call there). The prologue's end gives a Plain Shirt and Plain Breeches with no stats (`Item::plain`), worn
   where the torso and legs are bare; the Tack gives the Bay as she is spoken with on the round (a goal's own
-  `reward`, which may give Aurem or the horse, never a house's gifts nor the Sloop); the face-to-face shot stands
+  `reward`, which may give Aurem or the horse, never a house's gifts nor the Sloop), and at her counter for nothing to
+  one who pledged before the round reached her; the face-to-face shot stands
   2.8 m over the pair's feet, solved for the lens, their crowns no longer cut off; each speaker's name has a colour of
   their own in the dialogue box. The city's sounds are settled: the crowd kept on the owner's "Keep"; the hum the
   owner's pick from the sheet "Overlook City Sounds" (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound

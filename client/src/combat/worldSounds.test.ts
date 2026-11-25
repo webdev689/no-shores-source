@@ -4,6 +4,8 @@ import type { FightEvent, SeenPlayer } from '../network/messages.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { EVENT } from './cues.ts';
+import { voiceCue } from './worldCues.ts';
+import { recorded } from '../soundSamples.ts';
 import type { KeptFoe } from './fighting.ts';
 import { SpellEffects } from './spellEffects.ts';
 import { HEARD_MOST_S, type HeardFight, type WorldFrame, WorldSounds, voiceToDrop } from './worldSounds.ts';
@@ -198,7 +200,7 @@ test('a menu holds the world quiet, and what happened meanwhile is not heard aft
   sounds.frame(frameOf({ foe: foeAt(5, { alert: 2 }) }));
   assert.deepEqual(
     played.map(({ id }) => id),
-    ['foe.alert'],
+    [voiceCue('tithe', 'alert', recorded)],
   );
 });
 
