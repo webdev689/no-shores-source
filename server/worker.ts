@@ -201,7 +201,7 @@ export class RoomHost extends DurableObject<Env> {
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
     // they are landed on its island: their inputs are taken in their order and stand still until then.
-    if (privateRun(this.name) || this.name.startsWith('sea-dungeon-') || this.outpost)
+    if (privateRun(this.name) || passageRoom(this.name) || this.name.startsWith('sea-dungeon-') || this.outpost)
       this.guarded(() => this.room.hold(player, true), false);
     // A sea island's dungeon whose sea never says the player landed sends them off to join again, rather than hold them.
     if (this.name.startsWith('sea-dungeon-'))

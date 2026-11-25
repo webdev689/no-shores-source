@@ -85,6 +85,9 @@ export function diveOf(body: string | null): string {
   }
 }
 
+/** A dive no save holds yet, which no character's dive matches. */
+const UNSAVED = 'unsaved';
+
 /** A session's token, as a browser sends it. */
 export const TOKEN = /^[0-9a-f]{64}$/;
 
@@ -391,9 +394,9 @@ export class Keeper {
     if (here() && !signed()) this.lost(player, this.unsigned, false);
   }
 
-  /** Whether this room keeps no one it has not judged: a run, or a guild's outpost. */
+  /** Whether this room keeps no one it has not judged: a run, a guild's outpost, or a passage zone. */
   private get closed(): boolean {
-    return this.company || this.guild !== null;
+    return this.company || this.guild !== null || this.alone;
   }
 
   /** Why this room sends away a player it cannot keep. */
@@ -415,7 +418,10 @@ export class Keeper {
     const dive = diveOf(this.room.character(player));
     if (dive === held.dive) return;
     held.dive = dive;
-    void this.saveNow(player);
+    // Not saved, it is tried again at the next change, and by the ordinary save meanwhile.
+    void this.saveNow(player).then((saved) => {
+      if (!saved && held.dive === dive) held.dive = UNSAVED;
+    });
   }
 
   /** Saves each character that changed a while ago, or has gone unsaved long enough. */

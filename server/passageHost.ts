@@ -5,6 +5,7 @@
  */
 
 import type { PassageWeb, Passages } from './arrival.ts';
+import { weekOf } from '../client/src/game/guild/guildLaw.ts';
 import { passageAsk } from './roomNames.ts';
 import type { RoomDoor } from './roomDoor.ts';
 
@@ -14,9 +15,10 @@ export function webOf(room: Pick<RoomDoor, 'passageWeb'>, island: string, week: 
   return text === '' ? null : (JSON.parse(text) as PassageWeb);
 }
 
-/** What a kept character's passage arrivals are judged by: its body, and the webs the room's module lays. */
-export function passagesOf(room: Pick<RoomDoor, 'passageWeb'>, body: string | null): Passages {
-  return { body, web: (island, week) => webOf(room, island, week) };
+/** What a kept character's passage arrivals are judged by: its body, the week it is at `now` (Unix milliseconds), and
+ *  the webs the room's module lays. */
+export function passagesOf(room: Pick<RoomDoor, 'passageWeb'>, body: string | null, now = Date.now()): Passages {
+  return { body, week: weekOf(now), web: (island, week) => webOf(room, island, week) };
 }
 
 /** Opens the passage zone's room `name` at Unix minute `minute`: '' when it opened, else why it did not. */

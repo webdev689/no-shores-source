@@ -1,3 +1,5 @@
+import { weekOf } from '../client/src/game/guild/guildLaw.ts';
+
 /** The difficulties a voyage sets out at, by the gear crate's numbers. */
 const SEAS = ['normal', 'elite', 'abyss'];
 /** A patrol's dungeons, by their numbers: `dungeon-0` to `dungeon-2`. */
@@ -120,8 +122,8 @@ const PASSAGE =
 export const PASSAGE_MOST = 8;
 
 /** A passage zone's room by its whole name (`passage-...`): its island, week and zone, its copy (1 for the first
- *  public room) and its route's instance (null for a public room). Null for any other spelling, so no one opens a
- *  fresh copy of a public room to loot it again by naming it otherwise, nor a public copy of a route. */
+ *  public room) and its route's instance (null for a public room). Null for any other spelling, so each room has one
+ *  name and no other spelling opens a fresh room, nor a public copy of a route. */
 export function passageRoom(name: string | null): {
   readonly island: string;
   readonly week: number;
@@ -152,16 +154,10 @@ export function passageRoomName(island: string, week: number, zone: number, afte
 export function passageAsk(name: string, minute: number): { readonly ask: string } | { readonly why: string } {
   const named = passageRoom(name);
   if (!named) return { why: 'No such passage.' };
-  const week = weekAt(minute);
+  const week = weekOf(minute * 60_000);
   if (named.week !== week && named.week !== week - 1) return { why: "That week's passages are gone." };
   const route = named.run === null ? 'public' : 'company';
   return { ask: JSON.stringify({ island: named.island, week: named.week, zone: named.zone, route, minute }) };
-}
-
-/** The week a Unix minute falls in, as `gear::clock::week_of` counts it: weeks from Tuesday 09:00 UTC. */
-export function weekAt(minute: number): number {
-  const [week, first] = [7 * 24 * 60, 5 * 24 * 60 + 9 * 60];
-  return Math.floor((minute + week - first) / week);
 }
 
 /** The letters a run's instance is drawn from: 36, so each of its 8 random bytes is taken modulo 36. */

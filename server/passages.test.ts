@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { runInstance, sharedRun } from '../client/src/game/rooms.ts';
 import { type Passages, arrives } from './arrival.ts';
 import { Keeper } from './keeping.ts';
+import { weekOf } from '../client/src/game/guild/guildLaw.ts';
 import { roomOf, world } from './keepingForTests.ts';
 import { openPassageRoom, passagesOf, webOf } from './passageHost.ts';
 import type { PassageWeb } from './arrival.ts';
@@ -17,7 +18,6 @@ import {
   privateRun,
   runFull,
   socketsMost,
-  weekAt,
 } from './roomNames.ts';
 import { startRoomDoor } from './roomDoor.ts';
 
@@ -50,7 +50,7 @@ function diving(dive: Record<string, unknown> | null, lamps: number[] = []): Pas
   const passage = dive && { island: ISLAND, week: WEEK, route: 'public', mouth: 0, depth: 1, lamp: 0, ...dive };
   const lit = lamps.length > 0 ? { [ISLAND]: lamps } : {};
   const body = JSON.stringify({ passage, activity: { this_week: { week: WEEK, passage_lamps: lit } } });
-  return passagesOf(door, body);
+  return passagesOf(door, body, MINUTE * 60_000);
 }
 
 test('a passage zone’s room is named by its island, week and zone, a public copy or a route, by one spelling each', () => {
@@ -102,8 +102,8 @@ test('a company’s member taking its route joins a member’s room in that zone
 });
 
 test('a passage zone opens for this week’s web or the last’s alone, and says why it opens none', () => {
-  assert.equal(weekAt(MINUTE), WEEK, 'as gear::clock::week_of counts it');
-  assert.equal(weekAt(29_240_000), WEEK + 1);
+  assert.equal(weekOf(MINUTE * 60_000), WEEK, 'as gear::clock::week_of counts it');
+  assert.equal(weekOf(29_240_000 * 60_000), WEEK + 1);
   assert.deepEqual(JSON.parse((passageAsk(room(4, 'ab12cd34'), MINUTE) as { ask: string }).ask), {
     island: ISLAND,
     week: WEEK,
@@ -164,7 +164,12 @@ test('a dive goes on into a zone its last zone’s ways lead to, and rejoins its
     const astray = diving({ zone: elsewhere.number, depth: 2 });
     assert.equal(arrives(room(elsewhere.number), room(first), null, null, astray), false, 'no way leads there');
   }
-  assert.equal(arrives(room(first), room(first), null, null, diving(null)), true, 'a rejoin; the room ends its dive');
+  assert.equal(arrives(room(first), room(first), null, null, diving({ zone: first })), true, 'a rejoin on its dive');
+  assert.equal(arrives(room(first), room(first), null, null, diving(null)), false, 'a rejoin whose dive ended');
+  assert.equal(arrives(room(first), room(first), null, null, diving({ zone: next })), false, 'its dive went on');
+  // Once the week turns, last week's web takes no one, whoever comes.
+  const turned = passagesOf(door, wentOn.body, (MINUTE + 7 * 24 * 60) * 60_000);
+  assert.equal(arrives(room(next), room(first), null, null, turned), false);
 });
 
 test('a lamp’s zone leads home to its patrol zone once its lamp is lit for the character', () => {

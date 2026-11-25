@@ -626,7 +626,8 @@ so every decision is Rust and the shell only carries bytes and time.
   `gear::clock::week_of` counts it and the zone's number in the web ([[Passages]]), each number without leading
   zeros. That is the zone's first public room; `--2` to `--99` after it are the next public rooms, each opened when
   the ones before were full, and `--run-<instance>` a company's route, a run as any other (`privateRun`). Any other
-  spelling is no room, so no one opens a fresh copy of a public room to loot it again, nor a public copy of a route.
+  spelling is no room, so no other spelling opens a fresh room, nor a public copy of a route. A page may join any
+  copy by its number; each dive is still paid a zone's cache once.
 - **Opening** (`passageHost.ts`): the first join opens the room from its name with the room module's
   `open_passage`, its ask the island, week, zone, route and the minute (`passageAsk`). Last week's web still opens,
   and its room refuses every join with "The passage has shifted"; a week neither this one nor the last ("That week's
@@ -634,18 +635,21 @@ so every decision is Rust and the shell only carries bytes and time.
   socket only to close it with 4003 and why.
 - **Who comes in**: it keeps characters as a node's room does. A public room holds eight accounts (`PASSAGE_MOST`),
   judged as each signs in, and a ninth is closed with 4003 and "This passage is full.", for the page to join the next
-  copy; its sockets are held to sixteen. A route keeps to its company and its four accounts as a run does. A
+  copy; its sockets are held to sixteen. As in a run, no one plays before the room keeps their character, and it
+  keeps no one unkept. A route keeps to its company and its four accounts as a run does. A
   company's member taking its route joins the room of a member already in that zone's route, as the page finds it
   among the company's places (`sharedRun`), else the page draws a new instance (`runInstance`).
 - **Arrivals** (`arrives`, judged from the keeper's copy of the character, never the page's): only a character on a
   dive (`gear::dive::Dive`) of the room's island, week and zone, by its route (a company's dive into a route, a public
   one into a public room), and only from the island's patrol zone where the dive begins at the mouth leading to the
   zone or at the zone's lamp lit this week; from a passage zone of the same web and route whose ways on lead to it,
-  where the rules went on only once its deal was done; or rejoining its own room. No company playing there lets
+  where the rules went on only once its deal was done; or rejoining its own room with the dive still in it. Once the
+  week turns, last week's rooms take no one, whoever is still in them. No company playing there lets
   anyone else in. Out of a lamp's zone a character comes to the island's patrol zone once that lamp is lit for it this
   week. The web is laid by the room's own module (`room_passage_web`).
 - **The dive is saved at once** when it moves (`Keeper.changed`, `diveOf`): begun, gone on, gone home or ended, the
-  character is saved without waiting `SAVE_AFTER_CHANGE_MS`, so the next room reads where the dive went. A join to
+  character is saved without waiting `SAVE_AFTER_CHANGE_MS`, so the next room reads where the dive went; a save the
+  accounts did not take is tried again at the next change. A join to
   any land room that is not the dive's zone ends the dive, its haul lost, as the room's rules do.
 
 ## An outpost's room

@@ -82,7 +82,7 @@ export function arrives(
   reach: Reach | null,
   passages: Passages | null = null,
 ): boolean {
-  if (passageRoom(room)) return room === from || (passages !== null && intoPassage(room, from, passages));
+  if (passageRoom(room)) return passages !== null && intoPassage(room, from, passages);
   if (!room.startsWith('node-') || room === from || room === FIRST_ROOM) return true;
   const [to, was] = [nodeOf(room), nodeOf(from)];
   if (!to) return false;
@@ -151,10 +151,11 @@ export interface PassageWeb {
   }[];
 }
 
-/** What a passage's arrivals are judged by: the character's body as the keeper holds it (never what a page says), and
- *  an island's passages' web for a week, null for none. */
+/** What a passage's arrivals are judged by: the character's body as the keeper holds it (never what a page says), the
+ *  week it is now, and an island's passages' web for a week, null for none. */
 export interface Passages {
   readonly body: string | null;
+  readonly week: number;
   readonly web: (island: string, week: number) => PassageWeb | null;
 }
 
@@ -197,7 +198,9 @@ function intoPassage(room: string, from: string | null, passages: Passages): boo
   const diving = divingOf(passages.body);
   const dive = diving.passage;
   if (!to || !dive || dive.island !== to.island || dive.week !== to.week || dive.zone !== to.zone) return false;
-  if ((dive.route === 'company') !== (to.run !== null)) return false;
+  // Once the week turns, the web's ways lead elsewhere: no dive goes on into last week's.
+  if ((dive.route === 'company') !== (to.run !== null) || to.week !== passages.week) return false;
+  if (room === from) return true;
   const web = passages.web(to.island, to.week);
   const zone = web?.zones.find((each) => each.number === to.zone);
   if (!web || !zone) return false;
