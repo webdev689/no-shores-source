@@ -290,7 +290,7 @@ test('under ground a lit lamp, a lit dead lamp and an open mouth each light the 
   );
   const [lamp, kindle, mouth] = lights;
   assert.ok(lamp && kindle && mouth);
-  assert.ok(lamp.at[2] > 1 && kindle.at[2] > 2, 'each from its glass, over the floor');
+  assert.deepEqual([lamp.at[2], kindle.at[2]], [1.8, 2.25], 'each from its glass, over the floor');
   // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.
   assert.ok(mouth.at[0] < 10 && Math.abs(mouth.at[1] - 20) < 1e-6);
 });

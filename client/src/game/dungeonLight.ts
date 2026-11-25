@@ -132,8 +132,7 @@ export class NearestLights {
   private readonly portal: Light;
   private readonly chosen: Light[] = [];
 
-  /** `burning` the lights always lit, numbered from 0, and `portal` the one lit only while it stands open, numbered
-   *  after them. */
+  /** `burning` the lights always lit, each its own number, and `portal` the one lit only while it stands open. */
   constructor(burning: readonly Light[], portal: Light) {
     this.order = [...burning, portal];
     this.past = new Float64Array(Math.max(portal.number, ...burning.map((light) => light.number)) + 1);

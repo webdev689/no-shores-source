@@ -86,7 +86,9 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
   const zone = web.zones.find((each) =>
     asked.number !== undefined
       ? each.number === asked.number
-      : (!asked.ground || ground(each) === asked.ground) && (!asked.size || each.size === asked.size),
+      : (!asked.ground || ground(each) === asked.ground) &&
+        (!asked.size || each.size === asked.size) &&
+        door.plan(ISLAND, week, each.number) !== null,
   );
   const plan = zone && door.plan(ISLAND, week, zone.number);
   if (!plan) throw new Error(`no zone laid in week ${week} as asked: ${JSON.stringify(asked)}`);

@@ -1,4 +1,4 @@
-// How a passage's hollow looks beyond what its room lays: its floor's ground toY its form and name, and the meadow of
+// How a passage's hollow looks beyond what its room lays: its floor's ground by its form and name, and the meadow of
 // the islands' kit's grass and shrubs grown over that floor. Neither stands anything solid, so the page alone draws
 // them and the room's ground and blocks are as it lays them.
 import { groundHeight, type GroundLook, groundLook } from '../../islands/isleGround.ts';
@@ -27,7 +27,7 @@ const look = (floor: Colour, more: { readonly paved?: boolean; readonly rock?: C
   ...more,
 });
 
-/** A hollow's ground toY its form, and toY its name where that says a ground (`crates/passage/src/zone.rs` names):
+/** A hollow's ground by its form, and by its name where that says a ground (`crates/passage/src/zone.rs` names):
  *  a hollow the land's own grass, or chalk under chalk walls; a ravine stony earth; shelves turf, or bare rock; a
  *  court flagstones; a strand sand, or a shell bed's dry sea floor; a grove leaf litter. */
 export function hollowGround(form: string, name: string, climate: string): GroundLook {
@@ -48,7 +48,7 @@ export function hollowGround(form: string, name: string, climate: string): Groun
   }
 }
 
-/** The meadow's grass and shrubs a square metre, toY the hollow's form and its name where that says a ground: a grove
+/** The meadow's grass and shrubs a square metre, by the hollow's form and its name where that says a ground: a grove
  *  thickest, bare rock, chalk and a court thin, a strand barest. */
 function growthOf(form: string, name: string): { readonly grass: number; readonly shrubs: number } {
   const says = name.toLowerCase();
@@ -64,7 +64,7 @@ function growthOf(form: string, name: string): { readonly grass: number; readonl
 const CLEAR_OF_ARRIVAL_M = 3;
 const CLEAR_OF_PIECES_M = 2;
 
-/** Whether a point lies inside a ring, toY the crossings of a ray east from it. */
+/** Whether a point lies inside a ring, by the crossings of a ray east from it. */
 function inside(ring: readonly Point2[], [x, y]: Point2): boolean {
   let crossings = 0;
   ring.forEach(([fromX, fromY], index) => {
@@ -89,8 +89,13 @@ export function meadow(plan: PassagePlan, heights: Float64Array, climate: string
   const growth = growthOf(plan.zone.ground.form, plan.zone.name);
   const grid = gridOf(heights);
   const drawn = (seed: number, draw: number) => hashOf(plan.zone.number, seed, draw) / 4294967296;
+  // Clear too of the rocks, ruins and wrecks the room stands, so nothing grows through them.
+  const blocks = plan.ground.blocks;
   const clear = (spot: Point2) =>
     inside(ring, spot) &&
+    blocks.every(
+      ([left, top, right, bottom]) => spot[0] < left || spot[0] > right || spot[1] < top || spot[1] > bottom,
+    ) &&
     Math.hypot(spot[0] - plan.sites.arrive[0], spot[1] - plan.sites.arrive[1]) >= CLEAR_OF_ARRIVAL_M &&
     plan.pieces.every((piece) => Math.hypot(spot[0] - piece.at[0], spot[1] - piece.at[1]) >= CLEAR_OF_PIECES_M);
   const area = (east - west) * (south - north);

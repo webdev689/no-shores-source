@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { startPassageDoor } from '../../rules/passageRules.ts';
-import { groundLook } from '../../islands/isleGround.ts';
+import { groundHeight, groundLook } from '../../islands/isleGround.ts';
 import { MODULE_NAMES, roleOf } from '../../islands/isleModules.ts';
-import { groundHeight } from '../../islands/isleGround.ts';
 import { gridOf } from '../../islands/islePlan.ts';
 import { hollowGround } from './hollowLook.ts';
 import { UNTOUCHED } from './passagePieces.ts';
@@ -32,7 +31,7 @@ test('each zone is drawn as its kind: a layout under ground, an island’s groun
     assert.ok(heights);
     const shown = zoneIsle(plan, heights, 'woodland');
     assert.ok(shown && shown.plan.placements.length > 0, `zone ${zone.number} stands modules`);
-    // The sea's islands count from 1: a hollow is drawn toY an id none of theirs can be.
+    // The sea's islands count from 1: a hollow is drawn by an id none of theirs can be.
     assert.ok(shown.id < 1, `zone ${zone.number}'s hollow is no sea island`);
     assert.equal(zoneLayout(plan), null);
   }
@@ -67,6 +66,18 @@ test('above ground the lamp’s lantern stands cold until it is lit, and the way
     withPieces(shown, plan, { ...UNTOUCHED, lampLit }, false).plan.placements.find(([module]) => module === lamp)?.[7];
   assert.equal(coldOf(false), 1);
   assert.equal(coldOf(true), 0);
+  const kindled = web?.zones.find((zone) => zone.ground.kind === 'open' && zone.deal === 'kindle');
+  const kindlePlan = kindled && door.plan('continent-1', WEEK, kindled.number);
+  const kindleHeights = kindled && door.heights('continent-1', WEEK, kindled.number);
+  const kindleShown = kindlePlan && kindleHeights && zoneIsle(kindlePlan, kindleHeights, 'woodland');
+  assert.ok(kindlePlan && kindleShown, 'week 2900 has dead lamps above ground');
+  const deadLamp = MODULE_NAMES.indexOf('passage.kindle');
+  const colds = (lit: readonly number[]) =>
+    withPieces(kindleShown, kindlePlan, { ...UNTOUCHED, kindled: lit }, false)
+      .plan.placements.filter(([module]) => module === deadLamp)
+      .map((placement) => placement[7]);
+  assert.deepEqual(colds([]), [1, 1, 1]);
+  assert.deepEqual(colds([1]), [1, 0, 1], 'only the dead lamp kindled glows');
 });
 
 test('a hollow’s floor is its form’s ground, and a name that says a ground its own: no two forms alike', () => {
@@ -111,6 +122,9 @@ test('a hollow’s floor grows the kit’s grass and shrubs, which stand nothing
         return fromY > y !== toY > y && x < fromX + ((y - fromY) * (toX - fromX)) / (toY - fromY);
       }).length;
       assert.equal(crossings % 2, 1, 'inside the ring');
+      const within = ([west, north, east, south]: readonly number[]) =>
+        x >= (west ?? 0) && x <= (east ?? 0) && y >= (north ?? 0) && y <= (south ?? 0);
+      assert.ok(!plan.ground.blocks.some(within), 'clear of every rock, ruin and wreck');
     }
     assert.deepEqual(
       zoneIsle(plan, heights, 'temperate-coast')?.plan.placements.slice(laid),
