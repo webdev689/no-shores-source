@@ -444,5 +444,10 @@ and a file of one's own asks for any other. Every picture is drawn by the game's
 
 - A body may scramble aslant up a hollow's wall to its lip, where no foe follows (`crates/passage/src/hollow.rs`).
 - A small strand stands two of its five wrecks.
-- From the arrival in a narrow ravine, or by a strand's wreck, the eye behind the body can stand in rock or timber.
+- The way comes down over a hollow's arrival clear of its ground and blocks (`passageZone.test.ts`, four weeks'
+  hollows), and the foot's camera keeps off the hollow's heights and its dressing's blocks; where a module's mesh
+  reaches past the blocks it stands as (a cliff's face, a wreck's timbers), the eye behind the body can still stand
+  in it, as on the sea's islands. That reach is unmeasured.
+- A cache's roll for an Atheric bounty's find counts a zone once a week for all the island's bounties: with a second
+  bounty on Saltmere, the first would take each zone's roll (`roll_find`). There is one.
 - The pictures' hollows stand under a plain sky colour, and the way's frames over a plain ground.

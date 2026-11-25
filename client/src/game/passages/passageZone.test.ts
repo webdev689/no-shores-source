@@ -7,6 +7,7 @@ import { MODULE_NAMES, roleOf } from '../../islands/isleModules.ts';
 import { gridOf, type Point2 } from '../../islands/islePlan.ts';
 import { hollowGround } from './hollowLook.ts';
 import { UNTOUCHED } from './passagePieces.ts';
+import { LOW } from './passageWay.ts';
 import { drawnHeights, floorOf, UNDER_FLOOR_M, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 
 const door = startPassageDoor(
@@ -141,4 +142,34 @@ test('a hollow is drawn with its rim where its ground ends for a body, its walke
   const drawn = drawnHeights(heights);
   assert.deepEqual([...drawn.slice(5)], [5, 5, 5, 7, 7, 7], 'each drawn at its nearest held height');
   assert.ok(Number.isNaN(heights[6] ?? 0), 'the heights the body walks keep their walls');
+});
+
+test('the way comes down from over each hollow’s arrival clear of its ground and blocks, the arrival in sight', () => {
+  const buried: string[] = [];
+  let hollows = 0;
+  for (let week = 2_900; week < 2_904; week++) {
+    for (const zone of door.web('continent-1', week)?.zones ?? []) {
+      const plan = zone.ground.kind === 'open' ? door.plan('continent-1', week, zone.number) : null;
+      const heights = plan && door.heights('continent-1', week, zone.number);
+      if (!plan || !heights || plan.ground.kind !== 'open') continue;
+      hollows++;
+      const grid = gridOf(drawnHeights(heights));
+      const [[x, y], facing] = [plan.sites.arrive, plan.sites.facing];
+      const floor = groundHeight(grid, x, y) ?? 0;
+      // As `lowOver` frames it, looking at the body's head where it arrives.
+      const eye = [x - Math.sin(facing) * LOW.backM, y + Math.cos(facing) * LOW.backM, floor + LOW.upM] as const;
+      const head = [x, y, floor + 1.6] as const;
+      const under = Array.from({ length: 41 }, (unused, step) => step / 40).some((share) => {
+        const along = eye.map((part, axis) => part + ((head[axis] ?? 0) - part) * share);
+        return (groundHeight(grid, along[0] ?? 0, along[1] ?? 0) ?? -Infinity) > (along[2] ?? 0);
+      });
+      const blocked = [...plan.ground.blocks, ...plan.solids].some(
+        ([west, north, east, south, top]) =>
+          eye[0] > west && eye[0] < east && eye[1] > north && eye[1] < south && eye[2] < top,
+      );
+      if (under || blocked) buried.push(`week ${week} zone ${zone.number} (${zone.name})`);
+    }
+  }
+  assert.ok(hollows > 100, `${hollows} hollows in four weeks`);
+  assert.deepEqual(buried, []);
 });
