@@ -12,6 +12,7 @@ import { FIGHTER_FLOATS } from '../rules/fighters.ts';
 import { socketAt } from './breachPlan.ts';
 import { MARK, PUBLIC_KIND, type PublicEvent } from '../network/publicMessages.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
+import { mapEventOf } from './publicLaw.ts';
 import { type PublicBodies, PublicView } from './publicView.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -123,7 +124,8 @@ test('a raid’s stores carry their bars while it runs; a plundered store is hea
     { at: [10, 0, 1], share: 0.4, struck: false },
   ]);
   assert.deepEqual(frame.sounds, [{ cue: 'sea.ship.break', at: [10, 0, 1] }]);
-  const struck = view.frame(raid([store(1, 0.9), store(2, 0.4)]), [], [], bodies(), 0.1, [], () => 0);
+  const onGround = bodies({ feet: [50, 50, 2] });
+  const struck = view.frame(raid([store(1, 0.9), store(2, 0.4)]), [], [], onGround, 0.1, [], () => 0);
   assert.deepEqual(
     struck.shown?.stores.map((each) => each.struck),
     [true, false],
@@ -259,7 +261,7 @@ test('beats kept while the tab was hidden: the last shows, their sounds and stin
   assert.equal(next.sounds.length, 1, 'heard again once frames run');
 });
 
-test('a slow page counts the next event and a chest on the wall’s time, not its capped frame clock', () => {
+test('a slow page counts a chest on the wall’s time, not its capped frame clock; the next event shows no panel', () => {
   let wall = 0;
   const view = new PublicView('gullwing-vale', undefined, null, () => wall);
   const waiting = { ...raid([]), kind: 0, phase: 0, radius: 0, nextTicks: 3600, nextGround: [40, 0, 0] as const };
@@ -270,7 +272,7 @@ test('a slow page counts the next event and a chest on the wall’s time, not it
     wall = frame;
     shown = view.frame(waiting, [], [], bodies(), frame * 0.1, [], () => 0);
   }
-  assert.equal(shown?.shown?.banner?.clock, '0:50');
+  assert.equal(shown?.shown?.banner, null, 'between events no panel shows anywhere');
   const lying = [chest(5, [1, 0, 0], 1)];
   view.frame(raid([], 2), [], lying, bodies(), 1.1, [], () => 0);
   for (let frame = 1; frame <= 12; frame += 1) {
@@ -293,13 +295,14 @@ test('with no event (its room lost) no chest is drawn, and E opens none', () => 
 test('the heroic chance opens: an orange beat, its call in the banner, heard at its target, marked over it', () => {
   const view = new PublicView('saltgrass-downs');
   const growth = { kind: MARK.growth, id: 9, at: [5, 6, 1] as const, health: 1, state: 1 };
-  view.frame(fissure([growth]), [], [], bodies(), 0, [], () => 0);
+  const onGround = bodies({ feet: [50, 50, 2] });
+  view.frame(fissure([growth]), [], [], onGround, 0, [], () => 0);
   const marks: number[] = [];
   const opened = view.frame(
     { ...fissure([growth]), heroic: 1, heroicTicks: 60 * 60 },
     [],
     [],
-    bodies(),
+    onGround,
     0.1,
     marks,
     () => 0,
@@ -307,7 +310,7 @@ test('the heroic chance opens: an orange beat, its call in the banner, heard at 
   assert.equal(opened.shown?.beat, 'chance');
   assert.equal(opened.shown?.banner?.heroic?.text, 'A crystal growth rises: break it!');
   assert.deepEqual(opened.sounds, [{ cue: 'cast.charge', at: [5, 6, 1] }]);
-  const later = view.frame({ ...fissure([growth]), heroic: 1, heroicTicks: 50 * 60 }, [], [], bodies(), 6, [], () => 0);
+  const later = view.frame({ ...fissure([growth]), heroic: 1, heroicTicks: 50 * 60 }, [], [], onGround, 6, [], () => 0);
   assert.equal(later.shown?.banner?.heroic?.text, 'Break the growth', 'the plain task once the call is over');
 });
 
@@ -322,12 +325,14 @@ test('the next event a minute off: counted to the second, a beat, and a beacon o
     nextGround: [40, 0, 0] as const,
   });
   view.frame(waiting(2 * 3600), [], [], bodies(), 0, [], () => 0);
+  // The room still says two minutes a minute on: counted on the page's own seconds, one is left.
+  for (let second = 1; second < 60; second += 1) view.frame(waiting(2 * 3600), [], [], bodies(), second, [], () => 0);
   const marks: number[] = [];
-  const soon = view.frame(waiting(3600), [], [], bodies(), 1, marks, () => 0);
+  const soon = view.frame(waiting(2 * 3600), [], [], bodies(), 60, marks, () => 0);
   assert.equal(soon.shown?.beat, 'soon');
   assert.deepEqual(soon.sounds, [{ cue: 'drop.land', at: [0, 0, 0] }]);
   assert.ok(marks.length > 0, 'the beacon');
-  assert.equal(view.frame(waiting(3600), [], [], bodies(), 11, [], () => 0).shown?.banner?.clock, '0:50');
+  assert.equal(soon.shown?.banner, null, 'between events no panel shows');
 });
 
 test('a shard set arcs into the crack, the ground trembles, and the player carrying one is told where', () => {
@@ -335,7 +340,7 @@ test('a shard set arcs into the crack, the ground trembles, and the player carry
   const view = new PublicView('saltgrass-downs', { tremor: (trauma) => void shook.push(trauma) });
   const crack = { kind: MARK.fissure, id: 1, at: [0, 0, 0] as const, health: 0.8, state: 1 };
   const carried = { kind: MARK.carried, id: 1, at: [3, 0, 0] as const, health: 1, state: 1 };
-  const carrying = view.frame(fissure([crack, carried]), [], [], bodies(), 0, [], () => 0);
+  const carrying = view.frame(fissure([crack, carried]), [], [], bodies({ feet: [50, 50, 2] }), 0, [], () => 0);
   assert.equal(carrying.shown?.banner?.objective, 'Carrying a shard: take it to the fissure');
   const set = view.frame(
     fissure([{ ...crack, health: 0.6 }]),
@@ -360,6 +365,22 @@ test('a chest thumps in, is marked till opened, and the tracker counts the time 
   assert.ok(come.shown?.places.some((place) => place.kind === 'chest'));
   const later = view.frame(raid([], 2), [], lying, bodies(), 13, [], () => 0);
   assert.equal(later.quest?.steps[0]?.clock, 108);
+});
+
+test('a running event’s panel and steps show only on its ground; off it, none, and the map is told it', () => {
+  const view = new PublicView('saltgrass-downs');
+  const away = view.frame(raid([]), [], [], bodies(), 0, [], () => 0);
+  assert.equal(away.shown?.banner, null, 'no panel off its ground');
+  assert.equal(away.quest, null, 'no steps off its ground');
+  assert.ok(
+    away.shown?.places.some((place) => place.kind === 'event'),
+    'the compass still marks it',
+  );
+  const near = view.frame(raid([]), [], [], bodies({ feet: [50, 50, 2] }), 0.1, [], () => 0);
+  assert.equal(near.shown?.banner?.title, 'The Grey Tithe Raid');
+  assert.ok((near.quest?.steps.length ?? 0) > 0, 'its steps on its ground');
+  assert.deepEqual(mapEventOf(raid([])), { at: [50, 50], name: 'The Grey Tithe Raid', clock: '1:00' });
+  assert.equal(mapEventOf({ ...raid([]), phase: 2 }), null, 'the map marks it while it runs');
 });
 
 test('on its ground a running event holds the music at tension, and at its peak in the last minute', () => {

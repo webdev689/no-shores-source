@@ -1,10 +1,11 @@
 // The forged models a city's blocks stand, each built once and laid into one buffer the near cells instance from:
 // a vertex is its position, normal and UV in the model's frame and its picture's layer in the city's array.
-import { buildingModel } from '../models/buildings.ts';
+import { buildingModel, type WindowFrameOf } from '../models/buildings.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import type { MeshData } from './mesh.ts';
+import { CLEAR_GLASS } from './pictures.ts';
 import { finished } from './steps.ts';
 
 /** Numbers a model vertex takes: position, normal, UV, and its layer as a whole number. */
@@ -27,14 +28,21 @@ export function modelKeyOf(
 export function forgedModel(
   tables: { readonly buildings: BuildingTable; readonly props: PropTable },
   key: ModelKey,
+  frameOf?: WindowFrameOf,
 ): ForgedModel | null {
   const [kind, id] = key.split(':');
   if (kind === 'prop') return propModel(tables.props, Number(id));
-  return buildingModel(tables.buildings, Number(id), { open: kind === 'open' });
+  return buildingModel(tables.buildings, Number(id), { open: kind === 'open', frameOf });
 }
 
-/** Where each model sits in the shared buffers. */
-export type ModelEntry = { readonly firstIndex: number; readonly indexCount: number; readonly baseVertex: number };
+/** Where each model sits in the shared buffers, and whether any of it is an open building's clear window, whose
+ *  shadow lets the sun through its panes as the eye sees through them. */
+export type ModelEntry = {
+  readonly firstIndex: number;
+  readonly indexCount: number;
+  readonly baseVertex: number;
+  readonly clear?: boolean;
+};
 
 export type ModelBuffers = {
   readonly vertices: ArrayBuffer;
@@ -85,12 +93,13 @@ export function* modelBufferSteps(
       floats.set(model.uvs.subarray(k * 2, k * 2 + 2), slot + 6);
     }
     for (const part of model.parts) {
-      const layer = layerOf(part.archive, part.record);
+      const layer = layerOf(part.archive, part.record) | (part.clear ? CLEAR_GLASS : 0);
       for (let k = part.start; k < part.start + part.count; k++)
         whole[(vertexAt + model.indices[k]) * MODEL_FLOATS + 8] = layer;
     }
     indices.set(model.indices, indexAt);
-    entries.push({ firstIndex: indexAt, indexCount: model.indices.length, baseVertex: vertexAt });
+    const clear = model.parts.some((part) => part.clear);
+    entries.push({ firstIndex: indexAt, indexCount: model.indices.length, baseVertex: vertexAt, clear });
     triangles.push(model.indices.length / 3);
     vertexAt += count;
     indexAt += model.indices.length;

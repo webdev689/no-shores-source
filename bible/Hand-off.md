@@ -235,7 +235,7 @@ The decisions in [[Open Questions]] are not repeated here.
   whether it drops the MP3's 25 to 40 ms of padding as ffmpeg does (each stride decodes to its cut there).
 
 - **The five asks: plain clothes, the Tack's Bay, the welcome's camera, speakers' colours and the city's sounds**
-  (#206, draft; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
+  (#206; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
   every call there). The prologue's end gives a Plain Shirt and Plain Breeches with no stats (`Item::plain`), worn
   where the torso and legs are bare; the Tack gives the Bay as she is spoken with on the round (a goal's own
   `reward`, which may give Aurem or the horse, never a house's gifts nor the Sloop), and at her counter for nothing to
@@ -245,12 +245,40 @@ The decisions in [[Open Questions]] are not repeated here.
   owner's pick from the sheet "Overlook City Sounds" (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound
   824369 (an old-town alley in Stockholm, CC0, vhio), on R2 by the `freesound` run 45635457113, after seven searches
   (parks and ghost towns refused; it came from "old town ambience -park -klankbeeld", searched beside the owner's own
-  "distant city"). Waiting on the owner: the yes to merge, which deploys the page and the rooms. `main` with #201
+  "distant city"). Merged on the owner's "merge and deploy", which deploys the page, the site, the rooms and the bot. `main` with #201
   (the Sloop), #209 (the audit) and #210 (the desktop app) merged in. Tested offline: the rules', wire's and page's tests, the new ones
   failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and after
   (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the prologue
   before this are given no clothes (the owner's option gives them at its end).
 
+- **Three latent layout flaws, and the town's walls, windows and signs** (#207, merged). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
+  metre off a module's foot; a camp's palisade gap is sized from the path grid; fallen rock keeps 1.2 m off each run's
+  way ([[Layouts]]). One departure from the brief, the owner's to confirm: the gap's 9 m half-chord
+  (`CELL_M + KEEP_OFF_M`) is measured along the grid axis more across the way in, not along the chord, since 9 m along
+  the chord still sealed 8 of 5,760 turns tested (18 m wide square to the grid, up to 25.5 m at 45 degrees). Then the
+  owner's town notes, each pictured headless before and after in the Saltgrass Downs: a taller room is lined over a
+  lower one beside it (the tavern's upper floor saw sky there); a walk-in building's windows are holes through its
+  wall and lining with clear panes, the owner's choice over tinted glass ([[Forged Models]], [[Cities]]); the signpost
+  41739's and the signboard 41700's boards are painted wood as a shop's sign is ([[Procedural Textures]]). Then the
+  owner's third notes ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]):
+  every building's window is its frame alone, 2 m wide at the frame's proportions, with no wall's margin round it
+  ([[Forged Models]]); a public event's panel shows only on its ground, and the held map rings each running event
+  with its name and time left ([[Public Events]]); the held map dots every other player in the room in their
+  nameplate's colour, on land from the room's players and at sea from the sea's chart, which the room now sends every
+  player once a second ([[Held Map]], [[Server]]). Then an audit of the whole PR, each finding checked against the
+  code and fixed at its cause with a test: the sea's chart reaches every player at its tick and a sea opened again;
+  the land's map paints its sheet once for its view and what moves on it over a copy, ten times a second at most; the
+  public event's dead next-event banner is gone, and stepping onto its ground is read out; the sun comes through an
+  open building's panes; and no window is laid into a lower wing's gable (33 in 16 buildings). Then the owner's "It
+  looks like its raining in interiors": a room's ceiling was drawn but no box a body meets, so the rain's shelter
+  left every top storey open; each ceiling is now a box over its room to its outer faces, and a shelter cell is dry
+  where a box reaches a tenth of it ([[Weather]], "Shelter"). Tested offline: the
+  full check on the merged head before its push (the PR names the commit); pictured headless in the Downs: the
+  windows, and the raid's panel on its ground, none 60 m off it, and its ring on the map with its name and time left.
+  Not played by hand or seen on a real GPU; the dots and the light through the panes never pictured (no second
+  player stands in a headless world, and its sky gave no sun). Open for the owner: the camp gap's measure
+  ([[Open Questions]]), other zones' events are not on a zone's map, the compass still marks the event's ground from
+  anywhere in the zone, and the tracker still counts a chest left lying.
 - **The codebase audit** (#209, merged), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
@@ -1070,6 +1098,14 @@ The decisions in [[Open Questions]] are not repeated here.
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites. The
   dungeons session (#82) plans to move each patrol's dungeon entrances onto the layouts' places, and will
   coordinate before it touches the layout code.
+- **Latent layout flaws a re-roll exposes** (#207's description): five re-rolls of the Saltgrass Downs' brief (an area
+  added, moved or removed), the same failures on main's code and #207's. The Tithe Barns, a keep run beyond the
+  claim, gets a beat inside the section in four of five, failing four of `runs_planned`'s checks; a track grazes a
+  building's lining corner (`clearing::round_rooms` samples in tenths and bends at most three times); a gate's
+  palisade stops 11.3 m short of the rock; and with the Barrow Field removed, loose rock lies in the Beacon Stair's
+  stone and a run raises the Broken Causeway's claim 2 mm. Each wants its cause found before an area is added or
+  moved there. The 7 x 4 x 11 m block once seen on a Chalk Adit beat did not show in any of them; its source is
+  still unfound.
 - **Attack visuals**, left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the marks copied
   into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still lighting; `camera.ts`
   `shifted` keeping the HUD matrix's translation in float32 (about 0.25 m off far out).
