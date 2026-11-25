@@ -377,6 +377,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Discord Bot Deploys on Each Merge]]
 - [[The Panel's Sign-in Asks for a Person's Servers]]
 - [[The Website's Words and the Bot's Month Are Approved]]
+- [[The Discord Is Claude's to Build, Organised and Unbloated]]
+- [[The Discord Server as Claude Builds It]]
 
 ## Replaced
 
