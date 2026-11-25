@@ -135,8 +135,8 @@ fn salvage_gives_ship_materials_and_its_modules_never_past_what_its_level_could_
             .filter(|tick| salvage(Source::Flotsam { rank: 1, chest: false }, 5, raised, &dice(*tick)).module.is_some())
             .count()
     };
-    assert!((50..120).contains(&found(1.0)), "a Minor's piece holds a module about one time in 25: {}", found(1.0));
-    assert!((130..200).contains(&found(2.0)), "twice as often at Abyss: {}", found(2.0));
+    assert!((260..380).contains(&found(1.0)), "a Minor's piece holds a module about one time in six: {}", found(1.0));
+    assert!((580..700).contains(&found(2.0)), "twice as often at Abyss: {}", found(2.0));
 }
 
 #[test]
@@ -175,7 +175,7 @@ fn salvage_taken_fills_its_stocks_to_their_most_and_carries_its_module() {
 }
 
 #[test]
-fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_the_ship_and_its_player_as_twelve_kills() {
+fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_the_ship_and_its_player_as_twenty_one_kills() {
     let mut character = Character::starting();
     character.earn_ship_xp(u32::try_from(power::xp_for_level(9)).expect("fits"));
     let wares = vendor::wares(Vendor::Shipwright, 3, character.ship_level());
@@ -186,10 +186,10 @@ fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_the_ship_and_its
     character.ask(Ask::Vend { vendor: Vendor::Shipwright, ware: 0, day: 3 }, social, &dice(0)).expect("sold");
     let (before, aurem) = (character.ship_xp, character.materials.aurem);
     let earned = character.reward_sinking(Foe::Brute, 2, 10, Difficulty::Normal);
-    assert_eq!(earned, 1_980, "twelve of a Major brute's 110 XP, at level 10");
-    assert_eq!(character.ship_xp - before, 1_980);
-    assert_eq!(character.xp, 1_980, "the player earns the same, as twelve kills");
-    assert_eq!(character.materials.aurem - aurem, 144, "and twelve of its 8 Aurem, at level 10");
+    assert_eq!(earned, 3_465, "twenty-one of a Major brute's 110 XP, at level 10");
+    assert_eq!(character.ship_xp - before, 3_465);
+    assert_eq!(character.xp, 3_465, "the player earns the same, as twenty-one kills");
+    assert_eq!(character.materials.aurem - aurem, 252, "and twenty-one of its 8 Aurem, at level 10");
     let (ship_xp, xp) = (character.ship_xp, character.xp);
     assert_eq!(character.reward_sinking(Foe::Brute, 2, 13, Difficulty::Normal), 0, "a level 9 ship, four below");
     assert_eq!((character.ship_xp, character.xp), (ship_xp, xp), "nothing from a ship it could not harm");

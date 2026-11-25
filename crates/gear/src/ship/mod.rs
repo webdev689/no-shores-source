@@ -52,9 +52,9 @@ impl ShipPower {
 
 /// How many land kills of its rank a sinking pays as. A sea fight runs three and a half to four and a half minutes
 /// from 700 m (`measure_fights_by_rank`) and a ship is sighted every four to six, against some 25 s a kill on foot;
-/// with the sea's higher ranks, twelve puts a ship's climb and a player's pay at sea about level with a patrol's in
-/// the middle waters, a little under in the first and over in the last, whose fights are hardest.
-pub const SINKING_KILLS: u32 = 12;
+/// twenty-one puts an hour at sea inside the band beside a patrol zone's, its kills and its events' chests together
+/// (`band`): a little under in the first waters and over in the last, whose fights are hardest.
+pub const SINKING_KILLS: u32 = 21;
 
 impl Character {
     /// The module fitted in one of the ship's slots.

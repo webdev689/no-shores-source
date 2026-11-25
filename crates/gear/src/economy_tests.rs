@@ -125,8 +125,8 @@ fn a_bigger_task_pays_more_and_every_clear_and_chest_keeps_its_order() {
     let [mission, dungeon, boss] = [Clear::Mission, Clear::Dungeon, Clear::WorldBoss].map(Clear::worth);
     assert!(mission.0 < dungeon.0 && dungeon.0 < boss.0 && mission.1 < dungeon.1 && dungeon.1 < boss.1);
     assert!(CHEST_XP.windows(2).all(|pair| pair[0] < pair[1]) && CHEST_AUREM.windows(2).all(|pair| pair[0] < pair[1]));
-    // A sinking pays as a dozen kills, so the sea pays as a patrol does.
-    assert_eq!(SINKING_KILLS, 12);
+    // A sinking pays as twenty-one kills, so an hour at sea pays as a patrol zone's does (`band`).
+    assert_eq!(SINKING_KILLS, 21);
 }
 
 /// The ledger, for the balance's record: pay by source and level, drops by rank, and what finishing each piece costs.
