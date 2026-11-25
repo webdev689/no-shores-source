@@ -109,7 +109,7 @@ export async function interactionKeys() {
 }
 
 /** A Gateway namespace: answers the status given, and records every path asked with its body. */
-export function fakeGateway(status: unknown = { state: 'ready', live: true, latencyMs: 42 }) {
+export function fakeGateway(status: unknown = { state: 'ready', latencyMs: 42 }) {
   const asked: Array<{ path: string; body: unknown }> = [];
   const stub = {
     async fetch(url: string, init?: RequestInit) {

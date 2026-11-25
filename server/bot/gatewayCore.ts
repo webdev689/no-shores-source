@@ -6,6 +6,7 @@
 //
 // Everything with a side effect comes in through `deps`, so tests drive it with a fake socket and a fake clock.
 
+import { errorWords } from './kit.ts';
 import {
   OPCODE,
   BOT_INTENTS,
@@ -64,30 +65,20 @@ export const RESUME_TRIES = 5;
 /** What the panel's health card shows of the connection. */
 export interface Status {
   state: 'idle' | 'connecting' | 'identifying' | 'resuming' | 'ready' | 'waiting' | 'fatal';
-  since: number;
   readyAt: number;
   latencyMs: number;
   attempts: number;
-  lastClose: number;
   lastError: string;
-  user: { id: string; username: string } | null;
-  events: number;
-  guilds: number;
   retryAt: number;
   fatalKey: string;
 }
 
 export const blankStatus = (): Status => ({
   state: 'idle',
-  since: 0,
   readyAt: 0,
   latencyMs: 0,
   attempts: 0,
-  lastClose: 0,
   lastError: '',
-  user: null,
-  events: 0,
-  guilds: 0,
   retryAt: 0,
   fatalKey: '',
 });
@@ -108,8 +99,6 @@ export interface GatewayDeps {
   readonly onDispatch: (type: string, data: unknown) => Promise<void> | void;
   readonly log?: (line: string) => void;
 }
-
-const said = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export class GatewayCore {
   readonly deps: GatewayDeps;
@@ -161,13 +150,7 @@ export class GatewayCore {
 
   async setState(state: Status['state']): Promise<void> {
     this.status.state = state;
-    this.status.since = this.deps.now();
     await this.saveStatus();
-  }
-
-  /** The socket is open and Discord has said hello. */
-  get live(): boolean {
-    return this.socket !== null && this.helloAt > 0;
   }
 
   /**
@@ -259,7 +242,7 @@ export class GatewayCore {
     this.lastAckAt = 0;
     socket.addEventListener('message', (event) => {
       if (generation === this.generation)
-        this.onFrame(event.data).catch((error) => this.log(`[gateway] frame failed: ${said(error)}`));
+        this.onFrame(event.data).catch((error) => this.log(`[gateway] frame failed: ${errorWords(error)}`));
     });
     socket.addEventListener('close', (event) => {
       if (generation === this.generation) this.onClose(Number(event.code) || 1006).catch(() => {});
@@ -337,8 +320,6 @@ export class GatewayCore {
       const ready = (data ?? {}) as {
         session_id?: unknown;
         resume_gateway_url?: unknown;
-        user?: { id?: unknown; username?: unknown };
-        guilds?: unknown;
       };
       this.handled = null;
       this.session = {
@@ -347,8 +328,6 @@ export class GatewayCore {
         seq,
         intents: deps.intents ?? BOT_INTENTS,
       };
-      this.status.user = ready.user ? { id: String(ready.user.id), username: String(ready.user.username) } : null;
-      this.status.guilds = Array.isArray(ready.guilds) ? ready.guilds.length : 0;
       this.status.readyAt = deps.now();
       this.status.attempts = 0;
       this.status.lastError = '';
@@ -363,11 +342,10 @@ export class GatewayCore {
       // only ever forward: a later frame may have moved it while this one waited
       if (seq !== null && (this.session.seq === null || seq > this.session.seq)) this.session.seq = seq;
     }
-    this.status.events++;
     try {
       await deps.onDispatch(type, data);
     } catch (error) {
-      this.log(`[gateway] ${type} handler failed: ${said(error)}`);
+      this.log(`[gateway] ${type} handler failed: ${errorWords(error)}`);
     }
     // Kept only once handled: the sequence a resume after a lost object asks from is the last event handled, so
     // Discord sends again what was received but not yet handled. The heartbeat still names the last one received.
@@ -389,7 +367,7 @@ export class GatewayCore {
         resolve();
       }, DISPATCH_HOLD_MS);
     });
-    const done = work.catch((error) => this.log(`[gateway] ${type} failed: ${said(error)}`));
+    const done = work.catch((error) => this.log(`[gateway] ${type} failed: ${errorWords(error)}`));
     return Promise.race([done, late]).finally(() => {
       if (timer !== undefined) clearTimeout(timer);
     });
@@ -428,7 +406,7 @@ export class GatewayCore {
     try {
       this.socket?.send(JSON.stringify(payload));
     } catch (error) {
-      this.log(`[gateway] send failed: ${said(error)}`);
+      this.log(`[gateway] send failed: ${errorWords(error)}`);
     }
   }
 
@@ -436,7 +414,6 @@ export class GatewayCore {
     this.socket = null;
     this.generation++;
     this.helloAt = 0;
-    this.status.lastClose = code;
     const policy = closePolicy(code);
     if (policy === 'fatal') {
       await this.clearSession();

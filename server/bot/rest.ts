@@ -1,7 +1,7 @@
 // The bot's one door to Discord's HTTP API. Every call carries the User-Agent Discord asks for and a timeout, and
 // respects Discord's rate limits: the per-route buckets its headers describe, and the global limit. A call never
 // throws and never logs the token. A 429 short enough to wait out is waited out once; a longer one comes back as
-// `down` with how long to wait, so a clock job can try again on its next firing.
+// `down`, so a clock job can try again on its next firing.
 
 import { recordOf } from './law/settings.ts';
 
@@ -25,7 +25,6 @@ export interface RestFail {
   readonly status: number;
   readonly code: number;
   readonly down: boolean;
-  readonly retryAfterMs: number;
   readonly message: string;
 }
 export type RestResult = RestOk | RestFail;
@@ -76,12 +75,11 @@ export interface Rest {
   del(path: string, options?: CallOptions): Promise<RestResult>;
 }
 
-const failed = (status: number, code: number, down: boolean, retryAfterMs: number, message: string): RestFail => ({
+const failed = (status: number, code: number, down: boolean, message: string): RestFail => ({
   ok: false,
   status,
   code,
   down,
-  retryAfterMs,
   message,
 });
 
@@ -157,14 +155,14 @@ export function createRest(options: {
   };
 
   const call = async (method: string, path: string, given: CallOptions = {}): Promise<RestResult> => {
-    if (!token) return failed(0, 0, true, 0, 'The bot token is not set.');
+    if (!token) return failed(0, 0, true, 'The bot token is not set.');
     const key = routeKey(method, path);
     for (let attempt = 0; attempt < 2; attempt++) {
       const wait = waitFor(key);
-      if (wait > WAIT_MAX_MS) return failed(429, 0, true, wait, 'Rate limited.');
+      if (wait > WAIT_MAX_MS) return failed(429, 0, true, 'Rate limited.');
       if (wait > 0) await sleep(wait);
       const response = await sent(method, path, given);
-      if (!response) return failed(0, 0, true, 0, 'Discord could not be reached.');
+      if (!response) return failed(0, 0, true, 'Discord could not be reached.');
       learn(key, response);
       const json = parsed(await response.text().catch(() => ''));
       if (response.ok) return { ok: true, status: response.status, json };
@@ -177,13 +175,13 @@ export function createRest(options: {
         if (body.global || response.headers.get('x-ratelimit-global')) globalUntil = now() + retryMs;
         else buckets.set(stateKey(key), { remaining: 0, resetAt: now() + retryMs });
         if (attempt === 0 && retryMs <= WAIT_MAX_MS) continue;
-        return failed(429, code, true, retryMs, 'Rate limited.');
+        return failed(429, code, true, 'Rate limited.');
       }
       const down = response.status >= 500;
       if (!down) log(`[bot] Discord refused ${method} ${logPath(path)}: ${response.status} ${code || ''}`.trim());
-      return failed(response.status, code, down, 0, String(body.message ?? `HTTP ${response.status}`));
+      return failed(response.status, code, down, String(body.message ?? `HTTP ${response.status}`));
     }
-    return failed(429, 0, true, 0, 'Rate limited.');
+    return failed(429, 0, true, 'Rate limited.');
   };
 
   return {
