@@ -158,6 +158,7 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
   return {
     held,
     character: (player) => held.get(player) ?? null,
+    judgedMoved: () => false,
     restoreCharacter: (player, kept) => held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player) => held.has(player),
@@ -215,6 +216,41 @@ test('a node’s room lets go a character that came by no way leading there, unl
   await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
   assert.equal(await tidewall.signIn(3, tokens['Ada'] ?? '', now, here), true, 'the Roster’s join');
   assert.equal(far.held.get(3), '{"start":1}', 'with her own character');
+});
+
+test('a passage zone takes no one of a company playing there who is not on its dive', async () => {
+  const made = accounts();
+  const tokens: Record<string, string> = {};
+  for (const name of ['Ada', 'Ben']) {
+    tokens[name] = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+    await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, tokens[name]);
+  }
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const [now, here] = [() => made.clock.now, () => true];
+  // Ben begins his dive elsewhere and comes in on it; the zone judges by the dive alone.
+  const before = roomOf();
+  before.held.set(1, '{"passage":1}');
+  const patrol = new Keeper(kept, before, 'node-tidewall', () => undefined);
+  assert.equal(await patrol.signIn(1, tokens['Ben'] ?? '', now, here), true);
+  await patrol.leave(1);
+  const name = 'passage-continent-1-w2900-z4';
+  const zone = roomOf();
+  for (const player of [1, 2]) zone.held.set(player, '{}');
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(kept, zone, name, (player, why) => sent.push([player, why])).judgingArrivals(
+    (_from, body) => body?.includes('passage') === true,
+    true,
+  );
+  assert.equal(await keeper.signIn(1, tokens['Ben'] ?? '', now, here), true, 'on his dive');
+  // Ada, of his company and on no dive, is not let in through him, as she would be into a node's room.
+  assert.equal(await keeper.signIn(2, tokens['Ada'] ?? '', now, here), false);
+  assert.deepEqual(sent, [[2, NO_WAY_HERE]]);
 });
 
 test('a player walks between an outpost site’s wild ground and a guild’s plot on it, and no farther', () => {

@@ -37,6 +37,8 @@ export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
 /** What the keeper needs of the room. */
 export interface KeptRoom {
   character(player: number): string | null;
+  /** Whether what a player's arrival in the next room is judged by moved since this was last asked; asking clears it. */
+  judgedMoved(player: number): boolean;
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
@@ -74,20 +76,6 @@ export function leftByWayOut(body: string | null): boolean {
   }
 }
 
-/** Where a kept character's dive stands (its island, week, zone and route, `gear::dive::Dive`), as one text; empty
- *  for none, or a body that does not read. */
-export function diveOf(body: string | null): string {
-  try {
-    const dive = (JSON.parse(body ?? 'null') as { passage?: Record<string, unknown> | null } | null)?.passage;
-    return dive ? JSON.stringify([dive.island, dive.week, dive.zone, dive.route]) : '';
-  } catch {
-    return '';
-  }
-}
-
-/** A dive no save holds yet, which no character's dive matches. */
-const UNSAVED = 'unsaved';
-
 /** A session's token, as a browser sends it. */
 export const TOKEN = /^[0-9a-f]{64}$/;
 
@@ -104,8 +92,10 @@ interface Held {
   saving: boolean;
   /** The character as last saved, so a change that changed nothing (a refused ask) is not saved again. */
   saved: string | null;
-  /** Where the character's dive stands as last saved or being saved (`diveOf`). */
-  dive: string;
+  /** How many moves of what the next room judges their arrival by (`KeptRoom.judgedMoved`) the room has told of,
+   *  and how many of those a save holds. */
+  moves: number;
+  movesSaved: number;
   /** The save under way, which a leaving player's last save waits for so it is never overtaken by an older one. */
   inFlight: Promise<unknown> | null;
   /** When the room was last told the player's guild, and which it was told (undefined before it was). */
@@ -272,7 +262,8 @@ export class Keeper {
       savedAt: now(),
       saving: false,
       saved: claimed.body,
-      dive: diveOf(claimed.body),
+      moves: 0,
+      movesSaved: 0,
       inFlight: null,
       guildAt: 0,
     });
@@ -409,19 +400,17 @@ export class Keeper {
     return this.admitted.size === 0 || companions.some((account) => this.admitted.has(account));
   }
 
-  /** Notes that a player's character changed. A dive that moved (begun, gone on, gone home or ended) is saved at
-   *  once, not after SAVE_AFTER_CHANGE_MS: the room the player goes to next judges their arrival by the saved dive. */
+  /** Notes that a player's character changed. A move of what the next room judges their arrival by (a dive begun,
+   *  gone on, lit, gone home or ended; a lamp lit this week) is saved at once, not after SAVE_AFTER_CHANGE_MS, and so
+   *  is any change while such a move is still unsaved: the next room judges the arrival by the saved body. The room
+   *  tells of a move without the character being read. */
   changed(player: number): void {
     const held = this.held.get(player);
     if (!held) return;
     held.changed = true;
-    const dive = diveOf(this.room.character(player));
-    if (dive === held.dive) return;
-    held.dive = dive;
-    // Not saved, it is tried again at the next change, and by the ordinary save meanwhile.
-    void this.saveNow(player).then((saved) => {
-      if (!saved && held.dive === dive) held.dive = UNSAVED;
-    });
+    if (this.room.judgedMoved(player)) held.moves++;
+    else if (held.moves === held.movesSaved || held.saving) return;
+    void this.saveNow(player);
   }
 
   /** Saves each character that changed a while ago, or has gone unsaved long enough. */
@@ -461,6 +450,7 @@ export class Keeper {
   /** Saves `body` after the save under way, if any, so an older one never lands last; what the accounts answered. */
   private async store(characters: Characters, player: number, held: Held, body: string, now: number) {
     held.saving = true;
+    const moves = held.moves;
     const before = held.inFlight;
     const saving = (async () => {
       await before;
@@ -478,6 +468,7 @@ export class Keeper {
     } else if (saved === true) {
       held.savedAt = Math.max(held.savedAt, now);
       held.saved = body;
+      held.movesSaved = Math.max(held.movesSaved, moves);
     } else {
       // The accounts could not be reached: try again soon.
       held.changed = true;

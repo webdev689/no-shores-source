@@ -41,6 +41,7 @@ mod happening;
 pub mod harbour;
 pub mod hostiles;
 pub mod island;
+mod judged;
 mod judging;
 mod landing;
 mod left;

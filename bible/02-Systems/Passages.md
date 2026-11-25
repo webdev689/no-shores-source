@@ -220,7 +220,7 @@ clock's week is past the web's, the room refuses players: "The passage has shift
 - **Arrivals** are judged by the dive the accounts keep with the character: into a zone from the patrol zone at the
   dive's mouth or a lamp lit this week, from a zone whose ways on lead to it, or back into its own room; out of a
   lamp's zone, its lamp lit, to the patrol zone.
-- **The dive is saved** the moment it moves, so the next zone's room reads it.
+- **The dive is saved** the moment it moves, a lamp lit and Home among it, so the next room reads it.
 
 ## In the browser
 

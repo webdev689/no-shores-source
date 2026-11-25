@@ -180,14 +180,21 @@ test('a lamp’s zone leads home to its patrol zone once its lamp is lit for the
   assert.equal(arrives(`${PATROL}--dungeon-0`, lampRoom, null, null, diving(null, [1])), false);
   assert.equal(arrives('node-tidewall', lampRoom, null, null, diving(null, [1])), false);
   assert.equal(arrives(PATROL, lampRoom, null, null, null), false);
+  // Lamps lit in a week before this one's web are not this week's, though no weekly record rolled the week yet.
+  const lastWeek = JSON.stringify({ activity: { this_week: { week: WEEK - 1, passage_lamps: { [ISLAND]: [1] } } } });
+  assert.equal(arrives(PATROL, lampRoom, null, null, passagesOf(door, lastWeek, MINUTE * 60_000)), false, 'last week');
 });
 
-test('a dive that moves is saved at once, so the next zone’s room reads where it went', async () => {
+test('a move of what the next room judges is saved at once, a find is not, and no change reads the character', async () => {
   const { kept, token } = await world();
   const zone = roomOf();
-  const dive = (number: number) => JSON.stringify({ passage: { island: ISLAND, week: WEEK, zone: number } });
-  zone.held.set(1, dive(first));
-  const keeper = new Keeper(kept, zone, room(first), () => undefined);
+  const body = (dive: Record<string, unknown>, lamps: number[] = []) =>
+    JSON.stringify({
+      passage: { island: ISLAND, week: WEEK, zone: lampZone.number, lamp: 0, ...dive },
+      activity: { this_week: { week: WEEK, passage_lamps: lamps.length > 0 ? { [ISLAND]: lamps } : {} } },
+    });
+  zone.held.set(1, body({}));
+  const keeper = new Keeper(kept, zone, room(lampZone.number), () => undefined);
   assert.equal(
     await keeper.signIn(
       1,
@@ -198,21 +205,23 @@ test('a dive that moves is saved at once, so the next zone’s room reads where 
     true,
   );
   const saved = async () => (await kept.look(token))?.body ?? null;
-  // A new account's first character is the room's: its dive, begun here, is saved at its first change.
-  keeper.changed(1);
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  assert.equal(await saved(), dive(first));
-  // A find changes the character, not the dive: it waits for the keeper's ordinary save.
-  zone.held.set(1, JSON.stringify({ passage: { island: ISLAND, week: WEEK, zone: first }, found: 1 }));
-  keeper.changed(1);
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  const change = async (now: string, moved: boolean) => {
+    zone.held.set(1, now);
+    if (moved) zone.moved.add(1);
+    zone.reads.count = 0;
+    keeper.changed(1);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  };
+  // A find changes the character, not what an arrival is judged by: it waits for the keeper's ordinary save.
+  await change(body({ found: 1 }), false);
+  assert.equal(zone.reads.count, 0, 'the room says nothing moved: the character is not read');
   assert.notEqual(await saved(), zone.held.get(1));
-  zone.held.set(1, dive(second));
-  keeper.changed(1);
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  assert.equal(await saved(), dive(second));
-  zone.held.set(1, '{}');
-  keeper.changed(1);
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  const lit = body({ lamp: 1 }, [1]);
+  await change(lit, true);
+  assert.equal(await saved(), lit, 'a lamp lit is saved at once');
+  const home = body({ lamp: 1, homeward: true }, [1]);
+  await change(home, true);
+  assert.equal(await saved(), home, 'Home is saved at once');
+  await change('{}', true);
   assert.equal(await saved(), '{}', 'a dive ended is saved at once too');
 });
