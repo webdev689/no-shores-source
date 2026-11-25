@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
 import { dungeonBook, WATER_FLAG } from './dungeonBook.ts';
-import { dressingOf, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
+import { dressingOf, passagePieceLights, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { COLOUR, dungeonMesh, IRON, lookAt, ROLE } from './dungeonMesh.ts';
@@ -271,4 +271,26 @@ test("a passage zone's pieces are laid from the passages' pack as the deal stand
     [0, 1, 2].map((axis) => model.positions[vertex * 3 + axis] ?? 0),
   );
   assert.ok(corners.some(([east, south]) => Math.abs((east ?? 0) - x) < EPS && Math.abs((south ?? 0) - y - 1) < EPS));
+});
+
+test('under ground a lit lamp, a lit dead lamp and an open mouth each light the room; cold and shut, none', () => {
+  const piece = (kind: PassagePiece['kind'], number = 0): PassagePiece => ({
+    kind,
+    module: `passage.${kind}`,
+    number,
+    at: [10, 20, 0],
+    facing: Math.PI / 2,
+  });
+  const pieces = [piece('lamp'), piece('kindle', 1), piece('mouth', 0), piece('mouth', 1), piece('post')];
+  assert.deepEqual(passagePieceLights(pieces, UNTOUCHED), []);
+  const lights = passagePieceLights(pieces, { lampLit: true, openMouths: [1], kindled: [1], broken: [] });
+  assert.deepEqual(
+    lights.map((light) => light.number),
+    [0, 1, 2],
+  );
+  const [lamp, kindle, mouth] = lights;
+  assert.ok(lamp && kindle && mouth);
+  assert.deepEqual([lamp.at[2], kindle.at[2]], [1.8, 2.25], 'each from its glass, over the floor');
+  // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.
+  assert.ok(mouth.at[0] < 10 && Math.abs(mouth.at[1] - 20) < 1e-6);
 });

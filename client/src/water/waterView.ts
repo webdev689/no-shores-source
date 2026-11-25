@@ -81,6 +81,8 @@ export interface WaterScene {
     readonly multidepth: GPUTexture;
   };
   readonly target: GPUTextureView;
+  /** False for a place drawn alone (a passage's hollow): the sky behind it, and no sea's surface round it. */
+  readonly sea?: boolean;
 }
 
 /** Where the waves begin in the frame's floats, after the camera's, the eye's and the sea by weather's. */
@@ -273,7 +275,7 @@ export class WaterView {
     pass.draw(3);
     pass.setPipeline(this.surface);
     // The arcs of the disc the view may see, a ring a row; none where the view holds no water.
-    const draws = this.surfaceDraws(scene);
+    const draws = scene.sea === false ? [] : this.surfaceDraws(scene);
     for (let draw = 0; draw < draws.length; draw += 4) {
       const [first = 0, segments = 0, row = 0, rows = 0] = draws.slice(draw, draw + 4);
       pass.draw(segments * 6, rows, first * 6, row);

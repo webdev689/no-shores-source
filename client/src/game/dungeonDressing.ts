@@ -8,6 +8,7 @@ import type { Rect } from './dungeonCells.ts';
 import { kitsOf } from './dungeonKits.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { type DungeonLayout, styleAt, type StyleKey } from './dungeonLayout.ts';
+import { LIGHT_KINDS, type Light } from './dungeonLight.ts';
 import { box, type Kitted, lookAt } from './dungeonMesh.ts';
 import { layModule, loadStylePack, type ModuleMesh, type ModulePack, PARTS, partPicture } from './dungeonModules.ts';
 import type { PassagePiece } from '../rules/passageRules.ts';
@@ -109,4 +110,29 @@ export function passagePiecesLaid(
       layModule(mesh, facingModule(module, piece.facing), { origin: [x, y, z], turns: 0 }, pictureOf);
     }
   };
+}
+
+/** How far behind an open mouth's face its light stands, metres, and how high. */
+const MOUTH_LIGHT = { back: 0.4, up: 1.5 } as const;
+/** The lamp lit, home's light: a lantern's, reaching across its room. */
+const LAMP_LIT = { ...LIGHT_KINDS.lantern, colour: [1.8, 1.25, 0.65], reach: 13 } as const;
+
+/** The lights a passage zone's pieces burn under ground as `state` finds them, numbered from 0 among their own: the
+ *  lamp lit and each dead lamp lit burn as a lantern from their glass, and an open mouth shows
+ *  its way on in daylight's pale light behind its face; cold and shut, none. */
+export function passagePieceLights(pieces: readonly PassagePiece[], state: PieceState): Light[] {
+  const lights: Light[] = [];
+  const burn = (place: readonly [number, number, number], burning: Light['burning']) =>
+    lights.push({ at: place, number: lights.length, burning });
+  for (const piece of pieces) {
+    const [x, y, z] = piece.at;
+    if (piece.kind === 'lamp' && state.lampLit) burn([x, y, z + 1.8], LAMP_LIT);
+    if (piece.kind === 'kindle' && state.kindled.includes(piece.number)) burn([x, y, z + 2.25], LIGHT_KINDS.lantern);
+    if (piece.kind === 'mouth' && state.openMouths.includes(piece.number)) {
+      // A door faces into the room, so its way on lies behind it.
+      const [east, south] = [Math.sin(piece.facing), -Math.cos(piece.facing)];
+      burn([x - east * MOUTH_LIGHT.back, y - south * MOUTH_LIGHT.back, z + MOUTH_LIGHT.up], LIGHT_KINDS.daylight);
+    }
+  }
+  return lights;
 }

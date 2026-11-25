@@ -41,8 +41,10 @@ type Drawn = {
   readonly burning: readonly Light[];
   /** The open portal's light, half way up its face and a little out from it. */
   readonly portalLight: Light;
+  /** A passage zone's pieces' lights as they burn now, numbered after the portal's. */
+  pieceLights: readonly Light[];
   /** Picks the lights each frame is lit by. */
-  readonly picker: NearestLights;
+  picker: NearestLights;
   readonly book: SmallBook;
   readonly wood: readonly [number, number];
   readonly painter: CityPainter;
@@ -192,6 +194,7 @@ export class DungeonView {
       layout,
       burning,
       portalLight,
+      pieceLights: [],
       picker: new NearestLights(burning, portalLight),
       book,
       wood,
@@ -214,12 +217,15 @@ export class DungeonView {
     };
   }
 
-  /** A passage zone's pieces as `lay` lays them, built again only when `key` (what they stand as) changes; none
-   *  without `lay`. */
-  setPieces(lay: ((mesh: MeshBuilder) => void) | null, key: string): void {
+  /** A passage zone's pieces as `lay` lays them and the lights they burn (`passagePieceLights`), built again only
+   *  when `key` (what they stand as) changes; none without `lay`. */
+  setPieces(lay: ((mesh: MeshBuilder) => void) | null, key: string, lit: readonly Light[] = []): void {
     const drawn = this.drawn;
     if (!drawn || (key === drawn.piecesKey && (drawn.pieces !== null) === (lay !== null))) return;
     drawn.piecesKey = key;
+    const after = drawn.portalLight.number + 1;
+    drawn.pieceLights = lit.map((light, index) => ({ ...light, number: after + index }));
+    drawn.picker = new NearestLights([...drawn.burning, ...drawn.pieceLights], drawn.portalLight);
     for (const buffer of [drawn.pieces?.vertices, drawn.pieces?.indices]) buffer?.destroy();
     const mesh = meshBuilder();
     lay?.(mesh);
@@ -278,9 +284,11 @@ export class DungeonView {
     return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
   }
 
-  /** The torches and the fixtures, and the portal while it stands open, which is while the cache does. */
+  /** The torches, the fixtures and the pieces' lights, and the portal while it stands open, which is while the cache
+   *  does. */
   private lights(drawn: Drawn): readonly Light[] {
-    return drawn.shown?.open ? [...drawn.burning, drawn.portalLight] : drawn.burning;
+    const burning = [...drawn.burning, ...drawn.pieceLights];
+    return drawn.shown?.open ? [...burning, drawn.portalLight] : burning;
   }
 
   /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it: its depth first,

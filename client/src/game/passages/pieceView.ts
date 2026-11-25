@@ -154,7 +154,7 @@ export function piecesDrawer(
   current: () => {
     readonly plan: PassagePlan;
     readonly state: PieceState;
-    readonly lightsOnly: boolean;
+    readonly boxed: boolean;
     readonly key: string;
   } | null,
 ): Drawer {
@@ -166,7 +166,7 @@ export function piecesDrawer(
       const key = now?.key ?? null;
       if (key !== shown) {
         shown = key;
-        if (now) view.set(pieceMesh(now.plan.pieces, now.state, now.lightsOnly));
+        if (now?.boxed) view.set(pieceMesh(now.plan.pieces, now.state));
         else view.clear();
       }
       view.drawInto(pass, fromEye, shot);

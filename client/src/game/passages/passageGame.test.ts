@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { IsleShown } from '../../islands/islePlan.ts';
 import type { Flow } from '../flow.ts';
 import type { Foot } from '../foot.ts';
 import type { FootContext } from '../footPlace.ts';
@@ -80,7 +81,7 @@ function footIn(room: string, gear: { online: boolean; dive: unknown; answered?:
 /** A game of the passages over a stand-in host: what it told, what ways it played and the foot it stands on, its
  *  clock the rooms' as `now` keeps it. */
 function game(foot: unknown, now = () => Date.now()) {
-  const held = { foot, flow: { mode: 'foot', node: patrol.id } as Flow, told: [] as string[] };
+  const held = { foot, flow: { mode: 'foot', node: patrol.id } as Flow, told: [] as string[], kit: true };
   const passages = new PassageGame({
     module: new Promise<WebAssembly.Module>(() => undefined),
     context: { walker: { player: { body: { x: 4, y: 5, z: 0 }, facing: 0 } } } as unknown as FootContext,
@@ -93,7 +94,7 @@ function game(foot: unknown, now = () => Date.now()) {
     showDungeon: async () => undefined,
     companyPlaces: async () => [],
     tell: (words) => void held.told.push(words),
-    warmIsle: async () => undefined,
+    isles: { warm: async () => undefined, hasKit: () => held.kit },
     fallback: () => () => undefined,
     now,
   });
@@ -294,4 +295,19 @@ test('the mouths’ card closes once its place is left: walked away, or another 
   held.foot = footIn('passage-h', { online: true, dive: null });
   passages.frame(false);
   assert.equal(inside.card.open, false, 'in another room');
+});
+
+test('the pieces stand as boxes under ground, and above ground only until the islands’ passage pack has come', () => {
+  const foot = footIn('passage-e', { online: true, dive: null });
+  const { held, inside, passages } = game(foot);
+  foot.held.passage = { lampLit: false, open: false, lit: 0, broken: 0, done: false } as unknown as PassageSeenState;
+  inside.zone = zoneIn('passage-e', 3);
+  assert.equal(passages.pieces()?.boxed, true, 'under ground');
+  inside.zone = { ...zoneIn('passage-e', 3), isle: {} as IsleShown };
+  held.kit = false;
+  const waiting = passages.pieces();
+  assert.equal(waiting?.boxed, true, 'above ground, the pack not come');
+  held.kit = true;
+  assert.equal(passages.pieces()?.boxed, false, 'the pack come');
+  assert.notEqual(passages.pieces()?.key, waiting?.key, 'laid again');
 });

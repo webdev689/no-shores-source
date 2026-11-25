@@ -284,11 +284,15 @@ as its other asks do, and a refusal is said in the room's words (171 to 181).
   it left, where the accounts still keep the dive; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
   JSON), the character the last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to
   the page, its layout drawn by the dungeon's renderer; above ground its hollow is an island to the islands' layer
-  (`zoneIsle`, by an id no sea island has), stood on as a sea island's beach, and drawn alone: no land of the island
-  round it, and none of the sea's islands. Under ground its way in offers no Leave. Either way the
-  body is predicted on the zone's own ground from the same ask (`fighter_passage`, `set_passage`): the ground and
-  blocks its room stands bodies on (`passage_ground`), under ground the Forge's floor and the pieces' solids, above
-  ground the hollow's heights, its dressing's blocks and the pieces' solids.
+  (`zoneIsle`, by an id no sea island has), stood on as a sea island's beach, and drawn alone: no land or sea of the
+  island round it and none of the sea's islands, under its own climate's sky read where its zone lies on the island
+  (`hollowAir`). Its floor is its form's ground (`hollowGround`): a hollow the land's own grass or, named so, chalk; a
+  ravine stony earth; shelves turf, or bare rock; a court flagstones; a strand sand, or a shell bed's dry sea floor; a
+  grove leaf litter; a chalk hollow's walls chalk; and the page grows the islands' kit's grass and shrubs over it by
+  its form (`meadow`), which stand nothing solid, so the room's ground is as it lays it. Under ground its way in
+  offers no Leave. Either way the body is predicted on the zone's own ground from the same ask (`fighter_passage`,
+  `set_passage`): the ground and blocks its room stands bodies on (`passage_ground`), under ground the Forge's floor
+  and the pieces' solids, above ground the hollow's heights, its dressing's blocks and the pieces' solids.
 - **Home**: the lamp's Home turns the dive homeward; the page joins the patrol zone's room at the seas the dive began
   at, and the way comes down to where the room stands the player, 2 m before the mouth the dive began at toward its
   run's end arena and facing away from the door (`stand_before_mouth`, `homeSpot` alone), once its first snapshot of
@@ -312,11 +316,14 @@ as its other asks do, and a refusal is said in the room's words (171 to 181).
   line reads "Passage"; a company member in one is "In the passages", and Go to them says to go in at a mouth.
 - **The pieces** stand as the deal stands for the player (`PieceState`): a mouth open or shut, the lamp and the dead
   lamps lit (gold) or cold (grey), a tally post whole or broken, the reliquary shut or opened. Above ground they are
-  the islands' kit's `passage` modules, placed in the hollow (`withPieces`), and only the lamps' lights are drawn over
-  them as boxes. Under ground they are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each
-  piece's foot turned to its facing, in the pictures of the cell it stands on, into a mesh of the dungeon's own made
-  again as the deal's state changes; a lamp's and a dead lamp's `glow` part is lit, or the cell's stone while cold.
-  While the pack is coming, or if it fails, they are plain boxes to their solids' sizes (`pieceMesh`).
+  the islands' kit's `passage` modules, placed in the hollow (`withPieces`), a lamp's and a dead lamp's lantern (the
+  kit's ember) glowing once lit and the kit's stone while cold; only while that pack has not come do they stand as
+  plain boxes. Under ground they are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each piece's
+  foot turned to its facing, in the pictures of the cell it stands on, into a mesh of the dungeon's own made again as
+  the deal's state changes; a lamp's and a dead lamp's `glow` part is lit, or the cell's stone while cold. The lamp
+  lit burns from its glass across its room and each dead lamp lit as a lantern, and an open mouth shows its way on in
+  daylight's pale light behind its face (`passagePieceLights`), lighting the room as its torches do. While the pack is
+  coming, or if it fails, they are plain boxes to their solids' sizes (`pieceMesh`).
 
 ### The way between zones
 
@@ -360,13 +367,25 @@ each done with a tick, under way with its count, or still to come.
 
 ### Pictures
 
-`passageShots.ts`, which the game never imports, draws a zone of each kind with the game's own drawers onto a texture
-of its own (above ground under a plain sky, under ground in the dungeon's dark), the way's dots, the map, the mouths'
-card, the panels and Lanternfall's card.
+The passages are checked by their pictures, drawn headless by `tools/uiShot.mjs` from `passageShots.ts` (which the
+game never imports): `node tools/uiShot.mjs tools/passageShots.json` draws the standing set into `target/passages/`,
+and a file of one's own asks for any other. Every picture is drawn by the game's own drawers:
+
+- **A zone**: `zoneShot` (a `"call": true` shot) takes the week and the zone by its number, or the first of a form or
+  style (`ground`) and `size`; the pieces' `state` and `done`; the size in pixels; and the eye behind the arrival
+  (`eye`: metres back and up, and its pitch), over the zone (`above`), or some metres before the first piece of a
+  kind (`aim`). Above ground the hollow is the islands' layer's ground and modules and the land's own plants
+  (`IslesNature`), lit and shadowed by the sky of its climate where it lies at the world's `hour`, under a plain sky
+  colour where the game draws its dome; under ground the dungeon's scene (`DungeonScene`) with its torches and the
+  pieces' lights. The pieces' boxes are drawn only while their pack has not come, as in the game.
+- **The way between zones**: `wayShot`, its dots framed over the island at the moment `loadDoor` is given (seconds
+  from the way's start), over a plain ground: the island's land is the sea's view's, not drawn here.
+- **The map and the panels**: `mapShot` (a call), the mouths' card (`mouthsShot`), the sign, haul and lamp's prompt
+  (`panelsShot`) and Lanternfall's card (`athericShot`), each after `"before": "loadDoor"` where it reads the web.
 
 ## Limits
 
-- In a hollow the sea of the open landmass's view still lies round it at 0 m, under its rim, and the sky and the
-  shadows take the climate of the landmass open.
-- Under ground an onward mouth open and one shut differ little at a distance: the pack's open mouth is backed by
-  rough rock, close in tone to the shut slab.
+- A hollow's solid dressing is thin beside the island's: a grove stands a few trees, a court few of its ruins, a
+  strand few wrecks, as the room lays them (`crates/passage/src/hollow.rs`).
+- From the arrival in a narrow ravine, or by a strand's wreck, the eye behind the body can stand in rock or timber.
+- The pictures' hollows stand under a plain sky colour, and the way's frames over a plain ground.

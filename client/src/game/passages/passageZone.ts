@@ -7,6 +7,7 @@ import { gridOf, type IsleShown, type Point2 } from '../../islands/islePlan.ts';
 import { MODULE_NAMES } from '../../islands/isleModules.ts';
 import type { IslePlacement } from '../../islands/islePlan.ts';
 import type { PassagePlan } from '../../rules/passageRules.ts';
+import { hollowGround, meadow } from './hollowLook.ts';
 import { pieceModule, type PieceState } from './passagePieces.ts';
 
 /** The floor of every passage under ground, as the Forge lays it (crates/dungeon `FLOOR_M`). */
@@ -31,6 +32,9 @@ export function zoneIsle(plan: PassagePlan, heights: Float64Array, place: Point2
     at: place,
     climate: plan.climate,
     heights,
+    ...(plan.zone.ground.kind === 'open'
+      ? { ground: hollowGround(plan.zone.ground.form, plan.zone.name, plan.climate) }
+      : {}),
     plan: {
       kind: 'cove',
       dungeon: '',
@@ -47,7 +51,7 @@ export function zoneIsle(plan: PassagePlan, heights: Float64Array, place: Point2
       wrecks: [],
       nodes: [],
       ring: ground.ring,
-      placements: ground.placements,
+      placements: [...ground.placements, ...meadow(plan, heights, plan.climate)],
       blocks: ground.blocks,
     },
   };
@@ -63,11 +67,12 @@ export function floorOf(plan: PassagePlan, heights: Float64Array | null): (x: nu
 }
 
 /** A hollow with the passages' pieces standing in it as the islands' kit's modules, each as the deal stands for the
- *  player (`pieceModule`): `done` whether the deal is done. */
+ *  player (`pieceModule`): `done` whether the deal is done; the lamp's and a dead lamp's lantern cold till lit. */
 export function withPieces(isle: IsleShown, plan: PassagePlan, state: PieceState, done: boolean): IsleShown {
   const placed = plan.pieces.flatMap((piece): IslePlacement[] => {
     const module = MODULE_NAMES.indexOf(pieceModule(piece, state, done) ?? '');
-    return module < 0 ? [] : [[module, piece.at[0], piece.at[1], piece.at[2], piece.facing, 1, 1]];
+    const lit = piece.kind === 'lamp' ? state.lampLit : piece.kind !== 'kindle' || state.kindled.includes(piece.number);
+    return module < 0 ? [] : [[module, piece.at[0], piece.at[1], piece.at[2], piece.facing, 1, 1, lit ? 0 : 1]];
   });
   return { ...isle, plan: { ...isle.plan, placements: [...isle.plan.placements, ...placed] } };
 }
