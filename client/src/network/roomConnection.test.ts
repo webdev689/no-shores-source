@@ -228,3 +228,12 @@ test('a locked node’s room turns the player away saying why: a join fails with
   const { rejoining, lost } = kept.connection;
   assert.deepEqual([kept.sockets.length, rejoining, lost], [2, false, 'The Burned Mill is locked']);
 });
+
+test('a room out of reach is told in words, its address kept for the console', async (context: TestContext) => {
+  context.mock.method(console, 'warn', () => undefined);
+  const socket = new FakeSocket();
+  const connect = () => socket as unknown as WebSocket;
+  const opening = RoomConnection.open('wss://rooms.example/room/passage-z7', () => undefined, undefined, null, connect);
+  socket.dispatchEvent(new Event('error'));
+  await assert.rejects(opening, { message: 'the room could not be reached' });
+});

@@ -187,6 +187,7 @@ export function wayShot(ui: Interface): Node {
     to: to.at,
     framed: web.zones.map((zone) => zone.at),
     arrive: { at: [to.at[0], to.at[1], 0], facing: 0 },
+    open: true,
     viewport: view,
   });
   const frame = wayAt(way, RISE_S + DRAW_S / 2);

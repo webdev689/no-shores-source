@@ -100,5 +100,18 @@ export function startTravel(game: TravelGame) {
     behindVeil(after.words, work, { place, back, hub });
   };
 
-  return { travel, behindVeil, retry: () => retry, tell };
+  /** A way between places (`passages/wayBetween.ts`) set out to `place` from where the player stands now, played over
+   *  the island in place of the veil: should it fail, the veil comes down and the player is taken back (to `home`,
+   *  else where they stood) or to the hub, told why, as a trip is. */
+  const wayOut = (place: string, home?: NodeInfo) => {
+    const goHome = (node: NodeInfo) => () => game.goFoot(node, arrivalFacing(node, playing.landmass.plan, null));
+    const back: Refuge | null = home ? { flow: { mode: 'foot', node: home.id }, go: goHome(home) } : wayBack();
+    return (error: unknown) => {
+      const words = `Returning from the way to ${place}`;
+      playing.flow = { mode: 'loading', words, then: back?.flow ?? hub.flow };
+      behindVeil(words, () => Promise.reject(error), { place, back, hub });
+    };
+  };
+
+  return { travel, behindVeil, retry: () => retry, tell, wayOut };
 }

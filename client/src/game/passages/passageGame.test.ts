@@ -54,6 +54,7 @@ interface Inside {
   mouth: number | null;
   zone: unknown;
   begin(route: 'public' | 'company', lamp: number | null): void;
+  goOn(mouth: number, ask: (asked: GearAsk) => void): void;
   home(ask: (asked: GearAsk) => void): void;
 }
 
@@ -91,7 +92,8 @@ function game(foot: unknown, now = () => Date.now()) {
     companyPlaces: async () => [],
     climate: () => 'woodland',
     tell: (words) => void held.told.push(words),
-    failed: (why) => void held.told.push(why),
+    warmIsle: async () => undefined,
+    fallback: () => () => undefined,
     now,
   });
   const played: WayPlayed[] = [];
@@ -110,6 +112,7 @@ const tick = () => new Promise((done) => setTimeout(done));
 test('playing alone, a mouth’s choice asks the room alone to begin the dive', () => {
   const asks: GearAsk[] = [];
   const { inside } = game(footIn(patrol.id, { online: false, dive: null }, asks));
+  inside.door = { web: () => web, plan: (island: string, week: number, zone: number) => planOf(zone) };
   inside.mouth = 0;
   inside.begin('public', null);
   assert.deepEqual(asks, [{ kind: ASKS.beginDive, column: 0, slot: 0, node: 0 }]);
@@ -215,4 +218,40 @@ test('held in a zone, the map shows the web, the way come a track and "You" at t
   assert.deepEqual(track.at(-1), you);
   assert.equal(track.length, 3, 'the patrol zone, the zone passed and the zone stood in');
   assert.ok(sheet.marks.some((mark) => mark.word === patrol.name));
+});
+
+/** A zone laid with one way on, to zone 7, its mouth at (30, 40) of its own frame. */
+const onwardPlan = (number: number) =>
+  ({
+    zone: { number, onward: [7], name: `Zone ${number}` },
+    ground: { kind: 'under', layout: '' },
+    sites: { onward: [{ at: [30, 40], facing: 0 }] },
+  }) as unknown as PassagePlan;
+
+test('a way on is asked of the room only once the zone beyond is laid, and played with that zone', async () => {
+  const dive = { island: 'continent-1', week: 2_900, zone: 3, mouth: 0, homeward: false };
+  const asks: GearAsk[] = [];
+  const foot = footIn('passage-g', { online: true, dive }, asks);
+  const { held, inside, passages, played } = game(foot);
+  inside.zone = { ...zoneIn('passage-g', 3), entry: { plan: onwardPlan(3), room: 'passage-g', patrol, ...dive } };
+  // The zone beyond does not lay: nothing is asked, and the player is told why.
+  inside.door = { web: () => web, plan: () => null };
+  inside.goOn(0, (asked) => void asks.push(asked));
+  assert.equal(asks.length, 0);
+  assert.deepEqual(held.told, ['The zone beyond could not be laid, so the way on stays shut.']);
+  // Laid, the ask goes; once the room says yes the dive has moved, and the way is played with the zone laid before.
+  let laid = 0;
+  inside.door = {
+    web: () => web,
+    plan: (island: string, week: number, zone: number) => (laid++ ? null : onwardPlan(zone)),
+  };
+  inside.goOn(0, (asked) => void asks.push(asked));
+  assert.deepEqual(asks, [{ kind: ASKS.goOn, column: 0 }]);
+  foot.held.gear = { ...foot.held.gear!, answered: 1, dive: { ...dive, zone: 7 } };
+  passages.frame(false);
+  await tick();
+  assert.equal(played.length, 1, 'the way is played, not "The passage has shifted."');
+  assert.deepEqual(played[0]?.mouth, [30, 40], 'the character walks into the mouth taken');
+  assert.equal(played[0]?.place, 'Zone 7');
+  assert.equal(played[0]?.back, patrol, 'a failed way goes back to the patrol zone');
 });

@@ -1,16 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  DOWN_S,
   DRAW_S,
   dotsOnScreen,
   LEG_DOTS,
+  LOW,
   RISE_S,
   settledShot,
-  WALK_M,
-  WAY_S,
+  WALK_S,
   type WayAsk,
   wayAt,
   wayClock,
+  wayLength,
   wayOf,
 } from './passageWay.ts';
 
@@ -29,6 +31,7 @@ const ask: WayAsk = {
     [2_740_000, 1_360_000],
   ],
   arrive: { at: [2_798_510, 1_305_520, 20], facing: Math.PI / 2 },
+  open: true,
   viewport,
 };
 const way = wayOf(ask);
@@ -67,28 +70,48 @@ test('the clock waits over the island until the room gone to is ready', () => {
   const held = wayAt(way, wayClock(RISE_S + DRAW_S - 0.1, 0.5, false));
   assert.equal(held.beat, 'draw', 'held over the island, not on the way down');
   assert.equal(held.dots.filter((dot) => dot.taking).length, LEG_DOTS);
-  assert.equal(held.body, null);
+  assert.equal(held.inPlace, false);
 });
 
-test('the camera comes down behind the character, who walks 3 m in over 1.5 s to the arrival, inputs held till then', () => {
-  const down = wayAt(way, RISE_S + DRAW_S + 0.01);
+test('above ground the way comes down from a low framing over the arrival, the place filling the view', () => {
+  const down = wayAt(way, RISE_S + DRAW_S + 1e-9);
   assert.equal(down.beat, 'down');
-  const walkStart = wayAt(way, WAY_S - 1.5);
-  const end = wayAt(way, WAY_S);
-  assert.equal(walkStart.beat, 'walk');
-  assert.ok(walkStart.held && down.held);
+  assert.ok(down.inPlace && down.held && !down.walking);
+  assert.ok(down.settled < 1e-6, 'it starts from the low framing itself');
+  const [x, y, z] = ask.arrive.at;
+  const { eye, pitch } = down.shot;
+  assert.ok(eye[2] - z <= LOW.upM + 1e-6 && eye[2] - z > 5, 'low over the place, not over the island');
+  assert.ok(Math.abs(Math.hypot(eye[0] - x, eye[1] - y) - LOW.backM) < 1e-6, 'in front of the way in');
+  // The view's top edge no higher than the horizon, the place's walls standing along it and no sky past them, and
+  // the ground the arrival faces in the middle of the picture.
+  const top = (pitch ?? 0) - down.shot.fov / 2;
+  assert.ok(top > -0.02, `the view's top no higher than the horizon (${top})`);
+  // Facing east: the ground ahead of the arrival lies east of it.
+  const faced = dotsOnScreen(down.shot, viewport, [{ at: [x + LOW.aheadM, y, z], taking: false }]);
+  assert.ok(
+    faced[0] && Math.abs(faced[0].x - viewport.width / 2) < 1 && Math.abs(faced[0].y - viewport.height / 2) < 1,
+  );
+  // The camera settles into the foot's own over the down beat, eased.
+  assert.ok(wayAt(way, RISE_S + DRAW_S + DOWN_S / 2).settled > 0.4);
+  assert.ok(wayAt(way, RISE_S + DRAW_S + DOWN_S - 1e-6).settled > 0.99);
+});
+
+test('the character walks in with the foot’s own camera, inputs held till the way has played', () => {
+  const walk = wayAt(way, RISE_S + DRAW_S + DOWN_S + 0.01);
+  assert.equal(walk.beat, 'walk');
+  assert.ok(walk.walking && walk.held && walk.inPlace);
+  assert.equal(walk.settled, 1, 'the camera is the foot’s own, which keeps out of the walls');
+  const end = wayAt(way, wayLength(way));
   assert.equal(end.beat, 'done');
-  assert.equal(end.held, false);
-  assert.ok(walkStart.body && end.body);
-  const walked = Math.hypot(end.body.at[0] - walkStart.body.at[0], end.body.at[1] - walkStart.body.at[1]);
-  assert.ok(Math.abs(walked - WALK_M) < 1e-6);
-  assert.deepEqual(end.body.at, [...ask.arrive.at]);
-  // Behind them, facing east: the eye stands west of the body, looking along their bearing.
-  assert.ok(end.shot.eye[0] < end.body.at[0]);
-  assert.ok(Math.abs(end.shot.yaw - Math.PI / 2) < 1e-6);
-  // The rail down ends where the walk's camera starts, so nothing jumps.
-  const lastDown = wayAt(way, WAY_S - 1.5 - 1e-9);
-  assert.ok(Math.hypot(...lastDown.shot.eye.map((along, axis) => along - (walkStart.shot.eye[axis] ?? 0))) < 0.01);
+  assert.ok(!end.walking && !end.held);
+});
+
+test('under ground the way cuts from the island to the foot’s own camera, no rail through the rock over it', () => {
+  const under = wayOf({ ...ask, open: false });
+  const first = wayAt(under, RISE_S + DRAW_S + 1e-9);
+  assert.equal(first.beat, 'walk');
+  assert.equal(first.settled, 1);
+  assert.equal(wayLength(under), RISE_S + DRAW_S + WALK_S);
 });
 
 test('a lamp’s Home is the same way, its leg running back to the patrol zone', () => {
@@ -97,20 +120,13 @@ test('a lamp’s Home is the same way, its leg running back to the patrol zone',
   assert.deepEqual(leg.at(-1)?.at.slice(0, 2), [...(ask.come[0] ?? [])]);
 });
 
-test('the way comes down in the zone’s own frame: the camera over the island is the same place, the arrival the zone’s', () => {
-  const origin = [ask.to[0], ask.to[1], 0] as const;
-  const zoned = wayOf({ ...ask, arrive: { at: [10, 20, 20], facing: Math.PI / 2 }, origin });
-  const over = wayAt(zoned, RISE_S + DRAW_S);
+test('the low framing stands in the place’s own frame, over the arrival there', () => {
+  const zoned = wayOf({ ...ask, arrive: { at: [10, 20, 20], facing: Math.PI / 2 } });
   const down = wayAt(zoned, RISE_S + DRAW_S + 1e-9);
-  assert.equal(over.inPlace, false, 'over the island in the world');
-  assert.equal(down.inPlace, true);
-  // The same eye, measured from the zone's frame: no jump as the way comes down.
-  const moved = over.shot.eye.map((along, axis) => along - (origin[axis] ?? 0) - (down.shot.eye[axis] ?? 0));
-  assert.ok(Math.hypot(...moved) < 0.01, `${moved.join(', ')}`);
-  const end = wayAt(zoned, WAY_S);
-  assert.deepEqual(end.body?.at, [10, 20, 20]);
-  assert.equal(end.walked, 1);
-  assert.ok(Math.abs(end.shot.eye[0] - (10 - 4.5)) < 1e-6, 'behind the arrival in the zone’s frame');
+  assert.equal(wayAt(zoned, RISE_S + DRAW_S).inPlace, false, 'over the island in the world');
+  assert.ok(down.inPlace);
+  assert.deepEqual(down.shot.eye, [10 - LOW.backM, 20, 20 + LOW.upM]);
+  assert.ok(Math.abs(down.shot.yaw - Math.PI / 2) < 1e-6, 'looking east, along the arrival');
 });
 
 test('the way’s camera settles into the foot’s own as the character walks in, its yaw the shorter way round', () => {

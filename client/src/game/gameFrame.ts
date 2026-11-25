@@ -229,7 +229,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // While she speaks the figures are drawn for the tour's eye (last frame's), not the player's own camera.
     const eye = playing.after.seen?.eye ?? null;
     parts.passages.frame(heard.held('use'));
-    const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
+    const [walk, freeHands] = [parts.passages.ways.walk(), handsFree(heard, paused)];
+    const own = here.frame(heard, seconds, clock, { paused, looking, hands: freeHands, aspect, eye, walk });
     const shown = { ...own, shot: parts.passages.ways.shot(playing.after.shot(own.shot, seconds)) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
@@ -498,16 +499,19 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.arrive(left.epilogue === null);
   };
 
-  /** A frame of the way between passage zones, over the island; once it has played and the place has come, the
-   *  player arrives on foot. */
+  /** A frame of the way between places, and whether it drew the place whole: the place on foot as the way walks into
+   *  a mouth and from the way down, the island between; once played and the place come, the player arrives on foot. */
   const passingFrame = (controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
+    const { foot } = playing;
     // A room gone to that shuts sends the player to their ship, as it would on foot, before its body ever comes.
-    if (playing.foot && parts.heed(playing.foot)) return;
-    const shot = parts.passages.ways.passing(seconds, playing.ready);
-    // From the way down the place is drawn as on foot, held still while the flow is not yet on foot.
-    if (shot === 'place' && playing.foot) footFrame(playing.foot, controls, seconds, size);
-    else if (shot && shot !== 'place') scene.draw(shot, size, clock, seconds, []);
-    else playing.foot?.arrive(clock);
+    if (foot && parts.heed(foot)) return false;
+    const shot = parts.passages.ways.passing(seconds, playing.ready, drawnWhole());
+    // Over the island the place gone to is drawn unseen once its room has stood the body, the HUD standing down.
+    const drawn = !!foot && (shot === 'place' || (!!shot && parts.passages.ways.landed()));
+    const settled = drawn && footFrame(foot, controls, seconds, size);
+    if (shot && shot !== 'place') (scene.draw(shot, size, clock, seconds, []), heldHud(hud, footView, true));
+    else if (!shot) playing.foot?.arrive(clock);
+    return settled;
   };
 
   /** The GPU's work for the frame drawn last. */
@@ -565,7 +569,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
       else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
       else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
-      else if (shown?.mode === 'passing') passingFrame(controls, seconds, size);
+      else if (shown?.mode === 'passing') settled = passingFrame(controls, seconds, size);
     });
     settled &&= placed;
     // Only on foot is there a place to leave: a hold under way goes with the place it was begun in.

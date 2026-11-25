@@ -142,11 +142,14 @@ no landmark zones ("The regions", above).
 
 ## The passage between zones
 
-Through a mouth, the camera rises off the player over 1.5 s into the island seen whole, as over its side; the way
-taken so far shows as dots, and the way being taken is drawn a dot at a time over 2 s from one zone's place to the
-next; the room changes behind it; the camera comes down to the new zone's way in and the character walks 3 m in from
-its mouth over 1.5 s, the camera settling behind them. A lamp's Home plays the same, the dots running back to the
-patrol zone.
+Through a mouth, the character turns to it and walks into it, the camera following as on foot; the camera then rises
+off them over 1.5 s into the island seen whole, as over its side; the way taken so far shows as dots, and the way
+being taken is drawn a dot at a time over 2 s from one zone's place to the next; the room changes behind it, and the
+way holds over the island until the new zone is drawn whole. Above ground the camera comes down over 1.5 s from a low
+framing over the new zone into the foot's own camera; under ground, where rock and ceilings stand over it, it cuts to
+the foot's own. The character walks in over 1.5 s from where the room stands them, the foot's camera behind them kept
+out of the walls. A lamp's Home plays the same, the dots running back to the patrol zone. A way that fails comes down
+to the veil and takes the player back to the patrol zone, or to the hub, told why.
 
 ## Rewards
 

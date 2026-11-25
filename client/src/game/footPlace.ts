@@ -11,6 +11,7 @@ import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
 import type { Walker } from '../player/walker.ts';
+import type { InputFrame } from '../player/input.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import type { InDungeon } from './footTrips.ts';
@@ -173,13 +174,15 @@ export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 
 
 /** What a frame on foot is asked: whether play is paused or the map is looked at, whether the hands are free, the
  *  view's aspect, and the eye of a cutscene's shot shown in place of the player's own (the stranger's welcome), which
- *  the figures are then drawn for. */
+ *  the figures are then drawn for, and a walk stepped while paused. */
 export interface FootAsk {
   readonly paused: boolean;
   readonly looking?: boolean;
   readonly hands: boolean;
   readonly aspect: number;
   readonly eye?: readonly [number, number, number] | null;
+  /** A walk the body is stepped by while play is paused, the way between places walking it (`wayBetween.ts`). */
+  readonly walk?: InputFrame | null;
 }
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the

@@ -219,6 +219,16 @@ export class IslesView {
     for (const kit of new Set(next.flatMap((drawn) => drawn.kits))) this.ask(kit);
   }
 
+  /** Fetches the kits `isle` is drawn with before it is shown, so a place gone to has them by the time it is shown
+   *  (they go on the GPU as it is drawn): resolves once each has come or failed, never failing. */
+  async warm(isle: IsleShown): Promise<void> {
+    const biome = kitOfClimate(isle.climate);
+    const { runs } = instancesOf(isle.plan.placements, this.leaves);
+    const kits = new Set([...(biome ? [biome] : []), ...runs.map((run) => run.kit)]);
+    const urls = [...kits].map((kit) => [kit, packUrl(kit, this.manifest, this.prefix)] as const);
+    await Promise.all(urls.map(([kit, url]) => url && loadKitPack(kit, url)));
+  }
+
   /** The ground's height at a world point: the nearest shown island's there, null off every island. */
   groundAt(x: number, y: number): number | null {
     let best: { height: number; distance: number } | null = null;

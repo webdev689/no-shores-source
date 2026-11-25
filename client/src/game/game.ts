@@ -302,7 +302,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       { word, continent: continents[held.seen.continent]?.id ?? '', seas: seaSeas },
       trips.enterSeaDungeon,
     );
-  const { travel, behindVeil, retry, tell } = startTravel({
+  const { travel, behindVeil, retry, tell, wayOut } = startTravel({
     ...{ playing, hud, footContext, goInto, goFoot, goSea, showLandmass },
     ashore: () => ashore,
     backAshore: async (held) => {
@@ -324,7 +324,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     showDungeon: (layout, node) => dungeons.show(layout, node, undefined, () => passages.pieces()),
     companyPlaces: () => companyPlaces(link),
     climate: (id) => continents.find((each) => each.id === id)?.climate ?? '',
-    failed: (why) => travel({ kind: 'shut', why }, goSea),
+    ...{ fallback: wayOut, warmIsle: islesView.warm.bind(islesView) },
   });
   const pieces = piecesDrawer(gpu, () => (dungeons.piecesFromPack() ? null : passages.pieces()));
   const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];

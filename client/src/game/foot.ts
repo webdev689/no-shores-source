@@ -356,7 +356,7 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect, eye: cutscene = null }: FootAsk,
+    { paused, looking = false, hands, aspect, eye: cutscene = null, walk = null }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
@@ -373,7 +373,8 @@ export class Foot {
     const blocks = withBlocks(this.boxes, this.outpost?.walls, this.context.cameraBlocks);
     const aimed = () => playerCamera(walker.player, movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
-    const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
+    const moved = walk ?? (still ? IDLE : { ...controls, locked: true });
+    const shown = this.player.frame(moved, this.steps, seconds, clock, {
       running: true,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),

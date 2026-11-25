@@ -288,17 +288,21 @@ as its other asks do, and a refusal is said in the room's words (171 to 181).
 `wayOf` lays the way's rails and `wayAt` plays it, on the cinema's rails ([[Cinema]]), kept under way by
 `WayBetween`, which a crossing gate between two patrol zones plays too ([[Layouts]], "Gates"); in the flow ([[Game]], "The
 flow") a mouth, a begin or a Home is `passing`, drawn over the island from the way's camera with the web's places and
-the way's dots over it; from the way down the place gone to is drawn as on foot, the player's inputs held, and the
-flow is on foot again once the way has played. A zone's own frame stands at its place on the island, so the camera
-comes down from over the island without a jump.
+the way's dots over it, the place's prompt, tracker, crosshair and fight display stood down (`heldHud`); in the leave
+and from the way down the place is drawn as on foot, the player's inputs held, and the flow is on foot again once the
+way has played. The walks are the room's own: the way steps the body forward (`FootAsk.walk`), so it walks as any
+body does and stops where the ground and solids stop it. A way on is asked of the room only once the zone beyond is
+laid (`laidOrTold`), or the player is told it cannot be. A way that fails brings the veil down and takes the player
+back, to the patrol zone from a zone, or to the hub, told why (`wayOut`, `tripOrBack`).
 
 | Beat | Seconds | What is seen |
 |---|---|---|
+| Leave | 1.5 at most | The character turns to the mouth taken and walks into it, the foot's own camera following; the room is left once they reach it. A Home and a crossing gate have none |
 | Rise | 1.5 | From where the foot's camera last stood up to the island seen whole, framed as an island's side is framed from the ship (`frameSide`), every zone of the web inside the picture |
 | Draw | 2 | The way so far (the patrol zone and each zone passed this dive) shown, and the way being taken drawn a dot at a time, 10 a leg, to the next zone's place |
-| Wait | until ready | Held over the island while the room gone to is not ready (`wayClock`); once it is joined, 20 s at most (`READY_WAIT_S`, as the veil waits) for its body, then down to where the character stands |
-| Down | 1.5 | Down to 3 m short of behind where the room stood the character, in the place's own frame |
-| Walk | 1.5 | The camera comes the last 3 m in to the character, settling into the foot's own (`settledShot`) |
+| Wait | until ready | Held over the island while the room gone to is joined (`wayClock`), a hollow's kits asked for meanwhile (`warmIsle`); then while the place is drawn unseen under the island until it has drawn whole (`drawnWhole`); 20 s at most from the join (`READY_WAIT_S`, as the veil waits) |
+| Down | 1.5 | Above ground, from a low framing over the arrival (3 m back, 10 m up, looking 12 m past it) into the foot's own camera (`settledShot`); under ground, where rock and ceilings stand over the place, none: the way cuts to the foot's own |
+| Walk | 1.5 | The character walks in from where the room stood them, the foot's own camera behind, kept out of the walls as on foot |
 
 ### The passages' map
 
