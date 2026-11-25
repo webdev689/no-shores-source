@@ -28,3 +28,5 @@ variables): SkillsMP FAIL again, and Context7 now FAILs too: its anonymous tier 
 so the keyless fallback the hand-off relies on is spent for the month. Neither tool was needed for the audit.
 
 **Instance (2026-11-23):** install-all printed FAIL for SkillsMP (no SKILLSMP_API_KEY) and for Context7 (`mcp.context7.com` not reachable: the environment's network policy, not a quota). The fperks worker reported both refused by the proxy (403), so neither tool could be used.
+
+**Again, 2026-11-24 (the owner's performance pass):** `check-tools.sh --worker` failed only on Context7, "Monthly quota exceeded"; no CONTEXT7_API_KEY in the environment. A key is the owner's to grant (keys need their named approval).
