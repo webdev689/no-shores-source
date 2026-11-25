@@ -221,6 +221,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       spent: here.gear?.gear?.scavenged ?? [],
     } as const;
     const guided = quests.guide(afoot, { nodes: playing.zones, layouts: playing.landmass.layouts });
+    // In a passage zone the compass points at what its deal asks, not at the roads, as its tracker shows its deal.
+    const inZone = [...here.fight.foes.values()].map((foe) => {
+      const standing = foe.view.health > 0 && foe.view.action.kind !== 'dead';
+      return { at: [foe.view.x, foe.view.y] as const, name: foe.name ?? '', standing };
+    });
+    const questAt = parts.passages.standsIn() ? parts.passages.waypoint(inZone) : guided.at;
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     // A Breach's Rewritten are marked so on their plates.
@@ -228,7 +234,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     chatInRun(!!here.run);
     const plated = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
     const players = plated.map((each) => (marked.has(each.id) ? { ...each, marked: true } : each));
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: guided.at, players } };
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt, players } };
     const fought = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     const under = (...args: Parameters<Drawer['drawInto']>) => (
       fought.under.drawInto(...args),

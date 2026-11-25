@@ -223,6 +223,7 @@ losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
 | The map's names | A zone's kind (a lamp by its place) and its foes' levels, beside its mark or not at all; its currents are left to its sign, so a name fits by its mark |
 | The missions' marks | The objective's ringed disc with a device for each kind: a flame for a Kindle, a ring for a Hold, a crosshair for a Hunt, three tallies for a Reckoning, an hourglass for a Gauntlet, two bars for an Ambush, a broken post for a Sever |
 | The missions' bounty | "Finish 3 passage missions: a Kindle, Hold, Hunt, Reckoning, Gauntlet, Ambush or Sever.", so it names what the page shows |
+| The compass | Points at what the deal asks next, as the owner asked of every objective: the nearest foe standing (the Marked, a collector), the next dead lamp, tally post or node, the ring, the reliquary, a Gauntlet's far mouth; once the mouths are open, the lamp until lit, then the nearest way on |
 | The mouths' card | Closes 10 m from its door, past the 4 m it opens within |
 | The haul's panel | Five lines, then "and 4 more" |
 | The cold lantern found | Its name and words stand 6 s low in the view, on a phone's in the haul's place |

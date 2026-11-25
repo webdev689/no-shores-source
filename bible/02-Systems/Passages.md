@@ -67,6 +67,7 @@ code:
   - client/src/game/passages/wayBetween.ts#WayBetween
   - client/src/game/passages/passageMap.ts#passageSheet
   - client/src/game/passages/passageWords.ts#dealTracker
+  - client/src/game/passages/passageWaypoint.ts#passageWaypoint
   - client/src/game/passages/passagePanels.ts#MouthsCardView
   - client/src/game/passages/athericBounty.ts#athericCards
   - client/src/game/passages/passageShots.ts#zoneShot
@@ -355,7 +356,11 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
   begins again" with its clock (a route's round, never begun again, stands done); a Gauntlet's clock until its far
   mouth is reached; in a lamp's zone "Light the lamp"; then the way on ("Go on through an open mouth", at
   a lit lamp "Go on, or Home from the lamp", at the deepest "Home from the lamp"); and in the last ten minutes before
-  Tuesday 09:00 UTC "The web shifts" with its clock. Each mission is named by its kind (Kindle, Hold, Hunt, Reckoning,
+  Tuesday 09:00 UTC "The web shifts" with its clock. The compass points at what the deal asks next, in place of the
+  houses' roads ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]], `passageWaypoint`): the nearest
+  foe standing, the Marked or a collector; a dead lamp still cold, a tally post whole, a node ungathered; the ring or
+  the reliquary; a Gauntlet's far mouth; once the player's mouths are open, a lamp's zone's lamp until lit, then the
+  nearest way on (the lamp again where there is none, for Home); a round done before they came, nothing. Each mission is named by its kind (Kindle, Hold, Hunt, Reckoning,
   Gauntlet, Ambush, Sever) on its sign, the card, the tracker and the map. Near an onward mouth its sign shows the zone
   beyond, its foes' levels ("Foes 15 to 18", in the loss's colour where the strongest stands three or more over the
   player) and, shut, "Shut until this place's work is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts

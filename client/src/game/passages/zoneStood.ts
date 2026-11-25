@@ -19,6 +19,7 @@ import { haulNode, lanternNode, NARROW, signNode } from './passagePanels.ts';
 import { boxedPieces, type PieceState } from './passagePieces.ts';
 import { dealTracker, haulView, leaveWarning, type OnwardSign } from './passageWords.ts';
 import { withPieces } from './passageZone.ts';
+import { passageWaypoint, type ZoneFoe } from './passageWaypoint.ts';
 
 /** How long the cold lantern found stands in the view, seconds. */
 const LANTERN_S = 6;
@@ -119,6 +120,15 @@ export class ZoneStood {
     const nodes = zone.entry.plan.pieces.filter((piece) => piece.kind === 'node').length;
     const round = { nodes, public: gear?.dive?.route === 0 };
     return dealTracker(zone.entry.plan.zone, { ...word, ...round }, this.host.now());
+  }
+
+  /** Where the compass points in a zone, `foes` those the player sees (`passageWaypoint`); null out of one. */
+  waypoint(foes: readonly ZoneFoe[]): readonly [number, number] | null {
+    const zone = this.inZone();
+    if (!zone) return null;
+    const body = this.host.body();
+    const spent = gearOf(this.host.foot())?.spent ?? [];
+    return passageWaypoint(zone.entry.plan, this.seen(), [body.x, body.y], foes, spent);
   }
 
   /** What the leave held warns of in a zone while anything is carried. */

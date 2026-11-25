@@ -29,6 +29,7 @@ import { WayBetween, type WayHost, type WayPlayed } from './wayBetween.ts';
 import { inSentence, lampPrompt, onwardSign, type OnwardSign, type Route } from './passageWords.ts';
 import { zoneIsle, zoneLayout } from './passageZone.ts';
 import { type InZone, lampsLit, type Pieces, ZoneStood } from './zoneStood.ts';
+import type { ZoneFoe } from './passageWaypoint.ts';
 
 const NOT_LAID = 'The zone beyond could not be laid, so the way on stays shut.';
 
@@ -337,6 +338,11 @@ export class PassageGame {
 
   tracker(): Quest | null {
     return this.stood.tracker();
+  }
+
+  /** Where the compass points in a zone, at what its deal asks next; null out of one. */
+  waypoint(foes: readonly ZoneFoe[]): readonly [number, number] | null {
+    return this.stood.waypoint(foes);
   }
 
   leaveWarning(): string | null {
