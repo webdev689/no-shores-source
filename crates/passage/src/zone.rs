@@ -70,6 +70,22 @@ impl Size {
         }
     }
 
+    /// The most foes its room stands at once: 7, 9 and 12.
+    #[must_use]
+    pub fn foes_most(self) -> usize {
+        match self {
+            Size::Small => 7,
+            Size::Medium => 9,
+            Size::Large => 12,
+        }
+    }
+
+    /// How many posts a hollow of it lays: as many bands of the fewest, two, as its most foes hold.
+    #[must_use]
+    pub fn posts(self) -> usize {
+        self.foes_most() / 2
+    }
+
     #[must_use]
     pub fn key(self) -> &'static str {
         match self {

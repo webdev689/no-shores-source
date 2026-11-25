@@ -138,7 +138,7 @@ pub fn passage_ground(plan: &Plan) -> Option<(Floor, Vec<Block>, Vec<[f64; 2]>)>
             (Floor::of_dungeon(dungeon)?, Vec::new(), vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]])
         }
         Laid::Open(hollow) => {
-            (Floor::Island(Box::new(hollow.ground.clone())), hollow.blocks.clone(), hollow.ring.clone())
+            (Floor::Island(Box::new(hollow.ground.clone())), hollow.blocks.clone(), hollow.bounds.clone())
         }
     };
     blocks.extend(piece_blocks(plan));
