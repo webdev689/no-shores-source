@@ -49,7 +49,7 @@ pub const PLAIN_CLOTHES: [Kind; 2] = [Kind::Torso, Kind::Legs];
 /// Plain clothes of `kind`, numbered `id`: Normal, worn in its kind's slot, with no stats and no nodes.
 #[must_use]
 pub fn plain_item(id: u32, kind: Kind) -> Item {
-    Item { plain: true, ..Item::new(id, kind, Rarity::Normal, 1, kind.slot()) }
+    Item { plain: true, chosen: Vec::new(), ..Item::new(id, kind, Rarity::Normal, 1, kind.slot()) }
 }
 
 impl Character {

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 import { castOf, scenesOf } from './cast.ts';
+import { oklab } from '../oklab.ts';
 
 const story = new URL('../../../content/story/', import.meta.url);
 const castJson = JSON.parse(readFileSync(new URL('cast.json', story), 'utf8'));
@@ -104,19 +105,9 @@ const linear = (value: number) => (value <= 0.04045 ? value / 12.92 : ((value + 
 const luminance = ([red, green, blue]: readonly number[]) =>
   0.2126 * linear(red ?? 0) + 0.7152 * linear(green ?? 0) + 0.0722 * linear(blue ?? 0);
 /** A colour in OKLab, whose distances are near what the eye sees: 0.02 apart is about the least told apart. */
-function oklab(css: string): [number, number, number] {
-  const [red, green, blue] = rgbOf(css).map(linear) as [number, number, number];
-  const long = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue);
-  const middle = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue);
-  const short = Math.cbrt(0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue);
-  return [
-    0.2104542553 * long + 0.793617785 * middle - 0.0040720468 * short,
-    1.9779984951 * long - 2.428592205 * middle + 0.4505937099 * short,
-    0.0259040371 * long + 0.7827717662 * middle - 0.808675766 * short,
-  ];
-}
+const oklabOf = (css: string) => oklab(...(rgbOf(css).map((value) => value * 255) as [number, number, number]));
 const apart = (one: string, two: string) => {
-  const [a, b] = [oklab(one), oklab(two)];
+  const [a, b] = [oklabOf(one), oklabOf(two)];
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 };
 

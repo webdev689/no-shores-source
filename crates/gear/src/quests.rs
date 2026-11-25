@@ -404,6 +404,13 @@ impl Character {
         giving.is_some_and(|quest| self.quest_walked() != Some(quest))
     }
 
+    /// Whether the player's road no longer leads to the goal that gives the first horse (the round's Tack), as one
+    /// who pledged before the round reached her has left it.
+    pub(crate) fn horse_goal_left(&self) -> bool {
+        let giving = |def: &QuestDef| def.tasks.iter().flat_map(|task| &task.goals).any(|goal| goal.reward.horse);
+        quests().quests.iter().position(giving).is_some_and(|quest| self.quest_walked() != Some(quest))
+    }
+
     /// Speaks with a keeper at their counter, by the number ask 64 sends, when a goal of the task the player is on
     /// asks it.
     pub(crate) fn speak(&mut self, keeper: u8, here: Here) -> Result<Option<Done>, Refusal> {

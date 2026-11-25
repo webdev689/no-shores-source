@@ -1131,8 +1131,9 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
 - **Foes' voices** ([[The Grey Tithe and the Lattice Each Have Their Own Voice]]). A foe of the Grey Tithe or the
   Lattice, by its faction, is heard in its faction's voice as it spots the player (the shared `foe.alert` until its
   own is picked), as its blow swings, as it is struck, and as it falls; a killing blow is its death alone
-  (`voiceCue`, `combat/worldCues.ts`). Never a din: at most two foe voices begin within 0.75 s, the dying first, and
-  one foe's swing or hurt is heard at most once in 2 s (`WorldSounds.gated`). A cue picked as several recordings plays
+  (`voiceCue`, `combat/worldCues.ts`). Never a din: at most two foe voices begin within 0.75 s besides a death, which
+  is never kept back, and one foe's swing or hurt is heard at most once in 2 s; only a foe's voice that began counts
+  (`WorldSounds.playHeard`). A cue picked as several recordings plays
   them as variations, each credited.
 - **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a
   stride heard as the last one's recording ends while the horse moves, at a walk, a gallop (over 8 m/s) or boosted (while the

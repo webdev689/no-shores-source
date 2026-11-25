@@ -109,6 +109,7 @@ fn plain_clothes_are_normal_with_no_stats_no_nodes_and_no_xp_and_are_not_the_sto
         assert_eq!(item.defense(), None, "no Defense");
         assert_eq!((item.prestige(), item.attack()), (0, None));
         assert!(item.columns().is_empty() && item.xp_most() == 0, "no nodes to buy and no XP to earn");
+        assert_eq!(item.clone().kept(7, 64), item, "kept and read back the same: no node chosen in no column");
         let worn = Item::new(8, kind, Rarity::Normal, 1, kind.slot());
         assert!(worn.defense().is_some_and(|defense| defense > 0), "beside a Normal piece's Defense");
     }

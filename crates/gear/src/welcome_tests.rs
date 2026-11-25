@@ -157,6 +157,26 @@ fn the_tack_gives_the_bay_worn_on_the_round_once_and_never_a_second_and_the_stra
 }
 
 #[test]
+fn one_who_pledged_before_the_round_reached_the_tack_takes_the_bay_from_her_for_nothing_once() {
+    let horses = |character: &Character| character.items.values().filter(|(item, _)| item.kind == Kind::Horse).count();
+    let bay = crate::cosmetics::number_of(crate::horses::FIRST_HORSE).expect("the Bay");
+    let buy = Ask::BuyCosmetic { cosmetic: bay };
+    // On the round, the Bay is sold at its price, as every day; the Tack's goal gives it for nothing.
+    let mut walking = welcomed();
+    walking.materials.aurem = 0;
+    assert_eq!(walking.ask(buy, SOCIAL, &DICE), Err(Refusal::Short));
+    // Pledged first, the round's Tack is never reached: she gives the Bay for nothing instead, worn.
+    let mut pledged = welcomed();
+    assert!(pledged.ask(Ask::Pledge { faction: 1 }, SOCIAL, &DICE).is_ok());
+    assert_eq!(pledged.ask(Ask::Speak { keeper: keeper("tack") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
+    let aurem = pledged.materials.aurem;
+    assert!(pledged.ask(buy, SOCIAL, &DICE).is_ok());
+    assert!(pledged.may_ride(), "worn, as she gives it on the round");
+    assert_eq!((horses(&pledged), pledged.materials.aurem), (1, aurem), "given, not sold");
+    assert_eq!(pledged.ask(buy, SOCIAL, &DICE), Err(Refusal::Kept), "once: a horse is never dismantled");
+}
+
+#[test]
 fn a_goal_gives_aurem_or_the_horse_and_nothing_of_a_house_s_nor_the_ship() {
     let given = goal(r#"{ "kind": "talk", "to": "tack", "text": "t", "reward": { "horse": true, "aurem": 5 } }"#);
     assert!(given.reward.horse && given.reward.aurem == 5 && given.problem().is_none());

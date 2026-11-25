@@ -388,3 +388,56 @@ test('at most two foe voices begin at once, the dying first', () => {
   );
   assert.equal(played.filter(({ id }) => id === 'hit.blade').length, 4, 'every blow still heard');
 });
+
+/** A frame with foes `ids` about the player, each five metres east, of `faction`. */
+function foesFrame(ids: readonly number[], faction = 1): WorldFrame {
+  const fight = frameOf();
+  for (const id of ids) fight.fight.foes.set(id, foeAt(5, { id, faction }));
+  return fight;
+}
+const foeVoices = (played: readonly { readonly id: string }[]) =>
+  played.map(({ id }) => id).filter((id) => id.startsWith('foe.'));
+
+test("a raid's alarm is no foe's voice: heard however many foes cried out just before", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const fight = foesFrame([FOE, FOE + 1]);
+  sounds.frame(fight);
+  sounds.frame({ ...fight, events: [hit(), hit({ defender: FOE + 1 })] });
+  sounds.frame({ ...fight, heard: [{ cue: 'foe.alert', at: [5, 0, 0] }] });
+  assert.deepEqual(foeVoices(played), ['foe.tithe.hurt', 'foe.tithe.hurt', 'foe.alert']);
+});
+
+test('a foe voice that never sounds, unrecorded or too far, takes no place among the two', () => {
+  const { output, play, played } = fakeSound();
+  const unrecorded = (audio: AudioContext, out: AudioNode, id: string, rate: number) =>
+    id === 'foe.lattice.hurt' ? null : play(audio, out, id, rate);
+  const sounds = new WorldSounds(() => output, unrecorded);
+  const fight = foesFrame([FOE + 1, FOE + 2], 3);
+  fight.fight.foes.set(FOE, foeAt(5));
+  sounds.frame(fight);
+  sounds.frame({ ...fight, events: [hit({ defender: FOE + 1 }), hit({ defender: FOE + 2 }), hit()] });
+  assert.deepEqual(foeVoices(played), ['foe.tithe.hurt'], "the Lattice's silent hurts keep back none");
+});
+
+test("a foe's alert keeps back none of its cries: struck a second after it spots the player, it cries out", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const spotting = { foe: foeAt(5, { alert: 2 }) };
+  sounds.frame(frameOf());
+  for (let frame = 0; frame <= 60; frame++) sounds.frame(frameOf(spotting));
+  sounds.frame(frameOf({ ...spotting, events: [hit()] }));
+  const voices = foeVoices(played);
+  assert.deepEqual([voices.length, voices.at(-1)], [2, 'foe.tithe.hurt'], voices.join());
+});
+
+test('a death is never kept back: a foe killed just after two others cried out is heard dying', () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const fight = foesFrame([FOE, FOE + 1, FOE + 2]);
+  sounds.frame(fight);
+  sounds.frame({ ...fight, events: [hit(), hit({ defender: FOE + 1 })] });
+  for (let frame = 0; frame < 18; frame++) sounds.frame(fight);
+  sounds.frame({ ...fight, events: [hit({ kind: EVENT.killed, defender: FOE + 2 })] });
+  assert.deepEqual(foeVoices(played), ['foe.tithe.hurt', 'foe.tithe.hurt', 'foe.tithe.death']);
+});

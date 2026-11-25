@@ -52,6 +52,8 @@ export function slotOf(kind: number): number {
 }
 /** The coats, in the order a horse's name counts them. */
 const COATS = COSMETICS.filter((each) => each.kind === 'coat');
+/** The first horse's coat, the Bay, which the Tack gives (`horses.rs`, `FIRST_HORSE`). */
+export const FIRST_HORSE = 'bay';
 /** The coat a horse wears, by its id; null for an item that is no horse. */
 export const coatOfHorse = (item: Pick<GearItem, 'kind' | 'name'>): string | null =>
   item.kind === HORSE ? (COATS[item.name]?.id ?? null) : null;

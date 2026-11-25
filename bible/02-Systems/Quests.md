@@ -102,7 +102,7 @@ clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Des
 [[Prologue]]; its reward the 400 Aurem she gives); **Find your way round Overlook**, speaking at each counter in turn
 (the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack and the Postmaster), each keeper saying what
 their counter is for, the Tack giving the Bay Horse as she is spoken with (her goal's `"horse": true`, worn unless one
-is, never a second, [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]); **Take your ship from the Harbourmaster**, its reward the Sloop (`"ship": true`), which
+is, never a second, and at her counter for nothing to one who pledged before the round reached her, [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]); **Take your ship from the Harbourmaster**, its reward the Sloop (`"ship": true`), which
 a new player has none of until then ([[Shipyard]]); **Arm yourself**, a Melee weapon bought of the
 Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
 **Put them on**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces

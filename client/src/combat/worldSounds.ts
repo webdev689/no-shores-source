@@ -115,8 +115,9 @@ const FRESH_TICKS = 10;
 /** An Anima's release is heard once a caster in this long (seconds): a Tempest's later orbs are the same cast. */
 const ONE_RELEASE_S = 2;
 const FOE_ALERT = 2;
-/** Foes' voices, so a fight is never a din of them: at most FOE_VOICES begin within VOICE_WINDOW_S seconds, the dying
- *  first, then an alert, a hurt and a swing (`VOICE_RANK`); and one foe's swing or hurt is heard once in VOICE_GAP_S. */
+/** Foes' voices, so a fight is never a din of them: at most FOE_VOICES begin within VOICE_WINDOW_S seconds besides a
+ *  death, which is never kept back, an alert first, then a hurt and a swing (`VOICE_RANK`); and one foe's swing or
+ *  hurt is heard once in VOICE_GAP_S. Only a fighter's voice that began counts: a raid's alarm is no foe's. */
 const FOE_VOICES = 2;
 const VOICE_WINDOW_S = 0.75;
 const VOICE_GAP_S = 2;
@@ -195,14 +196,7 @@ export class WorldSounds {
     const hidden = typeof document !== 'undefined' && document.hidden;
     const output = frame.quiet || hidden ? null : this.live();
     if (output) listen(output.audio, frame.eye, frame.yaw);
-    const heard: {
-      readonly cue: string;
-      readonly at: Point;
-      readonly key: number | null;
-      readonly short?: true;
-      readonly rate?: number;
-      readonly whole?: true;
-    }[] = [];
+    const heard: Heard[] = [];
     const hear = (cue: string | null, place: Point | null, key: number | null) => {
       if (cue && place) heard.push({ cue, at: place, key });
     };
@@ -246,29 +240,30 @@ export class WorldSounds {
     const down = own?.action.kind === 'dead' || fight.standing.kind === 'dead';
     if (this.down && !down) hear('respawn', walker.feet, fight.player);
     this.down = down;
-    if (output)
-      for (const one of this.gated(heard))
-        this.sound(output, one.cue, one.at, one.key, frame.eye, one.short ?? false, one.rate, one.whole ?? false);
+    if (output) this.playHeard(output, heard, frame.eye);
   }
 
-  /** The sounds of `heard` to play: every one but foes' voices, and of those only what the gate lets through
-   *  (`FOE_VOICES`). */
-  private gated<T extends { readonly cue: string; readonly key: number | null }>(heard: readonly T[]): T[] {
+  /** Plays the frame's sounds: every one but a fighter's voice as it is, then foes' voices in their rank, each the
+   *  gate lets begin (`FOE_VOICES`), counted once it has. */
+  private playHeard(output: WorldOutput, heard: readonly Heard[], eye: Point): void {
+    const play = (one: Heard) =>
+      this.sound(output, one.cue, one.at, one.key, eye, one.short ?? false, one.rate, one.whole ?? false);
+    const isVoice = (one: Heard): one is Heard & { readonly key: number } =>
+      one.key !== null && one.cue.startsWith('foe.');
+    const moment = (one: Heard) => one.cue.slice(one.cue.lastIndexOf('.') + 1);
+    for (const one of heard) if (!isVoice(one)) play(one);
     this.voiceStarts = this.voiceStarts.filter((began) => this.clock - began < VOICE_WINDOW_S);
-    const moment = (cue: string) => cue.slice(cue.lastIndexOf('.') + 1);
-    const rank = (one: T) => VOICE_RANK[moment(one.cue)] ?? 0;
-    const voices = heard.filter((one) => one.cue.startsWith('foe.')).sort((one, two) => rank(one) - rank(two));
-    const letThrough = new Set<T>();
+    const voices = heard
+      .filter(isVoice)
+      .sort((one, two) => (VOICE_RANK[moment(one)] ?? 0) - (VOICE_RANK[moment(two)] ?? 0));
     for (const one of voices) {
-      if (this.voiceStarts.length >= FOE_VOICES) break;
-      const last = one.key === null ? undefined : this.spoke.get(one.key);
-      const often = moment(one.cue) === 'attack' || moment(one.cue) === 'hurt';
-      if (often && last !== undefined && this.clock - last < VOICE_GAP_S) continue;
+      const often = moment(one) === 'attack' || moment(one) === 'hurt';
+      const last = this.spoke.get(one.key);
+      if (moment(one) !== 'death' && this.voiceStarts.length >= FOE_VOICES) break;
+      if ((often && last !== undefined && this.clock - last < VOICE_GAP_S) || !play(one)) continue;
       this.voiceStarts.push(this.clock);
-      if (one.key !== null) this.spoke.set(one.key, this.clock);
-      letThrough.add(one);
+      if (often) this.spoke.set(one.key, this.clock);
     }
-    return heard.filter((one) => !one.cue.startsWith('foe.') || letThrough.has(one));
   }
 
   /** Every fighter this frame: the player at their walker's feet, the others and the foes where they are drawn. */
@@ -389,7 +384,7 @@ export class WorldSounds {
 
   /** Plays one cue at `place` through its own panner, at `rate` (a blow's strays a little), once its fighter has not
    *  just made it, within reach of the eye (farther for one heard `whole`) and room among the voices; an unpicked cue
-   *  plays nothing. */
+   *  plays nothing. Answers whether it began. */
   private sound(
     output: WorldOutput,
     cue: string,
@@ -399,10 +394,10 @@ export class WorldSounds {
     short = false,
     rate = 1,
     whole = false,
-  ): void {
+  ): boolean {
     if (key !== null) {
       const heardKey = `${key}|${cue}`;
-      if (this.clock - (this.heardAt.get(heardKey) ?? -Infinity) < GAP_S) return;
+      if (this.clock - (this.heardAt.get(heardKey) ?? -Infinity) < GAP_S) return false;
       this.heardAt.set(heardKey, this.clock);
       if (this.heardAt.size > 512)
         for (const [each, when] of this.heardAt) if (this.clock - when >= GAP_S) this.heardAt.delete(each);
@@ -415,7 +410,7 @@ export class WorldSounds {
       ranked,
     );
     const most = whole ? WHOLE_MOST_M : MOST_M;
-    if (distance > most || drop === 'new') return;
+    if (distance > most || drop === 'new') return false;
     const { audio, out } = output;
     const panner = audio.createPanner();
     Object.assign(panner, {
@@ -433,7 +428,7 @@ export class WorldSounds {
     if (!source) {
       fade?.disconnect();
       panner.disconnect();
-      return;
+      return false;
     }
     if (fade) {
       const end = audio.currentTime + HEARD_MOST_S;
@@ -453,7 +448,15 @@ export class WorldSounds {
       fade?.disconnect();
       panner.disconnect();
     });
+    return true;
   }
+}
+
+/** A sound heard this frame, with whose it is (a fighter's number, null for none) and whether it is held short (a
+ *  public event's). */
+interface Heard extends HeardSound {
+  readonly key: number | null;
+  readonly short?: true;
 }
 
 /** Everyone as their horse is heard: the player by their walker, every other player as they are drawn. */
