@@ -64,8 +64,8 @@ export function passageWordOf(
 /** Where a dive is: its island, its web's week, its zone and whether it is homeward. */
 type DiveWhere = Pick<DiveState<unknown>, 'island' | 'week' | 'zone'> & { readonly homeward?: boolean };
 
-/** The passages' refusals, as the room numbers its answers (crates/gear `Refusal`, NoDive to Fallen, plus one). */
-const REFUSED = { first: 171, last: 181 } as const;
+/** The passages' refusals, as the room numbers its answers (crates/gear `Refusal`, NoDive to FoesNear, plus one). */
+const REFUSED = { first: 171, last: 182 } as const;
 
 /** What the room has said of an ask of the passages sent when it had answered `asked.answered` asks, its dive then
  *  `asked.dive`: yes once the dive has changed (begun, gone on, turned homeward or ended), whatever other asks it

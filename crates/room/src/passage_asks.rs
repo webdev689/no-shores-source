@@ -1,26 +1,23 @@
 //! What a player asks of the passages, answered in turn as every ask is (`asks.rs`): in a passage zone to go on through
-//! an onward mouth, to kindle a dead lamp or light the zone's lamp (E held at it), and to go home from a lit lamp; in
-//! a patrol zone with passages to begin a dive at one of its mouths, by its route, or at a lamp lit this week. Each
-//! is answered done or with why not, the dive's zone told with the gear. And what the room does for the dive as a
-//! player comes and goes: a player joining a zone of their dive finds into its haul from now; joining any other room
-//! ends their dive; a respawn empties the haul; a kill counts toward the passages' bounties and the Atheric bounties.
+//! an onward mouth, to kindle a dead lamp, open a reliquary or light the zone's lamp (E held at it, `passage_holds.rs`),
+//! and to go home from a lit lamp; in a patrol zone with passages to begin a dive at one of its mouths, by its route,
+//! or at a lamp lit this week. Each is answered done or with why not, the dive's zone told with the gear. And what the
+//! room does for the dive as a player comes and goes: a player joining a zone of their dive finds into its haul from
+//! now; joining any other room ends their dive; a respawn empties the haul; a kill counts toward the passages'
+//! bounties and the Atheric bounties.
 
-use super::{Held, Hold, Passage};
+use super::passage_holds::{KINDLE_TICKS, LAMP_TICKS, OPEN_TICKS};
+use super::{Held, Passage};
 use crate::asks::answer_code;
 use crate::{PlayerId, Room, Standing};
 use combat::sight::apart;
 use gear::Refusal;
 use gear::dive::{Route, Start};
 use gear::objectives::{Deed, Feat};
-use passage::{Deal, Mission, PieceKind};
+use passage::{Deal, Mission};
 
-/// How near a mouth's middle, and a dead lamp's or the lamp's, a player stands to use it (m).
+/// How near a mouth's middle a player stands to use it (m).
 pub const MOUTH_REACH_M: f64 = 4.0;
-pub const HOLD_REACH_M: f64 = 3.0;
-/// How long E is held at a dead lamp and at the lamp, ticks (3 s and 2 s), and how far the body may stir meanwhile.
-pub const KINDLE_TICKS: u64 = 180;
-pub const LAMP_TICKS: u64 = 120;
-const HOLD_STIR_M: f64 = 0.3;
 
 /// An ask of the passages.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -31,6 +28,8 @@ pub enum PassageAsk {
     Kindle { lamp: u8 },
     /// Begins to light the zone's lamp, E held.
     LightLamp,
+    /// Begins to open a reliquary, E held.
+    Open,
     /// Goes home from the zone's lamp, lit.
     GoHome,
     /// Begins a dive at a patrol zone's mouth, by its place, on a route, at a lamp lit this week if one is named.
@@ -55,8 +54,9 @@ pub struct PassageSeen {
     pub holding: Option<(u8, f64)>,
 }
 
-/// A hold's target as the page reads it.
+/// A hold's target as the page reads it, the lamp's and a reliquary's beside the dead lamps' numbers.
 const LAMP_TARGET: u8 = 255;
+const RELIQUARY_TARGET: u8 = 253;
 
 fn refused(refusal: Refusal) -> u8 {
     answer_code(Err(refusal))
@@ -87,6 +87,7 @@ impl Room {
             (PassageAsk::Begin { .. }, _) | (_, None | Some(Passage::Mouths { .. })) => refused(Refusal::NotInPassage),
             (PassageAsk::GoOn { mouth }, Some(Passage::Zone(_))) => self.go_on(player, body, mouth),
             (PassageAsk::Kindle { lamp }, Some(Passage::Zone(_))) => self.begin_hold(player, body, Held::Kindle(lamp)),
+            (PassageAsk::Open, Some(Passage::Zone(_))) => self.begin_hold(player, body, Held::Reliquary),
             (PassageAsk::LightLamp, Some(Passage::Zone(zone))) => {
                 if zone.zone.deal != Deal::Lamp {
                     refused(Refusal::NoLamp)
@@ -140,85 +141,6 @@ impl Room {
         let Some(found) = self.players.get_mut(&player) else { return refused(Refusal::NoDive) };
         found.gear_changed = true;
         answer_code(found.character.go_on(here, to, open).map(|_| ()))
-    }
-
-    /// Begins a hold of E at a dead lamp or the lamp, within reach of it.
-    fn begin_hold(&mut self, player: PlayerId, body: [f64; 2], target: Held) -> u8 {
-        let Some(zone) = self.zone() else { return refused(Refusal::NotInPassage) };
-        let piece = zone.pieces.iter().find(|piece| match (piece.kind, target) {
-            (PieceKind::Kindle(nth), Held::Kindle(wanted)) => nth == wanted,
-            (PieceKind::Lamp, Held::Lamp) => true,
-            _ => false,
-        });
-        let Some(piece) = piece else { return refused(Refusal::NoLamp) };
-        if apart(body, [piece.at[0], piece.at[1]]) > HOLD_REACH_M {
-            return refused(Refusal::NotAtMouth);
-        }
-        if !self.may_hold(player, target) {
-            return refused(Refusal::AlreadyLit);
-        }
-        let (clock, health) = (self.clock, self.fighter(player).map_or(0.0, |fighter| fighter.health));
-        if let Some(zone) = self.zone_mut() {
-            zone.holds.insert(player, Hold { target, since: clock, at: body, health });
-        }
-        0
-    }
-
-    /// E let go of: the player's hold ends unfinished.
-    pub(crate) fn let_go_hold(&mut self, player: PlayerId) {
-        if let Some(zone) = self.zone_mut() {
-            zone.holds.remove(&player);
-        }
-    }
-
-    /// Keeps each hold under way: one stirred, hurt, fallen or no longer allowed ends; one held its time lights its
-    /// dead lamp, or the lamp for its player, keeping their haul.
-    pub(crate) fn keep_holds(&mut self) {
-        let Some(zone) = self.zone() else { return };
-        let holds: Vec<(PlayerId, Hold)> = zone.holds.iter().map(|(id, hold)| (*id, *hold)).collect();
-        let (island, week, number, depth, level) =
-            (zone.island, zone.week, zone.zone.number, zone.zone.depth, zone.levels.1);
-        for (player, hold) in holds {
-            let fighter = self.fighter(player).copied();
-            let broken = fighter.is_none_or(|fighter| {
-                fighter.dead()
-                    || fighter.health < hold.health
-                    || apart([fighter.body.x, fighter.body.y], hold.at) > HOLD_STIR_M
-            }) || !self.may_hold(player, hold.target);
-            let ticks = if hold.target == Held::Lamp { LAMP_TICKS } else { KINDLE_TICKS };
-            let done = self.clock >= hold.since + ticks;
-            if !(broken || done) {
-                continue;
-            }
-            self.let_go_hold(player);
-            if broken {
-                continue;
-            }
-            match hold.target {
-                Held::Kindle(nth) => {
-                    if let Some(lit) = self.zone_mut().and_then(|zone| zone.round.lit.get_mut(usize::from(nth))) {
-                        *lit = true;
-                    }
-                    if let Some(zone) = self.zone_mut() {
-                        zone.round.took_part.insert(player);
-                    }
-                }
-                Held::Lamp => {
-                    let (Some(lamp), dice, when) = (
-                        passage::lamp_number(depth),
-                        self.dice(player),
-                        (self.day(), gear::clock::week_of(self.minute)),
-                    ) else {
-                        continue;
-                    };
-                    let at = gear::lamps::Zone { island, week, zone: number, depth, level };
-                    let Some(found) = self.players.get_mut(&player) else { continue };
-                    if found.character.light_lamp(at, lamp, when, &dice).is_ok() {
-                        found.gear_changed = true;
-                    }
-                }
-            }
-        }
     }
 
     /// As a player comes into the room with their character: in a zone of their dive, what they find goes into its
@@ -311,6 +233,7 @@ impl Room {
         let holding = zone.holds.get(&player).map(|hold| {
             let (target, ticks) = match hold.target {
                 Held::Kindle(nth) => (nth, KINDLE_TICKS),
+                Held::Reliquary => (RELIQUARY_TARGET, OPEN_TICKS),
                 Held::Lamp => (LAMP_TARGET, LAMP_TICKS),
             };
             (target, (self.clock.saturating_sub(hold.since) as f64 / ticks as f64).min(1.0))

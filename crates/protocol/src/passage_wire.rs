@@ -10,12 +10,13 @@ use room::{Asked, PassageAsk, PassageSeen};
 
 /// The passages' asks' numbers: go on through the onward mouth `column`; kindle the dead lamp `column`; light the
 /// lamp; go home; begin a dive at the patrol zone's mouth `column`, its route `slot` (0 public, 1 a company's) and the
-/// lamp `node` to begin at (0 for none).
+/// lamp `node` to begin at (0 for none); open the reliquary.
 pub const PASSAGE_GO_ON: u8 = 82;
 pub const PASSAGE_KINDLE: u8 = 83;
 pub const PASSAGE_LIGHT: u8 = 84;
 pub const PASSAGE_HOME: u8 = 85;
 pub const PASSAGE_BEGIN: u8 = 86;
+pub const PASSAGE_OPEN: u8 = 87;
 /// A hold's target as it crosses with none under way.
 pub const NOT_HOLDING: u8 = 254;
 
@@ -28,6 +29,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         PASSAGE_KINDLE => PassageAsk::Kindle { lamp: column },
         PASSAGE_LIGHT => PassageAsk::LightLamp,
         PASSAGE_HOME => PassageAsk::GoHome,
+        PASSAGE_OPEN => PassageAsk::Open,
         PASSAGE_BEGIN => {
             let route = if ask.slot() == 1 { Route::Company } else { Route::Public };
             PassageAsk::Begin { mouth: column, route, lamp: (ask.node() > 0).then_some(ask.node()) }
@@ -44,6 +46,7 @@ pub fn ask_args(ask: PassageAsk, args: messages::AskArgs<'_>) -> messages::AskAr
         PassageAsk::Kindle { lamp } => messages::AskArgs { kind: PASSAGE_KINDLE, column: lamp, ..args },
         PassageAsk::LightLamp => messages::AskArgs { kind: PASSAGE_LIGHT, ..args },
         PassageAsk::GoHome => messages::AskArgs { kind: PASSAGE_HOME, ..args },
+        PassageAsk::Open => messages::AskArgs { kind: PASSAGE_OPEN, ..args },
         PassageAsk::Begin { mouth, route, lamp } => messages::AskArgs {
             kind: PASSAGE_BEGIN,
             column: mouth,

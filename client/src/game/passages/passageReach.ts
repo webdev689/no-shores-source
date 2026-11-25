@@ -1,7 +1,8 @@
 // Where the passages are used on foot, as the room judges them (crates/room `passage_asks.rs`): a patrol zone's
-// mouths, the sealed doors of its runs, within 4 m; in a zone, an onward mouth within 4 m, the lamp or a dead lamp
-// within 3 m. And what a zone's room is named and stood as.
+// mouths, the sealed doors of its runs, within 4 m; in a zone, an onward mouth within 4 m, the lamp, a dead lamp or a
+// reliquary within 3 m (`passage_holds.rs`). And what a zone's room is named and stood as.
 import type { LaidRun } from '../../layout/layouts.ts';
+import { HOLDING_LAMP, HOLDING_RELIQUARY } from '../../network/passageMessages.ts';
 import type { PassagePlan, PassageWeb } from '../../rules/passageRules.ts';
 import type { NodeInfo } from '../worldData.ts';
 
@@ -29,22 +30,32 @@ export function mouthAt(
   return null;
 }
 
+/** A hold's target as the room's word carries it (`passage_asks.rs`): a dead lamp's number, the lamp's or a
+ *  reliquary's. */
+export function heldTarget(held: NonNullable<ReturnType<typeof holdAt>>): number {
+  if ('kindle' in held) return held.kindle;
+  return 'lamp' in held ? HOLDING_LAMP : HOLDING_RELIQUARY;
+}
+
 /** The onward mouth a player at (x, y) of a zone stands at, by its place among the zone's ways on; null with none. */
 export function onwardAt(plan: PassagePlan, x: number, y: number): number | null {
   const found = plan.sites.onward.findIndex((door) => near(door.at, x, y, MOUTH_REACH_M));
   return found < 0 ? null : found;
 }
 
-/** What a player at (x, y) of a zone holds E at: the lamp, or a dead lamp by its number; null with neither near. */
+/** What a player at (x, y) of a zone holds E at: the lamp, a dead lamp by its number, or the reliquary; null with
+ *  none near. */
 export function holdAt(
   plan: PassagePlan,
   x: number,
   y: number,
-): { readonly lamp: true } | { readonly kindle: number } | null {
+): { readonly lamp: true } | { readonly kindle: number } | { readonly reliquary: true } | null {
+  const held = ['lamp', 'kindle', 'reliquary'];
   const piece = plan.pieces.find(
-    (each) => (each.kind === 'lamp' || each.kind === 'kindle') && near([each.at[0], each.at[1]], x, y, HOLD_REACH_M),
+    (each) => held.includes(each.kind) && near([each.at[0], each.at[1]], x, y, HOLD_REACH_M),
   );
   if (!piece) return null;
+  if (piece.kind === 'reliquary') return { reliquary: true };
   return piece.kind === 'lamp' ? { lamp: true } : { kindle: piece.number };
 }
 

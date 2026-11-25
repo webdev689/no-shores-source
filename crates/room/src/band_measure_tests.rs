@@ -59,6 +59,13 @@ impl Walker {
     /// at it within a metre past `stop` when `swing`. In a passage zone the way is the walk's, square by square, found
     /// again each quarter second or as it runs out; elsewhere the navmesh's, its points a metre apart.
     pub(super) fn step(&mut self, room: &mut Room, there: [f64; 3], stop: f64, swing: bool) {
+        self.steer(room, there, stop, swing);
+        room.tick();
+    }
+
+    /// The input of one tick, as `step` plays it, left for the room's next tick: a company's walkers each steer, then
+    /// the room ticks once.
+    pub(super) fn steer(&mut self, room: &mut Room, there: [f64; 3], stop: f64, swing: bool) {
         let me = *room.fighter(self.player).expect("in");
         let apart = libm::hypot(there[0] - me.body.x, there[1] - me.body.y);
         let from = [me.body.x, me.body.y, me.body.z];
@@ -99,7 +106,6 @@ impl Walker {
             ..Input::default()
         };
         room.input(self.player, input).expect("in order");
-        room.tick();
         self.ticks += 1;
     }
 }

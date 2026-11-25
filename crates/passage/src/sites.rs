@@ -28,6 +28,16 @@ pub struct Sites {
     pub spots: Vec<[f64; 2]>,
 }
 
+impl Sites {
+    /// The onward mouth farthest from the way in, by its place among them: a Gauntlet's goal.
+    #[must_use]
+    pub fn far_mouth(&self) -> Option<usize> {
+        let from = self.way_in.at;
+        let away = |door: &Door| libm::hypot(door.at[0] - from[0], door.at[1] - from[1]);
+        (0..self.onward.len()).max_by(|&one, &two| away(&self.onward[one]).total_cmp(&away(&self.onward[two])))
+    }
+}
+
 impl Default for Door {
     fn default() -> Self {
         Door { at: [0.0, 0.0], facing: 0.0 }

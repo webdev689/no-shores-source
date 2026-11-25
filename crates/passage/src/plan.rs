@@ -1,7 +1,7 @@
 //! A zone laid whole, as its room and every page stand it: its ground (the Forge's dungeon under ground, or a hollow
 //! above it), its sites, and the passages' own pieces standing in it (the mouth behind, the onward mouths, the lamp,
-//! and what its deal stands: dead lamps, tally posts, a reliquary, a vein's nodes), each with the solids a body runs
-//! into.
+//! and what its deal stands: dead lamps, tally posts, a reliquary, a vein's nodes, a Hold's ring), each with the
+//! solids a body runs into.
 
 use crate::hollow::{self, Hollow};
 use crate::sites::Sites;
@@ -28,7 +28,12 @@ pub enum Kind {
     Post(u8),
     Node(u8),
     Reliquary,
+    /// A Hold's ring, `RING_M` round its middle, drawn on the floor and standing in no one's way.
+    Ring,
 }
+
+/// How far round its middle a Hold's ring is held from (m).
+pub const RING_M: f64 = 6.0;
 
 impl Kind {
     /// The piece's name in the passages' pack and kit (tools/dungeon, content/islands/kits.json); a vein's node
@@ -43,6 +48,7 @@ impl Kind {
             Kind::Post(_) => "passage.tally-post",
             Kind::Node(_) => "resource",
             Kind::Reliquary => "passage.reliquary",
+            Kind::Ring => "passage.ring",
         }
     }
 
@@ -64,7 +70,7 @@ impl Kind {
             Kind::WayIn | Kind::Mouth(_) => vec![[-1.2, -0.4, 1.2, 0.4, 3.0]],
             Kind::Kindle(_) => vec![disc(0.0, 0.0, 0.25, 2.4)],
             Kind::Post(_) => vec![disc(0.0, 0.0, 0.35, 1.8)],
-            Kind::Node(_) => Vec::new(),
+            Kind::Node(_) | Kind::Ring => Vec::new(),
             Kind::Reliquary => vec![[-0.7, -0.45, 0.7, 0.45, 0.9]],
         }
     }
@@ -218,6 +224,7 @@ impl Plan {
             Deal::Mission(Mission::Sever) => take(POSTS, Kind::Post, &mut pieces),
             Deal::Vein => take(NODES, Kind::Node, &mut pieces),
             Deal::Reliquary => take(1, |_| Kind::Reliquary, &mut pieces),
+            Deal::Mission(Mission::Hold) => take(1, |_| Kind::Ring, &mut pieces),
             _ => {}
         }
         pieces

@@ -7,13 +7,14 @@ import type { Snapshot } from '../../../generated/messages/ts/overlook/wire/snap
 
 /** The passages' asks (`passage_wire`): go on through the onward mouth `column`; kindle the dead lamp `column`; light
  *  the zone's lamp; go home from it; begin a dive at the patrol zone's mouth `column`, by the route `slot` (0 public,
- *  1 a company's), at the lamp `node` lit this week (0 at the mouth). */
+ *  1 a company's), at the lamp `node` lit this week (0 at the mouth); open the reliquary. */
 export const PASSAGE_ASKS = {
   goOn: 82,
   kindle: 83,
   lightLamp: 84,
   goHome: 85,
   beginDive: 86,
+  open: 87,
 } as const;
 
 /** What a dive carries and has not kept: its Vestiges and items as the gear's, its stocks (Weapon and Armor
@@ -118,8 +119,9 @@ export function passagesOf<Item>(gear: Gear, itemOf: (item: GearItemTable) => It
   return { dive: read ?? null, islandLamps, athericBounties };
 }
 
-/** A hold's target as it crosses: the lamp's, and none under way. */
+/** A hold's target as it crosses: the lamp's, a reliquary's, and none under way. */
 export const HOLDING_LAMP = 255;
+export const HOLDING_RELIQUARY = 253;
 const NOT_HOLDING = 254;
 
 /** A passage zone's deal as it stands for one player: its key (crates/passage's `Deal::key`), whether it is done,

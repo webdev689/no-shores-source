@@ -113,7 +113,9 @@ no landmark zones ("The regions", above).
 | Call | Choice |
 |---|---|
 | Foe levels | The island's band raised by round((30 − its top) × ((depth − 1) ÷ 19)²): on Saltmere 1 to 4 at depth 1, 2 to 5 at 5, 7 to 10 at 10, 15 to 18 at 15, 27 to 30 at 20. Every island's deep reaches the top, so early islands keep their worth; a foe four levels over a player is still immune to them, which is the dive's own gate |
-| Ranks | Bands of Minors and Majors as a patrol's; from depth 6 one band in three has an Elite, from depth 11 every band; a lamp's guard is an Elite band at depth 5, a Miniboss and an Elite band at 10 and 15, a Miniboss and two Elite bands at 20 |
+| Ranks | Bands of Minors and Majors as a patrol's; from depth 6 one band in three has an Elite, from depth 11 every band; a lamp's guard is an Elite band at depth 5, a Miniboss and an Elite band at 10 and 15, a Boss and two Elite bands at 20 |
+| Who stands | The Grey Tithe's own, by depth: Runners, Collectors and Crossbowmen, Minors and Majors, at 1 to 5; Enforcers among them from 6; their Majors alone past 10. Their Elites the Enforcer and the Marksman, the Tithe-Taker with them past 10, the Reeve past 15. A strand, an old sea floor with its wrecks inland, stands the Tithe's deck crew: Deckhands, Hookmen and Pistoleers, Bosuns among them past 10, led by a Bosun or a Tithe-Mate. The Lattice stand in none: where they come in is the owner's to talk through |
+| The lamps' great foes | The Reeve at the second lamp, the Tithe-Mate at the third, and at the fourth one of the island's two Elite Dungeons' Bosses at Boss rank, the week's by turns; a vault's Miniboss the Reeve to depth 10, the Tithe-Mate past it |
 
 ## The haul
 
@@ -182,10 +184,21 @@ losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
 
 | Call | Choice |
 |---|---|
-| A reliquary | Its chest opens itself once its guard is down, with no hold |
-| A vein | Done when its guard is down; its six nodes are gathered into the haul as a patrol's are, and its cache pays two fragments |
-| A Sever's posts | Tithe Enforcers standing still, named "Tally Post" |
-| A Reckoning's collectors | Walk away when found, and never fight back |
+| A reliquary | Opened by E held 5 s within 3 m of its chest, the Kindle's hold; the first hold calls a wave, its keepers. Done once opened, its guard down or not |
+| A vein | Done once its six nodes are gathered, by any who take part, each gather calling a wave of two; its guard need not fall. Its nodes go into the haul as a patrol's do, and its cache pays two fragments |
+| A Sever's posts | Struck as a foe is, standing still, named "Tally Post", and drawn as the post alone, as the Fissure's crystal growth is |
+| A Reckoning's collectors | Walk away when found, never fight back, and are named "Collector" |
+| A Hunt's marked Elite | Named "The Marked" |
+| Holds and the ring | A dead lamp kindles, a reliquary opens and a Hold's ring is held only while no foe stands within 8 m of it; a hold begun with one near is refused so |
+| A Hold's ring | A piece of its own at its spot, its 6 m drawn on the floor in low stones |
+| A Gauntlet's far mouth | Marked among the zone's sites, so its sign can say so. It counts only one whose dive is in the zone and not done and who stood at the arrival this round; its seconds left run from each one's arrival or the round's start, the later |
+| The most foes | By the zone's size, 7, 9 and 12 standing at once (small, medium, large); Crowded's extra foes are not counted, so it holds as many bands. A band past it is held back |
+| A company | As a public event's waves and great foes rise: three more foes standing for each player past the first, a band held back standing once there is room and no player is near its post; a wave a foe more for each player past the first, three at most; a Miniboss or a Boss half its health more for each, the most players seen. Every one who takes part is paid the whole cache |
+| Waves | Drawn from the zone's own roster, taking its currents: Crowded's more foes, Veteran's Majors, Hardened's health, Shielded's shields |
+| A respawn | However a body fell, the section's ring among them, a respawn asked for empties the haul and is refused in Gloom |
+| The lamp lit | Lit for a player while their dive in the zone has lit it, kept with the dive: a round begun again, a reconnect or a dive begun at the lamp find it lit |
+| Leaving fallen | A body left fallen comes back fallen; past its two minutes it comes back whole, its haul lost as a respawn's |
+| A vein's stock | A gather is refused against the haul's stock while the haul takes it |
 | Taking part | Bringing down one of the deal's foes, lighting a dead lamp, holding the ring, or reaching the far mouth |
 | A vault's garrison | Takes no Crowded or Veteran; Hardened applies |
 | Drops | From the dungeons' content under ground, the world's above it |

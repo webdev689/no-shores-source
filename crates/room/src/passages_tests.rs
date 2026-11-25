@@ -146,7 +146,7 @@ fn a_kindles_three_dead_lamps_are_lit_by_holding_e_and_waves_come_meanwhile() {
         kill_all(&mut room);
         stand_at(&mut room, player, [at[0] + 1.0, at[1]]);
         assert_eq!(room.ask_passage(player, PassageAsk::Kindle { lamp: nth }), 0);
-        for _ in 0..super::passage_asks::KINDLE_TICKS + 1 {
+        for _ in 0..super::passage_holds::KINDLE_TICKS + 1 {
             room.players.get_mut(&player).expect("in").fighter.health = 1e9;
             room.tick();
         }
@@ -165,7 +165,7 @@ fn a_lamp_is_lit_for_each_player_once_its_guard_is_down_and_then_they_may_go_hom
     run(&mut room, 2);
     assert_eq!(room.ask_passage(player, PassageAsk::GoHome), gear::Refusal::LampNotLit as u8 + 1);
     assert_eq!(room.ask_passage(player, PassageAsk::LightLamp), 0);
-    run(&mut room, super::passage_asks::LAMP_TICKS + 1);
+    run(&mut room, super::passage_holds::LAMP_TICKS + 1);
     assert!(room.passage_seen(player).is_some_and(|seen| seen.lamp_lit));
     let number = passage::lamp_number(plan.zone.depth).expect("a lamp's depth");
     assert!(room.players[&player].character.activity.this_week.passage_lamps[ISLAND].contains(&number));
@@ -298,8 +298,11 @@ fn a_cache_pays_only_those_who_took_part_and_a_late_gauntlet_pays_none() {
     let fighter = diver(&mut room, week, &plan);
     let idle = diver(&mut room, week, &plan);
     room.zone_mut().expect("a zone").round.took_part.insert(fighter);
-    kill_all(&mut room);
-    run(&mut room, 2);
+    // Two players stand a band more where the zone held one back.
+    for _ in 0..4 {
+        kill_all(&mut room);
+        room.tick();
+    }
     assert!(dive(&room, fighter).is_some_and(|dive| dive.paid == [plan.zone.number]));
     assert!(dive(&room, idle).is_some_and(|dive| dive.paid.is_empty() && dive.done), "its mouths open, no cache");
 
@@ -392,7 +395,7 @@ pub(super) fn lit_lamp() -> (u64, Plan, Room, PlayerId) {
     kill_all(&mut room);
     run(&mut room, 2);
     assert_eq!(room.ask_passage(player, PassageAsk::LightLamp), 0);
-    run(&mut room, super::passage_asks::LAMP_TICKS + 1);
+    run(&mut room, super::passage_holds::LAMP_TICKS + 1);
     assert!(room.passage_seen(player).is_some_and(|seen| seen.lamp_lit));
     (week, plan, room, player)
 }
@@ -535,6 +538,6 @@ fn a_kindles_next_wave_waits_for_the_last_to_be_down_and_a_zone_stands_nine_at_m
     assert_eq!(room.passage_seen(player).map(|seen| seen.wave), Some(1), "none while the first stands");
     for deal in [Deal::Skirmish, Deal::Vault, Deal::Mission(Mission::Hunt)] {
         let (_, _, room) = zone_room(deal, None, Route::Public);
-        assert!(room.living_foes() <= super::ZONE_FOES_MOST, "{deal:?}: {}", room.living_foes());
+        assert!(room.living_foes() <= room.zone_foes_most(), "{deal:?}: {}", room.living_foes());
     }
 }

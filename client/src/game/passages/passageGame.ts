@@ -9,7 +9,7 @@ import { Foot } from '../foot.ts';
 import { weekOf } from '../guild/guildLaw.ts';
 import type { FootContext, Uses } from '../footPlace.ts';
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
-import { HOLDING_LAMP, type DiveState, type PassageSeenState } from '../../network/passageMessages.ts';
+import type { DiveState, PassageSeenState } from '../../network/passageMessages.ts';
 import type { GearItem } from '../../network/gearMessages.ts';
 import { type NodeLayout, placesOf } from '../../layout/layouts.ts';
 import { TIERS } from '../activityWords.ts';
@@ -29,7 +29,7 @@ import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
 import { passageSheet } from './passageMap.ts';
 import { haulNode, lanternNode, MouthsCardView, NARROW, signNode } from './passagePanels.ts';
 import type { PieceState } from './passagePieces.ts';
-import { holdAt, homeSpot, MOUTH_REACH_M, mouthAt, onwardAt } from './passageReach.ts';
+import { heldTarget, holdAt, homeSpot, MOUTH_REACH_M, mouthAt, onwardAt } from './passageReach.ts';
 import { WayBetween, type WayHost, type WayPlayed } from './wayBetween.ts';
 import {
   dealTracker,
@@ -219,19 +219,21 @@ export class PassageGame {
     if (seen?.holding && !this.useHeld && !this.letGo) ask({ kind: ASKS.stopGather });
     this.letGo = !!seen?.holding && !this.useHeld;
     const held = holdAt(plan, x, y);
+    const share = held && seen?.holding?.target === heldTarget(held) ? seen.holding.share : undefined;
     if (held && 'lamp' in held) {
       const lit = seen?.lampLit ?? false;
       const prompt = lampPrompt(lit, !lit && !(seen?.done ?? false));
       if (lit) return { words: prompt.deed, run: () => this.home(ask) };
-      const share = seen?.holding?.target === HOLDING_LAMP ? seen.holding.share : undefined;
       if (prompt.under === 'Not while its guard stands')
         return { words: prompt.under, run: () => undefined, idle: true };
       return { words: prompt.deed, run: () => ask({ kind: ASKS.lightLamp }), held: share };
     }
     if (held && 'kindle' in held) {
       if (((seen?.lit ?? 0) >> held.kindle) & 1) return null;
-      const share = seen?.holding?.target === held.kindle ? seen.holding.share : undefined;
       return { words: 'Light the dead lamp', run: () => ask({ kind: ASKS.kindle, column: held.kindle }), held: share };
+    }
+    if (held && 'reliquary' in held && !(seen?.done ?? false)) {
+      return { words: 'Open the reliquary', run: () => ask({ kind: ASKS.open }), held: share };
     }
     const mouth = onwardAt(plan, x, y);
     const to = mouth === null ? undefined : this.zone.web.zones.find((each) => each.number === plan.zone.onward[mouth]);

@@ -63,6 +63,16 @@ function lamp(lit: boolean): PieceBox[] {
   return [box(square(0, 0, 0.8), 0, 1.4, STONE), box(square(0, 0, 0.3), 1.4, 2, lit ? LIT : COLD, lit), ...stones];
 }
 
+/** A Hold's ring drawn on the floor: low flat stones on its 6 m (`passage::plan::RING_M`), standing in no one's way. */
+export const RING_M = 6;
+const RING_STONES = 24;
+function ringStones(): PieceBox[] {
+  return Array.from({ length: RING_STONES }, (unused, stone) => {
+    const turn = (2 * Math.PI * stone) / RING_STONES;
+    return box(square(RING_M * Math.sin(turn), -RING_M * Math.cos(turn), 0.3), -0.1, 0.06, STONE);
+  });
+}
+
 /** Each box a piece stands as, as `state` finds it. */
 export function piecesBoxes(piece: PassagePiece, state: PieceState): PieceBox[] {
   switch (piece.kind) {
@@ -84,6 +94,8 @@ export function piecesBoxes(piece: PassagePiece, state: PieceState): PieceBox[] 
       return [box([-0.7, -0.45, 0.7, 0.45], 0, 0.75, STONE), box([-0.72, -0.47, 0.72, 0.47], 0.75, 0.9, IRON)];
     case 'node':
       return [];
+    case 'ring':
+      return ringStones();
   }
 }
 

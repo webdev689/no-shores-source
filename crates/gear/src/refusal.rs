@@ -113,7 +113,8 @@ pub enum Refusal {
     /// number; the zone's deal not done while the player was in it; no lamp to light here, or none lit this week to
     /// begin at; the lamp not lit for the player; the lamp's guard still standing; out of reach of the lamp or a
     /// mouth; asked outside a passage zone or its patrol zone (the room's); asked of a zone whose week's web has
-    /// turned, but Home at a lamp already lit; a dead lamp or the lamp lit already; asked while fallen.
+    /// turned, but Home at a lamp already lit; a dead lamp or the lamp lit already; asked while fallen; a hold begun
+    /// while a foe stands near its piece.
     NoDive = 170,
     NoSuchMouth = 171,
     DealNotDone = 172,
@@ -125,4 +126,5 @@ pub enum Refusal {
     Shifted = 178,
     AlreadyLit = 179,
     Fallen = 180,
+    FoesNear = 181,
 }

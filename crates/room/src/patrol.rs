@@ -102,6 +102,7 @@ impl Room {
             }
             found.character.tell(&gear::quests::Event::Gather);
             self.saw(player, &gear::objectives::Feat::Gathered { resource });
+            self.vein_gathered(player, gathering.node);
         }
     }
 }
