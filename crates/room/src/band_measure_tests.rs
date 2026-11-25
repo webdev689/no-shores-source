@@ -161,7 +161,8 @@ fn measure_the_pace() {
         room.start_patrol(id, 0, &[]);
         row(&format!("Patrol garrison ({id})"), clear_all(&mut room));
     }
-    for patrol in ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra"] {
+    for patrol in ["saltgrass-downs", "highwater-fells", "whitewind-tundra"] {
+        assert!(gear::activities::island_of(patrol).is_some(), "{patrol} is a patrol zone that stands");
         for number in 0..dungeon::PER_PATROL {
             let Some(mut room) = Room::dungeon(patrol, number, Some((1, 1))) else { continue };
             row(&format!("Patrol dungeon ({patrol} {number})"), clear_all(&mut room));
@@ -197,4 +198,19 @@ fn the_bands_tables_are_the_rooms_and_the_passages_own() {
     assert_eq!(band::EVENTS_AN_HOUR, (60 / crate::public::PERIOD_MINUTES) as f64);
     let ranks = crate::sighting::RANKS_AT_SEA;
     assert_eq!(ranks.map(crate::flotsam::foe_of), band::SEA_FOES, "the foe each rank at sea pays as");
+}
+
+#[test]
+fn the_bands_passage_rosters_are_the_rooms() {
+    let pays = |number: u8| {
+        let role = ::foes::roster::foe_type(number).expect("a foe type").role;
+        crate::power::worth_of(role as u8).expect("paid")
+    };
+    for depth in 1..=passage::DEPTHS {
+        let (members, elites) = crate::passage_foes::roster_of(depth);
+        let members: Vec<_> = members.iter().map(|&(number, rank)| (pays(number), rank as u8)).collect();
+        let elites: Vec<_> = elites.iter().map(|&number| pays(number)).collect();
+        let (band_members, band_elites) = gear::band::passage_roster(depth);
+        assert_eq!((members.as_slice(), elites.as_slice()), (band_members, band_elites), "depth {depth}");
+    }
 }

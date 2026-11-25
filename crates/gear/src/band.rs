@@ -403,8 +403,28 @@ fn cache(depth: u8, level: u8) -> Hour {
         .fold(Hour::default(), |sum, (hour, share)| sum.plus(hour.times(share)))
 }
 
-/// A passage zone's foes at a depth: Minors and Majors of the patrol's kinds, an Elite leading every third band from
-/// depth 6 and every band from 11, three foes a band (`room::passages`).
+/// A passage zone's bands at a depth as they pay, each member as likely, by kind and rank, and the kinds of the
+/// Elites that lead them (`room::passage_foes`'s rosters off a strand): the patrol's Minors and Majors to depth 5, the
+/// Enforcer among them to 10, Majors alone past it; the Enforcer and the Marksman leading, the Tithe-Taker past 10 and
+/// the Reeve past 15. A strand's deck crew pays as near as makes no odds.
+#[must_use]
+pub fn passage_roster(depth: u8) -> (&'static [(Foe, u8)], &'static [Foe]) {
+    use Foe::{Archer, Brute, Captain, Skirmisher, Swordsman};
+    const SHALLOW: [(Foe, u8); 6] =
+        [(Skirmisher, 1), (Skirmisher, 2), (Swordsman, 1), (Swordsman, 2), (Archer, 1), (Archer, 2)];
+    const MIDDLE: [(Foe, u8); 6] =
+        [(Skirmisher, 1), (Skirmisher, 2), (Swordsman, 2), (Archer, 1), (Archer, 2), (Brute, 2)];
+    const DEEP: [(Foe, u8); 5] = [(Skirmisher, 2), (Swordsman, 2), (Archer, 2), (Brute, 2), (Swordsman, 2)];
+    match depth {
+        0..=5 => (&SHALLOW, &[Brute, Archer]),
+        6..=10 => (&MIDDLE, &[Brute, Archer]),
+        11..=15 => (&DEEP, &[Brute, Archer, Captain]),
+        _ => (&DEEP, &[Brute, Archer, Captain, Captain]),
+    }
+}
+
+/// A passage zone's foes at a depth: its roster's, an Elite leading every third band from depth 6 and every band
+/// from 11, three foes a band (`room::passage_foes`).
 fn passage_kill(depth: u8, level: u8) -> Hour {
     let tier = Difficulty::Normal;
     let elites = match depth {
@@ -412,21 +432,29 @@ fn passage_kill(depth: u8, level: u8) -> Hour {
         6..=10 => 1.0 / 9.0,
         _ => 1.0 / 3.0,
     };
-    let elite = kill_of(&[Foe::Brute, Foe::Archer], 3, level, tier);
-    patrol_kill(level, tier).times(1.0 - elites).plus(elite.times(elites))
+    let (members, kinds) = passage_roster(depth);
+    let each = 1.0 / members.len() as f64;
+    let band =
+        members.iter().fold(Hour::default(), |sum, &(foe, rank)| sum.plus(kill(foe, rank, level, tier).times(each)));
+    band.times(1.0 - elites).plus(kill_of(kinds, 3, level, tier).times(elites))
 }
 
-/// A lamp's zone at its number: its cache, a sure Vestige, and its guard (an Elite band at the first, a Miniboss and an
-/// Elite band at the second and third, a Miniboss and two Elite bands at the fourth).
+/// A lamp's zone at its number: its cache, a sure Vestige, and its guard of its depth's Elites (an Elite band at the
+/// first, a Miniboss and an Elite band at the second and third, an Elite Dungeon's Boss and two Elite bands at the
+/// fourth).
 fn lamp_zone(number: u8, depth: u8, level: u8) -> Hour {
     let tier = Difficulty::Normal;
     let chance = if LAMP_VESTIGE >= 1.0 { 1.0 } else { (LAMP_VESTIGE * find_times(depth)).min(1.0) };
     let paid_cache =
         paid(LAMP_PAY, level, tier).times(pay_times(depth)).plus(vestiges(chance, shares(colours(3), level)));
     let elites = if number >= 4 { 6.0 } else { 3.0 };
-    let guard = kill_of(&[Foe::Brute, Foe::Archer], 3, level, tier).times(elites * KILL_SHARE);
-    let miniboss = if number >= 2 { kill(Foe::Captain, 4, level, tier).times(KILL_SHARE) } else { Hour::default() };
-    paid_cache.plus(guard).plus(miniboss)
+    let guard = kill_of(passage_roster(depth).1, 3, level, tier).times(elites * KILL_SHARE);
+    let leader = match number {
+        0 | 1 => Hour::default(),
+        2 | 3 => kill(Foe::Captain, 4, level, tier),
+        _ => kill(Foe::Captain, 5, level, tier),
+    };
+    paid_cache.plus(guard).plus(leader.times(KILL_SHARE))
 }
 
 /// The lamps a player of `level` lights in a day and a week: the day's first (a dungeon of the day's clear and a sure
