@@ -219,7 +219,8 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+- **The codebase audit** (#209, merged on the owner's "Merge and deploy", which deploys the page, the site, the rooms
+  and the bot), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
   `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
@@ -235,7 +236,9 @@ The decisions in [[Open Questions]] are not repeated here.
   times a second, and the meadow grows half as thick ([[The Meadow Grows Half as Thick]], pictured before and after
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
-  ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
+  ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Tested live after the deploy:
+  the bot answers from b608b3c7, the rooms and the accounts answer, and `/play/` serves 288 tufts a cell, the darker
+  tone, the eye-reckoned gusts and #209's patch notes. Not yet seen in motion in a real browser.
 - **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
   reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
