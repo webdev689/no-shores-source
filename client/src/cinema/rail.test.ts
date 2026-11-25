@@ -1,16 +1,21 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { around, lookAt, railMoved, railShot, smooth, type RailKey } from './rail.ts';
+import { around, lookAt, railShot, smooth, type RailKey } from './rail.ts';
 
 const KEYS: RailKey[] = [
   { at: 0, eye: [0, 0, 10], look: [0, -100, 0] },
   { at: 4, eye: [40, 0, 20], look: [40, -100, 0], fov: 0.6 },
   { at: 10, eye: [100, 0, 10], look: [100, -100, 0] },
 ];
+/** The same rail off round numbers, so a key is met exactly however its time and place fall. */
+const LATE: RailKey[] = [
+  { at: 7.3, eye: [0.1, 0.2, 10.3], look: [0.1, -99.8, 0.3] },
+  { at: 11.3, eye: [40.1, 0.2, 20.3], look: [40.1, -99.8, 0.3], fov: 0.6 },
+  { at: 17.3, eye: [100.1, 0.2, 10.3], look: [100.1, -99.8, 0.3] },
+];
 
 test('a rail passes through every key at its time, exactly', () => {
-  const late = railMoved(KEYS, [0.1, 0.2, 0.3], 7.3);
-  for (const rail of [KEYS, late])
+  for (const rail of [KEYS, LATE])
     for (const key of rail) assert.deepEqual(railShot(rail, key.at, 0.9, 'none').eye, key.eye);
   assert.equal(railShot(KEYS, 4, 0.9, 'none').fov, 0.6);
   assert.equal(railShot(KEYS, 10, 0.9, 'none').fov, 0.9, "a key's own lens, or the rail's");
@@ -19,10 +24,9 @@ test('a rail passes through every key at its time, exactly', () => {
 test('before its first key and after its last a rail holds still, on that key exactly', () => {
   assert.deepEqual(railShot(KEYS, -3, 0.9).eye, railShot(KEYS, 0, 0.9).eye);
   assert.deepEqual(railShot(KEYS, 30, 0.9).eye, railShot(KEYS, 10, 0.9).eye);
-  const late = railMoved(KEYS, [0.1, 0.2, 0.3], 7.3);
   for (const ease of ['both', 'in', 'out', 'none'] as const) {
-    assert.deepEqual(railShot(late, 999, 0.9, ease).eye, late[late.length - 1]?.eye, ease);
-    assert.deepEqual(railShot(late, -999, 0.9, ease).eye, late[0]?.eye, ease);
+    assert.deepEqual(railShot(LATE, 999, 0.9, ease).eye, LATE[LATE.length - 1]?.eye, ease);
+    assert.deepEqual(railShot(LATE, -999, 0.9, ease).eye, LATE[0]?.eye, ease);
   }
 });
 
@@ -52,10 +56,7 @@ test('a look north is bearing 0, east a quarter turn, and down is a positive pit
   assert.ok(Math.abs(lookAt([0, 0, 10], [0, -10, 0]).pitch - Math.PI / 4) < 1e-12);
 });
 
-test('a rail moves and delays whole', () => {
-  const moved = railMoved(KEYS, [5, 6, 7], 2);
-  assert.deepEqual(moved[0]?.eye, [5, 6, 17]);
-  assert.equal(moved[2]?.at, 12);
+test('a point around a centre lies on its bearing, and the ease is flat past its ends', () => {
   assert.deepEqual(around([0, 0, 0], Math.PI / 2, 10, 3), [10, -6.123233995736766e-16, 3]);
   assert.equal(smooth(-1), 0);
   assert.equal(smooth(0.5), 0.5);

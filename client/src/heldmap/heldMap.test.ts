@@ -181,3 +181,32 @@ test("on land, a lit keeper's coin is ringed where it is painted, as large; an u
     'none at sea',
   );
 });
+
+test('art that fails for gauntlets the map is no longer held in leaves the map raised in the others', async () => {
+  const map = Object.create(HeldMap.prototype) as HeldMap;
+  const asked: { path: string; fail: (why: unknown) => void }[] = [];
+  const strip = (path: string) =>
+    new Promise<null>((_resolve, fail) => {
+      asked.push({ path, fail });
+    });
+  const lowered: unknown[] = [];
+  Object.assign(map, {
+    phase: { kind: 'closed' },
+    store: { strip },
+    view: { ready: false },
+    ask: new MapAsk(),
+    shut: [],
+    picked: 'normal',
+    lowered: () => lowered.push('lowered'),
+  });
+  const viewport = { width: 1280, height: 720 };
+  map.open(viewport, [0, 0], 'iron', []);
+  map.drop();
+  map.open(viewport, [0, 0], 'gold', []);
+  const iron = asked.filter(({ path }) => path.endsWith('-Iron.png'));
+  assert.equal(iron.length, 1, 'the iron hands were asked for');
+  for (const each of iron) each.fail(new Error('gone'));
+  await new Promise((settled) => setImmediate(settled));
+  map.frame(1, viewport, 1, scene);
+  assert.deepEqual([map.shown, lowered], [true, []], 'still rising in the gold gauntlets');
+});

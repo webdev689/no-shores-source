@@ -50,14 +50,7 @@ export function ladderRate(percent: number): number {
   return RATE_NEAR_LETHAL;
 }
 
-/** The gore dial's density scales a rate with a floor of one, so less blood is never none. */
-export function scaleRate(rate: number, density = 1): number {
-  const scaled = Number.isFinite(density) ? Math.max(0, density) : 1;
-  return Math.max(1, Math.round(rate * scaled));
-}
-
-export const bloodRate = (damage: number, healthMax: number, density = 1): number =>
-  scaleRate(ladderRate(damagePercent(damage, healthMax)), density);
+export const bloodRate = (damage: number, healthMax: number): number => ladderRate(damagePercent(damage, healthMax));
 
 export const isOverkill = (damage: number, healthMax: number): boolean =>
   damagePercent(damage, healthMax) >= OVERKILL_PERCENT;
@@ -85,12 +78,10 @@ export function sprayCount(rate: number): number {
 
 /** The burst's own ceiling, so a warhammer and a dagger do not leave the same mess. */
 export const BURST_DROPS_MAX = 48;
-export const burstRate = (heavy: boolean, density = 1): number =>
-  scaleRate(heavy ? OVERKILL_RATE_HEAVY : OVERKILL_RATE, density);
-export const burstCount = (heavy: boolean, density = 1): number =>
-  Math.max(1, Math.min(BURST_DROPS_MAX, Math.round(burstRate(heavy, density) * SPRAY_SHARE)));
-export const burstReach = (heavy: boolean, density = 1): number =>
-  sprayRadius(burstRate(heavy, density)) * OVERKILL_REACH_SCALE;
+export const burstRate = (heavy: boolean): number => (heavy ? OVERKILL_RATE_HEAVY : OVERKILL_RATE);
+export const burstCount = (heavy: boolean): number =>
+  Math.max(1, Math.min(BURST_DROPS_MAX, Math.round(burstRate(heavy) * SPRAY_SHARE)));
+export const burstReach = (heavy: boolean): number => sprayRadius(burstRate(heavy)) * OVERKILL_REACH_SCALE;
 
 /** Where a spray's drops fall: one to three lobes the blow threw, a share of strays, reach biased outward with a few
  *  flyers past it, sizes skewed many small and few large. The golden ratio's family mixes the draws so a spray never
@@ -396,12 +387,5 @@ export class DecalRing {
           [0, this.next],
         ]
       : [[0, this.capacity]];
-  }
-
-  clear(): void {
-    this.slots.fill(null);
-    this.next = 0;
-    this.filled = 0;
-    this.count = 0;
   }
 }

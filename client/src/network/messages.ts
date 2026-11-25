@@ -150,7 +150,7 @@ const FOE_NUMBERS = GLANCE_FLOATS + 17;
 export function foeOf(id: number, numbers: Float64Array): SeenFoe {
   const glance = numbers.slice(0, GLANCE_FLOATS);
   const [kind, type, rank, faction, phase, alert, level, element, left, most, expose, charge, chargeImmune, ...more] =
-    Array.from(numbers.subarray(GLANCE_FLOATS), (number) => number);
+    Array.from(numbers.subarray(GLANCE_FLOATS));
   const shield = (element ?? 0) > 0 ? { element: element ?? 0, left: left ?? 0, most: most ?? 0 } : null;
   const named = { type: type ?? 0, rank: rank ?? 0, faction: faction ?? 0, phase: phase ?? 0, alert: alert ?? 0 };
   const statuses = { expose: expose ?? 0, charge: charge ?? 0, chargeImmune: chargeImmune ?? 0 };
