@@ -65,10 +65,13 @@ pub struct Dive {
     /// The mouth of the patrol zone it began at, by its place among the island's.
     #[serde(default)]
     pub mouth: u8,
-    /// The zone it is in, by its number in the web, and that zone's depth.
+    /// The zone it is in, by its number in the web, and that zone's depth; and the depth it began at (0, read from a
+    /// dive kept before it, as the first).
     pub zone: u16,
     #[serde(default)]
     pub depth: u8,
+    #[serde(default)]
+    pub began: u8,
     /// Whether the zone's deal was done while the player was in it, which opens its onward mouths for them.
     #[serde(default)]
     pub done: bool,
@@ -87,6 +90,10 @@ pub struct Dive {
     /// The seas of the patrol zone it began at, the room it goes home to.
     #[serde(default)]
     pub seas: Difficulty,
+    /// Whether the sea has kept the character since the dive began: the sea never ends a dive, which is judged where
+    /// it next lands, and a homeward one landed by sea stands where it landed.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub sailed: bool,
     /// Whether the player stands in a passage zone of the dive now, so what they find goes into the haul: set by the
     /// zone's room as they join it, never kept.
     #[serde(skip)]
@@ -109,6 +116,15 @@ pub struct Start<'a> {
     pub seas: Difficulty,
 }
 
+impl Dive {
+    /// How many zones deep the dive has gone from where it began, the zone it is in counted: a dive begun at a
+    /// mouth's at its depth, one begun at a lamp from that lamp's zone.
+    #[must_use]
+    pub fn zones_deep(&self) -> u8 {
+        self.depth.saturating_sub(self.began.max(1)) + 1
+    }
+}
+
 impl Character {
     /// The dive the character stands in now, whose haul takes what they find.
     pub(crate) fn hauling(&mut self) -> Option<&mut Haul> {
@@ -116,14 +132,18 @@ impl Character {
     }
 
     /// Begins a dive at a mouth of an island's patrol zone, its haul empty: at the zone behind the mouth, or at a
-    /// lamp's zone where the lamp was lit this week on that island, the lamp counted lit and its zone's cache paid. A
-    /// dive under way ends first, its haul lost.
+    /// lamp's zone where the lamp was lit this week on that island or its zone's foes stand at or under the player's
+    /// level, the lamp counted lit for the dive (not for the week) and its zone's deal done and cache paid. The fourth
+    /// lamp, the deepest, is no begin. A dive under way ends first, its haul lost.
     pub fn begin_dive(&mut self, start: &Start<'_>) -> Result<(), Refusal> {
         let mut lamp = 0;
         if let Some(number) = start.lamp {
             let lit = self.activity.this_week.week == start.week
                 && self.activity.this_week.passage_lamps.get(start.island).is_some_and(|lamps| lamps.contains(&number));
-            if !lit {
+            let top =
+                crate::world::island_levels(start.island).map(|band| crate::band::passage_levels(band, start.depth).1);
+            let matched = top.is_some_and(|top| top <= self.level());
+            if number >= 4 || !(lit || matched) {
                 return Err(Refusal::NoLamp);
             }
             lamp = number;
@@ -135,13 +155,16 @@ impl Character {
             mouth: start.mouth,
             zone: start.zone,
             depth: start.depth,
-            done: false,
+            began: start.depth,
+            // Begun at a lamp, its guard and its ways on stand for nothing.
+            done: start.lamp.is_some(),
             lamp,
             // Its lamp's zone paid its cache the dive that lit it.
             paid: start.lamp.map(|_| start.zone).into_iter().collect(),
             haul: Haul::default(),
             homeward: false,
             seas: start.seas,
+            sailed: false,
             here: false,
             unknown: UnknownKeys::new(),
         });
@@ -198,15 +221,16 @@ impl Character {
 
     /// Leaves the passages, as joining any room that is not a passage zone of the dive does: a dive gone home, come
     /// into the room holding its island's mouths (`mouths_of`, the island whose mouths the room holds), keeps what was
-    /// found since its lamp and answers the mouth it began at; any other loses its haul.
+    /// found since its lamp and answers the mouth it began at to stand before, none if it came by sea; any other loses
+    /// its haul.
     pub fn leave_passages(&mut self, mouths_of: Option<&str>) -> Option<u8> {
         let home = |dive: &&Dive| dive.homeward && mouths_of == Some(dive.island.as_str());
-        let homeward = self.passage.as_ref().filter(home).map(|dive| dive.mouth);
+        let homeward = self.passage.as_ref().filter(home).map(|dive| (dive.mouth, dive.sailed));
         if homeward.is_some() {
             self.keep_haul_home();
         }
         self.end_dive();
-        homeward
+        homeward.filter(|(_, sailed)| !sailed).map(|(mouth, _)| mouth)
     }
 
     /// A Vestige into the haul, while the player stands in a passage zone: whether it went there.

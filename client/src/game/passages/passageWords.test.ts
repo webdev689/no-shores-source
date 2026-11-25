@@ -64,6 +64,23 @@ test('the mouths’ choice offers the public passage and one route of one’s ow
   assert.equal(mouthsChoice(web, 'The Beacon Stair', false, []), null);
 });
 
+test('a lamp whose foes the player matches is offered unlit, and the fourth lamp never is', () => {
+  const deep: PassageWeb = {
+    ...web,
+    zones: [
+      zone(0),
+      zone(1, { depth: 5, deal: 'lamp', lamp: 1, levels: [2, 5] }),
+      zone(2, { depth: 10, deal: 'lamp', lamp: 2, levels: [7, 10] }),
+      zone(3, { depth: 20, deal: 'lamp', lamp: 4, levels: [27, 30] }),
+    ],
+  };
+  const starts = (lit: number[], level: number) =>
+    mouthsChoice(deep, 'The Chalk Adit', false, lit, level)?.starts.map((start) => start.lamp);
+  assert.deepEqual(starts([], 4), [null], 'the first lamp’s foes stand over them');
+  assert.deepEqual(starts([], 30), [null, 1, 2], 'every lamp under them but the deepest');
+  assert.deepEqual(starts([4], 30), [null, 1, 2], 'the fourth lit this week is still no begin');
+});
+
 test('an onward mouth’s sign names the zone beyond, its deal, depth and currents, and why it is shut', () => {
   const shut = onwardSign(zone(3, { depth: 8 }), false);
   assert.deepEqual(

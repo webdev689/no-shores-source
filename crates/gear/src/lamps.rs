@@ -127,7 +127,7 @@ impl Character {
             self.find_material(Stuff::Fragments(stock), fragments);
         }
         let lamp = if let Cache::Lamp(number) = cache { Some(number) } else { None };
-        self.roll_find(at.island, at.depth, lamp, dice);
+        self.roll_find(at, lamp, dice);
         true
     }
 
@@ -137,8 +137,9 @@ impl Character {
     }
 
     /// Lights a zone's lamp, by its number, for this player: the haul kept, the day's and the week's lamp paid where
-    /// they are due (on `day` and in `week`, the clock's), the lamp noted lit this week and the deepest of the dive,
-    /// and the passages' bounties and the Atheric bounties counted.
+    /// they are due (on `day` and in `week`, the clock's; the day's only at a zone whose foes stand within three levels
+    /// of the player), the lamp noted lit this week and the deepest of the dive, the passages' lore found, and the
+    /// passages' bounties and the Atheric bounties counted.
     pub fn light_lamp(
         &mut self,
         at: Zone<'_>,
@@ -152,7 +153,9 @@ impl Character {
         self.keep_haul();
         // What the lamps pay is kept at once, never into the haul.
         let dive = self.passage.take();
-        if day >= self.activity.today.day && self.activity.today(day).passage_lamp.insert(at.island.to_owned()) {
+        let near = self.level() <= at.level.saturating_add(3);
+        if near && day >= self.activity.today.day && self.activity.today(day).passage_lamp.insert(at.island.to_owned())
+        {
             let found = worth(Foe::Captain, BOSS);
             self.pay((found.xp, found.aurem), at.level, None, Difficulty::Normal);
             self.keep_rolled(of_colours(colours(BOSS), at.level, dice), dice);
@@ -163,14 +166,16 @@ impl Character {
             self.pay_week_lamp(number, at.level, dice);
         }
         self.passage = dive;
+        // The first lamp lit gives the passages' lore (`lore::Found::Lamp`).
+        self.find_lore_due(crate::lore::lore());
         self.saw(&Feat::Passage(Deed::Lamp), day);
         self.toward_bounties(Toward::Lamp { island: at.island, lamp: number });
         Ok(())
     }
 
     /// The week's lamp of a number: a sure Vestige in a Boss's colours; from the second one Essence of each stock, from
-    /// the third two; and at the fourth a roll as the week's Abyss Dungeon's first clear, Legendary or Atheric. No
-    /// Shapes, which the week's Abyss alone gives.
+    /// the third two; and at the fourth a roll as the week's Elite Dungeon's first clear, a Legendary: the Abyss's
+    /// Atheric is the Abyss's own, as depth 20 stands at Normal. No Shapes, which the week's Abyss alone gives.
     fn pay_week_lamp(&mut self, number: u8, level: u8, dice: &Dice) {
         // Its own dice, so the day's lamp lit with it never pays the same Vestige twice.
         let dice = &Dice { seed: dice.seed ^ WEEK_LAMP_STREAM, ..*dice };
@@ -184,8 +189,8 @@ impl Character {
             self.materials.add(Stuff::Essence(stock), essence);
         }
         if number >= 4 {
-            let abyss = Dice { seed: dice.seed ^ 0x6c61_6d70, ..*dice };
-            self.keep_rolled(of_colours(Weekly::Abyss.colours(), level, &abyss), &abyss);
+            let elite = Dice { seed: dice.seed ^ 0x6c61_6d70, ..*dice };
+            self.keep_rolled(of_colours(Weekly::Elite.colours(), level, &elite), &elite);
         }
     }
 

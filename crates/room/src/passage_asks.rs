@@ -139,7 +139,13 @@ impl Room {
         let open = zone.zone.deal == Deal::Mission(Mission::Gauntlet);
         let Some(found) = self.players.get_mut(&player) else { return refused(Refusal::NoDive) };
         found.gear_changed = true;
-        answer_code(found.character.go_on(here, to, open).map(|_| ()))
+        let gone = found.character.go_on(here, to, open).map(|_| ());
+        // The depth counts only for a zone gone on into, and as deep as the dive has gone from where it began.
+        let deep = found.character.passage.as_ref().map(gear::dive::Dive::zones_deep).filter(|_| gone.is_ok());
+        if let Some(deep) = deep {
+            self.saw(player, &Feat::Passage(Deed::Deep(deep)));
+        }
+        answer_code(gone)
     }
 
     /// Begins a hold of E at a dead lamp or the lamp, within reach of it.
@@ -185,8 +191,7 @@ impl Room {
                     || fighter.health < hold.health
                     || apart([fighter.body.x, fighter.body.y], hold.at) > HOLD_STIR_M
             }) || !self.may_hold(player, hold.target);
-            let ticks = if hold.target == Held::Lamp { LAMP_TICKS } else { KINDLE_TICKS };
-            let done = self.clock >= hold.since + ticks;
+            let done = self.clock >= hold.since + self.hold_ticks(player, hold.target);
             if !(broken || done) {
                 continue;
             }
@@ -225,26 +230,35 @@ impl Room {
     }
 
     /// As a player comes into the room with their character: in a zone of their dive, what they find goes into its
-    /// haul from now, the depth reached counts, and in a company's zone whose deal is done it is done for them; in any
-    /// other room their dive ends, its haul kept if they went home from a lamp, else lost.
+    /// haul from now, and in a company's zone whose deal is done it is done for them; at a lamp they began at (or lit),
+    /// the lamp is lit for them, and a company's guard there stands down; in any other room their dive ends, its haul
+    /// kept if they went home from a lamp, else lost.
     pub(crate) fn passage_arrived(&mut self, player: PlayerId) {
         let here = self.zone().map(|zone| {
             let done = zone.route == Route::Company && zone.round.done_at.is_some();
-            (zone.island, zone.week, zone.zone.number, zone.zone.depth, done)
+            let lamp = (zone.zone.deal == Deal::Lamp).then(|| passage::lamp_number(zone.zone.depth)).flatten();
+            (zone.island, zone.week, zone.zone.number, zone.zone.depth, (done, lamp))
         });
         let Some(found) = self.players.get_mut(&player) else { return };
         let Some(dive) = found.character.passage.as_mut() else { return };
         match here {
-            Some((island, week, number, depth, done))
+            Some((island, week, number, depth, (done, lamp)))
                 if dive.island == island && dive.week == week && dive.zone == number =>
             {
                 (dive.here, dive.depth) = (true, depth);
+                // Its deal done for the dive before it came is a lamp begun at, or lit before a reload.
+                let lit = dive.done && lamp.is_some_and(|lamp| dive.lamp == lamp);
                 dive.done |= done;
                 let clock = self.clock;
                 if let Some(zone) = self.zone_mut() {
                     zone.arrived.insert(player, clock);
+                    if lit {
+                        zone.lit.insert(player);
+                    }
                 }
-                self.saw(player, &Feat::Passage(Deed::Deep(depth)));
+                if lit {
+                    self.stand_down_guard();
+                }
             }
             _ => {
                 let island = dive.island.clone();
@@ -258,6 +272,62 @@ impl Room {
                     self.stand_before_mouth(player, &island, mouth);
                 }
             }
+        }
+    }
+
+    /// A company's lamp begun at stands no guard: its guards go and its deal is done for every member there, paying
+    /// no one, as the dive that lit it was paid. A public room's guard stands for those who come the long way.
+    fn stand_down_guard(&mut self) {
+        let Some(zone) = self.zone().filter(|zone| zone.route == Route::Company && zone.round.done_at.is_none()) else {
+            return;
+        };
+        let (guards, number) = (zone.round.guards.clone(), zone.zone.number);
+        for found in self.players.values_mut() {
+            found.character.dive_deal_done(number);
+            found.gear_changed = true;
+        }
+        let clock = self.clock;
+        for post in guards {
+            let Some(found) = self.garrison.get_mut(post) else { continue };
+            let standing = std::mem::take(&mut found.standing);
+            found.cleared_at = Some(clock);
+            for id in standing {
+                self.gone(id);
+            }
+        }
+        if let Some(zone) = self.zone_mut() {
+            zone.round.done_at = Some(clock);
+        }
+    }
+
+    /// How long E is held at a dead lamp or the lamp for a player: at a lamp standing cold for them
+    /// (`gear::Character::lamp_cold`), as long as at a dead lamp.
+    fn hold_ticks(&self, player: PlayerId, target: Held) -> u64 {
+        match target {
+            Held::Lamp if !self.lamp_cold_for(player) => LAMP_TICKS,
+            Held::Lamp | Held::Kindle(_) => KINDLE_TICKS,
+        }
+    }
+
+    /// Whether the zone's lamp stands cold for a player: the lamp a bounty they hold lights last.
+    fn lamp_cold_for(&self, player: PlayerId) -> bool {
+        let Some(zone) = self.zone().filter(|zone| zone.zone.deal == Deal::Lamp) else { return false };
+        let Some(lamp) = passage::lamp_number(zone.zone.depth) else { return false };
+        self.players.get(&player).is_some_and(|found| found.character.lamp_cold(zone.island, lamp))
+    }
+
+    /// A cold lamp is kindled under waves: once its guard is down, while a player it stands cold for is in the zone
+    /// and has not lit it, a wave of the Tithe comes at once and every 30 s from the guard's fall, once the last is
+    /// down, as a Kindle's do.
+    pub(super) fn keep_cold_lamp(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        let Some(done) = zone.round.done_at else { return };
+        let waiting = self.players.keys().any(|id| !zone.lit.contains(id) && self.lamp_cold_for(*id));
+        let last_down = zone.round.wave_foes.iter().all(|id| self.foes.get(id).is_none_or(|foe| foe.fighter.dead()));
+        let due = zone.round.waves == 0
+            || self.clock.saturating_sub(done).is_multiple_of(super::passage_deal::WAVE_EVERY_TICKS);
+        if waiting && last_down && due {
+            self.call_wave();
         }
     }
 
@@ -310,10 +380,8 @@ impl Room {
             (None, _) => 0.0,
         };
         let holding = zone.holds.get(&player).map(|hold| {
-            let (target, ticks) = match hold.target {
-                Held::Kindle(nth) => (nth, KINDLE_TICKS),
-                Held::Lamp => (LAMP_TARGET, LAMP_TICKS),
-            };
+            let ticks = self.hold_ticks(player, hold.target);
+            let target = if let Held::Kindle(nth) = hold.target { nth } else { LAMP_TARGET };
             (target, (self.clock.saturating_sub(hold.since) as f64 / ticks as f64).min(1.0))
         });
         Some(PassageSeen {
@@ -330,3 +398,7 @@ impl Room {
         })
     }
 }
+
+#[cfg(test)]
+#[path = "passage_dive_tests.rs"]
+mod passage_dive_tests;

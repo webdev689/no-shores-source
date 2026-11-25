@@ -7,6 +7,7 @@ import type { Span } from '../../ui/node.ts';
 /** Where a chapter is found, as the file says. */
 export type Found =
   | { readonly kind: 'story' }
+  | { readonly kind: 'lamp' }
   | { readonly kind: 'quest'; readonly quest: string; readonly task: string }
   | {
       readonly kind: 'place';

@@ -152,3 +152,64 @@ fn a_homeward_dive_keeps_its_haul_only_in_its_islands_patrol_zone() {
         assert!(character.passage.is_none());
     }
 }
+
+/// A character of level 30: level 20 by XP, the rest by four Breach Legendary armour pieces worn, each at its most
+/// Prestige.
+pub(crate) fn at_the_top() -> Character {
+    let mut character = Character::starting();
+    character.earn_xp(10_000_000, None);
+    let dice = crate::dice::Dice { seed: 9, tick: 3, player: 1 };
+    for (id, slot) in (900..).zip([Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs]) {
+        let mut piece = crate::vestige::make(id, Rarity::Legendary, slot, 20, crate::Source::Breach, &dice);
+        let mut piece = piece.take().expect("a piece");
+        (piece.xp, piece.bought) = (piece.xp_most(), u32::MAX);
+        character.items.insert(id, (piece, crate::character::At::Worn(slot)));
+    }
+    assert_eq!(character.level(), 30);
+    character
+}
+
+#[test]
+fn a_dive_begun_at_a_lamp_has_that_zones_deal_done_and_the_fourth_lamp_is_no_begin() {
+    let mut character = Character::starting();
+    let lit = character.activity.this_week(WEEK).passage_lamps.entry(ISLAND.to_owned()).or_default();
+    lit.extend([2, 4]);
+    character.begin_dive(&start(30, Some(2))).expect("begun");
+    assert!(character.passage.as_ref().is_some_and(|dive| dive.done), "its guard and its ways on stand for nothing");
+    assert_eq!(character.begin_dive(&start(60, Some(4))), Err(Refusal::NoLamp), "depth 20 leads nowhere further");
+}
+
+#[test]
+fn a_player_begins_at_any_lamp_whose_foes_they_match_with_no_weeks_lamp_paid_for_it() {
+    let at = |lamp: u8| Start { depth: lamp * 5, ..start(30, Some(lamp)) };
+    let mut low = Character::starting();
+    assert_eq!(low.begin_dive(&at(1)), Err(Refusal::NoLamp), "the first lamp's foes stand over a new character");
+    let mut high = at_the_top();
+    assert_eq!(high.begin_dive(&at(3)), Ok(()), "foes 15 to 18 are under level 30");
+    assert!(high.activity.this_week.passage_lamps.is_empty(), "no lamp counted lit this week for it");
+    assert_eq!(high.passage.as_ref().map(|dive| (dive.lamp, dive.began)), Some((3, 15)));
+}
+
+#[test]
+fn a_dive_counts_the_zones_it_went_through_from_where_it_began() {
+    let mut character = Character::starting();
+    character.begin_dive(&start(0, None)).expect("begun");
+    character.dive_deal_done(0);
+    character.go_on((ISLAND, WEEK, 0), Some((4, 2)), false).expect("on");
+    assert_eq!(character.passage.as_ref().map(Dive::zones_deep), Some(2));
+    let mut high = at_the_top();
+    high.begin_dive(&Start { depth: 10, ..start(30, Some(2)) }).expect("begun at the second lamp");
+    high.go_on((ISLAND, WEEK, 30), Some((33, 11)), false).expect("on, its deal done");
+    assert_eq!(high.passage.as_ref().map(Dive::zones_deep), Some(2), "two zones in, not eleven");
+}
+
+#[test]
+fn a_homeward_dive_kept_by_the_sea_keeps_its_haul_home_but_stands_where_it_landed() {
+    let mut character = diving();
+    let dive = character.passage.as_mut().expect("diving");
+    (dive.homeward, dive.sailed) = (true, true);
+    character.gather(4);
+    assert_eq!(character.leave_passages(Some(ISLAND)), None, "not moved to the mouth");
+    assert_eq!(character.materials.resource(4), 3, "its haul kept");
+    assert!(character.passage.is_none());
+}

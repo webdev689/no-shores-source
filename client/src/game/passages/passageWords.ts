@@ -157,7 +157,9 @@ export function onwardSign(
 }
 
 /** The mouths' choice at the run named `run`'s sealed door: `company` whether the player is in one, `lit` the lamps
- *  they lit this week on the island, `level` theirs. Null where the run leads to no passage. */
+ *  they lit this week on the island, `level` theirs. A lamp is offered once lit this week or once its zone's foes
+ *  stand at or under the player's level, and never the fourth, the deepest (crates/gear `begin_dive`). Null where the
+ *  run leads to no passage. */
 export function mouthsChoice(
   web: PassageWeb,
   run: string,
@@ -168,7 +170,11 @@ export function mouthsChoice(
   const mouth = web.mouths.find((each) => each.run === run);
   const zone = mouth && web.zones.find((each) => each.number === mouth.zone);
   if (!zone) return null;
-  const lamps = [...new Set(lit)].filter((lamp) => web.zones.some((each) => each.lamp === lamp)).sort();
+  const matched = (lamp: number) =>
+    web.zones.some((each) => each.lamp === lamp && level !== null && each.levels !== undefined && each.levels[1] <= level);
+  const lamps = [1, 2, 3].filter(
+    (lamp) => web.zones.some((each) => each.lamp === lamp) && (lit.includes(lamp) || matched(lamp)),
+  );
   // A begin at a lamp lands in the lamp's zones' one at the mouth's place among the mouths, or the last, as the room
   // begins it (crates/room `begin_dive`).
   const place = web.mouths.indexOf(mouth);

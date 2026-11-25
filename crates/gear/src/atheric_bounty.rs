@@ -123,11 +123,12 @@ impl Step {
 }
 
 impl Character {
-    /// Rolls for a find in a cache of an island's passages at `depth` (its lamp's number in a lamp's zone): for a
+    /// Rolls for a find in a cache of a zone of an island's passages (its lamp's number in a lamp's zone): for a
     /// character of its level who holds none, has not finished its bounty and holds none in the haul, at the first of
-    /// its drops that fits; found, it goes into the haul. Whether one was found.
-    pub fn roll_find(&mut self, island: &str, depth: u8, lamp: Option<u8>, dice: &Dice) -> bool {
-        let level = self.level();
+    /// its drops that fits, on the character's first cache of that zone in the zone's week; found, it goes into the
+    /// haul. Whether one was found.
+    pub fn roll_find(&mut self, at: crate::lamps::Zone<'_>, lamp: Option<u8>, dice: &Dice) -> bool {
+        let (island, depth, level) = (at.island, at.depth, self.level());
         let Some(dive) = self.passage.as_mut().filter(|dive| dive.here && dive.haul.lantern.is_none()) else {
             return false;
         };
@@ -141,12 +142,30 @@ impl Character {
                 drop.lamp.map_or_else(|| drop.past.is_some_and(|past| depth > past), |want| lamp == Some(want))
             };
             let Some(drop) = bounty.drops.iter().find(fits) else { continue };
+            let record = &mut self.activity;
+            let first = at.week >= record.this_week.week
+                && record.this_week(at.week).passage_finds.entry(island.to_owned()).or_default().insert(at.zone);
+            if !first {
+                return false;
+            }
             if dice.roll(Purpose::Passage, 1 + nth) < drop.chance {
                 dive.haul.lantern = Some(bounty.id.clone());
                 return true;
             }
         }
         false
+    }
+
+    /// Whether a lamp of an island stands cold for the character: it is the lamp a held bounty's last step lights, to
+    /// be kindled under waves as a Kindle's dead lamps are, not lit as any other.
+    #[must_use]
+    pub fn lamp_cold(&self, island: &str, lamp: u8) -> bool {
+        bounties().iter().any(|bounty| {
+            let at = self.atheric_bounties.held.get(&bounty.id).map(|(step, _)| usize::from(*step));
+            at.is_some_and(|at| at + 1 == bounty.steps.len())
+                && bounty.island == island
+                && bounty.steps.last().is_some_and(|step| step.kind == StepKind::Lamp && step.lamp == Some(lamp))
+        })
     }
 
     /// Holds the bounty of a find kept at a lamp, from its first step.
