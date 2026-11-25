@@ -1,5 +1,5 @@
 ---
-id: 225
+id: 236
 title: "Agent-tool worktrees start from main, not the working branch, and a fixer sub-agent has no Agent tool for the reviewer its rules require"
 status: open
 type: internal
