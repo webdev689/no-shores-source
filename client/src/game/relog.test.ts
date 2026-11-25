@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Flow } from './flow.ts';
-import { joinAsk } from './footPlace.ts';
+import { type FootContext, joinAsk, nodeAddress } from './footPlace.ts';
 import {
   PLACE_KEY,
   type Resumed,
@@ -145,6 +145,17 @@ test('a join asks its room to stand the player before an entrance, or where they
   assert.equal(joinAsk({ number: 2, x: 0, y: 0, facing: 0 }), '?entrance=2');
   assert.equal(joinAsk(), '');
   assert.equal(joinAsk(undefined, 'gullwing-vale'), '?from=gullwing-vale', 'across from a patrol zone, at its gate');
+  // Through a crossing gate the node gone to says where it came from (`gates.ts`), and its room is asked so.
+  const context = { rooms: (name: string) => `wss://rooms/room/${name}` } as unknown as FootContext;
+  const vale = { id: 'gullwing-vale', kind: 'patrol', across: 'saltgrass-downs' } as unknown as NodeInfo;
+  assert.equal(
+    nodeAddress(context, vale, 'elite', undefined, null),
+    'wss://rooms/room/node-gullwing-vale--elite?from=saltgrass-downs',
+  );
+  assert.equal(
+    nodeAddress({ ...context, rooms: null } as unknown as FootContext, vale, 'normal', undefined, null),
+    null,
+  );
 });
 
 test('back from the title online, a player whose dive’s zone held them last goes back into it', async () => {

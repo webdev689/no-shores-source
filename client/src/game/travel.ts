@@ -11,7 +11,16 @@ import type { Playing } from './gameFrame.ts';
 import type { Hud } from './hud.ts';
 import type { IsleHeld } from './isles.ts';
 import { arrivalFacing, FIRST_NODE } from './nodes.ts';
-import { type Fallback, onOtherLand, type Refuge, placeOf, sentOut, TOLD_MS, tripOrBack } from './tripBack.ts';
+import {
+  type Fallback,
+  onOtherLand,
+  type Refuge,
+  placeOf,
+  sentOut,
+  TOLD_MS,
+  tripOrBack,
+  wayFailed,
+} from './tripBack.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What travel asks of the game: the play, the HUD, the ways into a place on foot (a node, a patrol zone arriving as
@@ -114,9 +123,9 @@ export function startTravel(game: TravelGame) {
     const goHome = (node: NodeInfo) => () => game.goFoot(node, arrivalFacing(node, playing.landmass.plan, null));
     const back: Refuge | null = home ? { flow: { mode: 'foot', node: home.id }, go: goHome(home) } : wayBack();
     return (error: unknown) => {
-      const words = `Returning from the way to ${place}`;
-      playing.flow = { mode: 'loading', words, then: back?.flow ?? hub.flow };
-      behindVeil(words, () => Promise.reject(error), { place, back, hub });
+      const failed = wayFailed(place, back, hub);
+      playing.flow = failed.flow;
+      behindVeil(failed.words, () => Promise.reject(error), failed.fallback);
     };
   };
 

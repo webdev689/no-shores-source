@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { IsleShown } from '../../islands/islePlan.ts';
 import type { Flow } from '../flow.ts';
-import type { Foot } from '../foot.ts';
+import { Foot } from '../foot.ts';
 import type { FootContext } from '../footPlace.ts';
 import { weekOf } from '../guild/guildLaw.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
 import type { PassageSeenState } from '../../network/passageMessages.ts';
 import type { PassagePlan, PassageWeb, PassageZone } from '../../rules/passageRules.ts';
-import { PassageGame } from './passageGame.ts';
+import { passageRoomName } from '../rooms.ts';
+import { PassageGame, type PassageHost } from './passageGame.ts';
 import type { WayPlayed } from './wayBetween.ts';
 
 Object.assign(globalThis, {
@@ -118,7 +119,7 @@ function footIn(room: string, gear: { online: boolean; dive: unknown; answered?:
 
 /** A game of the passages over a stand-in host: what it told, what ways it played and the foot it stands on, its
  *  clock the rooms' as `now` keeps it. */
-function game(foot: unknown, now = () => Date.now()) {
+function game(foot: unknown, now = () => Date.now(), more: Partial<PassageHost> = {}) {
   const held = { foot, flow: { mode: 'foot', node: patrol.id } as Flow, told: [] as string[], kit: true };
   const passages = new PassageGame({
     module: new Promise<WebAssembly.Module>(() => undefined),
@@ -136,6 +137,7 @@ function game(foot: unknown, now = () => Date.now()) {
     modelled: () => held.kit,
     fallback: () => () => undefined,
     now,
+    ...more,
   });
   const played: WayPlayed[] = [];
   passages.ways.play = (way) => void played.push(way);
@@ -357,4 +359,43 @@ test('a piece stands as boxes until its pack holds its module, under ground and 
   held.kit = true;
   assert.equal(passages.pieces()?.boxes.length, 0, 'the pack come');
   assert.notEqual(passages.pieces()?.key, waiting?.key, 'laid again');
+});
+
+test('Home goes to the patrol zone at the seas the dive began at, before the mouth it began at', async () => {
+  const dive = { island: 'continent-1', week: 2_900, zone: 7, mouth: 0, homeward: true, seas: 1 };
+  const goInto = async (entering: () => Promise<Foot>) => void (await entering());
+  const { inside, passages } = game(footIn('passage-i', { online: true, dive }), undefined, { goInto });
+  const works: (() => Promise<void>)[] = [];
+  passages.ways.play = (way, work) => void works.push(work);
+  const entered: unknown[] = [];
+  const enter = Foot.enter;
+  Foot.enter = async (...args: Parameters<typeof Foot.enter>) => (entered.push([args[1].id, args[3]]), {} as Foot);
+  try {
+    inside.zone = zoneIn('passage-i', 7, [3]);
+    inside.home(() => undefined);
+    await works[0]?.();
+  } finally {
+    Foot.enter = enter;
+  }
+  assert.deepEqual(entered, [[patrol.id, 'elite']], 'the Elite seas it began at');
+});
+
+test('back into a passage zone only where its room names one the web lays, its patrol zone open', async () => {
+  const module = Promise.resolve({} as WebAssembly.Module);
+  const { inside, passages } = game(footIn('node-saltgrass-downs', { online: true, dive: null }), undefined, {
+    module,
+  });
+  // The door the module would give, set once the game has tried to make its own of the stand-in module.
+  await tick();
+  inside.door = {
+    web: () => web,
+    plan: (island: string, week: number, zone: number) => (zone === 3 ? null : planOf(zone)),
+  };
+  assert.equal(await passages.resumeIn('node-saltgrass-downs'), false, 'no passage zone’s room');
+  assert.equal(await passages.resumeIn(passageRoomName('continent-1', 2_900, 3)), false, 'a zone the door lays not');
+  // A web is asked once a week: another week's the door has none of.
+  inside.door = { web: () => null, plan: () => planOf(7) };
+  assert.equal(await passages.resumeIn(passageRoomName('continent-1', 2_901, 7)), false, 'a week with no web');
+  inside.door = null;
+  assert.equal(await passages.resumeIn(passageRoomName('continent-1', 2_900, 7)), false, 'no door: no passages');
 });
