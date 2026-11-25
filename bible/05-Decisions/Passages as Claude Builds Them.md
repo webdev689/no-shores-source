@@ -192,10 +192,10 @@ losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
 | Holds and the ring | A dead lamp kindles, a reliquary opens and a Hold's ring is held only while no foe stands within 8 m of it; a hold begun with one near is refused so |
 | A Hold's ring | A piece of its own at its spot, its 6 m drawn on the floor in low stones |
 | A Gauntlet's far mouth | Marked among the zone's sites, so its sign can say so. It counts only one whose dive is in the zone and not done and who stood at the arrival this round; its seconds left run from each one's arrival or the round's start, the later |
-| The most foes | By the zone's size, 7, 9 and 12 standing at once (small, medium, large); Crowded's extra foes are not counted, so it holds as many bands. A band past it is held back |
+| The most foes | By the zone's size, 7, 9 and 12 standing at once (small, medium, large); Crowded's extra foes are not counted, so it holds as many bands. A band past it is held back. Waves are held to it apart from the bands, so a deal's own waves still come |
 | A company | As a public event's waves and great foes rise: three more foes standing for each player past the first, a band held back standing once there is room and no player is near its post; a wave a foe more for each player past the first, three at most; a Miniboss or a Boss half its health more for each, the most players seen. Every one who takes part is paid the whole cache |
 | Waves | Drawn from the zone's own roster, taking its currents: Crowded's more foes, Veteran's Majors, Hardened's health, Shielded's shields |
-| A respawn | However a body fell, the section's ring among them, a respawn asked for empties the haul and is refused in Gloom |
+| A respawn | However a body fell, the section's ring among them, a respawn asked for empties the haul and is refused in Gloom, where a company all down, the section's dead among them, falls back |
 | The lamp lit | Lit for a player while their dive in the zone has lit it, kept with the dive: a round begun again, a reconnect or a dive begun at the lamp find it lit |
 | Leaving fallen | A body left fallen comes back fallen; past its two minutes it comes back whole, its haul lost as a respawn's |
 | A vein's stock | A gather is refused against the haul's stock while the haul takes it |

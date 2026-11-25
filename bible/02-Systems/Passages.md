@@ -147,7 +147,8 @@ passages' own pieces standing in it with their solids.
 - **Going on** is asked within 4 m of an onward mouth, once the zone's deal was done while the player was in it, or
   at once from a Gauntlet; the dive is in the next zone from then, and the host moves the player there. Joining any
   room that is not the dive's zone ends the dive and loses its haul. A respawn asked for in a zone empties the haul
-  and stands the player at its arrival, however the body fell, and is refused in Gloom; a revive loses nothing. A body
+  and stands the player at its arrival, however the body fell, and is refused in Gloom, where a company all down
+  (the section's dead among them) falls back; a revive loses nothing. A body
   left fallen comes back fallen, and past its two minutes whole, its haul lost. A reload or a closed tab costs no more
   than a death:
   logging in again, a character whose last room was its dive's zone goes back into it, on the same dive
@@ -170,8 +171,9 @@ passages' own pieces standing in it with their solids.
   Tithe-Mate past it), and no cache chest of its own: its cache is the passage's. A guard never stands again by itself.
   A foe of a passage zone pays three quarters of a kill as it falls, its XP, Aurem and chances of a find
   (`lamps::KILL_SHARE`).
-- **The most foes** a zone stands at once, its bands and its waves together, is by its size: 7, 9 and 12 (small,
-  medium, large), Crowded's extra foes not counted, so it holds as many bands; a band past it is held back. It rises
+- **The most foes** a zone stands at once is by its size: 7, 9 and 12 (small, medium, large), Crowded's extra foes not
+  counted, so it holds as many bands; a band past it is held back. Its bands are held to it, and its waves apart from
+  them, so a reliquary's keepers and a vein's waves come while its bands stand. It rises
   by three for each player in the zone past the first (`zone_foes_most`), and a band held back stands once the bands
   stood leave room for it and no player is within 12 m of its post. A wave brings a foe more for each player past the
   first, three at most, and a Miniboss or a Boss stands with half its health more for each, the most players seen at
