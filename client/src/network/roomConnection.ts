@@ -133,8 +133,8 @@ export class RoomConnection implements RoomLink {
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
   private tries = 0;
-  /** When the room last welcomed the player, by the page's clock. */
-  private welcomedAt = Date.now();
+  /** When the room welcomed the player on the socket open now, by the page's clock; null for a try not welcomed. */
+  private welcomedAt: number | null = Date.now();
   private closed = false;
   private readonly measure = new LinkMeasure();
   private waiting: ReturnType<typeof setTimeout> | null = null;
@@ -214,7 +214,9 @@ export class RoomConnection implements RoomLink {
         return;
       }
       this.rejoining = true;
-      if (Date.now() - this.welcomedAt >= HELD_MS) this.tries = 0;
+      // Only a socket welcomed and held starts the waits over; a try that failed keeps them growing.
+      if (this.welcomedAt !== null && Date.now() - this.welcomedAt >= HELD_MS) this.tries = 0;
+      this.welcomedAt = null;
       this.waiting = setTimeout(() => this.rejoin(), rejoinWait(this.tries++) * 1000);
     });
   }

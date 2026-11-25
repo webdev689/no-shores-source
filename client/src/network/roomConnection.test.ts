@@ -186,6 +186,25 @@ test('a room that welcomes the player and soon closes is tried ever more slowly,
   assert.deepEqual(waited, [1, 2, 4, 8]);
 });
 
+test('a join that held, then a room down a while: the tries after it wait longer each time', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const { sockets } = await joined(3);
+  context.mock.timers.tick(5 * 60_000);
+  sockets.at(-1)?.closed(1006);
+  const waited: number[] = [];
+  for (let tries = 0; tries < 5; tries++) {
+    const before = sockets.length;
+    let seconds = 0;
+    while (sockets.length === before) {
+      context.mock.timers.tick(1_000);
+      seconds += 1;
+    }
+    waited.push(seconds);
+    sockets.at(-1)?.closed(1006);
+  }
+  assert.deepEqual(waited, [1, 2, 4, 8, 15]);
+});
+
 test('a room that sends the player away, or a page that leaves, is never joined again', async (context: TestContext) => {
   context.mock.timers.enable({ apis: ['setTimeout'] });
   const away = await joined(3);
