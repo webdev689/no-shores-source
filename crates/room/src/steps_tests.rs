@@ -85,14 +85,16 @@ fn an_escort_walks_while_the_player_keeps_within_its_reach_holds_for_its_ambush_
         "the mark on the figure, its reach the player's"
     );
     assert_eq!(room.quests.ways.len(), 1, "its way found once and kept");
-    let (mut held, mut ambush) = (0, Vec::new());
+    let (mut held, mut ambush, mut told_after) = (0_u64, Vec::new(), None);
     for _ in 0..6000 {
         if figure_or_none(&room, player).is_none_or(|state| state == ARRIVED) {
             break;
         }
         let (_, at, _) = figure(&room, player);
         stand_at(&mut room, player, [at[0], at[1] + 10.0]);
-        let told = room.take_gear_change(player);
+        if room.take_gear_change(player) && held > 0 {
+            told_after = told_after.or(Some(held));
+        }
         run(&mut room, 1);
         if figure_or_none(&room, player) == Some(HELD) {
             held += 1;
@@ -104,7 +106,6 @@ fn an_escort_walks_while_the_player_keeps_within_its_reach_holds_for_its_ambush_
                     "its ambush stands halfway"
                 );
                 assert!(at[1] < 1.0 && at[1] > -1.0, "halfway: {at:?}");
-                assert!(!told && room.take_gear_change(player), "the page is told it stands");
             }
             if held == 120 {
                 for id in &ambush {
@@ -114,6 +115,8 @@ fn an_escort_walks_while_the_player_keeps_within_its_reach_holds_for_its_ambush_
         }
     }
     assert!(held >= 120, "it held while its ambush stood");
+    let soon = told_after.is_some_and(|ticks| ticks <= crate::players::GEAR_EVERY_TICKS);
+    assert!(soon, "the page told it stands by its gear's next send: {told_after:?} ticks after");
     assert!(met(&room, player, key), "brought to its place: the goal met");
     if quests().quests[key[0]].tasks[key[1]].reward.art {
         let earned = room.player(player).expect("in").character.earned(quests().quests[key[0]].faction);
@@ -198,7 +201,7 @@ fn an_unseen_steps_watchers_stand_idle_and_only_a_foe_near_its_place_alert_on_th
     let player = joined(&mut room, &on_goal(key), [0.0, 150.0]);
     let kind = Stepping::Unseen(Watched::default());
     room.quests.steps.insert(player, Step { key, goal: watched, fails: 0, kind });
-    run(&mut room, 1);
+    crate::garrison::garrison_tests::run_baked(&mut room, 1);
     let watchers = living(&room);
     assert_eq!(watchers.len(), crate::quests::foes_of(unseen.spawn.iter()).len(), "its watchers stand as it begins");
     for id in &watchers {

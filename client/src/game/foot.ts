@@ -18,7 +18,7 @@ import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
 import type { Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
-import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
+import { cameraFollowed, playerCamera, shownBody, withBlocks } from '../player/player.ts';
 import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
 import { type OtherPlayers, ridersOf } from '../player/others.ts';
@@ -365,7 +365,7 @@ export class Foot {
     const { feel } = this;
     // The tumble starts the way the figure was last drawn facing (the aim, while aiming).
     walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.you.facing);
-    const blocks = [...this.boxes, ...(this.outpost?.walls ?? []), ...(this.context.cameraBlocks ?? [])];
+    const blocks = withBlocks(this.boxes, this.outpost?.walls, this.context.cameraBlocks);
     const aimed = () => playerCamera(walker.player, movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {

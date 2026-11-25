@@ -84,14 +84,17 @@ export function canvasIndices(
 
 /** The canvas's vertices, as its mesh's are, from each sail's grid now: a point's normal across its neighbours (the
  *  side its triangles face on the screen, as the export keeps its own), its UV the metres of its sail laid flat, its
- *  picture the sail's but where `layers` names another (its flag's). */
+ *  picture the sail's but where `layers` names another (its flag's). Laid into `into` where it holds them all: a
+ *  ship under way lays its canvas every frame. */
 export function canvasVertices(
   canvas: readonly Float32Array[],
   flat: readonly Float32Array[],
   layers: readonly number[] = [],
-): ArrayBuffer {
-  const bytes = new ArrayBuffer(canvas.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES);
-  const view = new DataView(bytes);
+  into?: DataView,
+): DataView {
+  const size = canvas.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES;
+  const view =
+    into && into.byteLength >= size ? new DataView(into.buffer, 0, size) : new DataView(new ArrayBuffer(size));
   const sailPart = SHIP_PARTS.indexOf('sail');
   canvas.forEach((points, sail) => {
     // Each sail's every point, every frame: its neighbours read by index, as the edges' clamp gives them.
@@ -112,7 +115,7 @@ export function canvasVertices(
         const normalX = upY * alongZ - upZ * alongY;
         const normalY = upZ * alongX - upX * alongZ;
         const normalZ = upX * alongY - upY * alongX;
-        const length = Math.hypot(normalX, normalY, normalZ) || 1;
+        const length = Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ) || 1;
         const byte = ((sail * SAIL_ROWS + row) * SAIL_COLUMNS + column) * VERTEX_BYTES;
         const grid = place(column, row);
         view.setFloat32(byte, points[grid] ?? 0, true);
@@ -127,7 +130,7 @@ export function canvasVertices(
         view.setUint8(byte + 24, layers[sail] ?? sailPart);
       }
   });
-  return bytes;
+  return view;
 }
 
 /** Where its tallest mast's head is, in its frame: the highest point of its spars. */
@@ -231,6 +234,8 @@ export class ShipView {
   private readonly paint: HullPaint;
   private readonly tags: ShipTags;
   private readonly flat: readonly Float32Array[];
+  /** The bytes its canvas was last laid in, laid into again. */
+  private canvasBytes: DataView | undefined;
   /** Its bounding sphere in its own frame, made once (`shipSphere`). */
   private readonly sphere: readonly number[];
 
@@ -402,11 +407,12 @@ export class ShipView {
     this.device.queue.writeBuffer(
       drawn.canvas,
       0,
-      canvasVertices(
+      (this.canvasBytes = canvasVertices(
         [...sails, flag],
         [...rig.sails.map((sail) => sail.flat), ...this.flat],
         [...rig.sails.map(() => SHIP_PARTS.indexOf('sail')), flagLayer],
-      ),
+        this.canvasBytes,
+      )),
     );
     return grid.length;
   }

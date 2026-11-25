@@ -5,7 +5,7 @@ import course from '../../../content/testground/course.json' with { type: 'json'
 import { startMovementRules } from '../rules/movementRules.ts';
 import { cardStand, eyeOf } from './figures.ts';
 import type { Action, InputFrame } from './input.ts';
-import { newPlayer, playerCamera, shownBody, updatePlayer } from './player.ts';
+import { newPlayer, playerCamera, shownBody, updatePlayer, withBlocks } from './player.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/movement_wasm.wasm', import.meta.url);
 const moduleBytes = await readFile(MODULE).catch(() => {
@@ -178,4 +178,16 @@ test('going over a lip, the body’s centre passes behind the wall’s face, but
   assert.ok(wentOver, 'the player went over the lip');
   assert.ok(centreBehind, 'the body’s centre passed behind the face below the lip');
   assert.equal(cardBehind, false);
+});
+
+test("the camera's blocks are a node's boxes, an outpost's walls and any more, joined once while all stay the same", () => {
+  const box = (minX: number) => ({ minX, minY: 0, bottom: 0, maxX: minX + 1, maxY: 1, top: 1 });
+  const [boxes, walls, more] = [[box(0), box(2)], [box(8)], [box(4)]];
+  assert.equal(withBlocks(boxes, undefined, undefined), boxes);
+  assert.equal(withBlocks(boxes, [], []), boxes);
+  const joined = withBlocks(boxes, walls, more);
+  assert.deepEqual(joined, [...boxes, ...walls, ...more]);
+  assert.equal(withBlocks(boxes, walls, more), joined, 'the same list again');
+  assert.notEqual(withBlocks(boxes, walls, [box(6)]), joined, 'more blocks of another deck join afresh');
+  assert.deepEqual(withBlocks(boxes, [box(10)], more), [...boxes, box(10), ...more], 'and walls raised anew');
 });

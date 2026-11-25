@@ -29,6 +29,43 @@ const faded = (css: string, fade: number): Colour => {
   return [red, green, blue, alpha * fade];
 };
 
+/** The quad a glyph or an outline's edge is laid in before the quads copy it: kept, so a frame's thousands make none. */
+const QUAD = { x: 0, y: 0, width: 0, height: 0 };
+const quadAt = (x: number, y: number, width: number, height: number): Box => {
+  QUAD.x = x;
+  QUAD.y = y;
+  QUAD.width = width;
+  QUAD.height = height;
+  return QUAD;
+};
+
+/** The eight steps of a halo round a glyph. */
+const HALO = [
+  [-1, -1],
+  [0, -1],
+  [1, -1],
+  [-1, 0],
+  [1, 0],
+  [-1, 1],
+  [0, 1],
+  [1, 1],
+] as const;
+
+/** How many characters `words` holds, a pair of surrogates as one, as the glyphs count them. */
+function charsIn(words: string): number {
+  let count = 0;
+  for (let unit = 0; unit < words.length; unit++) {
+    const code = words.charCodeAt(unit);
+    // A low surrogate after a high one is the second half of one character.
+    if (code >= 0xdc00 && code <= 0xdfff && unit > 0) {
+      const before = words.charCodeAt(unit - 1);
+      if (before >= 0xd800 && before <= 0xdbff) continue;
+    }
+    count += 1;
+  }
+  return count;
+}
+
 const scaled = (box: Box, scale: number): Box => ({
   x: box.x * scale,
   y: box.y * scale,
@@ -56,7 +93,7 @@ function drawLine(
   // Each glyph's span, walked along as the glyphs are, which come in the order of their characters.
   const tones = spans.map((span) => faded(span.colour || ink.colour, ink.fade));
   const ends: number[] = [];
-  for (const span of spans) ends.push((ends.at(-1) ?? 0) + [...span.words].length);
+  for (const span of spans) ends.push((ends.at(-1) ?? 0) + charsIn(span.words));
   const drawn = (offsetX: number, offsetY: number, edge: Colour | null) => {
     let span = 0;
     for (const laid of glyphs) {
@@ -66,30 +103,19 @@ function drawLine(
       if (!tone || tone[3] <= 0) continue;
       const texels = ui.glyphTexels(laid.glyph);
       if (!texels) continue;
-      const box = {
-        x: (x + laid.x + offsetX) * scale,
-        y: (y + laid.y + offsetY) * scale,
-        width: laid.glyph.width * size * scale,
-        height: laid.glyph.height * size * scale,
-      };
+      const box = quadAt(
+        (x + laid.x + offsetX) * scale,
+        (y + laid.y + offsetY) * scale,
+        laid.glyph.width * size * scale,
+        laid.glyph.height * size * scale,
+      );
       ui.quads.add(box, edge ?? tone, clip, texels);
     }
   };
   const edge = faded(ink.edgeColour ?? TONES.outline, ink.fade);
   const step = ink.edgeWidth ?? 1;
   if (ink.edge === 'shadow') drawn(step, step, edge);
-  if (ink.edge === 'halo')
-    for (const [across, down] of [
-      [-1, -1],
-      [0, -1],
-      [1, -1],
-      [-1, 0],
-      [1, 0],
-      [-1, 1],
-      [0, 1],
-      [1, 1],
-    ] as const)
-      drawn(across * step, down * step, edge);
+  if (ink.edge === 'halo') for (const [across, down] of HALO) drawn(across * step, down * step, edge);
   drawn(0, 0, null);
 }
 
@@ -129,13 +155,10 @@ export function drawLaid(ui: UiRenderer, laid: readonly Laid[], scale: number, s
       const line = node.outline.width * scale;
       const tone = faded(node.outline.colour, fade);
       const { x, y, width, height } = device;
-      for (const edge of [
-        { x, y, width, height: line },
-        { x, y: y + height - line, width, height: line },
-        { x, y: y + line, width: line, height: height - 2 * line },
-        { x: x + width - line, y: y + line, width: line, height: height - 2 * line },
-      ])
-        ui.quads.add(edge, tone, clip);
+      ui.quads.add(quadAt(x, y, width, line), tone, clip);
+      ui.quads.add(quadAt(x, y + height - line, width, line), tone, clip);
+      ui.quads.add(quadAt(x, y + line, line, height - 2 * line), tone, clip);
+      ui.quads.add(quadAt(x + width - line, y + line, line, height - 2 * line), tone, clip);
     }
     const [top, right, bottom, left] = sidesOf(node.padding);
     const inner = {

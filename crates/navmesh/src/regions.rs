@@ -59,14 +59,12 @@ struct Watershed<'flat> {
 }
 
 impl Watershed<'_> {
-    /// Grows the regions into unassigned spans at least `level` from the edge, `rounds` times or until none grows.
-    /// Each span takes the neighbouring region whose own distance is least.
-    fn expand(&mut self, rounds: Option<usize>, level: i32) {
-        let fringe: Vec<usize> =
-            (0..self.region.len()).filter(|&at| self.region[at] == 0 && self.flat.dist[at] >= level).collect();
+    /// Grows the regions into the unassigned spans of `fringe`, `rounds` times or until none grows. Each span takes
+    /// the neighbouring region whose own distance is least, every span of a round at once, so their order is no matter.
+    fn expand(&mut self, fringe: &[usize], rounds: Option<usize>) {
         let mut round = 0;
         while rounds.is_none_or(|rounds| round < rounds) {
-            for &at in &fringe {
+            for &at in fringe {
                 if self.region[at] != 0 {
                     self.buffer[at] = 0;
                     continue;
@@ -82,7 +80,7 @@ impl Watershed<'_> {
                 self.buffer[at] = taken;
             }
             let mut changed = false;
-            for &at in &fringe {
+            for &at in fringe {
                 if self.region[at] == 0 && self.buffer[at] != 0 {
                     self.region[at] = self.buffer[at];
                     changed = true;
@@ -118,6 +116,53 @@ impl Watershed<'_> {
             }
         }
         count > 0
+    }
+}
+
+/// The spans a water level reaches, kept between levels: every span, the deepest first (by index where alike); how
+/// many of those the levels have reached; and those reached still without a region, by index.
+struct Rising {
+    deepest: Vec<usize>,
+    reached: usize,
+    waiting: Vec<usize>,
+    merged: Vec<usize>,
+}
+
+impl Rising {
+    fn new(dist: &[i32]) -> Self {
+        let mut deepest: Vec<usize> = (0..dist.len()).collect();
+        deepest.sort_by_key(|&at| core::cmp::Reverse(dist[at]));
+        Self { deepest, reached: 0, waiting: Vec::new(), merged: Vec::new() }
+    }
+
+    /// Every span at least `level` from the edge still without a region, by index: those waiting from the levels
+    /// before, and those this one reaches. A span once given a region never loses it, so none else can be.
+    fn to(&mut self, level: i32, dist: &[i32], region: &[usize]) -> &[usize] {
+        let start = self.reached;
+        while self.deepest.get(self.reached).is_some_and(|&at| dist[at] >= level) {
+            self.reached += 1;
+        }
+        let reached = &mut self.deepest[start..self.reached];
+        reached.sort_unstable();
+        let (mut old, mut new) = (self.waiting.iter().peekable(), reached.iter().peekable());
+        self.merged.clear();
+        while let Some(&at) = match (old.peek(), new.peek()) {
+            (Some(one), Some(other)) => {
+                if one < other {
+                    old.next()
+                } else {
+                    new.next()
+                }
+            }
+            (Some(_), None) => old.next(),
+            (None, _) => new.next(),
+        } {
+            if region[at] == 0 {
+                self.merged.push(at);
+            }
+        }
+        core::mem::swap(&mut self.waiting, &mut self.merged);
+        &self.waiting
     }
 }
 
@@ -174,16 +219,19 @@ pub(crate) fn partition(
     let max_dist = flat.dist.iter().copied().max().unwrap_or(0).max(0);
     let mut level = (max_dist + 1) & !1;
     let mut next_region = 1;
+    // Each level looks only at the spans it reaches still without a region, in the order a scan of them all would.
+    let mut rising = Rising::new(&flat.dist);
     while level > 0 {
         level = if level >= 2 { level - 2 } else { 0 };
-        shed.expand(Some(8), level);
-        for at in 0..count_spans {
-            if shed.region[at] == 0 && flat.dist[at] >= level && shed.flood(at, level, next_region) {
+        let fringe = rising.to(level, &flat.dist, &shed.region);
+        shed.expand(fringe, Some(8));
+        for &at in fringe {
+            if shed.region[at] == 0 && shed.flood(at, level, next_region) {
                 next_region += 1;
             }
         }
     }
-    shed.expand(None, 0);
+    shed.expand(rising.to(0, &flat.dist, &shed.region), None);
     let region = shed.region;
     let regions = next_region;
 

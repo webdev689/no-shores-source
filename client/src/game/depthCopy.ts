@@ -1,6 +1,6 @@
 // A scene's depth, kept many samples a pixel, averaged into one float a pixel: what is drawn over a finished picture
 // (the blows' arcs, the see-through marks) and the light layer read it from.
-import type { Gpu } from '../gpu.ts';
+import { type Gpu, viewOf } from '../gpu.ts';
 import { perfZone } from '../perfMeter.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
@@ -20,6 +20,8 @@ export const DEPTH_COPY = /* wgsl */ `
 export class DepthCopy {
   private readonly device: GPUDevice;
   private readonly pipeline: GPURenderPipeline;
+  /** The copy's bind group for each depth it reads, made the first time. */
+  private readonly groups = new WeakMap<GPUTexture, GPUBindGroup>();
 
   constructor(gpu: Gpu) {
     this.device = gpu.device;
@@ -35,16 +37,18 @@ export class DepthCopy {
   encode(encoder: GPUCommandEncoder, from: GPUTexture, into: GPUTexture): void {
     perfZone('depth');
     const pass = encoder.beginRenderPass({
-      colorAttachments: [{ view: into.createView(), loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }],
+      colorAttachments: [{ view: viewOf(into), loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }],
     });
     pass.setPipeline(this.pipeline);
-    pass.setBindGroup(
-      0,
-      this.device.createBindGroup({
+    let group = this.groups.get(from);
+    if (!group) {
+      group = this.device.createBindGroup({
         layout: this.pipeline.getBindGroupLayout(0),
-        entries: [{ binding: 0, resource: from.createView() }],
-      }),
-    );
+        entries: [{ binding: 0, resource: viewOf(from) }],
+      });
+      this.groups.set(from, group);
+    }
+    pass.setBindGroup(0, group);
     pass.draw(3);
     pass.end();
   }

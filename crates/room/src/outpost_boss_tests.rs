@@ -27,9 +27,8 @@ fn sounded(tier: u32) -> (Room, PlayerId) {
     room.answer(player, Asked::Outpost(OutpostAsk::Horn));
     let errand = room.outpost_errands().remove(0);
     room.outpost_answered(errand.id, Some(i64::from(tier)));
-    for _ in 0..3 {
-        room.tick();
-    }
+    // The muster ground's mesh is baked a slice a tick before the horn's foe stands on it.
+    crate::garrison::garrison_tests::run_baked(&mut room, 3);
     (room, player)
 }
 
