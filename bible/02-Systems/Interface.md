@@ -1134,8 +1134,8 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   (`voiceCue`, `combat/worldCues.ts`). Never a din: at most two foe voices begin within 0.75 s, the dying first, and
   one foe's swing or hurt is heard at most once in 2 s (`WorldSounds.gated`). A cue picked as several recordings plays
   them as variations, each credited.
-- **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a cue a
-  stride (1.7 m at a walk, 3.4 m at a gallop, 4.6 m boosted), at a walk, a gallop (over 8 m/s) or boosted (while the
+- **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a
+  stride heard as the last one's recording ends while the horse moves, at a walk, a gallop (over 8 m/s) or boosted (while the
   rider's boost runs: another player's as the room last stepped their body) on the ground, stone or water, a
   footstep's wood (only the wreck's) heard as stone (`horse.<gait>.<ground>`, nine cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down (`horse.dismount`); a snort
   each 9 s a ridden horse stands (`horse.snort`); and the boost's start (`horse.boost`). The player's and every other

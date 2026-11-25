@@ -155,6 +155,14 @@ export class Samples {
     return Math.max(0, ...(this.held.get(id) ?? []).map((each) => each.measured.rush));
   }
 
+  /** The seconds a cue's recording lasts, its first file's (a long one's first chunk's); null, and fetched, where it
+   *  has not come. */
+  lengthOf(id: string): number | null {
+    const held = this.held.get(id)?.[0];
+    if (!held) this.want(id);
+    return held?.buffer.duration ?? null;
+  }
+
   /** A cue's recording held whole, decoded, and the gain that levels it, for a player that builds its own nodes (the
    *  music's sampled voices); null, and fetched, where it has not come. Asked for, it counts as played. */
   recording(audio: BaseAudioContext, id: string): { readonly buffer: AudioBuffer; readonly level: number } | null {
@@ -322,6 +330,9 @@ export function playSample(
 
 /** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
 export const rushOfCue = (id: string): number => samples.rushOf(id);
+
+/** The seconds a cue's recording lasts; null, and fetched, where it has not come (`Samples.lengthOf`). */
+export const lengthOfCue = (id: string): number | null => samples.lengthOf(id);
 
 /** A cue's recording held whole and its level, for the music's sampled voices (`Samples.recording`). */
 export const recordingOf = (audio: BaseAudioContext, id: string) => samples.recording(audio, id);
