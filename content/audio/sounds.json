@@ -152,6 +152,196 @@
       "page": "https://freesound.org/people/Joker313/sounds/683402/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.breach.bell.far": {
+      "key": "sounds/45de9bcec320b970cc33376eb22ab7d9d3904c5adace3007a639db7b46ad5f61.mp3",
+      "freesound": 68262,
+      "name": "bell5.wav",
+      "author": "juskiddink",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/juskiddink/sounds/68262/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.bubbles": {
+      "key": "sounds/c6793819635e0ce9527f845f0afd94ec39685b64d231c59fb683c97216f76030.mp3",
+      "freesound": 567457,
+      "name": "BUBBLES_LOW_PITCH.wav",
+      "author": "sound_ahead",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/sound_ahead/sounds/567457/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.cave": {
+      "key": "sounds/1cdd7fb47a7108d7983fe33f67c7436ba611cd98b8df481b9938833667f4e49f.mp3",
+      "freesound": 270387,
+      "name": "Ambience_Cave_00.wav",
+      "author": "LittleRobotSoundFactory",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/LittleRobotSoundFactory/sounds/270387/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.chain": {
+      "key": "sounds/b6d519d916460c2b04cce528358fac65818369a6a1e0e8aabee1233a28d39a91.mp3",
+      "freesound": 489767,
+      "name": "MetalDrop.wav",
+      "author": "nickronk123",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/nickronk123/sounds/489767/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.chapel": {
+      "key": "sounds/01231c4371ae3198c84532a1afb855d400f2b93431911932f37b55fe495e32a8.mp3",
+      "freesound": 788451,
+      "name": "room-tone empty church in village Bokhoven 357 PM 241220_0967",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/788451/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.creak": {
+      "key": "sounds/9c5e8b61631dad9bab9b328f2278c12ff7a224410cc71ffa89612f13a8f55bfe.mp3",
+      "freesound": 618083,
+      "name": "2022-02-06 wood creak 3.wav",
+      "author": "sit_walk",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/sit_walk/sounds/618083/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.crystal": {
+      "key": "sounds/d72b6174c4812ed530316af2cd38e42306d21719001ef59fa319b9538a51a86f.mp3",
+      "freesound": 728699,
+      "name": "3_GLASS_BELL_TAPPING_GLASS_CEILING_LIGHT_FIXTURE_WITH_FINGER",
+      "author": "PaperMacheToothPicksSeaAnenome",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/PaperMacheToothPicksSeaAnenome/sounds/728699/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.drip": {
+      "key": "sounds/66b6bdb3bcf854553d4496632849f6f3c57942aedeb3595804631957d1115bf2.mp3",
+      "freesound": 380885,
+      "name": "Water Dropping.wav",
+      "author": "morganpurkis",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/morganpurkis/sounds/380885/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.drone": {
+      "key": "sounds/c7aa563995247fed051de2ff1c4580b1cfd53443d2965d3d56f4bcc5615aa8ff.mp3",
+      "freesound": 519122,
+      "name": "drone1",
+      "author": "Koen",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Koen/sounds/519122/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.groan": {
+      "key": "sounds/6cf585824c95a81ad81c886384831f05f0e6e902fa423c2f38108acf19a4acb1.mp3",
+      "freesound": 389735,
+      "name": "Rocks Texture  06",
+      "author": "Uminari",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Uminari/sounds/389735/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.hall": {
+      "key": "sounds/9e3401c7a64e2648e12c429f2a051b9d3ddebca0bd7f3a98b6b005dc36ac21fe.mp3",
+      "freesound": 657539,
+      "name": "Dark Castle Entrance - Haunted Horror Ambience",
+      "author": "LilMati",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/LilMati/sounds/657539/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.hollow": {
+      "key": "sounds/322d64e1c464eadec8970a040c81bed10f806d412335099883ec9a5a9ace540a.mp3",
+      "freesound": 540470,
+      "name": "WindThunder.mp3",
+      "author": "zatar",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/zatar/sounds/540470/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.pool": {
+      "key": "sounds/ffce2ac94ba1fee5901da8b2770929a73dc9be9ad1d351a53561c4a3691b2bc8.mp3",
+      "freesound": 68076,
+      "name": "water tweaked (waves-caves).wav",
+      "author": "juskiddink",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/juskiddink/sounds/68076/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.race": {
+      "key": "sounds/1a2506cbabdcf0d5bb75e0a011f62db0646a7e71b7d91bdcf876d3d19ab1746a.mp3",
+      "freesound": 710601,
+      "name": "channel underwater sounds 0 220725_0453",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/710601/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.rift": {
+      "key": "sounds/57fed418353451c948bd48fa7a48eae8b24dddb4f6ed270e7c97c8a8f9cc6666.mp3",
+      "freesound": 348827,
+      "name": "Distant Waterfall - From Lookout",
+      "author": "Yoyodaman234",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Yoyodaman234/sounds/348827/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.stones": {
+      "key": "sounds/4a68aebe2e075eeb61588f11fb0c8af37877f7335b0b7b17a6248a16f179ec53.mp3",
+      "freesound": 398698,
+      "name": "Slow Pebble Tumble.wav",
+      "author": "bbrocer",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/bbrocer/sounds/398698/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.streets": {
+      "key": "sounds/49a936392e16a215fbce0b7e724d88221617ddc0eacda12e026cf8660e23570e.mp3",
+      "freesound": 610641,
+      "name": "Cold CityNight 1029PM 210209_0248.wav",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/610641/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.void": {
+      "key": "sounds/7ae3d18f9efa892069718ecb417d36c16ee57f14347cd129a806c850932e84af.mp3",
+      "freesound": 145777,
+      "name": "Wind blowing and howling in some small plastic tube in the desert of Chile",
+      "author": "felix.blume",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/felix.blume/sounds/145777/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.breach.whisper": {
+      "key": "sounds/71b9386ff468c0a7baefa880f8ad2683f9d4fd7b5c5c898a81274e10927d3fe3.mp3",
+      "freesound": 446083,
+      "name": "whispers.wav",
+      "author": "SophieMezaM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/SophieMezaM/sounds/446083/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.desert.sand": {
       "key": "sounds/e72510345ff0686999d3c6dd5dab8d5952c4713055ee23d9d34561c832daf0c7.mp3",
       "freesound": 632771,
@@ -1002,6 +1192,346 @@
       "page": "https://freesound.org/people/EminYILDIRIM/sounds/536068/",
       "changes": "Unchanged."
     },
+    "breach.begun": {
+      "key": "sounds/edea19e14470a4baf65f845bdbb5a9b1377659fe06336d2ae5eb93121aead990.mp3",
+      "freesound": 361495,
+      "name": "Gong 001.wav",
+      "author": "tec_studio",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/tec_studio/sounds/361495/",
+      "changes": "Unchanged."
+    },
+    "breach.bell.break": {
+      "key": "sounds/0facf7863fe6cb2d58bbb38b92b6d0849b71bb0381811d3b05aef4ae36379cf0.mp3",
+      "freesound": 807434,
+      "name": "ride 5",
+      "author": "Logicogonist",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Logicogonist/sounds/807434/",
+      "changes": "Unchanged."
+    },
+    "breach.bell.ring": {
+      "key": "sounds/8d6f164d676bc747d9f1560faf183000779a260529d2b2f8e0f07820f6d388cf.mp3",
+      "freesound": 160689,
+      "name": "Church Bell",
+      "author": "CosmicEmbers",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/CosmicEmbers/sounds/160689/",
+      "changes": "Unchanged."
+    },
+    "breach.bell.wake": {
+      "key": "sounds/e400a044bcbdc800caede451098dbab9b5eb080c22775ccc18882a18086aaf92.mp3",
+      "freesound": 532649,
+      "name": "Single bell.m4a",
+      "author": "brittgym98",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/brittgym98/sounds/532649/",
+      "changes": "Unchanged."
+    },
+    "breach.blotted": {
+      "key": "sounds/760a836d70363af8cbcf690702f8aba2b8215bf69ccfbe120ac154af14ee23bf.mp3",
+      "freesound": 256559,
+      "name": "Book Slam.mp3",
+      "author": "sjnewton",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/sjnewton/sounds/256559/",
+      "changes": "Unchanged."
+    },
+    "breach.chest": {
+      "key": "sounds/46493945ec68ab6dcfcecbf308d715592a4d72ebbb50fdd8110340a01a36e750.mp3",
+      "freesound": 377552,
+      "name": "Wooden Creak",
+      "author": "Mafon2",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Mafon2/sounds/377552/",
+      "changes": "Unchanged."
+    },
+    "breach.claimed": {
+      "key": "sounds/1f2127056d55433e1795c5cf47ad2cea37fca435c7e46521c3f4b3b348f6840f.mp3",
+      "freesound": 655585,
+      "name": "Metal chain - gently placed down - 221098_AshtiHari_SD100_Term4.wav",
+      "author": "221098HariPotter",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/221098HariPotter/sounds/655585/",
+      "changes": "Unchanged."
+    },
+    "breach.cleansed": {
+      "key": "sounds/15f41b305a01b19301fe10677c95455ab3abb62fd5dbc8fc86cc3e1bf0f0905a.mp3",
+      "freesound": 119113,
+      "name": "Water pouring; quick_1-2.aif",
+      "author": "domrodrig",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/domrodrig/sounds/119113/",
+      "changes": "Unchanged."
+    },
+    "breach.desk.marked": {
+      "key": "sounds/87bae5fdf1461ece6dbba4717762416427a6279097895be5656325ddd640fd7d.mp3",
+      "freesound": 379886,
+      "name": "03_psani_perem_kratke.wav",
+      "author": "13GPanska_Markova_Lucie",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/13GPanska_Markova_Lucie/sounds/379886/",
+      "changes": "Unchanged."
+    },
+    "breach.fused": {
+      "key": "sounds/b6963412eaa023a08ac6f22c4924b27f608cfbef80818bd423478effec523cc3.mp3",
+      "freesound": 253798,
+      "name": "egg crack sounds mixed.wav",
+      "author": "Reitanna",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Reitanna/sounds/253798/",
+      "changes": "Unchanged."
+    },
+    "breach.keeper.fell": {
+      "key": "sounds/b3e417d976ba2a2a9bd76327a997f2ea406f0563a94604921f762874b46c0f25.mp3",
+      "freesound": 810962,
+      "name": "landslide 1",
+      "author": "Logicogonist",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Logicogonist/sounds/810962/",
+      "changes": "Unchanged."
+    },
+    "breach.laid.bare": {
+      "key": "sounds/0169d0fe29c4aba3cf1b0dd94c186a5fb917e9eef975c9a1485568d4a325d822.mp3",
+      "freesound": 592388,
+      "name": "Car Crash (with Glass)",
+      "author": "magnuswaker",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/magnuswaker/sounds/592388/",
+      "changes": "Unchanged."
+    },
+    "breach.mooring": {
+      "key": "sounds/aa5975e4027123b7f894967ae7a51175fd28925cea239f17927245f6e1ef9a35.mp3",
+      "freesound": 556749,
+      "name": "Opening Microwave Door 2.wav",
+      "author": "F.M.Audio",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/F.M.Audio/sounds/556749/",
+      "changes": "Unchanged."
+    },
+    "breach.overtaken": {
+      "key": "sounds/3d7e8948c1a4d550d9c178f68f6d3755648b599670c409c439822db4517b9cb0.mp3",
+      "freesound": 764657,
+      "name": "ice cracking",
+      "author": "getwecked",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/getwecked/sounds/764657/",
+      "changes": "Unchanged."
+    },
+    "breach.returned": {
+      "key": "sounds/b782b47618a73a019ebc6a2925053e7cf8df70ce92eff3953667bb5c14971cbc.mp3",
+      "freesound": 583348,
+      "name": "Rock Splash",
+      "author": "Fission9",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Fission9/sounds/583348/",
+      "changes": "Unchanged."
+    },
+    "breach.rewritten": {
+      "key": "sounds/ec20deb3540ec59865003387b15a8fd6b20b4388e82dd8ad549af0c3aa25f9a2.mp3",
+      "freesound": 554372,
+      "name": "no.mp3",
+      "author": "Milky0519",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Milky0519/sounds/554372/",
+      "changes": "Unchanged."
+    },
+    "breach.rift.open": {
+      "key": "sounds/9080bafb887d073e0cd49634a3297c12f19b217afada6669c39d7fcaa8a39e54.mp3",
+      "freesound": 848658,
+      "name": "Water Splash Whoosh Magic Spell",
+      "author": "mikiko850",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/mikiko850/sounds/848658/",
+      "changes": "Unchanged."
+    },
+    "breach.rift.shut": {
+      "key": "sounds/b173dfe2e1dde98b10226173d88fd80a8a8c1cca18e9ff3d95d6fd8917b5bb69.mp3",
+      "freesound": 877675,
+      "name": "Reverse Gravity Whip",
+      "author": "zenosounds",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/zenosounds/sounds/877675/",
+      "changes": "Unchanged."
+    },
+    "breach.seal": {
+      "key": "sounds/fd806a44acc9a60acb0621bdb2b8fb52f12cd96b4fc5cbdf75376db04db26d6c.mp3",
+      "freesound": 453499,
+      "name": "neon tube smash explode shatter glass debris.flac",
+      "author": "kyles",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/kyles/sounds/453499/",
+      "changes": "Unchanged."
+    },
+    "breach.seen": {
+      "key": "sounds/0fd9272787dcc25a4250d398f616ec72741f22a090dc0c39435fe660ef14d4bb.mp3",
+      "freesound": 738439,
+      "name": "Orc Grunt 3",
+      "author": "qubodup",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/738439/",
+      "changes": "Unchanged."
+    },
+    "breach.slab": {
+      "key": "sounds/bfd9d47bb19add87db8e9b9da86aac115003cc6af32b357c063bd38dbdd43544.mp3",
+      "freesound": 182345,
+      "name": "stone_mechanisem_loop_01.wav",
+      "author": "Claire.H",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/Claire.H/sounds/182345/",
+      "changes": "Unchanged."
+    },
+    "breach.spire.fill": {
+      "key": "sounds/773bc362ec7ce629533e49eb7117618c06de95adda5991bbb0016d7d7953fba6.mp3",
+      "freesound": 861428,
+      "name": "battle mode space ship background hum loop",
+      "author": "qubodup",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/861428/",
+      "changes": "Unchanged."
+    },
+    "breach.spire.woken": {
+      "key": "sounds/1f3d14a52d0a53ecc7e70921981065aa5df9dac88d549dfd0e77e81b2a7bbd18.mp3",
+      "freesound": 418912,
+      "name": "22 Tehoste_lasinsoitto11.m4a",
+      "author": "ssalo",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/ssalo/sounds/418912/",
+      "changes": "Unchanged."
+    },
+    "breach.stage": {
+      "key": "sounds/be47eae67fdf405cc2cc29e28ff189f0894b441ab5658f23b36485fd071ed1f8.mp3",
+      "freesound": 574446,
+      "name": "Kicking Large Stones Down Shoreline on Stony Beach 4.wav",
+      "author": "F.M.Audio",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/F.M.Audio/sounds/574446/",
+      "changes": "Unchanged."
+    },
+    "breach.stone.drop": {
+      "key": "sounds/22eb8b847856f47050ba8d49d28947aa6819f4c678d10506ccf355a4822db7b1.mp3",
+      "freesound": 61086,
+      "name": "floppy_disk01.wav",
+      "author": "andre.nascimento",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/andre.nascimento/sounds/61086/",
+      "changes": "Unchanged."
+    },
+    "breach.stone.ground": {
+      "key": "sounds/a0f29a0d16920db050ee0f3ed6b6bcfa020f09118a1f39803a790ddc98d65bd6.mp3",
+      "freesound": 390729,
+      "name": "Breaking Glass 3.mp3",
+      "author": "FunWithSound",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/FunWithSound/sounds/390729/",
+      "changes": "Unchanged."
+    },
+    "breach.stone.hold": {
+      "key": "sounds/5841d9a2a3ad026c69ec9c72f0a604a540e48235a0bc9aaf5c1c900986f780bc.mp3",
+      "freesound": 271370,
+      "name": "singing bowl strike sound",
+      "author": "inoshirodesign",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/inoshirodesign/sounds/271370/",
+      "changes": "Unchanged."
+    },
+    "breach.stone.take": {
+      "key": "sounds/a1f5d90330a29a0fe8da419c19e7ffaec34efbad013cf2ef745d93ca0df1a155.mp3",
+      "freesound": 758580,
+      "name": "Rubble Trouble",
+      "author": "magnuswaker",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/magnuswaker/sounds/758580/",
+      "changes": "Unchanged."
+    },
+    "breach.taken": {
+      "key": "sounds/f2e4c1ff0ac9336b47d33a4eb8c666697c0558700de30c57fd5fb8cc5d77a6bd.mp3",
+      "freesound": 519008,
+      "name": "Water Explosion",
+      "author": "Sheyvan",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Sheyvan/sounds/519008/",
+      "changes": "Unchanged."
+    },
+    "breach.toll": {
+      "key": "sounds/22f751c584ab7e5d42ec6a852b1ef04ddd865a39125b903357a718238df4ec12.mp3",
+      "freesound": 791503,
+      "name": "Bell 12.2 OS",
+      "author": "Sadiquecat",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Sadiquecat/sounds/791503/",
+      "changes": "Unchanged."
+    },
+    "breach.unwritten": {
+      "key": "sounds/6d287c6ded6b3ffa99fb9ede528160621befaa23707f4838a96a48b7cec89217.mp3",
+      "freesound": 814715,
+      "name": "PAPRImpt-Blue Snowball Microphone, CU_Paper, Punch, Rip_Nicholas Judy_TDC",
+      "author": "designerschoice",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/designerschoice/sounds/814715/",
+      "changes": "Unchanged."
+    },
+    "breach.way.back": {
+      "key": "sounds/0b45ed0e5229f7e48f41c4fb83e8884edfd396b136165c517d980b6f417143a1.mp3",
+      "freesound": 757255,
+      "name": "Water rumbling mechanical drain",
+      "author": "HenKonen",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/HenKonen/sounds/757255/",
+      "changes": "Unchanged."
+    },
+    "breach.wipe": {
+      "key": "sounds/952b33cfa157e37cb3238310709e27258d3c1e404b2482ca2204ed2b68f30ed5.mp3",
+      "freesound": 162850,
+      "name": "Cinema Boom impact #1",
+      "author": "beman87",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/beman87/sounds/162850/",
+      "changes": "Unchanged."
+    },
+    "breach.wrote": {
+      "key": "sounds/9e5f622d3b9b1bbc1e0479550c5edc3900690382441787a491cf7fa1f4d1c90d.mp3",
+      "freesound": 257807,
+      "name": "Pen signing.wav",
+      "author": "xtrgamr",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/xtrgamr/sounds/257807/",
+      "changes": "Unchanged."
+    },
     "cast.charge": {
       "key": "sounds/db61cbe39bb5729687c277bcdaff340088869eba657ac59532ffc82a5c15e0e7.mp3",
       "freesound": 511872,
@@ -1221,6 +1751,230 @@
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/jjhouse4/sounds/203039/",
       "changes": "Unchanged."
+    },
+    "music.bass": {
+      "key": "sounds/348d8c3b6a0dcea57f155332b0db5c9b1b224efca41b3de8b5987bc9fe0b555f.mp3",
+      "freesound": 383710,
+      "name": "Standup_Bass_Normal_G#1.wav",
+      "author": "pjcohen",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/pjcohen/sounds/383710/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "G#1+2"
+    },
+    "music.bell": {
+      "key": "sounds/de76363874be93750cd0e9dfc0d028c2804dac3f2079d31787806c022c6120db.mp3",
+      "freesound": 85804,
+      "name": "TUBULAR BELL STRIKE 010.wav",
+      "author": "sandyrb",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/sandyrb/sounds/85804/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "F#3-45"
+    },
+    "music.boom": {
+      "key": "sounds/05a2d44a92612aa43b28b86d90d39578e67d0b72429c9e821ab3f98b934f65c8.mp3",
+      "freesound": 879905,
+      "name": "Cinematic boom impact",
+      "author": "WoodBetweenStudio",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/WoodBetweenStudio/sounds/879905/",
+      "changes": "Played at many pitches as an instrument in the game's music."
+    },
+    "music.bowed": {
+      "key": "sounds/44d24a9d3b431c74636501496913a85d35ba62988850bb34433dcbdf32ed4e41.mp3",
+      "freesound": 372207,
+      "name": "drone7_bowed_cymbal3.wav",
+      "author": "decembered",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/decembered/sounds/372207/",
+      "changes": "Played at many pitches as an instrument in the game's music."
+    },
+    "music.bowl": {
+      "key": "sounds/5841d9a2a3ad026c69ec9c72f0a604a540e48235a0bc9aaf5c1c900986f780bc.mp3",
+      "freesound": 271370,
+      "name": "singing bowl strike sound",
+      "author": "inoshirodesign",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/inoshirodesign/sounds/271370/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "E5-28"
+    },
+    "music.cello": {
+      "key": "sounds/319c91339d3ff413ec3c2a609b38bfa294dbbe53b721230607424960165c78b4.mp3",
+      "freesound": 329777,
+      "name": "Cello_mono.wav",
+      "author": "speedyrce",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/speedyrce/sounds/329777/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "D2-8"
+    },
+    "music.cello.short": {
+      "key": "sounds/7ff1d6a6adfef792370dc2394d889c2f4880e5fe9ed92808515e9f8cb8fb5b1e.mp3",
+      "freesound": 372811,
+      "name": "Cello Section - spiccato - E#5 (spic_F4_v2_RR2.wav)",
+      "author": "sgossner",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/sgossner/sounds/372811/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "F5-9"
+    },
+    "music.choir.high": {
+      "key": "sounds/7691b07ba92c204c2200ff12f6ffd38d2b5517d479bf9bda528af1c101ae065d.mp3",
+      "freesound": 819290,
+      "name": "Mystical female choir swell 01",
+      "author": "Johnmode",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Johnmode/sounds/819290/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "G#2+15"
+    },
+    "music.choir.low": {
+      "key": "sounds/b0a3fa3ef48aa75e76ee94c04de67924e6e8007f7253b3d5ff6a6efcd32fba53.mp3",
+      "freesound": 147881,
+      "name": "Spooky Singing Choir",
+      "author": "xSylviaMoonx",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/xSylviaMoonx/sounds/147881/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "C#5+10"
+    },
+    "music.drone": {
+      "key": "sounds/fc38d2bef812af3c6b6bc281865690f4cd96b7d7b3d55fdb47696fae73c0c970.mp3",
+      "freesound": 256250,
+      "name": "Wine Glass Sustained Note E6",
+      "author": "spectral9",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/spectral9/sounds/256250/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "E6-1"
+    },
+    "music.frame": {
+      "key": "sounds/dfbaee82c58974892dde751e45504b10ce8c023f8a1edb85b1d224e4c90818a5.mp3",
+      "freesound": 257146,
+      "name": "Shaman Hand Frame Drum 07",
+      "author": "Jagadamba",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Jagadamba/sounds/257146/",
+      "changes": "Played at many pitches as an instrument in the game's music."
+    },
+    "music.glass": {
+      "key": "sounds/327f5317322f8dba07163a5ab425e539c83843aa2ef065a049d6186c3e37953b.mp3",
+      "freesound": 62055,
+      "name": "Glass5.wav",
+      "author": "juskiddink",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/juskiddink/sounds/62055/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "B4+5"
+    },
+    "music.harp": {
+      "key": "sounds/75f586d92e879b270fe7e415de069576701c498942b66071006dc6d9953639bf.mp3",
+      "freesound": 653784,
+      "name": "Red Wing String.mp3",
+      "author": "Streetpoptunez",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Streetpoptunez/sounds/653784/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "C4"
+    },
+    "music.horn": {
+      "key": "sounds/e2de1434095908abcf712e9b6914f00853b072afe2b28a9758029d4a443d82ae.mp3",
+      "freesound": 362196,
+      "name": "horn_tone_F#3.wav",
+      "author": "TaranP",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/TaranP/sounds/362196/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "F#3-3"
+    },
+    "music.metal": {
+      "key": "sounds/660a1cbddc5cd8c8e75688cde85388192b64b4bfd6ad4e4028a3725f6b28d93a.mp3",
+      "freesound": 406561,
+      "name": "hit - metallic - natural gas tank 02.wav",
+      "author": "Anthousai",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Anthousai/sounds/406561/",
+      "changes": "Played at many pitches as an instrument in the game's music."
+    },
+    "music.organ": {
+      "key": "sounds/6eb8d6ce071aa16559ea23fec92900d201496c73a0e0588a9b69c1edb930cce6.mp3",
+      "freesound": 205822,
+      "name": "organ-C3.wav",
+      "author": "xserra",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/xserra/sounds/205822/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "C4-1"
+    },
+    "music.piano": {
+      "key": "sounds/3db4968c7642af8f709d7abede191d52b84982eb5b2e401d7a49d758aa1de6eb.mp3",
+      "freesound": 740920,
+      "name": "g6 note",
+      "author": "rondindon",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/rondindon/sounds/740920/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "G5+12"
+    },
+    "music.riser": {
+      "key": "sounds/008e8cfbf0d11653e4deedcae4d07e54734f2729e4d5108aa2677e0ce800b6a2.mp3",
+      "freesound": 9523,
+      "name": "cymbal-reversed-glassy-resonance.wav",
+      "author": "burnttoys",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/burnttoys/sounds/9523/",
+      "changes": "Played at many pitches as an instrument in the game's music."
+    },
+    "music.taiko": {
+      "key": "sounds/91269b271f72dabb43acde8424de13b46892907e8f86d129c5ed441f5b589f70.mp3",
+      "freesound": 441646,
+      "name": "TAIKOENS.wav",
+      "author": "xtrgamr",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/xtrgamr/sounds/441646/",
+      "changes": "Played at many pitches as an instrument in the game's music."
+    },
+    "music.timpani": {
+      "key": "sounds/0f600a718451a49f9969a82337aea9de595d05ab3eaf06523b845f4a3282d4cc.mp3",
+      "freesound": 373932,
+      "name": "Timpani - F3 (Timpani5_Hit_v3_rr2_Sum.wav)",
+      "author": "sgossner",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/sgossner/sounds/373932/",
+      "changes": "Played at many pitches as an instrument in the game's music.",
+      "root": "F#3-18"
+    },
+    "music.waterphone": {
+      "key": "sounds/255478936e08ee520f930a14fc3fa20bb52870307a9869e963ca68b88801d502.mp3",
+      "freesound": 378249,
+      "name": "Asoada eerie movement creaking waterphone.wav",
+      "author": "CawawaC",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/CawawaC/sounds/378249/",
+      "changes": "Played at many pitches as an instrument in the game's music."
     },
     "musket.shot": {
       "key": "sounds/c9e655fc2550611d37eb50bdae20067ace42503905d48635c9c3c302ec6d3b58.mp3",

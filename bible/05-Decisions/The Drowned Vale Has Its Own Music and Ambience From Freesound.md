@@ -24,4 +24,12 @@ Claude read the answer as scores written for the Drowned Vale, played on instrum
 Freesound, each picked by the owner on the sound sheet; that reading is Claude's, put to the owner to confirm, and
 each musical call made under it is in [[The Drowned Vale as Claude Builds It]] ("Its music").
 
+Asked what should happen to the four instruments picked with no single steady pitch (a piano playing a phrase, a
+drone whose pitch slides, a choir's moving chord, a timpani hit with no clear note), the owner answered:
+
+> "Search for single notes"
+
+So each pitched instrument is one held note, played at every note of its score; until one is picked, its part plays
+on the synthesiser.
+
 How it is built: [[Music]], [[Ambience]], [[Breaches]].
