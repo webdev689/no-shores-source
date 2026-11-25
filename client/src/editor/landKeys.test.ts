@@ -28,9 +28,16 @@ test('Ctrl or Cmd with Z undoes, with Shift and Z or with Y redoes', () => {
 
 test("the browser's own shortcuts give the Land mode nothing", () => {
   for (const key of ['l', 'k', 'b', 'g', 'v', '1', '9', '[', ']'])
-    for (const held of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }])
+    for (const held of [{ ctrlKey: true }, { metaKey: true }])
       assert.equal(landKey(press(key, held)), null, `${JSON.stringify(held)} ${key}`);
+  for (const key of ['l', 'd', '1', 'ArrowLeft', 'Home'])
+    assert.equal(landKey(press(key, { altKey: true })), null, `Alt+${key}`);
   assert.equal(landKey(press('z', { altKey: true })), null, 'Alt+Z is no undo');
+});
+
+test('a sign typed with Alt alone, as a Mac layout types [ with Option and 5, is typing', () => {
+  assert.equal(landKey(press('[', { altKey: true })), '[');
+  assert.equal(landKey(press(']', { altKey: true })), ']');
 });
 
 test('a key typed with AltGr, which comes as Ctrl and Alt held, is typing and reaches the Land mode', () => {
