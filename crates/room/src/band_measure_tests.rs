@@ -148,4 +148,8 @@ fn the_bands_tables_are_the_rooms_and_the_passages_own() {
     );
     assert_eq!(band::STAND_AGAIN_SECONDS, (crate::garrison::STAND_AGAIN / 60) as f64);
     assert_eq!(band::RUN_M_A_SECOND, movement::TUNING.run);
+    assert_eq!(band::GATHER_SECONDS, (crate::asks::GATHER_TICKS / 60) as f64);
+    assert_eq!(band::EVENTS_AN_HOUR, (60 / crate::public::PERIOD_MINUTES) as f64);
+    let ranks = crate::sighting::RANKS_AT_SEA;
+    assert_eq!(ranks.map(crate::flotsam::foe_of), band::SEA_FOES, "the foe each rank at sea pays as");
 }

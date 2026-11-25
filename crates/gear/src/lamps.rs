@@ -30,12 +30,12 @@ pub enum Cache {
 /// Each deal's cache at level 5, XP then Aurem. A passage zone holds some eighteen foes and takes one player about ten
 /// minutes (`band::PASSAGE_FOES`), its foes a little under a player who plays its depth for its pay, so its cache
 /// stands in for a patrol zone's public events and keeps an hour in the passages inside the band (`band`).
-pub const SKIRMISH_PAY: (u32, u32) = (1_200, 90);
-pub const MISSION_PAY: (u32, u32) = (1_600, 120);
-pub const VAULT_PAY: (u32, u32) = (2_400, 180);
-pub const VEIN_PAY: (u32, u32) = (600, 45);
-pub const RELIQUARY_PAY: (u32, u32) = (600, 45);
-pub const LAMP_PAY: (u32, u32) = (2_400, 180);
+pub const SKIRMISH_PAY: (u32, u32) = (1_400, 105);
+pub const MISSION_PAY: (u32, u32) = (1_800, 135);
+pub const VAULT_PAY: (u32, u32) = (2_800, 210);
+pub const VEIN_PAY: (u32, u32) = (700, 52);
+pub const RELIQUARY_PAY: (u32, u32) = (700, 52);
+pub const LAMP_PAY: (u32, u32) = (2_800, 210);
 /// A skirmish's and a mission's chance of a Vestige, before depth raises it.
 pub const SKIRMISH_VESTIGE: f64 = 1.0 / 3.0;
 pub const MISSION_VESTIGE: f64 = 0.5;
@@ -96,9 +96,7 @@ impl Character {
             Cache::Lamp(_) => (LAMP_PAY, 1.0, ELITE),
         };
         let raised = |amount: u32| libm::round(f64::from(amount) * pays) as u32;
-        if worth != (0, 0) {
-            self.pay((raised(worth.0), raised(worth.1)), at.level, None, difficulty);
-        }
+        self.pay((raised(worth.0), raised(worth.1)), at.level, None, difficulty);
         // A sure find stays one; a chance grows with depth.
         let chance = if vestige >= 1.0 { 1.0 } else { (vestige * finds).min(1.0) };
         let items = if cache == Cache::Vault { difficulty.reward() } else { 0.0 };

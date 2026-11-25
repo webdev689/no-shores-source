@@ -151,10 +151,10 @@ was done finds it done.
 
 - **A cache** is paid at the zone's level and depth (`Character::pay_cache`): its XP and Aurem times `pay_times` (1 at
   the first depth to 1.25 at the twentieth), its chances of finds times `find_times` (1 to 2); its finds go into the
-  haul. At level 5: a skirmish 1,200 XP and 90 Aurem and a Vestige one time in three; a mission 1,600 and 120 and a
-  Vestige one time in two; a vault 2,400 and 180, its Miniboss's item and a Vestige one time in three; a vein 600 and
-  45, its six nodes and two fragments; a reliquary 600 and 45, a sure Vestige and two to five fragments; a lamp 2,400
-  and 180 and a sure Vestige. A zone holds some eighteen foes and takes one player about ten minutes, so its cache
+  haul. At level 5: a skirmish 1,400 XP and 105 Aurem and a Vestige one time in three; a mission 1,800 and 135 and a
+  Vestige one time in two; a vault 2,800 and 210, its Miniboss's item and a Vestige one time in three; a vein 700 and
+  52, its six nodes and two fragments; a reliquary 700 and 52, a sure Vestige and two to five fragments; a lamp 2,800
+  and 210 and a sure Vestige. A zone holds some eighteen foes and takes one player about ten minutes, so its cache
   stands in for a patrol zone's public events and keeps the passages inside the band ([[Activities]], "The band").
 - **A lamp lit** (E held 2 s within 3 m of its plinth, once its guard is down, each player for themselves) keeps the
   haul: items as found, Vestiges carried or to the vault or the mail, materials added. The day's first lamp lit on an

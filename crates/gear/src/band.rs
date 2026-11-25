@@ -82,6 +82,8 @@ pub const SEA_RANKS: [(u8, [f64; 4]); 9] = [
     (22, [0.13, 0.43, 0.32, 0.12]),
     (26, [0.10, 0.40, 0.35, 0.15]),
 ];
+/// The foe each rank at sea pays as, Minor to Miniboss (`room::flotsam::foe_of`).
+pub const SEA_FOES: [Foe; 4] = [Foe::Skirmisher, Foe::Swordsman, Foe::Brute, Foe::Captain];
 /// The pieces a sunk ship leaves each player, Minor to Miniboss (`room::flotsam::pieces_of`).
 pub const SEA_PIECES: [f64; 4] = [3.0, 4.0, 5.0, 6.0];
 
@@ -333,11 +335,13 @@ pub fn sea(level: u8) -> Hour {
     let piece = |rank: u8, chest: bool, count: f64| {
         let held = holds(Source::Flotsam { rank, chest });
         let commons = f64::from(held.commons) * f64::from(held.each[0] + held.each[1]) / 2.0;
-        let module = items(held.module * count, shares(colours(rank), level), level);
+        // A module is rolled at its colour, never opened as a Vestige is (`ship::found::salvage`).
+        let module =
+            Hour { items: shares(colours(rank), level).map(|part| part * held.module * count), ..Hour::default() };
         Hour { materials: (commons + held.heartwood) * count, ..module }
     };
     let sinking = ranks.iter().zip(1_u8..).fold(Hour::default(), |sum, (&share, rank)| {
-        let foe = [Foe::Skirmisher, Foe::Swordsman, Foe::Brute, Foe::Captain][usize::from(rank - 1)];
+        let foe = SEA_FOES[usize::from(rank - 1)];
         let found = worth(foe, rank);
         let pay = paid((found.xp * SINKING_KILLS, found.aurem * SINKING_KILLS), level, tier);
         let colour = shares(colours(rank), level);
@@ -373,7 +377,8 @@ pub fn depths(level: u8) -> std::ops::RangeInclusive<u8> {
 }
 
 /// What one zone's deal pays as its cache at a depth and level, each deal as often as the web deals it (skirmish 30,
-/// mission 35, vault 10, vein 12, reliquary 13 in a hundred, `passage::web::DEALS`), its finds raised by depth.
+/// mission 35, vault 10, vein 12, reliquary 13 in a hundred, `passage::web::DEALS`, a vault under ground alone, half
+/// the zones, else a skirmish), its finds raised by depth.
 fn cache(depth: u8, level: u8) -> Hour {
     let tier = Difficulty::Normal;
     let (pays, finds) = (pay_times(depth), find_times(depth));
@@ -392,7 +397,7 @@ fn cache(depth: u8, level: u8) -> Hour {
     let vein = Hour { materials: 6.0 * f64::from(NODE_YIELD) + f64::from(VEIN_FRAGMENTS), ..raised(VEIN_PAY) };
     let (least, most) = RELIQUARY_FRAGMENTS;
     let reliquary = Hour { materials: f64::from(least + most) / 2.0, ..raised(RELIQUARY_PAY).plus(found(1.0, elite)) };
-    [(skirmish, 0.30), (mission, 0.35), (vault, 0.10), (vein, 0.12), (reliquary, 0.13)]
+    [(skirmish, 0.35), (mission, 0.35), (vault, 0.05), (vein, 0.12), (reliquary, 0.13)]
         .into_iter()
         .fold(Hour::default(), |sum, (hour, share)| sum.plus(hour.times(share)))
 }
@@ -452,8 +457,8 @@ fn lamps_paid(level: u8) -> Hour {
     day.plus(weekly(week))
 }
 
-/// An hour in the passages at `depth` for a player of `level`: its zones in turn (a lamp's one in five), their kills
-/// and caches, the haul's finds less the share a death takes at that depth, and the day's and the week's lamps; none
+/// An hour in the passages at `depth` for a player of `level`: its zones in turn, a lamp's one in five standing its
+/// guard alone, their kills and caches, the haul's finds less the share a death takes at that depth, and the day's and the week's lamps; none
 /// at a depth they do not play for its pay (`depths`).
 #[must_use]
 pub fn passage(depth: u8, level: u8) -> Option<Hour> {
@@ -464,8 +469,8 @@ pub fn passage(depth: u8, level: u8) -> Option<Hour> {
     let foes_at = ((u16::from(low) + u16::from(high)) / 2) as u8;
     let zone_seconds = PASSAGE_FOES * PASSAGE_SECONDS_A_FOE * slowed(level, foes_at) + PASSAGE_BETWEEN_SECONDS;
     let lamp = lamp_zone(depth.div_ceil(5), depth, foes_at);
-    let zone =
-        passage_kill(depth, foes_at).times(PASSAGE_FOES).plus(cache(depth, foes_at).times(0.8).plus(lamp.times(0.2)));
+    let dealt = passage_kill(depth, foes_at).times(PASSAGE_FOES).plus(cache(depth, foes_at));
+    let zone = dealt.times(0.8).plus(lamp.times(0.2));
     let zones = zone.times(3_600.0 / zone_seconds).less_finds(haul_lost(depth));
     Some(zones.plus(lamps_paid(level)))
 }

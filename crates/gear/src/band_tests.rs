@@ -48,17 +48,19 @@ fn every_activitys_hour_falls_in_the_band_against_a_patrol_zones_at_its_level() 
 
 #[test]
 fn the_passages_are_never_the_bands_top_at_every_level() {
-    // A level where the passages' best depth pays more XP and more loot than every other activity open there is one
-    // where they are the go-to; there must be a level where something else beats them.
-    let topped = LEVELS.iter().filter(|&&level| {
+    // The passages never drop the most loot at any level, and at some level another activity pays more XP than their
+    // best depth, so they are never the go-to.
+    let mut topped = 0;
+    for level in LEVELS {
         let all = activities(level);
         let best = |passages: bool, pick: fn(&Hour) -> f64| {
             let picked = all.iter().filter(|(name, _)| name.starts_with("Passages") == passages);
             picked.map(|(_, hour)| pick(hour)).fold(if passages { 0.0 } else { pick(&patrol(level)) }, f64::max)
         };
-        best(true, |hour| hour.xp) > best(false, |hour| hour.xp) && best(true, Hour::loot) > best(false, Hour::loot)
-    });
-    assert!(topped.count() < LEVELS.len(), "the passages top the band at every level");
+        assert!(best(true, Hour::loot) < best(false, Hour::loot), "level {level}: the passages drop the most loot");
+        topped += usize::from(best(true, |hour| hour.xp) > best(false, |hour| hour.xp));
+    }
+    assert!(topped < LEVELS.len(), "the passages pay the most XP at every level");
 }
 
 #[test]
