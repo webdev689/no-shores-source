@@ -1,5 +1,5 @@
 ---
-id: 271
+id: 274
 title: "tools/uiShot.mjs asked for reduced motion on every page, so no picture could show the interface moving"
 status: actioned
 type: internal
