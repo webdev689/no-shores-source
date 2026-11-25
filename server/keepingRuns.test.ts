@@ -205,6 +205,24 @@ test('one account is one player in a room: a second socket signed in sends the f
   assert.deepEqual(sent, [[1, undefined]], 'and the newer keeps its hold');
 });
 
+test('a second socket of one account takes on what the first gained since this room last saved it', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{}');
+  room.held.set(2, '{}');
+  const keeper = new Keeper(kept, room, 'node-a', () => undefined);
+  const [now, here] = [() => clock.now, () => true];
+  assert.equal(await keeper.signIn(1, token, now, here), true);
+  await keeper.due(clock.now + SAVE_UNCHANGED_MS);
+  room.held.set(1, '{"aurem":40}');
+  assert.equal(await keeper.signIn(2, token, now, here), true);
+  assert.equal(room.held.get(2), '{"aurem":40}', 'the first socket’s body, not the older one the accounts held');
+  clock.now += SAVE_UNCHANGED_MS;
+  await keeper.due(clock.now);
+  const looked = await kept.look(token);
+  assert.equal(looked?.body, '{"aurem":40}', 'and saved under the new hold');
+});
+
 test('a run is full by its four accounts: a member signing in again is kept, a fifth account refused', async () => {
   const made = accounts();
   const tokens: Record<string, string> = {};
