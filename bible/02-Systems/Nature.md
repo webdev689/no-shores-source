@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/nature/natureView.ts#NatureView
+  - client/src/nature/natureView.ts#Gusts
   - client/src/nature/flora.ts#loadFlora
   - client/src/nature/forms.ts#formBuffers
   - client/src/nature/impostor.ts#framesFor
@@ -144,7 +145,9 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   about twice as far, and gusts roll downwind across the land, deeper the gustier the wind; each plant rocks on its
   own beat, bending by its baked wind weights (still at the foot, free at the tips), and its leaves tremble, all
   slowly (`SWAY`): a gust rolls by about every 10 s, a plant rocks about every 7 s and its leaves tremble about every
-  2 s. Before the weather is read they sway in a breeze from the west-south-west.
+  2 s, in any wind. The gusts' phase is reckoned from the eye and carried with it (`Gusts`, one for the plants and the
+  meadow), so a turn of the weather's wind swings it only by how far a plant stands from the eye. Before the weather is
+  read they sway in a breeze from the west-south-west.
 - **Shadows.** In the game the near plants round the eye cast into the sun's near shadow map, swaying as they are
   drawn and cut out by their cards' coverage, and every plant, near or far, is lit through the near and far maps
   ([[Game]]): a tree in another's shade, or a wall's, is in shade.
