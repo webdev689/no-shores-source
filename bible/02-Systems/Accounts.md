@@ -115,14 +115,15 @@ they play in holds it while they are there.
 ## The character, kept
 
 - **One room at a time.** A node's room ([[Server]]) holds each signed-in player's character: the gear crate's
-  `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the
-  room claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can
-  reach) and gives it to the player, trimming their fight by it. One account is one player in a room: a second
-  socket of theirs signed in (a rejoin before the room saw the first close, or a second tab) sends the first away
-  as played elsewhere before it is given the character, so a run keeps the first one's body for it, and the rules
-  refuse to note one account for two players (`Room::own`). A rejoin's old socket is one the page let go of already,
-  so it plays on; a second tab's page stops there and joins no more, so two tabs never take the character back and
-  forth.
+  `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the room
+  claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can reach)
+  and gives it to the player, trimming their fight by it. One account is one player in a room: a second socket of theirs
+  signed in (a rejoin before the room saw the first close, or a second tab) sends the first away as played elsewhere
+  before it is given the character, so a run keeps the first one's body for it, and the rules refuse to note one account
+  for two players (`Room::own`). While the accounts hold what this room last saved of the first, the room's own body of
+  it is the newest, and the second takes that on, saved anew under its hold. A rejoin's old socket is one the page let
+  go of already, so it plays on; a second tab's page stops there and joins no more, so two tabs never take the character
+  back and forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
   and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the
@@ -192,13 +193,15 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
-- **The company**: eight at most, as a Breach's run is for ([[Breaches]]; every other run holds four), one its leader; a player alone leads their own. A player is
-  invited (the invite stands ten minutes, then is let go), or joins as the leader's privacy allows: Public, anyone;
-  Friends Only (each player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though
-  an invite still stands. The Roster shows the leader's privacy, the one that applies; a member's own applies once they
-  lead. A full company is refused before the player leaves their own, and joining one ends the invites they sent. The
-  leader makes another the leader or removes them; a leader who leaves hands the lead to the longest there. A member
-  away from the game ten minutes leaves it, but never the player asking.
+- **The company**: eight at most, as a Breach's run is for ([[Breaches]]; every other run holds four), one its leader;
+  a player alone leads their own. A player is invited (the invite stands ten minutes, then is let go), or joins as the
+  leader's privacy allows: Public, anyone; Friends Only (each player's first setting), the leader's friends; Invite
+  Only, those invited; Closed, no one, though an invite still stands. The Roster shows the leader's privacy, the one
+  that applies; a member's own applies once they lead. A full company is refused before the player leaves their own, and
+  joining one ends the invites they sent. The leader makes another the leader or removes them, each only while they
+  still lead and the other is still in it as it is written, so one who moved on meanwhile is never taken from their new
+  company; a leader who leaves hands the lead to the longest there. A member away from the game ten minutes leaves it,
+  but never the player asking.
 - **The guild**: a name of 3 to 24 characters, letters and digits starting with a letter, with single spaces, dashes
   or apostrophes between them, none too like another's; a tag of 2 to 4 letters or digits, unique however it is
   typed; and a motto of one line, 80 characters at most, with no control characters or marks that turn the text's

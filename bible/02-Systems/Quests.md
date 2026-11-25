@@ -138,10 +138,11 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
 
 ## On the wire
 
-- **Asks**: 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
+- **Asks**: 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it and never
+  while fallen. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
   the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster, 17 the Postmaster), answered only within reach of
-  that counter; 18 the stranger, answered anywhere in a social space;
-  65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
+  that counter; 18 the stranger, answered anywhere in a social space; 65 chooses a fragment (`column`: the Art's number,
+  `node`: the fragment's place in its Art's list).
 - **Whose word**: the gear message says whether its character is the player's own as their account keeps it
   (`claimed`). A player who sends an input before any token keeps no character, so the one the room holds is theirs
   from then on (`none_kept`), on land as at sea.

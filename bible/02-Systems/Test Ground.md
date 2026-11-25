@@ -59,10 +59,10 @@ it ([[The Player Plays as in DFO]]), the same [[Player]] the [[Game]] plays. It 
 
 ## Playing
 
-The page is one canvas: the view, with a panel either side of it drawn by the game ([[Interface]], "Drawn by the
-game"). The panels scroll under the wheel, and while the mouse is free their controls take Tab, the arrows and Enter,
-and a field takes the keys typed into it. The pad is theirs only while one of their controls has focus or a field is
-typed in, as the game's is a window's; otherwise its stick walks the player.
+The page is one canvas: the view, with a panel either side of it drawn by the game ([[Interface]], "Drawn by the game").
+The panels scroll under the wheel, and while the mouse is free their controls take Tab (never the page's own focus off
+its canvas), the arrows and Enter, and a field takes the keys typed into it. The pad is theirs only while one of their
+controls has focus or a field is typed in, as the game's is a window's; otherwise its stick walks the player.
 
 Click the view to play; Escape frees the mouse. The body moves by the [[Movement]] rules, and the controls are DFO's:
 

@@ -583,7 +583,10 @@ so every decision is Rust and the shell only carries bytes and time.
   player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
-  second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
+  second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. A page sends a
+  room at most two seconds of messages without hearing from it (`UNHEARD_MOST`, 120): past that the player stands and
+  nothing is numbered until the room speaks, so a stalled network that resumes lets through less than a second's
+  budget. Its player
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - A kept player is named in the room by their account's username, which the claim answers (`Room::name_player`, or at
@@ -699,7 +702,8 @@ so every decision is Rust and the shell only carries bytes and time.
   one ([[Accounts]]), and sends each tick's controls, numbered, as the player
   plays, with a respawn when asked and Use held to revive; at sea it sends the ship's course.
 - **Joining again.** When a room's socket closes, for a deploy or a dropped network, `RoomConnection` joins the room
-  again by itself: after 1 s, then 2, 4 and 8 s between tries, 15 s at most, and 1 s again once a join holds. The page
+  again by itself: after 1 s, then 2, 4 and 8 s between tries, 15 s at most, and 1 s again once a join has held a
+  minute (`HELD_MS`), so a room that welcomes the player and soon closes is tried ever more slowly. The page
   says "Reconnecting…" meanwhile, and nothing is sent until the new socket's welcome. A rejoin is a new join: a new
   number, inputs numbered from 1 again, the player standing where the room puts them, their dress sent again and what
   their hands hold kept, and every other figure drawn on from where the new room has it, though its clock starts again.

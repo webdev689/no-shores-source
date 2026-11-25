@@ -32,8 +32,8 @@ Every hull keeps what the Sloop's model holds, at its detail:
 - **Tall bulwarks with gunports**, each gun its own object named `Cannon.Port.N` or `Cannon.Starboard.N`, fore to aft
   ([[Ship Models Live on R2]]).
 - **One deck to walk**, with a raised quarterdeck holding the wheel, a hatch and steps down.
-- **A companionway into the cabin**, the one every ship shares, entered by interacting at its doors, the Sloop's too
-  ([[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]).
+- **A companionway into the cabin**, the one every ship shares, the Sloop's too, its doors modelled to be entered by
+  ([[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]); no ship opens its cabin yet (below).
 - **Made small and scaled up**, as the Sloop stands three times its model ([[The Sloop Is About 18 m Long]]).
 
 ## The hulls
@@ -118,3 +118,4 @@ Left:
 
 - **The ram**: a ram bow that strikes harder than a stem, for the Tithe Ram.
 - **The Fluyt**: not yet modelled.
+- **Entering the cabin**: the cabin is built and furnished in every model, but nothing in the game opens it yet.

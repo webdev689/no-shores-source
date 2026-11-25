@@ -10,8 +10,9 @@ code:
 # Checks
 
 `cargo xtask check` is the one command that says a change is done. CI runs it on every pull request and every push to
-`main`, and on `main` publishes the client to GitHub Pages once it passes and the rooms have deployed or had nothing
-to deploy. It stops at the first failing step, in the order a failure is cheapest to read:
+`main`, and on `main` publishes the client to GitHub Pages and the site once it passes and the rooms have deployed or
+had nothing to deploy, and deploys the Discord bot. It stops at the first failing step, in the order a failure is
+cheapest to read:
 
 1. **messages**: the Rust and the TypeScript for every network message, made from the schema with `flatc`
    (`npm run schema`), into `generated/`. Its first run on a machine installs the pinned `flatc`.
@@ -22,23 +23,25 @@ to deploy. It stops at the first failing step, in the order a failure is cheapes
 5. **shaders**: every shader the client compiles, written out by `npm run shaders` into `target/shaders/` and
    validated as WGSL with naga, the front end wgpu builds on ([[Every Shader Is Checked Offline]]). WebGPU reports a
    shader that fails to compile only as a warning, so this is where a broken one is caught. A shader's code is the
-   constant `createShaderModule({ code: … })` names, exported where it is made: a string, or a record of strings
-   picked by a key; a call naming anything else fails. `cargo xtask shaders` runs this step alone.
+   constant `createShaderModule({ code: … })` names, wherever its key stands, exported where it is made: a string, or
+   a record of strings picked by a key; a call naming anything else, or no `code:` this can read, fails
+   (`tools/shaderCalls.mjs`). `cargo xtask shaders` runs this step alone.
 6. **tests**: `cargo test`, then the world rules, the land, movement and the rooms built as WebAssembly
-   (`npm run wasm`), then `node --test`, whose bridge tests load them.
-7. **build**: the client, with Vite; then the bake cuts every node's window of the land (`npm run bake`), and the
-   server's Cloudflare Worker is bundled with them as a deploy would, without deploying.
+   (`npm run wasm`), then `node --test`, whose bridge tests load them, and the build tools' own (`tools/*.test.mjs`).
+7. **build**: the client, with Vite; the site (`npm run site:build`); then the bake cuts every node's window of the
+   land (`npm run bake`), and the rooms' and the accounts' Cloudflare Workers are bundled with them as a deploy would,
+   without deploying.
 8. **repo checks**, each a pure function with tests beside it:
 
 | Check | Holds | Rule |
 |---|---|---|
 | layout | the top level to the known list; every folder under `crates/` is a crate named after its folder | [[Code Map]] |
 | size | source files to 600 lines, tests (Rust's, `test_*.py`, `*.test.ts` and its kin) to 800 | [[Small Files]] |
-| comments | comments to eight lines, with no dates, issue numbers, ticket tags or `bible/` paths; lines in fenced examples are checked too, and so are Python's docstrings and the comments after its code | [[Comments Say Why]] |
-| layers | client imports follow the declared layers; no Node modules in client code (`fs/promises` is `fs`'s); no WebGL; nothing imports an entry point (`main.ts`, `gameWorker.ts`, `editorPage.ts`) but another, as the page names the game's worker. It reads `import` and `export … from` in every form, backtick imports, `new URL(…, import.meta.url)` and `import.meta.glob` | [[Code Map]], [[WebGPU Only]] |
-| html | a client page holds its head, one canvas and one module script loaded from its file (one, no more): no other element, no words but its title, no script written in the page, no `on…` handler or `style` attribute, no stylesheet linked or preloaded (`rel` and `as` read in any case or quote), and a `<style>` only for `html`, `body`, `:root` and the canvas's own id; no stylesheet in the client (`.css`, `.scss`, `.sass`, `.less` or `.styl`, in any case); no client script makes an element, puts one or words into the page, writes HTML, styles an element, brings in a stylesheet (any import of one, but a `?raw` read as text) or names an element but the canvas, in any spelling (`document['createElement']`, a space before the bracket, strings joined by `+`), and `.append(` or `.prepend(` only on a name its file gives nothing but what `new` makes, or on a URL's `searchParams`. Free of it: the page's bridge in `ui/` (`canvasEvents.ts`, which sets the canvas's cursor; `pictures.ts`, which decodes SVG through an image it never shows; `page.ts`, which holds the page's touches, borrows a link and a file input for a moment and writes the words that say the game could not start), and the tests and their `…ForTests.ts` aids while nothing but tests reaches them | [[The Interface Uses No HTML, Now or Later]] |
+| comments | comments to eight lines, with no dates (numbered, or with a month's name before or after the day), issue numbers (after `#`, `PR` or `issue`), ticket tags or `bible/` paths; lines in fenced examples are checked too, and so are Python's docstrings (raw ones, and one after a one-line `def` or `class`) and the comments after its code | [[Comments Say Why]] |
+| layers | client imports follow the declared layers; no Node modules in client code (`fs/promises` is `fs`'s); no WebGL; nothing imports an entry point (`main.ts`, `gameWorker.ts`, `editorPage.ts`, `testground/testgroundMain.ts`) but another, as the page names the game's worker. It reads `import` and `export … from` in every form, backtick imports, `new URL(…, import.meta.url)` and `import.meta.glob`, and a file named as the JavaScript it becomes (`./main.js`) as its TypeScript | [[Code Map]], [[WebGPU Only]] |
+| html | a client page holds its head, one canvas and one module script loaded from its file (one, no more): no other element, no words but its title, no script written in the page, no `on…` handler or `style` attribute, no stylesheet linked or preloaded (`rel` and `as` read in any case or quote), and a `<style>` only for `html`, `body`, `:root` and the canvas's own id, no rule nested in theirs (a title, style or script read as text to its own end tag, HTML's comment marks in a style read as CSS); no stylesheet in the client (`.css`, `.scss`, `.sass`, `.less` or `.styl`, in any case); no client script makes an element, puts one or words into the page, writes HTML, styles an element, brings in a stylesheet (any import of one, but a `?raw` read as text) or names an element but the canvas, in any spelling (`document['createElement']`, a space before the bracket, strings joined by `+`, `textContent` or `className` named without its dot), and `.append(` or `.prepend(` only on a name its file gives nothing but what `new` makes, or on a URL's `searchParams`. Free of it: the page's bridge in `ui/` (`canvasEvents.ts`, which sets the canvas's cursor; `pictures.ts`, which decodes SVG through an image it never shows; `page.ts`, which holds the page's touches, borrows a link and a file input for a moment and writes the words that say the game could not start), and the tests and their `…ForTests.ts` aids while nothing but tests reaches them | [[The Interface Uses No HTML, Now or Later]] |
 | crates | every crate is declared, takes the workspace's lints, and depends only on the crates its rule allows, read by real package name through renames and per-platform tables; any attribute naming `unsafe_code` outside a door crate is refused | [[Code Map]] |
-| assets | no file over 1 MB; media only in `bible/Attachments/`, and no WebAssembly or ship mesh anywhere | [[Generated Files Stay Out of Git]] |
+| assets | no file over 1 MB; media only in `bible/Attachments/`, and no WebAssembly, ship mesh, module pack (`.modules`) or binary bake (`.bin`) anywhere, the attachments too | [[Generated Files Stay Out of Git]] |
 | vault | every wikilink resolves; every `code:` path exists and, in Rust, a script or Python, defines its symbol (after `fn`, `const`, `class` and the like, or as a field, variant, property or method), never only names it in an import, a `use`, a comment or a call; in any other file, names it | [[Notes Say How It Works Now]] |
 | versions | every `.sql` file in a `migrations/` folder is named by its UTC timestamp to the second and what it does | [[Versions Are Not Counters]] |
 | dialogue | every scene in `content/story/`: 14 words a line, 4 a bark, 2 lines a speaker in a row, 8 lines a scene, no dash or ellipsis, every speaker in the cast with a voice the speech system can read; and `content/quests/quests.json`, whose every named scene is the story's, every speaker the cast's and every word on the screen free of a dash or an ellipsis ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and whose seams (a `begin` into the first task's `start`, a task's `end` into the next's `start`) hold 2 lines a speaker in a row ([[The Dialogue Check Holds Two Lines a Turn Across a Quest's Seams]]) | [[Dialogue]] |
