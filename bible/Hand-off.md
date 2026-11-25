@@ -219,7 +219,21 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+- **Foe arrivals** (#211, a draft on branch `ccr-9e470c58-pm6nyz`, waiting on the owner's yes to merge), on the
+  owner's "some enemies are already on the ground, while others come in from a dropship or spawn effect", the Grey
+  Tithe's airships ("Large modified vessels retrofitted with combustible thrusters") and the Lattice's "crystallized
+  structure that appears, as the enemies spawn below", with patrol groups varied and "present moreso"
+  ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]); every call in
+  [[Foe Arrivals as Claude Builds Them]], how it works in [[Enemies]] ("Arrivals"), [[Lattice]] and [[Modules]]. The
+  airship and the crown are Blender modules (`tools/modules/airship.py`, `crown.py`), published to R2 by the modules
+  workflow on the branch's pushes. Three read-only audits' 39 points are fixed, each with a test that fails on the code
+  before it, or answered in the pull request. Tested offline: every check on the merged head (`ab7a3244`); a walk of
+  each Saltmere zone's resources for 300 s brings four or five ships and meets 24 to 27 foes (main: none, 9 to 15);
+  the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the raid's
+  first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in
+  the game ([[Open Questions]], "Foe arrivals"); the door test's scripted pair loses the heroic raid's last wave,
+  pinned as it is.
+- **The codebase audit** (#209, merged), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
   `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
@@ -236,7 +250,7 @@ The decisions in [[Open Questions]] are not repeated here.
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
   ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
-- **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
+- **The desktop app** (#210, merged), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
   reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
   [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
