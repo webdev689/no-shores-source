@@ -28,7 +28,7 @@ struct Run {
 }
 
 /// Where the run over a whaleback of the Saltgrass Downs starts, and the bearing it runs on, across the whaleback.
-const OVER_A_WHALEBACK: ([f64; 2], f64) = ([2_807_147.0, 1_208_048.0], 1.87);
+const OVER_A_WHALEBACK: ([f64; 2], f64) = ([2_807_131.0, 1_207_162.0], 3.11);
 
 const RUNS: [Run; 4] = [
     // Across the plaza into its parapet; vault it onto the terrace beyond; jump; run east along the terrace.
@@ -49,7 +49,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-6",
         node: "emerald-tangle",
-        bounds: [489_198.0, 2_279_225.0, 490_895.5, 2_280_145.0],
+        bounds: [489_114.5, 2_279_164.5, 490_901.0, 2_280_862.5],
         from: None,
         script: &[
             (600, 1.0, 0.0, 0.0, true, false),
@@ -62,7 +62,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-1",
         node: "saltgrass-downs",
-        bounds: [2_806_393.0, 1_206_366.0, 2_807_981.5, 1_208_300.0],
+        bounds: [2_806_220.5, 1_206_595.5, 2_807_981.5, 1_208_284.5],
         from: None,
         script: &[
             (900, 1.0, 0.0, PI * 1.5, true, false),
@@ -75,7 +75,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-1",
         node: "saltgrass-downs",
-        bounds: [2_806_393.0, 1_206_366.0, 2_807_981.5, 1_208_300.0],
+        bounds: [2_806_220.5, 1_206_595.5, 2_807_981.5, 1_208_284.5],
         from: Some(OVER_A_WHALEBACK.0),
         script: &[(600, 1.0, 0.0, OVER_A_WHALEBACK.1, true, false)],
     },

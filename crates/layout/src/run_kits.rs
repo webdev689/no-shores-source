@@ -59,12 +59,30 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     door(kit, run, carved);
     let ground: Vec<f64> =
         kit.into.solids[first..].iter().map(|solid| carved_at(kit, carved, [solid.at[0], solid.at[1]])).collect();
+    let built = &kit.into.solids[first..];
+    let mut gone: Vec<bool> = built.iter().zip(&ground).map(|(solid, &floor)| blocks(run, solid, floor)).collect();
+    // What stood only on a piece left out (a merlon on a wall's end) goes with it, or it would hang in the air.
+    let boxes: Vec<[f64; 6]> = built.iter().map(Solid::bounds).collect();
+    let rests_on = |upper: &[f64; 6], lower: &[f64; 6]| {
+        (upper[4] - lower[5]).abs() < 0.05
+            && upper[0] < lower[2]
+            && lower[0] < upper[2]
+            && upper[1] < lower[3]
+            && lower[1] < upper[3]
+    };
+    let unheld: Vec<usize> = (0..boxes.len())
+        .filter(|&upper| {
+            !gone[upper]
+                && (0..boxes.len()).any(|lower| gone[lower] && rests_on(&boxes[upper], &boxes[lower]))
+                && !(0..boxes.len()).any(|lower| !gone[lower] && rests_on(&boxes[upper], &boxes[lower]))
+        })
+        .collect();
+    unheld.into_iter().for_each(|upper| gone[upper] = true);
     let mut index = 0;
-    kit.into.solids.retain(|solid| {
-        let built = index >= first;
-        let floor = if built { ground[index - first] } else { 0.0 };
+    kit.into.solids.retain(|_| {
+        let left = index >= first && gone[index - first];
         index += 1;
-        !built || !blocks(run, solid, floor)
+        !left
     });
     crate::run_climbs::build(kit, run, carved);
     // Its own loose rock (cover's boulders, a stump's fallen courses) keeps off the rest of what it built.

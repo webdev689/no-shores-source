@@ -1,7 +1,8 @@
 //! The Gullwing Vale's handcrafted modules (tools/modules) as the bake lays them, walked by the movement rules: up the
 //! Old Stones' flights onto their upper tier, from the coven through the tunnel's mouth into the cavern and up the chamber's steps onto its shelf,
 //! through the citadel's gate to its ward and its wall-walk, and over every stone bridge; and up every ledge's cliff
-//! stair of Saltmere's three zones to the high place.
+//! stair of Saltmere's zone and the two cut from it to the high place. The Vale and the Moors are cut from Saltmere
+//! and laid back by the tests alone (`support/cut_zones.rs`), for the modules only they stand.
 
 use city::solids::{Shape, Solid};
 use movement::terrain::Terrain;
@@ -9,6 +10,9 @@ use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
 use std::sync::OnceLock;
+
+#[path = "support/cut_zones.rs"]
+mod cut_zones;
 
 /// How near a waypoint a body counts as there, metres.
 const THERE_M: f64 = 1.2;
@@ -20,18 +24,26 @@ struct Vale {
     map: layout::spaces::Map,
 }
 
-/// Continent 1's layouts and node files as the bake makes them, once for every test.
-fn laid_one() -> &'static (Vec<layout::Layout>, Vec<bake::NodeFile>) {
-    static LAID: OnceLock<(Vec<layout::Layout>, Vec<bake::NodeFile>)> = OnceLock::new();
-    LAID.get_or_init(|| {
+type Laid = (Vec<layout::Layout>, Vec<bake::NodeFile>);
+
+/// Continent 1's layouts and node files as the bake makes them, once for every test, with the cut zones laid back
+/// or not.
+fn laid_one(cut: bool) -> &'static Laid {
+    static LAID: OnceLock<Laid> = OnceLock::new();
+    static CUT: OnceLock<Laid> = OnceLock::new();
+    (if cut { &CUT } else { &LAID }).get_or_init(|| {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let read =
             |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
         let id = "continent-1";
         let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
         let continent = layout.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
-        let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
-        let builders = bake::builders(&root).expect("the builders read");
+        let text = read(&format!("content/world/land/{id}.json"));
+        let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("the edits parse");
+        let mut builders = bake::builders(&root).expect("the builders read");
+        if cut {
+            cut_zones::briefs(&mut builders.briefs);
+        }
         let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
         let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("the continent generates");
         city::settle(&mut landmass, &city).expect("its city settles");
@@ -43,7 +55,7 @@ fn laid_one() -> &'static (Vec<layout::Layout>, Vec<bake::NodeFile>) {
 
 /// A zone of Saltmere as laid and baked: its ground, its boxes, its solids and its map.
 fn zone(id: &str) -> Vale {
-    let (layouts, nodes) = laid_one();
+    let (layouts, nodes) = laid_one(cut_zones::CUT.contains(&id));
     let laid = layouts.iter().find(|laid| laid.id == id).expect("the zone lays out");
     let node = nodes.iter().find(|node| node.id == laid.id).expect("the node bakes");
     Vale {

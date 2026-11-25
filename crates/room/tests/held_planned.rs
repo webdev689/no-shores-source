@@ -1,4 +1,5 @@
-//! Nothing in Saltmere's three zones hangs in the air: every solid is held by the carved ground, by what it rests on,
+//! Nothing in Saltmere's zone, nor in the two cut from it and laid back by the tests (`support/cut_zones.rs`), hangs in
+//! the air: every solid is held by the carved ground, by what it rests on,
 //! by what it hangs from if it is small, or as a thin deck laid on from another that is held.
 
 use land::ground::Ground;
@@ -6,20 +7,28 @@ use layout::Layout;
 use std::path::Path;
 use std::sync::OnceLock;
 
+#[path = "support/cut_zones.rs"]
+mod cut_zones;
+
 const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
 
-/// Continent 1's layouts as the bake settles them, and its ground as they leave it.
-fn laid_one() -> &'static (Vec<Layout>, Ground) {
+/// Continent 1's layouts as the bake settles them, the cut zones laid back or not, and its ground as they leave it.
+fn laid_one(cut: bool) -> &'static (Vec<Layout>, Ground) {
     static LAID: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
-    LAID.get_or_init(|| {
+    static CUT: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
+    (if cut { &CUT } else { &LAID }).get_or_init(|| {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let read =
             |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
         let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
         let continent =
             world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
-        let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
-        let builders = bake::builders(&root).expect("the builders read");
+        let text = read("content/world/land/continent-1.json");
+        let edits = land::edits::parse(&if cut { cut_zones::edits(&text) } else { text }).expect("the edits parse");
+        let mut builders = bake::builders(&root).expect("the builders read");
+        if cut {
+            cut_zones::briefs(&mut builders.briefs);
+        }
         let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
         let mut landmass = land::landmass::generate(&continent, edits).expect("continent-1 generates");
         city::settle(&mut landmass, &city).expect("its city settles");
@@ -28,8 +37,10 @@ fn laid_one() -> &'static (Vec<Layout>, Ground) {
     })
 }
 
-fn zone(id: &str) -> &'static Layout {
-    laid_one().0.iter().find(|laid| laid.id == id).expect("the zone lays out")
+/// A zone as laid, and its ground.
+fn zone(id: &str) -> (&'static Layout, &'static Ground) {
+    let (layouts, ground) = laid_one(cut_zones::CUT.contains(&id));
+    (layouts.iter().find(|laid| laid.id == id).expect("the zone lays out"), ground)
 }
 
 /// Each of a zone's solids that nothing holds up: held is what the carved ground reaches under its footprint, what
@@ -114,7 +125,12 @@ fn hanging(laid: &Layout, ground: &Ground) -> Vec<String> {
 
 #[test]
 fn nothing_in_saltmere_hangs_in_the_air() {
-    let ground = &laid_one().1;
-    let hung: Vec<String> = ZONES.iter().flat_map(|id| hanging(zone(id), ground)).collect();
+    let hung: Vec<String> = ZONES
+        .iter()
+        .flat_map(|id| {
+            let (laid, ground) = zone(id);
+            hanging(laid, ground)
+        })
+        .collect();
     assert!(hung.is_empty(), "{} hang: {hung:#?}", hung.len());
 }

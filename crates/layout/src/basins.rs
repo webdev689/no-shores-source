@@ -38,6 +38,8 @@ const PLATFORM_ROOM_M: f64 = 6.0;
 /// A ramp's half-width, metres, and how steep it rises at most, a rise a metre, where the massif's level stands
 /// highest (the highland's at its roughest, `TALLEST_LEVEL_M`): lower massifs' ramps are gentler.
 pub(crate) const RAMP_HALF_M: f64 = 4.5;
+/// How near two ramps' bearings run (the cosine of the angle between them) for one to serve the way the other climbs.
+const SAME_WAY: f64 = 0.9;
 pub const RAMP_STEEPEST: f64 = 0.25;
 pub(crate) const TALLEST_LEVEL_M: f64 = 44.0;
 /// How far a terrace's edge runs from its level down to the floor, metres, as the land crate cuts a climb's.
@@ -354,18 +356,27 @@ fn platform(
         let length = distance(from, to).max(1e-9);
         [(to[0] - from[0]) / length, (to[1] - from[1]) / length]
     };
-    // A ramp from `run` metres out along `out` up to just inside the edge at `edge`, unless one already lies along
-    // it, its top and its foot each within a ramp's half-width: ways leaving the edge together that part within a
-    // ramp's run each climb their own, or one would step off the side of the other's.
-    let ramp = |terraces: &mut Vec<[f64; 7]>, edge: [f64; 2], out: [f64; 2]| {
-        let foot = [edge[0] + out[0] * run, edge[1] + out[1] * run];
+    // A ramp from `run` metres out along `out` up to just inside the edge at `edge`, unless one already arrives there
+    // along the same way (`ahead`, the way's point a ramp's run on, lying on it): two ways meeting the edge side by
+    // side from different bearings each climb their own, and so do two that leave it together and part within a
+    // ramp's run, the second down toward where it goes, or it would step off the side of the first's.
+    let ramp = |terraces: &mut Vec<[f64; 7]>, edge: [f64; 2], out: [f64; 2], ahead: [f64; 2]| {
         let top = [edge[0] - out[0] * 2.0, edge[1] - out[1] * 2.0];
-        let served = terraces[1..].iter().any(|other| {
-            distance([other[2], other[3]], top) <= RAMP_HALF_M && distance([other[0], other[1]], foot) <= RAMP_HALF_M
-        });
-        if !served {
-            terraces.push([foot[0], foot[1], top[0], top[1], RAMP_HALF_M, 0.0, share]);
+        let mut parted = false;
+        for other in &terraces[1..] {
+            let along = unit([other[0], other[1]], [other[2], other[3]]);
+            if distance([other[2], other[3]], top) <= 2.0 * RAMP_HALF_M
+                && -(along[0] * out[0] + along[1] * out[1]) >= SAME_WAY
+            {
+                if off_line(ahead, [other[0], other[1]], [other[2], other[3]]) <= RAMP_HALF_M {
+                    return;
+                }
+                parted = true;
+            }
         }
+        let out = if parted { unit(edge, ahead) } else { out };
+        let foot = [edge[0] + out[0] * run, edge[1] + out[1] * run];
+        terraces.push([foot[0], foot[1], top[0], top[1], RAMP_HALF_M, 0.0, share]);
     };
     for path in paths {
         for (number, pair) in path.points.windows(2).enumerate() {
@@ -383,15 +394,16 @@ fn platform(
             let rest = from[0] * from[0] + from[1] * from[1] - half * half;
             let share_of = (-along + (along * along - square * rest).max(0.0).sqrt()) / square.max(1e-9);
             let edge = [inside[0] + span[0] * share_of, inside[1] + span[1] * share_of];
-            // Down toward where the way stands a ramp's run on, so the ramp follows the way as it bends.
-            let toward = run_along(edge, &onward, run).unwrap_or(outside);
-            ramp(&mut terraces, edge, unit(edge, toward));
+            let out = unit(inside, outside);
+            let ahead = run_along(edge, &onward, run).unwrap_or([edge[0] + out[0] * run, edge[1] + out[1] * run]);
+            ramp(&mut terraces, edge, out, ahead);
         }
         for end in [path.points.first(), path.points.last()].into_iter().flatten() {
             let off = distance(*end, middle);
             if off > half && off <= half + run {
                 let out = unit(middle, *end);
-                ramp(&mut terraces, [middle[0] + out[0] * half, middle[1] + out[1] * half], out);
+                let edge = [middle[0] + out[0] * half, middle[1] + out[1] * half];
+                ramp(&mut terraces, edge, out, [edge[0] + out[0] * run, edge[1] + out[1] * run]);
             }
         }
     }
@@ -407,7 +419,8 @@ fn platform(
             },
             |at| unit(middle, at),
         );
-        ramp(&mut terraces, [middle[0] + out[0] * half, middle[1] + out[1] * half], out);
+        let edge = [middle[0] + out[0] * half, middle[1] + out[1] * half];
+        ramp(&mut terraces, edge, out, [edge[0] + out[0] * run, edge[1] + out[1] * run]);
     }
     terraces
 }
