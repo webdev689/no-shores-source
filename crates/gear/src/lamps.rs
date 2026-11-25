@@ -10,7 +10,7 @@ use crate::dice::{Dice, Purpose};
 use crate::kinds::Stock;
 use crate::objectives::{Deed, Feat};
 use crate::refusal::Refusal;
-use crate::rewards::{Clear, Foe, worth};
+use crate::rewards::{Foe, worth};
 use crate::source::Source;
 use crate::vestige::{self, colours, of_colours};
 use crate::world::Difficulty;
@@ -27,10 +27,15 @@ pub enum Cache {
     Lamp(u8),
 }
 
-/// A skirmish's and a lamp's cache at level 5, XP then Aurem; a mission's and a vault's are a mission's and a
-/// dungeon's clear (`rewards::Clear`).
-pub const SKIRMISH_PAY: (u32, u32) = (300, 22);
-pub const LAMP_PAY: (u32, u32) = (600, 45);
+/// Each deal's cache at level 5, XP then Aurem. A passage zone holds some eighteen foes and takes one player about ten
+/// minutes (`band::PASSAGE_FOES`), its foes a little under a player who plays its depth for its pay, so its cache
+/// stands in for a patrol zone's public events and keeps an hour in the passages inside the band (`band`).
+pub const SKIRMISH_PAY: (u32, u32) = (1_200, 90);
+pub const MISSION_PAY: (u32, u32) = (1_600, 120);
+pub const VAULT_PAY: (u32, u32) = (2_400, 180);
+pub const VEIN_PAY: (u32, u32) = (600, 45);
+pub const RELIQUARY_PAY: (u32, u32) = (600, 45);
+pub const LAMP_PAY: (u32, u32) = (2_400, 180);
 /// A skirmish's and a mission's chance of a Vestige, before depth raises it.
 pub const SKIRMISH_VESTIGE: f64 = 1.0 / 3.0;
 pub const MISSION_VESTIGE: f64 = 0.5;
@@ -54,10 +59,10 @@ pub struct Zone<'a> {
     pub level: u8,
 }
 
-/// What a cache's XP and Aurem are times at a depth (`passage::cache_pay`): 1 at the first, 1.5 at the twentieth.
+/// What a cache's XP and Aurem are times at a depth (`passage::cache_pay`): 1 at the first, 1.25 at the twentieth.
 #[must_use]
 pub fn pay_times(depth: u8) -> f64 {
-    1.0 + f64::from(depth.clamp(1, 20) - 1) / 38.0
+    1.0 + f64::from(depth.clamp(1, 20) - 1) / 76.0
 }
 
 /// What its chances of finds are times (`passage::cache_finds`): 1 at the first, 2 at the twentieth.
@@ -84,10 +89,10 @@ impl Character {
         let (pays, finds) = (pay_times(at.depth), find_times(at.depth));
         let (worth, vestige, rank) = match cache {
             Cache::Skirmish => (SKIRMISH_PAY, SKIRMISH_VESTIGE, ELITE),
-            Cache::Mission => (Clear::Mission.worth(), MISSION_VESTIGE, ELITE),
-            Cache::Vault => (Clear::Dungeon.worth(), vestige::chance(MINIBOSS), MINIBOSS),
-            Cache::Vein => ((0, 0), 0.0, ELITE),
-            Cache::Reliquary => ((0, 0), 1.0, ELITE),
+            Cache::Mission => (MISSION_PAY, MISSION_VESTIGE, ELITE),
+            Cache::Vault => (VAULT_PAY, vestige::chance(MINIBOSS), MINIBOSS),
+            Cache::Vein => (VEIN_PAY, 0.0, ELITE),
+            Cache::Reliquary => (RELIQUARY_PAY, 1.0, ELITE),
             Cache::Lamp(_) => (LAMP_PAY, 1.0, ELITE),
         };
         let raised = |amount: u32| libm::round(f64::from(amount) * pays) as u32;

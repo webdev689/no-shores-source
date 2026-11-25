@@ -20,14 +20,14 @@ fn dice(seed: u64) -> Dice {
 
 #[test]
 fn a_caches_pay_and_finds_grow_with_depth_as_the_design_says() {
-    assert_eq!((pay_times(1), pay_times(20)), (1.0, 1.5));
+    assert_eq!((pay_times(1), pay_times(20)), (1.0, 1.25));
     assert_eq!((find_times(1), find_times(20)), (1.0, 2.0));
     assert!((pay_times(11) - passage_like(11)).abs() < 1e-12);
 }
 
 /// The passage crate's own sum, written out: the gear keeps its table without depending on the passages' crate.
 fn passage_like(depth: u8) -> f64 {
-    1.0 + f64::from(depth - 1) / 38.0
+    1.0 + f64::from(depth - 1) / 76.0
 }
 
 #[test]
@@ -35,7 +35,7 @@ fn a_cache_pays_once_a_dive_and_its_finds_go_into_the_haul() {
     let mut character = diving();
     let (xp, aurem) = (character.xp, character.materials.aurem);
     assert!(character.pay_cache(zone(1), Cache::Reliquary, Difficulty::Normal, Source::Dungeon, &dice(1)));
-    assert!(character.xp == xp && character.materials.aurem == aurem, "a reliquary pays no XP or Aurem");
+    assert!(character.xp > xp && character.materials.aurem > aurem, "a reliquary pays its XP and Aurem");
     let haul = &character.passage.as_ref().expect("diving").haul;
     let fragments = haul.materials.fragments(Stock::Weapon) + haul.materials.fragments(Stock::Armor);
     assert!((2..=5).contains(&fragments), "{fragments}");
@@ -51,7 +51,7 @@ fn a_deeper_skirmish_pays_more() {
         character.xp
     };
     assert!(paid(20) > paid(1));
-    assert_eq!(paid(1), u64::from(crate::rewards::at_level(300, 10)));
+    assert_eq!(paid(1), u64::from(crate::rewards::at_level(crate::lamps::SKIRMISH_PAY.0, 10)));
 }
 
 #[test]
