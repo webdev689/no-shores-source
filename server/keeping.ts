@@ -114,6 +114,10 @@ export class Keeper {
   /** Whether a character that came from a room, kept as it was claimed, may arrive here by a way that needs no one
    *  here (`arrival.ts`); null where the room judges no arrival. */
   private arrives: ((from: string | null, body: string | null) => boolean) | null = null;
+  /** A gate the room keeps shut until another room says otherwise: why it is shut, '' once open. */
+  private gate: (() => Promise<string>) | null = null;
+  /** Whether a player came by another way the accounts must say: launched for a Breach's run at its gate here. */
+  private launchedHere: ((player: number, account: string) => Promise<boolean>) | null = null;
   /** The accounts a run has let in, for as long as it lives: one back after the rest left a while finds it theirs. */
   private readonly admitted = new Set<string>();
   /** At a guild's outpost, its guild's key, and the accounts found to be its members. */
@@ -154,6 +158,20 @@ export class Keeper {
    *  player sent away saying so, unless one of their company plays here (the Roster's join brings them in). */
   judgingArrivals(arrives: (from: string | null, body: string | null) => boolean): this {
     this.arrives = arrives;
+    return this;
+  }
+
+  /** Keeps a gate: a character is let in only once `shut` says '' (a Breach's run, once its gate's zone says its
+   *  company woke it), and any other is let go untouched with its words. */
+  behindGate(shut: () => Promise<string>): this {
+    this.gate = shut;
+    return this;
+  }
+
+  /** Lets in a character come by no way leading here that `launched` says came for a run started here: a Breach's,
+   *  whose company is launched to its gate from wherever they are. */
+  arrivingLaunched(launched: (player: number, account: string) => Promise<boolean>): this {
+    this.launchedHere = launched;
     return this;
   }
 
@@ -299,7 +317,7 @@ export class Keeper {
   }
 
   /** Why this room turns a character away ('' when it lets it in): its gate, in a run its four accounts and its
-   *  company, and where it came from; undefined when the accounts cannot say who the company is. Nothing waits
+   *  company, its gate, and where it came from; undefined when the accounts cannot say who the company is. Nothing waits
    *  between this and keeping it. */
   private async judged(
     player: number,
@@ -314,19 +332,28 @@ export class Keeper {
     const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
     const full = this.company ? runFull(this.name, others.size + 1) : null;
     // A playlist's run is the server's: its first player must be one the server drew it for (`finding.ts`).
+    const named = nodeRoom(this.name.slice('node-'.length));
     const drawn =
-      this.admitted.size === 0 && characters && (nodeRoom(this.name.slice('node-'.length))?.playlist ?? null) !== null
+      this.admitted.size === 0 && characters && ((named?.playlist ?? null) !== null || (named?.breach ?? null) !== null)
         ? await this.tried(() => characters.launched(account, this.name), here)
         : true;
     if (drawn === undefined) return undefined;
     const outsider = await this.outsider(account, here);
     if (outsider === undefined) return undefined;
+    const gate = this.gate;
+    const gated = gate ? await this.tried(gate, here) : '';
+    if (gated === undefined) return undefined;
     const shut =
       this.room.shut(player, body) ||
       (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : '')) ||
       (drawn ? '' : FROM_THE_PLAYLIST) ||
-      (outsider ? ANOTHER_GUILD : '');
+      (outsider ? ANOTHER_GUILD : '') ||
+      gated;
     if (shut !== '' || !characters || !this.arrives || this.arrives(from, body)) return shut;
+    const launchedHere = this.launchedHere;
+    const launched = launchedHere ? await this.tried(() => launchedHere(player, account), here) : false;
+    if (launched === undefined) return undefined;
+    if (launched) return '';
     // Come by no way that leads here, a player may still join one of their company who plays here.
     const company = companions ?? (await this.tried(() => characters.companions(account, this.name), here));
     if (company === undefined) return undefined;

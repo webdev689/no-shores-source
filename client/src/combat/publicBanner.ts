@@ -36,6 +36,22 @@ export interface Banner {
 /** A beat of the event the banner slides in afresh for. */
 export type BannerBeat = 'begun' | 'stage' | 'heroic' | 'missed' | 'won' | 'failed' | 'chance' | 'soon';
 
+/** The Drowned Vale's encounters that fight, each with a song of its own. */
+export type BreachSong = 'waking' | 'mending' | 'choir' | 'ways' | 'shores';
+/** A Breach as the music hears it: whether the player is in its run (else at its gate, the Waking held by their
+ *  company), the song of the encounter under way or of the space they stand in, the great foe awake (its own score),
+ *  and the calm piece the space they stand in plays. */
+export interface HeardBreach {
+  readonly run: boolean;
+  readonly song: BreachSong | null;
+  readonly boss: 'scrivener' | 'steward' | null;
+  readonly piece: number;
+  /** The least mood it holds the player to: the Ways' peak while a Watcher has seen the company. */
+  readonly least?: 'peak';
+  /** The encounter this frame's moment (begun, won, wiped) is of, by its number, or the Breach cleared. */
+  readonly moment?: number | 'cleared';
+}
+
 /** What the display shows of the zone's public event this frame: its banner and the beat it slides in for, the
  *  places the compass marks, each store's health over it while a raid runs (struck: under attack), the least mood it
  *  holds the music to, and an Elite Dungeon's Court the part its Boss's score plays (by its wards broken). */
@@ -50,6 +66,8 @@ export interface PublicShown {
   }[];
   readonly mood?: 'tension' | 'peak' | null;
   readonly part?: number;
+  /** A Breach as the music hears it (`hearBreach`): its run, or its gate while the player's company holds it. */
+  readonly breach?: HeardBreach | null;
   /** A raid's call over the middle of the view as its mechanic is shown (an Elite Dungeon's slam or Reckoning). */
   readonly call?: string | null;
   /** Foul water that harms at the player's feet (an Ascent's drowned floor while its seal runs): 'harmed' on the frame

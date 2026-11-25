@@ -34,6 +34,7 @@ use wire::overlook::wire as messages;
 pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/messages/rust/version.rs"));
 
 mod bounty_wire;
+pub mod breach_wire;
 pub mod encounter_wire;
 mod finds_wire;
 pub mod fleet;

@@ -78,7 +78,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
             solids.extend(blocks.iter().map(|pad| Block { top: pad.top.max(agent.height), ..*pad }));
             NavMesh::bake_anchored(&solids, ground.grid(), bounds, &agent, anchor)
         }
-        Floor::Flat | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => {
+        Floor::Flat | Floor::Dark | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => {
             NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor)
         }
     }

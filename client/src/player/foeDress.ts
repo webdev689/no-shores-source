@@ -184,10 +184,15 @@ const CLOTHES: Readonly<Record<number, Clothes>> = {
     { shirt_long_v: 'Grey', breeches: 'DarkBrown', formal_tunic: 'DarkBrown', formal_cloak: 'Grey' },
     { style: 'crop', colour: 'black' },
   ),
+  // The Drowned Vale's Bosses wear the Lattice's own bodies until their own art is drawn: the Scrivener shoots, as
+  // the Idol does; the Steward is the Breach's last Boss, as the Heart is the Fissure's. A Bell (46) is no figure:
+  // its crystal is drawn where it stands (`breachView.ts`).
+  47: lattice('idol', { breeches: 'Grey' }, ['emitter']),
+  48: lattice('heart', {}, ['fused', 'core', 'anchor', 'torn']),
 };
 
 /** A type's dress: its own clothes, with the weapons the rules' roster puts in its hands drawn. Null for a type with
- *  no clothes here. */
+ *  no clothes here, and for a Bell, which stands as a crystal and no figure. */
 export function foeDress(type: FoeType): Dress | null {
   const own = CLOTHES[type.type];
   if (!own) return null;

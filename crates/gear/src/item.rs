@@ -36,6 +36,9 @@ pub struct Item {
     /// A Breach's armour piece or weapon: its perk columns roll from the Breaches' own perks, and a Legendary armour
     /// piece's upgrades climb further in Prestige.
     pub breach: bool,
+    /// A Breach's piece won at Hard: its armour climbs to the most Prestige, a Normal one's short of it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub hard: bool,
     pub xp: u32,
     /// The nodes bought, one bit each, column after column.
     pub bought: u32,
@@ -71,6 +74,7 @@ impl Item {
             layout: Vec::new(),
             resource: None,
             breach: false,
+            hard: false,
             xp: 0,
             bought: 0,
             chosen: Vec::new(),
@@ -177,6 +181,14 @@ impl Item {
         self.layout.get(place).map_or(&[], Vec::as_slice)
     }
 
+    /// Whether it gives a trait at its Forged grade: a Breach's perk, on a Breach's piece won at Hard.
+    #[must_use]
+    pub fn forges(&self, id: &str) -> bool {
+        self.breach
+            && self.hard
+            && crate::catalogue::catalogue().traits.iter().any(|found| found.breach && found.id == id)
+    }
+
     /// The traits it gives while worn: an Atheric's intrinsic, and the one chosen in each trait column, if bought and
     /// if it fits the item as a roll would offer it (a kept piece's node whose trait does not fit it is given back as
     /// it is read).
@@ -229,8 +241,9 @@ impl Item {
     }
 
     /// Its Prestige, if it is armour or a ship's module of level 20: a Rare 13 to 15, a Legendary 18 to 27 (a
-    /// Breach's to 30), an Atheric 21 to 30, climbing by equal steps over its upgrades, however many its grid holds,
-    /// so a module on a weapon's grid (the guns, five upgrades) carries no more than one on armour's (three).
+    /// Breach's at Normal 19 to 28, at Hard 21 to 30), an Atheric 21 to 30, climbing by equal steps over its upgrades,
+    /// however many its grid holds, so a module on a weapon's grid (the guns, five upgrades) carries no more than one
+    /// on armour's (three).
     #[must_use]
     pub fn prestige(&self) -> u32 {
         if !self.kind.carries_prestige() {
@@ -238,7 +251,14 @@ impl Item {
         }
         let (start, most) = match self.rarity {
             Rarity::Rare if self.level >= NAMED_LEVEL => (13, 15),
-            Rarity::Legendary => (18, if self.breach { 30 } else { 27 }),
+            Rarity::Legendary if self.breach => {
+                if self.hard {
+                    (21, 30)
+                } else {
+                    (19, 28)
+                }
+            }
+            Rarity::Legendary => (18, 27),
             Rarity::Atheric => (21, 30),
             _ => return 0,
         };

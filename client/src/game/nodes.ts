@@ -3,6 +3,10 @@ import { type NodeInfo, ringMiddle } from './worldData.ts';
 
 type Point = readonly [number, number];
 
+/** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
+ *  look round the world. */
+export const FIRST_NODE = 'overlook-social';
+
 /** A rect of the world: west, north, east and south, metres. */
 export type Rect = readonly [number, number, number, number];
 

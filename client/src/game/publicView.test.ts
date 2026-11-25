@@ -1,12 +1,19 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import bank from '../../../content/audio/sounds.json' with { type: 'json' };
+import { moduleNumber } from '../city/modules.ts';
 import { EVENT } from '../combat/cues.ts';
 import { ASKS, DROPPED, type GearAsk, type GearDrop } from '../network/gearMessages.ts';
 import { type EncounterSeen, SEAL_KIND, SEAL_STATE } from '../network/encounterMessages.ts';
-import type { FightEvent } from '../network/messages.ts';
+import type { BreachSeen } from '../network/breachMessages.ts';
+import type { FightEvent, SeenPlayer } from '../network/messages.ts';
+import { FIGHTER_FLOATS } from '../rules/fighters.ts';
+import { socketAt } from './breachPlan.ts';
 import { MARK, PUBLIC_KIND, type PublicEvent } from '../network/publicMessages.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import { type PublicBodies, PublicView } from './publicView.ts';
+import type { NodeInfo } from './worldData.ts';
 
 const raid = (marks: PublicEvent['marks'], phase = 1): PublicEvent => ({
   kind: PUBLIC_KIND.raid,
@@ -558,4 +565,45 @@ test("an Elite Dungeon's frame carries its Court's call and the foul water at th
     slamTicks: 60,
   });
   assert.equal(shown([], [9, 1.6, 0], awake)?.call, 'Get clear!');
+});
+
+test("back from a hidden tab during a Breach's Waking, what changed meanwhile is not heard late", async (context) => {
+  const module = new WebAssembly.Module(
+    await readFile(new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
+  );
+  const picked = bank.sounds as Record<string, unknown>;
+  picked['breach.mooring'] = {};
+  context.after(() => delete picked['breach.mooring']);
+  const gateAt = [100, 200, 3] as const;
+  const gate = { shape: 'module', module: moduleNumber('breach-gate'), group: 0, at: gateAt, turn: 0 };
+  const layout = [{ solids: [gate], areas: [] }];
+  const zone = { id: 'gullwing-vale', kind: 'patrol', name: 'Gullwing Vale', continent: 'continent-1' } as NodeInfo;
+  const context_ = { land: { layoutsNamed: async () => JSON.stringify(layout) }, trips: {} };
+  let wall = 0;
+  const course = { boxes: [], courses: [], breach: { zone, run: null, context: context_, module, seal: () => null } };
+  const view = new PublicView(zone.id, undefined, course, () => wall);
+  await new Promise((done) => setTimeout(done, 0));
+  const others = new Map<number, SeenPlayer>();
+  const seen = {
+    gate: true,
+    ...{ tier: 0, phases: [], heldBy: true, holders: [1, 2], woken: false, openTo: [], claims: 0, fill: 0.5 },
+    ...{ marked: [], revives: -1, encounter: 0, counts: [0], inside: [], awayShore: -1, chests: 0 },
+  } as unknown as BreachSeen;
+  const breach = { seen, fight: { player: 1, own: null, roomTick: 0, others, foes: new Map(), askGear: () => {} } };
+  const word = { ...breach, others: { plateOf: () => null } };
+  const heard = (seconds: number) => {
+    wall = seconds;
+    return view.frame(null, [], [], bodies({ feet: [gateAt[0] + 10, gateAt[1], 3] }), seconds, [], () => 0, {
+      breach: word,
+    });
+  };
+  heard(0);
+  const mooring = socketAt('breach-gate', 'mooring-west', gateAt, 0);
+  const body = { x: mooring[0], y: mooring[1], z: mooring[2] } as SeenPlayer['body'];
+  others.set(2, { player: 2, body, fighter: new Float64Array(FIGHTER_FLOATS) } as unknown as SeenPlayer);
+  assert.deepEqual(
+    heard(30).sounds.map((sound) => sound.cue),
+    [],
+    'held while the tab was hidden, not heard on its return',
+  );
 });

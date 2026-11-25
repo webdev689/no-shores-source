@@ -218,11 +218,11 @@ def chest(module, at, size=(0.9, 0.55, 0.55), turn=0.0, banded='iron'):
                 (0.1, 0.03, 0.12), 'gold', turn=(0.0, 0.0, turn))
 
 
-def lantern(module, at, size=0.3, hung_from=None):
-    """An iron lantern standing on `at` (or hung by a chain from `hung_from` above it): a glowing pane box in an
-    iron frame under a pointed cap with a ring."""
+def lantern(module, at, size=0.3, hung_from=None, pane='glow'):
+    """An iron lantern standing on `at` (or hung by a chain from `hung_from` above it): a pane box, glowing unless
+    `pane` says it is cold, in an iron frame under a pointed cap with a ring."""
     x, y, z = at
-    shapes.slab(module, (x, y, z + size * 0.55), (size * 0.62, size * 0.62, size * 0.8), 'glow')
+    shapes.slab(module, (x, y, z + size * 0.55), (size * 0.62, size * 0.62, size * 0.8), pane)
     for dx in (-1, 1):
         for dy in (-1, 1):
             shapes.rod(module, (x + dx * size * 0.33, y + dy * size * 0.33, z),

@@ -116,6 +116,10 @@ export const ASKS = {
   outpostTake: 78,
   outpostHorn: 79,
   outpostChanged: 80,
+  /** A Breach's: the Lodestone taken up and set down; and the gate asked whether it is open (0 yes, 112 shut). */
+  takeLodestone: 82,
+  dropLodestone: 83,
+  enterBreach: 84,
 } as const;
 
 /** Shape's place while he is away. */
@@ -158,6 +162,8 @@ export interface GearItem {
   readonly name: number;
   readonly resource: number | null;
   readonly breach: boolean;
+  /** A Breach's piece won at Hard. */
+  readonly hard: boolean;
   readonly xp: number;
   readonly xpMost: number;
   readonly bought: number;
@@ -371,6 +377,7 @@ function itemOf(item: GearItemTable): GearItem {
     name: item.name(),
     resource: resource === NONE ? null : resource,
     breach: item.breach(),
+    hard: item.hard(),
     xp: item.xp(),
     xpMost: item.xpMost(),
     bought: item.bought(),

@@ -4,6 +4,7 @@ import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { type PlaylistSearch, PlaylistView } from './playlistScreen.ts';
 import type { PlaylistScreenState } from './playlistWords.ts';
+import { breachEntries } from './playlistBreach.ts';
 
 const BURN = {
   key: 'burn-shadow',
@@ -100,12 +101,33 @@ export const SAMPLE_SCREEN: PlaylistScreenState = {
   ],
 };
 
+/** The sample with the Breach's two tiers after its four, as a level 22 character sees them: both shut. */
+const BREACH_SCREEN: PlaylistScreenState = {
+  ...SAMPLE_SCREEN,
+  entries: [
+    ...SAMPLE_SCREEN.entries,
+    ...breachEntries(
+      {
+        ...{ id: 'drowned-vale', name: 'The Drowned Vale', zone: 'gullwing-vale', spaces: [], seals: [], slabs: [] },
+        ...{ slabCycle: 660, slabStands: 420, encounters: [], shores: {}, banner: '', dye: '', horse: '' },
+        tiers: [
+          { key: 'normal', name: 'Normal', level: 26, opens: 24, revives: null },
+          { key: 'hard', name: 'Hard', level: 30, opens: 28, revives: 5 },
+        ],
+      },
+      22,
+      () => 'Gullwing Vale',
+      WEEK,
+    ),
+  ],
+};
+
 /** The screen the last shot showed. */
 let showing: PlaylistView | null = null;
 
-/** The screen shown as its mark opens it, one a picture, searching as `search` says, the arrows pressed `right` times
- *  to choose another entry. */
-function screenShot(search: Partial<PlaylistSearch>, right = 0): (ui: Interface) => Node {
+/** The screen shown as its mark opens it (the sample's, unless `screen` says), one a picture, searching as `search`
+ *  says, the arrows pressed `right` times to choose another entry. */
+function screenShot(search: Partial<PlaylistSearch>, right = 0, screen = SAMPLE_SCREEN): (ui: Interface) => Node {
   const views = new WeakMap<Interface, PlaylistView>();
   return (ui) => {
     let view = views.get(ui);
@@ -114,7 +136,7 @@ function screenShot(search: Partial<PlaylistSearch>, right = 0): (ui: Interface)
       showing?.hide();
       const none = () => undefined;
       view = new PlaylistView({ launch: none, find: none, stop: none, close: none });
-      view.show(SAMPLE_SCREEN, {
+      view.show(screen, {
         canFind: true,
         finding: null,
         said: null,
@@ -136,3 +158,4 @@ export const playlistAbyssShot = screenShot({ company: true }, 1);
 export const playlistShutShot = screenShot({}, 3);
 export const playlistLaunchingShot = screenShot({ finding: 'Launching…', launching: true, company: true });
 export const playlistRefusedShot = screenShot({ said: 'The accounts did not answer. Try again.' }, 1);
+export const playlistBreachShot = screenShot({}, 4, BREACH_SCREEN);

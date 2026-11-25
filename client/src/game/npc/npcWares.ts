@@ -161,6 +161,7 @@ function horseWare(gear: GearState, coat: Cosmetic, number: number): Ware {
     name,
     resource: null,
     breach: false,
+    hard: false,
     xp: 0,
     xpMost: 0,
     bought: 0,

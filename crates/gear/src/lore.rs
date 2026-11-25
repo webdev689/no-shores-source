@@ -25,6 +25,9 @@ pub enum Found {
         #[serde(default)]
         at: f64,
     },
+    /// As a Breach's encounter is first won, or its hidden chest first opened: the Breach's id and the find's key
+    /// (`crate::breach`).
+    Breach { breach: String, find: String },
 }
 
 /// A chapter as the rules read it: its id within its book, and where it is found.
@@ -130,6 +133,13 @@ impl LoreDef {
                         let placed = !node.is_empty() && !place.is_empty() && bearing.is_finite() && at.is_finite();
                         (!placed || *at < 0.0).then(|| "found at no place".to_owned())
                     }
+                    Found::Breach { breach, find } => {
+                        let found = crate::breach::breach(breach).is_some_and(|breach| {
+                            (0..breach.encounters.len() + breach.chests.len())
+                                .any(|nth| crate::breach::find_key(breach, nth) == Some(find.as_str()))
+                        });
+                        (!found).then(|| format!("found in {breach}'s {find}, no find"))
+                    }
                 };
                 problems.extend(said.map(|said| format!("{}/{}: {said}", book.id, chapter.id)));
             }
@@ -185,7 +195,7 @@ impl Character {
             .filter(|(_, found)| match found {
                 Found::Story => self.story.prologue,
                 Found::Quest { quest, task } => self.task_done(quest, task),
-                Found::Place { .. } => false,
+                Found::Place { .. } | Found::Breach { .. } => false,
             })
             .map(|(key, _)| key)
             .collect();

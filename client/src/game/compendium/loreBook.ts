@@ -4,10 +4,11 @@
 import file from '../../../../content/lore/lore.json' with { type: 'json' };
 import type { Span } from '../../ui/node.ts';
 
-/** Where a chapter is found, as the file says. */
+/** Where a chapter is found, as the file says: in a Breach, at the find its rules name (crates/gear/src/lore.rs). */
 export type Found =
   | { readonly kind: 'story' }
   | { readonly kind: 'quest'; readonly quest: string; readonly task: string }
+  | { readonly kind: 'breach'; readonly breach: string; readonly find: string }
   | {
       readonly kind: 'place';
       readonly node: string;

@@ -45,6 +45,10 @@ pub struct TraitDef {
     /// these alone (`Catalogue::breach_perks`).
     #[serde(default)]
     pub breach: bool,
+    /// A Breach perk's words at its Forged grade, the stronger one a piece won at Hard gives (`Item::forges`); none for
+    /// any other trait.
+    #[serde(default)]
+    pub forged: Option<String>,
 }
 
 /// A named item: a Legendary, an Atheric or a cloak. Its layout is the traits each of its trait columns offers, in
@@ -283,6 +287,10 @@ impl Catalogue {
             }
             if found.breach && (found.faction.is_some() || found.column != TraitColumn::Perk) {
                 problems.push(format!("trait {} is a Breach's, so it is a perk and no faction's", found.id));
+            }
+            if found.breach == found.forged.is_none() {
+                problems
+                    .push(format!("trait {}: a Breach's perk, and it alone, has its Forged grade's words", found.id));
             }
         }
         // A Breach piece's perk columns roll from the Breaches' pool alone, never one perk twice on the piece, so the

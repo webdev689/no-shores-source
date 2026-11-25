@@ -18,22 +18,24 @@ import { Charting } from './charting.ts';
 import { arriving, type Flow, type Happening, next, onTheSea } from './flow.ts';
 import { keepPlace, placeKept, placeNow, resume } from './relog.ts';
 import { Foot, type FootContext } from './foot.ts';
+import { enterBreachRun, enterDungeon } from './footEntries.ts';
+import type { TripGame } from './dungeonTrips.ts';
+import type { InBreach } from './breachView.ts';
 import { DungeonDrawers } from './dungeonDrawers.ts';
 import { startActivities } from './activityScreens.ts';
 import { HelmMap } from './helmMap.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { shipPeopleOf } from './shipPeople.ts';
-import { Isles } from './isles.ts';
+import { type IsleHeld, Isles } from './isles.ts';
 import { islePlanWorker } from '../network/islePlans.ts';
 import { ISLE_MANIFEST, islePacksPrefix } from '../islands/isleManifest.ts';
 import { GROWTH_ROLES, IslesView } from '../islands/isleView.ts';
 import { IslesNature } from './isleNature.ts';
 import type { Drawer } from './scene.ts';
 import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
-import type { IsleHeld } from './isles.ts';
 import { FootView } from './footView.ts';
-import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
+import { bootGame, SEA_SHIPS } from './gameBoot.ts';
 import { AfterStory } from './welcome/afterStory.ts';
 import { questsOn } from './quests/quests.ts';
 import { Lore } from './compendium/lore.ts';
@@ -43,7 +45,7 @@ import { installQaViews } from './qaViews.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
 import { helmControls } from './helmControls.ts';
-import { arrivalFacing } from './nodes.ts';
+import { arrivalFacing, FIRST_NODE } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { setItemRules } from './itemStats.ts';
 import { inspectAgainst } from './social/social.ts';
@@ -82,8 +84,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const input = new Input(canvas, () => ui.typing);
   const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
-  // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
-  // The address may ask for another (`&view=`), to picture a place from first person or nearer.
+  // Arriving, the camera stands back to show the whole figure; the address may ask for another view (`&view=`).
   const arrivalView = askedView(location.search) ?? { firstPerson: false, distance: 4.5, shown: 4.5 };
   const walker = new Walker({ ...newPlayer(movement, 0, 0), view: arrivalView }, you, firstPerson, forge);
   /** The ground the camera keeps over: an island's where one stands higher than the land's. */
@@ -91,14 +92,18 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     const [isle, land] = [islesView.groundAt(x, y), scene.groundAt(x, y)];
     return isle === null ? land : land === null ? isle : Math.max(isle, land);
   };
-  // The activities: the dungeons' ways in and out (each as `goInto` goes), their screens, and the sea's word of gear.
+  // The ways onto foot into a dungeon, a Breach's run and a patrol zone, each as `goInto` goes.
+  const intoDungeon: TripGame['intoDungeon'] = (...into) => goInto(() => enterDungeon(footContext, ...into));
+  const intoBreach = (into: InBreach) => goInto(() => enterBreachRun(footContext, into));
+  const ontoPatrol: TripGame['ontoPatrol'] = (...onto) => goInto(() => Foot.enter(footContext, ...onto));
+  // The activities: the dungeons' ways in and out, their screens, and the sea's word of gear.
   const { trips, screens, onFoot, heed } = startActivities(world.nodes, link, {
     foot: () => playing.foot,
     atSea: () => (onTheSea(playing.flow) ? (playing.sea?.gear?.gear ?? null) : undefined),
     travel: (happening, work) => travel(happening, work),
+    tell: (words) => tell(words),
     module: roomModule,
-    intoDungeon: (...into) => goInto(() => Foot.enterDungeon(footContext, ...into)),
-    ontoPatrol: (...onto) => goInto(() => Foot.enter(footContext, ...onto)),
+    ...{ intoDungeon, intoBreach, ontoPatrol },
     ontoSea: () => goSea(), // out of a sea island's dungeon, back at the ship, not before the island's door
     drawers: dungeons,
   });
@@ -216,7 +221,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     drain.toward(false);
     playing.after.leave();
   };
-
   /** Leaves wherever the player was for the place `entering` stands them in. */
   const goInto = async (entering: () => Promise<Foot>) => {
     leaveHere();
@@ -300,7 +304,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       trips.enterSeaDungeon,
     );
   const { travel, behindVeil, retry, tell } = startTravel({
-    ...{ playing, hud, footContext, goInto, goFoot, goSea, showLandmass },
+    ...{ playing, hud, goFoot, goSea, showLandmass, intoDungeon, intoBreach, ontoPatrol },
     ashore: () => ashore,
     backAshore: async (held) => {
       await goInto(() => isleFoot(held, ashoreWord));

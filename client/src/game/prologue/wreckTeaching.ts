@@ -36,6 +36,7 @@ export const ARMS_ITEM: GearItem = {
   name: 0,
   resource: null,
   breach: false,
+  hard: false,
   xp: 0,
   xpMost: 0,
   bought: 0,

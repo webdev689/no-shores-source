@@ -1,5 +1,6 @@
 /**
- * Companies: up to four players, as an Elite Dungeon's run is for, one of them its leader. A player alone leads their
+ * Companies: up to eight players, as a Breach's run is for (an Elite Dungeon's takes four of them), one of them its
+ * leader. A player alone leads their
  * own. Another joins by an invite, or by asking to, as the leader's privacy allows: anyone, the leader's friends,
  * those invited, or no one. The leader can remove a member or hand the lead on; a leader who leaves hands it to the
  * longest there. A member away from the game ten minutes leaves it.
@@ -9,8 +10,8 @@ import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
 import { AWAY_MS, LAST_SEEN, accountNamed, blocks } from './people.ts';
 
-/** The most players a company holds: four, as an Elite Dungeon's run is for. */
-export const COMPANY_MOST = 4;
+/** The most players a company holds: eight, as a Breach's run is for (`gear::breach::COMPANY_MOST`). */
+export const COMPANY_MOST = 8;
 /** How long an invite stands. */
 export const INVITE_MS = 10 * 60_000;
 /** Who may join: anyone, the leader's friends, those invited, no one. */
@@ -54,18 +55,46 @@ export async function companionsOf(database: Db, account: string, room: string, 
   return [...new Set([...company, ...results.map((row) => row.account_id)])];
 }
 
-/** Whether `room` was found or launched by the server within FOUND_KEPT_MS for the account or one of its company,
- *  whom the run would let in after them all the same: so a member back first, its room forgotten, is not shut out. */
-export async function launchedFor(database: Db, account: string, room: string, now: number): Promise<boolean> {
+/** Whether `room` was found or launched by the server within `within` (FOUND_KEPT_MS unless said) for the account or
+ *  one of its company, whom the run would let in after them all the same: so a member back first, its room forgotten,
+ *  is not shut out. */
+export async function launchedFor(
+  database: Db,
+  account: string,
+  room: string,
+  now: number,
+  within = FOUND_KEPT_MS,
+): Promise<boolean> {
   const row = await database
     .prepare(
       `SELECT 1 AS found FROM found_runs WHERE room = ?1 AND found_at >= ?3 AND (account_id = ?2 OR account_id IN
        (SELECT account_id FROM company_members WHERE company_id =
          (SELECT company_id FROM company_members WHERE account_id = ?2)))`,
     )
-    .bind(room, account, now - FOUND_KEPT_MS)
+    .bind(room, account, now - within)
     .first<{ found: number }>();
   return row !== null;
+}
+
+/** The newest run of `base` (`<base>--run-<instance>`) found or launched for the account or their company within
+ *  `within` ms; null for none. */
+export async function companyRunOf(
+  database: Db,
+  account: string,
+  base: string,
+  now: number,
+  within: number,
+): Promise<string | null> {
+  const prefix = `${base}--run-`;
+  const row = await database
+    .prepare(
+      `SELECT room FROM found_runs WHERE substr(room, 1, ?4) = ?1 AND found_at >= ?3 AND (account_id = ?2 OR account_id
+       IN (SELECT account_id FROM company_members WHERE company_id =
+         (SELECT company_id FROM company_members WHERE account_id = ?2))) ORDER BY found_at DESC LIMIT 1`,
+    )
+    .bind(prefix, account, now - within, prefix.length)
+    .first<{ room: string }>();
+  return row?.room ?? null;
 }
 
 /** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the

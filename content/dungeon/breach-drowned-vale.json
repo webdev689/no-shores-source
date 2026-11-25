@@ -1,0 +1,185 @@
+{
+  "about": "The Drowned Vale's plan (bible/02-Systems/Breaches.md): each space a module of content/modules/modules.json stood at a point of the run's frame (x east, y south, z up, metres) and turned whole quarters clockwise, chained so each space's entry meets the last one's exit; the seals across its ways on, each opened as the encounter named wins; the Broken Stair's slabs that come and go, each by its socket and the tick its cycle starts at; and which space each encounter is fought in.",
+  "id": "drowned-vale",
+  "spaces": [
+    {
+      "key": "descent",
+      "module": "breach-descent",
+      "at": [
+        0.0,
+        0.0,
+        60.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "mending",
+      "module": "breach-mending",
+      "at": [
+        0.0,
+        -76.0,
+        50.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "choir",
+      "module": "breach-choir",
+      "at": [
+        0.0,
+        -150.0,
+        50.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "ways",
+      "module": "breach-ways",
+      "at": [
+        77.0,
+        -127.0,
+        50.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "stair",
+      "module": "breach-stair",
+      "at": [
+        174.4,
+        -127.0,
+        50.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "hall",
+      "module": "breach-hall",
+      "at": [
+        261.8,
+        -127.0,
+        57.2
+      ],
+      "turn": 1
+    },
+    {
+      "key": "court",
+      "module": "breach-court",
+      "at": [
+        339.8,
+        -127.0,
+        57.2
+      ],
+      "turn": 1
+    },
+    {
+      "key": "hall-was",
+      "module": "breach-shore-was",
+      "at": [
+        60.0,
+        120.0,
+        60.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "hall-is",
+      "module": "breach-shore-is",
+      "at": [
+        120.0,
+        120.0,
+        60.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "court-was",
+      "module": "breach-shore-was",
+      "at": [
+        180.0,
+        120.0,
+        60.0
+      ],
+      "turn": 0
+    },
+    {
+      "key": "court-is",
+      "module": "breach-shore-is",
+      "at": [
+        240.0,
+        120.0,
+        60.0
+      ],
+      "turn": 0
+    }
+  ],
+  "seals": [
+    {
+      "space": "mending",
+      "socket": "seal",
+      "opens": "mending",
+      "turn": 0
+    },
+    {
+      "space": "choir",
+      "socket": "seal",
+      "opens": "choir",
+      "turn": 1
+    },
+    {
+      "space": "hall",
+      "socket": "seal",
+      "opens": "shores",
+      "turn": 1
+    }
+  ],
+  "slabs": [
+    {
+      "space": "stair",
+      "socket": "slab-1",
+      "phase": 0
+    },
+    {
+      "space": "stair",
+      "socket": "slab-2",
+      "phase": 240
+    },
+    {
+      "space": "stair",
+      "socket": "slab-3",
+      "phase": 120
+    },
+    {
+      "space": "stair",
+      "socket": "slab-4",
+      "phase": 360
+    },
+    {
+      "space": "stair",
+      "socket": "slab-5",
+      "phase": 60
+    },
+    {
+      "space": "stair",
+      "socket": "slab-6",
+      "phase": 300
+    }
+  ],
+  "encounters": {
+    "mending": "mending",
+    "choir": "choir",
+    "ways": "ways",
+    "shores": "hall",
+    "steward": "court"
+  },
+  "shores": {
+    "shores": [
+      "hall-was",
+      "hall-is"
+    ],
+    "steward": [
+      "court-was",
+      "court-is"
+    ]
+  }
+}

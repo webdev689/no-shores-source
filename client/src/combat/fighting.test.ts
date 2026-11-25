@@ -414,6 +414,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     public: null,
     encounter: null,
     outpost: 0,
+    breach: null,
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));
@@ -699,4 +700,41 @@ test('a respawn asked while the link joins its room again goes with the first in
     link.pump();
   }
   assert.deepEqual(asked, [true, false], 'the respawn asked goes with the first input');
+});
+
+test("in a Breach's run each input is predicted on its own tick's blocks, and the Lodestone's bearer bare handed", () => {
+  let fight: Fighting | null = null;
+  const stone = { gate: false, seals: 0b1, stone: 2, bearer: 0 };
+  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => {
+    stone.bearer = fight ? room.player : 0;
+    fight?.receive({ ...snapshot, breach: stone } as unknown as Snapshot);
+  });
+  const real = startCombatRules(compiled);
+  real.setCourse(course.blocks);
+  const [stood, armed] = [[] as [number, number][], [] as number[]];
+  const rules: CombatRules = {
+    ...real,
+    setBreach: (open, tick) => stood.push([open, tick]) > 0,
+    predict: (fighter, intent, player, arms, view) => {
+      armed.push(arms);
+      return real.predict(fighter, intent, player, arms, view);
+    },
+  };
+  const fighting = new Fighting(rules, room);
+  fight = fighting;
+  fighting.arms = real.armsCode('sword_iron', null, true);
+  room.pump(TICK);
+  const steps = fighting.steps(movement);
+  for (let tick = 0; tick < 3; tick += 1) {
+    fighting.press(UNPRESSED);
+    steps.step({} as Body, STILL);
+    room.pump(TICK);
+  }
+  assert.ok(stood.length >= 3 && stood.every(([open]) => open === 0b1), 'its seals as the room last said');
+  const ticks = stood.map(([, tick]) => tick);
+  assert.ok(
+    ticks.every((tick, index) => index === 0 || tick >= (ticks[index - 1] ?? 0)),
+    `on, tick by tick: ${ticks}`,
+  );
+  assert.ok(armed.length > 0 && armed.every((arms) => arms === 0), 'bare handed while bearing it');
 });

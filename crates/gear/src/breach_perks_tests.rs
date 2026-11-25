@@ -148,11 +148,13 @@ fn a_breach_piece_rolls_its_perks_from_the_breaches_pool_and_its_other_columns_f
 }
 
 #[test]
-fn a_breach_legendary_armour_piece_climbs_to_thirty_prestige_and_its_weapon_carries_none() {
+fn a_breach_legendary_armour_piece_climbs_to_28_prestige_at_normal_and_30_at_hard_and_its_weapon_carries_none() {
     let dice = Dice { seed: 9, tick: 3, player: 1 };
     let mut helm = crate::vestige::make(1, Rarity::Legendary, Slot::Head, 20, Source::Breach, &dice).expect("a helm");
     helm.xp = helm.xp_most();
     helm.bought = u32::MAX;
+    assert_eq!(helm.prestige(), 28);
+    helm.hard = true;
     assert_eq!(helm.prestige(), 30);
     let blade = crate::vestige::make(1, Rarity::Legendary, Slot::Melee, 20, Source::Breach, &dice).expect("a blade");
     assert!(blade.breach && blade.prestige() == 0);
@@ -204,4 +206,32 @@ fn a_rolled_piece_from_elsewhere_offering_a_breach_perk_gives_its_node_back() {
     let kept = crate::old_hands::unfit(&mut character, helm);
     assert!(kept.active_traits().all(|id| id != "regrowth"), "no Breach perk on a world helm");
     assert_eq!(kept.chosen[0], NONE_CHOSEN);
+}
+
+#[test]
+fn a_hard_pieces_breach_perks_are_forged_and_nothing_else_is() {
+    let content = catalogue();
+    for found in breach_perks() {
+        assert!(found.forged.as_deref().is_some_and(|words| !words.is_empty()), "{} has Forged words", found.id);
+    }
+    assert!(content.traits.iter().filter(|found| !found.breach).all(|found| found.forged.is_none()));
+    let dice = Dice { seed: 7, tick: 3, player: 1 };
+    let mut piece =
+        crate::vestige::make(1, Rarity::Legendary, Slot::Melee, 20, Source::Breach, &dice).expect("a piece");
+    let perk = offered(&piece)
+        .into_iter()
+        .find(|(column, _)| matches!(column, Column::Perk(_)))
+        .and_then(|(_, traits)| traits.first().cloned())
+        .expect("a perk column");
+    let shared = offered(&piece)
+        .into_iter()
+        .find(|(column, _)| !matches!(column, Column::Perk(_)))
+        .and_then(|(_, traits)| traits.first().cloned())
+        .expect("a shared column");
+    assert!(!piece.forges(&perk), "won at Normal");
+    piece.hard = true;
+    assert!(piece.forges(&perk), "won at Hard");
+    assert!(!piece.forges(&shared), "a shared pool's trait has no Forged grade");
+    piece.breach = false;
+    assert!(!piece.forges(&perk), "no Breach's piece");
 }
