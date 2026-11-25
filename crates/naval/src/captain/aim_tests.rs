@@ -182,8 +182,8 @@ fn a_misjudged_elevation_never_passes_what_its_carriage_raises_to() {
         let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
         deck.step(0.0, &far);
         if let Some(lay) = deck.step(1.4, &far).fire {
-            assert!(lay.elevation <= lay.gun.max_el_deg.to_radians() + 1e-12, "{seed}: {}", lay.elevation);
-            held += u32::from((lay.elevation - lay.gun.max_el_deg.to_radians()).abs() < 1e-12);
+            assert!(lay.elevation <= lay.gun.max_elevation_deg.to_radians() + 1e-12, "{seed}: {}", lay.elevation);
+            held += u32::from((lay.elevation - lay.gun.max_elevation_deg.to_radians()).abs() < 1e-12);
         }
     }
     assert!(held > 0, "some volleys laid at the carriage's highest");

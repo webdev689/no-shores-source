@@ -154,7 +154,7 @@ pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range:
     let (_, starboard) = frame(ship.heading);
     let direction = [starboard[0] * side.sign(), starboard[1] * side.sign()];
     let above = centre[2] - pose.heave;
-    let (low, high) = (gun.min_el_deg.to_radians(), gun.max_el_deg.to_radians());
+    let (low, high) = (gun.min_elevation_deg.to_radians(), gun.max_elevation_deg.to_radians());
     let elevation = elevation_for_range(range, gun.speed, above - rise.unwrap_or(0.0), low, high);
     Lay { side, mouths, centre, direction, elevation, gun, shot, reach: max_range(gun.speed, above, high) }
 }
@@ -165,7 +165,7 @@ pub fn lay_on(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, tar
     let square = lay(ship, pose, arms, side, shot, 0.0, None);
     let range =
         (target[0] - square.centre[0]) * square.direction[0] + (target[1] - square.centre[1]) * square.direction[1];
-    let (low, high) = (square.gun.min_el_deg.to_radians(), square.gun.max_el_deg.to_radians());
+    let (low, high) = (square.gun.min_elevation_deg.to_radians(), square.gun.max_elevation_deg.to_radians());
     let elevation = elevation_for_range(range, square.gun.speed, square.centre[2] - target[2], low, high);
     Lay { elevation, ..square }
 }

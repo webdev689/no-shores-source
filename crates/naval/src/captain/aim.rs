@@ -258,7 +258,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
         // Its reach out to the mark's near side, as a player's balls strike it.
         let [beam, depth] = hull_span(me, lead, mark.heading, at.arms, mark.arms);
         let reach = lay(ship, at.pose, at.arms, side, at.guns.load, 0.0, None).reach + beam + depth;
-        let lay_k = |share: f64| {
+        let laid_toward = |share: f64| {
             let target = [
                 me[0] + (lead[0] - me[0]) * share,
                 me[1] + (lead[1] - me[1]) * share,
@@ -270,7 +270,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
         // touch off, but never further off its beam than it ever fires (`BEAR_DEG`), so the broadside stays square
         // and no ball flies near its bow or stern; and as high or low as they misjudge their elevation.
         let misjudged = |share: f64| {
-            let laid = lay_k(share);
+            let laid = laid_toward(share);
             let off =
                 libm::atan2(judged.across_m, range.max(1.0)).clamp((-BEAR_DEG).to_radians(), BEAR_DEG.to_radians());
             let (sine, cosine) = (libm::sin(off), libm::cos(off));
@@ -279,13 +279,14 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
                 laid.direction[0] * sine + laid.direction[1] * cosine,
             ];
             // Never past what its carriage depresses or raises to.
-            let (low, high) = (laid.gun.min_el_deg.to_radians(), laid.gun.max_el_deg.to_radians());
+            let (low, high) = (laid.gun.min_elevation_deg.to_radians(), laid.gun.max_elevation_deg.to_radians());
             Lay { elevation: (laid.elevation + judged.elevation).clamp(low, high), direction, ..laid }
         };
         // The mark's near side, where a ball laid past its middle's reach still strikes it.
         let toward = depth.min(range) / range.max(1e-6);
         let near = [lead[0] - (lead[0] - me[0]) * toward, lead[1] - (lead[1] - me[1]) * toward];
-        let strikes = || lay_passes(&lay_k(1.0), carry, lead, band) || lay_passes(&lay_k(1.0), carry, near, band);
+        let strikes =
+            || lay_passes(&laid_toward(1.0), carry, lead, band) || lay_passes(&laid_toward(1.0), carry, near, band);
         let window = fire_window(me, lead, mark.heading, mark.arms, skill);
         let Some(since) = run.out[side.index()] else {
             if run.run_in[side.index()] > clock - RUN_IN_S {
