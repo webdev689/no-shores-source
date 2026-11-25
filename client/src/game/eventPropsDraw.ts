@@ -8,7 +8,7 @@ import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import type { Drawer } from './scene.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { LIGHT_DEPTH, LIGHT_TARGET } from '../combat/lightLayer.ts';
-import { ShadowMap, shadowLayouts } from '../shadow.ts';
+import { ShadowMap, farPlace, shadowLayouts } from '../shadow.ts';
 import { EVENT_LAMPS, type LampPlace } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -42,15 +42,24 @@ const VERTEX_LAYOUT: GPUVertexBufferLayout = {
 };
 
 /** A module's surfaces made ready to draw: its vertices and triangles (its crystal's last, from `crystalFrom`), its
- *  height, and where its lips stand in the lips' list, if it opens the land. */
+ *  height and half its width across, and where its lips stand in the lips' list, if it opens the land. */
 type Made = {
   readonly vertices: GPUBuffer;
   readonly indices: GPUBuffer;
   readonly count: number;
   readonly crystalFrom: number;
   readonly height: number;
+  readonly reach: number;
   readonly lips: { readonly first: number; readonly count: number } | null;
 };
+
+/** Where a prop lies as the sun's far shadow map can show it, for what the map is kept by (`farPlace`): its place, its
+ *  reach and its height risen in far texels, its turns at that reach; its module's half width across `reach` and its
+ *  height. An airship bobbing as it hangs, or a crown breathing, moves less than that and leaves the map kept. */
+export function propFarPlace(prop: EventProp, reach: number, height: number): number[] {
+  const across = reach * prop.scale;
+  return farPlace([...prop.at, across, height * prop.scale * prop.rise], [prop.turn, prop.lid, prop.roll ?? 0], across);
+}
 
 /** The public events' props, drawn as one of the scene's drawers from the list `set` hands it each frame. */
 export class EventPropsDraw implements Drawer {
@@ -218,6 +227,7 @@ export class EventPropsDraw implements Drawer {
       count: packed.indices.length,
       crystalFrom: packed.crystalFrom,
       height: moduleShape(number).size[2] ?? 1,
+      reach: Math.hypot(moduleShape(number).size[0] ?? 1, moduleShape(number).size[1] ?? 1) / 2,
       lips,
     };
     this.made.set(name, made);
@@ -294,8 +304,7 @@ export class EventPropsDraw implements Drawer {
     const drawn = this.prepared(fromEye, shot.eye);
     if (drawn.length === 0 || !this.tableGroup) return;
     // Where each stands and how far it has risen or opened, which its draws do not show, for the far shadow map.
-    for (const [prop] of drawn)
-      shadow.tally(prop.at[0], prop.at[1], prop.at[2], prop.turn, prop.scale, prop.rise, prop.lid);
+    for (const [prop, made] of drawn) shadow.tally(...propFarPlace(prop, made.reach, made.height));
     const { cast } = this.pipelines();
     pass.setPipeline(cast);
     pass.setBindGroup(0, this.viewGroup);

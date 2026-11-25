@@ -240,6 +240,7 @@ export class Fighting {
     this.foes.clear();
     this.others.clear();
     this.spells.clear();
+    this.arrivals = [];
     this.struck = null;
   }
 

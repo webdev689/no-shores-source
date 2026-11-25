@@ -98,10 +98,13 @@ export function layBeam(out: number[], eye: Point, hatch: Point, feet: Point, le
   layFlat(out, ringSprite(ring, 3, 1), POWDER, feet, 0.06);
 }
 
+/** How many steps dust thrown up passes through as it spreads: each its own ring's sprite, made once and kept. */
+const DUST_STEPS = 8;
+
 /** Dust thrown up round a foe's feet `since` seconds after it landed. */
 export function layLanding(out: number[], feet: Point, since: number): void {
   if (since < 0 || since > LOOKS.landDustS) return;
-  const share = since / LOOKS.landDustS;
+  const share = Math.round((since / LOOKS.landDustS) * DUST_STEPS) / DUST_STEPS;
   layFlat(out, ringSprite(Math.round(8 + 14 * share), share < 0.5 ? 2 : 1, 2, share), DUST, feet, 0.06);
 }
 

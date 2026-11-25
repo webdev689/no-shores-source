@@ -1,14 +1,16 @@
 // How a Grey Tithe airship flies, as the page draws it from what the room sends (`arrivalMessages.ts`): in from far
 // off along the way it comes, high, swinging a little to one side and settling as it slows, its nose flaring up to
-// brake; hanging over its ground, bobbing, its hatch open, while its foes are let down; then on, climbing away in a
-// turn. The room sets only the ticks and the ground: where the ship is between them is drawing alone.
+// brake; hanging over its ground, bobbing, while its foes are let down through the drop hatch's doors, which the model
+// keeps hung open; then on, climbing away in a turn. Each part runs on from the last with no step between them. The
+// room sets only the ticks and the ground: where the ship is between them is drawing alone.
 import type { ArrivalSeen } from '../network/arrivalMessages.ts';
 
 type Point = readonly [number, number, number];
 
 /** The flight's shape: how far off and how high over its ground it comes in from (metres), how far it swings aside on
  *  the way in, how far off and how high it climbs to on the way out and how far it turns (radians), how much it bobs
- *  and sways as it hangs, and how long its hatch takes to open (ticks). */
+ *  and sways as it hangs, and how long its bob takes to set in as it comes to hang and to die away before it leaves
+ *  (ticks). */
 export const FLIGHT = {
   inFarM: 340,
   inHighM: 70,
@@ -18,13 +20,13 @@ export const FLIGHT = {
   outTurn: 0.9,
   bobM: 0.45,
   bobRad: 1.1,
-  hatchTicks: 50,
+  settleTicks: 60,
 } as const;
 const TICKS_A_SECOND = 60;
 
 /** An airship as drawn at a moment: its keel's middle (world metres), the way its bow points (radians clockwise from
- *  north), its nose up (pitch) and its lean to port (roll), radians; how hard its main thrusters and its lift
- *  thrusters burn, and how far its hatch is open, each 0 to 1. */
+ *  north), its nose up (pitch) and its lean to port (roll), radians; and how hard its main thrusters and its lift
+ *  thrusters burn, each 0 to 1. */
 export interface ShipPose {
   readonly at: Point;
   readonly heading: number;
@@ -32,7 +34,6 @@ export interface ShipPose {
   readonly roll: number;
   readonly burn: number;
   readonly lift: number;
-  readonly hatch: number;
 }
 
 const smooth = (from: number, to: number, value: number): number => {
@@ -96,19 +97,21 @@ export function shipPose(ship: ArrivalSeen, tick: number): ShipPose | null {
       roll: 0.15 * sideOf(ship) * Math.sin(2 * Math.PI * (1 - (1 - done) ** 3)),
       burn: 0.25 + 0.75 * (1 - smooth(0.5, 0.9, done)),
       lift: smooth(0.55, 1, done),
-      hatch: 0,
     };
   }
   if (tick < ship.leaves) {
-    const bob = Math.sin(seconds * FLIGHT.bobRad) * FLIGHT.bobM;
+    // Its bob and sways set in as it comes to hang and die away before it leaves, so it hangs on from its flight in
+    // and flies out from where it hung.
+    const settle = FLIGHT.settleTicks;
+    const sway = smooth(ship.hangs, ship.hangs + settle, tick) * (1 - smooth(ship.leaves - settle, ship.leaves, tick));
+    const bob = Math.sin(seconds * FLIGHT.bobRad) * FLIGHT.bobM * sway;
     return {
       at: [ship.at[0], ship.at[1], ship.at[2] + ship.high + bob],
-      heading: ship.heading + 0.04 * Math.sin(seconds * 0.4),
-      pitch: 0.02 * Math.sin(seconds * 0.9),
-      roll: 0.025 * Math.sin(seconds * 0.7),
+      heading: ship.heading + 0.04 * Math.sin(seconds * 0.4) * sway,
+      pitch: 0.02 * Math.sin(seconds * 0.9) * sway,
+      roll: 0.025 * Math.sin(seconds * 0.7) * sway,
       burn: 0.25,
       lift: 1,
-      hatch: share(ship.hangs, ship.hangs + FLIGHT.hatchTicks, tick),
     };
   }
   const done = share(ship.leaves, ship.gone, tick);
@@ -117,9 +120,8 @@ export function shipPose(ship: ArrivalSeen, tick: number): ShipPose | null {
     heading: wayAlong((part) => outbound(ship, part), Math.max(done, 0.01), ship.heading),
     pitch: 0.12 * smooth(0, 0.12, done) * (1 - smooth(0.4, 1, done)),
     roll: 0.2 * sideOf(ship) * Math.sin(Math.PI * done),
-    burn: 0.5 + 0.5 * smooth(0, 0.15, done),
+    burn: 0.25 + 0.75 * smooth(0, 0.15, done),
     lift: 1 - smooth(0.2, 0.7, done),
-    hatch: 1 - share(ship.leaves, ship.leaves + FLIGHT.hatchTicks, tick),
   };
 }
 

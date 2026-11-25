@@ -38,19 +38,26 @@ test('it comes in from far off, high, behind the way it comes, and slows into it
   assert.ok(Math.abs(hung.heading - SHIP.heading) < 0.05, 'facing the way it came');
 });
 
-test('it hangs with its hatch opening and its lift burning, then climbs away on a turn, its hatch shutting', () => {
-  const opening = shipPose(SHIP, SHIP.hangs + FLIGHT.hatchTicks / 2)!;
-  assert.ok(Math.abs(opening.hatch - 0.5) < 1e-9 && opening.lift === 1);
-  assert.equal(shipPose(SHIP, SHIP.leaves - 1)!.hatch, 1);
+test('it hangs with its lift burning, then climbs away on a turn', () => {
+  assert.equal(shipPose(SHIP, SHIP.hangs + 30)!.lift, 1);
   const away = shipPose(SHIP, SHIP.gone - 1)!;
   assert.ok(apart(away.at, SHIP.at) > FLIGHT.outFarM * 0.9, 'far off');
   assert.ok(away.at[2] > SHIP.at[2] + FLIGHT.outHighM * 0.95, 'high');
   assert.ok(Math.abs(away.heading - SHIP.heading) > 0.5, 'turned');
-  assert.equal(away.hatch, 0);
+});
+
+test('it runs on from its flight in to its hang and from its hang to its flight out with no step', () => {
+  for (const edge of [SHIP.hangs, SHIP.leaves]) {
+    const [before, after] = [shipPose(SHIP, edge - 0.5)!, shipPose(SHIP, edge + 0.5)!];
+    assert.ok(apart(before.at, after.at) < 0.3, `${edge}: ${before.at} then ${after.at}`);
+    assert.ok(Math.abs(before.heading - after.heading) < 0.01, `${edge}: ${before.heading} then ${after.heading}`);
+    assert.ok(Math.abs(before.burn - after.burn) < 0.02 && Math.abs(before.pitch - after.pitch) < 0.01);
+    assert.ok(Math.abs(before.roll - after.roll) < 0.01);
+  }
 });
 
 test('a point of the ship is placed as the props shader places it: turned, pitched and rolled', () => {
-  const level = { at: [10, 20, 30] as const, heading: Math.PI / 2, pitch: 0, roll: 0, burn: 0, lift: 0, hatch: 0 };
+  const level = { at: [10, 20, 30] as const, heading: Math.PI / 2, pitch: 0, roll: 0, burn: 0, lift: 0 };
   // Heading east, its bow (+y in its own frame) points east.
   const bow = shipPoint(level, [0, 10, 0]);
   assert.ok(Math.abs(bow[0] - 20) < 1e-9 && Math.abs(bow[1] - 20) < 1e-9);

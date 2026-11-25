@@ -45,13 +45,14 @@ export interface ArrivalsFrame {
 }
 
 /** A shard of a broken crown falling to the ground and sinking into it: where it broke from, which way it flies off
- *  (m/s), how it spins, the ground under it and when it broke (page seconds). */
+ *  (m/s), how it spins and when it broke (page seconds); once it strikes the land, where it lies, how it lies and when
+ *  it struck. */
 interface Falling {
   readonly from: Point;
   readonly away: readonly [number, number, number];
   readonly spin: number;
-  readonly ground: number;
   readonly broke: number;
+  struck: { readonly at: Point; readonly turn: number; readonly lid: number; readonly when: number } | null;
 }
 
 /** How a broken crown's shards fall (m/s²), how long one lies before it sinks and how long it takes to sink, seconds;
@@ -61,6 +62,10 @@ const FALL = { gravity: 14, lies: 0.8, sinks: 0.7, shards: 7 } as const;
 const SMOKE_EVERY_S = 0.14;
 const ROAR_EVERY_S = 2.6;
 const CLEAR_OF_GROUND_M = 12;
+/** A ship or crown first seen this many ticks or more past one of its beats was come on late: that beat is not heard.
+ *  A room's tick this far below the last one seen is a room joined anew, whose numbers start again. */
+const LATE_TICKS = 30;
+const NEW_ROOM_TICKS = 60;
 /** The airship's sockets (tools/modules/airship.py): its four thrusters, its two lifts, its stacks and its hatch. */
 const THRUSTS = ['thrust-1', 'thrust-2', 'thrust-3', 'thrust-4'] as const;
 const LIFTS = ['lift-1', 'lift-2'] as const;
@@ -76,6 +81,9 @@ export class ArrivalsView {
   /** Each foe heard let down or begun forming: what brought it, the room tick it lands and the page's second it did. */
   private readonly coming = new Map<number, { kind: number; lands: number; landed: number | null }>();
   private falling: Falling[] = [];
+  /** The numbers of the ships and crowns in this frame's word, kept from frame to frame; the room's last tick seen. */
+  private readonly live = new Set<number>();
+  private roomTick = -1;
 
   /** One frame at the page's `clock` (seconds): the props to draw and the sounds heard, the marks laid into `marks`
    *  as seen from `eye`; `ground` is the land's height, null off it. */
@@ -86,10 +94,14 @@ export class ArrivalsView {
     eye: Point,
     ground: (x: number, y: number) => number | null,
   ): ArrivalsFrame {
+    if (fight.roomTick + NEW_ROOM_TICKS < this.roomTick) this.clear();
+    this.roomTick = fight.roomTick;
     const tick = this.ticks.now(fight.roomTick, clock);
     const props: EventProp[] = [];
     const sounds: HeardSound[] = [];
-    const live = new Set(fight.arrivals.map((each) => each.id));
+    const live = this.live;
+    live.clear();
+    for (const each of fight.arrivals) live.add(each.id);
     for (const id of this.smoke.keys()) if (!live.has(id)) this.smoke.delete(id);
     for (const id of this.heard.keys()) if (!live.has(id)) this.heard.delete(id);
     for (const each of fight.arrivals) {
@@ -97,8 +109,19 @@ export class ArrivalsView {
       else if (each.kind === BRINGER.crown) this.crown(each, { tick, clock, eye }, { props, sounds, marks }, fight);
     }
     this.foesLanding(fight, tick, clock, marks, sounds);
-    props.push(...this.shards(clock));
+    if (this.falling.length > 0) this.shards(clock, ground, props);
     return { props, sounds };
+  }
+
+  /** The beats of a ship or crown already heard, by its number: first seen, those it was past LATE_TICKS or more ago
+   *  (`beats`, each at its tick) are taken as heard, so a player who comes on one late hears it from where it is. */
+  private beatsOf(id: number, tick: number, beats: readonly (readonly [string, number])[]): Set<string> {
+    let heard = this.heard.get(id);
+    if (!heard) {
+      heard = new Set(beats.filter(([, when]) => tick - when >= LATE_TICKS).map(([beat]) => beat));
+      this.heard.set(id, heard);
+    }
+    return heard;
   }
 
   /** An airship as it flies at `tick`: its prop, its fire and smoke, the beams it lets its foes down in, its sounds. */
@@ -180,12 +203,15 @@ export class ArrivalsView {
       const drift = [Math.sin(pose.heading) * back, -Math.cos(pose.heading) * back] as const;
       for (const from of stacks) kept.puffs.push({ from, born: clock, drift });
     }
-    kept.puffs = kept.puffs.filter((puff) => clock - puff.born <= LOOKS.smokeLife);
+    // The oldest puffs first: those past their life go from the front.
+    let spent = 0;
+    while (spent < kept.puffs.length && clock - (kept.puffs[spent]?.born ?? clock) > LOOKS.smokeLife) spent++;
+    if (spent > 0) kept.puffs.splice(0, spent);
     layPuffs(marks, eye, kept.puffs, clock);
   }
 
-  /** A ship's sounds: its engines rumbling as it sets out, its fire roaring as it drives, the bosun's whistle as it
-   *  hangs, its timbers as it hangs, its engines opening up as it leaves. Each beat heard once. */
+  /** A ship's sounds: its engines rumbling as it sets out, its fire roaring as it drives, its timbers as it hangs, its
+   *  engines opening up as it leaves. Each beat heard once, and none it was long past when first seen. */
   private shipSounds(
     ship: ArrivalSeen,
     tick: number,
@@ -193,8 +219,11 @@ export class ArrivalsView {
     socketAt: (name: string) => Point,
     sounds: HeardSound[],
   ): void {
-    const beats = this.heard.get(ship.id) ?? new Set<string>();
-    this.heard.set(ship.id, beats);
+    const beats = this.beatsOf(ship.id, tick, [
+      ['set out', ship.began],
+      ['creaks', ship.hangs],
+      ['leaves', ship.leaves],
+    ]);
     const once = (beat: string, cue: string, where: Point, whole = false) => {
       if (beats.has(beat)) return;
       beats.add(beat);
@@ -202,10 +231,7 @@ export class ArrivalsView {
     };
     const middle = socketAt('hatch');
     once('set out', 'amb.thunder.roll', middle, true);
-    if (tick >= ship.hangs) {
-      once('hangs', 'ship.whistle', middle);
-      once('creaks', 'amb.sea.hull.creak', middle);
-    }
+    if (tick >= ship.hangs) once('creaks', 'amb.sea.hull.creak', middle);
     if (tick >= ship.leaves) once('leaves', 'ship.blast', socketAt('thrust-1'), true);
     const kept = this.smoke.get(ship.id);
     if (kept && clock - kept.roared >= ROAR_EVERY_S) {
@@ -228,8 +254,10 @@ export class ArrivalsView {
     const state = crownState(crown, tick);
     if (!state) return;
     const heart: Point = [crown.at[0], crown.at[1], crown.at[2] + CROWN.highM];
-    const beats = this.heard.get(crown.id) ?? new Set<string>();
-    this.heard.set(crown.id, beats);
+    const beats = this.beatsOf(crown.id, tick, [
+      ['forms', crown.began],
+      ['breaks', crown.leaves + CROWN.crackTicks],
+    ]);
     if (!beats.has('forms')) {
       beats.add('forms');
       out.sounds.push({ cue: 'amb.ice.ping', at: heart }, { cue: 'element.cosmic', at: heart });
@@ -239,7 +267,7 @@ export class ArrivalsView {
         beats.add('breaks');
         out.sounds.push({ cue: 'shield.break', at: heart, whole: true }, { cue: 'finish.cosmic', at: heart });
         latticeWaves.burst([heart[0], heart[1], heart[2] - 1.2], 'red', 2.4, clock);
-        this.breakInto(heart, crown.at[2], crown.heading, clock);
+        this.breakInto(heart, crown.heading, clock);
       }
       return;
     }
@@ -262,8 +290,8 @@ export class ArrivalsView {
     }
   }
 
-  /** A broken crown's shards flung out from its heart, to fall and sink into the ground at `ground`. */
-  private breakInto(heart: Point, ground: number, turn: number, clock: number): void {
+  /** A broken crown's shards flung out from its heart, to fall and sink into the land. */
+  private breakInto(heart: Point, turn: number, clock: number): void {
     for (let nth = 0; nth < FALL.shards; nth++) {
       const angle = turn + (nth * Math.PI * 2) / FALL.shards;
       const out = 2 + (nth % 3);
@@ -271,62 +299,60 @@ export class ArrivalsView {
         from: heart,
         away: [Math.cos(angle) * out, Math.sin(angle) * out, 2 + (nth % 2) * 2],
         spin: 3 + nth,
-        ground,
         broke: clock,
+        struck: null,
       });
     }
   }
 
-  /** Each falling shard's prop at `clock`: flying off and falling, lying a moment where it struck, then sinking. */
-  private shards(clock: number): EventProp[] {
+  /** Each falling shard's prop at `clock` into `props`: flying off and falling until it strikes the land under it
+   *  (`ground`, the land's height, null off it: then its heart's height less the crown's), lying a moment where it
+   *  struck, then sinking. */
+  private shards(clock: number, ground: (x: number, y: number) => number | null, props: EventProp[]): void {
     this.falling = this.falling.filter((shard) => clock - shard.broke < 6);
-    return this.falling.flatMap((shard): EventProp[] => {
+    for (const shard of this.falling) {
       const since = clock - shard.broke;
-      // Where it strikes the ground: when its fall from its height under gravity, thrown up as it was, reaches it.
-      const [up, drop] = [shard.away[2], shard.from[2] - shard.ground];
-      const lands = (up + Math.sqrt(up * up + 2 * FALL.gravity * drop)) / FALL.gravity;
-      const flying = Math.min(since, lands);
-      const place: Point = [
-        shard.from[0] + shard.away[0] * flying,
-        shard.from[1] + shard.away[1] * flying,
-        Math.max(shard.ground, shard.from[2] + up * flying - 0.5 * FALL.gravity * flying * flying),
-      ];
-      const sinking = Math.max(0, since - lands - FALL.lies) / FALL.sinks;
-      if (sinking >= 1) return [];
-      const turn = shard.spin * flying;
-      return [
-        {
-          module: 'lattice-shard',
-          at: place,
-          turn,
-          scale: 1.4,
-          rise: 1 - sinking,
-          lid: since < lands ? turn * 0.7 : 0,
-          glow: 1,
-        },
-      ];
-    });
+      if (!shard.struck) {
+        const up = shard.away[2];
+        const place: Point = [
+          shard.from[0] + shard.away[0] * since,
+          shard.from[1] + shard.away[1] * since,
+          shard.from[2] + up * since - 0.5 * FALL.gravity * since * since,
+        ];
+        const under = ground(place[0], place[1]) ?? shard.from[2] - CROWN.highM;
+        const turn = shard.spin * since;
+        if (place[2] > under) {
+          props.push({ module: 'lattice-shard', at: place, turn, scale: 1.4, rise: 1, lid: turn * 0.7, glow: 1 });
+          continue;
+        }
+        shard.struck = { at: [place[0], place[1], under], turn, lid: turn * 0.7, when: clock };
+      }
+      const { at, turn, lid, when } = shard.struck;
+      const sinking = Math.max(0, clock - when - FALL.lies) / FALL.sinks;
+      if (sinking < 1) props.push({ module: 'lattice-shard', at, turn, scale: 1.4, rise: 1 - sinking, lid, glow: 1 });
+    }
   }
 
   /** Each foe's coming heard as it is let down or begins forming, and dust thrown up where a Grey Tithe foe lands off
    *  its beam: its arrival is kept from the room's word, which says no more of it once it has landed. */
   private foesLanding(fight: ArrivalsFight, tick: number, clock: number, marks: number[], sounds: HeardSound[]): void {
     for (const [id, foe] of fight.foes) {
-      const feet: Point = [foe.view.x, foe.view.y, foe.view.z];
       const arrival = foe.arrival;
-      const kept = this.coming.get(id);
-      if (arrival && !kept && tick >= arrival.drops) {
-        this.coming.set(id, { kind: arrival.kind, lands: arrival.lands, landed: null });
+      let coming = this.coming.get(id);
+      if (!arrival && !coming) continue;
+      const feet: Point = [foe.view.x, foe.view.y, foe.view.z];
+      if (arrival && !coming && tick >= arrival.drops) {
+        coming = { kind: arrival.kind, lands: arrival.lands, landed: null };
+        this.coming.set(id, coming);
         sounds.push({ cue: arrival.kind === BRINGER.crown ? 'amb.ice.crack' : 'story.whoosh', at: feet });
       }
-      const coming = this.coming.get(id);
       if (coming && coming.landed === null && (tick >= coming.lands || !arrival)) coming.landed = clock;
       if (coming?.kind === BRINGER.airship && coming.landed !== null) layLanding(marks, feet, clock - coming.landed);
     }
     for (const id of this.coming.keys()) if (!fight.foes.has(id)) this.coming.delete(id);
   }
 
-  /** Lets everything go, as the room is left. */
+  /** Lets everything go, as a room joined anew starts its numbers again. */
   clear(): void {
     this.smoke.clear();
     this.heard.clear();

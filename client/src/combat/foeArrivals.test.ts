@@ -26,6 +26,35 @@ test('the room’s ticks run on between snapshots by the page’s clock, and hol
   const ticks = new RoomTicks();
   assert.equal(ticks.now(100, 5), 100);
   assert.ok(Math.abs(ticks.now(100, 5.05) - 103) < 1e-9);
-  assert.equal(ticks.now(100, 9), 112, 'held after a fifth of a second');
-  assert.equal(ticks.now(104, 9.01), 104, 'a new snapshot takes over');
+  const held = [5.1, 5.2, 5.5, 9].map((clock) => ticks.now(100, clock));
+  assert.ok(
+    held.every((tick) => tick <= 112 + 6),
+    `a stalled room holds the drawn tick near it: ${held}`,
+  );
+  assert.ok(
+    held.every((tick, nth) => nth === 0 || tick >= (held[nth - 1] ?? 0)),
+    'never stepped back',
+  );
+});
+
+test('the drawn tick never steps back as snapshots come late and early, and keeps up with the room', () => {
+  const ticks = new RoomTicks();
+  let [clock, drawn] = [0, ticks.now(0, 0)];
+  // Snapshots every 50 ms on average, each late or early by up to 30 ms: the room's tick runs at 60 a second.
+  for (let frame = 1; frame <= 600; frame++) {
+    clock = frame / 60;
+    const jitter = ((frame * 7919) % 61) / 1000 - 0.03;
+    const roomTick = Math.floor(Math.max(0, clock - 0.05 + jitter) * 20) * 3;
+    const tick = ticks.now(roomTick, clock);
+    assert.ok(tick >= drawn, `frame ${frame}: ${tick} after ${drawn}`);
+    assert.ok(Math.abs(tick - clock * 60) < 12, `frame ${frame}: ${tick} keeps up with ${clock * 60}`);
+    drawn = tick;
+  }
+});
+
+test('a room joined anew is taken at once, its ticks from its own start', () => {
+  const ticks = new RoomTicks();
+  ticks.now(50_000, 1);
+  assert.ok(ticks.now(50_000, 1.5) > 50_000);
+  assert.equal(ticks.now(30, 1.52), 30);
 });
