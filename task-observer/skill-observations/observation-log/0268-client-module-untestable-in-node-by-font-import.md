@@ -1,5 +1,5 @@
 ---
-id: 229
+id: 268
 title: "A client module that imports fonts cannot load under node --test, so its new failure path was checked by types only; and the audit's headless picture driver lost the GPU device after about three shots"
 status: open
 type: internal

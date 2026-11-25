@@ -1,5 +1,5 @@
 ---
-id: 226
+id: 265
 title: "A worker's cargo xtask repo piped through tail hid its failure and let a commit through"
 status: open
 type: internal

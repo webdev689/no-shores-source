@@ -1,5 +1,5 @@
 ---
-id: 225
+id: 264
 title: "A worktree moved to a second worker keeps the first one's build (fixtures and build scripts point at the old path), the disk runs low, and the template's graphify-out step errors where it is untracked"
 status: open
 type: internal

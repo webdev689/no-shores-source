@@ -1,5 +1,5 @@
 ---
-id: 228
+id: 267
 title: "A brief's either/or ('if the check passes, the script is at fault') let a pass of a model-based check stand as proof the real system works"
 status: open
 type: open-source

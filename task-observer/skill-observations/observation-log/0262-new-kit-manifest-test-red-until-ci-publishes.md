@@ -1,5 +1,5 @@
 ---
-id: 223
+id: 262
 title: "A new island kit or dungeon pack leaves the committed-manifest test red until CI publishes it and its line is committed"
 status: open
 type: internal

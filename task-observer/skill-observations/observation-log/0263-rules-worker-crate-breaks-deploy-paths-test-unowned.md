@@ -1,5 +1,5 @@
 ---
-id: 224
+id: 263
 title: "A new rules crate broke the rooms' deploy-paths test no worker owned, and worker.ts sits at the 600-line limit"
 status: open
 type: internal

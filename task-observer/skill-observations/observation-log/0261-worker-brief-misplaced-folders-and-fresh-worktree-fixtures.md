@@ -1,5 +1,5 @@
 ---
-id: 222
+id: 261
 title: "A worker brief named the wrong folders for readers, and a fresh worktree lacks fixtures cargo tests write, so client tests fail there"
 status: open
 type: internal

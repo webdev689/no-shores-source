@@ -1,5 +1,5 @@
 ---
-id: 231
+id: 269
 title: "A worker whose session dies on an authentication error mid-item is resumed only to commit, so its report is the previous round's and a half-done item reads as finished"
 status: actioned
 type: internal

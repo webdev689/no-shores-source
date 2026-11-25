@@ -1,5 +1,5 @@
 ---
-id: 232
+id: 270
 title: "A headless worker that ends its turn to wait on its own reviewer sub-agent has it stopped ten minutes later, and exits with no review and no report"
 status: actioned
 type: internal
