@@ -116,8 +116,10 @@ test('a key or button let go over the interface, or the window lost there, still
   window.dispatchEvent(new FakeEvent('keydown', { key: 'w', code: 'KeyW' }));
   window.dispatchEvent(new FakeEvent('keyup', { key: 'a', code: 'KeyA' }));
   window.dispatchEvent(new FakeEvent('blur', {}));
-  const preventDefault = () => undefined;
-  listeners.get('pointerup')?.({ button: 2, preventDefault, stopImmediatePropagation: preventDefault });
+  let stopped = false;
+  const stop = () => void (stopped = true);
+  listeners.get('pointerup')?.({ button: 2, preventDefault: () => undefined, stopImmediatePropagation: stop });
   assert.deepEqual(heard.slice(0, 3), ['a down', 'a up', 'let go'], 'no press over the interface, every release');
   assert.equal(heard.length, 4, 'the button let go too');
+  assert.equal(stopped, false, 'and still heard by the sea and the map, which let go of their own presses');
 });

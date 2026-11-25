@@ -121,7 +121,8 @@ export function fightControls(
       const combat = holding();
       held = false;
       if (!combat) return;
-      taken(event);
+      // Kept from the sea's own handlers only while the fight takes the pointer, so they still let go of their press.
+      if (fight()) taken(event);
       const own = FIGHT_CONTROLS.find((id) => BINDS.now[id].keys.includes(`mouse${event.button}`));
       if (own) combat.act(own, false);
     },
