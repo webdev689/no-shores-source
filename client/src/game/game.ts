@@ -325,7 +325,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     climate: (id) => continents.find((each) => each.id === id)?.climate ?? '',
     failed: (why) => travel({ kind: 'shut', why }, goSea),
   });
-  // Under ground a passage's pieces are the dungeon's own once their pack has come; until then, boxes.
   const pieces = piecesDrawer(gpu, () => (dungeons.piecesFromPack() ? null : passages.pieces()));
   const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
   if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
@@ -529,10 +528,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     );
   /** Going through the gate the player stands in to the node it leads to. */
   const goThrough = () => {
-    const way = playing.through;
+    const [way, here] = [playing.through, playing.foot?.node];
     // A gate shut on a locked node takes no one; an open one keeps the seas, as rooms judge where players come from.
-    if (way?.happening && playing.flow.mode === 'foot')
-      travel(way.happening, () => goFoot(way.node, way.facing, playing.foot?.seas));
+    if (!way?.happening || playing.flow.mode !== 'foot' || !here) return;
+    const join = () => goFoot(way.node, way.facing, playing.foot?.seas);
+    if (!passages.ways.cross(way.happening, here.centre, way.node.centre, join)) travel(way.happening, join);
   };
   hud.onPassage(goThrough);
   rejoinOnGuild(

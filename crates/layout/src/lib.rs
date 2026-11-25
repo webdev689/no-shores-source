@@ -459,7 +459,7 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
                    pull: &dyn Fn([f64; 2]) -> f64| {
         let radius = radius_of(kind, blocks);
         if let Some(at) = place(field, kind, radius, areas, seed ^ areas.len() as u32, pull) {
-            areas.push(Area { kind, name: name.to_owned(), at, radius, leads_to });
+            areas.push(Area { kind, name: name.to_owned(), at, radius, leads_to, crosses: false });
             wanted.push(if compose::stands_blocks(kind) { blocks.max(1) } else { 0 });
         }
     };

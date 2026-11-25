@@ -62,6 +62,7 @@ code:
   - client/src/game/passages/passagePieces.ts#pieceMesh
   - client/src/game/passages/pieceView.ts#piecesDrawer
   - client/src/game/passages/passageWay.ts#wayAt
+  - client/src/game/passages/wayBetween.ts#WayBetween
   - client/src/game/passages/passageMap.ts#passageSheet
   - client/src/game/passages/passageWords.ts#dealTracker
   - client/src/game/passages/passagePanels.ts#MouthsCardView
@@ -270,7 +271,8 @@ as its other asks do, and a refusal is said in the room's words (171 to 178).
 
 ### The way between zones
 
-`wayOf` lays the way's rails and `wayAt` plays it, on the cinema's rails ([[Cinema]]); in the flow ([[Game]], "The
+`wayOf` lays the way's rails and `wayAt` plays it, on the cinema's rails ([[Cinema]]), kept under way by
+`WayBetween`, which a crossing gate between two patrol zones plays too ([[Layouts]], "Gates"); in the flow ([[Game]], "The
 flow") a mouth, a begin or a Home is `passing`, drawn over the island from the way's camera with the web's places and
 the way's dots over it; from the way down the place gone to is drawn as on foot, the player's inputs held, and the
 flow is on foot again once the way has played. A zone's own frame stands at its place on the island, so the camera

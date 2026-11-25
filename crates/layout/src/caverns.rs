@@ -226,8 +226,14 @@ mod tests {
             inside: vec![1e6; count],
         };
         let claim = vec![[-half, -half], [half, -half], [half, half], [-half, half]];
-        let area =
-            Area { kind: AreaKind::Coven, name: "The Coven".into(), at: [0.0, 0.0], radius: 30.0, leads_to: None };
+        let area = Area {
+            kind: AreaKind::Coven,
+            name: "The Coven".into(),
+            at: [0.0, 0.0],
+            radius: 30.0,
+            leads_to: None,
+            crosses: false,
+        };
         let floors = [[0.0, 0.0, 0.0, 0.0, 30.0]];
         let found = find(&field, &[area], &[0.0], (&claim, &floors, &[], &[]), (28.0, 3));
         assert_eq!(found.len(), 1, "a cavern is cut");

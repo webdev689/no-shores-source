@@ -234,7 +234,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const eye = playing.after.seen?.eye ?? null;
     parts.passages.frame(heard.held('use'));
     const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
-    const shown = { ...own, shot: parts.passages.wayShot(playing.after.shot(own.shot, seconds)) };
+    const shown = { ...own, shot: parts.passages.ways.shot(playing.after.shot(own.shot, seconds)) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
@@ -507,7 +507,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const passingFrame = (controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     // A room gone to that shuts sends the player to their ship, as it would on foot, before its body ever comes.
     if (playing.foot && parts.heed(playing.foot)) return;
-    const shot = parts.passages.passing(seconds, playing.ready);
+    const shot = parts.passages.ways.passing(seconds, playing.ready);
     // From the way down the place is drawn as on foot, held still while the flow is not yet on foot.
     if (shot === 'place' && playing.foot) footFrame(playing.foot, controls, seconds, size);
     else if (shot && shot !== 'place') scene.draw(shot, size, clock, seconds, []);
