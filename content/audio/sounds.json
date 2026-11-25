@@ -1122,6 +1122,103 @@
       "page": "https://freesound.org/people/bassimat/sounds/858795/",
       "changes": "Unchanged."
     },
+    "foe.lattice.alert": {
+      "key": "sounds/87fa20ece95757d8f98ee844abbb89af039e1040e054dc95517e43baa8159ead.mp3",
+      "freesound": 499608,
+      "name": "Sliding sound 2.mp3",
+      "author": "Hope-Sounds",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Hope-Sounds/sounds/499608/",
+      "changes": "Unchanged."
+    },
+    "foe.tithe.attack": {
+      "keys": [
+        "sounds/488a4964036e0a80339da02149fd2ad2e3afd1a15c6768f55f30c5b90c6d172d.mp3",
+        "sounds/69212f716c48ebccd1582d8ac1f8b64f2484f6322c18d03d22b0d7f3574cf05e.mp3",
+        "sounds/aadc142a56a10426193041f2ed91a6b54851dd30cde40e4d3c5a57737563ec43.mp3",
+        "sounds/6f3d34945b619b291c64126a510e1dbda6b80e7a50629aa776d025bbf5afd349.mp3"
+      ],
+      "credits": [
+        {
+          "freesound": 695379,
+          "name": "Male Attack Grunt 2.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695379/"
+        },
+        {
+          "freesound": 695378,
+          "name": "Male Attack Grunt 1.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695378/"
+        },
+        {
+          "freesound": 695383,
+          "name": "Male Attack Grunt 8.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695383/"
+        },
+        {
+          "freesound": 695382,
+          "name": "Male Attack Grunt 7.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695382/"
+        }
+      ],
+      "changes": "Unchanged."
+    },
+    "foe.tithe.death": {
+      "key": "sounds/0aeee713079cd7e3b2578a0748cf4b63d20ac0c8fd302027b5850a8a8d1b7e83.mp3",
+      "freesound": 547209,
+      "name": "Voice_AdultMale_PainGrunts_09.wav",
+      "author": "MrFossy",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/MrFossy/sounds/547209/",
+      "changes": "Unchanged."
+    },
+    "foe.tithe.hurt": {
+      "keys": [
+        "sounds/0aeee713079cd7e3b2578a0748cf4b63d20ac0c8fd302027b5850a8a8d1b7e83.mp3",
+        "sounds/ad2727f3bc69029b479e657b3daf4add0f2448a045d1664343ed056c88eb5b68.mp3",
+        "sounds/aa9d286ff3a49315a7732a96648fdbf9e54af53cc9891c87e2fa08556454f932.mp3"
+      ],
+      "credits": [
+        {
+          "freesound": 547209,
+          "name": "Voice_AdultMale_PainGrunts_09.wav",
+          "author": "MrFossy",
+          "licence": "CC0",
+          "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "page": "https://freesound.org/people/MrFossy/sounds/547209/"
+        },
+        {
+          "freesound": 464486,
+          "name": "Male Grunting In Pain",
+          "author": "elynch0901",
+          "licence": "CC0",
+          "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "page": "https://freesound.org/people/elynch0901/sounds/464486/"
+        },
+        {
+          "freesound": 129346,
+          "name": "male_grunt.aif",
+          "author": "snaginneb",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+          "page": "https://freesound.org/people/snaginneb/sounds/129346/"
+        }
+      ],
+      "changes": "Unchanged."
+    },
     "guard.break": {
       "key": "sounds/48d47fdb27a4aa86f7bf66d42f0017dce59a20cde20e88072876314cd4e995fb.mp3",
       "freesound": 693582,
@@ -1190,6 +1287,76 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/TommasoMotteran/sounds/875968/",
+      "changes": "Unchanged."
+    },
+    "horse.boost": {
+      "key": "sounds/a49c36035f94313f579b4ecc415a511932fb4e95a1633d54be939d5042be3254.mp3",
+      "freesound": 322450,
+      "name": "Horse Neigh 2.wav",
+      "author": "GoodListener",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/GoodListener/sounds/322450/",
+      "changes": "Unchanged."
+    },
+    "horse.boost.ground": {
+      "key": "sounds/41fb0cd15bca180cd90908f91aa6ec27563b5e718358003e930d2de5a797f9a7.mp3",
+      "freesound": 490751,
+      "name": "Horse Galloping.wav",
+      "author": "Jordishaw",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Jordishaw/sounds/490751/",
+      "changes": "Cut to 0.5 s from 1.145 s in, made mono, its ends faded."
+    },
+    "horse.dismount": {
+      "key": "sounds/800df2d5a0ee4c367eec4fa7adcb727cfbddb43ad9d2ed6895d26df8a51e42a7.mp3",
+      "freesound": 321981,
+      "name": "Leather_saddle_Twisting 01.wav",
+      "author": "n_audioman",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/n_audioman/sounds/321981/",
+      "changes": "Unchanged."
+    },
+    "horse.gallop.ground": {
+      "key": "sounds/d432f828895c04c3c54787572fab0fab89c7f617835dbd41240d608f3b73f933.mp3",
+      "freesound": 197212,
+      "name": "Horse Gallop - Loopable.mp3",
+      "author": "HebronTheatre",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/HebronTheatre/sounds/197212/",
+      "changes": "Cut to 0.5 s from 0.715 s in, made mono, its ends faded."
+    },
+    "horse.mount": {
+      "key": "sounds/49ba0d36d3072ee7695e6068656b8d651b48f5e3df2f20ca3c40e4d7bdc6a68a.mp3",
+      "freesound": 642555,
+      "name": "Horse In Harness",
+      "author": "Thimblerig",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Thimblerig/sounds/642555/",
+      "changes": "Unchanged."
+    },
+    "horse.snort": {
+      "key": "sounds/f5781dc848f39f72ac1d1c33c8d35a09823ace881a57beb4af1058c461d4520d.mp3",
+      "freesound": 116267,
+      "name": "20110306_horse.snort.wav",
+      "author": "dobroide",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/dobroide/sounds/116267/",
+      "changes": "Unchanged."
+    },
+    "horse.whinny": {
+      "key": "sounds/aaf6c4e737518e92a325e091968dd3beb484f04eee8afd1134c5af32c3935adb.mp3",
+      "freesound": 439670,
+      "name": "Horse Small Whinny",
+      "author": "DrinkingWindGames",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/DrinkingWindGames/sounds/439670/",
       "changes": "Unchanged."
     },
     "jump": {
