@@ -3,7 +3,8 @@
 //! open and lintels over them, floored with planks and ceiled under its eaves; one tall enough for two storeys has an
 //! upper floor and a stair up to it; and its main room is furnished as its kind of building is (a tavern's counter
 //! and tables, a house's bed and hearth, a temple's benches). Wings too low to stand in, outdoor steps and platforms
-//! stay solid. What is built is drawn as solids, and every wall, floor, stair and lintel is a box a body meets.
+//! stay solid. What is built is drawn as solids, and every wall, floor, ceiling, stair and lintel is a box a body
+//! meets.
 
 use crate::book::{Book, Door, Measure, Wing};
 use crate::collide::Box3;
@@ -390,6 +391,10 @@ fn lay_floors(frame: &Frame, room: &Room, floors: &[f64], stair: Option<Stair>, 
     built.boxes.push(box_of(&floor));
     built.solids.push(floor);
     built.solids.push(frame.block(inner_x, inner_z, room.top - CEILING_M, room.top, Material::Timber));
+    // A body meets the ceiling, and the rain stops under what a body meets (client/src/sky/shelter.ts): its box spans
+    // the room to its outer faces, as a closed building's whole box does, so the shelter's cells along its walls are
+    // dry inside.
+    built.boxes.push(box_of(&frame.block(room.xs, room.zs, room.top - CEILING_M, room.top, Material::Timber)));
     for &floor in &floors[1..] {
         let mut slabs = vec![(inner_x, inner_z)];
         if let (Some(stair), true) = (stair, floor - room.base < STOREY_M + 0.1) {

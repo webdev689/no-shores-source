@@ -378,7 +378,8 @@ file takes its section, spawns and boxes from its layout.
 
 ## Boxes
 
-What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs and stairs, the outdoor steps, each wing
+What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs, ceiling and stairs, the ceiling's box
+over the room to its outer faces, so the rain stops under it ([[Weather]], "Shelter"), the outdoor steps, each wing
 too low to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the
 ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
 never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,

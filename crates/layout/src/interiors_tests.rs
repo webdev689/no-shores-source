@@ -77,3 +77,21 @@ fn a_quarter_turned_frame_takes_the_plan_s_forward_to_the_east() {
     let frame = Frame { origin: [100.0, 200.0, 0.0], cosine: 0.0, sine: 1.0 };
     assert_eq!(frame.world(0.0, 1.0), [101.0, 200.0]);
 }
+
+#[test]
+fn a_rooms_ceiling_is_a_box_a_body_meets_over_it_to_its_outer_faces_so_no_rain_falls_in_it() {
+    let frame = Frame { origin: [10.0, 20.0, 1.0], cosine: 1.0, sine: 0.0 };
+    let one = room(3.2);
+    let mut built = Built::default();
+    lay_floors(&frame, &one, &[0.0], None, 0.07, &mut built);
+    let [west, north, east, south, ..] = frame.block(one.xs, one.zs, 0.0, 1.0, Material::Timber).bounds();
+    let ceiling = 1.0 + one.top - CEILING_M;
+    let covers = |[left, top_edge, right, bottom_edge, _, under]: &Box3| {
+        *left <= west + 1e-9
+            && *right >= east - 1e-9
+            && *top_edge <= north + 1e-9
+            && *bottom_edge >= south - 1e-9
+            && (*under - ceiling).abs() < 1e-9
+    };
+    assert!(built.boxes.iter().any(covers), "a box over the whole room at its ceiling: {:?}", built.boxes);
+}
