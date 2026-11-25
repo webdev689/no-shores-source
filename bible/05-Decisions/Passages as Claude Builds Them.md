@@ -208,7 +208,7 @@ losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
 | The lamp lit | Lit for a player while their dive in the zone has lit it, kept with the dive: a round begun again, a reconnect or a dive begun at the lamp find it lit |
 | Leaving fallen | A body left fallen comes back fallen; past its two minutes it comes back whole, its haul lost as a respawn's |
 | A vein's stock | A gather is refused against the haul's stock while the haul takes it |
-| Taking part | Bringing down one of the deal's foes, lighting a dead lamp, holding the ring, or reaching the far mouth |
+| Taking part | Bringing down one of the zone's foes, lighting a dead lamp, opening the reliquary, gathering a node of the vein, holding the ring, or reaching the far mouth |
 | A vault's garrison | Takes no Crowded or Veteran; Hardened applies |
 | Drops | From the dungeons' content under ground, the world's above it |
 | The haul's size | At most 64 Vestiges and 64 items; a find past that is let go |

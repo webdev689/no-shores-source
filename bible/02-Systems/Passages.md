@@ -223,8 +223,8 @@ A dead lamp kindles, a reliquary opens and the ring is held only while no foe st
 (`CONTEST_M`); a hold begun with one near is refused so (`FoesNear`). A wave is two to four of the zone's roster
 taking its currents (Crowded's more, Veteran's Majors, Hardened's health) standing at the post or spot nearest a
 player but 12 m from every one, each hunting the nearest player. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
-and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, held the
-ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again; a player who came after
+and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, opened
+the reliquary, gathered a node of the vein, held the ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again; a player who came after
 it was done goes on once that round is done. A company's room does not begin again, and a member who comes after it
 was done finds it done.
 
@@ -276,11 +276,11 @@ only where the record is of the room's week and day), and
 the Atheric bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its key, done,
 the dead lamps lit and targets down, the ring's share held, the seconds left, the waves, whether the mouths are open
 and the lamp lit for the player (their dive in the zone having lit it), and their hold under way (a dead lamp's
-number, 253 for a reliquary, 255 for the lamp). The asks are numbered 82 to 87 (`passage_wire`), after the open-find
-ask's 81, the reliquary's open 87. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
+number, 253 for a reliquary, 255 for the lamp). The asks are numbered 91 to 96 (`passage_wire`), after the ships' 86
+to 90, the reliquary's open 96. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
 the route and the minute); once the
 week on its clock is past the web's, judged as each join comes, the room refuses players: "The passage has shifted". The passages' refusals are
-`Refusal`'s 170 to 181, answered one more: no dive, no such mouth, the deal not done, no lamp, the lamp not lit, the
+`Refusal`'s 173 to 184, answered one more: no dive, no such mouth, the deal not done, no lamp, the lamp not lit, the
 lamp guarded, out of reach, not in a passage; `Shifted`, every ask of a zone whose week's web has turned but Home at a
 lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; `Fallen`, any ask while the player is down; and
 `FoesNear`, a hold begun with a foe within 8 m of its piece.
@@ -309,8 +309,8 @@ under ground the Forge's layout as a dungeon's is handed over, above ground the 
 kit the page draws it from) and a hollow's heights (`room_passage_heights`), built by the same crate; each is read whole and refused, saying
 why, where it does not read. An island with no passages, a zone the web lacks or a style the Forge does not lay yet
 answers empty, read as none. The gear's dive, haul, lamps and Atheric bounties (`passagesOf`) and the snapshot's
-`PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks 82 to 86 go
-as its other asks do, and a refusal is said in the room's words (171 to 181).
+`PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks 91 to 96 go
+as its other asks do, and a refusal is said in the room's words (174 to 185).
 
 ### Played
 
