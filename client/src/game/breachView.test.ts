@@ -20,9 +20,9 @@ import { type BreachOn, BreachView, bearing, breachFall, gateOf, withBreach } fr
 import type { NodeInfo } from './worldData.ts';
 
 /** A moment as the page plays it: its own recording once the owner has picked it, else the world's it borrows. */
-function moment(event: number, at: readonly [number, number, number] | null) {
-  assert.ok(at, 'the moment has its place');
-  return heardOf(MOMENT_CUES[event]!, at);
+function moment(event: number, place: readonly [number, number, number] | null) {
+  assert.ok(place, 'the moment has its place');
+  return heardOf(MOMENT_CUES[event]!, place);
 }
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
