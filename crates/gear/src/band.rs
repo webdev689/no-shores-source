@@ -8,8 +8,9 @@
 
 use crate::chests::{CHEST_AUREM, CHEST_FRAGMENTS, CHEST_RESOURCE, CHEST_XP, FIRST_HEROIC_ESSENCE};
 use crate::lamps::{
-    LAMP_PAY, LAMP_VESTIGE, MISSION_PAY, MISSION_VESTIGE, RELIQUARY_FRAGMENTS, RELIQUARY_PAY, RELIQUARY_VESTIGE,
-    SKIRMISH_PAY, SKIRMISH_VESTIGE, VAULT_ITEM, VAULT_PAY, VEIN_FRAGMENTS, VEIN_PAY, find_times, pay_times,
+    KILL_SHARE, LAMP_PAY, LAMP_VESTIGE, MISSION_PAY, MISSION_VESTIGE, RELIQUARY_FRAGMENTS, RELIQUARY_PAY,
+    RELIQUARY_VESTIGE, SKIRMISH_PAY, SKIRMISH_VESTIGE, VAULT_ITEM, VAULT_PAY, VEIN_FRAGMENTS, VEIN_PAY, find_times,
+    pay_times,
 };
 use crate::playlist::Playlist;
 use crate::power::gap;
@@ -87,12 +88,12 @@ pub const SEA_FOES: [Foe; 4] = [Foe::Skirmisher, Foe::Swordsman, Foe::Brute, Foe
 /// The pieces a sunk ship leaves each player, Minor to Miniboss (`room::flotsam::pieces_of`).
 pub const SEA_PIECES: [f64; 4] = [3.0, 4.0, 5.0, 6.0];
 
-/// A passage zone: its foes felled and the seconds a scripted player takes over its deal to done, its ground walked
-/// (`room::deal_measure_tests::measure_the_deals` over six weeks' zones, three of each deal and lamp: 8 foes the
-/// middle, the room standing 9 at most; 145 s, each deal weighed as the web deals it), and the passage between zones,
-/// 1.5 s up, 2 s across and 1.5 s down and in (`Passages as Claude Builds Them`).
-pub const PASSAGE_FOES: f64 = 8.0;
-pub const PASSAGE_SECONDS: f64 = 145.0;
+/// A passage zone: its foes felled and the seconds a scripted player takes over its deal to done, on foot
+/// (`room::deal_measure_tests::measure_the_deals`, six weeks' zones, three of each deal and lamp, those it did: about
+/// 5 foes and 184 s a zone, each deal weighed as the web deals it, 45 s a foe against a patrol's 25), and the passage
+/// between zones, 1.5 s up, 2 s across and 1.5 s down and in (`Passages as Claude Builds Them`).
+pub const PASSAGE_FOES: f64 = 5.0;
+pub const PASSAGE_SECONDS: f64 = 184.0;
 pub const PASSAGE_BETWEEN_SECONDS: f64 = 5.0;
 /// The passages' island, Saltmere's band, and its depths.
 pub const PASSAGE_BAND: (u8, u8) = (1, 4);
@@ -389,12 +390,8 @@ fn cache(depth: u8, level: u8) -> Hour {
     let skirmish = raised(SKIRMISH_PAY).plus(found(SKIRMISH_VESTIGE, elite));
     let mission = raised(MISSION_PAY).plus(found(MISSION_VESTIGE, elite));
     let miniboss = shares(colours(4), level);
-    let vault = raised(VAULT_PAY).plus(found(chance(4), miniboss)).plus(items(VAULT_ITEM, miniboss, level)).plus(kill(
-        Foe::Captain,
-        4,
-        level,
-        tier,
-    ));
+    let reeve = kill(Foe::Captain, 4, level, tier).times(KILL_SHARE);
+    let vault = raised(VAULT_PAY).plus(found(chance(4), miniboss)).plus(items(VAULT_ITEM, miniboss, level)).plus(reeve);
     let vein = Hour { materials: 6.0 * f64::from(NODE_YIELD) + f64::from(VEIN_FRAGMENTS), ..raised(VEIN_PAY) };
     let (least, most) = RELIQUARY_FRAGMENTS;
     let reliquary = Hour {
@@ -427,8 +424,8 @@ fn lamp_zone(number: u8, depth: u8, level: u8) -> Hour {
     let paid_cache =
         paid(LAMP_PAY, level, tier).times(pay_times(depth)).plus(vestiges(chance, shares(colours(3), level)));
     let elites = if number >= 4 { 6.0 } else { 3.0 };
-    let guard = kill_of(&[Foe::Brute, Foe::Archer], 3, level, tier).times(elites);
-    let miniboss = if number >= 2 { kill(Foe::Captain, 4, level, tier) } else { Hour::default() };
+    let guard = kill_of(&[Foe::Brute, Foe::Archer], 3, level, tier).times(elites * KILL_SHARE);
+    let miniboss = if number >= 2 { kill(Foe::Captain, 4, level, tier).times(KILL_SHARE) } else { Hour::default() };
     paid_cache.plus(guard).plus(miniboss)
 }
 
@@ -475,7 +472,7 @@ pub fn passage(depth: u8, level: u8) -> Option<Hour> {
     let foes_at = ((u16::from(low) + u16::from(high)) / 2) as u8;
     let zone_seconds = PASSAGE_SECONDS * slowed(level, foes_at) + PASSAGE_BETWEEN_SECONDS;
     let lamp = lamp_zone(depth.div_ceil(5), depth, foes_at);
-    let dealt = passage_kill(depth, foes_at).times(PASSAGE_FOES).plus(cache(depth, foes_at));
+    let dealt = passage_kill(depth, foes_at).times(PASSAGE_FOES * KILL_SHARE).plus(cache(depth, foes_at));
     let zone = dealt.times(0.8).plus(lamp.times(0.2));
     let zones = zone.times(3_600.0 / zone_seconds).less_finds(haul_lost(depth));
     Some(zones.plus(lamps_paid(level)))

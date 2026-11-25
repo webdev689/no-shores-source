@@ -31,8 +31,8 @@ const BANDS: [(u8, Rank); 6] = [
 ];
 /// An Elite standing in a band, by turns.
 const ELITES: [u8; 2] = [ENFORCER, MARKSMAN];
-/// The most foes a zone stands at once, its bands and its waves together, so one player does its deal in about two
-/// and a half minutes (`deal_measure_tests`) and a lamp comes about every twelve.
+/// The most foes a zone stands at once, its bands and its waves together, so one player does its deal in about three
+/// minutes (`deal_measure_tests`) and a lamp comes about every fifteen.
 pub(crate) const ZONE_FOES_MOST: usize = 9;
 /// The stream a zone's bands are drawn on, apart from its waves'.
 const BAND_STREAM: u64 = 0x7061_7373;

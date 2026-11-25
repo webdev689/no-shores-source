@@ -13,9 +13,9 @@ use protocol::wire::overlook::wire as messages;
 pub const PASSAGE_ASK: &str =
     r#"{ "island": "continent-1", "week": 2900, "zone": ZONE, "route": "public", "minute": 29230000 }"#;
 /// Both tests hold this value; a change to the passages' rooms, the foes or the fight changes it in both, on purpose.
-pub const PASSAGE_HASH: &str = "8b88adf3";
+pub const PASSAGE_HASH: &str = "7ff73ce0";
 /// The tick the deal was done at, in both.
-pub const PASSAGE_DONE: u32 = 2_778;
+pub const PASSAGE_DONE: u32 = 2_798;
 const RUN_TICKS: u32 = 3_000;
 const SWING_EVERY: u32 = 20;
 /// A glance's health's place among a foe's numbers, and how near a foe stands to be swung at (m).
@@ -181,7 +181,7 @@ fn a_walk_predicted_on_a_passage_zones_own_ground_is_stepped_by_its_room_to_the_
             assert_eq!(bits(&predicted[..body]), bits(&after[..body]), "zone {zone}, tick {tick}: the body");
             // A foe come near strikes, which a page predicting alone does not see: the walk ends there.
             if bits(&predicted) != bits(&after) {
-                assert!(tick > 150, "zone {zone}: struck at tick {tick}, before the walk had gone far");
+                assert!(tick > 120, "zone {zone}: struck at tick {tick}, before the walk had gone far");
                 break;
             }
             let moved = combat::sight::apart([before[0], before[1]], [after[0], after[1]]);

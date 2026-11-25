@@ -148,7 +148,8 @@ passages' own pieces standing in it with their solids.
   third, a Miniboss and two Elite bands at the fourth. A vault stands a dungeon's garrison with its Miniboss in the end
   room, and no cache chest of its own: its cache is the passage's. A zone's room stands at most nine foes at once, its
   bands and its waves together (`ZONE_FOES_MOST`), bands past it not standing, so one player does its deal in about
-  two and a half minutes and a lamp comes about every twelve. A guard never stands again by itself.
+  three minutes and a lamp comes about every fifteen. A guard never stands again by itself. A foe of a passage zone
+  pays three quarters of a kill as it falls, its XP, Aurem and chances of a find (`lamps::KILL_SHARE`).
 - **The week's two modifiers** are the zone's run's, weighing the runs' hooks (`run.rs`); **the zone's currents**
   weigh them too at the depth's strength: Kindled and Sharpened a blow, Shielded the share shielded, Frail a heal, Spent
   a recharge, Hardened every foe's health, Crowded and Veteran each band, Gloom a darkness while the deal runs (no
@@ -180,13 +181,13 @@ was done finds it done.
 
 - **A cache** is paid at the zone's level and depth (`Character::pay_cache`): its XP and Aurem times `pay_times` (1 at
   the first depth to 1.25 at the twentieth), its chances of finds times `find_times` (1 to 2); its finds go into the
-  haul. At level 5: a skirmish 70 XP and 5 Aurem and a Vestige one time in a hundred; a mission 90 and 7 and a
-  Vestige two times in a hundred; a vault 140 and 10, its Miniboss's item one time in four and a Vestige as a
-  Miniboss's kill leaves one; a vein 40 and 3, its six nodes and two fragments; a reliquary 40 and 3, a Vestige three
-  times in a hundred and two to five fragments, their stock rolled apart from their count; a lamp 140 and 10 and a
-  Vestige five times in a hundred. A zone takes one player about two and a half minutes over about eight foes
-  (`room::deal_measure_tests`), so its kills carry the hour and its cache is a token, set to keep the passages inside
-  the band ([[Activities]], "The band").
+  haul. At level 5: a skirmish 410 XP and 30 Aurem and a Vestige about one time in ten; a mission 520 and 39 and a
+  Vestige about one time in seven; a vault 810 and 61, its Miniboss's item about one time in three and a Vestige as a
+  Miniboss's kill leaves one; a vein 200 and 15, its six nodes and two fragments; a reliquary 200 and 15, a sure
+  Vestige and two to five fragments, their stock rolled apart from their count; a lamp 810 and 61 and a sure Vestige.
+  A zone takes one player about three minutes over about five foes (`room::deal_measure_tests`), so its cache, the
+  passages' main pay, is sized for that, and its foes' share of a kill keeps the passages inside the band
+  ([[Activities]], "The band").
 - **A lamp lit** (E held 2 s within 3 m of its plinth, once its guard is down, each player for themselves) keeps the
   haul: items as found, Vestiges carried or to the vault or the mail, materials added. The day's first lamp lit on an
   island pays a dungeon of the day's clear and a sure Vestige in a Boss's colours; the first time each week each lamp

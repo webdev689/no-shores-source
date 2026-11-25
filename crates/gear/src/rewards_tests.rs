@@ -119,3 +119,15 @@ fn a_dungeons_clear_always_leaves_an_item_coloured_as_its_minibosss_and_now_and_
         assert_eq!(found(&character), 0, "{clear:?}: its pay alone; its Boss's kill leaves the loot");
     }
 }
+
+#[test]
+fn a_kill_paid_at_a_share_pays_that_share_of_its_xp_and_aurem() {
+    let (mut whole, mut half) = (Character::starting(), Character::starting());
+    let (xp, aurem) = (whole.xp, whole.materials.aurem);
+    whole.reward_kill(Foe::Brute, 2, 5, None, Difficulty::Normal);
+    half.reward_share(Foe::Brute, (2, 5), None, (Difficulty::Normal, 0.5));
+    let gained = |character: &Character| (character.xp - xp, character.materials.aurem - aurem);
+    let ((whole_xp, whole_aurem), (half_xp, half_aurem)) = (gained(&whole), gained(&half));
+    assert!(whole_xp > 0 && half_xp.abs_diff(whole_xp / 2) <= 1, "{half_xp} of {whole_xp}");
+    assert!(half_aurem.abs_diff(whole_aurem / 2) <= 1, "{half_aurem} of {whole_aurem}");
+}

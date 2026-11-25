@@ -27,22 +27,24 @@ pub enum Cache {
     Lamp(u8),
 }
 
-/// Each deal's cache at level 5, XP then Aurem. A passage zone holds at most nine foes and takes one player about two
-/// and a half minutes (`band::PASSAGE_SECONDS`), so zones come quickly and their kills carry the hour; the cache is a
-/// small token of the deal done, set so an hour in the passages stays inside the band (`band`).
-pub const SKIRMISH_PAY: (u32, u32) = (70, 5);
-pub const MISSION_PAY: (u32, u32) = (90, 7);
-pub const VAULT_PAY: (u32, u32) = (140, 10);
-pub const VEIN_PAY: (u32, u32) = (40, 3);
-pub const RELIQUARY_PAY: (u32, u32) = (40, 3);
-pub const LAMP_PAY: (u32, u32) = (140, 10);
+/// Each deal's cache at level 5, XP then Aurem: the passages' main pay, sized for a zone of about three minutes
+/// (`band::PASSAGE_SECONDS`), the ten-minute zone's cache times 184 s over its 635 s.
+pub const SKIRMISH_PAY: (u32, u32) = (410, 30);
+pub const MISSION_PAY: (u32, u32) = (520, 39);
+pub const VAULT_PAY: (u32, u32) = (810, 61);
+pub const VEIN_PAY: (u32, u32) = (200, 15);
+pub const RELIQUARY_PAY: (u32, u32) = (200, 15);
+pub const LAMP_PAY: (u32, u32) = (810, 61);
 /// A skirmish's, a mission's, a reliquary's and a lamp's chance of a Vestige, before depth raises it.
-pub const SKIRMISH_VESTIGE: f64 = 0.01;
-pub const MISSION_VESTIGE: f64 = 0.02;
-pub const RELIQUARY_VESTIGE: f64 = 0.03;
+pub const SKIRMISH_VESTIGE: f64 = 0.097;
+pub const MISSION_VESTIGE: f64 = 0.145;
+pub const RELIQUARY_VESTIGE: f64 = 1.0;
 /// A vault's chance of its Miniboss's item as itself.
-pub const VAULT_ITEM: f64 = 0.25;
-pub const LAMP_VESTIGE: f64 = 0.05;
+pub const VAULT_ITEM: f64 = 0.29;
+pub const LAMP_VESTIGE: f64 = 1.0;
+/// The share of a kill a passage zone's foe pays as it falls, its XP, Aurem and chances of a find: the passages pay
+/// through their caches, the lamp and the reliquary, deeper paying more, so their foes' pay is the band's lever.
+pub const KILL_SHARE: f64 = 0.75;
 /// A vein's fragments, and a reliquary's least and most.
 pub const VEIN_FRAGMENTS: u16 = 2;
 pub const RELIQUARY_FRAGMENTS: (u16, u16) = (2, 5);

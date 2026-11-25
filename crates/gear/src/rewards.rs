@@ -109,11 +109,23 @@ impl Character {
         weapon: Option<Slot>,
         difficulty: Difficulty,
     ) -> Reward {
+        self.reward_share(foe, (rank, foe_level), weapon, (difficulty, 1.0))
+    }
+
+    /// `reward_kill` at `share` of its XP and Aurem, as a passage zone's foe pays (`lamps::KILL_SHARE`).
+    pub fn reward_share(
+        &mut self,
+        foe: Foe,
+        (rank, foe_level): (u8, u8),
+        weapon: Option<Slot>,
+        (difficulty, share): (Difficulty, f64),
+    ) -> Reward {
         let worth = worth(foe, rank);
         if difficulty == Difficulty::Abyss {
             self.earn(crate::emblems::Deed::AbyssFoe);
         }
-        self.pay((worth.xp, worth.aurem), foe_level, weapon, difficulty)
+        let shared = |amount: u32| libm::round(f64::from(amount) * share) as u32;
+        self.pay((shared(worth.xp), shared(worth.aurem)), foe_level, weapon, difficulty)
     }
 
     /// What a kill of a foe of this rank and level leaves this player: Vestiges by its rank's chance, and from a
@@ -128,7 +140,18 @@ impl Character {
         source: Source,
         dice: &Dice,
     ) -> Vec<Vestige> {
-        let raised = difficulty.reward();
+        self.loot_share((rank, foe_level), (difficulty, 1.0), source, dice)
+    }
+
+    /// `loot_kill` at `share` of its chances, as a passage zone's foe drops (`lamps::KILL_SHARE`).
+    pub fn loot_share(
+        &mut self,
+        (rank, foe_level): (u8, u8),
+        (difficulty, share): (Difficulty, f64),
+        source: Source,
+        dice: &Dice,
+    ) -> Vec<Vestige> {
+        let raised = difficulty.reward() * share;
         let chances = (vestige::chance(rank) * raised, vestige::item_chance(rank) * raised);
         self.loot(chances, rank, foe_level, source, dice)
     }
