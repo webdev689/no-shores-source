@@ -107,8 +107,7 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
   ];
   const quad = (corners: readonly (readonly [number, number, number])[], colour: readonly number[]) => {
     const [first, second, third, fourth] = corners;
-    if (!first || !second || !third || !fourth) return;
-    for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);
+    if (first && second && third && fourth) pushQuad(out, first, second, third, fourth, colour);
   };
   const raised = LIFT + EDGE_LIFT;
   // A strip of edge from `from` to `to` along the lane, between two asides.
@@ -247,10 +246,23 @@ function markStreak(
   for (const side of sides) {
     const offset = (point: readonly number[], sign: number) =>
       [0, 1, 2].map((axis) => (point[axis] ?? 0) + (side[axis] ?? 0) * thick * sign);
-    const corners = [offset(tail, -1), offset([x, y, z], -1), offset([x, y, z], 1), offset(tail, 1)];
-    const [first, second, third, fourth] = corners;
-    if (!first || !second || !third || !fourth) continue;
-    for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);
+    pushQuad(out, offset(tail, -1), offset([x, y, z], -1), offset([x, y, z], 1), offset(tail, 1), colour);
+  }
+}
+
+/** A quad as its two triangles, first, second, third and first, third, fourth, each corner followed by `colour`:
+ *  the fight's marks lay thousands a frame, so each number is pushed as it is, with nothing made between. */
+function pushQuad(
+  out: number[],
+  first: readonly number[],
+  second: readonly number[],
+  third: readonly number[],
+  fourth: readonly number[],
+  colour: readonly number[],
+): void {
+  for (const corner of [first, second, third, first, third, fourth]) {
+    for (let axis = 0; axis < corner.length; axis++) out.push(corner[axis]!);
+    for (let channel = 0; channel < colour.length; channel++) out.push(colour[channel]!);
   }
 }
 
@@ -265,18 +277,21 @@ export function markRing(
   arc: readonly [number, number] = [0, 2 * Math.PI],
 ): void {
   const [x, y, z] = centre;
-  const onGround = (radius: number, angle: number) => [
-    x + Math.sin(angle) * radius,
-    y - Math.cos(angle) * radius,
-    z + LIFT,
-  ];
+  const [red, green, blue, opacity] = colour;
+  // A corner on the ground at `radius`, along the bearing whose sine and cosine are given, then the colour.
+  const corner = (radius: number, sine: number, cosine: number) =>
+    out.push(x + sine * radius, y - cosine * radius, z + LIFT, red, green, blue, opacity);
   const [start, end] = arc;
   const steps = Math.max(1, Math.ceil((CURVE_STEPS * Math.abs(end - start)) / (2 * Math.PI)));
   for (let step = 0; step < steps; step += 1) {
     const [from, to] = [start + ((end - start) * step) / steps, start + ((end - start) * (step + 1)) / steps];
-    const corners = [onGround(inner, from), onGround(outer, from), onGround(outer, to), onGround(inner, to)];
-    const [first, second, third, fourth] = corners;
-    if (!first || !second || !third || !fourth) continue;
-    for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);
+    const [fromSine, fromCosine, toSine, toCosine] = [Math.sin(from), Math.cos(from), Math.sin(to), Math.cos(to)];
+    // Its two triangles: inner and outer at the first bearing, outer at the next; then inner, outer and inner.
+    corner(inner, fromSine, fromCosine);
+    corner(outer, fromSine, fromCosine);
+    corner(outer, toSine, toCosine);
+    corner(inner, fromSine, fromCosine);
+    corner(outer, toSine, toCosine);
+    corner(inner, toSine, toCosine);
   }
 }

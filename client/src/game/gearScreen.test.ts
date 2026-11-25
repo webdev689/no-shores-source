@@ -96,10 +96,8 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   assert.equal(perk?.nodes[1]?.cost, 'Costs 800 Aurem, 2 fragments.');
   assert.deepEqual(
     detail.presses.map((press) => [press.label, press.role]),
-    [
-      ['Take off', 'button'],
-      ['Hold to feed a Fruit of Dagon', 'button'],
-    ],
+    [['Take off', 'button']],
+    'a Fruit of Dagon is eaten from the inventory, never fed from a page',
   );
   const module = itemDetailOf({ ...legendary, kind: 25, bucket: 8, source: 4 }, state({}));
   assert.ok(!module.numbers.some(([label]) => label === 'From'), 'a ship’s module keeps no look of a content');

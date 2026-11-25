@@ -30,6 +30,10 @@ export const LOD_BAND = 0.12;
  *  as they are drawn, the same share stands. */
 export const THIN_FROM_M = 1000;
 export const THIN_TO_M = 3000;
+/** How many tiles a step of making the list weighs before the frame's slice is looked at again. */
+const PACK_STRIDE = 256;
+/** How many tiles kept as they are the scattering passes before it reads the clock again. */
+const CLOCK_EVERY = 64;
 /** While tiles still wait their turn, newly scattered ones are listed at most this often, milliseconds. */
 const REPACK_MS = 250;
 /** The eye stands anywhere in its tile, so a tile's distance from the eye's tile's middle is this uncertain. */
@@ -72,11 +76,12 @@ export interface Packed {
   readonly blocks?: TileBlocks;
 }
 
-/** One layer of a tile: its plants, sorted by form, where each form's begin (and the last ends), and the store's
- *  pages that hold them. */
+/** One layer of a tile: its plants, sorted by form, where each form's begin (and the last ends), the forms it holds
+ *  any of, in order, and the store's pages that hold them. */
 interface Layered {
   readonly planted: Float32Array;
   readonly starts: Int32Array;
+  readonly held: Uint16Array;
   readonly pages: readonly number[];
 }
 
@@ -109,8 +114,15 @@ function layered(planted: Float32Array, forms: number, store: SlotStore, tileNum
     slots[to + 10] = tileNumber;
     slots[to + 11] = planted[from + 11] ?? 0;
   }
-  for (let form = 1; form <= forms; form++) starts[form] = (starts[form] ?? 0) + (starts[form - 1] ?? 0);
-  return { planted, starts, pages: store.store(slots) };
+  let holding = 0;
+  for (let form = 1; form <= forms; form++) {
+    if (starts[form]) holding += 1;
+    starts[form] = (starts[form] ?? 0) + (starts[form - 1] ?? 0);
+  }
+  // A far tile holds a form or two of the dozens a biome has: the list is packed over only those.
+  const held = new Uint16Array(holding);
+  for (let form = 0, laid = 0; form < forms; form++) if (starts[form + 1]! > starts[form]!) held[laid++] = form;
+  return { planted, starts, held, pages: store.store(slots) };
 }
 
 /** The lowest and highest foot among some plants and the bounds so far. */
@@ -135,7 +147,9 @@ function offsetsWithin(reach: number): (readonly [number, number, number])[] {
   return offsets.sort((a, b) => a[2] - b[2]);
 }
 
-const keyOf = (tileX: number, tileY: number) => tileX * 4_194_304 + tileY;
+/** A kept tile's key: its numbers wrapped to 15 bits each, so the key is one of the engine's small integers rather
+ *  than a number it boxes to hash; the tiles kept lie within a few kilometres of the eye, never 2,000 km apart. */
+const keyOf = (tileX: number, tileY: number) => ((tileX & 0x7fff) << 15) | (tileY & 0x7fff);
 
 /** How tall the cast's tallest plant stands and how far its widest reaches from its foot, metres, at its largest
  *  and widened as much as thinning widens the far ones (natureShader.ts `grow`). */
@@ -180,13 +194,23 @@ export class NatureField {
   private readonly runs: { slots: Uint32Array; length: number; tiles: number[]; counts: number[] }[] = [];
   /** Whether each form has a far mesh. */
   private hasFar: boolean[] = [];
+  /** The kept tiles a list is made of, in turn round the eye, and each one's place in the ring: kept between lists. */
+  private readonly listedTiles: Tile[] = [];
+  private readonly listedRing: number[] = [];
   /** Tile numbers let go of, for the next tiles kept; those let go since the last list wait for the next. */
   private readonly freeNumbers: number[] = [];
   private retiredNumbers: number[] = [];
   private nextNumber = 0;
+  /** Each tile number's tile, its place and whether it holds its low layer, kept in arrays of their own: a step of the
+   *  eye weighs every kept tile, and reading these is far quicker than reaching each tile's object. */
+  private readonly byNumber: (Tile | undefined)[] = [];
+  private numberX = new Int32Array(1024);
+  private numberY = new Int32Array(1024);
+  private numberLow = new Uint8Array(1024);
   /** Every kept instance, in slots that stay put while its tile is kept. */
   readonly store = new SlotStore();
-  private packing: Packed = {
+  /** The instances as last packed, drawn while the next list is made a slice a frame (`packing`). */
+  private drawnList: Packed = {
     anchor: [0, 0],
     list: new Uint32Array(),
     corners: new Float32Array(),
@@ -194,23 +218,29 @@ export class NatureField {
     groups: [],
     spread: 0,
   };
+  private packing: Generator<void, Packed> | null = null;
+  /** Each ring offset's place in the ring, by (down, across) from the eye's tile on a square `ringSide` across. */
+  private ringPlace = new Int32Array(0);
+  private ringSide = 0;
+  /** The kept tiles by their place in the ring as a list is made, kept between lists. */
+  private readonly byPlace: (Tile | undefined)[] = [];
   /** How many tile layers have been scattered: for tests and the page's own readout. */
   scattered = 0;
 
-  /** `budgetMs` is how long one update may spend scattering in play; behind a trip's veil it may spend
-   *  VEILED_BUDGET_MS. */
+  /** `budgetMs` is how long one update may spend scattering in play, and a third of it making the list; behind a
+   *  trip's veil it may spend VEILED_BUDGET_MS on each. */
   constructor(budgetMs = 6) {
     this.budgetMs = budgetMs;
+  }
+
+  /** The instances as last packed. */
+  get packed(): Packed {
+    return this.drawnList;
   }
 
   /** The cast being drawn. */
   get drawnCast(): Cast {
     return this.cast;
-  }
-
-  /** The instances as last packed. */
-  get packed(): Packed {
-    return this.packing;
   }
 
   /** Scatters the tiles the eye has come near, nearest first, within the budget, and packs again if anything
@@ -229,11 +259,18 @@ export class NatureField {
     let waiting = false;
     const started = performance.now();
     const offsets = this.settled?.version === ground.version ? [] : this.offsets;
+    const budget = behindVeil() ? VEILED_BUDGET_MS : this.budgetMs;
+    // Only scattering takes time: past a tile kept as it is, the clock is read again only now and then.
+    let unread = 0;
     for (; this.cursor.at < offsets.length; this.cursor.at++) {
-      if (performance.now() - started > (behindVeil() ? VEILED_BUDGET_MS : this.budgetMs)) {
-        waiting = true;
-        break;
+      if (unread === 0) {
+        if (performance.now() - started > budget) {
+          waiting = true;
+          break;
+        }
+        unread = CLOCK_EVERY;
       }
+      unread -= 1;
       const [across, down, distance] = offsets[this.cursor.at] ?? [0, 0, 0];
       const [tileX, tileY] = [tile[0] + across, tile[1] + down];
       const key = keyOf(tileX, tileY);
@@ -243,11 +280,12 @@ export class NatureField {
         kept.version = ground.version;
       if (!kept || kept.version !== ground.version || (kept.sparse && !sparse)) {
         if (kept) this.letGo(kept, false);
-        const number = kept?.number ?? this.freeNumbers.pop() ?? this.nextNumber++;
+        const number = kept?.number ?? this.freeNumbers.pop() ?? this.numbered();
         const far = sparse ? { beyondM: THIN_TO_M, keepBelow: this.cast.keepAtReach + 0.05 } : null;
         const tall = scatterTile(this.cast, 'tall', tileX, tileY, ground, null, far);
         const [lowest, highest] = feet(tall);
         const forms = this.kindOf.length;
+        unread = 0;
         kept = {
           tileX,
           tileY,
@@ -260,12 +298,16 @@ export class NatureField {
           highest,
         };
         this.kept.set(key, kept);
+        [this.byNumber[number], this.numberX[number], this.numberY[number]] = [kept, tileX, tileY];
+        this.numberLow[number] = 0;
         this.scattered += 1;
         this.grown = true;
       }
       if (!kept.low && distance <= this.reach.low + RING_M) {
+        unread = 0;
         const low = scatterTile(this.cast, 'low', tileX, tileY, ground, kept.tall.planted);
         kept.low = layered(low, this.kindOf.length, this.store, kept.number);
+        this.numberLow[kept.number] = 1;
         [kept.lowest, kept.highest] = feet(low, kept.lowest, kept.highest);
         this.scattered += 1;
         this.grown = true;
@@ -273,11 +315,34 @@ export class NatureField {
     }
     if (!waiting) this.settled = { version: ground.version };
     const now = performance.now();
-    if (this.moved || (this.grown && (!waiting || now - this.packedAt >= REPACK_MS))) {
-      this.pack(tile);
-      [this.moved, this.grown, this.packedAt] = [false, false, now];
+    // A list begun round another tile is left: one round this tile begins.
+    if (this.moved || (this.grown && !this.packing && (!waiting || now - this.packedAt >= REPACK_MS)))
+      this.beginPack(tile, now);
+    const until = performance.now() + (behindVeil() ? VEILED_BUDGET_MS : this.budgetMs / 3);
+    while (this.packing && this.stepPack(until) && this.grown && !waiting) this.beginPack(tile, performance.now());
+    return waiting || !!this.packing;
+  }
+
+  private beginPack(tile: readonly [number, number], now: number): void {
+    this.packing = this.packSteps(tile);
+    [this.moved, this.grown, this.packedAt] = [false, false, now];
+  }
+
+  /** Makes the list on until `until` (a step at least), and once it is whole, draws from it: answers whether it is. */
+  private stepPack(until: number): boolean {
+    for (let step = this.packing?.next(); step; step = this.packing?.next()) {
+      if (step.done) {
+        this.packing = null;
+        this.drawnList = step.value;
+        // The new list names none of what was let go, so its pages and numbers may be handed out again.
+        this.store.recycle();
+        this.freeNumbers.push(...this.retiredNumbers);
+        this.retiredNumbers = [];
+        return true;
+      }
+      if (performance.now() > until) return false;
     }
-    return waiting;
+    return false;
   }
 
   private reset(biome: string): void {
@@ -293,8 +358,15 @@ export class NatureField {
     this.offsets = offsetsWithin(Math.max(this.reach.tall, this.reach.low));
     const turn = ([across, down]: readonly [number, number, number]) => Math.atan2(down, across);
     this.ring = [...this.offsets].sort((a, b) => turn(a) - turn(b) || a[2] - b[2]);
+    const steps = Math.max(0, ...this.ring.map(([across, down]) => Math.max(Math.abs(across), Math.abs(down))));
+    this.ringSide = steps * 2 + 1;
+    this.ringPlace = new Int32Array(this.ringSide * this.ringSide).fill(-1);
+    for (const [place, [across, down]] of this.ring.entries())
+      this.ringPlace[(down + steps) * this.ringSide + across + steps] = place;
+    this.byPlace.length = this.ring.length;
     for (const kept of this.kept.values()) this.letGo(kept, true);
     this.kept.clear();
+    this.packing = null;
     this.eyeTile = null;
     this.settled = null;
     this.cursor = { at: 0, version: NaN };
@@ -302,48 +374,88 @@ export class NatureField {
 
   /** Lets go of tiles, and low layers, the eye has left well behind. */
   private forget(tile: readonly [number, number]): void {
-    for (const [key, kept] of this.kept) {
-      const distance = Math.hypot(kept.tileX - tile[0], kept.tileY - tile[1]) * TILE_M;
+    const { byNumber, numberX, numberY, numberLow } = this;
+    for (let number = 0; number < this.nextNumber; number++) {
+      const kept = byNumber[number];
+      if (!kept) continue;
+      const [across, down] = [numberX[number]! - tile[0], numberY[number]! - tile[1]];
+      const distance = Math.sqrt(across * across + down * down) * TILE_M;
       if (distance > Math.max(this.reach.tall, this.reach.low) + 3 * TILE_M) {
         this.letGo(kept, true);
-        this.kept.delete(key);
-      } else if (distance > this.reach.low + 3 * TILE_M && kept.low) {
+        this.kept.delete(keyOf(kept.tileX, kept.tileY));
+      } else if (distance > this.reach.low + 3 * TILE_M && numberLow[number] && kept.low) {
         this.store.release(kept.low.pages);
         kept.low = null;
+        numberLow[number] = 0;
       }
     }
   }
 
-  /** Gives a tile's pages back to the store, and its number too when the tile itself goes. */
+  /** A tile number never handed out before, the arrays by number grown to hold it. */
+  private numbered(): number {
+    const number = this.nextNumber++;
+    if (number >= this.numberX.length) {
+      const [x, y, low] = [new Int32Array(number * 2), new Int32Array(number * 2), new Uint8Array(number * 2)];
+      [x, y, low].forEach((grown, which) => grown.set([this.numberX, this.numberY, this.numberLow][which]!));
+      [this.numberX, this.numberY, this.numberLow] = [x, y, low];
+    }
+    return number;
+  }
+
+  /** Gives a tile's pages back to the store, and its number too when the tile itself goes. A list being made may
+   *  name its pages, which are handed out again once a list is whole: that list is left, and one made afresh. */
   private letGo(kept: Tile, wholly: boolean): void {
+    if (this.packing) [this.packing, this.grown] = [null, true];
     this.store.release(kept.tall.pages);
     if (kept.low) this.store.release(kept.low.pages);
-    if (wholly) this.retiredNumbers.push(kept.number);
+    if (!wholly) return;
+    this.retiredNumbers.push(kept.number);
+    if (this.byNumber[kept.number] === kept) this.byNumber[kept.number] = undefined;
   }
 
   /** Lists the slot of every kept instance its form's detail draws from here, tiles in turn round the eye so the
-   *  ones in view run together. Nothing moves in the store: only the list and the tiles' corners are made again. */
-  private pack(tile: readonly [number, number]): void {
+   *  ones in view run together. Nothing moves in the store: only the list and the tiles' corners are made again.
+   *  Made a few hundred tiles at a step, so a frame takes a slice of it. */
+  private *packSteps(tile: readonly [number, number]): Generator<void, Packed> {
     const anchor = [tile[0] * TILE_M, tile[1] * TILE_M] as const;
-    const tiles: { kept: Tile; east: number; south: number; distance: number }[] = [];
-    for (const [across, down, distance] of this.ring) {
-      const kept = this.kept.get(keyOf(tile[0] + across, tile[1] + down));
-      if (kept) tiles.push({ kept, east: across * TILE_M, south: down * TILE_M, distance });
+    const { ring, listedTiles: tiles, listedRing, byPlace, ringPlace, ringSide } = this;
+    [tiles.length, listedRing.length] = [0, 0];
+    byPlace.fill(undefined);
+    // The kept tiles laid at their places round the eye, then read off in turn.
+    const steps = (ringSide - 1) / 2;
+    const { byNumber, numberX, numberY } = this;
+    for (let number = 0; number < this.nextNumber; number++) {
+      const kept = byNumber[number];
+      if (!kept) continue;
+      const [across, down] = [numberX[number]! - tile[0], numberY[number]! - tile[1]];
+      if (Math.abs(across) > steps || Math.abs(down) > steps) continue;
+      const place = ringPlace[(down + steps) * ringSide + across + steps]!;
+      if (place >= 0) byPlace[place] = kept;
     }
+    yield;
+    for (let place = 0; place < ring.length; place++) {
+      const kept = byPlace[place];
+      if (!kept) continue;
+      byPlace[place] = undefined;
+      tiles.push(kept);
+      listedRing.push(place);
+    }
+    yield;
     const bounds = new Float32Array(tiles.length * 4);
     const corners = new Float32Array(this.nextNumber * 2);
     for (let index = 0; index < tiles.length; index++) {
-      const entry = tiles[index];
-      if (!entry) continue;
-      const { kept } = entry;
+      const kept = tiles[index]!;
+      const [across, down] = ring[listedRing[index]!]!;
       const none = kept.lowest > kept.highest;
-      bounds[index * 4] = entry.east + TILE_M / 2;
-      bounds[index * 4 + 1] = entry.south + TILE_M / 2;
+      bounds[index * 4] = across * TILE_M + TILE_M / 2;
+      bounds[index * 4 + 1] = down * TILE_M + TILE_M / 2;
       bounds[index * 4 + 2] = (none ? 0 : kept.lowest) - 1;
       bounds[index * 4 + 3] = (none ? 0 : kept.highest) + this.reach.top;
       corners[kept.number * 2] = kept.tileX * TILE_M - anchor[0];
       corners[kept.number * 2 + 1] = kept.tileY * TILE_M - anchor[1];
+      if (index % PACK_STRIDE === PACK_STRIDE - 1) yield;
     }
+    yield;
     // Tile by tile, each form's plants go to its group's own run, then the runs are joined: a tile is weighed once,
     // and only the forms it holds are visited.
     const kinds = this.kindOf.map((kindIndex) => this.cast.kinds[kindIndex]);
@@ -352,15 +464,16 @@ export class NatureField {
       runs.push({ slots: new Uint32Array(1024), length: 0, tiles: [], counts: [] });
     for (const run of runs) [run.length, run.tiles, run.counts] = [0, [], []];
     for (let index = 0; index < tiles.length; index++) {
-      const entry = tiles[index];
-      if (!entry) continue;
-      const nearest = Math.max(0, entry.distance - SLACK_M * 2);
-      const farthest = entry.distance + SLACK_M * 2;
+      const kept = tiles[index]!;
+      const distance = ring[listedRing[index]!]![2];
+      const nearest = Math.max(0, distance - SLACK_M * 2);
+      const farthest = distance + SLACK_M * 2;
       for (let layerIndex = 0; layerIndex < 2; layerIndex++) {
-        const layer = layerIndex === 0 ? entry.kept.tall : entry.kept.low;
+        const layer = layerIndex === 0 ? kept.tall : kept.low;
         if (!layer) continue;
-        const { planted, pages, starts } = layer;
-        for (let form = 0; form < kinds.length; form++) {
+        const { planted, pages, starts, held } = layer;
+        for (let holding = 0; holding < held.length; holding++) {
+          const form = held[holding]!;
           const from = starts[form] ?? 0;
           const to = starts[form + 1] ?? 0;
           const kind = kinds[form];
@@ -388,6 +501,7 @@ export class NatureField {
           }
         }
       }
+      if (index % PACK_STRIDE === PACK_STRIDE - 1) yield;
     }
     let out = this.scratch;
     const total = runs.reduce((sum, run) => sum + run.length, 0);
@@ -401,19 +515,8 @@ export class NatureField {
       length += run.length;
     }
     this.scratch = out;
-    const spread = this.reach.spread;
-    this.packing = {
-      anchor,
-      list: out.slice(0, length),
-      corners,
-      tiles: bounds,
-      groups,
-      spread,
-      blocks: blocksOf(bounds),
-    };
-    // The new list names none of what was let go, so its pages and numbers may be handed out again.
-    this.store.recycle();
-    this.freeNumbers.push(...this.retiredNumbers);
-    this.retiredNumbers = [];
+    const list = out.slice(0, length);
+    yield;
+    return { anchor, list, corners, tiles: bounds, groups, spread: this.reach.spread, blocks: blocksOf(bounds) };
   }
 }

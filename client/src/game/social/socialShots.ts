@@ -136,7 +136,7 @@ const piece = (slot: number, gilded: boolean) => ({
   defense: slot === 0 ? 0 : 60,
   gilded,
 });
-const inspected: Details = {
+export const INSPECTED: Details = {
   name: 'ChiefKabr',
   tag: 'SWK',
   emblem: 'stormborn',
@@ -157,6 +157,6 @@ const inspected: Details = {
 };
 const inspect = new InspectWindow(() => null);
 export function inspectShot(ui: Interface): Node {
-  const window = inspect.node(ui, ui.size, { name: 'ChiefKabr', details: inspected, dress: null }, () => undefined);
+  const window = inspect.node(ui, ui.size, { name: 'ChiefKabr', details: INSPECTED, dress: null }, () => undefined);
   return { width: 'grow', height: 'grow', fill: DUSK, children: [window] };
 }

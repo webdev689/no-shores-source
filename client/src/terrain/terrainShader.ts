@@ -196,8 +196,12 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let normal = normalize(vec3f(-ground.yz * view.brush.w, 1.0));
 
   var wet = bed_colour(max(depth, 0.0), slope, fresh);
-  let light = caustics(local, view.eye.w) * fine * exp(-max(depth, 0.0) / 9.0) * smoothstep(0.0, 0.4, depth);
-  wet += sky_state.key_light.rgb * light * select(0.32, 0.12, fresh);
+  // The caustics are some 1,500 operations a pixel and nothing on dry land or past a fine footprint, where both
+  // their factors are 0: only shallow water near the eye pays for them.
+  if (depth > 0.0 && fine > 0.0) {
+    let light = caustics(local, view.eye.w) * fine * exp(-depth / 9.0) * smoothstep(0.0, 0.4, depth);
+    wet += sky_state.key_light.rgb * light * select(0.32, 0.12, fresh);
+  }
 
   let world = view.world.xy + point;
   // The dirt's grain is read once a pixel: the land, the roads and the paths all wear it.
@@ -206,12 +210,15 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let land = land_colour(bed, slope, ground.w, local, normal, dirt_grain, chalk_share(laid));
   let woods = wooded(land, world, bed, slope, reach_to);
   var dry = woods.rgb;
-  let in_close = share > 0.5;
-  dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
-  let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);
-  let town = select(marked(wide_marks, wide, 4u, 4u), marked(close_marks, close, 4u, 4u), in_close);
-  let port = select(marked(wide_marks, wide, 5u, 5u), marked(close_marks, close, 5u, 5u), in_close);
-  dry = mix(mix(mix(dry, ROAD * dirt_grain, road), TOWN, 0.6 * town), PORT, port);
+  // The marks of the grid the pixel is in, from one read of its four texels: the close grid draws no river.
+  var cover: vec4f;
+  if (share > 0.5) {
+    cover = vec4f(0.0, marks_at(close_marks, close).yzw);
+  } else {
+    cover = marks_at(wide_marks, wide);
+  }
+  dry = mix(dry, RIVER, 0.7 * cover.x);
+  dry = mix(mix(mix(dry, ROAD * dirt_grain, cover.y), TOWN, 0.6 * cover.z), PORT, cover.w);
   dry = painted(dry, laid, local, footprint, dirt_grain);
 
   let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
@@ -231,7 +238,11 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let direct = max(dot(lit_normal, sky_state.key.xyz), 0.0);
   // Under water the sun's shadow fades with the depth it is seen through, scattered by the water above: a ship's
   // shadow lies on the surface beside it, not on the seabed far from it.
-  let lit = select(1.0, sunlit(on_ground, lit_normal), direct > 0.0) * sky_dapple(on_ground);
+  // A face turned from the sun takes no shadow: its map is not read.
+  var lit = sky_dapple(on_ground);
+  if (direct > 0.0) {
+    lit *= sunlit(on_ground, lit_normal);
+  }
   let sun = mix(lit, 1.0, under * (1.0 - exp(-max(depth, 0.0) / 1.5)));
   colour *= sky_ambient(lit_normal) + sky_direct(lit_normal, sun) + sky_lamps(on_ground, lit_normal);
   colour += sky_sheen(lit_normal, on_ground, soaked * (0.4 + 0.6 * puddle) * (1.0 - woods.a));

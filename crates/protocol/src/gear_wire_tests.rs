@@ -16,7 +16,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Choose { item: 4, column: 0, node: 2 }),
         Asked::Gear(Ask::Dismantle { item: 5 }),
         Asked::Gear(Ask::Identify { vestige: 6 }),
-        Asked::Gear(Ask::Feed { item: 7 }),
+        Asked::Gear(Ask::Feed),
         Asked::Gear(Ask::Store { item: 8 }),
         Asked::Gear(Ask::Withdraw { item: 9 }),
         Asked::Gear(Ask::StoreVestige { vestige: 10 }),
@@ -732,7 +732,7 @@ fn first_step(kind: gear::quests::GoalKind) -> (usize, usize, &'static gear::que
 }
 
 /// The gear message a player on a step is sent: their road at `task` of quest `quest`, in a room of `node` holding
-/// `places`, a tick on.
+/// `places`, a second on, by when the mesh its place stands things on is baked (a slice a tick) and they stand.
 fn step_gear(node: &str, places: &[(&str, [f64; 2], f64)], quest: usize, task: usize, at: [f64; 2]) -> Vec<u8> {
     let ring = vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]];
     let section = room::Section { ring, spawns: vec![[0.0, 180.0]], falls_kill: false };
@@ -745,7 +745,9 @@ fn step_gear(node: &str, places: &[(&str, [f64; 2], f64)], quest: usize, task: u
     let player = room.join().expect("a room with space");
     assert!(room.restore_character(player, &character.to_json()));
     assert!(room.put_player(player, at[0], at[1]));
-    room.tick();
+    for _ in 0..60 {
+        room.tick();
+    }
     gear_bytes(&room, player).expect("a player of the room")
 }
 

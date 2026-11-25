@@ -4,7 +4,7 @@ import { standIn } from '../standIns.ts';
 import { Atmosphere, drawsNothing } from '../cinema/atmosphere.ts';
 import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
-import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { type Gpu, TEXTURE_USAGE, viewOf } from '../gpu.ts';
 import { perfZone, PERF, timedEncoder } from '../perfMeter.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
@@ -37,6 +37,9 @@ import { Upscale } from './upscale.ts';
  *  (`castInto`), and every one is handed the map to receive them; one may draw again over the water (`overWater`), and
  *  what gives light draws it into the light layer (`lightInto`). */
 export interface Drawer {
+  /** Drawn before the ground: what it draws is opaque and pulled nearer than the ground it stands on (a city), so the
+   *  ground it covers fails the depth test before it is shaded, the costliest shading in the pass. */
+  readonly coversGround?: boolean;
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
   castInto?(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
   /** Called once a frame before anything is recorded, for work that replaces what the frame draws with (a texture,
@@ -329,27 +332,28 @@ export class GameScene {
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: targets.multisampled.createView(),
-          resolveTarget: targets.colour.createView(),
+          view: viewOf(targets.multisampled),
+          resolveTarget: viewOf(targets.colour),
           clearValue: [0, 0, 0, 1],
           loadOp: 'clear',
           storeOp: 'discard',
         },
       ],
       depthStencilAttachment: {
-        view: targets.multidepth.createView(),
+        view: viewOf(targets.multidepth),
         depthClearValue: 0,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',
       },
     });
+    for (const drawer of drawers) if (drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     drawn.drawInto(pass, this.shadow);
-    for (const drawer of drawers) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
+    for (const drawer of drawers) if (!drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     pass.end();
     this.copy.encode(encoder, targets.multidepth, targets.depth);
     const camera = frameOf(local);
     const canvas = this.gpu.context.getCurrentTexture();
-    const target = (targets.picture ?? canvas).createView();
+    const target = targets.picture ? viewOf(targets.picture) : canvas.createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
     const { strikes, worldS, reading } = SKY_NOW.current;
     // The weather's rain and mist lie under the deck the Overworld's camera stays under; under thin cover, where half

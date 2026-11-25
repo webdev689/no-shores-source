@@ -7,7 +7,8 @@ code:
   - crates/navmesh/src/lib.rs#Bounds
   - crates/navmesh/src/collider.rs#Collider
   - crates/navmesh/src/raster.rs#voxelise
-  - crates/navmesh/src/compact.rs#build
+  - crates/navmesh/src/compact.rs#open
+  - crates/navmesh/src/baking.rs#Baking
   - crates/navmesh/src/regions.rs#partition
   - crates/navmesh/src/lib.rs#bake_anchored
   - crates/room/src/dungeon_room.rs#baked
@@ -18,18 +19,18 @@ code:
   - crates/navmesh/src/lib.rs#Way
   - crates/navmesh/src/obstacles.rs#Obstacles
   - crates/navmesh/src/reach.rs#Reachable
-  - crates/navmesh/src/raster.rs#sample
+  - crates/navmesh/src/raster.rs#sample_rows
   - crates/navmesh/src/spots.rs#Spot
   - crates/navmesh/src/spots.rs#bake
   - crates/navmesh/src/links.rs#Link
-  - crates/navmesh/src/links.rs#bake
+  - crates/navmesh/src/links.rs#Linking
   - crates/navmesh/src/lib.rs#crossing
   - crates/navmesh/src/lib.rs#path_length
   - crates/room/src/foes.rs#MeshSpots
   - crates/room/src/foes.rs#MeshRoutes
   - crates/room/src/routes.rs#think_foes
   - crates/room/src/routes.rs#mesh_index
-  - crates/room/src/garrison.rs#square
+  - crates/room/src/garrison.rs#square_baking
 ---
 # Navmesh
 
@@ -77,6 +78,14 @@ and their firing spots by it, and climb and drop where its links say.
    Polys that share an edge are neighbours, across regions too.
 6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground where no block
    stands on it, blended between cell centres.
+
+**A bake a slice at a time** (`Baking`) is the same bake spread over a room's ticks, for a place's square baked while
+the room runs: twelve rows of the ground sampled a slice, then the voxels, the walkable floor, its erosion, the links
+tried until their bodies have stepped 6,000 ticks a slice, the regions, the firing spots, the outlines and the polys.
+Each slice does what a bake at once does, in its order, so the mesh is the same to the bit. A place's square takes
+some 45 slices, each 15 ms at most natively (tested offline, over all 77 squares of the first landmass's nodes). The
+watershed visits at each level only the cells it reaches still without a region, and the ear-clip keeps each corner's
+ear between clips, trying again only those a clip can change, so neither grows with the square of the floor.
 
 **Links** join two floors that no step joins, where the [[Movement]] rules carry a body between them. Along every side
 of every block, a metre apart and no nearer its ends than 0.5 m, the bake stands a body by the side and steps it by the
@@ -147,7 +156,7 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 
 - A node's room bakes a 70 m square of its [[Land]] (its first spawn 15 m inside the edge toward the middle of its
   section), and a 70 m square round each place a kill goal stands a group at, each with only the boxes that reach into
-  it. Elsewhere a node has no mesh, so a foe leashed there gives up a fight with one more than 14 m from it ([[A Foe Gives Up Only When the Player Is Far Away]]). Each place's square (a kill group's, a defence's, a puzzle's, an unseen step's watch, an escort's ambush) is baked the first time it is needed and kept, one in a tick at most (130 to 245 ms that tick natively), a step waiting a tick for its own; where the node's own square holds all the step stands things in, it is used instead. WebAssembly's cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
+  it. Elsewhere a node has no mesh, so a foe leashed there gives up a fight with one more than 14 m from it ([[A Foe Gives Up Only When the Player Is Far Away]]). Each place's square (a kill group's, a defence's, a puzzle's, an unseen step's watch, an escort's ambush) is baked the first time it is needed and kept, a slice a tick and one at a time (some 150 ms of work in all natively, over some 45 ticks), what waits on it standing the tick it is whole; where the node's own square holds all the step stands things in, it is used instead. WebAssembly's cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
   A zone that holds public events also bakes a rectangle round each of its grounds and joins it to the node's square as
   a part of one mesh: a path runs within one part, never from one to another, and a point is placed on whichever part
   has it nearest ([[Public Events]], with what it adds to the room's open).

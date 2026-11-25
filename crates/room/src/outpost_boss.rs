@@ -72,7 +72,7 @@ impl Room {
         let Some(outpost) = self.outpost.as_ref() else { return };
         let (muster, key) = (outpost.muster, outpost.key.clone());
         let place = gear::quests::Place { name: "muster".to_owned(), at: muster, radius: MUSTER_REACH };
-        // None while the room baked another ground this tick: tried again the next.
+        // None until the mesh round the muster ground is baked, a slice a tick: tried again the next.
         let Some(ground) = self.ground_of(&place, MUSTER_REACH) else { return };
         let member =
             |player: &PlayerId| self.guilds.of(*player).is_some_and(|seen| crate::outpost::guild_key(&seen.id) == key);

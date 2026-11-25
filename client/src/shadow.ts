@@ -158,7 +158,9 @@ const leastSquared = (cascade: Cascade): number => (CASTER_LEAST_TEXELS * texelO
 /** Whether a box measured from the eye (west, north, low, then east, south, high) may cast into a cascade whose square
  *  `planes` bound: whether, seen along the sun, it overlaps the square, and is large enough to show in its map. */
 export function boxCasts(planes: Planes, cascade: Cascade, low: Vector, high: Vector): boolean {
-  const [across, down, tall] = [high[0] - low[0], high[1] - low[1], high[2] - low[2]];
+  const across = high[0] - low[0];
+  const down = high[1] - low[1];
+  const tall = high[2] - low[2];
   return (across * across + down * down + tall * tall) / 4 >= leastSquared(cascade) && boxSeen(planes, low, high);
 }
 
@@ -270,6 +272,8 @@ const FAR_LAYER = CASCADES.indexOf(FAR);
 export class ShadowMap {
   private readonly gpu: Gpu;
   private readonly texture: GPUTexture;
+  /** Each cascade's layer as a view a pass draws into, made the first time. */
+  private readonly layerViews: GPUTextureView[] = [];
   private readonly receiving: GPUBuffer;
   private readonly casting: GPUBuffer[];
   private readonly sampler: GPUSampler;
@@ -410,7 +414,11 @@ export class ShadowMap {
     const pass = encoder.beginRenderPass({
       colorAttachments: [],
       depthStencilAttachment: {
-        view: this.texture.createView({ dimension: '2d', baseArrayLayer: layer, arrayLayerCount: 1 }),
+        view: (this.layerViews[layer] ??= this.texture.createView({
+          dimension: '2d',
+          baseArrayLayer: layer,
+          arrayLayerCount: 1,
+        })),
         depthClearValue: 1,
         depthLoadOp: 'clear',
         depthStoreOp: 'store',

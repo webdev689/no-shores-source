@@ -57,32 +57,71 @@ fn run(players: &[PlayerId], ticks: usize) -> (f64, f64, f64, f64) {
     (times[times.len() / 2], p99, times[times.len() - 1], bytes as f64 / (ticks * players.len()) as f64)
 }
 
-/// Players 60 km apart, four to a row.
-fn spot(index: usize) -> [f64; 2] {
-    [1_750_000.0 + (index % 4) as f64 * 60_000.0, 1_400_000.0 + (index / 4) as f64 * 60_000.0]
+/// Each port city's roadstead, as the sea reckons them, and the way from its city out to it: a new ship puts to sea
+/// by a roadstead, as a player's does.
+fn roadsteads() -> Vec<([f64; 2], [f64; 2])> {
+    let request: SeaRequest = serde_json::from_str(&request()).unwrap();
+    let harbours = room::harbour::Harbours::new(&request.layout, &request.ports);
+    let out = |(id, at): &(String, [f64; 2])| {
+        let centre = request.ports.iter().find(|port| port.id == *id).unwrap().centre;
+        let (east, south) = (at[0] - centre[0], at[1] - centre[1]);
+        let apart = (east * east + south * south).sqrt();
+        (*at, [east / apart, south / apart])
+    };
+    harbours.ports.iter().map(out).collect()
 }
 
-fn open_with(count: usize, at: impl Fn(usize) -> [f64; 2], pace: u16) -> Vec<PlayerId> {
+/// Opens the sea and puts `count` players to sea as players put to sea: each by a port's roadstead (`by` chooses
+/// which), on a course `out` metres off it away from its city, then another 20 km on.
+fn open_with(count: usize, by: impl Fn(usize) -> usize, out: impl Fn(usize) -> f64, pace: u16) -> Vec<PlayerId> {
     assert!(open_sea(request().as_bytes(), 7));
     room_world_start(1_790_000_000.0);
+    let ports = roadsteads();
     let players: Vec<PlayerId> = (0..count).map(|_| room_join()).collect();
     for (index, &player) in players.iter().enumerate() {
-        let [x, y] = at(index);
-        let answer = input(player, &protocol::course_bytes(&[[x, y], [x + 50_000.0, y]], pace));
-        assert_eq!(answer, TAKEN, "player {index} at {x},{y}");
+        let (at, away) = ports[by(index) % ports.len()];
+        let point = |metres: f64| [at[0] + away[0] * metres, at[1] + away[1] * metres];
+        let off = out(index);
+        let answer = input(player, &protocol::course_bytes(&[point(off), point(off + 20_000.0)], pace));
+        assert_eq!(answer, TAKEN, "player {index} by the roadstead at {at:?}");
+    }
+    // Under way, clear of the roadstead.
+    for _ in 0..120 {
+        room_tick();
     }
     players
+}
+
+/// Ticks until every player is in a fight, 10 s at most: a measurement of a fight that never began measures none.
+fn until_met(players: &[PlayerId]) {
+    for _ in 0..600 {
+        if with_sea(|sea| players.iter().all(|&player| sea.fight_mut(player).is_some())) {
+            return;
+        }
+        room_tick();
+    }
+    let unmet: Vec<usize> =
+        with_sea(|sea| (0..players.len()).filter(|&index| sea.fight_mut(players[index]).is_none()).collect());
+    panic!("players {unmet:?} met no hostile ship laid by them");
+}
+
+/// Where each player's ship is now.
+fn ships_of(players: &[PlayerId]) -> Vec<[f64; 2]> {
+    with_sea(|sea| {
+        let at = |player: &PlayerId| sea.ships().find(|(each, _)| each == player).map(|(_, ship)| [ship.x, ship.y]);
+        players.iter().map(|player| at(player).expect("at sea")).collect()
+    })
 }
 
 #[test]
 #[ignore = "a measurement, run by hand in release"]
 fn load_at_sea_among_hostile_ships() {
     for count in [1, 8, 16] {
-        let players = open_with(count, spot, 100);
+        let players = open_with(count, |index| index, |_| 2_000.0, 100);
+        let ships = ships_of(&players);
         // Three wary Minors in each player's sight, which leave a sound Sloop be.
         with_sea(|sea| {
-            for index in 0..count {
-                let [x, y] = spot(index);
+            for (index, &[x, y]) in ships.iter().enumerate() {
                 for k in 0..3 {
                     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
                     let id = 10_000 + (index * 3 + k) as u32;
@@ -100,8 +139,10 @@ fn load_at_sea_among_hostile_ships() {
 #[ignore = "a measurement, run by hand in release"]
 fn load_in_one_fight() {
     for count in [1, 8, 16] {
-        let centre = [1_800_000.0, 1_500_000.0];
-        let players = open_with(count, |index| [centre[0] + index as f64 * 40.0, centre[1]], 5);
+        // Every ship off the second roadstead, out of Overlook's home waters, where no one is met: 40 m apart along
+        // one course.
+        let players = open_with(count, |_| 1, |index| 2_000.0 + index as f64 * 40.0, 5);
+        let centre = ships_of(&players)[0];
         with_sea(|sea| {
             for k in 0..4 {
                 let commission = Commission { faction: GREY_TITHE, rank: Rank::Elite };
@@ -113,9 +154,7 @@ fn load_in_one_fight() {
                 });
             }
         });
-        for _ in 0..5 {
-            room_tick();
-        }
+        until_met(&players);
         let (median, p99, most, bytes) = run(&players, 600);
         eprintln!("ONE FIGHT {count:>2} players: {median:.3} / {p99:.3} / {most:.3} ms; {bytes:.0} B a player a tick");
     }
@@ -125,10 +164,11 @@ fn load_in_one_fight() {
 #[ignore = "a measurement, run by hand in release"]
 fn load_on_decks() {
     for count in [1, 8, 16] {
-        let players = open_with(count, spot, 5);
+        // Off the second roadstead, out of Overlook's home waters, where no one is met: 60 m apart along one course.
+        let players = open_with(count, |_| 1, |index| 2_000.0 + index as f64 * 60.0, 5);
+        let ships = ships_of(&players);
         with_sea(|sea| {
-            for index in 0..count {
-                let [x, y] = spot(index);
+            for (index, &[x, y]) in ships.iter().enumerate() {
                 let commission = Commission { faction: GREY_TITHE, rank: Rank::Miniboss };
                 let id = 30_000 + index as u32;
                 sea.put_to_sea(Hostile {
@@ -137,7 +177,7 @@ fn load_on_decks() {
                 });
             }
         });
-        room_tick();
+        until_met(&players);
         with_sea(|sea| {
             for &player in &players {
                 let fought = sea.fight_mut(player).expect("met");
@@ -193,13 +233,19 @@ fn load_of_a_roads_groups_standing() {
                         room.tick();
                         start.elapsed().as_secs_f64() * 1000.0
                     };
-                    let standing = timed(room);
+                    // Its place's mesh is baked a slice a tick: ticked until it is kept, or a second at most.
+                    let (mut slowest, mut baking) = (0.0_f64, 0);
+                    while room.place_grounds() == 0 && baking < 60 {
+                        slowest = slowest.max(timed(room));
+                        baking += 1;
+                    }
                     assert!(room.place_grounds() <= 1, "its place's mesh, baked as it first stands, or the node's own");
-                    (standing, timed(room))
+                    (slowest, baking, timed(room))
                 });
-                let (standing, after) = ticks.unwrap();
+                let (slowest, baking, after) = ticks.unwrap();
                 eprintln!(
-                    "STAND {id} '{place}': opens in {opening:.1} ms; stands in {standing:.1} ms; then {after:.2} ms a tick"
+                    "STAND {id} '{place}': opens in {opening:.1} ms; its mesh over {baking} ticks, the slowest \
+                     {slowest:.1} ms; then {after:.2} ms a tick"
                 );
             }
         }
@@ -252,11 +298,11 @@ fn load_of_a_roads_steps() {
                 })
                 .collect();
             ticks.sort_by(f64::total_cmp);
-            (idle, begun, ticks[300], ticks[594], room.place_grounds() - start)
+            (idle, begun, (ticks[300], ticks[594], ticks[599]), room.place_grounds() - start)
         });
-        let (idle, begun, median, p99, baked) = times.unwrap();
+        let (idle, begun, (median, p99, most), baked) = times.unwrap();
         eprintln!(
-            "STEP {kind:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2})"
+            "STEP {kind:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2}, slowest {most:.1})"
         );
     }
 }
@@ -264,6 +310,8 @@ fn load_of_a_roads_steps() {
 /// A character on a quest's task: pledged to its house, every quest before it done.
 fn on_road(quest: usize, task: usize) -> gear::Character {
     let mut character = gear::Character::starting();
+    // A road is walked past the prologue, which a patrol's gate asks for.
+    character.story.prologue = true;
     character.allegiance.pledge = gear::quests::quests().quests[quest].faction;
     character.quests.set_task(quest, task);
     character
