@@ -382,7 +382,8 @@ shape.
   - The Drowned Oath, a sword. Undertow: blows on a foe below half its health strike 30% harder. Pulled Under: a kill
     strikes the foes within 4 m of the slain for a third of the blow, in Cosmic, and Exposes each it lands on.
   - Lanternfall, a thunderlock. Last Light: a kill reloads it at once and gives back 25 stamina. Lantern's Wake: a
-    kill bursts in Blaze, half the shot on the foes within 4 m of the slain.
+    kill bursts in Blaze, half the shot on the foes within 4 m of the slain. No Vestige or Shape gives it: it comes
+    from its Atheric bounty alone ([[Passages]]).
   - The Last Bell, a warhammer. Tolling: a foe it staggers by poise stays staggered half again as long. Knell: a blow
     that staggers a foe by poise strikes the foes within 5 m of it for a quarter of the blow, in Volt.
   - The Reefwall, a Sword & Shield. Coral Guard: a blow it blocks gives back 15 stamina and bites its striker for a

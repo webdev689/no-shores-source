@@ -29,7 +29,7 @@ test('a players own gear the server wrote reads back whole, every column spelled
     ...{ playlistTaken: [false, false], playlistClears: [0, 0] },
   };
   assert.deepEqual(gear.activity, nothing, 'a character that has done nothing yet');
-  assert.equal(gear.bounties?.length, 6, 'the day’s board');
+  assert.equal(gear.bounties?.length, 8, 'the day’s board');
   assert.equal(
     gear.bounties?.some((bounty) => bounty.held),
     false,
@@ -37,7 +37,7 @@ test('a players own gear the server wrote reads back whole, every column spelled
   );
   assert.deepEqual(
     gear.bounties?.map((bounty) => bounty.pool),
-    [0, 0, 1, 1, 2, 2],
+    [0, 0, 1, 1, 2, 2, 3, 3],
     'where each counts',
   );
   assert.ok(
@@ -129,8 +129,8 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   const wares = here.shape?.wares ?? [];
   assert.deepEqual(
     wares.map((ware) => [ware.rarity, ware.price, ware.level, ware.named === null]),
-    [0, 1, 2, 3, 4, 5].map((place) => [place < 4 ? 3 : 4, place < 4 ? 7 : 23, 20, place < 4]),
-    'four rolled Legendary, then two named Atheric (this week both weapons, 23), priced in Shapes',
+    [0, 1, 2, 3, 4, 5].map((place) => [place < 4 ? 3 : 4, [7, 7, 7, 7, 23, 13][place], 20, place < 4]),
+    'four rolled Legendary, then two named Atheric (this week a weapon, 23, and an armour piece, 13), priced in Shapes',
   );
   // Each is numbered as a page asks for it: an Atheric by its place in the catalogue, a rolled piece by its hash.
   const atheric = wares[4];

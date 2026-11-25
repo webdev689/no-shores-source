@@ -79,7 +79,7 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 | Activity | What | Tier and level | Opens |
 |---|---|---|---|
 | Dungeon of the day | One patrol dungeon on each island, drawn each day | The seas', at its island's band | Normal at any level; Elite seas from 10, Abyss seas from 20 |
-| Bounties | Six from the board, drawn each day | | After the prologue |
+| Bounties | Eight from the board, drawn each day | | After the prologue |
 | Elite Dungeons | The 18 named dungeons | Normal, at their island's band | After the prologue |
 | Elite Dungeon of the week | One of the 18, with one modifier | Elite, foes at 26 | Campaign's end, level 24 |
 | Abyss Dungeon of the week | Another of the 18, with three modifiers | Abyss, foes at 30 | Campaign's end, level 28 |
@@ -272,14 +272,16 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
 - **The bounty board** stands on the notice board's landing in the Watch Court of Overlook's hub, its face to the
   court ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is
-  no station and has no keeper. It offers six bounties a day, the same for everyone (`gear::bounties::board`, drawn by the day):
-  places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two different ones of its pool. None names an
+  no station and has no keeper. It offers eight bounties a day, the same for everyone (`gear::bounties::board`, drawn by
+  the day): places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, 6 and 7 in the passages ([[Passages]]), each
+  pair two different ones of its pool. None names an
   island or a water, since the islands' bands run from 1 to 30. A character takes any of them; each pays once when
   turned in, by its tier as Destiny 1's three tiers paid (2,500, 3,750 and 5,000 XP): a first tier's 1,000 XP and 60
   Aurem at level 5, a second's half again, a third's twice, raised as a kill is by the character's level, its XP to
   their Art and faction as a kill's; and all end at the daily reset. Honest Work, Broadside and Into the Dark are of
   the first tier; Tithe Collector, A Cut Above, Bigger Fish and Deeper Still the second; Big Game, Sea Wolf and Deep
-  Delver the third (`Bounty.tier`, `bounty_pay`). The gear message carries a first tier's pay and each bounty's tier,
+  Delver the third; of the passages', Down Below and Seam Worker the first, Errand Runner, Further In and Relic Hunter
+  the second, Lamplighter the third (`Bounty.tier`, `bounty_pay`). The gear message carries a first tier's pay and each bounty's tier,
   and the card shows each one's own.
 - **Taking and turning in** happen at the board alone (`Ask::TakeBounty`, `Ask::TurnInBounty`), each by its place
   and the day of the board the page showed. The room refuses a day not its own, and a room whose day is behind the
@@ -376,5 +378,5 @@ with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a
 a Company's bands of ten levels, and a group found sharing one run without becoming a company; the Playlist's shape,
 its bands, modifiers, rewards and screen ([[The Playlist and Its Dungeons as Claude Shapes Them]]); five shared revives,
 restored by a wipe; the modifier set; the rewards above and the quarter-more boon; a foe felled on a ship's deck
-counting toward no bounty and earning no Abyss boon; six bounties a day paying XP and Aurem; and the screen's names,
+counting toward no bounty and earning no Abyss boon; eight bounties a day paying XP and Aurem; and the screen's names,
 Find a Company and the Journal's Timers.

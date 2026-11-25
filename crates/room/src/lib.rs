@@ -251,7 +251,7 @@ pub struct Room {
     /// Its fallen being revived, and where they respawn (`revive.rs`).
     pub(crate) respawning: revive::Respawning,
     /// A passage zone's deal and its dive's word, or a patrol zone's mouths into its passages (`passages.rs`).
-    pub(crate) passage: Option<Box<passages::Passage>>,
+    pub(crate) passage: Option<passages::Passage>,
 }
 
 impl Room {

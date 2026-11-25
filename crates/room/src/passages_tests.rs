@@ -271,3 +271,18 @@ fn a_hardened_zones_foes_stand_with_more_health() {
     assert!(most(&room) > most(&other), "{} against {}", most(&room), most(&other));
     let _ = Laid::Under;
 }
+
+#[test]
+fn a_hunt_begun_again_stands_its_marked_band_again_and_no_band_still_standing_twice() {
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Hunt), None, Route::Public);
+    let player = diver(&mut room, week, &plan);
+    let standing = room.living_foes();
+    for id in room.garrison[0].standing.clone() {
+        let foe = room.foes.get_mut(&id).expect("the marked band");
+        (foe.fighter.health, foe.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    }
+    run(&mut room, 2);
+    assert!(room.passage_seen(player).is_some_and(|seen| seen.done), "the marked band down");
+    run(&mut room, super::passage_deal::AGAIN_TICKS + 1);
+    assert_eq!(room.living_foes(), standing, "the marked band again, the rest as they stood");
+}

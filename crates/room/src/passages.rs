@@ -92,7 +92,7 @@ pub(crate) struct Zone {
 /// in the island's mouths' order).
 #[derive(Debug)]
 pub(crate) enum Passage {
-    Zone(Zone),
+    Zone(Box<Zone>),
     Mouths { island: &'static str, doors: Vec<[f64; 2]> },
 }
 
@@ -156,7 +156,7 @@ impl Room {
         room.source = if matches!(plan.ground, Laid::Under(_)) { gear::Source::Dungeon } else { gear::Source::World };
         room.island = Some(island);
         let levels = passage::levels(band, zone.depth);
-        room.passage = Some(Box::new(Passage::Zone(Zone {
+        room.passage = Some(Passage::Zone(Box::new(Zone {
             island,
             week,
             route,
@@ -177,8 +177,8 @@ impl Room {
         } else {
             room.stand_bands(levels);
         }
-        room.harden();
-        let guards = (0..room.garrison.len()).collect();
+        let guards: Vec<usize> = (0..room.garrison.len()).collect();
+        room.harden(&guards);
         if let Some(zone) = room.zone_mut() {
             zone.round.guards = guards;
         }
@@ -197,20 +197,20 @@ impl Room {
     /// A patrol zone's mouths into its island's passages: the doors of its runs, in the island's mouths' order.
     pub fn open_mouths(&mut self, island: &str, doors: Vec<[f64; 2]>) -> bool {
         let Some(island) = island_named(island) else { return false };
-        self.passage = Some(Box::new(Passage::Mouths { island, doors }));
+        self.passage = Some(Passage::Mouths { island, doors });
         true
     }
 
     /// The passage zone's own, when this room is one.
     pub(crate) fn zone(&self) -> Option<&Zone> {
-        match self.passage.as_deref() {
+        match self.passage.as_ref() {
             Some(Passage::Zone(zone)) => Some(zone),
             _ => None,
         }
     }
 
     pub(crate) fn zone_mut(&mut self) -> Option<&mut Zone> {
-        match self.passage.as_deref_mut() {
+        match self.passage.as_mut() {
             Some(Passage::Zone(zone)) => Some(zone),
             _ => None,
         }
@@ -320,11 +320,15 @@ impl Room {
         }
     }
 
-    /// Hardened's share more health on every foe standing.
-    pub(crate) fn harden(&mut self) {
+    /// Hardened's share more health on every foe standing at these garrison posts, as they stand.
+    pub(crate) fn harden(&mut self, posts: &[usize]) {
         let Some(strength) = self.current(Current::Hardened) else { return };
-        for foe in self.foes.values_mut() {
-            foe.grow(1.0 + passage::zone::HARDENED * strength);
+        let standing: Vec<FighterId> =
+            posts.iter().filter_map(|&post| self.garrison.get(post)).flat_map(|post| post.standing.clone()).collect();
+        for id in standing {
+            if let Some(foe) = self.foes.get_mut(&id) {
+                foe.grow(1.0 + passage::zone::HARDENED * strength);
+            }
         }
     }
 

@@ -68,7 +68,7 @@ impl Room {
         let Some(body) = self.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y]) else {
             return refused(Refusal::NoDive);
         };
-        match (ask, self.passage.as_deref()) {
+        match (ask, self.passage.as_ref()) {
             (PassageAsk::Begin { mouth, route, lamp }, Some(Passage::Mouths { island, doors })) => {
                 let (island, door) = (*island, doors.get(usize::from(mouth)).copied());
                 let Some(door) = door else { return refused(Refusal::NoSuchMouth) };

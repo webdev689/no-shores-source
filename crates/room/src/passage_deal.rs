@@ -143,10 +143,11 @@ impl Room {
                 if since.is_multiple_of(WAVE_EVERY_TICKS) {
                     self.call_wave();
                 }
-                if deal == Deal::Mission(Mission::Hold) && self.ring_held() {
-                    if let Some(zone) = self.zone_mut() {
-                        zone.round.held += 1;
-                    }
+                if deal == Deal::Mission(Mission::Hold)
+                    && self.ring_held()
+                    && let Some(zone) = self.zone_mut()
+                {
+                    zone.round.held += 1;
                 }
             }
             Deal::Mission(Mission::Ambush) => {
@@ -333,7 +334,8 @@ impl Room {
         }
     }
 
-    /// A public room's deal begins again: its guards stand again, its targets with them, its progress from nothing.
+    /// A public room's deal begins again: its guards cleared stand again (a band still standing keeps its own), its
+    /// targets with them, its progress from nothing.
     fn begin_again(&mut self) {
         let Some(zone) = self.zone() else { return };
         let (guards, targets, waves) =
@@ -341,12 +343,14 @@ impl Room {
         for id in targets.into_iter().chain(waves) {
             self.gone(id);
         }
-        for post in guards {
-            if post < self.garrison.len() {
-                self.stand_post(post);
-            }
+        let cleared: Vec<usize> = guards
+            .into_iter()
+            .filter(|&post| self.garrison.get(post).is_some_and(|post| post.cleared_at.is_some()))
+            .collect();
+        for &post in &cleared {
+            self.stand_post(post);
         }
-        self.harden();
+        self.harden(&cleared);
         let clock = self.clock;
         if let Some(zone) = self.zone_mut() {
             zone.round.number += 1;
