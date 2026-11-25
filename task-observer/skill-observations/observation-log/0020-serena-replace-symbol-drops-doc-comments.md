@@ -30,3 +30,8 @@ silent deletions read as the author's.
 `/** ... */`, so the class's doc comment then described the inserted function. Caught by the worker on reading back.
 
 **Instance (2026-11-23, worker fperks):** replace_symbol_body on a Rust method in `crates/` dropped its doc comment; the new body did not carry it. The worker's reviewer sub-agent caught it and it was fixed in the worker's second commit. Third occurrence of this failure shape.
+
+**Instance (2026-11-25, passages worker fixrules):** replace_symbol_body on `leave_passages` in `crates/gear` dropped
+the doc comment above it; the worker caught it on reading back. Fourth occurrence, still with no fix actioned: the
+improvement has to be the structural one (the brief template or a post-edit hook refuses a Serena symbol replace that
+lowers the file's count of `///`/`/**` lines), not another sentence.

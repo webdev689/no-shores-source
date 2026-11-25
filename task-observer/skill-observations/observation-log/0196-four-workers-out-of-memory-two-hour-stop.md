@@ -33,3 +33,16 @@ heavy steps (full checks) to the single place that must run them anyway.
 worktrees plus the main checkout, two full checks at once spent the session's disk allowance ("0 MB free"), and both
 checks died. Fix: a worktree's `target/` is deleted once its branch is merged into the PR branch, and full checks
 run one at a time. Consider a shared `CARGO_TARGET_DIR` per toolchain for worktrees in run-worker.sh.
+
+**Instance (2026-11-25, passages audit round):** five workers at once (fixrules, fxserver, fxway, fxzone, fxregions,
+each started with CARGO_BUILD_JOBS=2) on the same 4-core, 15 GB container: fxregions reported an OOM kill during
+`npm run wasm` plus node tests, fxserver one room test run "hit the memory limit" and `cargo test -p room` past 10
+minutes, and two workers' sessions died on "Authentication error" mid-item (whether load caused it is unchecked).
+CARGO_BUILD_JOBS=2 per worker was not enough: the controller's own rule should be at most three building workers on
+this container, enforced where workers start (run-worker.sh refusing a fourth while three run), not remembered.
+
+**Again, and the barrier (passages session, 2026-11-25):** rplay and rweb, three workers at once (memory held), were
+both killed at the 2 h background-task limit, rweb with most of its item uncommitted. The run script's advice to start
+a worker as the background task itself makes the 2 h cap the worker's own. Structural fix, commit on the passages
+branch: workers start detached (`setsid nohup`), and `tools/claude-toolkit/workers/wait-worker.sh` is the background
+task, restarted at its limit while the worker runs on; Toolkit.md, the README and run-worker.sh's header say so.

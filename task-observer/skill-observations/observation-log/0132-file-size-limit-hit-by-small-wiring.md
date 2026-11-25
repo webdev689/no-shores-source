@@ -25,3 +25,9 @@ lines of wiring push them over. The size check runs last in `cargo xtask check`,
 file, `wc -l` it, and put a new part's reading or types in a file of their own (as `questMessages.ts` does).
 
 **Principle:** Run the seconds-long check before the half-hour one.
+
+**Instance (2026-11-25, passages worker fxway):** `client/src/game/game.ts`, `foot.ts` and `gameFrame.ts` stand at 599
+to 600 lines, so every wiring change for the way between zones cost shaving lines elsewhere to stay under the cap.
+
+**Again (fxlook and fxzone, passages session, 2026-11-25):** `client/src/game/game.ts` sat at exactly 600 lines, so
+each worker's host wiring had to replace lines rather than add one; the merged `passageGame.ts` reached 586.
