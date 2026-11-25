@@ -1,5 +1,5 @@
 ---
-id: 248
+id: 258
 title: "Fixing one failing step of a long CI pipeline, without running its later steps locally, cost another 45-minute run"
 status: open
 type: open-source
