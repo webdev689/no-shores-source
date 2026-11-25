@@ -215,20 +215,24 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): the
+  owner's picks on the sheet "Horse and Foe Sounds" (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN, picks in its
+  `picks` store), every one of the 22 cues with candidates (the `freesound` runs 45636851844 and 45644079292). The
+  foes' voices are wired (`voiceCue`, silent until picked; the alert the shared one until then). Once picked: set each
+  cue's `picked` in `content/audio/freesound.json`, a hoofbeat's with a `cut` of one stride (find it in the pick's
+  preview with ffmpeg's `silencedetect` or by its peaks), push, and take the run's `sounds.json`.
+
 - **The five asks: plain clothes, the Tack's Bay, the welcome's camera, speakers' colours and the city's sounds**
   (#206, draft; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
   every call there). The prologue's end gives a Plain Shirt and Plain Breeches with no stats (`Item::plain`), worn
   where the torso and legs are bare; the Tack gives the Bay as she is spoken with on the round (a goal's own
   `reward`); the face-to-face shot stands 2.8 m over the pair's feet, solved for the lens, their crowns no longer cut
-  off; each speaker's name has a colour of their own in the dialogue box. Waiting on the owner: **the picks on the
-  sound sheet "Overlook City Sounds"** (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC, picks kept in its `picks`
-  store, read with ArtifactData), four new candidates each for the market crowd (`amb.social.crowd`) and the city's
-  hum (`amb.social.hum`): the crowd's from the `freesound` workflow's run 143 on this branch ("crowd chatter"), the
-  hum's from run 45533105199 ("medieval town ambience", on the owner's "Try again with the hum"; all four one
-  recordist's park in Zaltbommel). Once picked: set each cue's
-  `picked` (and a `cut` for a long one, `mono` kept on the crowd) in `content/audio/freesound.json`, skip the old
-  pick, push, and take the workflow's `sounds.json` into the branch. Until then the branch keeps the current picks,
-  so the game plays them. Then the owner's yes to merge, which deploys the page and the rooms. `main` (#202) merged
+  off; each speaker's name has a colour of their own in the dialogue box. The city's sounds are settled: the crowd
+  kept on the owner's "Keep"; the hum the owner's pick from the sheet "Overlook City Sounds"
+  (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound 824369 (an old-town alley in Stockholm, CC0, vhio),
+  on R2 by the `freesound` run 45635457113 and in `sounds.json`, after seven searches (parks and ghost towns refused;
+  the owner's own words "distant city" found it beside "old town ambience -park -klankbeeld"). Waiting on the owner:
+  Then the owner's yes to merge, which deploys the page and the rooms. `main` (#202) merged
   in. The full check passed in CI on f8dff2b4 (run 45526624102); the rules', wire's and page's tests, the new ones
   failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and
   after (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the
