@@ -1,0 +1,702 @@
+/* The website's one stylesheet: the night sea, lantern gold, framed pictures, the pixel face. */
+@import '@fontsource-variable/pixelify-sans/index.css';
+
+/* Pixelify Sans draws the copyright sign as a speck; the device's own sans draws that one sign. Nothing is fetched. */
+@font-face {
+  font-family: 'Site Marks';
+  src: local('Arial'), local('Helvetica'), local('DejaVu Sans'), local('Liberation Sans');
+  unicode-range: U+00A9;
+}
+
+:root {
+  color-scheme: dark;
+  --night: #070c18;
+  --deep: #0a1222;
+  --panel: #0e1a2e;
+  --edge: #2b3a55;
+  --edge-lit: #3d5276;
+  --ink: #e4e9f1;
+  --ink-soft: #b4c1d6;
+  --gold: #ffd36e;
+  --gold-mid: #d99a36;
+  --gold-deep: #7a4a16;
+  --shadow: 0 14px 34px rgb(0 0 0 / 45%);
+  --gutter: clamp(16px, 4vw, 40px);
+  --measure: 66ch;
+  font-family: 'Site Marks', 'Pixelify Sans Variable', system-ui, sans-serif;
+  font-size: clamp(17px, 0.6vw + 14px, 20px);
+  line-height: 1.6;
+  /* Pixelify Sans's fi and fl ligatures read as other letters ("Aght" for "fight"): every letter stands alone. */
+  font-variant-ligatures: none;
+  color: var(--ink);
+  background: var(--night);
+  scrollbar-color: var(--edge-lit) var(--deep);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--night) 0%, var(--deep) 60%, #050913 100%);
+  overflow-x: hidden;
+}
+
+main {
+  flex: 1;
+}
+
+::selection {
+  background: var(--gold-mid);
+  color: var(--night);
+}
+
+img {
+  image-rendering: pixelated;
+  display: block;
+}
+
+a {
+  color: var(--gold);
+  text-underline-offset: 0.25em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
+h1,
+h2 {
+  font-weight: 700;
+  line-height: 1.15;
+  text-wrap: balance;
+  margin: 0 0 0.6em;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  color: var(--gold);
+  text-shadow: 3px 3px 0 rgb(0 0 0 / 75%);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  color: var(--gold);
+  text-shadow: 2px 2px 0 rgb(0 0 0 / 75%);
+}
+
+p {
+  margin: 0 0 0.9em;
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+.skip {
+  position: absolute;
+  left: var(--gutter);
+  top: -100px;
+  z-index: 10;
+  padding: 0.5em 1em;
+  background: var(--gold);
+  color: var(--night);
+}
+
+.skip:focus {
+  top: 8px;
+}
+
+/* The bar: the logo at its own size, the pages, Play. On a narrow screen the pages wrap under the logo, and the bar
+   scrolls away rather than hold a seventh of the screen. */
+.bar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 8px var(--gutter);
+  background: rgb(7 12 24 / 94%);
+  border-bottom: 2px solid var(--edge);
+}
+
+.bar-brand img {
+  width: 255px;
+  height: 64px;
+}
+
+.bar-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+}
+
+.bar-nav a:not(.button) {
+  color: var(--ink);
+  text-decoration: none;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.bar-nav a:not(.button):hover,
+.bar-nav a[aria-current='page'] {
+  color: var(--gold);
+  border-bottom-color: var(--gold-mid);
+}
+
+.button {
+  display: inline-block;
+  padding: 0.45em 1.1em;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  background: var(--panel);
+  border: 2px solid var(--edge-lit);
+  box-shadow:
+    inset 0 -3px 0 rgb(0 0 0 / 35%),
+    0 6px 14px rgb(0 0 0 / 35%);
+  transition:
+    background 160ms ease-out,
+    transform 160ms ease-out;
+}
+
+.button:hover {
+  background: #15243c;
+  transform: translateY(-2px);
+}
+
+.button-gold {
+  color: #1a1206;
+  background: var(--gold);
+  border-color: #fff1c4;
+}
+
+.button-gold:hover {
+  background: #ffe08f;
+}
+
+.button-big {
+  font-size: 1.2rem;
+  padding: 0.55em 1.6em;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  justify-content: center;
+  max-width: none;
+}
+
+/* The home page's scene: the picture fills the band, its lanterns flicker, the logo and the first line over the sky. */
+.hero {
+  position: relative;
+  height: clamp(420px, 66vh, 560px);
+  overflow: hidden;
+  border-bottom: 2px solid var(--edge);
+}
+
+.hero-art,
+.hero-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* the town stands to the right of the scene: a phone sees its first terraces beside the words */
+  object-position: 72% 100%;
+}
+
+.hero-lights {
+  animation: flicker 3.2s steps(4) infinite;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0.8;
+  }
+}
+
+.hero-words {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: clamp(36px, 9vh, 96px) var(--gutter) 0;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0;
+}
+
+.hero-logo {
+  width: 255px;
+  height: 64px;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 70%));
+}
+
+.hero-line {
+  font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+  color: var(--ink);
+  text-shadow: 2px 2px 0 rgb(0 0 0 / 85%);
+  margin: 12px 0 6px;
+}
+
+.hero-pitch {
+  max-width: 46ch;
+  font-size: clamp(0.95rem, 1.2vw + 0.5rem, 1.15rem);
+  color: var(--ink-soft);
+  text-shadow: 2px 2px 0 rgb(0 0 0 / 85%);
+  margin: 0 0 20px;
+}
+
+.hero-needs {
+  margin: 14px 0 0;
+  padding: 2px 10px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  background: rgb(7 12 24 / 78%);
+}
+
+/* The narrowest phones keep the bar to the logo and one row of links. */
+@media (max-width: 419px) {
+  .bar-nav {
+    gap: 4px 12px;
+    font-size: 0.88rem;
+  }
+
+  .bar-nav .button {
+    padding: 0.35em 0.8em;
+  }
+}
+
+/* On a phone the scene's words stay compact: both buttons on one row, the bar's logo already naming the site. */
+@media (max-width: 639px) {
+  /* the bar's logo already names the site on a phone: the scene's stays in its heading for screen readers alone */
+  .hero h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .hero .button-big {
+    font-size: 1rem;
+    padding: 0.5em 1em;
+  }
+
+  .hero-words {
+    padding-top: 28px;
+  }
+}
+
+@media (min-width: 640px) {
+  .bar {
+    position: sticky;
+    top: 0;
+  }
+
+  .hero {
+    height: clamp(440px, 82vh, 760px);
+  }
+
+  .hero-art img {
+    object-position: 85% 100%;
+  }
+
+  .hero-logo {
+    width: 510px;
+    height: 128px;
+  }
+}
+
+/* The owner's words between the pictures: set apart, centred, the short lines heavier. */
+.passage {
+  padding: clamp(48px, 9vw, 112px) var(--gutter);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-size: clamp(1.1rem, 1.4vw + 0.6rem, 1.4rem);
+  color: var(--ink-soft);
+}
+
+.passage .beat {
+  color: var(--ink);
+  font-weight: 700;
+  margin-bottom: 0.3em;
+}
+
+.closing .beat {
+  color: var(--gold);
+  font-size: 1.3em;
+  margin-bottom: 1.2em;
+}
+
+.closing {
+  padding-bottom: 0;
+}
+
+/* Framed pictures: an outer edge, a gold inner line, a shadow under. */
+.frame {
+  width: 100%;
+  height: auto;
+  border: 3px solid var(--edge);
+  outline: 2px solid var(--gold-deep);
+  outline-offset: -7px;
+  background: var(--deep);
+  box-shadow: var(--shadow);
+}
+
+/* Home's rows of what a player does, after DFO's: the picture and its words side by side on a wide screen, in turn
+   left and right, each under a gold numeral. */
+.features {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) clamp(32px, 6vw, 72px);
+}
+
+.section-title {
+  margin: 0 0 clamp(8px, 2vw, 24px);
+  text-align: center;
+  font-size: clamp(1.6rem, 2.6vw + 0.6rem, 2.4rem);
+  color: var(--gold);
+}
+
+.feature {
+  display: grid;
+  gap: clamp(18px, 4vw, 56px);
+  align-items: center;
+  padding: clamp(20px, 4vw, 48px) 0;
+}
+
+.feature h3,
+.feature h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.3rem, 1.6vw + 0.6rem, 1.8rem);
+  color: var(--gold);
+}
+
+.feature p {
+  color: var(--ink-soft);
+}
+
+.numeral {
+  display: block;
+  font-size: clamp(2rem, 3vw + 1rem, 3.2rem);
+  line-height: 1;
+  color: var(--gold-mid);
+}
+
+.features > .buttons {
+  justify-content: center;
+}
+
+@media (min-width: 900px) {
+  .feature {
+    grid-template-columns: 7fr 5fr;
+  }
+
+  .feature:nth-of-type(even) {
+    grid-template-columns: 5fr 7fr;
+  }
+
+  .feature:nth-of-type(even) .frame {
+    order: 2;
+  }
+}
+
+/* Home's answer to what the game is: centred under the scene, the lede larger. */
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(48px, 8vw, 104px) var(--gutter) clamp(16px, 3vw, 32px);
+  text-align: center;
+}
+
+.intro p {
+  color: var(--ink-soft);
+}
+
+.intro .lede {
+  color: var(--ink);
+}
+
+/* The short facts under a row, set as tags. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  color: var(--ink);
+  background: var(--deep);
+  border: 2px solid var(--edge);
+}
+
+/* Steps to start, numbered in gold, three abreast on a wide screen. */
+.start {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(48px, 8vw, 96px) var(--gutter) 0;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: clamp(16px, 2.5vw, 28px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps li {
+  position: relative;
+  padding: 22px 22px 18px;
+  background: var(--panel);
+  border: 2px solid var(--edge);
+  box-shadow: var(--shadow);
+}
+
+ol.steps li {
+  counter-increment: step;
+  padding-top: 56px;
+}
+
+ol.steps li::before {
+  content: counter(step);
+  position: absolute;
+  top: 14px;
+  left: 22px;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: var(--gold);
+  text-shadow: 2px 2px 0 rgb(0 0 0 / 75%);
+}
+
+.steps h3 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+
+.steps p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* A band across the page: the numbers, each from the premise or a decision. */
+.band {
+  border-block: 2px solid var(--edge);
+  background: linear-gradient(180deg, var(--panel), var(--deep));
+  padding: clamp(24px, 4vw, 44px) var(--gutter);
+}
+
+.numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+}
+
+.numbers b {
+  display: block;
+  font-size: clamp(2.4rem, 4vw + 1rem, 3.6rem);
+  line-height: 1.1;
+  color: var(--gold);
+}
+
+.numbers span {
+  color: var(--ink-soft);
+}
+
+/* The World's lead: one wide row under the band. */
+.lead .buttons {
+  justify-content: flex-start;
+}
+
+.lead {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(40px, 7vw, 88px) var(--gutter) 0;
+}
+
+/* The Discord's call, shown only once the Discord has an address. */
+.call {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: clamp(40px, 7vw, 88px);
+  padding: clamp(28px, 5vw, 56px) var(--gutter);
+  border-block: 2px solid var(--edge);
+  background: var(--panel);
+  text-align: center;
+}
+
+.call h2 {
+  margin: 0;
+  color: var(--gold);
+}
+
+.call p {
+  color: var(--ink-soft);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A page's own head, then its scenes: the picture and its words side by side on a wide screen, in turn left and right. */
+.page-head {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(40px, 7vw, 88px) var(--gutter) clamp(16px, 3vw, 32px);
+}
+
+.lede {
+  font-size: clamp(1.15rem, 1.6vw + 0.6rem, 1.5rem);
+  color: var(--ink-soft);
+}
+
+.page-head .buttons {
+  justify-content: flex-start;
+  margin-top: 8px;
+}
+
+.scene {
+  display: grid;
+  gap: clamp(20px, 4vw, 56px);
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(28px, 5vw, 64px) var(--gutter);
+}
+
+@media (min-width: 900px) {
+  .scene {
+    grid-template-columns: 7fr 5fr;
+  }
+
+  .scene:nth-of-type(even) {
+    grid-template-columns: 5fr 7fr;
+  }
+
+  .scene:nth-of-type(even) .frame {
+    order: 2;
+  }
+}
+
+/* The foot in columns: the logo and the copyright, the pages, then Play and the Discord; stacked on a phone. */
+.foot {
+  display: grid;
+  gap: 24px clamp(24px, 5vw, 72px);
+  align-items: start;
+  margin-top: clamp(32px, 6vw, 72px);
+  padding: 32px var(--gutter) 40px;
+  border-top: 2px solid var(--edge);
+  background: #050913;
+  color: var(--ink-soft);
+}
+
+.foot-brand img {
+  width: 191px;
+  height: 48px;
+}
+
+.foot-brand p {
+  margin: 8px 0 0;
+}
+
+.foot-brand .copyright {
+  font-size: 0.85rem;
+}
+
+.foot h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: var(--gold);
+}
+
+.foot ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.foot a:not(.button) {
+  color: var(--ink);
+}
+
+.foot a[aria-current='page'] {
+  color: var(--gold);
+}
+
+.foot .buttons {
+  justify-content: flex-start;
+  margin: 0;
+}
+
+@media (min-width: 760px) {
+  .foot {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    padding-inline: max(var(--gutter), calc((100% - 1180px) / 2));
+  }
+
+  .foot .buttons {
+    justify-content: flex-end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-lights {
+    animation: none;
+  }
+
+  .button {
+    transition: none;
+  }
+
+  .button:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,682 @@
+/* The Discord bot's page: its head picture beside its title, and the panel the script draws under its root
+   (.bot-panel) in the site's own look: framed cards, night colours, lantern gold. Each panel rule names the root, so
+   the site's rules for the same tags do not fight it. */
+
+.panel-head {
+  display: grid;
+  gap: clamp(16px, 3vw, 40px);
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .panel-head {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+.panel-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.panel-wrap > .small {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  margin-top: 20px;
+}
+.panel-wrap > .warn {
+  color: #e8a598;
+}
+
+.bot-panel {
+  display: grid;
+  gap: 28px;
+  font-size: 1rem;
+  line-height: 1.5;
+  outline: none;
+}
+.bot-panel .panel-window {
+  display: block;
+  padding: 0 clamp(14px, 2vw, 22px) clamp(14px, 2vw, 22px);
+}
+.bot-panel .panel-window > h2 {
+  margin: 0 calc(-1 * clamp(14px, 2vw, 22px)) 16px;
+  padding: 12px clamp(14px, 2vw, 22px);
+  font-size: 1.35rem;
+  border-bottom: 2px solid var(--edge);
+  background: var(--deep);
+}
+.bot-panel h3 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.bot-panel p {
+  margin: 0 0 10px;
+  max-width: none;
+}
+.bot-panel .topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 10px 14px;
+  border: 2px solid var(--edge);
+  background: var(--panel);
+}
+.bot-panel .topline .who {
+  flex: 1;
+  color: var(--ink-soft);
+}
+.bot-panel .wordmark {
+  color: var(--gold);
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.bot-panel .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+}
+.bot-panel .tile {
+  border: 2px solid var(--edge);
+  background: var(--deep);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bot-panel .tile > .button {
+  margin-top: auto;
+  align-self: flex-start;
+}
+.bot-panel .tile > .acts {
+  margin-top: auto;
+}
+.bot-panel .part {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  border: 2px solid var(--edge);
+  background: var(--deep);
+  padding: 14px;
+}
+.bot-panel .part > .button,
+.bot-panel .part .acts {
+  justify-self: start;
+}
+.bot-panel .doors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+.bot-panel .button {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bot-panel .button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+.bot-panel .button-small {
+  padding: 0.15em 0.7em;
+  font-size: 0.85rem;
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 35%);
+}
+.bot-panel .acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.bot-panel .warn {
+  color: #e8a598;
+}
+.bot-panel .on {
+  color: #8fd1a5;
+}
+.bot-panel .off {
+  color: var(--ink-soft);
+}
+.bot-panel .small,
+.bot-panel .field-help {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+}
+.bot-panel .status {
+  min-height: 1.5em;
+  margin-top: 10px;
+}
+.bot-panel .form {
+  display: grid;
+  gap: 16px;
+  margin: 12px 0;
+}
+.bot-panel .field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.bot-panel .field label,
+.bot-panel .field-label {
+  color: var(--gold);
+  margin: 0;
+}
+.bot-panel .field-error {
+  color: #e8a598;
+  margin: 0;
+  font-size: 0.85rem;
+}
+.bot-panel .field-error:empty {
+  display: none;
+}
+.bot-panel input,
+.bot-panel select,
+.bot-panel textarea {
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--night);
+  border: 2px solid var(--edge-lit);
+  padding: 6px 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+.bot-panel input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  justify-self: start;
+  accent-color: var(--gold-mid);
+}
+.bot-panel textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.bot-panel fieldset.group {
+  border: 2px solid var(--edge);
+  padding: 10px 12px;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+}
+.bot-panel legend {
+  color: var(--gold);
+  padding: 0 6px;
+}
+.bot-panel .list-rows {
+  display: grid;
+  gap: 10px;
+}
+.bot-panel .field.list > .button,
+.bot-panel fieldset.group > .button {
+  justify-self: start;
+}
+.bot-panel .list-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+.bot-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.bot-panel th,
+.bot-panel td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--edge);
+  overflow-wrap: anywhere;
+}
+.bot-panel th {
+  color: var(--gold);
+  font-weight: 400;
+}
+/* A message setting: the composer beside its live preview, one above the other where the window is narrow. */
+.bot-panel .field.message {
+  gap: 8px;
+}
+.bot-panel .composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.bot-panel .composer-editor {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.bot-panel .composer-preview {
+  position: sticky;
+  top: 96px;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+.bot-panel .composer-embed {
+  border: 2px solid var(--edge);
+  padding: 8px 12px;
+  display: grid;
+  gap: 10px;
+}
+.bot-panel .composer-embed > summary {
+  cursor: pointer;
+  color: var(--gold);
+  overflow-wrap: anywhere;
+}
+.bot-panel .composer-fields {
+  display: grid;
+  gap: 10px;
+}
+.bot-panel .composer-field {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--edge);
+  padding-top: 8px;
+}
+.bot-panel .composer-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.bot-panel .field.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bot-panel .field .count {
+  float: right;
+}
+.bot-panel .field-help.over {
+  color: #e8a598;
+}
+.bot-panel .composer-bar,
+.bot-panel .composer-tools,
+.bot-panel .composer-test,
+.bot-panel .composer-pickers,
+.bot-panel .composer-time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.bot-panel .composer-insert {
+  display: grid;
+  gap: 6px;
+}
+.bot-panel .composer-pickers select,
+.bot-panel .composer-tools select {
+  max-width: 100%;
+}
+.bot-panel .composer-json {
+  border: 2px solid var(--edge);
+  padding: 8px 12px;
+  display: grid;
+  gap: 8px;
+}
+.bot-panel .composer-json > summary {
+  cursor: pointer;
+  color: var(--gold);
+}
+.bot-panel .composer-json textarea {
+  font-family: monospace;
+  font-size: 13px;
+}
+.bot-panel .composer-upload {
+  display: inline-flex;
+  margin-top: 6px;
+}
+.bot-panel .pictures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.bot-panel .picture {
+  margin: 0;
+  border: 2px solid var(--edge);
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+.bot-panel .picture img {
+  width: 100%;
+  height: 120px;
+  object-fit: contain;
+  background: #1e1f22;
+  image-rendering: auto;
+}
+.bot-panel .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.bot-panel input[type='color'] {
+  width: 64px;
+  height: 36px;
+  padding: 2px;
+}
+/* The preview, in Discord's own dark colours and face, so a card looks as it will in the channel. */
+.bot-panel .preview {
+  background: #313338;
+  color: #dbdee1;
+  border-radius: 4px;
+  padding: 14px 16px;
+  font:
+    15px/1.375 system-ui,
+    sans-serif;
+  overflow: hidden;
+}
+.bot-panel .preview img {
+  image-rendering: auto;
+  display: inline-block;
+}
+.bot-panel .dmsg {
+  display: flex;
+  gap: 14px;
+}
+.bot-panel .dmsg-avatar {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gold-mid);
+  color: var(--night);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.bot-panel .dmsg-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.bot-panel .dmsg-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.bot-panel .dmsg-name {
+  color: #f2f3f5;
+  font-weight: 600;
+}
+.bot-panel .dmsg-tag {
+  background: #5865f2;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.bot-panel .dmsg-time {
+  color: #949ba4;
+  font-size: 12px;
+}
+.bot-panel .dmsg-content {
+  overflow-wrap: anywhere;
+}
+.bot-panel .dmsg-empty {
+  color: #949ba4;
+  font-style: italic;
+  margin: 0;
+}
+.bot-panel .preview a {
+  color: #00a8fc;
+  text-decoration: none;
+}
+.bot-panel .preview a:hover {
+  text-decoration: underline;
+}
+.bot-panel .preview p,
+.bot-panel .preview li {
+  margin: 0;
+}
+.bot-panel .preview code {
+  background: #1e1f22;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 85%;
+}
+.bot-panel .dmention {
+  background: rgb(88 101 242 / 30%);
+  color: #c9cdfb;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.bot-panel .dembed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+  max-width: 520px;
+  margin-top: 6px;
+  background: #2b2d31;
+  border-left: 4px solid var(--gold-mid);
+  border-radius: 4px;
+  padding: 8px 16px 16px 12px;
+}
+.bot-panel .dembed-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 8px;
+}
+.bot-panel .dembed-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f2f3f5;
+}
+.bot-panel .dembed-author a {
+  color: #f2f3f5;
+}
+.bot-panel .dembed-author-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+.bot-panel .dembed-title {
+  font-weight: 600;
+  color: #f2f3f5;
+  overflow-wrap: anywhere;
+}
+.bot-panel .dembed-description {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.bot-panel .dembed-fields {
+  display: grid;
+  gap: 8px;
+}
+.bot-panel .dembed-row {
+  display: flex;
+  gap: 8px;
+}
+.bot-panel .dembed-field {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.bot-panel .dembed-field-name {
+  font-weight: 600;
+  color: #f2f3f5;
+  margin-bottom: 2px;
+}
+.bot-panel .dembed-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.bot-panel .dembed-thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+.bot-panel .dembed-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #949ba4;
+}
+.bot-panel .dembed-footer-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+/* Discord's markdown, as its client draws it. */
+.bot-panel .dmd-p {
+  min-height: 1em;
+}
+.bot-panel .dmd-h1,
+.bot-panel .dmd-h2,
+.bot-panel .dmd-h3 {
+  font-weight: 700;
+  color: #f2f3f5;
+  margin: 8px 0 4px;
+  line-height: 1.375;
+}
+.bot-panel .dmd-h1 {
+  font-size: 24px;
+}
+.bot-panel .dmd-h2 {
+  font-size: 20px;
+}
+.bot-panel .dmd-h3 {
+  font-size: 16px;
+}
+.bot-panel .dmd-sub {
+  font-size: 12px;
+  color: #949ba4;
+}
+.bot-panel .dmd-quote {
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 4px solid #4e5058;
+}
+.bot-panel .dmd-list {
+  margin: 2px 0;
+  padding-left: 1.5em;
+}
+.bot-panel .dmd-pre {
+  margin: 4px 0;
+  background: #2b2d31;
+  border: 1px solid #1e1f22;
+  border-radius: 4px;
+  padding: 7px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bot-panel .dmd-pre code {
+  background: none;
+  padding: 0;
+  font-size: 13px;
+}
+.bot-panel .dembed .dmd-pre {
+  background: #1e1f22;
+}
+.bot-panel .dspoiler {
+  background: #1e1f22;
+  color: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.bot-panel .dspoiler.shown {
+  background: rgb(255 255 255 / 10%);
+  color: inherit;
+  cursor: auto;
+}
+.bot-panel .dspoiler > * {
+  visibility: hidden;
+}
+.bot-panel .dspoiler.shown > * {
+  visibility: visible;
+}
+.bot-panel .dts {
+  background: rgb(255 255 255 / 6%);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.bot-panel .demoji {
+  width: 1.375em;
+  height: 1.375em;
+  vertical-align: bottom;
+  object-fit: contain;
+}
+.bot-panel .dbuttons {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bot-panel .dbutton-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bot-panel .preview a.dbutton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 2px 16px;
+  border-radius: 3px;
+  background: #4e5058;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+}
+.bot-panel .preview a.dbutton:hover {
+  background: #6d6f78;
+  text-decoration: none;
+}
+.bot-panel .dbutton-out {
+  font-size: 12px;
+  opacity: 0.8;
+}
+@media (max-width: 860px) {
+  .bot-panel .composer {
+    grid-template-columns: 1fr;
+  }
+  .bot-panel .composer-preview {
+    position: static;
+    order: -1;
+  }
+}
+@media (max-width: 560px) {
+  .bot-panel .list-row {
+    grid-template-columns: 1fr;
+  }
+  .bot-panel .topline .who {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .bot-panel .dembed-thumbnail {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* The panel takes the focus when it draws a page, for screen readers; a ring round the whole panel would say nothing. */
+.bot-panel:focus,
+.bot-panel:focus-visible {
+  outline: none;
+}
