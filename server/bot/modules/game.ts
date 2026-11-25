@@ -1,8 +1,10 @@
 // The game: a member's linked No Shores character in the bot's messages, read from the accounts through their
-// service binding, and /link, which says how to link one. The link itself is the accounts' own (Discord sign-in).
+// service binding, their house's role (`gameHouses.ts`), and /link, which says how to link one. The link itself is
+// the accounts' own (Discord sign-in).
 
 import { GAME_SLOTS } from '../law/gameShape.ts';
-import { privateReply } from '../kit.ts';
+import { errorWords, privateReply } from '../kit.ts';
+import { houseRoleKeeping } from './gameHouses.ts';
 import type { ServerModule } from './module.ts';
 
 /** Where the game is played. */
@@ -10,10 +12,9 @@ export const GAME_URL = 'https://noshores.online/play/';
 /** /link's answer, in the account tab's own words (`client/src/game/accountTab.ts`). */
 export const LINK_WORDS = `Open the game at ${GAME_URL}, then in Settings open Account and press Sign in or link with Discord.`;
 
-const said = (error: unknown) => (error instanceof Error ? error.message : String(error));
-
 export const gameModule: ServerModule = {
   id: 'game',
+  ...houseRoleKeeping,
   commands: [{ name: 'link', description: 'How to link your No Shores character', type: 1, contexts: [0] }],
   command: () => Promise.resolve(privateReply(LINK_WORDS)),
   slots: {
@@ -27,7 +28,7 @@ export const gameModule: ServerModule = {
       const found =
         accounts && user.id
           ? await accounts.linked(String(user.id)).catch((error: unknown) => {
-              context.log(`[bot] game: the accounts did not answer: ${said(error)}`);
+              context.log(`[bot] game: the accounts did not answer: ${errorWords(error)}`);
               return null;
             })
           : null;

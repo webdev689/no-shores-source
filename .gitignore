@@ -2,8 +2,10 @@
 target
 node_modules
 
-# Builds and generated outputs never enter git: forge renders, world bakes, web builds.
+# Builds and generated outputs never enter git: forge renders, world bakes, web builds, the desktop app's build and
+# installers.
 dist/
+desktop/out/
 generated
 client/public/*.wasm
 # The island build's packs, copied in for pictures before they are published (the editor's ?islePacks=).

@@ -26,6 +26,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   name: 0,
   resource: null,
   breach: false,
+  hard: false,
   xp: 0,
   xpMost: 0,
   bought: 0,
@@ -78,6 +79,9 @@ const ship = (fields: Partial<GearShip>): GearShip => ({
   offers: [],
   trim: [],
   pledge: 0,
+  fleet: [],
+  sailed: 0,
+  dresses: [],
   ...fields,
 });
 

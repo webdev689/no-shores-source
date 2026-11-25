@@ -142,8 +142,4 @@ export class Bleeding {
     }
     kept.walked = (kept.walked + run) % STRIDE;
   }
-
-  clear(): void {
-    this.kept = new Map();
-  }
 }

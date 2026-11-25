@@ -10,6 +10,7 @@ import { LOGS_SHAPE } from './logsShape.ts';
 import { AUTOMOD_SHAPE } from './automodShape.ts';
 import { ANTIRAID_SHAPE } from './antiraidShape.ts';
 import { GAME_SHAPE } from './gameShape.ts';
+import { LAYOUT_SHAPE } from './layoutShape.ts';
 import { ANNOUNCE_SHAPE, LEVELS_SHAPE, ROLEMENUS_SHAPE, TAGS_SHAPE, WELCOME_SHAPE } from './communityShape.ts';
 import {
   BIRTHDAYS_SHAPE,
@@ -128,6 +129,7 @@ export const BOT_MODULES: readonly BotModule[] = Object.freeze([
   STATS_SHAPE,
   SOCIALS_SHAPE,
   GAME_SHAPE,
+  LAYOUT_SHAPE,
   CORE_SHAPE,
 ]);
 

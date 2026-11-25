@@ -25,6 +25,15 @@ code:
 - **ESLint 10** with `typescript-eslint`: spelled-out names, no `any`, type-only imports marked.
 - **Prettier**, 120 columns, the same settings as DFO Online, so ported code keeps its layout.
 
+## Electron (the desktop app)
+
+- **Electron 45**, its version and the updater's pinned exactly at the root, for the shell's types and tests, and in
+  `desktop/package.json` with electron-builder 26, which packs the installers; `npm ci` installs the first two,
+  `npm ci --prefix desktop` the packing tools. The `electron` package downloads its binary on the app's first run.
+- **The shell** is TypeScript held to the client's strictness (`desktop/tsconfig.json`), its tests run by `node --test`,
+  and written out for Electron by `desktop/tsconfig.build.json`, its preload as CommonJS, as a sandboxed preload must
+  be ([[Desktop App]]).
+
 ## Rust (the server, the rules, the tooling)
 
 - **Rust 1.97.0**, pinned in `rust-toolchain.toml` with `rustfmt`, `clippy` and the `wasm32-unknown-unknown` target.
@@ -114,3 +123,4 @@ it). Cycles renders on the CPU, so it bakes anywhere: `python -I tools/flora/bak
 | `npm run bake` | Cuts each node's window of the land, its section and its boxes into `generated/nodes/` (not in git), for the server's rooms |
 | `npm run server` | Runs the server's rooms locally, at `ws://127.0.0.1:8787/room/<name>`, after the messages, the WebAssembly and the bake |
 | `npm test`, `cargo test` | One side's tests |
+| `npm run desktop` | The [[Desktop App]] on the live game, or on `NOSHORES_GAME_URL` |

@@ -189,7 +189,7 @@ export class Ram implements Beat {
     return {
       shot: this.shot(own),
       ships,
-      actors: [...brig.crew(own, tick.clock, moves), youAtHelm(story, own, braced ? 'block' : 'idle')],
+      actors: [...brig.crew(own, moves), youAtHelm(story, own, braced ? 'block' : 'idle')],
       heads: brig.heads(own),
       land: false,
       heard: { at: 'sea', deck: true, sailing: false },

@@ -17,10 +17,10 @@ import mathutils
 # colour, in the order its groups are written: paving last of those that carry parts, as the first group carries the
 # parts and paving is never run into. Cloth is the plain dyes: undyed linen, crimson, verdant, black, straw and the
 # three factions' own. Crystal is the Lattice's: drawn by code, not a picture, its core glowing as much as its
-# vertices' glow says.
+# vertices' glow says. Glass is a window's stained glass.
 CLOTHS = ('linen', 'crimson', 'verdant', 'black', 'straw', 'stormcaller_blue', 'lamplighter_gold', 'veiled_dusk')
 MATERIALS = ('stone', 'trim', 'rubble', 'chalk', 'turf', 'timber', 'canvas', 'iron', 'plaster', 'roof', 'gold',
-             'crystal', 'bone', 'glow', *CLOTHS, 'paving', 'lawn', 'water')
+             'crystal', 'bone', 'glow', *CLOTHS, 'paving', 'lawn', 'water', 'glass')
 
 
 class Module:

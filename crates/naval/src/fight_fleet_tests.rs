@@ -3,6 +3,7 @@ use crate::captain::Temper;
 use crate::damage::Hurt;
 use crate::ranks::Commission;
 use crate::shots::ShotEvent;
+use sailing::TICK_SECONDS;
 use sailing::waters::Spot;
 
 /// Deep, still water everywhere.

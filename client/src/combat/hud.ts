@@ -430,7 +430,7 @@ export class Hud {
    *  plate), then the veil over all. The arrows keep clear of the vitals and the Arts and weapons where `ui` last laid
    *  them. */
   node(ui: Interface): Node {
-    const { zoom, stacked, compassTop } = this.layout;
+    const { zoom, compassTop } = this.layout;
     const room = this.view.width / zoom;
     const arms = this.armsNode();
     const column = TOPS.flatMap((id) => sidesOf(ui.boxOf(id)) ?? []);
@@ -454,7 +454,7 @@ export class Hud {
       alignX: 'center',
       gap: COMPASS.gap * zoom,
       width: 'grow',
-      float: { to: 'screen', y: stacked ? compassTop : COMPASS.top * zoom, z: 1 },
+      float: { to: 'screen', y: compassTop, z: 1 },
       children: [
         this.heading !== null && {
           ...compassNode(

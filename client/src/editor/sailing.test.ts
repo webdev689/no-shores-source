@@ -9,6 +9,7 @@ interface Asked {
   readonly helm: Helm;
   readonly time: number;
   readonly ticks: number;
+  readonly hull: number | undefined;
 }
 
 /** A door that answers at once, or holds every answer until let go, and keeps what it was asked. */
@@ -16,8 +17,8 @@ function fakeDoor(aground = false, holding = false) {
   const asked: Asked[] = [];
   const held: (() => void)[] = [];
   const source: SailSource = {
-    sail: (_id, ship, helm, time, ticks) => {
-      asked.push({ ship, helm, time, ticks });
+    sail: (_id, ship, helm, time, ticks, hull) => {
+      asked.push({ ship, helm, time, ticks, hull });
       const sailed: Sailed = { ship, pose: { heave: 0.1, pitch: 0, roll: 0, aground } };
       return holding ? new Promise((resolve) => held.push(() => resolve(sailed))) : Promise.resolve(sailed);
     },
@@ -34,6 +35,17 @@ test('putting to sea where the door answers it aground is refused with a reason'
   assert.equal(typeof answer, 'string');
   assert.equal(asked[0]?.ticks, 0, 'the rules decide, stepping nothing');
   assert.deepEqual([...(asked[0]?.ship ?? [])], [1000, 2000, 0.5, 0, 0, 0, 0, 0]);
+});
+
+test('a ship of a hull is put to sea and stepped as that hull, the Sloop unless one is asked', async () => {
+  const { source, asked } = fakeDoor();
+  const brig = await Sailing.putToSea(source, 'square', 0, 0, 0, 0, 2);
+  assert.ok(brig instanceof Sailing);
+  brig.advance(0.1, new Set(), 1, ignore);
+  await settle();
+  const plain = await Sailing.putToSea(source, 'square', 0, 0, 0, 0);
+  assert.ok(plain instanceof Sailing);
+  assert.deepEqual([brig.hullKind, plain.hullKind, ...asked.map((each) => each.hull)], [2, 0, 2, 2, 0]);
 });
 
 test('a long wait is caught up a second at most, ending at the time asked', async () => {

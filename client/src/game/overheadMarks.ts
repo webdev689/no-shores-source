@@ -13,7 +13,7 @@ import type { PropTable } from '../models/tables.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import { ELEMENTS } from '../player/gear.ts';
-import { emblemOf, emblemPixels } from './emblemArt.ts';
+import { emblemOf, emblemPixels } from '../plus/emblemArt.ts';
 import { type Entrance, doorOf, entrancesOf } from './entrances.ts';
 import { keeperOf } from './keepers.ts';
 import { factionOf } from './npc/factionRows.ts';

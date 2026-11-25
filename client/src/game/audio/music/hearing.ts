@@ -11,7 +11,7 @@ import type { FighterView } from '../../../rules/fighters.ts';
 import type { SkyReading } from '../../../sky/skyLaw.ts';
 import type { Landfall } from '../../seaLaw.ts';
 import { type Place, placeOf } from '../place.ts';
-import type { HeardFoe, HeardSky, Hearing, Mood } from './directorLaw.ts';
+import type { HeardBreach, HeardFoe, HeardSky, Hearing, Mood } from './directorLaw.ts';
 
 /** The fight a frame on foot showed, as far as the music reads it. */
 export interface FootHeard {
@@ -20,7 +20,11 @@ export interface FootHeard {
   readonly events: readonly FightEvent[];
   readonly foes: readonly MarkedFoe[];
   /** The zone's public event as shown: the least mood it holds the player to, on its ground while it runs. */
-  readonly public?: { readonly mood?: Mood | null; readonly part?: number } | null;
+  readonly public?: {
+    readonly mood?: Mood | null;
+    readonly part?: number;
+    readonly breach?: HeardBreach | null;
+  } | null;
 }
 
 /** The sea, as far as the music reads it: where the ship lies, the hostile ships round it, its fight, and the
@@ -78,6 +82,7 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
     sky: null,
     ...(fight.public?.mood && { least: fight.public.mood }),
     ...(fight.public?.part && { part: fight.public.part }),
+    ...(fight.public?.breach && { breach: fight.public.breach }),
   };
 }
 

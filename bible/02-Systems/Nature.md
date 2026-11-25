@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/nature/natureView.ts#NatureView
+  - client/src/nature/natureView.ts#Gusts
   - client/src/nature/flora.ts#loadFlora
   - client/src/nature/forms.ts#formBuffers
   - client/src/nature/impostor.ts#framesFor
@@ -97,11 +98,15 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   point lies past 3 km keeps only the trees drawn that far and only those the thinning leaves, its ground read for
   no others; it is scattered whole again when the eye comes within 3 km. When the eye crosses into another tile, or
   newly scattered tiles arrive (at most four times a second while some still wait), only the list of which slots to
-  draw is made again, and each tile's corner. A changed ground is scattered again tile by tile, the old plants drawn
-  until their tile's turn, but only where it changed (`GroundChanges`): a new close patch changes the tiles under the
-  old patch or the new one, the 2 km squares the sampler reads, about 1,300 of the 28,000 tiles within 6 km, and every
-  other tile keeps its plants. A city or a layout built anew changes every tile. A tile scattered more than 32 changes
-  ago is scattered again wherever it lies. From more than 8 km above the ground nothing is drawn or scattered.
+  draw is made again, and each tile's corner: a few hundred tiles at a step, 2 ms a frame (behind a veil 30 ms), the
+  old list drawn until the new one is whole, and begun afresh if a tile is let go meanwhile, so no list names a slot
+  handed out again. A whole list is some 25 ms on a savanna's 28,000 tiles (in Node), most of it in reaching each
+  tile's own objects, so the walk over the tiles reads each one's place from arrays kept by tile number. A changed
+  ground is scattered again tile by tile, the old plants drawn until their tile's turn, but only where it changed
+  (`GroundChanges`): a new close patch changes the tiles under the old patch or the new one, the 2 km squares the
+  sampler reads, about 1,300 of the 28,000 tiles within 6 km, and every other tile keeps its plants. A city or a
+  layout built anew changes every tile. A tile scattered more than 32 changes ago is scattered again wherever it lies.
+  From more than 8 km above the ground nothing is drawn or scattered.
 - **Loading.** A biome's baked meshes and pictures (`content/nature/flora.json`) are fetched from R2 the first time
   a landmass of it is drawn; until they have come its plants are not drawn. Its pictures are two texture arrays,
   albedo with coverage and normal with leaf share, 1024 px layers with six mip levels, about 60 MB a biome. Once on
@@ -140,7 +145,9 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   about twice as far, and gusts roll downwind across the land, deeper the gustier the wind; each plant rocks on its
   own beat, bending by its baked wind weights (still at the foot, free at the tips), and its leaves tremble, all
   slowly (`SWAY`): a gust rolls by about every 10 s, a plant rocks about every 7 s and its leaves tremble about every
-  2 s. Before the weather is read they sway in a breeze from the west-south-west.
+  2 s, in any wind. The gusts' phase is reckoned from the eye and carried with it (`Gusts`, one for the plants and the
+  meadow), so a turn of the weather's wind swings it only by how far a plant stands from the eye. Before the weather is
+  read they sway in a breeze from the west-south-west.
 - **Shadows.** In the game the near plants round the eye cast into the sun's near shadow map, swaying as they are
   drawn and cut out by their cards' coverage, and every plant, near or far, is lit through the near and far maps
   ([[Game]]): a tree in another's shade, or a wall's, is in shade.

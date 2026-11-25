@@ -57,8 +57,10 @@ async function decodedMeasured(audio: BaseAudioContext, bytes: ArrayBuffer) {
   return { buffer, measured: measuredOf(channelsOf(buffer), buffer.sampleRate) };
 }
 
-/** Whether a cue is fetched as soon as the sound wakes: the short sounds of play, not the ambience or the story's. */
-export const fetchedAtWake = (id: string): boolean => !id.startsWith('amb.') && !id.startsWith('story.');
+/** Whether a cue is fetched as soon as the sound wakes: the short sounds of play, not the ambience, the story's or
+ *  the music's instruments, which come as a score first asks for them. */
+export const fetchedAtWake = (id: string): boolean =>
+  !id.startsWith('amb.') && !id.startsWith('story.') && !id.startsWith('music.');
 
 /** A sound's files: a Freesound pick's one, or each variant of one of DFO's own. */
 export const keysOf = (sound: { readonly key: string } | { readonly keys: readonly string[] }): readonly string[] =>
@@ -151,6 +153,21 @@ export class Samples {
   /** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
   rushOf(id: string): number {
     return Math.max(0, ...(this.held.get(id) ?? []).map((each) => each.measured.rush));
+  }
+
+  /** A cue's recording held whole, decoded, and the gain that levels it, for a player that builds its own nodes (the
+   *  music's sampled voices); null, and fetched, where it has not come. Asked for, it counts as played. */
+  recording(audio: BaseAudioContext, id: string): { readonly buffer: AudioBuffer; readonly level: number } | null {
+    this.audio ??= audio;
+    // shortcut: a pick longer than a chunk plays its first chunk (a minute) as its recording; enough for a drone.
+    const held = this.held.get(id) ?? [];
+    const sound = held.find((each) => each.chunk === null) ?? held.find((each) => each.chunk === 0);
+    if (!sound) {
+      this.want(id);
+      return null;
+    }
+    sound.playedAt = audio.currentTime;
+    return { buffer: sound.buffer, level: sound.measured.level };
   }
 
   /** Plays `id` into `out`, its pitch at `rate`, answering it as it plays; null, and fetched, where it has not come. */
@@ -305,6 +322,9 @@ export function playSample(
 
 /** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
 export const rushOfCue = (id: string): number => samples.rushOf(id);
+
+/** A cue's recording held whole and its level, for the music's sampled voices (`Samples.recording`). */
+export const recordingOf = (audio: BaseAudioContext, id: string) => samples.recording(audio, id);
 
 /** A Freesound recording's credit beside its file, as a cue of several picks (its variations) keeps one for each. */
 type Credit = Omit<SoundCredit, 'changes'> & { readonly freesound: number };

@@ -230,13 +230,14 @@ impl Fight {
                 .map(|(_, other_ship)| {
                     let (east, south) = (other_ship.ship.x - square.centre[0], other_ship.ship.y - square.centre[1]);
                     let apart = (east * east + south * south).sqrt();
-                    (other_ship, apart, (east * square.dir[0] + south * square.dir[1]) / apart.max(1e-9))
+                    (other_ship, apart, (east * square.direction[0] + south * square.direction[1]) / apart.max(1e-9))
                 })
                 .filter(|(_, apart, cos)| *cos >= GUNNER_ARC_COS && *apart <= square.reach)
                 .min_by(|one, other| one.1.total_cmp(&other.1));
             if let Some((other_ship, _, _)) = target {
                 let point = [other_ship.ship.x, other_ship.ship.y, square.centre[2]];
-                return Some(lay_on(&vessel.ship, &vessel.pose, arms, side, vessel.guns.load, point));
+                let laid = lay_on(&vessel.ship, &vessel.pose, arms, side, vessel.guns.load, point);
+                return Some(laid.laid_on(point));
             }
         }
         None

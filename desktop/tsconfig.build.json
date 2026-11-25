@@ -1,0 +1,12 @@
+{
+  // The shell written out for Electron: its sources and the client's types and words it shares, laid out under
+  // `out/app` as they stand in the repository.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "..",
+    "outDir": "out/app"
+  },
+  "include": ["src/**/*.ts", "src/**/*.cts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.cts", "node_modules", "out"]
+}

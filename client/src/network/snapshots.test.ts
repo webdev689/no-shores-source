@@ -83,8 +83,6 @@ test('what happened comes again until a later snapshot is shown, and is handed o
     [0n, 11n],
     'a shot flying always, a stopped ball once',
   );
-  kept.clear();
-  assert.equal(kept.whole(snapshot(1n, { events: [event(1n)] }))?.events.length, 1, 'a new welcome starts again');
 });
 
 test('the player’s own fighter sent as what changed is laid over the one held, and cannot be made without one', () => {

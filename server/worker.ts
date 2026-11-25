@@ -5,12 +5,14 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { addressKey } from './address.ts';
+import { Breach, breachAsked, breachHeard, breachRoom, toldBreach } from './breach.ts';
 import { type Count, admitsFrom, counted } from './budget.ts';
 import { delveAsk } from './delveHost.ts';
+import { entranceOf, roomName, sessionHash } from './joinRequest.ts';
 import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import { OutpostHost, outpostGround } from './outpostHost.ts';
 import {
-  canonicalRoom,
+  breachAsk,
   isleRoom,
   nodeRoom,
   privateRun,
@@ -23,6 +25,7 @@ import {
 } from './roomNames.ts';
 import { SEA_PORTS } from './seaPorts.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
+import { healthAnswer } from './health.ts';
 
 interface Env {
   readonly ROOMS: DurableObjectNamespace<RoomHost>;
@@ -60,26 +63,6 @@ const AGAIN = 1013;
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
-
-/** A session token's SHA-256, in hex: what the sea knows a ship played unkept by, never the token itself. */
-async function sessionHash(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-/** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens, spelled as the room's one
- *  name (`canonicalRoom`). */
-function roomName(request: Request): string | null {
-  const name = /^\/room\/([a-z0-9-]{1,64})$/.exec(new URL(request.url).pathname)?.[1];
-  return name === undefined ? null : canonicalRoom(name);
-}
-
-/** The entrance a join into a patrol's room asks to stand at, `?entrance=<number>`: as a player comes out of that
- *  entrance's dungeon. Null for none, or a number that is not one. */
-function entranceOf(request: Request): number | null {
-  const asked = new URL(request.url).searchParams.get('entrance');
-  return asked !== null && /^[0-9]$/.test(asked) ? Number(asked) : null;
-}
 
 /**
  * One room on Cloudflare: a Durable Object for each room's name (`roomNames.ts`), keeping the room in WebAssembly:
@@ -119,6 +102,7 @@ export class RoomHost extends DurableObject<Env> {
     }
   >();
   private keeper: Keeper | null = null;
+  private breach: Breach | null = null;
   /** The wait before an emptied run is forgotten, while it runs. */
   private closing: ReturnType<typeof setTimeout> | null = null;
   private name = '';
@@ -158,6 +142,12 @@ export class RoomHost extends DurableObject<Env> {
   async holdAshore(id: number, seed: string): Promise<boolean> {
     if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
     return this.guarded(() => this.room.holdAshore(id, seed), false);
+  }
+
+  /** A Breach's word between its zone and its run (`breach.ts`): whether a run's gate opened, or how far it came. */
+  async breachWord(kind: 'opened' | 'inside', text: string): Promise<boolean> {
+    if ((await this.opened) !== true) return false;
+    return this.guarded(() => breachHeard(this.room, kind, text, Math.floor(Date.now() / MINUTE_MS)), false);
   }
 
   override async fetch(request: Request): Promise<Response> {
@@ -202,6 +192,7 @@ export class RoomHost extends DurableObject<Env> {
     const relog = new URL(request.url).searchParams.get('relog') === '1';
     const held = { player, address, count: undefined, signed: false, spoke: false, token: null, door, relog };
     this.players.set(server, held);
+    this.breach?.joined(player, breachAsked(request, this.name));
     if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     // In a run no one plays before the room keeps their character, nor in a sea island's dungeon before the sea says
     // they are landed on its island: their inputs are taken in their order and stand still until then.
@@ -233,7 +224,7 @@ export class RoomHost extends DurableObject<Env> {
   private async openRoom(name: string): Promise<boolean> {
     this.name = name;
     const accounts = this.env.ACCOUNTS;
-    const room = {
+    const room = toldBreach(() => this.breach, {
       character: (player: number) => this.guarded(() => this.room.character(player), null),
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
@@ -248,7 +239,12 @@ export class RoomHost extends DurableObject<Env> {
       name: (player: number, name: string) => this.guarded(() => this.room.name(player, name), false),
       tag: (player: number, tag: string) => this.guarded(() => this.room.tag(player, tag), false),
       guild: (player: number, told: string) => this.guarded(() => this.room.guild(player, told), false),
-    };
+    });
+    this.breach = new Breach(name, {
+      room: breachRoom(this.room, this.guarded.bind(this)),
+      zone: (zone) => this.env.ROOMS.getByName(zone),
+      launched: (account, run, within) => accounts.launched(account, run, within),
+    });
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, and a fleet room is the World Editor's.
     const seas = seaRoom(name);
@@ -260,6 +256,7 @@ export class RoomHost extends DurableObject<Env> {
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
     });
     if (privateRun(name)) this.keeper.forCompany();
+    this.breach?.keep(this.keeper);
     // A node's room, its dungeons' and its runs' judge where each kept character comes from.
     const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
     if (reached?.guild) this.keeper.forGuild(reached.guild);
@@ -293,6 +290,8 @@ export class RoomHost extends DurableObject<Env> {
       const delve = await delveAsk(name, Math.floor(Date.now() / MINUTE_MS), outposts, (id) => this.nodeText(id));
       return delve !== null && this.room.openRun(delve) && this.room.reseed(seeds);
     }
+    const breach = breachAsk(name, Math.floor(Date.now() / MINUTE_MS));
+    if (breach !== null) return this.room.openBreach(breach) && this.room.reseed(seeds);
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-') && !(await this.behindDoor(name))) return false;
@@ -494,6 +493,7 @@ export class RoomHost extends DurableObject<Env> {
     // At an outpost, the last save waits for what the player's errands give back.
     if (this.outpost) void this.outpost.settled(held.player).then(part);
     else part();
+    this.breach?.left(held.player);
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
       clearInterval(this.ticking);
@@ -584,16 +584,17 @@ export class RoomHost extends DurableObject<Env> {
         this.lastKept = now;
         void this.keeper?.due(now);
         this.guarded(() => this.room.minute(Math.floor(now / MINUTE_MS)), false);
+        this.guarded(() => this.breach?.tick(now), undefined);
       }
     }, tickMs);
   }
 }
 
-/** Sends `/room/<name>` to that room's object; a name is lowercase letters, digits and hyphens. */
+/** Sends `/room/<name>` to that room's object, a name lowercase letters, digits and hyphens; answers `/health`. */
 export default {
   fetch(request: Request, env: Env): Response | Promise<Response> {
     const name = roomName(request);
-    if (!name) return new Response('Not found', { status: 404 });
+    if (!name) return healthAnswer(request) ?? new Response('Not found', { status: 404 });
     return env.ROOMS.getByName(name).fetch(request);
   },
 } satisfies ExportedHandler<Env>;

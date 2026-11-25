@@ -17,7 +17,7 @@ import { artStage, focusOf } from './artStage.ts';
 import { ARTS, type Art, type ArtsAsk, artCard, artOf, emblemSvg, frameSvg } from './artsCards.ts';
 import { LEVEL_MOST, barWords, factionOf, levelOf, ready, shareWords } from './artLevels.ts';
 import { ARTS_HINTS, type ArtLook, artsRows, lookOf, pipsNode, stepped } from './artsRows.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import { cardNode } from './gearCard.ts';
 import { INK, elementNode, emblemNode, focusRing, svgNode, words } from './gearNodes.ts';
 import type { MenuContext } from './menuPage.ts';
@@ -147,7 +147,7 @@ function levelBlock(context: MenuContext, art: Art, look: ArtLook): Node {
 
 /** The three Arts' diamonds, the worn one ringed in brass, each pressed to wear it; one not earned locked, refused
  *  before any ask. */
-function picksNode(context: MenuContext, art: Art, look: ArtLook, ask: ArtsState['ask']): Node {
+function picksNode(context: MenuContext, look: ArtLook, ask: ArtsState['ask']): Node {
   const { ui, sizes, gear } = context;
   const size = look.wide ? 72 : 48;
   return {
@@ -276,7 +276,7 @@ function sideOf(context: MenuContext, art: Art, look: ArtLook, ask: ArtsState['a
           },
         ],
       },
-      picksNode(context, art, look, ask),
+      picksNode(context, look, ask),
       levelBlock(context, art, look),
       {
         // Two lines' room, so changing Art never moves what stands above or beside it.

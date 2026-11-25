@@ -69,6 +69,9 @@ shows what the room says.
   hold is taken up, and an Abyss wipe ends the run ([[Activities]], "Abyss's rules").
 - **Revived where they lay**: on the ground under the body, a ledge or a floor above as much as the terrain, facing as
   they fell.
+- **A Breach** stands its fallen by its own rules on top of these ([[Breaches]], `breach/fallen.rs`): of themselves,
+  unasked, after its own times at its stage reached, its checkpoint; at Hard each revive spends one of the attempt's
+  revives; at its gate, the Waking's company is revived only by its own.
 - **On the wire.** Each input carries `revive`, Use held to revive. Each snapshot on land, and on a ship's deck,
   carries `darkness`, whether the darkness holds the player it is sent to, and `reviving`: each fallen player being
   revived, their reviver and the hold's share per mille ([[Server]]); the page hears them on a deck and a sea island

@@ -1,7 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { PALETTE_RGB, paintPicture, pictureSize, type Picture } from './picture.ts';
+import { PALETTE_RGB } from './palette.ts';
+import { paintPicture, pictureSize, type Picture } from './picture.ts';
 
 /** The rock sets are painted by their archive alone: no use chooses within them. */
 const NO_USES = new Map();

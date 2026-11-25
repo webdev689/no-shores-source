@@ -149,6 +149,26 @@ impl Room {
         }
     }
 
+    /// Whether a player's blow takes a perk at its Forged grade: a piece giving it, of those `perk_on` reads, was won at
+    /// Hard (`Item::forges`).
+    pub(crate) fn forged_on(&self, blow: &Blow, id: &str) -> bool {
+        let loadout = match blow.kind {
+            BlowKind::Shot(_) => Slot::Ranged,
+            BlowKind::Spell(_) => return false,
+            _ => self.striking(blow.striker),
+        };
+        let Some(found) = self.players.get(&blow.striker) else { return false };
+        let character = &found.character;
+        let loosed = self.shot_loosed.filter(|_| matches!(blow.kind, BlowKind::Shot(_)));
+        match loosed.map(|loosed| loosed.item.and_then(|item| character.item(item))) {
+            Some(from) => {
+                let gives = |item: &gear::Item| item.forges(id) && item.active_traits().any(|own| own == id);
+                character.forged_trait(id) || from.is_some_and(gives)
+            }
+            None => character.forged_drawn_trait(id, loadout),
+        }
+    }
+
     /// What a player strikes with now from a loadout; nothing for a foe.
     pub(crate) fn held(&self, striker: FighterId, loadout: Slot) -> Option<Loosed> {
         let player = self.players.get(&striker)?;

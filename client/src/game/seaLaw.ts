@@ -1,7 +1,7 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
 import { alongNear, PACE_STEPS, type Pace, SHIP_SPEED, type Voyage } from '../overworld/voyage.ts';
-import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
+import { cellHeight, type Deck, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
 import type { Landmass } from './landmass.ts';
 import { bearingTo } from './nodes.ts';
@@ -48,9 +48,14 @@ export const STANDING_EYE_M = 1.7;
 /** The helm's view, behind the Sloop's wheel on its quarterdeck (its deck's helm spot): how high over the water the
  *  eye stands there at its true scale, a standing eye over its deck, and how far down it looks. */
 export const HELM = {
-  eyeM: (cellHeight(SLOOP_DECK, ...SLOOP_DECK.helm) ?? 0) + STANDING_EYE_M,
+  eyeM: helmEyeM(SLOOP_DECK),
   pitch: 0.1,
 } as const;
+
+/** How high over the water the eye stands at the helm of a ship of `deck` at its true scale. */
+export function helmEyeM(deck: Deck): number {
+  return (cellHeight(deck, ...deck.helm) ?? 0) + STANDING_EYE_M;
+}
 
 /** How tall a shot's picture stands at a point, metres: the world its height spans there. A ship that long fills it. */
 export function pictureAt(shot: Shot, point: readonly [number, number, number]): number {
@@ -80,10 +85,10 @@ export function shownScale(overworldScale: number, picture: PictureAtShip): numb
   return Math.max(1, held ** (1 - share) * own ** share);
 }
 
-/** Where the eye stands at the helm of a ship as it lies, at the size it lies at. */
-export function helmEye(lying: Lying): readonly [number, number, number] {
-  const [helmX, helmY] = SLOOP_DECK.helm;
-  return deckToWorld(lying, helmX, helmY, HELM.eyeM);
+/** Where the eye stands at the helm of a ship of `deck` as it lies, at the size it lies at: behind its own wheel. */
+export function helmEye(lying: Lying, deck: Deck = SLOOP_DECK): readonly [number, number, number] {
+  const [helmX, helmY] = deck.helm;
+  return deckToWorld(lying, helmX, helmY, helmEyeM(deck));
 }
 
 /** A port's icon stands over its harbour at sea within this of it, metres: twice a landing's reach, so a port is seen

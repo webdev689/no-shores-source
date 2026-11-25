@@ -1,5 +1,5 @@
 //! The Playlist beside each port: the Elite and the Abyss Playlist, each a queue for one of the 18 Elite Dungeons drawn
-//! when a company is found, at the playlist's tier ([[The Playlist and Its Dungeons as Claude Shapes Them]]). Players
+//! when a company is found, at the playlist's tier. Players
 //! are banded by five levels from the level it opens at, and every foe of a band's run stands at the band's first
 //! level raised by the tier, never past 32. Its modifiers turn with the day: the Elite Playlist carries the day's, the
 //! Abyss Playlist the day's and one more of another kind. Each playlist's first clear each day pays as the dungeon of
@@ -57,12 +57,6 @@ impl Playlist {
             Playlist::Elite => "Elite Playlist",
             Playlist::Abyss => "Abyss Playlist",
         }
-    }
-
-    /// The playlist of a key; none for any other.
-    #[must_use]
-    pub fn of_key(key: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|playlist| playlist.key() == key)
     }
 
     /// The level it opens at, as its tier's seas do: 10 and 20.

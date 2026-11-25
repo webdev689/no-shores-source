@@ -14,6 +14,9 @@ import { seaSongs } from './seaScore.ts';
 import { socialPieces } from './socialPieces.ts';
 import { storyScores } from './storyScore.ts';
 import { wetScore } from './wetScore.ts';
+import { valeBosses } from './valeBosses.ts';
+import { valeCalm } from './valeCalm.ts';
+import { valeFights } from './valeScore.ts';
 import { wrathScore } from './wrathScore.ts';
 
 const sea = seaSongs();
@@ -23,9 +26,20 @@ const boarding = boardingScore();
 const families = { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() };
 const familySongs = Object.values(families).map((score) => score.song);
 const stings = Object.values(families).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
+const vale = valeFights();
+const valeSongs = Object.values(vale).map((score) => score.song);
+const valeStings = Object.values(vale).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
+const { scrivener, steward } = valeBosses();
 const { open, calm, night, ...band } = sea;
 /** The calm pieces out of danger: the social space's, the islands', the sea's. */
-const calmPieces: readonly Song[] = [...socialPieces(), ...Object.values(islandPieces()).flat(), open, calm, night];
+const calmPieces: readonly Song[] = [
+  ...socialPieces(),
+  ...Object.values(islandPieces()).flat(),
+  open,
+  calm,
+  night,
+  ...valeCalm(),
+];
 const { ram, ...storyLooped } = storyScores();
 const looped: readonly Song[] = [
   ...Object.values(band),
@@ -35,6 +49,8 @@ const looped: readonly Song[] = [
   ...boarding.phases,
   boarding.last,
   ...familySongs,
+  ...valeSongs,
+  ...[scrivener, steward].flatMap((boss) => [...boss.phases, boss.last]),
   ...Object.values(storyLooped),
 ];
 const once: readonly Song[] = [
@@ -44,6 +60,8 @@ const once: readonly Song[] = [
   boarding.fallen,
   boarding.end,
   ...stings,
+  ...valeStings,
+  ...[scrivener, steward].flatMap((boss) => [boss.wake, boss.fallen, boss.defeat]),
   ram,
   ...calmPieces,
 ];
@@ -55,6 +73,9 @@ const fights: readonly Song[] = [
   ...reckoning.phases,
   ...boarding.phases,
   ...familySongs,
+  ...valeSongs,
+  ...scrivener.phases,
+  ...steward.phases,
 ];
 
 test('a note is read by name, middle C 60, and a tune by its bars', () => {
@@ -141,7 +162,13 @@ test('every layer a score names plays somewhere in it, and each fight song grows
     [...wrath.phases, wrath.fallen],
     [...reckoning.phases, reckoning.last, reckoning.fallen],
     [...boarding.phases, boarding.last, boarding.wake, boarding.fallen, boarding.end],
-    ...Object.values(families).map(({ song, cadence, victory, defeat }) => [song, cadence, victory, defeat]),
+    ...[...Object.values(families), ...Object.values(vale)].map(({ song, cadence, victory, defeat }) => [
+      song,
+      cadence,
+      victory,
+      defeat,
+    ]),
+    ...[scrivener, steward].map((boss) => [...boss.phases, boss.last, boss.wake, boss.fallen, boss.defeat]),
     ...[...calmPieces, ...Object.values(storyLooped), ram].map((song) => [song]),
   ]) {
     const named = new Set(score.flatMap((song) => song.tracks.map((track) => track.role)));
@@ -166,11 +193,16 @@ test('every layer a score names plays somewhere in it, and each fight song grows
     );
 });
 
+/** The beats a minute a song plays at, as its ticks run. */
+const tempoOf = (song: Song): number => Math.round(60 / (song.secondsPerTick * TICKS_PER_BEAT));
+
 test('the scores keep their tempos and lengths: phases drive harder, the sea in its own meters', () => {
-  const bpm = (songs: readonly Song[]) => songs.map((song) => song.beatsPerMinute);
+  const bpm = (songs: readonly Song[]) => songs.map(tempoOf);
   assert.deepEqual(bpm(wrath.phases), [132, 138, 150]);
   assert.deepEqual(bpm(reckoning.phases), [136, 142, 152]);
   assert.deepEqual(bpm(boarding.phases), [138, 144, 152]);
+  assert.deepEqual(bpm([...scrivener.phases, scrivener.last]), [112, 118, 126, 134]);
+  assert.deepEqual(bpm([...steward.phases, steward.last]), [120, 126, 132, 140]);
   assert.equal(sea.open.ticksPerBar, 3 * TICKS_PER_BEAT);
   assert.equal(sea.fight.ticksPerBar, 4 * TICKS_PER_BEAT);
   // The wake is two bars: the first phase begins as it ends.
@@ -232,7 +264,7 @@ test('each family fight plays all six layers in a metre and tempo of its own', (
         song.notes.some((note) => note.role === role),
         `${song.name}: the ${role} layer plays`,
       );
-  const metres = familySongs.map((song) => `${song.ticksPerBar} ticks at ${song.beatsPerMinute}`);
+  const metres = familySongs.map((song) => `${song.ticksPerBar} ticks at ${tempoOf(song)}`);
   assert.equal(new Set(metres).size, familySongs.length, metres.join(', '));
 });
 
@@ -242,7 +274,7 @@ test("each family's cadence, victory and defeat is two to eight bars of its figh
       const bars = sting.durationTicks / sting.ticksPerBar;
       assert.ok(bars >= 2 && bars <= 8, `${sting.name} is ${bars} bars`);
       assert.equal(sting.ticksPerBar, score.song.ticksPerBar, `${sting.name} keeps its fight's metre`);
-      assert.equal(sting.beatsPerMinute, score.song.beatsPerMinute, `${sting.name} keeps its fight's tempo`);
+      assert.equal(sting.secondsPerTick, score.song.secondsPerTick, `${sting.name} keeps its fight's tempo`);
       assert.ok(
         sting.notes.some((note) => note.tick === 0),
         `${sting.name} speaks on its first beat`,
@@ -316,6 +348,8 @@ test('every score the game plays sounds nothing over the ceiling', () => {
   const scores = overlookScores();
   const all = [
     ...Object.values(scores.families).flatMap((family) => (family ? Object.values(family) : [])),
+    ...Object.values(scores.breach).flatMap((fight) => Object.values(fight)),
+    ...scores.vale,
     ...scores.social,
     ...Object.values(scores.roaming).flat(),
     ...Object.values(scores.sea),
@@ -337,13 +371,15 @@ test('no drum rings: a struck tone over 1.5 kHz dies within a tenth of a second,
   const scores = overlookScores();
   const songs = [
     ...Object.values(scores.families).flatMap((family) => (family ? Object.values(family) : [])),
+    ...Object.values(scores.breach).flatMap((fight) => Object.values(fight)),
+    ...scores.vale,
     ...scores.social,
     ...Object.values(scores.roaming).flat(),
     ...Object.values(scores.sea),
     ...Object.values(scores.bosses).flatMap((boss) => [...boss.phases, boss.wake, boss.last, boss.fallen, boss.defeat]),
     ...Object.values(scores.story),
   ].filter((song): song is Song => !!song);
-  for (const song of songs)
+  for (const song of songs) {
     for (const note of song.notes.filter((each) => each.channel === PERCUSSION_CHANNEL)) {
       const drum = { ...drumOf(note.note), ...song.kit.drums.get(note.note) };
       assert.ok(
@@ -351,6 +387,13 @@ test('no drum rings: a struck tone over 1.5 kHz dies within a tenth of a second,
         `${song.name}: key ${note.note}`,
       );
     }
+    // A recording a drum plays lasts no longer than its kit's drum, which may be a tone: past a low skin's, nothing
+    // rings past a tenth of a second after its peak.
+    for (const [key, sample] of song.kit.samples ?? []) {
+      const drum = { ...drumOf(key), ...song.kit.drums.get(key) };
+      assert.ok(drum.hz < RINGING_HZ || drum.decay <= RINGING_S, `${song.name}: ${sample.cue} rings ${drum.decay} s`);
+    }
+  }
 });
 
 test('no family fight sweeps a pitched swell: its risers and gusts are noise', () => {

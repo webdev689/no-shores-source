@@ -3,7 +3,7 @@
 //! aims; an Elite throws its role's whole set; a Miniboss and a Boss feint and fight in phases, each Boss its own.
 
 use crate::roles::{Numbers, Shapes};
-use crate::roster::{COLLECTOR, CROSSBOWMAN, DECKHAND};
+use crate::roster::{COLLECTOR, CROSSBOWMAN, DECKHAND, FLICKER, HUSK};
 use combat::shapes::Shape;
 
 /// The ranks, numbered as the wire carries them.
@@ -139,6 +139,31 @@ pub const CORVANE: [Phase; 3] = [
         chains: 1,
         adds: &[Shape::Charge, Shape::Leap, Shape::Ring],
         calls: Some(Call { foe_type: COLLECTOR, rank: Rank::Major, count: 2, place: Place::Beside }),
+    },
+];
+
+/// The Steward's three, the Drowned Vale's last: the sweep and the lunge, the iron slam added at two thirds with two
+/// Major Husks called to its sides, and the ring added at one third.
+pub const STEWARD_PHASES: [Phase; 3] = [
+    Phase { adds: &[Shape::Sweep, Shape::Lunge], ..FIRST },
+    Phase {
+        from: 2.0 / 3.0,
+        adds: &[Shape::Slam],
+        calls: Some(Call { foe_type: HUSK, rank: Rank::Major, count: 2, place: Place::Beside }),
+        ..FIRST
+    },
+    Phase { from: 1.0 / 3.0, adds: &[Shape::Ring], ..FIRST },
+];
+
+/// The Scrivener's two: its aimed shot, and at half its health quicker (cooldowns ×0.7) with two Major Flickers
+/// called behind it.
+pub const SCRIVENER_PHASES: [Phase; 2] = [
+    Phase { adds: &[Shape::Aimed], ..FIRST },
+    Phase {
+        from: 0.5,
+        cooldown: 0.7,
+        calls: Some(Call { foe_type: FLICKER, rank: Rank::Major, count: 2, place: Place::Behind }),
+        ..FIRST
     },
 ];
 

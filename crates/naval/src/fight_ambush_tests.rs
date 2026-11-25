@@ -1,5 +1,6 @@
 use super::*;
 use crate::ranks::{Commission, Rank};
+use sailing::TICK_SECONDS;
 use sailing::ship::Helm;
 use sailing::waters::Spot;
 

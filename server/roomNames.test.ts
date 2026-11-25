@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { COMPANY_MOST } from './accounts/companies.ts';
 import {
+  BREACH_MOST,
   RUN_MOST,
+  breachAsk,
+  breachRun,
   canonicalRoom,
   isleRoom,
   nodeRoom,
@@ -24,6 +27,7 @@ test('a node has one room at each difficulty, by one spelling each', () => {
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('tidewall--elite'), {
     id: 'tidewall',
@@ -32,6 +36,7 @@ test('a node has one room at each difficulty, by one spelling each', () => {
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('tidewall--abyss'), {
     id: 'tidewall',
@@ -40,6 +45,7 @@ test('a node has one room at each difficulty, by one spelling each', () => {
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.equal(nodeRoom('tidewall--normal'), null, 'Normal is the plain name');
   assert.equal(nodeRoom('tidewall--abyss--1'), null, 'no fresh copies');
@@ -82,7 +88,15 @@ test('a patrol’s dungeon is one shared room at Normal and a run at each harder
         seas === 0
           ? [`saltgrass-downs--dungeon-${dungeon}`, null]
           : [`saltgrass-downs${spelled}--dungeon-${dungeon}--run-a1b2c3d4`, 'a1b2c3d4'];
-      assert.deepEqual(nodeRoom(name), { id: 'saltgrass-downs', seas, dungeon, run, playlist: null, guild: null });
+      assert.deepEqual(nodeRoom(name), {
+        id: 'saltgrass-downs',
+        seas,
+        dungeon,
+        run,
+        playlist: null,
+        guild: null,
+        breach: null,
+      });
     }
   for (const name of [
     'saltgrass-downs--dungeon-3',
@@ -107,6 +121,7 @@ test('a node called as a dungeon is named is still its own room, at every diffic
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('dungeon-1--elite'), {
     id: 'dungeon-1',
@@ -115,6 +130,7 @@ test('a node called as a dungeon is named is still its own room, at every diffic
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('dungeon-2--dungeon-0'), {
     id: 'dungeon-2',
@@ -123,6 +139,7 @@ test('a node called as a dungeon is named is still its own room, at every diffic
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('run-a1b2c3d4'), {
     id: 'run-a1b2c3d4',
@@ -131,6 +148,7 @@ test('a node called as a dungeon is named is still its own room, at every diffic
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
 });
 
@@ -162,6 +180,7 @@ test('a run is a room of its own: an instance after its dungeon, at Elite and Ab
     run: 'k3j4h5g6',
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('krakens-grotto--run-k3j4h5g6'), {
     id: 'krakens-grotto',
@@ -170,6 +189,7 @@ test('a run is a room of its own: an instance after its dungeon, at Elite and Ab
     run: 'k3j4h5g6',
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('saltworm-warrens--abyss--run-k3j4h5g6'), {
     id: 'saltworm-warrens',
@@ -178,6 +198,7 @@ test('a run is a room of its own: an instance after its dungeon, at Elite and Ab
     run: 'k3j4h5g6',
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('saltgrass-downs--dungeon-1'), {
     id: 'saltgrass-downs',
@@ -186,6 +207,7 @@ test('a run is a room of its own: an instance after its dungeon, at Elite and Ab
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(nodeRoom('tidewall--elite'), {
     id: 'tidewall',
@@ -194,6 +216,7 @@ test('a run is a room of its own: an instance after its dungeon, at Elite and Ab
     run: null,
     playlist: null,
     guild: null,
+    breach: null,
   });
 });
 
@@ -288,6 +311,7 @@ test('a playlist’s run names its Elite Dungeon, its tier and its foes’ level
     run: 'k3j4h5g6',
     playlist: 28,
     guild: null,
+    breach: null,
   });
   assert.deepEqual(JSON.parse(runAsk(`node-${room}`, 29_919_420) ?? 'null'), {
     dungeon: { place: 'saltworm-warrens' },
@@ -330,15 +354,18 @@ test('the week’s run started from the Playlist is marked `--sea`, and opens as
   assert.ok('node-smugglers-labyrinth--abyss--sea--run-zzzzzzzz'.length <= 64);
 });
 
-test('a run holds four, a company’s most, and only a run is ever full this way', () => {
-  assert.equal(RUN_MOST, COMPANY_MOST);
+test('a run holds four, a Breach’s run a company’s most, and only a run is ever full this way', () => {
+  assert.equal(BREACH_MOST, COMPANY_MOST);
   assert.equal(runFull('node-krakens-grotto--run-k3j4h5g6', 4), null);
   assert.equal(runFull('node-krakens-grotto--run-k3j4h5g6', 5), 'This run is full.');
+  assert.equal(runFull('node-gullwing-vale--breach-hard--run-k3j4h5g6', 8), null);
+  assert.equal(runFull('node-gullwing-vale--breach-hard--run-k3j4h5g6', 9), 'This run is full.');
   assert.equal(runFull('node-saltgrass-downs', 65), null, 'no run');
 });
 
 test('a run takes twice a company of sockets at join, signed in or not, and any other room 64', () => {
   assert.equal(socketsMost('node-krakens-grotto--run-k3j4h5g6'), RUN_MOST * 2);
+  assert.equal(socketsMost('node-gullwing-vale--breach-normal--run-k3j4h5g6'), BREACH_MOST * 2);
   assert.deepEqual(
     ['sea', 'node-saltgrass-downs', 'sea-dungeon-continent-4-caverns-0a1b2c3d'].map(socketsMost),
     [64, 64, 64],
@@ -353,6 +380,7 @@ test('a guild’s outpost’s room is a bare node’s with its guild’s key las
     run: null,
     playlist: null,
     guild: '0a1b2c3d4e5f60718293a4b5c6d7e8f9',
+    breach: null,
   });
   for (const name of [
     'oakfast-landing--guild-0A1B2C3D4E5F60718293A4B5C6D7E8F9',
@@ -375,4 +403,32 @@ test('a guild’s outpost’s room is a bare node’s with its guild’s key las
     canonicalRoom('node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9'),
     'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
   );
+});
+
+test('a Breach’s run names its gate’s patrol zone and its tier before its instance, and opens from its ask', () => {
+  const room = 'gullwing-vale--breach-hard--run-k3j4h5g6';
+  assert.deepEqual(nodeRoom(room), {
+    id: 'gullwing-vale',
+    seas: 0,
+    dungeon: null,
+    run: 'k3j4h5g6',
+    playlist: null,
+    guild: null,
+    breach: 1,
+  });
+  assert.equal(nodeRoom('gullwing-vale--breach-normal--run-k3j4h5g6')?.breach, 0);
+  for (const name of [
+    'gullwing-vale--breach-hard',
+    'gullwing-vale--breach-easy--run-k3j4h5g6',
+    'gullwing-vale--elite--breach-hard--run-k3j4h5g6',
+    'gullwing-vale--breach-hard--dungeon-0--run-k3j4h5g6',
+    'gullwing-vale--breach-hard--playlist-12--run-k3j4h5g6',
+  ])
+    assert.equal(nodeRoom(name), null, name);
+  assert.equal(runAsk(`node-${room}`, 7), null, 'no dungeon’s run');
+  assert.deepEqual(JSON.parse(breachAsk(`node-${room}`, 7) ?? 'null'), { zone: 'gullwing-vale', tier: 1, minute: 7 });
+  assert.equal(breachAsk('node-krakens-grotto--run-k3j4h5g6', 7), null);
+  assert.deepEqual(breachRun(`node-${room}`), { zone: 'node-gullwing-vale', tier: 1 });
+  assert.ok(privateRun(`node-${room}`));
+  assert.ok('node-gullwing-vale--breach-normal--run-zzzzzzzz'.length <= 64);
 });

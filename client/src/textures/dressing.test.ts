@@ -1,8 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { CLIMATE_BASE, CLIMATES, SEASONS } from './climate.ts';
-import { DRESSING_ARCHIVE, PALETTE_RGB, climateArchive, paintPicture, pictureSize, type Picture } from './picture.ts';
+import { CLIMATE_BASE, CLIMATES, DRESSING_ARCHIVE, SEASONS } from './climate.ts';
+import { PALETTE_RGB } from './palette.ts';
+import { climateArchive, paintPicture, pictureSize, type Picture } from './picture.ts';
 
 /** The dressing is painted by its archive alone: no use chooses within it. */
 const NO_USES = new Map();

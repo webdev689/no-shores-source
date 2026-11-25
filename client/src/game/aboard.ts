@@ -57,11 +57,12 @@ interface View {
   readonly going: 'down' | 'up';
 }
 
-/** The view aboard the player's Sloop, and its stand-in crew. */
+/** The view aboard the player's ship, on the deck of the hull they sail, and its stand-in crew. */
 export class Aboard {
   private readonly context: AboardContext;
-  private readonly deck: Deck;
-  private readonly crew: Crew;
+  /** The deck of the hull the player sails, and the deck its stand-in crew was last laid on with them. */
+  private readonly deckOf: () => Deck;
+  private laidOn: { readonly deck: Deck; readonly crew: Crew };
   private readonly handDresses: Dress[] = [];
   private readonly helmsman = plainDress('human', 0.55);
   private view: View | null = null;
@@ -72,10 +73,26 @@ export class Aboard {
   private turn: number = MANAGE.turn;
   private distance: number = MANAGE.distanceM;
 
-  constructor(context: AboardContext, deck: Deck) {
+  constructor(context: AboardContext, deck: Deck | (() => Deck)) {
     this.context = context;
-    this.deck = deck;
-    this.crew = new Crew(deck, 7);
+    this.deckOf = typeof deck === 'function' ? deck : () => deck;
+    const laid = this.deckOf();
+    this.laidOn = { deck: laid, crew: new Crew(laid, 7) };
+  }
+
+  /** The deck walked, the one the player sails now, and its stand-in crew, laid again on another hull's. */
+  private laid(): { readonly deck: Deck; readonly crew: Crew } {
+    const deck = this.deckOf();
+    if (deck !== this.laidOn.deck) this.laidOn = { deck, crew: new Crew(deck, 7) };
+    return this.laidOn;
+  }
+
+  private get deck(): Deck {
+    return this.laid().deck;
+  }
+
+  private get crew(): Crew {
+    return this.laid().crew;
   }
 
   /** Whether the view is aboard, or on its way down or up. */

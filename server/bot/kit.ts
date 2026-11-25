@@ -36,9 +36,18 @@ export interface Vars {
   readonly DISCORD_BOT_TOKEN?: string;
   readonly DISCORD_CLIENT_SECRET?: string;
   readonly CARD_SIGNING_KEY?: string;
-  /** The accounts' LinkedCharacters (accounts/worker.ts) by service binding; without it no member reads as linked. */
-  readonly ACCOUNTS?: { linked(discordId: string): Promise<LinkedCharacter | null> };
+  /**
+   * The accounts' LinkedCharacters (accounts/worker.ts) by service binding; without it no member reads as linked.
+   * `pledges` may be missing, or throw, at accounts deployed before it; the house roles then change nothing.
+   */
+  readonly ACCOUNTS?: {
+    linked(discordId: string): Promise<LinkedCharacter | null>;
+    pledges?(discordIds: string[]): Promise<Record<string, string | null>>;
+  };
 }
+
+/** An error's words for a log line: its message, or the thing thrown when it is no Error. */
+export const errorWords = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /** The context a module runs in. `cache` and `memory` exist only in the Gateway object; `later` outlives the answer. */
 export interface BotContext {
@@ -50,6 +59,8 @@ export interface BotContext {
   readonly config: (guildId: string, moduleId: string) => Promise<ReadSettings | null>;
   readonly snapshot: (guildId: string) => Promise<Snapshot | null>;
   readonly later: (work: Promise<unknown>) => void;
+  /** Drops what this side and the Gateway keep of a module's settings, so a save made outside the panel acts now. */
+  readonly forget?: (guildId: string, moduleId: string) => Promise<void>;
   readonly cache?: Cache;
   readonly memory?: Map<string, unknown>;
 }
@@ -271,7 +282,7 @@ export function deferred(
       try {
         data = await work();
       } catch (error) {
-        context.log(`[bot] a deferred answer failed: ${error instanceof Error ? error.message : String(error)}`);
+        context.log(`[bot] a deferred answer failed: ${errorWords(error)}`);
         data = { content: 'Something went wrong. Try again in a minute.' };
       }
       const path = `/webhooks/${String(interaction.application_id)}/${String(interaction.token)}/messages/@original`;

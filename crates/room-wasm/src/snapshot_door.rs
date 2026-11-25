@@ -60,7 +60,7 @@ impl SeaParts {
 
     /// The ships and hostile ships `player` is sent: none but their own before their ship is at sea.
     fn near(&self, player: PlayerId) -> (Vec<(PlayerId, room::sea::Ship)>, Vec<room::hostiles::Hostile>) {
-        let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
+        let own = self.own(player);
         let crew = self.crews.iter().find(|crew| crew.contains(&player));
         let seen = |(other, ship): &&(PlayerId, room::sea::Ship)| {
             *other == player
@@ -88,7 +88,7 @@ impl SeaParts {
 
     /// The islands `player` is told of: those in sight of their ship, and those they have found, wherever they lie.
     fn islands(&self, player: PlayerId) -> Vec<protocol::IsleSeen> {
-        let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
+        let own = self.own(player);
         let in_sight = |at: [f64; 2]| {
             own.is_some_and(|[x, y]| {
                 let (east, south) = (at[0] - x, at[1] - y);
@@ -166,6 +166,7 @@ pub fn prepare() {
                     taken: sea.taken(),
                     friendlies: sea.friendlies(),
                     plates: sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect(),
+                    looks: sea.ships().filter_map(|(player, _)| Some((player, sea.look(player)?))).collect(),
                 },
                 deck_views,
                 islands,
@@ -215,6 +216,7 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                 taken: all.taken.clone(),
                 friendlies: friendlies_seen(parts.own(player), &all.friendlies),
                 plates: all.plates.iter().filter(|(other, _)| sent(other)).cloned().collect(),
+                looks: all.looks.clone(),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();
@@ -272,6 +274,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 public: public.as_ref(),
                 encounter: None,
                 outpost: 0,
+                breach: None,
                 darkness: room.darkness_for(viewer),
                 reviving: &reviving,
             };

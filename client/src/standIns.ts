@@ -2,7 +2,7 @@
 // up over it. What stands in: a figure with no frame of its own yet, ground, a city, a dungeon or an entrance still
 // painting, a city not yet built, plants or an island's kit not yet loaded, a hull
 // drawn as the Sloop, a place's sound not yet fetched. Each says so as it draws or plays; a trip's veil lifts only
-// after frames with none ([[One Loading Screen Covers Every Trip Until the Place Is Ready]], `gameFrame.ts`).
+// after frames with none (`gameFrame.ts`).
 
 const drawn = new Set<string>();
 

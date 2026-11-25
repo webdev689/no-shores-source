@@ -189,7 +189,11 @@ its system note.
   Tested offline at the head: 638 server and site tests, lint, types, format and `cargo xtask repo`; both Workers'
   `wrangler deploy --dry-run`; the site served by `wrangler dev` (404, redirects, caching); `cargo xtask check` in CI
   on the PR's head. `server/outpostReload.test.ts`'s three tests misreported once in a full parallel run and passed
-  alone and on the next run. Its first deploy's live checks are under Next.
+  alone and on the next run. Tested live after its deploy at dfb9217e: the four pages, the game at `/play/` (its
+  canvas), `/world` sent to `/world/`, an unknown address answered 404 by the site's page, `www` sent to the bare
+  domain with a 301, hashed files cached a year; the bot's `/health` answering from dfb9217e, and 24 slash commands
+  written to the application (its log). That deploy's `www` check failed in CI only because it looked the new name up
+  1.3 s after it was made and the runner kept the miss; `site.yml` now reaches `www` at the bare domain's address.
 - **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
   device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
   space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
@@ -215,29 +219,118 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): the
-  owner's picks on the sheet "Horse and Foe Sounds" (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN, picks in its
-  `picks` store), every one of the 22 cues with candidates (the `freesound` runs 45636851844 and 45644079292). The
-  foes' voices are wired (`voiceCue`, silent until picked; the alert the shared one until then). Once picked: set each
-  cue's `picked` in `content/audio/freesound.json`, a hoofbeat's with a `cut` of one stride (find it in the pick's
-  preview with ffmpeg's `silencedetect` or by its peaks), push, and take the run's `sounds.json`.
+- **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): eleven
+  of the owner's picks are on R2 and in `sounds.json` (the `freesound` run 45664528450): the gallop and the boost on
+  the ground, each cut to one stride, the boost's neigh, the whinny, the snort, into and out of the saddle, the Grey
+  Tithe's death, its four attack grunts and three pain grunts as variations (a cue may list several picks, each with
+  its credit), and the Lattice's alert. Foes never make a din: at most two foe voices start in any 0.75 s, a death
+  first, and one foe's attack or pain grunt waits 2 s before the next (`WorldSounds.gated`). Still on the sheet "Horse
+  and Foe Sounds" (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN, picks in its `picks` store): walking on the
+  ground (five new) and on stone (one), galloping on stone (one), the Tithe's alert and the Lattice's attack, hurt and
+  death; walking, galloping and boosting in water and boosting on stone found nothing in any wording, Freesound holding
+  almost no horse there. Open for the owner: whether those play the ground's hoofbeat until a recording turns up. Once
+  picked: set each cue's `picked` in `content/audio/freesound.json`, a hoofbeat's with a `cut` of one stride, push,
+  and take the run's `sounds.json`.
 
 - **The five asks: plain clothes, the Tack's Bay, the welcome's camera, speakers' colours and the city's sounds**
   (#206, draft; [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]],
   every call there). The prologue's end gives a Plain Shirt and Plain Breeches with no stats (`Item::plain`), worn
   where the torso and legs are bare; the Tack gives the Bay as she is spoken with on the round (a goal's own
-  `reward`); the face-to-face shot stands 2.8 m over the pair's feet, solved for the lens, their crowns no longer cut
-  off; each speaker's name has a colour of their own in the dialogue box. The city's sounds are settled: the crowd
-  kept on the owner's "Keep"; the hum the owner's pick from the sheet "Overlook City Sounds"
-  (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound 824369 (an old-town alley in Stockholm, CC0, vhio),
-  on R2 by the `freesound` run 45635457113 and in `sounds.json`, after seven searches (parks and ghost towns refused;
-  it came from "old town ambience -park -klankbeeld", searched beside the owner's own "distant city"). Waiting on the
-  owner: the yes to merge, which deploys the page and the rooms. `main` (#202) merged
-  in. The full check passed in CI on f8dff2b4 (run 45526624102); the rules', wire's and page's tests, the new ones
-  failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and
-  after (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the
-  prologue before this are given no clothes (the owner's option gives them at its end).
+  `reward`, which may give Aurem or the horse, never a house's gifts nor the Sloop); the face-to-face shot stands
+  2.8 m over the pair's feet, solved for the lens, their crowns no longer cut off; each speaker's name has a colour of
+  their own in the dialogue box. The city's sounds are settled: the crowd kept on the owner's "Keep"; the hum the
+  owner's pick from the sheet "Overlook City Sounds" (https://claude.ai/artifact/NdSyFK3WiUb6LUC2GZSkXC), Freesound
+  824369 (an old-town alley in Stockholm, CC0, vhio), on R2 by the `freesound` run 45635457113, after seven searches
+  (parks and ghost towns refused; it came from "old town ambience -park -klankbeeld", searched beside the owner's own
+  "distant city"). Waiting on the owner: the yes to merge, which deploys the page and the rooms. `main` with #201
+  (the Sloop), #209 (the audit) and #210 (the desktop app) merged in. Tested offline: the rules', wire's and page's tests, the new ones
+  failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and after
+  (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the prologue
+  before this are given no clothes (the owner's option gives them at its end).
 
+- **The codebase audit** (#209, merged), on the owner's "a comprehensive codebase
+  audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
+  regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
+  `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
+  checked before its fix. 231 files, about 1,450 lines out and 830 in: dead code, copies folded into one (`errorWords`,
+  `clockWords`, `apart`, `TICKS_A_SECOND`), comments that linked notes, short names spelled out, and three bugs, each
+  tested: a Breach gate open past its day in an empty zone, a stale held-map load closing the map, and the World
+  Editor's Land mode taking the browser's shortcuts (and, once fixed, missing a Mac's Option-typed `[`). An
+  independent review of the whole diff found no regression. Open for the owner, listed in the PR: whether Comments
+  Say Why's "who asked for what" covers the 158 comments that say a value is the owner's (or Claude's) call, and
+  whether the comments check should catch bible links (a new check). The same PR carries the owner's "tree sway/grass
+  sway is insanely fast when wind is high. Also reduce the amount of grass": the plants' gusts are reckoned from the
+  eye (`Gusts`), where reckoning them from the world's corner made the weather's slow turn whip them one to twelve
+  times a second, and the meadow grows half as thick ([[The Meadow Grows Half as Thick]], pictured before and after
+  at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
+  grass is too bright", the meadow's green stands a shade darker than its ground
+  ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
+- **The desktop app** (#210, merged), on the
+  owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
+  reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
+  [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
+  `noshores.online/play/?room=live` in a sandboxed window; WebGPU on Direct3D 12 then 11 on Windows, Metal on a Mac,
+  Vulkan three ways on Linux, watched from the game's own adapter report. It opens on a launcher in the game's look
+  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's
+  "Patch notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play.
+  Updates through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases
+  by hand from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their
+  tests; the PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on
+  SwiftShader with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank
+  window, a Windows or Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on
+  Ubuntu 23.10 or later. After a merge: the owner says when to cut the first release; the site's links to the
+  downloads and signing keys are open questions; performance is to be measured on a real GPU with `?perf`, in Chrome
+  and in the app, before any switch for it (an uncapped frame rate was proposed, not built).
+- **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
+  site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
+  have a ship until they reach the harbor master", "their own standard defined statistics" and
+  "customization options with a cost" ([[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]],
+  every call of Claude's in [[The Ships at the Harbourmaster as Claude Shapes Them]], the system in [[Shipyard]]). A
+  character keeps a fleet: the Sloop handed over by the welcome's Harbourmaster (a task of its own; at the counter to
+  one who pledged before it), the Schooner, Brig and Frigate bought from ship levels 7, 13 and 20; each hull with its
+  class's numbers (how long it lasts, broadside, reload, way, swing, boarders), answering its helm as the Sloop does,
+  each gun elevated from its own deck, as a captain's are on the owner's "Captains aim gun by gun"
+  ([[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]); the aim's camera and arcs follow the hull
+  sailed, its eye between the masts beside the guns, near the rail, on the owner's answer to
+  "Brig and frigate arent correct", and the World Editor sails the hull its address names (`?hull=brig`); 33 dresses
+  sold, besides each part's start and the houses' six at rank 2, bought once and laid free; names from two word lists,
+  free once then 250 Aurem; every ship seen by others in its hull, dress, name and flag. Asks 86 to 90, refusals
+  answered 167 to 173. Tested offline: the full check on fb959363 (CI checks the head), the counter pictured headless
+  (`harbourShots.ts`), each hull's held aim pictured in the World Editor (`?hull=`), a dressed Brig pictured at sea,
+  and 12 fights a row by hull ([[Shipyard]], "Measured"). Not yet played by hand or in a deployed room. Open for the
+  owner: the prices, levels and class numbers, the word lists, a figurehead once one is modelled, and whether a
+  shipless player may join a companion where only the sea leads ([[Shipyard]], "Limits").
+- **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
+  its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
+  [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new
+  Server layout module plans and builds the whole server from the panel: 8 roles, 6 categories and 16 channels with
+  their permissions, topics and forum tags, the server's settings and icon, 16 modules set, the guide, the rules and
+  the buttons posted, Founder for the owner, and a checklist in #staff of what only the owner can do. House roles
+  follow each linked member's pledge (`gameHouses.ts`, the accounts' `pledges`); posting the tickets button again
+  updates it in place; the server icon is drawn by the site's art (`server-icon`). The same PR carries the site's
+  `www` check fix. Tested offline: the server and site tests, the layout's against a fake server (a first build, a
+  second, hand changes, Discord's own new server, Community, a bot lacking permissions, the plan), the icon's round
+  crop. Not tested live: no build has run on the real server. After the merge, the owner presses Build in the panel
+  and follows the checklist; the bot's first invite lacks Manage Threads, Mute Members and the two thread permissions,
+  so the checklist's first item is a fuller invite.
+- **The Discord application's settings** ([[Discord Bot]], "One Discord application"): its interactions endpoint
+  set to the bot's `/v1/discord/interactions` and its two redirects (unchecked whether done; the bot was invited).
+  The words still Claude's: the auto-mod rules' prefix `No Shores: ` and "The bot" on the bot's own cases. The
+  Porkbun key posted in an earlier chat should be rotated; it was never stored or used.
+- **An extreme performance pass, quality unchanged** (#203, merged on the owner's "merge and deploy", which deploys
+  the page and the rooms), on the owner's "do an extreme performance pass while not reducing quality". Measured first:
+  the page headless with the new performance probe ([[Toolkit]]), the rooms natively. The page: each frame's culls and
+  draw lists, the interface, figures' terms, marks and a ship's canvas laid into kept lists (the hub's and a patrol's
+  garbage cut some 60 to 80%, a patrol's mean frame halved, headless with no GPU); the plants' list a slice a frame
+  (its worst frame 52 to 14 ms in Node, [[Nature]]); textures' views and bind groups kept; shaders branching past work
+  multiplied by zero, foam's lace only in quads that show it, the city drawn before the ground it covers ([[Game]]).
+  The rooms: a place's navmesh baked a slice a tick, not in one tick of 130 to 390 ms (some 45 ticks, each 15 to 19 ms
+  at most natively, [[Navmesh]]), the watershed and the ear-clip touching only what can change, and the land's course
+  search passing far segments by, every mesh of the first landmass's 77 squares the same to the bit before and after;
+  the rooms' load measurements running again. Tests that read a stand in the tick a player came near now wait for the
+  mesh; the patrol site's agreement fingerprint is `4e39f0f0`, native and WebAssembly agreeing. Tested offline: `cargo
+  xtask check` on e3ea41eb, with main merged in; the sea's foam pictured headless. Not timed on a real GPU, nor the
+  rooms' slices in WebAssembly; not played.
 - **The inspect panel after Destiny 1's weapon page** (#202, merged on the owner's "merge and deploy", which deploys
   the page and the rooms). Built on the owner's "take some autonomy" from
   [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]; Claude's calls in
@@ -259,11 +352,6 @@ The decisions in [[Open Questions]] are not repeated here.
   perks (`short`, and `short_takes` for a cost, in `content/gear/traits.json`) waiting on the owner's check. Tested
   offline: the full `cargo xtask check` on f0240671 (the short lines, before #194 merged in), and CI on the PR's head;
   pictures rendered headless at 1280 by 720, 1600 by 900 and 1920 by 1080; not played by hand or on a real GPU.
-
-- **The Discord application's settings, after #194's first deploy** ([[Discord Bot]], "One Discord application"):
-  its interactions endpoint set to the bot's `/v1/discord/interactions`, its two redirects, and the bot invited to
-  the server with its permissions. The words still Claude's: the auto-mod rules' prefix `No Shores: ` and "The bot"
-  on the bot's own cases. The Porkbun key posted in an earlier chat should be rotated; it was never stored or used.
 - **The bounty board after the Bounty Tracker, and faction bounties** (#196, merged), on the
   owner's "take autonomy and focus on overhauling the bounty menu and bounty design" with Destiny 1's Bounty Tracker
   ([[Standard and Faction Bounties Each Wear One Design, on a Board After the Bounty Tracker]]; every call in
@@ -537,8 +625,9 @@ The decisions in [[Open Questions]] are not repeated here.
   sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the owner: whether
   sections may overlap (0.3 m new on continent 2, greystone-tors and hollow-crypt; 4.2 m before, highwater-fells and
   wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first stand bakes its
-  navmesh in one tick (130 to 270 ms natively); room memory with every site stood unmeasured; a cavern over 4 m below
-  the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids either way.
+  navmesh a slice a tick (15 to 19 ms at most natively, #203); room memory with every site stood unmeasured; a
+  cavern over 4 m below the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids
+  either way.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
@@ -597,7 +686,7 @@ The decisions in [[Open Questions]] are not repeated here.
     its set and kind ("Portwatch Helm"), Atherics and kept named pieces keeping theirs; every drop, Vestige and Shape's
     Legendaries rolled in a content's set look with random perks, the named Legendaries kept-only; faction pieces
     rolling the shared pool and one of their faction's nine perks; the Breaches' own pool of thirteen, a Breach piece
-    rolling its perk columns from it alone, never one twice (no Breach is built: the owner, "Lets just finish this");
+    rolling its perk columns from it alone, never one twice (the Drowned Vale pays them, #200);
     no metal name in anything a player reads (`client/src/metalWords.test.ts`); a faction blade's hilt, guard and
     trim in its faction's colour, the Veiled's a faint cold violet ([[Factions]], [[Sprite Forge]],
     [[First Person]]); a rolled piece's look roll (`vestige::LOOK_ROLLS`, 36) choosing its set, metal, dye, make and
@@ -606,13 +695,56 @@ The decisions in [[Open Questions]] are not repeated here.
   - Asked to wait before the merge, the owner added three calls: flavour text for every weapon and armour piece
     ([[Weapons and Armour Carry Flavour Text]]: `content/gear/words.json`, a line for each set and kind); commons drop
     as themselves, never as Vestiges ([[Commons Drop as Themselves, Never as Vestiges]]); and a Breach's Hard weapons
-    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (#182, stacked on #169) to
+    named "(Forged)" ([[Breach Weapons Come Normal and Forged]]), for the Breach's own PR (now #200) to
     build with its `Item.hard`. The owner relays that one: this session may not message another.
   - The faction blades' art is published (forge run 18: figure strips and first person's frames, after a first run
     failed on a missing scikit-image pin) and `content/forge/renders.json` points at it.
   - Unchecked: whether the new first-person blades pair with the published hands (same size and `oFFs`); every look
     of a kept piece moves once with the wider look roll; played live. Here the full check stops at four R2 ship tests
     this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
+- **#200, the first Breach, the Drowned Vale, polished**, a draft for the owner's yes that supersedes #182 (its branch
+  merged whole) and is merged with `main` (its bounty board, finds and code-built chests included). The Breach itself:
+  [[Breaches]] (its Limits say what waits), every call of Claude's in [[The Drowned Vale as Claude Builds It]]. On it,
+  the owner's three asks:
+  - **Forged perks** ([[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]): a Breach piece won at Hard rolls
+    the same perks at a Forged grade, about half again, and Hard armour is named "(Forged)"; the numbers are Claude's,
+    in [[Gear as Claude Shapes It]].
+  - **Its sound** ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]): each space of the run heard as
+    its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key,
+    tempo and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is
+    picked. The sound sheet waits on the owner's picks, none made yet:
+    https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ (its `picks` collection). Once picked: write each `picked` into
+    `content/audio/freesound.json`, measure each pitched music pick's root with `tools/freesound/root.py` and write
+    it on its cue, push so the freesound workflow publishes them, and take `sounds.json` from that run's artifact; a
+    cue the owner marks "None" is searched again.
+  - **Its fidelity**: the run's own underground sky and its pieces' lamps (its floors measured to read, at sRGB 0.12
+    and over), the shores drawn only while in play, the dark's fade, stained glass, water, idle bells, chests that
+    read as payable, the gate's void; and its pieces made solid where they look it (the court, the rifts' walls, the
+    Ways' barricades and porches, the seals, the fight floors, the ledge rock), with windows, a torn rim and `glass`.
+    Judged on SwiftShader pictures drawn offline, never on a real GPU or in a live run.
+  - **A comprehensive audit** of the whole raid (rules, server and wire, page, design and tests, the bible, the art):
+    about seventy findings, each fixed with a test that fails without it, or left in Breaches' Limits.
+  - Left for the owner:
+    - Claude's reading of "Plenty of sounds come from freesound" (scores played on Freesound's recorded instruments).
+    - Whether a run's company is fixed at launch, or follows the accounts' company as it changes.
+    - Whether launching again within the gate's day returns the run whose gate stands open, not a new one.
+    - Whether the gate's state should outlive an eviction or a deploy (it is held in memory: either shuts it).
+    - Whether a member kicked from the company should be forgotten by the run that admitted them.
+    - Whether the Ways wait on every living player of the company, or only those in the Ways; and at Hard, whether
+      the fallen count (Claude's reading: the living alone).
+    - Hard's "no respawn" read as within a running encounter.
+    - New mechanics the audits proposed, not built: Keepers warded at Hard (so the crossing rule binds), Hard's seams
+      in a drawn order, the Steward taking into both shores, the Spire keeping each third, a pad way to call the
+      Steward's order without voice, a new danger sound; and sinking the Sunken Gate's area into the vale.
+    - Whether a Forged weapon should differ from its Normal one in more than its name, element and perk grades.
+    - The Drowned horse renders only by a hand forge run (`figures` =
+      `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2); its first-person frames are in no workflow.
+    - The Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn.
+  - The gate was tried in the Saltgrass Downs at the owner's word and reverted at their word; it stays in the Gullwing
+    Vale. Laying it there showed three latent flaws in the zones' layout, none showing as they stand, queued as their
+    own task: a beacon or resource node may stand inside a module, whose floors later level the ground under it; a
+    camp's palisade gap is narrower than the path grid passes at some turns (`blocked_by` widens a stake to a cell);
+    and fallen rock is kept off a run's stone and climb but not its line.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts:
@@ -806,9 +938,6 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **#194's first deploy, live** (unchecked until a hand-off says it was seen): `noshores.online`'s pages, the game at
-  `/play/`, `www` redirected, an unknown address answered by the 404 page; the bot's `/health` naming the merged
-  commit, and its slash commands listed in Discord.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
@@ -886,8 +1015,16 @@ The decisions in [[Open Questions]] are not repeated here.
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
   draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
-- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
-  140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
+- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake's slices in
+  WebAssembly (15 to 19 ms at most natively, some 45 ticks a place); playing alone walks no road, as it keeps no gear.
+- **After the performance pass** (#203): a node's room opens in 0.7 to 0.9 s natively on the roads' nodes, about 95%
+  of it navmesh bakes (the node's own square 370 to 510 ms), half of each bake reading the land's height and a quarter
+  stepping bodies over links. Baking a node's meshes with `npm run bake` would open a room at once but ship larger node
+  files: the owner's call, not asked yet. The bake's whole-field slices (the open floor, the regions, the polys, some
+  15 ms each natively) could be cut finer. The GPU audit's other ideas wait on a real GPU's timing; indexing the
+  city's quads was left, as it breaks their culling a quad at a time, and so was culling hulls on the CPU. A 10 s
+  window at the hub 30 s after loading still allocated some 400 MB over many sites, while the hub streamed in: measure
+  later after loading before taking it on.
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
   `server/garrison.test.ts`): its 13 foes stand all 1500 ticks, so nothing after a fall (drops, a group's break,
   fallback and last stand, waves) is checked natively against WebAssembly. Next: a scripted player that turns to its
@@ -958,8 +1095,8 @@ The decisions in [[Open Questions]] are not repeated here.
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
     a rebound Details or Character. The clash finder sees neither.
   - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`).
-  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
-    scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
+  - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), an island
+    room's hauls are kept and never told, and `RoomHost`
     (`server/worker.ts`) has no test.
   - Workflows (#180 adds `content/forged` to `ROOMS_CODE`, which the bake reads); the wreck's and the ships' workflows
     miss inputs they import (`tools/ships`, `shipPictures.ts`); a failed accounts deploy still lets the rooms record

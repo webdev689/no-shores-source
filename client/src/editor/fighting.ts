@@ -16,7 +16,8 @@ import { MOST_TICKS, TICK_SECONDS } from './sailing.ts';
 
 /** Where a fight is fought: the land's rules, over the open landmass; null when another landmass is open. */
 export interface FightSource {
-  fightBegin(id: string, ship: ShipFloats, seed: number, time: number): Promise<FightView | null>;
+  /** `hull` the player's, the Sloop unless given (0 the Sloop to 3 the Frigate). */
+  fightBegin(id: string, ship: ShipFloats, seed: number, time: number, hull?: number): Promise<FightView | null>;
   fightStep(id: string, orders: FightOrders, time: number, ticks: number): Promise<FightView | null>;
   fightEnd(): Promise<void>;
 }
@@ -102,16 +103,18 @@ export class Fighting {
     );
   }
 
-  /** Calls a Grey Tithe captain onto the ring round the player's `ship`, or says why none comes. The rules decide where. */
+  /** Calls a Grey Tithe captain onto the ring round the player's `ship` of `hull`, or says why none comes. The rules
+   *  decide where. */
   static async begin(
     source: FightSource,
     id: string,
     ship: ShipFloats,
     seed: number,
     time: number,
+    hull?: number,
   ): Promise<Fighting | string> {
     const answer = await source
-      .fightBegin(id, ship, seed, time)
+      .fightBegin(id, ship, seed, time, hull)
       .catch((error: unknown) => (error instanceof Error ? error.message : String(error)));
     if (answer === null) return 'Open this landmass to fight on it.';
     if (typeof answer === 'string') return answer;

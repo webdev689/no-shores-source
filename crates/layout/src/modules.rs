@@ -12,6 +12,7 @@ pub const fn of(kind: AreaKind) -> Option<&'static str> {
     match kind {
         AreaKind::Shrine => Some("old-stones"),
         AreaKind::Keep => Some("keep-citadel"),
+        AreaKind::Breach => Some("breach-gate"),
         _ => None,
     }
 }

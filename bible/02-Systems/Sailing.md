@@ -149,12 +149,14 @@ named by its key in the manifest (`HullKind`), numbered 0 to 3 on the wire.
 | Frigate | 38.1 × 6.2 m | 2.4 m | two staysails, eight square sails, a gaff spanker | 1.798 (the Carrack, a square-rigged three-master) |
 
 No hull's rig drives it harder than the Sloop's: its canvas drives it as the Sloop's does (`canvas_drive`), so every
-hull makes the Sloop's way on every point of sail, 2.4 m/s on a beam reach, and its rank's way alone makes it faster
-([[Naval Combat]]); its sails' kinds shape only how they are drawn and trimmed. Its square sails pull by the same law as the rest:
+hull makes the Sloop's way on every point of sail, 2.4 m/s on a beam reach, and a captain's rank's way alone makes it
+faster ([[Naval Combat]]), a player's hull's class its way and its swing in a fight and its way on a voyage
+([[Shipyard]]); its sails' kinds shape only how they are drawn and trimmed. Its square sails pull by the same law as the rest:
 under the responsive helm each draws at its crest (a square sail running dead before the wind), so the point of sail
 alone says how its heading takes it, and a Brig or a Frigate runs, reaches, beats and comes about through the wind's
-eye as the Sloop does, keeping its way. Its gain still shapes it: a bigger rig gathers and loses way faster and steers
-at its way over its gain. The game sets its square sails' trim only to draw them.
+eye as the Sloop does, keeping its way. Its gain still shapes a captain's ship: a bigger rig gathers and loses way
+faster and steers at its way over its gain. A player's ship answers its helm with the Sloop's gain in a fight, so its
+class alone sets its way and swing apart ([[Shipyard]]). The game sets its square sails' trim only to draw them.
 
 ## Its look
 

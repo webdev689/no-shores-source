@@ -7,7 +7,7 @@ import type { GearAsk, GearState } from '../../network/gearMessages.ts';
 import { ELEMENTS } from '../../player/gear.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import type { Child, Node } from '../../ui/node.ts';
-import { emblemOf, emblemPixels } from '../emblemArt.ts';
+import { emblemOf, emblemPixels } from '../../plus/emblemArt.ts';
 import { cardFrame, nameCard } from '../gearCard.ts';
 import { type Hint, INK, glyphNode, rgba, svgNode, words } from '../gearNodes.ts';
 import type { View } from '../gearScreen.ts';

@@ -1,7 +1,8 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { stillLevels } from '../water/shore.ts';
-import { SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
+import { SHARED_WGSL } from '../water/waterCommon.ts';
+import { wideTexels } from '../water/wideTexels.ts';
 import type { Camera } from './camera.ts';
 import type { CellRect } from './landMask.ts';
 import { MOST_TILES, TILE_SAMPLES, TILE_STEPS, type Tile } from './reliefTiles.ts';

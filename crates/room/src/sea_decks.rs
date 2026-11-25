@@ -47,7 +47,13 @@ pub enum LeaveRefused {
 }
 
 impl Sea {
-    /// The decks of each hull a boarded captain may sail, by its hull's number.
+    /// The deck of the hull a player sails, which they walk off the helm: the sea's own where it holds no deck of it.
+    pub(crate) fn deck_of(&self, player: PlayerId) -> &Deck {
+        let hull = super::ports::hull_sailed(&self.harbour.characters, player);
+        self.decks.hulls.get(usize::from(hull.number())).unwrap_or(&self.deck)
+    }
+
+    /// The decks of each hull a boarded captain or a player may sail, by its hull's number.
     pub fn set_hull_decks(&mut self, decks: Vec<Deck>) {
         self.decks.hulls = decks;
     }
@@ -89,8 +95,9 @@ impl Sea {
             // The fight's count first: the character's is written only when a fight ends.
             let kept = f64::from(character.ship[2]) / f64::from(gear::character::SHIP_WHOLE);
             let left = self.fights.hurts_of(player).map_or(kept, |(hurts, _)| hurts[2]);
-            let hands = (left * naval::arms::LARGE_BOAT.crew).round() as u16;
-            let count = crate::boarding_hands::boarding(hands, character.ship_trim().boarders);
+            let class = naval::class::class_of(super::ports::hull_sailed(&self.harbour.characters, player));
+            let hands = (left * class.build().crew).round() as u16;
+            let count = crate::boarding_hands::boarding(hands, class.boarders, character.ship_trim().boarders);
             boarded.room.board_hands(boarder, count, character.ship_level());
         }
         boarded.aboard.insert(player, boarder);
@@ -164,11 +171,12 @@ impl Sea {
         let fallen = deck.room.fallen_hands(boarder);
         deck.room.leave(boarder);
         self.fights.stand_up(player);
-        self.fights.lose_men(player, f64::from(fallen) / naval::arms::LARGE_BOAT.crew);
+        let crew = naval::class::class_of(super::ports::hull_sailed(&self.harbour.characters, player)).build().crew;
+        self.fights.lose_men(player, f64::from(fallen) / crew);
         if let (Some(character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             let mut character = with_sea_kept(character, held);
             // Its hands who fell on the deck are men it has lost, kept until a port city repairs it.
-            let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
+            let man = gear::character::SHIP_WHOLE / crew as u16;
             character.ship[2] = character.ship[2].saturating_sub(man.saturating_mul(u16::from(fallen)));
             self.harbour.characters.insert(player, character);
             // Off the deck their gear is the sea's again, sent them once more.

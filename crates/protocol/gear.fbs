@@ -45,6 +45,9 @@ table GearItem {
   element: ubyte;
   source: ubyte;
   story: bool;
+  /// A Breach's piece won at Hard, which climbs to 30 Prestige (last, so old readers skip it).
+  hard: bool;
+  /// The prologue's plain clothes: no Defense, no columns, nothing to salvage.
   plain: bool;
 }
 
@@ -292,9 +295,21 @@ table GearOfficer {
   wage: uint;
 }
 
+// A ship kept: its hull's number (0 the Sloop to 3 the Frigate), its name's two words by their places in
+// content/gear/shipyard.json's lists (255 for none), whether it has been named once (the first name is free), and
+// each part's dress by its number in content/gear/ship_dress.json (paint, stripe, canvas, flag).
+table GearKeptShip {
+  hull: ubyte;
+  name: [ubyte];
+  named: bool;
+  dress: [ushort];
+}
+
 // The ship's own power and crew: its experience, level, Prestige, Attack and Defense and how far to its next level;
 // Timber, Canvas, Iron and Heartwood; its hands and its complement; its officers, and at a pledged faction's counter
-// the officers of the day; its trim at sea (the gear crate's ShipTrim, in its order); and the pledge.
+// the officers of the day; its trim at sea (the gear crate's ShipTrim, in its order); the pledge; the ships kept, in
+// hull order (none before the Harbourmaster hands over the first), and the hull sailed; and every dress kept, by its
+// number.
 table GearShip {
   xp: ulong;
   level: ubyte;
@@ -311,4 +326,7 @@ table GearShip {
   trim: [double];
   // The faction the player is pledged to (0 none), whose counter signs officers on.
   pledge: ubyte;
+  fleet: [GearKeptShip];
+  sailed: ubyte;
+  dresses: [ushort];
 }

@@ -57,6 +57,7 @@ jobs:
     permissions:
       contents: read
       checks: read
+      pull-requests: read
     concurrency:
       group: site
       cancel-in-progress: false
@@ -118,6 +119,16 @@ jobs:
         with:
           name: served
           path: target/served
+      # The desktop app's launcher reads the latest merged pull requests' patch notes beside the game.
+      - name: Write the patch notes
+        if: steps.zone.outputs.served == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${{ github.repository }}/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=100" \
+            | node site/patchNotes.ts > target/served/play/patch-notes.json
+          echo "patch notes: $(jq '.notes | length' target/served/play/patch-notes.json)"
       # Every rule of the bucket's that lets the page read it lets the domain too; the rest are left as they are. The
       # call replaces the whole list, so it is read first and put back only when an origin was missing.
       - name: Let the game's bucket answer the domain
@@ -169,8 +180,14 @@ jobs:
           done
           status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "https://$ZONE/no-such-page/")
           test "$status" = 404 || { echo "::error::an address with no page answered $status, not 404"; exit 1; }
+          # The desktop app's downloads are the script's: before a release it says in words that there is none, never the page.
+          kind=$(curl -sS -o /dev/null -w '%{content_type}' --max-time 15 "https://$ZONE/download/latest.yml")
+          case "$kind" in text/html*) echo "::error::/download/ answered the site's page, not the downloads"; exit 1 ;; esac
+          # www's name is seconds old, and a resolver that asked too soon keeps "no such name" for the zone's 30 minutes,
+          # so it is reached at the bare domain's address, already answering, on the same Cloudflare edge.
           for attempt in $(seq 24); do
-            moved=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 "https://www.$ZONE/game/") || moved=""
+            moved=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 15 \
+              --connect-to "www.$ZONE:443:$ZONE:443" "https://www.$ZONE/game/") || moved=""
             if [ "$moved" = "301 https://$ZONE/game/" ]; then exit 0; fi
             sleep 10
           done

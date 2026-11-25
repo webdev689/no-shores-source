@@ -1,11 +1,13 @@
-//! The Sloop's deck and build, for the sea room and for a browser, and a captain's deck opened as a room alone. Its
-//! deck is read from the ships manifest the game is built with (content/ships/ships.json, which tools/ships/deck.py
-//! writes), so the room and every browser stand a walker on the same heights; its build is what the naval rules say
-//! it is, for a browser to show.
+//! Every hull's deck and every player's hull's build, for the sea room and for a browser, and a captain's deck opened
+//! as a room alone. A deck is read from the ships manifest the game is built with (content/ships/ships.json, which
+//! tools/ships/deck.py writes), so the room and every browser stand a walker on the same heights; a build is what the
+//! naval rules say a player's ship of that hull is (`naval::class`), for a browser to show.
 
 use movement::Heights;
-use naval::arms::{LARGE_BOAT, SLOOP_ARMS};
-use naval::guns::Shot;
+use naval::arms::arms_of;
+use naval::class::CLASSES;
+use naval::gunnery::RELOAD_SINGLEHANDED;
+use naval::guns::{SWIVEL, Shot};
 use room::deck::Deck;
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -69,21 +71,42 @@ pub fn hull_decks() -> &'static [Deck] {
     })
 }
 
-/// The Sloop's build as JSON: its name, its hull and canvas whole, its crew, its guns on each side, and the loads it
-/// guns take, in the order a gunner steps through them.
+/// Each hull's build as a player sails it, as JSON, in the hulls' order: its name, its hull and canvas whole, its
+/// crew, its guns on each side and the loads they take (in the order a gunner steps through them); and its class
+/// (`naval::class::Class`): how long it lasts and its rig lasts against the Sloop, its broadside's weight, the seconds a
+/// whole crew takes to reload a side, its way and its swing against the Sloop's, and the hands who board with its
+/// player.
 #[must_use]
-pub fn sloop_build_json() -> String {
+pub fn hull_builds_json() -> String {
     let loads: Vec<String> = Shot::CYCLE.iter().map(|shot| format!("\"{}\"", shot.name())).collect();
-    format!(
-        r#"{{"name":"{}","hull":{},"sail":{},"crew":{},"guns":{{"port":{},"starboard":{}}},"loads":[{}]}}"#,
-        LARGE_BOAT.name,
-        LARGE_BOAT.hull,
-        LARGE_BOAT.sail,
-        LARGE_BOAT.crew,
-        SLOOP_ARMS.port.len(),
-        SLOOP_ARMS.starboard.len(),
-        loads.join(","),
-    )
+    let builds: Vec<String> = CLASSES
+        .iter()
+        .map(|class| {
+            let (build, arms) = (class.build(), arms_of(class.hull));
+            let reload_s = SWIVEL.reload_s * RELOAD_SINGLEHANDED * class.reload;
+            format!(
+                concat!(
+                    r#"{{"name":"{}","hull":{},"sail":{},"crew":{},"guns":{{"port":{},"starboard":{}}},"loads":[{}],"#,
+                    r#""lasts":{},"rig_lasts":{},"broadside":{},"reload_s":{},"way":{},"turn":{},"boarders":{}}}"#
+                ),
+                build.name,
+                build.hull,
+                build.sail,
+                build.crew,
+                arms.port.len(),
+                arms.starboard.len(),
+                loads.join(","),
+                class.lasts,
+                class.rig_lasts,
+                class.broadside,
+                reload_s,
+                class.way,
+                class.turn,
+                class.boarders,
+            )
+        })
+        .collect();
+    format!("[{}]", builds.join(","))
 }
 
 /// Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's deck by its number, its faction's
@@ -133,11 +156,24 @@ mod tests {
     }
 
     #[test]
-    fn the_sloops_build_is_the_naval_rules_own() {
-        let build: serde_json::Value = serde_json::from_str(&sloop_build_json()).unwrap();
-        assert_eq!(build["name"], "Sloop");
-        assert_eq!(build["hull"], LARGE_BOAT.hull);
-        assert_eq!((build["guns"]["port"].as_u64(), build["guns"]["starboard"].as_u64()), (Some(3), Some(3)));
-        assert_eq!(build["loads"][0], "round");
+    fn each_hulls_build_is_the_naval_rules_own() {
+        let builds: serde_json::Value = serde_json::from_str(&hull_builds_json()).unwrap();
+        let sloop = &builds[0];
+        assert_eq!(sloop["name"], "Sloop");
+        assert_eq!(sloop["hull"], naval::arms::LARGE_BOAT.hull);
+        assert_eq!((sloop["guns"]["port"].as_u64(), sloop["guns"]["starboard"].as_u64()), (Some(3), Some(3)));
+        assert_eq!(sloop["loads"][0], "round");
+        assert!((sloop["reload_s"].as_f64().unwrap() - 5.6).abs() < 1e-9, "a whole crew's side, 5.6 s");
+        for (at, class) in CLASSES.iter().enumerate() {
+            let (build, json) = (class.build(), &builds[at]);
+            assert_eq!(json["name"], build.name);
+            assert_eq!(
+                [json["hull"].as_f64(), json["sail"].as_f64(), json["crew"].as_f64()],
+                [Some(build.hull), Some(build.sail), Some(build.crew)]
+            );
+            assert_eq!(json["guns"]["port"].as_u64(), Some(arms_of(class.hull).port.len() as u64));
+            assert_eq!([json["way"].as_f64(), json["turn"].as_f64()], [Some(class.way), Some(class.turn)]);
+            assert_eq!(json["boarders"].as_u64(), Some(u64::from(class.boarders)));
+        }
     }
 }

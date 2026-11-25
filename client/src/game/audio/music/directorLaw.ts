@@ -7,6 +7,7 @@
 // and a die in, the mood, the score and any sting out; the director plays them on bar lines.
 
 import { PUBLIC_CLIMAX } from '../../../rules/roster.ts';
+import type { BreachSong, HeardBreach } from '../../../combat/publicBanner.ts';
 import type { Climate, Place } from '../place.ts';
 import type { Role } from './score.ts';
 import type { SeaSong } from './seaScore.ts';
@@ -27,19 +28,25 @@ export const FAMILY_OF: Readonly<Record<Climate, Family>> = {
 };
 
 /** The boss scores. */
-export type Boss = 'boarding' | 'reckoning' | 'wrath';
+export type Boss = 'boarding' | 'reckoning' | 'wrath' | 'scrivener' | 'steward';
 /** Each Boss's own score by the name over its bar; a Boss not named here plays the Wrath. */
 export const BOSS_SCORES: Readonly<Record<string, Boss>> = {
   'Captain Brannoc Thule': 'boarding',
   'High Assessor Corvane': 'reckoning',
+  'The Scrivener': 'scrivener',
+  'The Steward': 'steward',
 };
+
+/** A Breach's song and how the music hears it, as the page shows it (publicBanner.ts). */
+export type { BreachSong, HeardBreach } from '../../../combat/publicBanner.ts';
+
 /** A boss score's part: a phase by the boss's health, or its last stand. */
 export type BossPart = 1 | 2 | 3 | 'last';
 
 export type Mood = 'silent' | 'tension' | 'combat' | 'peak' | 'boss';
 
 /** What plays: nothing, a piece of the social space's, a family's fight score or one of its roaming pieces, a sea
- *  song, a boss's part, or a song of the story's own. */
+ *  song, a boss's part, a Breach's encounter's song or its calm piece, or a song of the story's own. */
 export type Cue =
   | { readonly kind: 'none' }
   | { readonly kind: 'social'; readonly piece: number }
@@ -47,6 +54,8 @@ export type Cue =
   | { readonly kind: 'roam'; readonly family: Family; readonly piece: number }
   | { readonly kind: 'sea'; readonly song: SeaSong }
   | { readonly kind: 'boss'; readonly boss: Boss; readonly part: BossPart }
+  | { readonly kind: 'breach'; readonly song: BreachSong }
+  | { readonly kind: 'vale'; readonly piece: number }
   | { readonly kind: 'story'; readonly song: StorySong };
 
 /** What the story asks of the music this frame: a song of its own in a mood's layers; silence, cut at once or let
@@ -115,6 +124,8 @@ export interface Hearing {
   readonly least?: Mood;
   /** An Elite Dungeon's Court: the part its Boss's score plays, by its wards broken, short of its last stand. */
   readonly part?: number;
+  /** A Breach's run, or its gate while the player's company holds the Waking. */
+  readonly breach?: HeardBreach | null;
 }
 
 /** The ranks: an Elite and a Miniboss bring the peak, a Boss its own score. */
@@ -180,24 +191,25 @@ export const QUIET: Memory = {
   landedAt: -Infinity,
 };
 
-/** Where the calm pieces are chosen: the sea, the social space, or an island by its climate's family. */
-export type Where = 'sea' | 'social' | Family;
-export const whereOf = (place: Place): Where =>
-  place.kind === 'sea' ? 'sea' : place.kind === 'social' ? 'social' : FAMILY_OF[place.climate];
+/** Where the calm pieces are chosen: the sea, the social space, an island by its climate's family, or a Breach's run. */
+export type Where = 'sea' | 'social' | Family | 'breach';
+export const whereOf = (place: Place, breach: HeardBreach | null = null): Where =>
+  breach?.run ? 'breach' : place.kind === 'sea' ? 'sea' : place.kind === 'social' ? 'social' : FAMILY_OF[place.climate];
 
 /** After a sea song, or danger, this many seconds of silence at least, and at most, before another may come. */
 export const REST_S: readonly [number, number] = [4 * 60, 8 * 60];
 /** Each place's silences, seconds: `after` a piece, at least and at most; and `least` on arriving and after danger,
  *  before the first may come. A social space is where players wait, so its pieces come soonest and most often; an
- *  island's, between fights, least. */
+ *  island's, between fights, least; a Breach's run is short, its quiet stretches a minute or two between encounters. */
 export const RESTS: Readonly<
-  Record<'sea' | 'social' | 'island', { readonly after: readonly [number, number]; readonly least: number }>
+  Record<'sea' | 'social' | 'island' | 'breach', { readonly after: readonly [number, number]; readonly least: number }>
 > = {
   sea: { after: REST_S, least: REST_S[0] },
   social: { after: [150, 300], least: 30 },
   island: { after: [300, 540], least: 120 },
+  breach: { after: [45, 120], least: 20 },
 };
-const restsOf = (where: Where) => RESTS[where === 'sea' || where === 'social' ? where : 'island'];
+const restsOf = (where: Where) => RESTS[where === 'sea' || where === 'social' || where === 'breach' ? where : 'island'];
 /** A sea song is never played in rain or snow this hard, a storm this strong, or fog this thick. */
 const FOUL = { falling: 0.05, storm: 0.15, fog: 0.3 } as const;
 /** Under this wind, m/s, the sea is still. */
@@ -220,12 +232,25 @@ export interface SongClock {
 }
 const SONG_CLOCK: SongClock = { lengthOf: () => 180, pieces: () => 1, random: Math.random };
 
-/** The calm piece for `where` under `sky`: at sea the sky's song; elsewhere one of the place's, by the die, never the
- *  one last begun while there is another. None where nothing is written. */
-function pieceFor(where: Where, sky: HeardSky | null, last: Cue | null, songs: SongClock): Cue | null {
+/** The calm piece for `where` under `sky`: at sea the sky's song; in a Breach's run its space's; elsewhere one of the
+ *  place's, by the die, never the one last begun while there is another. None where nothing is written. */
+function pieceFor(
+  where: Where,
+  sky: HeardSky | null,
+  last: Cue | null,
+  songs: SongClock,
+  breach: HeardBreach | null,
+): Cue | null {
   if (where === 'sea') return { kind: 'sea', song: voyageSongFor(sky) };
   const count = songs.pieces(where);
+  if (where === 'breach' && breach && breach.piece < count) {
+    const own: Cue = { kind: 'vale', piece: breach.piece };
+    // The space's own, unless it was the one begun last: then another, by the die.
+    if (!last || !sameCue(last, own) || count < 2) return own;
+    return { kind: 'vale', piece: (breach.piece + 1 + Math.floor(songs.random() * (count - 1))) % count };
+  }
   if (count < 1) return null;
+  if (where === 'breach') return null;
   const cue = (piece: number): Cue =>
     where === 'social' ? { kind: 'social', piece } : { kind: 'roam', family: where, piece };
   const first = Math.min(count - 1, Math.floor(songs.random() * count));
@@ -245,7 +270,7 @@ function roamOf(
 ): Pick<Memory, 'roaming' | 'restUntil' | 'offCoast' | 'landedAt' | 'where' | 'lastPiece'> {
   // Ashore it lies at the coast: sailing out from it is no landfall.
   const offCoast = hearing.sea ? hearing.sea.landfall : true;
-  const where = whereOf(hearing.place);
+  const where = whereOf(hearing.place, hearing.breach ?? null);
   const { after, least } = restsOf(where);
   const moved = where !== memory.where;
   let { roaming, restUntil, landedAt, lastPiece } = memory;
@@ -260,7 +285,7 @@ function roamOf(
   if (where === 'sea' && offCoast && !memory.offCoast && clock - landedAt >= REST_S[0])
     [roaming, landedAt] = [begin({ kind: 'sea', song: 'landfall' }), clock];
   else if (!roaming && clock >= restUntil && fairForSong(hearing.sky)) {
-    const cue = pieceFor(where, hearing.sky, lastPiece, songs);
+    const cue = pieceFor(where, hearing.sky, lastPiece, songs, hearing.breach ?? null);
     if (cue) [roaming, lastPiece] = [begin(cue), cue];
   }
   return { roaming, restUntil, offCoast, landedAt, where, lastPiece };
@@ -340,6 +365,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
     return { memory: { ...QUIET, ...rest, clock, mood, cue }, mood, cue, sting: null, cut };
   }
   const { place, foes, sea } = hearing;
+  const breach = hearing.breach ?? null;
   let sting: Sting | null = null;
   // The boss: one engaged, or the one fought, while it stays alert.
   const kept = memory.boss;
@@ -387,7 +413,8 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
       : clock - lastDanger < TENSION_HOLD_S
         ? 'tension'
         : 'silent';
-  const mood = atLeast(story ? atLeast(heard, story.least) : heard, hearing.least ?? 'silent');
+  const least = atLeast(hearing.least ?? 'silent', breach?.least ?? 'silent');
+  const mood = atLeast(story ? atLeast(heard, story.least) : heard, least);
   const playing = mood !== 'silent';
   const seaSong = atSea && playing ? (memory.seaSong ?? seaSongFor(sea)) : null;
   const roam = roamOf(memory, clock, !playing && !boss, hearing, songs);
@@ -396,6 +423,13 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   else if (seaSong) cue = { kind: 'sea', song: seaSong };
   else if (roam.roaming) cue = roam.roaming.cue;
   else if (playing && story?.score) cue = { kind: 'boss', boss: story.score, part: 1 };
+  else if (playing && breach?.boss) {
+    // A great foe awake but not engaged by the player still plays its own score, its part by its health where it is
+    // seen, else as last heard.
+    const great = foes.find((foe) => BOSS_SCORES[foe.name] === breach.boss && alive(foe));
+    const held = memory.cue.kind === 'boss' && memory.cue.boss === breach.boss ? memory.cue.part : 1;
+    cue = { kind: 'boss', boss: breach.boss, part: great ? bossPart(great.health) : held };
+  } else if (playing && breach?.song) cue = { kind: 'breach', song: breach.song };
   else if (playing && place.kind !== 'sea') cue = { kind: 'family', family: FAMILY_OF[place.climate] };
   // A boss part holds while the boss is out of sight a moment: its health is not heard then.
   if (boss && !bossFoe && memory.cue.kind === 'boss') cue = memory.cue;

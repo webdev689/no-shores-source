@@ -45,6 +45,9 @@ pub enum Source {
         faction: u8,
         rank: u32,
     },
+    /// Won in a Breach: its banner at its last encounter's first fall, its dye and its horse by chance there
+    /// (`crate::breach`).
+    Breach,
 }
 
 /// An emblem as the catalogue holds it.
@@ -158,6 +161,7 @@ impl Character {
             self.emblem = starting();
         }
         self.earn_cosmetics_due();
+        self.give_ship_due();
         self.find_lore_due(crate::lore::lore());
     }
 

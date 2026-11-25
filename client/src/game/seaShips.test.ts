@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { SeenHostile, SeenShip } from '../network/messages.ts';
 import type { SeenFriendly } from '../network/seaHarbour.ts';
+import { HULL_DECKS } from '../ships/deck.ts';
 import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { captainAtSea, plainCrew } from '../ships/shipCrew.ts';
@@ -9,7 +10,7 @@ import { FAIR_LINE, HULLS } from '../water/hullMask.ts';
 
 /** Every hull's line the fair one: no mesh is fetched. */
 const FAIR_LINES = { line: () => FAIR_LINE };
-import { heelShare, SeaShips } from './seaShips.ts';
+import { heelShare, playerLook, SeaShips } from './seaShips.ts';
 
 const WATER = { swell: undefined, depthAt: () => Infinity };
 const OWN = {
@@ -36,7 +37,7 @@ test('a hostile first drawn is drawn under the sails it sails by, never setting 
 test('every ship leaves its footprint on the water as it is drawn, hostiles too, the nearest its first', () => {
   const far: SeenHostile = { id: 3, x: 900, y: 0, heading: 1.2, faction: 1, rank: 1 };
   const hostiles = [far, { id: 4, x: 0, y: -300, heading: 0.4, faction: 1, rank: 2 }];
-  const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0 };
+  const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0, hull: 0, dress: [], name: [], emblem: 0 };
   const hulls = new SeaShips(undefined, FAIR_LINES).hulls(OWN.lies, [other], hostiles, 4);
   assert.deepEqual(
     hulls.map((hull) => [hull.x, hull.y, hull.way > 0]),
@@ -122,7 +123,7 @@ test("each ship's footprint is its own hull at its drawn size, and its bow slams
 
 test("every other ship carries its people: a player's Sloop its plain crew, a captain's its faction and rank", () => {
   const hostile: SeenHostile = { id: 3, x: 800, y: -300, heading: 1.2, faction: 1, rank: 3, hull: 1 };
-  const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0 };
+  const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0, hull: 0, dress: [], name: [], emblem: 0 };
   const ships = new SeaShips(undefined, FAIR_LINES).ships(1 / 60, 10, 0.4, OWN, [other], [hostile], 4, WATER);
   assert.deepEqual(
     ships.map((ship) => ship.crew),
@@ -139,4 +140,28 @@ test('a friendly ship the room keeps at sea is drawn where the room has it, in i
   assert.deepEqual([drawn?.place.x, drawn?.place.y, drawn?.place.heading], [600, -200, 0.5]);
   const [, footprint] = ships.hulls(OWN.lies, [], [], 4, [friend]);
   assert.equal(footprint?.halfLength, (hullWaterline(2).lengthM / 2) * 4);
+});
+
+test("each player's ship is drawn in the hull they sail and the dress they keep, the player's own by the room's word", () => {
+  const dress = [1, 11, 21, 31];
+  const own: SeenShip = { player: 1, x: 0, y: 0, heading: 0, pace: 0, hull: 3, dress, name: [], emblem: 2 };
+  const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0, hull: 2, dress: [], name: [], emblem: 0 };
+  const ships = new SeaShips(undefined, FAIR_LINES, () => own);
+  const [drawnOwn, drawnOther] = ships.ships(1 / 60, 10, 0.4, OWN, [other], [], 4, WATER);
+  assert.deepEqual([drawnOwn?.hull, drawnOther?.hull], [3, 2], 'the Frigate sailed, and the other player’s Brig');
+  assert.deepEqual(drawnOwn?.look, playerLook(own), 'in the dress the room says they keep');
+  assert.deepEqual(drawnOther?.look, playerLook(other));
+  assert.equal(ships.ownDeck(), HULL_DECKS[3], 'its deck the Frigate’s, walked and steered from');
+  const [ownFootprint] = ships.hulls(OWN.lies, [], [], 1);
+  assert.equal(ownFootprint?.halfLength, hullWaterline(3).lengthM / 2, 'its footprint the Frigate’s');
+  const unsaid = new SeaShips(undefined, FAIR_LINES);
+  assert.equal(unsaid.ownHull(), SLOOP_HULL, 'the Sloop before the room has said');
+  assert.equal(unsaid.ownDeck(), HULL_DECKS[SLOOP_HULL]);
+  const shown = new SeaShips(
+    (hull) => (hull === 3 ? SLOOP_HULL : hull),
+    FAIR_LINES,
+    () => own,
+  );
+  assert.equal(shown.ownHull(), SLOOP_HULL, 'drawn as the Sloop until its own model has come');
+  assert.equal(shown.ownDeck(), HULL_DECKS[3], 'yet walked on its own deck, as the room walks it');
 });

@@ -5,7 +5,6 @@ import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { ELEMENTS } from '../player/gear.ts';
 import { type Pixels, svgOf } from '../plus/emblems.ts';
 import type { Node } from '../ui/node.ts';
-import { TONES } from '../plus/tones.ts';
 import { ICONS } from './journalIconMaps.ts';
 
 export type IconName = keyof typeof ICONS;
@@ -36,19 +35,6 @@ export function iconNode(name: IconName, size: number, tones?: Readonly<Record<s
   const key = `journal icon ${name} ${tones ? Object.values(tones).join(' ') : ''}`;
   return pixelNode(key, iconSvg(name, tones), [ICON_PIXELS, ICON_PIXELS], size);
 }
-
-/** Each pool's mark, by the board's numbers: 0 land, 1 the sea, 2 dungeons. */
-const POOLS: readonly IconName[] = ['land', 'sea', 'dungeon'];
-
-/** The mark of where a bounty counts: a peak on land, a wave at sea, an arched door in a dungeon; null for a pool the
- *  board does not have. */
-export function poolMarkSvg(pool: number): string | null {
-  const name = POOLS[pool];
-  return name ? iconSvg(name) : null;
-}
-
-/** The ground each pool's tiles stand on: stone for land, deep water for the sea, blood for dungeons. */
-export const POOL_GROUNDS: readonly string[] = [TONES.stoneDim, TONES.sea, TONES.bloodDeep];
 
 /** The modifiers drawn under their own keys. */
 const MODIFIERS: readonly IconName[] = [

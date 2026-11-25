@@ -20,6 +20,9 @@ TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 from r2 import PUBLIC, put  # noqa: E402
 
+sys.path.insert(0, HERE)
+from root import ROOT  # noqa: E402
+
 REPO = os.path.dirname(TOOLS)
 MANIFEST = os.path.join(REPO, 'content', 'audio', 'sounds.json')
 WANTED = os.path.join(REPO, 'content', 'audio', 'freesound.json')
@@ -29,6 +32,8 @@ WANTED = os.path.join(REPO, 'content', 'audio', 'freesound.json')
 CHANGES = 'Unchanged.'
 VARIED = re.compile(r'ui\.(hover|press|back)|(step|swing|hit|amb)\..+')
 VARIES = 'Its pitch varies a little each time it plays.'
+# The music's instruments (client/src/game/audio/music/sampled.ts) play a pick at many pitches.
+PLAYED = 'Played at many pitches as an instrument in the game\'s music.'
 # The licences the owner allows, each at its own address with its version.
 LICENCES = {
     'CC0': re.compile(r'https://creativecommons\.org/publicdomain/zero/\d\.\d/'),
@@ -112,8 +117,18 @@ def cut_of(entry):
 
 def changes_of(cue, entry):
     """Everything done to a pick on its way in and as it plays, as its credit says it."""
-    said = [cut_of(entry), VARIES if VARIED.fullmatch(cue) else '']
+    said = [cut_of(entry), VARIES if VARIED.fullmatch(cue) else '', PLAYED if cue.startswith('music.') else '']
     return ' '.join(part for part in said if part) or CHANGES
+
+
+def root_of(cue, entry):
+    """A music cue's measured root (root.py), carried onto its sound for the song player; nothing where it has none."""
+    root = entry.get('root')
+    if root is None:
+        return {}
+    if not cue.startswith('music.') or not isinstance(root, str) or not ROOT.fullmatch(root):
+        sys.exit(f'{cue}: its root {root!r} is not a music cue\'s note, as root.py writes it')
+    return {'root': root}
 
 
 def kept_key(before, cue, pick, entry):
@@ -170,11 +185,12 @@ def main():
         key = key or put(data, 'sounds', 'mp3', 'audio/mpeg')
         if isinstance(entry.get('picked'), list):
             # Several picks are one cue's variations: their files, and each one's credit, in the list's order.
-            sound = sounds.setdefault(cue, {'keys': [], 'credits': [], 'changes': changes_of(cue, entry)})
+            sound = sounds.setdefault(cue, {'keys': [], 'credits': [], 'changes': changes_of(cue, entry),
+                                             **root_of(cue, entry)})
             sound['keys'].append(key)
             sound['credits'].append(credit)
         else:
-            sounds[cue] = {'key': key, **credit, 'changes': changes_of(cue, entry)}
+            sounds[cue] = {'key': key, **credit, 'changes': changes_of(cue, entry), **root_of(cue, entry)}
     # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
     own = {cue: sound for cue, sound in before.items() if 'freesound' not in sound and 'credits' not in sound}
     sounds.update({cue: sound for cue, sound in own.items() if cue not in sounds})

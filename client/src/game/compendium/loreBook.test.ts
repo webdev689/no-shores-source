@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MOTIFS } from '../emblemMotifs.ts';
+import { MOTIFS } from '../../plus/emblemMotifs.ts';
 import { LORE, blocksOf, chapterAt, chaptersOf, heardOf, shelfOf, spansOf } from './loreBook.ts';
 import { SAMPLE_LORE } from './loreForTests.ts';
 
@@ -19,7 +19,7 @@ test("the lore's file holds what the page shows: names, covers in a cloth and a 
       assert.deepEqual(keys(chapter), ['found', 'id', 'text', 'title'], `${book.id}/${chapter.id}'s keys`);
       assert.ok(chapter.title.trim() && blocksOf(chapter.text).length > 0, `${book.id}/${chapter.id} has words`);
       assert.ok(
-        ['story', 'quest', 'place'].includes(chapter.found.kind),
+        ['story', 'quest', 'place', 'breach'].includes(chapter.found.kind),
         `${book.id}/${chapter.id} is found somewhere`,
       );
     }

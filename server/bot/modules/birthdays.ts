@@ -68,8 +68,6 @@ async function onCommand(context: BotContext, interaction: Interaction): Promise
   return privateReply(`Your birthday is kept as ${day} ${MONTHS[month - 1] ?? ''}.`);
 }
 
-/** Every server where a module is on: the clock's modules run across them all. */
-
 /** Wish one member well: the message, then the day's role. */
 async function wish(context: BotContext, guildId: string, userId: string, config: Record<string, unknown>) {
   const member = await context.rest.get(`/guilds/${guildId}/members/${userId}`);

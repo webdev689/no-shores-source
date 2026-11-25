@@ -1,18 +1,22 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { compassOf, shipPanelOf, sloopBuildOf } from './shipPanel.ts';
+import { compassOf, hullBuildsOf, shipPanelOf } from './shipPanel.ts';
 
-const BUILD =
-  '{"name":"Sloop","hull":240,"sail":96,"crew":0,"guns":{"port":3,"starboard":3},"loads":["round","grape","chain","heated"]}';
+const CLASS = '"lasts":1,"rig_lasts":1,"broadside":1,"reload_s":5.6,"way":1,"turn":1,"boarders":2';
+const BUILD = `{"name":"Sloop","hull":240,"sail":96,"crew":0,"guns":{"port":3,"starboard":3},"loads":["round","grape","chain","heated"],${CLASS}}`;
+/** The build read from the door's JSON as a list of one. */
+const sloopBuildOf = (text: string) => hullBuildsOf(`[${text}]`)?.[0] ?? null;
 
-test("the Sloop's build reads from the door's JSON, and anything else does not", () => {
+test("each hull's build reads from the door's JSON, and anything else does not", () => {
   assert.equal(sloopBuildOf(BUILD)?.hull, 240);
-  assert.equal(sloopBuildOf('not JSON'), null);
-  assert.equal(
-    sloopBuildOf('{"name":"Sloop","hull":-1,"sail":96,"crew":0,"guns":{"port":3,"starboard":3},"loads":[]}'),
-    null,
-  );
-  assert.equal(sloopBuildOf('{"name":"Sloop","hull":240,"sail":96,"crew":0,"guns":{"port":3},"loads":[]}'), null);
+  assert.equal(hullBuildsOf('not JSON'), null);
+  assert.equal(hullBuildsOf(BUILD), null, 'a build alone is no list of them');
+  assert.equal(hullBuildsOf('[]'), null);
+  assert.equal(hullBuildsOf(`[${BUILD},{"name":"Brig"}]`), null, 'every one must read');
+  const negative = BUILD.replace('"hull":240', '"hull":-1');
+  assert.equal(sloopBuildOf(negative), null);
+  assert.equal(sloopBuildOf(BUILD.replace('"starboard":3', '"other":3')), null);
+  assert.equal(sloopBuildOf(BUILD.replace('"boarders":2', '"boarders":"two"')), null, 'its class too');
 });
 
 test('a heading reads as whole degrees and the nearest of the eight points', () => {
@@ -56,4 +60,12 @@ test('Manage lists its men only once its build carries a crew', () => {
   };
   assert.equal(rowsOf(0).has('Men'), false, 'no crew yet: no Men row over the Crew marked Later');
   assert.equal(rowsOf(12).get('Men'), '12 / 12');
+});
+
+test("Manage's title names its hull, and the ship once it is named", () => {
+  const build = sloopBuildOf(BUILD);
+  assert.ok(build);
+  const measure = { lengthM: 6, beamM: 2, draughtM: 0.6 };
+  assert.equal(shipPanelOf(build, measure, null).title, 'Your Sloop');
+  assert.equal(shipPanelOf(build, measure, null, null, 'the Grey Gull').title, 'Your Sloop, the Grey Gull');
 });

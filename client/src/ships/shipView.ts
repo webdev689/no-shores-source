@@ -3,7 +3,8 @@ import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { farPlace, ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
-import { DRESSES, PLAYER_LOOK, SHIP_SIDES, type ShipLook } from './dress.ts';
+import { PLAYER_LOOK, type ShipLook } from './dress.ts';
+import { sidePainted } from './fleetDress.ts';
 import { flagFlat, flagGrid } from './flag.ts';
 import type { HullPaint } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
@@ -84,14 +85,17 @@ export function canvasIndices(
 
 /** The canvas's vertices, as its mesh's are, from each sail's grid now: a point's normal across its neighbours (the
  *  side its triangles face on the screen, as the export keeps its own), its UV the metres of its sail laid flat, its
- *  picture the sail's but where `layers` names another (its flag's). */
+ *  picture the sail's but where `layers` names another (its flag's). Laid into `into` where it holds them all: a
+ *  ship under way lays its canvas every frame. */
 export function canvasVertices(
   canvas: readonly Float32Array[],
   flat: readonly Float32Array[],
   layers: readonly number[] = [],
-): ArrayBuffer {
-  const bytes = new ArrayBuffer(canvas.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES);
-  const view = new DataView(bytes);
+  into?: DataView,
+): DataView {
+  const size = canvas.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES;
+  const view =
+    into && into.byteLength >= size ? new DataView(into.buffer, 0, size) : new DataView(new ArrayBuffer(size));
   const sailPart = SHIP_PARTS.indexOf('sail');
   canvas.forEach((points, sail) => {
     // Each sail's every point, every frame: its neighbours read by index, as the edges' clamp gives them.
@@ -112,7 +116,7 @@ export function canvasVertices(
         const normalX = upY * alongZ - upZ * alongY;
         const normalY = upZ * alongX - upX * alongZ;
         const normalZ = upX * alongY - upY * alongX;
-        const length = Math.hypot(normalX, normalY, normalZ) || 1;
+        const length = Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ) || 1;
         const byte = ((sail * SAIL_ROWS + row) * SAIL_COLUMNS + column) * VERTEX_BYTES;
         const grid = place(column, row);
         view.setFloat32(byte, points[grid] ?? 0, true);
@@ -127,7 +131,7 @@ export function canvasVertices(
         view.setUint8(byte + 24, layers[sail] ?? sailPart);
       }
   });
-  return bytes;
+  return view;
 }
 
 /** Where its tallest mast's head is, in its frame: the highest point of its spars. */
@@ -212,8 +216,7 @@ export class ShipView {
    *  flag's), and how many of its indices are drawn. A moored ship's furled rig never changes, so its canvas is laid
    *  once; a sailing one's once a frame for the shadows' passes and the picture alike. */
   private readonly laid: (
-    | { rig: SailRig; changes: number; harm: ShipHarm; harmed: number; side: ShipLook['side']; indices: number }
-    | undefined
+    { rig: SailRig; changes: number; harm: ShipHarm; harmed: number; flag: number; indices: number } | undefined
   )[] = [];
   private readonly slots: {
     readonly uniforms: GPUBuffer;
@@ -231,6 +234,8 @@ export class ShipView {
   private readonly paint: HullPaint;
   private readonly tags: ShipTags;
   private readonly flat: readonly Float32Array[];
+  /** The bytes its canvas was last laid in, laid into again. */
+  private canvasBytes: DataView | undefined;
   /** Its bounding sphere in its own frame, made once (`shipSphere`). */
   private readonly sphere: readonly number[];
 
@@ -365,11 +370,12 @@ export class ShipView {
     values.set(turn, 16);
     values.set([place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2], 0], 32);
     values.set([look.shade ?? 1, 0, 0, 0], 36);
-    const dress = DRESSES[look.side];
-    [dress.hull, dress.stripe, dress.canvas].forEach((colour, index) =>
+    const paint = look.painted ?? sidePainted(look.side);
+    [paint.hull, paint.stripe, paint.canvas].forEach((colour, index) =>
       values.set(colour ? [...colour, 1] : [0, 0, 0, 0], 40 + index * 4),
     );
     values.set([this.paint.atM, this.paint.rise, STRIPE_HALF_M, 0], 52);
+    values.set(paint.ink ? [...paint.ink, 1] : [0, 0, 0, 0], 56);
     this.tags.yards.forEach((yard, index) => {
       const brace = ((rig?.sails[yard.sail]?.trimDeg ?? 0) * Math.PI) / 180;
       values.set([yard.pivot[0], yard.pivot[1], Math.cos(brace), Math.sin(brace)], YARD_FLOATS_AT + index * 4);
@@ -386,27 +392,28 @@ export class ShipView {
       laid.changes === changes &&
       laid.harm === harm &&
       laid.harmed === harm.changes &&
-      laid.side === look.side
+      laid.flag === paint.flagLayer
     )
       return laid.indices;
     const flown = flagAt(this.masthead, rig.harm, this.tags.masts, now);
     const flag = flagGrid(flown.at, this.waterline.lengthM, rig.offDeg, rig.time);
-    const flagLayer = SHIP_PARTS.length + SHIP_SIDES.indexOf(look.side);
+    const flagLayer = paint.flagLayer;
     const sails = harmedCanvas(rig.canvas(this.tags.pivots), rig.harm, this.tags.masts, this.waterline.beamM / 2, now);
     const grid = canvasIndices(this.sails.length + 1, (sail, cell) =>
       sail < this.sails.length ? cellShows(rig.harm, sail, cell, now) : flown.shows,
     );
-    this.laid[slot] = { rig, changes, harm, harmed: harm.changes, side: look.side, indices: grid.length };
+    this.laid[slot] = { rig, changes, harm, harmed: harm.changes, flag: flagLayer, indices: grid.length };
     if (grid.length === 0) return 0;
     this.device.queue.writeBuffer(drawn.canvasIndices, 0, grid);
     this.device.queue.writeBuffer(
       drawn.canvas,
       0,
-      canvasVertices(
+      (this.canvasBytes = canvasVertices(
         [...sails, flag],
         [...rig.sails.map((sail) => sail.flat), ...this.flat],
         [...rig.sails.map(() => SHIP_PARTS.indexOf('sail')), flagLayer],
-      ),
+        this.canvasBytes,
+      )),
     );
     return grid.length;
   }

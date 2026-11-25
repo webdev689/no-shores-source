@@ -47,8 +47,9 @@ close patch), the cells over the plants' changed tiles are read again, their old
 
 ## The tufts
 
-A cell holds 576 tufts where all of it is grass, about two and a quarter a square metre, drawn by the GPU from its grid
-alone. Each tuft's draws are a hash of its cell and its number, so a cell grows the same meadow whenever it comes back:
+A cell holds 288 tufts where all of it is grass, about one and an eighth a square metre
+([[The Meadow Grows Half as Thick]]), drawn by the GPU from its grid alone. Each tuft's draws are a hash of its cell
+and its number, so a cell grows the same meadow whenever it comes back:
 
 - where it stands in the cell, a little clustered, and whether it grows there (its grass share);
 - its height, 0.25 m to 0.72 m, and how lush its patch is: its own tint pulled a little over half way to noise over the cells at
@@ -66,7 +67,8 @@ plants' wind, gusts rolling downwind across the land as slowly as theirs (about 
 ## Its colour and light
 
 The owner's green is lighter and bluer than a grass ground, so each texel is moved by its ground: the biome's low
-ground over the ground the tall tuft's green would stand a shade lighter over, held between 0.5 and 1.6. A texel takes
+ground over the ground the tall tuft's green would stand a shade darker over
+([[The Meadow's Green Stands a Shade Darker]]), held between 0.5 and 1.6. A texel takes
 that ratio's hue as far as it is green and only its light where it is not, so the green becomes the ground's own and
 the petals and dry stalks keep their colours (`texelOver`). A patch's tint lightens or darkens it in four bands, each rounded to its middle, and
 from 0.12 of the reach to 0.6 it gives way to the ground's colour. It is lit as the plants are (the sky, the sun

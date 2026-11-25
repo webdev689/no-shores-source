@@ -5,7 +5,7 @@ import type { Chunk, Range } from './cityBuild.ts';
 import { MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import type { CrystalPlace } from './overtaken.ts';
 import type { Wreck } from './plan.ts';
-import { boxReach, MIDDLE_M } from './tiers.ts';
+import { MIDDLE_M, type Reach, reachFrom } from './tiers.ts';
 
 /** The tier the city's shaders keep a crystal formation in: never dithered (cityShaders.ts TIER_CRYSTAL). */
 export const TIER_CRYSTAL = 8;
@@ -87,10 +87,10 @@ export function crystalInstances(
 
 /** Whether a chunk's middle-distance crystal is drawn from `eye` (from the city's middle): within `MIDDLE_M`. */
 export const withinMiddle = (chunk: Chunk, eye: readonly number[]): boolean =>
-  boxReach(
-    [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
-    [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
-  ).nearest < MIDDLE_M;
+  reachFrom(chunk.middlesLow, chunk.middlesHigh, eye, REACH).nearest < MIDDLE_M;
+
+/** A chunk's reach, laid afresh by each chunk over the last's. */
+const REACH: Reach = { nearest: 0, farthest: 0 };
 
 /** The instance runs to draw of some chunks' crystal (`byChunk[chunk][formation]`), a formation's chunks joined
  *  where their runs meet, laid into `into` (emptied first, so a view keeps one list a pass). */

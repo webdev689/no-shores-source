@@ -1,6 +1,6 @@
 // The community modules stood up for their tests: the core's Gateway side, with a fake Discord that remembers what the
-// bot did to it (posts by channel, edits, direct messages, reactions, members' roles, answers to presses) and can
-// refuse a channel or a role, lose a post or go down for edits.
+// bot did to it (posts by channel, edits, direct messages, reactions, members and their roles, answers to presses)
+// and can refuse a channel or a role, lose a post or go down for edits.
 
 import { GUILD, standGateway } from '../botForTests.ts';
 import type { BotContext, Interaction } from '../kit.ts';
@@ -18,7 +18,7 @@ export type Posted = Record<string, unknown> & { readonly id: string };
 /** A fake Discord's memory, and the fetch that answers from it. */
 export function rememberingDiscord() {
   const world = {
-    members: new Map<string, { roles: string[] }>(),
+    members: new Map<string, { roles: string[]; bot?: boolean }>(),
     posts: new Map<string, Posted[]>(),
     edits: [] as Posted[],
     dms: [] as Posted[],
@@ -28,6 +28,8 @@ export function rememberingDiscord() {
     editsDown: false,
     /** Roles the bot may not give or take, as for a role above its own. */
     refusedRoles: new Set<string>(),
+    /** Roles deleted from the server since a setting named them. */
+    deletedRoles: new Set<string>(),
     /** What a deferred answer to an interaction was changed to. */
     answers: [] as Record<string, unknown>[],
   };
@@ -68,6 +70,19 @@ export function rememberingDiscord() {
         return new Response(null, { status: 204 });
       }
     }
+    if (method === 'GET' && first === 'guilds' && third === 'members' && !fourth) {
+      // Discord's member list: by id, those after `after`, at most `limit`
+      const query = new URL(url).searchParams;
+      const after = BigInt(query.get('after') ?? '0');
+      const listed = [...world.members]
+        .filter(([id]) => BigInt(id) > after)
+        .sort(([one], [two]) => (BigInt(one) < BigInt(two) ? -1 : 1))
+        .slice(0, Number(query.get('limit') ?? 1));
+      return answer(
+        200,
+        listed.map(([id, member]) => ({ user: { id, bot: member.bot ?? false }, roles: member.roles })),
+      );
+    }
     if (first === 'guilds' && third === 'members' && fourth) {
       const member = world.members.get(fourth);
       if (method === 'GET')
@@ -77,6 +92,7 @@ export function rememberingDiscord() {
       const role = parts[5];
       if (fifth === 'roles' && role) {
         if (world.refusedRoles.has(role)) return answer(403, { code: 50013, message: 'Missing Permissions' });
+        if (world.deletedRoles.has(role)) return answer(404, { code: 10011, message: 'Unknown Role' });
         const held = world.members.get(fourth) ?? { roles: [] };
         world.members.set(fourth, held);
         if (method === 'PUT' && !held.roles.includes(role)) held.roles.push(role);

@@ -4,13 +4,13 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { NEAR, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SLOW_CLOCK_S } from '../water/shore.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { runsInView, tilesCasting, tilesInView } from './cull.ts';
+import { addRunsInView, Runs, tilesCasting, tilesInView } from './cull.ts';
 import { NatureField, type NatureGround, type Packed } from './field.ts';
 import { FLORA, type LoadedFlora, loadFlora, MESH_VERTEX_BYTES } from './flora.ts';
 import { FORM_BLOCK_BYTES, FORM_FLOATS, type FormBuffers, formBuffers, type Part } from './forms.ts';
 import { Kept } from './kept.ts';
 import { type Cast, TREE } from './kinds.ts';
-import { FRAME_FLOATS, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
+import { FRAME_FLOATS, GUST_PER_M, NATURE_CAST_SHADER, NATURE_SHADER, SHADE_SEGMENTS } from './natureShader.ts';
 import { standIn } from '../standIns.ts';
 
 /** The camera a frame is drawn from. */
@@ -51,6 +51,31 @@ export function plantWind(
     speed > 0.1 ? [weather.wind[0] / speed, weather.wind[1] / speed] : DEFAULT_WIND;
   return { way, bend: Math.min(2.2, Math.max(0.1, Math.sqrt(speed / BREEZE_MS))), gust: weather.gust };
 }
+
+/**
+ * The gusts' phase over the ground, as the plants and the meadow read it: reckoned from the eye and carried along as
+ * the eye moves, so a turn of the wind swings it only by how far a plant stands from the eye. Reckoned from the
+ * world's corner, hundreds of kilometres off, the weather's slow turn set every plant gusting several times a second.
+ */
+export class Gusts {
+  private from: readonly [number, number] = [0, 0];
+  private phase = 0;
+
+  /** The phase at `anchor` (world metres east and south) for a wind blowing `way` (a unit vector), the eye at `eye`. */
+  phaseAt(anchor: readonly number[], way: readonly [number, number], eye: readonly number[]): number {
+    const [east, south] = [eye[0] ?? 0, eye[1] ?? 0];
+    this.phase += ((east - this.from[0]) * way[0] + (south - this.from[1]) * way[1]) * GUST_PER_M;
+    this.phase %= Math.PI * 2;
+    this.from = [east, south];
+    return (
+      (this.phase + (((anchor[0] ?? 0) - east) * way[0] + ((anchor[1] ?? 0) - south) * way[1]) * GUST_PER_M) %
+      (Math.PI * 2)
+    );
+  }
+}
+
+/** The gusts every plant view reads, so the trees and the grass gust together. */
+export const GUSTS = new Gusts();
 /** How much higher than the plants' reach the eye may stand over the ground below before nothing is drawn, metres. */
 const HIGH_MARGIN_M = 2000;
 /** How long after a biome's flora failed to come a view asks for it again, milliseconds. */
@@ -65,16 +90,11 @@ export function asksFlora(
 ): boolean {
   return loading?.cast !== cast || (loading.retryAt !== null && now >= loading.retryAt);
 }
-const GUST_PER_M = 0.035;
+/** Each form block's dynamic offset, one array a block made once: a draw hands the same array again. */
+const BLOCK_OFFSETS: number[][] = [];
+const blockOffset = (block: number): number[] => (BLOCK_OFFSETS[block] ??= [block * FORM_BLOCK_BYTES]);
 /** WebGPU's storage usage flag, by the specification's value (gpu.ts names the flags the rest of the client uses). */
 const STORAGE_USAGE = 0x80;
-
-/** One draw: a part, its block's offset and a run of the list. */
-interface Draw {
-  readonly part: Part;
-  readonly first: number;
-  readonly count: number;
-}
 
 /** A buffer that grows by halves, so the eye's steps rarely make a new one. */
 interface Grown {
@@ -229,9 +249,16 @@ export class NatureView {
   private bind: GPUBindGroup | null = null;
   private listed: Packed | null = null;
   private visible = new Uint8Array();
-  private draws: Draw[] = [];
+  /** What this frame draws and casts, each a part and a run of the list: kept, so laying them makes nothing. */
+  private readonly draws = new Runs<Part>();
   private casting = new Uint8Array();
-  private casts: Draw[] = [];
+  private readonly casts = new Runs<Part>();
+  /** The frame's terms, laid afresh each frame into the same floats. */
+  private readonly floats = new Float32Array(FRAME_FLOATS);
+  /** The casts' test of a box against the near square, made once: `shadow` is the frame's map. */
+  private shadow: ShadowMap | null = null;
+  private readonly reachesNear = (low: readonly [number, number, number], high: readonly [number, number, number]) =>
+    this.shadow?.reaches(low, high, NEAR) ?? false;
 
   /** `budgetMs` is how long one update may spend scattering newly near tiles. */
   constructor(gpu: Gpu, budgetMs = 6) {
@@ -262,13 +289,15 @@ export class NatureView {
     // plants on a ridge in view from high over the valley beside it.
     const below = ground.sample(frame.eye[0], frame.eye[1]).height * frame.exaggeration;
     if (frame.eye[2] - below > TREE.reachM + HIGH_MARGIN_M) {
-      [this.draws, this.casts] = [[], []];
+      this.draws.clear();
+      this.casts.clear();
       return false;
     }
     const waiting = this.field.update(frame.eye[0], frame.eye[1], ground);
     // Until the biome's flora has loaded, its plants are not drawn; the page is asked to draw again meanwhile.
     if (!this.keepMeshes(this.field.drawnCast, ground.biome)) {
-      [this.draws, this.casts] = [[], []];
+      this.draws.clear();
+      this.casts.clear();
       if (!this.loading?.failed) standIn('plants');
       return !this.loading?.failed;
     }
@@ -280,44 +309,45 @@ export class NatureView {
     const { reading } = SKY_NOW.current;
     const blowing = frame.wind ? { ...BREEZE, way: frame.wind } : plantWind(reading);
     const wind = blowing.way;
-    const gusts = ((packed.anchor[0] * wind[0] + packed.anchor[1] * wind[1]) * GUST_PER_M) % (Math.PI * 2);
-    const floats = new Float32Array(FRAME_FLOATS);
+    const gusts = GUSTS.phaseAt(packed.anchor, wind, frame.eye);
+    const { floats } = this;
     floats.set(frame.fromEye);
-    floats.set([eastFromAnchor, southFromAnchor, -frame.eye[2], frame.exaggeration], 16);
-    floats.set([frame.time % SLOW_CLOCK_S, wind[0], wind[1], gusts], 20);
-    floats.set([ground.snowM, blowing.bend, blowing.gust, 0], 24);
-    floats.set([...(ground.groundColour ?? [0, 0, 0]), ground.groundColour ? 1 : 0], 28);
+    floats[16] = eastFromAnchor;
+    floats[17] = southFromAnchor;
+    floats[18] = -frame.eye[2];
+    floats[19] = frame.exaggeration;
+    floats[20] = frame.time % SLOW_CLOCK_S;
+    floats[21] = wind[0];
+    floats[22] = wind[1];
+    floats[23] = gusts;
+    floats[24] = ground.snowM;
+    floats[25] = blowing.bend;
+    floats[26] = blowing.gust;
+    const colour = ground.groundColour;
+    for (let channel = 0; channel < 3; channel++) floats[28 + channel] = colour?.[channel] ?? 0;
+    floats[31] = colour ? 1 : 0;
     this.gpu.device.queue.writeBuffer(this.frameBuffer, 0, floats);
     const anchorFromEye = [eastFromAnchor, southFromAnchor, -frame.eye[2]] as const;
     if (this.visible.length !== packed.tiles.length / 4) this.visible = new Uint8Array(packed.tiles.length / 4);
     tilesInView(packed, frame.fromEye, anchorFromEye, frame.exaggeration, this.visible);
-    this.draws = [];
+    this.draws.clear();
     const parts = this.meshes?.forms.parts ?? [];
-    for (const group of packed.groups) {
+    const { groups } = packed;
+    for (let index = 0; index < groups.length; index++) {
+      const group = groups[index]!;
       const part = parts[group.form]?.[group.far ? 1 : 0];
-      if (!part) continue;
-      const runs = runsInView(group, this.visible);
-      for (let run = 0; run < runs.length; run += 2) {
-        this.draws.push({ part, first: runs[run] ?? 0, count: runs[run + 1] ?? 0 });
-      }
+      if (part) addRunsInView(group, this.visible, part, this.draws);
     }
-    this.casts = [];
+    this.casts.clear();
     if (shadow?.active) {
       if (this.casting.length !== packed.tiles.length / 4) this.casting = new Uint8Array(packed.tiles.length / 4);
-      tilesCasting(
-        packed,
-        anchorFromEye,
-        frame.exaggeration,
-        (low, high) => shadow.reaches(low, high, NEAR),
-        this.casting,
-      );
-      for (const group of packed.groups) {
+      this.shadow = shadow;
+      tilesCasting(packed, anchorFromEye, frame.exaggeration, this.reachesNear, this.casting);
+      this.shadow = null;
+      for (let index = 0; index < groups.length; index++) {
+        const group = groups[index]!;
         const part = group.far ? undefined : parts[group.form]?.[0];
-        if (!part) continue;
-        const runs = runsInView(group, this.casting);
-        for (let run = 0; run < runs.length; run += 2) {
-          this.casts.push({ part, first: runs[run] ?? 0, count: runs[run + 1] ?? 0 });
-        }
+        if (part) addRunsInView(group, this.casting, part, this.casts);
       }
     }
     if (waiting) standIn('plants');
@@ -327,23 +357,26 @@ export class NatureView {
   /** Draws the near plants `update` found casting into the sun's near shadow map; past it their contact shades stand
    *  in, so they cast nothing into the far one. */
   castInto(pass: GPURenderPassEncoder, shadow: ShadowMap): void {
-    const { meshes, bind } = this;
-    if (!meshes || !bind || this.casts.length === 0 || shadow.cascade !== NEAR) return;
+    const { meshes, bind, casts } = this;
+    if (!meshes || !bind || casts.length === 0 || shadow.cascade !== NEAR) return;
     pass.setPipeline(this.pipelines.cast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.cast));
     pass.setVertexBuffer(0, meshes.vertices);
-    for (const { part, first, count } of this.casts) {
-      pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
-      pass.draw(part.vertexCount, count, part.firstVertex, first);
+    let block = -1;
+    for (let draw = 0; draw < casts.length; draw++) {
+      const part = casts.parts[draw]!;
+      if (part.block !== block) pass.setBindGroup(0, bind, blockOffset((block = part.block)));
+      pass.draw(part.vertexCount, casts.counts[draw]!, part.firstVertex, casts.firsts[draw]!);
     }
   }
 
   /** How many instances and triangles the last update drew, for a page's readout. */
   get drawn(): { readonly instances: number; readonly triangles: number; readonly draws: number } {
     let [instances, triangles] = [0, 0];
-    for (const { part, count } of this.draws) {
+    for (let draw = 0; draw < this.draws.length; draw++) {
+      const count = this.draws.counts[draw]!;
       instances += count;
-      triangles += (part.vertexCount / 3) * count;
+      triangles += (this.draws.parts[draw]!.vertexCount / 3) * count;
     }
     return { instances, triangles, draws: this.draws.length };
   }
@@ -357,18 +390,22 @@ export class NatureView {
     // Every pipeline here shares the shadow's layout, so one group serves them all.
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipelines.shade));
     skyUniformFor(this.gpu.device).bindShared(pass, [2]);
-    for (const { part, first, count } of this.draws) {
+    const { draws } = this;
+    let block = -1;
+    for (let draw = 0; draw < draws.length; draw++) {
+      const part = draws.parts[draw]!;
       if (!part.shaded) continue;
-      pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
-      pass.draw(SHADE_SEGMENTS * 3, count, 0, first);
+      if (part.block !== block) pass.setBindGroup(0, bind, blockOffset((block = part.block)));
+      pass.draw(SHADE_SEGMENTS * 3, draws.counts[draw]!, 0, draws.firsts[draw]!);
     }
     pass.setVertexBuffer(0, meshes.vertices);
     let shown: GPURenderPipeline | null = null;
-    for (const { part, first, count } of this.draws) {
+    for (let draw = 0; draw < draws.length; draw++) {
+      const part = draws.parts[draw]!;
       const pipeline = part.far ? this.pipelines.sprites : this.pipelines.plants;
       if (pipeline !== shown) pass.setPipeline((shown = pipeline));
-      pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);
-      pass.draw(part.vertexCount, count, part.firstVertex, first);
+      if (part.block !== block) pass.setBindGroup(0, bind, blockOffset((block = part.block)));
+      pass.draw(part.vertexCount, draws.counts[draw]!, part.firstVertex, draws.firsts[draw]!);
     }
   }
 
@@ -377,7 +414,9 @@ export class NatureView {
     this.frameBuffer.destroy();
     this.dropMeshes();
     for (const grown of [this.slots, this.list, this.corners]) grown.buffer?.destroy();
-    [this.bind, this.draws, this.loading] = [null, [], null];
+    [this.bind, this.loading] = [null, null];
+    this.draws.clear();
+    this.casts.clear();
   }
 
   /** The biome's baked meshes, terms and pictures on the GPU, taken from those kept or loaded when the biome changes.

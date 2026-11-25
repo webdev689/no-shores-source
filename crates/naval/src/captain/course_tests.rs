@@ -40,7 +40,7 @@ fn running_it_takes_the_best_wind_within_sixty_degrees_of_dead_away() {
     // The threat lies due south of it; the wind blows to the north-east.
     let wind = [1.5 / 2f64.sqrt(), -1.5 / 2f64.sqrt()];
     let away = flee_course([0.0, 0.0], [0.0, 100.0], wind);
-    assert!(away.abs() <= 60.0 * DEG + 1e-9);
+    assert!(away.abs() <= 60.0_f64.to_radians() + 1e-9);
     let dead_away = flee_course([0.0, 0.0], [0.0, 100.0], [0.0, -1.5]);
     assert!(near(dead_away, 0.0), "with the wind behind it, it runs dead away");
 }

@@ -1,4 +1,5 @@
-// The world's ambience: the sea's, the social space's and each island's by its climate, heard wherever the player is.
+// The world's ambience: the sea's, the social space's, each island's by its climate, and a Breach's (its run's spaces
+// under the ground, and its gate's hollow over the vale's own near it), heard wherever the player is.
 // The game tells it each frame where the player stands and looks (`onFoot`, `atSea`) and steps it once (`frame`); it
 // plays the place's ambience through the Ambience volume, crossfading over a few seconds as the player moves on, and
 // lets every place fade to nothing while the game shows none, behind a loading veil. Its beds and calls are the owner's
@@ -11,14 +12,16 @@ import { WORLD_CLOCK, hourOf } from '../../../sky/worldClock.ts';
 import type { Landmass } from '../../landmass.ts';
 import { listen } from '../../../listener.ts';
 import { ambienceOutput } from '../../uiSounds.ts';
+import { type BreachPlan, spaceAt } from '../../breachPlan.ts';
 import type { NodeInfo } from '../../worldData.ts';
 import { type Place, placeOf } from '../place.ts';
+import { BREACH_HEARD } from './breachHeard.ts';
 import type { Random } from './dsp.ts';
-import { ambienceOf, fadeGain, nearness, phasesAt, stepLevel, walkedOn, wayOf } from './law.ts';
-import { type Lay, shoreOf } from './places.ts';
-import { type Heard, MOST_CALLS, ScapePlayer } from './player.ts';
+import { ambienceOf, fadeGain, nearness, phasesAt, stepLevel, underground, walkedOn, wayOf } from './law.ts';
+import { type Lay, type Point3, shoreOf } from './places.ts';
+import { type Heard, ScapePlayer } from './player.ts';
 import { type FightHeard, seaFightCue } from './seaFight.ts';
-import { phasesOfSun, rainLevel, shelterOf, thunderOf, weatherOf } from './weatherLaw.ts';
+import { FAIR, phasesOfSun, rainLevel, shelterOf, thunderOf, weatherOf } from './weatherLaw.ts';
 
 /** The ear's height over its deck at sea, metres. */
 const DECK_EAR_M = 3;
@@ -34,6 +37,21 @@ const COAST_ON_FOOT: readonly [number, number] = [60, 500];
  *  page's frames stop). */
 const THUNDER_AHEAD_S = 0.25;
 const THUNDER_LATE_S = 1.5;
+/** A Breach's gate's hollow is heard over the vale's own within this far of the gate, metres: as near as its banner
+ *  stands first (breachView.ts GATE_NEAR_M). */
+const HOLLOW_HEARD_M = 60;
+/** Under the ground no hour is told: every rate there is the same at every hour, so the day's stands for them all. */
+const NO_HOUR = { dawn: 0, day: 1, dusk: 0, night: 0 } as const;
+/** A Breach's run has no land to read: its voices stand by the ear's own height (scapes.ts `cave`). */
+const NO_LAND: Lay = {
+  heightAt: () => 0,
+  outline: [],
+  rivers: [],
+  harbour: null,
+  city: null,
+  plaza: null,
+  smithy: null,
+};
 
 /** Where the ambience plays: a context and the node it goes into; null while it may not sound. */
 export type AmbienceOutput = () => { readonly audio: BaseAudioContext; readonly out: AudioNode } | null;
@@ -84,6 +102,10 @@ export class Ambience {
   private hidden = false;
   /** The sea fight's events since the last frame, heard where each happens. */
   private fought: FightHeard | null = null;
+  /** The space of a Breach's run last heard, kept while the listener stands between spaces. */
+  private space: string | null = null;
+  /** A Breach's gate's hollow sounding over the vale's own. */
+  private hollow: ScapePlayer | null = null;
 
   constructor(
     continents: Parameters<typeof placeOf>[0],
@@ -103,14 +125,33 @@ export class Ambience {
   }
 
   /** The player on foot in `node` of `land`, the camera at `ear`, a social space's people walking about. Underground,
-   *  in a dungeon, none of the open air is heard: its place fades out as behind a veil. */
-  onFoot(node: NodeInfo, land: Landmass, ear: Ear, folk: Heard['folk'] = [], underground = false): void {
-    if (underground) return;
+   *  in a dungeon, none of the open air is heard: its place fades out as behind a veil; in a Breach's run, the space
+   *  under the listener is heard instead (BREACH_HEARD). By a Breach's gate its hollow is heard over the vale. */
+  onFoot(node: NodeInfo, land: Landmass, ear: Ear, folk: Heard['folk'] = [], below = false): void {
+    const breach = BREACH_HEARD.current;
+    if (below) {
+      if (breach && 'run' in breach) this.hearRun(node, breach.run, ear);
+      else this.space = null;
+      return;
+    }
+    this.space = null;
     const lay = this.layOf(land);
     const shore = shoreOf([ear.eye[0], ear.eye[1]], lay.outline);
     this.hear(placeOf(this.continents, node), ear.eye, ear.yaw, [0, 0], lay, {
       coast: nearness(shore?.distance ?? Infinity, ...COAST_ON_FOOT),
       folk,
+      gate: breach && 'gate' in breach ? breach : null,
+    });
+  }
+
+  /** The space of a Breach's run under the ear, or the last while it stands between them; the Descent at first. */
+  private hearRun(node: NodeInfo, plan: BreachPlan, ear: Ear): void {
+    const place = placeOf(this.continents, node);
+    const climate = place.kind === 'sea' ? 'temperate-coast' : place.climate;
+    this.space = spaceAt(plan, ear.eye[0], ear.eye[1])?.key ?? this.space ?? 'descent';
+    this.hear({ kind: 'breach', climate, space: this.space }, ear.eye, ear.yaw, [0, 0], NO_LAND, {
+      coast: 0,
+      folk: [],
     });
   }
 
@@ -137,6 +178,7 @@ export class Ambience {
     this.way += (wayOf(voyage.sailing, voyage.pace) - this.way) * Math.min(1, seconds / WAY_FOLLOW_S);
     this.deck += ((voyage.deck ? 1 : DECK_FROM_ABOVE) - this.deck) * Math.min(1, seconds / DECK_FOLLOW_S);
     const coast = nearness(shore?.distance ?? Infinity, ...COAST_AT_SEA);
+    this.space = null;
     this.hear({ kind: 'sea' }, [ship[0], ship[1], DECK_EAR_M], ear.yaw, ship, lay, { coast, folk: [] });
   }
 
@@ -145,6 +187,7 @@ export class Ambience {
     this.clock += seconds;
     const heard = this.heard;
     this.heard = null;
+    BREACH_HEARD.current = null;
     const output = this.output();
     if (!output) {
       this.stopAll();
@@ -174,8 +217,10 @@ export class Ambience {
       player.gain.gain.setTargetAtTime(fadeGain(player.level) * player.scape.level, now, 0.05);
       if (still) player.frame(this.clock, still, player.target === 1 && heard !== null);
     }
+    this.hollowFrame(heard, audio, master, seconds);
     const live = heard ? this.players.find((player) => player.key === heard.key) : undefined;
-    if (heard) this.thunder(heard, live);
+    // No strike thunders under the ground.
+    if (heard && !underground(heard.key)) this.thunder(heard, live);
     if (heard && live && this.stepped && heard.key === 'sea') live.footstep(heard);
     this.stepped = false;
     const fought = this.fought;
@@ -191,19 +236,22 @@ export class Ambience {
     this.players = this.players.filter((player) => !gone.includes(player));
   }
 
-  /** What it is playing: the places sounding, their beds playing recordings, and the calls sounding. */
-  get stats(): {
-    readonly places: number;
-    readonly sources: number;
-    readonly calls: number;
-    readonly mostCalls: number;
-  } {
-    return {
-      places: this.players.length,
-      sources: this.players.reduce((sum, player) => sum + player.sources, 0),
-      calls: this.calls.count,
-      mostCalls: MOST_CALLS,
-    };
+  /** A Breach's gate's hollow, over the vale's own while the ear stands near the gate, fading as places do. */
+  private hollowFrame(heard: Heard | null, audio: BaseAudioContext, master: GainNode, seconds: number): void {
+    const gate = heard?.gate;
+    const near =
+      !!heard && !!gate && Math.hypot(heard.ear[0] - gate.at[0], heard.ear[1] - gate.at[1]) <= HOLLOW_HEARD_M;
+    if (near && !this.hollow) this.hollow = new ScapePlayer(audio, master, 'breach.gate', this.random, this.calls);
+    const hollow = this.hollow;
+    if (!hollow) return;
+    hollow.target = near ? 1 : 0;
+    hollow.level = stepLevel(hollow.level, hollow.target, seconds);
+    hollow.gain.gain.setTargetAtTime(fadeGain(hollow.level) * hollow.scape.level, audio.currentTime, 0.05);
+    const still = heard ?? this.lastHeard;
+    if (still) hollow.frame(this.clock, still, near);
+    if (hollow.level > 0 || near) return;
+    hollow.stop();
+    this.hollow = null;
   }
 
   private layOf(land: Landmass): Lay {
@@ -220,20 +268,29 @@ export class Ambience {
     yaw: number,
     origin: readonly [number, number],
     lay: Lay,
-    more: { readonly coast: number; readonly folk: Heard['folk'] },
+    more: {
+      readonly coast: number;
+      readonly folk: Heard['folk'];
+      readonly gate?: { readonly gate: Point3; readonly spire: Point3; readonly hum: number } | null;
+    },
   ): void {
     const way = place.kind === 'sea' ? this.way : 0;
     const deck = place.kind === 'sea' ? this.deck : 1;
+    const key = ambienceOf(place);
+    // Neither the sky's hour nor its weather reaches under the ground.
+    const below = underground(key);
     const { reading } = SKY_NOW.current;
-    const phases =
-      this.hour !== null
+    const phases = below
+      ? NO_HOUR
+      : this.hour !== null
         ? phasesAt(this.hour)
         : reading
           ? phasesOfSun(reading.sun)
           : phasesAt(hourOf(WORLD_CLOCK.seconds()));
-    const weather = weatherOf(reading);
+    const weather = below ? FAIR : weatherOf(reading);
+    const gate = more.gate;
     this.heard = {
-      key: ambienceOf(place),
+      key,
       ear,
       yaw,
       origin,
@@ -247,10 +304,12 @@ export class Ambience {
         wind: weather.wind,
         rain: rainLevel(weather.rain),
         sand: weather.sand,
+        fill: gate?.hum ?? 0,
       },
       weather,
       shelter: shelterOf(weather, phases),
       folk: more.folk,
+      gate: gate ? { at: gate.gate, spire: gate.spire } : null,
     };
   }
 
@@ -288,7 +347,8 @@ export class Ambience {
 
   private stopAll(): void {
     for (const player of this.players) player.stop();
-    this.players = [];
+    this.hollow?.stop();
+    [this.players, this.hollow] = [[], null];
     this.master?.disconnect();
     [this.context, this.master] = [null, null];
   }

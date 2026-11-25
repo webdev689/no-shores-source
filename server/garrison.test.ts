@@ -104,7 +104,7 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
 
 /** The room door's agreement test holds the same run and fingerprint: the node as a patrol whose layout marks a foes'
  *  site the player runs near, so its group stands mid-run on a mesh baked round it then. */
-const PATROL_SITE_HASH = '9dde7381';
+const PATROL_SITE_HASH = '4e39f0f0';
 
 test('a patrol’s foes’ site stands its group to the same fingerprint through WebAssembly as natively', () => {
   const { hash, mostAlert } = runIn({ ...NODE, kind: 'patrol', foes: [[-60, 40]] });

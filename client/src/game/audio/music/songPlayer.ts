@@ -1,15 +1,16 @@
 // The song player: a score's notes onto the audio clock. It wakes on a coarse timer and schedules every note falling
 // in the next quarter second at its exact time, so a stalled page never makes a note late (a stall past the window
 // skips the gap rather than playing the past all at once). A song loops on its bar line, to the tick; a song written
-// as takes plays the take its arranger chooses at each seam, also to the tick. Each note is built from the FM bank: a
-// modulator sine bending a carrier's pitch, its brightness settling as a real instrument's does, in unison copies for
-// a song's own ensembles; each drum by drumVoice.ts. Each layer role plays through a gain of its own, so the director
-// brings layers in and out on a bar line; a note is only built while its layer plays. Under the song's own level, its
-// press and a fader for fades, the whole stands at MUSIC_GAIN in the music's bus.
+// as takes plays the take its arranger chooses at each seam, also to the tick. Each note is built from the FM bank, in
+// unison copies for a song's own ensembles, each drum by drumVoice.ts; a track or drum played on a recording
+// (sampled.ts) plays it once it has come. Each layer role plays through a gain of its own, so the director brings
+// layers in and out on a bar line; a note is only built while its layer plays. Under the song's own level, its press
+// and a fader for fades, the whole stands at MUSIC_GAIN in the music's bus.
 
 import { type Sounding, buildDrum } from './drumVoice.ts';
-import { type FmVoice, PERCUSSION_CHANNEL, fmVoice, noteToHz, panPosition, velocityGain } from './fmBank.ts';
+import { type FmVoice, PERCUSSION_CHANNEL, drumOf, fmVoice, noteToHz, panPosition, velocityGain } from './fmBank.ts';
 import { Arranger } from './form.ts';
+import { type Recordings, lowpassInto, rateOf, sampledNote } from './sampled.ts';
 import { type Note, type Press, ROLES, type Role, type Song, TICKS_PER_BEAT, type Track } from './score.ts';
 
 /** How far ahead each wake schedules, and how often it wakes: the window must outlast the wait. */
@@ -135,6 +136,8 @@ export class SongPlayer {
   private readonly layers = new Map<Role, { node: GainNode; ramp: Ramp }>();
   private readonly channels = new Map<string, GainNode>();
   private readonly panned = new Map<string, StereoPannerNode>();
+  /** Each channel's and layer's lowpass for its sampled voices, one for all its notes. */
+  private readonly lowpassed = new Map<string, AudioNode>();
   private press: { comp: DynamicsCompressorNode; drive: GainNode; top: GainNode } | null = null;
   private floor: BiquadFilterNode | null = null;
   private levelTo: AudioNode | null = null;
@@ -142,6 +145,7 @@ export class SongPlayer {
   private readonly timed: boolean;
   private readonly clock: () => number;
   private readonly arranger: Arranger;
+  private readonly recordings: Recordings;
   private playing: Song | null = null;
   private tracks: (Track | undefined)[] = [];
   private looping = true;
@@ -156,13 +160,20 @@ export class SongPlayer {
   private startedAt = 0;
 
   /** `timed`: pumped by its own timer, as in the game; `clock`: the time it schedules against (a render's own);
-   *  `arranger`: who chooses the takes, shared by players that should remember the same fights. */
+   *  `arranger`: who chooses the takes, shared by players that should remember the same fights; `recordings`: where a
+   *  sampled voice's recording comes from (none, and every voice is the FM bank's, unless it says). */
   constructor(
     audio: BaseAudioContext,
     out: AudioNode,
-    { timed = true, clock = () => audio.currentTime, arranger = new Arranger() } = {},
+    {
+      timed = true,
+      clock = () => audio.currentTime,
+      arranger = new Arranger(),
+      recordings = (() => null) as Recordings,
+    } = {},
   ) {
     this.audio = audio;
+    this.recordings = recordings;
     this.timed = timed;
     this.clock = clock;
     this.arranger = arranger;
@@ -236,9 +247,11 @@ export class SongPlayer {
     this.playing = song;
     this.tracks = [];
     for (const track of song.tracks) this.tracks[track.channel] = track;
-    for (const node of [...this.channels.values(), ...this.panned.values()]) node.disconnect();
+    for (const node of [...this.channels.values(), ...this.panned.values(), ...this.lowpassed.values()])
+      node.disconnect();
     this.channels.clear();
     this.panned.clear();
+    this.lowpassed.clear();
     this.level.gain.value = song.level;
     this.route(song.press);
     this.take = loop ? this.arranger.opening(song) : null;
@@ -396,14 +409,14 @@ export class SongPlayer {
 
   /** A note's last gain into its channel, through the channel's panner for its place where it is not in the middle:
    *  one panner a place, not a note, as a pan is the same sum either way. Answers what to let go of as it ends. */
-  private connect(gain: AudioNode, pan: number, note: Note): AudioNode {
-    const into = this.channel(note.channel, note.role);
+  private connect(gain: AudioNode, pan: number, note: Note, sampled = false): AudioNode {
+    const into = sampled ? this.lowpass(note) : this.channel(note.channel, note.role);
     if (!pan) {
       gain.connect(into);
       return gain;
     }
     const place = Math.max(-1, Math.min(1, pan));
-    const key = `${note.channel}:${note.role}:${place}`;
+    const key = `${note.channel}:${note.role}:${place}:${sampled}`;
     let panner = this.panned.get(key);
     if (!panner) {
       panner = this.audio.createStereoPanner();
@@ -415,6 +428,17 @@ export class SongPlayer {
     return gain;
   }
 
+  /** A channel's lowpass for a layer's sampled voices, into its gain. */
+  private lowpass(note: Note): AudioNode {
+    const key = `${note.channel}:${note.role}`;
+    let node = this.lowpassed.get(key);
+    if (!node) {
+      node = lowpassInto(this.audio, this.channel(note.channel, note.role));
+      this.lowpassed.set(key, node);
+    }
+    return node;
+  }
+
   /** Builds one note and schedules it. */
   private voice(note: Note, when: number, seconds: number): void {
     const amp = velocityGain(note.velocity);
@@ -422,6 +446,7 @@ export class SongPlayer {
     if (note.channel === PERCUSSION_CHANNEL) return this.drum(note, when, amp);
     const track = this.tracks[note.channel];
     if (!track) return;
+    if (track.sample && this.sampled(track, note, when, seconds, amp)) return;
     const own = track.voice;
     const spec = { ...fmVoice(track.program), ...own };
     const audio = this.audio;
@@ -486,9 +511,39 @@ export class SongPlayer {
     this.sounding.push({ endsAt: end, stop: () => oscillators.forEach((oscillator) => oscillator.stop()) });
   }
 
-  /** Builds one drum hit: the bank's, under the song's own drum for its key where its kit has one. */
+  /** Plays a note on its track's recording, answering whether it could: not until the recording has come, nor while
+   *  a pitched cue has no root. */
+  private sampled(track: Track, note: Note, when: number, seconds: number, amp: number): boolean {
+    const sample = track.sample;
+    const rate = sample ? rateOf(sample, note.note) : null;
+    const recording = sample && rate !== null ? this.recordings(this.audio, sample.cue) : null;
+    if (!sample || rate === null || !recording) return false;
+    const pan = panPosition(track.pan);
+    const played = { rate, when, held: seconds, amp };
+    const into = (gain: AudioNode) => this.connect(gain, pan, note, true);
+    this.sounding.push(sampledNote(this.audio, recording, sample, played, into));
+    return true;
+  }
+
+  /** Builds one drum hit: on its recording where the kit samples it and it has come, lasting no longer than the kit's
+   *  drum and a swell landing where that drum's would; else the bank's, under the song's own drum for its key. */
   private drum(note: Note, when: number, amp: number): void {
+    const sample = this.playing?.kit.samples?.get(note.note);
+    const recording = sample ? this.recordings(this.audio, sample.cue) : null;
     const own = this.playing?.kit.drums.get(note.note);
+    if (sample && recording) {
+      const shape = { ...drumOf(note.note), ...own };
+      const rate = 2 ** ((sample.shift ?? 0) / 12);
+      // A swell's recording is started, or entered, so that it ends where the kit's own lands.
+      const early = sample.lands === undefined ? 0 : recording.buffer.duration / rate - sample.lands;
+      const [begins, offset] = early > 0 ? [when, early * rate] : [when - early, 0];
+      // A swell begun late rises for what is left of its attack.
+      const drum = { attack: Math.max(0, shape.attack - (begins - when)), decay: shape.decay };
+      const played = { rate, when: begins, held: 0, amp, drum, offset };
+      const into = (gain: AudioNode) => this.connect(gain, 0, note, true);
+      this.sounding.push(sampledNote(this.audio, recording, sample, played, into));
+      return;
+    }
     this.sounding.push(buildDrum(this.audio, note.note, own, when, amp, (gain) => this.connect(gain, 0, note)));
   }
 }

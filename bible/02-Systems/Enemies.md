@@ -125,10 +125,16 @@ out among them ([[Foes]]).
 | 43 | Bulwark (Lattice) | Brute | `mace_iron` | `shield_kite_iron` | Elite, Miniboss |
 | 44 | Heart (Lattice) | Captain | `flail_iron` | | Boss, with no phases of its own yet |
 | 45 | Tithe-Taker | Captain | `mace_iron` | | Elite |
+| 46 | Bell (Lattice) | Brute, never moving or striking | | | Minor |
+| 47 | The Scrivener (Lattice) | Archer, standing off half as far again | `bow_short_iron` | | Boss |
+| 48 | The Steward (Lattice) | Captain | `flail_iron` | | Boss |
 
 Types 21 to 38 are the Elite Dungeons' Bosses, one each ([[Activities]]): each a Grey Tithe land Captain, the faction
 of the dungeon garrison it ends, at Boss rank, fighting in Corvane's three phases under a name of its own over its
 bar, dressed as Corvane is.
+
+Types 46 to 48 are the Drowned Vale's own ([[Breaches]]): its crystal bells, which the room keeps and which have no
+figure, and its two great foes, the Scrivener in the Idol's body and the Steward in the Heart's.
 
 The Lattice's hands are those of the forge's weapons of the same reach: the [[Lattice]]'s own blades, emitter, maul and
 anchor are drawn and dressed over them. A foe may stand under a name of its own in place of its type's, sent with it: a
@@ -226,8 +232,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   each in its caverns (a coven's or a cave's area, at the area's middle) and on its runs' beats short of their end
   arenas, which hold their objective's site ([[Layouts]], "Runs"); one in the garrison's own square stands none, its
   ground held already. A site's group stands the first time a player comes within 150 m of it, none is within
-  40 m, and the room's living foes leave room for all of it, on a navmesh baked round the site then as a quest's
-  place's is, so a room opens as quickly as before. It is drawn as a
+  40 m, and the room's living foes leave room for all of it, on a navmesh baked round the site then, a slice a tick, as
+  a quest's place's is ([[Navmesh]]), so a room opens as quickly as before. It is drawn as a
   patrol's other groups are (two to four Runners, Collectors and Crossbowmen, Minor or Major, at the island's levels,
   raised by the seas, a shield drawn as any foe's), from the room's seed and where the site is, so every machine
   stands the same; it stands round the site's middle, or the nearest point of the lattice within 20 m where its foes

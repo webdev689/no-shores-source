@@ -93,23 +93,31 @@ test('the warning counts down, death offers Respawn only once it may, and the vi
   hud.reach({ kind: 'warned', secondsLeft: 4.2 });
   let laid = frame(ui, hud, [{ kind: 'pointer', x: 5, y: 700 }]);
   assert.ok(words(laid).includes('RETURN TO THE AREA') && words(laid).includes('5'));
-  assert.equal(ui.takesPointer, false, 'the darkened edge is not the interface’s');
+  assert.equal(ui.takes(5, 700), false, 'the darkened edge is not the interface’s');
   let risen = 0;
   hud.onRespawn(() => (risen += 1));
   // A fall plays out before death is told; then the words say how.
-  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: true, told: false });
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, respawnIn: 3, fell: true, told: false });
   assert.ok(!words(frame(ui, hud)).includes('YOU DIED'));
-  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: true, told: true });
-  assert.ok(words(frame(ui, hud)).includes('You fell.'));
-  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, fell: false, told: true });
+  // Told, the seconds before Respawn may be pressed are counted.
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, respawnIn: 3, fell: true, told: true });
+  assert.ok(words(frame(ui, hud)).includes('You fell. Respawn in 3 s'));
+  hud.reach({ kind: 'dead', secondsDead: 1, canRespawn: false, respawnIn: 3, fell: false, told: true });
   laid = frame(ui, hud);
-  assert.ok(words(laid).includes('Respawn…') && words(laid).includes('You strayed too far from the area.'));
+  assert.ok(
+    words(laid).includes('Respawn…') && words(laid).includes('You strayed too far from the area. Respawn in 3 s'),
+  );
   laid = clickOn(ui, hud, laid, 'hud:respawn');
   assert.equal(risen, 0);
-  hud.reach({ kind: 'dead', secondsDead: 5, canRespawn: true, fell: false, told: true });
+  hud.reach({ kind: 'dead', secondsDead: 5, canRespawn: true, respawnIn: 0, fell: false, told: true });
   laid = frame(ui, hud);
   clickOn(ui, hud, laid, 'hud:respawn');
   assert.equal(risen, 1);
+  // Where the place stands them again itself, no Respawn waits greyed: the words say when.
+  hud.reach({ kind: 'dead', secondsDead: 50, canRespawn: false, respawnIn: 0, fell: true, told: true, waits: true });
+  laid = frame(ui, hud);
+  assert.ok(!words(laid).includes('Respawn…') && !words(laid).includes('Respawn'));
+  assert.ok(words(laid).includes('You fell. You stand again once the encounter is won or your company falls.'));
 });
 
 test('a mark is pressed by its ring, its name and note under it; a held one points and hides its note', () => {
@@ -144,11 +152,11 @@ test('a mark is pressed by its ring, its name and note under it; a held one poin
 test('the veil stands over all and takes the pointer until it is lifted', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   frame(ui, hud, [{ kind: 'pointer', x: 640, y: 360 }]);
-  assert.equal(ui.takesPointer, true, 'the HUD starts veiled');
+  assert.equal(ui.takes(640, 360), true, 'the HUD starts veiled');
   hud.veil(null);
   frame(ui, hud);
   frame(ui, hud);
-  assert.equal(ui.takesPointer, false);
+  assert.equal(ui.takes(640, 360), false);
 });
 
 test('a trip’s veil is the loading screen: the logo, LOADING and its words; failed, its words alone', () => {

@@ -1,4 +1,4 @@
-//! Travel by the held map ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]): a course into another
+//! Travel by the held map: a course into another
 //! water, asked with the travel flag, takes the ship most of the way at once. The room judges it as any course, and
 //! refuses it besides while the ship fights, has a hostile ship on its heels, or its player is off the helm, and for a
 //! course that ends in the water the ship is in. Taken, the ship lies on the course's last leg short of its end,

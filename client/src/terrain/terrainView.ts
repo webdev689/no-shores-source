@@ -3,7 +3,8 @@ import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
-import { ANCHOR_M, wideTexels } from '../water/waterCommon.ts';
+import { ANCHOR_M } from '../water/waterCommon.ts';
+import { wideTexels } from '../water/wideTexels.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { CLIPMAP_LEVELS, type ClipLevel, quadOrder, ringDraws } from './clipmap.ts';
 import {

@@ -7,7 +7,7 @@ import { COSMETICS, type CosmeticKind, type CosmeticSource } from '../../forge/c
 import type { GearState } from '../../network/gearMessages.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { RARITIES } from '../../player/gear.ts';
-import { EMBLEMS } from '../emblemArt.ts';
+import { EMBLEMS } from '../../plus/emblemArt.ts';
 import { owned } from '../../player/factionNames.ts';
 
 /** A row of the screen: the emblems, or one kind of cosmetic. */
@@ -65,6 +65,9 @@ export function howHad(source: CosmeticSource, kind: CosmeticKind): string {
     const rank = source.rank ?? 1;
     return `Reach ${factionOwn(source.faction ?? 0)} ${ORDINALS[rank - 1] ?? `${rank}th`} rank.`;
   }
+  // A Breach's dye and horse come by chance with its last encounter's first clear a week, likelier at Hard
+  // (crates/gear/src/breach.rs `rewards_chance`).
+  if (source.kind === 'breach') return "A chance with the Steward's first clear each week, likelier at Hard.";
   return 'Yours from the start.';
 }
 

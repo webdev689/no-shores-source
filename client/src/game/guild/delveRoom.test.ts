@@ -1,18 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { nodeRoom, runAsk } from '../../../../server/roomNames.ts';
-import { DELVE_STYLES, delveBase, delveLaid, delveRoom, gateTier } from './delveRoom.ts';
+import { runOf } from '../rooms.ts';
+import { DELVE_STYLES, delveBase, delveLaid, gateTier } from './delveRoom.ts';
 import { weekOf } from './guildLaw.ts';
 
 const KEY = '0123456789abcdef0123456789abcdef';
 const gate = (tier: number, building = 0) => ({ id: 3, kind: 'gate', tier, building, x: 2, y: 2, turn: 0 });
 
 test("the guild dungeon's run is named after its outpost, its tier at Elite or Abyss, then its instance", () => {
-  assert.equal(delveRoom(KEY, 'crown-isle', 0, 'abcd1234'), `node-crown-isle--guild-${KEY}--run-abcd1234`);
-  assert.equal(delveRoom(KEY, 'crown-isle', 1, 'abcd1234'), `node-crown-isle--guild-${KEY}--elite--run-abcd1234`);
+  const run = (tier: number) => runOf(delveBase(KEY, 'crown-isle', tier), 'abcd1234');
+  assert.equal(run(0), `node-crown-isle--guild-${KEY}--run-abcd1234`);
+  assert.equal(run(1), `node-crown-isle--guild-${KEY}--elite--run-abcd1234`);
   assert.equal(delveBase(KEY, 'crown-isle', 2), `node-crown-isle--guild-${KEY}--abyss`);
   for (const tier of [0, 1, 2]) {
-    const named = nodeRoom(delveRoom(KEY, 'crown-isle', tier, 'abcd1234').slice('node-'.length));
+    const named = nodeRoom(run(tier).slice('node-'.length));
     assert.deepEqual(named, {
       id: 'crown-isle',
       seas: tier,
@@ -20,9 +22,10 @@ test("the guild dungeon's run is named after its outpost, its tier at Elite or A
       run: 'abcd1234',
       playlist: null,
       guild: KEY,
+      breach: null,
     });
     // Its ask is the host's, which reads the outpost first (`delveHost.ts`).
-    assert.equal(runAsk(delveRoom(KEY, 'crown-isle', tier, 'abcd1234'), 0), null);
+    assert.equal(runAsk(run(tier), 0), null);
   }
 });
 

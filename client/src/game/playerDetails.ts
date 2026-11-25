@@ -1,7 +1,7 @@
 import type { Details } from '../network/accounts.ts';
 import { RARITIES, itemName, slotName, statless } from '../player/gear.ts';
 import type { Node } from '../ui/node.ts';
-import { emblemOf } from './emblemArt.ts';
+import { emblemOf } from '../plus/emblemArt.ts';
 import {
   INK,
   elementNode,

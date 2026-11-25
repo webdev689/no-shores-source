@@ -87,10 +87,6 @@ export class EntranceCardView {
     play('close');
   }
 
-  get open(): boolean {
-    return this.card !== null;
-  }
-
   /** The card this frame over the dimmed world, its presses heard; nothing while it is shut. */
   readonly layer: Layer = (ui: Interface) => {
     if (!this.card) return null;

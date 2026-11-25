@@ -76,10 +76,18 @@ fn opening_tasks() -> Vec<&'static str> {
 }
 
 #[test]
-fn the_opening_hears_the_stranger_then_walks_round_the_counters_arms_and_dresses_then_hears_the_houses() {
+fn the_opening_hears_the_stranger_walks_round_the_counters_takes_its_ship_arms_and_dresses_then_hears_the_houses() {
     assert_eq!(
         opening_tasks(),
-        ["hear-the-stranger", "find-your-way", "arm-yourself", "wear-them", "hear-three-houses", "choose-house"]
+        [
+            "hear-the-stranger",
+            "find-your-way",
+            "your-ship",
+            "arm-yourself",
+            "wear-them",
+            "hear-three-houses",
+            "choose-house"
+        ]
     );
     let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
     let talks = |task: usize| -> Vec<(&str, Option<&str>)> {
@@ -93,8 +101,10 @@ fn the_opening_hears_the_stranger_then_walks_round_the_counters_arms_and_dresses
     };
     assert_eq!(talks(0), [("stranger", None)]);
     let counters: Vec<&str> = talks(1).iter().map(|(to, _)| *to).collect();
-    assert_eq!(counters, ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"]);
+    assert_eq!(counters, ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail"]);
     assert!(talks(1).iter().all(|(_, scene)| scene.is_some()), "each keeper says what their counter is for");
+    assert_eq!(talks(2), [("harbourmaster", Some("roundHarbour"))], "then the Harbourmaster, alone");
+    assert!(opening.tasks[2].reward.ship && opening.tasks.iter().filter(|task| task.reward.ship).count() == 1);
     assert_eq!(opening.tasks[0].reward.aurem, 400, "the stranger's gift");
 }
 
@@ -147,11 +157,11 @@ fn the_tack_gives_the_bay_worn_on_the_round_once_and_never_a_second_and_the_stra
 }
 
 #[test]
-fn a_goal_gives_aurem_or_the_horse_and_nothing_of_a_house_s() {
+fn a_goal_gives_aurem_or_the_horse_and_nothing_of_a_house_s_nor_the_ship() {
     let given = goal(r#"{ "kind": "talk", "to": "tack", "text": "t", "reward": { "horse": true, "aurem": 5 } }"#);
     assert!(given.reward.horse && given.reward.aurem == 5 && given.problem().is_none());
     assert!(goal(r#"{ "kind": "talk", "to": "tack", "text": "t" }"#).reward == crate::quests::RewardDef::default());
-    for house in [r#"{ "art": true }"#, r#"{ "tenet": 1 }"#, r#"{ "fragments": 1 }"#] {
+    for house in [r#"{ "art": true }"#, r#"{ "tenet": 1 }"#, r#"{ "fragments": 1 }"#, r#"{ "ship": true }"#] {
         let text = format!(r#"{{ "kind": "talk", "to": "tack", "text": "t", "reward": {house} }}"#);
         assert!(goal(&text).problem().is_some(), "{house}");
     }

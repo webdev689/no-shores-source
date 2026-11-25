@@ -106,6 +106,9 @@ export const CARRIED = 0;
 export const VAULTED = 1;
 export const WORN = 2;
 
+/** What the page says to a player who keeps no ship yet, as the room's gate to the sea says it (`gear::gate`). */
+export const NO_SHIP_YET = "You have no ship yet. The Harbourmaster in Overlook's market has one for you.";
+
 /** Why an ask was refused, by the room's answer numbers: the gear crate's refusals, then the room's own. */
 const REFUSALS: Readonly<Record<number, string>> = {
   1: 'There is no such item.',
@@ -154,6 +157,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   104: 'Not on horseback.',
   105: 'You cannot return to your ship while fallen.',
   106: 'You cannot return to your ship within ten seconds of being struck.',
+  109: NO_SHIP_YET,
   110: 'There is no such Art.',
   111: 'An Art’s Core has three slots.',
   112: 'There is no such fragment.',
@@ -181,6 +185,13 @@ const REFUSALS: Readonly<Record<number, string>> = {
   164: 'Only the founder or an admin sounds the War Horn.',
   165: 'No War Horn stands here yet.',
   166: 'Too many asks. Wait a while.',
+  167: 'The shipyard has no such ship.',
+  168: 'You keep no such ship yet.',
+  169: 'There is no such dress.',
+  170: 'The shipyard has no such word.',
+  171: 'You sail that ship already.',
+  172: 'It bears that name already.',
+  173: 'It has a name already. Hold to rename it.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */
@@ -195,17 +206,23 @@ const KIND_WORDS: Readonly<Record<string, string | undefined>> = rolled.kinds;
 /** Plain clothes' names and words, by their kind's key. */
 const PLAIN: Readonly<Record<string, { readonly name: string; readonly words: string } | undefined>> = rolled.plain;
 
+/** What a Breach's piece won at Hard is called after its set's name: its Forged version, as Destiny's raid weapons
+ *  are Adept (the decisions "Breach Weapons Come Normal and Forged" and "Forged Perks Are Stronger, and Hard Armour
+ *  Is Forged Too"). */
+export const FORGED = '(Forged)';
+
 /** An item's name: a named item's own (a faction's piece's is its set's); plain clothes' their own; a rolled armour
- *  piece or weapon its set's and its kind's word, by the look it is drawn in, the prologue's armour by its steel; a
- *  horse by its coat; the cloak its kind's. Ship modules are named by `gearName`. */
+ *  piece or weapon its set's and its kind's word, by the look it is drawn in, the prologue's armour by its steel, a
+ *  Breach's piece won at Hard Forged; a horse by its coat; the cloak its kind's. Ship modules are named by `gearName`. */
 export function itemName(
-  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story' | 'plain'>,
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story' | 'plain'> &
+    Partial<Pick<GearItem, 'breach' | 'hard'>>,
 ): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
   const plain = item.plain ? PLAIN[kindKey(item.kind)] : undefined;
   if (plain) return plain.name;
   const parts = rolledParts(item);
-  if (parts) return `${parts.set} ${parts.word}`;
+  if (parts) return item.breach && item.hard ? `${parts.set} ${parts.word} ${FORGED}` : `${parts.set} ${parts.word}`;
   // A horse by its coat's name among its kind's; the cloak by its kind.
   const kind = kindKey(item.kind);
   const names = (rolled.names as Record<string, Record<string, readonly string[]> | undefined>)[kind];
@@ -255,26 +272,42 @@ export function itemWords(
 
 /** A trait's name and words: all it does (`words`), and for a perk that gives and takes, what it gives and what it
  *  costs apart (`gives`, `takes`), so a screen can set the cost apart; and its short line, and its cost's, as a card
- *  shows them. */
-export function traitOf(id: string): {
+ *  shows them. A Breach's perk on a piece won at Hard is at its Forged grade (`forgedOn`): its Forged words and short
+ *  line, and `forged` set. */
+export function traitOf(
+  id: string,
+  forged = false,
+): {
   readonly name: string;
   readonly words: string;
   readonly gives: string;
   readonly takes: string;
+  readonly forged: boolean;
   readonly short: string;
   readonly shortTakes: string;
 } {
   const found = traits.traits.find((each) => each.id === id);
-  const [gives, takes] = [found?.words ?? '', (found && 'takes' in found ? found.takes : '') ?? ''];
+  const graded = forged && found && 'forged' in found ? found.forged : undefined;
+  const gradedShort = graded && found && 'forged_short' in found ? found.forged_short : undefined;
+  const [gives, takes] = [graded ?? found?.words ?? '', (found && 'takes' in found ? found.takes : '') ?? ''];
   const shortTakes = (found && 'short_takes' in found ? found.short_takes : '') ?? '';
   return {
     name: found?.name ?? id,
     words: takes ? `${gives} ${takes}` : gives,
     gives,
     takes,
-    short: found?.short ?? id,
+    forged: !!graded,
+    short: gradedShort ?? found?.short ?? id,
     shortTakes,
   };
+}
+
+/** Whether an item gives a trait at its Forged grade: a Breach's perk, on a Breach's piece won at Hard
+ *  (`gear::Item::forges`). */
+export function forgedOn(item: Partial<Pick<GearItem, 'breach' | 'hard'>>, id: string): boolean {
+  return (
+    !!item.breach && !!item.hard && traits.traits.some((each) => each.id === id && 'breach' in each && each.breach)
+  );
 }
 
 /** An island's resource's name, by its place in the list. */
@@ -358,7 +391,7 @@ export function nodeShown(item: GearItem, column: number, node: number): NodeSho
       : null;
   return {
     label: trait ? traitOf(trait).name : 'Upgrade',
-    words: trait ? traitOf(trait).words : 'Raises its power.',
+    words: trait ? traitOf(trait, forgedOn(item, trait)).words : 'Raises its power.',
     bought,
     chosen: bought && (!trait || item.chosen[column] === node),
     unlocked,

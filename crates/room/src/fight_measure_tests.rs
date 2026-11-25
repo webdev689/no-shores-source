@@ -1,7 +1,7 @@
-//! The sea's fights measured: a plain player in the starting Sloop against one bold captain of each rank, met 700 m
-//! off in each kind of hostile water of the world's own layout, the player either standing off (turning their
-//! broadside at 300 m out) or closing to 150 m before they turn. Run by hand, in release, to print the table:
-//! `cargo test -p room --release measure_fights -- --ignored --nocapture --test-threads=1`.
+//! The sea's fights measured: a plain player in the starting Sloop (or in each hull, for the hulls' table) against one
+//! bold captain of each rank, met 700 m off in each kind of hostile water of the world's own layout, the player either
+//! standing off (turning their broadside at 300 m out) or closing to 150 m before they turn. Run by hand, in release,
+//! to print the tables: `cargo test -p room --release measure_fights -- --ignored --nocapture --test-threads=1`.
 
 use super::*;
 use crate::measure_tests::world;
@@ -137,8 +137,14 @@ pub(crate) fn hostile_points(sea: &Sea) -> Vec<[f64; 2]> {
     chosen
 }
 
-/// One row of the table: `fights` fights with bold captains of `rank` at `level`, the player turning at `close`.
+/// One row of the table: `fights` fights with bold captains of `rank` at `level`, the player turning at `close`, in
+/// the starting Sloop.
 fn row(rank: Rank, level: u8, close: f64, fights: usize) -> String {
+    row_in(sailing::HullKind::Sloop, (rank, level), close, fights)
+}
+
+/// As `row`, the player sailing `hull`.
+fn row_in(hull: sailing::HullKind, (rank, level): (Rank, u8), close: f64, fights: usize) -> String {
     let (layout, ports) = world();
     let points = hostile_points(&Sea::new(&layout, crate::deck::test_deck(), 1, &ports));
     let commission = Commission { faction: GREY_TITHE, rank };
@@ -151,7 +157,13 @@ fn row(rank: Rank, level: u8, close: f64, fights: usize) -> String {
         let seed = seeds.next().unwrap();
         let mut sea = Sea::new(&layout, crate::deck::test_deck(), seed, &ports);
         let player = sea.join();
-        sea.harbour.characters.insert(player, gear::Character::starting());
+        let mut character = gear::Character::starting();
+        character.give_first_ship();
+        if hull != sailing::HullKind::Sloop {
+            character.fleet.ships.push(gear::ship::fleet::KeptShip::new(hull.number()));
+            character.fleet.sailed = hull.number();
+        }
+        sea.harbour.characters.insert(player, character);
         sea.course_anywhere(player, &[at], 10).unwrap();
         let standing = Hostile::standing(1, seed, commission, [at[0], at[1] - 700.0], std::f64::consts::PI, true);
         sea.hostiles.sailing.push(Hostile { level, ..standing });
@@ -183,6 +195,19 @@ fn measure_fights_by_rank() {
     eprintln!("| Captain | Stand-off: won / sunk, median length, hull kept | Closing to 150 m: the same |");
     for rank in Rank::ALL {
         eprintln!("| {rank:?} | {} | {} |", row(rank, 0, 300.0, FIGHTS_A_ROW), row(rank, 0, 150.0, FIGHTS_A_ROW));
+    }
+}
+
+#[test]
+#[ignore = "a measurement, printed by hand in release"]
+fn measure_fights_by_hull() {
+    eprintln!("| Hull, captain | Stand-off: won / sunk, median length, hull kept | Closing to 150 m: the same |");
+    for hull in sailing::HullKind::ALL {
+        for rank in [Rank::Major, Rank::Elite, Rank::Miniboss] {
+            let (off, close) =
+                (row_in(hull, (rank, 0), 300.0, FIGHTS_A_ROW), row_in(hull, (rank, 0), 150.0, FIGHTS_A_ROW));
+            eprintln!("| {hull:?}, {rank:?} | {off} | {close} |");
+        }
     }
 }
 

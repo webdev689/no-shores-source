@@ -35,7 +35,8 @@ const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
 /// What a task gives as it is done, or a goal as it is met: Aurem, its house's Art, a Tenet (1 or 2, 0 none),
-/// fragments to choose, and the first horse (`FIRST_HORSE`, the Bay). A goal gives only Aurem and the horse.
+/// fragments to choose, the first horse (`FIRST_HORSE`, the Bay), and the first ship (the Sloop,
+/// `Character::give_first_ship`). A goal gives only Aurem and the horse.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
@@ -44,6 +45,7 @@ pub struct RewardDef {
     pub tenet: u8,
     pub fragments: u8,
     pub horse: bool,
+    pub ship: bool,
 }
 
 /// One task: its id and the ids it had before (a save of one is read as this), the tracker's words, the scenes played
@@ -258,9 +260,10 @@ impl GoalDef {
             Some(format!("{text}: {field} holds a value none of its own"))
         } else if self.count == 0 || once && self.count != 1 {
             Some(format!("{text}: count must be 1 on a step or a piece bought or worn, and 1 or more on any goal"))
-        } else if self.reward.art || self.reward.tenet > 0 || self.reward.fragments > 0 {
-            // A house's gifts come with its tasks, in their order (`house_problems`); a goal gives Aurem or the horse.
-            Some(format!("{text}: a goal's reward gives Aurem or the first horse, nothing of a house's"))
+        } else if self.reward.art || self.reward.tenet > 0 || self.reward.fragments > 0 || self.reward.ship {
+            // A house's gifts come with its tasks, in their order (`house_problems`), and the Sloop with its task, the
+            // one `give_ship_due` looks for; a goal gives Aurem or the horse.
+            Some(format!("{text}: a goal's reward gives Aurem or the first horse, nothing of a house's nor the ship"))
         } else {
             None
         }
@@ -326,7 +329,8 @@ fn raced(race: &Race) -> Option<&'static str> {
 ///
 /// # Panics
 ///
-/// Never for the file in the repository, which `the_quests_file_reads_whole` reads.
+/// Never for the file in the repository, which
+/// `the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_that_are` reads.
 #[must_use]
 pub fn quests() -> &'static QuestsDef {
     static READ: OnceLock<QuestsDef> = OnceLock::new();
@@ -369,7 +373,8 @@ struct Cast {
 ///
 /// # Panics
 ///
-/// Never for the file in the repository, which `the_quests_file_reads_whole` reads.
+/// Never for the file in the repository, which
+/// `the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_that_are` reads.
 #[must_use]
 pub fn speaker_place(key: &str) -> Option<usize> {
     static READ: OnceLock<Vec<String>> = OnceLock::new();

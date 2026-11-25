@@ -2,6 +2,7 @@ use super::*;
 use crate::clash::tests::{at_sea, still};
 use naval::fight::CAPTAIN;
 use naval::ranks::{GREY_TITHE, Rank};
+use sailing::HullKind;
 
 const MAJOR: Commission = Commission { faction: GREY_TITHE, rank: Rank::Major };
 
@@ -12,7 +13,12 @@ fn sloop(x: f64, y: f64) -> Ship {
 /// A fight begun between player 1 at the origin and a bold Major 600 m north.
 fn begun() -> Fights {
     let mut fights = Fights::default();
-    fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3]), &at_sea(9, MAJOR, 0.0, true), (still(), &[]), 0.0);
+    fights.begin_met(
+        (1, sloop(0.0, 0.0), [1.0; 3], HullKind::Sloop),
+        &at_sea(9, MAJOR, 0.0, true),
+        (still(), &[]),
+        0.0,
+    );
     fights.list[0].fight.ships.get_mut(&CAPTAIN).unwrap().ship.y = -600.0;
     fights
 }
@@ -20,8 +26,11 @@ fn begun() -> Fights {
 #[test]
 fn a_player_not_fighting_who_comes_within_sight_of_a_fight_joins_it_with_a_number_of_their_own() {
     let mut fights = begun();
-    assert!(!fights.join((2, sloop(0.0, 900.0), [1.0; 3]), &[], 0.0), "800 m and more from every ship of it");
-    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
+    assert!(
+        !fights.join((2, sloop(0.0, 900.0), [1.0; 3], HullKind::Sloop), &[], 0.0),
+        "800 m and more from every ship of it"
+    );
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3], HullKind::Sloop), &[], 0.0));
     let crews: Vec<(PlayerId, ShipId)> =
         fights.list[0].crews.iter().map(|(player, crew)| (*player, crew.ship)).collect();
     assert_eq!(crews, vec![(1, PLAYER), (2, PLAYERS_FROM)]);
@@ -32,7 +41,7 @@ fn a_player_not_fighting_who_comes_within_sight_of_a_fight_joins_it_with_a_numbe
 #[test]
 fn each_player_sees_the_fight_from_their_own_ship() {
     let mut fights = begun();
-    fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0);
+    fights.join((2, sloop(0.0, 700.0), [1.0; 3], HullKind::Sloop), &[], 0.0);
     let views: Vec<(PlayerId, Vec<f64>)> = fights.views(&[], 0.0).map(|seen| (seen.player, seen.numbers)).collect();
     // A view's player's ship comes after its clock and its end: the ship's x and y first.
     let (first, second) = (&views[0].1, &views[1].1);
@@ -91,7 +100,12 @@ fn a_fight_whose_captains_have_all_left_lets_its_players_go_with_the_hurts_they_
 #[test]
 fn a_sloop_put_into_a_fight_starts_it_with_the_hurts_it_keeps() {
     let mut fights = Fights::default();
-    fights.begin_met((1, sloop(0.0, 0.0), [0.1, 0.25, 0.5]), &at_sea(9, MAJOR, 0.0, true), (still(), &[]), 0.0);
+    fights.begin_met(
+        (1, sloop(0.0, 0.0), [0.1, 0.25, 0.5], HullKind::Sloop),
+        &at_sea(9, MAJOR, 0.0, true),
+        (still(), &[]),
+        0.0,
+    );
     let damage = &fights.list[0].fight.vessel(PLAYER).unwrap().damage;
     assert_eq!(damage.hull, (damage.max_hull * 0.1).round());
     assert_eq!(damage.sail, (damage.max_sail * 0.25).round());
@@ -104,7 +118,7 @@ fn a_ships_level_raises_its_hull_men_and_guns_as_a_foes_level_raises_it_on_land_
     let at_level = |level: u8| Hostile { level, ..at_sea(9, minor, 0.0, true) };
     let met = |level: u8| {
         let mut fights = Fights::default();
-        fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3]), &at_level(level), (still(), &[]), 0.0);
+        fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3], HullKind::Sloop), &at_level(level), (still(), &[]), 0.0);
         let captain = fights.list[0].fight.vessel(CAPTAIN).unwrap();
         let strength = captain.command().unwrap().mind.strength;
         (captain.damage.max_hull, captain.damage.max_crew, strength)
@@ -122,14 +136,14 @@ fn a_ships_level_raises_its_hull_men_and_guns_as_a_foes_level_raises_it_on_land_
 #[test]
 fn a_player_who_leaves_and_comes_back_keeps_a_spent_last_stand_and_no_ship_number_is_given_twice() {
     let mut fights = begun();
-    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3], HullKind::Sloop), &[], 0.0));
     let first = fights.list[0].crews[&2].ship;
     fights.list[0]
         .fight
         .fit(first, naval::fight::fitting::Fitting { stood: true, ..naval::fight::fitting::Fitting::default() });
     fights.leave(2);
-    assert!(fights.join((3, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
-    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
+    assert!(fights.join((3, sloop(0.0, 700.0), [1.0; 3], HullKind::Sloop), &[], 0.0));
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3], HullKind::Sloop), &[], 0.0));
     let [newcomer, back] = [3, 2].map(|player| fights.list[0].crews[&player].ship);
     assert!(newcomer != first && back != first && back != newcomer, "{first}, {newcomer}, {back}");
     let mut characters = BTreeMap::new();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { clampView, viewOn } from './heldMapLaw.ts';
-import { footprint, INDEX_M, RELIEF_M, relief } from './landSheet.ts';
+import { boxPrint, INDEX_M, RELIEF_M, relief } from './landSheet.ts';
 import type { Point2 } from '../overworld/ground.ts';
 
 const near = (actual: readonly number[], expected: readonly number[]) =>
@@ -16,14 +16,14 @@ const area = (points: readonly Point2[]) =>
     }, 0),
   ) / 2;
 
-test('a footprint turns about its middle clockwise from north, as the city stands its solids', () => {
-  const [northWest, northEast, southEast, southWest] = footprint([10, 20], 4, 2, 0);
+test("a box's print turns about its middle clockwise from north, as a module stands its parts", () => {
+  const [northWest, northEast, southEast, southWest] = boxPrint([10, 20], [-2, -1, 2, 1], 0);
   near(northWest, [8, 19]);
   near(northEast, [12, 19]);
   near(southEast, [12, 21]);
   near(southWest, [8, 21]);
   // A quarter turn clockwise: its own east (its width) runs south.
-  const [turned] = footprint([0, 0], 4, 2, Math.PI / 2);
+  const [turned] = boxPrint([0, 0], [-2, -1, 2, 1], Math.PI / 2);
   near(turned, [1, -2]);
 });
 

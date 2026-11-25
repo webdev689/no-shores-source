@@ -68,6 +68,22 @@ pub struct NodeFile {
     /// At an outpost site, the ground its guilds build on and gather at.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outpost: Option<OutpostGround>,
+    /// In a patrol area with a Breach's gate, where its module stands: its foot's middle and its quarter turns
+    /// clockwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub breach: Option<([f64; 3], u8)>,
+}
+
+/// Where a layout stood a Breach's gate (`layout::modules`), as its node's room stands it.
+fn breach_of(layout: &layout::Layout) -> Option<([f64; 3], u8)> {
+    let gate = city::modules::number_of("breach-gate")?;
+    let solid = layout
+        .seating
+        .solids
+        .iter()
+        .find(|solid| solid.shape == city::solids::Shape::Module { module: gate, group: 0 })?;
+    let quarters = (solid.turn / std::f64::consts::FRAC_PI_2).round().rem_euclid(4.0) as u8;
+    Some((solid.at, quarters))
 }
 
 /// An outpost site's ground: its plot's middle and level (the ground's height on its platform, as the window reads
@@ -266,6 +282,7 @@ pub fn nodes_of(
             places,
             paths,
             outpost: None,
+            breach: None,
         }
     };
     let whole =
@@ -290,10 +307,11 @@ pub fn nodes_of(
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
         let grounds = laid.and_then(grounds_of);
+        let breach = laid.and_then(breach_of);
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
         let outpost =
             laid.filter(|_| node.kind == NodeKind::Outpost).and_then(|layout| outpost_of(layout, &cut.ground));
-        NodeFile { grounds, gates, resources, chests, holders, foes, places, paths, outpost, ..cut }
+        NodeFile { grounds, gates, resources, chests, holders, foes, places, paths, outpost, breach, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);

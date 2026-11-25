@@ -2689,6 +2689,672 @@
         6.0
       ],
       "picked": 547365
+    },
+    {
+      "id": "breach.begun",
+      "use": "A Breach encounter begins: a deep gong struck in stone halls",
+      "query": "deep gong",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "breach.stage",
+      "use": "The company's checkpoint moves on: a heavy stone settling into place",
+      "query": "stone slab drop",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.seal",
+      "use": "An encounter won: the crystal seal over its doorway shatters and falls away",
+      "query": "glass shatter large",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "id": "breach.rewritten",
+      "use": "A player is Rewritten: a whisper close at the ear, the Lattice's mark",
+      "query": "ghostly whisper",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.cleansed",
+      "use": "The Rewritten cleansed at the font or by Hold True: clear water poured over stone",
+      "query": "water pour",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.unwritten",
+      "use": "A player unwritten: parchment torn through",
+      "query": "paper tear",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.stone.take",
+      "use": "The Lodestone taken up from its plinth: heavy stone lifted with a scrape",
+      "query": "heavy stone scrape",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.stone.drop",
+      "use": "The Lodestone set down: a heavy stone thudding onto rock",
+      "query": "heavy stone thud",
+      "seconds": [
+        0.2,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.stone.ground",
+      "use": "The Lodestone Grounded: a ward breaking, a pane of crystal bursting",
+      "query": "glass impact shatter",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.stone.hold",
+      "use": "Hold True raised round the Lodestone's bearer: a struck singing bowl ringing on",
+      "query": "singing bowl strike",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "breach.bell.wake",
+      "use": "A Choir bell waking, played at each bell's own note: one small bell struck",
+      "query": "handbell",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "id": "breach.bell.ring",
+      "use": "A Choir bell ringing out, Rewriting the company: a church bell tolling hard",
+      "query": "church bell toll",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "breach.bell.break",
+      "use": "A Choir bell broken: struck metal cracking apart",
+      "query": "metal crack break",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.fused",
+      "use": "Husks fusing at a seam: wet, cracking flesh",
+      "query": "flesh squish crack",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.overtaken",
+      "use": "The ground round a fused seam overtaken: crystal crackling as it spreads",
+      "query": "ice cracking",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.claimed",
+      "use": "A Bulwark claims a mooring: heavy chains dragged taut",
+      "query": "chains rattle heavy",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.desk.marked",
+      "use": "The Scrivener marks a desk: a quill scratching",
+      "query": "quill writing",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.blotted",
+      "use": "A marked desk blotted by a player standing on it: a page slammed shut",
+      "query": "book slam",
+      "seconds": [
+        0.2,
+        2.0
+      ]
+    },
+    {
+      "id": "breach.wrote",
+      "use": "The Scrivener writes, unwriting the Rewritten: fast pen strokes on parchment",
+      "query": "pen writing paper",
+      "seconds": [
+        1.0,
+        5.0
+      ]
+    },
+    {
+      "id": "breach.seen",
+      "use": "A Watcher sees a player: a sharp, inhuman gasp",
+      "query": "creature gasp",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.rift.open",
+      "use": "A rift to a shore opens: water rushing in a sudden swell",
+      "query": "water rush whoosh",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "id": "breach.rift.shut",
+      "use": "A rift shuts: rushing water drawn back to nothing",
+      "query": "reverse whoosh",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.keeper.fell",
+      "use": "A Keeper falls in its shore: a stone figure crumbling",
+      "query": "stone crumble",
+      "seconds": [
+        1.0,
+        5.0
+      ]
+    },
+    {
+      "id": "breach.toll",
+      "use": "The Steward tolls: one huge, deep bell",
+      "query": "huge bell",
+      "seconds": [
+        3.0,
+        15.0
+      ]
+    },
+    {
+      "id": "breach.taken",
+      "use": "Players taken into a shore: plunged under water",
+      "query": "underwater plunge",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.way.back",
+      "use": "The way back from a shore opens: water swirling away down a drain",
+      "query": "water swirl drain",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "id": "breach.returned",
+      "use": "Players brought back from a shore: bursting up out of water",
+      "query": "water surface splash",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "breach.laid.bare",
+      "use": "The Steward laid bare: its armour shattering",
+      "query": "armor break",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.wipe",
+      "use": "The company falls and its attempt is lost: a low boom fading out",
+      "query": "low boom",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "breach.slab",
+      "use": "A slab of the Broken Stair rising or sinking: stone grinding on stone",
+      "query": "stone grinding",
+      "seconds": [
+        1.0,
+        5.0
+      ]
+    },
+    {
+      "id": "breach.mooring",
+      "use": "A mooring held: an old mechanism catching",
+      "query": "mechanism clunk",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "breach.spire.fill",
+      "use": "The Spire filling at the Sunken Gate while its moorings are held, looped: a crystal hum",
+      "query": "crystal hum drone",
+      "seconds": [
+        5.0,
+        60.0
+      ]
+    },
+    {
+      "id": "breach.spire.woken",
+      "use": "The Spire woken and the gate opened: a great crystal resonance breaking",
+      "query": "crystal resonance",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "breach.chest",
+      "use": "A hidden chest of the run opening: an old lid creaking up",
+      "query": "chest open creak",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "amb.breach.hollow",
+      "use": "The Sunken Gate's hollow in the vale, looped: wind moving round split stone",
+      "query": "canyon wind",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.cave",
+      "use": "Under the vale, looped: a deep cave's air with far drips",
+      "query": "cave ambience",
+      "seconds": [
+        20.0,
+        300.0
+      ]
+    },
+    {
+      "id": "amb.breach.race",
+      "use": "The old mill race of the Descent, looped: water running hard in a stone channel",
+      "query": "water channel",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.pool",
+      "use": "The drowned green, looped: still water lapping in a cavern",
+      "query": "cave water lapping",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.chapel",
+      "use": "The drowned chapel, looped: an empty stone church's air",
+      "query": "empty church",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.streets",
+      "use": "The Unlit Ways, looped: a cold wind down empty stone streets",
+      "query": "empty street wind night",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.void",
+      "use": "The dark under the Broken Stair and the court, looped: a deep wind from below",
+      "query": "deep wind howl",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.hall",
+      "use": "The keep's hall, looped: a great stone hall's air",
+      "query": "castle hall ambience",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.rift",
+      "use": "A rift's shore, looped: a far waterfall's roar",
+      "query": "distant waterfall",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.drone",
+      "use": "Under every space of the run, looped: a low, slow drone",
+      "query": "dark drone",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "amb.breach.drip",
+      "use": "A single drop of water falling in a cave",
+      "query": "water drop cave",
+      "seconds": [
+        0.2,
+        2.0
+      ]
+    },
+    {
+      "id": "amb.breach.stones",
+      "use": "Small stones trickling down rock",
+      "query": "pebbles falling",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "amb.breach.chain",
+      "use": "An old chain clinking",
+      "query": "chain clink",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "amb.breach.bell.far",
+      "use": "A bell far off in the drowned town",
+      "query": "distant bell",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "amb.breach.bubbles",
+      "use": "Bubbles rising and breaking at still water",
+      "query": "bubbles water",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "amb.breach.creak",
+      "use": "An old timber creaking",
+      "query": "wood creak",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "amb.breach.crystal",
+      "use": "The Lattice's crystal ringing faintly",
+      "query": "crystal chime",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "amb.breach.whisper",
+      "use": "Whispers far off in the dark, no word clear",
+      "query": "whispers",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "id": "amb.breach.groan",
+      "use": "The rock groaning deep below",
+      "query": "earth rumble",
+      "seconds": [
+        1.0,
+        8.0
+      ]
+    },
+    {
+      "id": "music.cello",
+      "use": "A cello's long bowed note, for the Drowned Vale's scores",
+      "query": "cello long note",
+      "seconds": [
+        3.0,
+        12.0
+      ]
+    },
+    {
+      "id": "music.cello.short",
+      "use": "A cello's short bowed note, for the scores' ostinatos",
+      "query": "cello staccato",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "music.bass",
+      "use": "A double bass's long bowed note, the scores' floor",
+      "query": "double bass arco",
+      "seconds": [
+        3.0,
+        12.0
+      ]
+    },
+    {
+      "id": "music.choir.low",
+      "use": "A men's choir holding one note, for the scores",
+      "query": "male choir",
+      "seconds": [
+        3.0,
+        15.0
+      ]
+    },
+    {
+      "id": "music.choir.high",
+      "use": "A women's choir holding one note, for the scores",
+      "query": "female choir",
+      "seconds": [
+        3.0,
+        15.0
+      ]
+    },
+    {
+      "id": "music.organ",
+      "use": "A pipe organ's low held note, for the chapel's scores",
+      "query": "pipe organ note",
+      "seconds": [
+        3.0,
+        15.0
+      ]
+    },
+    {
+      "id": "music.horn",
+      "use": "A French horn's long note, for the Steward's score",
+      "query": "french horn note",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "music.piano",
+      "use": "A soft felt piano's single note, for the quiet stretches",
+      "query": "felt piano note",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "music.harp",
+      "use": "A harp's single plucked note",
+      "query": "harp note",
+      "seconds": [
+        1.0,
+        8.0
+      ]
+    },
+    {
+      "id": "music.bell",
+      "use": "A tubular bell's single note, for the scores' bells",
+      "query": "tubular bell",
+      "seconds": [
+        2.0,
+        12.0
+      ]
+    },
+    {
+      "id": "music.timpani",
+      "use": "A single timpani hit",
+      "query": "timpani hit",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "id": "music.taiko",
+      "use": "A single taiko drum hit, for the fights",
+      "query": "taiko hit",
+      "seconds": [
+        0.5,
+        4.0
+      ]
+    },
+    {
+      "id": "music.frame",
+      "use": "A single frame drum hit, for the fights' grooves",
+      "query": "frame drum",
+      "seconds": [
+        0.3,
+        3.0
+      ]
+    },
+    {
+      "id": "music.boom",
+      "use": "A deep cinematic boom, for the scores' downbeats",
+      "query": "cinematic boom",
+      "seconds": [
+        1.0,
+        8.0
+      ]
+    },
+    {
+      "id": "music.metal",
+      "use": "A struck metal hit with a long tail, for the scores' accents",
+      "query": "metal hit",
+      "seconds": [
+        1.0,
+        6.0
+      ]
+    },
+    {
+      "id": "music.bowed",
+      "use": "A bowed cymbal's swell, for the scores' tension",
+      "query": "bowed cymbal",
+      "seconds": [
+        3.0,
+        20.0
+      ]
+    },
+    {
+      "id": "music.bowl",
+      "use": "A singing bowl ringing on, for the Lattice's colour",
+      "query": "singing bowl",
+      "seconds": [
+        3.0,
+        20.0
+      ]
+    },
+    {
+      "id": "music.glass",
+      "use": "Glass rubbed into a singing tone, for the Lattice's colour",
+      "query": "glass harmonica",
+      "seconds": [
+        2.0,
+        10.0
+      ]
+    },
+    {
+      "id": "music.waterphone",
+      "use": "A waterphone's eerie bowed tones, for the Ways' tension",
+      "query": "waterphone",
+      "seconds": [
+        2.0,
+        15.0
+      ]
+    },
+    {
+      "id": "music.drone",
+      "use": "A dark, slow drone under the scores, looped",
+      "query": "dark ambient drone",
+      "seconds": [
+        20.0,
+        180.0
+      ]
+    },
+    {
+      "id": "music.riser",
+      "use": "A reversed cymbal swelling up to a downbeat",
+      "query": "reverse cymbal",
+      "seconds": [
+        1.0,
+        6.0
+      ]
     }
   ]
 }
