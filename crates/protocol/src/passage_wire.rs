@@ -108,6 +108,7 @@ pub fn passages_of<'built>(
             mouth: dive.mouth,
             done: dive.done,
             haul: Some(haul),
+            homeward: dive.homeward,
         };
         messages::GearDive::create(builder, &args)
     });

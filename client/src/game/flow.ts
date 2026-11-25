@@ -54,10 +54,6 @@ export function next(flow: Flow, happening: Happening): Flow {
       // Behind the veil the place has come; on the way between passage zones, the way has played to its end too.
       return flow.mode === 'loading' || flow.mode === 'passing' ? flow.then : flow;
     case 'cross':
-      // shortcut: across behind the veil, as nothing draws `passing` yet; once the game plays the way between zones
-      // (passages/passageWay.ts), a crossing passes as `onward` does.
-      if (flow.mode !== 'foot') return flow;
-      return { mode: 'loading', words: `Going to ${happening.name}`, then: { mode: 'foot', node: happening.node } };
     case 'onward':
     case 'home':
       return flow.mode === 'foot' ? { mode: 'passing', then: { mode: 'foot', node: happening.node } } : flow;

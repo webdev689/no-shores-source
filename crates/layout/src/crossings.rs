@@ -15,10 +15,11 @@ use crate::sites::{Site, SiteKind};
 const CROSSING_OUT: f64 = 0.7;
 const CROSSING_M: f64 = 10.0;
 
-/// Whether an area is a crossing gate: a passage across the island, standing no arch and no palisade of its own.
+/// Whether an area is a crossing gate: a passage across the island, standing no arch and no palisade of its own, as
+/// `add` marks it.
 #[must_use]
 pub fn is_crossing(area: &Area) -> bool {
-    area.kind == AreaKind::Gate && (area.radius - CROSSING_M).abs() < 1e-9
+    area.kind == AreaKind::Gate && area.crosses
 }
 
 /// Each crossing gate: on the landing (the first area), toward the patrol area it leads to. None without a landing.
@@ -33,7 +34,8 @@ fn gates(areas: &[Area], links: &[Link]) -> Vec<Area> {
                 landing.at[0] + (link.towards[0] - landing.at[0]) * out,
                 landing.at[1] + (link.towards[1] - landing.at[1]) * out,
             ];
-            Area { kind: AreaKind::Gate, name: String::new(), at, radius: CROSSING_M, leads_to: Some(link.id.clone()) }
+            let leads_to = Some(link.id.clone());
+            Area { kind: AreaKind::Gate, name: String::new(), at, radius: CROSSING_M, leads_to, crosses: true }
         })
         .collect()
 }
@@ -68,6 +70,7 @@ mod tests {
             at: [0.0, 0.0],
             radius: 48.0,
             leads_to: None,
+            crosses: false,
         };
         let mill = Link { id: "mill".into(), towards: [0.0, 500.0], patrol: false };
         // Saltmere's two other zones as the Downs sees them, 48 degrees apart.
@@ -88,5 +91,8 @@ mod tests {
             [vale, moors].map(|area| Link { id: area.name.clone(), towards: area.at, patrol: true }).into();
         let none = gates(&[Area { kind: AreaKind::Hamlet, ..areas[0].clone() }], &patrols);
         assert!(none.is_empty(), "no landing, no crossing");
+        assert!(areas[1..].iter().all(is_crossing) && !is_crossing(&areas[0]));
+        let other = Area { kind: AreaKind::Gate, radius: CROSSING_M, crosses: false, ..areas[1].clone() };
+        assert!(!is_crossing(&other), "a gate of a crossing's reach, unmarked, is no crossing");
     }
 }

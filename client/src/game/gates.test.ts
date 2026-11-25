@@ -6,12 +6,12 @@ import type { NodeInfo, NodeKind } from './worldData.ts';
 
 type Point = readonly [number, number];
 
-const layout = (id: string, way: { kind: string; at: Point; to: string }[]): NodeLayout =>
+const layout = (id: string, way: { kind: string; at: Point; to: string; crosses?: boolean }[]): NodeLayout =>
   ({
     id,
     ring: [],
     spawns: [],
-    areas: way.map(({ kind, at, to }) => ({ kind, name: '', at, radius: 40, leads_to: to })),
+    areas: way.map(({ kind, at, to, crosses }) => ({ kind, name: '', at, radius: 40, leads_to: to, crosses })),
   }) as unknown as NodeLayout;
 const node = (id: string, kind: NodeKind, name: string, locked: boolean): NodeInfo => ({
   ...{ id, kind, name, continent: 'continent-1', ring: [], spawns: [[0, 0]], centre: [0, 0] },
@@ -56,8 +56,8 @@ test('the way out of an instance to a locked patrol area is shut the same way', 
 test('a gate toward another patrol area offers to go there, arriving at its gate toward the one left', () => {
   const landmass = {
     layouts: [
-      layout('downs', [{ kind: 'gate', at: [100, 0], to: 'vale' }]),
-      layout('vale', [{ kind: 'gate', at: [-700, 0], to: 'downs' }]),
+      layout('downs', [{ kind: 'gate', at: [100, 0], to: 'vale', crosses: true }]),
+      layout('vale', [{ kind: 'gate', at: [-700, 0], to: 'downs', crosses: true }]),
     ],
     nodes: [node('downs', 'patrol', 'The Downs', false), node('vale', 'patrol', 'The Vale', false)],
   };

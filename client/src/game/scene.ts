@@ -284,6 +284,8 @@ export class GameScene {
       readonly blur?: number;
       readonly drain?: number;
       readonly dark?: number;
+      /** A place drawn alone (a passage's hollow): none of the open landmass's ground under or round it. */
+      readonly bare?: boolean;
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -347,7 +349,7 @@ export class GameScene {
       },
     });
     for (const drawer of drawers) if (drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
-    drawn.drawInto(pass, this.shadow);
+    if (!more.bare) drawn.drawInto(pass, this.shadow);
     for (const drawer of drawers) if (!drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     pass.end();
     this.copy.encode(encoder, targets.multidepth, targets.depth);

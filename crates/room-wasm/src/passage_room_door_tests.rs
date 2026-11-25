@@ -125,3 +125,72 @@ fn a_passage_zone_refuses_a_bad_ask_and_its_week_once_turned() {
     assert!(open_passage(later.as_bytes()));
     assert_eq!(crate::refusal().as_deref(), Some(SHIFTED));
 }
+
+/// The week's first zone of each ground, under ground then above it, by its number.
+fn zone_of_each_ground() -> [u16; 2] {
+    let web = passage::Web::of(passage::island("continent-1").unwrap(), 2_900);
+    let first = |under: bool| {
+        let laid = |zone: &&passage::Zone| {
+            passage::Plan::of(&web, zone.number)
+                .is_some_and(|plan| matches!(plan.ground, passage::Laid::Under(_)) == under)
+        };
+        web.zones.iter().find(laid).expect("a zone of that ground").number
+    };
+    [first(true), first(false)]
+}
+
+/// The player's fighter as the room holds it now, its numbers whole.
+fn fighter_now(player: room::PlayerId) -> Vec<f64> {
+    let found = with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.fighters().into_iter().find(|(id, _)| *id == player).map(|(_, held)| held),
+        Opened::Sea(_) | Opened::Fleet(_) => None,
+    });
+    found.flatten().expect("the player's fighter").to_floats().to_vec()
+}
+
+#[test]
+fn a_walk_predicted_on_a_passage_zones_own_ground_is_stepped_by_its_room_to_the_bit() {
+    for zone in zone_of_each_ground() {
+        let ask = PASSAGE_ASK.replace("ZONE", &zone.to_string());
+        assert!(open_passage(ask.as_bytes()));
+        assert!(!crate::fighter_door::set_passage(b"not an ask"), "anything else is no zone");
+        assert!(crate::fighter_door::set_passage(ask.as_bytes()), "the page's ground for zone {zone}");
+        let player = room_join();
+        let character = diver(zone);
+        assert!(restore_character(player, character.as_bytes()));
+        let arms = room::arms_allowed(&gear::Character::from_json(&character).unwrap())[0].code();
+        let (mut blocked, mut climbed) = (false, false);
+        for tick in 1..=240_u32 {
+            // Ahead, turning a quarter each 60 ticks, so it walks into the walls and the pieces.
+            let yaw = f64::from(tick / 60) * std::f64::consts::FRAC_PI_2;
+            let controls = Controls { yaw, forward: 1.0, run: true, ..Controls::default() };
+            let intent = combat::Intent { controls, ..combat::Intent::default() };
+            let before = fighter_now(player);
+            let mut numbers = before.clone();
+            numbers.extend(intent.to_floats());
+            numbers.extend([f64::from(player), f64::from(arms)]);
+            let bytes: Vec<u8> = numbers.iter().flat_map(|number| number.to_le_bytes()).collect();
+            let predicted = crate::floats_of(&crate::fighter_door::predict(&bytes));
+            let input =
+                room::Input { sequence: tick, intent, seen: u64::from(tick - 1), arms, ..room::Input::default() };
+            assert_eq!(crate::input(player, &protocol::input_bytes(&input)), TAKEN);
+            room_tick();
+            let after = fighter_now(player);
+            let bits = |numbers: &[f64]| numbers.iter().map(|number| number.to_bits()).collect::<Vec<_>>();
+            let body = movement::floats::BODY_FLOATS;
+            assert_eq!(bits(&predicted[..body]), bits(&after[..body]), "zone {zone}, tick {tick}: the body");
+            // A foe come near strikes, which a page predicting alone does not see: the walk ends there.
+            if bits(&predicted) != bits(&after) {
+                assert!(tick > 150, "zone {zone}: struck at tick {tick}, before the walk had gone far");
+                break;
+            }
+            let moved = combat::sight::apart([before[0], before[1]], [after[0], after[1]]);
+            blocked |= tick % 60 > 5 && moved < 0.01;
+            climbed |= (after[2] - before[2]).abs() > 1e-6;
+        }
+        assert!(blocked, "zone {zone}: the walk met a wall");
+        if zone == zone_of_each_ground()[1] {
+            assert!(climbed, "zone {zone}: the walk rose or fell on the hollow's heights");
+        }
+    }
+}

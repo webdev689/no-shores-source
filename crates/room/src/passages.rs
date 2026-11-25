@@ -124,6 +124,24 @@ fn piece_blocks(plan: &Plan) -> Vec<Block> {
     solids.iter().map(block).collect()
 }
 
+/// A zone's ground as its room stands bodies on it, and a page predicts them on it: under ground the Forge's dungeon
+/// floor (its walls and jambs its own) and the pieces' solids; above ground the hollow's heights, its dressing's
+/// blocks and the pieces' solids; and its section's ring. None where the dungeon's floor cannot be made.
+#[must_use]
+pub fn passage_ground(plan: &Plan) -> Option<(Floor, Vec<Block>, Vec<[f64; 2]>)> {
+    let (floor, mut blocks, ring) = match &plan.ground {
+        Laid::Under(dungeon) => {
+            let (width, depth) = (dungeon.columns as f64 * dungeon::CELL_M, dungeon.rows as f64 * dungeon::CELL_M);
+            (Floor::of_dungeon(dungeon)?, Vec::new(), vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]])
+        }
+        Laid::Open(hollow) => {
+            (Floor::Island(Box::new(hollow.ground.clone())), hollow.blocks.clone(), hollow.ring.clone())
+        }
+    };
+    blocks.extend(piece_blocks(plan));
+    Some((floor, blocks, ring))
+}
+
 impl Room {
     /// A passage zone's room from its plan: its island's band of foe levels (raised by depth, `passage::levels`), the
     /// week's two modifiers on its passages, and its route. None where its ground cannot be made or its island is no
@@ -137,16 +155,7 @@ impl Room {
     ) -> Option<Self> {
         let island = island_named(island)?;
         let sites = &plan.sites;
-        let (floor, mut blocks, ring) = match &plan.ground {
-            Laid::Under(dungeon) => {
-                let (width, depth) = (dungeon.columns as f64 * dungeon::CELL_M, dungeon.rows as f64 * dungeon::CELL_M);
-                (Floor::of_dungeon(dungeon)?, Vec::new(), vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]])
-            }
-            Laid::Open(hollow) => {
-                (Floor::Island(Box::new(hollow.ground.clone())), hollow.blocks.clone(), hollow.ring.clone())
-            }
-        };
-        blocks.extend(piece_blocks(plan));
+        let (floor, blocks, ring) = passage_ground(plan)?;
         let section = Section { ring, spawns: vec![sites.arrive], falls_kill: false };
         let arrive = (sites.arrive[0], sites.arrive[1]);
         let mut room = if matches!(plan.ground, Laid::Under(_)) {

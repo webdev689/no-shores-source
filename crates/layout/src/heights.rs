@@ -414,7 +414,8 @@ mod tests {
 
     #[test]
     fn a_brief_without_heights_keeps_every_area_at_the_land_level() {
-        let area = |kind| Area { kind, name: String::new(), at: [0.0, 0.0], radius: 40.0, leads_to: None };
+        let area =
+            |kind| Area { kind, name: String::new(), at: [0.0, 0.0], radius: 40.0, leads_to: None, crosses: false };
         let areas = [area(AreaKind::Keep), area(AreaKind::Hamlet)];
         let mut brief = crate::brief::Briefs::default().of("none", land::sites::NodeKind::Patrol);
         assert_eq!(levels(&areas, &brief), vec![0.0, 0.0]);

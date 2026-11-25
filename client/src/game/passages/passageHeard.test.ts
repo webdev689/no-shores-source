@@ -86,5 +86,7 @@ test('an ask of the passages is answered yes by its dive changed, whatever other
   const diving = { answered: 4, dive: { island: 'continent-1', week: 9, zone: 3 } };
   const found = { answered: 5, answer: 0, dive: { island: 'continent-1', week: 9, zone: 3 } };
   assert.equal(answerHeard(diving, found, false), null, 'a find in the haul is no way on');
-  assert.equal(answerHeard({ ...diving, done: true }, found, false), 'yes', 'a Home, done, turns the dive homeward');
+  assert.equal(answerHeard(diving, found, false), null, 'another ask answered done is no Home');
+  const homeward = { ...found, dive: { ...found.dive, homeward: true } };
+  assert.equal(answerHeard(diving, homeward, false), 'yes', 'a Home turns the dive homeward');
 });

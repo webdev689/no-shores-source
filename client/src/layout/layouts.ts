@@ -39,6 +39,8 @@ export interface LayoutArea {
   readonly at: Point;
   readonly radius: number;
   readonly leads_to?: string;
+  /** A gate that crosses to another patrol area of the island (the layout crate's `crossings`). */
+  readonly crosses?: boolean;
 }
 
 /** A site a layout marks (the layout crate's `Site`): what it is for, where, how much ground it takes, and what it

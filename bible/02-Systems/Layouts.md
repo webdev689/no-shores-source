@@ -73,7 +73,8 @@ from the sea, fresh water and the claim's edge), then:
    comes first on its seaward side, then a gate at its edge toward each instance it leads to (the mission, dungeon
    and boss nodes of its own region, `content/world/regions.json`, nearer it than any other patrol area of that
    region), then the brief's areas. Once the zone is planned, a crossing gate toward each other patrol area of its
-   island stands on its landing (`crossings.rs`), 10 m round, 0.7 of the landing's reach out toward that zone, its
+   island stands on its landing (`crossings.rs`), marked as crossing (`crosses`, which `is_crossing` reads and the
+   page's `across`; no other gate is taken for one), 10 m round, 0.7 of the landing's reach out toward that zone, its
    map joining it to the landing by a way: added last, it moves none of the zone's places, ways or runs (on Saltmere
    each of its three zones has one toward each of the others). An
    instance whose region holds no patrol area has no way in from one: it is landed at from the sea. The bake reads
@@ -505,10 +506,10 @@ line. On continent 1 every space is reached from the first (`crates/room/tests/m
 
 A gate's basin and an instance's way in are passages ([[Game]]): standing in one, the player is offered "Enter" the
 instance or "Return to" the patrol area (E), and goes through the veil to arrive at the other's way in or gate. A
-gate toward another patrol area offers "Go to" it, and the player goes through the veil ("Going to" the zone) to
-arrive at that zone's gate toward the one they left (`client/src/layout/passage.ts`, `client/src/game/gates.ts`,
-the flow's `cross`); once the game draws the way between zones (`client/src/game/passages/passageWay.ts`), it takes
-the veil's place. A way
+gate the layout marks as crossing to another patrol area (its `crosses`) offers "Go to" it: E plays the way between
+the two zones over the island, never the veil, framed on the two, while the room of that zone's gate toward the one
+left is joined, then the walk in (`client/src/layout/passage.ts`, `client/src/game/gates.ts`, the flow's `cross`,
+`client/src/game/passages/wayBetween.ts`, as the passages' ways play, [[Passages]]). A way
 into a locked node ([[World Map]], "Seen whole, reached by nodes") is shut: it offers "<name> is locked", and E there
 does nothing.
 

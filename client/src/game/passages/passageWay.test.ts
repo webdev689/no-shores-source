@@ -5,6 +5,7 @@ import {
   dotsOnScreen,
   LEG_DOTS,
   RISE_S,
+  settledShot,
   WALK_M,
   WAY_S,
   type WayAsk,
@@ -94,4 +95,31 @@ test('a lamp’s Home is the same way, its leg running back to the patrol zone',
   const home = wayOf({ ...ask, to: ask.come[0] ?? [0, 0] });
   const leg = wayAt(home, RISE_S + DRAW_S - 0.001).dots.filter((dot) => dot.taking);
   assert.deepEqual(leg.at(-1)?.at.slice(0, 2), [...(ask.come[0] ?? [])]);
+});
+
+test('the way comes down in the zone’s own frame: the camera over the island is the same place, the arrival the zone’s', () => {
+  const origin = [ask.to[0], ask.to[1], 0] as const;
+  const zoned = wayOf({ ...ask, arrive: { at: [10, 20, 20], facing: Math.PI / 2 }, origin });
+  const over = wayAt(zoned, RISE_S + DRAW_S);
+  const down = wayAt(zoned, RISE_S + DRAW_S + 1e-9);
+  assert.equal(over.inPlace, false, 'over the island in the world');
+  assert.equal(down.inPlace, true);
+  // The same eye, measured from the zone's frame: no jump as the way comes down.
+  const moved = over.shot.eye.map((along, axis) => along - (origin[axis] ?? 0) - (down.shot.eye[axis] ?? 0));
+  assert.ok(Math.hypot(...moved) < 0.01, `${moved.join(', ')}`);
+  const end = wayAt(zoned, WAY_S);
+  assert.deepEqual(end.body?.at, [10, 20, 20]);
+  assert.equal(end.walked, 1);
+  assert.ok(Math.abs(end.shot.eye[0] - (10 - 4.5)) < 1e-6, 'behind the arrival in the zone’s frame');
+});
+
+test('the way’s camera settles into the foot’s own as the character walks in, its yaw the shorter way round', () => {
+  const shot = { eye: [0, 0, 10] as [number, number, number], yaw: 3, pitch: 0.2, fov: 1 };
+  const own = { eye: [4, 2, 2] as const, yaw: -3, pitch: 0.1, fov: 1.2 };
+  assert.deepEqual(settledShot(shot, own, 0), shot);
+  const settled = settledShot(shot, own, 1);
+  assert.deepEqual(settled.eye, [4, 2, 2]);
+  assert.ok(Math.abs(Math.sin(settled.yaw - own.yaw)) < 1e-9 && Math.cos(settled.yaw - own.yaw) > 0);
+  assert.ok(Math.abs(settledShot(shot, own, 0.5).yaw - (3 + (2 * Math.PI - 6) / 2)) < 1e-9, 'through south, not round');
+  assert.ok(Math.abs((settled.pitch ?? 0) - 0.1) < 1e-9 && Math.abs(settled.fov - 1.2) < 1e-9);
 });

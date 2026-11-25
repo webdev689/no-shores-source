@@ -316,16 +316,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     },
   });
 
-  const passages = new PassageGame({
+  const passages: PassageGame = new PassageGame({
     ...{ module: roomModule, context: footContext, goInto, tell, now: () => Date.now() },
     ...{ foot: () => playing.foot, flow: () => playing.flow, land: () => playing.landmass },
     setFlow: (flow) => void (playing.flow = flow),
     setReady: (ready) => void ([playing.ready, playing.waited] = [ready, 0]),
-    showDungeon: (layout, node) => dungeons.show(layout, node, undefined),
+    showDungeon: (layout, node) => dungeons.show(layout, node, undefined, () => passages.pieces()),
     companyPlaces: () => companyPlaces(link),
     climate: (id) => continents.find((each) => each.id === id)?.climate ?? '',
     failed: (why) => travel({ kind: 'shut', why }, goSea),
   });
+  const pieces = piecesDrawer(gpu, () => (dungeons.piecesFromPack() ? null : passages.pieces()));
   const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
   if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
   const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
@@ -528,10 +529,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     );
   /** Going through the gate the player stands in to the node it leads to. */
   const goThrough = () => {
-    const way = playing.through;
+    const [way, here] = [playing.through, playing.foot?.node];
     // A gate shut on a locked node takes no one; an open one keeps the seas, as rooms judge where players come from.
-    if (way?.happening && playing.flow.mode === 'foot')
-      travel(way.happening, () => goFoot(way.node, way.facing, playing.foot?.seas));
+    if (!way?.happening || playing.flow.mode !== 'foot' || !here) return;
+    const join = () => goFoot(way.node, way.facing, playing.foot?.seas);
+    if (!passages.ways.cross(way.happening, here.centre, way.node.centre, join)) travel(way.happening, join);
   };
   hud.onPassage(goThrough);
   rejoinOnGuild(
@@ -592,7 +594,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
-      ...{ world, music, ambience, dungeons, passages, pieces: piecesDrawer(gpu, () => passages.pieces()) },
+      ...{ world, music, ambience, dungeons, passages, pieces },
       heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),
     },
     playing,

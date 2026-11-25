@@ -49,7 +49,7 @@ import {
   openAlone,
   roomNameAt,
   standInDungeon,
-  standOnCourse,
+  standInPassage,
   unheard,
   useOnFoot,
 } from './footTrips.ts';
@@ -226,11 +226,11 @@ export class Foot {
     into: { readonly number: number; readonly ask: DungeonAsk; readonly room: string },
     layout: DungeonLayout,
     seas: Difficulty = 'normal',
-    passage?: { readonly blocks: readonly Block[]; link(heard: Heard, session: string | null): Promise<RoomLink> },
+    passage?: Parameters<typeof standInPassage>[2],
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
-    if (passage) standOnCourse(context.movement, rules.combat, passage.blocks);
+    if (passage) standInPassage(context.movement, rules.combat, passage);
     else standInDungeon(context.movement, rules.combat, into.ask);
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
     const address = context.rooms?.(into.room);

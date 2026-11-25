@@ -44,6 +44,9 @@ code:
   - crates/protocol/src/passage_wire.rs#passages_of
   - crates/protocol/src/passage_wire.rs#seen_offset
   - crates/room-wasm/src/passage_room_door.rs#open_passage
+  - crates/room/src/passages.rs#passage_ground
+  - crates/room-wasm/src/fighter_door.rs#set_passage
+  - client/src/game/dungeonDressing.ts#passagePiecesLaid
   - client/src/rules/passageRules.ts#startPassageDoor
   - client/src/network/passageMessages.ts#passagesOf
   - client/src/network/passageMessages.ts#passageSeenOf
@@ -59,6 +62,7 @@ code:
   - client/src/game/passages/passagePieces.ts#pieceMesh
   - client/src/game/passages/pieceView.ts#piecesDrawer
   - client/src/game/passages/passageWay.ts#wayAt
+  - client/src/game/passages/wayBetween.ts#WayBetween
   - client/src/game/passages/passageMap.ts#passageSheet
   - client/src/game/passages/passageWords.ts#dealTracker
   - client/src/game/passages/passagePanels.ts#MouthsCardView
@@ -200,8 +204,8 @@ was done finds it done.
 
 ## On the wire
 
-The gear carries the dive and its haul, each island's lamps lit this week and its day's lamp, and the Atheric
-bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its key, done,
+The gear carries the dive (homeward or not) and its haul, each island's lamps lit this week and its day's lamp, and
+the Atheric bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its key, done,
 the dead lamps lit and targets down, the ring's share held, the seconds left, the waves, whether the mouths are open
 and the lamp lit for the player, and their hold under way. The asks are numbered 82 to 86 (`passage_wire`), after
 the open-find ask's 81. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
@@ -237,16 +241,19 @@ as its other asks do, and a refusal is said in the room's words (171 to 178).
   beyond (its name, depth, deal and currents) and the week's modifiers; the routes ("The public passage", and "Your
   company's route" in a company, else "Your own route, alone"); Go in (E), "Begin at the second lamp" for each lamp lit
   this week, and Close (Esc). A choice asks to begin, by the mouth's place, its route and the lamp.
-- **The room's yes**: an ask of the passages is yes once the dive has moved (begun, or gone on to another zone), or
-  for a lamp's Home once the room answers it done; it plays the way between zones while the room gone to is joined. A
-  passage refusal is said in a toast, as is no answer in 10 s; other asks answered meanwhile are not taken for it.
+- **The room's yes**: an ask of the passages is yes once the dive has moved (begun, gone on to another zone, or for
+  a lamp's Home turned homeward, as the gear carries it); it plays the way between zones while the room gone to is
+  joined. A passage refusal is said in a toast, as is no answer in 10 s; other asks answered meanwhile, done or not,
+  are not taken for it.
 - **A zone's room**: the server's by its name (`passageRoomName`, spelled as the server spells it): the first public
   room, the next copy (`--2`, `--3`) when one says "This passage is full.", or a company's route's own, a member's
   room found as runs are; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
   JSON), the character the last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to
-  the page: its layout drawn by the dungeon's renderer and the body predicted on the Forge's floor at 0 m among its
-  walls and the pieces' solids; above ground its hollow is an island to the islands' layer (`zoneIsle`), the body
-  predicted on its heights among the solids, as a sea island's beach.
+  the page, its layout drawn by the dungeon's renderer; above ground its hollow is an island to the islands' layer
+  (`zoneIsle`), stood on as a sea island's beach, and drawn alone: no land of the island round it. Either way the
+  body is predicted on the zone's own ground from the same ask (`fighter_passage`, `set_passage`): the ground and
+  blocks its room stands bodies on (`passage_ground`), under ground the Forge's floor and the pieces' solids, above
+  ground the hollow's heights, its dressing's blocks and the pieces' solids.
 - **Home**: the lamp's Home turns the dive homeward; the page joins the patrol zone's room as ever, and the way comes
   down to where the room stands the player, 2 m before the mouth the dive began at and facing away from it, once its
   first snapshot of the body has come.
@@ -259,22 +266,27 @@ as its other asks do, and a refusal is said in the room's words (171 to 178).
 - **The pieces** stand as the deal stands for the player (`PieceState`): a mouth open or shut, the lamp and the dead
   lamps lit (gold) or cold (grey), a tally post whole or broken, the reliquary shut or opened. Above ground they are
   the islands' kit's `passage` modules, placed in the hollow (`withPieces`), and only the lamps' lights are drawn over
-  them as boxes; under ground they are plain boxes to their solids' sizes (`pieceMesh`) until the dungeon pack
-  `passage`, which `readModulePack` reads beside the styles' packs, is named in the dungeons' manifest.
+  them as boxes. Under ground they are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each
+  piece's foot turned to its facing, in the pictures of the cell it stands on, into a mesh of the dungeon's own made
+  again as the deal's state changes; a lamp's and a dead lamp's `glow` part is lit, or the cell's stone while cold.
+  While the pack is coming, or if it fails, they are plain boxes to their solids' sizes (`pieceMesh`).
 
 ### The way between zones
 
-`wayOf` lays the way's rails and `wayAt` plays it, on the cinema's rails ([[Cinema]]); in the flow ([[Game]], "The
+`wayOf` lays the way's rails and `wayAt` plays it, on the cinema's rails ([[Cinema]]), kept under way by
+`WayBetween`, which a crossing gate between two patrol zones plays too ([[Layouts]], "Gates"); in the flow ([[Game]], "The
 flow") a mouth, a begin or a Home is `passing`, drawn over the island from the way's camera with the web's places and
-the way's dots over it, and on foot again once the way has played and the place has come.
+the way's dots over it; from the way down the place gone to is drawn as on foot, the player's inputs held, and the
+flow is on foot again once the way has played. A zone's own frame stands at its place on the island, so the camera
+comes down from over the island without a jump.
 
 | Beat | Seconds | What is seen |
 |---|---|---|
 | Rise | 1.5 | From behind the character up to the island seen whole, framed as an island's side is framed from the ship (`frameSide`), every zone of the web inside the picture |
 | Draw | 2 | The way being taken drawn a dot at a time, 10 a leg, to the next zone's place |
 | Wait | until ready | Held over the island while the room gone to is not ready (`wayClock`) |
-| Down | 1.5 | Down to behind the character at their start, 3 m back from the arrival |
-| Walk | 1.5 | The character walks 3 m in, the camera settling 4.5 m behind and 2.2 m up |
+| Down | 1.5 | Down to 3 m short of behind where the room stood the character, in the place's own frame |
+| Walk | 1.5 | The camera comes the last 3 m in to the character, settling into the foot's own (`settledShot`) |
 
 ### The passages' map
 
@@ -299,6 +311,7 @@ card, the panels and Lanternfall's card.
 
 ## Limits
 
-- Under ground the pieces are boxes until the dungeon pack `passage` is named in the manifest.
-- Above ground the continent's land is drawn round the hollow as on any place on foot.
-- The way's camera ends over the zone's place on the island, and the foot's camera then stands in the zone's own frame.
+- In a hollow the sea of the open landmass's view still lies round it at 0 m, under its rim, and the sky and the
+  shadows take the climate of the landmass open.
+- Under ground an onward mouth open and one shut differ little at a distance: the pack's open mouth is backed by
+  rough rock, close in tone to the shut slab.

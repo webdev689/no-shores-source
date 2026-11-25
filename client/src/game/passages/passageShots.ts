@@ -14,7 +14,8 @@ import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { SAMPLES } from '../../water/waterView.ts';
 import { fromEyeMatrix, type Shot } from '../camera.ts';
-import { stylePacks } from '../dungeonDressing.ts';
+import { passagePiecesLaid, stylePacks } from '../dungeonDressing.ts';
+import { loadStylePack, PASSAGE_PACK } from '../dungeonModules.ts';
 import { DungeonView } from '../dungeonView.ts';
 import { viewOn } from '../../heldmap/heldMapLaw.ts';
 import { paintLand } from '../../heldmap/landLetters.ts';
@@ -99,8 +100,10 @@ export async function zoneShot(
   const heights = door.heights(ISLAND, week, plan.zone.number);
   const floor = floorOf(plan, heights);
   const pieces = new PieceView(gpu);
-  // As the game stands them: above ground the kit's modules, only the lights drawn as boxes; under ground boxes.
-  pieces.set(pieceMesh(plan.pieces, state, kind === 'open'));
+  // As the game stands them: above ground the kit's modules, only the lights drawn as boxes; under ground the
+  // passages' pack's, or boxes while it has not come.
+  const pack = kind === 'under' ? await loadStylePack(PASSAGE_PACK) : null;
+  if (!pack) pieces.set(pieceMesh(plan.pieces, state, kind === 'open'));
   // Above ground from over the arrival, its back to the rim's rock; under ground from behind it in the way in.
   const { back, up, pitch } =
     eye ?? (kind === 'open' ? { back: -4, up: 14, pitch: 0.45 } : { back: 14, up: 9, pitch: 0.3 });
@@ -129,7 +132,10 @@ export async function zoneShot(
     const layout = zoneLayout(plan);
     if (!layout) throw new Error('an under zone with no layout');
     const dungeon = new DungeonView(gpu);
-    dungeon.set(layout, cityClimate('woodland'), [56, 2], {}, await stylePacks(layout));
+    const climate = cityClimate('woodland');
+    const laid = pack && passagePiecesLaid(layout, pack, climate.climate, plan.pieces, state, false);
+    dungeon.set(layout, climate, [56, 2], {}, await stylePacks(layout), laid ?? undefined);
+    dungeon.setPieces(laid, 'shown');
     draw = (pass) => dungeon.drawInto(pass, fromEye, shot.eye, 0);
   }
   for (let frame = 0; frame < 6; frame++) {
