@@ -238,7 +238,10 @@ The decisions in [[Open Questions]] are not repeated here.
   code and fixed at its cause with a test: the sea's chart reaches every player at its tick and a sea opened again;
   the land's map paints its sheet once for its view and what moves on it over a copy, ten times a second at most; the
   public event's dead next-event banner is gone, and stepping onto its ground is read out; the sun comes through an
-  open building's panes; and no window is laid into a lower wing's gable (33 in 16 buildings). Tested offline: the
+  open building's panes; and no window is laid into a lower wing's gable (33 in 16 buildings). Then the owner's "It
+  looks like its raining in interiors": a room's ceiling was drawn but no box a body meets, so the rain's shelter
+  left every top storey open; each ceiling is now a box over its room to its outer faces, and a shelter cell is dry
+  where a box reaches a tenth of it ([[Weather]], "Shelter"). Tested offline: the
   full check on the merged head before its push (the PR names the commit); pictured headless in the Downs: the
   windows, and the raid's panel on its ground, none 60 m off it, and its ring on the map with its name and time left.
   Not played by hand or seen on a real GPU; the dots and the light through the panes never pictured (no second
