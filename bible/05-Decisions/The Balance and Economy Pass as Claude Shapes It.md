@@ -112,6 +112,9 @@ What finishing a piece takes now, every node and one node a column (Aurem, fragm
 | A cove's wreck | One common material of 1 or 2, Heartwood 1.5 times in a hundred, a module 3 (was two of 1 to 3, 5 and 8); an isle's unchanged | The owner's yes, and their earlier "less than a Minor ship's whole lot": a cove's two or three wrecks held 4 to 18 materials against a Minor ship's 3 to 9. Now 2 to 6 |
 | Level 30 | Waits on a Breach module, as a player's on Breach armour | The owner's "Yes. Same for player gear. Thats always been the goal"; already so, unchanged |
 
+Replaced in part by [[Passages as Claude Builds Them]] ("The band, measured"): a sinking pays as twenty-one
+land kills of its rank, and a ship's piece holds a module 12 times in a hundred and 4 more a rank, its chest always.
+
 ### The fight on foot
 
 | Call | Chosen | Why |

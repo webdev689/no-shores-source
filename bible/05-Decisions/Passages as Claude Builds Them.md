@@ -159,6 +159,21 @@ patrol zone.
 | Bounties | A fourth pool on the board, the passages', two a day: light a lamp; finish three missions; bring down 25 foes; go 8 zones deep; open two reliquaries; gather a vein |
 | The band | Every activity's rewards an hour are measured at each level and kept within one band (`gear::band`), the passages' with their deaths counted; a change to any pay is checked against it |
 
+## The band, measured
+
+Measured by `gear::band` against an hour of the patrol zone at the same level, its times from a scripted player in
+the rooms (`room::band_measure_tests`): a patrol garrison's foe 25 s, a patrol dungeon's 55 s, an Elite Dungeon's 45 s,
+a passage zone's 35 s and about eighteen foes a zone; the day's and the week's rewards spread over 14 hours a week;
+the haul's losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
+
+| Call | Choice |
+|---|---|
+| The band | Every activity's XP and Aurem an hour 0.7 to 2 of the patrol zone's, its loot (each colour weighed twice the one below) 0.75 to 5; a test fails for any outside it, for the passages paying the most XP at every level, and for the passages dropping the most loot at any |
+| The passages' caches | At level 5: a skirmish 1,400 XP and 105 Aurem; a mission 1,800 and 135; a vault 2,800 and 210; a vein and a reliquary 700 and 52; a lamp 2,800 and 210. Depth raises their XP and Aurem 1 to 1.25 and their finds' chances 1 to 2. A zone takes one player about ten minutes, so the cache stands where a patrol zone's public events do; the passages measure 0.8 to 1.4 of the patrol zone's XP and 0.8 to 1.3 of its loot |
+| The sea | A sinking pays as twenty-one land kills of its rank; a ship's piece holds a module 12 times in a hundred and 4 more a rank, and its chest always. An hour at sea measured 0.44 of the patrol zone's XP at level 5, below the band, the twelve having been set against the patrol's kills alone |
+
+Replaced in part, by the table above: the caches' numbers in "Rewards".
+
 ## As the rules play them
 
 | Call | Choice |

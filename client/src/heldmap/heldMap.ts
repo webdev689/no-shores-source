@@ -34,6 +34,7 @@ import { GLYPH_HALF } from './landGlyphs.ts';
 import { paintLand } from './landLetters.ts';
 import type { LandSheet } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
+import { MapRegions, paintRegion } from './mapRegions.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
 import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
@@ -157,6 +158,8 @@ export class HeldMap {
   /** The waters once they are open: their wash, letters and key, and which cities are ports. */
   private waters: HeldMapWaters | null = null;
   private isles: readonly IsleMark[] = [];
+  /** Every island's regions (`content/world/regions.json`), set as the world is read; one under the pointer lit. */
+  readonly regions = new MapRegions();
   /** The land the map shows while raised on foot (`openLand`), and what its view is held to: the world at sea. */
   private land: LandSheet | null = null;
   private extent: Extent = WORLD;
@@ -308,10 +311,13 @@ export class HeldMap {
     const [inkX, inkY] = [x - this.ink.x, y - this.ink.y];
     if (inkX < 0 || inkY < 0 || inkX > this.ink.width || inkY > this.ink.height) return;
     const mark = nearestMark(this.placed, inkX, inkY);
-    const point = mark ? mark.place.sail : (toWorld(this.mapView, inkX, inkY) as Point2);
+    // A region of the ship's island is sailed for at its anchorage, as a node is at its coast.
+    const [world, ship] = [toWorld(this.mapView, inkX, inkY) as Point2, this.shipAt];
+    const region = mark ? null : this.regions.under(this.waters, ship, world);
+    const point = mark ? mark.place.sail : (region?.anchorage ?? world);
     this.choice = {
       at: point,
-      name: mark ? mark.place.name : 'This stretch of sea',
+      name: mark ? mark.place.name : (region?.name ?? 'This stretch of sea'),
       course: this.plan(point),
       place: mark?.place.id ?? null,
     };
@@ -365,7 +371,8 @@ export class HeldMap {
     this.shipAt = scene.ship;
     const waters = this.land || this.press?.panning ? null : this.waters;
     const hovered = waters && this.ask.hover(waters.waters, waters.judge, this.mapView, this.ink, scene.ship);
-    if (hovered?.cells) this.view.setLit(hovered.cells);
+    const lit = this.regions.hover(waters, scene.ship, this.mapView, this.ink, this.ask, hovered?.cells ?? null);
+    if (lit) this.view.setLit(lit);
     const scaled = (rect: Rect, down: number): Rect => ({
       x: rect.x * dpr,
       y: (rect.y + down) * dpr,
@@ -394,7 +401,8 @@ export class HeldMap {
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const size = { width, height, inkAt, dpr };
-    const letteringChanged = this.letter(reads, scene, stage.sprite, size, hovered?.said ?? null);
+    const said = this.regions.said() ?? hovered?.said ?? null;
+    const letteringChanged = this.letter(reads, scene, stage.sprite, size, said);
     const land = this.land !== null;
     const ink = scaled(stage.ink, drop);
     return {
@@ -449,7 +457,8 @@ export class HeldMap {
     if (lettering) {
       paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
       // While the prompt asks, it says what the pointer's words would.
-      if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
+      if (said?.region && !asked) paintRegion(this.painter, said.line, said.x, said.y, lettering.scale);
+      else if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
       if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
     } else if (land) {
       const player = {

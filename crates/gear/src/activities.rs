@@ -15,12 +15,12 @@ pub struct EliteDungeon {
     pub boss: u8,
 }
 
-/// An island's places as the draws know them: its continent, its three patrols and its two Elite Dungeons, each in its
-/// land file's order.
+/// An island's places as the draws know them: its continent, its patrol zones (Saltmere's three; the one by its port
+/// city on every other island) and its two Elite Dungeons, each in its land file's order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Island {
     pub continent: &'static str,
-    pub patrols: [&'static str; 3],
+    pub patrols: &'static [&'static str],
     pub elite: [EliteDungeon; 2],
 }
 
@@ -32,47 +32,47 @@ const fn elite(id: &'static str, style: &'static str, boss: u8) -> EliteDungeon 
 pub const ISLAND_PLACES: [Island; 9] = [
     Island {
         continent: "continent-1",
-        patrols: ["saltgrass-downs", "gullwing-vale", "driftwood-moors"],
+        patrols: &["saltgrass-downs", "gullwing-vale", "driftwood-moors"],
         elite: [elite("krakens-grotto", "caverns", 21), elite("pearl-tomb", "crypt", 22)],
     },
     Island {
         continent: "continent-2",
-        patrols: ["highwater-fells", "highwater-glen", "greystone-tors"],
+        patrols: &["highwater-fells"],
         elite: [elite("cinder-deep", "mines", 23), elite("hollow-crypt", "crypt", 24)],
     },
     Island {
         continent: "continent-3",
-        patrols: ["elder-thicket", "hollow-dells", "oakshade-weald"],
+        patrols: &["elder-thicket"],
         elite: [elite("black-tide-caverns", "caverns", 25), elite("pale-undercroft", "sanctum", 26)],
     },
     Island {
         continent: "continent-4",
-        patrols: ["ochre-wastes", "sunscorched-barrens", "scorpion-erg"],
+        patrols: &["ochre-wastes"],
         elite: [elite("forsaken-cistern", "halls", 27), elite("sandworn-vault", "halls", 28)],
     },
     Island {
         continent: "continent-5",
-        patrols: ["lion-grasslands", "baobab-grasslands", "thunderhoof-grasslands"],
+        patrols: &["lion-grasslands"],
         elite: [elite("smugglers-labyrinth", "cells", 29), elite("silt-barrows", "crypt", 30)],
     },
     Island {
         continent: "continent-6",
-        patrols: ["emerald-tangle", "vinewood-basin", "rainshadow-canopy"],
+        patrols: &["emerald-tangle"],
         elite: [elite("deepwater-vault", "halls", 31), elite("coral-halls", "halls", 32)],
     },
     Island {
         continent: "continent-7",
-        patrols: ["kurgan-plateau", "horsehead-mounds", "greywind-steppe"],
+        patrols: &["kurgan-plateau"],
         elite: [elite("barrow-halls", "crypt", 33), elite("saltworm-warrens", "mines", 34)],
     },
     Island {
         continent: "continent-8",
-        patrols: ["bogmire-sloughs", "sunken-fen", "blackwater-marsh"],
+        patrols: &["bogmire-sloughs"],
         elite: [elite("mire-hollows", "caverns", 35), elite("rotwater-sewers", "cells", 36)],
     },
     Island {
         continent: "continent-9",
-        patrols: ["whitewind-tundra", "pale-wastes", "aurora-wastes"],
+        patrols: &["whitewind-tundra"],
         elite: [elite("frozen-sepulchre", "sanctum", 37), elite("brine-catacombs", "crypt", 38)],
     },
 ];
@@ -289,8 +289,9 @@ pub(crate) fn burning(period: u64, kind: u64, nth: u32) -> u8 {
 #[must_use]
 pub fn dungeon_of_the_day(day: u64, continent: &str) -> Option<(&'static str, usize)> {
     let index = ISLAND_PLACES.iter().position(|island| island.continent == continent)?;
-    let pick = drawn(day, DAY_DUNGEONS, u32::try_from(index).ok()?, 9);
-    Some((ISLAND_PLACES[index].patrols[pick / 3], pick % 3))
+    let patrols = ISLAND_PLACES[index].patrols;
+    let pick = drawn(day, DAY_DUNGEONS, u32::try_from(index).ok()?, patrols.len() * 3);
+    Some((patrols[pick / 3], pick % 3))
 }
 
 /// The modifier every dungeon of the day carries at Elite and Abyss.

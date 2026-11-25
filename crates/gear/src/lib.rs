@@ -13,6 +13,7 @@ mod art_levels;
 pub mod arts;
 pub mod asks;
 pub mod atheric_bounty;
+pub mod band;
 pub mod bounties;
 pub mod catalogue;
 pub mod character;
