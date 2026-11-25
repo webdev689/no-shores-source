@@ -3,6 +3,7 @@
 // at sea, and whether Use is held; the keys open the chat. It keeps its state here, as the menu's window keeps its own.
 import type { AccountLink, Roster } from '../../network/accounts.ts';
 import type { Cards } from '../../player/cards.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import type { OtherPlayers } from '../../player/others.ts';
 import { announce } from '../../ui/announce.ts';
 import type { Node } from '../../ui/node.ts';
@@ -91,6 +92,11 @@ class Social {
       },
       true,
     );
+  }
+
+  /** Sets Inspect's pieces beside the player's own, from `mine`. */
+  compareWith(mine: () => GearState | null): void {
+    this.inspectWindow.mine = mine;
   }
 
   private heard(said: FromHall): void {
@@ -334,6 +340,11 @@ export function startSocial(
   const started = new Social(accounts, session, forge);
   social = started;
   stack.add((ui) => started.node(ui));
+}
+
+/** Sets each piece another player wears, on Inspect, beside the piece of `mine` worn in its slot. */
+export function inspectAgainst(mine: () => GearState | null): void {
+  social?.compareWith(mine);
 }
 
 /** Opens the chat's field, on its channel as it was. */

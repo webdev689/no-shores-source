@@ -16,7 +16,7 @@ import { elementSvg } from '../player/elementGlyphs.ts';
 import { BAND_CELLS, type Emblem, SIGN_CELLS, type Shape, emblemPixels, plateEnd } from '../plus/emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
 import { keyName } from './controls.ts';
-import { fineGlyph, glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
+import { fineGlyph, glyphSvg, growthSvg, nodeGlyphSvg } from './gearGlyphs.ts';
 
 /** What a press or a key does, as a line of keycaps shows it: the key, then its words. */
 export type Hint = readonly [key: string, words: string];
@@ -123,10 +123,10 @@ export function elementNode(element: number, size: number): Node | null {
 export const nodeGlyphNode = (kind: number, colour: string, size = 24): Node =>
   svgNode(`node ${kind} ${colour}`, nodeGlyphSvg(kind).replace('currentColor', colour), size);
 
-/** A locked node's ring, grown `share` of the way to it, lit in `colour` over `dark`. */
-export function ringNode(share: number, colour: string, dark: string, size: number): Node {
+/** A locked node's growth, a square round its edge grown `share` of the way to it, lit in `colour` over `dark`. */
+export function growthNode(share: number, colour: string, dark: string, size: number): Node {
   const steps = Math.round(share * 100);
-  return svgNode(`ring ${steps} ${colour}`, ringSvg(steps / 100, dark).replaceAll('currentColor', colour), size);
+  return svgNode(`growth ${steps} ${colour}`, growthSvg(steps / 100, dark).replaceAll('currentColor', colour), size);
 }
 
 /** A key on a keycap: square and bevelled, as the kit's stone is. */
@@ -207,6 +207,15 @@ function grownBy(own: OffscreenCanvas, whole: number): OffscreenCanvas {
     context.drawImage(own, 0, 0, grown.width, grown.height);
   }
   return grown;
+}
+
+/** The box a picture is fitted in (`pictureNode`) to stand whole within `width` by `height`: its longer side as long as
+ *  its shorter one lets it be. */
+export function boxWithin(picture: Pixels, width: number, height: number): number {
+  const [, , across, down] = boundsOf(picture);
+  if (across === 0 || down === 0) return Math.max(0, Math.min(width, height));
+  const longest = Math.max(across, down);
+  return Math.max(0, Math.floor(Math.min((width * longest) / across, (height * longest) / down)));
 }
 
 /** A picture in a box `box` CSS pixels a side, its clear margin trimmed and fitted as Enhanced Plus fits its icons

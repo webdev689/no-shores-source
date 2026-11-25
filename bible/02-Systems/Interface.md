@@ -157,6 +157,14 @@ code:
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/combat/worldCues.ts#eventCues
   - client/src/game/gearCards.ts#cardOf
+  - client/src/game/gearCards.ts#wornFor
+  - client/src/game/itemStats.ts#sheetOf
+  - client/src/game/itemStats.ts#setItemRules
+  - client/src/game/statBars.ts#statSheetNode
+  - client/src/game/itemNodes.ts#nodeGrid
+  - client/src/game/itemPage.ts#Comparing
+  - client/src/game/gearGlyphs.ts#growthSvg
+  - client/src/game/itemShots.ts#itemMenu
   - client/src/player/itemPictures.ts#ItemPictures
   - client/src/player/iconFit.ts#fitIcon
   - client/src/game/gearGlyphs.ts#nodeGlyphSvg
@@ -185,7 +193,7 @@ code:
   - content/story/keepers.json
   - client/src/game/bountyBoard.ts#boardPage
   - client/src/game/bountyStage.ts#boardStage
-  - client/src/game/gearNodes.ts#ringNode
+  - client/src/game/gearNodes.ts#growthNode
   - client/src/player/elementGlyphs.ts#elementSvg
   - client/src/face.ts#outlineOf
   - client/src/face.ts#useMendedFace
@@ -353,9 +361,14 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut.
   `game/journalShots.ts`' `settingsShot` draws Settings at its first tab, its others pressed by a shot's events.
   `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing over the
-  sea bar, and the pad's buttons), each shot's display kept across its frames. A shot may
-  hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
-  to come; the page asks for reduced motion, so a screen stands settled.
+  sea bar, and the pad's buttons), each shot's display kept across its frames. `game/itemShots.ts` opens the menu
+  over sample gear carrying a Legendary sword with its whole grid, an Atheric bow and a Legendary helm, its stats asked
+  of the room's rules, so a shot's events open a flyout, hover a card or a node, open a page or press Compare; and
+  `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame
+  (`at`), once a screen has put its focus where it wants it, each event on a frame of its own where it says one, and a
+  pointer's event may name a node (`on`) in place of a place, heard at the middle of where it was laid; it may take
+  more frames (`frames`) for many pictures to come; the page asks for reduced motion, so a screen stands settled. The
+  tool serves on port 5173 where it is free, the only origin R2 answers, so the forge's pictures come.
 - **Read and driven headless.** The interfaces that hear a page's canvas (the game's, the World Editor's, the Test
   Ground's panels) are listed by `__ui()`, on the page or in the game's worker (`ui/seen.ts`): each node shown with an
   id, words or a label, its box clipped to what shows, in the page's CSS pixels, and whether it presses, is disabled or
@@ -853,30 +866,71 @@ never while a press is held. Each press is an ask the room answers.
   keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or barding, and
   the barding tiles' horse pictures without the dyes, 96 at most, letting go of the least lately shown. Escape goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
 - **The card.** An item's name (its set's and its kind's, "Portwatch Helm", or a named piece's own; [[Gear]],
-  "Names") on its rarity's band, its kind, pips and element, its picture, its main number large,
-  its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
-  with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
-  stand at 22, as the menu's labels do, in a card 440 px wide. It shows only for a pointer that moves or a focus the
-  keys moved: a page built anew under a resting pointer, or a focus a click left, opens none over what the player
-  looks at.
-- **An item's page** lies over the menu, as Destiny 1's weapon page does: its name on its rarity's band, its kind,
-  level, pips and element; an Atheric's two perks first, under "Atheric", for a weapon and a module alike: its
-  intrinsic, marked always on, and its own node's perk, marked and dimmed until it is chosen, never listed again among
-  the perks; its words, in a column 380 to 660 px wide (880 at the larger words); its main number large over a meter
-  of it; what it changes over the piece worn; the perks its chosen nodes give, a perk that gives and takes with its
-  cost on a line of its own in the colour of a loss; and its node grid. An item's card names an Atheric's intrinsic
-  first among its perks. Each node is a tile of the kit's stone with its kind's glyph:
-  sunk while locked, a ring inside it lit as far as the item has grown toward it; glowing when it can be bought; its
-  glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
-  click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
-  it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it (never a
-  horse, on its page, its vault cell or its flyout).
+  "Names") on its rarity's band, its kind, pips and element; its picture in a sunk well (its initials while there is
+  none) beside its main number large and its lines (level, Prestige, where it was earned); its fight numbers as rows
+  ("The stats", below); its chosen traits, each its glyph and its short line, a cost's in the colour of a loss under it
+  ([[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]); its words. A carried piece's card, a ware's, a vault cell's and a
+  letter's are set beside the piece worn in its own slot, a module's beside the module fitted, a horse's beside none
+  (`wornFor`): the main number's change and each row's in green or red, and under the number "Against your" the worn
+  piece's name; never a piece beside itself, the same object, whatever its id. Along its foot what its presses do.
+  Where the menu is wide, every card's words stand at 22, as the menu's labels do, in a card 440 px wide. It shows
+  only for a pointer that moves or a focus the keys moved: a page built anew under a resting pointer, or a focus a
+  click left, opens none over what the player looks at. Any other card of the menu (an Art's, a fragment's, an
+  emblem's) keeps its icon over its number.
+- **The stats** ([[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]],
+  [[The Inspect Panel as Claude Shapes It]]), as Destiny 1's weapon page draws them: each name in capitals set right
+  against a bone bar on a faint track, its value beside it (`statBars.ts`), a page's bar 10 px tall (14 at the larger
+  words) and a card's 6 (8). The numbers are the room's own, asked of its rules through the combat rules' WebAssembly
+  once the game has them (`setItemRules`, `itemStats.ts`; [[Gear]], "Stats"), each trait the item gives trimming
+  them: a Melee weapon's Damage, Speed, Reach, Poise and Swing cost; a Ranged one's Damage, Aimed, Fire rate, Poise,
+  Pace aiming and Ammo, a count with no bar; a weapon whose finish moves the body while it is drawn, or one set beside
+  it that does, Dodge cost and Poise held after them; an armour piece's or the cloak's Stamina back, Dodge cost, Poise
+  held and Healing ([[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]). On the page, under a
+  weapon's rows, how it is held where that changes how it plays (blocks with its shield, a pair whose blows or shots
+  take turns, two-handed) and "Strikes at once" for a gun. A bar is the most any
+  kind of its loadout reaches with no traits and three tenths again (a body's own number and three fifths again, Pace
+  aiming the whole pace). Beside another item or another choice of nodes, the part both share stands in bone and what
+  changes past it in green where it is better and red where it is worse, solid either way, a cost better as it falls,
+  the change's words signed after the value as the two numbers are shown ("22.1 +1.1"). A horse and a ship's module
+  have none, and before the rules come no card or page shows rows; rules that lay the numbers out otherwise than the
+  page reads them give none, never misread.
+- **An item's page** lies over the menu, as Destiny 1's weapon page does. Its head is the item's tile (its picture,
+  element and gauge, gilded once full), its name large and its kind, level, pips and element, on a band of its rarity
+  fading to the right over a rule of it. Under it, at the left, its words, upright and faint, over a rule; Attack or
+  Defense large with its element's glyph and its Prestige under it, level with the middle of its rows beside it, or
+  over them where the column has less than 340 px across beside the number for them (480 at the larger words); the
+  node grid, "Hold, Buy" and "Click, Choose" over it; and its perks (an Atheric's two first: its
+  intrinsic, marked always on, and its own node's perk, marked and dimmed until it is chosen, never listed twice; a
+  perk that gives and takes with its cost on a line of its own in the colour of a loss). That column is half the page
+  across, 460 to 600 px (780 at the larger words), and scrolls, its foot fading into the page. At the right the item
+  drawn large on a lit floor, as large as its place lets it stand whole, up to 760 px. Each node is a square tile of
+  the kit's stone with its kind's glyph (an Atheric's own a square with square rays), never a circle: sunk while
+  locked, a square band round its edge lit clockwise from its top's middle as far as the item has grown toward it
+  (`growthSvg`); edged in brass when it can be bought; dim, and not held, while the player has too little to buy it;
+  its glyph brass once bought; set in brass when chosen. Every node takes the pointer and the keys, locked or not, so
+  its card says why. A node is bought by holding it and one bought is chosen by a click. A node hovered, or focused by
+  the keys (over one under a resting pointer), that is not chosen shows on the rows what choosing it would change,
+  and the main number then shows no compare. Its card stands beside it: its name and its state (Chosen, Bought, Locked,
+  or "Not enough Aurem" in the colour of a loss where the player cannot pay; none where it can be bought), along its
+  foot its press in a word ("Hold, Buy"; "Click, Choose"), its words, "Replaces" the perk chosen in its column, and until
+  it is bought each thing it costs (Aurem, the item's fragments and Essence, its island's resource) with its glyph,
+  what the player has over what it asks, enough in green and short in red; a locked one says, in its own words, that
+  its square fills as the item, or an officer, is used; a ship's module's and an officer's nodes say their price in
+  words. With a piece worn in its slot (a carried or vaulted piece's page) the footer offers Compare, and C (the Compare
+  control, rebound as any is, not with Ctrl or Cmd) does the same: the worn piece's card stands in the art's place
+  under "Worn", scrolling where it is long, the art's place kept (a hold still charges it) and the page beside it as
+  it was; the rows and the main number show what this piece changes over it, and the press reads "Compare: on" while
+  it shows, kept from page to page until the menu shuts. Its presses go to the footer, Back first and what wears the
+  piece last, which wraps them onto a second line where they do not fit: wear it, take it off, put it in the vault or
+  take it out (at the vault's counter), and, held, dismantle it (never a horse, on its
+  page, its vault cell or its flyout).
 - **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried, "Vestiges 3/10" over ten places
   in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
   first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
   shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
-  the Ammo crate; the crate is held ("Hold to fill your ammo") to fill the Ranged weapon's ammunition, and offers
+  the Ammo crate; a Fruit is held (its hint "Hold, Use", a plain verb as [[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]] has it) to grow every piece worn, and offers nothing while nothing worn can
+  grow, when it says so ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]); the crate is held ("Hold, Use") to fill the Ranged weapon's ammunition, and offers
   nothing at full, nor with no Ranged weapon worn, when it says to wear one first. The gear is on the Character page
   alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
@@ -1414,7 +1468,9 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
   and Defense over it, and under it the Character tab: their figure in the dress they wear here, each piece they wear in
   its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
-  others to see. Each piece keeps its own id there, so its pictures make the look's choices its figure makes. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
+  others to see. Each piece's card is set against the player's own in that slot (at sea, the sea's word on their
+  gear), "Against your" it, "not counting nodes": the room tells no one another player's nodes, so neither's chosen
+  nodes count in the rows. Each piece keeps its own id there, so its pictures make the look's choices its figure makes. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
   back to their menu.
 - **Settings**' Account tab lists the muted under the blocked, each with Unmute.
 

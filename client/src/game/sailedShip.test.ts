@@ -5,7 +5,8 @@ import { hullWaterline } from '../ships/hulls.ts';
 import { sailedShip } from './sailedShip.ts';
 import type { HullBuild } from './shipPanel.ts';
 
-const builds = [{ name: 'Sloop' }, { name: 'Schooner' }, { name: 'Brig' }] as HullBuild[];
+const built = (name: string) => ({ name, hull: 1, sail: 1, crew: 1, guns: { port: 1, starboard: 1 }, loads: [] });
+const builds = ['Sloop', 'Schooner', 'Brig'].map(built) as unknown as HullBuild[];
 const gearWith = (ship: object | undefined) => ({ ship }) as unknown as GearState;
 
 test('the ship sailed is the gear’s, the Sloop’s before it, and having none is what the gear heard last says', () => {
@@ -30,4 +31,5 @@ test('the ship sailed is the gear’s, the Sloop’s before it, and having none 
   assert.equal(sailed.build()?.name, 'Brig');
   assert.deepEqual(sailed.waterline(), hullWaterline(2));
   assert.match(sailed.called() ?? '', /^the /);
+  assert.equal(sailed.papers(null, null)?.title, `Your Brig, ${sailed.called()}`, 'its papers name it');
 });

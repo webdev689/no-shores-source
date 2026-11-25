@@ -46,6 +46,9 @@ import { type Landmass, openLandmass } from './landmass.ts';
 import { helmControls } from './helmControls.ts';
 import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
+import { setItemRules } from './itemStats.ts';
+import { inspectAgainst } from './social/social.ts';
+import { rulesOf } from './footRoom.ts';
 import { rejoinOnGuild } from './footPlace.ts';
 import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
@@ -54,7 +57,6 @@ import { Sea } from './sea.ts';
 import { sailOrTravel } from './seaTravel.ts';
 import { SeaWord } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
-import { shipPanelOnceBuilt } from './shipPanel.ts';
 import { firstAnchorage } from './seaLaw.ts';
 import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
 import { startTravel } from './travel.ts';
@@ -506,15 +508,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
   const sailed = sailedShip(() => fed()?.gear, builtHulls);
-  const [builtShip, shipWaterline] = [sailed.build, sailed.waterline];
-  // The Ship tab's papers: its voyage only while it is at sea.
   const shipNow = () =>
-    shipPanelOnceBuilt(
-      builtShip(),
-      shipWaterline(),
+    sailed.papers(
       playing.flow.mode === 'sea' ? playing.sea : null,
       playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null,
-      sailed.called(),
     );
   /** Going through the gate the player stands in to the node it leads to. */
   const goThrough = () => {
@@ -535,7 +532,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const storyMode = () => playing.flow.mode === 'story';
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
-  // Read each frame by the menu's feed, so the ship sailed hears every gear the rooms send.
   const fed = () => sailed.heard(playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
   /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster is. */
   const shutOut = (why: string) => {
@@ -549,6 +545,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   stack.add(
     startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore, builtHulls),
   );
+  // The gear's pages ask items' fight numbers of the same rules the player's fighter is predicted by; Inspect sets
+  // another player's pieces beside the player's own, at sea the sea's word on them.
+  rulesOf({ roomModule }).then(
+    ({ combat }) => setItemRules(combat),
+    (error: unknown) => console.error('the gear pages have no rules to ask items’ numbers of:', error),
+  );
+  inspectAgainst(() => fed()?.gear ?? null);
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
@@ -586,8 +589,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
-      ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: shipWaterline },
-      ...{ builtShip, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
+      ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sailed.waterline },
+      ...{ builtShip: sailed.build, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
       heed: (here) => heed(here, shutOut, playing.flow.mode === 'foot'),

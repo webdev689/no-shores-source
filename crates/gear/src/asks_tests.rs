@@ -181,7 +181,7 @@ fn a_vestige_opens_into_a_number_no_item_holds() {
 }
 
 #[test]
-fn fruit_of_dagon_grows_past_level_20_and_feeds_an_item() {
+fn fruit_of_dagon_grows_past_level_20_and_eaten_grows_every_piece_worn() {
     let mut character = at_level_20();
     character.earn_xp(19_999, None);
     assert_eq!(character.materials.fruit, 0);
@@ -189,12 +189,26 @@ fn fruit_of_dagon_grows_past_level_20_and_feeds_an_item() {
     assert_eq!(character.materials.fruit, 1);
     character.earn_xp(u32::try_from(FRUIT_XP * 2).expect("small"), None);
     assert_eq!(character.materials.fruit, 3);
-    let worn = character.worn(Slot::Head).expect("the cap").id;
-    assert_eq!(character.item(worn).map(|item| item.xp), Some(1_000), "a Normal's XP stops at its last column");
-    let fresh = give(&mut character, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::Melee);
-    assert_eq!(character.ask(Ask::Feed { item: worn }, AFIELD, &DICE), Err(Refusal::FullOfXp));
-    assert_eq!(character.ask(Ask::Feed { item: fresh }, AFIELD, &DICE), Ok(Done::Done));
-    assert_eq!((character.item(fresh).map(|item| item.xp), character.materials.fruit), (Some(5_000), 2));
+    let cap = character.worn(Slot::Head).expect("the cap").id;
+    assert_eq!(character.item(cap).map(|item| item.xp), Some(1_000), "a Normal's XP stops at its last column");
+    let worn: Vec<u32> = character.all_worn().map(|(_, item)| item.id).collect();
+    for id in worn {
+        if let Some((item, _)) = character.items.get_mut(&id) {
+            item.xp = item.xp_most();
+        }
+    }
+    assert_eq!(character.ask(Ask::Feed, AFIELD, &DICE), Err(Refusal::FullOfXp), "nothing worn left to grow");
+    assert_eq!(character.materials.fruit, 3, "so none is eaten");
+    let sword = give(&mut character, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::Melee);
+    let helm = give(&mut character, Kind::Head, Rarity::Legendary, NAMED_LEVEL, Slot::Head);
+    let carried = give(&mut character, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::Melee);
+    for (item, slot) in [(sword, Slot::Melee), (helm, Slot::Head)] {
+        character.ask(Ask::Wear { item, slot }, AFIELD, &DICE).expect("worn");
+    }
+    assert_eq!(character.ask(Ask::Feed, AFIELD, &DICE), Ok(Done::Done));
+    let xp = |id: u32| character.item(id).map(|item| item.xp);
+    assert_eq!([xp(sword), xp(helm), xp(carried)], [Some(5_000), Some(5_000), Some(0)], "each worn piece, in full");
+    assert_eq!(character.materials.fruit, 2, "one Fruit for them all");
 }
 
 #[test]

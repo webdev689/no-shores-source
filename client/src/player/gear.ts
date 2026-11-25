@@ -119,13 +119,13 @@ const REFUSALS: Readonly<Record<number, string>> = {
   8: 'You already carry ten Vestiges.',
   9: 'Only at its counter in a social space.',
   10: 'Not while it is worn or in the vault.',
-  11: 'Locked until its ring fills.',
+  11: 'Locked until its square fills.',
   12: 'There is no such node.',
   13: 'That node is already bought.',
   14: 'That node is not bought.',
   15: 'You do not have enough for it.',
   16: 'You have no Fruit of Dagon.',
-  17: 'It cannot grow any more.',
+  17: 'Nothing you wear can grow any more.',
   18: 'There is no such emblem.',
   19: 'You do not have that.',
   20: 'You already have that.',
@@ -256,16 +256,27 @@ export function itemWords(
 }
 
 /** A trait's name and words: all it does (`words`), and for a perk that gives and takes, what it gives and what it
- *  costs apart (`gives`, `takes`), so a screen can set the cost apart. */
+ *  costs apart (`gives`, `takes`), so a screen can set the cost apart; and its short line, and its cost's, as a card
+ *  shows them. */
 export function traitOf(id: string): {
   readonly name: string;
   readonly words: string;
   readonly gives: string;
   readonly takes: string;
+  readonly short: string;
+  readonly shortTakes: string;
 } {
   const found = traits.traits.find((each) => each.id === id);
   const [gives, takes] = [found?.words ?? '', (found && 'takes' in found ? found.takes : '') ?? ''];
-  return { name: found?.name ?? id, words: takes ? `${gives} ${takes}` : gives, gives, takes };
+  const shortTakes = (found && 'short_takes' in found ? found.short_takes : '') ?? '';
+  return {
+    name: found?.name ?? id,
+    words: takes ? `${gives} ${takes}` : gives,
+    gives,
+    takes,
+    short: found?.short ?? id,
+    shortTakes,
+  };
 }
 
 /** An island's resource's name, by its place in the list. */
@@ -353,7 +364,7 @@ export function nodeShown(item: GearItem, column: number, node: number): NodeSho
     bought,
     chosen: bought && (!trait || item.chosen[column] === node),
     unlocked,
-    cost: bought ? 'Bought.' : unlocked ? `Costs ${costs.join(', ')}.` : 'Its ring fills as the item is used.',
+    cost: bought ? 'Bought.' : unlocked ? `Costs ${costs.join(', ')}.` : 'Its square fills as the item is used.',
     ask: unlocked ? ask : null,
   };
 }

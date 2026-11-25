@@ -28,7 +28,8 @@ them out is [[Gear]] and [[Ship Power]].
 | Its look | Its own metal or set, and its own make where the forge has more than one (a shield's kind, a bow's), with its rarity's glow | Destiny's exotics each had a model of their own |
 
 Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: an Atheric's own node costs 2,500 Aurem, 4
-fragments, 10 of its resource and 1 Essence.
+fragments, 10 of its resource and 1 Essence. Replaced in part by [[The Inspect Panel as Claude Shapes It]]: the
+intrinsic heads the page's perks, under "Perks", after its node grid, not the page itself.
 
 ### The Atheric weapons
 
@@ -81,6 +82,9 @@ came from, a bite as a flash on its striker.
 | A player back in a sea fight | Keeps a spent Hard to Kill; no ship number is given twice | "Once a fight" is the player's, and a ball in flight is no newcomer's |
 | A purchase from Shape | Names the piece shown, refused as not sold here when his week now draws another there | As a smith's ware of another day |
 | A Legendary's sails and rigging | Six perks each, Backed Sails, Boarding Ladders and Preventer Stays among them, so no module offers a perk twice | The merged pools had too few for a Legendary's six nodes |
+
+Replaced in part by [[The Inspect Panel as Claude Shapes It]]: on the item page both an Atheric's perks head its perks,
+under "Perks", not "Atheric".
 
 ### The Atheric ship modules
 

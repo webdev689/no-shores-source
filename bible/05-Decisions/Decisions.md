@@ -374,6 +374,17 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Harbourmaster Keeps Every Ship, Each With Its Own Numbers and Dress]]
 - [[The Ships at the Harbourmaster as Claude Shapes Them]]
 - [[Captains Lay Gun by Gun, and Each Ship's Aim Follows Its Guns]]
+- [[The Website Is at noshores.online, After DFO's]]
+- [[DFO's Discord Bot Comes Over, Its Panel on the Website]]
+- [[noshores.online Is Served From Cloudflare, and the Game Is Played There]]
+- [[The Discord Bot Deploys on Each Merge]]
+- [[The Panel's Sign-in Asks for a Person's Servers]]
+- [[The Website's Words and the Bot's Month Are Approved]]
+- [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]
+- [[The Inspect Panel as Claude Shapes It]]
+- [[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]
+- [[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]
+- [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]
 
 ## Replaced
 

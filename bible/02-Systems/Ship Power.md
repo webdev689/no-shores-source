@@ -45,7 +45,7 @@ are in [[Crew]].
 - **Its modules** are items of four kinds (`Kind::Guns`, `Hull`, `Sails`, `Rigging`), each fitted in its own slot
   and carried nine to a slot beside it, kept in the vault with the ship's other modules (twenty). Each has a rarity,
   a level, experience and the gear's grid of nodes (`grid.rs`): its guns a weapon's grid (handling, finish, perks),
-  the other three armour's (perks). Every module fitted earns all the experience the ship earns. Fruit of Dagon feeds no
+  the other three armour's (perks). Every module fitted earns all the experience the ship earns. A Fruit of Dagon grows no
   module. A new ship, and one kept from before modules, is fitted once with a level 1 Normal module in each slot that
   wears none.
 - **Its materials** (`ship::materials`): Timber, Canvas, Iron and Heartwood, the rare one, each to 200. A module's
