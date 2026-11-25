@@ -11,6 +11,10 @@ export const PICTURE_LAYERS = 252;
 /** The solids' plain colours, drawn by code rather than a picture: gold, iron, bone, the glow of a fire, cloth,
  *  still water and the Lattice's crystal.
  *  A plain colour never samples its own layer, so cloth's numbers lie past the array and cost it none. */
+/** A model vertex's layer bit marking an open building's window panes: the picture's glass texels (its alpha 0,
+ *  paintWorker.ts) are drawn as nothing, so the window is seen through. */
+export const CLEAR_GLASS = 0x8000;
+
 export const COLOUR_LAYERS = {
   gold: 252,
   iron: 253,

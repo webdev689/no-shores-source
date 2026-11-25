@@ -60,7 +60,9 @@ Every forge answers a `ForgedModel`: positions, normals, UVs and indices, its pa
 underside) to its eaves. It walls each side that stands in the open; a taller wing's wall rises over a lower wing's
 roof. A pitched wing gets a roof, gabled or hipped by the building's own seed, its eaves out 0.3 m over open ground
 with a soffit under them, and up to two chimneys. A flat wing gets a parapet; a wing a door opens onto is a terrace.
-Windows are the glass picture laid once a storey apart along each wall, clear of every door. `withoutDoors` builds a
+Windows are the glass picture laid once a storey apart along each wall, clear of every door. An open building's
+(one walked into) are holes through its wall, the picture laid again on its room's lining facing in and its panes
+clear, so a window is seen through from either side; `openingsOf` says where they go through. `withoutDoors` builds a
 model again with its faces whole and no door, for a town wall or gate that opens into nothing.
 
 `buildingMasses` answers the same plan as solid boxes with the roof the forge puts on each (gable, hip or flat), its

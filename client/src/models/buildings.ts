@@ -1,7 +1,7 @@
 // The Building Forge: a town building made in code from its plan alone. Each wing's masses are walled where they
 // stand in the open, roofed (gabled or hipped by the building's own seed) or flat with a parapet, windowed a storey
 // apart, and dressed in the pictures the classic building's walls and roofs wore. Its doors are kept as measured.
-import type { ForgedModel } from './model.ts';
+import type { ForgedModel, ModelPart } from './model.ts';
 import type { BuildingMeasure, BuildingTable, MeasuredDoor } from './tables.ts';
 import { boxFrame, type Frame } from './frame.ts';
 import { partBuilder, type PartBuilder } from './parts.ts';
@@ -39,7 +39,13 @@ const sameSpans = (a: readonly Span[], b: readonly Span[]): boolean =>
 /** Each side of a mass that stands in the open, as quads along the side's squares, joining those exposed alike.
  *  Under a covered mass beside it that starts above its top (a tower's crown) a side rises to meet that mass's
  *  underside, as the classic's wall does. Answers the runs laid, for the windows. */
-function sides(add: PartBuilder, look: readonly number[], block: Block, plan: Plan): Run[] {
+function sides(
+  add: PartBuilder,
+  look: readonly number[],
+  block: Block,
+  plan: Plan,
+  holesOf: (run: Run) => readonly Pane[] = () => [],
+): Run[] {
   const { blockAt, xAt, zAt } = plan;
   const laid: Run[] = [];
   const open = (other: Block | null): Span[] =>
@@ -86,21 +92,9 @@ function sides(add: PartBuilder, look: readonly number[], block: Block, plan: Pl
       if (next && sameSpans(next, spans)) continue;
       for (const [low, high] of spans) {
         const [from, to] = [run.along(start), run.along(k)];
-        const corners = run.normal[0]
-          ? [
-              [run.fixed, low, from],
-              [run.fixed, low, to],
-              [run.fixed, high, to],
-              [run.fixed, high, from],
-            ]
-          : [
-              [from, low, run.fixed],
-              [to, low, run.fixed],
-              [to, high, run.fixed],
-              [from, high, run.fixed],
-            ];
-        add.quad(look, corners, run.normal);
-        laid.push({ normal: run.normal, fixed: run.fixed, from, to, low, high });
+        const wall: Run = { normal: run.normal, fixed: run.fixed, from, to, low, high };
+        wallAround(add, look, wall, holesOf(wall));
+        laid.push(wall);
       }
       start = k;
       if (next) spans = next;
@@ -127,74 +121,145 @@ function near(door: MeasuredDoor, corners: readonly (readonly number[])[]): bool
   ].every(([low, high, from, to]) => from <= high && to >= low);
 }
 
-/** Windows along a wall's run, a storey apart, each its glass's whole picture laid once just off the wall, clear of
- *  the run's ends and of every door. */
-function windows(
-  add: PartBuilder,
-  glass: readonly number[],
-  run: Run,
-  base: number,
-  doors: readonly MeasuredDoor[],
-  inside = false,
-): void {
+/** The glass a mass's walls are windowed with: none for steps, a platform, a raised floor or a wing too low. */
+const glassOf = ({ wing, top, base }: Block, measure: BuildingMeasure): readonly number[] | undefined =>
+  !wing.steps && !wing.platform && wing.low === undefined && top - base >= 2.6 ? measure.glass : undefined;
+
+/** A window through an open building's wall, in its own frame (x right, y up, z forward): its wall's outer face
+ *  (`normal`, and `fixed` across it), its middle along that face and its sill's height, WINDOW_SIDE_M square. */
+export type Opening = { readonly normal: readonly number[]; readonly fixed: number } & Pane;
+export const WINDOW_SIDE_M = WINDOW_M[0];
+
+/** Where an open building's windows go through its walls, as `buildingModel` cuts them. */
+export function openingsOf(measure: BuildingMeasure): Opening[] {
+  const plan = planOf(measure);
+  return plan.masses.flatMap((block) =>
+    glassOf(block, measure)
+      ? sides(partBuilder(), measure.walls[0] ?? measure.looks[0], block, plan).flatMap((run) =>
+          panesOf(run, block.base, measure.doors ?? []).map((pane) => ({
+            normal: run.normal,
+            fixed: run.fixed,
+            ...pane,
+          })),
+        )
+      : [],
+  );
+}
+
+/** A window on a wall's run, WINDOW_M[0] square: its middle along the run and its sill's height. */
+type Pane = { readonly middle: number; readonly level: number };
+
+/** A wall's run laid whole, or round its windows' holes (an open building's, whose windows are seen through). */
+function wallAround(add: PartBuilder, look: readonly number[], run: Run, holes: readonly Pane[]): void {
+  const side = WINDOW_M[0];
+  const piece = (from: number, to: number, low: number, high: number): void => {
+    if (to - from < 1e-6 || high - low < 1e-6) return;
+    const corners = run.normal[0]
+      ? [
+          [run.fixed, low, from],
+          [run.fixed, low, to],
+          [run.fixed, high, to],
+          [run.fixed, high, from],
+        ]
+      : [
+          [from, low, run.fixed],
+          [to, low, run.fixed],
+          [to, high, run.fixed],
+          [from, high, run.fixed],
+        ];
+    add.quad(look, corners, run.normal);
+  };
+  let low = run.low;
+  for (const level of [...new Set(holes.map((hole) => hole.level))].sort((a, b) => a - b)) {
+    piece(run.from, run.to, low, level);
+    let along = run.from;
+    for (const middle of holes
+      .filter((hole) => hole.level === level)
+      .map((hole) => hole.middle)
+      .sort((a, b) => a - b)) {
+      piece(along, middle - side / 2, level, level + side);
+      along = middle + side / 2;
+    }
+    piece(along, run.to, level, level + side);
+    low = level + side;
+  }
+  piece(run.from, run.to, low, run.high);
+}
+
+/** Where a wall's run takes its windows: a storey apart, clear of the run's ends and of every door. */
+function panesOf(run: Run, base: number, doors: readonly MeasuredDoor[]): Pane[] {
   const [side, storey, sill, clear] = WINDOW_M;
   const length = run.to - run.from;
   const count = Math.floor((length - clear * 2 + storey - side) / storey);
-  if (count < 1) return;
+  const panes: Pane[] = [];
+  if (count < 1) return panes;
   const first = run.from + (length - (count - 1) * storey) / 2;
   const off = run.fixed + (run.normal[0] + run.normal[2]) * 0.003;
+  const point = (along: number, y: number): number[] => (run.normal[0] ? [off, y, along] : [along, y, off]);
   for (let level = base + sill; level + side <= run.high - 0.3; level += storey) {
     if (level < run.low) continue;
     for (let k = 0; k < count; k++) {
       const middle = first + k * storey;
       const [left, right] = [middle - side / 2, middle + side / 2];
-      const point = (along: number, y: number): number[] => (run.normal[0] ? [off, y, along] : [along, y, off]);
       const corners = [point(left, level), point(right, level), point(right, level + side), point(left, level + side)];
-      if (doors.some((door) => near(door, corners))) continue;
-      // Upright and unmirrored as one faces the wall: its left is the run's start on a wall facing -x or +z.
-      const flip = run.normal[2] < 0 || run.normal[0] > 0;
-      if (inside) {
-        // The same window seen from the room: on the lining's face, facing in, mirrored so it reads as from outside.
-        const back = run.fixed - (run.normal[0] + run.normal[2]) * LINING_FACE_M;
-        const within = (along: number, y: number): number[] => (run.normal[0] ? [back, y, along] : [along, y, back]);
-        add.quadUv(
-          glass,
-          [within(right, level), within(left, level), within(left, level + side), within(right, level + side)],
-          run.normal.map((value) => -value),
-          flip
-            ? [
-                [0, 1],
-                [1, 1],
-                [1, 0],
-                [0, 0],
-              ]
-            : [
-                [1, 1],
-                [0, 1],
-                [0, 0],
-                [1, 0],
-              ],
-        );
-      }
+      if (!doors.some((door) => near(door, corners))) panes.push({ middle, level });
+    }
+  }
+  return panes;
+}
+
+/** Windows along a wall's run, each its glass's whole picture laid once just off the wall; in an open building
+ *  laid again on its room's lining, facing in. */
+function windows(add: PartBuilder, glass: readonly number[], run: Run, panes: readonly Pane[], inside = false): void {
+  const side = WINDOW_M[0];
+  const off = run.fixed + (run.normal[0] + run.normal[2]) * 0.003;
+  const point = (along: number, y: number): number[] => (run.normal[0] ? [off, y, along] : [along, y, off]);
+  for (const { middle, level } of panes) {
+    const [left, right] = [middle - side / 2, middle + side / 2];
+    const corners = [point(left, level), point(right, level), point(right, level + side), point(left, level + side)];
+    // Upright and unmirrored as one faces the wall: its left is the run's start on a wall facing -x or +z.
+    const flip = run.normal[2] < 0 || run.normal[0] > 0;
+    if (inside) {
+      // The same window seen from the room: on the lining's face, facing in, mirrored so it reads as from outside.
+      const back = run.fixed - (run.normal[0] + run.normal[2]) * LINING_FACE_M;
+      const within = (along: number, y: number): number[] => (run.normal[0] ? [back, y, along] : [along, y, back]);
       add.quadUv(
         glass,
-        corners,
-        run.normal,
+        [within(right, level), within(left, level), within(left, level + side), within(right, level + side)],
+        run.normal.map((value) => -value),
         flip
           ? [
-              [1, 1],
               [0, 1],
-              [0, 0],
+              [1, 1],
               [1, 0],
+              [0, 0],
             ]
           : [
-              [0, 1],
               [1, 1],
-              [1, 0],
+              [0, 1],
               [0, 0],
+              [1, 0],
             ],
       );
     }
+    add.quadUv(
+      glass,
+      corners,
+      run.normal,
+      flip
+        ? [
+            [1, 1],
+            [0, 1],
+            [0, 0],
+            [1, 0],
+          ]
+        : [
+            [0, 1],
+            [1, 1],
+            [1, 0],
+            [0, 0],
+          ],
+    );
   }
 }
 
@@ -314,9 +379,11 @@ export function buildingModel(
     const { wing } = block;
     const span = Math.min(block.x1 - block.x0, block.z1 - block.z0);
     const pitched = roofOf(block, plan, fit, measure.doors ?? []);
-    const runs = sides(parts, block.top - block.base < 1.2 ? trim : wall, block, plan);
-    if (measure.glass && !wing.steps && !wing.platform && wing.low === undefined && block.top - block.base >= 2.6)
-      for (const run of runs) windows(parts, measure.glass, run, block.base, measure.doors ?? [], open);
+    const glass = glassOf(block, measure);
+    const panes = (run: Run): Pane[] => (glass ? panesOf(run, block.base, measure.doors ?? []) : []);
+    // An open building's windows are holes through its wall, seen through from either side.
+    const runs = sides(parts, block.top - block.base < 1.2 ? trim : wall, block, plan, open ? panes : undefined);
+    if (glass) for (const run of runs) windows(parts, glass, run, panes(run), open);
     if (wing.low !== undefined)
       parts.box(
         trim,
@@ -382,7 +449,11 @@ export function buildingModel(
   }
   if (!doors) return { ...parts.model(), doors: [] };
   // An open building's doorways are cut and framed with no door in them: a body walks straight in.
-  const model = withDoors(parts.model(), measure, fit, trim, { picture: !open });
+  const doored = withDoors(parts.model(), measure, fit, trim, { picture: !open });
+  const glass = measure.glass;
+  const clear = (part: ModelPart): ModelPart =>
+    open && glass && part.archive === glass[0] && part.record === glass[1] ? { ...part, clear: true } : part;
+  const model = { ...doored, parts: doored.parts.map(clear) };
   built.set(model, { table, id });
   return model;
 }

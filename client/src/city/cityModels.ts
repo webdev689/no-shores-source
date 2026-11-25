@@ -5,6 +5,7 @@ import type { ForgedModel } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import type { MeshData } from './mesh.ts';
+import { CLEAR_GLASS } from './pictures.ts';
 import { finished } from './steps.ts';
 
 /** Numbers a model vertex takes: position, normal, UV, and its layer as a whole number. */
@@ -85,7 +86,7 @@ export function* modelBufferSteps(
       floats.set(model.uvs.subarray(k * 2, k * 2 + 2), slot + 6);
     }
     for (const part of model.parts) {
-      const layer = layerOf(part.archive, part.record);
+      const layer = layerOf(part.archive, part.record) | (part.clear ? CLEAR_GLASS : 0);
       for (let k = part.start; k < part.start + part.count; k++)
         whole[(vertexAt + model.indices[k]) * MODEL_FLOATS + 8] = layer;
     }

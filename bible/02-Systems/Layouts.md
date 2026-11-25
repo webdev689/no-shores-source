@@ -84,8 +84,8 @@ from the sea, fresh water and the claim's edge), then:
    ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]: "Buildings are now open spaces"): its
    doorways stand open, and inside its outline it is lined with plaster, gaps left at its doors with lintels over
    them, and where a taller room opens onto a lower one beside it, lined above that room's top, so its wall over the
-   lower roof is not seen through from inside; floored with planks and ceiled under its eaves, each of the building's windows laid again on the lining's
-   face so the room shows the windows the building shows outside. The planks stand 3 cm over the highest ground under the room
+   lower roof is not seen through from inside; floored with planks and ceiled under its eaves, each of the building's windows a hole through its wall and
+   the lining, its picture on both faces and its panes clear, so the room is seen into and out of through it. The planks stand 3 cm over the highest ground under the room
    (7 cm over its base at least, 40 cm at most), so neither the land nor the model's own floor shows through, and a
    body walks on them. A wing tall enough has an upper floor on a slab and a stair of 0.2 m risers up to it, along a
    long wall and from whichever end leaves every door clear: none in its wall within a metre of its run or the

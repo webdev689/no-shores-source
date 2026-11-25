@@ -51,6 +51,7 @@ code:
   - client/src/city/cityGround.ts#groundPlates
   - client/src/city/cityGround.ts#clearedGround
   - client/src/city/pictures.ts#pictureBook
+  - client/src/city/windowCuts.ts#cutAtWindows
   - client/src/city/painter.ts#CityPainter
   - client/src/city/cityShaders.ts#PULL_SHARE
   - client/src/city/ruins.ts#buildingRuin
@@ -276,7 +277,9 @@ the same way, fading to none above it, and so is its contact shade, so the walks
 cut its soles off; nothing at a body's height (a hit's star, a weapon's glow) moves in depth.
 
 **The pictures.** One texture array of at most 252 layers, each picture resampled to 128 texels square, sampled
-nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
+nearest up close and mipmapped far off. A window's panes are clear in its picture's alpha: an open building's
+windows draw them as nothing (`CLEAR_GLASS`), so they are seen through, its room's lining cut away behind each
+(`cutAtWindows`), while a closed building's windows are drawn whole. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
 warmer, a factor a channel, as its own layer. The ground's tiles and the solids' pictures come first, then the
 forged models' by how much the city wears them. Up to four workers paint them; a layer shows its guessed colour until
 painted, and what is painted is kept for the next city. Gold, iron, bone, cloth and water are painted in the shader

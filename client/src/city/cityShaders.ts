@@ -4,7 +4,7 @@
 import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { CRYSTAL_WGSL } from './crystal.ts';
-import { CLOTH_COLOURS, COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
+import { CLEAR_GLASS, CLOTH_COLOURS, COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
 import { FAR_BAND_M, FAR_M, MIDDLE_BAND_M, MIDDLE_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
@@ -72,6 +72,7 @@ const GOLD = ${COLOUR_LAYERS.gold}u;
 const IRON = ${COLOUR_LAYERS.iron}u;
 const BONE = ${COLOUR_LAYERS.bone}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
+const CLEAR_GLASS = ${CLEAR_GLASS}u;
 const CRYSTAL = ${COLOUR_LAYERS.crystal}u;
 // A module's crystal in the city carries no glow of its own a vertex: its core is drawn half alight; a ruin's
 // overtaking crystal (all of it in a ruin) burns brighter, so a ruin is a scatter of red at night.
@@ -243,12 +244,19 @@ fn jagged(point: vec3f) -> f32 {
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   // all a ruin's crystal is the Lattice's overtaking: its crown, its crust and its formations
   crystal_glow = select(CITY_CRYSTAL_GLOW, RUIN_CRYSTAL_GLOW, view.grid.w > 0.5);
-  let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
+  let clear = (surface.layer & CLEAR_GLASS) != 0u;
+  let layer = surface.layer & ~CLEAR_GLASS;
+  let picture = textureSample(pictures, picture_sampler, surface.uv, min(layer, LAST_PICTURE));
+  let sampled = picture.rgb;
   // a ruin's open shell is drawn from inside too, lit from the side seen
   let normal = select(-surface.normal, surface.normal, facing);
   // coloured before any discard: the colour's derivatives want the whole quad
-  let albedo = colour_of(surface.layer, sampled, surface.uv, surface.from_eye + view.eye.xyz, normal);
+  let albedo = colour_of(layer, sampled, surface.uv, surface.from_eye + view.eye.xyz, normal);
   if !kept(surface.tier, surface.fades, surface.clip.xy) {
+    discard;
+  }
+  // an open building's window is seen through its panes
+  if clear && picture.a < 0.5 {
     discard;
   }
   let broken = surface.ruin.y > 0.0;
@@ -261,7 +269,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     discard;
   }
   let scorch = select(0.0, ${SCORCH} * pow(clamp(surface.ruin.x / max(surface.ruin.y, 1e-3), 0.0, 1.0), 1.5), broken);
-  return vec4f(lit(surface.layer, albedo * (1.0 - scorch), normal, surface.from_eye), 1.0);
+  return vec4f(lit(layer, albedo * (1.0 - scorch), normal, surface.from_eye), 1.0);
 }
 `;
 

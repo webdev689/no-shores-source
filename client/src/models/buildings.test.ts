@@ -295,3 +295,53 @@ test("an open building's rooms show its windows: each is laid again on the linin
   }
   assert.ok(checked > 20, `buildings with windows checked: ${checked}`);
 });
+
+test("an open building's windows are holes through its wall, seen through from either side; a closed one's are not", () => {
+  const table = buildingTable;
+  /** The model's mesh without its glass: an open building's clear panes, a closed one's windows. */
+  const without = (model: ForgedModel, glass: readonly number[]) => {
+    const kept = model.parts.filter((part) => part.archive !== glass[0] || part.record !== glass[1]);
+    return {
+      positions: model.positions,
+      indices: Uint32Array.from(
+        kept.flatMap((part) => [...model.indices.subarray(part.start, part.start + part.count)]),
+      ),
+    };
+  };
+  let [panes, through, shut] = [0, 0, 0];
+  for (const id of idsOf(table).filter((each) => table[each].glass)) {
+    const glass = table[id].glass!;
+    const [closed, open] = [buildingModel(table, id), buildingModel(table, id, { open: true })];
+    if (!closed || !open) continue;
+    const worn = (model: ForgedModel) =>
+      model.parts.filter((part) => part.archive === glass[0] && part.record === glass[1]);
+    assert.ok(
+      worn(open).every((part) => part.clear),
+      `${id}: an open building's panes are clear`,
+    );
+    assert.ok(!closed.parts.some((part) => part.clear), `${id}: a closed building's are not`);
+    for (const [model, mesh, isOpen] of [
+      [open, without(open, glass), true],
+      [closed, without(closed, glass), false],
+    ] as const)
+      for (const part of worn(model))
+        for (let quad = part.start; quad + 5 < part.start + part.count; quad += 6) {
+          const corners = [0, 1, 2, 5].map((k) => vertexOf(model, model.indices[quad + k]));
+          const middle = [0, 1, 2].map((axis) => corners.reduce((sum, corner) => sum + corner[axis], 0) / 4);
+          const normal = [0, 1, 2].map((axis) => model.normals[model.indices[quad] * 3 + axis]);
+          // From a hand before the pane, through the wall's depth and the lining's place behind it.
+          const from = middle.map((value, axis) => value + normal[axis] * 0.05);
+          const hit = rayHit(
+            mesh,
+            from,
+            normal.map((value) => -value),
+            0.35,
+          );
+          if (isOpen) [panes, through] = [panes + 1, through + (hit === null ? 1 : 0)];
+          else shut += hit === null ? 0 : 1;
+        }
+  }
+  // A window over a lower wing beside it can look into that wing's roof, its gable standing in the wall's plane.
+  assert.ok(panes > 1000 && through / panes > 0.999, `seen through: ${through} of ${panes}`);
+  assert.ok(shut > 500, `a closed building's windows are pictures on a whole wall: ${shut}`);
+});
