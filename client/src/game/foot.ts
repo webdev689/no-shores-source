@@ -234,7 +234,7 @@ export class Foot {
     else standInDungeon(context.movement, rules.combat, into.ask);
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
     const address = context.rooms?.(into.room);
-    const dungeon = { patrol: outside.node, ...into, layout };
+    const dungeon = { patrol: outside.node, ...into, layout, passage: !!passage };
     return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
       link: passage
         ? await passage.link(heard, session)

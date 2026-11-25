@@ -169,7 +169,7 @@ export async function loadWorld(base: string): Promise<WorldData> {
     if (sites.city) cities.push(sites.city);
     nodes.push(...sites.nodes);
   }
-  return { layoutText, continents, cities, nodes, regions: regionsOf(regionsText) };
+  return { layoutText, continents, cities, nodes, regions: regionsOf(regionsText, continents) };
 }
 
 /** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is

@@ -19,9 +19,12 @@ import type { Quest } from '../tasks.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { passageRoomName, runInstance, sharedRun } from '../rooms.ts';
 import type { IsleShown } from '../../islands/islePlan.ts';
+import type { LandSheet } from '../../heldmap/landSheet.ts';
+import { roomNow } from '../../sky/worldClock.ts';
 import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor } from '../../rules/passageRules.ts';
 import { enterZone, type ZoneEntry } from './passageEnter.ts';
 import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
+import { passageSheet } from './passageMap.ts';
 import { haulNode, MouthsCardView, signNode } from './passagePanels.ts';
 import type { PieceState } from './passagePieces.ts';
 import { holdAt, homeSpot, mouthAt, onwardAt } from './passageReach.ts';
@@ -60,23 +63,34 @@ export interface PassageHost {
   readonly tell: (words: string) => void;
   /** A way that fails: the player goes back to their ship, told why. */
   readonly failed: (why: string) => void;
-  readonly now: () => number;
 }
 
-/** An ask of the passages awaiting the room's answer: how many asks the room had answered as it went, the dive as it
- *  stood, when it went, and what its yes does. */
+/** An ask of the passages awaiting the room's answer: the foot it was asked on (a room left drops it), how many asks
+ *  the room had answered as it went, the dive as it stood, when it went, and what its yes does. */
 interface Asked {
+  readonly foot: Foot;
   readonly answered: number;
   readonly dive: DiveState<GearItem> | null;
   readonly since: number;
   readonly yes: (dive: DiveState<GearItem> | null) => void;
 }
 
-/** The zone the player stands in: its web, its entry and the island shown for it above ground. */
+/** The zone the player stands in: its web, its entry, the island shown for it above ground, and the zones passed this
+ *  dive before it, by number, the first behind the patrol zone's mouth. */
 interface InZone {
   readonly web: PassageWeb;
   readonly entry: ZoneEntry;
   readonly isle: IsleShown | null;
+  readonly passed: readonly number[];
+}
+
+/** The pieces as the deal stands for the player in a zone, and the key they are laid again by when it changes. */
+interface Pieces {
+  readonly plan: PassagePlan;
+  readonly state: PieceState;
+  readonly lightsOnly: boolean;
+  readonly done: boolean;
+  readonly key: string;
 }
 
 export class PassageGame {
@@ -96,8 +110,11 @@ export class PassageGame {
   private useHeld = false;
   /** Whether E let go of was told the room once already, so it is not told again each frame until it is heard. */
   private letGo = false;
-  /** The hollow shown, its pieces as last laid, and what they were laid for. */
-  private shownIsle: { readonly key: string; readonly isle: IsleShown } | null = null;
+  /** The pieces as last read, and the zone and word of the room they were read from. */
+  private laid: { readonly zone: InZone; readonly seen: PassageSeenState | null; readonly pieces: Pieces } | null =
+    null;
+  /** The hollow shown, and the pieces it stands. */
+  private shownIsle: { readonly pieces: Pieces; readonly isle: IsleShown } | null = null;
   readonly card: MouthsCardView;
 
   constructor(host: PassageHost) {
@@ -115,21 +132,36 @@ export class PassageGame {
     });
   }
 
-  /** The week's web of `island`, asked once; null where it has none. */
+  /** The week's web of `island`, asked once; null where it has none or the door cannot read it. */
   private webOf(island: string, week: number): PassageWeb | null {
     const key = `${island}:${week}`;
-    if (!this.webs.has(key)) this.webs.set(key, this.door?.web(island, week) ?? null);
+    if (!this.webs.has(key)) {
+      let web: PassageWeb | null = null;
+      try {
+        web = this.door?.web(island, week) ?? null;
+      } catch (error) {
+        console.warn(`the passages of ${island} in week ${week} do not read:`, error);
+      }
+      this.webs.set(key, web);
+    }
     return this.webs.get(key) ?? null;
   }
 
-  /** The web whose mouths stand in the patrol zone `node`, this week; null for one with none. */
+  /** The web whose mouths stand in the patrol zone `node`, this week by the rooms' clock; null for one with none. */
   private mouthsWeb(node: NodeInfo): PassageWeb | null {
-    const web = this.webOf(node.continent, weekOf(this.host.now()));
+    const web = this.webOf(node.continent, weekOf(roomNow()));
     return web?.patrol === node.id ? web : null;
   }
 
-  private gear(): GearState | null {
-    return this.host.foot()?.gear?.gear ?? null;
+  /** The player's gear as their room last said it, online or alone: a dive is played alone too. */
+  private gear(foot = this.host.foot()): GearState | null {
+    return foot ? (foot.held.gear ?? foot.held.alone) : null;
+  }
+
+  /** The zone stood in from now; what a respawn lost is judged afresh in it. */
+  private setZone(zone: InZone | null): void {
+    this.zone = zone;
+    [this.carried, this.wasDown] = [0, false];
   }
 
   private seen(): PassageSeenState | null {
@@ -223,11 +255,11 @@ export class PassageGame {
   }
 
   /** Sends `asked`, its yes (a dive changed: begun, gone on, turned homeward or ended) doing `yes`. */
-  private ask(foot: Foot, asked: GearAsk, yes: Asked['yes'], ask = (sent: GearAsk) => foot.gear?.ask(sent)): void {
-    const gear = foot.gear?.gear;
+  private ask(foot: Foot, asked: GearAsk, yes: Asked['yes'], ask = (sent: GearAsk) => foot.fight.askGear(sent)): void {
+    const gear = this.gear(foot);
     if (this.asked || !gear) return;
-    const since = this.host.now() / 1000;
-    this.asked = { answered: gear.answered, dive: gear.dive ?? null, since, yes };
+    const since = roomNow() / 1000;
+    this.asked = { foot, answered: gear.answered, dive: gear.dive ?? null, since, yes };
     ask(asked);
   }
 
@@ -239,7 +271,8 @@ export class PassageGame {
     const zone = web?.zones.find((each) => each.number === dive.zone);
     if (!web || !plan || !zone) return this.host.tell('The passage has shifted.');
     const heights = plan.ground.kind === 'open' ? this.door.heights(dive.island, dive.week, dive.zone) : null;
-    const from = this.zone?.web.zones.find((each) => each.number === this.zone?.entry.plan.zone.number)?.at;
+    const left = this.zone;
+    const passed = left ? [...left.passed, left.entry.plan.zone.number] : [];
     const work = async () => {
       const base = passageRoomName(dive.island, dive.week, dive.zone);
       const room =
@@ -247,7 +280,7 @@ export class PassageGame {
           ? (sharedRun(base, await this.host.companyPlaces()) ??
             passageRoomName(dive.island, dive.week, dive.zone, runInstance()))
           : base;
-      const minute = Math.floor(this.host.now() / 60_000);
+      const minute = Math.floor(roomNow() / 60_000);
       const entry = {
         plan,
         heights,
@@ -260,17 +293,29 @@ export class PassageGame {
       };
       const isle = heights && zoneIsle(plan, heights, this.host.climate(dive.island));
       await this.host.goInto(() => enterZone(this.host.context, entry));
-      this.zone = { web, entry, isle };
+      this.setZone({ web, entry, isle, passed });
       const layout = zoneLayout(plan);
       if (layout) await this.host.showDungeon(layout, this.host.foot()?.node ?? patrol);
     };
     this.pass(
       { kind: 'onward', node: passageRoomName(dive.island, dive.week, dive.zone) },
       web,
-      from ?? patrol.centre,
+      this.comeOf(left, patrol),
       zone.at,
       work,
     );
+  }
+
+  /** The way come this dive, on the island: the patrol zone's place, each zone passed, and the zone stood in. */
+  private comeOf(zone: InZone | null, patrol: NodeInfo): (readonly [number, number])[] {
+    if (!zone) return [patrol.centre];
+    return [
+      patrol.centre,
+      ...[...zone.passed, zone.entry.plan.zone.number].flatMap((number) => {
+        const passed = zone.web.zones.find((each) => each.number === number);
+        return passed ? [passed.at] : [];
+      }),
+    ];
   }
 
   /** Home to the patrol zone, before the mouth the dive began at. */
@@ -284,12 +329,11 @@ export class PassageGame {
     const spawn = door ? homeSpot(door, patrol.centre) : (patrol.spawns[0] ?? patrol.centre);
     // Facing away from the door, as the room stands one coming home; online the room's own stand is where they are.
     const facing = door ? Math.atan2(spawn[0] - door[0], -(spawn[1] - door[1])) : 0;
-    const here = zone.web.zones.find((each) => each.number === zone.entry.plan.zone.number)?.at ?? patrol.centre;
     const work = async () => {
       await this.host.goInto(() => Foot.enter(this.host.context, { ...patrol, spawns: [spawn] }, facing));
-      this.zone = null;
+      this.setZone(null);
     };
-    this.pass({ kind: 'home', node: patrol.id }, zone.web, here, patrol.centre, work);
+    this.pass({ kind: 'home', node: patrol.id }, zone.web, this.comeOf(zone, patrol), patrol.centre, work);
   }
 
   /** Plays the way from `from` to `to` over the island while `work` joins the place gone to; from a zone, its own
@@ -297,15 +341,15 @@ export class PassageGame {
   private pass(
     happening: { readonly kind: 'onward' | 'home'; readonly node: string },
     web: PassageWeb,
-    from: readonly [number, number],
+    come: readonly (readonly [number, number])[],
     to: readonly [number, number],
     work: () => Promise<void>,
   ): void {
     const origin = happening.kind === 'onward' ? ([to[0], to[1], 0] as const) : undefined;
     const framed = web.zones.map((each) => each.at);
-    const left = this.inZone() ? from : undefined;
-    const failed = (error: unknown) => ((this.zone = null), Promise.reject(error));
-    this.ways.play({ happening, from, to, framed, left, origin }, () => work().catch(failed));
+    const left = this.inZone() ? come[come.length - 1] : undefined;
+    const failed = (error: unknown) => (this.setZone(null), Promise.reject(error));
+    this.ways.play({ happening, come, to, framed, left, origin }, () => work().catch(failed));
   }
 
   /** Each frame on foot, before the foot's own: whether E is held (`useHeld`), the room's answer to an ask awaited,
@@ -313,9 +357,11 @@ export class PassageGame {
   frame(useHeld: boolean): void {
     this.useHeld = useHeld;
     const foot = this.host.foot();
-    const gear = foot?.gear?.gear ?? null;
+    // An ask of a room since left is no ask of the room stood in now.
+    if (this.asked && this.asked.foot !== foot) this.asked = null;
+    const gear = this.gear(foot);
     const asked = this.asked;
-    const late = asked !== null && this.host.now() / 1000 - asked.since > ANSWER_WAIT_S;
+    const late = asked !== null && roomNow() / 1000 - asked.since > ANSWER_WAIT_S;
     const heard = asked && gear && answerHeard(asked, gear, late);
     if (asked && heard) {
       this.asked = null;
@@ -325,7 +371,7 @@ export class PassageGame {
     }
     // A zone left by another way (the ship, a join) is no longer the one a way starts from.
     if (this.zone && foot && this.host.flow().mode === 'foot' && foot.node.id !== this.zone.entry.room)
-      this.zone = null;
+      this.setZone(null);
     if (!this.zone || foot?.node.id !== this.zone.entry.room) return;
     const down = foot.fallen;
     const carried = haulView(haulOf(gear?.dive?.haul)).lines.length;
@@ -348,15 +394,12 @@ export class PassageGame {
 
   /** The pieces' state as the deal stands for the player, and the zone's plan; null out of a zone. Above ground the
    *  pieces stand as the islands' kit's modules (`isles`), and only their lights are drawn so. */
-  pieces(): {
-    readonly plan: PassagePlan;
-    readonly state: PieceState;
-    readonly lightsOnly: boolean;
-    readonly done: boolean;
-  } | null {
+  pieces(): Pieces | null {
     const zone = this.inZone();
     if (!zone) return null;
     const seen = this.seen();
+    // Read again only on a new word of the room, and kept as it was while the word says the same.
+    if (this.laid?.zone === zone && this.laid.seen === seen) return this.laid.pieces;
     const bits = (set: number) => [0, 1, 2, 3, 4, 5, 6, 7].filter((bit) => (set >> bit) & 1);
     const open = seen?.open ? zone.entry.plan.zone.onward.map((unused, place) => place) : [];
     const state = {
@@ -365,7 +408,12 @@ export class PassageGame {
       kindled: bits(seen?.lit ?? 0),
       broken: bits(seen?.broken ?? 0),
     };
-    return { plan: zone.entry.plan, state, lightsOnly: zone.isle !== null, done: seen?.done ?? false };
+    const [lightsOnly, done] = [zone.isle !== null, seen?.done ?? false];
+    const key = JSON.stringify([zone.entry.room, state, lightsOnly, done]);
+    const kept = this.laid?.zone === zone && this.laid.pieces.key === key ? this.laid.pieces : null;
+    const pieces = kept ?? { plan: zone.entry.plan, state, lightsOnly, done, key };
+    this.laid = { zone, seen, pieces };
+    return pieces;
   }
 
   /** Whether the player stands in a hollow above ground, which is drawn alone, no land round it. */
@@ -377,11 +425,24 @@ export class PassageGame {
   isles(): readonly IsleShown[] {
     const [zone, pieces] = [this.inZone(), this.pieces()];
     if (!zone?.isle || !pieces) return [];
-    const key = JSON.stringify([zone.entry.room, pieces.state, this.seen()?.done ?? false]);
-    if (this.shownIsle?.key !== key)
-      this.shownIsle = { key, isle: withPieces(zone.isle, pieces.plan, pieces.state, this.seen()?.done ?? false) };
+    if (this.shownIsle?.pieces !== pieces)
+      this.shownIsle = { pieces, isle: withPieces(zone.isle, pieces.plan, pieces.state, pieces.done) };
     return [this.shownIsle.isle];
   }
+
+  /** The web as the held map shows it in a zone (`passageSheet`), its sheet laid so "You" stands at the zone the
+   *  player stands in, wherever in it they are; null out of a zone. */
+  readonly map = (): LandSheet | null => {
+    const zone = this.inZone();
+    if (!zone) return null;
+    const { patrol } = zone.entry;
+    const lit = this.gear()?.islandLamps?.find((each) => each.island === zone.web.island)?.lamps ?? [];
+    const where = { here: zone.entry.plan.zone.number, come: zone.passed, lit };
+    const home = { name: patrol.name, at: patrol.centre };
+    const { sheet, you } = passageSheet(zone.web, where, 'The passages', home);
+    const { body } = this.host.context.walker.player;
+    return { ...sheet, origin: [body.x - you[0], body.y - you[1]] };
+  };
 
   private inZone(): InZone | null {
     return this.zone && this.host.foot()?.node.id === this.zone.entry.room ? this.zone : null;

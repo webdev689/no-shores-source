@@ -140,8 +140,8 @@ export interface Opened {
  *  encounters. */
 export interface Held {
   gear: GearState | null;
-  /** Alone, the room's word on the player's gear, read only for their public events' chests: the page dresses and
-   *  serves nothing else from a character that is not kept. */
+  /** Alone, the room's word on the player's gear, read only for their public events' chests and the passages' dive
+   *  (which a room alone keeps and gives on): the page dresses and serves nothing else from a character not kept. */
   alone: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;

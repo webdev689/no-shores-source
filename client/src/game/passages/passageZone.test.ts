@@ -26,6 +26,8 @@ test('each zone is drawn as its kind: a layout under ground, an island’s groun
     assert.ok(heights);
     const shown = zoneIsle(plan, heights, 'woodland');
     assert.ok(shown && shown.plan.placements.length > 0, `zone ${zone.number} stands modules`);
+    // The sea's islands count from 1: a hollow is drawn by an id none of theirs can be.
+    assert.ok(shown.id < 1, `zone ${zone.number}'s hollow is no sea island`);
     assert.equal(zoneLayout(plan), null);
   }
 });
