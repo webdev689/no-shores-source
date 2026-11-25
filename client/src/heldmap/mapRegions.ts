@@ -117,12 +117,13 @@ export class MapRegions {
     },
     water: Uint8Array | null,
   ): Uint8Array | null {
+    // While the waters are away (a pan, the land's map), the region lit stays lit, and is judged again after.
+    if (!waters) return null;
     const inked = ask.pointer && { x: ask.pointer.x - ink.x, y: ask.pointer.y - ink.y };
     const world = inked && [view.left + inked.x / view.scale, view.top + inked.y / view.scale];
     const region = world && inked ? this.under(waters, ship, world) : null;
     if (region === (this.lit?.region ?? null)) return region ? null : water;
     this.lit = region && inked ? { region, ...inked } : null;
-    if (!waters) return null;
     return region ? regionCells(waters.waters, this.all, region) : ask.cellsNow(waters.waters);
   }
 

@@ -53,7 +53,7 @@ test('the way out of an instance to a locked patrol area is shut the same way', 
   assert.deepEqual([out?.offer, out?.happening], ['The Moors is locked', null]);
 });
 
-test("a gate toward another patrol area offers to go there, and crossing plays the dive's rise, not the veil", () => {
+test('a gate toward another patrol area offers to go there, arriving at its gate toward the one left', () => {
   const landmass = {
     layouts: [
       layout('downs', [{ kind: 'gate', at: [100, 0], to: 'vale' }]),
@@ -63,6 +63,6 @@ test("a gate toward another patrol area offers to go there, and crossing plays t
   };
   const across = gateWay(landmass, 'downs', [105, 0]);
   assert.equal(across?.offer, 'Go to The Vale  E');
-  assert.deepEqual(across?.happening, { kind: 'cross', node: 'vale' });
+  assert.deepEqual(across?.happening, { kind: 'cross', node: 'vale', name: 'The Vale' });
   assert.deepEqual(across?.node.spawns, [[-700, 0]], "at the Vale's gate toward the Downs");
 });

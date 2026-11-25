@@ -1,8 +1,9 @@
 //! A landmass's layouts, planned for every node it draws and laid on its ground: each patrol area with gates to the
 //! instances of its side (the mission, dungeon and boss nodes of its region nearest it) and to every other patrol
-//! area of its island, each instance entered from that patrol area. Their sculpts carve the land, the buildings' seats become pads and the paths roads, so every later reading
-//! of the ground (a node's window, the browser's land, nature keeping off the paths) stands on them; then what is
-//! laid on the land (a block's streets, the paths) takes its heights from the ground as it now lies.
+//! area of its island, each instance entered from that patrol area. Their sculpts carve the land, the buildings'
+//! seats become pads and the paths roads, so every later reading of the ground (a node's window, the browser's land,
+//! nature keeping off the paths) stands on them; then what is laid on the land (a block's streets, the paths) takes
+//! its heights from the ground as it now lies.
 
 use crate::book::Book;
 use crate::brief::Briefs;

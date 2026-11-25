@@ -35,11 +35,11 @@ export function gateWay(landmass: Pick<Landmass, 'layouts' | 'nodes'>, here: str
     offer: node.locked
       ? lockedWords(node.name)
       : `${passage.across ? 'Go to' : passage.into ? 'Enter' : 'Return to'} ${passage.name}  ${boundWord('use')}`,
-    // Across to another patrol area the dive's rise plays over the island (flow.ts `passing`); else the veil.
+    // Across to another patrol area the flow's own `cross` (flow.ts); in or out, `pass`.
     happening: node.locked
       ? null
       : passage.across
-        ? { kind: 'cross', node: node.id }
+        ? { kind: 'cross', node: node.id, name: node.name }
         : { kind: 'pass', node: node.id, name: node.name, into: passage.into },
     node: { ...node, spawns: [passage.arrive] },
     facing: bearingTo(passage.arrive, node.centre),

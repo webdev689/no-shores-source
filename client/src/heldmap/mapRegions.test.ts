@@ -53,6 +53,12 @@ test('the pointer coming onto a region lights its land, and leaving it lights th
   ask.pointer = { x: 40, y: 50 };
   assert.deepEqual([...(lit.hover(judged, [40, 50], view, ink, ask, null) ?? [])], [9], 'the water lit again');
   assert.equal(lit.said(), null);
+  ask.pointer = { x: 260, y: 50 };
+  assert.ok(lit.hover(judged, [40, 50], view, ink, ask, null), 'the Reach lit');
+  ask.pointer = { x: 40, y: 50 };
+  assert.equal(lit.hover(null, [40, 50], view, ink, ask, null), null, 'a pan: nothing changes');
+  assert.equal(lit.said()?.line, 'The Grey Reach', 'still lit while the waters are away');
+  assert.deepEqual([...(lit.hover(judged, [40, 50], view, ink, ask, null) ?? [])], [9], 'let go once they are back');
 });
 
 test("a click on a region of the ship's island sets a course to its anchorage, named for the region", () => {

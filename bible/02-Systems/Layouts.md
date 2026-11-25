@@ -489,9 +489,10 @@ line. On continent 1 every space is reached from the first (`crates/room/tests/m
 
 A gate's basin and an instance's way in are passages ([[Game]]): standing in one, the player is offered "Enter" the
 instance or "Return to" the patrol area (E), and goes through the veil to arrive at the other's way in or gate. A
-gate toward another patrol area offers "Go to" it; crossing plays the way between zones in place of the veil
-(`client/src/game/passages/passageWay.ts`, the flow's `passing`), and the player arrives at that zone's gate toward
-the one they left (`client/src/layout/passage.ts`, `client/src/game/gates.ts`). A way
+gate toward another patrol area offers "Go to" it, and the player goes through the veil ("Going to" the zone) to
+arrive at that zone's gate toward the one they left (`client/src/layout/passage.ts`, `client/src/game/gates.ts`,
+the flow's `cross`); once the game draws the way between zones (`client/src/game/passages/passageWay.ts`), it takes
+the veil's place. A way
 into a locked node ([[World Map]], "Seen whole, reached by nodes") is shut: it offers "<name> is locked", and E there
 does nothing.
 

@@ -323,3 +323,28 @@ pub fn footbridges(kit: &mut Kit, field: &Field, ([x1, y1, x2, y2, _], stone): (
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::book::Book;
+    use crate::seat::Seating;
+    use land::edits::Edits;
+    use land::grid::Grid;
+    use land::ground::Ground;
+
+    #[test]
+    fn two_ways_crossing_a_river_at_one_place_cross_by_one_bridge() {
+        let land = Grid::new(40, 40, -1000.0, -1000.0, 50.0).like(100.0);
+        let coast = land.like(land::relief::COAST_REACH_M);
+        let ground = Ground::new(&land, &coast, &vec![0.0; land.data.len()], &[], &Edits::default(), 1);
+        let (book, mut seating) = (Book::default(), Seating::default());
+        let mut kit = Kit { ground: &ground, book: &book, seed: 7, draws: 0, into: &mut seating };
+        bridge(&mut kit, [[0.0, 0.0], [20.0, 0.0]], 2.6);
+        // A second way over the same water a metre aside, its deck on the first's.
+        bridge(&mut kit, [[0.0, 1.0], [20.0, 1.0]], 2.6);
+        assert_eq!(kit.into.bridges.len(), 1, "one bridge carries both");
+        bridge(&mut kit, [[0.0, 60.0], [20.0, 60.0]], 2.6);
+        assert_eq!(kit.into.bridges.len(), 2, "a crossing elsewhere has its own");
+    }
+}
