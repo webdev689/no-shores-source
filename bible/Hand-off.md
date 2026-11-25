@@ -219,6 +219,17 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+  audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
+  regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
+  `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
+  checked before its fix. 231 files, about 1,450 lines out and 830 in: dead code, copies folded into one (`errorWords`,
+  `clockWords`, `apart`, `TICKS_A_SECOND`), comments that linked notes, short names spelled out, and three bugs, each
+  tested: a Breach gate open past its day in an empty zone, a stale held-map load closing the map, and the World
+  Editor's Land mode taking the browser's shortcuts (and, once fixed, missing a Mac's Option-typed `[`). An
+  independent review of the whole diff found no regression. Open for the owner, listed in the PR: whether Comments
+  Say Why's "who asked for what" covers the 158 comments that say a value is the owner's (or Claude's) call, and
+  whether the comments check should catch bible links (a new check).
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and
