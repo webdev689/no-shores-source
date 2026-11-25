@@ -159,3 +159,47 @@ fn a_reliquarys_fragments_stock_is_rolled_apart_from_their_count() {
     }
     assert_eq!(seen.len(), 4, "every count with every stock: {seen:?}");
 }
+
+/// A character of the top level in the first zone of a dive.
+fn diving_at_the_top() -> Character {
+    let mut character = crate::dive::dive_tests::at_the_top();
+    character.passage = diving().passage;
+    character
+}
+
+#[test]
+fn the_days_lamp_goes_to_the_first_lamp_lit_whose_zone_is_within_three_levels() {
+    let mut character = diving_at_the_top();
+    character.light_lamp(Zone { level: 5, ..zone(5) }, 1, (100, 14), &dice(1)).expect("lit");
+    assert!(!character.activity.today.passage_lamp.contains(ISLAND), "a lamp far under them pays no day's lamp");
+    character.light_lamp(Zone { level: 27, ..zone(20) }, 4, (100, 14), &dice(2)).expect("lit");
+    assert!(character.activity.today.passage_lamp.contains(ISLAND));
+}
+
+#[test]
+fn the_fourth_lamp_rolls_as_the_elite_dungeons_first_clear() {
+    let mut atheric = 0;
+    for seed in 0..80 {
+        let mut character = diving_at_the_top();
+        character.activity.today(100).passage_lamp.insert(ISLAND.to_owned());
+        let paid = new_finds(&mut character, |character| {
+            character.light_lamp(Zone { level: 28, ..zone(20) }, 4, (100, 14), &dice(seed)).expect("lit");
+        });
+        assert_eq!(paid.len(), 2, "the week's Boss Vestige and the Elite's roll");
+        assert!(paid.iter().any(|(rarity, _)| *rarity == Rarity::Legendary), "the Elite's is Legendary");
+        atheric += paid.iter().filter(|(rarity, _)| *rarity == Rarity::Atheric).count();
+    }
+    assert!(atheric < 8, "the Abyss's roll would give an Atheric about one time in five: {atheric} of 80");
+}
+
+#[test]
+fn the_first_lamp_a_character_lights_gives_the_passages_lore() {
+    let mut character = diving();
+    let chapters = |character: &Character| character.lore.len();
+    let before = chapters(&character);
+    character.light_lamp(zone(5), 1, (100, 14), &dice(1)).expect("lit");
+    assert_eq!(chapters(&character), before + 1);
+    assert!(character.finds_lore("longer-than-the-chart/the-first-lamp"));
+    character.light_lamp(zone(10), 2, (100, 14), &dice(2)).expect("lit");
+    assert_eq!(chapters(&character), before + 1, "once");
+}

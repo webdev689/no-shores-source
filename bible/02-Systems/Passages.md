@@ -129,9 +129,9 @@ passages' own pieces standing in it with their solids.
 ## A dive
 
 - **A dive is kept with the character** (`gear::dive::Dive`): its island and week, its route, the patrol zone's
-  mouth it began at and the seas that zone's room was at (Home goes back to them), the zone it is in and that zone's
-  depth, whether the zone's deal was done while the player was in it, the deepest lamp lit, the zones whose caches it
-  was paid, and its haul. An old save reads with none, and a dive kept before its seas at Normal; a later build's
+  mouth it began at and the seas that zone's room was at (Home goes back to them), the zone it is in, that zone's
+  depth and the depth it began at, whether the zone's deal was done while the player was in it, the deepest lamp lit,
+  the zones whose caches it was paid, whether the sea has kept it, and its haul. An old save reads with none, and a dive kept before its seas at Normal; a later build's
   keys are kept.
 - **The haul** holds what is found in a passage zone: Vestiges picked up, items found as themselves, gathered
   resources, a cache's fragments, Vestiges left lying as the player goes on, and the cold lantern. While the player
@@ -139,11 +139,15 @@ passages' own pieces standing in it with their solids.
   there. XP and Aurem are paid at once.
 - **A dive begins** at one of the patrol zone's mouths, the sealed doors of its runs, which the bake writes into the
   node file as `doors` (`bake::doors_of`): within 4 m of a door the page asks to begin, by its route, at the zone
-  behind it, or at a lamp lit this week on that island (its lamp counted lit, its zone's cache counted paid, the haul
-  empty).
+  behind it, or at a lamp lit this week on that island or whose zone's foes stand at or under the player's level (its
+  lamp counted lit for the dive but not the week, its zone's deal done and cache counted paid, the haul empty). Its
+  room lights that lamp for them as they come, and a company's route stands its guard down, its deal done and paying
+  no one (`stand_down_guard`); a public room's guard stands. The fourth lamp, depth 20, is no begin.
 - **Going on** is asked within 4 m of an onward mouth, once the zone's deal was done while the player was in it, or
   at once from a Gauntlet; the dive is in the next zone from then, and the host moves the player there. Joining any
-  room that is not the dive's zone ends the dive and loses its haul. A respawn asked for in a zone empties the haul
+  room that is not the dive's zone ends the dive and loses its haul. The sea is not such a room: it never ends a
+  dive, only marks it as kept by the sea (`Dive::sailed`), and the dive is judged in whatever room the character
+  next lands in; a homeward one landed by sea in its patrol zone keeps its haul and stands where it landed. A respawn asked for in a zone empties the haul
   and stands the player at its arrival; a revive loses nothing. A reload or a closed tab costs no more than a death:
   logging in again, a character whose last room was its dive's zone goes back into it, on the same dive
   ([[Accounts]], "Where a player logs back in").
@@ -202,9 +206,11 @@ was done finds it done.
   ([[Activities]], "The band").
 - **A lamp lit** (E held 2 s within 3 m of its plinth, once its guard is down, each player for themselves) keeps the
   haul: items as found, Vestiges carried or to the vault or the mail, materials added. The day's first lamp lit on an
-  island pays a dungeon of the day's clear and a sure Vestige in a Boss's colours; the first time each week each lamp
-  of an island is lit pays its week's lamp, a sure Vestige in a Boss's colours rolled apart from the day's, from the second one Essence of each
-  stock, from the third two, and at the fourth a roll as the week's Abyss Dungeon's first clear. Each is kept on
+  island whose zone's foes stand within three levels of the player pays a dungeon of the day's clear and a sure
+  Vestige in a Boss's colours; the first time each week each lamp of an island is lit pays its week's lamp, a sure
+  Vestige in a Boss's colours rolled apart from the day's, from the second one Essence of each stock, from the third
+  two, and at the fourth a roll as the week's Elite Dungeon's first clear, a Legendary. The first lamp a character
+  lights gives the passages' lore chapter ([[Lore]]). Each is kept on
   `Today` and `ThisWeek` by island, begun anew as they are. **Going home** from a lit lamp keeps what was found since
   and turns the dive homeward: no way on takes it further, and what is found on the way out goes into its haul. Its
   patrol zone's room, as it takes the kept character, keeps that haul, ends the dive and stands the player 2 m before
@@ -213,13 +219,20 @@ was done finds it done.
   and loses its haul.
 - **The passages' bounties** are the board's fourth pool, two a day (`bounties::PASSAGES`), counting a lamp lit, a
   mission finished, a foe brought down in a passage, a zone reached at least 8 deep, a reliquary opened and a vein's
-  every node gathered. They are the town's, at places 15 and 16 after the factions' 6 to 14 (`PASSAGE_PLACES_FROM`,
+  every node gathered. A deal counts, toward them and the Atheric bounties, only for those its cache paid, once a zone
+  a dive, so a public round camped counts nothing more and a late Gauntlet nothing. A depth counts as a player goes
+  on into a zone, as the zones the dive has gone into from the depth it began at (`Dive::zones_deep`), so a begin at
+  a lamp reaches no depth by itself. They are the town's, at places 15 and 16 after the factions' 6 to 14 (`PASSAGE_PLACES_FROM`,
   `town_places`), so the town's six keep 0 to 5; the day's record keeps them under the town's keys (`is_town_place`).
 - **Lanternfall** comes only from the first Atheric bounty, its data in `content/gear/atheric_bounties.json`: the
   cold lantern drops into the haul from a cache past depth 14, 3 times in a hundred, or from the fourth lamp's, 12, for a
-  character of level 20 or more on Saltmere who holds none and has not finished its bounty. Kept at a lamp, lit or gone
-  home from, the bounty is held and its first step done; then five Kindle missions finished on Saltmere, 100 foes brought down there with a thunderlock, and
-  the fourth lamp lit; the last step done, Lanternfall is kept as found. No Vestige or Shape gives it.
+  character of level 27 or more on Saltmere who holds none and has not finished its bounty, each zone rolling only on
+  the character's first cache of it in a week (`ThisWeek::passage_finds`). 27 is the least level that harms every
+  foe of depth 20, as a test holds it to the band and `power::gap`. Kept at a lamp, lit or gone
+  home from, the bounty is held and its first step done; then five Kindle missions finished on Saltmere, 100 foes
+  brought down there with a thunderlock, and the fourth lamp kindled: at its last step it stands cold for the holder
+  (`lamp_cold`), held 3 s as a Kindle's dead lamp is, a wave of the Tithe coming at its guard's fall and every 30 s
+  after while they have not lit it (`keep_cold_lamp`); the last step done, Lanternfall is kept as found. No Vestige or Shape gives it.
 
 ## On the wire
 

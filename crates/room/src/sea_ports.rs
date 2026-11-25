@@ -286,6 +286,10 @@ impl Sea {
             (deck, at_sea) => deck.or_else(|| at_sea.cloned()),
         };
         let mut character = held.unwrap_or_else(gear::Character::starting);
+        // The sea never ends a dive: it is judged where the character next lands (`gear::dive::Dive::sailed`).
+        if let Some(dive) = character.passage.as_mut() {
+            dive.sailed = true;
+        }
         // In a fight, the ship is kept as the fight has it, and lies at the port city it would wash up at, as one who
         // lost does: a player who leaves mid-fight comes back there.
         let (kept, at) = match self.fights.hurts_of(player) {

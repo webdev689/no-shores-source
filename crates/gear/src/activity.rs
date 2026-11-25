@@ -98,6 +98,10 @@ pub struct ThisWeek {
     /// 4): each pays the week's lamp once, and is offered as a place to begin a dive (`lamps.rs`).
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub passage_lamps: BTreeMap<String, BTreeSet<u8>>,
+    /// The passage zones whose cache has rolled for an Atheric bounty's find this week, by island and each zone's
+    /// number in the week's web: each rolls once a week (`atheric_bounty.rs`).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub passage_finds: BTreeMap<String, BTreeSet<u16>>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,

@@ -399,3 +399,23 @@ fn a_returning_ships_first_course_refused_keeps_where_the_sea_had_it_and_its_hea
     let at = (left.x.round(), left.y.round(), left.heading);
     assert_eq!((ship.x, ship.y, ship.heading), at, "still where it was, to the metre a course starts at, as it faced");
 }
+
+#[test]
+fn the_sea_keeps_a_dive_to_be_judged_where_it_lands_marked_as_come_by_sea() {
+    let mut sea = sea();
+    let player = sea.join();
+    let mut character = gear::Character::starting();
+    let start = gear::dive::Start {
+        island: "continent-1",
+        week: 2_900,
+        route: gear::dive::Route::Public,
+        mouth: 0,
+        zone: 4,
+        depth: 5,
+        lamp: None,
+        seas: gear::Difficulty::Normal,
+    };
+    character.begin_dive(&start).expect("begun");
+    assert!(sea.restore_character(player, &character.to_json()));
+    assert_eq!(kept(&sea, player).passage.map(|dive| dive.sailed), Some(true));
+}

@@ -123,7 +123,7 @@ no landmark zones ("The regions", above).
 | Where it is kept | With the character, so it goes with them from zone to zone |
 | A lamp lit | Keeps it: items as found are kept, Vestiges carried or sent on, materials added |
 | Death | A respawn asked for empties the haul and stands the player at the zone's way in; a revive loses nothing |
-| Leaving | Joining any room that is not a passage zone loses an unsecured haul; the page warns before the leave held. Vestiges still lying for a player as they go on go into their haul, not the mail |
+| Leaving | Joining any room that is not a passage zone loses an unsecured haul; the page warns before the leave held. Vestiges still lying for a player as they go on go into their haul, not the mail. The sea is no room that ends a dive: it is judged where the character next lands, and a homeward one landed by sea keeps its haul and stands where it landed |
 
 ## The lamp
 
@@ -131,7 +131,7 @@ no landmark zones ("The regions", above).
 |---|---|
 | Its guard | The zone's garrison; once it is down, each player lights the lamp for themselves, holding E 2 s at its plinth |
 | Then | Home, to the Saltgrass Downs at the seas the dive began at, before the mouth they came in by, or On: the zone's onward mouths |
-| Beginning at a lamp | A lamp lit this week on an island is offered at that island's mouths: "Begin at the second lamp" stands the player in that lamp's zone, the lamp counted lit, the haul empty |
+| Beginning at a lamp | A lamp lit this week on an island, or one whose zone's foes stand at or under the player's level, is offered at that island's mouths: "Begin at the second lamp" stands the player in that lamp's zone, the lamp counted lit for the dive and its deal done, so its guard and its ways on stand for nothing, the haul empty. A company's route begun there stands no guard; a public room's guard stands for those who come the long way. A begin at a lamp lit for no week pays no week's lamp. The fourth lamp, depth 20, leads no further and is no begin |
 
 ## Routes
 
@@ -158,9 +158,9 @@ to the veil and takes the player back to the patrol zone, or to the hub, told wh
 |---|---|
 | Kills | As anywhere, at the zone's levels, a passage zone's foe paying three quarters of a kill (`lamps::KILL_SHARE`) |
 | A deal's cache | Paid to each player who took part once it is done, at the zone's level, its XP and Aurem times 1 + (depth − 1) ÷ 76 (1 to 1.25), its finds into the haul with their chances times 1 + (depth − 1) ÷ 19 (1 to 2). At level 5: a skirmish 430 XP and 33 Aurem and a Vestige about one time in ten; a mission 560 and 42 and a Vestige about one time in six; a vault 870 and 65, its Miniboss's item about one time in three and its Vestige; a vein 220 and 16, the six nodes and two fragments; a reliquary 220 and 16, a sure Vestige and two to five fragments; a lamp 870 and 65 and a sure Vestige |
-| The day's lamp | The day's first lamp lit pays a dungeon of the day's clear at its level and a sure Vestige in a Boss's colours |
-| The week's lamps | The first time each week a player lights each lamp on an island: the first a sure Vestige in a Boss's colours; the second also one Essence of each stock; the third two; the fourth two, and a roll as the week's Abyss Dungeon's first clear, Legendary or Atheric. No Shapes, which come from the week's Abyss alone |
-| Bounties | A fourth pool on the board, the passages', two a day: light a lamp; finish three missions; bring down 25 foes; go 8 zones deep; open two reliquaries; gather a vein |
+| The day's lamp | The day's first lamp lit whose zone's foes stand within three levels of the player pays a dungeon of the day's clear at its level and a sure Vestige in a Boss's colours, so a lamp far under them never takes it |
+| The week's lamps | The first time each week a player lights each lamp on an island: the first a sure Vestige in a Boss's colours; the second also one Essence of each stock; the third two; the fourth two, and a roll as the week's Elite Dungeon's first clear, a Legendary: depth 20 stands at Normal, so the Abyss's Atheric stays the Abyss's. No Shapes, which come from the week's Abyss alone |
+| Bounties | A fourth pool on the board, the passages', two a day: light a lamp; finish three missions; bring down 25 foes; go 8 zones deep; open two reliquaries; gather a vein. A deal counts with its cache, once a zone a dive, so a public round camped counts nothing more; "zones deep" counts the zones the dive has gone on into from where it began, so a begin at a lamp is not a depth reached |
 | The band | Every activity's rewards an hour are measured at each level and kept within one band (`gear::band`), the passages' with their deaths counted; a change to any pay is checked against it |
 
 ## The band, measured
@@ -210,6 +210,8 @@ losses to death from 5 in a hundred at depth 1 to 25 at depth 20.
 | Call | Choice |
 |---|---|
 | The Atheric | Lanternfall, the thunderlock: "When the lanterns went out over the bay, this was the last light anyone saw." Nothing else gave it a place, and the passages are lit by lamps. It leaves the Vestige pool and Shape's stock: it comes only from its bounty |
-| The drop | A cold lantern, found only in Saltmere's passages, by a character of level 20 or more who holds none and has not finished its bounty: from a deal's cache past depth 14, 3 times in a hundred; from the fourth lamp's guard's cache, 12. It is in the haul until a lamp is lit, so a death loses it |
+| The drop | A cold lantern, found only in Saltmere's passages, by a character of level 27 or more who holds none and has not finished its bounty: from a deal's cache past depth 14, 3 times in a hundred; from the fourth lamp's guard's cache, 12. Each zone rolls only on the character's first cache of it in a week, so it stays rare at the top level. It is in the haul until a lamp is lit, so a death loses it |
+| Its level | The least that harms every foe of depth 20 (foes 27 to 30, `power::gap` giving nothing from four below): below it the next lamp cannot be reached, so a lantern found would always be lost |
 | Its words | "Cold, and heavier than it looks. Something in it still wants to burn." |
-| Its steps | After Destiny 1's exotic bounties, in the Journal's bounties: bring it to a lamp; kindle five lamps gone out (Kindle missions on Saltmere); bring down 100 foes with a thunderlock in Saltmere's passages; light Saltmere's fourth lamp. The last step done, Lanternfall is kept as found |
+| Its steps | After Destiny 1's exotic bounties, in the Journal's bounties: bring it to a lamp; kindle five lamps gone out (Kindle missions on Saltmere); bring down 100 foes with a thunderlock in Saltmere's passages; kindle Saltmere's fourth lamp, which stands cold for the holder: once its guard is down the Tithe come in waves every 30 s while they hold E 3 s at it, as at a Kindle's dead lamp. The last step done, Lanternfall is kept as found |
+| Its lore | The passages' lore, "The First Lamp" in the book "Longer Than the Chart", is the first lamp lit's: a Grey Tithe reckoning of the ways that change each week, which the Tithe walk and did not make, and the lamps on the stone no quarry gives, the twentieth found cold since the lanterns went out over the bay |

@@ -25,6 +25,8 @@ pub enum Found {
         #[serde(default)]
         at: f64,
     },
+    /// As the character lights their first lamp in the passages.
+    Lamp,
 }
 
 /// A chapter as the rules read it: its id within its book, and where it is found.
@@ -120,7 +122,7 @@ impl LoreDef {
             }
             for chapter in &book.chapters {
                 let said = match &chapter.found {
-                    Found::Story => None,
+                    Found::Story | Found::Lamp => None,
                     Found::Quest { quest, task } => {
                         let def = quests().quests.iter().find(|def| def.id == *quest);
                         let there = def.is_some_and(|def| def.tasks.iter().any(|it| it.id == *task));
@@ -177,14 +179,15 @@ impl Character {
     }
 
     /// Keeps every chapter of `defs` the player has come to without lying in the world: the story's once it is
-    /// played, and each quest task's once it is done. So a chapter given to a task or the story after a player passed
-    /// it is theirs as their character is next read.
+    /// played, each quest task's once it is done, and the passages' once a lamp is lit (as the week's record holds).
+    /// So a chapter given to a task or the story after a player passed it is theirs as their character is next read.
     pub fn find_lore_due(&mut self, defs: &LoreDef) {
         let due: Vec<String> = defs
             .chapters()
             .filter(|(_, found)| match found {
                 Found::Story => self.story.prologue,
                 Found::Quest { quest, task } => self.task_done(quest, task),
+                Found::Lamp => !self.activity.this_week.passage_lamps.is_empty(),
                 Found::Place { .. } => false,
             })
             .map(|(key, _)| key)

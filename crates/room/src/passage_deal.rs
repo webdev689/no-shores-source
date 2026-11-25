@@ -24,7 +24,7 @@ pub(crate) const HOLD_TICKS: u64 = 90 * 60;
 pub(crate) const GAUNTLET_TICKS: u64 = 90 * 60;
 /// A wave comes every 30 s while a Kindle or a Hold runs, once the last is down; an Ambush's comes as the last is
 /// down, three in all.
-const WAVE_EVERY_TICKS: u64 = 30 * 60;
+pub(super) const WAVE_EVERY_TICKS: u64 = 30 * 60;
 pub(crate) const AMBUSH_WAVES: u8 = 3;
 /// How far across Hold's ring is held from, a collector sees a player from, and a mouth counts as reached from (m).
 pub(crate) const RING_M: f64 = 6.0;
@@ -98,7 +98,7 @@ impl Room {
                 }
             }
             Some(done) if route == Route::Public && self.clock >= done + AGAIN_TICKS => self.begin_again(),
-            Some(_) => {}
+            Some(_) => self.keep_cold_lamp(),
         }
         self.keep_veins();
     }
@@ -253,7 +253,7 @@ impl Room {
 
     /// A wave of the Tithe: two to four of the bands' foes, at the post or spot at least WAVE_CLEAR_M from every
     /// player that is nearest one, each hunting the nearest player; none while the room has no room for them.
-    fn call_wave(&mut self) {
+    pub(super) fn call_wave(&mut self) {
         let Some(zone) = self.zone() else { return };
         let called = u32::from(zone.round.waves) + zone.round.number * 32;
         let places: Vec<[f64; 2]> = zone.sites.posts.iter().chain(&zone.sites.spots).copied().collect();
@@ -335,12 +335,11 @@ impl Room {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             found.character.dive_deal_done(number);
-            if let Some(cache) = cache.filter(|_| took_part.contains(&player)) {
-                found.character.pay_cache(at, cache, difficulty, source, &dice);
-            }
+            let cache = cache.filter(|_| took_part.contains(&player));
+            let paid = cache.is_some_and(|cache| found.character.pay_cache(at, cache, difficulty, source, &dice));
             found.gear_changed = true;
-            // The bounties count only those who took part, as the cache pays only them.
-            if !took_part.contains(&player) {
+            // The bounties count only those its cache paid, once a dive, so a round camped counts nothing more.
+            if !paid {
                 continue;
             }
             let deed = match deal {
