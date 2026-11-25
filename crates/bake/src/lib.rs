@@ -59,6 +59,9 @@ pub struct NodeFile {
     pub places: Vec<Place>,
     /// Its layout's paths, each its points, that a road's figure walks between places.
     pub paths: Vec<Vec<[f64; 2]>>,
+    /// In a patrol area, each run's name and the place of its sealed door, where an island's passages begin.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub doors: Vec<Place>,
     /// At an outpost site, the ground its guilds build on and gather at.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outpost: Option<OutpostGround>,
@@ -115,6 +118,12 @@ pub fn places_of(layout: &layout::Layout) -> Vec<Place> {
     let named = |name: &str| layout.areas.iter().any(|area| area.name == name);
     let runs = layout.runs.iter().filter(|run| !named(&run.name));
     areas.chain(runs.map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M })).collect()
+}
+
+/// A layout's runs' sealed doors, each its run's name and its door's middle, reached from 0 m.
+#[must_use]
+pub fn doors_of(layout: &layout::Layout) -> Vec<Place> {
+    layout.runs.iter().map(|run| Place { name: run.name.clone(), at: run.door, radius: 0.0 }).collect()
 }
 
 pub use layout::grounds::{EVENT_ZONES, FISSURE_RADIUS, FissureGround, Grounds, RaidGround, grounds_of};
@@ -239,6 +248,7 @@ pub fn nodes_of(
             foes: Vec::new(),
             places,
             paths,
+            doors: Vec::new(),
             outpost: None,
         }
     };
@@ -262,10 +272,11 @@ pub fn nodes_of(
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
         let grounds = laid.and_then(grounds_of);
+        let doors = laid.map(doors_of).unwrap_or_default();
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
         let outpost =
             laid.filter(|_| node.kind == NodeKind::Outpost).and_then(|layout| outpost_of(layout, &cut.ground));
-        NodeFile { grounds, gates, resources, foes, places, paths, outpost, ..cut }
+        NodeFile { grounds, gates, resources, foes, places, paths, doors, outpost, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -447,6 +458,8 @@ mod tests {
         let node = nodes_of(&layout.continents[0], edits, &Blocks::default(), &builders).unwrap().remove(0);
         let named = |name: &str| node.places.iter().filter(|place| place.name == name).count();
         assert_eq!((named("The Keep"), named("The Cut")), (1, 1), "the area alone, and the run of its own name");
+        let doors: Vec<&str> = node.doors.iter().map(|door| door.name.as_str()).collect();
+        assert_eq!(doors, ["The Keep", "The Cut"], "every run's sealed door, where the passages begin");
     }
 
     #[test]

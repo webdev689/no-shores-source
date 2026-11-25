@@ -12,7 +12,7 @@ use crate::{EventKind, PlayerId, Room};
 use combat::fighter::{Action, FighterId, player};
 use combat::tuning::{FOE_GONE, RESPAWN};
 use movement::Body;
-use reach::Standing;
+use reach::{Standing, respawn_point};
 use std::collections::BTreeMap;
 
 /// How long an ally holds Use beside a fallen player to revive them: 2 s, as long as a node's gather is held.
@@ -75,6 +75,7 @@ impl Room {
             }
             let body = self.stand_again(lain.x, lain.y);
             self.stand_up(id, body, None);
+            self.lose_haul(id);
         }
         let gone: Vec<FighterId> = self
             .foes
@@ -91,6 +92,17 @@ impl Room {
         }
     }
 
+    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
+    /// fell in a patrol zone (`respawns.rs`), else at the section's spawn nearest it, or the room's spawn.
+    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
+        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
+            return body;
+        }
+        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
+        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
+        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
+    }
+
     /// Whether the darkness holds a player where they are now (`dark_at`): none for one not in the room.
     #[must_use]
     pub fn darkness_for(&self, player: PlayerId) -> bool {
@@ -103,7 +115,7 @@ impl Room {
         let in_court = self.encounters.as_ref().is_some_and(|encounters| {
             encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.court_cells.contains(&cell))
         });
-        self.revives() == Some(0) || (in_court && self.boss().is_some())
+        self.revives() == Some(0) || (in_court && self.boss().is_some()) || self.gloomy()
     }
 
     /// Whether every player the room judges (those it keeps, where it keeps anyone) is down while the Court's Boss
@@ -112,7 +124,7 @@ impl Room {
         let keeps = self.players.values().any(|found| found.owner.is_some());
         let mut judged = self.players.values().filter(|found| !keeps || found.owner.is_some());
         let lain = |found: &crate::players::Player| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN);
-        self.boss().is_some() && !self.players.is_empty() && judged.all(lain)
+        (self.boss().is_some() || self.gloomy()) && !self.players.is_empty() && judged.all(lain)
     }
 
     /// A company fallen together while the Court's Boss stands: each player is told, shots, blows waiting and spells

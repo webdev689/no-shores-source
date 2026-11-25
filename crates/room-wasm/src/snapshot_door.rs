@@ -274,6 +274,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 outpost: 0,
                 darkness: room.darkness_for(viewer),
                 reviving: &reviving,
+                passage: None,
             };
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })

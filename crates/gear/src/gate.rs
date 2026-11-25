@@ -23,6 +23,8 @@ pub enum Place {
     Playlist(Playlist, u8),
     /// A mission's or a boss's node, the sea, a sea island, or a sea island's dungeon: shut by its seas alone.
     Node,
+    /// A zone of an island's passages: gated as its patrol zone is.
+    Passage,
 }
 
 /// Why a gate shuts.

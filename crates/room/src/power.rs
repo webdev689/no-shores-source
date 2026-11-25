@@ -210,6 +210,8 @@ impl Room {
         let spoilless = self.quests.spoilless.contains(&defender);
         let rank = brain.rank as u8;
         let garrison = self.garrison.iter().any(|post| !post.arrival && post.standing.contains(&defender));
+        // Bountiful's share more Vestiges, in a passage zone that runs it.
+        let bountiful = self.current(passage::Current::Bountiful).map(|strength| passage::zone::BOUNTIFUL * strength);
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
@@ -219,8 +221,11 @@ impl Room {
             let character = &mut found.character;
             let reward = character.reward_kill(worth, rank, level, Some(hand), self.difficulty);
             let looted = deck || spoilless;
-            let vestiges =
+            let mut vestiges =
                 if looted { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, self.source, &dice) };
+            if let Some(share) = bountiful.filter(|_| !looted) {
+                vestiges.extend(character.loot_more(share, rank, level, self.source, &dice));
+            }
             // A ship's deck is no island: what is felled there counts toward no land bounty and earns no boon.
             if !deck {
                 character.boon_xp(week, reward.xp, Some(hand));
@@ -237,6 +242,7 @@ impl Room {
             if !deck {
                 self.saw(player, &felled);
             }
+            self.passage_kill(player, hand);
         }
     }
 }

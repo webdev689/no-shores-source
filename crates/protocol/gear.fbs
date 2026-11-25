@@ -92,7 +92,7 @@ table GearBounty {
   count: uint;
   held: bool;
   paid: bool;
-  // Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons.
+  // Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons, 3 in the passages.
   pool: ubyte;
   // Its short name, as its card heads it.
   name: string;
@@ -230,7 +230,7 @@ table Gear {
   week_elite: bool;
   week_abyss: bool;
   boon: bool;
-  // The day's six bounties on the board, in its order, as they stand for them (none held from another day); and what
+  // The day's eight bounties on the board, in its order, as they stand for them (none held from another day); and what
   // a first tier's pays them when turned in, at their level (each bounty's tier raises it).
   bounties: [GearBounty];
   bounty_xp: uint;
@@ -253,6 +253,54 @@ table Gear {
   abyss_playlist_taken: bool;
   elite_playlist_clears: ubyte;
   abyss_playlist_clears: ubyte;
+  // Their dive in an island's passages, none outside one; the lamps lit this week on each island's passages and
+  // whether its day's lamp paid today; and their Atheric bounties, each held or finished.
+  dive: GearDive;
+  island_lamps: [GearIslandLamps];
+  atheric_bounties: [GearAthericBounty];
+}
+
+// What a dive has found and not yet kept: its Vestiges and items (as the gear's, numbered 0), its Weapon and Armor
+// Fragments and Essence, each island's resource in the catalogue's order, and the Atheric bounty whose find it holds
+// (empty for none).
+table GearHaul {
+  vestiges: [GearVestige];
+  items: [GearItem];
+  stocks: [ushort];
+  resources: [ushort];
+  lantern: string;
+}
+
+// A dive under way: its island (a continent's id) and the week of its web, the zone it is in and that zone's depth,
+// the deepest lamp lit (0 none), its route (0 public, 1 a company's), the patrol zone's mouth it began at, whether the
+// zone's deal was done while they were in it (its mouths open for them), and its haul.
+table GearDive {
+  island: string;
+  week: uint;
+  zone: ushort;
+  depth: ubyte;
+  lamp: ubyte;
+  route: ubyte;
+  mouth: ubyte;
+  done: bool;
+  haul: GearHaul;
+}
+
+// An island's passages' lamps for a player: the island, the lamps lit this week by number (1 to 4), and whether the
+// day's lamp paid today.
+table GearIslandLamps {
+  island: string;
+  lamps: [ubyte];
+  day_lamp: bool;
+}
+
+// An Atheric bounty of content/gear/atheric_bounties.json as it stands for a player: its id, the step they are on
+// (counted from 0) and their count toward it, and whether it is finished.
+table GearAthericBounty {
+  id: string;
+  step: ubyte;
+  count: uint;
+  finished: bool;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

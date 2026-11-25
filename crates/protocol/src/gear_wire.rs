@@ -215,7 +215,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         OUTPOST_TAKE => Asked::Outpost(OutpostAsk::Take { slot: ask.slot(), count: ask.count() }),
         OUTPOST_HORN => Asked::Outpost(OutpostAsk::Horn),
         OUTPOST_CHANGED => Asked::Outpost(OutpostAsk::Changed),
-        _ => return None,
+        _ => return crate::passage_wire::asked_of(ask),
     })
 }
 
@@ -320,6 +320,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
         Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
         Asked::Outpost(outpost) => args = outpost_args(*outpost, args),
+        Asked::Passage(ask) => args = crate::passage_wire::ask_args(*ask, args),
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -456,6 +457,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let cleared = Some(builder.create_vector(&cleared));
     let bounties = crate::bounty_wire::bounties_of(&mut builder, character, room.day());
     let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level(), 1);
+    let (dive, island_lamps, atheric_bounties) = crate::passage_wire::passages_of(&mut builder, character, room.day());
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -543,6 +545,9 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         abyss_playlist_taken: today.abyss_playlist,
         elite_playlist_clears: this_week.elite_playlist,
         abyss_playlist_clears: this_week.abyss_playlist,
+        dive,
+        island_lamps,
+        atheric_bounties,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -210,6 +210,11 @@ pub(crate) fn pads_of(text: &[u8], laid: &Dungeon) -> Vec<movement::Block> {
     if placed { room::encounter_plan::plan_encounters(laid).pads() } else { Vec::new() }
 }
 
+/// Why a locked node's room takes no player, in the words the page shows; None while it is open.
+pub(crate) fn lock_words(locked: bool, name: &str) -> Option<String> {
+    locked.then(|| format!("{name} is locked"))
+}
+
 /// Opens the room of a patrol's dungeon by its number, from the patrol's node file's text: its garrison at the patrol's
 /// island band, and locked while its patrol is. Answers whether the text was a patrol's and the number one of its
 /// dungeons.
@@ -219,7 +224,7 @@ pub fn open_dungeon(text: &[u8], number: usize) -> bool {
         return false;
     }
     let Some(room) = Room::dungeon(&node.id, number, gear::world::island_levels(&node.continent)) else { return false };
-    let refusal = crate::lock_words(node.locked, &node.name);
+    let refusal = lock_words(node.locked, &node.name);
     keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
     true
 }

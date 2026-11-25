@@ -170,7 +170,7 @@ impl Room {
     /// in each room `band_rooms` names, each foe on a cell nearest its room's middle facing out from it; then girds and
     /// stands them as any garrison, and lays the cache by the end foe. Answers each band's post by its number, with its
     /// room.
-    fn stand_dungeon_garrison(
+    pub(crate) fn stand_dungeon_garrison(
         &mut self,
         dungeon: &Dungeon,
         levels: Option<(u8, u8)>,

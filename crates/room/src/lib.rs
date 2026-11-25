@@ -45,6 +45,7 @@ mod left;
 pub mod lore;
 mod outpost;
 mod outpost_boss;
+mod passages;
 pub mod patrol;
 mod perks;
 mod plates;
@@ -81,6 +82,7 @@ pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
 pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
+pub use passages::{PassageAsk, PassageSeen};
 pub use perks::trim_of;
 pub use plates::Plate;
 pub use players::{
@@ -106,7 +108,7 @@ pub use land::sites::NodeKind;
 use movement::standing;
 use movement::{Block, Body, Mode};
 use players::Player;
-use reach::{Place, respawn_point};
+use reach::Place;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -248,6 +250,8 @@ pub struct Room {
     pub(crate) outpost: Option<Box<outpost::Outpost>>,
     /// Its fallen being revived, and where they respawn (`revive.rs`).
     pub(crate) respawning: revive::Respawning,
+    /// A passage zone's deal and its dive's word, or a patrol zone's mouths into its passages (`passages.rs`).
+    pub(crate) passage: Option<Box<passages::Passage>>,
 }
 
 impl Room {
@@ -331,6 +335,7 @@ impl Room {
             encounters: None,
             outpost: None,
             respawning: revive::Respawning::default(),
+            passage: None,
         }
     }
 
@@ -345,17 +350,6 @@ impl Room {
         let body =
             if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
         Body { facing: self.facing, ..body }
-    }
-
-    /// Where a body that fell at (x, y) stands again by its own respawn: at an activity's checkpoint, near where it
-    /// fell in a patrol zone (`respawns.rs`), else at the section's spawn nearest it, or the room's spawn.
-    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
-        if let Some(body) = self.at_checkpoint().or_else(|| self.near_where_fell(x, y)) {
-            return body;
-        }
-        let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
-        let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
     }
 
     /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
@@ -462,6 +456,7 @@ impl Room {
         self.keep_checkpoints(checkpoint);
         self.keep_public();
         self.keep_cache();
+        self.keep_passage();
         self.keep_quests();
         self.give_guilds();
         self.keep_steps();

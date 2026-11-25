@@ -2,7 +2,8 @@
 //! at Abyss and, in the week's two, the level every foe stands at. Each modifier is one hook in the rules, read here:
 //! a blow's weight (`modded_blow`, in `empower_as`), a spell's (`spell_times`), a recharge (`recharge_times`, in
 //! `step_arts`), a heal (`heal_times`), the share of foes shielded (`shield_chance`, as the garrison girds) and the
-//! drops (`modded`, in `drop_spoils`). A room with no run weighs everything as it always has.
+//! drops (`modded`, in `drop_spoils`). A passage zone's currents weigh the same hooks (`passages.rs`). A room with no
+//! run weighs everything as it always has.
 
 use crate::Room;
 use combat::fighter::FighterId;
@@ -11,6 +12,7 @@ use gear::activities::{
     BRAWLER_TIMES, BURN_TIMES, EXPOSURE_TIMES, IRONCLAD_SHIELDS, LIGHTSWITCH_TIMES, MARKSMAN_TIMES, Modifier,
     TRICKLE_TIMES, Weekly,
 };
+use passage::Current;
 
 /// The revives an Abyss run's company shares.
 pub const REVIVES: u8 = 5;
@@ -101,6 +103,13 @@ impl Room {
         if by_player && matches!(blow.kind, BlowKind::Shot(_)) && self.modded(Modifier::Marksman) {
             times *= MARKSMAN_TIMES;
         }
+        // A passage zone's currents: Kindled a player's blow, Sharpened a foe's on a player.
+        if let Some(strength) = self.current(Current::Kindled).filter(|_| by_player) {
+            times *= 1.0 + passage::zone::KINDLED * strength;
+        }
+        if let Some(strength) = self.current(Current::Sharpened).filter(|_| on_player.is_some()) {
+            times *= 1.0 + passage::zone::SHARPENED * strength;
+        }
         if let Some(player) = on_player {
             if (melee || matches!(blow.kind, BlowKind::Telegraph(_))) && self.modded(Modifier::Lightswitch) {
                 times *= LIGHTSWITCH_TIMES;
@@ -121,17 +130,20 @@ impl Room {
     /// How much longer an Art's recharge takes: half again under Trickle.
     #[must_use]
     pub fn recharge_times(&self) -> f64 {
-        if self.modded(Modifier::Trickle) { TRICKLE_TIMES } else { 1.0 }
+        let spent = self.current(Current::Spent).map_or(1.0, |strength| 1.0 + passage::zone::SPENT * strength);
+        spent * if self.modded(Modifier::Trickle) { TRICKLE_TIMES } else { 1.0 }
     }
 
     /// What a heal on a player gives, times: half under Exposure.
     pub(crate) fn heal_times(&self) -> f64 {
-        if self.modded(Modifier::Exposure) { EXPOSURE_TIMES } else { 1.0 }
+        let frail = self.current(Current::Frail).map_or(1.0, |strength| 1.0 - passage::zone::FRAIL * strength);
+        frail * if self.modded(Modifier::Exposure) { EXPOSURE_TIMES } else { 1.0 }
     }
 
     /// The share of the garrison's foes that stand with a shield: half under Ironclad, else any foe's.
     pub(crate) fn shield_chance(&self) -> f64 {
-        if self.modded(Modifier::Ironclad) { IRONCLAD_SHIELDS } else { gear::element::SHIELD_CHANCE }
+        let shielded = self.current(Current::Shielded).map_or(0.0, |strength| passage::zone::SHIELDED * strength);
+        shielded + if self.modded(Modifier::Ironclad) { IRONCLAD_SHIELDS } else { gear::element::SHIELD_CHANCE }
     }
 }
 

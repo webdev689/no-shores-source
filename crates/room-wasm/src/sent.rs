@@ -200,6 +200,7 @@ impl Sent {
             // The darkness is where the viewer lies, so the Court's holds only those in it (`Room::darkness_for`).
             darkness: room.darkness_for(viewer),
             reviving: &now.reviving,
+            passage: room.passage_seen(viewer),
         })
     }
 }

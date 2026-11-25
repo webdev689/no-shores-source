@@ -1,0 +1,404 @@
+//! A passage zone's deal, run by its room each tick once a player is in it: a skirmish, a vault, a vein, a reliquary
+//! and a lamp are done as their guard is down; a mission as the design gives it (Kindle's three dead lamps lit while
+//! waves come, Hold's ring held 90 s against waves, Hunt's marked band down, Reckoning's three collectors down, who
+//! run once found, Gauntlet's farthest mouth reached, in time or late, Ambush's three waves beaten, Sever's three tally
+//! posts broken). Done, it pays its cache to each player in the zone who took part, once a dive, and opens their
+//! mouths; in a public room it begins again 60 s on, and a player who came after it was done goes on once its next
+//! round is done.
+
+use super::{Held, Round};
+use crate::{PlayerId, Room};
+use ::foes::Rank::Major;
+use ::foes::roster::{COLLECTOR, ENFORCER};
+use combat::fighter::FighterId;
+use combat::sight::{apart, bearing};
+use gear::dive::Route;
+use gear::lamps::Cache;
+use gear::objectives::{Deed, Feat};
+use passage::{Deal, Mission, PieceKind};
+
+/// A public room's deal begins again this long after it is done: 60 s.
+pub(crate) const AGAIN_TICKS: u64 = 60 * 60;
+/// Hold's ring held, and Gauntlet's time to reach the far mouth: 90 s each.
+pub(crate) const HOLD_TICKS: u64 = 90 * 60;
+pub(crate) const GAUNTLET_TICKS: u64 = 90 * 60;
+/// A wave comes every 20 s while a Kindle or a Hold runs; an Ambush's comes as the last is down, three in all.
+const WAVE_EVERY_TICKS: u64 = 20 * 60;
+pub(crate) const AMBUSH_WAVES: u8 = 3;
+/// How far across Hold's ring is held from, a collector sees a player from, and a mouth counts as reached from (m).
+pub(crate) const RING_M: f64 = 6.0;
+const FOUND_M: f64 = 12.0;
+pub(crate) const REACHED_M: f64 = 3.0;
+/// How fast a found collector runs, metres a second.
+const FLEE_PACE: f64 = 5.5;
+/// No wave stands nearer a player than this (m).
+const WAVE_CLEAR_M: f64 = 12.0;
+/// The stream a zone's waves are drawn on.
+const WAVE_STREAM: u64 = 0x7761_7665;
+
+impl Room {
+    /// Lays what the deal stands beside its bands as the room opens: Kindle's dead lamps, Reckoning's collectors on
+    /// the farthest spots, Sever's tally posts at their pieces, the room moving each itself.
+    pub(crate) fn lay_deal(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        let deal = zone.zone.deal;
+        let pieces = zone.pieces.clone();
+        let spots = zone.sites.spots.clone();
+        let mut round = Round { guards: zone.round.guards.clone(), number: zone.round.number, ..Round::default() };
+        match deal {
+            Deal::Mission(Mission::Kindle) => round.lit = vec![false; passage::plan::KINDLES],
+            Deal::Mission(Mission::Reckoning) => {
+                for (nth, at) in (0..).zip(spots.iter().take(3)) {
+                    round.targets.extend(self.stand_deal_foe((COLLECTOR, Major), *at, 0.0, 100 + nth));
+                }
+                round.found = vec![false; round.targets.len()];
+            }
+            Deal::Mission(Mission::Sever) => {
+                let posts = pieces.iter().filter(|piece| matches!(piece.kind, PieceKind::Post(_)));
+                for (nth, piece) in (0..).zip(posts) {
+                    let target =
+                        self.stand_deal_foe((ENFORCER, Major), [piece.at[0], piece.at[1]], piece.facing, 200 + nth);
+                    if let Some(id) = target {
+                        self.names.insert(id, "Tally Post");
+                        round.targets.push(id);
+                    }
+                }
+            }
+            _ => {}
+        }
+        for id in &round.targets {
+            self.inert.insert(*id);
+        }
+        if let Some(zone) = self.zone_mut() {
+            zone.round = round;
+        }
+    }
+
+    /// Each tick: the round begins as the first player is in, its holds are kept, its deal run until it is done; in
+    /// a public room it begins again AGAIN_TICKS after; and a player who has gathered every node of a vein counts it.
+    pub(crate) fn keep_passage(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        if self.players.is_empty() {
+            return;
+        }
+        let (done_at, route) = (zone.round.done_at, zone.route);
+        if zone.round.began.is_none() {
+            let clock = self.clock;
+            if let Some(zone) = self.zone_mut() {
+                zone.round.began = Some(clock);
+            }
+        }
+        self.keep_holds();
+        match done_at {
+            None => {
+                self.run_deal();
+                if self.deal_met() {
+                    self.deal_done();
+                }
+            }
+            Some(done) if route == Route::Public && self.clock >= done + AGAIN_TICKS => self.begin_again(),
+            Some(_) => {}
+        }
+        self.keep_veins();
+    }
+
+    fn standing_foe(&self, id: FighterId) -> bool {
+        self.foes.get(&id).is_some_and(|foe| !foe.fighter.dead())
+    }
+
+    fn guards_down(&self) -> bool {
+        let Some(zone) = self.zone() else { return false };
+        zone.round.guards.iter().all(|&post| self.garrison.get(post).is_none_or(|post| post.cleared_at.is_some()))
+    }
+
+    /// Whether the round's deal is met now.
+    fn deal_met(&self) -> bool {
+        let Some(zone) = self.zone() else { return false };
+        let round = &zone.round;
+        match zone.zone.deal {
+            Deal::Mission(Mission::Kindle) => round.lit.iter().all(|lit| *lit),
+            Deal::Mission(Mission::Hold) => round.held >= HOLD_TICKS,
+            Deal::Mission(Mission::Hunt) => round
+                .guards
+                .first()
+                .is_none_or(|&post| self.garrison.get(post).is_none_or(|post| post.cleared_at.is_some())),
+            Deal::Mission(Mission::Reckoning | Mission::Sever) => {
+                round.targets.iter().all(|&id| !self.standing_foe(id))
+            }
+            Deal::Mission(Mission::Gauntlet) => round.reached,
+            Deal::Mission(Mission::Ambush) => {
+                round.waves >= AMBUSH_WAVES && round.wave_foes.iter().all(|&id| !self.standing_foe(id))
+            }
+            Deal::Skirmish | Deal::Vault | Deal::Vein | Deal::Reliquary | Deal::Lamp => self.guards_down(),
+        }
+    }
+
+    /// Runs a mission's own rules for a tick: its waves, Hold's ring, Reckoning's collectors, Gauntlet's far mouth.
+    fn run_deal(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        let (deal, began) = (zone.zone.deal, zone.round.began.unwrap_or(self.clock));
+        let since = self.clock.saturating_sub(began);
+        match deal {
+            Deal::Mission(Mission::Kindle | Mission::Hold) => {
+                if since.is_multiple_of(WAVE_EVERY_TICKS) {
+                    self.call_wave();
+                }
+                if deal == Deal::Mission(Mission::Hold) && self.ring_held() {
+                    if let Some(zone) = self.zone_mut() {
+                        zone.round.held += 1;
+                    }
+                }
+            }
+            Deal::Mission(Mission::Ambush) => {
+                let round = &zone.round;
+                if round.waves < AMBUSH_WAVES && round.wave_foes.iter().all(|&id| !self.standing_foe(id)) {
+                    self.call_wave();
+                }
+            }
+            Deal::Mission(Mission::Reckoning) => self.run_collectors(),
+            Deal::Mission(Mission::Gauntlet) => {
+                let late = since > GAUNTLET_TICKS;
+                let far = self.far_mouth();
+                let reached = far.is_some_and(|far| {
+                    self.players.values().any(|player| {
+                        !player.fighter.dead()
+                            && apart([player.fighter.body.x, player.fighter.body.y], far) <= REACHED_M
+                    })
+                });
+                if let Some(zone) = self.zone_mut() {
+                    zone.round.reached = reached;
+                    zone.round.late = late;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Hold's ring: round its first spot, held while a player stands in it, alive.
+    fn ring_held(&self) -> bool {
+        let Some(ring) = self.zone().and_then(|zone| zone.sites.spots.first().copied()) else { return false };
+        self.players.values().any(|player| {
+            !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], ring) <= RING_M
+        })
+    }
+
+    /// The onward mouth farthest from the way in, Gauntlet's goal.
+    pub(crate) fn far_mouth(&self) -> Option<[f64; 2]> {
+        let zone = self.zone()?;
+        let from = zone.sites.way_in.at;
+        let farthest = zone.sites.onward.iter().max_by(|one, two| apart(one.at, from).total_cmp(&apart(two.at, from)));
+        farthest.map(|door| door.at)
+    }
+
+    /// Each collector found (a player within FOUND_M) runs from the nearest player to the spot farthest from them.
+    fn run_collectors(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        let (targets, mut found, spots) =
+            (zone.round.targets.clone(), zone.round.found.clone(), zone.sites.spots.clone());
+        let players: Vec<[f64; 2]> = self
+            .players
+            .values()
+            .filter(|player| !player.fighter.dead())
+            .map(|player| [player.fighter.body.x, player.fighter.body.y])
+            .collect();
+        for (nth, id) in targets.iter().enumerate() {
+            let Some(body) = self.foes.get(id).filter(|foe| !foe.fighter.dead()).map(|foe| foe.fighter.body) else {
+                continue;
+            };
+            let nearest = |at: [f64; 2]| players.iter().map(|player| apart(*player, at)).fold(f64::INFINITY, f64::min);
+            if nearest([body.x, body.y]) <= FOUND_M {
+                found[nth] = true;
+            }
+            if !found[nth] {
+                continue;
+            }
+            let away = spots.iter().copied().max_by(|one, two| nearest(*one).total_cmp(&nearest(*two)));
+            if let Some(away) = away {
+                let to = [away[0], away[1], self.floor_height(away)];
+                self.walk_inert(*id, to, FLEE_PACE);
+            }
+        }
+        if let Some(zone) = self.zone_mut() {
+            zone.round.found = found;
+        }
+    }
+
+    fn floor_height(&self, at: [f64; 2]) -> f64 {
+        movement::Terrain::height_at(&self.floor, at[0], at[1])
+    }
+
+    /// A wave of the Tithe: two to four of the bands' foes, at the post or spot at least WAVE_CLEAR_M from every
+    /// player that is nearest one, each hunting the nearest player; none while the room has no room for them.
+    fn call_wave(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        let called = u32::from(zone.round.waves) + zone.round.number * 32;
+        let places: Vec<[f64; 2]> = zone.sites.posts.iter().chain(&zone.sites.spots).copied().collect();
+        let mut draws = crate::garrison::draws_of(self.world_seed ^ WAVE_STREAM ^ u64::from(called));
+        let size = 2 + crate::garrison::index(&mut draws, 3) + self.crowding_now();
+        if self.living_foes() + size > self.others_most() {
+            return;
+        }
+        let players: Vec<(PlayerId, [f64; 3])> = self
+            .players
+            .iter()
+            .filter(|(_, player)| !player.fighter.dead())
+            .map(|(id, player)| (*id, [player.fighter.body.x, player.fighter.body.y, player.fighter.body.z]))
+            .collect();
+        let nearest =
+            |at: [f64; 2]| players.iter().map(|(_, body)| apart([body[0], body[1]], at)).fold(f64::INFINITY, f64::min);
+        let open = places.into_iter().filter(|at| nearest(*at) >= WAVE_CLEAR_M);
+        let Some(from) = open.min_by(|one, two| nearest(*one).total_cmp(&nearest(*two))) else { return };
+        let mut ids = Vec::new();
+        for nth in 0..size {
+            let member = super::BANDS[crate::garrison::index(&mut draws, super::BANDS.len())];
+            let turn = core::f64::consts::TAU * nth as f64 / size as f64;
+            let at = [
+                from[0] + libm::sin(turn) * crate::garrison::SPREAD,
+                from[1] - libm::cos(turn) * crate::garrison::SPREAD,
+            ];
+            let facing = players.first().map_or(0.0, |(_, body)| bearing(at, [body[0], body[1]]));
+            ids.extend(self.stand_deal_foe(member, at, facing, 1_000 + called * 16 + nth as u32));
+        }
+        let clock = self.clock;
+        for id in &ids {
+            let Some(foe) = self.foes.get(id) else { continue };
+            let here = [foe.fighter.body.x, foe.fighter.body.y];
+            let hunted = players.iter().min_by(|one, two| {
+                apart(here, [one.1[0], one.1[1]]).total_cmp(&apart(here, [two.1[0], two.1[1]])).then(one.0.cmp(&two.0))
+            });
+            if let (Some((player, body)), Some(foe)) = (hunted.copied(), self.foes.get_mut(id)) {
+                foe.brain.hunt(player, body, clock);
+            }
+        }
+        if let Some(zone) = self.zone_mut() {
+            zone.round.waves += 1;
+            zone.round.wave_foes.extend(ids);
+        }
+    }
+
+    /// Crowded's more foes in a wave as in a band.
+    fn crowding_now(&self) -> usize {
+        let depth = self.zone().map_or(1, |zone| zone.zone.depth);
+        match self.current(passage::Current::Crowded) {
+            Some(_) if depth > 14 => 2,
+            Some(_) => 1,
+            None => 0,
+        }
+    }
+
+    /// The deal done: each player in the zone, who took part, has it done for their dive, opening their mouths, and is
+    /// paid its cache once a dive (a late Gauntlet pays none), the passages' bounties counted. One who came after an
+    /// earlier round was done is in this one.
+    fn deal_done(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        let (deal, number, depth, levels, island, week) =
+            (zone.zone.deal, zone.zone.number, zone.zone.depth, zone.levels, zone.island, zone.week);
+        let late = zone.round.late;
+        let (clock, difficulty, source) = (self.clock, self.difficulty, self.source);
+        let cache = match deal {
+            Deal::Skirmish => Some(Cache::Skirmish),
+            Deal::Mission(Mission::Gauntlet) if late => None,
+            Deal::Mission(_) => Some(Cache::Mission),
+            Deal::Vault => Some(Cache::Vault),
+            Deal::Vein => Some(Cache::Vein),
+            Deal::Reliquary => Some(Cache::Reliquary),
+            Deal::Lamp => passage::lamp_number(depth).map(Cache::Lamp),
+        };
+        let players: Vec<PlayerId> = self.players.keys().copied().collect();
+        let at = gear::lamps::Zone { island, week, zone: number, depth, level: levels.1 };
+        for player in players {
+            let dice = self.dice(player);
+            let Some(found) = self.players.get_mut(&player) else { continue };
+            found.character.dive_deal_done(number);
+            if let Some(cache) = cache {
+                found.character.pay_cache(at, cache, difficulty, source, &dice);
+            }
+            found.gear_changed = true;
+            let deed = match deal {
+                Deal::Mission(_) => Some(Deed::Mission),
+                Deal::Reliquary => Some(Deed::Reliquary),
+                _ => None,
+            };
+            if let Some(deed) = deed {
+                self.saw(player, &Feat::Passage(deed));
+            }
+            if deal == Deal::Mission(Mission::Kindle)
+                && let Some(found) = self.players.get_mut(&player)
+            {
+                found.character.toward_bounties(gear::atheric_bounty::Toward::Kindled { island });
+            }
+        }
+        if let Some(zone) = self.zone_mut() {
+            zone.round.done_at = Some(clock);
+        }
+    }
+
+    /// A public room's deal begins again: its guards stand again, its targets with them, its progress from nothing.
+    fn begin_again(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        let (guards, targets, waves) =
+            (zone.round.guards.clone(), zone.round.targets.clone(), zone.round.wave_foes.clone());
+        for id in targets.into_iter().chain(waves) {
+            self.gone(id);
+        }
+        for post in guards {
+            if post < self.garrison.len() {
+                self.stand_post(post);
+            }
+        }
+        self.harden();
+        let clock = self.clock;
+        if let Some(zone) = self.zone_mut() {
+            zone.round.number += 1;
+            zone.lit.clear();
+        }
+        self.lay_deal();
+        if let Some(zone) = self.zone_mut() {
+            zone.round.began = Some(clock);
+        }
+    }
+
+    /// Each player who has gathered every node of a vein counts it once.
+    fn keep_veins(&mut self) {
+        let Some(zone) = self.zone() else { return };
+        if zone.zone.deal != Deal::Vein {
+            return;
+        }
+        let nodes = self.resource_nodes.len();
+        let gathered: Vec<PlayerId> = self
+            .players
+            .iter()
+            .filter(|(id, player)| player.spent.len() >= nodes && nodes > 0 && !zone.veined.contains(id))
+            .map(|(id, _)| *id)
+            .collect();
+        for player in gathered {
+            self.saw(player, &Feat::Passage(Deed::Vein));
+            if let Some(zone) = self.zone_mut() {
+                zone.veined.insert(player);
+            }
+        }
+    }
+
+    /// Whether the zone's mouths are open for a player: once its deal was done for their dive, or at once in a
+    /// gauntlet.
+    pub(crate) fn mouths_open(&self, player: PlayerId) -> bool {
+        let Some(zone) = self.zone() else { return false };
+        let gauntlet = zone.zone.deal == Deal::Mission(Mission::Gauntlet);
+        let done = self
+            .players
+            .get(&player)
+            .and_then(|found| found.character.passage.as_ref())
+            .is_some_and(|dive| dive.zone == zone.zone.number && dive.done);
+        gauntlet || done
+    }
+
+    /// Whether a hold's target may be held now: a dead lamp not yet lit while the Kindle runs, or the lamp once its
+    /// guard is down and not yet lit for the player.
+    pub(crate) fn may_hold(&self, player: PlayerId, target: Held) -> bool {
+        let Some(zone) = self.zone() else { return false };
+        match target {
+            Held::Kindle(nth) => zone.round.done_at.is_none() && zone.round.lit.get(usize::from(nth)) == Some(&false),
+            Held::Lamp => zone.zone.deal == Deal::Lamp && zone.round.done_at.is_some() && !zone.lit.contains(&player),
+        }
+    }
+}

@@ -118,7 +118,7 @@ impl Character {
     }
 
     /// A material found: into the haul in a passage zone, else the character's own.
-    pub(crate) fn find_material(&mut self, what: Stuff, count: u16) -> u16 {
+    pub fn find_material(&mut self, what: Stuff, count: u16) -> u16 {
         self.haul_material(what, count).unwrap_or_else(|| self.materials.add(what, count))
     }
 

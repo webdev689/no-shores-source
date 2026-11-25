@@ -80,6 +80,8 @@ pub enum Asked {
     },
     /// An ask at one's guild's outpost (`outpost.rs`).
     Outpost(crate::OutpostAsk),
+    /// An ask of the passages (`passage_asks.rs`).
+    Passage(crate::PassageAsk),
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -319,6 +321,7 @@ impl Room {
             if let Some(gathering) = found.gathering.as_mut() {
                 gathering.let_go = true;
             }
+            self.let_go_hold(player);
             return;
         }
         if found.asks.len() < ASKS_HELD {
@@ -379,6 +382,7 @@ impl Room {
             Asked::OpenChest { chest } => self.open_chest(player, chest),
             Asked::ClaimGuild { slot } => self.claim_guild(player, slot),
             Asked::Outpost(ask) => self.ask_outpost(player, ask),
+            Asked::Passage(ask) => self.ask_passage(player, ask),
         };
         if let Some(found) = self.players.get_mut(&player) {
             // An errand with the accounts is answered once they answer (`outpost_answered`).

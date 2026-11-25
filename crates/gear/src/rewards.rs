@@ -133,6 +133,13 @@ impl Character {
         self.loot(chances, rank, foe_level, source, dice)
     }
 
+    /// More Vestiges of a kill, as a passage's Bountiful gives: its rank's chance times `share`, on dice apart from
+    /// the kill's own.
+    pub fn loot_more(&mut self, share: f64, rank: u8, foe_level: u8, source: Source, dice: &Dice) -> Vec<Vestige> {
+        let dice = Dice { seed: dice.seed ^ 0x6d6f_7265, ..*dice };
+        self.loot((vestige::chance(rank) * share, 0.0), rank, foe_level, source, &dice)
+    }
+
     /// Pays a cleared node to a player who fought it: its clear's XP and Aurem at its level, raised by a harder voyage
     /// as a kill's are; and from a dungeon an item as itself, coloured as its Miniboss's, and a Vestige as often as its
     /// Miniboss leaves one, returned to be laid as `loot_kill`'s are, both from `source`.

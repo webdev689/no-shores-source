@@ -297,6 +297,7 @@ fn snapshot<'snapshot>(
         outpost: 0,
         darkness: false,
         reviving: &[],
+        passage: None,
     }
 }
 

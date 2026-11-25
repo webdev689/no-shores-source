@@ -33,6 +33,7 @@ mod guild_door;
 mod isle_door;
 mod outpost_door;
 mod passage_door;
+mod passage_room_door;
 mod plate_door;
 mod public_door;
 mod roster_door;
@@ -44,6 +45,7 @@ mod waters_door;
 pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
+pub use passage_room_door::open_passage;
 pub use public_door::parting;
 pub use run_door::{activities_json, gates_json, open_run};
 
@@ -108,6 +110,8 @@ struct NodeFile {
     places: Vec<gear::quests::Place>,
     #[serde(default)]
     paths: Vec<Vec<[f64; 2]>>,
+    #[serde(default)]
+    doors: Vec<gear::quests::Place>,
 }
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
@@ -188,15 +192,11 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Dungeon {
         room.lay_elite_entrance(&node.id);
     }
-    let refusal = lock_words(node.locked, &node.name);
+    passage_room_door::open_mouths(&mut room, &node.continent, &node.doors);
+    let refusal = dungeon_door::lock_words(node.locked, &node.name);
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });
     true
-}
-
-/// Why a locked node's room takes no player, in the words the page shows; None while it is open.
-fn lock_words(locked: bool, name: &str) -> Option<String> {
-    locked.then(|| format!("{name} is locked"))
 }
 
 /// Why the open room takes no player: a locked node's says so; None for any other room.

@@ -208,6 +208,7 @@ impl Room {
             tell_one(&mut self.players, player, &Event::Enter(node));
         }
         self.tell_landed(player);
+        self.passage_arrived(player);
     }
 
     /// A foe's fall a player struck: its roster's name and rank's number, where it fell; on a sea island only for one
