@@ -82,5 +82,3 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   only from Privacy & Security, and cannot update itself. Signing takes the owner's accounts and keys: Apple's
   Developer Program for a Mac (a Developer ID and notarizing), and for Windows a code-signing certificate or Azure's
   Artifact Signing ([[Desktop App]], "Releases and downloads").
-- **The desktop app on the website.** Whether the site offers its downloads, and in what words ([[Desktop App]];
-  [[The Website's Words and the Bot's Month Are Approved]]).

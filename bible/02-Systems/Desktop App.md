@@ -239,7 +239,6 @@ on the game's own build, on SwiftShader, until its log says the game's adapter c
 - **AMD and other cards on Linux** reach Vulkan only with entry 186 of Chromium's GPU list lifted, on Wayland, or with
   Chromium drawing on Vulkan itself; for that last way, an open Electron report has one AMD card crash when an app
   draws to offscreen windows, which the game does not.
-- **The site's download links** are not yet on the website, whose words are the owner's ([[Open Questions]]).
 - **The AppImage may not start on Ubuntu 23.10 and later**, which keep an app from making the sandbox Chromium needs
   unless an AppArmor profile allows it. The Debian package installs that profile; an AppImage cannot (unchecked on a
   real Ubuntu). Its player is better served by the Debian package.

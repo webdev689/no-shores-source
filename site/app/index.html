@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-t="app.title"></title>
+    <meta name="description" data-t-content="app.description" />
+    <link rel="stylesheet" href="/src/site.css" />
+  </head>
+  <body>
+    <!--site:top-->
+    <main id="main">
+      <header class="page-head">
+        <h1 data-t="app.title"></h1>
+        <p class="lede" data-t="app.lede"></p>
+        <p class="buttons">
+          <a class="button button-gold button-big" data-to="windows" data-t="app.windows"></a>
+          <a class="button button-big" data-to="mac-arm64" data-t="app.macArm"></a>
+          <a class="button button-big" data-to="mac-x64" data-t="app.macIntel"></a>
+          <a class="button button-big" data-to="linux-appimage" data-t="app.linuxAppImage"></a>
+          <a class="button button-big" data-to="linux-deb" data-t="app.linuxDeb"></a>
+        </p>
+        <p class="hero-needs" data-t="app.needs"></p>
+      </header>
+
+      <section class="start" aria-labelledby="first-title">
+        <h2 class="section-title" id="first-title" data-t="app.firstHead"></h2>
+        <p data-t="app.firstIntro"></p>
+        <ul class="steps">
+          <li>
+            <h3 data-t="app.firstWindowsHead"></h3>
+            <p data-t="app.firstWindows"></p>
+          </li>
+          <li>
+            <h3 data-t="app.firstMacHead"></h3>
+            <p data-t="app.firstMac"></p>
+          </li>
+          <li>
+            <h3 data-t="app.firstLinuxHead"></h3>
+            <p data-t="app.firstLinux"></p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="call" aria-labelledby="browser-title">
+        <h2 id="browser-title" data-t="app.browserHead"></h2>
+        <p data-t="app.browserText"></p>
+        <p class="buttons"><a class="button button-gold button-big" data-to="play" data-t="home.play"></a></p>
+      </section>
+    </main>
+    <!--site:foot-->
+  </body>
+</html>
