@@ -134,10 +134,12 @@ Chromium; Go back counts as a failure, and no answer in 20 seconds starts the ne
 
 ### The launcher
 
-The app opens on a launcher ([[The Desktop App Opens on a Launcher in the Game's Look]]), once a run: a page loaded
-again (a sign-in's return, Exit to Menu) skips it. It is drawn by the game's own interface in the menus' look, played
-with keys, pad and mouse, with the world loading behind it and the title standing under it
-(`client/src/game/launcher/`):
+The app opens on a launcher ([[The Desktop App Opens on a Launcher in the Game's Look]]) in a window of its own
+([[The Launcher Stands in a Window of Its Own]]): 1200 by 760 at most, centred, never resized, maximized or
+whole-screen, filled by the launcher edge to edge. It loads the game's page flagged `launcher` (`LAUNCHER_FLAG`), which
+draws the launcher alone with the game's own interface (`launcherApp.ts`), nothing of the world loaded, played with
+keys, pad and mouse. Play asks the shell (`play`), which opens the game's window, on the title, and closes the
+launcher's once the game's is ready to show; closing the launcher's window quits the app (`client/src/game/launcher/`):
 
 - **Its head**: the logo, and links to the website and the Discord server, opened in the player's browser; Report a
   bug goes to the Discord server, whose bugs go in #bug-reports.
@@ -151,11 +153,10 @@ with keys, pad and mouse, with the world loading behind it and the title standin
   also pays for setting the connection up): up, not answering after 5 s, or being asked; then the graphics
   exactly as Settings' Graphics tab has them (the resolution, and the App part below).
 - **Its foot**: what the servers say, and Play, which has the focus as it opens. Play keeps the time, for the next
-  launch's new notes, and goes to the title, which hears the page only from then on (a pad's button held from Play
-  taps nothing).
+  launch's new notes; at the title a pad's button still held from Play taps nothing.
 
-While the launcher stands, the interface hears the page's input as the world loads, which it otherwise throws away
-until the game's own frames begin.
+The launcher's window has no game frames, so the interface hears the page's input in its frames alone while the
+launcher stands, which it otherwise throws away until the game's own frames begin.
 
 ### Settings' App part
 

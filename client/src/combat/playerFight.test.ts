@@ -89,6 +89,13 @@ function fightingPlayer(right = 'sword_iron', start: { readonly x: number; reado
     (snapshot: Snapshot) => fight?.receive(snapshot),
     (gear) => (said.gear = gear),
   );
+  // Every input the page sends the room, counted.
+  const sent = { count: 0 };
+  const send = room.send.bind(room);
+  room.send = (bytes) => {
+    sent.count += 1;
+    send(bytes);
+  };
   const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, room);
@@ -97,12 +104,12 @@ function fightingPlayer(right = 'sword_iron', start: { readonly x: number; reado
   const player = new PlayerFight(fighting, rules, walker);
   const steps = fighting.steps(movement);
   let clock = 0;
-  const frame = (input: InputFrame, bearer: { readonly charged: boolean } | null = null) => {
+  const frame = (input: InputFrame, bearer: { readonly charged: boolean } | null = null, running = true) => {
     clock += TICK;
-    const asked = { running: true, hands: true, markOf: () => null, zoomOf: () => 1, bearer };
+    const asked = { running, hands: true, markOf: () => null, zoomOf: () => 1, bearer };
     return player.frame(input, steps, TICK, clock, asked);
   };
-  return { fighting, walker, shown, frame, said, warmed, loads };
+  return { fighting, walker, shown, frame, said, warmed, loads, sent };
 }
 
 test("the other loadout's weapon is composed ahead of a swap, for the figure and for the hands", () => {
@@ -330,4 +337,14 @@ test("bearing the Lodestone, an Art's key asks the room to ground it and plays n
   unborne.frame(controls([], ['tenetOne']));
   unborne.frame(controls());
   assert.notEqual(unborne.fighting.castSent, null, 'Storm worn: its First Tenet cast');
+});
+
+test('while a cutscene holds the room still, the page sends it no inputs, so none are left waiting once it runs', () => {
+  const { frame, sent } = fightingPlayer();
+  frame(controls());
+  const before = sent.count;
+  for (let held = 0; held < 60; held++) frame(controls(), null, false);
+  assert.equal(sent.count, before, 'a second held sends nothing');
+  frame(controls());
+  assert.equal(sent.count, before + 1, 'running again, one input a tick');
 });

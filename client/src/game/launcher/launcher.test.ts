@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import { type DesktopInfo, useDesktop } from '../../desktop.ts';
 import { Stack } from '../../ui/stack.ts';
 import { drawn, settle } from '../menuPagesForTests.ts';
-import { LAUNCHER_PASSED, launcherStanding, launcherWanted, openLauncher } from './launcher.ts';
+import { launcherStanding, openLauncher } from './launcher.ts';
+import { isLauncherPage } from '../../desktop.ts';
 import { DISCORD_INVITE, PLAY, serversWords } from './launcherNodes.ts';
 import { LAST_PLAYED, type Notes } from './patchNotes.ts';
 
@@ -41,10 +42,10 @@ const storeOf = (kept: Record<string, string> = {}) => ({
 function launched(read: Notes = notes, lastPlayed = '2026-11-22T00:00:00Z') {
   useDesktop(app, () => undefined);
   const stack = new Stack();
-  const [local, session] = [storeOf({ [LAST_PLAYED]: lastPlayed }), storeOf()];
+  const local = storeOf({ [LAST_PLAYED]: lastPlayed });
   const opened: string[] = [];
   let played = false;
-  const playing = openLauncher(stack, { local, session }, '/play/', {
+  const playing = openLauncher(stack, local, '/play/', {
     readNotes: async () => read,
     askServer: async (health) => (health.includes('rooms') ? { state: 'up', ms: 38 } : { state: 'down' }),
     open: (address) => opened.push(address),
@@ -56,7 +57,7 @@ function launched(read: Notes = notes, lastPlayed = '2026-11-22T00:00:00Z') {
     if (launcherStanding()) page.click(PLAY);
     useDesktop(null, () => undefined);
   };
-  return { page, local, session, opened, playing, played: () => played, close };
+  return { page, local, opened, playing, played: () => played, close };
 }
 
 test('the launcher shows the notes newest first, new since last played marked, the servers, graphics and app', async () => {
@@ -80,8 +81,8 @@ test('the launcher shows the notes newest first, new since last played marked, t
   }
 });
 
-test('the links open in the browser, and Play goes on, keeping when the player played and that it stood', async () => {
-  const { page, local, session, opened, playing, played, close } = launched();
+test('the links open in the browser, and Play goes on, keeping when the player played', async () => {
+  const { page, local, opened, playing, played, close } = launched();
   try {
     page.frame();
     page.click('launcher-discord');
@@ -93,8 +94,6 @@ test('the links open in the browser, and Play goes on, keeping when the player p
     await playing;
     assert.equal(launcherStanding(), false);
     assert.equal(local.kept[LAST_PLAYED], '2026-11-25T12:00:00.000Z');
-    assert.equal(launcherWanted(session), false, 'once a run');
-    assert.ok(session.kept[LAUNCHER_PASSED]);
     page.frame();
     assert.doesNotMatch(page.shows(), /PATCH NOTES/, 'gone');
   } finally {
@@ -122,15 +121,10 @@ test('with no notes to read, or only those kept, the launcher says so; a first l
   }
 });
 
-test('the launcher stands only in the app, once a run', () => {
-  assert.equal(launcherWanted(storeOf()), false, 'a browser has none');
-  useDesktop(app, () => undefined);
-  try {
-    assert.equal(launcherWanted(storeOf()), true);
-    assert.equal(launcherWanted(storeOf({ [LAUNCHER_PASSED]: '1' })), false);
-  } finally {
-    useDesktop(null, () => undefined);
-  }
+test("the launcher's window is the page the shell flags, in the app alone", () => {
+  assert.equal(isLauncherPage('https://noshores.online/play/?room=live&launcher=', true), true);
+  assert.equal(isLauncherPage('https://noshores.online/play/?room=live', true), false, "the game's window");
+  assert.equal(isLauncherPage('https://noshores.online/play/?launcher=', false), false, 'a browser has none');
 });
 
 test('the servers are said together: checking, up, or one not answering', () => {

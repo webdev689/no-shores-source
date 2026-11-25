@@ -103,7 +103,9 @@ export class PlayerFight {
     });
     const foe = fight.targetAt;
     const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
-    walker.step(controls, steps, seconds, toward, aiming);
+    // The fight steps only while the room's clock runs: inputs sent while it is held (a cutscene) would wait in its
+    // queue after, and every blow with them.
+    walker.step(controls, steps, running ? seconds : 0, toward, aiming);
     if (running) fight.pump(seconds);
     const shown = {
       own: fight.own,

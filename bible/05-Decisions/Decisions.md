@@ -402,6 +402,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Desktop App Stays on Electron]]
 - [[The Desktop App Releases With Each Merge That Changes It]]
 - [[The Website Offers the Desktop App's Downloads]]
+- [[The Launcher Stands in a Window of Its Own]]
 
 ## Replaced
 

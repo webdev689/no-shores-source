@@ -58,6 +58,7 @@ export function askOf(value: unknown): DesktopAsk | null {
     case 'drawn':
     case 'restart':
     case 'download':
+    case 'play':
     case 'relock':
       return { ask: value['ask'] };
     default:
