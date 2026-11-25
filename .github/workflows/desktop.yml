@@ -1,11 +1,11 @@
 name: desktop
 
 # The desktop app: Electron around the game noshores.online serves (desktop/). A pull request or a push to main that
-# changes it packs the app for Linux and starts the packed app on the game's own build, on the CPU's WebGPU, until it
-# says the game drew. Run by hand from main, it is a release, and a release is the owner's to ask for: the commit's
-# CI check must have passed, its version is its commit's time and must be after the one published, each platform's
-# installers are built on its own runner holding no secret, and only when every one is whole are they put on R2 under
-# desktop/, the installers before the feeds, where noshores.online/download/ answers them.
+# changes it packs the app for Linux, with no feed to update from, and starts the packed app on the game's own build,
+# on the CPU's WebGPU, until it says the game's adapter came up. Run by hand from main, it is a release, the owner's to
+# ask for: the commit's CI check must have passed, its version is its commit's time and must be after the one
+# published, each platform's installers are packed on its own runner with no Cloudflare token, and only when every one
+# is whole are they put on R2 under desktop/, the installers before the feeds, where noshores.online/download/ answers.
 on:
   pull_request:
     paths:
@@ -97,6 +97,9 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
       - id: version
         env:
           GH_TOKEN: ${{ github.token }}
@@ -117,20 +120,14 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "releasing $version (published: ${published:-none})"
 
-  # Installs others' code and builds, so it holds no Cloudflare token; a platform's signing keys, where the repository
-  # has them, reach its packing step alone.
+  # Each platform's installers, packed with the feed they update from. Its installs run no scripts, and a platform's
+  # signing keys, where the repository has them, reach its own packing step alone.
   build:
     needs: version
     strategy:
       fail-fast: true
       matrix:
-        include:
-          - os: ubuntu-latest
-            pack: --linux AppImage deb --x64
-          - os: windows-latest
-            pack: --win nsis --x64
-          - os: macos-latest
-            pack: --mac dmg zip --arm64 --x64
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
@@ -147,17 +144,16 @@ jobs:
         run: |
           set -euo pipefail
           npm ci --ignore-scripts
-          npm ci --prefix desktop
+          npm ci --prefix desktop --ignore-scripts
       - name: Pack the installers
         shell: bash
         env:
           VERSION: ${{ needs.version.outputs.version }}
-          PACK: ${{ matrix.pack }}
           CSC_LINK: ${{ matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK || matrix.os == 'windows-latest' && secrets.WIN_CSC_LINK || '' }}
           CSC_KEY_PASSWORD: ${{ matrix.os == 'macos-latest' && secrets.MAC_CSC_KEY_PASSWORD || matrix.os == 'windows-latest' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
-          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY_BASE64: ${{ matrix.os == 'macos-latest' && secrets.APPLE_API_KEY_BASE64 || '' }}
+          APPLE_API_KEY_ID: ${{ matrix.os == 'macos-latest' && secrets.APPLE_API_KEY_ID || '' }}
+          APPLE_API_ISSUER: ${{ matrix.os == 'macos-latest' && secrets.APPLE_API_ISSUER || '' }}
         run: |
           set -euo pipefail
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::the version is not three numbers"; exit 1; }
@@ -170,10 +166,23 @@ jobs:
             echo "$APPLE_API_KEY_BASE64" | base64 --decode > "$APPLE_API_KEY"
           fi
           cd desktop
-          # $PACK is the matrix's own words, split into the platform's targets and arches on purpose.
-          # shellcheck disable=SC2086
-          npx electron-builder $PACK --publish never \
-            -c.extraMetadata.version="$VERSION" -c.extraMetadata.noShores.signed="$signed"
+          release=(--publish never -c.extraMetadata.version="$VERSION" -c.extraMetadata.noShores.signed="$signed"
+            -c.publish.provider=generic -c.publish.url=https://noshores.online/download/
+            -c.publish.useMultipleRangeRequest=false)
+          case "$RUNNER_OS" in
+            Windows) npx electron-builder --win nsis --x64 "${release[@]}" ;;
+            macOS) npx electron-builder --mac dmg zip --arm64 --x64 "${release[@]}" ;;
+            Linux)
+              # Packed apart, as a Debian package marks the folder it is packed from as its own, and an AppImage packed
+              # beside it would carry the mark; their feeds are then made one.
+              npx electron-builder --linux AppImage --x64 "${release[@]}" -c.directories.output=out/release-appimage
+              npx electron-builder --linux deb --x64 "${release[@]}" -c.directories.output=out/release-deb
+              mkdir -p out/release
+              cp out/release-appimage/No-Shores-* out/release-deb/No-Shores-* out/release/
+              node release/publish.ts merge out/release-appimage/latest-linux.yml out/release-deb/latest-linux.yml \
+                > out/release/latest-linux.yml
+              ;;
+          esac
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: desktop-${{ matrix.os }}
@@ -183,7 +192,7 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-  # Holds the Cloudflare token, in the upload's step alone, and installs nothing but the repository's own tools.
+  # Holds the Cloudflare token, in the upload's step alone, after installs that run no scripts.
   publish:
     needs: [version, build]
     runs-on: ubuntu-latest
@@ -199,7 +208,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Install the TypeScript tools
-        run: npm ci
+        run: npm ci --ignore-scripts
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: desktop-*
@@ -207,19 +216,22 @@ jobs:
           merge-multiple: true
       - name: Check the release is whole
         run: node desktop/release/publish.ts release "$VERSION" > "$RUNNER_TEMP/order.txt"
+      # The list is read whole first: a tool run in the loop could otherwise read the rest of it as its own input.
       - name: Put the release on R2, the installers before the feeds
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: |
           set -euo pipefail
-          while read -r name; do
+          mapfile -t names < "$RUNNER_TEMP/order.txt"
+          for name in "${names[@]}"; do
             case "$name" in
               *.yml) kind='text/yaml' ;;
               *.json) kind='application/json' ;;
               *) kind='application/octet-stream' ;;
             esac
-            npx wrangler r2 object put "$BUCKET/desktop/$name" --file "release/$name" --content-type "$kind" --remote
-          done < "$RUNNER_TEMP/order.txt"
+            npx wrangler r2 object put "$BUCKET/desktop/$name" --file "release/$name" --content-type "$kind" --remote \
+              < /dev/null
+          done
       - name: Check noshores.online answers the release
         run: |
           set -euo pipefail

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../../client/src/network/accounts.ts';
-import { ACCOUNTS_ORIGIN, gamePlace, isGamePage, opensInBrowser, permits, staysInWindow } from './fences.ts';
+import { ACCOUNTS_ORIGIN, fenceOf, gamePlace, isGamePage, opensInBrowser, permits, staysInWindow } from './fences.ts';
 import { LIVE_GAME } from './gameAddress.ts';
 
 const game = gamePlace(LIVE_GAME);
@@ -53,4 +53,11 @@ test('the game may hold the pointer and the screen; nothing else is granted, and
   assert.equal(permits('notifications', 'https://noshores.online/play/', game), false);
   assert.equal(permits('pointerLock', 'https://discord.com/', game), false);
   assert.equal(permits('pointerLock', '', game), false);
+});
+
+test("only the game's top page is fenced: a frame inside a sign-in's page goes where its page sends it", () => {
+  assert.equal(fenceOf('https://noshores.online/play/', true, game), 'stay');
+  assert.equal(fenceOf('https://example.com/', true, game), 'browser');
+  assert.equal(fenceOf('file:///etc/passwd', true, game), 'refuse');
+  assert.equal(fenceOf('https://hcaptcha.example/challenge', false, game), 'stay');
 });

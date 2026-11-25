@@ -29,14 +29,15 @@ export interface GameWindowSetup {
   readonly origin: string;
   readonly kept: WindowPlace | null;
   readonly keep: (place: WindowPlace) => void;
-  /** A game page finished loading, and the page's process went (`reason`, its exit code), for the log. */
-  readonly loaded: () => void;
+  /** The page's process went (`reason`, its exit code), for the log. */
   readonly gone: (reason: string, exitCode: number) => void;
   readonly quit: () => void;
 }
 
-/** Shows `box` over `window`; answers the button pressed. */
+/** Shows `box` over `window`, shown first if it was not yet: a box over a window never shown is never seen on a Mac.
+ *  Answers the button pressed. */
 export async function boxOver(window: BrowserWindow | null, box: Box, signal?: AbortSignal): Promise<number> {
+  if (window && !window.isDestroyed() && !window.isVisible()) window.show();
   const options = { ...box, buttons: [...box.buttons], noLink: true, signal };
   const { response } =
     window && !window.isDestroyed()
@@ -119,7 +120,6 @@ function watchPage(window: BrowserWindow, setup: GameWindowSetup): void {
   const stops = stopCount();
   let asking = false;
   let restarting = false;
-  contents.on('did-finish-load', () => setup.loaded());
   contents.on('did-fail-load', (_event, code, description, address, mainFrame) => {
     if (!mainFrame || code === ABORTED || asking) return;
     asking = true;

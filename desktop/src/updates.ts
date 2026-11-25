@@ -58,6 +58,18 @@ export function updateAfter(update: DesktopUpdate, event: UpdateEvent, transport
   }
 }
 
+/** What Restart does: installs a ready update, which electron-updater must be asked once only (a second ask installs
+ *  twice, over the copy the first put in place); does nothing else while that install runs; or starts the app again. */
+export function restartOf(update: DesktopUpdate, installing: boolean): 'install' | 'installing' | 'relaunch' {
+  if (installing) return 'installing';
+  return update.state === 'ready' ? 'install' : 'relaunch';
+}
+
+/** Whether a copy's `app-update.yml` names a feed to follow: a release's names its provider, and a trial pack writes
+ *  the file without one. */
+export const followsFeed = (updateFile: string | null): boolean =>
+  updateFile !== null && /^provider:\s*\S/m.test(updateFile);
+
 /** How long after the app starts it first looks, and how often after. */
 export const FIRST_CHECK_MS = 15_000;
 export const CHECK_EVERY_MS = 60 * 60_000;

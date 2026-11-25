@@ -1,6 +1,6 @@
 // The watch over one launch's graphics. The game says what adapter WebGPU gave it; a launch fails when it gave none,
 // gave one that draws on the CPU, drew with another API than the one launched, could not start its device, said
-// nothing within a minute of its page loading, or lost the GPU's process in the launch's first minute. A failure is
+// nothing within a minute of asking WebGPU for it, or lost the GPU's process in the launch's first minute. A failure is
 // kept by card, driver and Chromium, the player is told, and the app starts again on the next backend; with none left
 // it says what to do. A backend that may draw a blank window, which no check sees, has its player asked once the game
 // has drawn whether they see it, and the answer is kept for that card, driver and Chromium.
@@ -18,8 +18,9 @@ import {
   orderOf,
 } from './graphics.ts';
 
-/** How long the game has to say what it draws with once its page has loaded, the launch's first stretch in which a
- *  lost GPU process counts as its backend failing, and how long the player has to answer whether they see the game. */
+/** How long the game has to say what it draws with once it has asked WebGPU (a page slow to load is no failure of the
+ *  graphics), the launch's first stretch in which a lost GPU process counts as its backend failing, and how long the
+ *  player has to answer whether they see the game. */
 export const REPORT_WITHIN_MS = 60_000;
 export const GPU_GONE_WITHIN_MS = 60_000;
 export const ASK_WITHIN_MS = 20_000;
@@ -106,8 +107,8 @@ export interface WatchEffects {
 
 /** The watch's doors, which the shell's wiring calls as the launch goes. */
 export interface GraphicsWatch {
-  /** A page of the game has loaded: the minute it has to say what it draws with starts, once. */
-  readonly pageLoaded: () => void;
+  /** The game has asked WebGPU for its adapter: the minute it has to say what it got starts, once. */
+  readonly gpuAsked: () => void;
   readonly report: (report: GpuReport) => Promise<void>;
   /** The game has drawn: the player may now be asked whether they see it. */
   readonly drawn: () => Promise<void>;
@@ -125,6 +126,9 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
   let heard: GpuReport | null = null;
   let stopClock: (() => void) | null = null;
   let asking: AbortController | null = null;
+  /** Whether the player has been asked this launch: a page loaded again (a restart, a sign-in's return) is not asked
+   *  again. */
+  let asked = false;
 
   async function fail(reason: string, { told = true, keep = true } = {}): Promise<void> {
     if (failing) return;
@@ -146,7 +150,8 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
   }
 
   async function askPlayer(): Promise<void> {
-    if (next === null || !kept || !MAY_DRAW_BLANK.has(launch.backend)) return;
+    if (asked || next === null || !kept || !MAY_DRAW_BLANK.has(launch.backend)) return;
+    asked = true;
     const gpu = await effects.gpuKey();
     const seen = effects.seen();
     const known = (one: GraphicsSeen) => one.backend === launch.backend && one.gpu === gpu && one.chromium === chromium;
@@ -154,8 +159,10 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
     asking = new AbortController();
     const stop = asking;
     const stopLater = effects.later(() => stop.abort(), ASK_WITHIN_MS);
-    const answer = await effects.ask(seenBox(launch.backend, next), stop.signal).catch(() => null);
+    const given = await effects.ask(seenBox(launch.backend, next), stop.signal).catch(() => null);
     stopLater();
+    // A box its signal closed answers as if cancelled: that is no answer from the player.
+    const answer = stop.signal.aborted ? null : given;
     if (failing) return;
     if (answer === 0) {
       if (gpu !== null)
@@ -166,7 +173,7 @@ export function watchGraphics(launch: Launch, desk: Desk, chromium: string, effe
   }
 
   return {
-    pageLoaded() {
+    gpuAsked() {
       if (stopClock || heard || failing) return;
       stopClock = effects.later(() => {
         if (!heard) void fail(`the game said nothing of its graphics within ${REPORT_WITHIN_MS / 1000} s`);

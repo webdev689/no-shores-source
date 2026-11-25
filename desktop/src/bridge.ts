@@ -52,6 +52,7 @@ export function askOf(value: unknown): DesktopAsk | null {
       return GRAPHICS_APIS.includes(value['api'] as GraphicsApi)
         ? { ask: 'graphics', api: value['api'] as GraphicsApi }
         : null;
+    case 'gpuAsked':
     case 'drawn':
     case 'restart':
     case 'download':

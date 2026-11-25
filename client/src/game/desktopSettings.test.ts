@@ -74,7 +74,13 @@ test('on Windows the App part offers the graphics API, says what it draws with, 
     );
     page.click('graphics-api');
     page.click('graphics-api:d3d11');
-    assert.deepEqual(asked, [{ ask: 'graphics', api: 'd3d11' }]);
+    page.frame();
+    page.frame();
+    assert.deepEqual(
+      asked,
+      [{ ask: 'graphics', api: 'd3d11' }],
+      'asked once, the frames after the click waiting on the shell',
+    );
   } finally {
     useDesktop(null, () => undefined);
   }

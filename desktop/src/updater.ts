@@ -1,9 +1,8 @@
 // The app's own updates, through electron-updater, on the transport `updates.ts` chose. It is loaded only by a copy
 // that has one, looks a little after the start and every hour after, and tells each change as the game sees it. A
 // download that hears nothing for two minutes is given up, as electron-updater's own wait does not run under
-// Electron's network, so the next check starts afresh. Installing is asked once at most: a second ask made
-// electron-updater install twice in DFO, over the copy the first had just put in place.
-import { app, shell } from 'electron';
+// Electron's network, so the next check starts afresh. Installing is asked of it once at most (`restartOf`).
+import { shell } from 'electron';
 import type { DesktopUpdate } from '../../client/src/desktop.ts';
 import {
   CHECK_EVERY_MS,
@@ -11,6 +10,7 @@ import {
   FIRST_CHECK_MS,
   type Transport,
   type UpdateEvent,
+  restartOf,
   updateAfter,
 } from './updates.ts';
 
@@ -26,7 +26,8 @@ export function downloadFor(platform: NodeJS.Platform, arch: string): string {
 
 export interface Updater {
   readonly update: () => DesktopUpdate;
-  /** Installs a downloaded update now, closing the app and opening it again on the new one. */
+  /** Installs a downloaded update now, closing the app and opening it again on the new one; answers whether an
+   *  install has the app in hand, this one or one already under way, so nothing else starts it again. */
   readonly install: () => boolean;
   /** Opens the download of an update this copy cannot install itself. */
   readonly download: () => void;
@@ -71,12 +72,13 @@ export function startUpdater(
     updater.allowDowngrade = false;
     updater.logger = null;
     let cancel = () => undefined as void;
+    // The stall cancels whichever download is running when it comes, not the one known as it was set.
     updater.on('update-available', (info) => {
       heard({ kind: 'available', version: info.version });
-      if (transport === 'updater') watchStall(cancel);
+      if (transport === 'updater') watchStall(() => cancel());
     });
     updater.on('download-progress', (progress) => {
-      watchStall(cancel);
+      watchStall(() => cancel());
       heard({ kind: 'progress', percent: progress.percent });
     });
     updater.on('update-downloaded', (info) => {
@@ -97,6 +99,8 @@ export function startUpdater(
         .then((result) => {
           const token = result?.cancellationToken;
           if (token) cancel = () => token.cancel();
+          // A download that fails or is cancelled is said by the updater's error, not by its promise.
+          result?.downloadPromise?.catch(() => undefined);
         })
         .catch(() => heard({ kind: 'failed' }));
     setTimeout(check, FIRST_CHECK_MS).unref();
@@ -105,7 +109,9 @@ export function startUpdater(
   return {
     update: () => update,
     install() {
-      if (installing || update.state !== 'ready' || !installer) return false;
+      const restart = restartOf(update, installing);
+      if (restart === 'installing') return true;
+      if (restart !== 'install' || !installer) return false;
       installing = true;
       installer.quitAndInstall(true, true);
       return true;
@@ -114,9 +120,4 @@ export function startUpdater(
       if (update.state === 'manual') void shell.openExternal(downloadFor(process.platform, process.arch));
     },
   };
-}
-
-/** Whether this copy carries the release's `app-update.yml`, cut for a release rather than to try. */
-export function cutForRelease(resources: string, exists: (file: string) => boolean): boolean {
-  return app.isPackaged && exists(`${resources}/app-update.yml`);
 }

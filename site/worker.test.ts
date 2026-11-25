@@ -88,3 +88,21 @@ test("a range's bytes are named from its offset, its length or its suffix", () =
   assert.equal(rangeOf({ offset: 4 }, 10), '4-9/10');
   assert.equal(rangeOf({ suffix: 3 }, 10), '7-9/10');
 });
+
+test('a latest.json that does not read sends no one anywhere, and a range R2 cannot read is said to be one', async () => {
+  const broken = bucketOf({ 'latest.json': '{ not json' });
+  const moved = await download(new Request('https://noshores.online/download/windows'), broken);
+  assert.equal(moved.status, 404);
+  const refusing: DownloadBucket = {
+    get: async (_key, options) => {
+      if (options?.range) throw new Error('InvalidRange');
+      return null;
+    },
+    head: async () => null,
+  };
+  const range = await download(
+    new Request(`https://noshores.online/download/${installer}`, { headers: { range: 'bytes=900-999' } }),
+    refusing,
+  );
+  assert.equal(range.status, 416);
+});

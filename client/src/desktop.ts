@@ -60,6 +60,8 @@ export interface GpuReport {
 
 /** What the game asks of the shell. */
 export type DesktopAsk =
+  /** The game is asking WebGPU for its adapter: a launch whose graphics hang says nothing after this. */
+  | { readonly ask: 'gpuAsked' }
   | { readonly ask: 'gpu'; readonly report: GpuReport }
   /** The game has started and drawn: a blank window would show by now. */
   | { readonly ask: 'drawn' }

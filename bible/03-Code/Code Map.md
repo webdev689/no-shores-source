@@ -109,7 +109,7 @@ decision, made in the same change as its entry here.
 | `server/bot/layout/` | The No Shores server's layout as data (roles, channels, settings, modules, messages) and the plan and build that make it (`build.ts`, `parts.ts`) |
 | `desktop/` | The [[Desktop App]]: its own package (Electron, its packing tools and the updater), the shell's TypeScript settings, and electron-builder's settings in `package.json`. Builds into `desktop/out/` (not in git) |
 | `desktop/src/` | The shell: its wiring (`main.ts`), the game's window and its keys, crashes and unreachable address (`gameWindow.ts`, `crashes.ts`), the fences (`fences.ts`), the bridge and its preload (`bridge.ts`, `preload.cts`), the graphics backends, their switches and the watch over a launch (`graphics.ts`, `switches.ts`, `graphicsWatch.ts`), the kept settings (`config.ts`), the window's place, the menu, and the updates (`updates.ts`, `updater.ts`) |
-| `desktop/release/` | A release's tools: its version from its commit's time, the check that it is whole and its upload order, the icon drawn by the site's code, and the Mac app's ad hoc signature |
+| `desktop/release/` | A release's tools: its version from its commit's time, the check that it is whole, its upload order and Linux's two feeds made one, and the icon drawn by the site's code |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
 | `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names and borders; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |

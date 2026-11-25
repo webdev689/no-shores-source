@@ -65,8 +65,9 @@ export async function download(request: Request, bucket: DownloadBucket): Promis
   const name = new URL(request.url).pathname.slice('/download/'.length);
   if ((LATEST_NAMES as readonly string[]).includes(name)) {
     const listed = await bucket.get(`${DOWNLOAD_PREFIX}latest.json`);
+    // A list that does not read names nothing.
     const files = listed?.body
-      ? ((await new Response(listed.body).json()) as { files?: Record<string, string> }).files
+      ? ((await new Response(listed.body).json().catch(() => null)) as { files?: Record<string, string> } | null)?.files
       : null;
     const file = files?.[name];
     if (!file || !RELEASE_FILE.test(file)) return new Response('no release yet', { status: 404 });
@@ -87,7 +88,12 @@ export async function download(request: Request, bucket: DownloadBucket): Promis
   // One range a request, as R2 reads them; a list of ranges is answered with the whole file.
   const asked = request.headers.get('range');
   const single = asked !== null && !asked.includes(',');
-  const object = await bucket.get(key, single ? { range: request.headers } : {});
+  // R2 refuses a range past the file's end by throwing, which is the asker's mistake, not the Worker's.
+  const object = await bucket.get(key, single ? { range: request.headers } : {}).catch((error: unknown) => {
+    if (single) return 'unsatisfiable' as const;
+    throw error;
+  });
+  if (object === 'unsatisfiable') return new Response('range not satisfiable', { status: 416 });
   if (!object?.body) return new Response('not found', { status: 404 });
   const headers = headersOf(name, object);
   const part = single ? rangeOf(object.range, object.size) : null;

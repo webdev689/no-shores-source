@@ -138,10 +138,11 @@ export function launchFor(input: {
   const own = backendsOf(input.chosen, input.desk);
   const preferred = [...own, ...order.filter((backend) => !own.includes(backend))];
   const left = preferred.filter((backend) => !failedOn(backend, input.failures, input.chromium));
-  const held = own.length > 0 && own.every((backend) => failedOn(backend, input.failures, input.chromium));
   // With every one failed, the default is tried as it comes: the game then says why it cannot draw.
   const [backend = order[0] ?? 'vulkan-skia', ...next] = left;
-  const holder = held ? failedOn(own[0] ?? backend, input.failures, input.chromium) : null;
+  // The choice is held only while this launch takes another API than the one chosen.
+  const holder =
+    own.length > 0 && !own.includes(backend) ? failedOn(own[0] ?? backend, input.failures, input.chromium) : null;
   return { backend, next, chosen: input.chosen, held: holder, named: false };
 }
 

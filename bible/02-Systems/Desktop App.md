@@ -26,7 +26,6 @@ code:
   - desktop/release/version.ts#versionOf
   - desktop/release/publish.ts#releasePlan
   - desktop/release/icon.ts
-  - desktop/release/afterPack.cjs
   - client/src/desktop.ts#DesktopBridge
   - client/src/gpu.ts#gpuReportOf
   - client/src/game/desktopSettings.ts#desktopNodes
@@ -110,14 +109,15 @@ the adapter say its backend, type and driver (`switches.ts`).
 Each launch takes the first backend in the player's order that has not failed on record under this Chromium
 (`graphics.ts` `launchFor`). The watch over the launch (`graphicsWatch.ts`) fails it when WebGPU gave no adapter,
 gave one that draws on the CPU, drew with another API than the one asked for by switches, could not start its device,
-said nothing within a minute of its page loading, or the GPU's process went in the launch's first minute. A failure
+said nothing within a minute of asking WebGPU for it (a page slow to load is no failure of the graphics), or the
+GPU's process went in the launch's first minute. A failure
 is kept with the card and its driver (`vendor:device@driver`) and the Chromium version; the player is told, and the
 app starts again on the next backend. With none left the player is told what to do for their platform: update the
 driver, install the card's Vulkan driver, or update macOS. A failure is dropped once the card, its driver or the
 app's Chromium changes, so the next start tries that backend again; choosing an API again in Settings tries it again
 at once. Direct3D 11 and the second and third ways to Vulkan may draw a blank window that no check sees: once the game
-has drawn, the player is asked whether they can see it, the answer kept for that card, driver and Chromium; Go back
-counts as a failure, and no answer in 20 seconds starts the next backend for that launch alone.
+has drawn, the player is asked once a launch whether they can see it, the answer kept for that card, driver and
+Chromium; Go back counts as a failure, and no answer in 20 seconds starts the next backend for that launch alone.
 
 ### Settings' App part
 
@@ -132,7 +132,9 @@ The game updates with the site. The shell updates through electron-updater from 
 Debian package and a Mac app a developer signed download an update in the background, a little after the start and
 every hour, and install it as the app closes, or at once with Restart now; a download that hears nothing for two
 minutes is given up for the next check. A Mac app signed by nobody cannot replace itself, so Settings says the version
-is out and Download opens it. A copy run from the source, or packed without a release, never looks.
+is out and Download opens it. A copy run from the source, or packed without a release, never looks: only the
+release names the feed when it packs (`desktop.yml`), so a trial pack's update file names none (`updates.ts`
+`followsFeed`).
 
 ### Releases and downloads
 
@@ -143,9 +145,11 @@ A release is cut by hand from `main`, and only on the owner's yes ([[Ask Before 
    the one published.
 2. Each platform's installers are packed on its own runner, which holds no Cloudflare token: the Windows installer
    (per user, its folder chosen), a disk image and a zip for each Mac (Apple silicon and Intel), and an AppImage and
-   a Debian package for Linux. The icon is drawn by the site's own code, as the Discord server's is
+   a Debian package for Linux, packed apart and their feeds made one (`release/publish.ts` `mergeFeeds`), as a Debian
+   package marks the folder it is packed from, which would set an AppImage packed beside it updating as a package. The icon is drawn by the site's own code, as the Discord server's is
    (`release/icon.ts`). Electron's fuses are set: no running as Node, no Node options or inspector from outside, the
-   app's archive checked against its hash and the only code loaded.
+   app's archive checked against its hash and the only code loaded; on a Mac the app is then signed ad hoc again, as
+   setting them breaks the signature it had.
 3. Only when every installer is there (`release/publish.ts`) are they put on R2 under `desktop/`, then `latest.json`,
    then the feeds, so no copy reads a feed that names a file not yet there.
 
@@ -157,8 +161,8 @@ alone; every other address is the site's static files as before.
 Where the repository holds a developer's keys, the release signs with them: `MAC_CSC_LINK` and
 `MAC_CSC_KEY_PASSWORD` for a Mac's Developer ID, notarized with `APPLE_API_KEY_BASE64`, `APPLE_API_KEY_ID` and
 `APPLE_API_ISSUER`; `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD` for Windows. Without them the Windows installer is
-unsigned, and the Mac app signed ad hoc (`release/afterPack.cjs`), so it opens from System Settings, Privacy &
-Security, rather than being called damaged.
+unsigned, and the Mac app signed ad hoc, so it opens from System Settings, Privacy & Security, rather than being
+called damaged.
 
 ### Running it
 
@@ -166,7 +170,7 @@ Security, rather than being called damaged.
 |---|---|
 | `npm run desktop` | Builds the shell and the icon into `desktop/out/` (not in git) and runs the app on the live game; with `NOSHORES_GAME_URL=http://localhost:5173/` on a dev server |
 | `npm ci --prefix desktop` | Installs the packing tools (electron-builder), once |
-| `cd desktop && npx electron-builder --linux AppImage deb --publish never` | Packs installers into `desktop/out/release/`, after `npm run desktop:build` |
+| `cd desktop && npx electron-builder --linux AppImage deb --publish never` | Packs installers into `desktop/out/release/`, after `npm run desktop:build`, with no feed to update from |
 | `NOSHORES_GRAPHICS=swiftshader` | One launch on the CPU's WebGPU, for a machine with no GPU (tests) |
 
 A pull request that changes the app packs it for Linux and starts the packed app on the game's own build, on

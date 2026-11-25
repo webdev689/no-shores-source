@@ -51,6 +51,13 @@ export function opensInBrowser(address: string): boolean {
   return url !== null && (url.protocol === 'https:' || url.protocol === 'http:') && url.username === '';
 }
 
+/** Where a navigation of the game's window goes: on, to the player's browser, or nowhere. Only its top page is fenced;
+ *  a frame inside a page it may show (a sign-in's check that it is a person) goes where its page sends it. */
+export function fenceOf(address: string, mainFrame: boolean, game: GamePlace): 'stay' | 'browser' | 'refuse' {
+  if (!mainFrame || staysInWindow(address, game)) return 'stay';
+  return opensInBrowser(address) ? 'browser' : 'refuse';
+}
+
 /** What the game's pages may use: the pointer held for looking about, the whole screen, the keys the system would
  *  take (Escape among them) while the screen is whole, and the clipboard to copy into. Nothing else is granted, and
  *  nothing to any other page. */

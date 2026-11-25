@@ -15,9 +15,17 @@ export class GpuUnavailable extends Error {
 /** Starts WebGPU on a canvas. The game draws with WebGPU only, so a browser without it gets a clear reason. */
 export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
   if (!('gpu' in navigator)) {
+    askDesktop({ ask: 'gpu', report: gpuReportOf(null, 'this browser has no WebGPU') });
     throw new GpuUnavailable('This browser does not support WebGPU. Try a current Chrome, Edge or Safari.');
   }
-  const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+  askDesktop({ ask: 'gpuAsked' });
+  let adapter: GPUAdapter | null;
+  try {
+    adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+  } catch (error) {
+    askDesktop({ ask: 'gpu', report: gpuReportOf(null, String(error)) });
+    throw error;
+  }
   if (!adapter) {
     askDesktop({ ask: 'gpu', report: gpuReportOf(null, '') });
     throw new GpuUnavailable('WebGPU is on, but no graphics adapter is available. Update your graphics drivers.');

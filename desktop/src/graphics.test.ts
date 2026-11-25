@@ -136,3 +136,8 @@ test("a card is its vendor, device and driver: the active one, never a software 
   assert.equal(gpuKeyOf([{ vendorId: 0xffff, deviceId: 0xc0de }]), null);
   assert.equal(gpuKeyOf([]), null);
 });
+
+test('a choice is held only while the launch takes another API: with every backend failed, it runs the choice', () => {
+  const launch = launchFor({ ...plain, desk: windows, chosen: 'd3d12', failures: [failed('d3d12'), failed('d3d11')] });
+  assert.deepEqual([launch.backend, launch.held], ['d3d12', null]);
+});

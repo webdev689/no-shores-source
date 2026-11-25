@@ -8,7 +8,7 @@ import { type DesktopAsk, RELOCK_HOOK } from '../../client/src/desktop.ts';
 import { CHANNELS, askOf, infoOf } from './bridge.ts';
 import { Config } from './config.ts';
 import { goneLine, logWith } from './crashes.ts';
-import { gamePlace, isGamePage, opensInBrowser, permits, staysInWindow } from './fences.ts';
+import { fenceOf, gamePlace, isGamePage, opensInBrowser, permits } from './fences.ts';
 import { GAME_URL_VARIABLE, gameAddress } from './gameAddress.ts';
 import { boxOver, openGameWindow } from './gameWindow.ts';
 import {
@@ -23,8 +23,8 @@ import {
 import { watchGraphics } from './graphicsWatch.ts';
 import { setMenu } from './menu.ts';
 import { switchesFor } from './switches.ts';
-import { cutForRelease, startUpdater } from './updater.ts';
-import { transportOf } from './updates.ts';
+import { startUpdater } from './updater.ts';
+import { followsFeed, transportOf } from './updates.ts';
 
 // The data folder keeps the name it was first made with, whatever the app is called later, so a new name never strands
 // a player's settings; `NOSHORES_USER_DATA` moves it, for a run that tests the app.
@@ -58,35 +58,33 @@ for (const [name, value] of switchesFor(launch.backend)) app.commandLine.appendS
 
 const address = gameAddress(process.env[GAME_URL_VARIABLE], app.isPackaged);
 const game = gamePlace(address);
-const meta = (() => {
+/** A file of the app's own, or null where it has none. */
+const ownFile = (file: string): string | null => {
   try {
-    return JSON.parse(readFileSync(path.join(app.getAppPath(), 'package.json'), 'utf8')) as {
-      noShores?: { signed?: boolean | string };
-    };
+    return readFileSync(file, 'utf8');
   } catch {
-    return {};
+    return null;
   }
-})();
-const resources = process.resourcesPath;
-const packageType = (() => {
-  try {
-    return readFileSync(path.join(resources, 'package-type'), 'utf8').trim();
-  } catch {
-    return '';
-  }
-})();
+};
+const ownPackage = JSON.parse(ownFile(path.join(app.getAppPath(), 'package.json')) ?? '{}') as {
+  noShores?: { signed?: boolean | string };
+};
 const transport = transportOf({
   packaged: app.isPackaged,
   platform: process.platform,
-  configured: cutForRelease(resources, existsSync),
+  configured: followsFeed(ownFile(path.join(process.resourcesPath, 'app-update.yml'))),
   appImage: Boolean(process.env['APPIMAGE']),
-  deb: packageType === 'deb',
+  deb: ownFile(path.join(process.resourcesPath, 'package-type'))?.trim() === 'deb',
   // The release writes it from the command line, which may leave it a word.
-  signed: meta.noShores?.signed === true || meta.noShores?.signed === 'true',
+  signed: ownPackage.noShores?.signed === true || ownPackage.noShores?.signed === 'true',
 });
 
 let window: BrowserWindow | null = null;
 const restartArgs = () => process.argv.slice(1).filter((arg) => !arg.startsWith(BACKEND_ARGUMENT));
+/** Starts the app again once this one has gone: from its AppImage where it runs from one, as the folder it runs in
+ *  is the AppImage's, and goes with it. */
+const relaunch = (args: readonly string[]) =>
+  app.relaunch({ args: [...restartArgs(), ...args], execPath: process.env['APPIMAGE'] ?? process.execPath });
 const gpuKey = async () => {
   const deadline = new Promise<null>((resolve) => setTimeout(() => resolve(null), 10_000).unref());
   const info = (await Promise.race([app.getGPUInfo('basic').catch(() => null), deadline])) as { gpuDevice?: [] } | null;
@@ -101,7 +99,7 @@ const watch = watchGraphics(launch, desk, chromium, {
   tell: (box) => boxOver(window, box),
   ask: (box, stop) => boxOver(window, box, stop),
   restart: (args) => {
-    app.relaunch({ args: [...restartArgs(), ...args] });
+    relaunch(args);
     app.releaseSingleInstanceLock();
     app.exit(0);
   },
@@ -123,8 +121,10 @@ const info = () =>
     report: watch.reported(),
     update: updater.update(),
   });
+/** Tells the game what changed: its own pages alone, never one the window passes through to sign in. */
 const tell = () => {
-  if (window && !window.isDestroyed()) window.webContents.send(CHANNELS.changed, info());
+  if (window && !window.isDestroyed() && isGamePage(window.webContents.getURL(), game))
+    window.webContents.send(CHANNELS.changed, info());
 };
 const updater = startUpdater(transport, config.get().updateChecks, tell, log);
 
@@ -138,6 +138,9 @@ const fromGame = (event: IpcMainEvent) =>
 
 function answer(ask: DesktopAsk): void {
   switch (ask.ask) {
+    case 'gpuAsked':
+      watch.gpuAsked();
+      return;
     case 'gpu':
       void watch.report(ask.report).then(tell);
       return;
@@ -154,7 +157,7 @@ function answer(ask: DesktopAsk): void {
     }
     case 'restart':
       if (updater.install()) return;
-      app.relaunch({ args: restartArgs() });
+      relaunch([]);
       app.quit();
       return;
     case 'download':
@@ -186,10 +189,11 @@ else {
       if (opensInBrowser(url)) void shell.openExternal(url);
       return { action: 'deny' };
     });
-    const fence = (event: { preventDefault: () => void }, url: string) => {
-      if (staysInWindow(url, game)) return;
+    const fence = (event: { readonly url: string; readonly isMainFrame: boolean; preventDefault: () => void }) => {
+      const way = fenceOf(event.url, event.isMainFrame, game);
+      if (way === 'stay') return;
       event.preventDefault();
-      if (opensInBrowser(url)) void shell.openExternal(url);
+      if (way === 'browser') void shell.openExternal(event.url);
     };
     contents.on('will-navigate', fence);
     contents.on('will-redirect', fence);
@@ -209,14 +213,15 @@ else {
       permits(permission, origin, game),
     );
     setMenu(process.platform);
-    config.set({ failures: reviewFailures(config.get().failures, await gpuKey(), chromium) });
+    // Read after the card is known, so a failure the watch kept meanwhile is reviewed, not written over.
+    const card = await gpuKey();
+    config.set({ failures: reviewFailures(config.get().failures, card, chromium) });
     log(`launch: ${launch.backend} (chosen ${launch.chosen}), ${address}, updates by ${transport}`);
     window = openGameWindow({
       address,
       origin: game.origin,
       kept: config.get().window,
       keep: (place) => void config.set({ window: place }),
-      loaded: () => watch.pageLoaded(),
       gone: (reason, exitCode) =>
         log(goneLine('renderer', { reason, exitCode }, Date.now(), watch.reported()?.description ?? '')),
       quit: () => app.quit(),

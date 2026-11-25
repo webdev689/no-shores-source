@@ -5,8 +5,9 @@
 //
 //     node desktop/release/publish.ts <folder> <version>
 //
-// writes `latest.json` into the folder and prints each file to upload, in order.
-import { readdirSync, writeFileSync } from 'node:fs';
+// writes `latest.json` into the folder and prints each file to upload, in order; `merge <feed> <feed>` prints Linux's
+// two feeds as one.
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /** Each name that never moves, and the installer it names. */
@@ -47,7 +48,31 @@ export function latestOf(version: string): string {
   return `${JSON.stringify({ version, files }, null, 2)}\n`;
 }
 
-if (import.meta.main) {
+/** A feed's lines: its `files:` list's entries, and the rest. */
+function feedParts(feed: string): { readonly version: string; readonly files: string[]; readonly rest: string[] } {
+  const lines = feed.trimEnd().split('\n');
+  const start = lines.indexOf('files:');
+  if (start < 0) throw new Error('a feed without its files');
+  let end = start + 1;
+  while (end < lines.length && (lines[end] ?? '').startsWith('  ')) end++;
+  const version = lines.find((line) => line.startsWith('version: ')) ?? '';
+  return { version, files: lines.slice(start + 1, end), rest: [...lines.slice(0, start + 1), ...lines.slice(end)] };
+}
+
+/** Linux's two feeds as one: the AppImage's, with the Debian package's files after its own, so the AppImage's updater
+ *  and the Debian package's each find their own file. The two are packed apart, as a Debian package marks the folder
+ *  it is packed from as its own, which an AppImage packed beside it would carry. */
+export function mergeFeeds(base: string, extra: string): string {
+  const [first, second] = [feedParts(base), feedParts(extra)];
+  if (first.version !== second.version) throw new Error(`feeds of two versions: ${first.version}, ${second.version}`);
+  const after = first.rest.indexOf('files:') + 1;
+  return `${[...first.rest.slice(0, after), ...first.files, ...second.files, ...first.rest.slice(after)].join('\n')}\n`;
+}
+
+if (import.meta.main && process.argv[2] === 'merge') {
+  const [base = '', extra = ''] = process.argv.slice(3);
+  process.stdout.write(mergeFeeds(readFileSync(base, 'utf8'), readFileSync(extra, 'utf8')));
+} else if (import.meta.main) {
   const [folder = '', version = ''] = process.argv.slice(2);
   const { order, missing } = releasePlan(readdirSync(folder), version);
   if (missing.length > 0) {

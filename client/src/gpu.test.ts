@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { gpuReportOf, stopWhenLost, viewOf } from './gpu.ts';
+import { type DesktopAsk, type DesktopInfo, useDesktop } from './desktop.ts';
+import { GpuUnavailable, gpuReportOf, startGpu, stopWhenLost, viewOf } from './gpu.ts';
 
 const lostAs = (reason: 'destroyed' | 'unknown', message: string) => ({
   lost: Promise.resolve({ reason, message } as GPUDeviceLostInfo),
@@ -64,4 +65,30 @@ test('no adapter, or a device that would not start, is told with why', () => {
   );
   const failed = gpuReportOf({ info: { vendor: 'amd' } } as unknown as GPUAdapter, 'OperationError: lost');
   assert.deepEqual([failed.adapter, failed.device, failed.error], [true, false, 'OperationError: lost']);
+});
+
+test('in the app the shell hears the game ask WebGPU, then what it got, however the ask ends', async () => {
+  const asked: DesktopAsk[] = [];
+  useDesktop({ version: 'dev' } as DesktopInfo, (ask) => asked.push(ask));
+  const canvas = {} as HTMLCanvasElement;
+  try {
+    await assert.rejects(startGpu(canvas), GpuUnavailable);
+    assert.deepEqual(
+      asked.map((ask) => [ask.ask, ask.ask === 'gpu' ? ask.report.adapter : null]),
+      [['gpu', false]],
+      'a browser with no WebGPU says so at once',
+    );
+    asked.length = 0;
+    for (const requestAdapter of [async () => null, async () => Promise.reject(new Error('the driver hung up'))]) {
+      Object.defineProperty(navigator, 'gpu', { value: { requestAdapter }, configurable: true });
+      await assert.rejects(startGpu(canvas));
+    }
+    assert.deepEqual(
+      asked.map((ask) => (ask.ask === 'gpu' ? `gpu ${ask.report.adapter} ${ask.report.error}` : ask.ask)),
+      ['gpuAsked', 'gpu false ', 'gpuAsked', 'gpu false Error: the driver hung up'],
+    );
+  } finally {
+    Reflect.deleteProperty(navigator, 'gpu');
+    useDesktop(null, () => undefined);
+  }
 });

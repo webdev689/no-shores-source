@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { DesktopUpdate } from '../../client/src/desktop.ts';
-import { type CopyFacts, transportOf, updateAfter } from './updates.ts';
+import { type CopyFacts, followsFeed, restartOf, transportOf, updateAfter } from './updates.ts';
 
 const installed: CopyFacts = {
   packaged: true,
@@ -73,4 +73,18 @@ test('a download that fails is forgotten, so the next check starts afresh; a not
   const manual: DesktopUpdate = { state: 'manual', version: 'v' };
   assert.deepEqual(updateAfter(manual, { kind: 'failed' }, 'notice'), manual);
   assert.deepEqual(updateAfter(manual, { kind: 'none' }, 'notice'), manual);
+});
+
+test('Restart installs a ready update once; pressed again while it installs, it does nothing else', () => {
+  const ready: DesktopUpdate = { state: 'ready', version: 'v2' };
+  assert.equal(restartOf(ready, false), 'install');
+  assert.equal(restartOf(ready, true), 'installing');
+  assert.equal(restartOf(none, false), 'relaunch');
+  assert.equal(restartOf({ state: 'manual', version: 'v2' }, false), 'relaunch');
+});
+
+test('a copy follows a feed only where its update file names a provider: a trial pack writes one without', () => {
+  assert.equal(followsFeed('provider: generic\nurl: https://noshores.online/download/\n'), true);
+  assert.equal(followsFeed('updaterCacheDirName: no-shores-desktop-updater\n'), false);
+  assert.equal(followsFeed(null), false);
 });

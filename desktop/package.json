@@ -34,7 +34,6 @@
       "package.json"
     ],
     "icon": "out/resources/icon.png",
-    "afterPack": "release/afterPack.cjs",
     "electronFuses": {
       "runAsNode": false,
       "enableCookieEncryption": true,
@@ -42,15 +41,9 @@
       "enableNodeCliInspectArguments": false,
       "enableEmbeddedAsarIntegrityValidation": true,
       "onlyLoadAppFromAsar": true,
-      "grantFileProtocolExtraPrivileges": false
+      "grantFileProtocolExtraPrivileges": false,
+      "resetAdHocDarwinSignature": true
     },
-    "publish": [
-      {
-        "provider": "generic",
-        "url": "https://noshores.online/download/",
-        "useMultipleRangeRequest": false
-      }
-    ],
     "win": {
       "target": [
         "nsis"

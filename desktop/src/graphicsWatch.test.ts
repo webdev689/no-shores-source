@@ -70,7 +70,8 @@ function harness(launch: Launch, desk: Desk, answers: (number | null)[] = [], wr
       new Promise((answer) => {
         asked.push(box);
         const given = answers.shift();
-        if (given === undefined) stop.addEventListener('abort', () => answer(null));
+        // As Electron's box does: closed by its signal, it answers as if cancelled, with its cancel button.
+        if (given === undefined) stop.addEventListener('abort', () => answer(box.cancelId));
         else answer(given);
       }),
     restart: (args) => void restarts.push(args),
@@ -93,9 +94,15 @@ function harness(launch: Launch, desk: Desk, answers: (number | null)[] = [], wr
   return { watch, told, asked, restarts, pass, failures: () => failures, seen: () => seen };
 }
 
+test('a game slow to load, or that never loads, is no failure of the graphics: the clock runs from its ask', async () => {
+  const run = harness(launchOf('d3d12', ['d3d11']), windows);
+  await run.pass(REPORT_WITHIN_MS * 5);
+  assert.deepEqual([run.failures(), run.restarts], [[], []]);
+});
+
 test('a launch whose game draws as it should is left alone', async () => {
   const run = harness(launchOf('d3d12', ['d3d11']), windows);
-  run.watch.pageLoaded();
+  run.watch.gpuAsked();
   await run.watch.report(card);
   await run.pass(REPORT_WITHIN_MS * 2);
   await run.watch.drawn();
@@ -134,10 +141,10 @@ test('with no backend left the player is told what to do, and the app does not s
   assert.deepEqual(run.restarts, []);
 });
 
-test('a game that says nothing within a minute of its page loading fails the launch, once', async () => {
+test('a game that asked WebGPU for its adapter and says nothing within a minute fails the launch, once', async () => {
   const run = harness(launchOf('d3d12', ['d3d11']), windows);
-  run.watch.pageLoaded();
-  run.watch.pageLoaded();
+  run.watch.gpuAsked();
+  run.watch.gpuAsked();
   await run.pass(REPORT_WITHIN_MS + 1);
   assert.match(run.failures()[0]?.reason ?? '', /said nothing/);
   assert.equal(run.restarts.length, 1);
@@ -189,4 +196,12 @@ test('the default, the last backend left, and a launch named for itself never as
     await run.watch.drawn();
     assert.deepEqual(run.asked, []);
   }
+});
+
+test('the player is asked once a launch, however often the page loads again', async () => {
+  const run = harness(launchOf('d3d11', ['d3d12']), windows, [0, 0]);
+  await run.watch.report({ ...card, backend: 'D3D11' });
+  await Promise.all([run.watch.drawn(), run.watch.drawn()]);
+  await run.watch.drawn();
+  assert.equal(run.asked.length, 1);
 });
