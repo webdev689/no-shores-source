@@ -11,7 +11,7 @@ import { ASKS } from '../network/gearMessages.ts';
 import { RARITIES, dismantlable } from '../player/gear.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { cardFrame, cardName, cardNode, rarityTone } from './gearCard.ts';
-import { type Cell, cardOf, inventoryPageOf } from './gearCards.ts';
+import { type Cell, cardOf, inventoryPageOf, wornFor } from './gearCards.ts';
 import { DISMANTLE_KEY, fillNode, quiver, washNode } from './gearHold.ts';
 import {
   type Hint,
@@ -41,7 +41,7 @@ const holds = (cell: Cell): boolean => cell.item !== null || cell.glyph === 'ves
 /** What a cell's presses do, in keycaps. */
 function hintsOf(cell: Cell): Hint[] {
   return [
-    ...(cell.press ? [[cell.press.held ? 'Press' : 'Click', cell.press.label] as const] : []),
+    ...(cell.press ? [[cell.press.held ? 'Hold' : 'Click', cell.press.label] as const] : []),
     ...(cell.other ? [['Right-click', cell.other.label] as const] : []),
   ];
 }
@@ -93,12 +93,14 @@ export function cellNode(context: MenuContext, cell: Cell): Node {
   }
   if (item) context.details(id, item);
   const hints: Hint[] = [
-    ...(press ? [[press.held ? 'Press' : 'Click', press.label] as const] : []),
+    ...(press ? [[press.held ? 'Hold' : 'Click', press.label] as const] : []),
     ['Right-click / details', 'Details'],
     ...(carried ? [[DISMANTLE_KEY, 'Hold to dismantle'] as const] : []),
   ];
   context.card(id, () =>
-    item ? cardNode(cardOf(item), context.picture(item), hints, sizes) : cellCard(context, cell),
+    item
+      ? cardNode(cardOf(item, wornFor(context.gear, item)), context.picture(item), hints, sizes)
+      : cellCard(context, cell),
   );
   const icon = item
     ? itemIconNode(context.picture(item), cell.name, CELL_PX, sizes, cell.rarity)

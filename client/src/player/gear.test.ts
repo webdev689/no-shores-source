@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { GearItem, GearState } from '../network/gearMessages.ts';
 import traits from '../../../content/gear/traits.json' with { type: 'json' };
+import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
 import {
   WORN,
@@ -148,6 +148,16 @@ test('an item is named as the catalogue names it', () => {
   assert.equal(answerText(166), 'Too many asks. Wait a while.', 'past the limit, the accounts own words');
 });
 
+test("every perk has a card's short line of one line's length, and a short cost exactly where it costs", () => {
+  for (const each of traits.traits) {
+    const short = traitOf(each.id);
+    const lines = [short.short, short.shortTakes].filter((line) => line !== '');
+    assert.equal(lines.length, 'takes' in each ? 2 : 1, each.id);
+    // 30 letters stand on one line of a large card, the face drawn at twice its size.
+    for (const line of lines) assert.ok([...line].length <= 30, `${each.id}: "${line}"`);
+  }
+});
+
 test('the hands hold the drawn loadout in its look, or the nearest metal the forge draws', () => {
   const hands = (right: string | null, left: string | null, grip: 'hilt' | null = null) => ({ right, left, grip });
   const shielded = item({ id: 3, kind: 12, rarity: 1, at: 2 });
@@ -282,6 +292,14 @@ test("a Breach's perk on a piece won at Hard reads at its Forged grade, and no o
   const forged = traitOf('vein_strike', true);
   assert.equal(forged.words, 'Blows and shots on an Exposed foe strike 20% harder.');
   assert.ok(forged.forged && forged.name === 'Vein Strike');
+  // Its card's short line carries its Forged numbers too; one whose short line names none keeps its own.
+  assert.deepEqual(
+    [traitOf('vein_strike').short, forged.short],
+    ['Exposed foes: damage +15%', 'Exposed foes: damage +20%'],
+  );
+  assert.equal(traitOf('shardburst', true).short, traitOf('shardburst').short);
+  for (const each of traits.traits)
+    assert.ok(!('forged_short' in each) || 'forged' in each, `${each.id}: a Forged short line`);
   assert.ok(!traitOf('honed', true).forged, 'a trait with no Forged grade reads plain');
   for (const each of traits.traits)
     assert.equal(

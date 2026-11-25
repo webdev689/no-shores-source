@@ -9,6 +9,8 @@ code:
   - server/accounts/discord.ts#taken
   - server/accounts/secrets.ts#hashPassword
   - server/accounts/worker.ts#CharacterKeeper
+  - server/accounts/worker.ts#LinkedCharacters
+  - server/accounts/linked.ts#linkedCharacter
   - server/accounts/migrations/20261117210000_accounts.sql
   - server/accounts/migrations/20261118120000_friends.sql
   - server/accounts/migrations/20261118181357_name_skeletons.sql
@@ -71,7 +73,13 @@ they play in holds it while they are there.
   ten minutes. So no one can finish another's sign-in, hand a player their own session, or link a player's Discord
   to their own account. A session's token never travels in an address. The Discord app must list
   `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a redirect. Without the app's keys,
-  Discord sign-in says it is not set up.
+  Discord sign-in says it is not set up. The app is the [[Discord Bot]]'s too, one application for both: the
+  accounts read `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`, and the bot's keys and its own redirect are in
+  its note ("One Discord application").
+- **What the Discord bot reads.** The bot reaches the accounts' `LinkedCharacters` through its service binding, never
+  a web address: given a Discord user id, the linked account's username, its character's level as its room kept it
+  to show (`shown.level`) and the faction it is pledged to, or null when that Discord account is linked to none
+  (`linked.ts`). Nothing else: no account id, no email, no gear.
 - **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
   guests an hour (an IPv6 address by its /48 for guests) and every address together 500
   ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and one
@@ -91,8 +99,8 @@ they play in holds it while they are there.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no
   page acts as a player without holding their token. A write that fails is logged and answered like any other: 409
   when another ask changed the same rows first, 500 otherwise. Discord sends players back only to pages under those listed in
-  the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/no-shores-source/`, and
-  under `npm run accounts` the dev server's.
+  the Worker's `PAGES`, by origin and path: the game at `https://noshores.online/play/` (and `www.`), the copy still
+  published at `https://lattymoy.github.io/no-shores-source/`, and under `npm run accounts` the dev server's.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
   rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
   kept apart from any other's. A room reads the session's token as it connects, so a sign-in made after the page

@@ -68,6 +68,7 @@ mod seeing;
 pub mod ship_power;
 pub mod sighting;
 mod spells;
+pub mod stats;
 mod statuses;
 mod stepping;
 mod steps;

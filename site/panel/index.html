@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title data-t="panel.title"></title>
+    <meta name="description" data-t-content="panel.description" />
+    <link rel="stylesheet" href="/src/site.css" />
+    <link rel="stylesheet" href="/src/panel/panel.css" />
+  </head>
+  <body>
+    <!--site:top-->
+    <main id="main">
+      <header class="page-head panel-head">
+        <img class="frame" data-art="bell" data-t-alt="panel.bellAlt" />
+        <div>
+          <h1 data-t="panel.title"></h1>
+          <p class="lede" data-t="panel.lede"></p>
+        </div>
+      </header>
+
+      <div class="panel-wrap">
+        <p class="lede warn" id="panel-off" data-t="panel.noScript"></p>
+        <div class="bot-panel" id="app" tabindex="-1">
+          <p class="status" data-t="panel.loading"></p>
+        </div>
+        <p class="small" data-t="panel.english"></p>
+      </div>
+    </main>
+    <!--site:foot-->
+    <script type="module" src="/src/panel/panelPage.ts"></script>
+  </body>
+</html>

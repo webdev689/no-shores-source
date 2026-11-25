@@ -1,6 +1,6 @@
 //! The door's half that steps a player's fighter in the browser without a room, by the room's own rules, to predict
 //! it: the course and the ground it stands on, kept between calls, the step itself, and the fight's sizes and reaches
-//! the page lays its numbers out by.
+//! the page lays its numbers out by, with an item's fight numbers its page shows.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
 use crate::{floats_of, hand_over};
@@ -287,6 +287,26 @@ pub extern "C" fn fighter_stroke_arc(stroke: u32) -> f64 {
         .ok()
         .and_then(combat::Stroke::from_number)
         .map_or(0.0, |stroke| combat::arms::stroke_shape(stroke).half_arc)
+}
+
+/// An item's fight numbers (`room::stats`), `STATS_FLOATS` little-endian floats, for the text written at `address`:
+/// its kind's number, then each trait it gives, a line each. Empty for a kind there is none of.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_item_stats(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    hand_over(item_stats(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+fn item_stats(bytes: &[u8]) -> Vec<u8> {
+    let text = std::str::from_utf8(bytes).unwrap_or_default();
+    let mut lines = text.lines();
+    let kind = lines.next().and_then(|number| number.parse().ok()).and_then(gear::Kind::from_number);
+    let Some(kind) = kind else { return Vec::new() };
+    let (stats, _) = room::stats::stats(kind, lines.filter(|line| !line.is_empty()));
+    stats.to_floats().into_iter().flat_map(f64::to_le_bytes).collect()
 }
 
 /// How many numbers a fighter, an intent and a glance are, for the browser to lay them out: as one number, each in a

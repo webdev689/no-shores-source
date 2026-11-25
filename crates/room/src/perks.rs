@@ -150,8 +150,15 @@ impl PerkCounts {
 /// gear's own rules give their more.
 #[must_use]
 pub fn trim_of(character: &Character, drawn: Slot) -> Trim {
+    trim_by(character.traits(drawn))
+}
+
+/// The trim these traits make together, each listed trait's own, a trait listed twice counted twice: a player's worn
+/// gear's, each once (`trim_of`), or one item's as its page shows it.
+#[must_use]
+pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>) -> Trim {
     let mut trim = Trim::PLAIN;
-    for id in character.traits(drawn) {
+    for id in traits {
         match id {
             "light_grip" => trim.swing_stamina *= 0.85,
             "weighted" => trim.poise_given *= 1.2,

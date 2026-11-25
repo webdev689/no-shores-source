@@ -13,4 +13,6 @@ status: in force
 - Claude asks the owner before any deploy or release, every time. An approval covers that one merge or deploy.
 - The editor's site is published on each merge into `main`, so the yes to that merge covers it
   ([[The World Editor Is on GitHub Pages]]). So are the rooms, when their code changed
-  ([[The Rooms Deploy When Their Code Changes]]).
+  ([[The Rooms Deploy When Their Code Changes]]), the website and the game at noshores.online
+  ([[noshores.online Is Served From Cloudflare, and the Game Is Played There]]), and the Discord bot, when its code
+  changed ([[The Discord Bot Deploys on Each Merge]]).

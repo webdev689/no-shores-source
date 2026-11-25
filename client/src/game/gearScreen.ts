@@ -205,14 +205,6 @@ function gearPresses(item: GearItem, state: GearState, atVault: boolean): Press[
   }
   if (item.at === VAULTED && atVault)
     presses.push({ label: 'Take out of the vault', ask: { kind: ASKS.withdraw, item: item.id }, role: 'button' });
-  if (item.columns.length > 0 && item.at !== VAULTED && item.xp < item.xpMost && (state.stocks[4] ?? 0) > 0)
-    presses.push({
-      label: 'Hold to feed a Fruit of Dagon',
-      ask: { kind: ASKS.feed, item: item.id },
-      role: 'button',
-      held: true,
-      burst: 'pulse',
-    });
   return presses;
 }
 

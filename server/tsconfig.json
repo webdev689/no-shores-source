@@ -19,6 +19,14 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["*.ts", "accounts/*.ts"],
-  "exclude": ["*.test.ts", "*ForTests.ts", "accounts/*.test.ts", "accounts/*ForTests.ts", "protocolVersion.ts"]
+  "include": ["*.ts", "accounts/*.ts", "bot/**/*.ts"],
+  "exclude": [
+    "*.test.ts",
+    "*ForTests.ts",
+    "accounts/*.test.ts",
+    "accounts/*ForTests.ts",
+    "bot/**/*.test.ts",
+    "bot/**/*ForTests.ts",
+    "protocolVersion.ts"
+  ]
 }

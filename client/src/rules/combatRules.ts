@@ -72,6 +72,8 @@ export interface CombatRules {
   strokeArc(stroke: number): number;
   /** How many ticks the parry window a press of the guard opens stays open, a player's or a foe's. */
   parryWindow(player: boolean): number;
+  /** An item's fight numbers and its traits' trim, as the room's stats lay them out; empty for no kind of item. */
+  itemStats(kind: number, traits: readonly string[]): Float64Array;
 }
 
 interface FightExports {
@@ -90,6 +92,7 @@ interface FightExports {
   fighter_reach(arms: number, stroke: number, player: number): number;
   fighter_stroke_arc(stroke: number): number;
   fighter_parry_window(player: number): number;
+  fighter_item_stats(address: number, length: number): bigint;
 }
 
 /** The page's own count of the numbers in a fighter, an intent and a glance (`fighters.ts`). */
@@ -182,5 +185,10 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
     strokeReach: (arms, stroke, player) => exports.fighter_reach(arms, stroke, player ? 1 : 0),
     strokeArc: (stroke) => exports.fighter_stroke_arc(stroke),
     parryWindow: (player) => exports.fighter_parry_window(player ? 1 : 0),
+    itemStats: (kind, traits) => {
+      const text = new TextEncoder().encode([kind, ...traits].join('\n'));
+      const bytes = take(lend(text, (address) => exports.fighter_item_stats(address, text.length)));
+      return new Float64Array(bytes.buffer, bytes.byteOffset, bytes.length / 8).slice();
+    },
   };
 }
