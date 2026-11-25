@@ -132,6 +132,7 @@ no landmark zones ("The regions", above).
 | What it holds | What is found: Vestiges picked up, items found as themselves, materials (gathered resources, fragments, Essence) and the lantern (below). XP and Aurem are paid at once, as anywhere |
 | Where it is kept | With the character, so it goes with them from zone to zone |
 | A lamp lit | Keeps it: items as found are kept, Vestiges carried or sent on, materials added |
+| Carrying it on past a lamp | Not offered: a lamp lit always keeps the haul, so pressing on risks only what is found after it, as the owner decided ("Death loses only what was found since the last structure") |
 | Death | A respawn asked for empties the haul and stands the player at the zone's way in; a revive loses nothing |
 | Leaving | Joining any room that is not a passage zone loses an unsecured haul; the page warns before the leave held. Vestiges still lying for a player as they go on go into their haul, not the mail. The sea is no room that ends a dive: it is judged where the character next lands, and a homeward one landed by sea keeps its haul and stands where it landed |
 
