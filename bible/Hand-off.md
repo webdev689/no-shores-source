@@ -262,8 +262,9 @@ The decisions in [[Open Questions]] are not repeated here.
     own task: a beacon or resource node may stand inside a module, whose floors later level the ground under it; a
     camp's palisade gap is narrower than the path grid passes at some turns (`blocked_by` widens a stake to a cell);
     and fallen rock is kept off a run's stone and climb but not its line.
-  - Tested offline: `cargo xtask check` on a2940286; in CI, the full check on the PR's head 72144b89. Not played,
-    not in a deployed room; the light tuned on SwiftShader pictures, never a real GPU.
+  - Tested offline: `cargo xtask check` on a2940286; in CI, the full check on the PR's head 72144b89 and on main's
+    672294ee, which deployed the rooms, the accounts, the page and the site (CI run 1076; the bot unchanged, so not
+    deployed again). Not played live; the light tuned on SwiftShader pictures, never a real GPU.
 - **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
   its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
   [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new
