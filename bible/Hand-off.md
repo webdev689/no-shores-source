@@ -219,6 +219,14 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The passages and the regions** (#204, a draft on `ccr-9b9e80b0-5e314s-passages`), built on the owner's
+  autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
+  audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
+  [[Passages as Claude Builds Them]]; how it works in [[Passages]]. Two for the owner to agree:
+  - `passage` now uses `gear`, for the week's modifiers its currents keep clear of (`crates/xtask/src/checks/crates.rs`,
+    [[Code Map]]): a widened check. Without it, the week's modifiers are passed into `Web::of` by its callers.
+  - A passage foe's kill share (`lamps::KILL_SHARE`, 0.75) also scales the officer and boon XP that follow its kill;
+    Bountiful's more Vestiges are not shared.
 - **The Discord server, built by the bot** (#205, merged on the owner's "Deploy"), on the owner's "push the discord to
   its limit ... This is your baby" ([[The Discord Is Claude's to Build, Organised and Unbloated]]; every call in
   [[The Discord Server as Claude Builds It]]; how it works in [[Discord Bot]], "The server layout"). The bot's new
@@ -542,7 +550,7 @@ The decisions in [[Open Questions]] are not repeated here.
   rock beside ramparts out, caverns on quarters, building runs ramped short of their place's middle). Each moved pin
   is attributed in its commit; the page's bots now lose the raid's stores at its pinned minute, which a 12-minute
   sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the owner: whether
-  sections may overlap (0.3 m new on continent 2, greystone-tors and hollow-crypt; 4.2 m before, highwater-fells and
+  sections may overlap (4.2 m, highwater-fells and
   wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first stand bakes its
   navmesh a slice a tick (15 to 19 ms at most natively, #203); room memory with every site stood unmeasured; a
   cavern over 4 m below the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids
@@ -723,7 +731,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The wreck's teaching** ([[The Wreck Opens by Teaching the Player]]): the owner's "teaching them the inventory" is
   taught on the Character page (I), where gear is worn; whether the owner wants it otherwise.
 - **Saltmere's heights** ([[Zones Rise and Fall, Above and Below Ground]]), for the owner to look at before the other
-  24 zones take heights and runs. Switchbacks: the owner approved "ways that switch back down cliffs", but no
+  islands' eight patrol zones take heights and runs. Switchbacks: the owner approved "ways that switch back down cliffs", but no
   Saltmere way needs one as built (`map_planned.rs`); whether they are wanted as a cliff climb of their own, and where.
 - **Open points in merged descriptions:**
   - #98: the crew's bars under the fewer plates; whether the welcome's "Follow" moves onto the tracker and the
@@ -814,6 +822,29 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The passages, to finish** (#204), in order:
+  1. The client design round, stopped part-way on `passages-fx-design` (60b73921, work in progress, untested:
+     `passageGame.ts` being split into `passageAsks.ts`, `mouthsCard.ts` and `zoneStood.ts`). Still to do: the Hold's
+     ring modelled in Blender as `passage.ring` (its pack publishes on a push of `tools/dungeon/**`; take the manifest
+     from CI); the Gauntlet's far mouth's sign (`sites.far`); "The Marked" and "Collector" over their heads and the
+     Tally Post read as struck; the public way (`public` in the web) on the map and the card; words for ask 87 and
+     refusal 181 (the page's 182); a cold fourth lamp's prompt to kindle; the lamp begins and "The First Lamp" checked
+     on the page; tests for `wayOut` (out of font-importing `travel.ts`), `bake::crossings_of`, the `?from=` path,
+     `resumeIn` and `homeTo`'s seas; pictures by the game's own camera at a ravine's arrival, by a strand's wreck, of
+     the held map at sea over a lit region and of an open mouth under ground, and "Limits" made true.
+  2. The band, set once, stopped part-way on `passages-fix-rules` (8a1fd725, work in progress). Both sides by the
+     same scripted player: round three's measured a patrol garrison's foe at 12.5 s, a patrol dungeon's at 28 and an
+     Elite Dungeon's at 24, where `band.rs` still has 25, 55 and 45; if one of main's own activities leaves the band,
+     say so rather than retune it. Every deal played to done or named with its cause, the root found where the walker
+     stands within a blow of a foe it never brings down (veins 0 of 3 alone, a Skirmish, a Sever, a Vault, an Ambush,
+     the fourth lamp's Boss at about 14 minutes); a hollow's beat margin read from the grid's edge, not the floor's;
+     `measure_the_pace` still names removed patrol zones (thunderhoof-grasslands, whitewind-tundra). Then the band's
+     tables in [[Passages]] and [[Activities]], and "The band, measured" in [[Passages as Claude Builds Them]].
+  3. A fresh review of the rules round together (`git diff e7f89516 9e822b36`: the dive, play and web workers and the
+     merge's resolution in 9d4e2579), which was stopped unrun when the session moved.
+  4. `cargo xtask check` locally and in CI on the head, pictures, #204's description rewritten (the draft is stale:
+     the nine-foe cap, the fourth lamp's Abyss roll, limits since fixed), then the owner asked.
+  Workers start detached and are waited on by `wait-worker.sh` ([[Toolkit]]), three at most on this container.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
@@ -931,7 +962,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The gear loop**: a signed ticket from the sea room naming the node and the seas a player may join at (the client
   names a voyage's seas now); Breaches, Elite Dungeons and Missions as loot sources; the wardrobe
   ([[Clothing Is Armour, With a Wardrobe Later]]).
-- **Zones**: the other 24 zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
+- **Zones**: the other islands' eight patrol zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
   enough to climb in places, so its runs' end arenas need cutting deeper or walling. The layouts' open ends
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites. The
   dungeons session (#82) plans to move each patrol's dungeon entrances onto the layouts' places, and will
