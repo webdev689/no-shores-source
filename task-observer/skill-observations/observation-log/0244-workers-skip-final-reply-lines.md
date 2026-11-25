@@ -1,5 +1,5 @@
 ---
-id: 0223
+id: 244
 title: "Both audio workers ended without naming their inbox headings, and one without its OBSERVATIONS line, though their reports covered them"
 status: open
 type: internal

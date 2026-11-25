@@ -1,5 +1,5 @@
 ---
-id: 224
+id: 245
 title: "The controller type-checked only the page's tsconfig, so test type errors and a timed-out tsc passed as clean"
 status: open
 type: open-source
