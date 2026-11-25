@@ -121,7 +121,7 @@ test('a passage zone’s deal reads back from the snapshot, a hold under way by 
 });
 
 test('the passages’ asks cross as the rules number them: begin by mouth, route and lamp', () => {
-  assert.deepEqual([ASKS.goOn, ASKS.kindle, ASKS.lightLamp, ASKS.goHome, ASKS.beginDive], [81, 82, 83, 84, 85]);
+  assert.deepEqual([ASKS.goOn, ASKS.kindle, ASKS.lightLamp, ASKS.goHome, ASKS.beginDive], [82, 83, 84, 85, 86]);
   const bytes = inputBytes(1, {
     intent: new Float64Array(18),
     look: { anim: 'idle', frame: 0, facing: 0 },
@@ -130,5 +130,5 @@ test('the passages’ asks cross as the rules number them: begin by mouth, route
     ask: { kind: ASKS.beginDive, column: 2, slot: 1, node: 10 },
   });
   const ask = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).ask();
-  assert.deepEqual([ask?.kind(), ask?.column(), ask?.slot(), ask?.node()], [85, 2, 1, 10]);
+  assert.deepEqual([ask?.kind(), ask?.column(), ask?.slot(), ask?.node()], [86, 2, 1, 10]);
 });

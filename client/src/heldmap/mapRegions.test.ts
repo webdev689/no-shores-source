@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HeldMap } from './heldMap.ts';
 import { MapAsk } from './heldMapAsk.ts';
-import { type MapRegion, MapRegions, regionAt, regionCells, regionsOf } from './mapRegions.ts';
+import { type MapRegion, regionsOf } from '../overworld/regions.ts';
+import { MapRegions, regionAt, regionCells } from './mapRegions.ts';
 import type { MapWaters } from './watersWash.ts';
 
 // A strip of six 100 m cells: the ship's water, three cells of its island's land, the water again, and another

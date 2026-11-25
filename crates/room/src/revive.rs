@@ -8,9 +8,10 @@
 //! its fallen again as soon as they may.
 
 use crate::players::GRACE;
-use crate::{EventKind, PlayerId, Room};
+use crate::{EventKind, Input, PlayerId, Room};
 use combat::fighter::{Action, FighterId, player};
 use combat::tuning::{FOE_GONE, RESPAWN};
+use combat::{Fighter, player_tick};
 use movement::Body;
 use reach::Standing;
 use std::collections::BTreeMap;
@@ -224,6 +225,22 @@ impl Room {
             progress: share(*ticks).unwrap_or(1000),
         })
         .collect()
+    }
+
+    /// A dead player's input: the body falls under its own weight (`lying_still`), the input taken without steering
+    /// it, and one asking to respawn, once the section allows, stands it where a respawn stands a player.
+    pub(crate) fn step_dead(&mut self, id: PlayerId, input: Input, seen: u64, view: &[(FighterId, Fighter)]) {
+        let Some(found) = self.players.get_mut(&id) else { return };
+        found.chain = crate::chain::Chain::default();
+        found.shown = input.shown;
+        found.remember(seen);
+        let (lying, dead) = (crate::players::lying_still(&found.fighter), found.armed(found.fighter));
+        found.fighter = player_tick(id, &dead, &lying, view, &self.blocks, &self.floor).0;
+        if input.respawn && found.standing.may_respawn() {
+            let lain = found.fighter.body;
+            let body = self.stand_again(lain.x, lain.y);
+            self.stand_up(id, body, None);
+        }
     }
 }
 

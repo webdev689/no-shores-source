@@ -76,9 +76,8 @@ pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
-/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, whether
-/// it is locked, a patrol's resource places (where its nodes stand), and the places the houses' roads name and the
-/// paths their figures walk. A page playing alone writes its own, never locked.
+/// A node's file as the bake writes it: its id, kind, name, section, window, rect, boxes, whether it is locked, a
+/// patrol's resource places, the roads' places and paths, and its passages' doors; a page alone writes its own, open.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,

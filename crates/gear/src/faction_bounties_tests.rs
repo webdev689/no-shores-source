@@ -3,8 +3,8 @@
 
 use crate::activity::{Activity, BOUNTIES, BOUNTY_PLACES, FACTION_BOUNTIES, POSTING_FACTIONS};
 use crate::bounties::{
-    BOUNTY_NAME_MOST, DUNGEONS, FACTION_POOLS, LAND, PASSAGES, SEA, board, bounty_at, bounty_pay, faction_at, faction_board,
-    faction_bounty_reputation, faction_places,
+    BOUNTY_NAME_MOST, DUNGEONS, FACTION_POOLS, LAND, PASSAGES, SEA, board, bounty_at, bounty_pay, faction_at,
+    faction_board, faction_bounty_reputation, faction_places,
 };
 use crate::dice::Dice;
 use crate::factions::factions;
@@ -101,7 +101,7 @@ fn a_factions_bounty_is_taken_only_pledged_to_it() {
     assert_eq!(stormcaller.ask(take(9), at_board(DAY), &DICE), Err(Refusal::NotPledged), "another's");
     assert_eq!(stormcaller.ask(take(6), at_board(DAY), &DICE), Ok(Done::Done));
     assert_eq!(stormcaller.ask(take(6), at_board(DAY), &DICE), Err(Refusal::BountyHeld));
-    assert_eq!(stormcaller.ask(take(15), at_board(DAY), &DICE), Err(Refusal::NoSuchBounty), "past the board");
+    assert_eq!(stormcaller.ask(take(17), at_board(DAY), &DICE), Err(Refusal::NoSuchBounty), "past the board");
     let mut shut = serving(1);
     shut.story.prologue = false;
     assert_eq!(shut.ask(take(6), at_board(DAY), &DICE), Err(Refusal::BoardShut));

@@ -187,6 +187,7 @@ Replaced in part, by the table above: the caches' numbers in "Rewards".
 | Drops | From the dungeons' content under ground, the world's above it |
 | The haul's size | At most 64 Vestiges and 64 items; a find past that is let go |
 | Going home | Asked of a lamp lit for the dive, wherever in its zone the player stands |
+| The passages' bounties on the board | The town's, at places 15 and 16 after the factions' 6 to 14, so no place a save keeps changes meaning: the town's six stay 0 to 5. They are drawn as the board's fourth pool, kept under the town's keys, and shown in the town's row after its six, in its one design, their card's mark a lamp |
 
 ## The Atheric bounty: Lanternfall
 

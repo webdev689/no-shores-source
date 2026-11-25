@@ -518,16 +518,7 @@ impl Room {
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
                 if let Standing::Dead { .. } = found.standing {
-                    found.chain = chain::Chain::default();
-                    found.shown = input.shown;
-                    found.remember(seen);
-                    let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
-                    found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
-                    if input.respawn && found.standing.may_respawn() {
-                        let lain = found.fighter.body;
-                        let body = self.stand_again(lain.x, lain.y);
-                        self.stand_up(id, body, None);
-                    }
+                    self.step_dead(id, input, seen, &view);
                     continue;
                 }
                 let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));

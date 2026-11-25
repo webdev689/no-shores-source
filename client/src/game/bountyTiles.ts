@@ -51,7 +51,13 @@ export interface TileLook {
 }
 
 /** A gauge of a count toward its target, `height` pixels tall, filled in `colour`. */
-export function gauge(count: number, target: number, height: number, colour: string, width: Node['width'] = 'grow'): Node {
+export function gauge(
+  count: number,
+  target: number,
+  height: number,
+  colour: string,
+  width: Node['width'] = 'grow',
+): Node {
   const share = Math.round((100 * Math.min(count, target)) / Math.max(1, target));
   return {
     role: 'track',

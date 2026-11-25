@@ -190,7 +190,8 @@ was done finds it done.
   `stand_before_mouth`). Any other room the character joins ends the dive and loses its haul.
 - **The passages' bounties** are the board's fourth pool, two a day (`bounties::PASSAGES`), counting a lamp lit, a
   mission finished, a foe brought down in a passage, a zone reached at least 8 deep, a reliquary opened and a vein's
-  every node gathered.
+  every node gathered. They are the town's, at places 15 and 16 after the factions' 6 to 14 (`PASSAGE_PLACES_FROM`,
+  `town_places`), so the town's six keep 0 to 5; the day's record keeps them under the town's keys (`is_town_place`).
 - **Lanternfall** comes only from the first Atheric bounty, its data in `content/gear/atheric_bounties.json`: the
   cold lantern drops into the haul from a cache past depth 14, 3 times in a hundred, or from the fourth lamp's, 12, for a
   character of level 20 or more on Saltmere who holds none and has not finished its bounty. Kept at a lamp, the bounty
@@ -202,8 +203,9 @@ was done finds it done.
 The gear carries the dive and its haul, each island's lamps lit this week and its day's lamp, and the Atheric
 bounties held and finished; the snapshot the zone's deal as it stands for the player (`PassageSeen`): its key, done,
 the dead lamps lit and targets down, the ring's share held, the seconds left, the waves, whether the mouths are open
-and the lamp lit for the player, and their hold under way. The asks are numbered 81 to 85 (`passage_wire`). A page or
-the host opens a zone's room with `open_passage` (the island, the week, the zone, the route and the minute); once the
+and the lamp lit for the player, and their hold under way. The asks are numbered 82 to 86 (`passage_wire`), after
+the open-find ask's 81. A page or the host opens a zone's room with `open_passage` (the island, the week, the zone,
+the route and the minute); once the
 clock's week is past the web's, the room refuses players: "The passage has shifted".
 
 ## On the server
@@ -225,7 +227,7 @@ room-wasm's passage door (`startPassageDoor`, in an instance of the room module 
 over) and a hollow's heights (`room_passage_heights`), built by the same crate; each is read whole and refused, saying
 why, where it does not read. An island with no passages, a zone the web lacks or a style the Forge does not lay yet
 answers empty, read as none. The gear's dive, haul, lamps and Atheric bounties (`passagesOf`) and the snapshot's
-`PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks 81 to 85 go
+`PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks 82 to 86 go
 as its other asks do, and a refusal is said in the room's words (171 to 178).
 
 ### Played
@@ -282,7 +284,8 @@ the ways on footpaths, "You" at the player's zone.
 
 ### The Journal and the board
 
-The board's fourth pool is the passages', two a day, its tiles on a dark brass ground under a lamp's mark. The
+The board's fourth pool is the passages', two a day, shown in the town's row after its six ([[Activities]], "Bounties"):
+each wears the town's writ as every town bounty does, its card "Passage bounty" by a lamp's mark. The
 Journal's timers show each island's lamp of the day and its four lamps this week, gold once lit and grey while cold
 ([[Interface]], "Journal"). Lanternfall's bounty, held or finished, is a card of its own under the board's in the
 Journal's bounties (`athericCards`): its name in the Atheric colour, the cold lantern and its words, then its steps,

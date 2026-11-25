@@ -4,30 +4,11 @@
 // the island whose waters the ship is in light as the pointer passes over their land, named in the waters' own
 // letters, and a click on one sets a course to its anchorage.
 import type { Point2 } from '../overworld/ground.ts';
+import type { MapRegion } from '../overworld/regions.ts';
 import type { HoverSaid, WaterJudge } from './heldMapAsk.ts';
 import { fontOf, type Painter, word } from './mapLetters.ts';
 import { INK } from './mapKey.ts';
 import type { MapWaters } from './watersWash.ts';
-
-/** One region as the map knows it: the island it is of (its continent's id), its name, its centre and the anchorage a
- *  ship sails for, 3 km off its coast where the coast is nearest its centre. */
-export interface MapRegion {
-  readonly island: string;
-  readonly name: string;
-  readonly centre: Point2;
-  readonly anchorage: Point2;
-}
-
-/** The regions of `content/world/regions.json`, island by island. */
-export function regionsOf(text: string): MapRegion[] {
-  const islands = JSON.parse(text) as {
-    readonly island: string;
-    readonly regions: readonly { name: string; centre: Point2; anchorage: Point2 }[];
-  }[];
-  return islands.flatMap(({ island, regions }) =>
-    regions.map(({ name, centre, anchorage }) => ({ island, name, centre, anchorage })),
-  );
-}
 
 /** The region whose centre is nearest a point, of every island's. */
 function nearest(regions: readonly MapRegion[], [x, y]: Point2): MapRegion | null {

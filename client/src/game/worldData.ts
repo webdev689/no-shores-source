@@ -1,5 +1,5 @@
 import { ruinedName } from '../ruinedName.ts';
-import { type MapRegion, regionsOf } from '../heldmap/mapRegions.ts';
+import { type MapRegion, regionsOf } from '../overworld/regions.ts';
 import { type Post, type StationInfo, type Ways, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */

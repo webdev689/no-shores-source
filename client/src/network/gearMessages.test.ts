@@ -46,8 +46,8 @@ test('a players own gear the server wrote reads back whole, every column spelled
   );
   assert.deepEqual(
     gear.bounties?.map((bounty) => [bounty.place, bounty.faction]),
-    [0, 1, 2, 3, 4, 5].map((place) => [place, 0]),
-    'the town’s six, by their places, pledged to none',
+    [0, 1, 2, 3, 4, 5, 15, 16].map((place) => [place, 0]),
+    'the town’s eight, by their places (the passages’ two after the factions’), pledged to none',
   );
   assert.equal(gear.bountyXp, 2_500, 'at level 20');
   assert.equal(typeof gear.day, 'number');
@@ -128,8 +128,8 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   });
   assert.deepEqual(
     here.bounties?.map((bounty) => [bounty.place, bounty.faction]),
-    [...[0, 1, 2, 3, 4, 5].map((place) => [place, 0]), [9, 2], [10, 2], [11, 2]],
-    'the town’s six, then the Lamplighters’ three at their own places',
+    [...[0, 1, 2, 3, 4, 5, 15, 16].map((place) => [place, 0]), [9, 2], [10, 2], [11, 2]],
+    'the town’s eight, then the Lamplighters’ three at their own places',
   );
   assert.deepEqual(here.cosmetics, [23, 24, 14, 0], 'Ember Plate bought and the Lamplighters’ gold earned');
   assert.deepEqual(here.worn, { dye: 0, coat: 0, barding: 24 });
