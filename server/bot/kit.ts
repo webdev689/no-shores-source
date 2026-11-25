@@ -56,6 +56,8 @@ export interface BotContext {
   readonly config: (guildId: string, moduleId: string) => Promise<ReadSettings | null>;
   readonly snapshot: (guildId: string) => Promise<Snapshot | null>;
   readonly later: (work: Promise<unknown>) => void;
+  /** Drops what this side and the Gateway keep of a module's settings, so a save made outside the panel acts now. */
+  readonly forget?: (guildId: string, moduleId: string) => Promise<void>;
   readonly cache?: Cache;
   readonly memory?: Map<string, unknown>;
 }
