@@ -1,0 +1,255 @@
+name: desktop
+
+# The desktop app: Electron around the game noshores.online serves (desktop/). A pull request or a push to main that
+# changes it packs the app for Linux, with no feed to update from, and starts the packed app on the game's own build,
+# on the CPU's WebGPU, until it says the game's adapter came up. Run by hand from main, it is a release, the owner's to
+# ask for: the commit's CI check must have passed, its version is its commit's time and must be after the one
+# published, each platform's installers are packed on its own runner with no Cloudflare token, and only when every one
+# is whole are they put on R2 under desktop/, the installers before the feeds, where noshores.online/download/ answers.
+on:
+  pull_request:
+    paths:
+      - desktop/**
+      - client/src/desktop.ts
+      - client/src/gpu.ts
+      - client/src/thread/**
+      - site/worker.ts
+      - site/src/art/**
+      - .github/workflows/desktop.yml
+  push:
+    branches: [main]
+    paths:
+      - desktop/**
+      - client/src/desktop.ts
+      - client/src/gpu.ts
+      - client/src/thread/**
+      - site/worker.ts
+      - site/src/art/**
+      - .github/workflows/desktop.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to a pull request cancels its older run; a release is never cancelled once it runs.
+concurrency:
+  group: desktop-${{ github.event_name == 'workflow_dispatch' && 'release' || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pack:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install the pinned toolchain
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+      - name: Install the tools and the app's own
+        run: |
+          set -euo pipefail
+          npm ci
+          npm ci --prefix desktop
+      - name: Build the game and pack the app for Linux
+        run: |
+          set -euo pipefail
+          npm run build
+          npm run -s desktop:build
+          cd desktop && npx electron-builder --linux AppImage deb --x64 --publish never -c.extraMetadata.version=0.0.1
+      # The packed app plays the game's build from this machine and draws on SwiftShader, as the runner has no GPU. The
+      # shell's log says the game's adapter came up only once the packed main, the preload, the bridge and the graphics
+      # watch have all run.
+      - name: Start the packed app on the game
+        run: |
+          set -euo pipefail
+          npx vite preview --port 5173 --strictPort > "$RUNNER_TEMP/preview.log" 2>&1 &
+          for attempt in $(seq 30); do curl -fsS -o /dev/null http://localhost:5173/ && break; sleep 1; done
+          data="$RUNNER_TEMP/app-data"
+          NOSHORES_GAME_URL=http://localhost:5173/ NOSHORES_GRAPHICS=swiftshader NOSHORES_USER_DATA="$data" \
+            xvfb-run -a desktop/out/release/linux-unpacked/no-shores --no-sandbox > "$RUNNER_TEMP/app.out" 2>&1 &
+          for attempt in $(seq 90); do
+            if grep -q 'graphics: swiftshader up' "$data/app.log" 2>/dev/null; then
+              cat "$data/app.log"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::the packed app did not say the game drew"
+          cat "$data/app.log" "$RUNNER_TEMP/app.out" || true
+          exit 1
+
+  version:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      checks: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "::error::a release is cut from main alone"
+            exit 1
+          fi
+          passed=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/check-runs?check_name=check" \
+            --jq 'any(.check_runs[]; .app.slug == "github-actions" and .conclusion == "success")')
+          if [ "$passed" != true ]; then
+            echo "::error::a release is cut only from a commit that passed the CI check, and this one has not"
+            exit 1
+          fi
+          # Only a feed that is not there means nothing is published: any other failure stops the release, so it never
+          # goes back behind a version it could not read.
+          status=$(curl -sS -o "$RUNNER_TEMP/latest.yml" -w '%{http_code}' https://noshores.online/download/latest.yml)
+          case "$status" in
+            200) published=$(sed -n 's/^version: //p' "$RUNNER_TEMP/latest.yml") ;;
+            404) published="" ;;
+            *) echo "::error::the published feed answered $status"; exit 1 ;;
+          esac
+          version=$(node desktop/release/version.ts "$(git log -1 --format=%cI)" "$published")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "releasing $version (published: ${published:-none})"
+
+  # Each platform's installers, packed with the feed they update from. Its installs run no scripts, and a platform's
+  # signing keys, where the repository has them, reach its own packing step alone.
+  build:
+    needs: version
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+      - name: Install the tools and the app's own
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm ci --prefix desktop --ignore-scripts
+      - name: Pack the installers
+        shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          CSC_LINK: ${{ matrix.os == 'macos-latest' && secrets.MAC_CSC_LINK || matrix.os == 'windows-latest' && secrets.WIN_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.os == 'macos-latest' && secrets.MAC_CSC_KEY_PASSWORD || matrix.os == 'windows-latest' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
+          APPLE_API_KEY_BASE64: ${{ matrix.os == 'macos-latest' && secrets.APPLE_API_KEY_BASE64 || '' }}
+          APPLE_API_KEY_ID: ${{ matrix.os == 'macos-latest' && secrets.APPLE_API_KEY_ID || '' }}
+          APPLE_API_ISSUER: ${{ matrix.os == 'macos-latest' && secrets.APPLE_API_ISSUER || '' }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::the version is not three numbers"; exit 1; }
+          npm run -s desktop:build
+          signed=false
+          if [ -n "$CSC_LINK" ]; then signed=true; else export CSC_IDENTITY_AUTO_DISCOVERY=false; unset CSC_LINK CSC_KEY_PASSWORD; fi
+          # Notarized only where a developer's identity signs: Apple takes no app signed ad hoc, and a Mac app signed but
+          # not notarized is refused by the Mac it is opened on.
+          if [ "$RUNNER_OS" = macOS ] && [ "$signed" = true ] && [ -z "$APPLE_API_KEY_BASE64" ]; then
+            echo "::error::the Mac signing key is set without the notarizing key"
+            exit 1
+          fi
+          if [ "$signed" = true ] && [ -n "$APPLE_API_KEY_BASE64" ]; then
+            export APPLE_API_KEY="$RUNNER_TEMP/apple-api-key.p8"
+            echo "$APPLE_API_KEY_BASE64" | base64 --decode > "$APPLE_API_KEY"
+          fi
+          cd desktop
+          release=(--publish never -c.extraMetadata.version="$VERSION" -c.extraMetadata.noShores.signed="$signed"
+            -c.publish.provider=generic -c.publish.url=https://noshores.online/download/
+            -c.publish.useMultipleRangeRequest=false)
+          case "$RUNNER_OS" in
+            Windows) npx electron-builder --win nsis --x64 "${release[@]}" ;;
+            macOS) npx electron-builder --mac dmg zip --arm64 --x64 "${release[@]}" ;;
+            Linux)
+              # Packed apart, as a Debian package marks the folder it is packed from as its own, and an AppImage packed
+              # beside it would carry the mark; their feeds are then made one.
+              npx electron-builder --linux AppImage --x64 "${release[@]}" -c.directories.output=out/release-appimage
+              npx electron-builder --linux deb --x64 "${release[@]}" -c.directories.output=out/release-deb
+              mkdir -p out/release
+              cp out/release-appimage/No-Shores-* out/release-deb/No-Shores-* out/release/
+              node release/publish.ts merge out/release-appimage/latest-linux.yml out/release-deb/latest-linux.yml \
+                > out/release/latest-linux.yml
+              ;;
+          esac
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: desktop-${{ matrix.os }}
+          path: |
+            desktop/out/release/No-Shores-*
+            desktop/out/release/latest*.yml
+          if-no-files-found: error
+          retention-days: 3
+
+  # Holds the Cloudflare token, in the upload's step alone, after installs that run no scripts.
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ACCOUNT_ID: a27adccb38c8e8b82fa32e5736274a94
+      BUCKET: overlook-forge
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install the TypeScript tools
+        run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: desktop-*
+          path: release
+          merge-multiple: true
+      - name: Check the release is whole
+        run: node desktop/release/publish.ts release "$VERSION" > "$RUNNER_TEMP/order.txt"
+      # The list is read whole first: a tool run in the loop could otherwise read the rest of it as its own input.
+      - name: Put the release on R2, the installers before the feeds
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          set -euo pipefail
+          mapfile -t names < "$RUNNER_TEMP/order.txt"
+          for name in "${names[@]}"; do
+            case "$name" in
+              *.yml) kind='text/yaml' ;;
+              *.json) kind='application/json' ;;
+              *) kind='application/octet-stream' ;;
+            esac
+            npx wrangler r2 object put "$BUCKET/desktop/$name" --file "release/$name" --content-type "$kind" --remote \
+              < /dev/null
+          done
+      - name: Check noshores.online answers the release
+        run: |
+          set -euo pipefail
+          answered=$(curl -fsS "https://noshores.online/download/latest.yml?release=$VERSION" | sed -n 's/^version: //p')
+          if [ "$answered" != "$VERSION" ]; then
+            echo "::error::noshores.online/download/latest.yml answers ${answered:-nothing}, not $VERSION"
+            exit 1
+          fi
+          curl -fsS -o /dev/null -w 'windows: %{http_code} %{redirect_url}\n' https://noshores.online/download/windows

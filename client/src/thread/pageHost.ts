@@ -1,10 +1,12 @@
 // The page's side of the game in its worker: the page keeps what a browser allows nowhere else (the player's input,
 // the pointer's lock, the pad, typing, sound, storage, the address) and sends the game what it hears, doing what the
 // game asks of it. The game draws on the page's canvas from its worker.
+import { BRIDGE_NAME, type DesktopBridge, RELOCK_HOOK } from '../desktop.ts';
 import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { BROWSERS_SIGN_INS, stopped, touchesHeld } from '../ui/page.ts';
 import { drawSvgInPage } from '../ui/pictures.ts';
 import { AudioHost } from './audioHost.ts';
+import { PointerLock } from './pointerLock.ts';
 import {
   EVENT_FIELDS,
   HEARD,
@@ -21,6 +23,10 @@ import {
 const browsersOwn = (event: KeyboardEvent) =>
   event.ctrlKey || event.metaKey || event.altKey || /^F\d+$/.test(event.key);
 
+/** The desktop app's bridge, which its shell puts on the page before the page's own script; none in a browser. */
+const bridgeOf = (): DesktopBridge | null =>
+  ((globalThis as unknown as Record<string, unknown>)[BRIDGE_NAME] as DesktopBridge | undefined) ?? null;
+
 export class PageHost {
   private readonly canvas: HTMLCanvasElement;
   private readonly worker: Worker;
@@ -33,22 +39,26 @@ export class PageHost {
   private questions = 0;
   /** Each hook's ask of the game, answered when the game answers. */
   private readonly asking = new Map<number, (answer: unknown) => void>();
+  private readonly desktop = bridgeOf();
+  private readonly lock: PointerLock;
 
   constructor(canvas: HTMLCanvasElement, worker: Worker) {
     [this.canvas, this.worker] = [canvas, worker];
     this.events = new CanvasEvents(canvas);
+    const desktop = this.desktop;
+    this.lock = new PointerLock(canvas, document, desktop && (() => desktop.ask({ ask: 'relock' })));
     this.audio = new AudioHost((reply, transfer) => this.post({ kind: 'audio', reply }, transfer));
     worker.addEventListener('message', (message: MessageEvent<ToPage>) => this.asked(message.data));
     for (const type of HEARD)
       addEventListener(type, (event) => this.heard(event), { passive: type !== 'wheel' ? undefined : false });
     document.addEventListener('visibilitychange', () => this.post({ kind: 'hidden', hidden: document.hidden }));
-    document.addEventListener('pointerlockchange', () =>
-      this.post({ kind: 'lock', locked: document.pointerLockElement === canvas }),
-    );
+    document.addEventListener('pointerlockchange', () => this.post({ kind: 'lock', locked: this.lock.changed() }));
     for (const query of MEDIA)
       matchMedia(query).addEventListener('change', (change) =>
         this.post({ kind: 'media', query, matches: change.matches }),
       );
+    this.desktop?.onInfo((info) => this.post({ kind: 'desktop', info }));
+    if (this.desktop) Object.assign(window, { [RELOCK_HOOK]: () => this.lock.again() });
     new ResizeObserver(() => this.post({ kind: 'view', view: this.view() })).observe(canvas);
     addEventListener('resize', () => this.post({ kind: 'view', view: this.view() }));
     this.frame();
@@ -100,6 +110,7 @@ export class PageHost {
       view: this.view(),
       media: Object.fromEntries(MEDIA.map((query) => [query, matchMedia(query).matches])),
       hidden: document.hidden,
+      desktop: this.desktop?.info() ?? null,
     };
   }
 
@@ -152,7 +163,7 @@ export class PageHost {
   }
 
   private heard(event: Event): void {
-    const locked = document.pointerLockElement === this.canvas;
+    const locked = this.lock.held;
     // A gesture is the one moment a browser lets sound start; the game hears it after.
     if (event.type === 'pointerdown' || event.type === 'keydown') this.audio.wake();
     if (event instanceof KeyboardEvent) {
@@ -196,8 +207,7 @@ export class PageHost {
         else location[message.how](message.url);
         return;
       case 'lock':
-        if (message.locked) void this.canvas.requestPointerLock()?.catch?.(() => undefined);
-        else if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+        this.lock.want(message.locked);
         return;
       case 'capture':
         try {
@@ -238,8 +248,12 @@ export class PageHost {
         this.asking.get(message.id)?.(message.answer);
         this.asking.delete(message.id);
         return;
+      case 'desktop':
+        this.desktop?.ask(message.ask);
+        return;
       case 'started':
         this.started = true;
+        this.desktop?.ask({ ask: 'drawn' });
         return;
       case 'stopped':
         this.stop(message.message);

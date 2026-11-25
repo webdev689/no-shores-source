@@ -1,6 +1,7 @@
 // What the page and the game's worker say to each other (`pageHost.ts` on the page, `pageAway.ts` in the worker): the
 // page hands over its canvas, its storage, its address, its size and what the player does; the worker asks for what
 // only a page can do.
+import type { DesktopAsk, DesktopInfo } from '../desktop.ts';
 import type { KeptSignIn } from '../ui/page.ts';
 import type { Typing, UiEvent } from '../ui/ui.ts';
 import type { AudioOp, AudioReply } from './audioOps.ts';
@@ -87,6 +88,8 @@ export interface Start {
   readonly view: View;
   readonly media: Readonly<Record<string, boolean>>;
   readonly hidden: boolean;
+  /** What the desktop app's shell tells, or null in a browser. */
+  readonly desktop: DesktopInfo | null;
 }
 
 /** From the page to the game. */
@@ -113,7 +116,9 @@ export type ToGame =
   /** The browser's answer: the sign-in it keeps, or null with none or once one offered is taken. */
   | { readonly kind: 'signIn'; readonly id: number; readonly kept: KeptSignIn | null }
   /** A tool driving the page asks one of the game's hooks for pictures (`QA_HOOKS`). */
-  | { readonly kind: 'qa'; readonly id: number; readonly hook: string; readonly args: readonly unknown[] };
+  | { readonly kind: 'qa'; readonly id: number; readonly hook: string; readonly args: readonly unknown[] }
+  /** The desktop app's shell tells what changed. */
+  | { readonly kind: 'desktop'; readonly info: DesktopInfo };
 
 /** From the game to the page. */
 export type ToPage =
@@ -143,6 +148,8 @@ export type ToPage =
   | { readonly kind: 'qa'; readonly id: number; readonly answer: unknown }
   /** A sign-in to offer the browser to keep, or, with none, the one it keeps asked for. */
   | { readonly kind: 'signIn'; readonly id: number; readonly keep: KeptSignIn | null }
+  /** Asks the desktop app's shell, where the page has one. */
+  | { readonly kind: 'desktop'; readonly ask: DesktopAsk }
   /** The game has started: an error after this is the game's to bear, not a reason to stop the page. */
   | { readonly kind: 'started' }
   | { readonly kind: 'stopped'; readonly message: string };

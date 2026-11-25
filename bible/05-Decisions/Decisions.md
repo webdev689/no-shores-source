@@ -394,6 +394,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]
 - [[The Discord Is Claude's to Build, Organised and Unbloated]]
 - [[The Discord Server as Claude Builds It]]
+- [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
+- [[The Desktop App as Claude Builds It]]
 
 ## Replaced
 

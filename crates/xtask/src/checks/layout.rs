@@ -2,7 +2,7 @@ use super::Problem;
 
 /// Everything allowed at the top of the repository. A new top-level folder is a decision: add it here and to the
 /// Code Map note in the same change.
-pub const TOP_LEVEL: [&str; 29] = [
+pub const TOP_LEVEL: [&str; 30] = [
     ".cargo",
     ".claude",
     ".editorconfig",
@@ -21,6 +21,7 @@ pub const TOP_LEVEL: [&str; 29] = [
     "content",
     "clippy.toml",
     "crates",
+    "desktop",
     "eslint.config.js",
     "package-lock.json",
     "package.json",
