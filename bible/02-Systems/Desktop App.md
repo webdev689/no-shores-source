@@ -36,8 +36,9 @@ code:
 
 No Shores installed on Windows, macOS and Linux: the game noshores.online serves, in a window of its own, with what a
 browser cannot give it ([[Browser and Desktop From the Start]],
-[[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]). It is Electron 45, made after DFO Online's
-shell ([[Pick - Desktop App]]); every call of Claude's is in [[The Desktop App as Claude Builds It]].
+[[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]). It is Electron 45
+([[The Desktop App Stays on Electron]]), made after DFO Online's shell ([[Pick - Desktop App]]); every call of
+Claude's is in [[The Desktop App as Claude Builds It]].
 
 ## How it works
 
