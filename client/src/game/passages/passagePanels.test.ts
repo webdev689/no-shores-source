@@ -21,7 +21,6 @@ const choice: MouthsChoice = {
       currents: [],
       name: 'A chalk cut',
       onward: [1],
-      landmark: null,
       lamp: null,
     },
     true,

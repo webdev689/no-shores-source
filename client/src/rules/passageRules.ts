@@ -56,8 +56,8 @@ export type PassageGroundKind =
   { readonly kind: 'under'; readonly style: string } | { readonly kind: 'open'; readonly form: string };
 
 /** One zone of the web: its number, depth and lane, where it lies on the island (world metres), its ground, size,
- *  deal, currents and name, the zones its onward mouths lead to in their order, its landmark, and its lamp's number
- *  (1 to 4) or null. */
+ *  deal, currents and name, the zones its onward mouths lead to in their order, and its lamp's number (1 to 4) or
+ *  null. */
 export interface PassageZone {
   readonly number: number;
   readonly depth: number;
@@ -69,7 +69,6 @@ export interface PassageZone {
   readonly currents: readonly PassageCurrent[];
   readonly name: string;
   readonly onward: readonly number[];
-  readonly landmark: string | null;
   readonly lamp: number | null;
 }
 
@@ -201,7 +200,6 @@ function zoneOf(value: unknown): PassageZone {
     }),
     name: text(raw.name, "zone's name"),
     onward: list(raw.onward, "zone's ways on", (each) => whole(each, 'way on')),
-    landmark: raw.landmark === null ? null : text(raw.landmark, "zone's landmark"),
     lamp,
   };
 }

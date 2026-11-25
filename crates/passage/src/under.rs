@@ -6,9 +6,9 @@ use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spread};
 use crate::zone::Zone;
 use dungeon::{CELL_M, Cell, Dungeon, SIDES, Side};
 
-/// How far apart onward mouths keep, and how far from the way in, metres.
-const MOUTHS_APART_M: f64 = 9.0;
-const MOUTH_OFF_WAY_IN_M: f64 = 16.0;
+/// The onward mouths' passes: how far from the way in each keeps, how far from one another (metres), and whether each
+/// asks a room of its own, the first pass the most.
+const PASSES: [(f64, f64, bool); 4] = [(16.0, 9.0, true), (16.0, 9.0, false), (12.0, 6.0, false), (9.0, 4.0, false)];
 /// How far a mouth keeps from a torch, a prop, a fixture or a landmark, metres.
 const MOUTH_CLEAR_M: f64 = 2.4;
 /// How far a mouth stands off its wall, as the exit door does, metres.
@@ -70,11 +70,13 @@ fn onward(dungeon: &Dungeon, count: usize, way_in: [f64; 2]) -> Vec<Door> {
             .then(one.cell.cmp(&other.cell))
     });
     let mut chosen: Vec<(Door, usize)> = Vec::new();
-    for own_room in [true, false] {
+    // A small dungeon may not hold every way on at the full spacing: each pass asks a little less of the last, so
+    // every way on has its mouth.
+    for (off_way_in, mouths_apart, own_room) in PASSES {
         for wall in &walls {
             let door = door_on(dungeon, wall.cell, wall.side);
-            let far = apart(door.at, way_in) >= MOUTH_OFF_WAY_IN_M
-                && chosen.iter().all(|(held, _)| apart(held.at, door.at) >= MOUTHS_APART_M);
+            let far = apart(door.at, way_in) >= off_way_in
+                && chosen.iter().all(|(held, _)| apart(held.at, door.at) >= mouths_apart);
             let alone = !own_room || chosen.iter().all(|(_, room)| *room != wall.room);
             if chosen.len() < count && far && alone {
                 chosen.push((door, wall.room));

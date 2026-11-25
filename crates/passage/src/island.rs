@@ -1,23 +1,9 @@
 //! What an island's passages are laid from, as content/passages names it: its patrol zone, the runs whose sealed doors
 //! are its mouths, the spine its web lies along from the patrol zone across the island (each point with the depth it
-//! is reached at), and its landmark zones, the places of zones folded into the passages, each at its own depth.
+//! is reached at), and the climate its hollows are dressed in.
 
-use crate::zone::Form;
 use serde::Deserialize;
 use std::sync::OnceLock;
-
-/// A zone standing at a place already named on the island, dressed after it.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Landmark {
-    pub name: String,
-    pub at: [f64; 2],
-    pub depth: u8,
-    /// The style it is laid in under ground, or the form of its hollow above ground: one of the two.
-    pub style: Option<String>,
-    pub form: Option<Form>,
-    /// Whether it stands every week; any other is one of the week's share at its depth.
-    pub anchor: bool,
-}
 
 /// An island's passages.
 #[derive(Clone, Debug, PartialEq)]
@@ -31,18 +17,6 @@ pub struct Island {
     pub mouths: Vec<String>,
     /// Points (x, y) along the island from the patrol zone, each with the depth reached there, rising.
     pub spine: Vec<[f64; 3]>,
-    pub landmarks: Vec<Landmark>,
-}
-
-#[derive(Deserialize)]
-struct LandmarkFile {
-    name: String,
-    at: [f64; 2],
-    depth: u8,
-    ground: String,
-    form: String,
-    #[serde(default)]
-    anchor: bool,
 }
 
 #[derive(Deserialize)]
@@ -52,7 +26,6 @@ struct IslandFile {
     climate: String,
     mouths: Vec<String>,
     spine: Vec<[f64; 3]>,
-    landmarks: Vec<LandmarkFile>,
 }
 
 /// Every island's passages' file, by the island it lays.
@@ -60,20 +33,8 @@ const FILES: [&str; 1] = [include_str!("../../../content/passages/saltmere.json"
 
 fn read(text: &str) -> Result<Island, String> {
     let file: IslandFile = serde_json::from_str(text).map_err(|error| error.to_string())?;
-    let landmarks = file.landmarks.into_iter().map(|mark| {
-        let (style, form) = match mark.ground.as_str() {
-            "under" => (Some(mark.form.clone()), None),
-            "open" => {
-                let form = Form::of_key(&mark.form).ok_or_else(|| format!("{}: no form {}", mark.name, mark.form))?;
-                (None, Some(form))
-            }
-            other => return Err(format!("{}: no ground {other}", mark.name)),
-        };
-        Ok(Landmark { name: mark.name, at: mark.at, depth: mark.depth, style, form, anchor: mark.anchor })
-    });
-    let landmarks = landmarks.collect::<Result<Vec<_>, String>>()?;
     let (id, patrol, climate, mouths, spine) = (file.island, file.patrol, file.climate, file.mouths, file.spine);
-    Ok(Island { id, patrol, climate, mouths, spine, landmarks })
+    Ok(Island { id, patrol, climate, mouths, spine })
 }
 
 /// Every island with passages.

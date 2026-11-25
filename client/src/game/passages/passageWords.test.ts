@@ -23,7 +23,6 @@ const zone = (number: number, extra: Partial<PassageZone> = {}): PassageZone => 
   currents: [{ key: 'gloom', name: 'Gloom', words: 'It is dark here.', boon: false }],
   name: 'A chalk cut',
   onward: [],
-  landmark: null,
   lamp: null,
   ...extra,
 });

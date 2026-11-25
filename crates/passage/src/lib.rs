@@ -13,7 +13,7 @@ pub mod hollow;
 mod sites;
 mod under;
 
-pub use island::{Island, Landmark, island};
+pub use island::{Island, island};
 pub use plan::{Ground as Laid, Kind as PieceKind, Piece, Plan};
 pub use sites::{Door, Sites};
 pub use web::Web;

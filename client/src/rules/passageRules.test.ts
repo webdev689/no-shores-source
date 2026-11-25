@@ -73,7 +73,6 @@ test('what does not read is refused, saying why', () => {
     currents: [],
     name: 'A hollow',
     onward: [],
-    landmark: null,
     lamp,
   });
   twice.zones = [zone(1, null), zone(1, null)];

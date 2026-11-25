@@ -27,11 +27,8 @@ small zones across the island, twenty deep ([[Passages Web Out From the Patrol Z
 - **Depths**: three zones at the first, one behind each mouth (the Chalk Adit's, the Beacon Stair's and the Tithe
   Barns' doors, in `content/passages/saltmere.json`), then three or four at each depth to the twentieth.
 - **Where zones lie**: along the island's spine, a line on its land from the patrol zone to its far side whose every
-  point holds the depth reached there; a depth's zones 14 km apart across it. On Saltmere the spine passes the Moors'
-  places at depth 10 and ends at the Vale's at 20.
-- **Landmark zones**: the Moors' and the Vale's places stand as zones at their own depths and places, dressed after
-  them; the week shows its anchors (Grey Point Light at 10, the Old Stones at 20) and one or two of the rest at each
-  of their depths.
+  point holds the depth reached there; a depth's zones 14 km apart across it. On Saltmere the spine runs under the
+  Grey Reach, past the Driftwood Moors at depth 10, and ends under the Weirlands by the Gullwing Vale at 20.
 - **The ways on**: each zone leads on to one to three zones of the next depth beside it across the spine, the nearest
   always; a zone left without a way in is given one from the nearest. Ways lead deeper only.
 - **Each zone** is drawn its ground (under ground, a style by depth, chalk and barrow among them; above ground, a
@@ -51,7 +48,8 @@ passages' own pieces standing in it with their solids.
 - **Under ground**: the Forge's dungeon in the zone's style, in one, two or three blocks by its size. Its way in is
   the mouth behind; its onward mouths stand on rock walls of its rooms, the end room's portal wall first, then the
   rooms farthest along the way, each in a room of its own where there are enough, 9 m apart and 16 m from the way in,
-  clear of torches, props, fixtures and landmarks. Its lamp stands in its greatest room, three cells or more each way.
+  clear of torches, props, fixtures and landmarks; where a small dungeon cannot hold them so, they keep 6 m apart and
+  12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room, three cells or more each way.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
   little and stepping down in shelves; its walls rise 12 to 25 m within 5 m of its edge, too steep for a body. It is

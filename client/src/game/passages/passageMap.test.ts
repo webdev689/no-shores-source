@@ -19,7 +19,6 @@ const zone = (
   currents: [],
   name: 'A grassy hollow',
   onward: [],
-  landmark: null,
   lamp: null,
   ...extra,
 });
