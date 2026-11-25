@@ -171,7 +171,9 @@ export function mouthsChoice(
   const zone = mouth && web.zones.find((each) => each.number === mouth.zone);
   if (!zone) return null;
   const matched = (lamp: number) =>
-    web.zones.some((each) => each.lamp === lamp && level !== null && each.levels !== undefined && each.levels[1] <= level);
+    web.zones.some(
+      (each) => each.lamp === lamp && level !== null && each.levels !== undefined && each.levels[1] <= level,
+    );
   const lamps = [1, 2, 3].filter(
     (lamp) => web.zones.some((each) => each.lamp === lamp) && (lit.includes(lamp) || matched(lamp)),
   );

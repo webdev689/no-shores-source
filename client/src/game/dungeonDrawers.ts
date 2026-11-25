@@ -111,9 +111,9 @@ export class DungeonDrawers {
     return { lay, lights: passagePieceLights(now.plan.pieces, now.state), key: now.key };
   }
 
-  /** Whether a passage zone's pieces are drawn from their pack, so their boxes are not. */
-  piecesFromPack(): boolean {
-    return this.passage !== null;
+  /** Whether the passages' pack has come holding `module`, so the piece is drawn from it and not as boxes. */
+  hasPassageModule(module: string): boolean {
+    return this.passage?.pack.modules.has(module) ?? false;
   }
 
   /** Lets go of the dungeon last drawn and the scene's targets, once the player is somewhere that is no dungeon. */

@@ -31,7 +31,7 @@ import { paintLand } from '../../heldmap/landLetters.ts';
 import { passageSheet } from './passageMap.ts';
 import { athericCardNode, athericCards } from './athericBounty.ts';
 import { haulNode, lampNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
-import { pieceMesh, type PieceState, UNTOUCHED } from './passagePieces.ts';
+import { boxedPieces, pieceMesh, type PieceState, UNTOUCHED } from './passagePieces.ts';
 import { PieceView } from './pieceView.ts';
 import { RISE_S, DRAW_S, wayAt, wayOf } from './passageWay.ts';
 import { floorOf, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
@@ -115,8 +115,9 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
       shot,
       { at: plan.zone.at, hour: asked.hour ?? 11 },
       (isles) => {
-        // The pieces' boxes only while the islands' passage pack has not come, as the game stands them.
-        if (!isles.hasKit('passage')) pieces.set(pieceMesh(plan.pieces, state));
+        // Each piece's boxes only while the islands' passage pack does not hold it, as the game stands them.
+        const boxes = boxedPieces(plan.pieces, state, done, (module) => isles.hasModule('passage', module));
+        if (boxes.length > 0) pieces.set(pieceMesh(boxes, state));
         else pieces.clear();
         return pieces;
       },
@@ -130,7 +131,8 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
     const laid = pack && passagePiecesLaid(layout, pack, climate.climate, plan.pieces, state, done);
     dungeon.set(layout, climate, [56, 2], {}, await stylePacks(layout), laid ?? undefined);
     dungeon.setPieces(laid, 'shown', pack ? passagePieceLights(plan.pieces, state) : []);
-    if (!pack) pieces.set(pieceMesh(plan.pieces, state));
+    const boxes = boxedPieces(plan.pieces, state, done, (module) => pack?.modules.has(module) ?? false);
+    if (boxes.length > 0) pieces.set(pieceMesh(boxes, state));
     const scene = new DungeonScene(gpu);
     const drawers: Drawer[] = [
       { drawInto: (pass, fromEye, eyed, time) => dungeon.drawInto(pass, fromEye, eyed.eye, time) },

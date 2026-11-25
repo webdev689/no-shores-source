@@ -6,7 +6,7 @@ import { REVERSED_DEPTH } from '../../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../../gpu.ts';
 import { SAMPLES } from '../../water/waterView.ts';
 import { PIECE_FLOATS, type PieceMesh, pieceMesh, type PieceState } from './passagePieces.ts';
-import type { PassagePlan } from '../../rules/passageRules.ts';
+import type { PassagePiece, PassagePlan } from '../../rules/passageRules.ts';
 import type { Drawer } from '../scene.ts';
 
 export const PIECE_SHADER = /* wgsl */ `
@@ -154,7 +154,7 @@ export function piecesDrawer(
   current: () => {
     readonly plan: PassagePlan;
     readonly state: PieceState;
-    readonly boxed: boolean;
+    readonly boxes: readonly PassagePiece[];
     readonly key: string;
   } | null,
 ): Drawer {
@@ -166,7 +166,7 @@ export function piecesDrawer(
       const key = now?.key ?? null;
       if (key !== shown) {
         shown = key;
-        if (now?.boxed) view.set(pieceMesh(now.plan.pieces, now.state));
+        if (now && now.boxes.length > 0) view.set(pieceMesh(now.boxes, now.state));
         else view.clear();
       }
       view.drawInto(pass, fromEye, shot);
