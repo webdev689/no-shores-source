@@ -317,7 +317,7 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
 
 - **At a mouth**: E within 4 m of a run's sealed door in the patrol zone ("Into the passages", the layout's runs'
   doors matched by name to the web's mouths) opens the mouths' card (`MouthsCardView`): the run's name; the zone
-  beyond (its name, depth, deal, foes' levels and currents) and the week's modifiers; the routes ("The public
+  beyond (its name, depth, deal, whether it lies on the week's public way, foes' levels and currents) and the week's modifiers; the routes ("The public
   passage", and "Your company's route" in a company, else "Your own route, alone"); where each lamp lit this week
   begins, that lamp's zone at the mouth's place as the room begins it, and its foes; Go in (the Use key as bound), "Begin at the second lamp"
   for each lamp lit this week, and Close (Esc). A choice asks to begin, by the mouth's place, its route and the lamp.
@@ -361,8 +361,8 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
   foe standing, the Marked or a collector; a dead lamp still cold, a tally post whole, a node ungathered; the ring or
   the reliquary; a Gauntlet's far mouth; once the player's mouths are open, a lamp's zone's lamp until lit, then the
   nearest way on (the lamp again where there is none, for Home); a round done before they came, nothing. Each mission is named by its kind (Kindle, Hold, Hunt, Reckoning,
-  Gauntlet, Ambush, Sever) on its sign, the card, the tracker and the map. Near an onward mouth its sign shows the zone
-  beyond, its foes' levels ("Foes 15 to 18", in the loss's colour where the strongest stands three or more over the
+  Gauntlet, Ambush, Sever) on its sign, the card, the tracker and the map. Near an onward mouth its sign shows a Gauntlet's far mouth as its goal ("The Gauntlet's far mouth: reach it in
+  time."), the zone beyond, whether it lies on the week's public way, its foes' levels ("Foes 15 to 18", in the loss's colour where the strongest stands three or more over the
   player) and, shut, "Shut until this place's work is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
   the hold; once lit E there is Home. E held at a dead lamp kindles it. E let go ends a hold, as a gather's. The haul
   stands on the right while anything is carried, its first five lines and then "and 4 more" (on a phone's narrow view two, under the tracker), no wider than the view,
@@ -408,7 +408,7 @@ Held in a passage zone, under ground or above, the held map shows the web as a l
 [[Held Map]], "On land") in place of the land's: every zone a mark at its place by its deal's glyph, each mission by
 its kind's own, named beside its mark by its kind (a lamp by its place, ", lit" once lit this week) and its foes'
 levels, in the loss's ink where they stand too strong for the player; the patrol zone by its name; every way of the
-web washed faint, the way come this dive a track and the ways on from the player's zone footpaths; "You" at the
+web washed faint, the week's public way inked from zone to zone, the way come this dive a track and the ways on from the player's zone footpaths; "You" at the
 player's zone. It opens on the whole web, every mark inside it; a zone's name stands under, over or beside its mark or
 not at all, and those too close to be lettered at that scale come as the wheel draws in. Over the island, the way's places are every zone's and the patrol zone's.
 

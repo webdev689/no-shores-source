@@ -9,6 +9,7 @@ import {
   lampPrompt,
   leaveWarning,
   mouthsChoice,
+  FAR_MOUTH,
   onwardSign,
   type PassageHaul,
   type PassageWord,
@@ -27,6 +28,7 @@ const zone = (number: number, extra: Partial<PassageZone> = {}): PassageZone => 
   name: 'A chalk cut',
   onward: [],
   lamp: null,
+  public: false,
   ...extra,
 });
 
@@ -79,6 +81,13 @@ test('a lamp whose foes the player matches is offered unlit, and the fourth lamp
   assert.deepEqual(starts([], 4), [null], 'the first lamp’s foes stand over them');
   assert.deepEqual(starts([], 30), [null, 1, 2], 'every lamp under them but the deepest');
   assert.deepEqual(starts([4], 30), [null, 1, 2], 'the fourth lit this week is still no begin');
+});
+
+test('an onward mouth’s sign says a Gauntlet’s far mouth is its goal, and whether the zone beyond is on the public way', () => {
+  const plain = onwardSign(zone(3), true);
+  assert.deepEqual([plain.goal, plain.public], [null, false]);
+  const far = onwardSign(zone(3, { public: true }), true, null, [], true);
+  assert.deepEqual([far.goal, far.public], [FAR_MOUTH, true]);
 });
 
 test('an onward mouth’s sign names the zone beyond, its deal, depth and currents, and why it is shut', () => {

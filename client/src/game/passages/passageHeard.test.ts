@@ -16,6 +16,7 @@ const zone = (extra: Partial<PassageZone> = {}): PassageZone => ({
   name: 'A chalk cut',
   onward: [7, 8],
   lamp: null,
+  public: false,
   ...extra,
 });
 const seen = (extra: Partial<PassageSeenState> = {}): PassageSeenState => ({

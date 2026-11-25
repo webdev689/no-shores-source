@@ -81,7 +81,16 @@ export interface OnwardSign {
   readonly hard: boolean;
   readonly currents: readonly PassageCurrent[];
   readonly shut: string | null;
+  /** What the mouth is to the zone stood in: a Gauntlet's far mouth, its goal; null for none. */
+  readonly goal: string | null;
+  /** Whether the zone beyond lies on the week's public way. */
+  readonly public: boolean;
 }
+
+/** A Gauntlet's far mouth, as its sign says it. */
+export const FAR_MOUTH = 'The Gauntlet’s far mouth: reach it in time.';
+/** The public way, as a sign and the mouths' card say it. */
+export const PUBLIC_WAY = 'On this week’s public way, where others pass.';
 
 /** Each deal as a sign says it: what waits in the zone, a mission after its kind's name. */
 const DEAL_SIGNS: Readonly<Record<Exclude<PassageDeal, 'lamp'>, string>> = {
@@ -133,12 +142,13 @@ export const foesWords = ([low, high]: readonly [number, number]): string =>
 export const inSentence = (name: string): string => name.replace(/^(A|An|The) /, (article) => article.toLowerCase());
 
 /** The sign over an onward mouth on coming near it; `open` once the zone's deal is done, `level` the player's, `lit`
- *  the lamps they lit this week on the island. */
+ *  the lamps they lit this week on the island, `far` whether it is the far mouth of the Gauntlet stood in. */
 export function onwardSign(
   zone: PassageZone,
   open: boolean,
   level: number | null = null,
   lit: readonly number[] = [],
+  far = false,
 ): OnwardSign {
   const lamp = zone.lamp ?? 1;
   return {
@@ -153,6 +163,8 @@ export function onwardSign(
     hard: tooHard(zone, level),
     currents: zone.currents,
     shut: open ? null : 'Shut until this place’s work is done.',
+    goal: far ? FAR_MOUTH : null,
+    public: zone.public,
   };
 }
 

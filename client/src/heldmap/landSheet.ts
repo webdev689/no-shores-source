@@ -40,12 +40,14 @@ export interface LandSheet extends Relief {
   readonly rivers: readonly { readonly from: Point2; readonly to: Point2; readonly width: number }[];
   readonly grounds: readonly { readonly kind: GroundKind; readonly quad: Quad }[];
   readonly walks: readonly Quad[];
-  /** Each path as wide as it is laid, metres: a track cased, a footpath dashed, a `faint` one a thin pale line. */
+  /** Each path as wide as it is laid, metres: a track cased, a footpath dashed, a `faint` one a thin pale line, an
+   *  `inked` one a thin solid line of the map's ink. */
   readonly paths: readonly {
     readonly track: boolean;
     readonly width: number;
     readonly points: readonly Point2[];
     readonly faint?: boolean;
+    readonly inked?: boolean;
   }[];
   readonly standing: readonly Quad[];
   readonly low: readonly Quad[];

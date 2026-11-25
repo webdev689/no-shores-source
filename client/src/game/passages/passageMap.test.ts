@@ -20,6 +20,7 @@ const zone = (
   name: 'A grassy hollow',
   onward: [],
   lamp: null,
+  public: false,
   ...extra,
 });
 
@@ -112,4 +113,14 @@ test('the map opens on the whole web: every mark inside the map, wherever the pl
       }
     }
   }
+});
+
+test('the week’s public way is inked from zone to zone along it, and no other way', () => {
+  const along = { ...web, zones: web.zones.map((each) => ({ ...each, public: each.number !== 1 })) };
+  const { sheet } = passageSheet(along, { here: 0, come: [], lit: [] }, 'The passages', patrol);
+  const inked = sheet.paths.filter((path) => path.inked);
+  assert.equal(inked.length, 1, 'zone 0 to zone 2, the way to zone 1 left off it');
+  assert.deepEqual(inked[0]?.points, [sheet.marks[0]?.at, sheet.marks[2]?.at]);
+  const { sheet: none } = passageSheet(web, { here: 0, come: [], lit: [] }, 'The passages', patrol);
+  assert.equal(none.paths.filter((path) => path.inked).length, 0);
 });

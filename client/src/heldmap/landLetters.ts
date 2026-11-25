@@ -174,7 +174,12 @@ export function paintLand(
     RELIEF,
     scale,
   );
-  const drawn = sheet.paths.filter((path) => !path.faint);
+  lines(
+    sheet.paths.filter((path) => path.inked).map((path) => path.points),
+    LIGHT_INK,
+    1.4 * scale,
+  );
+  const drawn = sheet.paths.filter((path) => !path.faint && !path.inked);
   const [tracks, footpaths] = [drawn.filter((path) => path.track), drawn.filter((path) => !path.track)];
   const across = (path: (typeof tracks)[number], share = 1) => Math.max(1.2 * scale, path.width * share * view.scale);
   for (const path of tracks) lines([path.points], CASING, across(path) + 1.4 * scale);

@@ -1,7 +1,8 @@
 // The passages' map: held in a passage zone, the held map shows the week's web instead of the land, as a land sheet
 // (heldmap/landSheet.ts) the map paints as it paints any land: every zone a mark at its place on the island, a mission
 // by its kind's glyph, named beside its mark by its kind or its lamp and its foes' levels; every way of the web
-// faintly, the way the player has come as a track and the ways on from where they stand as footpaths. It is built
+// faintly, the week's public way inked, the way the player has come as a track and the ways on from where they stand
+// as footpaths. It is built
 // only in a passage zone: the sea, the island's side and the land's map show nothing of the web.
 import type { LandGlyph } from '../../heldmap/landGlyphs.ts';
 import type { LandMark, LandSheet } from '../../heldmap/landSheet.ts';
@@ -111,6 +112,17 @@ export function passageSheet(
       return to ? [{ track: false, faint: true, width: WAY_M, points: [local(zone.at), local(to.at)] }] : [];
     }),
   );
+  // The week's public way, inked from zone to zone, so players in public rooms find where the others pass.
+  const publicWay = web.zones.flatMap((zone) =>
+    !zone.public
+      ? []
+      : zone.onward.flatMap((number) => {
+          const to = byNumber.get(number);
+          return to?.public
+            ? [{ track: false, inked: true, width: WAY_M, points: [local(zone.at), local(to.at)] }]
+            : [];
+        }),
+  );
   const sheet: LandSheet = {
     name,
     origin,
@@ -126,7 +138,12 @@ export function passageSheet(
     rivers: [],
     grounds: [],
     walks: [],
-    paths: [...webWays, ...(path.length > 1 ? [{ track: true, width: WAY_M, points: path }] : []), ...ways],
+    paths: [
+      ...webWays,
+      ...publicWay,
+      ...(path.length > 1 ? [{ track: true, width: WAY_M, points: path }] : []),
+      ...ways,
+    ],
     standing: [],
     low: [],
     overhead: [],

@@ -160,7 +160,8 @@ export class PassageGame {
     if (mouth === null || !to) return null;
     const open = seen?.open ?? false;
     const gear = gearOf(this.host.foot());
-    this.sign = onwardSign(to, open, gear?.level ?? null, lampsLit(this.host.foot(), zone.web.island));
+    const far = plan.zone.deal === 'gauntlet' && plan.sites.far === mouth;
+    this.sign = onwardSign(to, open, gear?.level ?? null, lampsLit(this.host.foot(), zone.web.island), far);
     if (!open) return { words: 'Shut', run: () => undefined, idle: true };
     return { words: `On to ${inSentence(to.name)}`, run: () => this.goOn(mouth, ask) };
   }

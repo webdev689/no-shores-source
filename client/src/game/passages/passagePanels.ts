@@ -15,7 +15,14 @@ import { modifierNode } from '../journalTimers.ts';
 import { play } from '../uiSounds.ts';
 import { promptChip } from '../usePrompt.ts';
 import type { PassageCurrent } from '../../rules/passageRules.ts';
-import type { HaulView, LampPrompt, MouthsChoice, OnwardSign, Route } from './passageWords.ts';
+import {
+  type HaulView,
+  type LampPrompt,
+  type MouthsChoice,
+  type OnwardSign,
+  PUBLIC_WAY,
+  type Route,
+} from './passageWords.ts';
 import { dotsOnScreen, type WayFrame } from './passageWay.ts';
 
 /** What the mouths' choice's presses do: go in by a route, at the mouth (null) or at a lamp lit this week; or close. */
@@ -53,15 +60,18 @@ function currentNode(current: PassageCurrent, size: number): Node {
   };
 }
 
-/** What a sign says of the zone beyond, as lines: its name, its depth, its deal, its foes' levels (in the loss's
- *  colour where they stand too far over the player) and its currents, `named` by their names alone on one line. */
+/** What a sign says of the zone beyond, as lines: the mouth's goal over all (a Gauntlet's far mouth), its name, its
+ *  depth, its deal, whether it lies on the public way, its foes' levels (in the loss's colour where they stand too far
+ *  over the player) and its currents, `named` by their names alone on one line. */
 function signLines(sign: OnwardSign, size: number, named = false): Child[] {
   const currents = named
     ? [sign.currents.length > 0 && words(sign.currents.map((current) => current.name).join(' · '), size, INK.faint)]
     : sign.currents.map((current) => currentNode(current, size));
   return [
+    sign.goal !== null && { width: 'grow', text: { words: sign.goal, size, colour: INK.brassLit } },
     words(sign.name, size, INK.brassLit),
     { width: 'grow', text: { words: `${sign.depth}. ${sign.deal}`, size, colour: INK.word } },
+    sign.public && { width: 'grow', text: { words: PUBLIC_WAY, size, colour: INK.faint } },
     sign.foes !== null && words(sign.foes, size, sign.hard ? INK.loss : INK.word),
     ...currents,
     sign.shut !== null && { width: 'grow', text: { words: sign.shut, size, colour: INK.loss } },

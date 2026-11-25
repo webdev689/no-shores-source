@@ -56,8 +56,8 @@ export type PassageGroundKind =
   { readonly kind: 'under'; readonly style: string } | { readonly kind: 'open'; readonly form: string };
 
 /** One zone of the web: its number, depth and lane, where it lies on the island (world metres), its ground, size,
- *  deal, currents and name, the zones its onward mouths lead to in their order, and its lamp's number (1 to 4) or
- *  null. */
+ *  deal, currents and name, the zones its onward mouths lead to in their order, its lamp's number (1 to 4) or null,
+ *  and whether it lies on the week's public way. */
 export interface PassageZone {
   readonly number: number;
   readonly depth: number;
@@ -70,6 +70,8 @@ export interface PassageZone {
   readonly name: string;
   readonly onward: readonly number[];
   readonly lamp: number | null;
+  /** Whether it lies on the week's public way, one zone a depth, where players in public rooms meet. */
+  readonly public: boolean;
   /** Its foes' levels, lowest and highest, as its room stands them; none where the web does not say. */
   readonly levels?: readonly [number, number];
 }
@@ -207,6 +209,7 @@ function zoneOf(value: unknown): PassageZone {
     name: text(raw.name, "zone's name"),
     onward: list(raw.onward, "zone's ways on", (each) => whole(each, 'way on')),
     lamp,
+    public: raw.public === true,
     ...(raw.levels === undefined || raw.levels === null
       ? {}
       : { levels: numbers(raw.levels, 2, "zone's levels") as unknown as [number, number] }),

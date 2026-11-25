@@ -22,6 +22,7 @@ const choice: MouthsChoice = {
       name: 'A chalk cut',
       onward: [1],
       lamp: null,
+      public: false,
     },
     true,
   ),

@@ -32,6 +32,12 @@ test('a week’s web reads whole: three mouths, twenty depths, every way on to a
     ],
     'its foes’ levels, by depth',
   );
+  const publicWay = web.zones.filter((zone) => zone.public).map((zone) => zone.depth);
+  assert.deepEqual(
+    publicWay,
+    [...Array(20).keys()].map((depth) => depth + 1),
+    'the public way, a zone a depth',
+  );
   assert.equal(door.web('continent-9', WEEK), null, 'an island with no passages has no web');
 });
 
