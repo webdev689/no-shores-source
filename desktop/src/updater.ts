@@ -1,15 +1,19 @@
 // The app's own updates, through electron-updater, on the transport `updates.ts` chose. It is loaded only by a copy
-// that has one, looks a little after the start and every hour after, and tells each change as the game sees it. A
-// download that hears nothing for two minutes is given up, as electron-updater's own wait does not run under
-// Electron's network, so the next check starts afresh. Installing is asked of it once at most (`restartOf`).
-import { shell } from 'electron';
+// that has one, looks a little after the start and every hour after while nothing is downloading or waiting, and
+// tells each change as the game sees it. A download that hears nothing for two minutes is given up, as
+// electron-updater's own wait does not run under Electron's network, so the next check starts afresh. Installing is
+// asked of it once at most (`restartOf`), and one that leaves the app open is given up for this run.
+import { app, shell } from 'electron';
 import type { DesktopUpdate } from '../../client/src/desktop.ts';
 import {
   CHECK_EVERY_MS,
   DOWNLOAD_STALL_MS,
   FIRST_CHECK_MS,
+  INSTALL_WITHIN_MS,
+  type Install,
   type Transport,
   type UpdateEvent,
+  looksFor,
   restartOf,
   updateAfter,
 } from './updates.ts';
@@ -31,6 +35,8 @@ export interface Updater {
   readonly install: () => boolean;
   /** Opens the download of an update this copy cannot install itself. */
   readonly download: () => void;
+  /** Keeps a downloaded update for a later close, as the app starts again for another reason (its graphics). */
+  readonly hold: () => void;
 }
 
 export function startUpdater(
@@ -40,8 +46,13 @@ export function startUpdater(
   log: (line: string) => void,
 ): Updater {
   let update: DesktopUpdate = { state: 'none' };
-  let installing = false;
-  const quiet: Updater = { update: () => update, install: () => false, download: () => undefined };
+  let install: Install = 'no';
+  const quiet: Updater = {
+    update: () => update,
+    install: () => false,
+    download: () => undefined,
+    hold: () => undefined,
+  };
   if (transport === 'none' || !enabled) return quiet;
   const heard = (event: UpdateEvent) => {
     const next = updateAfter(update, event, transport);
@@ -62,7 +73,10 @@ export function startUpdater(
     if (stall) clearTimeout(stall);
     stall = null;
   };
-  let installer: { quitAndInstall: (silent: boolean, runAfter: boolean) => void } | null = null;
+  let installer: {
+    quitAndInstall: (silent: boolean, runAfter: boolean) => void;
+    autoInstallOnAppQuit: boolean;
+  } | null = null;
   void import('electron-updater').then(({ default: updaterModule }) => {
     const updater = updaterModule.autoUpdater;
     installer = updater;
@@ -93,7 +107,8 @@ export function startUpdater(
       // electron-updater's errors carry every header of the answer: the first line says what failed.
       log(`update: ${(error instanceof Error ? error.message : String(error)).split('\n')[0]}`);
     });
-    const check = () =>
+    const check = () => {
+      if (!looksFor(update)) return;
       void updater
         .checkForUpdates()
         .then((result) => {
@@ -103,21 +118,36 @@ export function startUpdater(
           result?.downloadPromise?.catch(() => undefined);
         })
         .catch(() => heard({ kind: 'failed' }));
+    };
     setTimeout(check, FIRST_CHECK_MS).unref();
     setInterval(check, CHECK_EVERY_MS).unref();
   });
   return {
     update: () => update,
     install() {
-      const restart = restartOf(update, installing);
+      const restart = restartOf(update, install);
       if (restart === 'installing') return true;
       if (restart !== 'install' || !installer) return false;
-      installing = true;
-      installer.quitAndInstall(true, true);
+      const ready = installer;
+      install = 'running';
+      // The new copy opens before this one has quite gone, and must find the one-copy lock free.
+      app.releaseSingleInstanceLock();
+      ready.quitAndInstall(true, true);
+      // Still open, the install failed: Restart restarts, and closing asks nothing more of it this run.
+      setTimeout(() => {
+        install = 'failed';
+        ready.autoInstallOnAppQuit = false;
+        app.requestSingleInstanceLock();
+        log(`update: the install of ${update.state === 'ready' ? update.version : 'the update'} left the app open`);
+      }, INSTALL_WITHIN_MS).unref();
       return true;
     },
     download() {
-      if (update.state === 'manual') void shell.openExternal(downloadFor(process.platform, process.arch));
+      if (update.state === 'manual')
+        void shell.openExternal(downloadFor(process.platform, process.arch)).catch(() => undefined);
+    },
+    hold() {
+      if (installer) installer.autoInstallOnAppQuit = false;
     },
   };
 }

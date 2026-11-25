@@ -115,7 +115,14 @@ jobs:
             echo "::error::a release is cut only from a commit that passed the CI check, and this one has not"
             exit 1
           fi
-          published=$(curl -fsS https://noshores.online/download/latest.yml 2>/dev/null | sed -n 's/^version: //p' || true)
+          # Only a feed that is not there means nothing is published: any other failure stops the release, so it never
+          # goes back behind a version it could not read.
+          status=$(curl -sS -o "$RUNNER_TEMP/latest.yml" -w '%{http_code}' https://noshores.online/download/latest.yml)
+          case "$status" in
+            200) published=$(sed -n 's/^version: //p' "$RUNNER_TEMP/latest.yml") ;;
+            404) published="" ;;
+            *) echo "::error::the published feed answered $status"; exit 1 ;;
+          esac
           version=$(node desktop/release/version.ts "$(git log -1 --format=%cI)" "$published")
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "releasing $version (published: ${published:-none})"
@@ -160,7 +167,12 @@ jobs:
           npm run -s desktop:build
           signed=false
           if [ -n "$CSC_LINK" ]; then signed=true; else export CSC_IDENTITY_AUTO_DISCOVERY=false; unset CSC_LINK CSC_KEY_PASSWORD; fi
-          # Notarized only where a developer's identity signs: Apple takes no app signed ad hoc.
+          # Notarized only where a developer's identity signs: Apple takes no app signed ad hoc, and a Mac app signed but
+          # not notarized is refused by the Mac it is opened on.
+          if [ "$RUNNER_OS" = macOS ] && [ "$signed" = true ] && [ -z "$APPLE_API_KEY_BASE64" ]; then
+            echo "::error::the Mac signing key is set without the notarizing key"
+            exit 1
+          fi
           if [ "$signed" = true ] && [ -n "$APPLE_API_KEY_BASE64" ]; then
             export APPLE_API_KEY="$RUNNER_TEMP/apple-api-key.p8"
             echo "$APPLE_API_KEY_BASE64" | base64 --decode > "$APPLE_API_KEY"

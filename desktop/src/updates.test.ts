@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { DesktopUpdate } from '../../client/src/desktop.ts';
-import { type CopyFacts, followsFeed, restartOf, transportOf, updateAfter } from './updates.ts';
+import { type CopyFacts, followsFeed, looksFor, restartOf, transportOf, updateAfter } from './updates.ts';
 
 const installed: CopyFacts = {
   packaged: true,
@@ -26,10 +26,11 @@ test('a Mac app replaces itself only when a developer signed it', () => {
   assert.equal(transportOf({ ...installed, platform: 'darwin', signed: true }), 'updater');
 });
 
-test('on Linux an AppImage run as one, or the Debian package, replaces itself, and anything else is told', () => {
+test('on Linux an AppImage run as one, or the Debian package, replaces itself, and anything else never asks', () => {
   assert.equal(transportOf({ ...installed, platform: 'linux', appImage: true }), 'updater');
   assert.equal(transportOf({ ...installed, platform: 'linux', deb: true }), 'updater');
-  assert.equal(transportOf({ ...installed, platform: 'linux' }), 'notice');
+  // electron-updater finds no feed for a folder unpacked by hand, so it has nothing to be told of.
+  assert.equal(transportOf({ ...installed, platform: 'linux' }), 'none');
 });
 
 const none: DesktopUpdate = { state: 'none' };
@@ -75,12 +76,20 @@ test('a download that fails is forgotten, so the next check starts afresh; a not
   assert.deepEqual(updateAfter(manual, { kind: 'none' }, 'notice'), manual);
 });
 
-test('Restart installs a ready update once; pressed again while it installs, it does nothing else', () => {
-  const ready: DesktopUpdate = { state: 'ready', version: 'v2' };
-  assert.equal(restartOf(ready, false), 'install');
-  assert.equal(restartOf(ready, true), 'installing');
-  assert.equal(restartOf(none, false), 'relaunch');
-  assert.equal(restartOf({ state: 'manual', version: 'v2' }, false), 'relaunch');
+test('Restart installs a ready update once; pressed while it installs, it does nothing; one that failed, it restarts', () => {
+  const [ready, none]: DesktopUpdate[] = [{ state: 'ready', version: 'v2' }, { state: 'none' }];
+  assert.equal(restartOf(ready, 'no'), 'install');
+  assert.equal(restartOf(ready, 'running'), 'installing');
+  assert.equal(restartOf(ready, 'failed'), 'relaunch', 'an install that left the app running does not hold Restart');
+  assert.equal(restartOf(none, 'no'), 'relaunch');
+  assert.equal(restartOf({ state: 'manual', version: 'v2' }, 'no'), 'relaunch');
+});
+
+test('no check runs while a download is under way or waits to install: a newer one would empty its folder', () => {
+  assert.equal(looksFor({ state: 'none' }), true);
+  assert.equal(looksFor({ state: 'manual', version: 'v2' }), true);
+  assert.equal(looksFor({ state: 'downloading', version: 'v2', percent: 40 }), false);
+  assert.equal(looksFor({ state: 'ready', version: 'v2' }), false);
 });
 
 test('a copy follows a feed only where its update file names a provider: a trial pack writes one without', () => {

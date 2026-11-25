@@ -132,11 +132,14 @@ this card, a change that waits on a restart, the version, and the update, with R
 The game updates with the site. The shell updates through electron-updater from the feed at
 `https://noshores.online/download/` (`updates.ts`, `updater.ts`): an installed Windows copy, an AppImage run as one, the
 Debian package and a Mac app a developer signed download an update in the background, a little after the start and
-every hour, and install it as the app closes, or at once with Restart now; a download that hears nothing for two
-minutes is given up for the next check. A Mac app signed by nobody cannot replace itself, so Settings says the version
-is out and Download opens it. A copy run from the source, or packed without a release, never looks: only the
-release names the feed when it packs (`desktop.yml`), so a trial pack's update file names none (`updates.ts`
-`followsFeed`).
+every hour while none is downloading or waiting (a newer one found would empty the folder holding it), and install it
+as the app closes, or at once with Restart now; a download that hears nothing for two minutes is given up for the next
+check. An install that leaves the app open for 30 s (a Debian package's password refused) is given up for that run:
+Restart restarts, and closing asks nothing. A restart for the graphics installs a downloaded update on its way. An
+AppImage is saved with no version in its name, so each update replaces it in place and its shortcuts hold. A Mac app
+signed by nobody cannot replace itself, so Settings says the version is out and Download opens it. A copy run from the
+source, packed without a release, or a Linux folder unpacked by hand never looks: only the release names the feed when
+it packs (`desktop.yml`), so a trial pack's update file names none (`updates.ts` `followsFeed`).
 
 ### Releases and downloads
 
@@ -144,12 +147,13 @@ A release is cut by hand from `main`, and only on the owner's yes ([[Ask Before 
 
 1. Its commit must have passed the CI check. Its version is the commit's UTC time, `year.monthday.hourminute`
    (`2026.1125.1230`; `release/version.ts`), never bumped by hand ([[Versions Are Not Counters]]), and must be after
-   the one published.
+   the one published; a feed that answers anything but itself or "not found" stops the release.
 2. Each platform's installers are packed on its own runner, which holds no Cloudflare token: the Windows installer
    (per user, its folder chosen), a disk image and a zip for each Mac (Apple silicon and Intel), and an AppImage and
    a Debian package for Linux, packed apart and their feeds made one (`release/publish.ts` `mergeFeeds`), as a Debian
-   package marks the folder it is packed from, which would set an AppImage packed beside it updating as a package. The icon is drawn by the site's own code, as the Discord server's is
-   (`release/icon.ts`). Electron's fuses are set: no running as Node, no Node options or inspector from outside, the
+   package marks the folder it is packed from, which would set an AppImage packed beside it updating as a package.
+   The icon is drawn by the site's own code, as the Discord server's is (`release/icon.ts`). A Mac signing key set
+   without the notarizing key stops the release, as a Mac refuses an app signed but not notarized. Electron's fuses are set: no running as Node, no Node options or inspector from outside, the
    app's archive checked against its hash and the only code loaded; on a Mac the app is then signed ad hoc again, as
    setting them breaks the signature it had.
 3. Only when every installer is there (`release/publish.ts`) are they put on R2 under `desktop/`, then `latest.json`,

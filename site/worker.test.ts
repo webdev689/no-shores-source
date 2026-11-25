@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import worker, { type DownloadBucket, type DownloadObject, download, rangeOf } from './worker.ts';
 
 const installer = 'No-Shores-2026.1125.1230-windows-x64-setup.exe';
+const appImage = 'No-Shores-2026.1125.1230-linux-x86_64.AppImage';
 
 /** A bucket holding `files` under the downloads' folder, read as R2 reads one range. */
 function bucketOf(files: Record<string, string>): DownloadBucket {
@@ -28,6 +29,7 @@ function bucketOf(files: Record<string, string>): DownloadBucket {
 const bucket = bucketOf({
   'latest.yml': 'version: 2026.1125.1230\n',
   [installer]: '0123456789',
+  [appImage]: 'ELF',
   'latest.json': JSON.stringify({ files: { windows: installer, 'mac-arm64': '../../secrets' } }),
 });
 const ask = (path: string, init?: RequestInit) => download(new Request(`https://noshores.online${path}`, init), bucket);
@@ -41,6 +43,11 @@ test('a feed is read afresh each time; an installer is kept for good and saved a
   assert.equal(file.headers.get('cache-control'), 'public, max-age=31536000, immutable');
   assert.equal(file.headers.get('content-disposition'), `attachment; filename="${installer}"`);
   assert.equal(file.headers.get('accept-ranges'), 'bytes');
+});
+
+test('an AppImage is saved under a name with no version, which each update then keeps', async () => {
+  const file = await ask(`/download/${appImage}`);
+  assert.equal(file.headers.get('content-disposition'), 'attachment; filename="No-Shores-linux-x86_64.AppImage"');
 });
 
 test('a range is answered with its bytes alone, as the updater asks for the parts that changed', async () => {
@@ -66,7 +73,10 @@ test('a name that never moves sends the player to the newest installer of its ki
 
 test('only release files are read: no other key of the bucket, and nothing outside the folder', async () => {
   assert.equal((await ask('/download/latest.json')).status, 404);
-  assert.equal((await ask('/download/../forge/index.json')).status, 404);
+  // An address that climbs out is no download: the URL drops the climb before the Worker sees it.
+  const climbed = new Request('https://noshores.online/download/../forge/index.json');
+  const env = { ASSETS: { fetch: async () => new Response('the site') }, DOWNLOADS: bucket };
+  assert.equal(await (await worker.fetch(climbed, env)).text(), 'the site');
   assert.equal((await ask('/download/No-Shores-2026.1201.900-windows-x64-setup.exe')).status, 404);
   assert.equal((await ask(`/download/${installer}`, { method: 'POST' })).status, 405);
 });
@@ -89,20 +99,26 @@ test("a range's bytes are named from its offset, its length or its suffix", () =
   assert.equal(rangeOf({ suffix: 3 }, 10), '7-9/10');
 });
 
-test('a latest.json that does not read sends no one anywhere, and a range R2 cannot read is said to be one', async () => {
+test('a latest.json that does not read sends no one anywhere', async () => {
   const broken = bucketOf({ 'latest.json': '{ not json' });
   const moved = await download(new Request('https://noshores.online/download/windows'), broken);
   assert.equal(moved.status, 404);
+});
+
+test('a range R2 cannot read is past the end (416), not written as bytes (the whole file), or a failure', async () => {
+  // R2 throws on any single range it cannot read, as this bucket does on a range of the installer.
   const refusing: DownloadBucket = {
-    get: async (_key, options) => {
+    get: async (key, options) => {
       if (options?.range) throw new Error('InvalidRange');
-      return null;
+      return bucket.get(key);
     },
-    head: async () => null,
+    head: (key) => bucket.head(key),
   };
-  const range = await download(
-    new Request(`https://noshores.online/download/${installer}`, { headers: { range: 'bytes=900-999' } }),
-    refusing,
-  );
-  assert.equal(range.status, 416);
+  const asking = (range: string) =>
+    download(new Request(`https://noshores.online/download/${installer}`, { headers: { range } }), refusing);
+  const past = await asking('bytes=900-999');
+  assert.deepEqual([past.status, past.headers.get('content-range')], [416, 'bytes */10']);
+  const words = await asking('lines=1-2');
+  assert.deepEqual([words.status, await words.text()], [200, '0123456789']);
+  await assert.rejects(asking('bytes=2-5'), /InvalidRange/, 'a range the file holds failed for another reason');
 });

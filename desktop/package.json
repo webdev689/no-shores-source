@@ -23,7 +23,6 @@
   "build": {
     "appId": "online.noshores.app",
     "productName": "No Shores",
-    "executableName": "no-shores",
     "copyright": "Copyright © 2026 Vestige Studios",
     "directories": {
       "output": "out/release",
@@ -82,6 +81,7 @@
       "hardenedRuntime": true
     },
     "linux": {
+      "executableName": "no-shores",
       "target": [
         "AppImage",
         "deb"

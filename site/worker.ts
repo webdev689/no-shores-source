@@ -45,8 +45,18 @@ function headersOf(name: string, object: DownloadObject): Headers {
     'etag': object.httpEtag,
     'accept-ranges': 'bytes',
   });
-  if (!name.endsWith('.yml')) headers.set('content-disposition', `attachment; filename="${name}"`);
+  // An AppImage saved with no version in its name is replaced in place by each update, so its shortcuts hold.
+  const saved = name.endsWith('.AppImage') ? name.replace(/-[0-9]+\.[0-9]+\.[0-9]+/, '') : name;
+  if (!name.endsWith('.yml')) headers.set('content-disposition', `attachment; filename="${saved}"`);
   return headers;
+}
+
+/** Whether a range R2 could not read lies within a file of `size`: null where it is not written as bytes, which
+ *  HTTP has ignored. */
+export function within(range: string, size: number): boolean | null {
+  const asked = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  if (!asked || (asked[1] === '' && asked[2] === '')) return null;
+  return asked[1] === '' ? Number(asked[2]) > 0 : Number(asked[1]) < size;
 }
 
 /** The bytes a range answer holds, as `start-end/size`, or null for the whole file. */
@@ -87,13 +97,22 @@ export async function download(request: Request, bucket: DownloadBucket): Promis
   }
   // One range a request, as R2 reads them; a list of ranges is answered with the whole file.
   const asked = request.headers.get('range');
-  const single = asked !== null && !asked.includes(',');
-  // R2 refuses a range past the file's end by throwing, which is the asker's mistake, not the Worker's.
-  const object = await bucket.get(key, single ? { range: request.headers } : {}).catch((error: unknown) => {
-    if (single) return 'unsatisfiable' as const;
-    throw error;
+  let single = asked !== null && !asked.includes(',');
+  // R2 throws on a range it cannot read: past the end is the asker's mistake, a range not in bytes is ignored, and
+  // any other throw is the bucket's failure.
+  const object = await bucket.get(key, single ? { range: request.headers } : {}).catch(async (error: unknown) => {
+    const whole = single && asked !== null ? await bucket.head(key) : null;
+    const fits = whole ? within(asked ?? '', whole.size) : true;
+    if (fits === true) throw error;
+    if (fits === false) return { unsatisfiable: whole?.size ?? 0 };
+    single = false;
+    return bucket.get(key);
   });
-  if (object === 'unsatisfiable') return new Response('range not satisfiable', { status: 416 });
+  if (object && 'unsatisfiable' in object)
+    return new Response('range not satisfiable', {
+      status: 416,
+      headers: { 'content-range': `bytes */${object.unsatisfiable}` },
+    });
   if (!object?.body) return new Response('not found', { status: 404 });
   const headers = headersOf(name, object);
   const part = single ? rangeOf(object.range, object.size) : null;

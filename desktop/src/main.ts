@@ -106,6 +106,10 @@ const watch = watchGraphics(launch, desk, chromium, {
   tell: (box) => boxOver(window, box),
   ask: (box, stop) => boxOver(window, box, stop),
   restart: (args) => {
+    // With its failure kept, a downloaded update installs and opens the app again on its own; else it waits, as an
+    // install as the app goes would take the place the app is opened again from.
+    if (args.length === 0 && updater.install()) return;
+    updater.hold();
     relaunch(args);
     app.releaseSingleInstanceLock();
     app.exit(0);

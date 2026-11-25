@@ -2,7 +2,8 @@
 // as it does in a browser, so an update here is the shell's alone and rare. A copy that can replace itself (the
 // Windows installer's, an AppImage run as one, a Debian package, a Mac app signed by a developer) downloads in the
 // background and installs as the app closes; one that cannot (a Mac app signed by nobody) is told and downloads by
-// hand; one with nothing to follow (run from the source, or cut without a release) never asks.
+// hand; one with nothing to follow (run from the source, cut without a release, or a Linux folder unpacked by hand,
+// which electron-updater finds no way to replace) never asks.
 import type { DesktopUpdate } from '../../client/src/desktop.ts';
 
 export type Transport = 'updater' | 'notice' | 'none';
@@ -24,7 +25,7 @@ export function transportOf(copy: CopyFacts): Transport {
   if (!copy.packaged || !copy.configured) return 'none';
   if (copy.platform === 'win32') return 'updater';
   if (copy.platform === 'darwin') return copy.signed ? 'updater' : 'notice';
-  if (copy.platform === 'linux') return copy.appImage || copy.deb ? 'updater' : 'notice';
+  if (copy.platform === 'linux') return copy.appImage || copy.deb ? 'updater' : 'none';
   return 'none';
 }
 
@@ -58,11 +59,20 @@ export function updateAfter(update: DesktopUpdate, event: UpdateEvent, transport
   }
 }
 
+/** Whether a check may run: never while a download runs or waits to install, as a newer one found would empty the
+ *  folder that holds it, under the install. */
+export const looksFor = (update: DesktopUpdate): boolean => update.state === 'none' || update.state === 'manual';
+
+/** Where an install asked of electron-updater stands: none asked, running, or failed (the app still open after it,
+ *  as when a Debian package's password is refused). */
+export type Install = 'no' | 'running' | 'failed';
+
 /** What Restart does: installs a ready update, which electron-updater must be asked once only (a second ask installs
- *  twice, over the copy the first put in place); does nothing else while that install runs; or starts the app again. */
-export function restartOf(update: DesktopUpdate, installing: boolean): 'install' | 'installing' | 'relaunch' {
-  if (installing) return 'installing';
-  return update.state === 'ready' ? 'install' : 'relaunch';
+ *  twice, over the copy the first put in place); does nothing else while that install runs; or starts the app again,
+ *  as it does once an install has failed. */
+export function restartOf(update: DesktopUpdate, install: Install): 'install' | 'installing' | 'relaunch' {
+  if (install === 'running') return 'installing';
+  return update.state === 'ready' && install === 'no' ? 'install' : 'relaunch';
 }
 
 /** Whether a copy's `app-update.yml` names a feed to follow: a release's names its provider, and a trial pack writes
@@ -75,3 +85,5 @@ export const FIRST_CHECK_MS = 15_000;
 export const CHECK_EVERY_MS = 60 * 60_000;
 /** A download that hears nothing this long is given up, so the next check may start one afresh. */
 export const DOWNLOAD_STALL_MS = 120_000;
+/** An install that leaves the app open this long has failed. */
+export const INSTALL_WITHIN_MS = 30_000;
