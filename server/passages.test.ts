@@ -185,8 +185,15 @@ test('a lamp’s zone leads home to its patrol zone once its lamp is lit for the
   assert.equal(arrives(PATROL, lampRoom, null, null, passagesOf(door, lastWeek, MINUTE * 60_000)), false, 'last week');
 });
 
-test('a move of what the next room judges is saved at once, a find is not, and no change reads the character', async () => {
+test('a move of what the next room judges is saved at once, a find is not, nor read out of the room', async () => {
   const { kept, token } = await world();
+  // The accounts, unreachable while `unreachable` says so.
+  let unreachable = false;
+  const accounts = {
+    ...kept,
+    save: (account: string, holder: string, body: string) =>
+      unreachable ? Promise.reject(new Error('unreachable')) : kept.save(account, holder, body),
+  };
   const zone = roomOf();
   const body = (dive: Record<string, unknown>, lamps: number[] = []) =>
     JSON.stringify({
@@ -194,7 +201,7 @@ test('a move of what the next room judges is saved at once, a find is not, and n
       activity: { this_week: { week: WEEK, passage_lamps: lamps.length > 0 ? { [ISLAND]: lamps } : {} } },
     });
   zone.held.set(1, body({}));
-  const keeper = new Keeper(kept, zone, room(lampZone.number), () => undefined);
+  const keeper = new Keeper(accounts, zone, room(lampZone.number), () => undefined);
   assert.equal(
     await keeper.signIn(
       1,
@@ -224,4 +231,12 @@ test('a move of what the next room judges is saved at once, a find is not, and n
   assert.equal(await saved(), home, 'Home is saved at once');
   await change('{}', true);
   assert.equal(await saved(), '{}', 'a dive ended is saved at once too');
+  // A move the accounts did not take is saved at the next change, though that change moves nothing.
+  unreachable = true;
+  await change(lit, true);
+  assert.equal(await saved(), '{}');
+  unreachable = false;
+  const found = body({ lamp: 1, found: 2 }, [1]);
+  await change(found, false);
+  assert.equal(await saved(), found, 'the unsaved move saved');
 });
