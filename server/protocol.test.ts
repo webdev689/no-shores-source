@@ -41,7 +41,8 @@ test("the protocol's version hashes every file that lays out the fights' numbers
 test("the protocol's version moves with the passages' rules and the Forge, which every page lays itself", () => {
   // A zone's number, mouths and posts come from the passages' crate and, under ground, the Forge's: a page laying
   // them from another build draws mouths where the room has none.
-  for (const path of ['crates/passage/src/web.rs', 'crates/dungeon/src/dungeon.rs', 'content/passages/saltmere.json']) {
+  const laid = ['crates/passage/src/web.rs', 'crates/dungeon/src/dungeon.rs', 'crates/isle/src/shape.rs'];
+  for (const path of [...laid, 'content/passages/saltmere.json']) {
     assert.ok(PROTOCOL_PATHS.includes(path), `${path} is hashed`);
     assert.notEqual(protocolOf(reading(path, '\n')), protocolOf(reading()), `${path} moves it`);
   }

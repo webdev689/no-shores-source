@@ -4,6 +4,7 @@
 // on the character.
 import type { Db } from './database.ts';
 import { passageRoom, passageRoomName } from '../roomNames.ts';
+import { weekOf } from '../../client/src/game/guild/guildLaw.ts';
 
 /** Where a character logs back in: at sea, on foot in a social space (its node, feet in metres, facing in radians),
  *  or in its dive's passage zone (its room: the zone's first public room, or its company's route's); null for one
@@ -14,10 +15,11 @@ export type LastPlace =
   | { readonly kind: 'passage'; readonly room: string }
   | null;
 
-/** The zone a dive kept in `body` stands in, when `room`, the room that held the character last, is a room of it and
- *  the dive has not turned home: a reload or a closed tab costs no more than a death would. */
-function diveRoom(read: { passage?: unknown }, room: string | null): LastPlace {
+/** The zone a dive kept in `body` stands in, when `room`, the room that held the character last, is a room of it, of
+ *  this `week`'s web, and the dive has not turned home: a reload or a closed tab costs no more than a death would. */
+function diveRoom(read: { passage?: unknown }, room: string | null, week: number): LastPlace {
   const zone = passageRoom(room);
+  if (zone?.week !== week) return null;
   const dive = read.passage as { island?: unknown; week?: unknown; zone?: unknown; homeward?: unknown } | null;
   if (!zone || !dive || dive.homeward === true) return null;
   if (dive.island !== zone.island || dive.week !== zone.week || dive.zone !== zone.zone) return null;
@@ -26,12 +28,12 @@ function diveRoom(read: { passage?: unknown }, room: string | null): LastPlace {
 }
 
 /** The place a kept body names, read leniently: anything that is not one is none. `room` is the room that held it
- *  last, which names its dive's zone. */
-export function lastPlaceOf(body: string | null, room: string | null = null): LastPlace {
+ *  last, which names its dive's zone, and `week` the week it is now (`weekOf`). */
+export function lastPlaceOf(body: string | null, room: string | null = null, week = weekOf(Date.now())): LastPlace {
   let read: unknown = null;
   try {
     const whole = body === null ? null : (JSON.parse(body) as { last?: unknown; passage?: unknown } | null);
-    const diving = whole && diveRoom(whole, room);
+    const diving = whole && diveRoom(whole, room, week);
     if (diving) return diving;
     read = whole?.last;
   } catch {
@@ -52,10 +54,10 @@ export function lastPlaceOf(body: string | null, room: string | null = null): La
 }
 
 /** Where an account's character logs back in. */
-export async function lastPlace(database: Db, account: string): Promise<LastPlace> {
+export async function lastPlace(database: Db, account: string, now = Date.now()): Promise<LastPlace> {
   const kept = await database
     .prepare('SELECT body, room FROM characters WHERE account_id = ?1')
     .bind(account)
     .first<{ body: string | null; room: string | null }>();
-  return lastPlaceOf(kept?.body ?? null, kept?.room ?? null);
+  return lastPlaceOf(kept?.body ?? null, kept?.room ?? null, weekOf(now));
 }

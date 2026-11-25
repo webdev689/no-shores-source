@@ -25,9 +25,9 @@ const FLOATS = [
 ];
 
 /** The rules every page lays a passage zone by itself, as its room does: the passages' web, zones, mouths and posts,
- *  their island's file, and under ground the Forge's dungeons, their tests apart. */
+ *  their island's file, under ground the Forge's dungeons and above ground the islands' hollows, their tests apart. */
 const LAID = [
-  ...['crates/passage/src', 'crates/dungeon/src'].flatMap((folder) =>
+  ...['crates/passage/src', 'crates/dungeon/src', 'crates/isle/src'].flatMap((folder) =>
     readdirSync(folder, { encoding: 'utf8' })
       .filter((name) => name.endsWith('.rs') && name !== 'tests.rs' && !name.endsWith('_tests.rs'))
       .sort()

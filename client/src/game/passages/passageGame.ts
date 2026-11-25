@@ -306,7 +306,6 @@ export class PassageGame {
     );
   }
 
-
   /** Joins the zone `zone` stands for and stands the player there, its dungeon shown under ground. */
   private async standIn(zone: InZone): Promise<void> {
     await this.host.goInto(() => enterZone(this.host.context, zone.entry));
@@ -318,6 +317,8 @@ export class PassageGame {
   /** Back into the passage zone of the room `room`, as a log-in whose dive's zone held them last resumes there
    *  (`relog.ts`): whether the page lays that zone, its patrol zone on the landmass open, and joined it. */
   async resumeIn(room: string): Promise<boolean> {
+    // The door is laid as the module comes, by the first of its waiters.
+    await this.host.module;
     const named = passageRoom(room);
     const door = this.door;
     const web = named && this.webOf(named.island, named.week);
@@ -328,9 +329,10 @@ export class PassageGame {
     const heights = plan.ground.kind === 'open' ? door.heights(island, week, zone) : null;
     const minute = Math.floor(this.host.now() / 60_000);
     const entry = { plan, heights, island, week, room, patrol, company: named.run !== null, minute };
-    this.host.setFlow(arriving(room, plan.zone.name));
     const isle = heights && zoneIsle(plan, heights, this.host.climate(island));
     await this.standIn({ web, entry, isle, passed: [] });
+    // Set once joined, so a zone that refuses leaves the flow to Overlook's arrival.
+    this.host.setFlow(arriving(room, plan.zone.name));
     return true;
   }
 

@@ -59,7 +59,11 @@ test('a zone gone on to that refuses the dive as come by no way there sends the 
   assert.deepEqual(went, ['back']);
   await assert.rejects(onwardOrBack(refused, null), /cannot reach/, 'from the patrol zone, nowhere to go back to');
   const full = () => Promise.reject(new Error(PASSAGE_FULL));
-  await assert.rejects(onwardOrBack(full, async () => void went.push('back')), /full/, 'any other refusal is said');
+  await assert.rejects(
+    onwardOrBack(full, async () => void went.push('back')),
+    /full/,
+    'any other refusal is said',
+  );
   assert.equal(await onwardOrBack(() => Promise.resolve(), null), true);
 });
 

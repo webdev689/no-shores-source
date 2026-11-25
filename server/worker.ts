@@ -310,7 +310,7 @@ export class RoomHost extends DurableObject<Env> {
     const named = nodeRoom(node);
     if (!named) return false;
     const text = await this.nodeText(named.id);
-    this.crossings = crossingsOf(text);
+    this.crossings = named.dungeon === null && named.run === null ? crossingsOf(text) : [];
     // A guild's outpost opens only on a node whose file has an outpost's ground; the bare node is the wild site.
     const ground = named.guild !== null && text !== null ? outpostGround(text) : null;
     if (named.guild !== null && !ground) return false;
