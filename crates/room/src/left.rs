@@ -1,7 +1,7 @@
 //! The body a player leaves a room with, kept with their character (`gear::left`): their health and healing charges
 //! for two minutes, their Anima and Tenets for ten, so leaving and coming back, to this room or another, heals nothing
 //! and readies nothing ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). One who left fallen comes back
-//! fallen, to stand again at a spawn.
+//! fallen, to stand again at a spawn; once the body no longer holds, whole, but in a passage zone without its haul.
 
 use crate::players::Player;
 use crate::{PlayerId, Room};
@@ -103,7 +103,8 @@ impl Room {
     }
 
     /// Gives a returning player the body their character left with, what of it still holds at the room's minute; a
-    /// boarder comes onto a hostile's deck from their own ship, unhurt.
+    /// boarder comes onto a hostile's deck from their own ship, unhurt; one left fallen whose body no longer holds
+    /// loses a passage zone's haul.
     fn give_left_back(&mut self, player: PlayerId) {
         let (minute, on_deck) = (self.minute, matches!(self.floor, crate::Floor::Deck(_)));
         let Some(found) = self.players.get_mut(&player) else { return };
@@ -119,6 +120,10 @@ impl Room {
         if left.arts_hold(minute) && found.character.arts.worn == left.art {
             found.casting.anima = whole_of(left.anima);
             found.casting.tenets = left.tenets.map(whole_of);
+        }
+        // One who left fallen and comes back whole, the body no longer kept, stood again as a respawn does.
+        if left.health == 0 && !left.body_holds(minute) {
+            self.lose_haul(player);
         }
     }
 }

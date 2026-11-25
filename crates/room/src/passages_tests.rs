@@ -7,15 +7,15 @@ use combat::fighter::Action;
 use gear::dive::{Route, Start};
 use passage::{Deal, Mission, PieceKind, Plan, Web};
 
-const ISLAND: &str = "continent-1";
-const BAND: (u8, u8) = (1, 4);
+pub(super) const ISLAND: &str = "continent-1";
+pub(super) const BAND: (u8, u8) = (1, 4);
 
-fn web(week: u64) -> Web {
+pub(super) fn web(week: u64) -> Web {
     Web::of(passage::island(ISLAND).expect("Saltmere's passages"), week)
 }
 
 /// The first zone over the weeks from 2_900 whose deal is `deal`, under ground or not as `under` asks (either for none).
-fn plan_of(deal: Deal, under: Option<bool>) -> (u64, Plan) {
+pub(super) fn plan_of(deal: Deal, under: Option<bool>) -> (u64, Plan) {
     for week in 2_900..2_960 {
         let web = web(week);
         for zone in &web.zones {
@@ -32,7 +32,7 @@ fn plan_of(deal: Deal, under: Option<bool>) -> (u64, Plan) {
     panic!("no zone of {deal:?}");
 }
 
-fn zone_room(deal: Deal, under: Option<bool>, route: Route) -> (u64, Plan, Room) {
+pub(super) fn zone_room(deal: Deal, under: Option<bool>, route: Route) -> (u64, Plan, Room) {
     let (week, plan) = plan_of(deal, under);
     let modifiers = gear::passages::week_modifiers(ISLAND, week);
     let room = Room::passage(&plan, BAND, modifiers, (ISLAND, week, route)).expect("a zone's room");
@@ -40,7 +40,7 @@ fn zone_room(deal: Deal, under: Option<bool>, route: Route) -> (u64, Plan, Room)
 }
 
 /// A player in the zone on a dive of it, past the prologue, standing at its arrival.
-fn diver(room: &mut Room, week: u64, plan: &Plan) -> PlayerId {
+pub(super) fn diver(room: &mut Room, week: u64, plan: &Plan) -> PlayerId {
     let player = room.join().expect("joined");
     let mut character = gear::Character::starting();
     character.story.prologue = true;
@@ -59,25 +59,25 @@ fn diver(room: &mut Room, week: u64, plan: &Plan) -> PlayerId {
     player
 }
 
-fn run(room: &mut Room, ticks: u64) {
+pub(super) fn run(room: &mut Room, ticks: u64) {
     for _ in 0..ticks {
         room.tick();
     }
 }
 
-fn kill_all(room: &mut Room) {
+pub(super) fn kill_all(room: &mut Room) {
     for foe in room.foes.values_mut() {
         foe.fighter.health = 0.0;
         foe.fighter.action = Action::Dead { elapsed: 0 };
     }
 }
 
-fn stand_at(room: &mut Room, player: PlayerId, at: [f64; 2]) {
+pub(super) fn stand_at(room: &mut Room, player: PlayerId, at: [f64; 2]) {
     let body = standing_on(&room.floor, &room.blocks, at[0], at[1]);
     room.players.get_mut(&player).expect("in the room").fighter.body = body;
 }
 
-fn dive(room: &Room, player: PlayerId) -> Option<&gear::dive::Dive> {
+pub(super) fn dive(room: &Room, player: PlayerId) -> Option<&gear::dive::Dive> {
     room.players[&player].character.passage.as_ref()
 }
 
@@ -370,7 +370,7 @@ fn a_player_home_from_a_lamp_stands_before_the_mouth_they_began_at_keeping_what_
 }
 
 /// The room's answer to a refusal.
-fn refusal(refusal: gear::Refusal) -> u8 {
+pub(super) fn refusal(refusal: gear::Refusal) -> u8 {
     refusal as u8 + 1
 }
 
@@ -384,7 +384,7 @@ fn week_begins(week: u64) -> u64 {
 }
 
 /// A lamp's zone, its guard down, lit for one player standing at it.
-fn lit_lamp() -> (u64, Plan, Room, PlayerId) {
+pub(super) fn lit_lamp() -> (u64, Plan, Room, PlayerId) {
     let (week, plan, mut room) = zone_room(Deal::Lamp, None, Route::Public);
     let player = diver(&mut room, week, &plan);
     let lamp = plan.sites.lamp.expect("a lamp");
@@ -443,6 +443,7 @@ fn a_gauntlets_time_runs_from_the_later_of_a_players_arrival_and_the_rounds_star
     let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Gauntlet), None, Route::Public);
     let first = diver(&mut room, week, &plan);
     let far = room.far_mouth().expect("a far mouth");
+    run(&mut room, 1);
     stand_at(&mut room, first, far);
     run(&mut room, 2);
     assert!(room.passage_seen(first).is_some_and(|seen| seen.done), "the first round");

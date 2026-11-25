@@ -75,10 +75,12 @@ pub(crate) struct Round {
     /// The players who took part: struck down one of its foes, lit a dead lamp, held the ring or reached the far
     /// mouth. Only they are paid its cache.
     pub took_part: BTreeSet<PlayerId>,
+    /// A Gauntlet's runners who stood at the arrival in this round, whose reaching the far mouth counts.
+    pub set_out: BTreeSet<PlayerId>,
 }
 
 /// A passage zone's room's own: its web's island, week and route, the zone, its levels, sites and pieces, the deal's
-/// round, the players its lamp is lit for, the holds under way, and those counted as having gathered its vein.
+/// round, the holds under way, and those counted as having gathered its vein.
 #[derive(Debug)]
 pub(crate) struct Zone {
     pub island: &'static str,
@@ -89,7 +91,6 @@ pub(crate) struct Zone {
     pub sites: Sites,
     pub pieces: Vec<Piece>,
     pub round: Round,
-    pub lit: BTreeSet<PlayerId>,
     pub holds: BTreeMap<PlayerId, Hold>,
     /// The tick each player came into the zone, which a Gauntlet's time runs from.
     pub arrived: BTreeMap<PlayerId, u64>,
@@ -185,7 +186,6 @@ impl Room {
             sites: sites.clone(),
             pieces: plan.pieces.clone(),
             round: Round::default(),
-            lit: BTreeSet::new(),
             holds: BTreeMap::new(),
             arrived: BTreeMap::new(),
             veined: BTreeSet::new(),
@@ -414,6 +414,9 @@ mod passage_asks;
 mod passage_deal;
 pub use passage_asks::{PassageAsk, PassageSeen};
 
+#[cfg(test)]
+#[path = "passage_play_tests.rs"]
+mod passage_play_tests;
 #[cfg(test)]
 #[path = "passage_reach_tests.rs"]
 mod passage_reach_tests;

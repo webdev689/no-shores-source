@@ -437,11 +437,14 @@ impl Room {
             .as_ref()
             .and_then(|isle| isle.landed.as_ref())
             .is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains_key(owner)));
+        // While hauling, a gather goes into the haul, so the haul's stock is the one that fills.
+        let hauling = found.character.passage.as_ref().filter(|dive| dive.here).map(|dive| &dive.haul.materials);
+        let stock = hauling.unwrap_or(&found.character.materials);
         if found.spent.iter().any(|&(spent, _)| spent == node) || dead || !landed {
             Some(OUT_OF_REACH)
         } else if found.mounted {
             Some(MOUNTED)
-        } else if found.character.materials.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
+        } else if stock.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
             Some(STOCK_FULL)
         } else {
             None

@@ -215,9 +215,6 @@ impl Room {
                     let Some(found) = self.players.get_mut(&player) else { continue };
                     if found.character.light_lamp(at, lamp, when, &dice).is_ok() {
                         found.gear_changed = true;
-                        if let Some(zone) = self.zone_mut() {
-                            zone.lit.insert(player);
-                        }
                     }
                 }
             }
@@ -297,7 +294,9 @@ impl Room {
         };
         let broken = bits(&mut round.targets.iter().map(|id| self.foes.get(id).is_none_or(|foe| foe.fighter.dead())));
         let seconds = |ticks: u64| ticks as f64 / 60.0;
-        let since = round.began.map_or(0, |began| self.clock.saturating_sub(began));
+        // A Gauntlet's time runs from the player's arrival or the round's start, the later, as the deal times it.
+        let came = round.began.map(|began| zone.arrived.get(&player).copied().unwrap_or(began).max(began));
+        let since = came.map_or(0, |came| self.clock.saturating_sub(came));
         let left = match (round.done_at, zone.zone.deal) {
             (Some(done), _) if zone.route == Route::Public => {
                 seconds((done + super::passage_deal::AGAIN_TICKS).saturating_sub(self.clock))
@@ -325,7 +324,7 @@ impl Room {
             left,
             wave: round.waves,
             open: self.mouths_open(player),
-            lamp_lit: zone.lit.contains(&player),
+            lamp_lit: self.lamp_lit_for(player),
             holding,
         })
     }

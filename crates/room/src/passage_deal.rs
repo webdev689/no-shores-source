@@ -30,6 +30,8 @@ pub(crate) const AMBUSH_WAVES: u8 = 3;
 pub(crate) const RING_M: f64 = 6.0;
 const FOUND_M: f64 = 12.0;
 pub(crate) const REACHED_M: f64 = 3.0;
+/// How near the arrival a Gauntlet's runner stands in a round for their reaching the far mouth to count (m).
+const SET_OUT_M: f64 = 6.0;
 /// How fast a found collector runs, metres a second.
 const FLEE_PACE: f64 = 5.5;
 /// No wave stands nearer a player than this (m).
@@ -161,15 +163,28 @@ impl Room {
             Deal::Mission(Mission::Reckoning) => self.run_collectors(),
             Deal::Mission(Mission::Gauntlet) => {
                 let Some(far) = self.far_mouth() else { return };
+                let (arrive, number, clock) = (zone.sites.arrive, zone.zone.number, self.clock);
+                let at = |player: &crate::players::Player| [player.fighter.body.x, player.fighter.body.y];
+                // A run is set out on from the way in in this round, by one whose dive is here and not yet done.
+                let running = |player: &crate::players::Player| {
+                    !player.fighter.dead()
+                        && player.character.passage.as_ref().is_some_and(|dive| dive.zone == number && !dive.done)
+                };
+                let setting_out: Vec<PlayerId> = self
+                    .players
+                    .iter()
+                    .filter(|(_, player)| running(player) && apart(at(player), arrive) <= SET_OUT_M)
+                    .map(|(id, _)| *id)
+                    .collect();
                 // Each player's 90 s run from their arrival or the round's start, the later; the deal is late only if
                 // every one there was late.
-                let clock = self.clock;
                 let reachers: Vec<(PlayerId, bool)> = self
                     .players
                     .iter()
-                    .filter(|(_, player)| {
-                        !player.fighter.dead()
-                            && apart([player.fighter.body.x, player.fighter.body.y], far) <= REACHED_M
+                    .filter(|(id, player)| {
+                        running(player)
+                            && (zone.round.set_out.contains(id) || setting_out.contains(id))
+                            && apart(at(player), far) <= REACHED_M
                     })
                     .map(|(id, _)| {
                         // A player who came in an earlier round runs from this one's start.
@@ -177,9 +192,9 @@ impl Room {
                         (*id, clock.saturating_sub(came) > GAUNTLET_TICKS)
                     })
                     .collect();
-                if let Some(zone) = self.zone_mut()
-                    && !reachers.is_empty()
-                {
+                let Some(zone) = self.zone_mut() else { return };
+                zone.round.set_out.extend(setting_out);
+                if !reachers.is_empty() {
                     zone.round.reached = true;
                     zone.round.late = reachers.iter().all(|(_, late)| *late);
                     zone.round.took_part.extend(reachers.iter().map(|(id, _)| *id));
@@ -382,7 +397,6 @@ impl Room {
         let clock = self.clock;
         if let Some(zone) = self.zone_mut() {
             zone.round.number += 1;
-            zone.lit.clear();
         }
         self.lay_deal();
         if let Some(zone) = self.zone_mut() {
@@ -438,7 +452,18 @@ impl Room {
         }
         match target {
             Held::Kindle(nth) => zone.round.done_at.is_none() && zone.round.lit.get(usize::from(nth)) == Some(&false),
-            Held::Lamp => zone.zone.deal == Deal::Lamp && zone.round.done_at.is_some() && !zone.lit.contains(&player),
+            Held::Lamp => zone.zone.deal == Deal::Lamp && zone.round.done_at.is_some() && !self.lamp_lit_for(player),
         }
+    }
+
+    /// Whether the zone's lamp is lit for a player: their dive is in this zone and has lit its lamp, kept with the
+    /// dive so a round begun again, a reconnect or a dive begun at the lamp all find it lit.
+    pub(crate) fn lamp_lit_for(&self, player: PlayerId) -> bool {
+        let Some(zone) = self.zone() else { return false };
+        let Some(lamp) = passage::lamp_number(zone.zone.depth) else { return false };
+        let dive = self.players.get(&player).and_then(|found| found.character.passage.as_ref());
+        dive.is_some_and(|dive| {
+            dive.island == zone.island && dive.week == zone.week && dive.zone == zone.zone.number && dive.lamp >= lamp
+        })
     }
 }
