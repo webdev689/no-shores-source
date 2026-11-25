@@ -159,7 +159,10 @@ was done finds it done.
   of an island is lit pays its week's lamp, a sure Vestige in a Boss's colours, from the second one Essence of each
   stock, from the third two, and at the fourth a roll as the week's Abyss Dungeon's first clear. Each is kept on
   `Today` and `ThisWeek` by island, begun anew as they are. **Going home** from a lit lamp keeps what was found since
-  and ends the dive.
+  and turns the dive homeward: no way on takes it further, and what is found on the way out goes into its haul. Its
+  patrol zone's room, as it takes the kept character, keeps that haul, ends the dive and stands the player 2 m before
+  the mouth the dive began at, toward its run's end arena, facing away from the door (`leave_passages`,
+  `stand_before_mouth`). Any other room the character joins ends the dive and loses its haul.
 - **The passages' bounties** are the board's fourth pool, two a day (`bounties::PASSAGES`), counting a lamp lit, a
   mission finished, a foe brought down in a passage, a zone reached at least 8 deep, a reliquary opened and a vein's
   every node gathered.

@@ -210,7 +210,7 @@ impl Character {
     }
 
     /// Goes home from a zone's lamp, by its number, lit this dive: what was found since it was lit is kept, and the
-    /// dive ends.
+    /// dive goes home, to end as the player comes into the patrol zone (`leave_passages`).
     pub fn go_home(&mut self, zone: u16, lamp: Option<u8>) -> Result<(), Refusal> {
         let dive = self.passage.as_ref().filter(|dive| dive.zone == zone).ok_or(Refusal::NoDive)?;
         let number = lamp.ok_or(Refusal::NoLamp)?;
@@ -218,7 +218,9 @@ impl Character {
             return Err(Refusal::LampNotLit);
         }
         self.keep_haul();
-        self.end_dive();
+        if let Some(dive) = self.passage.as_mut() {
+            dive.homeward = true;
+        }
         Ok(())
     }
 }

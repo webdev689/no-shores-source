@@ -177,6 +177,7 @@ pub fn open_node(text: &[u8]) -> bool {
         node.counters.iter().filter_map(gear_door::counter_of).chain(board).collect()
     });
     room.shape_spots = node.shape_spots;
+    passage_room_door::open_mouths(&mut room, &node.continent, &node.doors, &node.places);
     room.set_places(node.places);
     room.set_foe_sites(&node.foes);
     room.set_paths(node.paths);
@@ -192,7 +193,6 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Dungeon {
         room.lay_elite_entrance(&node.id);
     }
-    passage_room_door::open_mouths(&mut room, &node.continent, &node.doors);
     let refusal = dungeon_door::lock_words(node.locked, &node.name);
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });

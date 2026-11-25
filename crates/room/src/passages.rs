@@ -93,12 +93,15 @@ pub(crate) struct Zone {
     pub veined: BTreeSet<PlayerId>,
 }
 
+/// How far before a mouth's door a player home from a lamp stands, metres.
+const BEFORE_MOUTH_M: f64 = 2.0;
+
 /// What the room keeps of the passages: a passage zone's, or a patrol zone's mouths (its island and its runs' doors,
 /// in the island's mouths' order).
 #[derive(Debug)]
 pub(crate) enum Passage {
     Zone(Box<Zone>),
-    Mouths { island: &'static str, doors: Vec<[f64; 2]> },
+    Mouths { island: &'static str, doors: Vec<[f64; 2]>, fronts: Vec<[f64; 2]> },
 }
 
 /// The island's continent's id as the world keeps it, for the feats a room counts.
@@ -200,11 +203,39 @@ impl Room {
         Some(room)
     }
 
-    /// A patrol zone's mouths into its island's passages: the doors of its runs, in the island's mouths' order.
-    pub fn open_mouths(&mut self, island: &str, doors: Vec<[f64; 2]>) -> bool {
+    /// A patrol zone's mouths into its island's passages: the doors of its runs, in the island's mouths' order, each
+    /// with the point its run's end arena lies toward, where a player home from a lamp stands before it.
+    pub fn open_mouths(&mut self, island: &str, mouths: Vec<([f64; 2], [f64; 2])>) -> bool {
         let Some(island) = island_named(island) else { return false };
-        self.passage = Some(Passage::Mouths { island, doors });
+        let front = |(door, toward): ([f64; 2], [f64; 2])| {
+            let (east, south) = (toward[0] - door[0], toward[1] - door[1]);
+            let length = libm::hypot(east, south);
+            if length < 1e-6 {
+                return door;
+            }
+            [door[0] + east / length * BEFORE_MOUTH_M, door[1] + south / length * BEFORE_MOUTH_M]
+        };
+        let fronts = mouths.iter().copied().map(front).collect();
+        let doors = mouths.into_iter().map(|(door, _)| door).collect();
+        self.passage = Some(Passage::Mouths { island, doors, fronts });
         true
+    }
+
+    /// Stands a player come home from a lamp of `island`'s passages before the mouth numbered `mouth`, facing away
+    /// from its door, where this room holds that island's mouths.
+    pub(crate) fn stand_before_mouth(&mut self, player: PlayerId, island: &str, mouth: u8) {
+        let Some(Passage::Mouths { island: here, doors, fronts }) = self.passage.as_ref() else { return };
+        let (Some(&door), Some(&[x, y])) = (doors.get(usize::from(mouth)), fronts.get(usize::from(mouth))) else {
+            return;
+        };
+        if *here != island {
+            return;
+        }
+        let facing = libm::atan2(x - door[0], -(y - door[1]));
+        let body = movement::Body { facing, ..crate::standing_on(&self.floor, &self.blocks, x, y) };
+        if let Some(found) = self.players.get_mut(&player) {
+            found.fighter.body = body;
+        }
     }
 
     /// The passage zone's own, when this room is one.

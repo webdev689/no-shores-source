@@ -69,7 +69,7 @@ impl Room {
             return refused(Refusal::NoDive);
         };
         match (ask, self.passage.as_ref()) {
-            (PassageAsk::Begin { mouth, route, lamp }, Some(Passage::Mouths { island, doors })) => {
+            (PassageAsk::Begin { mouth, route, lamp }, Some(Passage::Mouths { island, doors, .. })) => {
                 let (island, door) = (*island, doors.get(usize::from(mouth)).copied());
                 let Some(door) = door else { return refused(Refusal::NoSuchMouth) };
                 if apart(body, door) > MOUTH_REACH_M {
@@ -218,7 +218,7 @@ impl Room {
 
     /// As a player comes into the room with their character: in a zone of their dive, what they find goes into its
     /// haul from now, the depth reached counts, and in a company's zone whose deal is done it is done for them; in any
-    /// other room their dive ends, its haul lost.
+    /// other room their dive ends, its haul kept if they went home from a lamp, else lost.
     pub(crate) fn passage_arrived(&mut self, player: PlayerId) {
         let here = self.zone().map(|zone| {
             let done = zone.route == Route::Company && zone.round.done_at.is_some();
@@ -239,8 +239,12 @@ impl Room {
                 self.saw(player, &Feat::Passage(Deed::Deep(depth)));
             }
             _ => {
-                found.character.end_dive();
+                let island = dive.island.clone();
+                let home = found.character.leave_passages();
                 found.gear_changed = true;
+                if let Some(mouth) = home {
+                    self.stand_before_mouth(player, &island, mouth);
+                }
             }
         }
     }
