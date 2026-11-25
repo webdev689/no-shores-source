@@ -398,6 +398,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Meadow's Green Stands a Shade Darker]]
 - [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
 - [[The Desktop App as Claude Builds It]]
+- [[The Desktop App Opens on a Launcher in the Game's Look]]
+- [[The Desktop App Stays on Electron]]
+- [[The Desktop App Releases With Each Merge That Changes It]]
 
 ## Replaced
 

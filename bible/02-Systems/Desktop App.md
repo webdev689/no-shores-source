@@ -179,7 +179,13 @@ it packs (`desktop.yml`), so a trial pack's update file names none (`updates.ts`
 
 ### Releases and downloads
 
-A release is cut by hand from `main`, and only on the owner's yes ([[Ask Before Deploying]]), by `desktop.yml`:
+A merge into `main` releases the app once the same commit has passed the check, when what its installers are built
+from changed since the last release (`desktop/` but its tests, `client/src/desktop.ts`, the icon's art and
+`desktop.yml`): `ci.yml` calls `desktop.yml`, whose `ready` job asks `.github/deploy-ready.sh`, as the rooms and the
+bot do, and each release is recorded as a deployment to the `desktop` environment for the next to compare with. The
+owner's yes to the merge covers it ([[The Desktop App Releases With Each Merge That Changes It]]). Run by hand from
+`main`, it releases all the same. A merge of the game alone releases nothing: the app plays the game the site serves.
+Each release:
 
 1. Its commit must have passed the CI check. Its version is the commit's UTC time, `year.monthday.hourminute`
    (`2026.1125.1230`; `release/version.ts`), never bumped by hand ([[Versions Are Not Counters]]), and must be after
