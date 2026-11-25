@@ -37,8 +37,8 @@ export function iconNode(name: IconName, size: number, tones?: Readonly<Record<s
   return pixelNode(key, iconSvg(name, tones), [ICON_PIXELS, ICON_PIXELS], size);
 }
 
-/** Each pool's mark, by the board's numbers: 0 land, 1 the sea, 2 dungeons. */
-const POOLS: readonly IconName[] = ['land', 'sea', 'dungeon'];
+/** Each pool's mark, by the board's numbers: 0 land, 1 the sea, 2 dungeons, 3 the passages. */
+const POOLS: readonly IconName[] = ['land', 'sea', 'dungeon', 'lamp'];
 
 /** The mark of where a bounty counts: a peak on land, a wave at sea, an arched door in a dungeon; null for a pool the
  *  board does not have. */
@@ -47,8 +47,9 @@ export function poolMarkSvg(pool: number): string | null {
   return name ? iconSvg(name) : null;
 }
 
-/** The ground each pool's tiles stand on: stone for land, deep water for the sea, blood for dungeons. */
-export const POOL_GROUNDS: readonly string[] = [TONES.stoneDim, TONES.sea, TONES.bloodDeep];
+/** The ground each pool's tiles stand on: stone for land, deep water for the sea, blood for dungeons, a lamp's
+ *  dark brass for the passages. */
+export const POOL_GROUNDS: readonly string[] = [TONES.stoneDim, TONES.sea, TONES.bloodDeep, TONES.brassDark];
 
 /** The modifiers drawn under their own keys. */
 const MODIFIERS: readonly IconName[] = [

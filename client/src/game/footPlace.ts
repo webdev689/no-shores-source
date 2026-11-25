@@ -1,5 +1,6 @@
 // Where a player stands on foot and the room they join there: the node's ground, its file for a room playing alone, and
 // what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
+import type { PassageSeenState } from '../network/passageMessages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
@@ -49,6 +50,8 @@ export interface FootContext {
   readonly speak?: Speak;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
+  /** What E does at the passages where the player stands: a patrol zone's mouths, a zone's ways on and lamps. */
+  readonly passageUses?: () => Uses | null;
 }
 
 /** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
@@ -152,6 +155,8 @@ export interface Held {
   encounter: EncounterSeen | null;
   /** At a guild's outpost, how many plots its room has stood (0 in any other room): its plot is read again on a change. */
   plots: number;
+  /** In a passage zone, its deal as it stands for the player (none in any other room). */
+  passage: PassageSeenState | null;
 }
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,

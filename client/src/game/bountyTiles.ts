@@ -11,8 +11,8 @@ import { INK, glyphNode, words } from './gearNodes.ts';
 import { type IconName, POOL_GROUNDS, iconNode, pixelNode } from './journalIcons.ts';
 
 /** Each pool's kind, as a card names it under the bounty's name, with its mark. */
-export const BOUNTY_KINDS: readonly string[] = ['Land bounty', 'Sea bounty', 'Dungeon bounty'];
-const KIND_MARKS: readonly IconName[] = ['land', 'sea', 'dungeon'];
+export const BOUNTY_KINDS: readonly string[] = ['Land bounty', 'Sea bounty', 'Dungeon bounty', 'Passage bounty'];
+const KIND_MARKS: readonly IconName[] = ['land', 'sea', 'dungeon', 'lamp'];
 /** A bounty's glyph's pixels a side. */
 const GLYPH_PIXELS = 16;
 /** A tile's bevel at rest, under the pointer or the keys, and done: the kit's stone, its brass, and a gilded edge. */
@@ -44,7 +44,7 @@ export class TileChoice {
 }
 
 /** A gauge of a count toward its target, `height` pixels tall, filled in `colour`. */
-function gauge(count: number, target: number, height: number, colour: string, width: Size = 'grow'): Node {
+export function gauge(count: number, target: number, height: number, colour: string, width: Size = 'grow'): Node {
   const share = Math.round((100 * Math.min(count, target)) / Math.max(1, target));
   return {
     role: 'track',

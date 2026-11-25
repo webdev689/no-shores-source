@@ -12,6 +12,7 @@ import { play } from '../uiSounds.ts';
 import { promptChip } from '../usePrompt.ts';
 import type { PassageCurrent } from '../../rules/passageRules.ts';
 import type { HaulView, LampPrompt, MouthsChoice, OnwardSign, Route } from './passageWords.ts';
+import { dotsOnScreen, type WayFrame } from './passageWay.ts';
 
 /** What the mouths' choice's presses do: go in by a route, at the mouth (null) or at a lamp lit this week; or close. */
 export interface ChoicePresses {
@@ -232,4 +233,33 @@ export function haulNode(haul: HaulView, view: { readonly width: number; readonl
 /** The lamp's prompt where the use prompt stands: its key ringed as far as it is held (`held`, 0 to 1). */
 export function lampNode(prompt: LampPrompt, held: number | null): Node {
   return promptChip(prompt.deed, prompt.lit ? null : held, undefined, prompt.under);
+}
+
+/** The way between zones over the island at one moment: every zone's place a faint ring, the way come and the leg
+ *  being taken as dots, the leg's gold, on a picture of `view`. */
+export function wayDotsNode(
+  frame: WayFrame,
+  view: { readonly width: number; readonly height: number },
+  zones: readonly (readonly [number, number])[],
+): Node {
+  const dot = (x: number, y: number, side: number, fill: string): Node => ({
+    width: side,
+    height: side,
+    fill,
+    float: { to: 'screen', at: [0, 0], x: x - side / 2, y: y - side / 2 },
+  });
+  const places =
+    frame.beat === 'rise' || frame.beat === 'draw'
+      ? zones.map(([x, y]) => ({ at: [x, y, 0] as const, taking: false }))
+      : [];
+  return {
+    width: 'grow',
+    height: 'grow',
+    children: [
+      ...dotsOnScreen(frame.shot, view, places).map(({ x, y }) => dot(x, y, 9, 'rgba(239,232,214,0.35)')),
+      ...dotsOnScreen(frame.shot, view, frame.dots).map(({ x, y, taking }) =>
+        dot(x, y, 5, taking ? '#f3cf86' : '#efe8d6'),
+      ),
+    ],
+  };
 }

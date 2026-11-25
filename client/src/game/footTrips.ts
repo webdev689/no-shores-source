@@ -8,13 +8,14 @@ import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import type { Reviving } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
+import type { PassageSeenState } from '../network/passageMessages.ts';
 import { TIERS } from './activityWords.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { cacheOf } from './dungeonChest.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
-import type { MovementRules } from '../rules/movementRules.ts';
+import type { Block, MovementRules } from '../rules/movementRules.ts';
 import { type Speak, type Use, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Heard, Held } from './footPlace.ts';
@@ -104,6 +105,7 @@ export function hearRoom(
       held.cache = cacheOf(snapshot.cache);
       heardRun(held, snapshot, own());
       held.plots = snapshot.outpost;
+      held.passage = snapshot.passage ?? null;
     },
     gear: (sent) => {
       if (online) held.gear = sent;
@@ -146,6 +148,15 @@ export function standInDungeon(movement: MovementRules, combat: CombatRules, ask
   movement.setCourse([]);
   movement.setGround(null);
   if (!combat.setDungeon(ask)) throw new Error('the dungeon’s ground did not load');
+}
+
+/** Stands both rules on open ground at 0 m among `blocks`, as a passage zone under ground stands bodies on the
+ *  Forge's floor among its walls and pieces. */
+export function standOnCourse(movement: MovementRules, combat: CombatRules, blocks: readonly Block[]): void {
+  movement.setGround(null);
+  movement.setCourse(blocks);
+  combat.setGround(null);
+  combat.setCourse(blocks);
 }
 
 /** A patrol's entrances as its room last gave them, and each one's dungeon's name, asked of the room's module once:
@@ -245,4 +256,5 @@ export const unheard = () => ({
   reviving: [] as readonly Reviving[],
   encounter: null as EncounterSeen | null,
   plots: 0,
+  passage: null as PassageSeenState | null,
 });

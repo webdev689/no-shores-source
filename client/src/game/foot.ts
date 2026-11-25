@@ -48,6 +48,7 @@ import {
   openAlone,
   roomNameAt,
   standInDungeon,
+  standOnCourse,
   unheard,
   useOnFoot,
 } from './footTrips.ts';
@@ -232,18 +233,20 @@ export class Foot {
     into: { readonly number: number; readonly ask: DungeonAsk; readonly room: string },
     layout: DungeonLayout,
     seas: Difficulty = 'normal',
+    passage?: { readonly blocks: readonly Block[]; alone(heard: Heard): Promise<RoomLink> },
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
-    standInDungeon(context.movement, rules.combat, into.ask);
+    if (passage) standOnCourse(context.movement, rules.combat, passage.blocks);
+    else standInDungeon(context.movement, rules.combat, into.ask);
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
     const address = context.rooms?.(into.room);
     const dungeon = { patrol: outside.node, ...into, layout };
     return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
       link: address
         ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : await openAlone(module, outside.text, into, heard, seas),
-      boxes: seenBlocks(layout),
+        : await (passage?.alone(heard) ?? openAlone(module, outside.text, into, heard, seas)),
+      boxes: passage?.blocks ?? seenBlocks(layout),
       text: outside.text,
       dungeon,
       seas,
@@ -504,7 +507,7 @@ export class Foot {
     };
     const placeUse = this.outpost
       ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing, controls.held('use'))
-      : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
+      : ((this.uses ?? this.context.passageUses?.())?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const counters = countersOf(this.node);
     // A fallen ally beside the player comes first, as Destiny's revive does, then a public event's chest.
     const revive = reviveHere(fight, this.held, [x, y, walker.player.body.z], able && !mounted, controls, this.nameOf);

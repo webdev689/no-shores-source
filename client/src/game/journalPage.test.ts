@@ -155,7 +155,7 @@ test('each bounty taken is a tile, its state its look; the rest empty frames; it
 test('gear of another day’s board, kept at sea through the reset, shows no bounty until a room sends today’s', () => {
   const { ui, tree } = journalOf({ week: () => weekEnding(FRIDAY_AT, 20_779), kept: () => geared(null) });
   assert.ok(!keyed(ui, 'bounty-1'));
-  assert.ok(wordsIn(tree()).includes('Six a day, from the board in Overlook’s plaza.'));
+  assert.ok(wordsIn(tree()).includes('Eight a day, from the board in Overlook’s plaza.'));
   assert.ok(!wordsIn(tree()).includes('0/0'), 'no count without a board to count');
 });
 

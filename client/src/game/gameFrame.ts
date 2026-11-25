@@ -43,6 +43,7 @@ import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
 import { arrivalFacing } from './nodes.ts';
 import type { Drawer, GameScene, Overlay } from './scene.ts';
+import type { PassageGame } from './passages/passageGame.ts';
 import type { Sea } from './sea.ts';
 import type { SeaWord } from './seaWord.ts';
 import { hideSeaHud, showSeaHud } from './seaHud.ts';
@@ -153,6 +154,9 @@ export interface FrameParts {
   /** What a frame on foot heeds first (`startActivities`): true when the room's gate sent the player away, and nothing
    *  more of the place is drawn. */
   readonly heed: (here: Foot) => boolean;
+  /** The passages as played (`passages/passageGame.ts`), and their pieces in a zone, drawn under the figures. */
+  readonly passages: PassageGame;
+  readonly pieces: Drawer;
 }
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
@@ -227,6 +231,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const heard = playing.after.heard(controls);
     // While she speaks the figures are drawn for the tour's eye (last frame's), not the player's own camera.
     const eye = playing.after.seen?.eye ?? null;
+    parts.passages.frame(heard.held('use'));
     const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
     const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
@@ -287,7 +292,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
     const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: guided.at, players } };
-    const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
+    const fought = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
+    const under = (...args: Parameters<Drawer['drawInto']>) => (
+      fought.under.drawInto(...args),
+      parts.pieces.drawInto(...args)
+    );
+    const fight = { ...fought, under: { drawInto: under } };
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
     holdOnPlayer(footView.playerPlates, offered, heard.held('use'), clock, {
@@ -349,7 +359,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
-    hud.tasks.show(shown.quest ?? quests.tracked);
+    hud.tasks.show(shown.quest ?? parts.passages.tracker() ?? quests.tracked);
+    hud.leaveWarning = parts.passages.leaveWarning();
     const nameOf = (id: number) => (here.fight.others.has(id) ? (here.otherPlayers.plateOf(id)?.name ?? '') : null);
     reviveNotices.hear(shown.fight.events, here.fight.player, nameOf, performance.now());
     hud.toast(...toldNow(), ...reviveNotices.lines(performance.now()), ...quests.toasts, ...playing.lore.toasts);
@@ -487,6 +498,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.arrive(left.epilogue === null);
   };
 
+  /** A frame of the way between passage zones, over the island; once it has played and the place has come, the
+   *  player arrives on foot. */
+  const passingFrame = (seconds: number, size: { width: number; height: number }) => {
+    const shot = parts.passages.passing(seconds, playing.ready);
+    if (shot) scene.draw(shot, size, clock, seconds, []);
+    else playing.foot?.arrive(clock);
+  };
+
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
   const guard = new FrameGuard();
@@ -542,6 +561,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (shown?.mode === 'story' && parts.story) storyFrame(parts.story, controls, seconds, size);
       else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
       else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+      else if (shown?.mode === 'passing') passingFrame(seconds, size);
     });
     settled &&= placed;
     // Only on foot is there a place to leave: a hold under way goes with the place it was begun in.

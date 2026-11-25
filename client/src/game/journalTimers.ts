@@ -3,6 +3,8 @@
 // Each row is its icon, its name and its marks (the seas of each tier and how this character stands with them, the
 // modifiers, what a run pays, the Abyss's rules). The words a row stands for are read to a screen reader as it takes
 // the focus, and the panel's foot says them for whatever is pointed at or focused; nothing is written twice.
+import { ISLANDS } from './hudLaw.ts';
+import { lampWords } from './passages/passageMap.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { KeyedModifier, Reward, Standing, ThisWeek, WeekDungeon, WeekRow } from './activityWords.ts';
@@ -27,6 +29,38 @@ interface Timer {
   readonly lines: readonly (readonly Mark[])[];
   readonly words: string;
   readonly isles?: ThisWeek['today']['dungeons'];
+}
+
+/** A lamp's mark, gold once lit and grey while cold. */
+const COLD_LAMP = { c: '#8a8a86', d: '#b4b4ae', e: '#6a6a66' };
+const lampMark = (lit: boolean, words: string): Mark => ({ drawn: [icon('lamp', lit ? undefined : COLD_LAMP)], words });
+
+/** The passages' lamps of each island with passages: today, whether its day's lamp has paid; this week, which of
+ *  its four lamps are lit. */
+function lampRows(week: ThisWeek, when: 'day' | 'week'): Timer[] {
+  return Object.entries(ISLANDS).map(([island, name]) => {
+    const held = week.lamps?.find((each) => each.island === island);
+    if (when === 'day')
+      return {
+        id: `day-lamp-${island}`,
+        icon: 'lamp',
+        name: `${name}’s lamp of the day`,
+        lines: [[lampMark(held?.dayLamp ?? false, held?.dayLamp ? 'Lit today.' : 'Not lit today.')]],
+        words: `The first lamp lit today in ${name}’s passages pays a dungeon of the day’s clear and a sure Vestige.`,
+      };
+    const lit = held?.lamps ?? [];
+    return {
+      id: `lamps-${island}`,
+      icon: 'lamp',
+      name: `${name}’s lamps`,
+      lines: [
+        [1, 2, 3, 4].map((lamp) =>
+          lampMark(lit.includes(lamp), `${lampWords(lamp)}, ${lit.includes(lamp) ? 'lit' : 'not lit'} this week.`),
+        ),
+      ],
+      words: `The first time each week each lamp in ${name}’s passages is lit, it pays its week’s lamp.`,
+    };
+  });
 }
 
 /** A group of rows: its id, name, the icon and reset its head shows (none for Later), and its rows. */
@@ -184,15 +218,17 @@ function groupsOf(week: ThisWeek): readonly Group[] {
           icon: 'bounty',
           name: 'Bounties',
           lines: [],
-          words: 'Six a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons.',
+          words:
+            'Eight a day, from the board in Overlook’s plaza: two on land, two at sea, two in dungeons, two in the passages.',
         },
+        ...lampRows(week, 'day'),
       ],
     },
     {
       id: 'week',
       name: 'This week',
       reset: { icon: 'week', endsAt: week.week.endsAt, words: `The week turns at this time, ${local}` },
-      rows: [...weekly, ...boon],
+      rows: [...weekly, ...boon, ...lampRows(week, 'week')],
     },
     {
       id: 'later',

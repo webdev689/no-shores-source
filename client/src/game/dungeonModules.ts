@@ -41,7 +41,12 @@ export type ModuleMesh = {
 };
 
 /** A style's pieces by name: `<style>.<piece>` for its kit, and each of its landmarks by its `module`. */
-export type ModulePack = { readonly style: StyleKey; readonly modules: ReadonlyMap<string, ModuleMesh> };
+/** The passages' own pieces' pack (tools/dungeon/styles/passage), built beside the styles' and worn in any of them. */
+export const PASSAGE_PACK = 'passage';
+export type ModulePack = {
+  readonly style: StyleKey | typeof PASSAGE_PACK;
+  readonly modules: ReadonlyMap<string, ModuleMesh>;
+};
 
 /** Where a piece is laid. A landmark gives its footprint, W × D metres, and is turned within it, `origin` the turned
  *  footprint's north-west corner; a kit piece is turned about its own origin. `stretch` lays the piece's z 0 to 1
@@ -123,7 +128,7 @@ export function readModulePack(bytes: ArrayBuffer): ModulePack {
   const { parts, style } = header;
   if (!Array.isArray(parts) || parts.length !== PARTS.length || parts.some((part, index) => part !== PARTS[index]))
     throw new Error("a module pack's parts are not the kits' parts, in their order");
-  if (typeof style !== 'string' || !Object.hasOwn(kits.styles, style))
+  if (typeof style !== 'string' || (style !== PASSAGE_PACK && !Object.hasOwn(kits.styles, style)))
     throw new Error(`a module pack is for ${String(style)}, a style the kits do not know`);
   if (!Array.isArray(header.modules)) throw new Error('a module pack lists no modules');
   const entries = header.modules.map(entryOf);
@@ -139,7 +144,7 @@ export function readModulePack(bytes: ArrayBuffer): ModulePack {
     if (modules.has(entry.name)) throw new Error(`a module pack holds ${entry.name} twice`);
     modules.set(entry.name, moduleOf(data, entry, vertices, corners));
   }
-  return { style: style as StyleKey, modules };
+  return { style: style as StyleKey | typeof PASSAGE_PACK, modules };
 }
 
 /** Where each style's pack is published: `base` and the key under it. */

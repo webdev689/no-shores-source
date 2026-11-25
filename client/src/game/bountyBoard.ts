@@ -128,8 +128,10 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
     ? { id: 'bounty-card', role: 'panel', width: cardWidth, padding: [12, 14], children: [stateLine(SHUT, 'locked')] }
     : chosen
       ? bountyCardNode(chosen, payOf(gear, chosen), foot(chosen), cardWidth, sizes.label)
-      : { width: cardWidth, text: { words: 'Six a day, from the board in Overlook’s plaza.', colour: INK.faint } };
-  const tiles = [0, 1, 2].map((pool): Node => ({
+      : { width: cardWidth, text: { words: 'Eight a day, from the board in Overlook’s plaza.', colour: INK.faint } };
+  // Each pool a row, as the board lays them: land, the sea, dungeons, then the passages.
+  const pools = [...new Set(rows.map((row) => row.pool))].sort((one, two) => one - two);
+  const tiles = pools.map((pool): Node => ({
     gap: 8,
     children: rows
       .filter((row) => row.pool === pool)

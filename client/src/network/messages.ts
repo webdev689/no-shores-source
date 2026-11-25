@@ -13,6 +13,7 @@ import { type PublicEvent, publicOf } from './publicMessages.ts';
 import { type EncounterSeen, encounterOf } from './encounterMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
 import { type PlayerPlate, platesOf } from './plateMessages.ts';
+import { type PassageSeenState, passageSeenOf } from './passageMessages.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -276,6 +277,8 @@ export type FromRoomMessage =
       /** On land, whether the room is a darkness zone, where no one respawns by their own ask; and who is reviving whom. */
       readonly darkness: boolean;
       readonly reviving: readonly Reviving[];
+      /** In a passage zone, its deal as it stands for the player; none in any other room. */
+      readonly passage?: PassageSeenState | null;
     } & FleetPart &
       HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
@@ -545,6 +548,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       reviving: Array.from({ length: snapshot.revivingLength() }, (unused, index) =>
         revivingOf(snapshot.reviving(index)),
       ),
+      passage: passageSeenOf(snapshot),
       ...fleetOf(snapshot),
       ...harbourOf(snapshot),
     };

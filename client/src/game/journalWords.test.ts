@@ -87,7 +87,7 @@ test('the bounties taken stand in the board’s order, each with its count, done
     ],
   );
   assert.deepEqual([column.slots, column.said], [6, null]);
-  const unheard = { taken: [], slots: 0, said: 'Six a day, from the board in Overlook’s plaza.' };
+  const unheard = { taken: [], slots: 0, said: 'Eight a day, from the board in Overlook’s plaza.' };
   assert.deepEqual(bountyColumnOf(null), unheard);
   assert.equal(bountyColumnOf({ ...gear, prologueDone: false }).said, 'The bounty board opens after the prologue.');
   const none = bountyColumnOf({ ...gear, bounties: BOARD.map((one) => ({ ...one, held: false, paid: false })) });

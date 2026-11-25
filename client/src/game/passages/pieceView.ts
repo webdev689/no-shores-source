@@ -5,7 +5,9 @@
 import { REVERSED_DEPTH } from '../../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../../gpu.ts';
 import { SAMPLES } from '../../water/waterView.ts';
-import { PIECE_FLOATS, type PieceMesh } from './passagePieces.ts';
+import { PIECE_FLOATS, type PieceMesh, pieceMesh, type PieceState } from './passagePieces.ts';
+import type { PassagePlan } from '../../rules/passageRules.ts';
+import type { Drawer } from '../scene.ts';
 
 export const PIECE_SHADER = /* wgsl */ `
 struct View { from_eye: mat4x4f, offset: vec4f }
@@ -143,4 +145,26 @@ export class PieceView {
     this.drawn?.indices.destroy();
     this.drawn = null;
   }
+}
+
+/** The zone's pieces as a drawer of either scene's pass, their mesh made again only when the zone or the deal's
+ *  state for the player changes; nothing out of a zone. */
+export function piecesDrawer(
+  gpu: Gpu,
+  current: () => { readonly plan: PassagePlan; readonly state: PieceState; readonly lightsOnly: boolean } | null,
+): Drawer {
+  const view = new PieceView(gpu);
+  let shown: string | null = null;
+  return {
+    drawInto: (pass, fromEye, shot) => {
+      const now = current();
+      const key = now && JSON.stringify([now.plan.zone.number, now.state, now.lightsOnly]);
+      if (key !== shown) {
+        shown = key;
+        if (now) view.set(pieceMesh(now.plan.pieces, now.state, now.lightsOnly));
+        else view.clear();
+      }
+      view.drawInto(pass, fromEye, shot);
+    },
+  };
 }

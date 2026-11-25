@@ -49,12 +49,12 @@ test('every icon is twelve square, drawn sharp, outlined as the gear glyphs are,
   }
 });
 
-test('each of the board’s three pools has its own mark and its own ground of the kit’s, and no other pool has one', () => {
-  const marks = [0, 1, 2].map((pool) => poolMarkSvg(pool) ?? '');
-  assert.deepEqual(marks, [iconSvg('land'), iconSvg('sea'), iconSvg('dungeon')]);
-  assert.equal(poolMarkSvg(3), null);
+test('each of the board’s four pools has its own mark and its own ground of the kit’s, and no other pool has one', () => {
+  const marks = [0, 1, 2, 3].map((pool) => poolMarkSvg(pool) ?? '');
+  assert.deepEqual(marks, [iconSvg('land'), iconSvg('sea'), iconSvg('dungeon'), iconSvg('lamp')]);
+  assert.equal(poolMarkSvg(4), null);
   const palette = new Set<string>(Object.values(TONES));
-  assert.equal(new Set(POOL_GROUNDS).size, 3);
+  assert.equal(new Set(POOL_GROUNDS).size, 4);
   for (const ground of POOL_GROUNDS) assert.ok(palette.has(ground), `${ground} is the kit's`);
 });
 

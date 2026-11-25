@@ -97,7 +97,7 @@ export interface BountyColumn {
  *  changes). */
 export function bountyColumnOf(gear: GearState | null, day: number | null = null): BountyColumn {
   if (!gear?.bounties || (day !== null && gear.day !== day))
-    return { taken: [], slots: 0, said: 'Six a day, from the board in Overlook’s plaza.' };
+    return { taken: [], slots: 0, said: 'Eight a day, from the board in Overlook’s plaza.' };
   if (gear.prologueDone === false) return { taken: [], slots: 0, said: 'The bounty board opens after the prologue.' };
   const taken = bountyRows(gear).filter((row) => row.state !== 'open');
   const said = taken.length > 0 ? null : 'None taken yet. Take them at the bounty board in Overlook’s plaza.';

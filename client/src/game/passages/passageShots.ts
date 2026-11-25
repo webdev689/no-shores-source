@@ -19,10 +19,10 @@ import { DungeonView } from '../dungeonView.ts';
 import { viewOn } from '../../heldmap/heldMapLaw.ts';
 import { paintLand } from '../../heldmap/landLetters.ts';
 import { passageSheet } from './passageMap.ts';
-import { haulNode, lampNode, MouthsCardView, signNode } from './passagePanels.ts';
+import { haulNode, lampNode, MouthsCardView, signNode, wayDotsNode } from './passagePanels.ts';
 import { pieceMesh, type PieceState } from './passagePieces.ts';
 import { PieceView } from './pieceView.ts';
-import { dotsOnScreen, RISE_S, DRAW_S, wayAt, wayOf } from './passageWay.ts';
+import { RISE_S, DRAW_S, wayAt, wayOf } from './passageWay.ts';
 import { floorOf, zoneIsle, zoneLayout } from './passageZone.ts';
 import { haulView, lampPrompt, mouthsChoice, onwardSign } from './passageWords.ts';
 
@@ -179,27 +179,13 @@ export function wayShot(ui: Interface): Node {
     viewport: view,
   });
   const frame = wayAt(way, RISE_S + DRAW_S / 2);
-  const zones = dotsOnScreen(
-    frame.shot,
-    view,
-    web.zones.map((zone) => ({ at: [zone.at[0], zone.at[1], 0], taking: false })),
-  );
-  const dot = (x: number, y: number, side: number, fill: string): Node => ({
-    width: side,
-    height: side,
-    fill,
-    float: { to: 'screen', at: [0, 0], x: x - side / 2, y: y - side / 2 },
-  });
   return {
-    width: 'grow',
-    height: 'grow',
+    ...wayDotsNode(
+      frame,
+      view,
+      web.zones.map((zone) => zone.at),
+    ),
     fill: '#3f4a3a',
-    children: [
-      ...zones.map(({ x, y }) => dot(x, y, 9, 'rgba(239,232,214,0.35)')),
-      ...dotsOnScreen(frame.shot, view, frame.dots).map(({ x, y, taking }) =>
-        dot(x, y, 5, taking ? '#f3cf86' : '#efe8d6'),
-      ),
-    ],
   };
 }
 

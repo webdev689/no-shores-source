@@ -40,7 +40,8 @@ const choice: MouthsChoice = {
 function said(node: Child): string[] {
   if (!node || typeof node !== 'object') return [];
   const own = (node as Node).text?.words;
-  return [...(own ? [own] : []), ...((node as Node).children ?? []).flatMap(said)];
+  const spoken = typeof own === 'string' ? [own] : (own ?? []).map((span) => span.words);
+  return [...spoken, ...((node as Node).children ?? []).flatMap(said)];
 }
 
 function card() {
@@ -75,7 +76,7 @@ test('a route chosen is the one a start goes by; the pad’s B closes it', () =>
     assert.ok(box, id);
     const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
     frame([
-      { kind: 'move', x, y },
+      { kind: 'pointer', x, y },
       { kind: 'down', x, y, button: 0 },
     ]);
     frame([{ kind: 'up', x, y, button: 0 }]);

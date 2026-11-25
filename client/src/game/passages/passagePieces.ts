@@ -97,7 +97,7 @@ export interface PieceMesh {
 
 /** Every piece's boxes turned to its facing (clockwise from north) and stood at its foot, in the zone's frame: four
  *  corners a face, each face its own normal. */
-export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState): PieceMesh {
+export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState, lightsOnly = false): PieceMesh {
   const vertices: number[] = [];
   const indices: number[] = [];
   for (const piece of pieces) {
@@ -106,7 +106,10 @@ export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState): P
       piece.at[0] + x * cosine - y * sine,
       piece.at[1] + x * sine + y * cosine,
     ];
-    for (const { sides, foot, top, colour, glows } of piecesBoxes(piece, state)) {
+    const boxes = piecesBoxes(piece, state).filter(
+      (each) => !lightsOnly || each.colour === LIT || each.colour === COLD,
+    );
+    for (const { sides, foot, top, colour, glows } of boxes) {
       const [west, north, east, south] = sides;
       const corners = [turned(west, north), turned(east, north), turned(east, south), turned(west, south)];
       const [low, high] = [piece.at[2] + foot, piece.at[2] + top];
@@ -142,4 +145,21 @@ export function pieceMesh(pieces: readonly PassagePiece[], state: PieceState): P
     }
   }
   return { vertices: new Float32Array(vertices), indices: new Uint32Array(indices) };
+}
+
+/** The kit's module each piece stands as, as the deal stands: a mouth open or shut, a tally post whole or broken, the
+ *  reliquary open once the deal is done (`done`). A vein's nodes are the game's own resource nodes, none of these. */
+export function pieceModule(piece: PassagePiece, state: PieceState, done: boolean): string | null {
+  switch (piece.kind) {
+    case 'mouth':
+      return state.openMouths.includes(piece.number) ? 'passage.mouth.open' : 'passage.mouth.shut';
+    case 'post':
+      return state.broken.includes(piece.number) ? 'passage.tally-post.broken' : 'passage.tally-post';
+    case 'reliquary':
+      return done ? 'passage.reliquary.open' : 'passage.reliquary';
+    case 'node':
+      return null;
+    default:
+      return piece.module;
+  }
 }

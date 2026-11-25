@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { PassagePiece } from '../../rules/passageRules.ts';
-import { COLD, LIT, PIECE_FLOATS, pieceMesh, piecesBoxes, UNTOUCHED } from './passagePieces.ts';
+import { COLD, LIT, PIECE_FLOATS, pieceMesh, pieceModule, piecesBoxes, UNTOUCHED } from './passagePieces.ts';
 
 const piece = (kind: PassagePiece['kind'], facing = 0, number = 0): PassagePiece => ({
   module: `passage.${kind}`,
@@ -68,4 +68,19 @@ test('a piece turns clockwise from north: facing east, the lamp’s first stone,
     Math.abs(middle(easts) - 3.5) < 1e-5 && Math.abs(middle(souths)) < 1e-5,
     `${middle(easts)}, ${middle(souths)}`,
   );
+});
+
+test('in the islands’ kit each piece stands as its module as the deal stands: open, broken, opened', () => {
+  assert.equal(pieceModule(piece('mouth', 0, 1), UNTOUCHED, false), 'passage.mouth.shut');
+  assert.equal(pieceModule(piece('mouth', 0, 1), { ...UNTOUCHED, openMouths: [1] }, false), 'passage.mouth.open');
+  assert.equal(pieceModule(piece('post', 0, 2), { ...UNTOUCHED, broken: [2] }, false), 'passage.tally-post.broken');
+  assert.equal(pieceModule(piece('reliquary'), UNTOUCHED, true), 'passage.reliquary.open');
+  assert.equal(pieceModule(piece('lamp'), UNTOUCHED, false), 'passage.lamp');
+  assert.equal(pieceModule(piece('node'), UNTOUCHED, false), null);
+});
+
+test('drawn over the kit’s modules, only the lamps’ lights stand: the lamp’s one box of its seven', () => {
+  const faces = (lightsOnly: boolean) => pieceMesh([piece('lamp')], UNTOUCHED, lightsOnly).indices.length / 6;
+  assert.equal(faces(true), 6);
+  assert.equal(faces(false), 42);
 });

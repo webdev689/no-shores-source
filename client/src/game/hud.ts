@@ -114,6 +114,8 @@ export class Hud {
   /** What happened, as DFO's toasts say it, at the top right. */
   private readonly noticeStack = new NoticeStack();
   private title = '';
+  /** What the leave held warns of where it costs something: a passage's haul lost. */
+  leaveWarning: string | null = null;
   private kind = '';
   private standing: Standing = { kind: 'inside' };
   /** The player's fall in the fight, as the death screen tells it (`footRevive.ts`); null while they stand. */
@@ -436,7 +438,7 @@ export class Hud {
         deathNode(ui, deathWords(standing.fell), standing.canRespawn, () => this.respawnWanted()),
       standing.kind !== 'dead' && this.fallen && fallenNode(ui, this.fallen, () => this.respawnWanted()),
       this.veilNode(width, clock, still),
-      !this.quiet && (this.leaving.node(view, this.title) ?? this.usePrompt.node(view)),
+      !this.quiet && (this.leaving.node(view, this.title, this.leaveWarning) ?? this.usePrompt.node(view)),
       this.seaSight.node(),
       // The page raised each mark over the rest of the display, so they stand over it here too.
       ...markNodes(ui, this.marksShown, (id) => this.markChosen(id)),

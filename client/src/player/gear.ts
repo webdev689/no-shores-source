@@ -179,6 +179,14 @@ const REFUSALS: Readonly<Record<number, string>> = {
   164: 'Only the founder or an admin sounds the War Horn.',
   165: 'No War Horn stands here yet.',
   166: 'Too many asks. Wait a while.',
+  171: 'You are on no passage here.',
+  172: 'There is no way on there.',
+  173: 'Shut until this place’s work is done.',
+  174: 'There is no lamp to light here.',
+  175: 'Light the lamp first.',
+  176: 'Not while its guard stands.',
+  177: 'Come closer.',
+  178: 'There is no passage here.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */
