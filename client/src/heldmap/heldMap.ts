@@ -225,7 +225,7 @@ export class HeldMap {
     if (this.phase.kind !== 'closed') return;
     [this.land, this.extent] = [sheet, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }];
     this.table = null;
-    this.raise(viewport, gauntlets, (ink) => viewOn(standing, ink, this.extent, LAND_SPAN_M));
+    this.raise(viewport, gauntlets, (ink) => viewOn(standing, ink, this.extent, sheet.span ?? LAND_SPAN_M));
   }
 
   /** Lifts the map from its foot in `gauntlets`, its view as `viewed` lays it on the screen's map. */

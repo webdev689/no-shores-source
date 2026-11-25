@@ -104,6 +104,7 @@ decision, made in the same change as its entry here.
 | `crates/layout` | The [[Layouts]] of patrol areas and instances: areas, paths, carved land, RMB villages, set pieces, great works, walk-in rooms, sites and sections |
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
 | `crates/dungeon` | [[Dungeons]]: the patrol areas' dungeons, laid by DFO's Forge from a seed, rooms and corridors on a grid of 3.2 m cells |
+| `crates/passage` | [[Passages]]: an island's week's web of passage zones, each zone laid whole (under ground by the Forge, or a hollow above it), its sites and pieces, and the depth's levels, currents' strength and cache's pay |
 | `crates/isle` | [[Islands]]: a sea island from its seed and climate, the same on the server and in every browser: its shape, its fine ground, its places and its dressing of the Blender modules content/islands/kits.json names |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the links where the movement rules climb a block's side or drop off its edge, the paths across both, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
@@ -205,16 +206,17 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `movement`, which may use only `libm`; `sky`, which may use `land` and `world`; `sailing`, which may use `land`,
   `sky` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use `movement` and `libm`;
   `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement` and `libm`; `reach` and
-  `dungeon`, which use no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and `libm`; and `gear`,
-  which may use `serde`, `serde_json` and `libm`.
+  `dungeon`, which use no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and `libm`; `passage`,
+  which may use `dungeon`, `isle`, `movement`, `serde`, `serde_json` and `libm`; and `gear`, which may use `serde`,
+  `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client. Its core is `room`, which may use `combat`, `dungeon`, `foes`, `gear`,
-  `isle`, `land`, `movement`, `naval`, `navmesh`, `reach`, `sailing`, `sky`, `world` and `libm`; its messages are
+  `isle`, `land`, `movement`, `naval`, `navmesh`, `passage`, `reach`, `sailing`, `sky`, `world` and `libm`; its messages are
   `protocol`, which may use `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and
   `room-wasm` puts them behind a WebAssembly door for the Cloudflare shell in `server/`, and for a browser playing
   alone or predicting its ship in a fleet, reading a node's baked file, an island's word and the layout with
-  `combat`, `dungeon`, `foes`, `gear`, `isle`, `land`, `movement`, `naval`, `protocol`, `room`, `sailing`, `sky`,
-  `world`, `serde` and `serde_json`.
+  `combat`, `dungeon`, `foes`, `gear`, `isle`, `land`, `movement`, `naval`, `passage`, `protocol`, `room`, `sailing`,
+  `sky`, `world`, `serde` and `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `layout`, `world`, `serde`
   and `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are

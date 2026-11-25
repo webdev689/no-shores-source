@@ -64,6 +64,18 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let laid = Dungeon::forge_within(seed, style, blocks);
     // An Elite Dungeon has a name of its own; any other is named for its style and its place.
     let name = if found.place.is_some() { found.name } else { dungeon::name(&style, &found.name) };
+    let mut layout = layout_json(&laid, &name);
+    // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
+    if found.place.is_some() {
+        layout["encounters"] = encounters_json(&room::encounter_plan::plan_encounters(&laid));
+    }
+    layout.to_string()
+}
+
+/// A laid dungeon's layout as JSON, as `dungeon_json` describes it, under its name: what a page draws a dungeon or a
+/// passage zone under ground from.
+pub(crate) fn layout_json(laid: &Dungeon, name: &str) -> Value {
+    let style = laid.style;
     let cells: Vec<i32> = laid
         .cells
         .iter()
@@ -119,7 +131,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let glows: Vec<[f64; 4]> = laid.landmarks.iter().flat_map(|placed| placed.glows.iter().copied()).collect();
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
-    let layout = json!({
+    json!({
         "name": name,
         "style": style.key,
         "pictures": style.pictures,
@@ -153,13 +165,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "props": props,
         "landmarks": landmarks,
         "glows": glows,
-    });
-    // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
-    let mut layout = layout;
-    if found.place.is_some() {
-        layout["encounters"] = encounters_json(&room::encounter_plan::plan_encounters(&laid));
-    }
-    layout.to_string()
+    })
 }
 
 /// An Elite Dungeon's encounters as JSON: each seal's kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the

@@ -42,6 +42,22 @@ Claude's reading of the lore already written, shown and never told
 | The dungeon of the day | Drawn from each island's one zone's three dungeons |
 | What is folded into the passages | The two zones' places become the passages' landmark zones where they lie on the island (below); their runs' kinds (keep, gorge, ledge, rampart, undercroft) become passage shapes |
 
+Replaced in part by [[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]: Saltmere keeps
+its three patrol zones, their tasks, public events and dungeons; only the other islands' excess zones go, their
+instances staying in their regions (below).
+
+## The regions
+
+| Call | Choice |
+|---|---|
+| Their names | Saltmere: the Beacon Shore (Overlook and the Saltgrass Downs), the Grey Reach (the Driftwood Moors), the Weirlands (the Gullwing Vale). The second island: the Cairn Heights, the Low Glens, the Tor Marches. The third: the Elder March, the Tidewood, the Greenwold. The fourth: the Ochre Coast, the Thunder Flats, the Dune Sea. The fifth: the Gold Plains, the Bone Veldt, the Long Grass. The sixth: the Mistfall Terraces, the Drowned Green, the Coral Shade. The seventh: the Windward Plateau, the Barrowlands, the Silent Steppe. The eighth: the Bell Fens, the Queen's Mire, the Rotwater. The ninth: the Whalebone Coast, the Wyrm's Ice, the Aurora Shelf. Each its port city's first |
+| Their land | Each point of an island lies in the region whose centre is nearest; a region's centre is its patrol zone's, or that of the patrol zone that stood there |
+| Their nodes | Each node lies in the region whose centre is nearest, as `content/world/regions.json` lists them |
+| Sailing to one | At sea, the held map lights the regions of the island whose waters the ship is in as the pointer passes over them; a click on one sets a course to its anchorage, 3 km off its coast where the coast is nearest its centre, sailed at the sea's own pace |
+| Instances | An instance links only to a patrol zone of its own region; a region with none holds nodes that are landed at from the sea |
+| Saltmere's links | Each of its three zones holds a gate toward each of the other two, planned by its layout as its gates toward its instances are. E in the gate's basin offers "Go to" the other zone; crossing plays the dive's rise over the island, the dots running from one zone's place to the other's, and the player walks in at that zone's gate toward the one they left |
+| The dive's landmark zones | None: the Moors' and the Vale's places stand on the surface in their own zones, so the web's zones under them are drawn as any others |
+
 ## The web
 
 | Call | Choice |
@@ -54,6 +70,9 @@ Claude's reading of the lore already written, shown and never told
 | Landmark zones | The Moors' and the Vale's places (the Saltbreaker Hulks, Moorend, Grey Point Light, Moorhold, Drowned Men's Graves, the Gorse Moor, Wreckers' Cut, the Gorse Ledge; Gullwing, Weir Mill, Valeguard, Orchard Farm, the Old Stones, the Water Meadows, Hollow Coven, Valeguard Walls, the Weir Gorge, the Hollow Undercroft) stand as zones at the depths their distance gives, each dressed after its place. Each week shows a share of them at their depths; the Old Stones always hold the deepest lamp |
 | The week | The web, its zones and their deals are drawn from the island and the week (Tuesday 09:00 UTC, [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]) |
 | Not seen | Passage zones stand on no land: the sea, the overworld over the island and the held map's land show none. Only the passage between zones and the passages' own map, held in a passage zone, show the web |
+
+Replaced in part by [[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]: the web has
+no landmark zones ("The regions", above).
 
 ## A passage zone
 

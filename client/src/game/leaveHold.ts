@@ -69,15 +69,20 @@ export class LeaveHold {
     return true;
   }
 
-  /** The prompt in a view `width` by `height` CSS pixels, naming the `place` left, where the use prompt stands; none
-   *  while it does not show. */
-  node(view: { readonly width: number; readonly height: number }, place: string): Node | null {
+  /** The prompt in a view `width` by `height` CSS pixels, naming the `place` left, where the use prompt stands, and
+   *  what leaving costs (`warning`: a passage's haul lost); none while it does not show. */
+  node(
+    view: { readonly width: number; readonly height: number },
+    place: string,
+    warning: string | null = null,
+  ): Node | null {
     if (!this.shown) return null;
     const big = view.width >= 1500 && view.height >= 900;
     const refusal = this.refusal;
+    const under = [place === '' ? null : `Leave ${place}`, warning].filter((said) => said !== null).join('. ');
     const chip = refusal
       ? promptChip(refusal, null, boundCap('leave'))
-      : promptChip('Return to ship', this.share, boundCap('leave'), place === '' ? null : `Leave ${place}`);
+      : promptChip('Return to ship', this.share, boundCap('leave'), under === '' ? null : under);
     return { ...chip, id: PROMPT_ID, float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 } };
   }
 

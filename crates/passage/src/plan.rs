@@ -1,0 +1,179 @@
+//! A zone laid whole, as its room and every page stand it: its ground (the Forge's dungeon under ground, or a hollow
+//! above it), its sites, and the passages' own pieces standing in it (the mouth behind, the onward mouths, the lamp,
+//! and what its deal stands: dead lamps, tally posts, a reliquary, a vein's nodes), each with the solids a body runs
+//! into.
+
+use crate::hollow::{self, Hollow};
+use crate::sites::Sites;
+use crate::web::Web;
+use crate::zone::{Deal, Ground as Drawn, Mission, Zone};
+use dungeon::Dungeon;
+
+/// How a zone's ground is laid.
+#[derive(Clone, Debug)]
+pub enum Ground {
+    Under(Box<Dungeon>),
+    Open(Box<Hollow>),
+}
+
+/// One of the passages' own pieces.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kind {
+    WayIn,
+    /// An onward mouth, by its place among the zone's.
+    Mouth(u8),
+    Lamp,
+    /// A dead lamp of a Kindle, a tally post of a Sever, a node of a vein, by its number.
+    Kindle(u8),
+    Post(u8),
+    Node(u8),
+    Reliquary,
+}
+
+impl Kind {
+    /// The piece's name in the passages' pack and kit (tools/dungeon, content/islands/kits.json); a vein's node
+    /// is the island's resource node, drawn as anywhere.
+    #[must_use]
+    pub fn module(self) -> &'static str {
+        match self {
+            Kind::WayIn => "passage.way-in",
+            Kind::Mouth(_) => "passage.mouth.shut",
+            Kind::Lamp => "passage.lamp",
+            Kind::Kindle(_) => "passage.kindle",
+            Kind::Post(_) => "passage.tally-post",
+            Kind::Node(_) => "resource",
+            Kind::Reliquary => "passage.reliquary",
+        }
+    }
+
+    /// What a body runs into round its middle, each (west, north, east, south, top) from its foot, its front to the
+    /// north: the pieces' sizes, as the passages' Blender pieces are built to.
+    #[must_use]
+    pub fn solids(self) -> Vec<[f64; 5]> {
+        let disc = |x: f64, y: f64, radius: f64, top: f64| [x - radius, y - radius, x + radius, y + radius, top];
+        match self {
+            Kind::Lamp => {
+                let mut solids = vec![[-0.8, -0.8, 0.8, 0.8, 1.4]];
+                solids.extend((0..5).map(|stone| {
+                    let turn = core::f64::consts::TAU * f64::from(stone) / 5.0;
+                    disc(3.5 * libm::sin(turn), -3.5 * libm::cos(turn), 0.5, 2.2)
+                }));
+                solids
+            }
+            // A shut mouth fills its opening; the way in is always shut.
+            Kind::WayIn | Kind::Mouth(_) => vec![[-1.2, -0.4, 1.2, 0.4, 3.0]],
+            Kind::Kindle(_) => vec![disc(0.0, 0.0, 0.25, 2.4)],
+            Kind::Post(_) => vec![disc(0.0, 0.0, 0.35, 1.8)],
+            Kind::Node(_) => Vec::new(),
+            Kind::Reliquary => vec![[-0.7, -0.45, 0.7, 0.45, 0.9]],
+        }
+    }
+}
+
+/// A piece standing in a zone: its kind, its middle at its foot (x, y, z) and the way its front faces.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Piece {
+    pub kind: Kind,
+    pub at: [f64; 3],
+    pub facing: f64,
+}
+
+/// How many of a deal's things stand in a zone.
+pub const KINDLES: usize = 3;
+pub const POSTS: usize = 3;
+pub const NODES: usize = 6;
+
+/// A zone laid whole.
+#[derive(Clone, Debug)]
+pub struct Plan {
+    pub zone: Zone,
+    pub ground: Ground,
+    pub sites: Sites,
+    pub pieces: Vec<Piece>,
+}
+
+impl Plan {
+    /// A zone of a web laid whole, or none for a number past its zones or a style the Forge does not know.
+    #[must_use]
+    pub fn of(web: &Web, number: u16) -> Option<Self> {
+        let zone = web.zone_of(number)?.clone();
+        let onward = zone.onward.len();
+        let (ground, sites) = match &zone.ground {
+            Drawn::Under { style } => {
+                let (dungeon, sites) = crate::under::lay(&zone, style, onward)?;
+                (Ground::Under(Box::new(dungeon)), sites)
+            }
+            Drawn::Open { form } => {
+                let (hollow, sites) = hollow::lay(&zone, *form, &web.island.climate, onward);
+                (Ground::Open(Box::new(hollow)), sites)
+            }
+        };
+        let mut plan = Plan { zone, ground, sites, pieces: Vec::new() };
+        plan.pieces = plan.stand_pieces();
+        Some(plan)
+    }
+
+    /// The height of the floor at a point.
+    #[must_use]
+    pub fn floor_at(&self, at: [f64; 2]) -> f64 {
+        match &self.ground {
+            Ground::Under(_) => dungeon::FLOOR_M,
+            Ground::Open(hollow) => hollow::floor_at(hollow, at),
+        }
+    }
+
+    /// The pieces: the way in and the onward mouths where the sites put them, the lamp at its middle facing the way
+    /// in, and the deal's things on the spots, the farthest from the way in first.
+    fn stand_pieces(&self) -> Vec<Piece> {
+        let sites = &self.sites;
+        let on_floor =
+            |kind: Kind, at: [f64; 2], facing: f64| Piece { kind, at: [at[0], at[1], self.floor_at(at)], facing };
+        let mut pieces = vec![on_floor(Kind::WayIn, sites.way_in.at, sites.way_in.facing)];
+        for (number, door) in sites.onward.iter().enumerate() {
+            pieces.push(on_floor(Kind::Mouth(u8::try_from(number).unwrap_or(u8::MAX)), door.at, door.facing));
+        }
+        if let Some(lamp) = sites.lamp {
+            let facing = libm::atan2(sites.arrive[0] - lamp[0], -(sites.arrive[1] - lamp[1]));
+            pieces.push(on_floor(Kind::Lamp, lamp, facing));
+        }
+        let mut spots = sites.spots.iter().copied();
+        let mut take = |count: usize, kind: fn(u8) -> Kind, pieces: &mut Vec<Piece>| {
+            for (number, at) in spots.by_ref().take(count).enumerate() {
+                pieces.push(on_floor(kind(u8::try_from(number).unwrap_or(u8::MAX)), at, 0.0));
+            }
+        };
+        match self.zone.deal {
+            Deal::Mission(Mission::Kindle) => take(KINDLES, Kind::Kindle, &mut pieces),
+            Deal::Mission(Mission::Sever) => take(POSTS, Kind::Post, &mut pieces),
+            Deal::Vein => take(NODES, Kind::Node, &mut pieces),
+            Deal::Reliquary => take(1, |_| Kind::Reliquary, &mut pieces),
+            _ => {}
+        }
+        pieces
+    }
+
+    /// Every piece's solids in the zone's frame, turned with it, each (west, north, east, south, top).
+    #[must_use]
+    pub fn piece_solids(&self) -> Vec<[f64; 5]> {
+        let mut solids = Vec::new();
+        for piece in &self.pieces {
+            let (sine, cosine) = (libm::sin(piece.facing), libm::cos(piece.facing));
+            for [west, north, east, south, top] in piece.kind.solids() {
+                // A box turned is held as the square round its turned corners.
+                let corners = [[west, north], [east, north], [east, south], [west, south]]
+                    .map(|[x, y]| [piece.at[0] + x * cosine - y * sine, piece.at[1] + x * sine + y * cosine]);
+                let fold = |pick: fn(f64, f64) -> f64, axis: usize, start: f64| {
+                    corners.iter().map(|corner| corner[axis]).fold(start, pick)
+                };
+                solids.push([
+                    fold(f64::min, 0, f64::MAX),
+                    fold(f64::min, 1, f64::MAX),
+                    fold(f64::max, 0, f64::MIN),
+                    fold(f64::max, 1, f64::MIN),
+                    piece.at[2] + top,
+                ]);
+            }
+        }
+        solids
+    }
+}

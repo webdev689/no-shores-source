@@ -178,3 +178,15 @@ test('the player is on the sea while sailing or choosing where to land, never on
   assert.equal(onTheSea(next({ mode: 'foot', node: 'overlook-social' }, { kind: 'return-to-ship' })), false);
   assert.equal(onTheSea({ mode: 'story' }), false);
 });
+
+test('through a passage’s mouth, or by a lamp’s Home, the way between zones plays in place of the veil', () => {
+  const zone: Flow = { mode: 'foot', node: 'passage-zone-3' };
+  const passing = next(zone, { kind: 'onward', node: 'passage-zone-7' });
+  assert.deepEqual(passing, { mode: 'passing', then: { mode: 'foot', node: 'passage-zone-7' } });
+  assert.deepEqual(next(passing, { kind: 'loaded' }), { mode: 'foot', node: 'passage-zone-7' });
+  const home = next(zone, { kind: 'home', node: 'saltgrass-downs' });
+  assert.deepEqual(next(home, { kind: 'loaded' }), { mode: 'foot', node: 'saltgrass-downs' });
+  assert.deepEqual(next({ mode: 'sea' }, { kind: 'onward', node: 'passage-zone-7' }), { mode: 'sea' }, 'only on foot');
+  assert.equal(next(passing, { kind: 'shut', why: 'Shut.' }).mode, 'loading', 'a room shut on the way sends them back');
+  assert.equal(onTheSea(passing), false);
+});

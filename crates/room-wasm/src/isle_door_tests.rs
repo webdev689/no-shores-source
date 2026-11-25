@@ -69,7 +69,7 @@ fn with_no_sea_open_there_is_no_word_on_an_island() {
 /// module, block and post stands where the room has it on every machine, not only the ground.
 const PLANS_PINNED: [(u64, &str); 2] = [(41, "desert"), (QUARRY_SEED, "rainforest")];
 const QUARRY_SEED: u64 = 2;
-const PLANS: &str = "b34441b512d89694";
+const PLANS: &str = "14b4a51225abf702";
 
 #[test]
 fn the_plans_bits_are_the_ones_the_page_pins() {

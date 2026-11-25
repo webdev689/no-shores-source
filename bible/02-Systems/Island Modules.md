@@ -12,6 +12,7 @@ code:
   - tools/islands/kits/rocks.py#pieces
   - tools/islands/kits/trees.py#broadleaf
   - tools/islands/kits/wreck.py#hull
+  - tools/islands/kits/passage.py
   - content/islands/kits.json
   - .github/workflows/island-modules.yml
 ---
@@ -23,7 +24,8 @@ Blender by code, checked, packed and published as the dungeon's modules are.
 ## The contract
 
 `kits.json` holds the parts every piece wears, the kits (four biome kits, temperate, arid, tropical and frozen, which
-hold the same pieces, and the common kit every climate shares) and each module's role, size and solids.
+hold the same pieces, the common kit every climate shares, and the passages' kit) and each module's role, size and
+solids.
 `catalog.py` reads it once for every other file.
 
 A module stands in its own frame: x east, y south, z up, metres; its origin the middle of its base, its front facing
@@ -38,7 +40,13 @@ a body cannot walk through as tall as the module, stand where the mesh is solid.
 blades, each part a material named by its part and UVs in metres). The biome kits share `kits/rocks.py` (granite with
 weed lines, sandstone in bands, basalt columns with coral, slate under snow), `kits/trees.py` and `kits/growth.py`
 (shrubs, grasses and each biome's drift); the common kit's are in `kits/wreck.py`, `ruins.py`, `doors.py` and
-`landmarks.py`.
+`landmarks.py`. The passages' kit (`kits/passage.py`) holds the pieces a passage zone above ground stands: the lamp,
+its mouths open and shut, the way in, the Kindle lamp, the tally post whole and broken, and the reliquary shut and
+open. They are the dungeon's passage pieces, made from the same faces (`tools/dungeon/styles/passage/pieces.py`,
+[[Dungeon Modules]]), each role in an island part: the lamp's glass the `ember` the game lights, the chalk on the way
+in `snow`'s white, roots `bark`. Their names sort before `temperate` and `tropical`, whose modules' numbers so come
+after theirs: an island dressed from those kits is pinned by those numbers. No climate gives the grey-green stone its
+colour: it wears the climate's `stone`.
 
 The build refuses a missing or extra module and checks each against `envelope.py`: within its envelope (2 cm
 tolerance), its mesh spanning at least 70% of its size across x and along y and 80% of its height, every part one of
