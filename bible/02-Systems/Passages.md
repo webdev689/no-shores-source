@@ -294,7 +294,8 @@ comes down from over the island without a jump.
 Held in a passage zone, under ground or above, the held map shows the web as a land sheet (`passageSheet`,
 [[Held Map]], "On land") in place of the land's: every zone a mark at its place by its deal's glyph, its lamp named,
 its currents under it, the patrol zone by its name, the way come this dive a track and the ways on footpaths, "You"
-at the player's zone.
+at the player's zone. It opens on the whole web, every mark inside it; names that stand too close to be lettered at
+that scale come as the wheel draws in. Over the island, the way's places are every zone's and the patrol zone's.
 
 ### The Journal and the board
 

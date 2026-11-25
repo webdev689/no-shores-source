@@ -20,7 +20,6 @@ import type { NodeInfo } from '../worldData.ts';
 import { passageRoomName, runInstance, sharedRun } from '../rooms.ts';
 import type { IsleShown } from '../../islands/islePlan.ts';
 import type { LandSheet } from '../../heldmap/landSheet.ts';
-import { roomNow } from '../../sky/worldClock.ts';
 import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor } from '../../rules/passageRules.ts';
 import { enterZone, type ZoneEntry } from './passageEnter.ts';
 import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
@@ -63,6 +62,8 @@ export interface PassageHost {
   readonly tell: (words: string) => void;
   /** A way that fails: the player goes back to their ship, told why. */
   readonly failed: (why: string) => void;
+  /** The moment now, milliseconds since 1970, by the rooms' clock (`roomNow`), so the week turns with theirs. */
+  readonly now: () => number;
 }
 
 /** An ask of the passages awaiting the room's answer: the foot it was asked on (a room left drops it), how many asks
@@ -149,7 +150,7 @@ export class PassageGame {
 
   /** The web whose mouths stand in the patrol zone `node`, this week by the rooms' clock; null for one with none. */
   private mouthsWeb(node: NodeInfo): PassageWeb | null {
-    const web = this.webOf(node.continent, weekOf(roomNow()));
+    const web = this.webOf(node.continent, weekOf(this.host.now()));
     return web?.patrol === node.id ? web : null;
   }
 
@@ -258,7 +259,7 @@ export class PassageGame {
   private ask(foot: Foot, asked: GearAsk, yes: Asked['yes'], ask = (sent: GearAsk) => foot.fight.askGear(sent)): void {
     const gear = this.gear(foot);
     if (this.asked || !gear) return;
-    const since = roomNow() / 1000;
+    const since = this.host.now() / 1000;
     this.asked = { foot, answered: gear.answered, dive: gear.dive ?? null, since, yes };
     ask(asked);
   }
@@ -280,7 +281,7 @@ export class PassageGame {
           ? (sharedRun(base, await this.host.companyPlaces()) ??
             passageRoomName(dive.island, dive.week, dive.zone, runInstance()))
           : base;
-      const minute = Math.floor(roomNow() / 60_000);
+      const minute = Math.floor(this.host.now() / 60_000);
       const entry = {
         plan,
         heights,
@@ -346,7 +347,8 @@ export class PassageGame {
     work: () => Promise<void>,
   ): void {
     const origin = happening.kind === 'onward' ? ([to[0], to[1], 0] as const) : undefined;
-    const framed = web.zones.map((each) => each.at);
+    // Every zone of the web and the patrol zone, where the way come starts.
+    const framed = [...web.zones.map((each) => each.at), ...come.slice(0, 1)];
     const left = this.inZone() ? come[come.length - 1] : undefined;
     const failed = (error: unknown) => (this.setZone(null), Promise.reject(error));
     this.ways.play({ happening, come, to, framed, left, origin }, () => work().catch(failed));
@@ -361,7 +363,7 @@ export class PassageGame {
     if (this.asked && this.asked.foot !== foot) this.asked = null;
     const gear = this.gear(foot);
     const asked = this.asked;
-    const late = asked !== null && roomNow() / 1000 - asked.since > ANSWER_WAIT_S;
+    const late = asked !== null && this.host.now() / 1000 - asked.since > ANSWER_WAIT_S;
     const heard = asked && gear && answerHeard(asked, gear, late);
     if (asked && heard) {
       this.asked = null;

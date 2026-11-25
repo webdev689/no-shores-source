@@ -200,8 +200,9 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     head) only outlined, dashed, so a passage through a range reads open. Its trees and bushes are green crowns.
   - **A patrol area's plan**: its layout's tracks cased and footpaths dashed, at their widths (4.5 m and 2.6 m), its
     buildings and pieces as a social space's, its plantings' trees and shrubs.
-  - **Places by name**, a glyph's width under their middles, else over them, else twice as far, where clear of the
-    glyphs, the names before them and the gauntlets (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of
+  - **Places by name**, a glyph's width under their middles, else over them, else twice as far, else beside them,
+    where clear of the glyphs, the table, the names before them (a gap apart on a line) and the gauntlets, else left
+    off; a place on the map by its edge has its name whole inside the map, moved along its line (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of
     the Arts and the Stair Yard).
   - **The glyphs.** Each keeper is a coin in their sign's board colour carrying their sign's device: a star for the
     Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a
@@ -218,8 +219,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     ring goes out from it to twice its width and fades, once every 1.3 s; under reduced motion only the first. The
     rings are inked by the map's own pass each frame (`pulse_at`, at most 16 coins), so the parchment's picture is
     never painted again for them, and the gauntlets cover them as they cover the coin.
-  - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
-    (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
+  - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs, chosen
+    before the names are lettered (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
     it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.

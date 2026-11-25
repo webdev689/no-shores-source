@@ -42,6 +42,7 @@ import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
+import { roomNow } from '../sky/worldClock.ts';
 import { helmControls } from './helmControls.ts';
 import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
@@ -316,7 +317,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     },
   });
   const passages: PassageGame = new PassageGame({
-    ...{ module: roomModule, context: footContext, goInto, tell },
+    ...{ module: roomModule, context: footContext, goInto, tell, now: roomNow },
     ...{ foot: () => playing.foot, flow: () => playing.flow, land: () => playing.landmass },
     setFlow: (flow) => void (playing.flow = flow),
     setReady: (ready) => void ([playing.ready, playing.waited] = [ready, 0]),

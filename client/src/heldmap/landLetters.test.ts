@@ -34,6 +34,8 @@ const SHEET: LandSheet = {
     { name: 'Well', at: [195, 121] },
     { name: 'Pump', at: [200, 119] },
     { name: 'Cistern', at: [201, 120] },
+    { name: 'Spring', at: [199, 120] },
+    { name: 'Drain', at: [200, 121] },
   ],
   marks: [
     { glyph: 'mage', at: [100, 100], word: 'The Mage' },
@@ -70,13 +72,13 @@ test('the plan says no keeper by name: each is a glyph, and the table says what 
   );
 });
 
-test("a place's name that would fall on one before it stands over its middle, else farther off, else is left off", () => {
+test("a place's name that would fall on one before it stands over its middle, else farther off, else beside it, else is left off", () => {
   const words = paint().texts();
   assert.ok(
-    ['Fountain', 'Well', 'Pump'].every((name) => words.includes(name)),
+    ['Fountain', 'Well', 'Pump', 'Cistern', 'Spring'].every((name) => words.includes(name)),
     `${words.join(', ')}`,
   );
-  assert.ok(!words.includes('Cistern'));
+  assert.ok(!words.includes('Drain'));
 });
 
 test("a place's name keeps clear of the gauntlets: under a thumb it stands over its middle instead", () => {
@@ -126,4 +128,49 @@ test("the player's arrow points the way they look: east, a quarter turn from nor
   const placed = calls.findIndex((call) => call.name === 'translate' && call.args[0] === 300 && call.args[1] === 120);
   const tip = calls.slice(placed).find((call) => call.name === 'moveTo')?.args as number[];
   assert.ok(Math.abs((tip[0] ?? 0) - 9) < 1e-9 && Math.abs(tip[1] ?? 0) < 1e-9, `${tip}`);
+});
+
+test("a place's name by the map's edge stands whole inside it, not cut by the edge", () => {
+  const name = 'The first lamp, lit';
+  const sheet = { ...SHEET, places: [{ name, at: [2, 3] as const }], marks: [] };
+  const { calls } = paint({ sheet });
+  const written = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === name);
+  const placed = calls
+    .slice(0, written)
+    .filter((call) => call.name === 'translate')
+    .at(-1)?.args as number[];
+  // The test painter measures six units a letter; the map is 800 by 500.
+  const half = (name.length * 6) / 2;
+  assert.ok(written > 0, 'lettered');
+  assert.ok((placed[0] ?? 0) >= half, `left edge ${placed}`);
+  assert.ok((placed[1] ?? 0) >= 15 * 0.6, `top edge ${placed}`);
+});
+
+test("no place's name is lettered under the table: it stands clear, else is left off", () => {
+  const { table } = paint({ sheet: { ...SHEET, places: [] } });
+  // A place in the table's middle (the view's two units a metre) has nowhere to stand clear of it.
+  const middle = [(table.box.x + table.box.width / 2) / 2, (table.box.y + table.box.height / 2) / 2] as const;
+  const words = paint({ sheet: { ...SHEET, places: [{ name: 'Under The Key', at: middle }] } }).texts();
+  assert.ok(!words.includes('Under The Key'), words.join(', '));
+});
+
+test('two names on one line keep a gap: the second does not run on from the first', () => {
+  // At two units a metre, Westmarch's name under its place ends at 227; East's would begin at 230.
+  const places = [
+    { name: 'Westmarch', at: [100, 150] as const },
+    { name: 'East', at: [121, 150] as const },
+  ];
+  const { calls } = paint({ sheet: { ...SHEET, places, marks: [] } });
+  const placedAt = (name: string) => {
+    const written = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === name);
+    assert.ok(written > 0, `${name} lettered`);
+    return calls
+      .slice(0, written)
+      .filter((call) => call.name === 'translate')
+      .at(-1)?.args as number[];
+  };
+  const [west, east] = [placedAt('Westmarch'), placedAt('East')];
+  const sameLine = west[1] === east[1];
+  const apart = (east[0] ?? 0) - 12 - ((west[0] ?? 0) + 27);
+  assert.ok(!sameLine || apart >= 6, `${west} ${east}`);
 });

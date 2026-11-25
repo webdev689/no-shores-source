@@ -8,7 +8,6 @@ import type { NodeInfo } from '../worldData.ts';
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
 import type { PassageSeenState } from '../../network/passageMessages.ts';
 import type { PassagePlan, PassageWeb, PassageZone } from '../../rules/passageRules.ts';
-import { roomNow, WORLD_CLOCK } from '../../sky/worldClock.ts';
 import { PassageGame } from './passageGame.ts';
 import type { WayPlayed } from './wayBetween.ts';
 
@@ -75,8 +74,9 @@ function footIn(room: string, gear: { online: boolean; dive: unknown; answered?:
   };
 }
 
-/** A game of the passages over a stand-in host: what it told, what ways it played and the foot it stands on. */
-function game(foot: unknown) {
+/** A game of the passages over a stand-in host: what it told, what ways it played and the foot it stands on, its
+ *  clock the rooms' as `now` keeps it. */
+function game(foot: unknown, now = () => Date.now()) {
   const held = { foot, flow: { mode: 'foot', node: patrol.id } as Flow, told: [] as string[] };
   const passages = new PassageGame({
     module: new Promise<WebAssembly.Module>(() => undefined),
@@ -92,6 +92,7 @@ function game(foot: unknown) {
     climate: () => 'woodland',
     tell: (words) => void held.told.push(words),
     failed: (why) => void held.told.push(why),
+    now,
   });
   const played: WayPlayed[] = [];
   passages.ways.play = (way) => void played.push(way);
@@ -138,6 +139,10 @@ test('the way home is drawn from the patrol zone through every zone passed this 
   await tick();
   assert.deepEqual(played[0]?.come, [patrol.centre, [1_500, 2_500], [2_000, 3_000]]);
   assert.deepEqual(played[0]?.to, patrol.centre);
+  assert.ok(
+    played[0]?.framed.some((place) => place[0] === patrol.centre[0] && place[1] === patrol.centre[1]),
+    'the patrol zone among the places drawn over the island',
+  );
 });
 
 test('a respawn’s loss is said only of the zone it was carried in', () => {
@@ -160,14 +165,13 @@ test('a respawn’s loss is said only of the zone it was carried in', () => {
 
 test('the mouths’ week is the rooms’ week, not a page clock that is wrong', () => {
   const weeks: number[] = [];
-  const { inside, passages } = game(footIn(patrol.id, { online: true, dive: null }));
+  // The rooms say it is a week later than the page thinks.
+  const rooms = () => Date.now() + 7 * 86_400_000;
+  const { inside, passages } = game(footIn(patrol.id, { online: true, dive: null }), rooms);
   inside.door = { web: (island: string, week: number) => (weeks.push(week), null) };
-  // The rooms' first word sets the page's clock: they say it is a week later than the page thinks.
-  WORLD_CLOCK.heard(WORLD_CLOCK.seconds() + 7 * 86_400);
-  const roomsWeek = weekOf(roomNow());
   passages.uses();
-  assert.notEqual(roomsWeek, weekOf(Date.now()), 'the two clocks disagree');
-  assert.deepEqual(weeks, [roomsWeek]);
+  assert.notEqual(weekOf(rooms()), weekOf(Date.now()), 'the two clocks disagree');
+  assert.deepEqual(weeks, [weekOf(rooms())]);
 });
 
 test('a web the door cannot read is asked once, not again each frame', () => {
