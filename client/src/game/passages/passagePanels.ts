@@ -1,10 +1,14 @@
 // The passages' panels, drawn by the game in the house style of its other panels: the mouths' choice as a card of the
 // menu's kit (as an entrance's card is, `entranceCard.ts`), an onward mouth's sign and the haul as small framed
 // panels, the lamp's prompt as the use prompt's chip, each from its view model (passageWords.ts).
+import bounties from '../../../../content/gear/atheric_bounties.json' with { type: 'json' };
+import { BINDS, keyNameOf } from '../../player/input.ts';
+import { RARITIES } from '../../player/gear.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import type { Layer } from '../../ui/stack.ts';
 import type { Interface } from '../../ui/ui.ts';
+import { boundCap } from '../controls.ts';
 import { INK, pressNode, sizesOf, words } from '../gearNodes.ts';
 import { setGearScreenOpen } from '../gearScreen.ts';
 import { modifierNode } from '../journalTimers.ts';
@@ -25,6 +29,17 @@ const routeId = (route: Route) => `passage-route-${route}`;
 const startId = (lamp: number | null) => `passage-start-${lamp ?? 'mouth'}`;
 /** How wide the card stands at most, a step of its words' size, as an entrance's card. */
 const WIDE = 260;
+/** How wide a small panel stands at most, CSS pixels, and its least room from the view's edges. */
+const PANEL_WIDE = 320;
+const EDGE = 16;
+/** How many of the haul's lines its panel lists before it counts the rest, and where a view is narrow (a phone's),
+ *  where it stands under the tracker. */
+const HAUL_LINES_MOST = 6;
+const HAUL_LINES_NARROW = 3;
+/** A view this wide or narrower stands the tracker lower and its panels round it closer, as the tracker has it. */
+export const NARROW = 900;
+/** How far down a narrow view the haul stands, under the tracker. */
+const HAUL_TOP_NARROW = 0.6;
 
 /** A current as a line: its name, then what it does, a boon's name in the gain's colour. */
 function currentNode(current: PassageCurrent, size: number): Node {
@@ -38,12 +53,17 @@ function currentNode(current: PassageCurrent, size: number): Node {
   };
 }
 
-/** What a sign says of the zone beyond, as lines: its name, its depth, its deal and its currents. */
-function signLines(sign: OnwardSign, size: number): Child[] {
+/** What a sign says of the zone beyond, as lines: its name, its depth, its deal, its foes' levels (in the loss's
+ *  colour where they stand too far over the player) and its currents, `named` by their names alone on one line. */
+function signLines(sign: OnwardSign, size: number, named = false): Child[] {
+  const currents = named
+    ? [sign.currents.length > 0 && words(sign.currents.map((current) => current.name).join(' · '), size, INK.faint)]
+    : sign.currents.map((current) => currentNode(current, size));
   return [
     words(sign.name, size, INK.brassLit),
     { width: 'grow', text: { words: `${sign.depth}. ${sign.deal}`, size, colour: INK.word } },
-    ...sign.currents.map((current) => currentNode(current, size)),
+    sign.foes !== null && words(sign.foes, size, sign.hard ? INK.loss : INK.word),
+    ...currents,
     sign.shut !== null && { width: 'grow', text: { words: sign.shut, size, colour: INK.loss } },
   ];
 }
@@ -64,10 +84,11 @@ export class MouthsCardView {
       (event) => {
         if (!this.choice) return;
         event.stopImmediatePropagation();
-        const key = event.key.toLowerCase();
-        if (event.repeat || (key !== 'e' && key !== 'escape')) return;
+        // Go in on the Use key as the player bound it, Close on Escape.
+        const [escape, use] = [event.key === 'Escape', BINDS.now.use.keys.includes(keyNameOf(event))];
+        if (event.repeat || (!escape && !use)) return;
         event.preventDefault();
-        if (key === 'escape') presses.close();
+        if (escape) presses.close();
         else presses.go(this.route, null);
       },
       { capture: true },
@@ -130,6 +151,12 @@ export class MouthsCardView {
           pressNode(routeId(route), said, route === this.route ? 'primary' : 'button', '', size),
         ),
       },
+      // Where each begin at a lamp lands: that lamp's zone of the mouth's lane, and its foes.
+      ...choice.starts.flatMap(({ zone }) =>
+        zone
+          ? [{ width: 'grow' as const, text: { words: zone.words, size, colour: zone.hard ? INK.loss : INK.faint } }]
+          : [],
+      ),
     ];
     return {
       width: 'grow',
@@ -172,7 +199,7 @@ export class MouthsCardView {
               wrap: true,
               children: [
                 ...choice.starts.map(({ lamp, words: said }) =>
-                  pressNode(startId(lamp), said, 'button', lamp === null ? 'E' : '', size),
+                  pressNode(startId(lamp), said, 'button', lamp === null ? boundCap('use', 'keys') : '', size),
                 ),
                 pressNode(CLOSE, 'Close', 'button', 'Esc', size),
               ],
@@ -206,28 +233,58 @@ function framed(
 /** An onward mouth's sign, high in the view while the player is near it. */
 export function signNode(sign: OnwardSign, view: { readonly width: number; readonly height: number }): Node {
   const size = sizesOf(view.width, view.height, 1).label;
+  const narrow = view.width <= NARROW;
   return {
-    ...framed('passage-sign', signLines(sign, size), [0.5, 0.16], [0.5, 0]),
-    width: Math.min(320, view.width - 32),
+    // On a narrow view the currents by name alone, so the sign stands clear over the tracker.
+    ...framed('passage-sign', signLines(sign, size, narrow), [0.5, narrow ? 0.1 : 0.16], [0.5, 0]),
+    width: Math.min(PANEL_WIDE, view.width - 2 * EDGE),
   };
 }
 
-/** The haul, under the tracker on the right, its warning while anything is carried; nothing while it is empty. */
+/** The haul, under the tracker on the right, its warning while anything is carried; nothing while it is empty. Its
+ *  first lines stand and the rest are counted ("and 4 more"), and it is no wider than the view, so it stays on it. */
 export function haulNode(haul: HaulView, view: { readonly width: number; readonly height: number }): Node | null {
   if (haul.lines.length === 0) return null;
   const size = sizesOf(view.width, view.height, 1).label;
+  const width = Math.min(PANEL_WIDE * 0.8, view.width - 2 * EDGE);
+  const narrow = view.width <= NARROW;
+  const most = narrow ? HAUL_LINES_NARROW : HAUL_LINES_MOST;
+  const more = haul.lines.length - most;
+  const shown = more > 0 ? [...haul.lines.slice(0, most - 1), `and ${more + 1} more`] : haul.lines;
+  const top = narrow ? HAUL_TOP_NARROW : 0.55;
   const panel = framed(
     'passage-haul',
     [
       words('CARRIED', size, INK.faint, { tracking: 2 }),
-      ...haul.lines.map((line) => words(line, size, INK.word)),
-      haul.warning !== null && { width: 240, text: { words: haul.warning, size, colour: INK.loss } },
+      ...shown.map((line) => ({ width: 'grow' as const, text: { words: line, size, colour: INK.word } })),
+      haul.warning !== null && { width: 'grow', text: { words: haul.warning, size, colour: INK.loss } },
     ],
-    [1, 0.55],
+    [1, top],
     [1, 0],
   );
   // Clear of the screen's right edge, as the tracker stands.
-  return { ...panel, float: { to: 'screen', at: [1, 0.55], anchor: [1, 0], x: -16 } };
+  return { ...panel, width, float: { to: 'screen', at: [1, top], anchor: [1, 0], x: -EDGE } };
+}
+
+/** The cold lantern found, for a moment low in the middle of the view, clear of a sign over it and the use prompt
+ *  under it, and on a narrow view where the haul stands, in its place: its name in the Atheric colour, and its
+ *  words. */
+export function lanternNode(view: { readonly width: number; readonly height: number }): Node {
+  const size = sizesOf(view.width, view.height, 1).label;
+  const spot: readonly [number, number] = view.width <= NARROW ? [0.5, HAUL_TOP_NARROW] : [0.5, 0.74];
+  const [lantern] = bounties;
+  return {
+    ...framed(
+      'passage-lantern',
+      [
+        words(lantern?.find ?? '', size + 1, RARITIES[4]?.colour ?? INK.brassLit),
+        { width: 'grow', text: { words: lantern?.words ?? '', size, colour: INK.word } },
+      ],
+      spot,
+      [0.5, view.width <= NARROW ? 0 : 1],
+    ),
+    width: Math.min(PANEL_WIDE, view.width - 2 * EDGE),
+  };
 }
 
 /** The lamp's prompt where the use prompt stands: its key ringed as far as it is held (`held`, 0 to 1). */

@@ -79,7 +79,9 @@ export class LeaveHold {
     if (!this.shown) return null;
     const big = view.width >= 1500 && view.height >= 900;
     const refusal = this.refusal;
-    const under = [place === '' ? null : `Leave ${place}`, warning].filter((said) => said !== null).join('. ');
+    // A place's article small inside the sentence: "Leave a chalk cut".
+    const named = place.replace(/^(A|An|The) /, (article) => article.toLowerCase());
+    const under = [place === '' ? null : `Leave ${named}`, warning].filter((said) => said !== null).join('. ');
     const chip = refusal
       ? promptChip(refusal, null, boundCap('leave'))
       : promptChip('Return to ship', this.share, boundCap('leave'), under === '' ? null : under);

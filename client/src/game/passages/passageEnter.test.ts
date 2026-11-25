@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import type { GearState } from '../../network/gearMessages.ts';
 import type { RoomLink } from '../../network/roomConnection.ts';
 import { NO_WAY_HERE, PASSAGE_FULL } from '../rooms.ts';
-import { joinPassage, joiner, onwardOrBack } from './passageEnter.ts';
+import type { PassagePlan } from '../../rules/passageRules.ts';
+import { hollowBoxes, joinPassage, joiner, onwardOrBack } from './passageEnter.ts';
 
 /** A join that finds the first `full` copies full, recording each name joined and each link closed. */
 function joins(full: number) {
@@ -71,4 +72,19 @@ test('a copy that shuts on the player for any other reason than full is not join
   const join = (name: string) =>
     Promise.resolve({ link: { shut: NO_WAY_HERE, close: () => undefined } as unknown as RoomLink, full: false, name });
   await assert.rejects(joinPassage('passage-continent-1-w9-z3', join), /cannot reach/);
+});
+
+test('a hollow’s foot boxes hold its dressing (cliffs, boulders, trees) as well as its pieces', () => {
+  const plan = {
+    ground: { kind: 'open', placements: [], blocks: [[0, 0, 4, 4, 9]], ring: [] },
+    solids: [[10, 10, 11, 11, 2]],
+  } as unknown as PassagePlan;
+  assert.deepEqual(
+    hollowBoxes(plan).map((box) => [box.minX, box.top, box.bottom]),
+    [
+      [0, 9, -100],
+      [10, 2, -100],
+    ],
+  );
+  assert.deepEqual(hollowBoxes({ ground: { kind: 'under' }, solids: [] } as unknown as PassagePlan), []);
 });

@@ -24,7 +24,7 @@ struct Ink {
   view: vec4f,
   // The coast field's columns and rows and its cell's side, metres.
   field: vec4f,
-  // The islands shown, a bit each by their place among the outlines.
+  // The islands shown, a bit each by their place among the outlines; then 1 while the lit cells are a region's land.
   known: vec4u,
   // The parchment's rectangle, screen pixels: the pass covers it, the map's ink only within the map.
   sheet: vec4f,
@@ -165,8 +165,10 @@ fn route_at(world: vec2f) -> f32 {
   let washed = hatched + tinted * (1.0 - hatched);
   let washedRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
   // The lit water brightened, and softly lined where its share crosses a half between its cells and another's.
-  let share = textureSampleLevel(lit, soft, world / size, 0.0).r * sea;
-  let edge = LIT_EDGE_ALPHA * (1.0 - smoothstep(0.1, 0.4, abs(share - 0.5))) * sea;
+  // A water lit lights its sea; a region lit, its land (known.y 1), brightened and lined as a water's sea is.
+  let litOn = select(sea, 1.0 - sea, ink.known.y == 1u);
+  let share = textureSampleLevel(lit, soft, world / size, 0.0).r * litOn;
+  let edge = LIT_EDGE_ALPHA * (1.0 - smoothstep(0.1, 0.4, abs(share - 0.5))) * litOn;
   let bright = LIT_ALPHA * share;
   let lifted = bright + washed * (1.0 - bright);
   let liftedRgb = LIT_RGB * bright + washedRgb * (1.0 - bright);
@@ -224,6 +226,8 @@ export class HeldMapView {
   private readonly wash: GPUTexture;
   private readonly hatch: GPUTexture;
   private readonly lit: GPUTexture;
+  /** Whether the cells lit are a region's land, not a water. */
+  private litLand = false;
   private readonly inkGroup: GPUBindGroup;
   private readonly letteringLayout: GPUBindGroupLayout;
   /** The parchment's picture on the device, made again when its size changes. */
@@ -333,10 +337,12 @@ export class HeldMapView {
     queue.writeTexture({ texture: this.hatch }, wash.hatch, { bytesPerRow: columns * 2 }, [columns, rows]);
   }
 
-  /** Lights the water under the pointer: a byte a cell on the coast field's own cells (`litCells`). */
-  setLit(cells: Uint8Array): void {
+  /** Lights the water under the pointer, or with `land` a region's land: a byte a cell on the coast field's own
+   *  cells (`litCells`, `regionCells`). */
+  setLit(cells: Uint8Array, land = false): void {
     const { columns, rows } = this.field;
     if (cells.length !== columns * rows) throw new Error('the lit water is not on the coast field’s cells');
+    this.litLand = land;
     this.gpu.device.queue.writeTexture({ texture: this.lit }, cells, { bytesPerRow: columns }, [columns, rows]);
   }
 
@@ -397,7 +403,7 @@ export class HeldMapView {
       ...[view.left, view.top, view.scale, points],
       ...[this.field.columns, this.field.rows, this.field.cellM, 0],
     ]);
-    new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, 0, 0, 0]);
+    new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, this.litLand ? 1 : 0, 0, 0]);
     const { parchment } = frame;
     new Float32Array(uniforms, 80, 4).set([parchment.x, parchment.y, parchment.width, parchment.height]);
     const { coins, seconds, held } = frame.pulses;

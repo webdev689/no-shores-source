@@ -192,3 +192,30 @@ test('two names on one line keep a gap: the second does not run on from the firs
   const apart = (east[0] ?? 0) - 12 - ((west[0] ?? 0) + 27);
   assert.ok(!sameLine || apart >= 6, `${west} ${east}`);
 });
+
+test("a name kept by its mark stands only where it is nearer its own mark than any other's, else is left off", () => {
+  // Kindle's mark at (200, 200) on the map; its name under it would stand nearer the Hold's mark below and right.
+  const near = (other: readonly [number, number]): LandSheet => ({
+    ...SHEET,
+    places: [{ name: 'Kindle', at: [100, 100], near: true }],
+    marks: [
+      { glyph: 'kindle', at: [100, 100], word: 'Kindle' },
+      { glyph: 'hold', at: other, word: 'Hold' },
+    ],
+  });
+  const placed = (sheet: LandSheet) => {
+    const { calls } = paint({ sheet });
+    const named = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === 'Kindle');
+    return named < 0
+      ? null
+      : calls
+          .slice(0, named)
+          .filter((call) => call.name === 'translate')
+          .at(-1)?.args;
+  };
+  assert.deepEqual(placed(near([150, 100])), [200, 218], 'alone, under its mark');
+  // Its glyph clear of the name under Kindle's, but 8.2 from it where Kindle's mark stands 9 off.
+  const crowded = placed(near([113.1, 109]));
+  assert.ok(crowded, 'lettered elsewhere by its own mark');
+  assert.notDeepEqual(crowded, [200, 218], 'not under it, nearer the Hold’s mark than its own');
+});

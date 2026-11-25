@@ -40,6 +40,8 @@ export interface NodeInfo {
   readonly foes?: readonly Point[];
   /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
   readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
+  /** Its runs' sealed doors by name (layouts.ts `doorsOf`), where its room lays the passages' mouths. */
+  readonly doors?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
   /** Its layout's paths, each its points, along which its room lays where the fallen stand again (respawns.rs). */
   readonly paths?: readonly (readonly Point[])[];
   /** A patrol area's chest places and its props, of which a room playing alone keeps those that hold things

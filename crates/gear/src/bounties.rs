@@ -95,7 +95,14 @@ pub(crate) static DUNGEONS: [Template; 3] = [
 /// The passages' six, of which the board shows two a day.
 pub(crate) static PASSAGES: [Template; 6] = [
     posted(|| Objective::Passage(Deed::Lamp), 1, "Light a lamp in the passages.", "Lamplighter", 3, 3),
-    posted(|| Objective::Passage(Deed::Mission), 3, "Finish 3 missions in the passages.", "Errand Runner", 3, 2),
+    posted(
+        || Objective::Passage(Deed::Mission),
+        3,
+        "Finish 3 passage missions: a Kindle, Hold, Hunt, Reckoning, Gauntlet, Ambush or Sever.",
+        "Errand Runner",
+        3,
+        2,
+    ),
     posted(|| Objective::Passage(Deed::Felled), 25, "Defeat 25 foes in the passages.", "Down Below", 3, 1),
     posted(|| Objective::Passage(Deed::Deep(8)), 1, "Go 8 zones deep in the passages.", "Further In", 3, 2),
     posted(|| Objective::Passage(Deed::Reliquary), 2, "Open 2 reliquaries in the passages.", "Relic Hunter", 3, 2),

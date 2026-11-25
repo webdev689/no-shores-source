@@ -26,13 +26,14 @@ import { type PassageDoor, type PassagePlan, type PassageWeb, startPassageDoor }
 import { enterZone, onwardOrBack, type ZoneEntry } from './passageEnter.ts';
 import { answerHeard, haulOf, passageWordOf } from './passageHeard.ts';
 import { passageSheet } from './passageMap.ts';
-import { haulNode, MouthsCardView, signNode } from './passagePanels.ts';
+import { haulNode, lanternNode, MouthsCardView, NARROW, signNode } from './passagePanels.ts';
 import type { PieceState } from './passagePieces.ts';
-import { holdAt, homeSpot, mouthAt, onwardAt } from './passageReach.ts';
+import { holdAt, homeSpot, MOUTH_REACH_M, mouthAt, onwardAt } from './passageReach.ts';
 import { WayBetween, type WayHost, type WayPlayed } from './wayBetween.ts';
 import {
   dealTracker,
   haulView,
+  inSentence,
   lampPrompt,
   leaveWarning,
   mouthsChoice,
@@ -46,6 +47,14 @@ import { withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 const ANSWER_WAIT_S = 10;
 const UNANSWERED = 'Your room did not answer. Try again.';
 const NOT_LAID = 'The zone beyond could not be laid, so the way on stays shut.';
+/** The room's refusal of an ask that needs a lamp (crates/gear `Refusal::NoLamp`, plus one), and what it means for a
+ *  begin at a lamp: the player has not lit it this week. */
+const NO_LAMP = 174;
+const LAMP_NOT_LIT = 'You have not lit that lamp this week.';
+/** How far past a mouth's reach the mouths' card stays open, metres: walked further, it closes. */
+const CARD_REACH_M = 6;
+/** How long the cold lantern found stands in the view, seconds. */
+const LANTERN_S = 6;
 
 /** What the passages ask of the game. */
 export interface PassageHost {
@@ -63,7 +72,6 @@ export interface PassageHost {
   readonly warmIsle: (isle: IsleShown) => Promise<void>;
   /** Where the player's company's members play: none alone. */
   readonly companyPlaces: () => Promise<readonly string[]>;
-  readonly climate: (continent: string) => string;
   readonly tell: (words: string) => void;
   /** What a way that fails does, asked as it sets out (`WayHost`). */
   readonly fallback: WayHost['fallback'];
@@ -75,6 +83,7 @@ export interface PassageHost {
  *  the room had answered as it went, the dive as it stood, when it went, and what its yes does. */
 interface Asked {
   readonly foot: Foot;
+  readonly kind: number;
   readonly answered: number;
   readonly dive: DiveState<GearItem> | null;
   readonly since: number;
@@ -108,8 +117,12 @@ export class PassageGame {
   private sign: OnwardSign | null = null;
   /** The way between places, shared with the crossings between patrol zones. */
   readonly ways: WayBetween;
-  /** The patrol zone's mouth whose card stands open. */
+  /** The patrol zone's mouth whose card stands open, the foot it was opened on and where its door stands. */
   private mouth: number | null = null;
+  private cardAt: { readonly foot: Foot; readonly door: readonly [number, number] } | null = null;
+  /** When the cold lantern was found, by the rooms' clock, seconds; and whether the haul held it last frame. */
+  private lanternFound = Number.NEGATIVE_INFINITY;
+  private lanternHeld = false;
   /** What the haul held while the player stood, to say plainly what a respawn lost. */
   private carried = 0;
   private wasDown = false;
@@ -169,6 +182,8 @@ export class PassageGame {
   private setZone(zone: InZone | null): void {
     this.zone = zone;
     [this.carried, this.wasDown] = [0, false];
+    // A lantern carried in already (a rejoin, a reload) was found before: its moment is not played again.
+    this.lanternHeld = haulOf(this.gear()?.dive?.haul).lantern;
   }
 
   private seen(): PassageSeenState | null {
@@ -186,7 +201,9 @@ export class PassageGame {
     return (x, y) => {
       const door = mouthAt(web, runs, x, y);
       if (!door) return null;
-      return { words: 'Into the passages', run: () => void this.openCard(web, door.mouth, door.run) };
+      const sealed = runs.find((run) => run.name === door.run)?.door ?? [x, y];
+      const opened = () => void this.openCard(web, door.mouth, door.run, [sealed[0], sealed[1]]);
+      return { words: 'Into the passages', run: opened };
     };
   };
 
@@ -217,23 +234,37 @@ export class PassageGame {
     const to = mouth === null ? undefined : this.zone.web.zones.find((each) => each.number === plan.zone.onward[mouth]);
     if (mouth === null || !to) return null;
     const open = seen?.open ?? false;
-    this.sign = onwardSign(to, open);
+    this.sign = onwardSign(to, open, this.gear()?.level ?? null, this.litLamps(this.zone.web.island));
     if (!open) return { words: 'Shut', run: () => undefined, idle: true };
-    return { words: `On to ${to.name.replace(/^A /, 'a ')}`, run: () => this.goOn(mouth, ask) };
+    return { words: `On to ${inSentence(to.name)}`, run: () => this.goOn(mouth, ask) };
   }
 
-  private async openCard(web: PassageWeb, mouth: number, run: string): Promise<void> {
-    const lit = this.gear()?.islandLamps?.find((each) => each.island === web.island)?.lamps ?? [];
+  /** The lamps the player lit this week on `island`, by number. */
+  private litLamps(island: string): readonly number[] {
+    return this.gear()?.islandLamps?.find((each) => each.island === island)?.lamps ?? [];
+  }
+
+  private async openCard(web: PassageWeb, mouth: number, run: string, door: readonly [number, number]): Promise<void> {
+    const foot = this.host.foot();
     const company = (await this.host.companyPlaces()).length > 0;
-    const choice = mouthsChoice(web, run, company, lit);
-    if (!choice) return;
-    this.mouth = mouth;
+    const choice = mouthsChoice(web, run, company, this.litLamps(web.island), this.gear()?.level ?? null);
+    if (!choice || !foot || this.host.foot() !== foot) return;
+    [this.mouth, this.cardAt] = [mouth, { foot, door }];
     this.card.show(choice);
   }
 
   private closeCard(): void {
-    this.mouth = null;
+    [this.mouth, this.cardAt] = [null, null];
     this.card.hide();
+  }
+
+  /** The card closes once its place is left: another room, another flow (the ship, the map), or walked away. */
+  private keepCard(foot: Foot | null): void {
+    const opened = this.cardAt;
+    if (!opened) return;
+    const { body } = this.host.context.walker.player;
+    const away = Math.hypot(body.x - opened.door[0], body.y - opened.door[1]) > MOUTH_REACH_M + CARD_REACH_M;
+    if (foot !== opened.foot || this.host.flow().mode !== 'foot' || away) this.closeCard();
   }
 
   /** The card's choice: a dive begun at its mouth by `route`, at the mouth or at lamp `lamp`. */
@@ -278,7 +309,12 @@ export class PassageGame {
     const zone = this.zone;
     if (!foot || !zone) return;
     const dive = this.gear()?.dive;
-    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, dive?.mouth ?? 0, TIERS[dive?.seas ?? 0]), ask);
+    const mouth = dive?.mouth ?? 0;
+    const tier = TIERS[dive?.seas ?? 0];
+    // Turned homeward already by an earlier Home at this lamp: the dive has nothing to change, so the room's yes
+    // would never be seen, and the way home is open.
+    if (dive?.homeward) return this.homeTo(zone, mouth, tier);
+    this.ask(foot, { kind: ASKS.goHome }, () => this.homeTo(zone, mouth, tier), ask);
   }
 
   /** Sends `asked`, its yes (a dive changed: begun, gone on, turned homeward or ended) doing `yes`. */
@@ -286,7 +322,7 @@ export class PassageGame {
     const gear = this.gear(foot);
     if (this.asked || !gear) return;
     const since = this.host.now() / 1000;
-    this.asked = { foot, answered: gear.answered, dive: gear.dive ?? null, since, yes };
+    this.asked = { foot, kind: asked.kind, answered: gear.answered, dive: gear.dive ?? null, since, yes };
     ask(asked);
   }
 
@@ -323,7 +359,7 @@ export class PassageGame {
         company: dive.route === 1,
         minute,
       };
-      const isle = heights && zoneIsle(plan, heights, this.host.climate(dive.island));
+      const isle = heights && zoneIsle(plan, heights);
       const warmed = isle && this.host.warmIsle(isle);
       await onwardOrBack(() => this.standIn({ web, entry, isle, passed }), left && (() => this.standIn(left)));
       await warmed;
@@ -357,7 +393,7 @@ export class PassageGame {
     const heights = plan.ground.kind === 'open' ? door.heights(island, week, zone) : null;
     const minute = Math.floor(this.host.now() / 60_000);
     const entry = { plan, heights, island, week, room, patrol, company: named.run !== null, minute };
-    const isle = heights && zoneIsle(plan, heights, this.host.climate(island));
+    const isle = heights && zoneIsle(plan, heights);
     await this.standIn({ web, entry, isle, passed: [] });
     // Set once joined, so a zone that refuses leaves the flow to Overlook's arrival.
     this.host.setFlow(arriving(room, plan.zone.name));
@@ -427,14 +463,22 @@ export class PassageGame {
       this.asked = null;
       // After this frame, so the foot's own frame runs on the place it was begun in before the way leaves it.
       if (heard === 'yes') setTimeout(() => asked.yes(gear?.dive ?? null));
-      else this.host.tell(heard === 'unanswered' ? UNANSWERED : answerText(heard.refused));
+      else if (heard === 'unanswered') this.host.tell(UNANSWERED);
+      else {
+        const begun = asked.kind === ASKS.beginDive && heard.refused === NO_LAMP;
+        this.host.tell(begun ? LAMP_NOT_LIT : answerText(heard.refused));
+      }
     }
+    this.keepCard(foot);
     // A zone left by another way (the ship, a join) is no longer the one a way starts from.
     if (this.zone && foot && this.host.flow().mode === 'foot' && foot.node.id !== this.zone.entry.room)
       this.setZone(null);
     if (!this.zone || foot?.node.id !== this.zone.entry.room) return;
     const down = foot.fallen;
-    const carried = haulView(haulOf(gear?.dive?.haul)).lines.length;
+    const haul = haulOf(gear?.dive?.haul);
+    if (haul.lantern && !this.lanternHeld) this.lanternFound = this.host.now() / 1000;
+    this.lanternHeld = haul.lantern;
+    const carried = haulView(haul).lines.length;
     if (this.wasDown && !down && this.carried > 0 && carried === 0) this.host.tell('What you carried is lost.');
     if (!down) this.carried = carried;
     this.wasDown = down;
@@ -443,8 +487,12 @@ export class PassageGame {
   /** The zone's deal in the tracker, where it stands; null out of a zone. */
   tracker(): Quest | null {
     const zone = this.inZone();
-    const word = zone && passageWordOf(zone.entry.plan.zone, this.gear()?.dive, this.seen());
-    return zone && word ? dealTracker(zone.entry.plan.zone, word.deal) : null;
+    const gear = this.gear();
+    const word = zone && passageWordOf(zone.entry.plan.zone, gear?.dive, this.seen(), gear?.spent.length);
+    if (!zone || !word) return null;
+    const nodes = zone.entry.plan.pieces.filter((piece) => piece.kind === 'node').length;
+    const round = { nodes, public: gear?.dive?.route === 0 };
+    return dealTracker(zone.entry.plan.zone, { ...word, ...round }, this.host.now());
   }
 
   /** What the leave held warns of in a zone while anything is carried. */
@@ -476,6 +524,11 @@ export class PassageGame {
     return pieces;
   }
 
+  /** Whether the player stands in a passage zone, under ground or above, where the held map is the web's. */
+  standsIn(): boolean {
+    return this.inZone() !== null;
+  }
+
   /** Whether the player stands in a hollow above ground, which is drawn alone, no land round it. */
   inHollow(): boolean {
     return !!this.inZone()?.isle;
@@ -496,8 +549,14 @@ export class PassageGame {
     const zone = this.inZone();
     if (!zone) return null;
     const { patrol } = zone.entry;
-    const lit = this.gear()?.islandLamps?.find((each) => each.island === zone.web.island)?.lamps ?? [];
-    const where = { here: zone.entry.plan.zone.number, come: zone.passed, lit };
+    const level = this.gear()?.level;
+    const lit = this.litLamps(zone.web.island);
+    const where = {
+      here: zone.entry.plan.zone.number,
+      come: zone.passed,
+      lit,
+      ...(level === undefined ? {} : { level }),
+    };
     const home = { name: patrol.name, at: patrol.centre };
     const { sheet, you } = passageSheet(zone.web, where, 'The passages', home);
     const { body } = this.host.context.walker.player;
@@ -515,9 +574,12 @@ export class PassageGame {
     const dots = this.ways.dots(ui);
     if (dots) return dots;
     if (!this.inZone()) return null;
+    const found = this.host.now() / 1000 - this.lanternFound < LANTERN_S;
     const children = [
       this.sign && signNode(this.sign, ui.size),
-      haulNode(haulView(haulOf(this.gear()?.dive?.haul)), ui.size),
+      found ? lanternNode(ui.size) : null,
+      // On a narrow view the lantern found stands a moment where the haul does, in its place.
+      found && ui.size.width <= NARROW ? null : haulNode(haulView(haulOf(this.gear()?.dive?.haul)), ui.size),
     ];
     return { width: 'grow', height: 'grow', children: children.filter((child) => child !== null) };
   };

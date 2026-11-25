@@ -17,15 +17,10 @@ export const zoneLayout = (plan: PassagePlan): DungeonLayout | null =>
   plan.ground.kind === 'under' ? readDungeon(plan.ground.layout) : null;
 
 /** A zone above ground as the islands' layer shows an island, in the zone's own frame at `at` in the world: its
- *  modules on its heights (`room_passage_heights`), dressed from its island's kit by `climate`. The rest of an
+ *  modules on its heights (`room_passage_heights`), drawn from the kit of the climate the room dressed it in. The rest of an
  *  island's plan (its landing, its dungeon door, its wrecks) the zone has none of, and the layer draws none of it.
  *  Null for a zone under ground. */
-export function zoneIsle(
-  plan: PassagePlan,
-  heights: Float64Array,
-  climate: string,
-  place: Point2 = [0, 0],
-): IsleShown | null {
+export function zoneIsle(plan: PassagePlan, heights: Float64Array, place: Point2 = [0, 0]): IsleShown | null {
   const ground = plan.ground;
   if (ground.kind !== 'open') return null;
   const reach = Math.max(1, ...ground.ring.map(([x, y]) => Math.hypot(x, y)));
@@ -34,7 +29,7 @@ export function zoneIsle(
     // The sea's islands count from 1, so a hollow's id, from 0 down, is none of theirs.
     id: -plan.zone.number,
     at: place,
-    climate,
+    climate: plan.climate,
     heights,
     plan: {
       kind: 'cove',

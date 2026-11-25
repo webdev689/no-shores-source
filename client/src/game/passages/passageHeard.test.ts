@@ -43,8 +43,16 @@ test('a deal’s progress counts what it asks: dead lamps lit, posts down, waves
     count: null,
     seconds: null,
     late: true,
+    again: null,
   });
   assert.equal(progressOf(zone({ deal: 'skirmish' }), seen({ done: true })).done, true);
+  const late = progressOf(zone({ deal: 'skirmish' }), seen({ done: true, open: false, left: 42 }));
+  assert.equal(late.again, 42, 'a public round done before the player came begins again in 42 s');
+  assert.equal(
+    progressOf(zone(), seen({ done: true, open: true, left: 42 })).again,
+    null,
+    'done while they were in it',
+  );
 });
 
 test('the room’s word opens every onward mouth together and says the lamp only in a lamp’s zone', () => {

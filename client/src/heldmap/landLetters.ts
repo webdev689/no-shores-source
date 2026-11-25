@@ -9,7 +9,7 @@ import type { GroundKind, LandSheet, Quad } from './landSheet.ts';
 import { barOf, paintTable, tablePlace, tableRows, tableSize } from './landTable.ts';
 import { FACE, INK, type KeyPlace } from './mapKey.ts';
 import { PORT_PX } from './mapLayout.ts';
-import { LIGHT_INK, paintArrow, type Painter, word } from './mapLetters.ts';
+import { LIGHT_INK, paintArrow, type Painter, ROUTE, word } from './mapLetters.ts';
 
 /** What a painting of the land asks: the sheet, the view of it (its metres), the map's size, how many times over its
  *  words and marks are drawn (`letterScale`), the gauntlets' cover over the map (ink pixels), where the table stood
@@ -62,7 +62,8 @@ const overlaps = (one: Rect, two: Rect) =>
 /** Where each place's name stands, in `sheet`'s order: under its middle, else over it, else twice as far, else
  *  beside it, clear of `clear` and of the names before it (a gap apart on a line); a place on the map by its edge has
  *  its name whole inside it, moved along its line, and one off the map is left where it falls, so panning does not
- *  drag names in after it. A name with no room is left off. */
+ *  drag names in after it. A name with no room is left off; so is a `near` one with no room beside its mark nearer
+ *  it than any other mark, never moved along the map's edge or twice as far, so it cannot be taken for another's. */
 function nameSpots(
   sheet: LandSheet,
   ink: { readonly width: number; readonly height: number },
@@ -70,25 +71,34 @@ function nameSpots(
   onMap: (point: Point2) => Point2,
   painter: Painter,
   clear: readonly Rect[],
-): { readonly name: string; readonly middle: number; readonly box: Rect }[] {
+): { readonly name: string; readonly middle: number; readonly box: Rect; readonly loss: boolean }[] {
   const gap = NAME_GAP * scale;
   const spaced = (name: Rect): Rect => ({ ...name, x: name.x - gap, width: name.width + 2 * gap });
-  const spots: { readonly name: string; readonly middle: number; readonly box: Rect }[] = [];
-  for (const { name, at } of sheet.places) {
+  const spots: { readonly name: string; readonly middle: number; readonly box: Rect; readonly loss: boolean }[] = [];
+  const marks = sheet.marks.map((mark) => onMap(mark.at));
+  const apart = (box: Rect, [across, down]: Point2) =>
+    Math.hypot(
+      Math.max(box.x - across, 0, across - box.x - box.width),
+      Math.max(box.y - down, 0, down - box.y - box.height),
+    );
+  for (const { name, at, near = false, loss = false } of sheet.places) {
     const [x, y] = onMap(at);
     const [width, height] = [painter.measureText(name).width * scale, PORT_PX * 1.2 * scale];
     const onInk = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
     const beside = NAME_SIDE * scale + width / 2;
     const spot = [
-      ...[1, -1, 2, -2].map((away) => [x, y + away * NAME_OFF * scale] as const),
+      ...(near ? [1, -1] : [1, -1, 2, -2]).map((away) => [x, y + away * NAME_OFF * scale] as const),
       [x + beside, y] as const,
       [x - beside, y] as const,
     ]
       .map(([centre, middle]) => {
-        const left = onInk ? Math.max(0, Math.min(centre - width / 2, ink.width - width)) : centre - width / 2;
-        return { name, middle, box: { x: left, y: middle - height / 2, width, height } };
+        const slid = onInk && !near;
+        const left = slid ? Math.max(0, Math.min(centre - width / 2, ink.width - width)) : centre - width / 2;
+        return { name, middle, loss, box: { x: left, y: middle - height / 2, width, height } };
       })
       .filter(({ box }) => !onInk || (box.y >= 0 && box.y + box.height <= ink.height))
+      .filter(({ box }) => !near || (box.x >= 0 && box.x + box.width <= ink.width))
+      .filter(({ box }) => !near || marks.every((mark) => apart(box, mark) >= apart(box, [x, y]) - 0.5))
       .find(
         ({ box }) =>
           !clear.some((other) => overlaps(box, other)) && !spots.some((other) => overlaps(spaced(box), other.box)),
@@ -159,7 +169,13 @@ export function paintLand(
   fills(sheet.walks, WALK);
   // Every track's casing before any track's way, so where tracks meet their ways run on together; then the
   // footpaths, dashed, a little narrower than they are laid so they read as trodden.
-  const [tracks, footpaths] = [sheet.paths.filter((path) => path.track), sheet.paths.filter((path) => !path.track)];
+  lines(
+    sheet.paths.filter((path) => path.faint).map((path) => path.points),
+    RELIEF,
+    scale,
+  );
+  const drawn = sheet.paths.filter((path) => !path.faint);
+  const [tracks, footpaths] = [drawn.filter((path) => path.track), drawn.filter((path) => !path.track)];
   const across = (path: (typeof tracks)[number], share = 1) => Math.max(1.2 * scale, path.width * share * view.scale);
   for (const path of tracks) lines([path.points], CASING, across(path) + 1.4 * scale);
   for (const path of tracks) lines([path.points], TRACK, across(path));
@@ -218,7 +234,9 @@ export function paintLand(
   const first = named(glyphs).map((spot) => spot.box);
   const place = tablePlace(ink, tableBox, scale, [...glyphs, ...first], painting.covers, painting.table);
   for (const spot of named([...glyphs, place.box]))
-    local([spot.box.x + spot.box.width / 2, spot.middle], () => word(painter, spot.name, 0, 0, INK));
+    local([spot.box.x + spot.box.width / 2, spot.middle], () =>
+      word(painter, spot.name, 0, 0, spot.loss ? ROUTE : INK),
+    );
   if (player) local(onMap(player.at), () => paintArrow(painter, player.heading));
   paintTable(painter, place, scale, { name: sheet.name, rows, bar: barOf(view, scale) });
   painter.restore();

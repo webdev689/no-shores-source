@@ -70,6 +70,8 @@ export interface PassageZone {
   readonly name: string;
   readonly onward: readonly number[];
   readonly lamp: number | null;
+  /** Its foes' levels, lowest and highest, as its room stands them; none where the web does not say. */
+  readonly levels?: readonly [number, number];
 }
 
 /** An island's passages for a week: its patrol zone, its mouths (each its run's name and the zone it leads to), the
@@ -118,6 +120,8 @@ export type PassageGround =
 /** A zone laid whole: the zone, its ground, its sites, its pieces and every piece's solids. */
 export interface PassagePlan {
   readonly zone: PassageZone;
+  /** The islands' climate its hollow is dressed in, whose kit the page draws it from. */
+  readonly climate: string;
   readonly ground: PassageGround;
   readonly sites: {
     readonly arrive: Point2;
@@ -201,6 +205,9 @@ function zoneOf(value: unknown): PassageZone {
     name: text(raw.name, "zone's name"),
     onward: list(raw.onward, "zone's ways on", (each) => whole(each, 'way on')),
     lamp,
+    ...(raw.levels === undefined || raw.levels === null
+      ? {}
+      : { levels: numbers(raw.levels, 2, "zone's levels") as unknown as [number, number] }),
   };
 }
 
@@ -289,6 +296,7 @@ export function readPassagePlan(answer: string): PassagePlan | null {
     fail(`zone ${zone.number} stands mouth pieces other than its ${onward.length} onward mouths`);
   return {
     zone,
+    climate: text(raw.climate, "zone's climate"),
     ground,
     sites: {
       arrive: point(sites.arrive, 'arrival'),

@@ -24,8 +24,10 @@ test('each zone is drawn as its kind: a layout under ground, an island’s groun
       continue;
     }
     assert.ok(heights);
-    const shown = zoneIsle(plan, heights, 'woodland');
+    const shown = zoneIsle(plan, heights);
     assert.ok(shown && shown.plan.placements.length > 0, `zone ${zone.number} stands modules`);
+    // Drawn from the kit of the climate the room dressed it in (content/passages/saltmere.json), not the island's.
+    assert.equal(shown.climate, 'woodland', `zone ${zone.number}'s modules are the kit it was laid from`);
     // The sea's islands count from 1: a hollow is drawn by an id none of theirs can be.
     assert.ok(shown.id < 1, `zone ${zone.number}'s hollow is no sea island`);
     assert.equal(zoneLayout(plan), null);

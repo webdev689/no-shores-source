@@ -60,7 +60,7 @@ test('the pointer coming onto a region lights its land, and leaving it lights th
   lit.all = regions;
   const ask = { pointer: { x: 140, y: 50 }, cellsNow: () => Uint8Array.from([9]) };
   const view = { left: 0, top: 0, scale: 1 };
-  const ink = { x: 0, y: 0 };
+  const ink = { x: 0, y: 0, width: 600, height: 100 };
   assert.deepEqual([...(lit.hover(judged, [40, 50], view, ink, ask, null) ?? [])], [0, 255, 0, 0, 0, 0]);
   assert.equal(lit.said()?.line, 'The Beacon Shore');
   assert.equal(lit.said()?.region, true, "lettered as the waters' names are");
@@ -74,6 +74,24 @@ test('the pointer coming onto a region lights its land, and leaving it lights th
   assert.equal(lit.hover(null, [40, 50], view, ink, ask, null), null, 'a pan: nothing changes');
   assert.equal(lit.said()?.line, 'The Grey Reach', 'still lit while the waters are away');
   assert.deepEqual([...(lit.hover(judged, [40, 50], view, ink, ask, null) ?? [])], [9], 'let go once they are back');
+});
+
+test("a region's name stands anew by the pointer once the map moves, and nothing is lit off the map", () => {
+  const lit = new MapRegions();
+  lit.all = regions;
+  const ask = { pointer: { x: 140, y: 50 }, cellsNow: () => Uint8Array.from([9]) };
+  const ink = { x: 0, y: 0, width: 600, height: 100 };
+  assert.ok(lit.hover(judged, [40, 50], { left: 0, top: 0, scale: 1 }, ink, ask, null));
+  ask.pointer = { x: 180, y: 40 };
+  assert.equal(lit.hover(judged, [40, 50], { left: 0, top: 0, scale: 1 }, ink, ask, null), null);
+  assert.deepEqual([lit.said()?.x, lit.said()?.y], [140, 50], 'within it, where the pointer came in');
+  // Panned by 20 m: the Beacon Shore still under the pointer, its name stands where the pointer is now.
+  assert.equal(lit.hover(judged, [40, 50], { left: -20, top: 0, scale: 1 }, ink, ask, null), null);
+  assert.deepEqual([lit.said()?.x, lit.said()?.y], [180, 40], 'after a pan, by the pointer');
+  // The pointer off the map, though the world under it is the region's land: nothing lit.
+  const narrow = { x: 0, y: 0, width: 100, height: 100 };
+  assert.deepEqual([...(lit.hover(judged, [40, 50], { left: 0, top: 0, scale: 1 }, narrow, ask, null) ?? [])], [9]);
+  assert.equal(lit.said(), null, 'off the map nothing is named');
 });
 
 test("a click on a region of the ship's island sets a course to its anchorage, named for the region", () => {

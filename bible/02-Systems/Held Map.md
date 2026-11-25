@@ -139,8 +139,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **The regions** ([[World Map]], "Regions"). At sea, the land of the island whose waters the ship is in is lit by
   region as the pointer passes over it: the land's cells of the waters' grid whose middle lies inside the island's
-  outline and nearest that region's centre of the island's own, lit as another water is (`mapRegions.ts`), and the region's name written where the pointer came onto it, in
-  the face and ink the waters' names are lettered in. Its land lit, no water is; off it, the water under the pointer is
+  outline and nearest that region's centre of the island's own, its land brightened and lined as another water's sea
+  is (`mapRegions.ts`), and the region's name written where the pointer came onto it, in the face and ink the waters'
+  names are lettered in, whole inside the map, and stood anew by the pointer once the map is panned, zoomed or raised
+  again; with the pointer off the map, none is lit. Its land lit, no water is; off it, the water under the pointer is
   lit again. A click on a region's land (no place's mark within 16 px) chooses its anchorage, named for the region:
   the way there is planned and inked as any course is, and sailed at the sea's own pace, the course judged by the
   waters' rules as any other ([[Sailing]]). Another island's land lights nothing.
@@ -181,12 +183,12 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 The map on land speaks in icon glyphs, with little text, and a table on it says what each glyph is
 ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
-- **Raising.** On foot, N anywhere but in a dungeon, under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
+- **Raising.** On foot, N anywhere but in a dungeon (a passage zone's under ground among the places it rises, the web its sheet: [[Passages]], "The passages' map"), under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
   person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
   pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
   waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
   plates and compass, and a gate's offer, give way while it is up.
-- **The view** opens centred on the player, 400 m across, held to the land's sheet: its ring and 40 m past it. A drag
+- **The view** opens centred on the player, 400 m across (in a passage zone, the whole web), held to the land's sheet: its ring and 40 m past it. A drag
   pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.
 - **What it shows**, painted on the parchment in the map's inks and washes as a surveyor colours a plan, read afresh
   each time it is raised, off the ground as the camera keeps it (exact within 1 km of the player, an island's its

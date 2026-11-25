@@ -253,8 +253,9 @@ lamp already lit; `AlreadyLit`, a dead lamp or the lamp lit already; and `Fallen
 ### Reading the rules
 
 room-wasm's passage door (`startPassageDoor`, in an instance of the room module of its own) hands a page a week's web
-(`room_passage_web`), a zone laid whole (`room_passage_zone`, under ground the Forge's layout as a dungeon's is handed
-over) and a hollow's heights (`room_passage_heights`), built by the same crate; each is read whole and refused, saying
+(`room_passage_web`, each zone with its foes' levels as its room stands them), a zone laid whole (`room_passage_zone`,
+under ground the Forge's layout as a dungeon's is handed over, above ground the climate its hollow is dressed in, whose
+kit the page draws it from) and a hollow's heights (`room_passage_heights`), built by the same crate; each is read whole and refused, saying
 why, where it does not read. An island with no passages, a zone the web lacks or a style the Forge does not lay yet
 answers empty, read as none. The gear's dive, haul, lamps and Atheric bounties (`passagesOf`) and the snapshot's
 `PassageSeen` (`passageSeenOf`) are read as the page reads the rest of the gear and the snapshot; the asks 82 to 86 go
@@ -264,9 +265,13 @@ as its other asks do, and a refusal is said in the room's words (171 to 181).
 
 - **At a mouth**: E within 4 m of a run's sealed door in the patrol zone ("Into the passages", the layout's runs'
   doors matched by name to the web's mouths) opens the mouths' card (`MouthsCardView`): the run's name; the zone
-  beyond (its name, depth, deal and currents) and the week's modifiers; the routes ("The public passage", and "Your
-  company's route" in a company, else "Your own route, alone"); Go in (E), "Begin at the second lamp" for each lamp lit
-  this week, and Close (Esc). A choice asks to begin, by the mouth's place, its route and the lamp.
+  beyond (its name, depth, deal, foes' levels and currents) and the week's modifiers; the routes ("The public
+  passage", and "Your company's route" in a company, else "Your own route, alone"); where each lamp lit this week
+  begins, that lamp's zone at the mouth's place as the room begins it, and its foes; Go in (the Use key as bound), "Begin at the second lamp"
+  for each lamp lit this week, and Close (Esc). A choice asks to begin, by the mouth's place, its route and the lamp.
+  The card closes once its place is left: another room, the ship or the map, or 10 m from the door. Playing alone,
+  the patrol zone's node file the page writes names its runs' doors as the bake's does (`doorsOf`), so its room lays
+  the same mouths.
 - **The room's yes**: an ask of the passages is yes once the dive has moved (begun, gone on to another zone, or for
   a lamp's Home turned homeward, as the gear carries it); it plays the way between zones while the room gone to is
   joined. A passage refusal is said in a toast, as is no answer in 10 s; other asks answered meanwhile, done or not,
@@ -288,12 +293,23 @@ as its other asks do, and a refusal is said in the room's words (171 to 181).
   at, and the way comes down to where the room stands the player, 2 m before the mouth the dive began at toward its
   run's end arena and facing away from the door (`stand_before_mouth`, `homeSpot` alone), once its first snapshot of
   the body has come.
-- **In a zone**: the deal stands in the tracker (`dealTracker`: "Light the dead lamps 1/3", a hold's clock, then "Go on
-  through an open mouth"); near an onward mouth its sign shows the zone beyond and, shut, "Shut until this place's work
-  is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
+- **In a zone**: the deal stands in the tracker (`dealTracker`), keyed to the room's word: headed where the zone lies
+  ("Depth 7, the second lamp in 3"), its kind ("Kindle") over its steps, the zone's own name the place's; the deal's steps ("Light the dead lamps 1/3", a
+  hold's clock; a vein's guard, then its six nodes counted; a reliquary's guard), all done once the player's mouths
+  are open, whatever the round does after; a public round done before the player came, "Done before you came: it
+  begins again" with its clock (a route's round, never begun again, stands done); a Gauntlet's clock until its far
+  mouth is reached; in a lamp's zone "Light the lamp"; then the way on ("Go on through an open mouth", at
+  a lit lamp "Go on, or Home from the lamp", at the deepest "Home from the lamp"); and in the last ten minutes before
+  Tuesday 09:00 UTC "The web shifts" with its clock. Each mission is named by its kind (Kindle, Hold, Hunt, Reckoning,
+  Gauntlet, Ambush, Sever) on its sign, the card, the tracker and the map. Near an onward mouth its sign shows the zone
+  beyond, its foes' levels ("Foes 15 to 18", in the loss's colour where the strongest stands three or more over the
+  player) and, shut, "Shut until this place's work is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
   the hold; once lit E there is Home. E held at a dead lamp kindles it. E let go ends a hold, as a gather's. The haul
-  stands on the right while anything is carried, with "Carried, not kept. Fall or leave, and it is lost."; the leave
-  held adds "What you carry is lost"; a respawn that empties it says "What you carried is lost."
+  stands on the right while anything is carried, its first five lines and then "and 4 more" (on a phone's narrow view two, under the tracker), no wider than the view,
+  with "Carried, not kept. Fall or leave, and it is lost."; the leave held adds "What you carry is lost"; a respawn
+  that empties it says "What you carried is lost." The cold lantern found stands a moment low in the view (on a narrow one in
+  the haul's place), its name in the Atheric colour and its words. Home asked again once the dive has turned homeward goes home at once. The place's
+  line reads "Passage"; a company member in one is "In the passages", and Go to them says to go in at a mouth.
 - **The pieces** stand as the deal stands for the player (`PieceState`): a mouth open or shut, the lamp and the dead
   lamps lit (gold) or cold (grey), a tally post whole or broken, the reliquary shut or opened. Above ground they are
   the islands' kit's `passage` modules, placed in the hollow (`withPieces`), and only the lamps' lights are drawn over
@@ -326,10 +342,12 @@ back, to the patrol zone from a zone, or to the hub, told why (`wayOut`, `tripOr
 ### The passages' map
 
 Held in a passage zone, under ground or above, the held map shows the web as a land sheet (`passageSheet`,
-[[Held Map]], "On land") in place of the land's: every zone a mark at its place by its deal's glyph, its lamp named,
-its currents under it, the patrol zone by its name, the way come this dive a track and the ways on footpaths, "You"
-at the player's zone. It opens on the whole web, every mark inside it; names that stand too close to be lettered at
-that scale come as the wheel draws in. Over the island, the way's places are every zone's and the patrol zone's.
+[[Held Map]], "On land") in place of the land's: every zone a mark at its place by its deal's glyph, each mission by
+its kind's own, named beside its mark by its kind (a lamp by its place, ", lit" once lit this week) and its foes'
+levels, in the loss's ink where they stand too strong for the player; the patrol zone by its name; every way of the
+web washed faint, the way come this dive a track and the ways on from the player's zone footpaths; "You" at the
+player's zone. It opens on the whole web, every mark inside it; a zone's name stands under, over or beside its mark or
+not at all, and those too close to be lettered at that scale come as the wheel draws in. Over the island, the way's places are every zone's and the patrol zone's.
 
 ### The Journal and the board
 
