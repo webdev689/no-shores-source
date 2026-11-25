@@ -264,7 +264,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
                 me[1] + (lead[1] - me[1]) * share,
                 mark.level + top * AIM_FREEBOARD,
             ];
-            lay_on(ship, at.pose, at.arms, side, at.guns.load, target)
+            lay_on(ship, at.pose, at.arms, side, at.guns.load, target).laid_on(target)
         };
         // Fired as they judge it: as far across the mark as they misjudge it, the ship swinging under them as they
         // touch off, but never further off its beam than it ever fires (`BEAR_DEG`), so the broadside stays square

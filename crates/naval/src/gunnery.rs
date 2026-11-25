@@ -156,14 +156,18 @@ impl Lay {
         Self { on: Some(point), ..self }
     }
 
-    /// Gun `index`'s elevation: the middle's; or, laid on a point, for that point's range out along the fire from its
-    /// own port and its height over it.
+    /// Gun `index`'s elevation: the middle's; or, laid on a point, the middle's moved by how its own port's range out
+    /// along the fire and height over the point differ from the middle's, so a lay set off its point (a captain's
+    /// misjudged elevation) is set off it at every gun.
     #[must_use]
     pub fn gun_elevation(&self, index: usize) -> f64 {
         let (Some(on), Some(mouth)) = (self.on, self.mouths.get(index)) else { return self.elevation };
-        let range = (on[0] - mouth[0]) * self.dir[0] + (on[1] - mouth[1]) * self.dir[1];
         let (low, high) = (self.gun.min_el_deg * DEGREE, self.gun.max_el_deg * DEGREE);
-        elevation_for_range(range, self.gun.speed, mouth[2] - on[2], low, high)
+        let from = |port: [f64; 3]| {
+            let range = (on[0] - port[0]) * self.dir[0] + (on[1] - port[1]) * self.dir[1];
+            elevation_for_range(range, self.gun.speed, port[2] - on[2], low, high)
+        };
+        (self.elevation + from(*mouth) - from(self.centre)).clamp(low, high)
     }
 }
 

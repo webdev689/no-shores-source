@@ -71,7 +71,8 @@ fn struck_share(rank: Rank, weaving: bool, minutes: u32, seeds: u32) -> (u32, u3
 #[test]
 fn captains_miss_often_and_a_higher_rank_less() {
     let share = |rank: Rank, weaving: bool| {
-        let (struck, fired) = struck_share(rank, weaving, 2, 3);
+        // The measure's own sample: two minutes on three seeds fire too few balls to hold the ranks' order.
+        let (struck, fired) = struck_share(rank, weaving, 4, 6);
         assert!(fired >= 9, "{rank:?} fired {fired}");
         f64::from(struck) / f64::from(fired)
     };

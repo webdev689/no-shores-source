@@ -74,7 +74,7 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   assert.ok(Math.abs((bursts[2] ?? 0) - 0.75) < 0.01 && bursts[6] === 0, `the third leg's burst: ${bursts.join(' ')}`);
   assert.equal(
     prints.join(' '),
-    'e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e c280b31683618734 5d98d687145547d7 57367ddfff1fc024 ' +
+    'e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e 966aa293a1b8b24f e252828049982355 57367ddfff1fc024 ' +
       '4d74479c465fc08e 3674caafaa897bf9 896c9ea4b9acae3c',
   );
 });
