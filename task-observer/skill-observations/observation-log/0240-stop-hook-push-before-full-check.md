@@ -1,5 +1,5 @@
 ---
-id: 236
+id: 240
 title: "The harness's stop hook asks for a push at every turn's end; with the owner asking for the full check before a push, an early commit led to a push before it"
 status: open
 type: internal
