@@ -7,7 +7,7 @@
 
 use super::{Held, Hold, Passage};
 use crate::asks::answer_code;
-use crate::{PlayerId, Room};
+use crate::{PlayerId, Room, Standing};
 use combat::sight::apart;
 use gear::Refusal;
 use gear::dive::{Route, Start};
@@ -63,11 +63,18 @@ fn refused(refusal: Refusal) -> u8 {
 }
 
 impl Room {
-    /// Answers an ask of the passages: 0 done, else why not.
+    /// Answers an ask of the passages: 0 done, else why not. None is answered while the player is fallen, and in a
+    /// zone whose week's web has turned only Home at a lamp already lit is.
     pub(crate) fn ask_passage(&mut self, player: PlayerId, ask: PassageAsk) -> u8 {
-        let Some(body) = self.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y]) else {
-            return refused(Refusal::NoDive);
-        };
+        let Some(fighter) = self.fighter(player).copied() else { return refused(Refusal::NoDive) };
+        let fallen = self.players.get(&player).is_some_and(|found| matches!(found.standing, Standing::Dead { .. }));
+        if fighter.dead() || fallen {
+            return refused(Refusal::Fallen);
+        }
+        if self.shifted() && ask != PassageAsk::GoHome {
+            return refused(Refusal::Shifted);
+        }
+        let body = [fighter.body.x, fighter.body.y];
         match (ask, self.passage.as_ref()) {
             (PassageAsk::Begin { mouth, route, lamp }, Some(Passage::Mouths { island, doors, .. })) => {
                 let (island, door) = (*island, doors.get(usize::from(mouth)).copied());
@@ -147,7 +154,7 @@ impl Room {
             return refused(Refusal::NotAtMouth);
         }
         if !self.may_hold(player, target) {
-            return refused(Refusal::LampNotLit);
+            return refused(Refusal::AlreadyLit);
         }
         let (clock, health) = (self.clock, self.fighter(player).map_or(0.0, |fighter| fighter.health));
         if let Some(zone) = self.zone_mut() {
@@ -240,7 +247,11 @@ impl Room {
             }
             _ => {
                 let island = dive.island.clone();
-                let home = found.character.leave_passages();
+                let mouths_of = match self.passage.as_ref() {
+                    Some(super::Passage::Mouths { island, .. }) => Some(*island),
+                    _ => None,
+                };
+                let home = found.character.leave_passages(mouths_of);
                 found.gear_changed = true;
                 if let Some(mouth) = home {
                     self.stand_before_mouth(player, &island, mouth);

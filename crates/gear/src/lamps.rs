@@ -27,18 +27,22 @@ pub enum Cache {
     Lamp(u8),
 }
 
-/// Each deal's cache at level 5, XP then Aurem. A passage zone holds some eighteen foes and takes one player about ten
-/// minutes (`band::PASSAGE_FOES`), its foes a little under a player who plays its depth for its pay, so its cache
-/// stands in for a patrol zone's public events and keeps an hour in the passages inside the band (`band`).
-pub const SKIRMISH_PAY: (u32, u32) = (1_400, 105);
-pub const MISSION_PAY: (u32, u32) = (1_800, 135);
-pub const VAULT_PAY: (u32, u32) = (2_800, 210);
-pub const VEIN_PAY: (u32, u32) = (700, 52);
-pub const RELIQUARY_PAY: (u32, u32) = (700, 52);
-pub const LAMP_PAY: (u32, u32) = (2_800, 210);
-/// A skirmish's and a mission's chance of a Vestige, before depth raises it.
-pub const SKIRMISH_VESTIGE: f64 = 1.0 / 3.0;
-pub const MISSION_VESTIGE: f64 = 0.5;
+/// Each deal's cache at level 5, XP then Aurem. A passage zone holds at most nine foes and takes one player about two
+/// and a half minutes (`band::PASSAGE_SECONDS`), so zones come quickly and their kills carry the hour; the cache is a
+/// small token of the deal done, set so an hour in the passages stays inside the band (`band`).
+pub const SKIRMISH_PAY: (u32, u32) = (70, 5);
+pub const MISSION_PAY: (u32, u32) = (90, 7);
+pub const VAULT_PAY: (u32, u32) = (140, 10);
+pub const VEIN_PAY: (u32, u32) = (40, 3);
+pub const RELIQUARY_PAY: (u32, u32) = (40, 3);
+pub const LAMP_PAY: (u32, u32) = (140, 10);
+/// A skirmish's, a mission's, a reliquary's and a lamp's chance of a Vestige, before depth raises it.
+pub const SKIRMISH_VESTIGE: f64 = 0.01;
+pub const MISSION_VESTIGE: f64 = 0.02;
+pub const RELIQUARY_VESTIGE: f64 = 0.03;
+/// A vault's chance of its Miniboss's item as itself.
+pub const VAULT_ITEM: f64 = 0.25;
+pub const LAMP_VESTIGE: f64 = 0.05;
 /// A vein's fragments, and a reliquary's least and most.
 pub const VEIN_FRAGMENTS: u16 = 2;
 pub const RELIQUARY_FRAGMENTS: (u16, u16) = (2, 5);
@@ -47,6 +51,11 @@ pub const RELIQUARY_FRAGMENTS: (u16, u16) = (2, 5);
 const ELITE: u8 = 3;
 const MINIBOSS: u8 = 4;
 const BOSS: u8 = 5;
+/// A reliquary's fragments' stock is rolled at this index of `Purpose::Passage`, clear of its count's (0) and of the
+/// Atheric bounties' finds (1 on, one a bounty).
+const FRAGMENT_STOCK: u32 = 100;
+/// The stream the week's lamp rolls on, apart from the day's.
+const WEEK_LAMP_STREAM: u64 = 0x7765_656b;
 
 /// Where a zone stands, as its room tells the gear: its island (a continent's id), the week of its web, its number and
 /// depth, and its foes' level.
@@ -59,13 +68,13 @@ pub struct Zone<'a> {
     pub level: u8,
 }
 
-/// What a cache's XP and Aurem are times at a depth (`passage::cache_pay`): 1 at the first, 1.25 at the twentieth.
+/// What a cache's XP and Aurem are times at a depth: 1 at the first, 1.25 at the twentieth.
 #[must_use]
 pub fn pay_times(depth: u8) -> f64 {
     1.0 + f64::from(depth.clamp(1, 20) - 1) / 76.0
 }
 
-/// What its chances of finds are times (`passage::cache_finds`): 1 at the first, 2 at the twentieth.
+/// What its chances of finds are times: 1 at the first, 2 at the twentieth.
 #[must_use]
 pub fn find_times(depth: u8) -> f64 {
     1.0 + f64::from(depth.clamp(1, 20) - 1) / 19.0
@@ -92,14 +101,14 @@ impl Character {
             Cache::Mission => (MISSION_PAY, MISSION_VESTIGE, ELITE),
             Cache::Vault => (VAULT_PAY, vestige::chance(MINIBOSS), MINIBOSS),
             Cache::Vein => (VEIN_PAY, 0.0, ELITE),
-            Cache::Reliquary => (RELIQUARY_PAY, 1.0, ELITE),
-            Cache::Lamp(_) => (LAMP_PAY, 1.0, ELITE),
+            Cache::Reliquary => (RELIQUARY_PAY, RELIQUARY_VESTIGE, ELITE),
+            Cache::Lamp(_) => (LAMP_PAY, LAMP_VESTIGE, ELITE),
         };
         let raised = |amount: u32| libm::round(f64::from(amount) * pays) as u32;
         self.pay((raised(worth.0), raised(worth.1)), at.level, None, difficulty);
         // A sure find stays one; a chance grows with depth.
         let chance = if vestige >= 1.0 { 1.0 } else { (vestige * finds).min(1.0) };
-        let items = if cache == Cache::Vault { difficulty.reward() } else { 0.0 };
+        let items = if cache == Cache::Vault { VAULT_ITEM * difficulty.reward() } else { 0.0 };
         for found in self.loot((chance * difficulty.reward(), items), rank, at.level, source, dice) {
             self.pick_up(found);
         }
@@ -112,7 +121,7 @@ impl Character {
             _ => 0,
         };
         if fragments > 0 {
-            let stock = if dice.roll(Purpose::Passage, 0) < 0.5 { Stock::Weapon } else { Stock::Armor };
+            let stock = if dice.roll(Purpose::Passage, FRAGMENT_STOCK) < 0.5 { Stock::Weapon } else { Stock::Armor };
             self.find_material(Stuff::Fragments(stock), fragments);
         }
         let lamp = if let Cache::Lamp(number) = cache { Some(number) } else { None };
@@ -161,6 +170,8 @@ impl Character {
     /// the third two; and at the fourth a roll as the week's Abyss Dungeon's first clear, Legendary or Atheric. No
     /// Shapes, which the week's Abyss alone gives.
     fn pay_week_lamp(&mut self, number: u8, level: u8, dice: &Dice) {
+        // Its own dice, so the day's lamp lit with it never pays the same Vestige twice.
+        let dice = &Dice { seed: dice.seed ^ WEEK_LAMP_STREAM, ..*dice };
         self.keep_rolled(of_colours(colours(BOSS), level, dice), dice);
         let essence = match number {
             0 | 1 => 0,
@@ -171,8 +182,8 @@ impl Character {
             self.materials.add(Stuff::Essence(stock), essence);
         }
         if number >= 4 {
-            let rolled = of_colours(Weekly::Abyss.colours(), level, &Dice { seed: dice.seed ^ 0x6c61_6d70, ..*dice });
-            self.keep_rolled(rolled, dice);
+            let abyss = Dice { seed: dice.seed ^ 0x6c61_6d70, ..*dice };
+            self.keep_rolled(of_colours(Weekly::Abyss.colours(), level, &abyss), &abyss);
         }
     }
 
@@ -185,9 +196,9 @@ impl Character {
     }
 
     /// Keeps the haul: items as found are kept, Vestiges carried or sent on as found Vestiges go, materials added, and
-    /// an Atheric bounty's find held as its bounty. The dive goes on, its haul empty.
-    pub(crate) fn keep_haul(&mut self) {
-        let Some(mut dive) = self.passage.take() else { return };
+    /// an Atheric bounty's find held as its bounty. The dive goes on, its haul empty. Whether a find was held so.
+    pub(crate) fn keep_haul(&mut self) -> bool {
+        let Some(mut dive) = self.passage.take() else { return false };
         let haul = std::mem::take(&mut dive.haul);
         for item in haul.items {
             let level = item.level;
@@ -206,10 +217,27 @@ impl Character {
         for (resource, &count) in held.resources.iter().enumerate() {
             self.materials.add(Stuff::Resource(resource), count);
         }
-        if let Some(bounty) = haul.lantern {
-            self.hold_bounty(&bounty);
-        }
+        let held = haul.lantern.inspect(|bounty| self.hold_bounty(bounty)).is_some();
         self.passage = Some(dive);
+        held
+    }
+
+    /// Keeps the haul at a lamp's Home: a find held as its bounty was brought to a lamp, its first step done. Only
+    /// that bounty is counted, so no other's lamp step is done without its lamp lit.
+    pub(crate) fn keep_haul_home(&mut self) {
+        let Some(found) = self.passage.as_ref().and_then(|dive| dive.haul.lantern.clone()) else {
+            self.keep_haul();
+            return;
+        };
+        self.keep_haul();
+        let first = crate::atheric_bounty::bounties()
+            .iter()
+            .find(|bounty| bounty.id == found)
+            .and_then(|bounty| bounty.steps.first());
+        let brought = first.is_some_and(|step| step.kind == crate::atheric_bounty::StepKind::Lamp && step.count == 1);
+        if let Some(held) = self.atheric_bounties.held.get_mut(&found).filter(|held| brought && **held == (0, 0)) {
+            *held = (1, 0);
+        }
     }
 
     /// Goes home from a zone's lamp, by its number, lit this dive: what was found since it was lit is kept, and the
@@ -220,7 +248,7 @@ impl Character {
         if dive.lamp < number {
             return Err(Refusal::LampNotLit);
         }
-        self.keep_haul();
+        self.keep_haul_home();
         if let Some(dive) = self.passage.as_mut() {
             dive.homeward = true;
         }

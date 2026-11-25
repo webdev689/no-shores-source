@@ -62,11 +62,12 @@ pub type Passages<'built> = (
     Option<WIPOffset<flatbuffers::Vector<'built, flatbuffers::ForwardsUOffset<messages::GearAthericBounty<'built>>>>>,
 );
 
-/// A character's passages as their gear carries them.
+/// A character's passages as their gear carries them on the room's day and week: the day's lamp and the week's lamps
+/// only where the record is of them.
 pub fn passages_of<'built>(
     builder: &mut FlatBufferBuilder<'built>,
     character: &Character,
-    day: u64,
+    (day, week_now): (u64, u64),
 ) -> Passages<'built> {
     let dive = character.passage.as_ref().map(|dive| {
         let haul = &dive.haul;
@@ -114,12 +115,12 @@ pub fn passages_of<'built>(
     });
     let (today, week) = (&character.activity.today, &character.activity.this_week);
     let today_lamps = if today.day == day { today.passage_lamp.clone() } else { Default::default() };
-    let islands: std::collections::BTreeSet<&String> = week.passage_lamps.keys().chain(&today_lamps).collect();
+    let week_lamps = if week.week == week_now { week.passage_lamps.clone() } else { Default::default() };
+    let islands: std::collections::BTreeSet<&String> = week_lamps.keys().chain(&today_lamps).collect();
     let lamps: Vec<_> = islands
         .into_iter()
         .map(|island| {
-            let lit: Vec<u8> =
-                week.passage_lamps.get(island).map(|lamps| lamps.iter().copied().collect()).unwrap_or_default();
+            let lit: Vec<u8> = week_lamps.get(island).map(|lamps| lamps.iter().copied().collect()).unwrap_or_default();
             let (island_name, lamps) = (Some(builder.create_string(island)), Some(builder.create_vector(&lit)));
             let args =
                 messages::GearIslandLampsArgs { island: island_name, lamps, day_lamp: today_lamps.contains(island) };

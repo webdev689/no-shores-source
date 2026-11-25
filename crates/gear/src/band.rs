@@ -8,8 +8,8 @@
 
 use crate::chests::{CHEST_AUREM, CHEST_FRAGMENTS, CHEST_RESOURCE, CHEST_XP, FIRST_HEROIC_ESSENCE};
 use crate::lamps::{
-    LAMP_PAY, MISSION_PAY, MISSION_VESTIGE, RELIQUARY_FRAGMENTS, RELIQUARY_PAY, SKIRMISH_PAY, SKIRMISH_VESTIGE,
-    VAULT_PAY, VEIN_FRAGMENTS, VEIN_PAY, find_times, pay_times,
+    LAMP_PAY, LAMP_VESTIGE, MISSION_PAY, MISSION_VESTIGE, RELIQUARY_FRAGMENTS, RELIQUARY_PAY, RELIQUARY_VESTIGE,
+    SKIRMISH_PAY, SKIRMISH_VESTIGE, VAULT_ITEM, VAULT_PAY, VEIN_FRAGMENTS, VEIN_PAY, find_times, pay_times,
 };
 use crate::playlist::Playlist;
 use crate::power::gap;
@@ -87,11 +87,12 @@ pub const SEA_FOES: [Foe; 4] = [Foe::Skirmisher, Foe::Swordsman, Foe::Brute, Foe
 /// The pieces a sunk ship leaves each player, Minor to Miniboss (`room::flotsam::pieces_of`).
 pub const SEA_PIECES: [f64; 4] = [3.0, 4.0, 5.0, 6.0];
 
-/// A passage zone: its foes and the seconds a scripted player takes for each, its ground walked (`measure_the_pace`
-/// over two weeks' zones at depths 1, 9, 13 and 17: 5 to 25 foes, 18 the middle, at 22 to 83 s, 35 the middle), and
-/// the passage between zones, 1.5 s up, 2 s across and 1.5 s down and in (`Passages as Claude Builds Them`).
-pub const PASSAGE_FOES: f64 = 18.0;
-pub const PASSAGE_SECONDS_A_FOE: f64 = 35.0;
+/// A passage zone: its foes felled and the seconds a scripted player takes over its deal to done, its ground walked
+/// (`room::deal_measure_tests::measure_the_deals` over six weeks' zones, three of each deal and lamp: 8 foes the
+/// middle, the room standing 9 at most; 145 s, each deal weighed as the web deals it), and the passage between zones,
+/// 1.5 s up, 2 s across and 1.5 s down and in (`Passages as Claude Builds Them`).
+pub const PASSAGE_FOES: f64 = 8.0;
+pub const PASSAGE_SECONDS: f64 = 145.0;
 pub const PASSAGE_BETWEEN_SECONDS: f64 = 5.0;
 /// The passages' island, Saltmere's band, and its depths.
 pub const PASSAGE_BAND: (u8, u8) = (1, 4);
@@ -388,7 +389,7 @@ fn cache(depth: u8, level: u8) -> Hour {
     let skirmish = raised(SKIRMISH_PAY).plus(found(SKIRMISH_VESTIGE, elite));
     let mission = raised(MISSION_PAY).plus(found(MISSION_VESTIGE, elite));
     let miniboss = shares(colours(4), level);
-    let vault = raised(VAULT_PAY).plus(found(chance(4), miniboss)).plus(items(1.0, miniboss, level)).plus(kill(
+    let vault = raised(VAULT_PAY).plus(found(chance(4), miniboss)).plus(items(VAULT_ITEM, miniboss, level)).plus(kill(
         Foe::Captain,
         4,
         level,
@@ -396,7 +397,10 @@ fn cache(depth: u8, level: u8) -> Hour {
     ));
     let vein = Hour { materials: 6.0 * f64::from(NODE_YIELD) + f64::from(VEIN_FRAGMENTS), ..raised(VEIN_PAY) };
     let (least, most) = RELIQUARY_FRAGMENTS;
-    let reliquary = Hour { materials: f64::from(least + most) / 2.0, ..raised(RELIQUARY_PAY).plus(found(1.0, elite)) };
+    let reliquary = Hour {
+        materials: f64::from(least + most) / 2.0,
+        ..raised(RELIQUARY_PAY).plus(found(RELIQUARY_VESTIGE, elite))
+    };
     [(skirmish, 0.35), (mission, 0.35), (vault, 0.05), (vein, 0.12), (reliquary, 0.13)]
         .into_iter()
         .fold(Hour::default(), |sum, (hour, share)| sum.plus(hour.times(share)))
@@ -419,7 +423,9 @@ fn passage_kill(depth: u8, level: u8) -> Hour {
 /// Elite band at the second and third, a Miniboss and two Elite bands at the fourth).
 fn lamp_zone(number: u8, depth: u8, level: u8) -> Hour {
     let tier = Difficulty::Normal;
-    let paid_cache = paid(LAMP_PAY, level, tier).times(pay_times(depth)).plus(vestiges(1.0, shares(colours(3), level)));
+    let chance = if LAMP_VESTIGE >= 1.0 { 1.0 } else { (LAMP_VESTIGE * find_times(depth)).min(1.0) };
+    let paid_cache =
+        paid(LAMP_PAY, level, tier).times(pay_times(depth)).plus(vestiges(chance, shares(colours(3), level)));
     let elites = if number >= 4 { 6.0 } else { 3.0 };
     let guard = kill_of(&[Foe::Brute, Foe::Archer], 3, level, tier).times(elites);
     let miniboss = if number >= 2 { kill(Foe::Captain, 4, level, tier) } else { Hour::default() };
@@ -467,7 +473,7 @@ pub fn passage(depth: u8, level: u8) -> Option<Hour> {
     }
     let (low, high) = passage_levels(PASSAGE_BAND, depth);
     let foes_at = ((u16::from(low) + u16::from(high)) / 2) as u8;
-    let zone_seconds = PASSAGE_FOES * PASSAGE_SECONDS_A_FOE * slowed(level, foes_at) + PASSAGE_BETWEEN_SECONDS;
+    let zone_seconds = PASSAGE_SECONDS * slowed(level, foes_at) + PASSAGE_BETWEEN_SECONDS;
     let lamp = lamp_zone(depth.div_ceil(5), depth, foes_at);
     let dealt = passage_kill(depth, foes_at).times(PASSAGE_FOES).plus(cache(depth, foes_at));
     let zone = dealt.times(0.8).plus(lamp.times(0.2));

@@ -22,8 +22,9 @@ pub(crate) const AGAIN_TICKS: u64 = 60 * 60;
 /// Hold's ring held, and Gauntlet's time to reach the far mouth: 90 s each.
 pub(crate) const HOLD_TICKS: u64 = 90 * 60;
 pub(crate) const GAUNTLET_TICKS: u64 = 90 * 60;
-/// A wave comes every 20 s while a Kindle or a Hold runs; an Ambush's comes as the last is down, three in all.
-const WAVE_EVERY_TICKS: u64 = 20 * 60;
+/// A wave comes every 30 s while a Kindle or a Hold runs, once the last is down; an Ambush's comes as the last is
+/// down, three in all.
+const WAVE_EVERY_TICKS: u64 = 30 * 60;
 pub(crate) const AMBUSH_WAVES: u8 = 3;
 /// How far across Hold's ring is held from, a collector sees a player from, and a mouth counts as reached from (m).
 pub(crate) const RING_M: f64 = 6.0;
@@ -140,7 +141,8 @@ impl Room {
         let since = self.clock.saturating_sub(began);
         match deal {
             Deal::Mission(Mission::Kindle | Mission::Hold) => {
-                if since.is_multiple_of(WAVE_EVERY_TICKS) {
+                let last_down = zone.round.wave_foes.iter().all(|&id| !self.standing_foe(id));
+                if since.is_multiple_of(WAVE_EVERY_TICKS) && last_down {
                     self.call_wave();
                 }
                 if deal == Deal::Mission(Mission::Hold)
@@ -159,7 +161,8 @@ impl Room {
             Deal::Mission(Mission::Reckoning) => self.run_collectors(),
             Deal::Mission(Mission::Gauntlet) => {
                 let Some(far) = self.far_mouth() else { return };
-                // Each player's 90 s run from their own arrival; the deal is late only if every one there was late.
+                // Each player's 90 s run from their arrival or the round's start, the later; the deal is late only if
+                // every one there was late.
                 let clock = self.clock;
                 let reachers: Vec<(PlayerId, bool)> = self
                     .players
@@ -169,7 +172,8 @@ impl Room {
                             && apart([player.fighter.body.x, player.fighter.body.y], far) <= REACHED_M
                     })
                     .map(|(id, _)| {
-                        let came = zone.arrived.get(id).copied().unwrap_or(began);
+                        // A player who came in an earlier round runs from this one's start.
+                        let came = zone.arrived.get(id).copied().unwrap_or(began).max(began);
                         (*id, clock.saturating_sub(came) > GAUNTLET_TICKS)
                     })
                     .collect();
@@ -291,7 +295,7 @@ impl Room {
             }
         }
         if let Some(zone) = self.zone_mut() {
-            zone.round.waves += 1;
+            zone.round.waves = zone.round.waves.saturating_add(1);
             zone.round.wave_foes.extend(ids);
         }
     }
@@ -335,6 +339,10 @@ impl Room {
                 found.character.pay_cache(at, cache, difficulty, source, &dice);
             }
             found.gear_changed = true;
+            // The bounties count only those who took part, as the cache pays only them.
+            if !took_part.contains(&player) {
+                continue;
+            }
             let deed = match deal {
                 Deal::Mission(_) => Some(Deed::Mission),
                 Deal::Reliquary => Some(Deed::Reliquary),
@@ -416,10 +424,18 @@ impl Room {
         gauntlet || done
     }
 
+    /// Whether the clock's week is past the zone's web's: its ways lead elsewhere now.
+    pub(crate) fn shifted(&self) -> bool {
+        self.zone().is_some_and(|zone| gear::clock::week_of(self.minute) > zone.week)
+    }
+
     /// Whether a hold's target may be held now: a dead lamp not yet lit while the Kindle runs, or the lamp once its
-    /// guard is down and not yet lit for the player.
+    /// guard is down and not yet lit for the player; neither once the zone's web has turned.
     pub(crate) fn may_hold(&self, player: PlayerId, target: Held) -> bool {
         let Some(zone) = self.zone() else { return false };
+        if self.shifted() {
+            return false;
+        }
         match target {
             Held::Kindle(nth) => zone.round.done_at.is_none() && zone.round.lit.get(usize::from(nth)) == Some(&false),
             Held::Lamp => zone.zone.deal == Deal::Lamp && zone.round.done_at.is_some() && !zone.lit.contains(&player),

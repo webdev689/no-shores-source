@@ -39,7 +39,6 @@ fn a_cache_pays_once_a_dive_and_its_finds_go_into_the_haul() {
     let haul = &character.passage.as_ref().expect("diving").haul;
     let fragments = haul.materials.fragments(Stock::Weapon) + haul.materials.fragments(Stock::Armor);
     assert!((2..=5).contains(&fragments), "{fragments}");
-    assert!(haul.vestiges.len() + haul.items.len() >= 1, "a sure Vestige");
     assert!(!character.pay_cache(zone(1), Cache::Reliquary, Difficulty::Normal, Source::Dungeon, &dice(2)), "once");
 }
 
@@ -59,17 +58,19 @@ fn a_lamp_keeps_the_haul_and_pays_the_day_and_the_week_once() {
     let mut character = diving();
     character.pick_up(Vestige::new(0, Rarity::Rare, Slot::Head, 10));
     character.gather(1);
-    let held = character.vestiges.len();
+    // A Normal Vestige paid is kept as its item.
+    let kept = |character: &Character| character.vestiges.len() + character.mail.len() + character.items.len();
+    let held = kept(&character);
     character.light_lamp(zone(5), 1, (100, 14), &dice(1)).expect("lit");
     assert!(character.passage.as_ref().expect("diving").haul.is_empty());
     assert_eq!(character.materials.resource(1), 3, "materials added");
     // The haul's Vestige, the day's lamp's and the week's first lamp's.
-    assert_eq!(character.vestiges.len() + character.mail.len(), held + 3);
+    assert_eq!(kept(&character), held + 3);
     assert!(character.activity.today.passage_lamp.contains(ISLAND));
     assert!(character.activity.this_week.passage_lamps[ISLAND].contains(&1));
-    let (xp, count) = (character.xp, character.vestiges.len() + character.mail.len());
+    let (xp, count) = (character.xp, kept(&character));
     character.light_lamp(zone(5), 1, (100, 14), &dice(2)).expect("lit again");
-    assert_eq!((character.xp, character.vestiges.len() + character.mail.len()), (xp, count), "nothing twice");
+    assert_eq!((character.xp, kept(&character)), (xp, count), "nothing twice");
     assert_eq!(character.passage.as_ref().map(|dive| dive.lamp), Some(1));
 }
 
@@ -99,7 +100,7 @@ fn going_home_needs_the_lamp_lit_and_keeps_the_haul_to_the_patrol_zone_before_it
     assert_eq!(character.go_on(("continent-1", 2_900, 0), Some((3, 2)), true), Err(Refusal::NoDive), "and no further");
     character.gather(4);
     let mouth = character.passage.as_ref().map(|dive| dive.mouth);
-    assert_eq!(character.leave_passages(), mouth, "into the patrol zone before the mouth it began at");
+    assert_eq!(character.leave_passages(Some(ISLAND)), mouth, "into the patrol zone before the mouth it began at");
     assert!(character.passage.is_none());
     assert_eq!(character.materials.resource(4), 6, "a find on the way out is kept with it");
 }
@@ -108,7 +109,53 @@ fn going_home_needs_the_lamp_lit_and_keeps_the_haul_to_the_patrol_zone_before_it
 fn leaving_the_passages_any_other_way_loses_the_haul() {
     let mut character = diving();
     character.gather(4);
-    assert_eq!(character.leave_passages(), None);
+    assert_eq!(character.leave_passages(Some(ISLAND)), None);
     assert!(character.passage.is_none());
     assert_eq!(character.materials.resource(4), 0);
+}
+
+/// What `light` added to the character's Vestiges and items, by colour and slot.
+fn new_finds(character: &mut Character, light: impl FnOnce(&mut Character)) -> Vec<(Rarity, Slot)> {
+    let (vestiges, items): (Vec<u32>, Vec<u32>) =
+        (character.vestiges.keys().copied().collect(), character.items.keys().copied().collect());
+    light(character);
+    let found = character
+        .vestiges
+        .iter()
+        .filter(|(id, _)| !vestiges.contains(id))
+        .map(|(_, (vestige, _))| (vestige.rarity, vestige.slot));
+    let made = character
+        .items
+        .iter()
+        .filter(|(id, _)| !items.contains(id))
+        .map(|(_, (item, _))| (item.rarity, item.kind.slot()));
+    found.chain(made).collect()
+}
+
+#[test]
+fn the_days_lamp_and_the_weeks_lamp_roll_their_vestiges_apart() {
+    let alike = (1..24)
+        .filter(|&seed| {
+            let mut character = diving();
+            let paid = new_finds(&mut character, |character| {
+                character.light_lamp(zone(5), 1, (100, 14), &dice(seed)).expect("lit");
+            });
+            assert_eq!(paid.len(), 2, "the day's and the week's");
+            paid[0] == paid[1]
+        })
+        .count();
+    assert!(alike < 12, "{alike} of 23 lamps paid two alike");
+}
+
+#[test]
+fn a_reliquarys_fragments_stock_is_rolled_apart_from_their_count() {
+    let mut seen = std::collections::BTreeSet::new();
+    for seed in 0..64 {
+        let mut character = diving();
+        character.pay_cache(zone(1), Cache::Reliquary, Difficulty::Normal, Source::Dungeon, &dice(seed));
+        let haul = &character.passage.as_ref().expect("diving").haul.materials;
+        let (weapon, armor) = (haul.fragments(Stock::Weapon), haul.fragments(Stock::Armor));
+        seen.insert((weapon.max(armor) <= 3, weapon > 0));
+    }
+    assert_eq!(seen.len(), 4, "every count with every stock: {seen:?}");
 }

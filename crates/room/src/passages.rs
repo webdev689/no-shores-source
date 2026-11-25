@@ -8,7 +8,7 @@
 
 use crate::garrison::{Group, draws_of, index, node_seed, ring_bounds};
 use crate::run::Run;
-use crate::{Floor, NODE_FOES_MOST, PlayerId, Room};
+use crate::{Floor, PlayerId, Room};
 use ::foes::Rank::{self, Elite, Major, Miniboss, Minor};
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, MARKSMAN, REEVE, RUNNER};
 use combat::fighter::FighterId;
@@ -31,6 +31,9 @@ const BANDS: [(u8, Rank); 6] = [
 ];
 /// An Elite standing in a band, by turns.
 const ELITES: [u8; 2] = [ENFORCER, MARKSMAN];
+/// The most foes a zone stands at once, its bands and its waves together, so one player does its deal in about two
+/// and a half minutes (`deal_measure_tests`) and a lamp comes about every twelve.
+pub(crate) const ZONE_FOES_MOST: usize = 9;
 /// The stream a zone's bands are drawn on, apart from its waves'.
 const BAND_STREAM: u64 = 0x7061_7373;
 
@@ -168,7 +171,7 @@ impl Room {
         room.facing = sites.facing;
         room.place = Some(gear::gate::Place::Passage);
         room.world_seed = node_seed(&format!("passage:{island}:{week}:{}", zone.number)) ^ zone.seed;
-        room.foes_most = NODE_FOES_MOST;
+        room.foes_most = ZONE_FOES_MOST;
         room.run = Some(Run { modifiers: modifiers.to_vec(), ..Run::default() });
         room.source = if matches!(plan.ground, Laid::Under(_)) { gear::Source::Dungeon } else { gear::Source::World };
         room.island = Some(island);
