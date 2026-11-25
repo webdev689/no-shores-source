@@ -10,7 +10,8 @@ type: procedure
 5. **Run `cargo xtask repo` and the tests of what changed** until they pass; CI runs the whole `cargo xtask check`
    on the pull request ([[CI Is the Check Before a Merge]]).
 6. **Open a pull request.** Its description says what changed, why, and how it was tested. History goes here, not
-   in the code or the bible.
+   in the code or the bible. A change a player would notice carries `## Patch notes: <title>`, a few lines in plain
+   words, which the desktop app's launcher shows once it merges ([[Desktop App]], "The launcher").
 7. **Ask the owner**, then squash-merge once CI is green on the branch's latest commit, and delete the branch. Every
    merge into `main` and every deploy waits for the owner's yes ([[Ask Before Deploying]]); a merge deploys the page,
    the website and, when their code changed, the rooms and the Discord bot, so its yes covers them

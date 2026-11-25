@@ -84,6 +84,7 @@ decision, made in the same change as its entry here.
 | `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
 | `client/src/speech/` | The speech layer, which imports `plus` and `ui`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
 | `client/src/cinema/` | The cinema layer, which imports `water`, `combat`, `plus` and `ui`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
+| `client/src/game/launcher/` | The [[Desktop App]]'s launcher: its window, the patch notes it reads and marks new, and the servers it asks |
 | `client/src/game/prologue/` | The [[Prologue]]: the tap to start, the intro and title, character creation and the story mission's beats, run by its director |
 | `client/src/game/npc/` | The keepers' screen every counter of a social space opens, and Shape's: the keeper drawn in their dress with their words and band, the rows of wares each keeper sells, a faction's rows (`factionRows.ts`), the stock's clock ([[Interface]], [[Factions]]) |
 | `client/src/game/gearHints.ts` | What the menu's footer says each view's presses and keys do, the bounty board's and the Journal's among them ([[Interface]]) |

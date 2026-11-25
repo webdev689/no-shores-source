@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { notesOf } from '../client/src/game/launcher/patchNotes.ts';
 import { noteOf, patchNotesOf, plainOf } from './patchNotes.ts';
@@ -59,4 +60,10 @@ test('the file written is the one the launcher reads, newest first', () => {
 test('markdown is taken out of a line, and a list mark off its start', () => {
   assert.equal(plainOf('  * __Bold__ and `code` and ![a picture](x.png)  '), 'Bold and code and a picture');
   assert.equal(plainOf('1. First step'), 'First step');
+});
+
+test("the repository's pull request template, left unfilled, puts nothing on the launcher", () => {
+  const body = readFileSync(new URL('../.github/pull_request_template.md', import.meta.url), 'utf8');
+  assert.match(body, /^## Patch notes$/m);
+  assert.equal(noteOf({ number: 1, title: 'A change', body, merged_at: '2026-11-25T00:00:00Z' }), null);
 });

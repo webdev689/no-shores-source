@@ -115,7 +115,9 @@ panel's sign-in live at one origin. A merge into `main` deploys it
 to, so no game is served on a protocol no room speaks. Run by hand from the Actions tab it deploys again, but only a
 commit whose own CI check passed. Before it deploys, every CORS rule of the game's R2 bucket
 (`overlook-forge`) that lets the published page read it is widened to the domain's two origins, and the accounts send
-a Discord sign-in back to the game there. The game is still published on GitHub Pages as well
+a Discord sign-in back to the game there. Each deploy also writes `play/patch-notes.json` from the merged pull
+requests' "Patch notes" sections, which the [[Desktop App]]'s launcher shows (`site/patchNotes.ts`). The game is still
+published on GitHub Pages as well
 ([[The World Editor Is on GitHub Pages]]).
 
 The [[Desktop App]]'s downloads are the one address a script answers (`site/worker.ts`, run for `/download/` alone):

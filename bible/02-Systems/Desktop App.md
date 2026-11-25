@@ -29,6 +29,12 @@ code:
   - client/src/desktop.ts#DesktopBridge
   - client/src/gpu.ts#gpuReportOf
   - client/src/game/desktopSettings.ts#desktopNodes
+  - client/src/game/launcher/launcher.ts#openLauncher
+  - client/src/game/launcher/launcherNodes.ts#launcherNode
+  - client/src/game/launcher/patchNotes.ts#readNotes
+  - client/src/game/launcher/servers.ts#askHealth
+  - site/patchNotes.ts#patchNotesOf
+  - server/health.ts#healthAnswer
   - site/worker.ts#download
   - .github/workflows/desktop.yml
 ---
@@ -126,11 +132,36 @@ third ways to Vulkan may draw a blank window that no check sees: once the game h
 launch whether they can see it (with no backend left, a blank window is told what to do), the answer kept for that card, driver and
 Chromium; Go back counts as a failure, and no answer in 20 seconds starts the next backend for that launch alone.
 
+### The launcher
+
+The app opens on a launcher ([[The Desktop App Opens on a Launcher in the Game's Look]]), once a run: a page loaded
+again (a sign-in's return, Exit to Menu) skips it. It is drawn by the game's own interface in the menus' look, played
+with keys, pad and mouse, with the world loading behind it and the title standing under it
+(`client/src/game/launcher/`):
+
+- **Its head**: the logo, and links to the website and the Discord server, opened in the player's browser; Report a
+  bug goes to the Discord server, whose bugs go in #bug-reports.
+- **Its left**: the patch notes, newest first. Each merged pull request's "Patch notes" section
+  ([[Making a Change]]) is read by the site's deploy into `play/patch-notes.json` (`site/patchNotes.ts`: the twelve
+  latest, each a title and its lines, plain words with no markup), which the launcher reads beside the game and keeps;
+  the site not answering, it shows the notes it kept, and says so. A note merged since the player last pressed Play
+  is marked new as the menu marks what is new, with the count in its heading.
+- **Its right**: the servers Play joins, the rooms (`/health`, `server/health.ts`) and the accounts (`/v1/health`),
+  each asked and timed as it opens and every 30 s, up, not answering after 5 s, or being asked; then the graphics
+  exactly as Settings' Graphics tab has them (the resolution, and the App part below).
+- **Its foot**: what the servers say, and Play, which has the focus as it opens. Play keeps the time, for the next
+  launch's new notes, and goes to the title, which hears the page only from then on (a pad's button held from Play
+  taps nothing).
+
+While the launcher stands, the interface hears the page's input as the world loads, which it otherwise throws away
+until the game's own frames begin.
+
 ### Settings' App part
 
 In the app, Settings' Graphics tab ([[Interface]], "Settings") adds an App part (`desktopSettings.ts`): the graphics
 API where there is a choice (Windows), what the app draws with and on which card, a choice whose every way failed on
-this card, a change that waits on a restart, the version, and the update, with Restart now or Download.
+this card, what a restart would bring, the version, and the update, with Restart now, Download, or both. The launcher
+shows the same.
 
 ### Updates
 
