@@ -2,7 +2,7 @@
 //! (a coven's or a cave's area) and of its runs' beats but their end arenas, each standing a group the first time a
 //! player comes within SITE_NEAR of it, on a mesh baked round it then (`quests.rs`' `ground_of`), so a room's opening
 //! grows no slower; and a half-fallen patrol group made whole again once no player has come near its post for
-//! STAND_AGAIN, as a Destiny patrol area resets.
+//! STAND_AGAIN, as a Destiny patrol area resets (the owner's "Whatever destiny does").
 
 use super::{
     BEAT_STREAM, CLEAR_AROUND, FROM_SQUARE, Group, NODE_AROUND, PATROL, POSTS_APART, STAND_AGAIN, draws_of, foe_type,
