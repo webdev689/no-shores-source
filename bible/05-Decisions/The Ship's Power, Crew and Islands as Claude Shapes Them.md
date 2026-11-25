@@ -70,3 +70,6 @@ for (Destiny 1, Star Trek Online, Black Desert, Deadfire, DFO's own crew), and t
 Replaced in part by [[The Balance and Economy Pass as Claude Shapes It]]: a sinking pays twelve land kills of its rank,
 in XP to the ship, its modules and its officers aboard and in XP and Aurem to the player; every module climbs to its
 rarity's Prestige over however many upgrades its grid holds.
+
+Replaced in part by [[Passages as Claude Builds Them]] ("The band, measured"): a sinking pays as twenty-one
+land kills of its rank.
