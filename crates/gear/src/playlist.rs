@@ -59,12 +59,6 @@ impl Playlist {
         }
     }
 
-    /// The playlist of a key; none for any other.
-    #[must_use]
-    pub fn of_key(key: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|playlist| playlist.key() == key)
-    }
-
     /// The level it opens at, as its tier's seas do: 10 and 20.
     #[must_use]
     pub fn opens_at(self) -> u8 {

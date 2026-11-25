@@ -230,7 +230,7 @@ impl Fight {
                 .map(|(_, other_ship)| {
                     let (east, south) = (other_ship.ship.x - square.centre[0], other_ship.ship.y - square.centre[1]);
                     let apart = (east * east + south * south).sqrt();
-                    (other_ship, apart, (east * square.dir[0] + south * square.dir[1]) / apart.max(1e-9))
+                    (other_ship, apart, (east * square.direction[0] + south * square.direction[1]) / apart.max(1e-9))
                 })
                 .filter(|(_, apart, cos)| *cos >= GUNNER_ARC_COS && *apart <= square.reach)
                 .min_by(|one, other| one.1.total_cmp(&other.1));

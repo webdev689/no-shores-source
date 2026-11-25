@@ -322,7 +322,8 @@ fn raced(race: &Race) -> Option<&'static str> {
 ///
 /// # Panics
 ///
-/// Never for the file in the repository, which `the_quests_file_reads_whole` reads.
+/// Never for the file in the repository, which
+/// `the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_that_are` reads.
 #[must_use]
 pub fn quests() -> &'static QuestsDef {
     static READ: OnceLock<QuestsDef> = OnceLock::new();
@@ -365,7 +366,8 @@ struct Cast {
 ///
 /// # Panics
 ///
-/// Never for the file in the repository, which `the_quests_file_reads_whole` reads.
+/// Never for the file in the repository, which
+/// `the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_that_are` reads.
 #[must_use]
 pub fn speaker_place(key: &str) -> Option<usize> {
     static READ: OnceLock<Vec<String>> = OnceLock::new();

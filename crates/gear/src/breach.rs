@@ -53,12 +53,6 @@ impl Tier {
         }
     }
 
-    /// The tier of a key; none for any other.
-    #[must_use]
-    pub fn of_key(key: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tier| tier.key() == key)
-    }
-
     /// The level every foe stands at, as Destiny 1's Vault of Glass stood at 26 and 30.
     #[must_use]
     pub const fn foes_at(self) -> u8 {

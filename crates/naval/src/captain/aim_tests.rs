@@ -110,7 +110,7 @@ fn its_lay_is_long_or_short_by_its_crews_error() {
     };
     let most = 0.45 * (1.0 - TITHE_SLOOP.skill);
     // Laid long or short by up to `most` of the range, then misjudged up or down by up to its elevation's error.
-    let tilt = JUDGE_ELEVATION_DEG * DEG * (1.0 - TITHE_SLOOP.skill);
+    let tilt = JUDGE_ELEVATION_DEG.to_radians() * (1.0 - TITHE_SLOOP.skill);
     for seed in 1..40 {
         let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
         deck.step(0.0, &target_east(60.0));
@@ -130,10 +130,10 @@ fn a_volley_flies_as_far_across_its_mark_as_its_gunners_misjudge_it_within_its_b
         deck.step(0.0, &target_east(60.0));
         let judged = deck.run.judged[Side::Starboard.index()].across_m;
         let Some(lay) = deck.step(1.4, &target_east(60.0)).fire else { panic!("seed {seed} fires") };
-        let off = libm::atan2(lay.dir[1], lay.dir[0]) / DEG;
+        let off = libm::atan2(lay.direction[1], lay.direction[0]) / DEGREE;
         assert!(off.abs() <= BEAR_DEG + 1e-9, "{seed}: {off} degrees off its beam");
-        let across = 60.0 * lay.dir[1] / lay.dir[0];
-        let most = 60.0 * libm::tan(BEAR_DEG * DEG);
+        let across = 60.0 * lay.direction[1] / lay.direction[0];
+        let most = 60.0 * libm::tan(BEAR_DEG.to_radians());
         assert!((across - judged.clamp(-most, most)).abs() < 1e-6, "{seed}: {across} m across, judged {judged}");
         wide += u32::from(across.abs() > 10.6);
         held += u32::from(off.abs() >= BEAR_DEG - 1e-9);
@@ -182,8 +182,8 @@ fn a_misjudged_elevation_never_passes_what_its_carriage_raises_to() {
         let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
         deck.step(0.0, &far);
         if let Some(lay) = deck.step(1.4, &far).fire {
-            assert!(lay.elevation <= lay.gun.max_el_deg * DEG + 1e-12, "{seed}: {}", lay.elevation);
-            held += u32::from((lay.elevation - lay.gun.max_el_deg * DEG).abs() < 1e-12);
+            assert!(lay.elevation <= lay.gun.max_el_deg.to_radians() + 1e-12, "{seed}: {}", lay.elevation);
+            held += u32::from((lay.elevation - lay.gun.max_el_deg.to_radians()).abs() < 1e-12);
         }
     }
     assert!(held > 0, "some volleys laid at the carriage's highest");
