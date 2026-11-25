@@ -137,11 +137,11 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 - **The ruined cities** are overtaken by its crystal, drawn by code in the city's crystal material: the landmark
   crowned, the buildings, heaps, rubble and wrecks grown through ([[Cities]], "Overtaken by the Lattice").
 - **Its coming** ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]],
-  [[Enemies]], "Arrivals"): its foes form under a crown of its crystal, the `lattice-crown` module ([[Modules]]), built
+  [[Foe Arrivals as Claude Builds Them]], [[Enemies]], "Arrivals"): its foes form under a crown of its crystal, the `lattice-crown` module ([[Modules]]), built
   from the same shards its foes are grown with. The crown grows out of its heart 6.4 m over the ground, its crystal
   drawn in out of the air; each foe forms under it from the head down, its cells landing in its crystal, a thread of
   the crown's light down to it and a ring round its feet; the crown holds a moment, cracks and breaks in its wave,
-  twice a man's size, its shards falling and sinking into the ground (`arrivalsView.ts`, `crownLife.ts`). One of its
+  2.4 times a man's size, its shards falling and sinking into the ground (`arrivalsView.ts`, `crownLife.ts`). One of its
   own a great foe calls forms where it stands, in its crystal.
 - **Before the pictures are published** a Lattice foe is drawn as a plain man in grey and brown at its size, and dies
   in its fade alone.

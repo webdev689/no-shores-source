@@ -36,8 +36,8 @@ status: in force
   thrusters. In patrol they are seen flying in, and the foes they bring arrive with a spawn effect like the player's
   ([[Players Arrive as Destiny's Transmat Does, Unexplained]]).
 - **The Lattice arrive under crystal**: a crystallized structure appears, and its foes spawn below it ([[Lattice]]).
-- **Patrol groups are varied, and there are more foes**: the largest groups are the ones patrols have now, and smaller
-  groups of varied kinds stand beside them.
+- **Patrol groups are varied, and there are more foes**: the largest groups are a patrol's bands, and smaller groups of
+  varied kinds stand beside them.
 - **The airships and the crystal are made with the Blender pipeline** ([[Modules]]).
 - **Claude decides the rest**, in detail, recording each call in [[Foe Arrivals as Claude Builds Them]]; it is done
   when it is complete.

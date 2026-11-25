@@ -345,18 +345,19 @@ companions, and a foe a page asks for. The rest arrive (`arrivals.rs`):
 
 - **By airship**, the Grey Tithe's, under the open sky (a node's land or an island's; nowhere else, where they stand as
   they are stood): a garrison group standing again, a half-fallen patrol group's fallen, a mission's waves, the raid's
-  waves and its tithe-taker ([[Public Events]]), a quest defence's waves ([[Quests]]), and a patrol's own airship
-  groups (below). A ship carries six at most; it comes in toward the nearest living player (swung up to 0.6 rad off
+  waves and its tithe-taker ([[Public Events]]), a quest defence's waves ([[Quests]]), the War Horn's Assessor and his
+  four ([[Outposts]]), and a patrol's own airship groups (below). A ship carries six at most; it comes in toward the nearest living player (swung up to 0.6 rad off
   that line), its flight 8 s; it hangs 16 m over the middle of its foes' places, lets the first down 1 s after it hangs
   and each next 0.5 s after, each built over 1 s; it lingers 1.2 s after the last stands and flies on for 9 s. A ship
   to ground another's is over (within 40 m) sets out 1.5 s later and hangs 8 m higher.
-- **Under a crown**, the Lattice's: the Fissure's waves and its Warden, the Sunken Gate's Waking and the Drowned
-  Vale's waves, a crown over each mouth or perch they come out of. It forms over 1.2 s; each foe begins forming 0.25 s
+- **Under a crown**, the Lattice's: the Fissure's waves and its Warden, the Sunken Gate's Waking and the Bulwarks it
+  sends to claim a mooring, and the Drowned Vale's waves, a crown over each mouth or perch they come out of. It forms over 1.2 s; each foe begins forming 0.25 s
   after the one before and forms over 1.3 s; it holds 0.6 s after the last and breaks over 0.8 s.
 - **Called**: a Boss's called foes are built where they stand, over 0.6 s.
 
-A foe arriving neither thinks nor steps, is in no foe's sight, and no blow, shot, spell or telegraphed blow touches
-it until it lands; it counts among the room's living foes. As it lands it takes up the hunt it came with at its
+A foe arriving neither thinks, steps nor hears (no noise reaches its brain), breaks with no fallen leader, and holds
+its group's beat, is in no foe's sight, and no blow, shot, spell or telegraphed blow touches it until it lands; it
+counts among the room's living foes. As it lands it takes up the hunt it came with at its
 target as it stands then. The room sends each foe's arrival (what brings it, its number, the tick it is let down and
 the tick it lands) and each airship and crown whole while it lasts (`ArrivalSeen`: where its ground is, the way it
 comes, how high it hangs, and the ticks it set out, hangs, lets its last go and is gone).
@@ -365,13 +366,16 @@ comes, how high it hangs, and the ticks it set out, hangs, lets its last go and 
 after, then every 45 to 75 s, to each roaming player in turn, while fewer than three of their groups stand and the
 room has room. The group, half the time a band and else one of the smaller groups, is set down on ground the room has
 35 to 80 m from the player (as near 50 m as it can), 25 m from every player, 20 m from every foe and post and 60 m
-from every foes' site and quest place, so it adds to the ground between the zone's laid encounters. Where no ground
+from every foes' site and quest place and from the edge of each public event's ground, running or not, so it adds to
+the ground between the zone's laid encounters. Where no ground
 reaches, one is baked round a 60 m cell 50 m from the player: the one ahead of them, else one an eighth of a turn
 either side of that way, then a quarter, and so on round to behind them, the first in the section that the room has no
-ground round yet; ten at most in a room, never while another place's ground is baking: the room bakes one at a time,
-some 45 ticks each ([[Navmesh]]), so a site's or a quest's waits at most one of the airships'. One the airships began
-is baked whole wherever the player goes meanwhile. A group brought walks a beat over its ground's lattice, never
-stands again, and once no player has come within 220 m of it for 90 s, its foes all idle, it is gone.
+ground round yet; ten at most in a room, counted whichever place's turn finished each, never while another place's
+ground is baking nor the tick after another place waited for its turn: the room bakes one at a time, some 45 ticks
+each ([[Navmesh]]), so a site's or a quest's waits at most one of the airships'. One the airships began is baked whole
+wherever the player goes meanwhile. A group brought walks a beat over its ground's lattice (a sentry or a watch holds
+its post), never stands again, and once no player, standing or fallen, has come within 220 m of it for 90 s, its foes
+all idle, it is gone.
 
 ## On screen
 
@@ -417,7 +421,8 @@ stands again, and once no player has come within 220 m of it for 90 s, its foes 
   grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the crew's own five types in the Test
   Ground's first foes' clothes. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the wreck dresses its
   crew as the Brig's hands ([[Prologue]]).
-- **Arriving**, a foe is drawn only once it is let down or begins forming, and wears no plate until it lands. A
+- **Arriving**, a foe is drawn only once it is let down or begins forming, and wears no plate, nor stops a player's
+  aimed shot on the page, until it lands. A
   Grey Tithe foe is built from the feet up as a player arriving is, each 2 by 2 cell white as it lands and then a
   moment ember, in a beam from its airship's hatch, a ring of light at its feet and dust thrown up as it lands; a
   Lattice foe forms from the head down, its cells landing in its crystal, a thread of its crown's light down to it.
@@ -425,7 +430,10 @@ stands again, and once no player has come within 220 m of it for 90 s, its foes 
   as `arrivalsView.ts` flies and grows them (`airshipFlight.ts`, `crownLife.ts`): the ship banks, pitches and bobs, its
   thrusters burn and its stacks smoke as hard as it drives (`arrivalLooks.ts`), its fires light the ground round it at
   night; the crown grows out of its heart, its crystal drawn in out of the air, and breaks in the Lattice's wave, its
-  shards falling and sinking. Each is heard from recordings the owner picked ([[Foe Arrivals as Claude Builds Them]]).
+  shards falling to the land under each and sinking. The page runs the room's ticks on between its snapshots, eased
+  onto each and never stepped back (`foeArrivals.ts`), so a ship's flight and a foe's build run smoothly. Each is heard
+  from recordings the owner picked, a beat it was long past when first seen not heard
+  ([[Foe Arrivals as Claude Builds Them]]).
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 

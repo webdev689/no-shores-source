@@ -68,11 +68,11 @@ raised by the voyage's seas), at home round the event's ground. Each but the gro
 player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its
 ground's radius, or its farthest point from its middle past it: the growth's spot, the approach, where the raid's waves
 form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post at its store), on ground
-the room's mesh covers, or anywhere within 14 m of it ([[A Foe Gives Up Only When the Player Is Far Away]]); past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
+the room's mesh covers, or anywhere within 14 m of it ([[A Foe Gives Up Only When the Player Is Far Away]]); past that it gives them up and walks back. A zone's room that holds events stands 48 foes alive
 at most and keeps 16 of them for its event (the most it stands at once: a Fissure's living foes short of a wave, its
-fullest wave and its growth or Warden); its garrison stands again, calls and arrives, a road's kill goal stands its
-group, and a road's ward, waves, ambush and watchers stand, only while the foes not of the event stay within 24, as in
-any other node. The growth, the Warden and Marrow
+fullest wave and its growth or Warden); its garrison stands again, calls and arrives, its airships bring their groups,
+a road's kill goal stands its group, and a road's ward, waves, ambush and watchers stand, only while the foes not of the
+event stay within 32, as in any patrol ([[Enemies]], "Limits"). The growth, the Warden and Marrow
 stand half their health more for each player at the event beyond the first (the most seen at the Fissure; those on the
 raid's ground as Marrow comes). The Fissure's growth and the raid's tithe-taker the room handles itself: their brains
 are left be, so neither moves on its own nor strikes; the growth stands where it rose, and the tithe-taker walks the
@@ -81,7 +81,7 @@ waves form and its raiders' home (the stores' middle) are put on the navmesh as 
 
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle, forming under a crown of
-its crystal over the crack ([[Enemies]], "Arrivals"): three foes and one more for
+its crystal over the crack ([[Enemies]], "Arrivals"; [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Foe Arrivals as Claude Builds Them]]): three foes and one more for
 each player seen at it beyond the first (six at most), drawn from Husks, Flickers, an Idol and a Ravager. Another
 comes when two or fewer of its foes stand, but never sooner than 30 seconds after the last, or 40 seconds after the
 last, while fewer than ten stand: the shards come at a pace a group must keep up with. Each of its
@@ -263,8 +263,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - The door test's scripted players stand over Saltmere's band of 1 to 4 ("Agreement"). They take a foe as standing
   while it is not dead (a sliver of health crosses as none) and wait 8 m from one still arriving, guarded: they seal
   the Fissure heroic at tick 16,378, and meet the raid's heroic task but lose to its fourth wave, Marrow felling them
-  one at a time while he heals walking home, the stores at 732 per mille at its countdown's end; the rules' own
-  scripted pair holds the heroic raid. The events'
+  one at a time while he heals walking home, the stores at 732 per mille at its countdown's end. The room's own raid
+  test, striking each foe once it lands, wins it heroic (`raid_tests.rs`), and so do the page's two bots beside its
+  standing player (`server/public.test.ts`). The events'
   pacing ([[Public Events as Claude Builds Them]], "The Fissure's waves", "The raid's waves") comes from scripted runs
   at levels 2 and 4 with plain and magic gear, two to four players, made at commit 6a483587: not kept in the
   repository, and not made against the rules as they stand (the great foes' health, the leash, the heroic third

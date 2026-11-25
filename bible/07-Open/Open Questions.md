@@ -91,7 +91,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
     roaming players; they hold no ground in those zones ([[Enemies]], "Factions").
   - Whether a site's group may be one of the smaller groups too: a smaller group up a run's ledge, facing away, is
     not met by a player walking the run (`sites_held`), so sites stand bands.
-  - The arrivals' sounds are recordings already picked for other things (the bosun's whistle, the thunder's roll, the
+  - The arrivals' sounds are recordings already picked for other things (a hull's creak, the thunder's roll, the
     ice's crack, a shield breaking); a sheet of the airship's own engines, hatch and the crown's forming would let the
     owner pick their own.
   - Whether the heroic raid is as hard as wanted: the room door's scripted pair loses its last wave (Marrow), and the

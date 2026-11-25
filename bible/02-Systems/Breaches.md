@@ -66,7 +66,8 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   the Spire (150 s); fewer let it ebb (at a quarter the pace at Normal, a half at Hard), and a Bulwark sent out claims
   a mooring left empty, which holds nothing while it stands. Waves come from the hollow's four growths, two and one
   more for every two of the company's living holders, six at most, each growth's foes forming under a crown of the
-  Lattice's crystal over it, and its perch's Ravager under its own ([[Enemies]], "Arrivals"). The Spire woken, the gate opens to that company
+  Lattice's crystal over it, and its perch's Ravager under its own; a Bulwark sent out forms under a crown over its
+  mouth ([[Enemies]], "Arrivals"; [[Foe Arrivals as Claude Builds Them]]). The Spire woken, the gate opens to that company
   alone until its Breach is cleared or a day has passed, and no company whose run opened takes the gate again; lost
   (a wipe, or the Spire standing empty a whole minute), the company stands whole at the gate's arrival and the gate is
   free. The zone hears only the runs it opened, so a run no one was let into shows no company inside. The gate's

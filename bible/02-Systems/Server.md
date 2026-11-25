@@ -472,7 +472,10 @@ input names): the players and foes that changed, each as only its numbers that c
 own fighter likewise but whole, and those gone. The fight's events, dresses changed and balls stopped since that
 tick go each time until a later one is shown, so a snapshot lost on the way costs nothing the next does not carry.
 A player whose screen is further behind is sent everything. A foe's packed numbers end with its companion's four (0
-for a foe). An island's room measures from its middle, floored to whole metres; a course's from the world's middle. A
+for a foe) and last, while it arrives, what brings it (1 an airship, 2 a crown, 3 a call), the number of what brings
+it, the tick it is let down and the tick it lands (0 each once it has landed); every airship and crown bringing foes
+crosses whole in each snapshot while it lasts (`Arrival`: its number, what it is, its ground, its heading, how high it
+hangs and the ticks it set out, hangs, leaves and is gone; none in a room with none; [[Enemies]], "Arrivals"). An island's room measures from its middle, floored to whole metres; a course's from the world's middle. A
 deck boarded at sea sends each boarder their own snapshot inside the sea's: their fighter whole, the rest packed, and
 all of it each tick, since the sea's snapshot is not built on another. At sea, each player is sent their own fight
 alone. An input may carry the inputs before it, which the room takes when it has not had them (`read_inputs`); a

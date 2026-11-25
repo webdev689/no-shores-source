@@ -138,7 +138,7 @@ are written with paving last, since the first group carries the parts and paving
     `client/src/city/chestModules.ts` and listed after the manifest's modules: `chest` and `chest-heroic`, each with
     its lid (`chest-lid`, `chest-heroic-lid`), a module of its own with its hinge at its origin, and the chest's `hinge`
     socket where that hinge sits on it.
-- **What brings foes** ([[Enemies]], "Arrivals"; [[Foe Arrivals as Claude Builds Them]]), drawn by the page as it
+- **What brings foes** ([[Enemies]], "Arrivals"; [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Foe Arrivals as Claude Builds Them]]), drawn by the page as it
   flies or forms, never placed by a layout:
   - The Grey Tithe's airship (`tithe-airship`, `airship.py`): the Brig's own hull, built by the ships' builder
     (`shipkit.py` takes `tools/ships/ship_hull.py` in, its painted parts read as the kit's timber, canvas and iron),
@@ -153,7 +153,7 @@ are written with paving last, since the first group carries the parts and paving
     `-4`, facing aft), each lift's (`lift-1`, `-2`), each stack's top (`stack-1`, `-2`) and its hatch (`hatch`). Its
     canvas is the Tithe's grey. 16,588 triangles.
   - The Lattice's crown (`lattice-crown`, `crown.py`): a heart of its light held in seven great spars reaching down
-    like a claw, seven shorter splayed level between them, a cluster pointing down and points standing up, a halo of
+    like a claw, seven shorter splayed nearly level between them, a cluster pointing down and points standing up, a halo of
     small shards round its waist and a long shard dripping from each spar's end, all the Lattice's own shards
     (`latticekit`). Its origin is its heart: it reaches some 4 m down. 1,544 triangles.
 - **The Drowned Vale's** ([[Breaches]], "Its art"): the Sunken Gate's hollow (`breach-gate`), the run's nine spaces
