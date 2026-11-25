@@ -3,7 +3,14 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import * as flatbuffers from 'flatbuffers';
-import { Gear, GearColumn, GearOfficer, GearShip, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import {
+  Gear,
+  GearColumn,
+  GearKeptShip,
+  GearOfficer,
+  GearShip,
+  Input,
+} from '../../../generated/messages/ts/overlook/wire.ts';
 import { earnedOf } from './artMessages.ts';
 import { ASKS, DROPPED, gearOf } from './gearMessages.ts';
 import { FIGURE_STATES } from './questMessages.ts';
@@ -200,7 +207,7 @@ test('an ask crosses into an input with every field it names', () => {
   assert.equal(none.ask(), null, 'an input that asks nothing carries no ask');
 });
 
-test("the ship's part of the gear message reads back: its power, materials, hands, officers and offers", () => {
+test("the ship's part of the gear message reads back: its power, materials, hands, officers, offers and fleet", () => {
   const builder = new flatbuffers.Builder(256);
   const traits = GearColumn.createTraitsVector(builder, [builder.createString('steady_hand')]);
   const column = GearColumn.createGearColumn(builder, 3, traits, 400, 900, 0, 2, 0);
@@ -225,6 +232,15 @@ test("the ship's part of the gear message reads back: its power, materials, hand
     );
   const officers = GearShip.createOfficersVector(builder, [officer(5, 1, 0)]);
   const offers = GearShip.createOffersVector(builder, [officer(0, 0, 4_000)]);
+  const brig = GearKeptShip.createGearKeptShip(
+    builder,
+    2,
+    GearKeptShip.createNameVector(builder, [255, 3]),
+    true,
+    GearKeptShip.createDressVector(builder, [1, 11, 21, 31]),
+  );
+  const fleet = GearShip.createFleetVector(builder, [brig]);
+  const dresses = GearShip.createDressesVector(builder, [0, 1, 11]);
   const ship = GearShip.createGearShip(
     builder,
     9_000n,
@@ -241,6 +257,9 @@ test("the ship's part of the gear message reads back: its power, materials, hand
     offers,
     GearShip.createTrimVector(builder, [1, 2]),
     2,
+    fleet,
+    2,
+    dresses,
   );
   Gear.startGear(builder);
   Gear.addShip(builder, ship);
@@ -255,6 +274,8 @@ test("the ship's part of the gear message reads back: its power, materials, hand
     [read.stocks, read.hands, read.handsMost, read.trim, read.pledge],
     [[10, 20, 30, 4], 18, 24, [1, 2], 2],
   );
+  assert.deepEqual(read.fleet, [{ hull: 2, name: [255, 3], named: true, dress: [1, 11, 21, 31] }]);
+  assert.deepEqual([read.sailed, read.dresses], [2, [0, 1, 11]]);
   const [kept] = read.officers;
   assert.deepEqual(
     [kept?.id, kept?.post, kept?.grade, kept?.given, kept?.family, kept?.duty, kept?.level, kept?.toNext],

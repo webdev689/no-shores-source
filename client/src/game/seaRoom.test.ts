@@ -89,7 +89,7 @@ test('a facing still waiting when the player leaves the helm is let go, and a co
 
 test('while its link rejoins the sea shows none of its ships; joined again, it is its new player, its course sent at once', async () => {
   const { room, sent, atTick, link } = await joined();
-  atTick(1000, [{ player: 1, x: 50_000, y: 150_000, heading: 0, pace: 0 }]);
+  atTick(1000, [{ player: 1, x: 50_000, y: 150_000, heading: 0, pace: 0, hull: 0, dress: [], name: [], emblem: 0 }]);
   assert.ok(room.ownShip);
   link.rejoining = true;
   room.pump(0);
@@ -102,7 +102,7 @@ test('while its link rejoins the sea shows none of its ships; joined again, it i
 
 test('washed up, the player’s ship lies where the room moored it, taken once, and what the sea told is kept', async () => {
   const { room, atTick } = await joined();
-  const moored = { player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0 };
+  const moored = { player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0, hull: 0, dress: [], name: [], emblem: 0 };
   atTick(5, [moored], [[20, 5, 0, 1]]);
   assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 1 });
   assert.equal(room.takeWashed(), null, 'taken once');
@@ -113,14 +113,22 @@ test('washed up, the player’s ship lies where the room moored it, taken once, 
 
 test('back at sea, its ship lies where the room last kept it', async () => {
   const { room, atTick } = await joined();
-  atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 2, pace: 0 }], [[23, 5, 61_000, 50_000, 2]]);
+  atTick(
+    5,
+    [{ player: 1, x: 61_000, y: 50_000, heading: 2, pace: 0, hull: 0, dress: [], name: [], emblem: 0 }],
+    [[23, 5, 61_000, 50_000, 2]],
+  );
   assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 2 });
 });
 
 test('washed up in the snapshot that lets the fight go, the fight is over as sunk, never as gone', async () => {
   const { room, atTick } = await joined();
   Object.assign(room, { fight: { over: null, events: [] } });
-  atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0 }], [[20, 5, 0, 1]]);
+  atTick(
+    5,
+    [{ player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0, hull: 0, dress: [], name: [], emblem: 0 }],
+    [[20, 5, 0, 1]],
+  );
   assert.equal(room.takeFight()?.over, 'sunk');
 });
 

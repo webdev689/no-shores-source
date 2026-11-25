@@ -80,7 +80,8 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
 - **One strength a rank.** Every hull's best way is the Sloop's. A side's broadside weighs the Sloop's, spread over
   its guns, each ball's chances times three over its guns a side, and harm's fractions carried. Its hull, canvas and
   men scale by how often a captain's gunners hit it, so every hull of a rank lasts as long under a captain's fire.
-  Under a player's, a Frigate lasts about 5% longer.
+  Under a player's, a Frigate lasts about 5% longer. Replaced in part for a player's own hull, whose class sets its
+  way, broadside and lasting ([[The Ships at the Harbourmaster as Claude Shapes Them]]).
 - **Rigs and names.** Its handling gain is the matching rig's in DFO: the Large Boat V for the Schooner, the galleon
   for the Brig, the Carrack for the Frigate. Every sail is small. A captain is named by its side and hull, as "Tithe
   Brig".

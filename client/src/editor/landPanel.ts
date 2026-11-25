@@ -294,7 +294,11 @@ export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPane
       'Walking: W A S D to move, Shift to run, C to dive, Space to rise, drag to look round, G to stop.',
       view.walking,
     ),
-    hint('Sailing: W and S climb and come down from oars to sails, A and D steer, B to stop.', view.sailing),
+    hint(
+      'Sailing: W and S climb and come down from oars to sails, A and D steer, B to stop. ?hull=brig in the address' +
+        ' sails another hull (sloop, schooner, brig or frigate); a fleet sails the Sloop.',
+      view.sailing,
+    ),
     hint(
       'F calls a Tithe ship, or sends it off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
         ' A left click holds fire, the wheel changes shot, C braces, and Shift gives a burst of speed. In a fleet' +

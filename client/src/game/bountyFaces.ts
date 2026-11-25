@@ -6,7 +6,7 @@ import factions from '../../../content/gear/factions.json' with { type: 'json' }
 import { OUTLINE } from '../combat/dropPictures.ts';
 import type { Pixels } from '../plus/emblems.ts';
 import type { Node } from '../ui/node.ts';
-import { type Emblem, SIGN_CELLS, emblemOf, emblemPixels } from './emblemArt.ts';
+import { type Emblem, SIGN_CELLS, emblemOf, emblemPixels } from '../plus/emblemArt.ts';
 
 /** The town's writ, 16 cells by 17: a notice pinned by a brass tack, its lines inked, its red seal and ribbons. */
 const WRIT: Pixels = {

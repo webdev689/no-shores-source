@@ -126,8 +126,9 @@ impl Fight {
                 continue;
             };
             player.guns.braced = order.brace;
-            // A side drawn for a new load reloads as its volleys do: by its hands left and its fittings' trim.
-            let pace = RELOAD_SINGLEHANDED * self.fittings.get(id).map_or(1.0, |fitted| fitted.trim.reload);
+            // A side drawn for a new load reloads as its volleys do: by its hands left, its class and its fittings' trim.
+            let trimmed = self.fittings.get(id).map_or(1.0, |fitted| fitted.trim.reload);
+            let pace = RELOAD_SINGLEHANDED * crate::class::class_of(player.hull).reload * trimmed;
             if let Some(shot) = order.load
                 && player.guns.set_load(shot, player.damage.crew_share(), true, pace)
             {
@@ -140,7 +141,7 @@ impl Fight {
             let hurts =
                 Hurts { drive: player.boost.drive(), ..Hurts::of(&player.damage).fitted(self.fittings.get(id)) };
             let hurts = Hurts { way_share: hurts.way_share * way, turn: hurts.turn * turn, ..hurts };
-            let (ship, refused) = sail_hurt(&player.ship, player.hull.hull(), order.helm, hurts, waters, wind, time);
+            let (ship, refused) = sail_hurt(&player.ship, player.hull, order.helm, hurts, waters, wind, time);
             if refused {
                 events.push(Event::NoSail { ship: *id });
             }
@@ -223,14 +224,16 @@ impl Fight {
         }
     }
 
-    /// A player's laid side fired: its scatter `spread` times its gun's own (as long as its lay was held), and its
-    /// scatter and its reload as its fitting trims them.
+    /// A player's laid side fired: its scatter `spread` times its gun's own (as long as its lay was held), its
+    /// scatter and its reload as its fitting trims them, and its broadside's weight and reload its class's.
     fn player_volley(&mut self, id: ShipId, laid: Lay, spread: f64) {
         let trim = self.fittings.get(&id).map(|fitted| fitted.trim).unwrap_or_default();
+        let Some(class) = self.ships.get(&id).map(|player| crate::class::class_of(player.hull)) else { return };
         let scatter = |gun_spread: f64| gun_spread * trim.scatter * spread;
         let gun = crate::guns::Gun {
             yaw_spread_deg: scatter(laid.gun.yaw_spread_deg),
             pitch_spread_deg: scatter(laid.gun.pitch_spread_deg),
+            share: laid.gun.share * class.broadside,
             ..laid.gun
         };
         let laid = Lay { gun, ..laid };
@@ -240,7 +243,7 @@ impl Fight {
         self.balls.extend(volley(&laid, carry, LARGE_BOAT.skill, seed, self.clock, (id, Flag::Player)));
         // Its hands work its guns: whole, at the pace one player alone always loaded them; thinned, slower.
         player.guns.fired(laid.side, player.damage.crew_share(), true);
-        player.guns.pace_reload(laid.side, RELOAD_SINGLEHANDED * trim.reload);
+        player.guns.pace_reload(laid.side, RELOAD_SINGLEHANDED * class.reload * trim.reload);
     }
 
     /// Its Gunner's broadside, when he has one to fire: the side its own lay this tick does not take.

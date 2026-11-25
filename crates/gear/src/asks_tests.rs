@@ -166,7 +166,7 @@ fn a_vestige_opens_only_in_a_social_space_into_the_slot_it_holds() {
 
 #[test]
 fn a_vestige_opens_into_a_number_no_item_holds() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     let id = character.take_id();
     character.vestiges.insert(id, (Vestige::new(id, Rarity::Magic, Slot::Arms, 4), false));
     let held = *character.items.keys().next().expect("a starting item");

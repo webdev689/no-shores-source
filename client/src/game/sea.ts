@@ -20,7 +20,7 @@ import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
 import { SKY_NOW } from '../sky/skyDriver.ts';
-import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
+import type { Lying } from '../ships/deck.ts';
 import { Aboard } from './aboard.ts';
 import { Boarding } from './deckBoarding.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -77,7 +77,7 @@ export class Sea {
     [this.chase.metM, this.passage.holdReachM] = [facts.engageM, facts.holdReachM];
   }
   private readonly watch = new SeaWatch();
-  private readonly chase = new Chase((ship) => this.room?.chase(ship));
+  private readonly chase = new Chase({ tell: (ship) => this.room?.chase(ship), speed: () => this.passage.speed });
   /** Where it lies and heads, its voyage and pace dial, and its courses to the sea room. */
   private readonly passage: Passage;
   /** The view over it: the sea's, over an island's side, or down at its helm. */
@@ -114,15 +114,15 @@ export class Sea {
     aboard: FootContext,
   ) {
     [this.landmass, this.hull, this.context] = [landmass, hull, aboard];
-    this.drawn = new SeaShips(hull.shown);
+    this.drawn = new SeaShips(hull.shown, undefined, () => this.room?.ownShip ?? null);
     [this.aboard, this.boarding] = [
-      new Aboard(aboard, SLOOP_DECK),
+      new Aboard(aboard, () => this.drawn.ownDeck()),
       new Boarding(aboard, (...asked) => Foot.onDeck(...asked)),
     ];
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
-    this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
+    this.passage = new Passage(outlines, () => this.landmass.mask, start, heading, hull.way);
     this.passage.keepClear = () => keptClear(this.isles?.all() ?? []);
-    this.view = new SeaView(start, heading);
+    this.view = new SeaView(start, heading, () => this.drawn.ownDeck());
     this.setLandmass(landmass);
   }
 

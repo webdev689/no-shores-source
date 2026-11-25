@@ -1,7 +1,7 @@
 // What the player gained between two words from the room on their gear: Aurem and Shapes, XP, each faction's
 // reputation, each Art's progress and fragments, fragments, essence and Fruit of Dagon, each island's resource, the
 // ship's materials and XP, ammunition from an Ammo box, Ammo crates, every item, Vestige, emblem and cosmetic new to
-// them, and the letters sent to their mail. What they spent or moved is not a gain, nor the ammunition a crate they
+// them, every ship and ship's dress new to them, and the letters sent to their mail. What they spent or moved is not a gain, nor the ammunition a crate they
 // used gave back. Currency, XP, reputation and an Art's progress are short lines, as Destiny shows them over the
 // items' rows. Prestige is not a gain: it is what the armour worn is worth.
 // The feed at the right of the screen shows these as Destiny shows what is picked up.
@@ -14,11 +14,13 @@ import { ARTS, emblemSvg } from './artsCards.ts';
 import { gearName, moduleGlyph, SHIP_MATERIALS } from './shipGear.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
-import { EMBLEMS } from './emblemArt.ts';
+import { EMBLEMS } from '../plus/emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
 import { bardingSvg, keeperMarkSvg, markSvg, shapesSvg } from './npc/npcMarks.ts';
 import { holderName } from './finds.ts';
 import { CHEST_PICTURE, SEARCH_PICTURE } from './overheadMarks.ts';
+import { SHIPYARD } from './harbour/harbourModel.ts';
+import { SHIP_DRESSES } from '../ships/fleetDress.ts';
 import { rarityNamed } from './npc/npcWares.ts';
 
 /** One gain: what merges with the same gain shown already, its name, how many, and how it is drawn. */
@@ -137,6 +139,26 @@ function cosmeticGain(number: number): Gain[] {
   return [gain(`cosmetic-${number}`, cosmetic.name, 1, { rarity: rarityNamed(cosmetic.rarity), icon })];
 }
 
+/** Each ship and each ship's dress newly kept between two words of a room that sends the ship's part: a hull under the
+ *  hull's glyph, a dress as its colours. */
+function fleetGains(before: GearState, after: GearState): Gain[] {
+  if (!before.ship || !after.ship) return [];
+  const kept = new Set(before.ship.fleet.map((ship) => ship.hull));
+  const ships = after.ship.fleet
+    .filter((ship) => !kept.has(ship.hull))
+    .map((ship) => gain(`hull-${ship.hull}`, SHIPYARD.hulls[ship.hull]?.name ?? 'Ship', 1, { glyph: 'hull' }));
+  const had = new Set(before.ship.dresses);
+  const dresses = after.ship.dresses.flatMap((number) => {
+    const entry = SHIP_DRESSES[number];
+    if (had.has(number) || !entry) return [];
+    const colours = [entry.colour ?? '#7a5b3c', entry.ink ?? entry.colour ?? '#7a5b3c'];
+    const bands = colours.map((colour, place) => `<rect x="${place}" width="1" height="2" fill="${colour}"/>`);
+    const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2">${bands.join('')}</svg>`;
+    return [gain(`dress-${number}`, entry.name, 1, { rarity: rarityNamed(entry.rarity), icon })];
+  });
+  return [...ships, ...dresses];
+}
+
 /** A public event's chest opened between two words (lying in `before`, gone in `after`), its tier as pips; the XP
  *  and reputation it gave are told as any are. */
 function chestGains(before: GearState, after: GearState): Gain[] {
@@ -208,6 +230,7 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
     if (!worn.has(emblem)) gains.push(gain(`emblem-${emblem}`, EMBLEMS[emblem]?.name ?? 'Emblem', 1, { emblem }));
   const owned = new Set(before.cosmetics ?? []);
   for (const number of after.cosmetics ?? []) if (!owned.has(number)) gains.push(...cosmeticGain(number));
+  gains.push(...fleetGains(before, after));
   // What went to the mail rather than being lost is told as it goes, under the Postmaster's mark.
   const posted = new Set((before.mail ?? []).map((letter) => letter.id));
   const sent = (after.mail ?? []).filter((letter) => !posted.has(letter.id)).length;

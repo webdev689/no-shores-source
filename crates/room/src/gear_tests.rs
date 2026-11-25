@@ -600,7 +600,7 @@ fn a_ware_shown_before_nine_utc_sells_till_then_and_is_refused_once_the_day_turn
 
 #[test]
 fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while_fallen() {
-    use crate::asks::{Asked, FALLEN, FIGHTING, TO_SHIP};
+    use crate::asks::{Asked, FALLEN, FIGHTING, NOT_YET, TO_SHIP};
     let mut room = room();
     let player = room.join().expect("a room with space");
     let mut sequence = 0;
@@ -614,6 +614,8 @@ fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while
         room.tick();
         room.player(player).expect("in").answer
     };
+    assert_eq!(to_ship(&mut room), NOT_YET, "the room does not yet know whose character it holds");
+    room.none_kept(player);
     assert_eq!(to_ship(&mut room), TO_SHIP, "at peace, a yes no other ask gives");
     let foe = stand_type(
         &mut room,

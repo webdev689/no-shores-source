@@ -3,11 +3,10 @@
 // the water where the guns are laid, so the sight at the view's middle stands on the landing zone; let go, it eases
 // home. A sinking ship's guns are silent, so its eye never moves (the caller asks for no side).
 import type { FightLook } from '../rules/fightRules.ts';
-import { hullBox } from '../ships/hulls.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import { lookPitch, lookReach } from './aim.ts';
 import { aimStation, batteryOf, LOWEST_ELEVATION } from './aimStation.ts';
-import { clearAround, sweptBoxes } from './shipClear.ts';
+import { abeamOut, clearAround, ROUND_CLEAR_M, sweptBoxes } from './shipClear.ts';
 
 /** How long the eye takes to ease in or out, and from one battery to the other: its time constant, seconds. */
 export const AIM_CAM_TAU = 0.22;
@@ -16,9 +15,6 @@ export const AIM_CAM_TAU = 0.22;
 const DRIFT_TAU = 0.25;
 /** Taken again on the other side, the view goes out there once it has eased this near home. */
 const SWAP_SHARE = 0.05;
-/** On its way between the camera's own place and the battery the eye keeps this far out past the ship and its rig,
- *  and this far over and under each part of it, metres, coming in to the battery's station at the end. */
-const ROUND_CLEAR_M = 0.6;
 /** The eye's way round the ship is felt every this many radians of bearing (5°), and every this many metres of height. */
 const ROUND_STEP = Math.PI / 36;
 const ROUND_RISE_M = 0.5;
@@ -227,14 +223,7 @@ export function wayAboard(hull: number, from: Point, to: Point, share: number, s
   // There, the way is not looked for: the ship heels and pitches under the eye, and no frame of a held aim searches.
   if (share >= 1) return to;
   if (!onDeck) return roundShip(hull, from, to, share);
-  const [, high] = hullBox(hull);
-  const past = sweptBoxes(hull)
-    .filter(
-      ([low, top]) =>
-        to[0] > low[0] && to[0] < top[0] && to[2] > low[2] - ROUND_CLEAR_M && to[2] < top[2] + ROUND_CLEAR_M,
-    )
-    .map(([, top]) => top[1]);
-  const abeam: Point = [to[0], side * (Math.max(Math.abs(high[1]), ...past) + ROUND_CLEAR_M), to[2]];
+  const abeam: Point = [to[0], side * abeamOut(hull, to), to[2]];
   const [round, last] = [sweepOf(hull, from, abeam).length, Math.abs(abeam[1] - to[1])];
   const split = round / Math.max(1e-9, round + last);
   if (share < split) return roundShip(hull, from, abeam, share / split);
