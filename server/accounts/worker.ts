@@ -3,7 +3,7 @@ import { handle } from './accounts.ts';
 import { type Characters, type Claimed, characters } from './characters.ts';
 import type { CompanyFinder } from './finder.ts';
 import { findingAt } from './finding.ts';
-import { type LinkedCharacter, linkedCharacter } from './linked.ts';
+import { type LinkedCharacter, linkedCharacter, linkedPledges } from './linked.ts';
 import { type ChatHall, chatAt } from './chat.ts';
 
 export { CompanyFinder } from './finder.ts';
@@ -85,6 +85,10 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
 export class LinkedCharacters extends WorkerEntrypoint<Env> {
   linked(discordId: string): Promise<LinkedCharacter | null> {
     return linkedCharacter(this.env.DB, String(discordId));
+  }
+
+  pledges(discordIds: string[]): Promise<Record<string, string | null>> {
+    return linkedPledges(this.env.DB, discordIds);
   }
 }
 

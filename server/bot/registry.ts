@@ -10,6 +10,7 @@ import { birthdaysModule } from './modules/birthdays.ts';
 import { gameModule } from './modules/game.ts';
 import { giveawaysModule } from './modules/giveaways.ts';
 import { invitesModule } from './modules/invites.ts';
+import { layoutModule } from './modules/layout.ts';
 import { levelsModule } from './modules/levels.ts';
 import { logsModule } from './modules/logs.ts';
 import { moderationModule } from './modules/moderation.ts';
@@ -47,6 +48,7 @@ export const SERVER_MODULES: readonly ServerModule[] = Object.freeze([
   statsModule,
   socialsModule,
   gameModule,
+  layoutModule,
 ]);
 
 /** A module list, ready to route: tests build one of their own. */
