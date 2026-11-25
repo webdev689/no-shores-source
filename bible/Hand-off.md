@@ -233,7 +233,7 @@ The decisions in [[Open Questions]] are not repeated here.
   sway is insanely fast when wind is high. Also reduce the amount of grass": the plants' gusts are reckoned from the
   eye (`Gusts`), where reckoning them from the world's corner made the weather's slow turn whip them one to twelve
   times a second, and the meadow grows half as thick ([[The Meadow Grows Half as Thick]], pictured before and after
-  at the Saltgrass Downs). Open for the owner: whether the plants' baked grass thins too. Not yet seen in motion.
+  at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow". Not yet seen in motion.
 - **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
   reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
