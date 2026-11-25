@@ -83,7 +83,8 @@ from the sea, fresh water and the claim's edge), then:
 3. **The rooms.** Every shop, guild hall, temple, tavern, palace and house is walked into
    ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]: "Buildings are now open spaces"): its
    doorways stand open, and inside its outline it is lined with plaster, gaps left at its doors with lintels over
-   them, floored with planks and ceiled under its eaves, each of the building's windows laid again on the lining's
+   them, and where a taller room opens onto a lower one beside it, lined above that room's top, so its wall over the
+   lower roof is not seen through from inside; floored with planks and ceiled under its eaves, each of the building's windows laid again on the lining's
    face so the room shows the windows the building shows outside. The planks stand 3 cm over the highest ground under the room
    (7 cm over its base at least, 40 cm at most), so neither the land nor the model's own floor shows through, and a
    body walks on them. A wing tall enough has an upper floor on a slab and a stair of 0.2 m risers up to it, along a

@@ -135,6 +135,10 @@ const LONE: Readonly<Record<number, readonly [LoneKind, string]>> = {
   351: ['building', 'stone'],
 };
 
+/** The records filed among other things that are a sign's board, painted as a shop's sign (333) is: a signpost's
+ *  (86, among stone) and a signboard's (89, among leaves). */
+const SIGN_BOARDS: Readonly<Record<number, readonly number[]>> = { 86: [2, 3], 89: [4] };
+
 /** A solid colour: archive 0's record is that palette index, archive 1's the index past 128. */
 function paintSolid(ctx: RecipeContext): Rendered {
   const index = (ctx.archive === 1 ? 128 : 0) + ctx.record;
@@ -292,7 +296,7 @@ export function paintThing(ctx: RecipeContext): Job | Rendered | null {
     frame(surf, 4, { material: index[wood], base: 0.45 });
     return { surf, mats, finish: { strength: 0.85 } };
   }
-  const lone = LONE[archive];
+  const lone = SIGN_BOARDS[archive]?.includes(record) ? LONE[333] : LONE[archive];
   if (!lone) return null;
   const mats = kitMats(lone[1], 'woodGrey', 'stoneBlue', 'stoneGreen', 'sandstone');
   const surf = new Surface(width, height);

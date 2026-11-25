@@ -147,6 +147,28 @@ test('a window keeps its panes as glass, the dark hole too; nothing else keeps g
     assert.equal(paint(archive, record).glass, null, `${archive}.${record} keeps no glass`);
 });
 
+test("a signpost's and a signboard's board is painted wood as a shop's sign is, whatever archive files it", () => {
+  // The shop signs (archive 333) are wooden boards; a signpost (prop 41739) wears 86.2 and 86.3, a signboard (41700)
+  // wears 89.4, filed among stone and leaves.
+  const signs = new Set(
+    Array.from({ length: 19 }, (_index, record) => paint(333, record)).flatMap((picture) =>
+      Array.from({ length: picture.rgba.length / 4 }, (_texel, k) => colourAt(picture.rgba, k * 4)),
+    ),
+  );
+  for (const [archive, record] of [
+    [86, 2],
+    [86, 3],
+    [89, 4],
+  ]) {
+    const picture = paint(archive, record);
+    const texels = picture.rgba.length / 4;
+    const signLike = Array.from({ length: texels }, (_texel, k) => colourAt(picture.rgba, k * 4)).filter((colour) =>
+      signs.has(colour),
+    ).length;
+    assert.ok(signLike / texels > 0.9, `${archive}.${record}: ${((100 * signLike) / texels).toFixed(0)}% a sign's`);
+  }
+});
+
 test('the uses carry a record to every climate and season it turns into, the ground aside', () => {
   assert.ok(uses.get('312.3')?.has('window'), 'a building names its window');
   assert.ok(uses.get('313.3')?.has('window'), 'and its winter turn wears it too');

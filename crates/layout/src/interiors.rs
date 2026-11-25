@@ -217,25 +217,26 @@ fn doors_in(doors: &[Door], along_x: bool, at: f64, outward: f64) -> Vec<([f64; 
         .collect()
 }
 
-/// An edge of a building's outline: whether it runs along x, its line, its way out, its floor and its top, millimetres.
-type EdgeKey = (bool, i64, i64, i64, i64);
+/// An edge of a building's outline: whether it runs along x, its line, its way out, and its floor, its top and the
+/// height its lining starts from, millimetres.
+type EdgeKey = (bool, i64, i64, [i64; 3]);
 
 /// Lines a building's walls with plaster just inside its outline, storey by storey: every edge of a room walked into
-/// that does not open onto another room on its floor, merged into runs along each wall, open where its doors are and
-/// a lintel over each door.
+/// that does not open onto another room on its floor, and over a lower room beside it the edge above that room's
+/// top, merged into runs along each wall, open where its doors are and a lintel over each door.
 fn line(frame: &Frame, plan: &Plan, doors: &[Door], built: &mut Built) {
     let [columns, rows] = plan.grid;
-    let open = |column: isize, row: isize, base: f64| {
+    // The top of a room walked on into across a side, on about the same floor: no lining stands below it.
+    let open_to = |column: isize, row: isize, base: f64| {
         (column >= 0 && row >= 0 && (column as usize) < columns && (row as usize) < rows)
             .then(|| plan.on[row as usize * columns + column as usize])
             .flatten()
-            .is_some_and(|index| {
-                let (other, wing) = &plan.rooms[index];
-                walked(other, wing) && (other.base - base).abs() < 0.6
-            })
+            .map(|index| &plan.rooms[index])
+            .filter(|(other, wing)| walked(other, wing) && (other.base - base).abs() < 0.6)
+            .map(|(other, _)| other.top)
     };
     let millimetres = |metres: f64| (metres * 1000.0).round() as i64;
-    // Each edge keyed by whether it runs along x, its line, its way out, its floor and its top, all in millimetres.
+    // Each edge keyed by whether it runs along x, its line, its way out, its floor, its top and where its lining starts.
     let mut edges: std::collections::BTreeMap<EdgeKey, Vec<[f64; 2]>> = std::collections::BTreeMap::new();
     for row in 0..rows {
         for column in 0..columns {
@@ -253,14 +254,19 @@ fn line(frame: &Frame, plan: &Plan, doors: &[Door], built: &mut Built) {
                 (false, x[0], -1, (column - 1, row), z),
                 (false, x[1], 1, (column + 1, row), z),
             ] {
-                if !open(neighbour.0, neighbour.1, room.base) {
-                    let key = (along_x, millimetres(line_at), outward, millimetres(room.base), millimetres(room.top));
-                    edges.entry(key).or_default().push(span);
-                }
+                // Over a lower room beside it, a taller room is lined from that room's top, so its own wall above
+                // that roof (drawn facing out) is never seen through from inside.
+                let from = match open_to(neighbour.0, neighbour.1, room.base) {
+                    Some(top) if top >= room.top - 1e-6 => continue,
+                    Some(top) => top,
+                    None => room.base,
+                };
+                let heights = [room.base, room.top, from].map(millimetres);
+                edges.entry((along_x, millimetres(line_at), outward, heights)).or_default().push(span);
             }
         }
     }
-    for ((along_x, line_at, outward, base, top), mut spans) in edges {
+    for ((along_x, line_at, outward, [base, top, from]), mut spans) in edges {
         spans.sort_by(|first, second| first[0].total_cmp(&second[0]));
         let mut runs: Vec<[f64; 2]> = Vec::new();
         for span in spans {
@@ -269,14 +275,18 @@ fn line(frame: &Frame, plan: &Plan, doors: &[Door], built: &mut Built) {
                 _ => runs.push(span),
             }
         }
-        let (at, outward, base, top) =
-            (line_at as f64 / 1000.0, outward as f64, base as f64 / 1000.0, top as f64 / 1000.0);
+        let (at, outward) = (line_at as f64 / 1000.0, outward as f64);
+        let [base, top, from] = [base, top, from].map(|millimetres| millimetres as f64 / 1000.0);
         let inner = at - outward * (INSET_M + LINING_M / 2.0);
         let thick = [inner - LINING_M / 2.0, inner + LINING_M / 2.0];
         let floors = floors_of(&Room { cells: [0; 4], xs: [0.0; 2], zs: [0.0; 2], base, top });
         let gaps = doors_in(doors, along_x, at, outward);
         for (storey, &floor) in floors.iter().enumerate() {
             let ceiling = floors.get(storey + 1).map_or(top - CEILING_M, |&next| next - SLAB_M);
+            let floor = floor.max(from);
+            if ceiling - floor < 0.05 {
+                continue;
+            }
             let here: Vec<&([f64; 2], f64, f64)> =
                 gaps.iter().filter(|(_, sill, _)| *sill > floor - 0.4 && *sill < floor + 0.8).collect();
             for run in &runs {
@@ -517,49 +527,5 @@ fn steps_out(kit: &mut Kit, frame: &Frame, doors: &[Door], ground_floor: f64, bu
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn room(top: f64) -> Room {
-        Room { cells: [0, 0, 10, 10], xs: [0.0, 8.0], zs: [0.0, 6.0], base: 0.0, top }
-    }
-
-    #[test]
-    fn a_room_stands_a_storey_for_every_three_metres_it_leaves_room_for() {
-        assert_eq!(floors_of(&room(3.5)), [0.0]);
-        assert_eq!(floors_of(&room(6.65)), [0.0, STOREY_M]);
-    }
-
-    #[test]
-    fn a_span_cut_by_a_door_leaves_the_wall_either_side() {
-        assert_eq!(cut([0.0, 10.0], [4.0, 5.5]), [[0.0, 4.0], [5.5, 10.0]]);
-        assert_eq!(cut([0.0, 3.0], [4.0, 5.0]), [[0.0, 3.0]]);
-        assert_eq!(cut([4.2, 5.0], [4.0, 5.5]), Vec::<[f64; 2]>::new());
-    }
-
-    #[test]
-    fn a_stair_stands_clear_of_the_doors_in_its_wall() {
-        // A long room with a door near the middle of each long wall, as a curved hall's (model 703).
-        let room = Room { cells: [0; 4], xs: [9.6, 19.2], zs: [-12.8, 6.4], base: 0.0, top: 6.45 };
-        let door = |x: f64, z: [f64; 2], out: f64| Door {
-            top: [x, 2.3, z[0]],
-            sill: [x, 0.05, z[0]],
-            sill_end: [x, 0.05, z[1]],
-            out: [out, 0.0, 0.0],
-        };
-        let doors = [door(9.6, [-6.75, -8.0], -1.0), door(19.2, [-9.25, -8.0], 1.0)];
-        let stair = stair_of(&room, &doors);
-        let [low, high] = stair.run();
-        let wall = if stair.side[0] < 14.4 { 9.6 } else { 19.2 };
-        for (span, _, _) in doors_in(&doors, false, wall, if wall < 14.4 { -1.0 } else { 1.0 }) {
-            assert!(span[1] < low - 1.0 || span[0] > high + 1.0, "{span:?} by the run {low}..{high}");
-        }
-        assert!(low >= room.zs[0] && high <= room.zs[1], "within the room");
-    }
-
-    #[test]
-    fn a_quarter_turned_frame_takes_the_plan_s_forward_to_the_east() {
-        let frame = Frame { origin: [100.0, 200.0, 0.0], cosine: 0.0, sine: 1.0 };
-        assert_eq!(frame.world(0.0, 1.0), [101.0, 200.0]);
-    }
-}
+#[path = "interiors_tests.rs"]
+mod tests;
