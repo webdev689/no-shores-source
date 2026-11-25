@@ -150,13 +150,13 @@ impl PerkCounts {
 /// gear's own rules give their more.
 #[must_use]
 pub fn trim_of(character: &Character, drawn: Slot) -> Trim {
-    trim_by(character.traits(drawn))
+    trim_by(character.traits(drawn), |id| character.forged_drawn_trait(id, drawn))
 }
 
-/// The trim these traits make together, each listed trait's own, a trait listed twice counted twice: a player's worn
-/// gear's, each once (`trim_of`), or one item's as its page shows it.
+/// The trim these traits make together, each listed trait's own, a trait listed twice counted twice, each at its
+/// Forged grade where `forged` says: a player's worn gear's, each once (`trim_of`), or one item's as its page shows it.
 #[must_use]
-pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>) -> Trim {
+pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>, forged: impl Fn(&str) -> bool) -> Trim {
     let mut trim = Trim::PLAIN;
     for id in traits {
         match id {
@@ -225,8 +225,8 @@ pub fn trim_by<'a>(traits: impl IntoIterator<Item = &'a str>) -> Trim {
             "lightbearer" => trim.drink_heal *= 1.15,
             "shade_step" => trim.veiled_dodge_stamina *= 0.8,
             // The Breaches' armour perks that trim: Crystal Skin's blows taken while hale, Lattice Shell's while low.
-            "crystal_skin" => trim.hale_taken *= CRYSTAL_SKIN_TAKEN.at(character.forged_drawn_trait(id, drawn)),
-            "lattice_shell" => trim.low_taken *= LATTICE_SHELL_TAKEN.at(character.forged_drawn_trait(id, drawn)),
+            "crystal_skin" => trim.hale_taken *= CRYSTAL_SKIN_TAKEN.at(forged(id)),
+            "lattice_shell" => trim.low_taken *= LATTICE_SHELL_TAKEN.at(forged(id)),
             _ => {}
         }
     }
