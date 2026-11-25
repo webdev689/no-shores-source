@@ -36,8 +36,14 @@ export interface Vars {
   readonly DISCORD_BOT_TOKEN?: string;
   readonly DISCORD_CLIENT_SECRET?: string;
   readonly CARD_SIGNING_KEY?: string;
-  /** The accounts' LinkedCharacters (accounts/worker.ts) by service binding; without it no member reads as linked. */
-  readonly ACCOUNTS?: { linked(discordId: string): Promise<LinkedCharacter | null> };
+  /**
+   * The accounts' LinkedCharacters (accounts/worker.ts) by service binding; without it no member reads as linked.
+   * `pledges` may be missing, or throw, at accounts deployed before it; the house roles then change nothing.
+   */
+  readonly ACCOUNTS?: {
+    linked(discordId: string): Promise<LinkedCharacter | null>;
+    pledges?(discordIds: string[]): Promise<Record<string, string | null>>;
+  };
 }
 
 /** The context a module runs in. `cache` and `memory` exist only in the Gateway object; `later` outlives the answer. */
