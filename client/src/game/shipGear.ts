@@ -279,7 +279,7 @@ export function officerNode(officer: GearOfficer, column: number, node: number):
   const ask: GearAsk | null =
     shown.ask === null ? null : { ...shown.ask, kind: shown.ask.kind === ASKS.buy ? ASKS.train : ASKS.chooseOfficer };
   const costs = !shown.bought && shown.unlocked ? `Costs ${priced(kind.aurem, [[HEARTWOOD, kind.essence]])}.` : null;
-  const cost = costs ?? (shown.unlocked ? shown.cost : 'Its ring fills as they serve.');
+  const cost = costs ?? (shown.unlocked ? shown.cost : 'Its square fills as they serve.');
   return { ...shown, ask, cost };
 }
 

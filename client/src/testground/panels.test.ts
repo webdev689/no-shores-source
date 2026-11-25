@@ -83,24 +83,25 @@ test('the foes panel stands the faction, type and rank picked, at the level type
   assert.equal(figures[1]?.dress.outfit.garments.at(-1), 'shirt_linen', 'a garment ticked is worn last');
 });
 
-test('the gear panel opens an item’s nodes, feeds a Fruit of Dagon only once held, and says the room’s answer', () => {
+test('the gear panel opens an item’s nodes, eats a Fruit of Dagon only once held, and says the room’s answer', () => {
   const asked: GearAsk[] = [];
   const panel = new GearPanel((ask) => asked.push(ask));
   const column = { kind: 0, traits: ['a', 'b'], xp: 100, aurem: 0, fragments: 0, essence: 0, resource: 0 };
   const sword = item({ id: 7, at: 2, columns: [column] });
-  let view = { gear: gearState({ items: [sword] }), atStall: false, nodesInReach: [] };
+  let view = { gear: gearState({ items: [sword], stocks: [0, 0, 0, 0, 1] }), atStall: false, nodesInReach: [] };
   const driven = new Driven((ui) => panel.node(ui, view, 1 / 60));
   assert.ok(!driven.has('tg:gear:7:grid'));
   driven.press('tg:gear:7:nodes');
   assert.ok(driven.has('tg:gear:7:grid'), 'its nodes open');
-  driven.hold('tg:gear:7:feed', 0.5);
-  driven.hold('tg:gear:7:feed', 0.5);
+  driven.hold('tg:gear:fruit', 0.5);
+  driven.hold('tg:gear:fruit', 0.5);
   assert.deepEqual(asked, [], 'not yet: letting go starts the hold again');
-  driven.hold('tg:gear:7:feed', 1.5);
-  assert.deepEqual(asked, [{ kind: ASKS.feed, item: 7 }], 'fed once, however long held');
+  driven.hold('tg:gear:fruit', 1.5);
+  assert.deepEqual(asked, [{ kind: ASKS.feed }], 'eaten once, however long held, for every piece worn');
   view = { ...view, gear: gearState({ items: [sword], answer: 1 }) };
   driven.frame([]);
   assert.equal(driven.said.length, 1, 'the answer said once');
+  assert.ok(!driven.has('tg:gear:fruit'), 'none held, none offered');
 });
 
 test('the gear panel waits for the room, then hands out what is asked at the level typed', () => {

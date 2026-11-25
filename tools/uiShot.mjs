@@ -5,7 +5,8 @@
 //
 // shots.json: { "size": [w, h], "scale": 2, "frames": 10, "shots": [{ "module": "/src/game/journalShots.ts", "build":
 // "journalShot", "out": "target/ui/journal.png", "size": [w, h], "events": [...], "at": 3 }] }: `build` answers the
-// tree for the interface it is given; `events`, `at` and `frames` are as the Interface note says. Errors are printed.
+// tree for the interface it is given; `events`, `at` and `frames` are as `client/src/ui/shot.ts` hears them. Errors are
+// printed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createRequire } from 'node:module';
@@ -15,7 +16,8 @@ import { createServer } from 'vite';
 const { chromium } = createRequire(import.meta.url)('playwright');
 
 const asked = JSON.parse(readFileSync(process.argv[2] ?? '', 'utf8'));
-const server = await createServer({ server: { port: 0 }, logLevel: 'error' });
+// Port 5173 where it is free, the only origin R2 answers, so the forge's pictures come; the next free one otherwise.
+const server = await createServer({ server: { port: 5173, strictPort: false }, logLevel: 'error' });
 await server.listen();
 const address = server.httpServer?.address();
 const base = `http://localhost:${typeof address === 'object' && address ? address.port : 5173}`;

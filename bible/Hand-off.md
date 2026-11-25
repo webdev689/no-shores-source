@@ -215,6 +215,28 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The inspect panel after Destiny 1's weapon page** (#202, merged on the owner's "merge and deploy", which deploys
+  the page and the rooms). Built on the owner's "take some autonomy" from
+  [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]; Claude's calls in
+  [[The Inspect Panel as Claude Shapes It]]. Fight numbers from the room's own rules (`room::stats` through the room's
+  WebAssembly) as Destiny's stat bars on every item's page and card, a node hovered previewing its change in green and
+  red, a node's card with its costs as have over need, square nodes and a square growth band, the art large, Compare
+  (its press or C) and every card set beside the piece worn, Inspect beside the player's own ([[Interface]], [[Gear]],
+  "Stats"). Five read-only audits (the rules, the page, the design, the bible, the tests) and each finding tested
+  before its fix: the fire rate a tick fast per reload, Impact without a player's ×1.5, a finish's drawn trims unseen,
+  a module's card set against the worn sword, locked nodes' cards never reachable, italic breaking the face's letters,
+  among them. The owner's next asks are in too: hints as plain verbs ("Hold, Buy", "Click, Choose", and a held
+  consumable's "Hold, Use"), no "frees a hand" line, Impact named Damage
+  ([[The Inspect Panel's Hints Are Plain Verbs, and Impact Is Damage]]); a Fruit of Dagon no longer fed from an item's
+  page but held from the inventory's Consumables, growing every piece worn 5,000 XP each, the owner's two answers
+  ([[A Fruit of Dagon Is Used From the Inventory and Grows Everything Worn]]; the wire's Feed ask now carries no item).
+  Main (#196, the chests; then #194, the website) merged in. Then the owner's two answers
+  ([[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]]): [[Plain Text]]'s
+  example is the square now, and a hover card's perk is its icon and a short line, Claude's line for each of the 139
+  perks (`short`, and `short_takes` for a cost, in `content/gear/traits.json`) waiting on the owner's check. Tested
+  offline: the full `cargo xtask check` on f0240671 (the short lines, before #194 merged in), and CI on the PR's head;
+  pictures rendered headless at 1280 by 720, 1600 by 900 and 1920 by 1080; not played by hand or on a real GPU.
+
 - **The Discord application's settings, after #194's first deploy** ([[Discord Bot]], "One Discord application"):
   its interactions endpoint set to the bot's `/v1/discord/interactions`, its two redirects, and the bot invited to
   the server with its permissions. The words still Claude's: the auto-mod rules' prefix `No Shores: ` and "The bot"

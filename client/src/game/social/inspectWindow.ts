@@ -1,12 +1,14 @@
 // Inspect: another player as the Character tab shows the player's own character, from what their room kept for others
 // to see, under their emblem's banner: their figure in the dress they wear here, each piece they wear in its slot with
-// its card, their level and power, and the Art they wear. Nothing on it can be asked or changed.
+// its card, set beside the piece the player looking wears there, their level and power, and the Art they wear. Nothing
+// on it can be asked or changed.
 import type { Details } from '../../network/accounts.ts';
-import type { GearItem } from '../../network/gearMessages.ts';
+import type { GearItem, GearState } from '../../network/gearMessages.ts';
 import type { Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { ItemPictures } from '../../player/itemPictures.ts';
 import type { Picture } from '../../player/picture.ts';
+import { WORN } from '../../player/gear.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { uiScale } from '../../ui/uiRenderer.ts';
@@ -40,6 +42,8 @@ export class InspectWindow {
     gear: null,
   };
   private readonly forge: () => Cards | null;
+  /** The looking player's own gear, whose worn pieces each of the other player's is set beside on its card. */
+  mine: () => GearState | null = () => null;
 
   /** A window drawing pictures with the forge `forge` gives, once it has one. */
   constructor(forge: () => Cards | null) {
@@ -160,6 +164,7 @@ export class InspectWindow {
       forge,
       dress,
       inspected: true,
+      against: (slot) => this.mine()?.items.find((item) => item.at === WORN + slot) ?? null,
     };
   }
 

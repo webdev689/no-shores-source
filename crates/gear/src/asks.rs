@@ -8,12 +8,12 @@ use crate::character::{At, CARRIED_MOST, Character, Stuff};
 use crate::dice::{Dice, Purpose};
 use crate::emblems::Deed;
 use crate::item::{Item, NAMED_LEVEL, NONE_CHOSEN};
-use crate::kinds::{Slot, Stock};
+use crate::kinds::{Group, Slot, Stock};
 use crate::rarity::Rarity;
 use crate::vendor::{self, Vendor};
 use crate::vestige;
 
-/// The XP a Fruit of Dagon gives an item.
+/// The XP a Fruit of Dagon gives each piece worn.
 pub const FRUIT_ITEM_XP: u32 = 5_000;
 
 /// One ask.
@@ -42,9 +42,8 @@ pub enum Ask {
     Identify {
         vestige: u32,
     },
-    Feed {
-        item: u32,
-    },
+    /// Eats a Fruit of Dagon from the inventory: every piece worn grows by it (`feed`).
+    Feed,
     Store {
         item: u32,
     },
@@ -207,7 +206,7 @@ impl Character {
             Ask::Choose { item, column, node } => self.choose(item, usize::from(column), node),
             Ask::Dismantle { item } => self.dismantle(item, dice),
             Ask::Identify { vestige } => self.identify(vestige, here, dice),
-            Ask::Feed { item } => self.feed(item),
+            Ask::Feed => self.feed(),
             Ask::Store { item } => self.move_item(item, here, At::Carried, At::Vault),
             Ask::Withdraw { item } => self.move_item(item, here, At::Vault, At::Carried),
             Ask::StoreVestige { vestige } => self.move_vestige(vestige, here, true),
@@ -480,18 +479,24 @@ impl Character {
         Ok(Some(Done::Identified(item_id)))
     }
 
-    fn feed(&mut self, id: u32) -> Result<Option<Done>, Refusal> {
+    /// One Fruit of Dagon, eaten from the inventory, gives every piece worn (the loadouts, the armour and the cloak)
+    /// `FRUIT_ITEM_XP`, each up to its last column; refused with no Fruit, or with no worn piece left to grow.
+    fn feed(&mut self) -> Result<Option<Done>, Refusal> {
         if self.materials.fruit == 0 {
             return Err(Refusal::NoFruit);
         }
-        let item = self.held_mut(id)?;
-        if item.kind.module() {
-            return Err(Refusal::DoesNotFit);
-        }
-        if item.xp >= item.xp_most() {
+        let grows =
+            |slot: Slot, item: &Item| slot.group() != Group::Ship && slot != Slot::Mount && item.xp < item.xp_most();
+        let growing: Vec<u32> =
+            self.all_worn().filter(|(slot, item)| grows(*slot, item)).map(|(_, item)| item.id).collect();
+        if growing.is_empty() {
             return Err(Refusal::FullOfXp);
         }
-        item.xp = item.xp.saturating_add(FRUIT_ITEM_XP).min(item.xp_most());
+        for id in growing {
+            if let Some((item, _)) = self.items.get_mut(&id) {
+                item.xp = item.xp.saturating_add(FRUIT_ITEM_XP).min(item.xp_most());
+            }
+        }
         self.materials.fruit -= 1;
         Ok(None)
     }

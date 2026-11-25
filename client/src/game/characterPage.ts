@@ -227,7 +227,9 @@ function slotNode(
     context.details(id, worn);
     // An open slot's flyout stands where its card would, so the card waits until it closes.
     const hints = context.inspected ? [] : SLOT_HINTS;
-    if (open !== slot) context.card(id, () => cardNode(cardOf(worn), context.picture(worn), hints, sizes));
+    const beside = context.against?.(slot) ?? null;
+    const card = () => cardNode(cardOf(worn, beside, context.inspected), context.picture(worn), hints, sizes);
+    if (open !== slot) context.card(id, card);
   }
   const { marks, gilded } = worn ? itemMarks(worn) : { marks: [], gilded: false };
   const tile = tileNode(

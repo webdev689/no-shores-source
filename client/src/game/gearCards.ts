@@ -2,10 +2,10 @@
 // traits and, against the piece it would replace, what changes), a slot's flyout of the nine it carries, the
 // inventory page's currencies and its shelves of cells, and the vault's. The page draws these in the Enhanced Plus kit.
 
-import items from '../../../content/gear/items.json' with { type: 'json' };
 import { ASKS, type GearItem, type GearState, NONE } from '../network/gearMessages.ts';
 import {
   CARRIED,
+  HORSE,
   RARITIES,
   RESOURCE_COUNT,
   SLOTS,
@@ -15,9 +15,11 @@ import {
   capital,
   isModule,
   isWeapon,
+  moduleOf,
   itemWords,
   resourceName,
   resourceWords,
+  slotOf,
   statless,
   traitOf,
   wearAsks,
@@ -26,6 +28,7 @@ import type { Press } from './gearScreen.ts';
 import { gearKindName, gearName } from './shipGear.ts';
 import type { ShipGlyph } from './shipGlyphs.ts';
 import { earnedFrom } from '../player/sourceLooks.ts';
+import { type StatSheet, givenTraits, intrinsicIdOf, sheetOf, statsOf } from './itemStats.ts';
 
 /** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
  *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
@@ -51,7 +54,12 @@ export interface Card {
   readonly compare: {
     readonly replaces: string;
     readonly rows: readonly { readonly label: string; readonly from: number; readonly to: number }[];
+    /** Neither's chosen nodes count in the numbers compared, as on Inspect. */
+    readonly nodesAside?: boolean;
   } | null;
+  /** An item's fight numbers as bars, beside the piece it would replace's: set on every item's card, null until the
+   *  rules have come or for an item with none (a horse, a ship's module). */
+  readonly sheet?: StatSheet | null;
 }
 
 /** A trait an item gives: its name, its words, and its column's kind (`COLUMNS`). */
@@ -62,6 +70,9 @@ export interface Trait {
   /** What a perk that gives and takes gives, and costs, apart; empty for any other. */
   readonly gives?: string;
   readonly takes?: string;
+  /** Its short line, and its cost's, as a card shows it beside its glyph (the owner's "a small perk description"). */
+  readonly short?: string;
+  readonly shortTakes?: string;
   /** A word on where it stands: an Atheric's intrinsic always on, its own node not yet chosen. */
   readonly note?: string;
   /** Whether it acts now; an Atheric's own node not yet chosen does not. */
@@ -73,11 +84,9 @@ export const ATHERIC_OWN = 4;
 
 /** An Atheric's intrinsic, always on while it is worn and never a node, as its page and card show it; null for any
  *  other. */
-export function intrinsicOf(item: Pick<GearItem, 'named'>): Trait | null {
-  const entry: { readonly id: string; readonly intrinsic?: string } | undefined = items.items.find(
-    (found) => found.id === item.named,
-  );
-  return entry?.intrinsic ? { ...traitOf(entry.intrinsic), kind: ATHERIC_OWN, note: 'Intrinsic: always on' } : null;
+export function intrinsicOf(item: Pick<GearItem, 'named' | 'rarity'>): Trait | null {
+  const intrinsic = intrinsicIdOf(item);
+  return intrinsic ? { ...traitOf(intrinsic), kind: ATHERIC_OWN, note: 'Intrinsic: always on' } : null;
 }
 
 /** An Atheric's own node's perk as its page shows it beside its intrinsic: on once bought and chosen, else marked as
@@ -109,8 +118,9 @@ export function traitsShown(item: Pick<GearItem, 'columns' | 'chosen'>): Trait[]
   return traitsOf(item).map(({ id, kind }) => ({ ...traitOf(id), kind }));
 }
 
-/** An item's card; against `worn`, the piece it would replace, what changes. */
-export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
+/** An item's card; against `worn`, the piece it would replace, what changes. `nodesAside`, as Inspect sets another
+ *  player's piece beside the player's own, whose nodes it never knows: neither's chosen nodes count in their numbers. */
+export function cardOf(item: GearItem, worn: GearItem | null = null, nodesAside = false): Card {
   const big = item.attack
     ? { label: 'Attack', value: item.attack }
     : item.defense
@@ -125,6 +135,10 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);
+  // Set beside another piece, never itself: the same object, as an item's own id may be shared by a ware or by
+  // another player's piece.
+  const beside = worn && worn !== item ? worn : null;
+  const against = beside ? statsOf(beside.kind, givenTraits(nodesAside ? { ...beside, columns: [] } : beside)) : null;
   return {
     name: gearName(item),
     rarity: item.rarity,
@@ -135,8 +149,17 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
     // An Atheric's intrinsic heads its perks, as the piece is chiefly that.
     traits: [...[intrinsicOf(item)].filter((trait) => trait !== null), ...traitsShown(item)],
     words: itemWords(item),
-    compare: worn && worn.id !== item.id ? { replaces: gearName(worn), rows: changes } : null,
+    compare: beside ? { replaces: gearName(beside), rows: changes, ...(nodesAside && { nodesAside }) } : null,
+    sheet: sheetOf(item, against, givenTraits(nodesAside ? { ...item, columns: [] } : item)),
   };
+}
+
+/** The piece worn in the slot `item` is worn in, which its card sets it beside: a ship's module beside the module
+ *  fitted in its own slot; none where none is, nor for a horse, which has no numbers to set beside another's. */
+export function wornFor(state: GearState, item: Pick<GearItem, 'kind'>): GearItem | null {
+  if (item.kind === HORSE) return null;
+  const slot = moduleOf(item.kind)?.slot ?? slotOf(item.kind);
+  return state.items.find((each) => each.at === WORN + slot) ?? null;
 }
 
 /** A slot's flyout: the piece it wears, and its nine carried places, empty ones null. */
@@ -230,9 +253,18 @@ export function inventoryPageOf(state: GearState): InventoryPage {
       words: STOCK_WORDS[index] ?? '',
     }),
   );
+  const fruits = state.stocks[4] ?? 0;
+  // A Fruit is eaten from here, and grows every piece worn that can still grow (`gear::asks` feed).
+  const growing = state.items.some(
+    (item) => item.at >= WORN && item.at <= WORN + 6 && item.columns.length > 0 && item.xp < item.xpMost,
+  );
   const fruit = cell('fruit', 'fruit', 'Fruit of Dagon', {
-    count: state.stocks[4] ?? 0,
-    words: "Hold it on an item's page to feed it to that item: it grows the item.",
+    count: fruits,
+    words: `It grows every piece you wear.${growing ? '' : ' Nothing you wear can grow any more.'}`,
+    press:
+      fruits > 0 && growing
+        ? { label: 'Use', ask: { kind: ASKS.feed }, role: 'button', held: true, burst: 'pulse' }
+        : null,
   });
   const crates = state.crates ?? 0;
   const [full, unarmed] = [(state.ammoShare ?? 1) >= 1, state.ammoMost === 0];
@@ -242,7 +274,7 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${why}`,
     press:
       crates > 0 && !full && !unarmed
-        ? { label: 'Hold to fill your ammo', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
+        ? { label: 'Use', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
         : null,
   });
   const materials = Array.from({ length: RESOURCE_COUNT }, (unused, index) =>
