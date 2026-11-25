@@ -25,4 +25,7 @@ Destiny 2's character screen, its finest pieces' icons framed in gold.
 The gauge's measure is settled since: it counts upgrade progress, not general XP, as
 [[The Face Is Mended Whole, and the Gauge Counts Upgrades]] settles.
 
+Replaced in part by [[The Inspect Panel Follows Destiny's Weapon Page, Its Stats Shown and Its Nodes Square]]: the
+growth within a node is a square, not a ring.
+
 Links: [[Plain Text]], [[Interface]], [[Gear]].

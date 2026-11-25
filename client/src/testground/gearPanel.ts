@@ -150,7 +150,7 @@ export class GearPanel {
     return press(ui, id, words, () => undefined);
   }
 
-  private itemRow(ui: Interface, item: GearItem, gear: GearState, view: GearView, seconds: number): Node {
+  private itemRow(ui: Interface, item: GearItem, gear: GearState, view: GearView): Node {
     const { ask } = this;
     const id = `tg:gear:${item.id}`;
     const actions: Node[] = [];
@@ -193,13 +193,6 @@ export class GearPanel {
             ),
           ),
         ]),
-        {
-          children: [
-            this.hold(ui, `${id}:feed`, 'Hold to feed a Fruit of Dagon', seconds, () =>
-              ask({ kind: ASKS.feed, item: item.id }),
-            ),
-          ],
-        },
       ],
     };
     return {
@@ -303,7 +296,7 @@ export class GearPanel {
     );
     const carried = gear.items.filter((item) => item.at === CARRIED).sort((one, two) => one.bucket - two.bucket);
     const vaulted = gear.items.filter((item) => item.at === VAULTED);
-    const row = (item: GearItem) => this.itemRow(ui, item, gear, view, seconds);
+    const row = (item: GearItem) => this.itemRow(ui, item, gear, view);
     const vestiges = gear.vestiges.map((vestige): Node => {
       const id = `tg:vestige:${vestige.id}`;
       const words = `${RARITIES[vestige.rarity]?.name ?? ''} Vestige: ${SLOTS[vestige.slot] ?? ''}, level ${vestige.level}`;
@@ -334,6 +327,12 @@ export class GearPanel {
       answer && hint(answer),
       hint(level, LOOK.words),
       hint(heldLine(gear)),
+      // A Fruit of Dagon is eaten from what is held, and grows every piece worn.
+      (gear.stocks[4] ?? 0) > 0 && {
+        children: [
+          this.hold(ui, 'tg:gear:fruit', 'Hold to use a Fruit of Dagon', seconds, () => ask({ kind: ASKS.feed })),
+        ],
+      },
       hint(ammoLine(gear)),
       opened && opened.at === CARRIED && hint(`The Vestige opened: ${itemName(opened)}.`, LOOK.words),
       hint(

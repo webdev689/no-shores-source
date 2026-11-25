@@ -259,16 +259,16 @@ const NODE_MAPS: readonly (readonly string[])[] = [
   ],
   [
     '.....aa.....',
-    '.a...aa...a.',
-    '..a......a..',
+    '.....aa.....',
+    '.aa......aa.',
+    '.aa......aa.',
     '....aaaa....',
-    '...aaaaaa...',
-    'aa.aaaaaa.aa',
-    'aa.aaaaaa.aa',
-    '...aaaaaa...',
+    'aa..aaaa..aa',
+    'aa..aaaa..aa',
     '....aaaa....',
-    '..a......a..',
-    '.a...aa...a.',
+    '.aa......aa.',
+    '.aa......aa.',
+    '.....aa.....',
     '.....aa.....',
   ],
 ];
@@ -284,23 +284,24 @@ export function nodeGlyphSvg(kind: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">${squares.join('')}</svg>`;
 }
 
-/** The cells across a node's ring, and its radius and thickness in cells. */
-const RING_CELLS = 20;
-const RING_RADIUS = 9;
-const RING_HALF_WIDTH = 0.6;
+/** The cells across a node's growth, and how many deep its band runs in from one cell inside them. */
+const GROWTH_CELLS = 20;
+const GROWTH_BAND = 2;
 
-/** A node's ring, pixel by pixel, lit clockwise from the top as far as `share` of the way round, the rest dark: how
- *  far the item has grown toward the node. Its colours are the text's around it (lit) and `dark`. */
-export function ringSvg(share: number, dark: string): string {
-  const centre = (RING_CELLS - 1) / 2;
+/** A locked node's growth, pixel by pixel: a square band round its edge, lit clockwise from the middle of its top as
+ *  far as `share` of the way round, the rest dark; how far the item has grown toward the node. Its colours are the
+ *  text's around it (lit) and `dark`. */
+export function growthSvg(share: number, dark: string): string {
+  const [first, last] = [1, GROWTH_CELLS - 2];
+  const middle = (GROWTH_CELLS - 1) / 2;
+  const onBand = (cell: number) => cell < first + GROWTH_BAND || cell > last - GROWTH_BAND;
   const squares: string[] = [];
-  for (let line = 0; line < RING_CELLS; line++)
-    for (let column = 0; column < RING_CELLS; column++) {
-      const [east, south] = [column - centre, line - centre];
-      if (Math.abs(Math.hypot(east, south) - RING_RADIUS) > RING_HALF_WIDTH) continue;
-      const round = (Math.atan2(east, -south) / (2 * Math.PI) + 1) % 1;
+  for (let line = first; line <= last; line++)
+    for (let column = first; column <= last; column++) {
+      if (!onBand(line) && !onBand(column)) continue;
+      const round = (Math.atan2(column - middle, middle - line) / (2 * Math.PI) + 1) % 1;
       const fill = round < share ? 'currentColor' : dark;
       squares.push(`<rect x="${column}" y="${line}" width="1" height="1" fill="${fill}"/>`);
     }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${RING_CELLS} ${RING_CELLS}" shape-rendering="crispEdges" aria-hidden="true">${squares.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${GROWTH_CELLS} ${GROWTH_CELLS}" shape-rendering="crispEdges" aria-hidden="true">${squares.join('')}</svg>`;
 }

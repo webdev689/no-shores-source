@@ -43,6 +43,8 @@ export interface MenuContext {
   readonly dress: Dress | null;
   /** Another player's character, shown as the Character tab shows one's own and changed by nothing on it (Inspect). */
   readonly inspected?: boolean;
+  /** On Inspect, the piece the player looking wears in a slot, which the other player's piece is set beside. */
+  readonly against?: (slot: number) => GearItem | null;
 }
 
 /** What a drawn page that needs no gear (the Journal, Social, Settings, a page to come) draws from: the part of
