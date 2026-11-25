@@ -47,10 +47,16 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "isle", workspace: &["movement"], outside: &["serde", "serde_json", "libm"], door: false },
     CrateRule { name: "gear", workspace: &[], outside: &["serde", "serde_json", "libm"], door: false },
     CrateRule {
+        name: "passage",
+        workspace: &["dungeon", "isle", "movement"],
+        outside: &["serde", "serde_json", "libm"],
+        door: false,
+    },
+    CrateRule {
         name: "room",
         workspace: &[
-            "combat", "dungeon", "foes", "gear", "isle", "land", "movement", "naval", "navmesh", "reach", "sailing",
-            "sky", "world",
+            "combat", "dungeon", "foes", "gear", "isle", "land", "movement", "naval", "navmesh", "passage", "reach",
+            "sailing", "sky", "world",
         ],
         outside: &["libm"],
         door: false,
@@ -64,8 +70,8 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule {
         name: "room-wasm",
         workspace: &[
-            "combat", "dungeon", "foes", "gear", "isle", "land", "movement", "naval", "protocol", "room", "sailing",
-            "sky", "world",
+            "combat", "dungeon", "foes", "gear", "isle", "land", "movement", "naval", "passage", "protocol", "room",
+            "sailing", "sky", "world",
         ],
         outside: &["serde", "serde_json"],
         door: true,

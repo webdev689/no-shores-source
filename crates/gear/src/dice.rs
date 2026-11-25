@@ -46,6 +46,8 @@ pub enum Purpose {
     Recruit = 1_100,
     /// Whether a boarded deck's officer joins the winner, and who it is.
     Taken = 1_900,
+    /// A passage's cache: its fragments' stock and count, and whether a cold lantern is found (the question added).
+    Passage = 1_200,
 }
 
 /// One player's dice for one tick of one room.

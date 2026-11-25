@@ -316,9 +316,9 @@ fn a_new_character_is_kept_short_of_the_prologue_and_one_kept_before_the_story_p
 #[test]
 fn a_kept_activity_holds_only_the_boards_bounties() {
     let mut character = Character::starting();
-    character.activity.today(20_778).bounties.extend([(0, 1), (5, 2), (6, 3), (200, 4)]);
+    character.activity.today(20_778).bounties.extend([(0, 1), (5, 2), (7, 3), (8, 4), (200, 5)]);
     let mut read = Character::from_json(&character.to_json()).expect("a character");
-    assert_eq!(read.activity.today(20_778).bounties, std::collections::BTreeMap::from([(0, 1), (5, 2)]));
+    assert_eq!(read.activity.today(20_778).bounties, std::collections::BTreeMap::from([(0, 1), (5, 2), (7, 3)]));
 }
 
 #[test]

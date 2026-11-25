@@ -253,10 +253,15 @@ impl Catalogue {
     }
 
     /// The named items of this rarity and slot that a Vestige's Atheric or ship's module, or Shape's ware, is drawn
-    /// among: Breach items come from Breaches alone, and a faction's from its counter alone.
+    /// among: Breach items come from Breaches alone, a faction's from its counter alone, and an Atheric bounty's from
+    /// its bounty alone (`atheric_bounty.rs`).
     pub fn vestige_pool(&self, rarity: Rarity, slot: Slot) -> impl Iterator<Item = &NamedDef> {
         self.items.iter().filter(move |found| {
-            found.rarity == rarity && !found.breach && found.faction.is_none() && found.kind.fits(slot)
+            found.rarity == rarity
+                && !found.breach
+                && found.faction.is_none()
+                && found.kind.fits(slot)
+                && !crate::atheric_bounty::is_bounty_item(&found.id)
         })
     }
 
@@ -330,6 +335,7 @@ impl Catalogue {
                 problems.push(format!("no Legendary {kind:?}"));
             }
         }
+        problems.extend(crate::atheric_bounty::problems());
         for slot in Slot::VESTIGE.into_iter().chain(Slot::SHIP) {
             for rarity in [Rarity::Legendary, Rarity::Atheric] {
                 if self.vestige_pool(rarity, slot).next().is_none() {

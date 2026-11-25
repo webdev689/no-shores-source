@@ -75,6 +75,13 @@ impl Character {
     /// and the new one among them, and the newest letter kept says so: the new one, or the one before it when the new
     /// one went. Only the new letter's room is made, so a mailbox a later build kept fuller loses no more.
     pub fn post(&mut self, source: Source, posted: Posted) {
+        // A Vestige left lying in a passage zone goes into the dive's haul, not the mail.
+        if let Posted::Vestige(vestige) = &posted
+            && matches!(source, Source::LeftBehind | Source::LeftLying)
+            && self.haul_vestige(vestige)
+        {
+            return;
+        }
         let (vestige, item) = match posted {
             Posted::Vestige(vestige) => (Some(vestige), None),
             Posted::Item(item) => (None, Some(item)),

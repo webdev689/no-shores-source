@@ -186,7 +186,7 @@ impl Character {
 
     /// Vestiges and items by their chances, coloured by `rank` at `level`, from `source`: the items kept, the
     /// Vestiges returned, a Normal one's item among the kept (`unsealed`).
-    fn loot(
+    pub(crate) fn loot(
         &mut self,
         (vestiges, items): (f64, f64),
         rank: u8,
@@ -208,6 +208,10 @@ impl Character {
     /// its colour and slot at `level`, its foe's, to be laid, so nothing found is lost and none opens above what that
     /// foe could drop (a named item stands at 20, a cloak at 1, whatever its foe).
     pub fn keep_found(&mut self, item: Item, level: u8) -> Option<Vestige> {
+        // In a passage zone it goes into the dive's haul, kept only once a lamp is lit (`dive.rs`).
+        if self.haul_item(&item) {
+            return None;
+        }
         let at = if self.carried_in(item.bucket) < CARRIED_MOST {
             At::Carried
         } else if self.vaulted(item.kind.stock()) < VAULT_MOST {
@@ -244,6 +248,9 @@ impl Character {
 
     /// Takes a Vestige off the ground into the carried ten; refused, leaving it lying, when they are full.
     pub fn pick_up(&mut self, vestige: Vestige) -> bool {
+        if self.haul_vestige(&vestige) {
+            return true;
+        }
         if self.vestiges_held(false) >= crate::character::VESTIGES_MOST {
             return false;
         }
@@ -258,6 +265,7 @@ impl Character {
     pub fn gather(&mut self, resource: usize) -> u16 {
         let count = NODE_YIELD + u16::from(self.has_trait("forager"));
         self.earn(crate::emblems::Deed::Gathered);
-        self.materials.add(Stuff::Resource(resource), count)
+        self.haul_material(Stuff::Resource(resource), count)
+            .unwrap_or_else(|| self.materials.add(Stuff::Resource(resource), count))
     }
 }

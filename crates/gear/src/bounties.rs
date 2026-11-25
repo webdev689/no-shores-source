@@ -1,5 +1,5 @@
-//! The bounty board: six bounties a day, the same for everyone, drawn by the clock's day (`crate::activities`), two on
-//! land, two at sea and two in dungeons, each taken and turned in at the board by the day of the board shown, and
+//! The bounty board: eight bounties a day, the same for everyone, drawn by the clock's day (`crate::activities`), two
+//! on land, two at sea, two in dungeons and two in the passages, each taken and turned in at the board by the day of the board shown, and
 //! paying XP and Aurem once at the character's level, more for a bigger task, as Destiny 1's bounties paid in three
 //! tiers.
 
@@ -7,7 +7,7 @@ use crate::activities::{BOUNTY_DRAWS, drawn};
 use crate::activity::BOUNTIES;
 use crate::asks::{Done, Here, Refusal};
 use crate::character::Character;
-use crate::objectives::{ELITE_RANK, GREY_TITHE, MINIBOSS_RANK, Objective};
+use crate::objectives::{Deed, ELITE_RANK, GREY_TITHE, MINIBOSS_RANK, Objective};
 use crate::rewards::at_level;
 
 /// A bounty on the board: what it counts, how many, its words, its name and where it counts.
@@ -18,7 +18,7 @@ pub struct Bounty {
     pub words: &'static str,
     /// Its short name, as its card heads it: content, never kept or matched.
     pub name: &'static str,
-    /// Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons.
+    /// Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons, 3 in the passages.
     pub pool: u8,
     /// Its tier, 1 to 3, by how big a task it is: it pays once, half again or twice a first tier's
     /// (`bounty_pay`), as Destiny 1's paid 2,500, 3,750 or 5,000 XP.
@@ -66,10 +66,21 @@ pub(crate) static DUNGEONS: [Template; 3] = [
     (cleared, 3, "Clear 3 dungeons.", "Deep Delver", 3),
 ];
 
-/// The day's six: places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two of its pool.
+/// The passages' six, of which the board shows two a day.
+pub(crate) static PASSAGES: [Template; 6] = [
+    (|| Objective::Passage(Deed::Lamp), 1, "Light a lamp in the passages.", "Lamplighter", 3),
+    (|| Objective::Passage(Deed::Mission), 3, "Finish 3 missions in the passages.", "Errand Runner", 2),
+    (|| Objective::Passage(Deed::Felled), 25, "Defeat 25 foes in the passages.", "Down Below", 1),
+    (|| Objective::Passage(Deed::Deep(8)), 1, "Go 8 zones deep in the passages.", "Further In", 2),
+    (|| Objective::Passage(Deed::Reliquary), 2, "Open 2 reliquaries in the passages.", "Relic Hunter", 2),
+    (|| Objective::Passage(Deed::Vein), 1, "Gather a vein in the passages.", "Seam Worker", 1),
+];
+
+/// The day's eight: places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, 6 and 7 in the passages, each pair
+/// two of its pool. A pool's pair is drawn as it always was, so a kept place reads as the bounty it was.
 #[must_use]
-pub fn board(day: u64) -> [Bounty; 6] {
-    let pools: [&[Template]; 3] = [&LAND, &SEA, &DUNGEONS];
+pub fn board(day: u64) -> [Bounty; 8] {
+    let pools: [&[Template]; 4] = [&LAND, &SEA, &DUNGEONS, &PASSAGES];
     let pick = |place: usize| {
         let pool = pools[place / 2];
         let pair = u32::try_from(place / 2 * 2).unwrap_or(0);

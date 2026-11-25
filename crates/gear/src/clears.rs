@@ -24,7 +24,7 @@ pub const ABYSS_SHAPES: u16 = 10;
 impl Weekly {
     /// The colour weights of the Vestige its first clear pays, Normal to Atheric: the Elite's Legendary, the Abyss's
     /// Atheric one time in five.
-    const fn colours(self) -> [u32; 5] {
+    pub(crate) const fn colours(self) -> [u32; 5] {
         match self {
             Weekly::Elite => [0, 0, 0, 1, 0],
             Weekly::Abyss => [0, 0, 0, 4, 1],

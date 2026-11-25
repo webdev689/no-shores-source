@@ -109,4 +109,16 @@ pub enum Refusal {
     NoHorn = 164,
     /// Past the account's limit on outpost asks, which the accounts answer so: never a refusal of the ask itself.
     TooManyAsks = 165,
+    /// The passages' asks (`dive.rs`): no dive under way, or one of another island or week; no onward mouth of that
+    /// number; the zone's deal not done while the player was in it; no lamp to light here, or none lit this week to
+    /// begin at; the lamp not lit for the player; the lamp's guard still standing; out of reach of the lamp or a
+    /// mouth; asked outside a passage zone or its patrol zone (the room's).
+    NoDive = 170,
+    NoSuchMouth = 171,
+    DealNotDone = 172,
+    NoLamp = 173,
+    LampNotLit = 174,
+    LampGuarded = 175,
+    NotAtMouth = 176,
+    NotInPassage = 177,
 }

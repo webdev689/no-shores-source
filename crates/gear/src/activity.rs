@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// How many places the bounty board has.
-pub const BOUNTIES: u8 = 6;
+pub const BOUNTIES: u8 = 8;
 
 /// A character's day and week.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -49,6 +49,9 @@ pub struct Today {
     /// Whether a heroic chest has paid its Essence today (`chests::FIRST_HEROIC_ESSENCE`).
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub heroic_chest: bool,
+    /// The islands whose passages' day's lamp has paid today (`lamps.rs`): the day's first lamp lit on each.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub passage_lamp: BTreeSet<String>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
@@ -69,6 +72,10 @@ pub struct ThisWeek {
     pub elite_playlist: u8,
     #[serde(skip_serializing_if = "is_zero")]
     pub abyss_playlist: u8,
+    /// The lamps lit this week on each island's passages, by the island's continent's id and each lamp's number (1 to
+    /// 4): each pays the week's lamp once, and is offered as a place to begin a dive (`lamps.rs`).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub passage_lamps: BTreeMap<String, BTreeSet<u8>>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
@@ -124,7 +131,7 @@ impl Activity {
         &mut self.this_week
     }
 
-    /// Made whole as read: no bounty held or turned in past the board's six places.
+    /// Made whole as read: no bounty held or turned in past the board's eight places.
     #[must_use]
     pub fn kept(mut self) -> Self {
         self.today.bounties.retain(|place, _| *place < BOUNTIES);
