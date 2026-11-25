@@ -310,12 +310,12 @@ mod tests {
     /// last a style deeper, and the fifth is laid by a seed and a style where no patrol lays it.
     const AGREED_ASKS: [&[u8]; 5] = [
         br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#,
-        br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
-        br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
+        br#"{"patrol":"highwater-fells","name":"The Highwater Fells","number":1}"#,
+        br#"{"patrol":"whitewind-tundra","name":"The Whitewind Tundra","number":2}"#,
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x77bb_f751_6bd7_1735;
+    const AGREED_HASH: u64 = 0x939e_f98a_66ce_5550;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {

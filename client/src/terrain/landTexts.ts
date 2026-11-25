@@ -1,9 +1,9 @@
 // What the land's worker settles a landmass with besides its edits, read once from the pages' `world/` folder: the
-// RMB index for its city, and every RMB block file, the forged models' tables and the nodes' briefs for its layouts,
-// joined as the open request's members so the worker parses them once.
+// RMB index for its city, and every RMB block file, the forged models' tables, the nodes' briefs and the islands'
+// regions for its layouts, joined as the open request's members so the worker parses them once.
 
 /** The RMB index's text, and the layouts' builders as JSON members (`"rmbBlocks":[...],"forged":{...},"briefs":
- *  {...}`); either null where the pages do not serve it. */
+ *  {...},"regions":[...]`); either null where the pages do not serve it. */
 export interface LandTexts {
   readonly rmbText: string | null;
   readonly buildersText: string | null;
@@ -34,15 +34,16 @@ export async function loadLandTexts(base: string): Promise<LandTexts> {
   try {
     const index = JSON.parse(rmbText) as { blocks: readonly (readonly [string, string, ...unknown[]])[] };
     const files = [...new Set(index.blocks.map((row) => row[1]))].sort();
-    const [blockFiles, buildings, props, parts, briefs] = await Promise.all([
+    const [blockFiles, buildings, props, parts, briefs, regions] = await Promise.all([
       Promise.all(files.map((file) => read(`rmb/${file}`))),
       read('forged/buildings.json'),
       read('forged/props.json'),
       read('forged/parts.json'),
       read('briefs.json'),
+      read('regions.json'),
     ]);
     const forged = `{"buildings":${buildings},"props":${props},"parts":${parts}}`;
-    const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${forged},"briefs":${briefs}`;
+    const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${forged},"briefs":${briefs},"regions":${regions}`;
     return { rmbText, buildersText };
   } catch (error) {
     console.error('the layouts cannot be built:', error);
