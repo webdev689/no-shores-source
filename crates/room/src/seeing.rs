@@ -9,7 +9,8 @@ use combat::fighter::FighterId;
 use combat::shots::Line;
 
 impl Room {
-    /// Every fighter now, players then foes, each in the order of their numbers.
+    /// Every fighter now that a blow or a shot may meet, players then foes, each in the order of their numbers: a foe
+    /// still arriving is none of them.
     #[must_use]
     pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
         let players = self.players.iter().map(|(id, found)| (*id, found.fighter));

@@ -193,3 +193,19 @@ fn a_called_foe_is_built_where_it_stands() {
     run(&mut room, CALLED_BUILD);
     assert!(room.arrival_of(foe).is_none());
 }
+
+#[test]
+fn a_foe_arriving_hears_nothing_until_it_lands() {
+    let (mut room, player, foes) = brought();
+    let attack = combat::fighter::Attack {
+        stroke: combat::arms::Stroke::Down,
+        elapsed: 0,
+        strike: 20,
+        end: 60,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    };
+    room.swings.push((player, attack));
+    room.tell_brains();
+    assert!(foes.iter().all(|id| room.foes[id].brain.heard().is_empty()), "no swing heard from the ship");
+}

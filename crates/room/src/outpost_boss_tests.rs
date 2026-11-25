@@ -17,7 +17,11 @@ fn seen(before_the_week: bool) -> GuildSeen {
 }
 
 fn sounded(tier: u32) -> (Room, PlayerId) {
-    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    sounded_on(Room::new(Vec::new(), (0.0, 0.0)), tier)
+}
+
+/// The horn sounded at `tier` in `room`, as `sounded` does.
+fn sounded_on(mut room: Room, tier: u32) -> (Room, PlayerId) {
     room.open_outpost(&guild_key(GUILD), [30.0, 0.0], "node-x--guild-y:1");
     let player = room.join().expect("a room with space");
     room.guild_player(player, Some(seen(true)));
@@ -103,4 +107,17 @@ fn a_member_who_joined_since_the_week_turned_is_paid_the_clear_but_not_the_guild
     let character = &room.players[&player].character;
     assert!(character.materials.aurem > aurem, "a world boss's clear's Aurem");
     assert!(!character.guild.horn && character.vestiges.is_empty(), "no guild package");
+}
+
+#[test]
+fn under_the_open_sky_the_horn_s_foes_come_by_airship() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.floor = crate::garrison::garrison_tests::sloped();
+    let (room, _) = sounded_on(room, 2);
+    let foes: Vec<_> = room.foes.keys().copied().collect();
+    assert_eq!(foes.len(), 5);
+    let brought = |id: &combat::fighter::FighterId| {
+        room.arrival_of(*id).is_some_and(|arrival| arrival.kind == crate::arrivals::Bringer::Airship)
+    };
+    assert!(foes.iter().all(brought), "let down from a ship over the muster ground");
 }

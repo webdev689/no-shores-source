@@ -357,16 +357,30 @@ impl Room {
         }
     }
 
-    /// Bulwarks sent from the mouths to claim the moorings left empty; answers how many stood.
+    /// Bulwarks sent from the mouths to claim the moorings left empty, each mouth's formed under a crown over it, as
+    /// the Waking's are; answers how many stood.
     fn send_claimers(&mut self, gate: &mut Gate, moorings: &[[f64; 3]], count: usize) -> usize {
         let mouths: Vec<[f64; 3]> = (1..=4).filter_map(|number| gate.socket(&format!("mouth-{number}"))).collect();
+        let mut at_mouth: BTreeMap<usize, Vec<FighterId>> = BTreeMap::new();
+        let mut stood = count;
         for nth in 0..count {
-            let Some(mouth) = mouths.get((gate.waves + nth) % mouths.len().max(1)) else { return nth };
-            let Some(id) = self.stand_gate_foe(gate, (BULWARK, Rank::Elite), *mouth) else { return nth };
+            let mouth_number = (gate.waves + nth) % mouths.len().max(1);
+            let Some(mouth) = mouths.get(mouth_number) else {
+                stood = nth;
+                break;
+            };
+            let Some(id) = self.stand_gate_foe(gate, (BULWARK, Rank::Elite), *mouth) else {
+                stood = nth;
+                break;
+            };
             self.inert.insert(id);
             gate.claimers.push((id, (gate.waves + nth) % moorings.len().max(1)));
+            at_mouth.entry(mouth_number).or_default().push(id);
         }
-        count
+        for formed in at_mouth.values() {
+            self.under_crown(formed);
+        }
+        stood
     }
 
     /// Each claimer walks to its mooring and, finding it empty of the company, claims it and fights there; one that

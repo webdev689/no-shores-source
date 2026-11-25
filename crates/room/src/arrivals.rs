@@ -2,8 +2,9 @@
 //! quest's group as a player nears it); others arrive. The Grey Tithe's come by airship: the ship flies in, hangs
 //! over the ground it brings them to, lets each down in turn, built from the feet up as a player arriving is, and
 //! flies on. The Lattice's come under its crystal: a crown of it forms in the air, each foe forms under it, and it
-//! breaks. A Boss's called foes arrive where they stand. A foe arriving neither thinks nor steps, no foe sees it, and
-//! no blow, shot or cast touches it, until it has landed: the owner's "Some Foes Stand Already, Others Arrive".
+//! breaks. A Boss's called foes arrive where they stand. A foe arriving neither thinks, steps nor hears, no foe sees
+//! it, and no blow, shot or cast touches it, until it has landed: the owner's "some enemies are already on the
+//! ground, while others come in from a dropship or spawn effect".
 
 use crate::{Floor, Room};
 use combat::fighter::FighterId;
@@ -11,13 +12,13 @@ use combat::sight::{apart, bearing};
 use core::f64::consts::PI;
 use std::collections::BTreeMap;
 
-/// What brings a foe: a Grey Tithe airship, a Lattice crown, or a Boss's call.
+/// What brings a foe: a Grey Tithe airship, a Lattice crown, or a Boss's call (numbered on the wire in protocol's
+/// `land.rs`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
 pub enum Bringer {
-    Airship = 1,
-    Crown = 2,
-    Called = 3,
+    Airship,
+    Crown,
+    Called,
 }
 
 /// An airship's flight, in ticks: in from far off to hang over its ground, a moment to settle, each foe let down this

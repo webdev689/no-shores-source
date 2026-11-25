@@ -187,6 +187,10 @@ fn a_cleared_group_stands_again_at_its_post_and_walks_its_beat_from_there() {
     let places: Vec<[f64; 3]> = standing.iter().map(|id| place_of(&room, *id)).collect();
     assert_eq!(places, posted, "its places those at its post");
     let leader = standing[0];
+    // Brought back by airship, it walks its beat once it has landed.
+    while standing.iter().any(|id| room.arriving(*id)) {
+        room.tick();
+    }
     run(&mut room, PAUSE + 600);
     assert!(apart(feet(&room, leader), flat(room.garrison[0].at)) > 5.0, "and it walks its beat from there");
 }
@@ -203,4 +207,28 @@ fn a_follower_beside_its_leader_on_a_raised_floor_keeps_a_place_of_its_own_on_it
     assert!(apart(flat(place), [SPREAD, 0.0]) < 0.5, "its own place, not its leader's: {place:?}");
     let ground = beat::near_on((&nav, &Floor::Flat), [30.0, 0.0, 0.0], (30.0 + SPREAD, 0.0));
     assert!(ground[2].abs() < 0.1 && apart(flat(ground), [30.0 + SPREAD, 0.0]) < 0.5, "on the ground: {ground:?}");
+}
+
+#[test]
+fn a_group_brought_by_airship_walks_no_beat_until_it_has_landed() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    let post = (0..room.garrison.len()).find(|&post| room.garrison[post].beat.is_some()).expect("a group with a beat");
+    for id in room.garrison[post].standing.clone() {
+        let found = room.foes.get_mut(&id).unwrap();
+        (found.fighter.health, found.fighter.action) = (0.0, combat::fighter::Action::Dead { elapsed: 0 });
+    }
+    run(&mut room, STAND_AGAIN + 2);
+    let standing = room.garrison[post].standing.clone();
+    assert!(standing.iter().all(|id| room.arriving(*id)), "it stands again by airship");
+    let leader = standing[0];
+    let home = room.foes[&leader].brain.home().expect("a place of its own").at;
+    let landed = standing.iter().filter_map(|id| room.arrival_of(*id)).map(|arrival| arrival.lands).max().unwrap();
+    while room.clock + 1 < landed {
+        room.tick();
+    }
+    let now = room.foes[&leader].brain.home().expect("a place of its own").at;
+    assert!(
+        apart([now[0], now[1]], [home[0], home[1]]) < 0.5,
+        "its leader's place kept until it lands: {home:?} {now:?}"
+    );
 }

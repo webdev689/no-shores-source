@@ -629,3 +629,16 @@ fn a_half_fallen_patrol_group_is_made_whole_once_no_player_has_come_within_40_m_
     });
     assert!(moved, "and walks its beat again");
 }
+
+#[test]
+fn followers_still_arriving_do_not_break_as_their_leader_falls() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    let player = room.join().unwrap();
+    provoke(&mut room, 0, player);
+    let leader = room.garrison[0].leader.unwrap();
+    let followers: Vec<FighterId> = living(&room, 0).into_iter().filter(|id| *id != leader).collect();
+    room.by_airship(&followers);
+    kill(&mut room, leader);
+    run(&mut room, 1);
+    assert!(followers.iter().all(|id| mood(&room, *id) == Mood::Steady), "not yet in the fight, none breaks");
+}

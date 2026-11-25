@@ -5,7 +5,7 @@
 
 use super::garrison_tests::{node, run, stand_player};
 use super::leash_tests::whole;
-use super::reinforcements::{BROUGHT_MOST, LIFT_AFTER, LIFT_FAR, SET_DOWN};
+use super::reinforcements::{BROUGHT_MOST, LAID_CLEAR, LIFT_AFTER, LIFT_FAR, SET_DOWN};
 use super::smaller::SMALLER;
 use super::*;
 use crate::arrivals::Bringer;
@@ -144,9 +144,87 @@ fn a_ground_baked_for_an_airship_is_counted_however_far_the_player_goes_while_it
         }
     }
     assert_eq!(room.place_grounds(), 1, "the ground begun is baked whole");
-    assert_eq!(room.brought.baked, 1, "and counted among the airships'");
+    assert_eq!(room.airship_grounds(), 1, "and counted among the airships'");
 }
 
+#[test]
+fn a_ground_the_airships_began_counts_as_theirs_whichever_place_s_turn_finishes_it() {
+    let at = [0.0, -100.0];
+    let (mut room, player) = patrol_with_player(at);
+    while room.quests.baking.is_none() {
+        step_facing(&mut room, player, at, 0.0);
+    }
+    // A site standing first each tick takes the turn and steps the airships' bake on to its end.
+    let site = gear::quests::Place { name: "a site".to_owned(), at: [120.0, 120.0], radius: 0.0 };
+    while room.place_grounds() == 0 {
+        room.clock += 1;
+        let _ = room.ground_of(&site, NODE_AROUND - FROM_SQUARE);
+    }
+    assert_eq!(room.airship_grounds(), 1, "the airships' ground, toward their ten");
+}
+
+#[test]
+fn the_airships_begin_no_ground_the_tick_after_another_place_waited_for_its_turn() {
+    let at = [0.0, -100.0];
+    let (mut room, player) = patrol_with_player(at);
+    for _ in 0..60 * 60 {
+        room.quests.waited = Some((room.clock, "a defence".to_owned()));
+        step_facing(&mut room, player, at, 0.0);
+        assert!(room.quests.baking.is_none() && room.place_grounds() == 0, "the defence's turn first");
+    }
+    let mut began = false;
+    for _ in 0..60 * 60 {
+        step_facing(&mut room, player, at, 0.0);
+        if room.quests.baking.is_some() || room.place_grounds() > 0 {
+            began = true;
+            break;
+        }
+    }
+    assert!(began, "once no place waits, the airships bake");
+}
+
+#[test]
+fn a_brought_group_stays_while_a_player_lies_fallen_near_it() {
+    let (mut room, player) = patrol_with_player(ROAMING);
+    let mut landed = false;
+    for _ in 0..3 * 60 * 60 {
+        stand_player(&mut room, player, ROAMING);
+        whole(&mut room, player);
+        room.tick();
+        let posts = brought(&room);
+        if posts.len() == 1 && posts[0].standing.iter().all(|id| !room.arriving(*id)) {
+            landed = true;
+            break;
+        }
+    }
+    assert!(landed, "a group brought and landed");
+    let ids: Vec<FighterId> = brought(&room)[0].standing.clone();
+    let found = room.players.get_mut(&player).unwrap();
+    (found.fighter.health, found.fighter.action) = (0.0, combat::fighter::Action::Dead { elapsed: 0 });
+    run(&mut room, LIFT_AFTER + 30 * 60);
+    assert!(ids.iter().any(|id| room.foes.contains_key(id)), "kept while the player lies near it");
+}
+
+#[test]
+fn a_group_is_set_down_clear_of_a_public_event_s_ground() {
+    let (mut room, player) = patrol_with_player(ROAMING);
+    // The Fissure's ground 25 m round, south of the roaming player toward the landing: where groups are set down
+    // otherwise.
+    let middle = [40.0, 140.0];
+    let fissure = crate::public::FissureGround { at: middle, radius: 25.0, growth: [50.0, 140.0] };
+    room.open_public("saltgrass-downs", crate::public::Grounds { fissure: Some(fissure), raid: None }, None);
+    let mut brought_any = false;
+    for _ in 0..4 * 60 * 60 {
+        stand_player(&mut room, player, ROAMING);
+        whole(&mut room, player);
+        room.tick();
+        for post in brought(&room) {
+            brought_any = true;
+            assert!(apart([post.at[0], post.at[1]], middle) >= 25.0 + LAID_CLEAR, "set down at {:?}", post.at);
+        }
+    }
+    assert!(brought_any, "groups brought clear of it");
+}
 #[test]
 fn a_cleared_group_and_a_half_fallen_group_s_fallen_come_back_by_airship() {
     let (mut room, _) = patrol_with_player([0.0, -150.0]);

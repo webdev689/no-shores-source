@@ -219,8 +219,12 @@ impl crate::Room {
                 .copied()
                 .filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead()))
                 .collect();
+            // A foe still arriving is not yet home: its beat waits until it lands.
             let ready = living.iter().all(|id| {
                 let foe = &self.foes[id];
+                if self.arriving(*id) {
+                    return false;
+                }
                 let near = foe.brain.home().is_some_and(|home| {
                     apart([foe.fighter.body.x, foe.fighter.body.y], [home.at[0], home.at[1]]) <= LAG
                 });

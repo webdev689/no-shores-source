@@ -378,6 +378,12 @@ impl Brain {
     pub fn forget_heard(&mut self) {
         self.awareness.heard.clear();
     }
+
+    /// The noises and shouts told it since its last thought.
+    #[must_use]
+    pub fn heard(&self) -> &[Seen] {
+        &self.awareness.heard
+    }
 }
 
 /// What the room tells a foe's brain it saw happen this tick, noted in place for its next thought. Only an alert foe

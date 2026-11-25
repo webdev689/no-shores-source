@@ -261,12 +261,14 @@ impl Room {
 
     /// Breaks the foes of `ids` that are stirred and not walking home: one rages, a brute first, then a skirmisher,
     /// then a swordsman, the one nearest its target (none if one of them already rages); the rest break by their role.
+    /// A foe still arriving does not break: it is not yet in the fight.
     fn break_foes(&mut self, ids: &[FighterId]) {
         let tick = self.clock;
         let stirred = |id: &&FighterId| {
-            self.foes.get(id).is_some_and(|foe| {
-                !foe.fighter.dead() && !foe.brain.returning() && foe.brain.alertness() != Alertness::Idle
-            })
+            !self.arriving(**id)
+                && self.foes.get(id).is_some_and(|foe| {
+                    !foe.fighter.dead() && !foe.brain.returning() && foe.brain.alertness() != Alertness::Idle
+                })
         };
         let breaking: Vec<FighterId> = ids.iter().filter(stirred).copied().collect();
         let rages = breaking.iter().any(|id| self.foes[id].brain.mood(tick) == Mood::Raging);

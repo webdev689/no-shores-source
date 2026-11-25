@@ -518,3 +518,19 @@ fn no_company_whose_gate_opened_takes_it_again_once_it_cleared_or_its_day_is_pas
         );
     }
 }
+
+#[test]
+fn a_bulwark_sent_out_forms_under_a_crown_over_its_mouth() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    let claimers = room.breach_gate.as_ref().expect("gate").claimers.clone();
+    assert!(!claimers.is_empty(), "a Bulwark sent as the Waking begins");
+    for (bulwark, _) in claimers {
+        let arrival = room.arrival_of(bulwark).expect("it arrives");
+        assert_eq!(arrival.kind, crate::arrivals::Bringer::Crown, "formed under a crown, as the Waking's are");
+    }
+}
