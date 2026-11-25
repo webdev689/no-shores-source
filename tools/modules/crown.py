@@ -5,7 +5,7 @@ splayed out level, a dense cluster pointing down at the ground under it, a lesse
 top, a halo of small shards round its waist, and long thin shards dripping from its arms' ends. It is the Lattice's
 own crystal (latticekit), its heart alight, its points bright, its roots dark.
 
-Its origin is its heart: it reaches down some 4 m to the drips' tips and up some 1.6 m. The page hangs it over the
+Its origin is its heart: it reaches down some 4 m to the drips' tips and up some 1.3 m. The page hangs it over the
 ground, grows it out of its heart and breaks it.
 """
 import math

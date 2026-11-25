@@ -1,4 +1,4 @@
-"""The Grey Tithe's airship (`tithe-airship`): one of their brigs retrofitted to fly, as the owner has them, "large
+"""The Grey Tithe's airship (`tithe-airship`): one of their brigs retrofitted to fly, as the owner has them: "Large
 modified vessels retrofitted with combustible thrusters". Her hull is the Brig's own, from the ships' builder
 (shipkit), so she is the vessel the sea sails; what is fitted to her is in the bible's Modules note. She is built in
 the ships' frame (x toward her bow, y to port, z up) and turned at the end so her bow points along the module's front
@@ -16,8 +16,9 @@ from timbers import Frame, barrel, board, cloth, crate, ring
 HULL = 'brig'
 # Her keel's bottom is this far under the ships' frame's zero, and the module stands it at the origin.
 KEEL_M = 1.0
-# The outrigger beams, fore and aft: where along her, how far out each way, how thick.
-BEAMS_X = (4.6, -6.6)
+# The outrigger beams, fore and aft: where along her (each midway between two of her gunports, clear of her deck's
+# load), how far out each way, how thick.
+BEAMS_X = (3.9, -6.5)
 BEAM_OUT_M = 9.4
 BEAM_M = 0.55
 # A thruster on a beam's end: its drum's radius and length, hung this far under the beam; its bell's mouth.
@@ -54,7 +55,7 @@ def tube(module, start, end, radius, end_radius=None, material='iron', sides=12,
 
 def thruster(module, at, way, sockets, name):
     """A thruster hung at `at`, its bell aft along `way` (a unit vector): its drum banded, an intake cowl at its front,
-    rivets round its bands, the bell flared and sooted, its throat alight; its mouth's socket named `name`."""
+    bands round it, the bell flared, its throat alight; its mouth's socket named `name`."""
     centre = mathutils.Vector(at)
     way = mathutils.Vector(way).normalized()
     front, back = centre - way * (DRUM_LONG_M / 2), centre + way * (DRUM_LONG_M / 2)
@@ -118,7 +119,7 @@ def lifts(module, shape, sockets):
 
 
 def furnace(module, shape, sockets):
-    """The furnace house of riveted iron plate amidships, its firebox door alight, coal heaped by it, its two stacks
+    """The furnace house of iron plate amidships, its firebox door alight, coal heaped by it, its two stacks
     with collars and capped tops, and the stores round it."""
     aft, fore, half, high = FURNACE
     deck = shape.deck((aft + fore) / 2)
@@ -177,7 +178,7 @@ def mast(module, shape):
 
 
 def plating(module, shape):
-    """Iron plate riveted over her lower sides, where the sea once was, a plate every 2 m along her, each laid on her
+    """Iron plate over her lower sides, where the sea once was, a plate every 2 m along her, each laid on her
     planking and standing a hand's breadth proud of it."""
     for side in (1, -1):
         for k in range(12):
@@ -213,8 +214,20 @@ def wales(module, shape):
                 faces += [(a + 1, b + 1, b + 3, a + 3), (a + 2, a + 3, b + 3, b + 2), (a, b, b + 1, a + 1)]
             last = 4 * (len(stations) - 1)
             faces += [(0, 1, 3, 2), (last, last + 2, last + 3, last + 1)]
-            middle = [sum(point[axis] for point in points) / len(points) for axis in range(3)]
-            outward = lambda at, middle=middle: [0.0, at[1] - middle[1] + (at[1] - middle[1]) * 4, at[2] - middle[2]]
+            # Each face wound out from the strake's own section where it lies, as the hull narrows to her bow and
+            # stern; its two ends out along her.
+            middles = [[sum(points[4 * k + n][axis] for n in range(4)) / 4 for axis in range(3)]
+                       for k in range(len(stations))]
+
+            def outward(at, middles=middles, stations=stations):
+                if abs(at[0] - stations[0]) < 1e-6:
+                    return [-1.0, 0.0, 0.0]
+                if abs(at[0] - stations[-1]) < 1e-6:
+                    return [1.0, 0.0, 0.0]
+                k = min(len(stations) - 2, int((at[0] - stations[0]) / (stations[1] - stations[0])))
+                share = (at[0] - stations[k]) / (stations[k + 1] - stations[k])
+                middle = [middles[k][axis] + (middles[k + 1][axis] - middles[k][axis]) * share for axis in range(3)]
+                return [0.0, at[1] - middle[1], at[2] - middle[2]]
             kit.solid_of(module, 'wale', points, kit.oriented(points, faces, outward), 'timber')
 
 
