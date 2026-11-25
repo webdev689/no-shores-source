@@ -81,6 +81,10 @@ no quests, stood beside the roads. Asked "How should they come together?", the o
 | The panel | It lies over the page, which rests under it, and goes up as the Journal is left | So the timers never stand over another tab |
 | This Week | Its title goes, its rows becoming the timers' | The owner's drop-down holds them |
 
+Replaced in part by [[The Bounty Board as Claude Shapes It]]: every bounty of a kind wears one face (the town's a
+writ, a faction's its emblem) on a smaller tile; the card floats beside the tile pointed at; the board is laid as a
+keeper's screen with the factions' bounties under the town's; and the Journal's column takes the same tiles and card.
+
 Links: [[Interface]], [[Activities]], [[Pick - Enhanced Plus UI]],
 [[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]],
 [[The Story Is Nine Missions, With Side Quests Between Them]],

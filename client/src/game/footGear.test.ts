@@ -83,7 +83,7 @@ test('on foot the room is always told, so no character is kept out by a prologue
 test('the bounty board is used where a player stands before it, though no keeper stands there, and marked', () => {
   const ask = () => undefined;
   const here = countersOf({ stations: [WEAPONSMITH], board: [5, 0] });
-  assert.equal(useAt(5.5, 0, here, null, ask)?.words, 'The Bounty Board: bounties for XP and Aurem');
+  assert.equal(useAt(5.5, 0, here, null, ask)?.words, 'The Bounty Board: the day’s bounties');
   assert.equal(useAt(9, 0, here, null, ask), null, 'past its reach');
   const keepers = markedHere(null, { stations: [WEAPONSMITH] }, () => 0).length;
   assert.equal(markedHere(null, here, () => 0).length, keepers + 1, 'its mark beside the keepers');

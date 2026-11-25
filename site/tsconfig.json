@@ -1,0 +1,9 @@
+{
+  // The website: strict like the client, with Node's types, since all of its code runs at build time in Node.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules"]
+}

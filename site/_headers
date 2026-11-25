@@ -1,0 +1,5 @@
+# Files the builds name by a hash of their bytes never change under that name, so a browser keeps them for a year.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/play/assets/*
+  Cache-Control: public, max-age=31536000, immutable

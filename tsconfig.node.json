@@ -11,7 +11,8 @@
     "server/**/*.test.ts",
     "vite.config.ts",
     "tools/ships/ship_pictures.ts",
-    "tools/dungeon/previewPictures.ts"
+    "tools/dungeon/previewPictures.ts",
+    "tools/botCommands.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

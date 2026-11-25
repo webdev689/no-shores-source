@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
 import { BANNER_KEYS } from '../plus/journalArt.ts';
-import { bountyWords } from './bountyBoard.ts';
+import { stateWords } from './bountyTiles.ts';
 import { bountyColumnOf, countdownWords, questCardsOf, whenWords } from './journalWords.ts';
 import type { QuestLine } from './quests/questBook.ts';
 
@@ -16,6 +16,7 @@ const bounty = (words: string, target: number, count = 0, held = false, paid = f
   pool,
   name: 'Sample',
   tier: 1,
+  faction: 0,
 });
 const BOARD = [
   bounty('Defeat 30 Grey Tithe foes.', 30),
@@ -24,7 +25,7 @@ const BOARD = [
   bounty('Sink or take a ship of Elite rank or higher.', 1, 1, true, true, 1),
   bounty('Clear 2 dungeons.', 2, 0, false, false, 2),
   bounty('Clear 3 dungeons.', 3, 0, false, false, 2),
-];
+].map((one, place) => ({ ...one, place }));
 /** A sample road of two tasks, its opening scene one of the story's own. */
 const sample = (id: string): QuestLine => ({
   id,
@@ -79,7 +80,7 @@ test('the bounties taken stand in the board’s order, each with its count, done
   const gear = { prologueDone: true, day: 20_778, bounties: BOARD } as unknown as GearState;
   const column = bountyColumnOf(gear);
   assert.deepEqual(
-    column.taken.map((row) => [row.place, row.pool, bountyWords(row)]),
+    column.taken.map((row) => [row.place, row.pool, stateWords(row)]),
     [
       [1, 0, '1/2'],
       [2, 1, 'Done. Turn it in at the board.'],
@@ -87,7 +88,7 @@ test('the bounties taken stand in the board’s order, each with its count, done
     ],
   );
   assert.deepEqual([column.slots, column.said], [6, null]);
-  const unheard = { taken: [], slots: 0, said: 'Six a day, from the board in Overlook’s plaza.' };
+  const unheard = { taken: [], slots: 0, said: 'Posted each day on the board in Overlook’s plaza.' };
   assert.deepEqual(bountyColumnOf(null), unheard);
   assert.equal(bountyColumnOf({ ...gear, prologueDone: false }).said, 'The bounty board opens after the prologue.');
   const none = bountyColumnOf({ ...gear, bounties: BOARD.map((one) => ({ ...one, held: false, paid: false })) });

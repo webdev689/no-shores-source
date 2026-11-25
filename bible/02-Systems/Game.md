@@ -321,7 +321,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"), and at the bounty board its bounties, offered as "The Bounty Board:
-  bounties for XP and Aurem"; within 2.5 m of a chapter of the lore lying there for the player it reads "Read" and its
+  the day’s bounties"; within 2.5 m of a chapter of the lore lying there for the player it reads "Read" and its
   book's name, and asks the room to find it ([[Lore]]); within 2.5 m of a node it reads "Hold to gather" and its
   resource, and held it asks the room to gather it (`GatherHold`): a ring traced round the keycap's edge fills over the
   two seconds with the menus' build-up sound; that is all, no tool and no move of the figure's. A sea island's nodes

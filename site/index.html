@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-t="home.title"></title>
+    <meta name="description" data-t-content="home.description" />
+    <link rel="stylesheet" href="/src/site.css" />
+  </head>
+  <body>
+    <!--site:top-->
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-art">
+          <img class="hero-scene" data-art="overlook" data-t-alt="home.heroAlt" />
+          <img class="hero-lights" data-art="overlook-lights" aria-hidden="true" />
+        </div>
+        <div class="hero-words">
+          <h1 id="hero-title"><img class="hero-logo" data-art="logo" data-t-alt="shell.brand" /></h1>
+          <p class="hero-line" data-t="premise.opening"></p>
+          <p class="hero-pitch" data-t="home.pitch"></p>
+          <p class="buttons">
+            <a class="button button-gold button-big" data-to="play" data-t="home.play"></a>
+            <a class="button button-big" data-to="discord" data-t="home.discord"></a>
+          </p>
+          <p class="hero-needs" data-t="home.needs"></p>
+        </div>
+      </section>
+
+      <section class="intro" aria-labelledby="intro-title">
+        <h2 id="intro-title" data-t="home.introHead"></h2>
+        <p class="lede" data-t="home.intro"></p>
+        <p data-t="home.introShared"></p>
+      </section>
+
+      <section class="features" aria-labelledby="features-title">
+        <h2 class="section-title" id="features-title" data-t="home.featuresHead"></h2>
+        <article class="feature">
+          <img class="frame" data-art="overlook-court" data-t-alt="game.portAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">I</span>
+            <h3 data-t="home.portHead"></h3>
+            <p data-t="home.portText"></p>
+            <ul class="chips">
+              <li data-t="home.portHub"></li>
+              <li data-t="home.portKeepers"></li>
+              <li data-t="home.portBounties"></li>
+              <li data-t="home.portFactions"></li>
+            </ul>
+          </div>
+        </article>
+        <article class="feature">
+          <img class="frame" data-art="under-sail" data-t-alt="game.seaAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">II</span>
+            <h3 data-t="home.seaHead"></h3>
+            <p data-t="home.seaText"></p>
+            <p data-t="home.seaFight"></p>
+            <ul class="chips">
+              <li data-t="home.seaSailing"></li>
+              <li data-t="home.seaBoarding"></li>
+              <li data-t="home.seaCrew"></li>
+              <li data-t="home.seaFleets"></li>
+            </ul>
+          </div>
+        </article>
+        <article class="feature">
+          <img class="frame" data-art="duel" data-t-alt="game.fightAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">III</span>
+            <h3 data-t="home.fightHead"></h3>
+            <p data-t="home.fightText"></p>
+            <p data-t="home.fightArts"></p>
+            <ul class="chips">
+              <li data-t="home.fightParry"></li>
+              <li data-t="home.fightPoise"></li>
+              <li data-t="home.fightRanged"></li>
+              <li data-t="home.fightThree"></li>
+            </ul>
+          </div>
+        </article>
+        <article class="feature">
+          <img class="frame" data-art="gear" data-t-alt="game.gearAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">IV</span>
+            <h3 data-t="home.gearHead"></h3>
+            <p data-t="home.gearText"></p>
+            <ul class="chips">
+              <li data-t="home.gearRarities"></li>
+              <li data-t="home.gearUpgrades"></li>
+              <li data-t="home.gearFaction"></li>
+              <li data-t="home.gearVestiges"></li>
+            </ul>
+          </div>
+        </article>
+        <article class="feature">
+          <img class="frame" data-art="dungeon" data-t-alt="game.doAlt" loading="lazy" />
+          <div>
+            <span class="numeral" aria-hidden="true">V</span>
+            <h3 data-t="home.doHead"></h3>
+            <p data-t="home.doText"></p>
+            <ul class="chips">
+              <li data-t="home.doDaily"></li>
+              <li data-t="home.doEvents"></li>
+              <li data-t="home.doCompany"></li>
+              <li data-t="home.doGuilds"></li>
+            </ul>
+          </div>
+        </article>
+        <p class="buttons"><a class="button" data-to="game" data-t="home.gameLead"></a></p>
+      </section>
+
+      <section class="band" aria-labelledby="numbers-title">
+        <h2 class="hidden" id="numbers-title" data-t="home.numbersHead"></h2>
+        <ul class="numbers">
+          <li><b>9</b><span data-t="home.numberContinents"></span></li>
+          <li><b>3</b><span data-t="home.numberPorts"></span></li>
+          <li><b>3</b><span data-t="home.numberArts"></span></li>
+          <li><b>6</b><span data-t="home.numberStyles"></span></li>
+        </ul>
+      </section>
+
+      <section class="feature lead" aria-labelledby="story-title">
+        <img class="frame" data-art="thule" data-t-alt="world.ambushAlt" loading="lazy" />
+        <div>
+          <h2 id="story-title" data-t="home.storyHead"></h2>
+          <p data-t="premise.ambush"></p>
+          <p data-t="premise.depths"></p>
+          <p class="beat" data-t="premise.calls"></p>
+          <p data-t="premise.survives"></p>
+          <p class="buttons"><a class="button" data-to="world" data-t="home.storyLead"></a></p>
+        </div>
+      </section>
+
+      <section class="start" aria-labelledby="start-title">
+        <h2 class="section-title" id="start-title" data-t="home.startHead"></h2>
+        <ol class="steps">
+          <li>
+            <h3 data-t="home.stepPlayHead"></h3>
+            <p data-t="home.stepPlayText"></p>
+          </li>
+          <li>
+            <h3 data-t="home.stepKeepHead"></h3>
+            <p data-t="home.stepKeepText"></p>
+          </li>
+          <li>
+            <h3 data-t="home.stepCrewHead"></h3>
+            <p data-t="home.stepCrewText"></p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="call" aria-labelledby="community-title" data-needs="discord">
+        <h2 id="community-title" data-t="home.communityHead"></h2>
+        <p data-t="home.communityText"></p>
+        <p class="buttons"><a class="button button-big" data-to="discord" data-t="home.discord"></a></p>
+      </section>
+
+      <section class="passage closing">
+        <p data-t="premise.countless"></p>
+        <p class="beat" data-t="premise.safety"></p>
+        <p class="buttons"><a class="button button-gold button-big" data-to="play" data-t="home.play"></a></p>
+      </section>
+    </main>
+    <!--site:foot-->
+  </body>
+</html>

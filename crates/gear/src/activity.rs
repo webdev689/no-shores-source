@@ -7,8 +7,13 @@ use crate::world::Difficulty;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-/// How many places the bounty board has.
+/// How many of the bounty board's places are the town's.
 pub const BOUNTIES: u8 = 6;
+/// How many bounties each faction posts a day, and how many factions post them (`content/gear/factions.json`'s).
+pub const FACTION_BOUNTIES: u8 = 3;
+pub const POSTING_FACTIONS: u8 = 3;
+/// Every place a bounty stands at: the town's six, then each faction's three in the factions' order.
+pub const BOUNTY_PLACES: u8 = BOUNTIES + POSTING_FACTIONS * FACTION_BOUNTIES;
 
 /// A character's day and week.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -36,6 +41,12 @@ pub struct Today {
     /// The board's places turned in today: each pays once.
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub turned_in: BTreeSet<u8>,
+    /// The factions' bounties held and turned in today, by their places (6 to 14), kept apart from the town's: a room
+    /// built before them keeps only the town's six under `bounties`, and carries a key it does not know as it was.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub faction_bounties: BTreeMap<u8, u32>,
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
+    pub faction_turned_in: BTreeSet<u8>,
     /// The sea islands' resource nodes gathered today, each island by its seed with its nodes' numbers, the latest
     /// `ISLES_GATHERED_KEPT` islands kept: spent for the character until the day turns
     /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
@@ -86,6 +97,28 @@ fn known_tiers<'de, D: serde::Deserializer<'de>>(reader: D) -> Result<BTreeSet<D
     Ok(read.into_iter().filter_map(|tier| serde_json::from_value(tier).ok()).collect())
 }
 
+impl Today {
+    /// The counts held under a place's keys: the town's places in `bounties`, a faction's in `faction_bounties`.
+    #[must_use]
+    pub fn held(&self, place: u8) -> &BTreeMap<u8, u32> {
+        if place < BOUNTIES { &self.bounties } else { &self.faction_bounties }
+    }
+
+    pub fn held_mut(&mut self, place: u8) -> &mut BTreeMap<u8, u32> {
+        if place < BOUNTIES { &mut self.bounties } else { &mut self.faction_bounties }
+    }
+
+    /// The places turned in under a place's keys, the town's or the factions'.
+    #[must_use]
+    pub fn paid(&self, place: u8) -> &BTreeSet<u8> {
+        if place < BOUNTIES { &self.turned_in } else { &self.faction_turned_in }
+    }
+
+    pub fn paid_mut(&mut self, place: u8) -> &mut BTreeSet<u8> {
+        if place < BOUNTIES { &mut self.turned_in } else { &mut self.faction_turned_in }
+    }
+}
+
 impl Activity {
     /// The nodes of the island of `seed` gathered on `day`, none on another day.
     #[must_use]
@@ -124,11 +157,15 @@ impl Activity {
         &mut self.this_week
     }
 
-    /// Made whole as read: no bounty held or turned in past the board's six places.
+    /// Made whole as read: the town's places under the town's keys and the factions' under theirs, none past the
+    /// board.
     #[must_use]
     pub fn kept(mut self) -> Self {
+        let factions = |place: &u8| (BOUNTIES..BOUNTY_PLACES).contains(place);
         self.today.bounties.retain(|place, _| *place < BOUNTIES);
         self.today.turned_in.retain(|place| *place < BOUNTIES);
+        self.today.faction_bounties.retain(|place, _| factions(place));
+        self.today.faction_turned_in.retain(factions);
         self
     }
 }

@@ -33,7 +33,7 @@ const OFFERS: Readonly<Record<string, Offer>> = {
     ]),
   ),
   harbourmaster: { words: HARBOURMASTER, opens: { view: 'harbourmaster' } },
-  board: { words: 'The Bounty Board: bounties for XP and Aurem', opens: { view: 'board' } },
+  board: { words: 'The Bounty Board: the day’s bounties', opens: { view: 'board' } },
 };
 
 /** Where a social space serves a player, as its marks and E read it: each station's counter with the bounty board
