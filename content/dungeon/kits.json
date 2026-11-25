@@ -88,6 +88,242 @@
       "floor": "rails",
       "features": 1,
       "leastCeiling": 3.2
+    },
+    "chalk": {
+      "wallEvery": 2,
+      "wallIn": "rooms+corridors",
+      "ceiling": "beams",
+      "floor": "scree",
+      "features": 2,
+      "leastCeiling": 3.2
+    },
+    "barrow": {
+      "wallEvery": 2,
+      "wallIn": "rooms",
+      "ceiling": "apex",
+      "floor": "slabs",
+      "features": 2,
+      "leastCeiling": 3.6
+    }
+  },
+  "passage": {
+    "modules": {
+      "passage.lamp": {
+        "size": [
+          8.0,
+          8.0,
+          3.7
+        ],
+        "boxes": [
+          [
+            -0.8,
+            -0.8,
+            0.8,
+            0.8,
+            1.4
+          ]
+        ],
+        "discs": [
+          [
+            0.0,
+            -3.5,
+            0.5,
+            2.2
+          ],
+          [
+            3.329,
+            -1.082,
+            0.5,
+            2.2
+          ],
+          [
+            2.057,
+            2.832,
+            0.5,
+            2.2
+          ],
+          [
+            -2.057,
+            2.832,
+            0.5,
+            2.2
+          ],
+          [
+            -3.329,
+            -1.082,
+            0.5,
+            2.2
+          ]
+        ],
+        "glows": [
+          [
+            0.0,
+            0.0,
+            3.2
+          ]
+        ]
+      },
+      "passage.mouth.open": {
+        "size": [
+          2.4,
+          0.8,
+          3.0
+        ],
+        "boxes": [
+          [
+            -1.2,
+            -0.4,
+            -0.7,
+            0.4,
+            3.0
+          ],
+          [
+            0.7,
+            -0.4,
+            1.2,
+            0.4,
+            3.0
+          ],
+          [
+            -0.7,
+            0.3,
+            0.7,
+            0.4,
+            3.0
+          ]
+        ],
+        "discs": [],
+        "glows": []
+      },
+      "passage.mouth.shut": {
+        "size": [
+          2.4,
+          0.8,
+          3.0
+        ],
+        "boxes": [
+          [
+            -1.2,
+            -0.4,
+            1.2,
+            0.4,
+            3.0
+          ]
+        ],
+        "discs": [],
+        "glows": []
+      },
+      "passage.way-in": {
+        "size": [
+          2.4,
+          0.8,
+          3.0
+        ],
+        "boxes": [
+          [
+            -1.2,
+            -0.4,
+            1.2,
+            0.4,
+            3.0
+          ]
+        ],
+        "discs": [],
+        "glows": []
+      },
+      "passage.kindle": {
+        "size": [
+          0.6,
+          0.6,
+          2.4
+        ],
+        "boxes": [],
+        "discs": [
+          [
+            0.0,
+            0.0,
+            0.25,
+            2.4
+          ]
+        ],
+        "glows": [
+          [
+            0.17,
+            0.0,
+            2.2
+          ]
+        ]
+      },
+      "passage.tally-post": {
+        "size": [
+          0.8,
+          0.8,
+          1.8
+        ],
+        "boxes": [],
+        "discs": [
+          [
+            0.0,
+            0.0,
+            0.35,
+            1.8
+          ]
+        ],
+        "glows": []
+      },
+      "passage.tally-post.broken": {
+        "size": [
+          0.8,
+          0.8,
+          1.8
+        ],
+        "boxes": [],
+        "discs": [
+          [
+            0.0,
+            0.0,
+            0.35,
+            1.8
+          ]
+        ],
+        "glows": []
+      },
+      "passage.reliquary": {
+        "size": [
+          1.4,
+          0.9,
+          0.9
+        ],
+        "boxes": [
+          [
+            -0.7,
+            -0.45,
+            0.7,
+            0.45,
+            0.9
+          ]
+        ],
+        "discs": [],
+        "glows": []
+      },
+      "passage.reliquary.open": {
+        "size": [
+          1.4,
+          0.9,
+          1.5
+        ],
+        "boxes": [
+          [
+            -0.7,
+            -0.45,
+            0.7,
+            0.45,
+            0.9
+          ]
+        ],
+        "discs": [],
+        "glows": []
+      }
     }
   }
 }

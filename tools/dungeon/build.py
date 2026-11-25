@@ -2,7 +2,7 @@
 
     <python with bpy> -I tools/dungeon/build.py --out DIR [--style S ...] [--preview [flat]] [--pictures DIR]
 
-For each style (all of kits.json's by default) it runs styles/<style>.py's build(kit), refuses a missing or extra
+For each style (all of kits.json's, and its passage pack, by default) it runs styles/<style>.py's build(kit), refuses a missing or extra
 name, and checks every module (envelope.py). It writes DIR/<style>.modules for each style that passes, DIR/modules.blend
 with every style in a collection of its own, and with --preview DIR/previews/<style>.png: in the game's pictures by
 torchlight (from --pictures, else painted by previewPictures.ts into DIR/pictures), or flat parts. It fails listing
@@ -88,14 +88,15 @@ def build_style(style):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--out', required=True, help='the folder to write into, outside the repository')
-    parser.add_argument('--style', action='append', choices=list(catalog.STYLES), help='a style (repeat for more)')
+    parser.add_argument('--style', action='append', choices=list(catalog.PACKS),
+                        help='a style, or passage (repeat for more)')
     parser.add_argument('--preview', nargs='?', const='pictures', choices=['pictures', 'flat'],
                         help="render a contact sheet a style, in the game's pictures (the default) or flat parts")
     parser.add_argument('--pictures', help="previewPictures.ts's folder, for pictures of another climate or season")
     args = parser.parse_args()
     out = os.path.abspath(args.out)
     os.makedirs(out, exist_ok=True)
-    styles = args.style or list(catalog.STYLES)
+    styles = args.style or list(catalog.PACKS)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     problems, built = [], {}
     for style in styles:
@@ -121,12 +122,14 @@ def main():
         folder = args.pictures or os.path.join(out, 'pictures')
         if args.preview == 'pictures' and not args.pictures:
             painter = ['node', os.path.join(HERE, 'previewPictures.ts'), folder]
-            subprocess.run(painter + [word for style in styles for word in ('--style', style)], check=True)
+            painted = dict.fromkeys(catalog.PASSAGE_PICTURES if style == catalog.PASSAGE else style for style in styles)
+            subprocess.run(painter + [word for style in painted for word in ('--style', style)], check=True)
         for style, (modules, triangles) in built.items():
             counts = {module: len(triangles.get(module, ())) for module in modules}
             pictures = None
             if args.preview == 'pictures':
-                pictures = preview.read_pictures(os.path.join(folder, f'{style}.pictures'))
+                worn = catalog.PASSAGE_PICTURES if style == catalog.PASSAGE else style
+                pictures = preview.read_pictures(os.path.join(folder, f'{worn}.pictures'))
             path = preview.sheet(style, modules, counts, os.path.join(out, 'previews'), pictures)
             print(f'{style}: {path}', flush=True)
     if problems:

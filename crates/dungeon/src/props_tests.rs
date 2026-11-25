@@ -1,10 +1,12 @@
 use crate::models::FAMILIES;
 use crate::{
-    CELL_M, Cell, Dungeon, HUNG_M, PILLAR_HALF_M, POSTS_A_ROOM, Piece, Prop, SIDES, STYLES, Side, posts_for, prop_model,
+    CELL_M, Cell, Dungeon, EVERY_STYLE, HUNG_M, PILLAR_HALF_M, POSTS_A_ROOM, Piece, Prop, SIDES, Side, posts_for,
+    prop_model,
 };
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
-    (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
+    (0..count)
+        .map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), EVERY_STYLE[seed as usize % EVERY_STYLE.len()]))
 }
 
 /// The cell a point stands in.
