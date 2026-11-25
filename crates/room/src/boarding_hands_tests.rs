@@ -11,11 +11,13 @@ fn boarded(hands: u8, level: u8) -> (Room, PlayerId) {
 }
 
 #[test]
-fn two_hands_board_with_their_player_and_as_many_more_as_its_trim_leads_never_more_than_it_has() {
-    assert_eq!(boarding(10, 0), HANDS_BOARD);
-    assert_eq!(boarding(10, 4), 6);
-    assert_eq!(boarding(1, 4), 1, "only the hands it has left");
-    assert_eq!(boarding(0, 0), 0);
+fn its_classs_hands_board_with_their_player_and_as_many_more_as_its_trim_leads_never_more_than_it_has() {
+    let class = |hull| naval::class::class_of(hull).boarders;
+    assert_eq!(boarding(10, class(sailing::HullKind::Sloop), 0), 2);
+    assert_eq!(boarding(24, class(sailing::HullKind::Frigate), 0), 4);
+    assert_eq!(boarding(10, 2, 4), 6);
+    assert_eq!(boarding(1, 2, 4), 1, "only the hands it has left");
+    assert_eq!(boarding(0, 2, 0), 0);
 }
 
 #[test]
@@ -71,6 +73,9 @@ fn its_hands_go_back_aboard_when_their_player_leaves_its_deck() {
 #[test]
 fn a_deck_refuses_what_the_sea_keeps_of_its_ship_and_answers_the_rest() {
     let (mut room, player) = boarded(2, 6);
+    if let Some(found) = room.players.get_mut(&player) {
+        assert!(found.character.give_first_ship(), "a boarder who keeps a ship and its modules");
+    }
     let not_here = crate::asks::answer_code(Err(gear::Refusal::NotHere));
     let guns = room.player(player).and_then(|found| found.character.fitted(gear::Slot::Guns)).map(|item| item.id);
     for ask in [

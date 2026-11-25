@@ -38,7 +38,13 @@ pub fn sea_snapshot_bytes(
     let each: Vec<_> = ships
         .iter()
         .map(|&(player, Ship { x, y, heading, rate, .. })| {
-            messages::Ship::create(&mut builder, &messages::ShipArgs { player, x, y, heading, pace: rate })
+            let look = harbour.looks.iter().find(|(each, _)| *each == player).map(|(_, look)| *look);
+            let built = || (gear::ship::fleet::Dress::default().numbers(), [gear::ship::fleet::NO_WORD; 2]);
+            let (dress, name) = look.map_or_else(built, |look| (look.dress, look.name));
+            let (dress, name) = (Some(builder.create_vector(&dress)), Some(builder.create_vector(&name)));
+            let (hull, emblem) = look.map_or((0, 0), |look| (look.hull, look.emblem));
+            let args = messages::ShipArgs { player, x, y, heading, pace: rate, hull, dress, name, emblem };
+            messages::Ship::create(&mut builder, &args)
         })
         .collect();
     let ships = Some(builder.create_vector(&each));
@@ -164,6 +170,8 @@ pub struct SeaHarbour {
     pub taken: Vec<u64>,
     pub friendlies: Vec<room::friendlies::Friendly>,
     pub plates: Vec<(PlayerId, room::Plate)>,
+    /// How each player's ship looks, the player's own among them (`Sea::look`); a ship with none is the Sloop as built.
+    pub looks: Vec<(PlayerId, room::sea::ShipLook)>,
 }
 
 /// A sea island as a player is told of it: its number and seed, where its middle is, its kind's number, its water's

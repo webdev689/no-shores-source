@@ -161,6 +161,7 @@ impl Character {
             self.emblem = starting();
         }
         self.earn_cosmetics_due();
+        self.give_ship_due();
         self.find_lore_due(crate::lore::lore());
     }
 

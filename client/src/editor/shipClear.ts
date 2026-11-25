@@ -14,6 +14,9 @@ export const STAY_SWAY_M = 0.9;
 export const BELLY_M = 1.2;
 /** How far the fight's camera keeps back from the nearest part of its ship it would otherwise stand in, metres. */
 export const ORBIT_CLEAR_M = 2;
+/** On its way between the camera's own place and the battery the aim's eye keeps this far out past the ship and its
+ *  rig, and this far over and under each part of it, metres, coming in to the battery's station at the end. */
+export const ROUND_CLEAR_M = 0.6;
 
 /** How a sail swings, in its ship's frame: about the point along its keel it turns on (its mast, or its luff), as
  *  far as its farthest corner from there, between its lowest and highest corners; a gaff aft of its luff alone, a
@@ -105,6 +108,18 @@ export function sweptBoxes(hull: number): readonly Box[] {
   const boxes = [hullBox(hull), ...sails];
   sweeps.set(hull, boxes);
   return boxes;
+}
+
+/** How far out from its centreline the aim's eye comes abeam of `to` (a point in a hull's frame), clear of the hull
+ *  and of every sail's swing there, before it goes straight in over the rail to it. */
+export function abeamOut(hull: number, to: Point): number {
+  const past = sweptBoxes(hull)
+    .filter(
+      ([low, top]) =>
+        to[0] > low[0] && to[0] < top[0] && to[2] > low[2] - ROUND_CLEAR_M && to[2] < top[2] + ROUND_CLEAR_M,
+    )
+    .map(([, top]) => top[1]);
+  return Math.max(Math.abs(hullBox(hull)[1][1]), ...past) + ROUND_CLEAR_M;
 }
 
 /** Where a ray from `from` along `way` (both in a box's frame) leaves the box, if it ever is in it ahead of `from`. */

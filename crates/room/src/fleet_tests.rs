@@ -176,7 +176,7 @@ fn their_ship_is_their_orders_stepped_by_the_rules_to_the_bit() {
     let mut ship =
         Ship { x: AT[0], y: AT[1], heading: AT[2], ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     for helm in std::iter::once(STANDING.helm).chain(std::iter::once(CLIMB)).chain(std::iter::repeat_n(ROWING, 120)) {
-        ship = sail_hurt(&ship, &sailing::SLOOP, helm, whole, &waters, wind, 0.0).0;
+        ship = sail_hurt(&ship, sailing::HullKind::Sloop, helm, whole, &waters, wind, 0.0).0;
     }
     let room = ship_of(&fleet, player).map(|ship| ship.to_floats().map(f64::to_bits));
     assert_eq!(room, Some(ship.to_floats().map(f64::to_bits)), "a browser predicting it agrees with the room");

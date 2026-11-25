@@ -12,6 +12,7 @@ import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { HULL_NAMES } from '../ships/hulls.ts';
+import { sailedShip } from './sailedShip.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
@@ -58,7 +59,6 @@ import { Sea } from './sea.ts';
 import { sailOrTravel } from './seaTravel.ts';
 import { SeaWord } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
-import { shipPanelOnceBuilt } from './shipPanel.ts';
 import { firstAnchorage } from './seaLaw.ts';
 import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
 import { startTravel } from './travel.ts';
@@ -78,7 +78,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const boot = await bootGame(gpu, canvas, () => shipScale);
   const { hud, stack, ui, story, rooms, link, session, world, landTexts, start, shown, roomModule, land } = boot;
   const { scene, shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor } = boot;
-  const { builtSloop } = boot;
+  const { builtHulls: hulls } = boot;
   const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf);
   const { continents } = world;
   const input = new Input(canvas, () => ui.typing);
@@ -252,6 +252,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
           waterline: sloop.waterline,
           marks: new MarkView(gpu),
           shown: (hull) => shipModels.shown(hull),
+          way: (hull) => hulls()?.[hull]?.way ?? 1,
           warm: () => Promise.all(HULL_NAMES.map((name) => shipModels.load(HULL_NAMES.indexOf(name)))),
         },
         anchorage,
@@ -510,14 +511,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   hud.onManage(manage);
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
-  // The Ship tab's papers: its voyage only while it is at sea.
-  const shipNow = () =>
-    shipPanelOnceBuilt(
-      builtSloop(),
-      sloop.waterline,
-      playing.flow.mode === 'sea' ? playing.sea : null,
-      playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null,
-    );
+  const sailed = sailedShip(() => fed()?.gear, hulls);
+  const hurtsKept = () => playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null;
+  const shipNow = () => sailed.papers(playing.flow.mode === 'sea' ? playing.sea : null, hurtsKept());
   /** Going through the gate the player stands in to the node it leads to. */
   const goThrough = () => {
     const way = playing.through;
@@ -537,10 +533,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const storyMode = () => playing.flow.mode === 'story';
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
-  const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  const fed = () => sailed.heard(playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  /** A gate shut sends the player back to their ship; one who keeps none yet, to Overlook, where the Harbourmaster is. */
+  const shutOut = (why: string) => {
+    const home = sailed.shipless() ? playing.landmass.nodes.find((node) => node.id === FIRST_NODE) : undefined;
+    if (!home || playing.foot?.node.id === FIRST_NODE) return travel({ kind: 'shut', why }, goSea);
+    const ashore = { node: home.id, name: home.name };
+    travel({ kind: 'shut', why, ashore }, () => goFoot(home, arrivalFacing(home, playing.landmass.plan, null)));
+  };
   const fighting = () => footView.shown.fight;
   const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore));
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore, hulls));
   // The gear's pages ask items' fight numbers of the same rules the player's fighter is predicted by; Inspect sets
   // another player's pieces beside the player's own, at sea the sea's word on them.
   rulesOf({ roomModule }).then(
@@ -585,11 +588,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
-      ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
-      ...{ builtSloop, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
+      ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sailed.waterline },
+      ...{ builtShip: sailed.build, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
-      heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea), playing.flow.mode === 'foot'),
+      heed: (here) => heed(here, shutOut, playing.flow.mode === 'foot'),
     },
     playing,
   );

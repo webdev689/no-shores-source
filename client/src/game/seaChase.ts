@@ -29,25 +29,33 @@ export function interceptPoint(from: Point2, speed: number, there: Point2, veloc
   return [there[0] + velocity[0] * time, there[1] + velocity[1] * time];
 }
 
-/** Where the player's ship at `ship` meets `hostile`: both on the same clock, so at their ways at the world's own time,
- *  the hostile's as the room sends it (none from a room that sends none: where it is). */
-export function meetingPoint(ship: Point2, hostile: SeenHostile): Point2 {
+/** Where the player's ship at `ship`, sailing `speed` m/s, meets `hostile`: both on the same clock, so at their ways at
+ *  the world's own time, the hostile's as the room sends it (none from a room that sends none: where it is). */
+export function meetingPoint(ship: Point2, hostile: SeenHostile, speed = SHIP_SPEED): Point2 {
   const way = hostile.way ?? 0;
   const velocity: Point2 = [Math.sin(hostile.heading) * way, -Math.cos(hostile.heading) * way];
-  return interceptPoint(ship, SHIP_SPEED, [hostile.x, hostile.y], velocity);
+  return interceptPoint(ship, speed, [hostile.x, hostile.y], velocity);
 }
 
-/** The ship's chase, if any: whom, and the seconds since its last plan; `tell` tells the sea room whom it chases (null
- *  none), so the one chased is met within 750 m whatever its temper. */
+/** What a chase is told by: `tell` tells the sea room whom it chases (null none), so the one chased is met within
+ *  750 m whatever its temper; `speed` is the ship's way at the world's own time, m/s. */
+interface ChaseHooks {
+  readonly tell?: (ship: number | null) => void;
+  readonly speed?: () => number;
+}
+
+/** The ship's chase, if any: whom, and the seconds since its last plan. */
 export class Chase {
   private quarry: { readonly id: number; readonly name: string } | null = null;
   private since = 0;
   /** Within this the one chased is met, metres: the rules' meeting reach (`Sea.facts`); none known, none met here. */
   metM = 0;
   private readonly tell: (ship: number | null) => void;
+  /** The ship's way at the world's own time, m/s: the Sloop's, whole, until said. */
+  private readonly speed: () => number;
 
-  constructor(tell: (ship: number | null) => void = () => undefined) {
-    this.tell = tell;
+  constructor({ tell = () => undefined, speed = () => SHIP_SPEED }: ChaseHooks = {}) {
+    [this.tell, this.speed] = [tell, speed];
   }
 
   /** Chases the ship of the mark `markId`, if it is among `hostiles` sighted from the ship at `ship`: where to plan
@@ -57,7 +65,7 @@ export class Chase {
     if (!hostile) return null;
     [this.quarry, this.since] = [{ id: hostile.id, name: hostileName(hostile) }, 0];
     this.tell(hostile.id);
-    return meetingPoint(ship, hostile);
+    return meetingPoint(ship, hostile, this.speed());
   }
 
   /** Ends the chase for another course set, telling the room. */
@@ -89,7 +97,7 @@ export class Chase {
     this.since = 0;
     // Told again with each plan, so a room joined again after its link was lost learns it too.
     this.tell(id);
-    return meetingPoint(ship, hostile);
+    return meetingPoint(ship, hostile, this.speed());
   }
 
   /** The voyage's line while chasing: "Chasing the Tithe Brig."; null otherwise. */

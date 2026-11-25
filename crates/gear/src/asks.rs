@@ -169,6 +169,8 @@ pub enum Ask {
         letter: u32,
     },
     TakeAllLetters,
+    /// One of the Harbourmaster's asks for the player's ships (`ship::shipyard`): at the Harbourmaster's counter.
+    Ship(crate::ship::shipyard::ShipAsk),
 }
 
 pub use crate::refusal::Refusal;
@@ -238,6 +240,7 @@ impl Character {
             Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
             Ask::TakeLetter { letter } => self.take_letter(letter, here),
             Ask::TakeAllLetters => self.take_all_letters(here),
+            Ask::Ship(ask) => self.ship_ask(ask, here),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens; a fragment choice left with

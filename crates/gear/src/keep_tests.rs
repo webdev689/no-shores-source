@@ -246,7 +246,7 @@ fn a_kept_rolled_module_offering_a_merged_perk_offers_what_it_merged_into_and_ne
 
 #[test]
 fn a_kept_character_gains_new_resources_and_never_reuses_a_number() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     character.materials.resources.truncate(2);
     character.next_id = 1;
     let back = Character::from_json(&character.to_json()).expect("a character");
@@ -292,7 +292,7 @@ fn a_kept_character_however_broken_is_made_whole_and_no_ask_fails_on_it() {
 
 #[test]
 fn a_fresh_number_is_never_one_held() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     let held = *character.items.keys().next().expect("its starting kit");
     character.next_id = held;
     let fresh = character.take_id();
@@ -326,15 +326,18 @@ fn a_kept_activity_holds_only_the_boards_bounties() {
 
 #[test]
 fn keys_a_room_does_not_know_are_kept_through_a_read_and_a_write() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
+    assert!(character.give_first_ship());
     let id = character.take_id();
     character.vestiges.insert(id, (crate::character::Vestige::new(id, Rarity::Rare, Slot::Head, 4), false));
     let mut kept: serde_json::Value = serde_json::from_str(&character.to_json()).expect("a character");
     let later = serde_json::json!({ "from": "a later room" });
     kept["later"] = later.clone();
-    for nested in ["materials", "arts", "allegiance", "cosmetics"] {
+    for nested in ["materials", "arts", "allegiance", "cosmetics", "fleet"] {
         kept[nested]["later"] = later.clone();
     }
+    kept["fleet"]["ships"][0]["later"] = later.clone();
+    kept["fleet"]["ships"][0]["dress"]["later"] = later.clone();
     let items = kept["items"].as_object_mut().expect("the items");
     let first = items.values_mut().next().expect("an item");
     first[0]["later"] = later.clone();
@@ -343,9 +346,11 @@ fn keys_a_room_does_not_know_are_kept_through_a_read_and_a_write() {
     let read = Character::from_json(&kept.to_string()).expect("a newer save reads");
     let written: serde_json::Value = serde_json::from_str(&read.to_json()).expect("written");
     assert_eq!(written["later"], later, "top level");
-    for nested in ["materials", "arts", "allegiance", "cosmetics"] {
+    for nested in ["materials", "arts", "allegiance", "cosmetics", "fleet"] {
         assert_eq!(written[nested]["later"], later, "{nested}");
     }
+    assert_eq!(written["fleet"]["ships"][0]["later"], later, "a ship kept");
+    assert_eq!(written["fleet"]["ships"][0]["dress"]["later"], later, "a ship's dress");
     let items = written["items"].as_object().expect("the items");
     assert_eq!(items.values().next().map(|item| &item[0]["later"]), Some(&later), "an item");
     let vestiges = written["vestiges"].as_object().expect("the Vestiges");

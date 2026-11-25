@@ -46,7 +46,8 @@ are in [[Crew]].
   and carried nine to a slot beside it, kept in the vault with the ship's other modules (twenty). Each has a rarity,
   a level, experience and the gear's grid of nodes (`grid.rs`): its guns a weapon's grid (handling, finish, perks),
   the other three armour's (perks). Every module fitted earns all the experience the ship earns. A Fruit of Dagon grows no
-  module. A new ship, and one kept from before modules, is fitted once with four level 1 Normal modules.
+  module. A new ship, and one kept from before modules, is fitted once with a level 1 Normal module in each slot that
+  wears none.
 - **Its materials** (`ship::materials`): Timber, Canvas, Iron and Heartwood, the rare one, each to 200. A module's
   nodes cost Aurem and its own two common materials (guns iron and timber, hull timber and iron, sails canvas and
   timber, rigging canvas and iron) where the gear asks for fragments and a resource, and Heartwood where it asks for
@@ -111,7 +112,7 @@ are in [[Crew]].
 
   A ship sinks to the ball that takes the last of its hull: that ball's shooter sank it. Only a player's ship is
   fitted, so a captain's carries none of these. The trim's numbers cross in the gear message beside the rest.
-- **Its hands.** The player's Sloop carries ten men ([[Crew]]): balls cut them down as a captain's are, a thinned crew
+- **Its hands.** The player's ship carries its hull's men, the Sloop ten ([[Crew]], [[Shipyard]]): balls cut them down as a captain's are, a thinned crew
   reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
 - **What a fight pays.** A captain going down pays as twelve kills of a foe of its rank would, at its level, raised by
@@ -126,7 +127,8 @@ are in [[Crew]].
 
 - The gear message carries the ship's part (`GearShip`): its experience, level, Prestige, Attack and Defense and how
   far to its next level, its materials, its hands and its whole complement, its officers and the officers offered at
-  the muster, and its trim. Its modules are the gear message's items of kinds 24 to 27, worn in slots 7 to 10.
+  the muster, its trim, and the fleet: each ship kept with its name and dress, the hull sailed and every dress kept
+  ([[Shipyard]]). Its modules are the gear message's items of kinds 24 to 27, worn in slots 7 to 10.
 - Infusion is ask 17 (the kept module in `item`, the fed one in `count`).
 
 ## In the fleet room

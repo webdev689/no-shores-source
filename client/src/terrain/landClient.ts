@@ -40,6 +40,7 @@ export type LandRequest =
       readonly helm: Helm;
       readonly time: number;
       readonly ticks: number;
+      readonly hull?: number;
     }
   | {
       readonly kind: 'fight-begin';
@@ -47,6 +48,7 @@ export type LandRequest =
       readonly seed: number;
       readonly time: number;
       readonly captains?: readonly CaptainAt[];
+      readonly hull?: number;
     }
   | {
       readonly kind: 'fight-step';
@@ -117,11 +119,17 @@ export interface LandWorker {
   write(): Promise<{ readonly id: string; readonly text: string }>;
   /** The exact ground over a grid, and the breakers' field over it (worked here too: it takes a while). */
   ground(left: number, top: number, step: number, width: number, height: number): Promise<CloseGround>;
-  /** A ship sailed over the open landmass. */
-  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed>;
-  /** A fight begun round the ship over the open landmass (with `captains`, those set upon it), stepped by the
-   *  player's orders, and ended. */
-  fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): Promise<FightView>;
+  /** A ship of `hull` (the Sloop unless given) sailed over the open landmass. */
+  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, hull?: number): Promise<Sailed>;
+  /** A fight begun round the ship of `hull` (the Sloop unless given) over the open landmass (with `captains`, those
+   *  set upon it), stepped by the player's orders, and ended. */
+  fightBegin(
+    ship: ShipFloats,
+    seed: number,
+    time: number,
+    captains?: readonly CaptainAt[],
+    hull?: number,
+  ): Promise<FightView>;
   /** A step of the fight in the world's wind, or in the weather's `wind` (m/s east and south) a story tells it. */
   fightStep(orders: FightOrders, time: number, ticks: number, wind?: readonly [number, number]): Promise<FightView>;
   fightEnd(): Promise<void>;
@@ -189,15 +197,24 @@ export function startLandWorker(): LandWorker {
       if (!ground || !shore) throw new Error('the land worker answered no ground');
       return { patch: ground, field: shore };
     },
-    fightBegin: async (ship, seed, time, captains) =>
-      fought(await ask({ kind: 'fight-begin', ship, seed, time, ...(captains ? { captains } : {}) })),
+    fightBegin: async (ship, seed, time, captains, hull) =>
+      fought(
+        await ask({
+          kind: 'fight-begin',
+          ship,
+          seed,
+          time,
+          ...(captains ? { captains } : {}),
+          ...(hull === undefined ? {} : { hull }),
+        }),
+      ),
     fightStep: async (orders, time, ticks, wind) =>
       fought(await ask({ kind: 'fight-step', orders, time, ticks, wind })),
     fightEnd: async () => {
       await ask({ kind: 'fight-end' });
     },
-    sail: async (ship, helm, time, ticks) => {
-      const { sailed } = await ask({ kind: 'sail', ship, helm, time, ticks });
+    sail: async (ship, helm, time, ticks, hull) => {
+      const { sailed } = await ask({ kind: 'sail', ship, helm, time, ticks, ...(hull === undefined ? {} : { hull }) });
       if (!sailed) throw new Error('the land worker answered no ship');
       return sailed;
     },

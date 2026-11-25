@@ -74,7 +74,7 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   assert.ok(Math.abs((bursts[2] ?? 0) - 0.75) < 0.01 && bursts[6] === 0, `the third leg's burst: ${bursts.join(' ')}`);
   assert.equal(
     prints.join(' '),
-    'e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e 55fbf2018bfc7a00 015591c3068bb900 57367ddfff1fc024 ' +
+    'e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e 966aa293a1b8b24f e252828049982355 57367ddfff1fc024 ' +
       '4d74479c465fc08e 3674caafaa897bf9 896c9ea4b9acae3c',
   );
 });
@@ -101,6 +101,21 @@ test('a fight against each hull through WebAssembly fights to the same fingerpri
     }
     assert.equal(view.fingerprint, print, `rank ${rank}`);
   }
+});
+
+test("a fight begun with the player's hull through WebAssembly sails it and lays its every gun", async () => {
+  const rules = await openSquare();
+  const sides = [0, 1, 2, 3].map((hull) => {
+    const begun = rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000, { hull });
+    const looked = rules.fightStep(ordersOf([0, 0, 90, 80]), 1000, 1, 0);
+    return [begun.player.hull_kind, looked.lay?.launches.length];
+  });
+  assert.deepEqual(sides, [
+    [0, 3],
+    [1, 5],
+    [2, 7],
+    [3, 10],
+  ]);
 });
 
 test('the fight door refuses a step with no fight and a look past its reach', async () => {

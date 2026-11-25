@@ -623,7 +623,10 @@ fn the_bytes_for_the_clients_test_are_written() {
         to: [0.0; 2],
         lane: None,
     };
-    let harbour = SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], ..SeaHarbour::default() };
+    // The first ship a dressed and named Brig, the second as built: none the room knows the look of.
+    let look = room::sea::ShipLook { hull: 2, dress: [1, 11, 21, 31], name: [255, 3], emblem: 4 };
+    let looks = vec![(SHIPS[0].0, look)];
+    let harbour = SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], looks, ..SeaHarbour::default() };
     let sea = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &harbour);
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }

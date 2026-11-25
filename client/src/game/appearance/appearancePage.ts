@@ -9,7 +9,7 @@ import { ASKS } from '../../network/gearMessages.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import { emblemCard } from '../appearanceButton.ts';
-import { EMBLEMS } from '../emblemArt.ts';
+import { EMBLEMS } from '../../plus/emblemArt.ts';
 import { cardNode } from '../gearCard.ts';
 import { type Hint, INK, emblemNode, focusRing, label, svgNode, tileLabel, tileNode, words } from '../gearNodes.ts';
 import type { MenuContext } from '../menuPage.ts';

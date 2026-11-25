@@ -102,8 +102,8 @@ export const ASKS = {
   takeAllLetters: 72,
   ...LORE_ASKS,
   ...FIND_ASKS,
-  /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
-   *  seconds) before the page leaves for the sea. */
+  /** A return to the player's ship, which the room answers (107 yes, or 103 its character not yet given it, 105
+   *  fallen, 106 struck in the last ten seconds, 109 no ship kept yet) before the page leaves for the sea. */
   toShip: 73,
   /** A guild bounty claimed, by its slot among the week's four in `column` (`gear::guild`). */
   claimGuildBounty: 75,
@@ -120,6 +120,15 @@ export const ASKS = {
   takeLodestone: 82,
   dropLodestone: 83,
   enterBreach: 84,
+  /** The Harbourmaster's asks, the hull's number in `column`: a hull bought, a ship kept sailed, a dress bought by its
+   *  number in `item`, a dress kept laid on a ship (`item` the dress), and a ship named (its words' places in `node`
+   *  and `slot`, 255 for no first word; `count` 1 for a renaming at the shipyard's price, 0 for the first, free name).
+   *  At the Harbourmaster's counter. */
+  buyShip: 86,
+  sailShip: 87,
+  buyDress: 88,
+  dressShip: 89,
+  nameShip: 90,
 } as const;
 
 /** Shape's place while he is away. */

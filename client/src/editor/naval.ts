@@ -33,7 +33,7 @@ const LEAST_RING_M = 1.6;
 /** The panel keeps a fight's last lines this long after it ends (seconds). */
 const FAREWELL_S = 4;
 
-/** A captain's fight round the Sloop in the World Editor: calling it and sending it off (F), stepping the fight in
+/** A captain's fight round the ship in the World Editor: calling it and sending it off (F), stepping the fight in
  *  its helm's place, the aim's look and camera, its captain's ship in its hull and colours, and drawing the balls,
  *  the lay and the effects. */
 /** What draws the marks: the ship layer's mark view, whose device draws the aim too, or a test's. */
@@ -42,7 +42,7 @@ export type MarkDrawer = Pick<MarkView, 'drawInto'> & Partial<Pick<MarkView, 'gp
 export type FightingShip = Pick<Sailing, 'adopt' | 'place'>;
 /** Where a fight is drawn from: the window's corner, or the world's own (0, 0) in the game. */
 export type Window = Pick<LandView, 'leftM' | 'topM'>;
-/** A Sloop as the aim sees it: where it is drawn. */
+/** A ship as the aim sees it: where it is drawn. */
 export type Aboard = Pick<Afloat, 'place'>;
 
 export class Naval {
@@ -52,9 +52,9 @@ export class Naval {
   private call = 0;
   private adopted: FightView | null = null;
   private feel = new FightFeel(1);
-  /** The player's own Sloop's rig, whose harm the fight draws on it: the scene's, once its model has come. */
+  /** The player's own ship's rig, whose harm the fight draws on it: the scene's, once its model has come. */
   ownRig: SailRig | null = null;
-  /** Where the player's own Sloop was drawn at the last step, and the wind's bearing the sails were last stepped in. */
+  /** Where the player's own ship was drawn at the last step, and the wind's bearing the sails were last stepped in. */
   private own: FightingShip | null = null;
   private windBearing = 0;
   /** The answer the last fight to end by itself ended on, until another begins. */
@@ -107,7 +107,9 @@ export class Naval {
     // Its own helm stands while it is called: the fight begins from its numbers once its last step has answered.
     sailing
       .whenStill()
-      .then(() => (call === this.call ? Fighting.begin(source, id, sailing.floats(), seed, time) : 'sent off'))
+      .then(() =>
+        call === this.call ? Fighting.begin(source, id, sailing.floats(), seed, time, sailing.hullKind) : 'sent off',
+      )
       .then((fighting) => {
         if (call !== this.call) return;
         this.calling = false;
@@ -185,7 +187,7 @@ export class Naval {
     return this.feel.takeCues();
   }
 
-  /** The fight's ships as its feel sees them, by number: by default the player's Sloop and their captain's in the hull
+  /** The fight's ships as its feel sees them, by number: by default the player's ship and their captain's in the hull
    *  they sail; the sea's fight gives its own, every captain in it with its rig. */
   shipsOf: ((answer: FightView) => Map<number, FeelShip>) | null = null;
 
@@ -194,7 +196,15 @@ export class Naval {
     const hull = this.shown(hullOfCaptain(answer.captain));
     if (this.rig?.hull !== hull) this.rig = { hull, rig: new SailRig(hullSails(hull)) };
     return new Map([
-      [0, { vessel: answer.player, rig: this.ownRig, hull: SLOOP_HULL, side: 'player' as const }],
+      [
+        0,
+        {
+          vessel: answer.player,
+          rig: this.ownRig,
+          hull: this.shown(answer.player.hull_kind ?? SLOOP_HULL),
+          side: 'player' as const,
+        },
+      ],
       [1, { vessel: answer.captain, rig: this.rig.rig, hull, side: factionSide(answer.captain.faction) }],
     ]);
   }
@@ -214,7 +224,7 @@ export class Naval {
       orbit,
       sailing,
       view,
-      { shown, aiming: speaks },
+      { shown, aiming: speaks, hull: answer?.player.hull_kind ?? SLOOP_HULL },
       answer?.lay ?? null,
       seconds,
     );
@@ -287,7 +297,7 @@ export class Naval {
 
   /** Draws the balls aloft and the effects (the lay is `drawAimOver`'s), heights as drawn: each effect and ball
    *  `scale` times its size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is
-   *  drawn (by default the player's Sloop and their captain's); what floats on the drawn swell (`sea.water`, its height
+   *  drawn (by default the player's ship and their captain's); what floats on the drawn swell (`sea.water`, its height
    *  at a window point) where the page has one, all in the sun's shadows when a map is given. */
   draw(
     pass: GPURenderPassEncoder,
@@ -353,15 +363,15 @@ function captainPlace(ship: FeelShip, view: Window, shown: number) {
   return { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
 }
 
-/** A Sloop as the aim lays from it: where and how it is drawn. */
-function aimShipOf(ship: Aboard, view: Window): AimShip {
+/** A ship of `hull` as the aim lays from it: where and how it is drawn. */
+function aimShipOf(ship: Aboard, view: Window, hull: number): AimShip {
   const place = ship.place(view, 1);
   const { heading, pitch, roll } = place;
-  return { x: place.x + view.leftM, y: place.y + view.topM, heading, heave: place.z, pitch, roll, hull: SLOOP_HULL };
+  return { x: place.x + view.leftM, y: place.y + view.topM, heading, heave: place.z, pitch, roll, hull };
 }
 
-/** The aim camera while laying from a Sloop (`AimCamera`): `orbit`'s eye eased to its battery's station on the
- *  side looked at while `aiming`, looking at the water its guns are laid on (`lay`,
+/** The aim camera while laying from a ship of `hull` (`AimCamera`): `orbit`'s eye eased to its battery's station on
+ *  the side looked at while `aiming`, looking at the water its guns are laid on (`lay`,
  *  the rules' last answer), and home again once let go; heights drawn `shown` times their own. Answers the orbit
  *  drawn and the look laid. */
 export function easedAimOf(
@@ -369,11 +379,11 @@ export function easedAimOf(
   orbit: Orbit,
   ship: Aboard,
   view: Window,
-  how: { readonly shown: number; readonly aiming: boolean },
+  how: { readonly shown: number; readonly aiming: boolean; readonly hull: number },
   lay: Laid | null,
   seconds: number,
 ): { readonly orbit: Orbit; readonly look: FightLook | null } {
-  const lying = aimShipOf(ship, view);
+  const lying = aimShipOf(ship, view, how.hull);
   const [eastM, southM, upM] = cameraOf(orbit).eye;
   const eye = [eastM + view.leftM, southM + view.topM, upM / how.shown] as const;
   const want: 1 | -1 | null = how.aiming ? (lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1) : null;

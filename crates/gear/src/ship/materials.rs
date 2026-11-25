@@ -61,6 +61,12 @@ impl ShipStock {
         taken
     }
 
+    /// Takes some of a material, as much as is held at most.
+    pub fn take(&mut self, material: ShipMaterial, count: u16) {
+        let held = self.held_mut(material);
+        *held = held.saturating_sub(count);
+    }
+
     /// Whether a price in ship materials can be paid.
     #[must_use]
     pub fn affords(&self, price: &ShipPrice) -> bool {
