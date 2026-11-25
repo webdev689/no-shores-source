@@ -25,9 +25,11 @@ const count = (heard: readonly string[], cue: string) => heard.filter((each) => 
 /** Every cue's recording as a stride of half a second. */
 const STRIDE_S = 0.5;
 const paced = () => STRIDE_S;
+/** Every cue recorded. */
+const every = () => true;
 
 test('a horse is heard a stride at a time at its gait, on the ground under it', () => {
-  const sounds = new HorseSounds(paced);
+  const sounds = new HorseSounds(paced, every);
   const rider: Rider = { id: 1, feet: [0, 0, 0], mounted: true, boosting: 0 };
   sounds.frame([rider], 1 / 60, FLAT, () => assert.fail('nothing for one first heard'));
   const walked = ride(sounds, rider, 2, 6);
@@ -40,7 +42,7 @@ test('a horse is heard a stride at a time at its gait, on the ground under it', 
 });
 
 test('a horse is boosted only while its boost runs, however fast it goes', () => {
-  const sounds = new HorseSounds(paced);
+  const sounds = new HorseSounds(paced, every);
   const rider: Rider = { id: 3, feet: [0, 0, 0], mounted: true, boosting: 0 };
   sounds.frame([rider], 1 / 60, FLAT, () => undefined);
   const fast = ride(sounds, rider, 2, 18);
@@ -51,12 +53,12 @@ test('a horse is boosted only while its boost runs, however fast it goes', () =>
 test("a stride is heard as the last one's recording ends, whatever the speed within its gait, once it has come", () => {
   const rider: Rider = { id: 6, feet: [0, 0, 0], mounted: true, boosting: 0 };
   for (const speed of [2, 7]) {
-    const sounds = new HorseSounds(paced);
+    const sounds = new HorseSounds(paced, every);
     sounds.frame([rider], 1 / 60, FLAT, () => undefined);
     assert.equal(count(ride(sounds, rider, 2, speed), 'horse.walk.ground'), 2 / STRIDE_S, `at ${speed} m/s`);
   }
   let come: number | null = null;
-  const sounds = new HorseSounds(() => come);
+  const sounds = new HorseSounds(() => come, every);
   sounds.frame([rider], 1 / 60, FLAT, () => undefined);
   assert.deepEqual(ride(sounds, rider, 1, 6), [], 'nothing before its recording has come');
   come = STRIDE_S;
@@ -65,8 +67,24 @@ test("a stride is heard as the last one's recording ends, whatever the speed wit
   assert.deepEqual(ride(sounds, { ...going, feet: [0, -6.1, 0] }, 1, 0), [], 'standing, no hooves');
 });
 
+test("where stone or water has no hoofbeat of its own yet, the gait's on the ground is heard in its place", () => {
+  const rider: Rider = { id: 8, feet: [0, 0, 0], mounted: true, boosting: 0 };
+  const sea = { blocks: [], groundAt: () => -1 };
+  for (const [ground, own] of [
+    [STONE, 'horse.gallop.stone'],
+    [sea, 'horse.gallop.water'],
+  ] as const) {
+    const groundOnly = new HorseSounds(paced, (cue) => cue.endsWith('.ground'));
+    groundOnly.frame([rider], 1 / 60, ground, () => undefined);
+    assert.deepEqual(new Set(ride(groundOnly, rider, 2, 12, ground)), new Set(['horse.gallop.ground']), own);
+    const picked = new HorseSounds(paced, every);
+    picked.frame([rider], 1 / 60, ground, () => undefined);
+    assert.deepEqual(new Set(ride(picked, rider, 2, 12, ground)), new Set([own]), 'its own, once picked');
+  }
+});
+
 test("on wood, only the wreck's timber, a horse sounds as on stone", () => {
-  const sounds = new HorseSounds(paced);
+  const sounds = new HorseSounds(paced, every);
   const rider: Rider = { id: 4, feet: [0, 0, 0], mounted: true, boosting: 0 };
   const timber = { ...STONE, wooden: STONE.blocks };
   sounds.frame([rider], 1 / 60, timber, () => undefined);
@@ -75,7 +93,7 @@ test("on wood, only the wreck's timber, a horse sounds as on stone", () => {
 });
 
 test('mounting whinnies, getting down is heard, a horse standing snorts now and then, and on foot it is silent', () => {
-  const sounds = new HorseSounds(paced);
+  const sounds = new HorseSounds(paced, every);
   const heard: string[] = [];
   const hear = (cue: string) => heard.push(cue);
   const standing: Rider = { id: 2, feet: [5, 5, 0], mounted: false, boosting: 0 };

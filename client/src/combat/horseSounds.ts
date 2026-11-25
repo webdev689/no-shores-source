@@ -1,8 +1,9 @@
 // A horse's sounds, from Freesound as the world's are: its hooves at a walk, a gallop and a boost on the ground, stone
 // or water (`stepCue`'s grounds, wood ringing as stone), a stride's recording after another as it goes; the rider
 // mounting, the horse whinnying as they do, and getting down; a snort now and then while it stands; and the boost's
-// start. Each is silent until the owner picks its recording on the sound sheet, as every cue of the world's is.
-import { lengthOfCue } from '../soundSamples.ts';
+// start. Each is silent until the owner picks its recording on the sound sheet, as every cue of the world's is, but a
+// hoofbeat on stone or in water, which plays its gait's on the ground until it has its own.
+import { lengthOfCue, recorded } from '../soundSamples.ts';
 import { type StepGround, stepCue } from './worldCues.ts';
 
 type Point = readonly [number, number, number];
@@ -33,9 +34,12 @@ export const HORSE_CUES: readonly string[] = [
 export const hoofGround = (step: ReturnType<typeof stepCue>): Exclude<typeof step, 'step.wood'> =>
   step === 'step.wood' ? 'step.stone' : step;
 
-/** The hooves' cue at `gait` on the ground a footstep there would sound on. */
-export const hoofCue = (gait: Gait, step: ReturnType<typeof stepCue>): string =>
-  `horse.${gait}.${hoofGround(step).slice('step.'.length)}`;
+/** The hooves' cue at `gait` on the ground a footstep there would sound on; on stone or in water with no recording
+ *  of its own (`picked`), the gait's on the ground in its place, on the owner's "play a sound in their place". */
+export function hoofCue(gait: Gait, step: ReturnType<typeof stepCue>, picked: (cue: string) => boolean): string {
+  const own = `horse.${gait}.${hoofGround(step).slice('step.'.length)}`;
+  return picked(own) ? own : `horse.${gait}.ground`;
+}
 
 /** Someone as their horse is heard: their fighter's number, their feet, whether they ride, and the seconds their
  *  boost still runs. */
@@ -59,10 +63,12 @@ interface Kept {
 export class HorseSounds {
   private readonly kept = new Map<number, Kept>();
   private readonly length: Length;
+  private readonly picked: (cue: string) => boolean;
 
-  /** `length`: how long each cue's recording lasts, which paces the strides. */
-  constructor(length: Length = lengthOfCue) {
+  /** `length`: how long each cue's recording lasts, which paces the strides; `picked`: whether a cue has one. */
+  constructor(length: Length = lengthOfCue, picked: (cue: string) => boolean = recorded) {
     this.length = length;
+    this.picked = picked;
   }
 
   /** `riders` `seconds` on from the last frame, over `ground`: each cue heard where it is, with whose it is. */
@@ -93,7 +99,7 @@ export class HorseSounds {
         // A horse keeps its stride's pace at a gait, going faster by a longer stride: the next stride is heard as the
         // last one's recording ends, so strides played back to back keep the recording's own pace.
         if (speed >= STILL_SPEED && kept.stride <= 0) {
-          const cue = hoofCue(gait, stepCue(feet, ground));
+          const cue = hoofCue(gait, stepCue(feet, ground), this.picked);
           const lasts = this.length(cue);
           if (lasts !== null && lasts > 0) {
             hear(cue, feet, id);

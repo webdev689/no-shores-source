@@ -228,9 +228,9 @@ The decisions in [[Open Questions]] are not repeated here.
   the sample's length), each hoofbeat cut to one stride of its recording, quiet to quiet, mono; a fixed 1.7, 3.4 or
   4.6 m a stride had doubled the hoofbeats' pace at the Bay's 6 and 12 m/s. Foes never make a din: at most two foe
   voices begin in 0.75 s besides a death, never kept back; one foe's swing or hurt once in 2 s; only a fighter's voice
-  that began counts, so a raid's alarm is never held (`WorldSounds.playHeard`). Silent, nothing found in any wording:
-  walking, galloping and boosting in water, and boosting on stone. Open for the owner: whether those play the
-  ground's hoofbeat until a recording turns up. The sheet "Horse and Foe Sounds"
+  that began counts, so a raid's alarm is never held (`WorldSounds.playHeard`). Nothing found in any wording for
+  walking, galloping and boosting in water, nor boosting on stone: each plays its gait's on the ground until it has
+  its own, on the owner's "yes play a sound in their place" (`hoofCue`). The sheet "Horse and Foe Sounds"
   (https://claude.ai/artifact/7fnfdyTarw9FFRcPhM4bHN) holds the picks in its `picks` store. Not heard in a browser:
   whether it drops the MP3's 25 to 40 ms of padding as ffmpeg does (each stride decodes to its cut there).
 

@@ -1140,7 +1140,8 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
   rider's boost runs: another player's as the room last stepped their body) on the ground, stone or water, a
   footstep's wood (only the wreck's) heard as stone (`horse.<gait>.<ground>`, nine cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down (`horse.dismount`); a snort
   each 9 s a ridden horse stands (`horse.snort`); and the boost's start (`horse.boost`). The player's and every other
-  player's horse, another's riding read from its moves. Each is silent until it has its pick on the sound sheet.
+  player's horse, another's riding read from its moves. Each is silent until it has its pick on the sound sheet, but a
+  hoofbeat on stone or in water, which plays its gait's on the ground until then.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
   they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).
