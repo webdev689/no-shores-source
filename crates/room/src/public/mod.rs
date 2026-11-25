@@ -38,7 +38,7 @@ pub const PRESENT_TICKS: u32 = 30 * 60;
 /// Fissure's living lesser foes short of a wave, its fullest wave and its growth or Warden), and the most foes it
 /// stands alive, its garrison's and its event's together: the garrison, its calls and its arrivals keep a node's own.
 pub const EVENT_ROOM: usize = 16;
-pub const EVENT_FOES_MOST: usize = crate::NODE_FOES_MOST + EVENT_ROOM;
+pub const EVENT_FOES_MOST: usize = crate::PATROL_FOES_MOST + EVENT_ROOM;
 /// How far past each ground (and a raid's approach and the point its waves form at) its room bakes navmesh of its own,
 /// and its foes fight a player: as far as a player shoots into the fight from.
 const SQUARE_PAST: f64 = 16.0;

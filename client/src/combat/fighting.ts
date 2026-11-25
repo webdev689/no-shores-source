@@ -12,6 +12,7 @@ import type { ArtState, CastAsk } from '../network/artMessages.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
+import type { ArrivalSeen } from '../network/arrivalMessages.ts';
 import type { PublicEvent } from '../network/publicMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
@@ -208,6 +209,8 @@ export class Fighting {
   /** The zone's public events as the room last sent them, and their events (begun, a shard set, won...) since the
    *  page last asked: kept apart from the fight's, which read every event as a blow. */
   private publicWord: PublicEvent | null = null;
+  /** Every airship and crown bringing foes, as the room last sent them (`arrivalMessages.ts`). */
+  arrivals: readonly ArrivalSeen[] = [];
   publicEvents: FightEvent[] = [];
   shots: readonly FlyingShot[] = [];
   /** Every spell in the room, as its snapshots send them, for a drawer to draw. */
@@ -505,7 +508,8 @@ export class Fighting {
       const kept = this.foes.get(foe.id);
       const { glance, ...seen } = foe;
       this.foes.set(foe.id, { ...seen, view: glanceView(glance), before: kept?.view ?? null, ticks });
-      view.push({ id: foe.id, glance: foe.glance });
+      // A foe arriving is in no one's way and takes no blow until it lands (crates/room/src/arrivals.rs).
+      if (!foe.arrival) view.push({ id: foe.id, glance: foe.glance });
     }
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);
     this.view = view;
@@ -523,6 +527,7 @@ export class Fighting {
     this.events = [...this.events, ...snapshot.events.filter((event) => !isPublic(event))].slice(-QUEUED_MOST);
     this.publicEvents = [...this.publicEvents, ...snapshot.events.filter(isPublic)].slice(-QUEUED_MOST);
     this.publicWord = snapshot.public ?? null;
+    this.arrivals = snapshot.arrivals ?? [];
   }
 
   /** Lets the room's clock run, for a room in the page. */

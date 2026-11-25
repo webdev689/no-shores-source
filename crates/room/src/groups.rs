@@ -569,7 +569,9 @@ impl Room {
             post.standing.push(id);
         }
         post.leader = leader_of(self, &post.standing);
+        let standing = post.standing.clone();
         self.garrison.push(post);
+        self.by_airship(&standing);
         if let Some(encounter) = self.encounter.as_mut() {
             encounter.called += 1;
         }

@@ -402,16 +402,22 @@ impl Room {
         let holders = gate.held_by.as_ref().and_then(|run| gate.companies.get(run)).map_or(0, |company| {
             company.players.iter().filter(|player| self.players.get(player).is_some_and(Player::living)).count()
         });
+        // Each mouth's and each perch's foes form under a crown of crystal over it (`arrivals.rs`).
+        let mut at_mouths: Vec<Vec<FighterId>> = vec![Vec::new(); mouths.len()];
         for nth in 0..(2 + holders / 2).min(super::waves::WAVE_MOST) {
             let kind = if nth % 2 == 0 { (HUSK, Rank::Major) } else { (FLICKER, Rank::Major) };
-            if let Some(mouth) = mouths.get((gate.waves + nth) % mouths.len().max(1)) {
-                self.stand_gate_foe(gate, kind, *mouth);
+            let mouth = (gate.waves + nth) % mouths.len().max(1);
+            if let Some(&at) = mouths.get(mouth) {
+                at_mouths[mouth].extend(self.stand_gate_foe(gate, kind, at));
             }
         }
         if gate.waves % 2 == 1
             && let Some(perch) = perches.get(gate.waves / 2 % perches.len().max(1))
         {
-            self.stand_gate_foe(gate, (RAVAGER, Rank::Elite), *perch);
+            at_mouths.push(self.stand_gate_foe(gate, (RAVAGER, Rank::Elite), *perch).into_iter().collect());
+        }
+        for foes in at_mouths {
+            self.under_crown(&foes);
         }
         gate.waves += 1;
     }

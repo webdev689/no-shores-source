@@ -12,6 +12,7 @@ use crate::Room;
 use combat::fighter::FighterId;
 use combat::sight::apart;
 use naval::random::Mulberry32;
+use reach::Section;
 
 /// A foes' site stands its group the first time a player comes this near its middle.
 pub(super) const SITE_NEAR: f64 = 150.0;
@@ -23,7 +24,7 @@ const SITE_STREAM: u64 = 0x7369_7465_5f66_6f65;
 pub(super) fn band(draws: &mut Mulberry32, from: &[(u8, ::foes::Rank)]) -> Group {
     let size = 2 + index(draws, 3);
     let members = (0..size).map(|_| from[index(draws, from.len())]).collect();
-    Group { members, leads: false, farthest: false }
+    Group { members, leads: false, farthest: false, holds: false }
 }
 
 /// Tries the open points in turn, each the one `pick` names, until `post` stands a post at one; only that one clears
@@ -76,6 +77,8 @@ impl Room {
                 ^ at[1].to_bits().wrapping_mul(0xc2b2_ae3d_27d4_eb4f);
             let seed = self.world_seed ^ SITE_STREAM ^ mix;
             let mut draws = draws_of(seed);
+            // A site's group is a band, as it was laid and walked: the smaller groups stand by the landing and come by
+            // airship (`smaller.rs`).
             let group = band(&mut draws, &PATROL);
             if self.living_foes() + group.members.len() > self.others_most() {
                 continue;
@@ -134,12 +137,16 @@ impl Room {
             return;
         }
         let mut standing = self.garrison[post].standing.clone();
+        let mut brought = Vec::new();
         for nth in fallen {
             if let Some(id) = self.stand_member(post, nth) {
                 standing[nth] = id;
+                brought.push(id);
             }
         }
         self.renew_post(post, standing);
+        // Its fallen are brought back to it by airship.
+        self.by_airship(&brought);
     }
 
     /// Stands the `nth` foe of a post's group at its place, idle, facing as it was posted, leashed to it, at its level
@@ -152,4 +159,18 @@ impl Room {
         self.foes.get_mut(&id)?.brain.posted_at(place, facing);
         Some(id)
     }
+}
+
+/// The open point farthest from the nearest spawn; the first of any as far.
+pub(super) fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
+    let from_spawns = |&(x, y): &(f64, f64)| {
+        section.spawns.iter().map(|&[sx, sy]| apart([x, y], [sx, sy])).fold(f64::INFINITY, f64::min)
+    };
+    let mut best = 0;
+    for (at, point) in open.iter().enumerate() {
+        if from_spawns(point) > from_spawns(&open[best]) {
+            best = at;
+        }
+    }
+    best
 }

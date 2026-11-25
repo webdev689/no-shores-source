@@ -59,7 +59,9 @@ fn a_patrol_s_foes_site_stands_its_group_the_first_time_a_player_comes_within_15
     clear(&mut room, post);
     stand_player(&mut room, player, [SITE[0], SITE[1] + SITE_NEAR - 5.0]);
     run(&mut room, STAND_AGAIN + 2);
-    assert_eq!(room.garrison.len(), posts + 1, "it stands nowhere else");
+    // The groups the airships brought the roaming player meanwhile are no site's (`reinforcements.rs`).
+    let held = room.garrison.iter().filter(|post| !post.arrival).count();
+    assert_eq!(held, posts + 1, "it stands nowhere else");
     let again: Vec<FoeSeen> = room.foes_seen().filter(|foe| room.garrison[post].standing.contains(&foe.foe)).collect();
     assert_eq!(again.len(), kept.len(), "a cleared site's group stands again as any garrison group does");
     for (new, old) in again.iter().zip(&kept) {

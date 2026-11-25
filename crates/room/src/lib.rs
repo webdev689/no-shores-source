@@ -4,6 +4,7 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees.
 
+mod arrivals;
 mod arts;
 pub mod asks;
 mod atheric;
@@ -77,6 +78,7 @@ pub mod threat;
 mod told;
 pub mod winds;
 
+pub use arrivals::{ArrivalSeen, Bringer, FoeArrival};
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
@@ -85,7 +87,7 @@ pub use entrances::Entrance;
 pub use find_holds::{CHEST_REACH, FIND_HEIGHT, OPEN_TICKS, SEARCH_REACH, SEARCH_TICKS};
 pub use finds::{ChestPlace, Holder};
 pub use floor::{Floor, standing_on};
-pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
+pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, PATROL_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
 pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
@@ -259,6 +261,10 @@ pub struct Room {
     pub(crate) breach_gate: Option<Box<breach::gate::Gate>>,
     /// Its fallen being revived, and where they respawn (`revive.rs`).
     pub(crate) respawning: revive::Respawning,
+    /// What brings foes now, the Tithe's airships and the Lattice's crowns, and the foes arriving (`arrivals.rs`).
+    pub(crate) arrivals: arrivals::Arrivals,
+    /// A patrol's groups the airships brought (`reinforcements.rs`).
+    pub(crate) brought: garrison::Brought,
 }
 
 impl Room {
@@ -345,6 +351,8 @@ impl Room {
             breach: None,
             breach_gate: None,
             respawning: revive::Respawning::default(),
+            arrivals: arrivals::Arrivals::default(),
+            brought: garrison::Brought::default(),
         }
     }
 
@@ -455,6 +463,7 @@ impl Room {
         self.step_players();
         self.keep_spots();
         self.spawn_asked();
+        self.keep_arrivals();
         self.keep_patrol();
         self.keep_gathering();
         self.keep_finds();

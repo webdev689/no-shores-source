@@ -1,6 +1,7 @@
 import type { RoomDoor } from '../../../server/roomDoor.ts';
 import type { RoomPlay } from './localRoom.ts';
 import { inputBytes } from './messages.ts';
+import { glanceView } from '../rules/fighters.ts';
 import type { PublicEvent } from './publicMessages.ts';
 import type { Snapshot } from './roomConnection.ts';
 
@@ -12,6 +13,8 @@ import type { Snapshot } from './roomConnection.ts';
 const STRIKE = 1.5 * 1.5;
 const SWING_EVERY = 20;
 const GOT = 0.5 * 0.5;
+/** A player waits this far, squared, from a foe still arriving: clear of where its wave comes down round it. */
+const HOLD_OFF = 8 * 8;
 const NEAR_AXIS = 0.4142135623730951;
 /** The level a scripted player plays at, and its gear's rarity, as the rules' test gives them. */
 const SEASONED = 6;
@@ -28,6 +31,8 @@ export interface Read {
     readonly faction: number;
     readonly type: number;
     readonly at: Point;
+    /** Landed: a foe still arriving is waited for, never struck. */
+    readonly landed: boolean;
   }[];
   readonly event: PublicEvent | null;
 }
@@ -36,13 +41,16 @@ export interface Read {
 export function readOf(snapshot: Snapshot): Read {
   return {
     players: snapshot.players.map((seen) => ({ id: seen.player, at: [seen.body.x, seen.body.y] as const })),
+    // Standing: not dead, as its glance says (a sliver of health left crosses as none, in thousandths).
     foes: snapshot.foes
-      .filter((foe) => (foe.glance[10] ?? 0) > 0)
+      .filter((foe) => glanceView(foe.glance).action.kind !== 'dead')
       .map((foe) => ({
         id: foe.id,
         faction: foe.faction,
         type: foe.type,
         at: [foe.glance[0] ?? 0, foe.glance[1] ?? 0] as const,
+        // A foe still arriving is touched by nothing (crates/room/src/arrivals.rs).
+        landed: !foe.arrival,
       })),
     event: snapshot.public,
   };
@@ -103,8 +111,11 @@ export function decide(read: Read | null, player: number, tick: number, heroic =
   const goal = walk ?? (strike === null ? null : (read.foes.find((foe) => foe.id === strike)?.at ?? null));
   if (!goal) return still;
   const yaw = yawToward(goal[0] - feet[0], goal[1] - feet[1]);
-  if (apart(feet, goal) > (strike === null ? GOT : STRIKE)) return intent(1, yaw, 1, 0, 0);
-  const swing = strike !== null && tick % SWING_EVERY === 0;
+  // A foe still arriving is waited for HOLD_OFF from it, guarded, out of the drop, and struck once it lands.
+  const landed = strike === null || read.foes.some((foe) => foe.id === strike && foe.landed);
+  const near = !landed ? HOLD_OFF : strike === null ? GOT : STRIKE;
+  if (apart(feet, goal) > near) return intent(1, yaw, 1, 0, 0);
+  const swing = strike !== null && landed && tick % SWING_EVERY === 0;
   const stroke = [1, 2, 3, 4, 5, 6][Math.floor(tick / SWING_EVERY) % 6] ?? 1;
   return intent(0, yaw, 0, swing ? stroke : 0, strike !== null && !swing ? 1 : 0);
 }

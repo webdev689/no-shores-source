@@ -21,12 +21,16 @@ fn beats(room: &Room) -> Vec<Vec<[f64; 3]>> {
 }
 
 #[test]
-fn every_group_but_a_boss_s_or_a_miniboss_s_walks_a_beat_over_the_navmesh_drawn_from_its_node_s_seed() {
+fn every_group_but_a_great_foe_s_a_sentry_or_a_watch_walks_a_beat_over_the_navmesh_drawn_from_its_node_s_seed() {
     for kind in KINDS {
         let room = node(kind, "glade");
         for post in &room.garrison {
-            let holds = post.members[0].1 >= Miniboss;
-            assert_eq!(post.beat.is_none(), holds, "{kind:?}: only a Boss's or a Miniboss's group holds its post");
+            // A patrol's sentry and its watch hold their posts too (`smaller.rs`).
+            let drawn: Vec<(u8, ::foes::Rank)> =
+                post.members.iter().map(|&(number, rank, ..)| (number, rank)).collect();
+            let watch = super::smaller::SMALLER.iter().any(|(members, holds)| *holds && drawn == *members);
+            let holds = post.members[0].1 >= Miniboss || watch;
+            assert_eq!(post.beat.is_none(), holds, "{kind:?}: only a great foe's group, a sentry and a watch hold");
             let Some(beat) = &post.beat else { continue };
             let points = beat.points();
             assert!((2..=POINTS).contains(&points.len()) && points[0] == post.at, "{kind:?}: from its post");

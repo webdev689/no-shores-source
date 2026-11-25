@@ -28,8 +28,9 @@ const PROP_FLOATS = 16;
 /** No lamps and nothing drawn, shared, so a place with no props makes nothing a frame. */
 const NO_LAMPS: readonly LampPlace[] = [];
 const NONE_DRAWN: readonly [EventProp, Made, number][] = [];
-/** The props whose canvas is the Tithe's unmarked grey, as its sails are; every other canvas is oiled tan. */
-const GREY_CANVAS: ReadonlySet<EventProp['module']> = new Set<PropModule>(['tithe-banner']);
+/** The props whose canvas is the Tithe's unmarked grey, as its sails are (its banner, its airship's); every other
+ *  canvas is oiled tan. */
+const GREY_CANVAS: ReadonlySet<EventProp['module']> = new Set<PropModule>(['tithe-banner', 'tithe-airship']);
 
 const VERTEX_LAYOUT: GPUVertexBufferLayout = {
   arrayStride: STRIDE,
@@ -251,7 +252,8 @@ export class EventPropsDraw implements Drawer {
       rows[first + 8] = made.lips ? 1 : 0;
       rows[first + 9] = made.height;
       rows[first + 10] = made.lips?.first ?? 0;
-      rows[first + 11] = made.lips?.count ?? 0;
+      // A module that opens has its lips' count here; any other its roll (an airship's lean), if any.
+      rows[first + 11] = made.lips ? made.lips.count : (prop.roll ?? 0);
       rows[first + 12] = prop.dark ? LOOK.dark : GREY_CANVAS.has(prop.module) ? LOOK.grey : 0;
       [rows[first + 13] = 0, rows[first + 14] = 0, rows[first + 15] = 0] = prop.dark ?? prop.tint ?? [];
     });

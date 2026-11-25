@@ -261,8 +261,13 @@ fn a_mission_calls_a_wave_as_it_falls_back_and_another_for_its_last_stand_and_a_
         let home = foe.brain.home().unwrap().at;
         assert!(apart([home[0], home[1]], [wave.at[0], wave.at[1]]) <= SPREAD + 0.5, "holding where it came");
     }
-    // It comes for the player and fights.
+    // It comes by airship (`arrivals.rs`), and once landed comes for the player and fights.
     let first: Vec<FighterId> = wave.standing.clone();
+    assert!(first.iter().all(|id| room.arriving(*id)), "brought by airship");
+    while first.iter().any(|id| room.arriving(*id)) {
+        whole(&mut room, player);
+        run(&mut room, 1);
+    }
     let mut reached = false;
     for _ in 0..600 {
         whole(&mut room, player);

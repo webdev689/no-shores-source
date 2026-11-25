@@ -54,13 +54,17 @@ pub struct Snapshot<'snapshot> {
     /// revived.
     pub darkness: bool,
     pub reviving: &'snapshot [Reviving],
+    /// Every airship and crown bringing foes (`Room::arrivals_seen`), whole each time; none in a room with none.
+    pub arrivals: &'snapshot [room::ArrivalSeen],
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and
 /// level, its shield's element, what it holds and held whole, the ticks left of its Expose, its Charge and the
-/// immunity a Charge leaves, and last, for a companion, its leader, its officer's given and family names and post (0
-/// each for a foe). Everything of a foe is in its packed bytes, so a foe's table holds its number and them.
-pub const FOE_NUMBERS: usize = combat::floats::GLANCE_FLOATS + 17;
+/// immunity a Charge leaves; for a companion, its leader, its officer's given and family names and post (0 each for a
+/// foe); and last, while it arrives, what brings it (`room::Bringer`), the number of what brings it, the tick it is let
+/// down and the tick it lands (0 each once landed). Everything of a foe is in its packed bytes, so a foe's table holds
+/// its number and them.
+pub const FOE_NUMBERS: usize = combat::floats::GLANCE_FLOATS + 21;
 
 /// Values as they cross: whole, or with a base, only those that changed and a bit for each.
 fn changes_of(values: &[u64], base: Option<&Vec<u64>>) -> (Vec<u8>, Vec<u8>) {
@@ -82,6 +86,10 @@ pub fn foe_numbers(foe: &FoeSeen) -> Vec<f64> {
         [companion.leader, companion.given.into(), companion.family.into(), (companion.post as u8).into()]
     });
     numbers.extend(companion.map(f64::from));
+    let arrival = foe.arrival.map_or([0.0; 4], |arrival| {
+        [f64::from(arrival.kind as u8), f64::from(arrival.from), arrival.drops as f64, arrival.lands as f64]
+    });
+    numbers.extend(arrival);
     numbers
 }
 
@@ -220,6 +228,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
             .collect();
         builder.create_vector(&each)
     });
+    let arrivals = (!snapshot.arrivals.is_empty()).then(|| arrivals_vector(&mut builder, snapshot.arrivals));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -241,9 +250,28 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         breach,
         darkness: snapshot.darkness,
         reviving,
+        arrivals,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
+}
+
+/// Every airship and crown bringing foes, as the snapshot carries them.
+fn arrivals_vector<'built>(
+    builder: &mut flatbuffers::FlatBufferBuilder<'built>,
+    arrivals: &[room::ArrivalSeen],
+) -> flatbuffers::WIPOffset<flatbuffers::Vector<'built, flatbuffers::ForwardsUOffset<messages::Arrival<'built>>>> {
+    let each: Vec<_> = arrivals
+        .iter()
+        .map(|seen| {
+            let at = Some(builder.create_vector(&seen.at));
+            let (id, kind, heading, high) = (seen.id, seen.kind as u8, seen.heading, seen.high);
+            let (began, hangs, leaves, gone) = (seen.began, seen.hangs, seen.leaves, seen.gone);
+            let args = messages::ArrivalArgs { id, kind, at, heading, high, began, hangs, leaves, gone };
+            messages::Arrival::create(builder, &args)
+        })
+        .collect();
+    builder.create_vector(&each)
 }
 
 /// Every spell, as the snapshot carries them.

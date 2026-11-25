@@ -268,6 +268,8 @@ impl Room {
         if stood.is_empty() {
             return Stood::Nobody;
         }
+        // A defence's waves come by airship (`arrivals.rs`).
+        self.by_airship(&stood);
         // A wave the character stood before in this task, before a rejoin or a return, drops nothing again.
         let quest = gear::quests::quests().quests.get(key[0]).map(|quest| quest.id.as_str());
         let fought = self.players.get_mut(&player).zip(quest).is_some_and(|(found, quest)| {

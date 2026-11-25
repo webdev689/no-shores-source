@@ -47,6 +47,8 @@ export interface CardAt {
   readonly jitter?: number;
   readonly dissolve?: { readonly share: number; readonly look: GlowLook };
   readonly arrival?: number | undefined;
+  /** The look it is built in while it arrives (`cardLooks.ts` ARRIVING): a player's, unless a foe's says. */
+  readonly arriving?: number | undefined;
   readonly smear?: {
     readonly across: number;
     readonly up: number;

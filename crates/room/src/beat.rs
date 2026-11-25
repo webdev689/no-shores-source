@@ -6,6 +6,8 @@
 
 use super::{SPAWN_CLEAR, SPREAD};
 use crate::Floor;
+use ::foes::Alertness;
+use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use core::f64::consts::PI;
 use movement::{TICK_SECONDS, TUNING, Terrain};
@@ -198,5 +200,40 @@ impl Beat {
         }
         places.truncate(count);
         places
+    }
+}
+
+impl crate::Room {
+    /// Each group with a beat walks on along it while all its living foes are idle and none is LAG from its place,
+    /// and each of them is given its place: its leader the beat's, the rest round it in turn.
+    pub(super) fn walk_beats(&mut self) {
+        for post in 0..self.garrison.len() {
+            // A group gathered elsewhere, as its encounter gives ground or it defends, keeps to the places it has there.
+            if self.garrison[post].anchor.is_some() {
+                continue;
+            }
+            let Some(mut beat) = self.garrison[post].beat.take() else { continue };
+            let living: Vec<FighterId> = self.garrison[post]
+                .standing
+                .iter()
+                .copied()
+                .filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead()))
+                .collect();
+            let ready = living.iter().all(|id| {
+                let foe = &self.foes[id];
+                let near = foe.brain.home().is_some_and(|home| {
+                    apart([foe.fighter.body.x, foe.fighter.body.y], [home.at[0], home.at[1]]) <= LAG
+                });
+                near && foe.brain.alertness() == Alertness::Idle && !foe.brain.returning()
+            });
+            let marching = beat.step(self.clock, ready);
+            let places = beat.places((self.mesh_at(self.garrison[post].at), &self.floor), living.len(), marching);
+            for (id, (place, facing)) in living.iter().zip(places) {
+                if let Some(foe) = self.foes.get_mut(id) {
+                    foe.brain.keep_to(place, facing, marching);
+                }
+            }
+            self.garrison[post].beat = Some(beat);
+        }
     }
 }

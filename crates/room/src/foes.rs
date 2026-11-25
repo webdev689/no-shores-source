@@ -25,6 +25,8 @@ use std::collections::BTreeMap;
 /// for those called behind; and the ask that sends every foe away.
 pub const FOES_MOST: usize = 12;
 pub const NODE_FOES_MOST: usize = 24;
+/// A patrol's room holds this many: a node's and room for the groups the Tithe's airships bring (`reinforcements.rs`).
+pub const PATROL_FOES_MOST: usize = NODE_FOES_MOST + 8;
 /// An ask for a foe on the wire names its role in its low four bits, and in the bits above them the element of a
 /// shield it stands with, 0 for none.
 pub const SHIELD_SHIFT: u8 = 4;
@@ -66,7 +68,8 @@ impl Foe {
 
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
 /// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield; the companion it
-/// is, if one, whose faction is the players' (0); and the name it stands under in place of its type's (empty for none).
+/// is, if one, whose faction is the players' (0); the name it stands under in place of its type's (empty for none);
+/// and its arrival while it is arriving (`arrivals.rs`).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeSeen {
     pub foe: FighterId,
@@ -81,6 +84,7 @@ pub struct FoeSeen {
     pub shield: Option<gear::element::Shield>,
     pub name: &'static str,
     pub companion: Option<crate::Companion>,
+    pub arrival: Option<crate::FoeArrival>,
 }
 
 /// A corner nearer a foe's feet than a tick's run is as good as reached, in metres.
@@ -334,6 +338,8 @@ impl Room {
             let beside = [from_x + sin * out, from_y - cos * out, at.body.z];
             let spot = self.mesh_at(beside).nearest_point(beside).unwrap_or(beside);
             let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
+            // It arrives where it stands, built as a player arriving is (`arrivals.rs`).
+            self.as_called(id);
             // A called foe fights at its caller's level, and stands with no shield.
             self.gird(id, self.foes.get(&caller).map_or(0, |found| found.level), None);
             // The calls of a fight after its caller leashed drop nothing: pulling it again pays no more. Nor do those
@@ -456,7 +462,7 @@ impl Room {
         let caught: Vec<(FighterId, Fighter)> = self
             .foes
             .iter()
-            .filter(|(_, other)| other.fighter.side != foe.side && !other.fighter.dead())
+            .filter(|(other, found)| found.fighter.side != foe.side && !found.fighter.dead() && !self.arriving(**other))
             .filter(|(_, other)| {
                 let body = other.fighter.body;
                 telegraph.strikes([body.x, body.y, body.z], &self.blocks, &self.floor)
@@ -536,6 +542,7 @@ impl Room {
                 shield: found.shield,
                 name: self.names.get(&foe).copied().unwrap_or_default(),
                 companion: self.companion(foe),
+                arrival: self.arrival_of(foe),
             }
         })
     }

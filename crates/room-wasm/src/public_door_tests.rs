@@ -1,6 +1,7 @@
 //! Two scripted players play a whole Fissure and a whole Grey Tithe raid through the room's door, reading only what
-//! each snapshot says: they fell the event's foes, take the shards and carry them to the lip, break the growth, kill
-//! the tithe-taker, strike the Collectors at the stores, and win each, heroic. The same script, run by the browser's
+//! each snapshot says: they fell the event's foes, waiting clear of each one still arriving, take the shards and carry
+//! them to the lip, break the growth, kill the tithe-taker and strike the Collectors at the stores: the Fissure won
+//! heroic, the raid fought to its countdown's end, its heroic task met. The same script, run by the browser's
 //! test through WebAssembly (server/public.test.ts), comes to the same fingerprint.
 
 use super::*;
@@ -34,17 +35,19 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 9 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "834a10b2";
-pub const RAID_HASH: &str = "ef5c5501";
+pub const FISSURE_HASH: &str = "94c4e086";
+pub const RAID_HASH: &str = "19f94058";
 /// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
 /// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille). The
 /// players' swings take the room's chain whatever stroke is asked (`room::chain`).
-pub const FISSURE_ENDED: [u32; 3] = [15_638, 2, 28];
-pub const RAID_ENDED: [u32; 3] = [20_998, 4, 948];
+pub const FISSURE_ENDED: [u32; 3] = [16_378, 2, 28];
+pub const RAID_ENDED: [u32; 3] = [28_800, 4, 732];
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
 const GOT: f64 = 0.5 * 0.5;
+/// A player waits this far, squared, from a foe still arriving: clear of where its wave comes down round it.
+const HOLD_OFF: f64 = 8.0 * 8.0;
 /// tan 22.5°: a heading this near a compass point's axis takes that point.
 const NEAR_AXIS: f64 = 0.414_213_562_373_095_1;
 const SEASONED: u8 = 6;
@@ -69,11 +72,12 @@ fn yaw_toward(east: f64, south: f64) -> f64 {
 }
 
 /// What a scripted player reads of a snapshot: every player's feet, every foe standing (its number, faction, type,
-/// feet), and the event's kind, phase, heroic task, ground and marks.
+/// feet, and whether it has landed: one still arriving is touched by nothing), and the event's kind, phase, heroic
+/// task, ground and marks.
 #[derive(Default)]
 struct Read {
     players: Vec<(u32, [f64; 2])>,
-    foes: Vec<(u32, u8, u8, [f64; 2])>,
+    foes: Vec<(u32, u8, u8, [f64; 2], bool)>,
     kind: u8,
     phase: u8,
     heroic: u8,
@@ -102,10 +106,17 @@ fn read(bytes: &[u8]) -> Read {
         .unwrap()
         .iter()
         .map(|foe| (foe.id(), unpacked(foe.packed().unwrap().bytes(), protocol::land::FOE_NUMBERS)));
-    // Standing: its health (the glance's eleventh) left. Its type and faction follow its glance and its role.
-    let foes = foes
-        .filter(|(_, numbers)| numbers[10] > 0.0)
-        .map(|(id, numbers)| (id, numbers[glance + 3] as u8, numbers[glance + 1] as u8, [numbers[0], numbers[1]]));
+    // Standing: not dead, as its glance says (a sliver of health left crosses as none, in thousandths). Its type and
+    // faction follow its glance and its role; it has landed once its arrival's kind (fourth from last) is none.
+    let arriving = protocol::land::FOE_NUMBERS - 4;
+    let standing = |numbers: &Vec<f64>| {
+        let glanced: [f64; combat::floats::GLANCE_FLOATS] = numbers[..glance].try_into().unwrap();
+        !combat::Fighter::from_glance(&glanced).dead()
+    };
+    let foes = foes.filter(|(_, numbers)| standing(numbers)).map(|(id, numbers)| {
+        let landed = numbers[arriving] == 0.0;
+        (id, numbers[glance + 3] as u8, numbers[glance + 1] as u8, [numbers[0], numbers[1]], landed)
+    });
     let event = seen.public_event().unwrap();
     let marks = event
         .marks()
@@ -164,11 +175,19 @@ fn decide(read: &Read, player: u32, tick: u32) -> (Controls, CombatInput) {
     let goal = walk.or_else(|| strike.and_then(foe_at));
     let Some(goal) = goal else { return still };
     let yaw = yaw_toward(goal[0] - at[0], goal[1] - at[1]);
-    let near = if strike.is_some() { STRIKE } else { GOT };
+    // A foe still arriving is waited for HOLD_OFF from it, guarded, out of the drop, and struck once it lands.
+    let landed = strike.is_none_or(|id| read.foes.iter().any(|foe| foe.0 == id && foe.4));
+    let near = if !landed {
+        HOLD_OFF
+    } else if strike.is_some() {
+        STRIKE
+    } else {
+        GOT
+    };
     if apart(at, goal) > near {
         return (Controls { forward: 1.0, yaw, run: true, ..Controls::default() }, CombatInput::default());
     }
-    let swing = strike.is_some() && tick.is_multiple_of(SWING_EVERY);
+    let swing = strike.is_some() && landed && tick.is_multiple_of(SWING_EVERY);
     // Each swing asks the next of the six strokes; the room takes the swings' chain whatever is asked.
     let stroke = [Stroke::Down, Stroke::DownLeft, Stroke::Left, Stroke::Right, Stroke::DownRight, Stroke::Up]
         [(tick / SWING_EVERY) as usize % 6];
@@ -240,11 +259,12 @@ fn two_scripted_players_seal_a_heroic_fissure_to_the_same_fingerprint_natively_a
 }
 
 #[test]
-fn two_scripted_players_meet_a_raids_heroic_task_and_hold_its_stores_to_the_same_fingerprint_natively_as_in_webassembly()
+fn two_scripted_players_meet_a_raids_heroic_task_and_fight_to_its_end_to_the_same_fingerprint_natively_as_in_webassembly()
  {
+    // Marrow's last wave outlasts them: falling one at a time, each runs back from the spawn while he heals walking home.
     let (hash, event, at) = play(RAID_MINUTE);
-    assert_eq!(event, (2, 2, 2), "the raid won, its heroic task met");
-    assert_eq!(at, RAID_ENDED, "the tick it was won at, its wave and the stores left");
+    assert_eq!(event, (2, 3, 2), "the raid failed at its countdown's end, its heroic task met");
+    assert_eq!(at, RAID_ENDED, "the tick it ended at, Marrow's wave and the stores left");
     assert_eq!(hash, RAID_HASH);
 }
 

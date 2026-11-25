@@ -207,6 +207,10 @@ impl Room {
     /// and tells it. A player's blow that lands on a foe shares its kill, which pays everyone who shares it.
     pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict, hand: Option<Slot>) {
         let Some(before) = self.fighter(defender).copied() else { return };
+        // A foe arriving is touched by nothing until it lands (`arrivals.rs`).
+        if self.arriving(defender) {
+            return;
+        }
         // No one harms their own side: a player never strikes a companion.
         let ally = blow.striker != defender && self.fighter(blow.striker).is_some_and(|by| by.side == before.side);
         if before.dead() || ally {

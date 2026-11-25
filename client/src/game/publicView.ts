@@ -11,6 +11,7 @@ import { sealWave } from '../combat/latticeLooks.ts';
 import { markRing } from '../combat/marks.ts';
 import type { BannerBeat, PublicShown } from '../combat/publicBanner.ts';
 import type { HeardSound } from '../combat/worldSounds.ts';
+import { type ArrivalsFight, ArrivalsView } from './arrivalsView.ts';
 import { ASKS, DROPPED, type GearAsk, type GearDrop } from '../network/gearMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import {
@@ -225,6 +226,8 @@ export class PublicView {
   /** The wall's seconds: a hidden tab and the room's countdowns are told by them, since the frame clock moves at most a
    *  tenth of a second a frame. */
   private readonly now: () => number;
+  /** The airships and crowns bringing foes. */
+  private readonly arrivals = new ArrivalsView();
 
   /** The events of `zone`, shaking `feel`'s view; the fissure's spires stood among the place's `boxes` in each of
    *  `courses` (the page's movement and fight), where given, and a Breach as `breach` makes it; `now` reads the
@@ -247,8 +250,8 @@ export class PublicView {
   }
 
   /** One frame at `clock` (the page's seconds): the room's `event` and its `events` since the last, the player's
-   *  `drops` (their chests among them), the bodies as drawn, the land's height, the marks laid into `marks`, and a
-   *  Breach's word where the room gives one. */
+   *  `drops` (their chests among them), the bodies as drawn, the land's height, the marks laid into `marks`, a
+   *  Breach's word where the room gives one, and what brings foes. */
   frame(
     word: PublicEvent | null,
     events: readonly FightEvent[],
@@ -262,7 +265,14 @@ export class PublicView {
       held = null,
       encounter = null,
       breach = null,
-    }: { quiet?: boolean; held?: PublicEvent | null; encounter?: EncounterHere | null; breach?: BreachOn | null } = {},
+      arrivals = null,
+    }: {
+      quiet?: boolean;
+      held?: PublicEvent | null;
+      encounter?: EncounterHere | null;
+      breach?: BreachOn | null;
+      arrivals?: ArrivalsFight | null;
+    } = {},
   ): PublicFrame {
     const wall = this.now();
     const event = this.counted(word, wall);
@@ -295,6 +305,9 @@ export class PublicView {
       moments.props,
     );
     props.push(...moments.flights);
+    // What brings foes, the Tithe's airships and the Lattice's crowns, wherever the room has them (`arrivalsView.ts`).
+    const brought = arrivals && this.arrivals.frame(arrivals, clock, marks, bodies.shot.eye, floor);
+    if (brought) props.push(...brought.props);
     // A frame with no event (the room lost a while) forgets nothing: on its return no beat is played again.
     if (event) this.clock.done(true);
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
@@ -336,7 +349,7 @@ export class PublicView {
     const { feet, where, shot } = bodies;
     const breached = breach && this.breach?.frame(breach, stale ? [] : events, feet, where, clock, marks, shot.eye);
     if (breached) props.push(...breached.props);
-    const heard = stale ? [] : [...(sealed?.sounds ?? []), ...(breached?.sounds ?? [])];
+    const heard = stale ? [] : [...(sealed?.sounds ?? []), ...(breached?.sounds ?? []), ...(brought?.sounds ?? [])];
     return {
       shown: withBreach(shown ?? sealed?.shown ?? null, breached ?? null),
       quest: questOf(event, this.zone) ?? (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),

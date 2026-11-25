@@ -8,11 +8,10 @@
 //! clear ground without growing: a bake's cost grows far faster than its area.
 
 use crate::{Floor, NODE_FOES_MOST, NodeKind, Room, SEED};
-use ::foes::Alertness;
 use ::foes::Rank::{Boss, Elite, Major, Miniboss, Minor};
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, HIGH_ASSESSOR, MARKSMAN, REEVE, RUNNER};
 use ::foes::{Rank, foe_type};
-use beat::{Beat, LAG};
+use beat::Beat;
 use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use core::f64::consts::TAU;
@@ -51,6 +50,8 @@ pub(crate) struct Group {
     pub leads: bool,
     /// It takes the post farthest from the spawns and holds it, walking no beat: a Boss's or a Miniboss's.
     pub farthest: bool,
+    /// It holds whatever post it takes, walking no beat: a patrol's sentry or watch (`smaller.rs`).
+    pub holds: bool,
 }
 
 /// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing there, and its
@@ -139,13 +140,14 @@ fn bands(draws: &mut Mulberry32, from: &[(u8, Rank)]) -> Vec<Group> {
 /// an Elite Enforcer and an Elite Reeve; a dungeon's bands of Majors and Elites, and a Reeve as a Miniboss alone at the
 /// farthest post; a world boss's High Assessor Corvane with four Majors about him. Social spaces, outposts hold none.
 fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
-    let alone = |members: Vec<(u8, Rank)>| Group { members, leads: true, farthest: true };
+    let alone = |members: Vec<(u8, Rank)>| Group { members, leads: true, farthest: true, holds: false };
     match kind {
         NodeKind::Social | NodeKind::Outpost => Vec::new(),
         NodeKind::Patrol => bands(draws, &PATROL),
         NodeKind::Mission => {
             let mut groups = bands(draws, &PATROL);
-            groups.push(Group { members: vec![(ENFORCER, Elite), (REEVE, Elite)], leads: false, farthest: false });
+            let pair = vec![(ENFORCER, Elite), (REEVE, Elite)];
+            groups.push(Group { members: pair, leads: false, farthest: false, holds: false });
             groups
         }
         NodeKind::Dungeon => {
@@ -317,7 +319,8 @@ impl Room {
     ) -> Self {
         let mut room = Self::node(floor, blocks, section);
         (room.quests.node, room.quests.levels) = (Some(id.to_owned()), levels);
-        (room.world_seed, room.foes_most) = (node_seed(id), NODE_FOES_MOST);
+        let most = if matches!(kind, NodeKind::Patrol) { crate::PATROL_FOES_MOST } else { NODE_FOES_MOST };
+        (room.world_seed, room.foes_most) = (node_seed(id), most);
         room.place = Some(place_of(kind));
         room.stand_garrison(kind, levels);
         room.lay_post_checkpoints();
@@ -334,7 +337,9 @@ impl Room {
         let mut open = open_points(&section, ground_middle(&section, first));
         let lattice = open.clone();
         let mut beats = draws_of(self.world_seed ^ BEAT_STREAM);
-        for group in groups(kind, &mut draws) {
+        let bands = groups(kind, &mut draws);
+        let smaller = smaller::beside_bands(kind, self.world_seed, bands.iter().map(|band| band.members.len()).sum());
+        for group in bands.into_iter().chain(smaller) {
             let pick = |open: &[(f64, f64)], draws: &mut Mulberry32| {
                 if group.farthest { farthest(open, &section) } else { index(draws, open.len()) }
             };
@@ -396,7 +401,8 @@ impl Room {
             members.push((number, rank, mesh.nearest_point(place)?, outward));
         }
         // A Boss's or a Miniboss's group, at the farthest post, holds it: the one fight a player seeks out there.
-        let beat = (!group.farthest).then(|| Beat::drawn((mesh, &self.floor), at, lattice, section, beats)).flatten();
+        let walks = !group.farthest && !group.holds;
+        let beat = walks.then(|| Beat::drawn((mesh, &self.floor), at, lattice, section, beats)).flatten();
         if let Some(beat) = &beat {
             let places = beat.places((mesh, &self.floor), members.len(), false);
             for (member, (place, facing)) in members.iter_mut().zip(places) {
@@ -478,6 +484,7 @@ impl Room {
     /// and the living foes leave room for it.
     pub(crate) fn keep_garrison(&mut self) {
         self.stand_sites();
+        self.reinforce();
         self.lead_groups();
         self.walk_beats();
         // A wave that has fallen is gone: it never stands again.
@@ -501,60 +508,11 @@ impl Room {
             let great = found.members.iter().any(|(_, rank, _, _)| matches!(rank, Rank::Miniboss | Rank::Boss));
             let again = if great { GREAT_STAND_AGAIN } else { STAND_AGAIN };
             if self.clock >= cleared + again && !near && room_for && self.stands_again(post) {
-                self.stand_post(post);
+                self.stand_group_again(post);
             }
         }
         self.pay_garrison_clear();
     }
-}
-
-impl Room {
-    /// Each group with a beat walks on along it while all its living foes are idle and none is LAG from its place,
-    /// and each of them is given its place: its leader the beat's, the rest round it in turn.
-    fn walk_beats(&mut self) {
-        for post in 0..self.garrison.len() {
-            // A group gathered elsewhere, as its encounter gives ground or it defends, keeps to the places it has there.
-            if self.garrison[post].anchor.is_some() {
-                continue;
-            }
-            let Some(mut beat) = self.garrison[post].beat.take() else { continue };
-            let living: Vec<FighterId> = self.garrison[post]
-                .standing
-                .iter()
-                .copied()
-                .filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead()))
-                .collect();
-            let ready = living.iter().all(|id| {
-                let foe = &self.foes[id];
-                let near = foe.brain.home().is_some_and(|home| {
-                    apart([foe.fighter.body.x, foe.fighter.body.y], [home.at[0], home.at[1]]) <= LAG
-                });
-                near && foe.brain.alertness() == Alertness::Idle && !foe.brain.returning()
-            });
-            let marching = beat.step(self.clock, ready);
-            let places = beat.places((self.mesh_at(self.garrison[post].at), &self.floor), living.len(), marching);
-            for (id, (place, facing)) in living.iter().zip(places) {
-                if let Some(foe) = self.foes.get_mut(id) {
-                    foe.brain.keep_to(place, facing, marching);
-                }
-            }
-            self.garrison[post].beat = Some(beat);
-        }
-    }
-}
-
-/// The open point farthest from the nearest spawn; the first of any as far.
-fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
-    let from_spawns = |&(x, y): &(f64, f64)| {
-        section.spawns.iter().map(|&[sx, sy]| apart([x, y], [sx, sy])).fold(f64::INFINITY, f64::min)
-    };
-    let mut best = 0;
-    for (at, point) in open.iter().enumerate() {
-        if from_spawns(point) > from_spawns(&open[best]) {
-            best = at;
-        }
-    }
-    best
 }
 
 #[path = "beat.rs"]
@@ -562,6 +520,15 @@ mod beat;
 
 #[path = "stands.rs"]
 mod stands;
+use stands::farthest;
+
+#[path = "smaller.rs"]
+mod smaller;
+
+#[path = "reinforcements.rs"]
+mod reinforcements;
+pub(crate) use reinforcements::Brought;
+pub(crate) use smaller::varied;
 
 #[path = "groups.rs"]
 mod groups;
@@ -598,3 +565,7 @@ mod stands_tests;
 #[cfg(test)]
 #[path = "clears_tests.rs"]
 mod clears_tests;
+
+#[cfg(test)]
+#[path = "reinforcements_tests.rs"]
+mod reinforcements_tests;

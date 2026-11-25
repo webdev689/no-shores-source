@@ -13,7 +13,9 @@ impl Room {
     #[must_use]
     pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
         let players = self.players.iter().map(|(id, found)| (*id, found.fighter));
-        players.chain(self.foes.iter().map(|(id, foe)| (*id, foe.fighter))).collect()
+        // A foe arriving is in no one's sight, nor any blow's reach, until it lands.
+        let landed = self.foes.iter().filter(|(id, _)| !self.arriving(**id));
+        players.chain(landed.map(|(id, foe)| (*id, foe.fighter))).collect()
     }
 
     /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,
