@@ -80,6 +80,7 @@ test('the way come is a track to where the player is; the ways on from there are
 test('the map opens on the whole web: every mark inside the map, wherever the player stands', async () => {
   const { viewOn } = await import('../../heldmap/heldMapLaw.ts');
   const { GLYPH_HALF } = await import('../../heldmap/landGlyphs.ts');
+  const { LAND_SCALE_MOST } = await import('../../heldmap/heldMap.ts');
   // Deep in a long web, the player far from the patrol zone.
   const deep = [...web.zones, zone(3, 9, [40_000, 60_000]), zone(4, 9, [-20_000, 50_000])];
   for (const here of [0, 3]) {
@@ -90,7 +91,7 @@ test('the map opens on the whole web: every mark inside the map, wherever the pl
       { width: 600, height: 900 },
     ]) {
       // Held to the land's closest zoom, as the map on land holds it (heldMap.ts `openLand`).
-      const view = viewOn(you, ink, { width: sheet.width, height: sheet.height, most: 8 }, sheet.span);
+      const view = viewOn(you, ink, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }, sheet.span);
       for (const mark of sheet.marks) {
         const [x, y] = [(mark.at[0] - view.left) * view.scale, (mark.at[1] - view.top) * view.scale];
         const inside =

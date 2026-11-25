@@ -146,12 +146,30 @@ test("a place's name by the map's edge stands whole inside it, not cut by the ed
   assert.ok((placed[1] ?? 0) >= 15 * 0.6, `top edge ${placed}`);
 });
 
-test("no place's name is lettered under the table: it stands clear, else is left off", () => {
-  const { table } = paint({ sheet: { ...SHEET, places: [] } });
-  // A place in the table's middle (the view's two units a metre) has nowhere to stand clear of it.
-  const middle = [(table.box.x + table.box.width / 2) / 2, (table.box.y + table.box.height / 2) / 2] as const;
-  const words = paint({ sheet: { ...SHEET, places: [{ name: 'Under The Key', at: middle }] } }).texts();
-  assert.ok(!words.includes('Under The Key'), words.join(', '));
+test("no place's name is lettered under the table: the table takes the corner with fewest, the names keep clear", () => {
+  // Names in every corner of the map (two units a metre on an 800 by 500 map): wherever the table stands, the
+  // name there moves clear of it or is left off, never written under it.
+  const corners = [
+    [30, 20],
+    [370, 20],
+    [30, 230],
+    [370, 230],
+  ] as const;
+  const places = corners.map((corner, index) => ({ name: `Corner Place ${index}`, at: corner }));
+  const { calls, table } = paint({ sheet: { ...SHEET, places, marks: [] } });
+  const box = table.box;
+  const lettered = calls.flatMap((call, index) => {
+    if (call.name !== 'fillText' || !String(call.args[0]).startsWith('Corner Place')) return [];
+    return [
+      calls
+        .slice(0, index)
+        .filter((each) => each.name === 'translate')
+        .at(-1)?.args as number[],
+    ];
+  });
+  assert.ok(lettered.length >= 3, `${lettered.length} names lettered`);
+  for (const [x = 0, y = 0] of lettered)
+    assert.ok(x < box.x || x > box.x + box.width || y < box.y || y > box.y + box.height, `${[x, y]} under the table`);
 });
 
 test('two names on one line keep a gap: the second does not run on from the first', () => {

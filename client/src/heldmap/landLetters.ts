@@ -59,6 +59,45 @@ const NAME_GAP = 6;
 const overlaps = (one: Rect, two: Rect) =>
   one.x < two.x + two.width && two.x < one.x + one.width && one.y < two.y + two.height && two.y < one.y + one.height;
 
+/** Where each place's name stands, in `sheet`'s order: under its middle, else over it, else twice as far, else
+ *  beside it, clear of `clear` and of the names before it (a gap apart on a line); a place on the map by its edge has
+ *  its name whole inside it, moved along its line, and one off the map is left where it falls, so panning does not
+ *  drag names in after it. A name with no room is left off. */
+function nameSpots(
+  sheet: LandSheet,
+  ink: { readonly width: number; readonly height: number },
+  scale: number,
+  onMap: (point: Point2) => Point2,
+  painter: Painter,
+  clear: readonly Rect[],
+): { readonly name: string; readonly middle: number; readonly box: Rect }[] {
+  const gap = NAME_GAP * scale;
+  const spaced = (name: Rect): Rect => ({ ...name, x: name.x - gap, width: name.width + 2 * gap });
+  const spots: { readonly name: string; readonly middle: number; readonly box: Rect }[] = [];
+  for (const { name, at } of sheet.places) {
+    const [x, y] = onMap(at);
+    const [width, height] = [painter.measureText(name).width * scale, PORT_PX * 1.2 * scale];
+    const onInk = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
+    const beside = NAME_SIDE * scale + width / 2;
+    const spot = [
+      ...[1, -1, 2, -2].map((away) => [x, y + away * NAME_OFF * scale] as const),
+      [x + beside, y] as const,
+      [x - beside, y] as const,
+    ]
+      .map(([centre, middle]) => {
+        const left = onInk ? Math.max(0, Math.min(centre - width / 2, ink.width - width)) : centre - width / 2;
+        return { name, middle, box: { x: left, y: middle - height / 2, width, height } };
+      })
+      .filter(({ box }) => !onInk || (box.y >= 0 && box.y + box.height <= ink.height))
+      .find(
+        ({ box }) =>
+          !clear.some((other) => overlaps(box, other)) && !spots.some((other) => overlaps(spaced(box), other.box)),
+      );
+    if (spot) spots.push(spot);
+  }
+  return spots;
+}
+
 /** Paints `painting` onto the parchment's picture: `inkAt` is where the map's top-left stands in it, and `dpr` its
  *  pixels a screen pixel. The picture is cleared first, and nothing is painted outside the map. Answers where the
  *  table stands, for the next painting to keep it there. */
@@ -160,52 +199,26 @@ export function paintLand(
     draw();
     painter.restore();
   };
-  // Every mark as its glyph; the table's corner, clear of the glyphs; then each place's name under its middle, else
-  // over it, else beside it, where it keeps clear of the glyphs, the table, the names before it and the gauntlets;
-  // then the player's arrow over all, and the table.
+  // Every mark as its glyph; each place's name under its middle, else over it, else beside it, where it keeps clear
+  // of the glyphs, the names before it and the gauntlets; the table in the corner over the fewest glyphs and names,
+  // and the names laid again clear of it, so none is lettered under it; then the player's arrow, and the table.
   const half = GLYPH_HALF * scale;
-  const taken: Rect[] = sheet.marks.map((mark) => {
+  const glyphs: Rect[] = sheet.marks.map((mark) => {
     const [x, y] = onMap(mark.at);
     return { x: x - half, y: y - half, width: 2 * half, height: 2 * half };
   });
   for (const mark of sheet.marks) local(onMap(mark.at), () => paintGlyph(painter, mark.glyph));
   const rows = tableRows(sheet);
   const size = tableSize(painter, sheet.name, rows);
-  const box = { width: size.width * scale, height: size.height * scale };
-  const place = tablePlace(ink, box, scale, taken, painting.covers, painting.table);
-  taken.push(place.box);
-  // Two names a gap apart at least, so neither reads as the other's end.
-  const gap = NAME_GAP * scale;
-  const spaced = (box: Rect): Rect => ({ ...box, x: box.x - gap, width: box.width + 2 * gap });
-  const names: Rect[] = [];
   painter.font = `500 ${PORT_PX}px ${FACE}`;
   painter.textAlign = 'center';
-  for (const place of sheet.places) {
-    const [x, y] = onMap(place.at);
-    const [width, height] = [painter.measureText(place.name).width * scale, PORT_PX * 1.2 * scale];
-    // A place on the map by its edge has its name whole inside it, moved along its line; one off the map is left
-    // where it falls, so panning does not drag names in after it.
-    const onInk = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
-    const beside = NAME_SIDE * scale + width / 2;
-    const spot = [
-      ...[1, -1, 2, -2].map((away) => [x, y + away * NAME_OFF * scale] as const),
-      [x + beside, y] as const,
-      [x - beside, y] as const,
-    ]
-      .map(([centre, middle]) => {
-        const left = onInk ? Math.max(0, Math.min(centre - width / 2, ink.width - width)) : centre - width / 2;
-        return { middle, box: { x: left, y: middle - height / 2, width, height } };
-      })
-      .filter(({ box }) => !onInk || (box.y >= 0 && box.y + box.height <= ink.height))
-      .find(
-        ({ box }) =>
-          ![...taken, ...painting.covers].some((other) => overlaps(box, other)) &&
-          !names.some((other) => overlaps(spaced(box), other)),
-      );
-    if (!spot) continue;
-    names.push(spot.box);
-    local([spot.box.x + width / 2, spot.middle], () => word(painter, place.name, 0, 0, INK));
-  }
+  const named = (clear: readonly Rect[]) =>
+    nameSpots(sheet, ink, scale, onMap, painter, [...clear, ...painting.covers]);
+  const tableBox = { width: size.width * scale, height: size.height * scale };
+  const first = named(glyphs).map((spot) => spot.box);
+  const place = tablePlace(ink, tableBox, scale, [...glyphs, ...first], painting.covers, painting.table);
+  for (const spot of named([...glyphs, place.box]))
+    local([spot.box.x + spot.box.width / 2, spot.middle], () => word(painter, spot.name, 0, 0, INK));
   if (player) local(onMap(player.at), () => paintArrow(painter, player.heading));
   paintTable(painter, place, scale, { name: sheet.name, rows, bar: barOf(view, scale) });
   painter.restore();

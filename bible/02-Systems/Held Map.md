@@ -219,8 +219,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     ring goes out from it to twice its width and fades, once every 1.3 s; under reduced motion only the first. The
     rings are inked by the map's own pass each frame (`pulse_at`, at most 16 coins), so the parchment's picture is
     never painted again for them, and the gauntlets cover them as they cover the coin.
-  - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs, chosen
-    before the names are lettered (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
+  - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
+    (keeping its corner while it can), the names then laid again clear of it: the land's name at its head; then each glyph the land holds, once, beside what
     it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.
