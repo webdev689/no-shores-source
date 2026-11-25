@@ -32,6 +32,10 @@ Asked what counts as being in a public event, the owner chose "On its ground", t
 event's area, where its foes fight you. Elsewhere in the zone no panel shows, and the map (N) marks each event
 running, with its name and time left."
 
+Asked whether the map should also show public events running in Saltmere's other two patrol zones (only the player's
+own zone's event was marked), the owner chose "Leave as is", the option that read: "Each zone's map (N) marks only its
+own event. The other zones' events show nowhere until you travel there."
+
 Asked how far "anywhere" is for other players on the map, coloured as their nameplates are, the owner answered:
 "Anywhere in the zone whether in a zone, sea or social space".
 
@@ -42,6 +46,7 @@ Asked how far "anywhere" is for other players on the map, coloured as their name
 - Every building's window is its picture's window and frame alone, 2 m wide at the frame's proportions, painted where
   nothing is inside ([[Forged Models]]).
 - The public event's panel shows only on the event's ground; the held map marks each event running, with its name
-  and the time it has left ([[Public Events]], [[Held Map]]).
+  and the time it has left ([[Public Events]], [[Held Map]]). A zone's map marks its own zone's event alone; the
+  other zones' show nowhere until the player travels there.
 - The held map shows every other player in the room the player is in, a patrol zone's, the sea's or a social
   space's, coloured as their nameplate is ([[Held Map]], [[Interface]]).

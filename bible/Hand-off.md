@@ -219,8 +219,8 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **Three latent layout flaws, and the town's walls, windows and signs** (#207, a draft for the owner's yes once its
-  checks pass). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
+- **Three latent layout flaws, and the town's walls, windows and signs** (#207, merged on the owner's "Merge and
+  deploy", which deploys the page, the site, the rooms and the bot: CI run 1129 on main). On the owner's brief after the Breach gate tried in the Saltgrass Downs: a beacon or resource keeps a
   metre off a module's foot; a camp's palisade gap is sized from the path grid; fallen rock keeps 1.2 m off each run's
   way ([[Layouts]]). One departure from the brief, the owner's to confirm: the gap's 9 m half-chord
   (`CELL_M + KEEP_OFF_M`) is measured along the grid axis more across the way in, not along the chord, since 9 m along
@@ -242,13 +242,13 @@ The decisions in [[Open Questions]] are not repeated here.
   looks like its raining in interiors": a room's ceiling was drawn but no box a body meets, so the rain's shelter
   left every top storey open; each ceiling is now a box over its room to its outer faces, and a shelter cell is dry
   where a box reaches a tenth of it ([[Weather]], "Shelter"). Tested offline: the
-  full check on the merged head before its push (the PR names the commit); pictured headless in the Downs: the
+  full check on each head before its push, the last `a7ef2573`, and CI green on the head merged, `e77fdccb`; pictured headless in the Downs: the
   windows, and the raid's panel on its ground, none 60 m off it, and its ring on the map with its name and time left.
   Not played by hand or seen on a real GPU; the dots and the light through the panes never pictured (no second
   player stands in a headless world, and its sky gave no sun). Open for the owner: the camp gap's measure
-  ([[Open Questions]]), other zones' events are not on a zone's map, the compass still marks the event's ground from
-  anywhere in the zone, and the tracker still counts a chest left lying.
-- **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
+  ([[Open Questions]]), the compass still marking the event's ground from anywhere in the zone, and the tracker still
+  counting a chest left lying. Another zone's events stay off a zone's map, on the owner's "Leave as is".
+- **The codebase audit** (#209, merged; CI run 1111 on main passed), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
   `pub` item, files nothing imports, content and WGSL entry points), then seven read-only audits by area, each finding
@@ -265,7 +265,7 @@ The decisions in [[Open Questions]] are not repeated here.
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
   ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
-- **The desktop app** (#210, a draft on branch `ccr-42a55a97-wkid9r`, waiting on the owner's yes to merge), on the
+- **The desktop app** (#210, merged; CI run 1100 on main passed), on the
   owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
   reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
   [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
@@ -313,7 +313,7 @@ The decisions in [[Open Questions]] are not repeated here.
     picked. All 74 of its cues are picked by the owner, on two sound sheets
     (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
     the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
-    timpani on the owner's "Search for single notes"); in #208, not yet merged, published to R2 by freesound runs 171
+    timpani on the owner's "Search for single notes"); in #208, merged (CI run 1119 on main passed), published to R2 by freesound runs 171
     and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
     centre on the owner's "Use it as it is". To change a pick: write its `picked` into
     `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
