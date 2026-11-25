@@ -51,7 +51,7 @@ code:
   - client/src/network/passageMessages.ts#passagesOf
   - client/src/network/passageMessages.ts#passageSeenOf
   - client/src/network/passageRoomDoor.ts#passageAsk
-  - client/src/game/rooms.ts#passageRoomName
+  - server/roomNames.ts#passageRoomName
   - client/src/game/passages/passageEnter.ts#joinPassage
   - client/src/game/passages/passageGame.ts#PassageGame
   - client/src/game/passages/passageEnter.ts#enterZone
@@ -250,7 +250,8 @@ as its other asks do, and a refusal is said in the room's words (171 to 178).
   room found as runs are; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
   JSON), the character the last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to
   the page, its layout drawn by the dungeon's renderer; above ground its hollow is an island to the islands' layer
-  (`zoneIsle`), stood on as a sea island's beach, and drawn alone: no land of the island round it. Either way the
+  (`zoneIsle`, by an id no sea island has), stood on as a sea island's beach, and drawn alone: no land of the island
+  round it, and none of the sea's islands. Under ground its way in offers no Leave. Either way the
   body is predicted on the zone's own ground from the same ask (`fighter_passage`, `set_passage`): the ground and
   blocks its room stands bodies on (`passage_ground`), under ground the Forge's floor and the pieces' solids, above
   ground the hollow's heights, its dressing's blocks and the pieces' solids.
@@ -282,17 +283,19 @@ comes down from over the island without a jump.
 
 | Beat | Seconds | What is seen |
 |---|---|---|
-| Rise | 1.5 | From behind the character up to the island seen whole, framed as an island's side is framed from the ship (`frameSide`), every zone of the web inside the picture |
-| Draw | 2 | The way being taken drawn a dot at a time, 10 a leg, to the next zone's place |
-| Wait | until ready | Held over the island while the room gone to is not ready (`wayClock`) |
+| Rise | 1.5 | From where the foot's camera last stood up to the island seen whole, framed as an island's side is framed from the ship (`frameSide`), every zone of the web inside the picture |
+| Draw | 2 | The way so far (the patrol zone and each zone passed this dive) shown, and the way being taken drawn a dot at a time, 10 a leg, to the next zone's place |
+| Wait | until ready | Held over the island while the room gone to is not ready (`wayClock`); once it is joined, 20 s at most (`READY_WAIT_S`, as the veil waits) for its body, then down to where the character stands |
 | Down | 1.5 | Down to 3 m short of behind where the room stood the character, in the place's own frame |
 | Walk | 1.5 | The camera comes the last 3 m in to the character, settling into the foot's own (`settledShot`) |
 
 ### The passages' map
 
-Held in a passage zone, the held map can show the web as a land sheet (`passageSheet`, [[Held Map]], "On land"):
-every zone a mark at its place by its deal's glyph, its lamp named, its currents under it, the way come a track and
-the ways on footpaths, "You" at the player's zone.
+Held in a passage zone, under ground or above, the held map shows the web as a land sheet (`passageSheet`,
+[[Held Map]], "On land") in place of the land's: every zone a mark at its place by its deal's glyph, its lamp named,
+its currents under it, the patrol zone by its name, the way come this dive a track and the ways on footpaths, "You"
+at the player's zone. It opens on the whole web, every mark inside it; names that stand too close to be lettered at
+that scale come as the wheel draws in. Over the island, the way's places are every zone's and the patrol zone's.
 
 ### The Journal and the board
 

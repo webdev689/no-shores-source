@@ -151,14 +151,19 @@ export class PieceView {
  *  state for the player changes; nothing out of a zone. */
 export function piecesDrawer(
   gpu: Gpu,
-  current: () => { readonly plan: PassagePlan; readonly state: PieceState; readonly lightsOnly: boolean } | null,
+  current: () => {
+    readonly plan: PassagePlan;
+    readonly state: PieceState;
+    readonly lightsOnly: boolean;
+    readonly key: string;
+  } | null,
 ): Drawer {
   const view = new PieceView(gpu);
   let shown: string | null = null;
   return {
     drawInto: (pass, fromEye, shot) => {
       const now = current();
-      const key = now && JSON.stringify([now.plan.zone.number, now.state, now.lightsOnly]);
+      const key = now?.key ?? null;
       if (key !== shown) {
         shown = key;
         if (now) view.set(pieceMesh(now.plan.pieces, now.state, now.lightsOnly));

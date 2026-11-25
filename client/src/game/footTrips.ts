@@ -30,6 +30,8 @@ export interface InDungeon {
   readonly ask: DungeonAsk;
   readonly room: string;
   readonly layout: DungeonLayout;
+  /** A passage zone under ground: its layout's exit is its way in, and no way out. */
+  readonly passage?: boolean;
 }
 
 /** What going in and out asks of the game: the forged props' table once read, and the ways in and out. */
@@ -206,8 +208,8 @@ export class Entrances {
 }
 
 /** What E offers about going in and out where a player stands at (x, y): in a dungeon, "Leave" within reach of its
- *  exit door, or of its return portal while that stands open; on a patrol or an Elite Dungeon's node, "Enter" and the
- *  dungeon's name within reach of an entrance's door. */
+ *  exit door, or of its return portal while that stands open, and none in a passage zone; on a patrol or an Elite
+ *  Dungeon's node, "Enter" and the dungeon's name within reach of an entrance's door. */
 export function tripAt(
   x: number,
   y: number,
@@ -221,6 +223,7 @@ export function tripAt(
   trips: Trips,
 ): Use | null {
   const { dungeon } = here;
+  if (dungeon?.passage) return null;
   if (dungeon) {
     const { exitDoor, portal } = dungeon.layout;
     const reaches = (door: { x: number; y: number }) => Math.hypot(door.x - x, door.y - y) <= DOOR_REACH_M;

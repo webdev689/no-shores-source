@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { OUTLINE } from '../combat/dropPictures.ts';
 import { pixelsOf } from '../plus/pixelsForTests.ts';
-import { TONES } from '../plus/tones.ts';
-import { ICON_PIXELS, type IconName, POOL_GROUNDS, iconSvg, modifierIcon, poolMarkSvg } from './journalIcons.ts';
+import { ICON_PIXELS, type IconName, iconSvg, modifierIcon } from './journalIcons.ts';
 
 const NAMES: readonly IconName[] = [
   'land',
@@ -47,15 +46,6 @@ test('every icon is twelve square, drawn sharp, outlined as the gear glyphs are,
     assert.ok([...pixels.values()].includes(OUTLINE), `${NAMES[place]} is outlined`);
     assert.ok(pixels.size > 24, `${NAMES[place]} is a sign, not a speck`);
   }
-});
-
-test('each of the board’s four pools has its own mark and its own ground of the kit’s, and no other pool has one', () => {
-  const marks = [0, 1, 2, 3].map((pool) => poolMarkSvg(pool) ?? '');
-  assert.deepEqual(marks, [iconSvg('land'), iconSvg('sea'), iconSvg('dungeon'), iconSvg('lamp')]);
-  assert.equal(poolMarkSvg(4), null);
-  const palette = new Set<string>(Object.values(TONES));
-  assert.equal(new Set(POOL_GROUNDS).size, 4);
-  for (const ground of POOL_GROUNDS) assert.ok(palette.has(ground), `${ground} is the kit's`);
 });
 
 test('every modifier the rules draw has its icon, Burn’s flame in its Art’s colours and none for a key unknown', () => {

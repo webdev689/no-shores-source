@@ -22,8 +22,14 @@ import type { NodeInfo } from './worldData.ts';
 /** The door picture of Daggerfall's dungeon doors, where the props' table has not come. */
 const PLAIN_DOOR = [56, 2] as const;
 
-/** A passage zone's pieces as they stand for the player now: its plan, the deal's state and whether it is done. */
-export type PiecesNow = () => { readonly plan: PassagePlan; readonly state: PieceState; readonly done: boolean } | null;
+/** A passage zone's pieces as they stand for the player now: its plan, the deal's state, whether it is done, and the
+ *  key they are laid again by when that changes; null out of a zone. */
+export type PiecesNow = () => {
+  readonly plan: PassagePlan;
+  readonly state: PieceState;
+  readonly done: boolean;
+  readonly key: string;
+} | null;
 
 export class DungeonDrawers {
   private readonly scene: DungeonScene;
@@ -101,7 +107,7 @@ export class DungeonDrawers {
     if (!this.passage || !now) return null;
     const { pack, layout, climate } = this.passage;
     const lay = passagePiecesLaid(layout, pack, climate, now.plan.pieces, now.state, now.done);
-    return { lay, key: JSON.stringify([now.plan.zone.number, now.state, now.done]) };
+    return { lay, key: now.key };
   }
 
   /** Whether a passage zone's pieces are drawn from their pack, so their boxes are not. */

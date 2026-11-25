@@ -5,6 +5,8 @@ import { MapAsk } from './heldMapAsk.ts';
 import { type MapRegion, regionsOf } from '../overworld/regions.ts';
 import { MapRegions, regionAt, regionCells } from './mapRegions.ts';
 import type { MapWaters } from './watersWash.ts';
+import type { Point2 } from '../overworld/ground.ts';
+import { readFileSync } from 'node:fs';
 
 // A strip of six 100 m cells: the ship's water, three cells of its island's land, the water again, and another
 // island's land, whose region's centre lies far off.
@@ -16,6 +18,14 @@ const waters: MapWaters = {
   waters: [{ continent: 0, id: 'continent-1', name: 'The Home Waters', holder: 'home', levels: [1, 4] }],
   mainPorts: [],
 };
+// The other island's region's centre lies nearer its land's west edge than the Grey Reach's does, and its land is
+// still its own.
+const ringOf = (west: number, east: number): Point2[] => [
+  [west, 0],
+  [east, 0],
+  [east, 100],
+  [west, 100],
+];
 const regions: MapRegion[] = regionsOf(
   JSON.stringify([
     {
@@ -27,6 +37,10 @@ const regions: MapRegion[] = regionsOf(
     },
     { island: 'continent-2', regions: [{ name: 'The Far March', centre: [560, 50], anchorage: [700, 50], nodes: [] }] },
   ]),
+  [
+    { id: 'continent-1', outline: ringOf(100, 400) },
+    { id: 'continent-2', outline: ringOf(500, 600) },
+  ],
 );
 const [shore, reach] = regions;
 const judged = { waters, judge: () => 0 };
@@ -86,4 +100,49 @@ test("a click on a region of the ship's island sets a course to its anchorage, n
   const choice = (map as unknown as { choice: { at: readonly number[]; name: string } }).choice;
   assert.deepEqual([choice.at, choice.name], [[450, 50], 'The Grey Reach']);
   assert.deepEqual(planned, [[450, 50]], 'the course is planned to the anchorage, as any course is');
+});
+
+/** Whether a point lies inside a ring, by the crossings of a line east from it. */
+function inside(ring: readonly Point2[], [x, y]: Point2): boolean {
+  let crossed = false;
+  ring.forEach(([fromX, fromY], index) => {
+    const [toX, toY] = ring[(index + 1) % ring.length] ?? [fromX, fromY];
+    if (fromY > y !== toY > y && x < fromX + ((y - fromY) / (toY - fromY)) * (toX - fromX)) crossed = !crossed;
+  });
+  return crossed;
+}
+
+test("every point of an island's land lights a region of that island, and of no other, over the world's own", () => {
+  const read = (name: string) => readFileSync(new URL(`../../../content/world/${name}`, import.meta.url), 'utf8');
+  const islands = (JSON.parse(read('layout.json')) as { continents: { id: string; outline: Point2[] }[] }).continents;
+  const world = regionsOf(read('regions.json'), islands);
+  const [columns, rows, cellM] = [480, 310, 10_000];
+  const middleOf = (cell: number): Point2 => [
+    ((cell % columns) + 0.5) * cellM,
+    (Math.floor(cell / columns) + 0.5) * cellM,
+  ];
+  // Land where an island's outline holds a cell's middle, the sea elsewhere.
+  const owners = Array.from({ length: columns * rows }, (unused, cell) => {
+    return islands.find((island) => inside(island.outline, middleOf(cell)))?.id ?? null;
+  });
+  const water = Int16Array.from(owners, (owner) => (owner ? -1 : 0));
+  const land: MapWaters = { columns, rows, cellM, water, waters: [], mainPorts: [] };
+  const sampled = new Map<string, number>();
+  owners.forEach((owner, cell) => {
+    if (!owner) return;
+    sampled.set(owner, (sampled.get(owner) ?? 0) + 1);
+    for (const { id } of islands) {
+      const region = regionAt(land, world, id, middleOf(cell));
+      if (id === owner)
+        assert.equal(region?.island, id, `${id}'s land at ${middleOf(cell)} lies in a region of its own`);
+      else assert.equal(region, null, `${owner}'s land at ${middleOf(cell)} is not ${id}'s`);
+    }
+  });
+  assert.equal(sampled.size, islands.length, 'every island sampled');
+  // A region's land lit whole is the land each of its points is judged to be.
+  for (const region of world.filter((each) => each.island === 'continent-8')) {
+    const cells = regionCells(land, world, region);
+    for (let cell = 0; cell < cells.length; cell++)
+      assert.equal(cells[cell] === 255, regionAt(land, world, 'continent-8', middleOf(cell)) === region, region.name);
+  }
 });

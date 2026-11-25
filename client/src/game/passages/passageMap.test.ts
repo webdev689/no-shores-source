@@ -54,7 +54,6 @@ test('every zone of the week is a mark at its place, by its deal’s glyph, the 
   const [first, , third] = sheet.marks;
   assert.ok(first && third);
   assert.equal(third.at[0] - first.at[0], 2_000, 'each at its place on the island');
-  assert.ok(sheet.span && sheet.span < sheet.width, 'it opens round the player, the web drawn back to by the wheel');
 });
 
 test('lamps and currents are named under their zones, a lamp lit this week said to be lit', () => {
@@ -78,10 +77,27 @@ test('the way come is a track to where the player is; the ways on from there are
   assert.throws(() => passageSheet(web, { here: 9, come: [], lit: [] }, 'The passages', null), /no zone 9/);
 });
 
-test('the map opens round the player at the sheet’s span, not the land’s 400 m', async () => {
+test('the map opens on the whole web: every mark inside the map, wherever the player stands', async () => {
   const { viewOn } = await import('../../heldmap/heldMapLaw.ts');
-  const { sheet, you } = passageSheet(web, { here: 0, come: [], lit: [] }, 'The passages', patrol);
-  const ink = { width: 1000, height: 700 };
-  const view = viewOn(you, ink, { width: sheet.width, height: sheet.height }, sheet.span);
-  assert.ok(Math.abs(ink.width / view.scale - (sheet.span ?? 0)) < 1e-6 || ink.width / view.scale >= sheet.width);
+  const { GLYPH_HALF } = await import('../../heldmap/landGlyphs.ts');
+  const { LAND_SCALE_MOST } = await import('../../heldmap/heldMap.ts');
+  // Deep in a long web, the player far from the patrol zone.
+  const deep = [...web.zones, zone(3, 9, [40_000, 60_000]), zone(4, 9, [-20_000, 50_000])];
+  for (const here of [0, 3]) {
+    const where = { here, come: [], lit: [] };
+    const { sheet, you } = passageSheet({ ...web, zones: deep }, where, 'The passages', patrol);
+    for (const ink of [
+      { width: 1000, height: 700 },
+      { width: 600, height: 900 },
+    ]) {
+      // Held to the land's closest zoom, as the map on land holds it (heldMap.ts `openLand`).
+      const view = viewOn(you, ink, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }, sheet.span);
+      for (const mark of sheet.marks) {
+        const [x, y] = [(mark.at[0] - view.left) * view.scale, (mark.at[1] - view.top) * view.scale];
+        const inside =
+          x >= GLYPH_HALF && y >= GLYPH_HALF && x <= ink.width - GLYPH_HALF && y <= ink.height - GLYPH_HALF;
+        assert.ok(inside, `${mark.word} at ${[x, y]} on a map ${ink.width} by ${ink.height}`);
+      }
+    }
+  }
 });

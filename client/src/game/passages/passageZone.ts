@@ -31,7 +31,8 @@ export function zoneIsle(
   const reach = Math.max(1, ...ground.ring.map(([x, y]) => Math.hypot(x, y)));
   const { sites } = plan;
   return {
-    id: plan.zone.number,
+    // The sea's islands count from 1, so a hollow's id, from 0 down, is none of theirs.
+    id: -plan.zone.number,
     at: place,
     climate,
     heights,

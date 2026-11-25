@@ -1,8 +1,8 @@
 // The regions of an island on the held map at sea
 // ([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]): every island is cut into
-// three, each point of its land in the region whose centre is nearest (`content/world/regions.json`). The regions of
-// the island whose waters the ship is in light as the pointer passes over their land, named in the waters' own
-// letters, and a click on one sets a course to its anchorage.
+// three, each point of its land (inside its outline) in the region of that island whose centre is nearest
+// (`content/world/regions.json`). The regions of the island whose waters the ship is in light as the pointer passes
+// over their land, named in the waters' own letters, and a click on one sets a course to its anchorage.
 import type { Point2 } from '../overworld/ground.ts';
 import type { MapRegion } from '../overworld/regions.ts';
 import type { HoverSaid, WaterJudge } from './heldMapAsk.ts';
@@ -10,7 +10,7 @@ import { fontOf, type Painter, word } from './mapLetters.ts';
 import { INK } from './mapKey.ts';
 import type { MapWaters } from './watersWash.ts';
 
-/** The region whose centre is nearest a point, of every island's. */
+/** The region whose centre is nearest a point, of those given. */
 function nearest(regions: readonly MapRegion[], [x, y]: Point2): MapRegion | null {
   let best: MapRegion | null = null;
   let bestApart = Number.POSITIVE_INFINITY;
@@ -21,23 +21,50 @@ function nearest(regions: readonly MapRegion[], [x, y]: Point2): MapRegion | nul
   return best;
 }
 
-/** Whether the waters' grid reads a point as land. */
-function onLand(waters: MapWaters, [x, y]: Point2): boolean {
-  const [column, row] = [Math.floor(x / waters.cellM), Math.floor(y / waters.cellM)];
-  if (column < 0 || row < 0 || column >= waters.columns || row >= waters.rows) return false;
-  return (waters.water[row * waters.columns + column] ?? -1) < 0;
+/** The cells of the waters' grid whose middles lie inside `outline`, a byte each (1 inside), laid a row at a time by
+ *  where the outline crosses it (even-odd); kept for each outline while the grid is the same. */
+const insides = new WeakMap<readonly Point2[], { readonly waters: MapWaters; readonly cells: Uint8Array }>();
+function insideCells(waters: MapWaters, outline: readonly Point2[]): Uint8Array {
+  const kept = insides.get(outline);
+  if (kept?.waters === waters) return kept.cells;
+  const { columns, rows, cellM } = waters;
+  const cells = new Uint8Array(columns * rows);
+  for (let row = 0; row < rows; row++) {
+    const y = (row + 0.5) * cellM;
+    const crossings = outline.flatMap(([fromX, fromY], index) => {
+      const [toX, toY] = outline[(index + 1) % outline.length] ?? [fromX, fromY];
+      return fromY > y !== toY > y ? [fromX + ((y - fromY) / (toY - fromY)) * (toX - fromX)] : [];
+    });
+    crossings.sort((first, second) => first - second);
+    for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
+      const west = Math.max(0, Math.ceil((crossings[pair] ?? 0) / cellM - 0.5));
+      const east = Math.min(columns, Math.ceil((crossings[pair + 1] ?? 0) / cellM - 0.5));
+      cells.fill(1, row * columns + west, row * columns + Math.max(west, east));
+    }
+  }
+  insides.set(outline, { waters, cells });
+  return cells;
 }
 
-/** The region of the island `island` whose land lies under a point; none over the sea or another island's land. */
+/** The cell of the waters' grid a point lies in; null off the grid. */
+function cellOf(waters: MapWaters, [x, y]: Point2): number | null {
+  const [column, row] = [Math.floor(x / waters.cellM), Math.floor(y / waters.cellM)];
+  if (column < 0 || row < 0 || column >= waters.columns || row >= waters.rows) return null;
+  return row * waters.columns + column;
+}
+
+/** The region of the island `island` whose land lies under a point: a cell of land inside the island's outline, in
+ *  the region of the island's own whose centre is nearest; none over the sea or another island's land. */
 export function regionAt(
   waters: MapWaters,
   regions: readonly MapRegion[],
   island: string | null,
   point: Point2,
 ): MapRegion | null {
-  if (island === null || !onLand(waters, point)) return null;
-  const region = nearest(regions, point);
-  return region?.island === island ? region : null;
+  const cell = cellOf(waters, point);
+  if (island === null || cell === null || (waters.water[cell] ?? -1) >= 0) return null;
+  const own = regions.filter((region) => region.island === island);
+  return own[0] && insideCells(waters, own[0].outline)[cell] ? nearest(own, point) : null;
 }
 
 /** A byte a cell of the waters' grid, 255 over the land of `region`; all 0 for none. */
@@ -45,10 +72,13 @@ export function regionCells(waters: MapWaters, regions: readonly MapRegion[], re
   const { columns, rows, cellM, water } = waters;
   const lit = new Uint8Array(columns * rows);
   if (!region) return lit;
+  const inside = insideCells(waters, region.outline);
+  const own = regions.filter((each) => each.island === region.island);
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
-      if ((water[row * columns + column] ?? -1) >= 0) continue;
-      if (nearest(regions, [(column + 0.5) * cellM, (row + 0.5) * cellM]) === region) lit[row * columns + column] = 255;
+      const cell = row * columns + column;
+      if (!inside[cell] || (water[cell] ?? -1) >= 0) continue;
+      if (nearest(own, [(column + 0.5) * cellM, (row + 0.5) * cellM]) === region) lit[cell] = 255;
     }
   return lit;
 }

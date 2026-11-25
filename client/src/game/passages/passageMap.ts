@@ -39,9 +39,6 @@ export interface PassageWhere {
 
 /** How far past the web's farthest zones the sheet reaches, a share of its span. */
 const MARGIN = 0.12;
-/** How much of the web the map opens across, round where the player is: about seven depths, so each zone's names
- *  stand clear of its neighbours'; the wheel draws back to the whole. */
-const SPAN_SHARE = 0.35;
 /** A way's width on the map's ground: the island's metres, so a way across kilometres still reads. */
 const WAY_M = 90;
 
@@ -82,7 +79,9 @@ export function passageSheet(
     origin,
     width: east - west + 2 * margin,
     height: south - north + 2 * margin,
-    span: SPAN_SHARE * (Math.max(east - west, south - north) + 2 * margin),
+    // The whole web: no span is too wide, so the map opens at the least scale, every mark inside it, and the wheel
+    // draws in to the names that stand too close to be lettered from there.
+    span: Number.POSITIVE_INFINITY,
     sea: [],
     coast: [],
     relief: [],

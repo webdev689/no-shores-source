@@ -101,11 +101,12 @@ Every island is cut into three regions
 [[Passages as Claude Builds Them]], "The regions"), each holding its own nodes, as
 `content/world/regions.json` lists them: its name, its centre (a point its nodes lie round: its patrol zone's where it
 has one), its anchorage 3 km off the coast where the coast is nearest the centre, and its nodes, each in the
-region whose centre is nearest. Each point of an island's land lies in the region whose centre is nearest. Saltmere's
-three are the Beacon Shore (Overlook and the Saltgrass Downs), the Weirlands (the Gullwing Vale) and the Grey Reach
-(the Driftwood Moors), a patrol zone in each; every other island keeps one patrol zone, the one by its port city, in
-its first region, and its other two regions hold nodes alone. An instance's gate leads only from a patrol zone of its
-own region ([[Layouts]], "How a layout is planned"); one in a region with no patrol zone is landed at from the sea.
+region whose centre is nearest. Each point of an island's land lies in the region of that island whose centre is
+nearest. Saltmere's three are the Beacon Shore (Overlook and the Saltgrass Downs), the Weirlands (the Gullwing
+Vale) and the Grey Reach (the Driftwood Moors), a patrol zone in each; every other island keeps one patrol zone, the
+one by its port city, in its first region, and its other two regions hold nodes alone. An instance's gate leads only
+from a patrol zone of its own region ([[Layouts]], "How a layout is planned"); one in a region with no patrol zone is
+landed at from the sea.
 Each patrol zone of an island holds a gate toward each other one: Saltmere's three link each to both others
 ([[Layouts]], "Gates"). At sea the held map lights the regions of the island whose waters the ship is in and sails
 for their anchorages ([[Held Map]], "Choosing").

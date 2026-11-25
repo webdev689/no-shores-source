@@ -42,6 +42,7 @@ import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
+import { roomNow } from '../sky/worldClock.ts';
 import { helmControls } from './helmControls.ts';
 import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
@@ -316,7 +317,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     },
   });
   const passages: PassageGame = new PassageGame({
-    ...{ module: roomModule, context: footContext, goInto, tell, now: () => Date.now() },
+    ...{ module: roomModule, context: footContext, goInto, tell, now: roomNow },
     ...{ foot: () => playing.foot, flow: () => playing.flow, land: () => playing.landmass },
     setFlow: (flow) => void (playing.flow = flow),
     setReady: (ready) => void ([playing.ready, playing.waited] = [ready, 0]),
@@ -455,7 +456,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const isleFrame = () => {
     // Off the island's beach, at sea or in a node, the island is the sea's again; under the veil ashore it is kept.
     if (playing.flow.mode === 'sea' || (playing.foot && !playing.foot.node.id.startsWith('isle-'))) ashore = null;
-    const shown = [...isles.shown(ashore), ...passages.isles()];
+    // A passage's hollow stands alone: the sea's islands, as the sea last told of them, are not drawn round it.
+    const hollow = passages.isles();
+    const shown = hollow.length > 0 ? hollow : isles.shown(ashore);
     islesView.show(shown);
     islesNature.show(shown);
     const sea = playing.sea;
@@ -501,11 +504,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       .catch(() => sea.sailAlone(sail));
   };
 
-  const { openMap, manage, leaveHelm, takeHelm, stopOrResume, choose } = helmControls(playing, input, {
-    landAt,
-    change,
-    groundAt,
-  });
+  const helm = { landAt, change, groundAt, passageMap: passages.map };
+  const { openMap, manage, leaveHelm, takeHelm, stopOrResume, choose } = helmControls(playing, input, helm);
 
   const respawn = () => (playing.foot ?? playing.sea?.boarding.foot)?.respawn();
 

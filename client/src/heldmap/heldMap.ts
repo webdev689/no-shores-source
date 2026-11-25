@@ -48,7 +48,7 @@ import type { Interface } from '../ui/ui.ts';
 const WORLD = { width: WORLD_FRAME.widthM, height: WORLD_FRAME.heightM } as const;
 /** How much of the land the map first shows across, metres, and the most it zooms in there, screen pixels a metre. */
 const LAND_SPAN_M = 400;
-const LAND_SCALE_MOST = 8;
+export const LAND_SCALE_MOST = 8;
 /** On land the world's ink is turned off the sheet, which shows only what is painted on it. */
 const OFF_WORLD = { left: -1e7, top: -1e7, scale: 1 } as const;
 /** The forge's held-map art: the parchment, and the gauntlets' strips of 17 frames, one a set and one bare. */
