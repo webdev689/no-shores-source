@@ -248,14 +248,15 @@ The decisions in [[Open Questions]] are not repeated here.
   - **Its sound** ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]): each space of the run heard as
     its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key,
     tempo and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is
-    picked. The owner's picks from the first sound sheet (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ) are in
-    #208, not yet merged: 51 play, published to R2 by freesound run 171, seven with measured roots; the piano, drone,
-    low choir and timpani are searched again for single held notes, on the owner's "Search for single notes". The
-    second sheet waits on the owner: https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx (its `picks` collection), 23
-    cues (the 12 marked None, the 7 the first search missed, those four). Once picked: write each `picked` into
-    `content/audio/freesound.json`, measure each pitched music pick's root with `tools/freesound/root.py` and write
-    it on its cue, push so the freesound workflow publishes them, and take `sounds.json` from that run's artifact; a
-    cue marked "None" is searched again, in two common words (Freesound matches every word of a search).
+    picked. All 74 of its cues are picked by the owner, on two sound sheets
+    (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
+    the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
+    timpani on the owner's "Search for single notes"); in #208, not yet merged, published to R2 by freesound runs 171
+    and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
+    centre on the owner's "Use it as it is". To change a pick: write its `picked` into
+    `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
+    the preview's partials) and write it on its cue, push so the freesound workflow publishes it, and take
+    `sounds.json` from that run's artifact; a search keeps to two common words (Freesound matches every word).
   - **Its fidelity**: the run's own underground sky and its pieces' lamps (its floors measured to read, at sRGB 0.12
     and over), the shores drawn only while in play, the dark's fade, stained glass, water, idle bells, chests that
     read as payable, the gate's void; and its pieces made solid where they look it (the court, the rifts' walls, the
