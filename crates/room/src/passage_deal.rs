@@ -1,5 +1,5 @@
-//! A passage zone's deal, run by its room each tick once a player is in it: a skirmish, a vault, a vein, a reliquary
-//! and a lamp are done as their guard is down; a mission as the design gives it (Kindle's three dead lamps lit while
+//! A passage zone's deal, run by its room each tick once a player is in it: a skirmish, a vault and a lamp are done as
+//! their guard is down, a reliquary once opened and a vein once its nodes are gathered; a mission as the design gives it (Kindle's three dead lamps lit while
 //! waves come, Hold's ring held 90 s against waves, Hunt's marked band down, Reckoning's three collectors down, who
 //! run once found, Gauntlet's farthest mouth reached, in time or late, Ambush's three waves beaten, Sever's three tally
 //! posts broken). Done, it pays its cache to each player in the zone who took part, once a dive, and opens their
@@ -113,7 +113,6 @@ impl Room {
             Some(done) if route == Route::Public && self.clock >= done + AGAIN_TICKS => self.begin_again(),
             Some(_) => self.keep_cold_lamp(),
         }
-        self.keep_veins();
     }
 
     fn guards_down(&self) -> bool {
@@ -185,8 +184,8 @@ impl Room {
                     .filter(|(_, player)| running(player) && apart(at(player), arrive) <= SET_OUT_M)
                     .map(|(id, _)| *id)
                     .collect();
-                // Each player's 90 s run from their arrival or the round's start, the later; the deal is late only if
-                // every one there was late.
+                // Each player's 90 s run from their arrival or the round's start, the later; one past theirs is late,
+                // whoever else reaches it with them.
                 let reachers: Vec<(PlayerId, bool)> = self
                     .players
                     .iter()
@@ -205,7 +204,7 @@ impl Room {
                 zone.round.set_out.extend(setting_out);
                 if !reachers.is_empty() {
                     zone.round.reached = true;
-                    zone.round.late = reachers.iter().all(|(_, late)| *late);
+                    zone.round.late.extend(reachers.iter().filter(|(_, late)| *late).map(|(id, _)| *id));
                     zone.round.took_part.extend(reachers.iter().map(|(id, _)| *id));
                 }
             }
@@ -276,17 +275,16 @@ impl Room {
     }
 
     /// The deal done: each player in the zone, who took part, has it done for their dive, opening their mouths, and is
-    /// paid its cache once a dive (a late Gauntlet pays none), the passages' bounties counted. One who came after an
-    /// earlier round was done is in this one.
+    /// paid its cache once a dive (a Gauntlet's none who reached its far mouth late), the passages' bounties counted.
+    /// One who came after an earlier round was done is in this one.
     fn deal_done(&mut self) {
         let Some(zone) = self.zone() else { return };
         let (deal, number, depth, levels, island, week) =
             (zone.zone.deal, zone.zone.number, zone.zone.depth, zone.levels, zone.island, zone.week);
-        let late = zone.round.late;
+        let late = zone.round.late.clone();
         let (clock, difficulty, source) = (self.clock, self.difficulty, self.source);
         let cache = match deal {
             Deal::Skirmish => Some(Cache::Skirmish),
-            Deal::Mission(Mission::Gauntlet) if late => None,
             Deal::Mission(_) => Some(Cache::Mission),
             Deal::Vault => Some(Cache::Vault),
             Deal::Vein => Some(Cache::Vein),
@@ -300,7 +298,7 @@ impl Room {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             found.character.dive_deal_done(number);
-            let cache = cache.filter(|_| took_part.contains(&player));
+            let cache = cache.filter(|_| took_part.contains(&player) && !late.contains(&player));
             let paid = cache.is_some_and(|cache| found.character.pay_cache(at, cache, difficulty, source, &dice));
             found.gear_changed = true;
             // The bounties count only those its cache paid, once a dive, so a round camped counts nothing more.
@@ -310,6 +308,7 @@ impl Room {
             let deed = match deal {
                 Deal::Mission(_) => Some(Deed::Mission),
                 Deal::Reliquary => Some(Deed::Reliquary),
+                Deal::Vein => Some(Deed::Vein),
                 _ => None,
             };
             if let Some(deed) = deed {
@@ -364,27 +363,6 @@ impl Room {
         zone.round.gathered.insert(node);
         zone.round.took_part.insert(player);
         self.call_wave(Some(GATHER_WAVE));
-    }
-
-    /// Each player who has gathered every node of a vein counts it once.
-    fn keep_veins(&mut self) {
-        let Some(zone) = self.zone() else { return };
-        if zone.zone.deal != Deal::Vein {
-            return;
-        }
-        let nodes = self.resource_nodes.len();
-        let gathered: Vec<PlayerId> = self
-            .players
-            .iter()
-            .filter(|(id, player)| player.spent.len() >= nodes && nodes > 0 && !zone.veined.contains(id))
-            .map(|(id, _)| *id)
-            .collect();
-        for player in gathered {
-            self.saw(player, &Feat::Passage(Deed::Vein));
-            if let Some(zone) = self.zone_mut() {
-                zone.veined.insert(player);
-            }
-        }
     }
 
     /// Whether the zone's mouths are open for a player: once its deal was done for their dive, or at once in a

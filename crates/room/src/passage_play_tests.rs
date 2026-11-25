@@ -188,7 +188,11 @@ fn a_company_raises_the_most_its_waves_and_its_great_foes_health() {
     let (one, _) = (diver(&mut room, week, &plan), diver(&mut room, week, &plan));
     run(&mut room, 1);
     let first = room.zone().expect("a zone").round.wave_foes.len();
-    assert!(first >= 3, "a wave of two to four and one more: {first}");
+    let (week_alone, plan_alone, mut alone) = zone_room(Deal::Mission(Mission::Kindle), None, Route::Public);
+    diver(&mut alone, week_alone, &plan_alone);
+    run(&mut alone, 1);
+    let lone = alone.zone().expect("a zone").round.wave_foes.len();
+    assert_eq!(first, lone + 1, "the same wave as one player's and a foe more");
     let at =
         |kind: PieceKind| plan.pieces.iter().find(|piece| piece.kind == kind).map(|piece| [piece.at[0], piece.at[1]]);
     let lamp = at(PieceKind::Kindle(0)).expect("a dead lamp");
@@ -348,4 +352,62 @@ fn a_deals_own_waves_are_held_apart_from_its_bands_and_a_strand_hunt_is_led_by_t
     let leader = room.garrison[post].standing[0];
     let deck = [foes::roster::BOSUN, foes::roster::TITHE_MATE];
     assert!(deck.contains(&room.foes[&leader].brain.foe_type.number), "the deck crew's Elite leads it");
+}
+
+/// The first day from 20_000 whose board posts the passages' bounty for `deed`, its place on the board, and a minute
+/// of it.
+fn day_posting(deed: gear::objectives::Deed) -> (u64, u8, u64) {
+    let wanted = gear::objectives::Objective::Passage(deed);
+    for day in 20_000.. {
+        let Some(index) = gear::bounties::board(day).iter().position(|bounty| bounty.objective == wanted) else {
+            continue;
+        };
+        let mut minute = day * gear::clock::DAY_MINUTES;
+        while gear::clock::day_of(minute) < day {
+            minute += gear::clock::minutes_to_next_day(minute).max(1);
+        }
+        return (day, gear::bounties::town_places().nth(index).expect("a town place"), minute);
+    }
+    unreachable!("the days run on")
+}
+
+#[test]
+fn a_vein_counts_toward_the_bounties_of_those_its_cache_paid_once_a_dive_whoever_gathered_which_node() {
+    let (day, place, minute) = day_posting(gear::objectives::Deed::Vein);
+    let (week, plan, mut room) = zone_room(Deal::Vein, None, Route::Public);
+    room.set_minute(minute);
+    let (one, other) = (diver(&mut room, week, &plan), diver(&mut room, week, &plan));
+    for id in [one, other] {
+        room.players.get_mut(&id).expect("in").character.activity.today(day).bounties.insert(place, 0);
+    }
+    let count = |room: &Room, id: PlayerId| room.players[&id].character.activity.today.bounties[&place];
+    let nodes = u8::try_from(room.resource_nodes.len()).expect("few");
+    for node in 0..nodes {
+        room.vein_gathered(if node < nodes / 2 { one } else { other }, node);
+    }
+    run(&mut room, 1);
+    assert_eq!((count(&room, one), count(&room, other)), (1, 1), "each gathered half, each was paid");
+    run(&mut room, super::passage_deal::AGAIN_TICKS + 1);
+    for node in 0..nodes {
+        kill_all(&mut room);
+        room.vein_gathered(one, node);
+    }
+    run(&mut room, 1);
+    assert_eq!(count(&room, one), 1, "the next round's vein, its cache paid already this dive, counts nothing more");
+}
+
+#[test]
+fn a_gauntlet_pays_each_runner_by_their_own_time_though_two_reach_its_far_mouth_together() {
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Gauntlet), None, Route::Public);
+    let early = diver(&mut room, week, &plan);
+    run(&mut room, super::passage_deal::GAUNTLET_TICKS + 2);
+    let fresh = diver(&mut room, week, &plan);
+    run(&mut room, 2);
+    let far = room.far_mouth().expect("a far mouth");
+    for id in [early, fresh] {
+        stand_at(&mut room, id, far);
+    }
+    run(&mut room, 2);
+    assert!(dive(&room, fresh).is_some_and(|dive| dive.paid == [plan.zone.number]), "in their 90 s");
+    assert!(dive(&room, early).is_some_and(|dive| dive.paid.is_empty() && dive.done), "late: open, no cache");
 }

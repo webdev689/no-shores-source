@@ -57,7 +57,8 @@ pub(crate) struct Round {
     pub waves: u8,
     pub wave_foes: Vec<FighterId>,
     pub reached: bool,
-    pub late: bool,
+    /// A Gauntlet's runners who reached its far mouth past their own 90 s: no cache pays them.
+    pub late: BTreeSet<PlayerId>,
     /// The players who took part: struck down one of its foes, lit a dead lamp, held the ring or reached the far
     /// mouth. Only they are paid its cache.
     pub took_part: BTreeSet<PlayerId>,
@@ -72,7 +73,7 @@ pub(crate) struct Round {
 pub(crate) type HeldBand = (Vec<(u8, ::foes::Rank)>, bool, [f64; 2]);
 
 /// A passage zone's room's own: its web's island, week and route, the zone, its levels, sites and pieces, the deal's
-/// round, the holds under way, and those counted as having gathered its vein.
+/// round, the holds under way, and when each player came in.
 #[derive(Debug)]
 pub(crate) struct Zone {
     pub island: &'static str,
@@ -86,7 +87,6 @@ pub(crate) struct Zone {
     pub holds: BTreeMap<PlayerId, Hold>,
     /// The tick each player came into the zone, which a Gauntlet's time runs from.
     pub arrived: BTreeMap<PlayerId, u64>,
-    pub veined: BTreeSet<PlayerId>,
     /// The bands the zone's most foes held back, stood in turn once there is room.
     pub held: Vec<HeldBand>,
     /// The most players seen in the zone at once, whom its Minibosses and Bosses stand toughened for.
@@ -185,7 +185,6 @@ impl Room {
             round: Round::default(),
             holds: BTreeMap::new(),
             arrived: BTreeMap::new(),
-            veined: BTreeSet::new(),
             held: Vec::new(),
             most_seen: 1,
         })));
