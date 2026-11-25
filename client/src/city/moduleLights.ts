@@ -68,22 +68,22 @@ export function lightsOf(
 /** How far out of a solid's face a lamp moved out of it stands, metres. */
 const OUT_M = 0.1;
 
-/** A point moved out of the module's solid parts (boxes: west, north, bottom, east, south, top), each through its
- *  nearest face: crystal grown on a wall's faces gathers to a middle inside the wall, which would light the wall's
- *  every side from within. */
+/** A point moved out of the module's solid parts (boxes: west, north, bottom, east, south, top) through the nearest
+ *  face of the part it stands in that leaves it in no part (parts overlap): crystal grown on a wall's faces gathers to
+ *  a middle inside the wall, which would light the wall's every side from within. */
 function outOf(parts: readonly (readonly number[])[], from: Point): Point {
-  const point: [number, number, number] = [...from];
-  for (const part of parts) {
-    const inside = [0, 1, 2].every((axis) => point[axis]! > part[axis]! && point[axis]! < part[axis + 3]!);
-    if (!inside) continue;
-    const ways = [0, 1, 2].flatMap((axis) => [
-      { axis, to: part[axis]! - OUT_M, by: point[axis]! - part[axis]! },
-      { axis, to: part[axis + 3]! + OUT_M, by: part[axis + 3]! - point[axis]! },
-    ]);
-    const nearest = ways.reduce((best, way) => (way.by < best.by ? way : best));
-    point[nearest.axis] = nearest.to;
-  }
-  return point;
+  const within = (point: Point) =>
+    parts.find((box) => [0, 1, 2].every((axis) => point[axis]! > box[axis]! && point[axis]! < box[axis + 3]!));
+  const part = within(from);
+  if (!part) return from;
+  const ways = [0, 1, 2]
+    .flatMap((axis) => [
+      { axis, to: part[axis]! - OUT_M, by: from[axis]! - part[axis]! },
+      { axis, to: part[axis + 3]! + OUT_M, by: part[axis + 3]! - from[axis]! },
+    ])
+    .sort((one, other) => one.by - other.by)
+    .map(({ axis, to }): Point => from.map((value, each) => (each === axis ? to : value)) as unknown as Point);
+  return ways.find((point) => !within(point)) ?? ways[0] ?? from;
 }
 
 const known = new Map<number, readonly ModuleLight[]>();

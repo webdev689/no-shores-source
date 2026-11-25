@@ -175,7 +175,8 @@ dressing (`breach_dress.py`) is drawn only. The Drowned horse is a mount look of
 
 Its light comes from its pieces as built: wherever a module wears crystal, glow (a flame) or glass, the page gathers
 it into lamps 3 m across (`moduleLights.ts`), one lamp for a light the grid cuts in two, and out of the piece's
-solids where crystal on a wall's faces gathers inside it, so a piece rebuilt lights where it now burns. Stained glass (`glass`) is
+solids where crystal on a wall's faces gathers inside it, so a piece rebuilt lights where it now burns. Crystal on
+both faces of a wall thinner than 3 m gathers to one lamp, set out on one side only. Stained glass (`glass`) is
 drawn as leaded panes of ruby, cobalt, amber, green and pale, lit from behind; the drowned floors' water ripples
 slowly and glints with the lamps over it ([[Modules]], "In the game").
 

@@ -237,11 +237,13 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A Breach's
   pieces light lamps from their own surfaces: each 3 m cell its crystal, glow or glass falls in is one lamp at their
   middle (`moduleLights.ts`), cells within a cell of each other one lamp and a lamp inside a solid moved out through
-  its nearest face, red, warm or the glass's coloured light. Their light falls off more steeply than the land's
-  lamps', and a face turns to each as to a point 1.5 m over it, so the floor round a crystal's foot is lit, not
-  grazed; a face turned away from a lamp takes none of it. A fire (glow) and stained glass are their own
-  light, the glass leaded panes laid across the face it looks out of; still water's face ripples slowly and glints
-  with the key light and the lamps; a prop marked dark (`dark`) is drawn as the dark of a way through it. Under a sky
+  the nearest face that leaves it in no solid, red, warm or the glass's coloured light. Underground (a sky with a
+  `darkM`) a prop's lamps fall off more steeply than the land's (the fourth power), a face under a lamp turns to it
+  as to a point 1.5 m over it, so the floor round a crystal's foot is lit, not grazed, and a face turned away from a
+  lamp takes none of it; on the land, props are lit by the lamps as the land is. A fire (glow) and stained glass are
+  their own light, the glass leaded panes laid across the face it looks out of; still water's face ripples slowly and
+  glints with the key light and the lamps; a prop marked dark (`dark`, its doorway's opening) is drawn as that
+  opening, filled flat and dark, each of its vertices snapped to the opening's corner on its side. Under a sky
   that sets how far off all is dark (`darkM`, a Breach's run's 120 m), every prop fades into the fog's colour from a
   third of that way. A module that
   opens draws each point of its chasm under the ground at the depth where the eye's line to it crosses the land at

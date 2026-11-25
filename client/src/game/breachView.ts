@@ -295,7 +295,8 @@ export class BreachView {
 
   /** A frame at the gate in the zone: its moorings' rings while the Waking runs and the Spire glowing as it fills, the
    *  seal in its doorway (to the company it opened to, the dark of the way in), its banner (the player's own company
-   *  named as theirs, its line as it begins), its mark on the compass, and the music's tension for its company in the hollow. */
+   *  named as theirs, its line as it begins), its mark on the compass, and the music's tension for its company in the
+   *  hollow. */
   private gateFrame(
     plan: BreachPlan,
     seen: BreachSeen,

@@ -135,16 +135,16 @@ const LAMPS = {
 } as const;
 const CHEST_LIGHT = [0.6, 0.42, 0.2] as const;
 /** A Breach's pieces' lamps, read from where each burns (moduleLights.ts): a crystal's red, by the square of how it
- *  glows (a shard's dark root lights little, a lit point much), full at CRYSTAL_FULL, at most CRYSTAL_MOST; a fire's warmth (a candle, a
- *  hearth, a lantern); the light through stained glass, coloured and reaching further. */
+ *  glows (a shard's dark root lights little, a lit point much), full at CRYSTAL_FULL, at most CRYSTAL_MOST; a fire's
+ *  warmth (a candle, a hearth, a lantern); the light through stained glass, coloured and reaching further. */
 const BREACH_LAMPS: Readonly<Record<LightKind, { light: readonly [number, number, number]; reachM: number }>> = {
   // Hotter than the land's crystal light: near the crystal it lights, its red runs toward its white-hot core.
-  crystal: { light: [1.0, 0.34, 0.3], reachM: 12 },
+  crystal: { light: [1.0, 0.34, 0.3], reachM: 10 },
   fire: { light: FIRELIGHT, reachM: 10 },
   glass: { light: [0.8, 0.5, 0.55], reachM: 14 },
 };
 const CRYSTAL_FULL = 0.15;
-const CRYSTAL_MOST = 2;
+const CRYSTAL_MOST = 2.5;
 
 /** The lamp a Breach's piece gives at `light` (its own frame placed by `place`), the piece shown at `strength`. */
 export function breachLamp(light: ModuleLight, strength: number, scale: number, place: (local: Point) => Point) {

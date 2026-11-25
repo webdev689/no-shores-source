@@ -198,8 +198,8 @@ fn water_ripple(local: vec3f) -> vec2f {
 }
 
 // The lamps' light on a prop's face, as sky_lamps lays it but for the way a face turns to each: none to a face turned
-// away from it, and measured toward a point LAMP_LIFT_M over it: a crystal or a flame burns from its whole height, so the floor round its foot is lit,
-// not grazed.
+// away from it, and measured toward a point LAMP_LIFT_M over it: a crystal or a flame burns from its whole height, so
+// the floor round its foot is lit, not grazed.
 const LAMP_LIFT_M = 1.5;
 fn prop_lamps(from_eye: vec3f, normal: vec3f) -> vec3f {
   var light = vec3f(0.0);
@@ -208,13 +208,19 @@ fn prop_lamps(from_eye: vec3f, normal: vec3f) -> vec3f {
     let place = sky_state.lamps[lamp * 2u];
     let toward = place.xyz - from_eye;
     let near = clamp(1.0 - dot(toward, toward) / (place.w * place.w), 0.0, 1.0);
-    let lifted = normalize(toward + vec3f(0.0, 0.0, LAMP_LIFT_M));
+    // Only a face under the lamp turns to the lifted point: a ceiling over it keeps its own turn.
+    let lifted = normalize(toward + vec3f(0.0, 0.0, select(0.0, LAMP_LIFT_M, toward.z >= 0.0)));
     // A face turned away from the lamp takes none of it: no lamp lights a wall's far side through it.
     let facing = select(0.0, 0.15 + 0.85 * max(dot(normal, lifted), 0.0), dot(normal, toward) > 0.0);
     // Falling off a power steeper than the land's lamps: the run's lamps pool round what burns, not wash its floors.
-    light += sky_state.lamps[lamp * 2u + 1u].rgb * (near * near * near * facing);
+    light += sky_state.lamps[lamp * 2u + 1u].rgb * (near * near * near * near * facing);
   }
   return light;
+}
+
+// The lamps on a prop: underground (key_light.w, a Breach's run) its own pooled lamps, else the land's as the land.
+fn lamps_on(from_eye: vec3f, normal: vec3f) -> vec3f {
+  return select(sky_lamps(from_eye, normal), prop_lamps(from_eye, normal), sky_state.key_light.w > 0.0);
 }
 
 // The lights a wet face mirrors toward the eye: the key light's glint, and each lamp's.
@@ -330,7 +336,7 @@ fn shade(in: Out) -> vec4f {
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
   let grey = abs(look.x - ${LOOK.grey}.0) < 0.5;
-  var colour = material_colour(in.material, in.local, grey) * (light + prop_lamps(in.from_eye, facing));
+  var colour = material_colour(in.material, in.local, grey) * (light + lamps_on(in.from_eye, facing));
   // Metal catches the sun.
   if in.material == ${id('iron')} || in.material == ${id('gold')} {
     let glint = pow(max(dot(reflect(normalize(in.from_eye), facing), sky_state.key.xyz), 0.0), 24.0) * sun;
