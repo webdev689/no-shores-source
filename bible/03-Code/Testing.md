@@ -30,6 +30,8 @@ workflow ([[Item Pictures]]).
   continent-1 in the land's WebAssembly (`npm run -s wasm` first) and holds every stop of the stranger's tour to a clear
   shot of its keepers on Overlook's own counters and solids, not on hand-laid boxes.
 - **GPU code** is checked in a browser with WebGPU; the pure parts around it (sizes, layouts, maths) are unit-tested.
+- **The desktop app** is packed for Linux and started on the game's own build by `desktop.yml` whenever it changes,
+  until its log says the game's adapter came up ([[Desktop App]]).
 
 ## What a good test looks like
 

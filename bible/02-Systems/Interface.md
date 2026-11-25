@@ -1088,7 +1088,9 @@ never while a press is held. Each press is an ask the room answers.
   not behind a veil, nor as the view goes down to the helm's map. While the credits show the footer says Back, and
   showing them or putting them away gives the focus to their way back or to their press, never an exit.
   - **Graphics**: under Display, the resolution the world is drawn at ("Resolution": Auto, the first, or 100%, 85%,
-    75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own.
+    75%, 67% or 50%, kept in this browser; [[Game]], "Drawing"), the interface staying at the screen's own. In the
+    [[Desktop App]] an App part follows: the graphics API where there is a choice, what the app draws with and on
+    which card, the version and the update, with Restart now or Download (`desktopSettings.ts`).
   - **Audio**: under Volume, the volumes of the interface, the world ("World sounds"), the music ("Music") and the
     [[Ambience]] ("Ambience"), each kept in this browser; under Credits, "Sound credits" and its View press, which
     shows the recorded sounds' credits in the volumes' place: each one's name, author, licence and source, and what was

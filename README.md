@@ -10,6 +10,7 @@ Private and proprietary. The client is TypeScript drawing with WebGPU; the serve
 ```sh
 npm ci              # once: the TypeScript tools
 npm run dev         # the client in a browser with WebGPU
+npm run desktop     # the desktop app, on the live game
 cargo xtask check   # everything CI runs, both languages
 cargo xtask repo    # only the repo checks, in about a second
 ```

@@ -32,6 +32,7 @@ code:
   - site/wrangler.jsonc
   - .github/workflows/site.yml
   - site/www/worker.ts#toBareDomain
+  - site/worker.ts#download
   - site/_headers
 ---
 # Website
@@ -115,6 +116,10 @@ commit whose own CI check passed. Before it deploys, every CORS rule of the game
 (`overlook-forge`) that lets the published page read it is widened to the domain's two origins, and the accounts send
 a Discord sign-in back to the game there. The game is still published on GitHub Pages as well
 ([[The World Editor Is on GitHub Pages]]).
+
+The [[Desktop App]]'s downloads are the one address a script answers (`site/worker.ts`, run for `/download/` alone):
+its installers and update feeds, read from R2 under `desktop/`, and the names that never move (`/download/windows`,
+`mac-arm64`, `mac-x64`, `linux-appimage`, `linux-deb`) sent to the newest of each. The site links to none of them yet.
 
 ## The Discord bot's panel
 

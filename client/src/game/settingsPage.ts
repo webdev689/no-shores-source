@@ -1,13 +1,14 @@
-// The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at),
-// Audio (the volumes, and the recorded sounds' credits behind a press of their own), Controls (every control, bound
-// anew there as in the sheet K opens) and Account (the account and the players blocked or muted), down a rail with
-// Exit to Menu and Exit to Desktop at its foot, each held. The resolution and the volumes are kept in this browser,
-// the binds with the account.
+// The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at,
+// and in the desktop app its graphics API and version), Audio (the volumes, and the recorded sounds' credits behind a
+// press of their own), Controls (every control, bound anew there as in the sheet K opens) and Account (the account and
+// the players blocked or muted), down a rail with Exit to Menu and Exit to Desktop at its foot, each held. The
+// resolution and the volumes are kept in this browser, the binds with the account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { PAGE, type Page } from '../ui/page.ts';
 import { button, choice, slider } from '../ui/controls.ts';
 import type { AccountPanel } from './accountTab.ts';
+import { desktopNodes } from './desktopSettings.ts';
 import { bindingColumns, bindingWords } from './controlsSheet.ts';
 import { fillNode } from './gearHold.ts';
 import { INK, words } from './gearNodes.ts';
@@ -292,8 +293,10 @@ function held(
   };
 }
 
-/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser. */
-function graphicsNode({ ui }: PlainContext): Node {
+/** Graphics: the resolution the world is drawn at, Auto or a share of the screen's, kept in this browser; and in the
+ *  desktop app, the app's own graphics and version. */
+function graphicsNode(context: PlainContext): Node {
+  const { ui } = context;
   const { node, chosen } = choice(ui, 'resolution', resolution(), RESOLUTIONS);
   if (chosen !== resolution()) setResolution(chosen);
   const said = RESOLUTIONS.find((option) => option.value === chosen)?.words ?? chosen;
@@ -302,6 +305,7 @@ function graphicsNode({ ui }: PlainContext): Node {
     { height: 4 },
     settingRow('Resolution', { ...node, label: `Resolution, ${said}` }),
     hintNode('Auto lowers the resolution while the game runs slow. The interface stays sharp.'),
+    ...desktopNodes(context, settingRow),
   ]);
 }
 

@@ -1,0 +1,103 @@
+{
+  "name": "no-shores-desktop",
+  "productName": "No Shores",
+  "private": true,
+  "version": "0.0.0",
+  "description": "No Shores for the desktop: the game noshores.online serves, in a window of its own.",
+  "author": "Vestige Studios",
+  "homepage": "https://noshores.online/",
+  "desktopName": "no-shores.desktop",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "out/app/desktop/src/main.js",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.12"
+  },
+  "devDependencies": {
+    "electron": "45.3.0",
+    "electron-builder": "26.18.1"
+  },
+  "build": {
+    "appId": "online.noshores.app",
+    "productName": "No Shores",
+    "executableName": "no-shores",
+    "copyright": "Copyright © 2026 Vestige Studios",
+    "directories": {
+      "output": "out/release",
+      "buildResources": "out/resources"
+    },
+    "files": [
+      "out/app/**/*",
+      "package.json"
+    ],
+    "icon": "out/resources/icon.png",
+    "afterPack": "release/afterPack.cjs",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": false
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://noshores.online/download/",
+        "useMultipleRangeRequest": false
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "No-Shores-${version}-windows-${arch}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "No Shores",
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "No-Shores-${version}-mac-${arch}.${ext}",
+      "category": "public.app-category.role-playing-games",
+      "darkModeSupport": true,
+      "hardenedRuntime": true
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "artifactName": "No-Shores-${version}-linux-${arch}.${ext}",
+      "category": "Game",
+      "synopsis": "A proper pirate sandbox experience",
+      "maintainer": "Vestige Studios",
+      "syncDesktopName": true
+    }
+  }
+}

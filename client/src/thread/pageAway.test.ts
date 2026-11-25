@@ -76,6 +76,7 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     view: { width: 640, height: 360, left: 0, top: 0, ratio: 2 },
     media: { '(prefers-reduced-motion: reduce)': true },
     hidden: false,
+    desktop: null,
   };
   // A worker's global hears events, as Node's does not.
   const scope = new EventTarget();

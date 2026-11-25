@@ -1,6 +1,7 @@
 // The page's side of the game in its worker: the page keeps what a browser allows nowhere else (the player's input,
 // the pointer's lock, the pad, typing, sound, storage, the address) and sends the game what it hears, doing what the
 // game asks of it. The game draws on the page's canvas from its worker.
+import { BRIDGE_NAME, type DesktopBridge } from '../desktop.ts';
 import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { BROWSERS_SIGN_INS, stopped, touchesHeld } from '../ui/page.ts';
 import { drawSvgInPage } from '../ui/pictures.ts';
@@ -21,6 +22,10 @@ import {
 const browsersOwn = (event: KeyboardEvent) =>
   event.ctrlKey || event.metaKey || event.altKey || /^F\d+$/.test(event.key);
 
+/** The desktop app's bridge, which its shell puts on the page before the page's own script; none in a browser. */
+const bridgeOf = (): DesktopBridge | null =>
+  ((globalThis as unknown as Record<string, unknown>)[BRIDGE_NAME] as DesktopBridge | undefined) ?? null;
+
 export class PageHost {
   private readonly canvas: HTMLCanvasElement;
   private readonly worker: Worker;
@@ -33,6 +38,7 @@ export class PageHost {
   private questions = 0;
   /** Each hook's ask of the game, answered when the game answers. */
   private readonly asking = new Map<number, (answer: unknown) => void>();
+  private readonly desktop = bridgeOf();
 
   constructor(canvas: HTMLCanvasElement, worker: Worker) {
     [this.canvas, this.worker] = [canvas, worker];
@@ -49,6 +55,7 @@ export class PageHost {
       matchMedia(query).addEventListener('change', (change) =>
         this.post({ kind: 'media', query, matches: change.matches }),
       );
+    this.desktop?.onInfo((info) => this.post({ kind: 'desktop', info }));
     new ResizeObserver(() => this.post({ kind: 'view', view: this.view() })).observe(canvas);
     addEventListener('resize', () => this.post({ kind: 'view', view: this.view() }));
     this.frame();
@@ -100,6 +107,7 @@ export class PageHost {
       view: this.view(),
       media: Object.fromEntries(MEDIA.map((query) => [query, matchMedia(query).matches])),
       hidden: document.hidden,
+      desktop: this.desktop?.info() ?? null,
     };
   }
 
@@ -196,7 +204,8 @@ export class PageHost {
         else location[message.how](message.url);
         return;
       case 'lock':
-        if (message.locked) void this.canvas.requestPointerLock()?.catch?.(() => undefined);
+        // A lock the page may not take without a press (as after Escape) the desktop app's shell takes for it.
+        if (message.locked) void this.canvas.requestPointerLock()?.catch?.(() => this.desktop?.ask({ ask: 'relock' }));
         else if (document.pointerLockElement === this.canvas) document.exitPointerLock();
         return;
       case 'capture':
@@ -238,8 +247,12 @@ export class PageHost {
         this.asking.get(message.id)?.(message.answer);
         this.asking.delete(message.id);
         return;
+      case 'desktop':
+        this.desktop?.ask(message.ask);
+        return;
       case 'started':
         this.started = true;
+        this.desktop?.ask({ ask: 'drawn' });
         return;
       case 'stopped':
         this.stop(message.message);
