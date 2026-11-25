@@ -40,3 +40,6 @@ needed for the work. A key is the owner's to grant; nothing was changed.
 1 FAIL: Context7 alone, "Monthly quota exceeded", no CONTEXT7_API_KEY; SkillsMP passes on the proxy's key. This work
 reads Electron's and electron-builder's current docs, so it falls back to WebSearch and the projects' own pages. The
 key is the owner's to grant; nothing was changed.
+
+2026-11-25, the Playlist nodes session (PR #216): the same two lines, FAIL skillsmp (no key) and FAIL context7
+(mcp.context7.com not reachable, so not registered). Nothing changed; the proposal stands.
