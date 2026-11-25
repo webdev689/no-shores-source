@@ -226,9 +226,11 @@ The decisions in [[Open Questions]] are not repeated here.
   hum (`amb.social.hum`), searched by the `freesound` workflow's run 143 on this branch. Once picked: set each cue's
   `picked` (and a `cut` for a long one, `mono` kept on the crowd) in `content/audio/freesound.json`, skip the old
   pick, push, and take the workflow's `sounds.json` into the branch. Until then the branch keeps the current picks,
-  so the game plays them. Then the owner's yes to merge, which deploys the page and the rooms. Tested offline: the
-  rules', wire's and page's tests, the new ones failing first; the camera pictured headless before and after. Not
-  yet: played by hand, a real GPU, a deployed room; characters past the prologue before this are given no clothes.
+  so the game plays them. Then the owner's yes to merge, which deploys the page and the rooms. `main` (#202) merged
+  in. The full check passed in CI on f8dff2b4 (run 45526624102); the rules', wire's and page's tests, the new ones
+  failing first; the face-to-face shot pictured headless at 1600x900 before (crowns at the frame's top edge) and
+  after (crowns 17% down, feet 37%). Not yet: played by hand, a real GPU, a deployed room; characters past the
+  prologue before this are given no clothes (the owner's option gives them at its end).
 
 - **The inspect panel after Destiny 1's weapon page** (#202, merged on the owner's "merge and deploy", which deploys
   the page and the rooms). Built on the owner's "take some autonomy" from
