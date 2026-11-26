@@ -78,12 +78,15 @@ impl Room {
 
     /// Whether an Abyss run has just been wiped: someone is in it, every one of them is down, and it was never won.
     /// Where the room keeps anyone's character, those it keeps are judged alone: a socket that never signed in holds
-    /// no run up.
+    /// no run up. One the section killed is down once no revive is left, as it may not stand again then.
     pub(crate) fn wiped(&self) -> bool {
         let keeps = self.players.values().any(|found| found.owner.is_some());
         self.revives().is_some()
             && !self.players.is_empty()
-            && self.players.values().filter(|found| !keeps || found.owner.is_some()).all(|found| found.fighter.dead())
+            && self.players.values().filter(|found| !keeps || found.owner.is_some()).all(|found| {
+                found.fighter.dead()
+                    || (self.revives() == Some(0) && matches!(found.standing, reach::Standing::Dead { .. }))
+            })
             && !self.run.as_ref().is_some_and(|run| run.won)
     }
 

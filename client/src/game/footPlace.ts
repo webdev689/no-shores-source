@@ -1,5 +1,6 @@
 // Where a player stands on foot and the room they join there: the node's ground, its file for a room playing alone, and
 // what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
+import type { PassageSeenState } from '../network/passageMessages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { BreachSeen } from '../network/breachMessages.ts';
 import type { Cache } from './dungeonChest.ts';
@@ -11,6 +12,7 @@ import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
 import type { Walker } from '../player/walker.ts';
+import type { InputFrame } from '../player/input.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import type { InDungeon } from './footTrips.ts';
@@ -52,6 +54,8 @@ export interface FootContext {
   readonly speak?: Speak;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
+  /** What E does at the passages where the player stands: a patrol zone's mouths, a zone's ways on and lamps. */
+  readonly passageUses?: () => Uses | null;
 }
 
 /** How far down a player arriving in a social space looks, radians: over the parapet onto the city, as the Tower's
@@ -97,8 +101,8 @@ export function rejoinOnGuild(here: () => AtOutpost | null, rejoin: (standing: A
   });
 }
 
-/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of or
- *  logging back in (`joinAsk`): at an outpost site, the room of the outpost of `guild`, or the wild site for none. */
+/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of, at
+ *  the gate toward the patrol area they cross from, or logging back in (`joinAsk`): at an outpost site, the room of the outpost of `guild`, or the wild site for none. */
 export function nodeAddress(
   context: FootContext,
   node: NodeInfo,
@@ -110,7 +114,7 @@ export function nodeAddress(
   // Launched for a Breach's test run, the player joins the zone's copy its test is opened from.
   const breach = typeof asked === 'object' ? asked.breach : undefined;
   const room = (breach !== undefined && testZoneOf(breach)) || nodeRoom(node, seas, guild);
-  return `${context.rooms(room)}${joinAsk(asked)}`;
+  return `${context.rooms(room)}${joinAsk(asked, node.across)}`;
 }
 
 /** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out; or
@@ -154,8 +158,8 @@ export interface Opened {
  *  encounters. */
 export interface Held {
   gear: GearState | null;
-  /** Alone, the room's word on the player's gear, read only for their public events' chests: the page dresses and
-   *  serves nothing else from a character that is not kept. */
+  /** Alone, the room's word on the player's gear, read only for their public events' chests and the passages' dive
+   *  (which a room alone keeps and gives on): the page dresses and serves nothing else from a character not kept. */
   alone: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;
@@ -169,15 +173,20 @@ export interface Held {
   encounter: EncounterSeen | null;
   /** At a guild's outpost, how many plots its room has stood (0 in any other room): its plot is read again on a change. */
   plots: number;
+  /** In a passage zone, its deal as it stands for the player (none in any other room). */
+  passage: PassageSeenState | null;
   /** A Breach as its run or its gate's patrol zone last said; null in any other room. */
   breach: BreachSeen | null;
 }
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
- *  or at the gate of the Breach's run the player was launched for (`arrivalQuery`); or to stand where the kept
- *  character left this social space, logging back in (`relog.ts`). */
-export const joinAsk = (asked?: AtEntrance | 'relog'): string =>
-  asked === 'relog' ? '?relog=1' : asked ? arrivalQuery(asked) : '';
+ *  or at the gate of the Breach's run the player was launched for (`arrivalQuery`), or at the gate toward the patrol
+ *  zone `across` they came from; or to stand where the kept character left this social space, logging back in
+ *  (`relog.ts`). */
+export const joinAsk = (asked?: AtEntrance | 'relog', across?: string): string => {
+  if (asked === 'relog') return '?relog=1';
+  return asked ? arrivalQuery(asked) : across ? `?from=${encodeURIComponent(across)}` : '';
+};
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
 export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
@@ -188,13 +197,15 @@ export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 
 
 /** What a frame on foot is asked: whether play is paused or the map is looked at, whether the hands are free, the
  *  view's aspect, and the eye of a cutscene's shot shown in place of the player's own (the stranger's welcome), which
- *  the figures are then drawn for. */
+ *  the figures are then drawn for, and a walk stepped while paused. */
 export interface FootAsk {
   readonly paused: boolean;
   readonly looking?: boolean;
   readonly hands: boolean;
   readonly aspect: number;
   readonly eye?: readonly [number, number, number] | null;
+  /** A walk the body is stepped by while play is paused, the way between places walking it (`wayBetween.ts`). */
+  readonly walk?: InputFrame | null;
 }
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the

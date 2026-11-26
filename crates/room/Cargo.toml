@@ -11,6 +11,7 @@ gear = { path = "../gear" }
 isle = { path = "../isle" }
 combat = { path = "../combat" }
 dungeon = { path = "../dungeon" }
+passage = { path = "../passage" }
 foes = { path = "../foes" }
 land = { path = "../land" }
 libm.workspace = true

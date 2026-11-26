@@ -14,8 +14,7 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   `roomThread.test.ts`).
 - **Other sessions' work under way**: #223 (keepers' gifts, the house Arts' horde, escorts that ride, the horse and
   ship taught, keepers' screens after Destiny 2's), #221 (hostile ships and islands on the sea map, travel anywhere at
-  sea), #218 (Passages, a draft; it supersedes #204) and #216 (the sea reworked, the island's places as painted tiles,
-  the Playlist's crests).
+  sea) and #216 (the sea reworked, the island's places as painted tiles, the Playlist's crests).
 - **Drafts**: #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -40,7 +39,7 @@ when its code changed ([[The Rooms Deploy When Their Code Changes]], [[The Disco
 - **Gear**: [[Gear]], Vestiges and [[Item Pictures]], the [[Shipyard]], [[Guilds]] and [[Outposts]].
 - **The sea**: [[Sailing]], [[Naval Combat]], [[Hulls]], [[Ship Power]], [[Crew]].
 - **Story and activities**: the [[Prologue]], [[Quests]] with the houses' roads, [[Dungeons]], [[Breaches]] (the
-  Drowned Vale), [[Activities]], [[Public Events]], [[Lore]].
+  Drowned Vale), the [[Passages]], [[Activities]], [[Public Events]], [[Lore]].
 - **Sound**: [[Music]] and [[Ambience]], every recording the owner's Freesound pick but four synthesised ones.
 - **The interface**: [[Interface]], drawn without HTML; the game in a worker of its own ([[Game]]).
 - **Outside the game**: the [[Website]] at noshores.online, the [[Discord Bot]] and the server it lays out, the
@@ -60,7 +59,8 @@ yet played by hand or with other players in a deployed room.
   ffmpeg does, so each hoofbeat plays to its cut.
 - **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's cinematic
   from the helm; a clash of a Tithe ship and a merchant, joined; the welcome's tour with its 400 Aurem and a starter
-  piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages once merged.
+  piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a dive's way across zones, a public round, the held
+  map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again).
 - **Live, once deployed**: a dungeon of each style; the Journal and the board (a bounty taken, counted and turned in,
   a sea bounty at sea); an arrival of each kind; a Vestige left lying and taken from the Postmaster; the accounts'
   migration of each character's room; a lore chapter found; two players reviving; the heroic raid with players; the live flow into a Test
@@ -77,7 +77,9 @@ yet played by hand or with other players in a deployed room.
   AppImage on Ubuntu 23.10 or later.
 - **Unchecked**: whether the Escape that frees a locked mouse also reaches the game; whether the faction blades'
   first-person frames pair with the published hands; the pistolet's and the thunderlock's first-person pictures (a
-  404 at the Test Ground: missing on R2, or slow); whether #70's dead code is cleared.
+  404 at the Test Ground: missing on R2, or slow); whether #70's dead code is cleared; a public event's chest
+  (`public/chest.rs`) and a grant (`grants.rs`) still go through `pick_up`, which hauls a Vestige where the player
+  stands in a passage zone; a Vein's nodes under ground, never pictured.
 
 ## Waiting on the owner
 
@@ -106,7 +108,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The cloud environment.** A cloud session runs on the `no-shores-source` environment (personal, set up with the
   owner's approval): its network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts`
-  fetches meshes from, and its setup script runs `npm ci`. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask
+  fetches meshes from, and its setup script runs `npm ci` (unproven until a fresh session starts on it). Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask
   check`: Node's `fetch` ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with
   "fetch failed" and xtask stops before the build, the bundle and the repo checks; run `cargo xtask repo` beside it.
   The Context7 and SkillsMP keys are on neither environment.
@@ -222,7 +224,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels run
   the room while the pointer is free; `server/outpostReload.test.ts`'s three tests misreported once in a full parallel
   run and passed alone and on the next run.
-- **Zones**: the other 24 zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
+- **Zones**: the other islands' eight patrol zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
   enough to climb in places, so its runs' end arenas need cutting deeper or walling. The layouts' open ends
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites; moving each
   patrol's dungeon entrances onto the layouts' places (#82's plan). Some

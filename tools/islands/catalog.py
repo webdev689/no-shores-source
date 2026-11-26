@@ -16,8 +16,9 @@ PARTS = tuple(_KITS['parts'])
 KITS = tuple(_KITS['kits'])
 # Each module by name, in the file's order: {'role', 'size' [x, y, z], 'solids' [[x, y, r], ...]}.
 MODULES = dict(_KITS['modules'])
-# The kits a climate dresses with; the common kit serves every climate.
-BIOMES = tuple(kit for kit in KITS if kit != 'common')
+# The kits a climate dresses with; the common kit serves every climate, and the passages' kit stands their own
+# pieces in a passage zone above ground, so neither is a biome's.
+BIOMES = tuple(kit for kit in KITS if kit not in ('common', 'passage'))
 
 
 def required(kit):

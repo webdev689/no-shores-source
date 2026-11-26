@@ -10,6 +10,11 @@
       "id": "breaches",
       "name": "The Breaches",
       "motif": "spire"
+    },
+    {
+      "id": "passages",
+      "name": "The Passages",
+      "motif": "lantern"
     }
   ],
   "books": [
@@ -483,6 +488,25 @@
             "kind": "breach",
             "breach": "drowned-vale",
             "find": "steward"
+          }
+        }
+      ]
+    },
+    {
+      "id": "longer-than-the-chart",
+      "category": "passages",
+      "name": "Longer Than the Chart",
+      "cover": {
+        "colour": "#6f8a78",
+        "motif": "lantern"
+      },
+      "chapters": [
+        {
+          "id": "the-first-lamp",
+          "title": "The First Lamp",
+          "text": "*Found pressed under the plinth of a lamp, its pages swollen with damp.*\n\n> GREY TITHE. RECKONING OF THE WAYS.\n> Saltmere, under the Saltgrass Downs.\n> Door at the end of the run: opened. Door found again: no.\n> Ways counted this week: forty one.\n> Ways counted last week: forty one.\n> The same ways: none.\n\nThe ground under Saltmere is longer than the chart. The Tithe have known it a long time, and they have written it down the way they write everything down, in columns, and never said it aloud. Their book has pages for places that are not on any chart. Every week someone tears the old pages out, because the places on them are no longer where the pages say.\n\nThe Tithe did not make the ways. The reckoner says so twice, plainly, as though someone had asked. They walk them, and count them, and stand guard wherever the counting is worth guarding. Who made them the book does not say. The column for it is ruled and left empty.\n\nWhat the book does say is this. About every fifth way down there is a lamp on a plinth of grey-green stone, in a ring of five standing stones. No quarry on Saltmere gives that stone. The lamps burn on nothing: no oil, no wick, no smell of either. Cold, they are grey. Touched, they go gold, and gold is for home.\n\n> Lamp lit at the fifth way. Not by us.\n> Reckoner stood in the ring. Reckoner was home.\n> Home is two hours' walk from the ring. Reckoner was home at once.\n> Twentieth way: lamp found cold. Not lit since the lanterns went out over the bay.\n> Under review.\n\nIn the margin, in a hand that is not the Tithe's, someone has written one line and pressed hard enough to tear the page.\n\n*Somebody is still keeping them.*\n\nYou lit one. The gold went down into the stone and stayed there, and for a moment the ground under the ground was quiet, as if it had been waiting to be counted by someone who was not the Tithe.",
+          "found": {
+            "kind": "lamp"
           }
         }
       ]

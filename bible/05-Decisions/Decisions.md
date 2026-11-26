@@ -125,7 +125,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]
 - [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]
 - [[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]
-- [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map Comes to the Social Spaces and Every Land Area]]
 - [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]
 - [[The Sea Fight Looks and Aims as DFO's Does]]
@@ -378,6 +377,13 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 - [[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]
 - [[Developers Launch Activities From a Test Room, in Max Gear]]
+- [[Each Island Keeps One Patrol Zone, the One by Its Port City]]
+- [[Passages Web Out From the Patrol Zone Across Its Island]]
+- [[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]
+- [[A Passage Kill's Share Scales the XP That Follows It, and the Passages Read Gear's Week]]
+- [[The Sea and the Abyss Run Again Are Retuned Into the Band]]
+- [[The Held Map Colours Each Water's Name by Its Difficulty]]
+- [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]
 
 ## Claude's calls
 
@@ -422,6 +428,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[The Desktop App as Claude Builds It]]
 - [[Foe Arrivals as Claude Builds Them]]
 - [[Character Slots and the Test Room as Claude Builds Them]]
+- [[Passages as Claude Builds Them]]
 
 ## Replaced
 

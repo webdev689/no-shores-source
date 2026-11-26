@@ -106,6 +106,10 @@ test("a pack whose parts are not the kits' own, in their order, is refused", () 
   assert.throws(() => readModulePack(packOf([FOOT], { style: 'barrows' })), /style/);
 });
 
+test('the passages’ own pack reads as a style’s, worn in any of them', () => {
+  assert.equal(readModulePack(packOf([FOOT], { style: 'passage' })).style, 'passage');
+});
+
 test("a corner outside its own module, a part past the kits' parts or a wrong length is refused", () => {
   assert.throws(() => readModulePack(packOf([{ ...FOOT, indices: [0, 1, 3] }])), /names no vertex/);
   // The second module's corners counted from the pack's first vertex, not its own.

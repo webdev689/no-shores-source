@@ -64,6 +64,18 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let laid = Dungeon::forge_within(seed, style, blocks);
     // An Elite Dungeon has a name of its own; any other is named for its style and its place.
     let name = if found.place.is_some() { found.name } else { dungeon::name(&style, &found.name) };
+    let mut layout = layout_json(&laid, &name);
+    // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
+    if found.place.is_some() {
+        layout["encounters"] = encounters_json(&room::encounter_plan::plan_encounters(&laid));
+    }
+    layout.to_string()
+}
+
+/// A laid dungeon's layout as JSON, as `dungeon_json` describes it, under its name: what a page draws a dungeon or a
+/// passage zone under ground from.
+pub(crate) fn layout_json(laid: &Dungeon, name: &str) -> Value {
+    let style = laid.style;
     let cells: Vec<i32> = laid
         .cells
         .iter()
@@ -119,7 +131,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let glows: Vec<[f64; 4]> = laid.landmarks.iter().flat_map(|placed| placed.glows.iter().copied()).collect();
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
-    let layout = json!({
+    json!({
         "name": name,
         "style": style.key,
         "pictures": style.pictures,
@@ -153,13 +165,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "props": props,
         "landmarks": landmarks,
         "glows": glows,
-    });
-    // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
-    let mut layout = layout;
-    if found.place.is_some() {
-        layout["encounters"] = encounters_json(&room::encounter_plan::plan_encounters(&laid));
-    }
-    layout.to_string()
+    })
 }
 
 /// An Elite Dungeon's encounters as JSON: each seal's kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the
@@ -204,6 +210,11 @@ pub(crate) fn pads_of(text: &[u8], laid: &Dungeon) -> Vec<movement::Block> {
     if placed { room::encounter_plan::plan_encounters(laid).pads() } else { Vec::new() }
 }
 
+/// Why a locked node's room takes no player, in the words the page shows; None while it is open.
+pub(crate) fn lock_words(locked: bool, name: &str) -> Option<String> {
+    locked.then(|| format!("{name} is locked"))
+}
+
 /// Opens the room of a patrol's dungeon by its number, from the patrol's node file's text: its garrison at the patrol's
 /// island band, and locked while its patrol is. Answers whether the text was a patrol's and the number one of its
 /// dungeons.
@@ -213,7 +224,7 @@ pub fn open_dungeon(text: &[u8], number: usize) -> bool {
         return false;
     }
     let Some(room) = Room::dungeon(&node.id, number, gear::world::island_levels(&node.continent)) else { return false };
-    let refusal = crate::lock_words(node.locked, &node.name);
+    let refusal = lock_words(node.locked, &node.name);
     keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
     true
 }
@@ -246,7 +257,7 @@ pub unsafe extern "C" fn room_open_dungeon(address: *const u8, length: usize, nu
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join_at(number: u32) -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, refusal: None, .. } => {
+        Opened::Land { room, refusal: None, .. } if !room.shifted() => {
             usize::try_from(number).ok().and_then(|number| room.join_at(number))
         }
         Opened::Land { .. } | Opened::Sea(_) | Opened::Fleet(_) => None,
@@ -299,12 +310,12 @@ mod tests {
     /// last a style deeper, and the fifth is laid by a seed and a style where no patrol lays it.
     const AGREED_ASKS: [&[u8]; 5] = [
         br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#,
-        br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
-        br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
+        br#"{"patrol":"highwater-fells","name":"The Highwater Fells","number":1}"#,
+        br#"{"patrol":"whitewind-tundra","name":"The Whitewind Tundra","number":2}"#,
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x77bb_f751_6bd7_1735;
+    const AGREED_HASH: u64 = 0x939e_f98a_66ce_5550;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {

@@ -18,6 +18,7 @@ foes = { path = "../foes" }
 land = { path = "../land" }
 movement = { path = "../movement" }
 naval = { path = "../naval" }
+passage = { path = "../passage" }
 protocol = { path = "../protocol" }
 room = { path = "../room" }
 sailing = { path = "../sailing" }

@@ -87,8 +87,9 @@ export function questCardsOf(state: QuestState | null | undefined, quests: reado
 /** The Journal's bounties: those taken in the board's order, the board's slots, and what to say where none shows. */
 export interface BountyColumn {
   readonly taken: readonly BountyRow[];
-  /** The bounties the board shows the player, as the gear carries them (the town's six, the pledged faction's three and
-   *  any other faction's held that day); none before a board is heard or while it is shut. */
+  /** The bounties the board shows the player, as the gear carries them (the town's eight, the passages' two among
+   *  them, the pledged faction's three and any other faction's held that day); none before a board is heard or while
+   *  it is shut. */
   readonly slots: number;
   readonly said: string | null;
 }

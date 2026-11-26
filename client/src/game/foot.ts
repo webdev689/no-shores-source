@@ -336,7 +336,7 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect, eye: cutscene = null }: FootAsk,
+    { paused, looking = false, hands, aspect, eye: cutscene = null, walk = null }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
@@ -363,7 +363,8 @@ export class Foot {
     this.followable = down && (company?.length ?? 0) > 0 ? named : null;
     const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
-    const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
+    const moved = walk ?? (still ? IDLE : { ...controls, locked: true });
+    const shown = this.player.frame(moved, this.steps, seconds, clock, {
       running: true,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),
@@ -497,7 +498,7 @@ export class Foot {
     };
     const placeUse = this.outpost
       ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing, controls.held('use'))
-      : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
+      : ((this.uses ?? this.context.passageUses?.())?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const counters = countersOf(this.node);
     // A fallen ally beside the player comes first, as Destiny's revive does, but for a Breach's Lodestone lying
     // counting down; then a public event's chest, then a find.
@@ -511,7 +512,8 @@ export class Foot {
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
     const gathered = this.using?.held ?? this.hold.share(clock, able && !mounted, gearHeard);
-    this.prompt.show(this.using?.words ?? null, revive.share ?? gathered, this.using?.idle === true);
+    const using = this.using;
+    this.prompt.show(using?.words ?? null, revive.share ?? gathered, using?.idle === true, using?.under ?? null);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;

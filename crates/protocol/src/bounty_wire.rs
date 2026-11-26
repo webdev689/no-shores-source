@@ -2,14 +2,14 @@
 
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
-use gear::bounties::{Bounty, bounty_at, faction_at, faction_board, faction_places};
+use gear::bounties::{Bounty, bounty_at, faction_at, faction_board, faction_places, town_places};
 use std::collections::BTreeMap;
 
 /// The bounties a character pledged to `pledge` is shown on a day, holding `held` that day under the factions' keys:
-/// the town's six, the pledged faction's three, then any other faction's they hold (a pledge switched since it was
-/// taken), each by its place.
+/// the town's eight (the passages' two at their places after the factions'), the pledged faction's three, then any
+/// other faction's they hold (a pledge switched since it was taken), each by its place.
 fn shown(pledge: u8, held: &BTreeMap<u8, u32>, day: u64) -> Vec<(u8, Bounty)> {
-    let mut rows: Vec<(u8, Bounty)> = (0u8..).zip(gear::bounties::board(day)).collect();
+    let mut rows: Vec<(u8, Bounty)> = town_places().zip(gear::bounties::board(day)).collect();
     if let Some(own) = faction_board(day, pledge) {
         rows.extend(faction_places(pledge).zip(own));
     }

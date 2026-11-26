@@ -411,3 +411,23 @@ fn the_sea_shuts_to_a_character_who_keeps_no_ship_and_keeps_none() {
     assert!(!sea.harbour.characters.contains_key(&player), "nor held");
     assert!(sea.restore_character(player, &sailor().to_json()), "handed the Sloop, it sails");
 }
+
+#[test]
+fn the_sea_keeps_a_dive_to_be_judged_where_it_lands_marked_as_come_by_sea() {
+    let mut sea = sea();
+    let player = sea.join();
+    let mut character = sailor();
+    let start = gear::dive::Start {
+        island: "continent-1",
+        week: 2_900,
+        route: gear::dive::Route::Public,
+        mouth: 0,
+        zone: 4,
+        depth: 5,
+        lamp: None,
+        seas: gear::Difficulty::Normal,
+    };
+    character.begin_dive(&start).expect("begun");
+    assert!(sea.restore_character(player, &character.to_json()));
+    assert_eq!(kept(&sea, player).passage.map(|dive| dive.sailed), Some(true));
+}

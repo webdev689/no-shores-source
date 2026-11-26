@@ -11,7 +11,7 @@ use land::pads::Pad;
 const AT: [f64; 2] = [5000.0, 3000.0];
 
 fn area(kind: AreaKind, radius: f64) -> Area {
-    Area { kind, name: String::new(), at: AT, radius, leads_to: None }
+    Area { kind, name: String::new(), at: AT, radius, leads_to: None, crosses: false }
 }
 
 fn building(middle: [f64; 2], half: f64) -> Seated {

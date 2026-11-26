@@ -1,0 +1,378 @@
+{
+  "size": [960, 540],
+  "shots": [
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "hollow"
+        }
+      ],
+      "out": "target/passages/arrive-hollow.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "ravine"
+        }
+      ],
+      "out": "target/passages/arrive-ravine.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "shelves"
+        }
+      ],
+      "out": "target/passages/arrive-shelves.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "court"
+        }
+      ],
+      "out": "target/passages/arrive-court.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "strand"
+        }
+      ],
+      "out": "target/passages/arrive-strand.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "grove"
+        }
+      ],
+      "out": "target/passages/arrive-grove.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "hollow",
+          "above": true
+        }
+      ],
+      "out": "target/passages/above-hollow.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "court",
+          "above": true
+        }
+      ],
+      "out": "target/passages/above-court.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "chalk"
+        }
+      ],
+      "out": "target/passages/under-chalk.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "mines"
+        }
+      ],
+      "out": "target/passages/under-mines.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "caverns"
+        }
+      ],
+      "out": "target/passages/under-caverns.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "barrow"
+        }
+      ],
+      "out": "target/passages/under-barrow.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 47,
+          "aim": {
+            "kind": "lamp",
+            "distance": 9,
+            "up": 3
+          }
+        }
+      ],
+      "out": "target/passages/open-lamp-cold.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 47,
+          "aim": {
+            "kind": "lamp",
+            "distance": 9,
+            "up": 3
+          },
+          "state": {
+            "lampLit": true,
+            "openMouths": [0, 1, 2],
+            "kindled": [0, 1, 2],
+            "broken": [0, 1, 2]
+          }
+        }
+      ],
+      "out": "target/passages/open-lamp-lit.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 14,
+          "aim": {
+            "kind": "lamp",
+            "distance": 6,
+            "up": 2.2
+          }
+        }
+      ],
+      "out": "target/passages/under-lamp-cold.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 14,
+          "aim": {
+            "kind": "lamp",
+            "distance": 6,
+            "up": 2.2
+          },
+          "state": {
+            "lampLit": true,
+            "openMouths": [0, 1, 2],
+            "kindled": [0, 1, 2],
+            "broken": [0, 1, 2]
+          }
+        }
+      ],
+      "out": "target/passages/under-lamp-lit.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 3,
+          "aim": {
+            "kind": "mouth",
+            "distance": 5,
+            "up": 1.7
+          }
+        }
+      ],
+      "out": "target/passages/under-mouth-shut.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 3,
+          "aim": {
+            "kind": "mouth",
+            "distance": 5,
+            "up": 1.7
+          },
+          "state": {
+            "lampLit": true,
+            "openMouths": [0, 1, 2],
+            "kindled": [0, 1, 2],
+            "broken": [0, 1, 2]
+          }
+        }
+      ],
+      "out": "target/passages/under-mouth-open.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "ravine",
+          "own": {}
+        }
+      ],
+      "out": "target/passages/own-ravine.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "ground": "strand",
+          "own": {
+            "near": "common.wreck"
+          }
+        }
+      ],
+      "out": "target/passages/own-strand-wreck.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 53,
+          "aim": {
+            "kind": "ring",
+            "distance": 9,
+            "up": 4
+          }
+        }
+      ],
+      "out": "target/passages/hold-ring-open.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "zoneShot",
+      "call": true,
+      "args": [
+        {
+          "week": 2900,
+          "number": 13,
+          "aim": {
+            "kind": "ring",
+            "distance": 9,
+            "up": 3
+          }
+        }
+      ],
+      "out": "target/passages/hold-ring-under.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "wayShot",
+      "before": "loadDoor",
+      "beforeArgs": [1],
+      "out": "target/passages/way-1s.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "wayShot",
+      "before": "loadDoor",
+      "beforeArgs": [3],
+      "out": "target/passages/way-3s.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "wayShot",
+      "before": "loadDoor",
+      "beforeArgs": [5],
+      "out": "target/passages/way-5s.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "mapShot",
+      "call": true,
+      "before": "loadDoor",
+      "out": "target/passages/map.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "mouthsShot",
+      "before": "loadDoor",
+      "out": "target/passages/mouths.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "panelsShot",
+      "before": "loadDoor",
+      "out": "target/passages/panels.png"
+    },
+    {
+      "module": "/src/game/passages/passageShots.ts",
+      "build": "athericShot",
+      "out": "target/passages/atheric.png"
+    }
+  ]
+}
