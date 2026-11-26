@@ -142,7 +142,7 @@ Every save keeps its place. A save on the old **Arm yourself** task (a Melee wea
 reads on **Put them on** (its `was`), its counts at nothing. A save kept partway round the counters before the keepers
 gave gifts is given, as it is read, the gift of each keeper it has heard, and the rest as it hears them. One who pledges
 before the round is done is given, as they pledge, every gift the opening's tasks still held, the Weaponsmith's choice
-kept free at her counter, as the Tack gives the Bay. A character past the round before the gifts (on **Put them on** or
+kept free at her counter, as the Tack gives the Bay. A character past the round before the gifts (on **Take your ship from the Harbourmaster** or
 later, or pledged) is owed nothing new, as one past the Tack's goal is given no Bay. A character whose log stood at the
 houses before keeps its place by its task's id, and one kept with no place in the opening reads at "Hear the three
 houses" (its `kept`): neither is walked round again, nor owed a gift. The Test Ground's player reads as one kept

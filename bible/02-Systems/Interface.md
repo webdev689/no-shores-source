@@ -1368,11 +1368,12 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   presses, Escape steps back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone,
   the keeper stands over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
-  The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: TO START, every
-  Melee kind and every Ranged kind ([[Gear]], "Vendors"), then WEAPONS, the day's six, and SUPPLIES, the Ammo crate
-  with how many of the five are carried. While her gift is owed, each starter piece of a slot still owed comes at no
-  price: its tile says "Free" in place of the price, its card says "My gift to you: one Melee weapon and one Ranged,
-  your choice.", and holding it takes it as a purchase would ([[Quests]], "The opening"). The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's six. The Tack: MOUNT,
+  The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: SUPPLIES, the Ammo
+  crate with how many of the five are carried, then WEAPONS, the day's six, then TO START, every Melee kind and every
+  Ranged kind ([[Gear]], "Vendors"); while her gift is owed TO START comes first instead, each starter piece of a slot
+  still owed at no price: its tile says "Free" in place of the price, its card says "My gift to you: one Melee weapon
+  and one Ranged, your choice.", and holding it takes it as a purchase would ([[Quests]], "The opening"). Eighteen
+  pieces fill the screen, so once the gift is taken the day's wares lead. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's six. The Tack: MOUNT,
   the Bay Horse first, then the day's four horses and bardings, a horse as any item ware is, its picture, its card and
   "Normal Horse", kept once a horse in its coat is held. A piece kept says so.
 - **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen scrolls

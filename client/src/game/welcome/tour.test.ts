@@ -103,6 +103,19 @@ test('with no pair to see the view stays the player’s, and her words are still
   );
 });
 
+test('a pair not yet standing is asked for again each frame, and framed once it stands', async () => {
+  let standing = false;
+  const welcome = new StrangerWelcome([], {
+    play: () => new Promise<void>(() => undefined),
+    heard: () => undefined,
+    faces: () => (standing ? FACES : null),
+  });
+  void welcome.run();
+  welcome.shot(OWN, STEP_S);
+  standing = true;
+  assert.ok(near(flown(welcome), facesShot(OWN, FACES.stranger, FACES.player, [])), 'the pair framed');
+});
+
 test('the player leaving ends the welcome where it is, the keys given back and nothing asked of the room', async () => {
   const { welcome, finish, heard } = welcomeOn();
   const run = welcome.run();

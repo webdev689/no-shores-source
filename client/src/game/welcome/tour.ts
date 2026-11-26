@@ -91,11 +91,12 @@ export class StrangerWelcome {
     ];
   }
 
-  /** Sets a flight from where the view stands to the pair, seen from the side; with no pair to see, the view stays. */
+  /** Sets a flight from where the view stands to the pair, seen from the side; with no pair to see yet, the view
+   *  stays and the next frame asks again. */
   private aim(own: Shot): void {
-    this.asked = false;
     const pair = this.voice.faces?.();
     if (!pair) return;
+    this.asked = false;
     [this.from, this.to, this.flown] = [this.last, facesShot(own, pair.stranger, pair.player, this.blocks), 0];
   }
 }

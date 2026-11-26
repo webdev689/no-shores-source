@@ -1,8 +1,7 @@
 //! The welcome to Overlook in a room: the stranger is heard anywhere in a social space and nowhere else, once, giving
 //! nothing; the Bay given by the Tack at her counter, the Postmaster spoken with at the mail counter, his letter
-//! posted as he is, and
-//! the Harbourmaster at theirs, who hands over the Sloop a new player has none of until then and answers every ask for
-//! the player's ships.
+//! posted as he is, and the Harbourmaster at theirs, who hands over the Sloop a new player has none of until then and
+//! answers every ask for the player's ships.
 
 use crate::Room;
 use crate::asks::{Asked, Counter, CounterKind, answer_code};

@@ -171,7 +171,7 @@ impl QuestLog {
                 (road.task, road.counts, road.fought) = (now.id.clone(), Vec::new(), Vec::new());
             }
             // A task this file does not hold (another build's) reads as a character kept before the quest's tasks
-            // did: a reward before `kept`, such as the stranger's gift, may already be paid.
+            // did: a reward before `kept`, such as a keeper's gift on the round, may already be paid.
             if !quest.tasks.iter().any(|task| task.id == road.task) {
                 let first = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
                 road.task = quest.kept.clone().unwrap_or(first);
@@ -348,8 +348,8 @@ impl Character {
         }
     }
 
-    /// A task's or a goal's reward: its Aurem, a keeper's gift (`give_gift`), the Bay, worn where no horse is (never a second: one horse of each
-    /// coat), the Sloop to one who keeps no ship, and of its house's Art, the Art earned and worn at once, a Tenet
+    /// A task's or a goal's reward: its Aurem, a keeper's gift (`give_gift`), the Bay, worn where no horse is (never a
+    /// second: one horse of each coat), the Sloop to one who keeps no ship, and of its house's Art, the Art earned and worn at once, a Tenet
     /// earned, fragments to choose. A fragment beyond those the Art has left unowned and unchosen is its price at the
     /// counter in Aurem instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {

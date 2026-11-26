@@ -56,7 +56,6 @@ impl Vendor {
     pub fn starter_kinds(self) -> &'static [Kind] {
         match self {
             Vendor::Armorsmith => &[Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs],
-            // Every Melee loadout, the sword and shield first, then every Ranged one.
             Vendor::Weaponsmith => &[
                 Kind::SwordAndShield,
                 Kind::Sword,
