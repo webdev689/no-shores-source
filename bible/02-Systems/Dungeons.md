@@ -165,15 +165,16 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   the rim with rock round it, on the first spot from a drawn one clear of its storey's flights and landings and, where
   one is, of the landings of the storey over it; nine each way where its drawn sides find none. A hewn one stands its
   pillars as any great room does. Over 2000 dungeons about one block storey in twenty is one.
-- **Galleries** (`plan_gallery`, on the lane `gallery:<seed>`): in three dungeons in ten that hold a great room under
-  another storey (never under the way in's), the first whose storey over it has no landing over it rises through
+- **Galleries** (`plan_gallery`, on the lane `gallery:<seed>`): in a dungeon that holds a great room under another
+  storey (never under the way in's), the first whose storey over it has no landing over it rises through
   that storey: two to four of its sides one after another round it (drawn) keep a gallery a cell wide, a way of the
   storey over, and the rest of its rectangle there is open air (`Cell::Void`, 3.2 m high) over the room's floor (over
   a cave's bitten edge or a stone the rock stays). The rock round the open air on its other sides is kept, so no room
   or way of that storey opens onto it, and that storey's landings and doorways stay joined round it. A balustrade
   (`balustrades`) stands along every edge where the gallery meets the air, inside the gallery, 0.25 m deep (as the
   pieces drawn there are) and 1 m high: a block a body climbs and drops from, a way down and never up. No pillar
-  stands under the open air. About one dungeon in four of those with a great room on a lower storey has one.
+  stands under the open air. Over 2000 dungeons about six in ten of those with a great room on a lower storey have
+  one, where the gallery fits: one dungeon in 25.
 - **A room's shape** (`outline`) lies inside its rectangle, and is always one walk. A rectangle takes all of it; an L
   leaves a corner quarter rock; a cross leaves each corner block rock, a third of each side; an octagon leaves each
   corner cell rock. Alcoves line one or both long walls of a hall with single cells cut one deep into the rock, every

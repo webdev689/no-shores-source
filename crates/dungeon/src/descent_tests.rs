@@ -175,7 +175,7 @@ fn loops_come_now_and_then_as_the_forge_joins_a_storey() {
 }
 
 #[test]
-fn now_and_then_a_block_storey_is_one_great_room_and_one_in_about_four_under_a_storey_rises_into_a_gallery() {
+fn now_and_then_a_block_storey_is_one_great_room_and_one_under_a_storey_rises_into_a_gallery_where_it_fits() {
     let (mut great, mut storeys, mut under, mut galleries) = (0, 0, 0, 0);
     for dungeon in DUNGEONS.iter() {
         storeys += dungeon.block_storeys.iter().sum::<usize>();
@@ -211,7 +211,7 @@ fn now_and_then_a_block_storey_is_one_great_room_and_one_in_about_four_under_a_s
         assert!(dungeon.balustrades.iter().all(|rail| rail[4] == floor && rail[5] == floor + BALUSTRADE_M));
     }
     assert!((0.03..0.07).contains(&share(great, storeys)), "{great} great rooms in {storeys} block storeys");
-    assert!((0.17..0.33).contains(&share(galleries, under)), "{galleries} galleries of {under}");
+    assert!((0.5..0.75).contains(&share(galleries, under)), "{galleries} galleries of {under}");
 }
 
 #[test]

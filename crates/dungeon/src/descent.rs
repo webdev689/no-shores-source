@@ -8,11 +8,10 @@ use crate::styles::Style;
 use crate::{FLIGHT_CELLS, SIDES, Side};
 
 /// The storeys the way in's block holds at most, and how often a block storey is one great room, its sides fewest and
-/// most (cells), and how often a dungeon with a great room under another storey lets it rise into a gallery.
+/// most (cells).
 const WAY_IN_STOREYS: usize = 2;
 const GREAT_SHARE: f64 = 0.12;
 pub(crate) const GREAT_SIDES: (usize, usize) = (9, 12);
-const GALLERY_SHARE: f64 = 0.3;
 /// How often two blocks side by side that are not next in the chain share a doorway.
 const OTHER_DOORWAY_SHARE: f64 = 0.5;
 
@@ -339,8 +338,8 @@ impl BlockPlan {
     }
 }
 
-/// Every block's plan: its storeys' doorways, its flights and its great rooms; and, one time in GALLERY_SHARE where a
-/// great room stands under another storey, the first of them that fits rising into a gallery.
+/// Every block's plan: its storeys' doorways, its flights and its great rooms; and, where a great room stands under
+/// another storey, the first of them that fits rising into a gallery.
 pub(crate) fn plan_blocks(
     seed: u32,
     squares: &[(usize, usize)],
@@ -358,7 +357,7 @@ pub(crate) fn plan_blocks(
         .collect();
     let lower = |plan: &BlockPlan| plan.storeys.iter().skip(1).any(|storey| storey.great.is_some());
     let mut lane = Lane::named(&format!("gallery:{seed}"));
-    if plans.iter().any(lower) && lane.chance(GALLERY_SHARE) {
+    if plans.iter().any(lower) {
         'blocks: for (number, plan) in plans.iter_mut().enumerate() {
             // The way in's storey keeps its rooms, one of which holds the way in.
             for storey in if number == 0 { 2 } else { 1 }..plan.storeys.len() {
