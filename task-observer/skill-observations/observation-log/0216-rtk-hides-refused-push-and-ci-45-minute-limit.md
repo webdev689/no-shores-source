@@ -33,3 +33,7 @@ proxy's HTTP 403. Caught only because the merge step was followed by an `ls-remo
 barrier, not a sentence: rtk's git filter keeps any `fatal:`/`error:` line and the exit code of `git push`, or
 `git push` is left out of rtk's compaction entirely. Since the first entry, `ci.yml`'s check limit is 75 minutes; #194's
 PR run took 49 minutes and passed.
+
+**Instance (2026-11-26, a read-only auditor of No Shores #211):** rtk's condensed `git log --oneline` dropped merge commits (it said 19 and showed 14); the auditor reran it as `rtk bypass` to count them.
+
+**Instance (2026-11-26, No Shores #211 merged):** the hook rewrote `git push origin --delete ccr-9e470c58-pm6nyz` to `rtk git push ...`; the remote refused it ("the remote end hung up unexpectedly") and rtk still printed "Everything up-to-date". `git ls-remote` showed the branch still there. The merged branch could not be deleted from this session; the owner deletes it from the PR page.
