@@ -22,3 +22,6 @@ CREATE TABLE vaults (
   body TEXT NOT NULL,
   saved_at INTEGER NOT NULL DEFAULT 0
 );
+
+-- A benched character's carried errand, as `characters_errand` indexes the one in play's, so its answer is kept.
+CREATE INDEX benched_errand ON benched (json_extract(CASE WHEN json_valid(body) THEN body END, '$.errand.rid'));

@@ -21,7 +21,7 @@ change any of them.
 | The look | Kept with each character on the accounts, as well as in the browser | Each slot shows its own figure on any browser |
 | Switch character | A held press in Settings beside Exit to Menu, leaving straight for the character screen | Leaving the world is a reload, as Exit to Menu is |
 | A number taken twice | A vaulted item or Vestige joining a character that already holds its number takes a new one; nothing is dropped, however full the vault | Each character numbers its own things; the vault is never lost to a clash |
-| A character kept before the four | Keeps its own vault and Aurem until a room next saves it, which parts them into the account's; one benched before that keeps them until it next plays, then adds them to the account's | Nothing is lost or doubled, and no character is read or rewritten outside a room |
+| A character kept before the four | Keeps its own vault and Aurem until a room next saves it, which parts them into the account's; switched away from or deleted before that, the accounts part them first | Nothing is lost or doubled |
 | The look kept on the accounts | Checked for its shape alone (a body, a race, a tone from 0 to 1, hair or none; at most 512 characters); which races, styles and colours there are is the page's to judge | The page draws them and may add more; the accounts never load the page's figures |
 | A slot with a look and no body | Shows as a character: one made on the screen and never yet played | The figure chosen stands in its slot until it plays |
 | How often | 120 reads and changes an hour an account, as the binds | The screen asks a few times a visit |

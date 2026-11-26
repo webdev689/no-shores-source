@@ -8,6 +8,7 @@
 import type { Db } from './database.ts';
 import { type Developers, isDeveloper } from './developers.ts';
 import { type AccountRow, HEADERS, bodyOf, json, refused } from './http.ts';
+import { countFromJoining } from './guildWeeks.ts';
 import { lastPlaceOf } from './lastPlace.ts';
 
 /** How many characters an account keeps. */
@@ -59,7 +60,7 @@ async function slotsOf(database: Db, bot: Developers | null, account: string) {
   const { slot: playing } = await playingOf(database, account);
   const rows = await database
     .prepare(
-      `SELECT slot, playing, body IS NOT NULL AS kept, look, saved_at, json_extract(b, '$.shown') AS shown,
+      `SELECT slot, playing, body IS NOT NULL AS kept, look, saved_at, CASE json_type(b, '$.shown') WHEN 'object' THEN json_extract(b, '$.shown') END AS shown,
        json_extract(b, '$.allegiance.pledge') AS pledge, json_extract(b, '$.last') AS last,
        json_extract(b, '$.story.prologue') AS prologue
        FROM (SELECT slot, 1 AS playing, body, look, saved_at, CASE WHEN json_valid(body) THEN body END AS b
@@ -126,11 +127,13 @@ export function lookOf(value: unknown): string | null {
 /** Makes `slot` the one in play: the one in play now goes to the bench under its slot (unless it is empty), and the
  *  chosen one comes off it, or a new character for an empty slot. Each statement holds only while nothing changed
  *  under it, so a room that claims it meanwhile changes nothing. */
-function play(database: Db, account: string, from: number, slot: number, now: number) {
-  // ?1 the account, ?2 the slot in play now, ?3 the slot chosen, ?4 now.
+async function play(database: Db, account: string, from: number, slot: number, now: number) {
+  // ?1 the account, ?2 the slot in play now, ?3 now, ?4 the slot chosen. The holder goes, so a room whose hold lapsed
+  // saves nothing over the character chosen.
   const free = 'account_id = ?1 AND slot = ?2 AND (holder IS NULL OR held_until < ?3)';
   const benched = (column: string) => `(SELECT ${column} FROM benched WHERE account_id = ?1 AND slot = ?4)`;
-  return database.batch([
+  await database.batch([
+    ...vaultParted(database, account, now),
     database
       .prepare(
         `INSERT INTO benched (account_id, slot, body, look, room, came_from, saved_at)
@@ -141,8 +144,8 @@ function play(database: Db, account: string, from: number, slot: number, now: nu
     database
       .prepare(
         `UPDATE characters SET slot = ?4, body = ${benched('body')}, look = ${benched('look')},
-         room = ${benched('room')}, came_from = ${benched('came_from')}, saved_at = COALESCE(${benched('saved_at')}, 0)
-         WHERE ${free}`,
+         room = ${benched('room')}, came_from = ${benched('came_from')}, saved_at = COALESCE(${benched('saved_at')}, 0),
+         holder = NULL, held_until = 0 WHERE ${free}`,
       )
       .bind(account, from, now, slot),
     database
@@ -152,6 +155,37 @@ function play(database: Db, account: string, from: number, slot: number, now: nu
       )
       .bind(account, slot),
   ]);
+  // The guild's week counts from the chosen character's own record on, so a switch back credits nothing twice.
+  await countFromJoining(database, account);
+}
+
+/** For a character in play kept before the vault was the account's, with no vault kept apart yet: its vault and Aurem
+ *  parted out into the account's (as `gear::shared` parts them), so switching or deleting it loses nothing. The
+ *  character is stripped only if its vault was made by the first statement now (`saved_at` = -now marks it). */
+function vaultParted(database: Db, account: string, now: number) {
+  const kept = (path: string, filter: string) =>
+    `json((SELECT json_group_array(json(json_extract(value, '$[0]'))) FROM json_each(body, '${path}') WHERE ${filter}))`;
+  const left = (path: string, filter: string) =>
+    `json((SELECT json_group_object(key, json(value)) FROM json_each(body, '${path}') WHERE NOT (${filter})))`;
+  const [items, vestiges] = ["json_extract(value, '$[1]') IS 'Vault'", "json_extract(value, '$[1]') IS 1"];
+  const free = 'account_id = ?1 AND json_valid(body) AND (holder IS NULL OR held_until < ?2)';
+  return [
+    database
+      .prepare(
+        `INSERT INTO vaults (account_id, body, saved_at)
+         SELECT account_id, json_object('items', ${kept('$.items', items)}, 'vestiges', ${kept('$.vestiges', vestiges)},
+           'aurem', COALESCE(json_extract(body, '$.materials.aurem'), 0)), -?2
+         FROM characters WHERE ${free} AND NOT EXISTS (SELECT 1 FROM vaults WHERE account_id = ?1)`,
+      )
+      .bind(account, now),
+    database
+      .prepare(
+        `UPDATE characters SET body = json_set(body, '$.items', ${left('$.items', items)},
+           '$.vestiges', ${left('$.vestiges', vestiges)}, '$.materials.aurem', 0)
+         WHERE ${free} AND EXISTS (SELECT 1 FROM vaults WHERE account_id = ?1 AND saved_at = -?2)`,
+      )
+      .bind(account, now),
+  ];
 }
 
 /** Answers `GET /v1/characters`, `POST /v1/characters/play`, `POST /v1/characters/delete` and
@@ -182,13 +216,15 @@ export async function slotsAsk(
       if (held(playing, now)) return refused(409, STILL_IN_A_ROOM);
       if (route === 'POST /v1/characters/play') await play(database, account.id, playing.slot, slot, now);
       else
-        await database
-          .prepare(
-            `UPDATE characters SET body = NULL, look = NULL, room = NULL, came_from = NULL
-             WHERE account_id = ?1 AND slot = ?2 AND (holder IS NULL OR held_until < ?3)`,
-          )
-          .bind(account.id, slot, now)
-          .run();
+        await database.batch([
+          ...vaultParted(database, account.id, now),
+          database
+            .prepare(
+              `UPDATE characters SET body = NULL, look = NULL, room = NULL, came_from = NULL, holder = NULL,
+               held_until = 0 WHERE account_id = ?1 AND slot = ?2 AND (holder IS NULL OR held_until < ?3)`,
+            )
+            .bind(account.id, slot, now),
+        ]);
     }
   }
   return json(await slotsOf(database, bot, account.id));

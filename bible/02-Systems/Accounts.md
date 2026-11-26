@@ -135,7 +135,9 @@ they play in holds it while they are there.
   write the character and the vault in one batch, the vault only while that holder still holds the character, so a
   room that lost it writes neither. A release with no body (turned away) writes neither. A character kept before the
   vault was the account's still holds its own vault and Aurem; the first save after parts them into the account's
-  row, once, so nothing is lost or doubled.
+  row, once, so nothing is lost or doubled; switched away from or deleted before that, the accounts part them first,
+  as the rules would. A switch also counts the guild's week from the chosen character's own record on, so a switch
+  back gives the guild nothing twice, and the benched characters' errands keep their answers as the one in play's.
 - **One room at a time.** A node's room ([[Server]]) holds each signed-in player's character: the gear crate's
   `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the
   room claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can
@@ -356,7 +358,7 @@ The character screen reads and changes the four by the session's bearer token, 1
   batch. It waits while a room holds the one in play, refused 409 "Your character is still in a room. Try again in a
   moment."; the slot already in play answers as `GET`; a slot outside 0 to 3 is refused 400. Answers as `GET`.
 - **`POST /v1/characters/delete`** with `{ "slot" }` deletes a benched character, or empties the one in play (its slot
-  stays in play; refused 409 while a room holds it). The vault is never touched. Answers as `GET`.
+  stays in play; refused 409 while a room holds it). The vault stays the account's. Answers as `GET`.
 - **`PUT /v1/characters/look`** with `{ "look" }` keeps the look of the one in play: an object of `body`, `race`,
   `tone` and `hair` as the page writes it, at most 512 characters as JSON; anything else is refused 400. Answers 204.
 - **`GET /v1/me`**'s `place` is the character in play's.

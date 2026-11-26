@@ -166,3 +166,47 @@ test('a guest swept goes with its benched characters and its vault', async () =>
     assert.equal(left?.n, 0, table);
   }
 });
+
+test('a room whose hold lapsed saves nothing over the character chosen or emptied after it', async () => {
+  const { slots, kept, token, world, row } = await guest();
+  const claimed = await kept.claim(token, 'node-a:1');
+  assert.ok(claimed);
+  await kept.save(claimed.account, 'node-a:1', '{"xp":1}', '{"aurem":5}');
+  world.clock.now += 61_000;
+  await slots('POST', '/play', { slot: 1 });
+  assert.equal(await kept.save(claimed.account, 'node-a:1', '{"xp":2}', '{"aurem":6}'), false);
+  assert.equal(await kept.release(claimed.account, 'node-a:1', '{"xp":2}', '{"aurem":6}'), false);
+  assert.deepEqual(await row('characters', 1), { body: null, look: null, room: null, came_from: null });
+  assert.equal((await slots()).body.aurem, 5, 'the vault as the room last saved it while it held it');
+});
+
+/** A character kept before the vault was the account's: an item carried (2) and one vaulted (3), a Vestige carried (4)
+ *  and one vaulted (5), and its Aurem. */
+const OLD = JSON.stringify({
+  next_id: 6,
+  items: { 2: [{ id: 2 }, 'Carried'], 3: [{ id: 3 }, 'Vault'] },
+  vestiges: { 4: [{ id: 4 }, false], 5: [{ id: 5 }, true] },
+  materials: { aurem: 700, fragments: 3 },
+});
+
+for (const ask of ['/play', '/delete'])
+  test(`a character kept before the four, switched or deleted before a room saves it, gives the account its vault (${ask})`, async () => {
+    const { slots, world, row } = await guest();
+    await slots();
+    await world.deps.database.prepare('UPDATE characters SET body = ?1').bind(OLD).run();
+    await slots('POST', ask, { slot: ask === '/play' ? 1 : 0 });
+    const vault = await world.deps.database.prepare('SELECT body FROM vaults').first<{ body: string }>();
+    assert.deepEqual(JSON.parse(vault?.body ?? 'null'), { items: [{ id: 3 }], vestiges: [{ id: 5 }], aurem: 700 });
+    assert.equal((await slots()).body.aurem, 700);
+    if (ask === '/play')
+      assert.deepEqual(JSON.parse((await row('benched', 0))?.body ?? 'null'), {
+        next_id: 6,
+        items: { 2: [{ id: 2 }, 'Carried'] },
+        vestiges: { 4: [{ id: 4 }, false] },
+        materials: { aurem: 0, fragments: 3 },
+      });
+    // Asked again, nothing is parted twice.
+    await slots('POST', '/play', { slot: 2 });
+    const again = await world.deps.database.prepare('SELECT body FROM vaults').first<{ body: string }>();
+    assert.equal(again?.body, vault?.body);
+  });

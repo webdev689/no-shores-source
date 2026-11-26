@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import course from '../content/testground/course.json' with { type: 'json' };
+import { handle } from './accounts/accounts.ts';
 import { Keeper } from './keeping.ts';
 import { world } from './keepingForTests.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
@@ -114,4 +115,46 @@ test('a character kept before the vault was the account’s parts its own vault 
   assert.equal(last.vault?.aurem, 1_200);
   assert.equal(last.vault?.items.length, 1);
   assert.equal(last.body?.materials.aurem, 0);
+});
+
+test('a character kept before the four and switched away from before a room saved it plays again whole, nothing doubled', async () => {
+  const { database, clock, kept, token } = await world();
+  const { room, player, kitted } = keptRoom();
+  const [vaulted] = Object.keys(kitted.items);
+  assert.ok(vaulted);
+  const before = {
+    ...kitted,
+    materials: { ...kitted.materials, aurem: 900 },
+    items: { ...kitted.items, [vaulted]: [kitted.items[vaulted]?.[0], 'Vault'] },
+  };
+  const ask = (path: string, slot: number) =>
+    handle(
+      new Request(`https://a.test/v1/characters${path}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ slot }),
+      }),
+      { database, now: () => clock.now, discord: null, pages: [] },
+    );
+  await ask('/play', 0);
+  await database.prepare('UPDATE characters SET body = ?1').bind(JSON.stringify(before)).run();
+  await ask('/play', 1);
+  await ask('/play', 0);
+  const keeper = keeperOf(room, kept);
+  assert.equal(
+    await keeper.signIn(
+      player,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+    'the body parted by the accounts reads as a character',
+  );
+  const joined = JSON.parse(room.character(player) ?? '{}') as Body;
+  assert.equal(joined.materials.aurem, 900);
+  assert.equal(Object.keys(joined.items).length, Object.keys(kitted.items).length, 'every item once');
+  await keeper.leave(player);
+  const last = await rows(database);
+  assert.deepEqual([last.body?.materials.aurem, last.vault?.aurem, last.vault?.items.length], [0, 900, 1]);
 });
