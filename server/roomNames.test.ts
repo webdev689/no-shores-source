@@ -341,7 +341,6 @@ test('the week’s run started from the Playlist is marked `--sea`, and opens as
   assert.ok(!startedAtSea(`node-${door}`), 'one gone into by its door');
   assert.ok(!startedAtSea('sea--run-k3j4h5g6'));
   for (const name of [
-    'saltworm-warrens--sea--run-k3j4h5g6',
     'saltworm-warrens--normal--sea--run-k3j4h5g6',
     'saltworm-warrens--abyss--sea',
     'saltworm-warrens--abyss--dungeon-1--sea--run-k3j4h5g6',
@@ -352,6 +351,31 @@ test('the week’s run started from the Playlist is marked `--sea`, and opens as
   ])
     assert.equal(nodeRoom(name), null, name);
   assert.ok('node-smugglers-labyrinth--abyss--sea--run-zzzzzzzz'.length <= 64);
+});
+
+test('an Elite Dungeon’s run at Normal started at sea is marked `--sea` with no tier, and opens as its door’s does', () => {
+  const [marked, door] = ['krakens-grotto--sea--run-k3j4h5g6', 'krakens-grotto--run-k3j4h5g6'];
+  assert.deepEqual(nodeRoom(marked), nodeRoom(door));
+  assert.deepEqual(JSON.parse(runAsk(`node-${marked}`, 29_919_420) ?? 'null'), {
+    dungeon: { place: 'krakens-grotto' },
+    tier: 0,
+    minute: 29_919_420,
+  });
+  assert.ok(startedAtSea(`node-${marked}`));
+  assert.ok(!startedAtSea(`node-${door}`), 'one gone into by its door');
+  assert.ok(privateRun(`node-${marked}`));
+  assert.equal(nodeRoom('sea--run-k3j4h5g6')?.id, 'sea', 'a node may itself be called `sea`');
+  assert.ok(!startedAtSea('node-sea--run-k3j4h5g6'));
+  for (const name of [
+    'krakens-grotto--sea',
+    'krakens-grotto--sea--elite--run-k3j4h5g6',
+    'krakens-grotto--dungeon-0--sea--run-k3j4h5g6',
+    'krakens-grotto--sea--dungeon-0--run-k3j4h5g6',
+    'krakens-grotto--playlist-12--sea--run-k3j4h5g6',
+    'krakens-grotto--breach-normal--sea--run-k3j4h5g6',
+  ])
+    assert.equal(nodeRoom(name), null, name);
+  assert.ok('node-smugglers-labyrinth--sea--run-zzzzzzzz'.length <= 64);
 });
 
 test('a run holds four, a Breach’s run a company’s most, and only a run is ever full this way', () => {

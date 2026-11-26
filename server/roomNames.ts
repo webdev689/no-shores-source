@@ -13,14 +13,15 @@ const PLAYLIST = /^playlist-([1-9][0-9]?)$/;
 export const BREACH_TIERS = ['normal', 'hard'] as const;
 const BREACH = /^breach-(normal|hard)$/;
 
-/** The mark of the week's Elite Dungeon's run started at sea from the Playlist, before its instance: `--sea`. */
+/** The mark of an Elite Dungeon's run started at sea, before its instance: `--sea`, after the week's tier from the
+ *  Playlist, or after the node's id alone at Normal. */
 const STARTED_AT_SEA = 'sea';
 const SEA_STARTED = /--sea--run-[a-z0-9]{8}$/;
 
 /** A node's room by the name after `node-`: `<id>` at Normal, `<id>--elite` or `<id>--abyss`; a patrol's dungeon's
  *  room with `--dungeon-<number>` after that; and a run with `--run-<instance>` last. A patrol's dungeon is one shared
  *  room at Normal and only a run at Elite or Abyss. A playlist's run of an Elite Dungeon at Elite or Abyss names its
- *  foes' level before its instance, `--playlist-<level>`, and the week's run started from the Playlist `--sea`. A
+ *  foes' level before its instance, `--playlist-<level>`, and an Elite Dungeon's run started at sea `--sea`. A
  *  Breach's run names its gate's patrol zone and its tier before its instance, `--breach-<tier>`. Null for any other
  *  spelling, so no one opens a fresh copy of a shared room to gather or loot again, nor a shared copy of a private run.
  *  A guild's outpost's room is a bare node's with `--guild-<key>` last, and `guild` its key; its guild dungeon's run
@@ -56,7 +57,8 @@ export function nodeRoom(name: string): {
   const breach = tier === undefined ? null : BREACH_TIERS.indexOf(tier as (typeof BREACH_TIERS)[number]);
   const listed = run !== null && parts.length > 2 ? PLAYLIST.exec(parts.at(-1) ?? '')?.[1] : undefined;
   if (listed !== undefined) parts.pop();
-  const atSea = listed === undefined && run !== null && parts.length > 2 && parts.at(-1) === STARTED_AT_SEA;
+  // After the node's id alone: a node may itself be called `sea`.
+  const atSea = listed === undefined && run !== null && parts.length > 1 && parts.at(-1) === STARTED_AT_SEA;
   if (atSea) parts.pop();
   const marked = listed !== undefined || atSea;
   const number = !marked && parts.length > 1 ? DUNGEON.exec(parts.at(-1) ?? '')?.[1] : undefined;
@@ -77,8 +79,9 @@ export function nodeRoom(name: string): {
   };
 }
 
-/** Whether a node's run was started at sea from the Playlist: a playlist's run, or the week's marked `--sea`. Such a
- *  run is entered from the sea and left back to it, never by its dungeon's door, so it carries no one across the sea. */
+/** Whether a node's run was started at sea: a playlist's run, or an Elite Dungeon's marked `--sea` (the week's from
+ *  the Playlist, or one at Normal). Such a run is entered from the sea and left back to it, never by its dungeon's
+ *  door, so it carries no one across the sea. */
 export function startedAtSea(room: string): boolean {
   const named = room.startsWith('node-') ? nodeRoom(room.slice('node-'.length)) : null;
   return named !== null && (named.playlist !== null || SEA_STARTED.test(room));

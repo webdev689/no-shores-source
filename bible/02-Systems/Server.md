@@ -547,9 +547,12 @@ so every decision is Rust and the shell only carries bytes and time.
   Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
   the week's two, and `node-<Elite Dungeon>--elite--playlist-<foes' level>--run-<i>` or `--abyss--` a playlist's run
   (`nodeRoom`'s `playlist`, which `runAsk` hands the room module as the ask's `playlist`; [[Activities]], "The
-  Playlist"). The week's run the Playlist launches is marked `--sea` before its instance
-  (`node-<Elite Dungeon>--abyss--sea--run-<i>`): it opens as the week's run, and `startedAtSea` reads it and a
-  playlist's run as started at sea. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
+  Playlist"). An Elite Dungeon's run started at sea is marked `--sea` before its instance: the week's the Playlist
+  launches (`node-<Elite Dungeon>--abyss--sea--run-<i>`) opens as the week's run, and one at Normal from the island
+  view's panel (`node-<Elite Dungeon>--sea--run-<i>`, no tier before the mark) as the Elite Dungeon's run at Normal.
+  `startedAtSea` reads these and a playlist's run as started at sea; `sea` is never read as a tier, a patrol's dungeon
+  takes no `--sea`, and `--sea` with no run after it is no room. A sea island's dungeon is
+  `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
   Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). A Breach's run names its
   gate's patrol zone and its tier, `node-<zone>--breach-<normal|hard>--run-<i>` (`nodeRoom`'s `breach`), and opens from
   `breachAsk`'s ask; it lets a character in only once its zone's room says its company's gate opened, and holds eight
@@ -627,8 +630,9 @@ so every decision is Rust and the shell only carries bytes and time.
   the page offers it; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
-  from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or the week's marked `--sea`) takes
-  one from the sea alone, as the Playlist beside a port launches it, and never leads out to its node or by its door,
+  from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or an Elite Dungeon's marked `--sea`,
+  the week's or one at Normal) takes one from the sea alone, as the Playlist beside a port or the island view's panel
+  starts it, and never leads out to its node or by its door,
   so no run carries a player across the sea onto an island. A character that came by none of these ways may still join one of its company who plays
   in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is

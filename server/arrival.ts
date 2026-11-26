@@ -77,7 +77,8 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   if (!room.startsWith('node-') || room === from || room === FIRST_ROOM) return true;
   const [to, was] = [nodeOf(room), nodeOf(from)];
   if (!to) return false;
-  // A run started from the Playlist, beside any port, is entered from the sea alone.
+  // A run started at sea (from the Playlist, beside any port, or an Elite Dungeon's at Normal) is entered from the
+  // sea alone.
   if (startedAtSea(room)) return from !== null && seaRoom(from) !== null;
   // A guild dungeon's run is entered from its guild's outpost alone and left back to it, at whatever tier it runs.
   if ((to.guild !== null && inside(to)) || (was !== null && was.guild !== null && inside(was)))
@@ -90,7 +91,7 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
     // Normal) from its node at any, as its tier is its own whatever the seas; out of the node's own dungeon or run at
     // the seas it was gone into at.
     if (inside(to)) return !inside(was) && (was.seas === to.seas || (to.dungeon === null && to.run !== null));
-    // A run started from the Playlist is left back to the sea, never onto its dungeon's island.
+    // A run started at sea is left back to the sea, never onto its dungeon's island.
     if (inside(was)) return was.seas === to.seas && !startedAtSea(from ?? '');
   }
   if (inside(to)) return false;

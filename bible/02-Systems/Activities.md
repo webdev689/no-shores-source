@@ -111,7 +111,9 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 - **Its encounters**: two or three seals in rooms along its walk (the Litany, the Weighing, the Ascent, the Holdfast),
   its Boss standing only once every seal is broken, and a Court of wards, anchors, the Reckoning and Fury round it
   ([[Dungeons]], "Encounters").
-- **Its node** keeps its open-air approach and gains the entrance.
+- **Its node** keeps its open-air approach and gains the entrance. A run at Normal may also be started at sea, from
+  the island view's panel: named `--sea` ([[Server]], "Runs"), it is gone into from the sea alone and left back to it,
+  never by the entrance ([[Server]], "Where a character comes from").
 - **For four players**, matched together ([[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]).
 
 ## Runs and companies
@@ -128,7 +130,8 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
   room keeps their character, a player's inputs are taken in their order and stand still (`Room::hold`). It is forgotten
   a minute after its last player leaves.
 - **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band (tens of
-  levels, from the level their room last kept), from the entrance's card, and for each playlist by its own bands
+  levels, from the level their room last kept), from the entrance's card (one at Normal also from the sea, its run
+  marked `--sea`), and for each playlist by its own bands
   from the Playlist ("The Playlist"). A run starts with four, or with fewer after
   a minute's wait, never with two where one blocks the other, and those found go into it together ([[Accounts]],
   "Find a Company"). A group found is no company: it shares that one run alone.

@@ -36,11 +36,11 @@ export const FINDING_MOST = 64;
 const ANOTHER_TAB = 'You are finding a company in another tab.';
 /** The longest base a run is found for, so its run's name (`--run-` and eight more) fits a room's 64. */
 const BASE_MOST = 50;
-/** An Elite Dungeon's base at Normal, the week's at Elite (`--sea` after it from the Playlist, whose run is started
- *  at sea), a Breach's at its tier (`node-<its gate's zone>--breach-<tier>`), or a playlist's, as Find a Company is
- *  asked for it by WebSocket. */
+/** An Elite Dungeon's base at Normal, the week's at Elite (either with `--sea` after it for a run started at sea), a
+ *  Breach's at its tier (`node-<its gate's zone>--breach-<tier>`), or a playlist's, as Find a Company is asked for it
+ *  by WebSocket. */
 const FINDING =
-  /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite(?:--sea)?|--breach-(?:normal|hard))?|playlist-(?:elite|abyss))$/;
+  /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--sea|--elite(?:--sea)?|--breach-(?:normal|hard))?|playlist-(?:elite|abyss))$/;
 /** A Breach's base, and the level each of its tiers opens at (`gear::breach::Tier::opens_at`), in the gate's words. */
 const BREACH_BASE = /--breach-(normal|hard)$/;
 export const BREACH_OPENS = { normal: 25, hard: 29 } as const;
@@ -65,9 +65,9 @@ export function bandOf(level: number): number {
 }
 
 /** The run's base a Find a Company request is for, `/v1/find/<base>` by WebSocket: an Elite Dungeon at Normal
- *  (`node-<id>`), the week's at Elite (`node-<id>--elite`, or `node-<id>--elite--sea` from the Playlist) or a playlist (`playlist-elite`, `playlist-abyss`), short
- *  enough that its run's name fits 64; never the Abyss Dungeon of the week, a patrol's dungeon or a run. Null for any
- *  other request. */
+ *  (`node-<id>`, or `node-<id>--sea` started at sea), the week's at Elite (`node-<id>--elite`, or
+ *  `node-<id>--elite--sea` from the Playlist) or a playlist (`playlist-elite`, `playlist-abyss`), short enough that its
+ *  run's name fits 64; never the Abyss Dungeon of the week, a patrol's dungeon or a run. Null for any other request. */
 export function findingAt(request: Request): string | null {
   if (request.headers.get('Upgrade') !== 'websocket') return null;
   const base = FINDING.exec(new URL(request.url).pathname)?.[1];
