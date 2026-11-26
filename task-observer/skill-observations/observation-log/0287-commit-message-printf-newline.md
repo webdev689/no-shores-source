@@ -1,5 +1,5 @@
 ---
-id: 282
+id: 287
 title: "A commit message built inline with $(printf '\\n') lost its blank line twice in one session; one went out on a shared branch"
 status: open
 type: open-source
