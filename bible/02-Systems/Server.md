@@ -288,6 +288,11 @@ will take it, by the room's own tick.
 
 - Each tick, each ship sails its pace's distance along its course, turning onto each leg as it comes to it, and comes
   to rest at the course's end. Its heading is the bearing of the leg it sails, clockwise from north.
+- **Locked seas.** A course is refused whole when any of its points lies in a locked sea, the sea of an island not
+  yet named (`world::islands`, from `content/world/islands.json`, which the server opens the sea with as the
+  request's `islands`; a sea opened without them locks nothing), and a ship about to cross into one stops at its edge; a ship
+  the sea kept in one comes back at Overlook's roadstead, and no ship washes up, puts in or is repaired at a port in
+  one ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
 - A course is refused whole when any point lies on a continent, or any leg, from where the ship is on, crosses or
   touches a continent's coast in the layout ([[World Map]]). The coasts are judged in whole metres, in integer
   arithmetic. A pace neither one of the steps nor 1, a point outside the world's frame, and a course of more than 64
@@ -650,7 +655,7 @@ so every decision is Rust and the shell only carries bytes and time.
   where a new character first stands, takes anyone. Any other node's room takes a character that rejoins it; that
   lands from the sea at the room's seas (a social space's from any), the ship the sea kept in it (`ship_at`) lying
   within the landfall's 30 km of the node's island's coast, and 2 km more, since the ship heaves to a moment after
-  the page offers it; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
+  the page offers it, but never on an island not yet named, whose sea is locked ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]); that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
   from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or the week's marked `--sea`) takes

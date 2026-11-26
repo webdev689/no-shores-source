@@ -165,7 +165,9 @@ Friendly ships sail between the port cities all the time, seen from land and sea
 The numbers are Claude's, under the owner's "Friendly ships should dynamically travel. Visible on land and sea".
 
 - **Main ports.** Three port cities remain: Overlook in home waters, Sunspire and Rimeholt in the Grey Tithe's
-  ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). `ports.rs` holds the list
+  ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). Sunspire's and Rimeholt's seas are locked
+  until their islands are named; the merchants still sail the lanes to them
+  ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]). `ports.rs` holds the list
   (`MAIN_PORTS`, `is_main_port`) for the traffic, the city crate and the page; the other six cities are no ports.
 - **Ports.** The caller passes in the cities (the crate reads no files); the traffic keeps those that are port cities,
   on a continent the layout holds, with a roadstead clear inside the frame, in the order given.

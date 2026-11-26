@@ -424,6 +424,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]
 - [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
 - [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]
+- [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]
 
 ## Replaced
 

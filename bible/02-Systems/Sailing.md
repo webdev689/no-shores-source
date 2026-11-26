@@ -320,7 +320,8 @@ the player elsewhere (the company's Go to them waits); a travel left behind any 
    again; a room joined since, or the same link joined again (which drops what it was sent), is asked again, once it
    has the ship at sea (a tier's room just joined puts it there when its keeper has answered); one that gives no
    answer within 13 s of the yes, or whose room never shows the ship, is given up; one that would leave the ship where
-   it lies (none the map asks) is refused, and courses are sent again. A yes in a fight
+   it lies (none the map asks) is refused, and one into a locked sea ("That sea is locked.",
+   [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]), and courses are sent again. A yes in a fight
    sails the course as Set sail does.
 2. Black for at least 0.5 s, and longer until the room has answered, no continent near the ship's new place is
    still to open (`Charting.waiting`), and frames drawn since the answer have shown the new waters whole (nothing

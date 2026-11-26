@@ -28,7 +28,7 @@ import {
 import { behindDoor, type HeldIsland, openIsland } from './seaIsland.ts';
 import { TestRun } from './testRuns.ts';
 import { present } from './presence.ts';
-import { SEA_PORTS } from './seaPorts.ts';
+import { SEA_REQUEST } from './seaPorts.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 import { healthAnswer } from './health.ts';
 
@@ -298,11 +298,7 @@ export class RoomHost extends DurableObject<Env> {
     // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept it.
     if (seas !== null)
       return (
-        this.room.openSea(
-          JSON.stringify({ layout, ports: SEA_PORTS }),
-          crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
-          Date.now() / 1000,
-        ) &&
+        this.room.openSea(SEA_REQUEST, crypto.getRandomValues(new Uint32Array(1))[0] ?? 0, Date.now() / 1000) &&
         this.room.reseed(seeds) &&
         this.room.difficulty(seas) &&
         this.room.keepCharacters()

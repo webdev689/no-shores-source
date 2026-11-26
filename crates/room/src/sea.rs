@@ -62,6 +62,8 @@ pub enum CourseRefused {
     Fighting,
     /// A course while the player is off the helm: the ship's helmsman keeps the one it has.
     OffTheHelm,
+    /// A point in a locked sea, the sea of an island not yet named.
+    Locked,
 }
 
 /// Why leaving or taking the helm was refused.
@@ -278,6 +280,9 @@ impl Sea {
             Some(ship) => whole(&ports::in_frame([ship.x, ship.y])).ok_or(CourseRefused::BadCourse)?,
             None => self.puts_in(player, whole_points[0]).ok_or(CourseRefused::BadCourse)?,
         };
+        if whole_points.iter().any(|point| self.chart.locked([point.x as f64, point.y as f64])) {
+            return Err(CourseRefused::Locked);
+        }
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
         let path: Vec<Point> = legs.collect();
         if self.crosses_land(player, &path) {
@@ -379,6 +384,10 @@ impl Sea {
             // Its way is its pace's by the canvas it keeps, never under half, and its hull's class.
             let way = berth.kept[1].max(0.5) * class.way;
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
+            // No ship sails into a locked sea: one about to cross into it stops at its edge.
+            if self.chart.locked([sailing.ship.x, sailing.ship.y]) && !self.chart.locked([ship.x, ship.y]) {
+                (sailing.ship, sailing.course) = (Ship { pace: 0, rate: 0, ..ship }, VecDeque::new());
+            }
         }
         self.tick_harbour();
         self.give_guilds();
@@ -567,6 +576,8 @@ pub mod islands;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;
+#[path = "sea_locked.rs"]
+mod locked;
 #[path = "sea_ports.rs"]
 mod ports;
 #[path = "sea_puts_in.rs"]
@@ -577,6 +588,9 @@ pub mod travel;
 #[cfg(test)]
 #[path = "sea_home_tests.rs"]
 mod sea_home_tests;
+#[cfg(test)]
+#[path = "sea_locked_tests.rs"]
+mod sea_locked_tests;
 #[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;

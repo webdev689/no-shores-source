@@ -11,6 +11,7 @@ import {
   type WatersTable,
 } from '../rules/watersRules.ts';
 import type { Point2 } from '../overworld/ground.ts';
+import { ISLANDS } from './hudLaw.ts';
 import { waterNamer, type WaterNamed } from './seaHostiles.ts';
 import { type PortCity, portCities, portsOf, type WorldData } from './worldData.ts';
 
@@ -44,19 +45,50 @@ export function watersOnce(module: Promise<WebAssembly.Module>, world: WorldData
     .then((compiled) => openWaters(compiled, world));
 }
 
+/** The locked seas, those of the islands not yet named (`ISLANDS`), which no voyage is planned into: whether a point
+ *  lies in one by the waters' exact rule, the room's own, for a course's end; and by the grid of 4.8 km cells, cheap
+ *  enough for every cell of a route's mask, for a route's way there. */
+export interface SeaLock {
+  at(point: Point2): boolean;
+  cell(x: number, y: number): boolean;
+}
+
+/** No sea locked: before the waters are open. */
+export const NO_LOCK: SeaLock = { at: () => false, cell: () => false };
+
+/** The locked seas of the opened waters, the islands named by `names`. */
+export function seaLockOf(open: OpenWaters, names: Readonly<Record<string, string>> = ISLANDS): SeaLock {
+  const locked = open.table.waters.map((water) => !Object.hasOwn(names, water.id));
+  const { columns, rows, cellM, water } = open.map;
+  return {
+    at: (point) => {
+      const here = open.rules.waterAt(point);
+      return here !== null && (locked[here.continent] ?? false);
+    },
+    cell: (x, y) => {
+      const [column, row] = [Math.floor(x / cellM), Math.floor(y / cellM)];
+      if (column < 0 || row < 0 || column >= columns || row >= rows) return false;
+      return locked[water[row * columns + column] ?? -1] ?? false;
+    },
+  };
+}
+
+/** The sea's facts as the page gives them: its rules', and the locked seas. */
+export type PageSeaFacts = SeaFacts & { readonly locked: SeaLock };
+
 /** What the sea reads of the page's waters: the water at a point, named, the port cities, in the sea's order, and the
- *  sea's facts its rules give. */
+ *  sea's facts its rules give, with the locked seas. */
 export function seaWatersOf(
   open: OpenWaters,
   world: WorldData,
 ): {
   readonly waterAt: (point: Point2) => WaterNamed | null;
   readonly ports: readonly PortCity[];
-  readonly facts: SeaFacts;
+  readonly facts: PageSeaFacts;
 } {
   return {
     waterAt: waterNamer(open.rules, open.table),
     ports: portCities(portsOf(world.cities), open.table.mainPorts),
-    facts: open.table.sea,
+    facts: { ...open.table.sea, locked: seaLockOf(open) },
   };
 }

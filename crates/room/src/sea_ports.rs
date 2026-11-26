@@ -392,6 +392,7 @@ impl Sea {
         }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
+        let at = at.and_then(|at| self.open_at(at));
         let start = self.harbour.harbours.starting();
         let at = at.or(start);
         if at.is_some() && self.fights.fighting(player) {

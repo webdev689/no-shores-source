@@ -4,7 +4,7 @@ import { TRAVEL_FADE } from '../cinema/travelFade.ts';
 import type { Passage } from './passage.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Sea } from './sea.ts';
-import { deckHeard, sailOrTravel, SeaTravel } from './seaTravel.ts';
+import { deckHeard, sailOrTravel, SeaTravel, travelRefusal } from './seaTravel.ts';
 import { frameDrawn, WHOLE_FRAMES } from '../standIns.ts';
 
 /** A travel for a point east, its passage and room standing in: what the passage was asked, and the room's answer
@@ -260,4 +260,13 @@ test('the deck is heard close at the helm, aboard, and while a travel holds the 
     ].map(deckHeard),
     [true, true, true, false, false],
   );
+});
+
+test('the room’s refusals of a travel are said in plain words, a locked sea’s among them', () => {
+  assert.deepEqual([3, 5, 8, 7].map(travelRefusal), [
+    'No travel with a hostile ship giving chase.',
+    'The way there crosses land.',
+    'That sea is locked.',
+    'The sea would not take that course.',
+  ]);
 });

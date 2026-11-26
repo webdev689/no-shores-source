@@ -89,7 +89,9 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Locked seas.** Every other island's sea, and its land, is darkened toward the ink by up to 0.42, softly at its
   edge (`shutCells` on the waters' grid, the land by its outline and its coast's island), and a padlock stands out at
   its label point, while it stands whole inside the map: the lock in the ink on a disc of the parchment ringed in the
-  ink (`paintLock`). A lock is never dropped for a name, and names keep clear of it.
+  ink (`paintLock`). A lock is never dropped for a name, and names keep clear of it. A locked sea is not sailed or
+  travelled into: a course whose end lies in one is refused ("That sea is locked."), and the route planner keeps a
+  4.8 km cell clear of every one (`SeaLock`, `lockedOut`; [[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]).
 - **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
   holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
   its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's

@@ -18,6 +18,8 @@ pub struct Charted {
     lanes: Vec<[[f64; 2]; 2]>,
     pub(crate) sailed: Vec<[[f64; 2]; 2]>,
     pub traffic: Option<Traffic>,
+    /// Whether each continent's sea is locked, by its index; none is with none listed.
+    locked: Vec<bool>,
 }
 
 impl Charted {
@@ -34,7 +36,7 @@ impl Charted {
         let lanes: Vec<_> = routes().flat_map(|route| route.path.windows(2)).map(leg).collect();
         let ways = routes().flat_map(|route| route.ways.iter()).flat_map(|way| way.path.windows(2)).map(leg);
         let sailed = lanes.iter().copied().chain(ways).collect();
-        Charted { waters, ids, bands, lanes, sailed, traffic }
+        Charted { waters, ids, bands, lanes, sailed, traffic, locked: Vec::new() }
     }
 
     /// How far a point of sea lies from the nearest coast, metres; 0 on land.
@@ -54,6 +56,18 @@ impl Charted {
     #[must_use]
     pub fn home(&self, at: [f64; 2]) -> bool {
         self.water(at).is_some_and(|(water, _)| water.holder == Holder::Home)
+    }
+
+    /// Locks the sea of every island `named` does not name.
+    pub fn lock(&mut self, named: impl Fn(&str) -> bool) {
+        self.locked = self.ids.iter().map(|id| !named(id)).collect();
+    }
+
+    /// Whether a point of sea lies in a locked sea, which no ship sails or travels into; none on land.
+    #[must_use]
+    pub fn locked(&self, at: [f64; 2]) -> bool {
+        !self.locked.is_empty()
+            && self.waters.water_at(at).is_some_and(|water| self.locked.get(water.continent).copied().unwrap_or(false))
     }
 
     /// The id of the continent whose water a point of sea lies in, as the bounties name a water; none on land.

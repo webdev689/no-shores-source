@@ -25,7 +25,7 @@ const COAST: [number, number][] = [
   [1_100_000, 1_100_000],
   [1_000_000, 1_100_000],
 ];
-const reach = (gatedFrom: string[] = [], social = false): Reach => ({ social, coast: COAST, gatedFrom });
+const reach = (gatedFrom: string[] = [], social = false): Reach => ({ social, coast: COAST, gatedFrom, locked: false });
 const [OFF_COAST, FAR_OFF]: [number, number][] = [
   [1_050_000, 1_120_000],
   [1_050_000, 1_200_000],
@@ -45,6 +45,7 @@ test('a node is landed at from the sea at its seas, its ship lying off the node�
   assert.equal(arrives('node-tidewall--elite', 'sea--elite', OFF_COAST, reach()), true);
   assert.equal(arrives('node-tidewall', 'sea', FAR_OFF, reach()), false, 'a voyage skipped');
   assert.equal(arrives('node-tidewall', 'sea', null, reach()), false, 'no ship the sea kept');
+  assert.equal(arrives('node-tidewall', 'sea', OFF_COAST, { ...reach(), locked: true }), false, 'an island not named');
   assert.equal(arrives('node-tidewall', 'sea--abyss', OFF_COAST, reach()), false, 'at another tier');
   assert.equal(arrives('node-tidewall--abyss', 'sea', OFF_COAST, reach()), false);
   assert.equal(arrives('node-tidewall', 'node-saltgrass-downs', OFF_COAST, reach()), false, 'not from the sea');
@@ -141,7 +142,14 @@ test('a node’s reach reads from the bake’s index, and a ship’s place from 
     social: false,
     coast: COAST,
     gatedFrom: ['gullwing-vale'],
+    locked: false,
   });
+  const sunspire = reachOf(
+    [{ id: 'sunspire-social', kind: 'social', continent: 'continent-4' }],
+    continents,
+    'sunspire-social',
+  );
+  assert.equal(sunspire?.locked, true, 'an island not yet named has its sea locked');
   assert.equal(reachOf(index, continents, 'overlook-social')?.social, true);
   assert.equal(
     reachOf([{ id: 'gull-cove', kind: 'outpost', continent: 'continent-1' }], continents, 'gull-cove')?.social,

@@ -285,7 +285,7 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
 fn a_player_washes_up_at_a_found_island_nearer_than_any_port_unrepaired() {
     let mut sea = sea_round("continent-4", "desert");
     let player = at_rest(&mut sea);
-    sea.harbour.harbours = Harbours { ports: vec![("far".into(), [5_000.0, 5_000.0])], ways: None };
+    sea.harbour.harbours = Harbours { ports: vec![("far".into(), [5_000.0, 5_000.0])], ways: None, locked: Vec::new() };
     while sea.islands().standing.is_empty() {
         sea.tick();
     }

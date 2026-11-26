@@ -708,3 +708,22 @@ fn a_browser_foresees_whom_its_swing_hits_as_the_room_judges_them() {
     assert!(foreseen(facing_back).is_empty(), "a guard facing the blow blocks it: no hit foreseen");
     assert!(foreseen(foe_at(-6.0, combat::Action::Idle)).is_empty(), "out of reach");
 }
+
+#[test]
+fn a_sea_opened_with_the_islands_names_locks_the_sea_of_every_island_not_named() {
+    let layout = r#"{ "continents": [
+        { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+        { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
+    ], "isles": [] }"#;
+    let text = format!(r#"{{ "layout": {layout}, "ports": [], "islands": {{ "continent-1": "Saltmere" }} }}"#);
+    assert!(open_sea(text.as_bytes(), 7));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[250_000.0, 150_000.0]], 10)), TAKEN);
+    for _ in 0..room::sea::COURSE_EVERY_TICKS {
+        room_tick();
+    }
+    assert_eq!(input(player, &protocol::course_bytes(&[[350_000.0, 150_000.0]], 10)), REFUSED, "the fourth's sea");
+    assert!(open_sea(layout.as_bytes(), 7), "a layout alone locks nothing");
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[350_000.0, 150_000.0]], 10)), TAKEN);
+}

@@ -27,7 +27,7 @@ pub enum TravelRefused {
 
 impl TravelRefused {
     /// The number the page is told: 1 fighting, 2 off the helm, 3 chased, 5 across land, 6 too soon, 7 any other
-    /// course refused; 4 is not used.
+    /// course refused, 8 into a locked sea; 4 is not used.
     #[must_use]
     pub fn number(self) -> f64 {
         match self {
@@ -36,6 +36,7 @@ impl TravelRefused {
             TravelRefused::Chased => 3.0,
             TravelRefused::Course(CourseRefused::CrossesLand) => 5.0,
             TravelRefused::Course(CourseRefused::TooSoon) => 6.0,
+            TravelRefused::Course(CourseRefused::Locked) => 8.0,
             TravelRefused::Course(_) => 7.0,
         }
     }
@@ -94,14 +95,18 @@ impl Sea {
 }
 
 impl Sea {
-    /// Why a travel by `points` from `ship` is refused where it goes: one that would leave the ship where it lies; or
-    /// its last leg, in waters the player was never told of, across a standing island or ending the ship on one.
+    /// Why a travel by `points` from `ship` is refused where it goes: one that would leave the ship where it lies, or
+    /// lay it in a locked sea; or its last leg, in waters the player was never told of, across a standing island or
+    /// ending the ship on one.
     fn refused_where(&self, points: &[[f64; 2]], ship: super::Ship) -> Option<TravelRefused> {
         let [start, end] = last_leg(points, [ship.x, ship.y])?;
         let (placed, _) = placed_on(start, end);
         let (east, south) = (placed[0] - ship.x, placed[1] - ship.y);
         if east * east + south * south < 1.0 {
             return Some(TravelRefused::Course(CourseRefused::BadCourse));
+        }
+        if self.chart.locked(placed) || self.chart.locked(end) {
+            return Some(TravelRefused::Course(CourseRefused::Locked));
         }
         let islands: Vec<&Coast> = self.islands.coasts().collect();
         let whole = |at: [f64; 2]| super::whole(&at);

@@ -18,7 +18,7 @@ import { lookOf, panShot, type Shot } from './camera.ts';
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
-import type { SeaFacts } from '../rules/watersRules.ts';
+import type { PageSeaFacts } from './pageWaters.ts';
 import { SKY_NOW } from '../sky/skyDriver.ts';
 import type { Lying } from '../ships/deck.ts';
 import { Aboard } from './aboard.ts';
@@ -71,10 +71,10 @@ export class Sea {
   /** The water at a point, once the page has opened the waters; and what the voyage's line says of them. */
   waterAt: ((point: Point2) => WaterNamed | null) | null = null;
 
-  /** The sea's rules as its waters' table gives them: the reaches the chase meets it within and the voyage is held
-   *  within. */
-  set facts(facts: SeaFacts) {
-    [this.chase.metM, this.passage.holdReachM] = [facts.engageM, facts.holdReachM];
+  /** The sea's rules as the waters give them: the reaches the chase meets it within and the voyage is held within,
+   *  and the locked seas no voyage is planned into. */
+  set facts(facts: PageSeaFacts) {
+    [this.chase.metM, this.passage.holdReachM, this.passage.locked] = [facts.engageM, facts.holdReachM, facts.locked];
   }
   private readonly watch = new SeaWatch();
   private readonly chase = new Chase({ tell: (ship) => this.room?.chase(ship), speed: () => this.passage.speed });

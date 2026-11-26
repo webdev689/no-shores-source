@@ -6,7 +6,7 @@ import { courseBytes, faceBytes } from '../network/courseMessages.ts';
 import type { SeenShip } from '../network/messages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import type { Point2 } from '../overworld/ground.ts';
-import { maskFromOutlines } from '../overworld/seaRoute.ts';
+import { maskFromOutlines, type SeaMask } from '../overworld/seaRoute.ts';
 import { Passage } from './passage.ts';
 import { AHEAD, HELM_TURN } from './seaHelm.ts';
 import type { SeaRoom } from './seaRoom.ts';
@@ -234,4 +234,28 @@ test('a pace step the room refused is asked again once its word comes, until the
   asked.length = 0;
   passage.advance(0.05, true);
   assert.deepEqual(asked, [], 'once they agree, nothing more is sent');
+});
+
+/** Open water 100 km by 20 km in 2 km cells; the sea east of 60 km locked. */
+const OPEN_WIDTH = 50;
+const OPEN_HEIGHT = 10;
+const openWater: SeaMask = {
+  width: OPEN_WIDTH,
+  height: OPEN_HEIGHT,
+  leftM: 0,
+  topM: 0,
+  cellM: 2_000,
+  land: new Uint8Array(OPEN_WIDTH * OPEN_HEIGHT),
+  coastM: new Float32Array(OPEN_WIDTH * OPEN_HEIGHT).fill(1e9),
+};
+const eastLocked = { at: ([x]: readonly [number, number]) => x >= 60_000, cell: (x: number) => x >= 60_000 };
+
+test('a course into a locked sea is refused, and one in the open sea keeps out of it and off its edge', () => {
+  const passage = new Passage([], () => openWater, [10_000, 10_000], 0);
+  passage.locked = eastLocked;
+  assert.deepEqual(passage.planTo([70_000, 10_000]), { ok: false, why: 'That sea is locked.' });
+  const course = passage.planTo([54_000, 10_000]);
+  assert.ok(course.ok && course.points.every(([x]) => x < 60_000), 'within the open sea');
+  passage.sailTo([70_000, 10_000]);
+  assert.equal(passage.sailing, false, 'nor set sail for');
 });
