@@ -119,5 +119,31 @@ test('while a quest is offered its card leads and the wares stand beside it, in 
   const ware = first ? ui.boxOf(`npc-${first.key}`) : null;
   assert.ok(card && ware, 'Acquire and a ware are laid');
   assert.ok(ware.y + ware.height <= 720, `the first ware is in sight (${ware.y + ware.height} px of 720)`);
-  assert.ok(ware.x > card.x, 'beside the card, at its right');
+  assert.ok(ware.x >= card.x + card.width, 'beside the card, right of its Acquire at its right edge');
+});
+
+test("an acquired quest's tile keeps the focus from being lost when it is done, and its card shuts for the next", () => {
+  const { ui, frame, regear } = screenOf('weaponsmith', { ...QUEST, counts: [1], offered: 0 });
+  const tile = ui.boxOf('npc-quest');
+  assert.ok(tile);
+  const [x, y] = [tile.x + tile.width / 2, tile.y + tile.height / 2];
+  frame([
+    { kind: 'pointer', x, y },
+    { kind: 'down', x, y, button: 0 },
+    { kind: 'up', x, y, button: 0 },
+  ]);
+  frame();
+  assert.ok(ui.boxOf('npc-quest-card'), 'opened');
+  ui.focusOn('npc-quest');
+  // The opening done: the player walks a house's road, which she does not offer.
+  const ROAD = QUESTS.findIndex((quest) => quest.id === 'lamplighters') + 1;
+  regear({ quest: { ...QUEST, quest: ROAD, task: 0, counts: [] } });
+  frame();
+  frame();
+  assert.equal(ui.boxOf('npc-quest'), null, 'the tile gone with its quest');
+  assert.ok(ui.focusedId?.startsWith('npc-'), `the focus on a ware beside it, not lost (${ui.focusedId})`);
+  regear({ quest: { ...QUEST, counts: [1], offered: 0 } });
+  frame();
+  frame();
+  assert.equal(ui.boxOf('npc-quest-card'), null, 'a quest acquired again shows as its tile, its card shut');
 });

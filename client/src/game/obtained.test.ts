@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Node } from '../ui/node.ts';
-import { NOTICE_FILL, NOTICE_S, Obtained, WITH_KEY_S, noticeNode } from './obtained.ts';
+import { laidOf, wordsIn } from '../ui/uiForTests.ts';
+import { LINE_INK, NOTICE_FILL, NOTICE_S, Obtained, WITH_KEY_S, noticeNode } from './obtained.ts';
 
 const notice = (title: string, more = {}) => ({ title, line: `${title}, given`, icon: null, ...more });
 
@@ -74,9 +75,24 @@ test("the notice's band is a translucent grey the screen shows through, its word
     [128, 128, 128],
   ]) {
     const ground = blend([red, green, blue], alpha, under);
-    // The line, the dimmer of its words: the menu's word ink at 0.86 over the band.
-    const line = blend([239, 232, 214], 0.86, ground);
+    // The line, and the key and what it opens at the right, the dimmest of its words.
+    const [lineRed = 0, lineGreen = 0, lineBlue = 0, lineAlpha = 1] = (LINE_INK.match(/[\d.]+/g) ?? []).map(Number);
+    const line = blend([lineRed, lineGreen, lineBlue], lineAlpha, ground);
     const ratio = (luminance(line) + 0.05) / (luminance(ground) + 0.05);
     assert.ok(ratio >= 4.5, `the line reads at 4.5:1 over ${under.join(',')} (${ratio.toFixed(2)}:1)`);
   }
+});
+
+test("on a phone a notice's long line wraps inside the view, none of it cut off at the right", () => {
+  const view = { width: 412, height: 915 };
+  const lines = [
+    notice('Quest acquired', { line: 'A House of Your Own. Follow its steps in the tracker.' }),
+    notice('Your horse', { key: 'mount', line: 'Press {key} to call your horse wherever you stand.', opens: 'Mount' }),
+  ];
+  for (const one of lines)
+    for (const laid of laidOf(noticeNode(one, view, 1), view.width, view.height).filter((each) => each.node.text))
+      assert.ok(
+        laid.box.x + laid.box.width <= view.width,
+        `${wordsIn(laid.node)} ends at ${laid.box.x + laid.box.width}`,
+      );
 });

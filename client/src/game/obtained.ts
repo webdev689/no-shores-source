@@ -22,6 +22,8 @@ const CYAN = '#4fd8f0';
 /** The band's ground: the reference's translucent grey, the screen showing through it, dark enough that its line still
  *  reads at 4.5:1 over white. */
 export const NOTICE_FILL = 'rgba(24,28,34,0.72)';
+/** The ink of a notice's line and of the key and what it opens at the right: the menu's word ink at 0.86. */
+export const LINE_INK = 'rgba(239,232,214,0.86)';
 /** Over every window and card the game lays, under the pad's cursor alone (`padCursor.ts`). */
 const NOTICE_Z = 900;
 /** The most notices kept waiting: past it the oldest waiting goes, so a flood never stands for minutes. */
@@ -129,8 +131,10 @@ function iconNode(notice: Notice, size: number): Node {
 
 /** The line, its key on a keycap where `{key}` stands. */
 function lineNode(notice: Notice, size: number): Node {
-  const colour = 'rgba(239,232,214,0.86)';
-  const [before, after] = notice.key === undefined ? [notice.line, null] : notice.line.split('{key}');
+  const colour = LINE_INK;
+  // Without a key, one text the column's width, so a long line wraps inside a phone's view instead of running off it.
+  if (notice.key === undefined) return { width: 'grow', text: { words: notice.line, size, colour } };
+  const [before, after] = notice.line.split('{key}');
   return {
     gap: 6,
     alignY: 'center',
@@ -160,8 +164,8 @@ export function noticeNode(
           float: { to: 'parent', at: [1, 1], anchor: [1, 1], x: -40, y: -22 },
           gap: 8,
           alignY: 'center',
-          opacity: 0.5,
-          children: [keycap(boundKey(notice.key), 1), words(notice.opens, 2, INK.faint)],
+          // The line's ink, not a dimmer one: over a white scene through the translucent band a dimmer reads under 4.5:1.
+          children: [keycap(boundKey(notice.key), 2), words(notice.opens, 2, LINE_INK)],
         }
       : null;
   return {

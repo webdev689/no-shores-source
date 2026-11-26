@@ -270,6 +270,8 @@ function offerNode(
   const text = sizes.label;
   const offered = offeredAt(gear.quest, kind);
   offerWaiting = offered !== null && !offered.acquired;
+  // A card opened by the tile shuts with its quest, so the next one acquired here shows as a tile.
+  if (!offered?.acquired) questOpen = false;
   if (!offered || !gear.quest) return { rows: body, tile: null };
   const column = COUNTERS[kind];
   // Asked once until the room answers, as a ware is bought once.
@@ -287,7 +289,8 @@ function offerNode(
   }
   const tile = questTileNode(offered.quest, offered.offer, text > 1 ? 104 : 76);
   const gap = text > 1 ? 28 : 18;
-  if (narrow)
+  // Pages laid for the column's whole width (the vault's, the mail's, the Harbourmaster's) stand under the card.
+  if (narrow || kind === 'vault' || kind === 'mail' || kind === 'harbourmaster')
     return {
       tile: null,
       rows: [
@@ -344,8 +347,7 @@ function acquiredTile(context: MenuContext, offered: NonNullable<ReturnType<type
       {
         children: [
           questTileNode(offered.quest, offered.offer, size),
-          ui.focused(QUEST_TILE) &&
-            ui.keyFocused && { ...focusRing(size, size), float: { to: 'parent', x: -4, y: -4 } },
+          ui.focused(QUEST_TILE) && ui.keyFocused && focusRing(size, size),
         ],
       },
       {
@@ -454,8 +456,10 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
         : rowsNode(context, rows, look, act, open);
   // The focus on a ware or a letter gone (bought, taken, or its row closed) goes to the one beside it; on Acquire,
   // a row of its own over them while a quest waits, to the first under it once acquired.
+  const offered = offeredAt(gear.quest, kind);
   const presses = [
-    ...(offeredAt(gear.quest, kind)?.acquired === false ? [[ACQUIRE]] : []),
+    // Acquire over the wares while a quest waits; once acquired its tile, so a focus on it is not lost when it is done.
+    ...(offered ? [[offered.acquired ? QUEST_TILE : ACQUIRE]] : []),
     ...(kind === 'mail' ? letterPresses(gear) : rows.map((row) => row.wares.map((ware) => `npc-${ware.key}`))),
   ];
   const focused = ui.focusedId;
