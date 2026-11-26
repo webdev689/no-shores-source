@@ -43,7 +43,7 @@ export interface IslandEntry {
 
 /** The Playlist's banner: its entry, and its four crests, shut or open. */
 export interface PlaylistBanner extends IslandEntry {
-  readonly crests: readonly { readonly kind: PlaylistKind; readonly name: string; readonly shut: boolean }[];
+  readonly crests: readonly { readonly kind: PlaylistKind; readonly shut: boolean }[];
 }
 
 /** The whole panel: the island's name, where the ship lies off it, its level at Normal, its port and the Playlist
@@ -51,7 +51,8 @@ export interface PlaylistBanner extends IslandEntry {
 export interface IslandPanel {
   readonly title: string;
   readonly where: string;
-  readonly band: string | null;
+  /** The island's levels at Normal in short, as a tile shows them. */
+  readonly levels: string | null;
   readonly port: IslandEntry | null;
   readonly playlist: PlaylistBanner | null;
   readonly groups: readonly { readonly title: string; readonly entries: readonly IslandEntry[] }[];
@@ -253,10 +254,10 @@ function playlistBanner(city: string, facts: IslandFacts): PlaylistBanner {
     shut: null,
     act: { words: 'Open the Playlist', does: 'playlist' },
     crests: [
-      { kind: 'elite', name: 'Elite', shut: false },
-      { kind: 'abyss', name: 'Abyss', shut: false },
-      { kind: 'week-elite', name: "Week's Elite", shut: (facts.gates?.weekElite ?? null) !== null },
-      { kind: 'week-abyss', name: "Week's Abyss", shut: (facts.gates?.weekAbyss ?? null) !== null },
+      { kind: 'elite', shut: (facts.gates?.playlists[0] ?? null) !== null },
+      { kind: 'abyss', shut: (facts.gates?.playlists[1] ?? null) !== null },
+      { kind: 'week-elite', shut: (facts.gates?.weekElite ?? null) !== null },
+      { kind: 'week-abyss', shut: (facts.gates?.weekAbyss ?? null) !== null },
     ],
   };
 }
@@ -271,6 +272,7 @@ export function islandPanelOf(
   const island = ISLANDS[landmass.id] ?? landmass.plan?.name ?? 'The island';
   const port = docked ? portEntry(landmass, island) : null;
   const city = docked && port && landmass.plan ? landmass.plan.id : null;
+  const normal = facts.activities?.bands[landmass.nodes[0]?.continent ?? landmass.id]?.[0];
   const groups = GROUPS.flatMap(({ kind, title, line }) => {
     const entries = landmass.nodes
       .filter((node) => node.kind === kind)
@@ -285,7 +287,7 @@ export function islandPanelOf(
   return {
     title: island,
     where: docked && port ? `Docked at ${port.name}` : `Ashore on the coast of ${island}`,
-    band: bandOf(facts, landmass.nodes[0]?.continent ?? landmass.id, 0),
+    levels: normal ? shortBand(normal) : null,
     port,
     playlist: city ? playlistBanner(city, facts) : null,
     groups,

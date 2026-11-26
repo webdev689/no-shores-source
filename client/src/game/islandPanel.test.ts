@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { byId, fakeInterface, wordsIn } from '../ui/uiForTests.ts';
-import type { Activities } from './activities.ts';
+import { sidesOf } from '../ui/layout.ts';
+import type { Activities, Gates } from './activities.ts';
+import { TEXEL } from './islandArt.ts';
 import { gridOf, islandPanelNode, islandScreen } from './islandPanel.ts';
 import { entriesOf, type IslandEntry, islandPanelOf } from './islandWords.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -63,6 +65,15 @@ const DRAWN = {
   },
   modifiers: { 'burn-shadow': { name: 'Burn (Shadow)', words: '' }, brawler: { name: 'Brawler', words: '' } },
 } as unknown as Activities;
+/** A character's gates with every place open. */
+const OPEN: Gates = {
+  day: [null, null, null],
+  eliteDungeon: null,
+  weekElite: null,
+  weekAbyss: null,
+  seas: [null, null, null],
+  playlists: [null, null],
+};
 const FACTS = {
   activities: DRAWN,
   gates: null,
@@ -71,7 +82,7 @@ const FACTS = {
 
 test('docked, the tiles hold the port and the Playlist first, then the island’s places by kind, none of them on the map', () => {
   const panel = islandPanelOf(ISLAND, true, FACTS);
-  assert.deepEqual([panel.title, panel.where, panel.band], ['Saltmere', 'Docked at Overlook', 'Levels 1 to 5']);
+  assert.deepEqual([panel.title, panel.where, panel.levels], ['Saltmere', 'Docked at Overlook', 'Lv 1–5']);
   assert.deepEqual(
     entriesOf(panel).map((entry) => entry.id),
     ['overlook-social', 'overlook-playlist', 'saltgrass-downs', 'krakens-grotto', 'burned-mill', 'maw', 'tern-strand'],
@@ -99,6 +110,20 @@ test('the port’s snapshot names its counters and moorings; the Playlist’s ba
     ['elite', 'abyss', 'week-elite', 'week-abyss'],
   );
   assert.equal(panel.playlist?.act.does, 'playlist');
+});
+
+test('the Playlist’s crests are shut on its tile as on the screen it opens: each playlist and week by its gate', () => {
+  const gates = { ...OPEN, playlists: [null, 'Opens at level 24'], weekAbyss: 'Opens at level 24' };
+  const panel = islandPanelOf(ISLAND, true, { ...FACTS, gates });
+  assert.deepEqual(
+    panel.playlist?.crests.map((crest) => [crest.kind, crest.shut]),
+    [
+      ['elite', false],
+      ['abyss', true],
+      ['week-elite', false],
+      ['week-abyss', true],
+    ],
+  );
 });
 
 test('a patrol zone’s snapshot: its levels, its dungeon of the day, resources, foes and the harder seas', () => {
@@ -130,7 +155,7 @@ test('an Elite Dungeon leads into its dungeon from the sea, saying whether it is
   const gated = entriesOf(
     islandPanelOf(ISLAND, true, {
       ...FACTS,
-      gates: { eliteDungeon: 'Opens after the prologue.', seas: [null, null, null] } as never,
+      gates: { ...OPEN, eliteDungeon: 'Opens after the prologue.' },
     }),
   );
   assert.equal(gated.find((entry) => entry.id === 'krakens-grotto')?.shut, 'Opens after the prologue.');
@@ -190,6 +215,51 @@ test('every tile is the same size, and a click on one does what it does, the Pla
   assert.deepEqual(wordsIn(patrolTile ?? node), ['The Saltgrass Downs', 'Lv 1–5'], 'its name and levels alone');
   assert.match(patrolTile?.label ?? '', /Dungeons: Three; today's is second/, 'its details read out');
   assert.ok(byId(node, 'island:back'));
+});
+
+test('each scene is painted at the box it is drawn in, a texel two pixels across, its crests over its own lines', () => {
+  const { ui } = clicked('island:island');
+  const scenes = ui.laid.filter((each) => each.node.picture?.key.startsWith('island scene') === true);
+  assert.equal(scenes.length, 8, 'the island’s own and its seven places');
+  for (const { node, box } of scenes) {
+    const [top, right, bottom, left] = sidesOf(node.padding);
+    const drawn = [box.width - left - right, box.height - top - bottom];
+    const { width, height } = node.picture?.pixel ?? { width: 0, height: 0 };
+    assert.deepEqual(drawn, [width * TEXEL, height * TEXEL], node.picture?.key);
+  }
+});
+
+test('a press dragged off one tile onto another lights the one under the pointer, and holds it lit', () => {
+  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const { ui, step } = fakeInterface(1280, 720);
+  let chosen: string | null = null;
+  const chose: string[] = [];
+  const acts = {
+    choose: (entry: string) => void chose.push((chosen = entry)),
+    act: () => undefined,
+    back: () => undefined,
+  };
+  const root = () => islandPanelNode(ui, panel, chosen, null, acts);
+  step(root);
+  const [from, to] = [ui.boxOf('island:saltgrass-downs'), ui.boxOf('island:krakens-grotto')];
+  assert.ok(from && to);
+  const [a, b] = [
+    { x: from.x + 8, y: from.y + 8 },
+    { x: to.x + 8, y: to.y + 8 },
+  ];
+  step(root, [{ kind: 'pointer', ...a }, { kind: 'down', ...a, button: 0 }, { kind: 'pointer', ...b }]);
+  step(root, [{ kind: 'up', ...b, button: 0 }]);
+  chose.length = 0;
+  for (let frame = 0; frame < 4; frame += 1) step(root);
+  assert.deepEqual(chose, chosen === 'krakens-grotto' ? [] : ['krakens-grotto'], 'the tile under the pointer');
+  assert.equal(chosen, 'krakens-grotto');
+});
+
+test('the island’s own tile names its levels at Normal; a shut tile’s label says why once', () => {
+  const { node } = clicked('island:island');
+  assert.deepEqual(wordsIn(byId(node, 'island:island') ?? node).slice(0, 2), ['Saltmere', 'Lv 1–5'], 'its levels');
+  const label = byId(node, 'island:burned-mill')?.label ?? '';
+  assert.equal(label.split('The Burned Mill is locked').length - 1, 1, label);
 });
 
 test('a shut tile does nothing; the pointer on a tile lights it for Enter', () => {

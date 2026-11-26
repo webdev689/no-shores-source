@@ -79,10 +79,11 @@ export function risenTile(place: number, opened: number, still: boolean): number
   return 1 - (1 - share) ** 3;
 }
 
-/** A tile's motion and light: how far it has risen, and whether it is lit. */
+/** A tile's motion and light: how far it has risen, whether it is lit, and whether the pointer is on any tile. */
 interface TileState {
   readonly rise: number;
   readonly lit: boolean;
+  readonly pointed?: boolean;
 }
 
 /** What a tile stands with as it rises and is lit: faded and lowered as it rises, a step up and a brass edge lit. */
@@ -101,6 +102,17 @@ function sceneOf(scene: Scene, size: TileSize, look: string): Node['picture'] {
     pixel: { width, height },
   };
 }
+
+/** A tile's box: its scene over the whole of it, its ground under the scene, its words kept in from its edges by
+ *  `WITHIN`, so the scene is drawn at the size it was painted. */
+const tileOf = (scene: Scene, size: TileSize, look: string): Partial<Node> => ({
+  ...size,
+  direction: 'column',
+  clip: true,
+  fill: GROUND,
+  picture: sceneOf(scene, size, look),
+});
+const WITHIN: Node = { width: 'grow', height: 'grow', direction: 'column', padding: [10, 12] };
 
 /** The Playlist's crests set over its night where its constellation's lines meet, grey where shut. */
 const crestsOver = (banner: PlaylistBanner, size: TileSize): Node[] => {
@@ -145,7 +157,9 @@ function entryTile(
     ui.focusOn(null);
     if (entry.shut === null) acts.act(entry);
   }
-  if ((ui.hovered(id) || ui.focused(id)) && !state.lit) acts.choose(entry.id);
+  // The pointer lights the tile under it; a focus left on another (by a press dragged off it) lights it only while the
+  // pointer is on no tile, so the two never take turns.
+  if ((ui.hovered(id) || (ui.focused(id) && !state.pointed)) && !state.lit) acts.choose(entry.id);
   const banner = 'crests' in entry ? (entry as PlaylistBanner) : null;
   const scene: Scene = { kind: SCENES[entry.kind], id: entry.id, abyss: entry.abyss ?? false };
   const look = `${entry.abyss === true}`;
@@ -156,33 +170,34 @@ function entryTile(
   return {
     id,
     press: true,
-    label: [entry.name, entry.line, ...details, entry.shut ?? entry.act.words].join('. '),
-    ...size,
-    direction: 'column',
-    padding: [10, 12],
-    clip: true,
-    fill: GROUND,
-    picture: sceneOf(scene, size, look),
+    // A shut entry's line is why it is shut already, so the reason is read once.
+    label: [...new Set([entry.name, entry.line, ...details, entry.shut ?? entry.act.words])].join('. '),
+    ...tileOf(scene, size, look),
     ...standing(state),
     children: [
       ...(banner ? crestsOver(banner, size) : []),
-      glyphsNode(entry),
-      { height: 'grow' },
       {
-        width: 'grow',
-        gap: 8,
-        alignY: 'end',
+        ...WITHIN,
         children: [
+          glyphsNode(entry),
+          { height: 'grow' },
           {
             width: 'grow',
-            direction: 'column',
-            gap: 3,
+            gap: 8,
+            alignY: 'end',
             children: [
-              said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM }),
-              entry.levels !== null && said(entry.levels, { colour: DIM }),
+              {
+                width: 'grow',
+                direction: 'column',
+                gap: 3,
+                children: [
+                  said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM }),
+                  entry.levels !== null && said(entry.levels, { colour: DIM }),
+                ],
+              },
+              entry.shut === null && { ...iconNode('next', 24), opacity: state.lit ? 1 : 0.45 },
             ],
           },
-          entry.shut === null && { ...iconNode('next', 24), opacity: state.lit ? 1 : 0.45 },
         ],
       },
     ],
@@ -203,24 +218,25 @@ function islandTile(
     : '';
   return {
     id: 'island:island',
-    ...size,
-    direction: 'column',
-    gap: 4,
-    padding: [10, 12],
-    clip: true,
-    fill: GROUND,
-    picture: sceneOf(scene, size, look),
+    ...tileOf(scene, size, look),
     ...standing({ ...state, lit: false }),
     children: [
-      { height: 'grow' },
-      said(panel.title, { size: 2, colour: BRASS }),
       {
-        width: 'grow',
-        gap: 8,
-        alignY: 'center',
+        ...WITHIN,
+        gap: 4,
         children: [
-          { width: 'grow', children: [said(panel.where, { colour: DIM })] },
-          hudPress(ui, 'island:back', 'Back  Esc', back, { padding: [5, 10] }),
+          { height: 'grow' },
+          said(panel.title, { size: 2, colour: BRASS }),
+          panel.levels !== null && said(panel.levels, { colour: DIM }),
+          {
+            width: 'grow',
+            gap: 8,
+            alignY: 'center',
+            children: [
+              { width: 'grow', children: [said(panel.where, { colour: DIM })] },
+              hudPress(ui, 'island:back', 'Back  Esc', back, { padding: [5, 10] }),
+            ],
+          },
         ],
       },
     ],
@@ -252,13 +268,16 @@ export function islandPanelNode(
 ): Node {
   const { width, height } = ui.size;
   const { columns, tile } = gridOf(width, height);
-  const shown = chosen ?? entriesOf(panel)[0]?.id ?? null;
+  const entries = entriesOf(panel);
+  const shown = chosen ?? entries[0]?.id ?? null;
   const [opened, still] = [ui.age('island-panel'), motionReduced()];
+  const pointed = entries.some((entry) => ui.hovered(`island:${entry.id}`));
   const tiles: Node[] = [
     islandTile(ui, [panel, tile], chart, { rise: risenTile(0, opened, still), lit: false }, acts.back),
-    ...entriesOf(panel).map((entry, place) =>
-      entryTile(ui, [entry, tile], { rise: risenTile(place + 1, opened, still), lit: shown === entry.id }, acts),
-    ),
+    ...entries.map((entry, place) => {
+      const state = { rise: risenTile(place + 1, opened, still), lit: shown === entry.id, pointed };
+      return entryTile(ui, [entry, tile], state, acts);
+    }),
   ];
   const rows: Node[] = [];
   for (let first = 0; first < tiles.length; first += columns)
