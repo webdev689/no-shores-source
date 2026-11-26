@@ -273,13 +273,18 @@ The decisions in [[Open Questions]] are not repeated here.
   role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
   before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
 - **The passages and the regions** (#218 on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
-  autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
-  audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
-  [[Passages as Claude Builds Them]]; how it works in [[Passages]]. With it, on the owner's "Retune both into band",
-  the sea's low bands send fewer Minor ships, the week's Abyss Dungeon run again pays four fifths, and, once #220's
-  four-times kill drops lifted a patrol zone's loot, a ship's piece holds a module three times as often
-  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]); and the held map at sea redesigned on the owner's
-  word ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]).
+  autonomy ("this is where I give you autonomy and make this your baby"), audited on "I want to do a comprehensive
+  audit and detailed design pass on this entire arc" and again on "This is yours now, do a comprehensive audit on
+  it": not merged until the owner's yes, which deploys the page, the rooms and the accounts. Every call is in
+  [[Passages as Claude Builds Them]]; how it works in [[Passages]]; with it the band's retune
+  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]) and the held map at sea's redesign
+  ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]). Main is merged in to
+  #222. Five read-only audits (the web and laying; the room and the dive; the server and wire; the page; the notes
+  and tools) found 46 points: 41 fixed, each code fix with a test that failed first but where the PR says not; the
+  decision note's copied tables cut to their calls; the workers' wait-ceiling variable checked present; Home from
+  anywhere in a lamp's zone and the Court's dark found meant; a hollow rebuilt whole at each piece's change left. A
+  review of the fixes found five more, all fixed. The owner's questions are in [[Open Questions]] ("The passages",
+  "The held map at sea's redesign"). Not seen: the deployed game, a real GPU, players together.
 - **A second codebase audit** (#217, merged on the owner's "Merge and deploy": CI's run 1154 on `main` passed), on the
   owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
@@ -1050,15 +1055,12 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The passages, to finish** (#218): the hand-off's four steps are done (the design round, the band set once, the
-  rules round reviewed, the check and the pictures), the band's outliers retuned and the held map at sea redesigned on
-  the owner's word. Left: the check green in CI on the head, and the owner's yes to merge. Claude's calls in the
-  redesign, for the owner to confirm: a node the quest names keeps its red-brown ring at sea; a sea is locked while
-  its island has no name in `ISLANDS` (`hudLaw.ts`), so naming one unlocks it; a locked sea is still sailed and
-  travelled to as before (the lock is drawn, not enforced); a sea's name falls back to a plain word's size where its
-  arch fits nowhere. Not yet played live: every deal, a dive's way across zones, a public round, the held map's public
-  way and its redesign on a real GPU, the sea's new ranks and salvage, a run of the week's Abyss Dungeon again; tested
-  offline, and pictured headless (`tools/passageShots.json`, `target/passages/`).
+- **The passages, to finish** (#218): CI's check green on the head, then the owner's yes to merge. Not yet played
+  live: every deal, a dive's way across zones, a public round, the held map's public way and its redesign on a real
+  GPU, the sea's new ranks and salvage, a run of the week's Abyss Dungeon again; tested offline, and pictured
+  headless (`tools/passageShots.json`, `target/passages/`); a Vein's nodes under ground not yet pictured. Unchecked
+  from the audit's review: a public event's chest (`public/chest.rs`) and a grant (`grants.rs`) still go through
+  `pick_up`, which hauls a Vestige where the player stands in a passage zone.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes

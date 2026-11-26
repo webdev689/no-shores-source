@@ -112,6 +112,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
     home or press on with it at risk, and death lose only what was found since the last structure passed; Claude's
     call keeps the second by having a lamp lit always keep the haul, so no one presses on with it unkept.
   - Where the Lattice come into the passages: the zones stand the Grey Tithe's alone.
+  - A Vein's nodes come back 9 minutes after they are gathered, as a patrol's do (Claude's call, so that one who
+    gathered between rounds can finish the next), so one who camps a Vein zone gathers its six into the haul every 9
+    minutes; fewer would be the nodes coming back only in public rooms, or only as a round begins again.
 - **The held map at sea's redesign**, Claude's calls for the owner to confirm ([[Held Map]];
   [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]):
   - A node the quest names keeps a red-brown ring, though the owner's "Remove the tiny nodes on the held map" leaves
