@@ -393,11 +393,9 @@ fn relic(reading: &Reading, room: usize, spots: &[[f64; 2]]) -> Option<[f64; 3]>
     let found = &dungeon.rooms[room];
     let middle =
         [(found.x as f64 + found.width as f64 / 2.0) * CELL_M, (found.y as f64 + found.depth as f64 / 2.0) * CELL_M];
-    let in_room = |[x, y]: [f64; 2]| {
-        x >= 0.0
-            && y >= 0.0
-            && dungeon.room_at((y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize) == Some(room)
-    };
+    let floor = dungeon::storey_floor(found.storey);
+    let in_room =
+        |[x, y]: [f64; 2]| x >= 0.0 && y >= 0.0 && dungeon.room_at(dungeon.cell_at([x, y, floor])) == Some(room);
     let ringed = |[x, y]: [f64; 2]| {
         let ring = RELIC_RING_M;
         [[x + ring, y], [x, y + ring], [x - ring, y], [x, y - ring]].into_iter().all(in_room)
@@ -475,17 +473,16 @@ fn ascent(reading: &Reading, room: usize) -> Option<(Vec<Block>, [f64; 3])> {
         return None;
     }
     let start = reading.entered_by(room)?;
-    let padded = reading.padded(room);
+    let (padded, floor) = (reading.padded(room), dungeon::storey_floor(found.storey));
+    // What is not the room walls a leap as its solids do: none crosses a cave's bitten corner.
+    let walls = [reading.boxes.clone(), dungeon.walls_round(room)].concat();
     let clear = |pad: Footprint| {
         reading.boxes.iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
             max_x <= pad[0] || min_x >= pad[2] || max_y <= pad[1] || min_y >= pad[3]
         })
     };
     let fits = |pad: Footprint| {
-        let on = |x: f64, y: f64| {
-            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
-            x >= 0.0 && y >= 0.0 && padded.contains(&cell)
-        };
+        let on = |x: f64, y: f64| x >= 0.0 && y >= 0.0 && padded.contains(&dungeon.cell_at([x, y, floor]));
         clear(pad) && on(pad[0], pad[1]) && on(pad[2], pad[1]) && on(pad[0], pad[3]) && on(pad[2], pad[3])
     };
     // Every pad's middle on a grid QUARTER_M apart over the room's cells, four a side to a cell.
@@ -518,7 +515,7 @@ fn ascent(reading: &Reading, room: usize) -> Option<(Vec<Block>, [f64; 3])> {
         }
         let mut path = vec![first];
         let mut budget = LEAP_SEARCH;
-        leaping(&spots, &reading.boxes, &mut path, &mut best, &mut budget);
+        leaping(&spots, &walls, &mut path, &mut best, &mut budget);
     }
     if best.len() < ASCENT_PADS.0 {
         return None;

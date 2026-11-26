@@ -223,10 +223,12 @@ fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
     })
 }
 
-/// The pads an ask's dungeon's Ascents stand, the blocks a body climbs in it: an Elite Dungeon's, none for any other.
+/// The blocks a body climbs in an ask's dungeon: an Elite Dungeon's Ascents' pads, and any gallery's balustrades.
 pub(crate) fn pads_of(text: &[u8], laid: &Dungeon) -> Vec<movement::Block> {
     let placed = serde_json::from_slice::<Asked>(text).is_ok_and(|asked| asked.place.is_some());
-    if placed { room::encounter_plan::plan_encounters(laid).pads() } else { Vec::new() }
+    let mut pads = if placed { room::encounter_plan::plan_encounters(laid).pads() } else { Vec::new() };
+    pads.extend(room::balustrade_blocks(laid));
+    pads
 }
 
 /// Opens the room of a patrol's dungeon by its number, from the patrol's node file's text: its garrison at the patrol's
@@ -312,7 +314,8 @@ mod tests {
         let laid: Value = serde_json::from_str(&dungeon_json(ask)).unwrap();
         let columns = laid["columns"].as_u64().unwrap();
         let rows = laid["rows"].as_u64().unwrap();
-        assert_eq!(laid["cells"].as_array().unwrap().len() as u64, columns * rows);
+        let storeys = laid["storeys"].as_u64().unwrap();
+        assert_eq!(laid["cells"].as_array().unwrap().len() as u64, storeys * columns * rows);
         assert!(laid["name"].as_str().unwrap().ends_with(" of the Saltgrass Downs"));
         assert_eq!(dungeon_json(ask), dungeon_json(ask), "the same ask, the same dungeon");
         let way_in = laid["wayIn"]["cell"].as_u64().unwrap() as usize;
@@ -329,7 +332,7 @@ mod tests {
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x93ac_57ba_fe36_cb1d;
+    const AGREED_HASH: u64 = 0xff45_c2cf_495f_3148;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {

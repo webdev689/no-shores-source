@@ -1,8 +1,8 @@
 //! The sea room under load, measured as the host drives it: each tick, then every player's snapshot cut for them, at
 //! 1, 8 and 16 players at sea among hostile ships, in one fight, and on boarded decks; and each road's group standing
-//! in its patrol's room for the first time, its place's mesh baked then, from the bake's files. Run by hand, in
-//! release, to print the numbers (median, p99 and slowest milliseconds a tick, and bytes a player a tick; milliseconds
-//! an opening and a standing):
+//! in its patrol's room for the first time, its place's mesh baked then, from the bake's files; and the 18 Elite
+//! Dungeons forged and opened. Run by hand, in release, to print the numbers (median, p99 and slowest milliseconds a
+//! tick, and bytes a player a tick; milliseconds an opening and a standing; the slowest forge and opening):
 //! `cargo test -p room-wasm --release load -- --ignored --nocapture`.
 
 use super::*;
@@ -328,4 +328,32 @@ fn tick_timed(room: &mut room::Room) -> f64 {
 /// A place's middle in the open room, by its name.
 fn room_place(room: &room::Room, name: &str) -> [f64; 2] {
     room.place(name).map(|place| place.at).unwrap()
+}
+
+/// The 18 Elite Dungeons, the largest and deepest a room opens: answers the slowest forge and the slowest opening
+/// (its ground, its navmesh bake, its garrison and its encounters), milliseconds, with the dungeon each was.
+// The wall clock is what this measures; the rules themselves never read it.
+#[allow(clippy::disallowed_methods)]
+#[test]
+#[ignore = "a measurement, run by hand in release"]
+fn load_of_opening_the_deepest_dungeons() {
+    let (mut forge, mut open) = ((0.0, String::new()), (0.0, String::new()));
+    for elite in gear::activities::elite_dungeons() {
+        let started = Instant::now();
+        let (seed, style) = room::elite_laid(elite.id).unwrap();
+        let laid = dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+        let forged = started.elapsed().as_secs_f64() * 1000.0;
+        let started = Instant::now();
+        let of = room::RunOf::Elite { place: elite.id.into() };
+        room::Room::dungeon_run(&of, gear::Difficulty::Normal, 29_919_420).unwrap();
+        let opened = started.elapsed().as_secs_f64() * 1000.0;
+        let name = format!("{} ({} storeys, {} cells)", elite.id, laid.storeys, laid.cells.len());
+        if forged > forge.0 {
+            forge = (forged, name.clone());
+        }
+        if opened > open.0 {
+            open = (opened, name);
+        }
+    }
+    eprintln!("slowest forge {:.1} ms: {}; slowest opening {:.1} ms: {}", forge.0, forge.1, open.0, open.1);
 }

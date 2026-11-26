@@ -28,6 +28,7 @@ mod dungeon_bake;
 pub mod dungeon_ground;
 mod dungeon_lines;
 mod dungeon_room;
+pub use dungeon_room::balustrade_blocks;
 pub mod encounter_plan;
 pub mod encounters;
 mod entrances;

@@ -1,8 +1,8 @@
-//! One block's layout, as DFO's Forge lays it: 16 by 16 cells of 3.2 m, rock but where rooms are carved by a seeded
-//! split of the square and joined by the cheapest ways through the rock. The owner wants a dungeon run through, not a
-//! maze, so a block's rooms are joined one after another, from its way in to its way on. The outer ring stays rock but
-//! where an opening passes, so a block closes its own edges.
+//! One storey of one block, as DFO's Forge lays it: 16 by 16 cells of 3.2 m, rock but where rooms are carved by a
+//! seeded split of the square, round the flights and the landings its plan laid first, and joined by the cheapest ways
+//! through the rock (`ways.rs`). The outer ring stays rock but where an opening passes, so a block closes its own edges.
 
+use crate::descent::{At, StoreyPlan};
 use crate::lane::Lane;
 use crate::shapes::{Shape, outline};
 use crate::styles::{Form, Style};
@@ -10,12 +10,13 @@ use crate::{CORRIDOR_HEIGHT_M, Cell, SIDES, Side};
 
 /// Cells to a block's side.
 pub const BLOCK_CELLS: usize = 16;
-const AREA: usize = BLOCK_CELLS * BLOCK_CELLS;
+pub(crate) const AREA: usize = BLOCK_CELLS * BLOCK_CELLS;
 /// An opening's cell along its side, clear of the corners.
 pub(crate) const OPENING_FIRST: usize = 2;
 pub(crate) const OPENING_LAST: usize = 13;
-/// A split's smallest part, in cells.
+/// A split's smallest part, in cells, and how many spots a room tries in its part, clear of its plan's cells.
 const LEAST_PART: usize = 5;
+const SPOTS: usize = 8;
 /// Tries at a sound layout before a block takes its simplest form, and the step between their seeds.
 const TRIES: u32 = 16;
 const TRY_STEP: u32 = 0x9e37_79b1;
@@ -43,35 +44,30 @@ pub(crate) struct BlockRoom {
     pub stones: Vec<(usize, usize)>,
 }
 
-/// A block's way in, the opening from the block before it, and its way on, the opening onto the next; the way in's
-/// block has no way in and the last block no way on.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Ends {
-    pub entry: Option<Opening>,
-    pub exit: Option<Opening>,
-}
-
-/// A block's cells (a room's by its number in `rooms`), each open cell's ceiling height, its rooms, its openings, and
-/// its rooms in the order its way runs through them.
+/// A block storey's cells (a room's by its number in `rooms`), each open cell's ceiling height, the cells no room or
+/// way takes (`blocked`), its rooms, its openings, the cells its ways join (`nodes`), and its rooms in the order the
+/// way in's door is sought in.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct BlockLayout {
     pub cells: Vec<Cell>,
     pub ceilings: Vec<f64>,
+    pub blocked: Vec<bool>,
     pub rooms: Vec<BlockRoom>,
     pub openings: Vec<Opening>,
+    pub nodes: Vec<At>,
     pub order: Vec<usize>,
 }
 
-const fn at(x: usize, y: usize) -> usize {
+pub(crate) const fn at(x: usize, y: usize) -> usize {
     y * BLOCK_CELLS + x
 }
 
-const fn on_rim(x: usize, y: usize) -> bool {
+pub(crate) const fn on_rim(x: usize, y: usize) -> bool {
     x == 0 || y == 0 || x == BLOCK_CELLS - 1 || y == BLOCK_CELLS - 1
 }
 
 /// The cell beside (x, y) on `side`, if it is in the block.
-fn beside(x: usize, y: usize, side: Side) -> Option<(usize, usize)> {
+pub(crate) fn beside(x: usize, y: usize, side: Side) -> Option<(usize, usize)> {
     let (dx, dy) = side.step();
     let (next_x, next_y) = (x.checked_add_signed(dx)?, y.checked_add_signed(dy)?);
     (next_x < BLOCK_CELLS && next_y < BLOCK_CELLS).then_some((next_x, next_y))
@@ -151,111 +147,99 @@ fn draw_form(lane: &mut Lane, forms: &[Form], part: &Part) -> Option<(Shape, usi
 }
 
 impl BlockLayout {
-    fn empty() -> Self {
-        Self {
+    /// The storey before its rooms: rock, but its plan's openings, landings and gallery, which are ways, and the cells
+    /// it keeps from every room and way.
+    fn empty(plan: &StoreyPlan) -> Self {
+        let mut block = Self {
             cells: vec![Cell::Rock; AREA],
             ceilings: vec![0.0; AREA],
+            blocked: vec![false; AREA],
             rooms: Vec::new(),
-            openings: Vec::new(),
+            openings: plan.openings.clone(),
+            nodes: Vec::new(),
             order: Vec::new(),
+        };
+        for &(x, y) in &plan.reserved {
+            block.blocked[at(x, y)] = true;
+        }
+        let gallery = plan.gallery.iter().flat_map(|gallery| gallery.cells.iter().copied());
+        let ways = plan.openings.iter().map(|&opening| opening_cell(opening)).chain(plan.landings.iter().copied());
+        for (x, y) in ways.chain(gallery) {
+            block.cells[at(x, y)] = Cell::Corridor;
+            block.ceilings[at(x, y)] = CORRIDOR_HEIGHT_M;
+        }
+        block
+    }
+
+    /// Whether a room of this outline may stand with its north-west corner at (x, y): every cell it takes rock that no
+    /// plan keeps.
+    fn clear(&self, x: usize, y: usize, width: usize, takes: &[bool]) -> bool {
+        takes.iter().enumerate().filter(|&(_, &taken)| taken).all(|(index, _)| {
+            let cell = at(x + index % width, y + index / width);
+            self.cells[cell] == Cell::Rock && !self.blocked[cell]
+        })
+    }
+
+    /// Carves a room of a shape at a spot, its height drawn in the style's.
+    fn carve_room(
+        &mut self,
+        lane: &mut Lane,
+        style: &Style,
+        room: (usize, usize, Shape, usize, usize),
+        takes: &[bool],
+    ) {
+        let (x, y, shape, width, depth) = room;
+        let (lowest, highest) = style.heights;
+        let steps = ((lowest + lane.draw() * (highest - lowest)) / 0.4 + 0.5).floor();
+        let height = steps * 0.4;
+        let number = u16::try_from(self.rooms.len()).unwrap_or(u16::MAX);
+        self.rooms.push(BlockRoom { x, y, width, depth, height, shape, stones: Vec::new() });
+        for row in 0..depth {
+            for column in 0..width {
+                if takes[row * width + column] {
+                    self.cells[at(x + column, y + row)] = Cell::Room(number);
+                    self.ceilings[at(x + column, y + row)] = height;
+                }
+            }
         }
     }
 
     /// Carves a room into each part, a cell of rock kept on every side of it: a form of the style drawn among those
-    /// that fit the part, its sides drawn within the form's and the part's, and its outline drawn in its rectangle.
-    fn carve_rooms(&mut self, lane: &mut Lane, style: &Style) {
+    /// that fit the part, its sides drawn within the form's and the part's, its outline drawn in its rectangle, on the
+    /// first of a few drawn spots in its part that its plan's cells leave clear. A storey that is a great room is that
+    /// one room: a cave in the caverns, else a hall whose pillars stand.
+    fn carve_rooms(&mut self, lane: &mut Lane, style: &Style, plan: &StoreyPlan) {
+        if let Some(great) = plan.great {
+            let shape = if style.key == "caverns" { Shape::Cave } else { Shape::Rectangle };
+            let outlined = outline(shape, great.width, great.depth, lane);
+            if self.clear(great.x, great.y, great.width, &outlined.takes) {
+                self.carve_room(lane, style, (great.x, great.y, shape, great.width, great.depth), &outlined.takes);
+                let stones = outlined.stones.iter().map(|&(x, y)| (great.x + x, great.y + y)).collect();
+                self.rooms[0].stones = stones;
+                return;
+            }
+        }
         let (fewest, most) = style.rooms;
         let want = lane.int(fewest, most);
         for part in split(lane, want).into_iter().take(want) {
             let Some((shape, width, depth)) = draw_form(lane, style.forms, &part) else { continue };
-            let x = part.x + 1 + lane.below(part.width - width - 1);
-            let y = part.y + 1 + lane.below(part.depth - depth - 1);
-            let (lowest, highest) = style.heights;
-            let steps = ((lowest + lane.draw() * (highest - lowest)) / 0.4 + 0.5).floor();
-            let height = steps * 0.4;
             let outlined = outline(shape, width, depth, lane);
-            let number = u16::try_from(self.rooms.len()).unwrap_or(u16::MAX);
-            let stones = outlined.stones.iter().map(|&(stone_x, stone_y)| (x + stone_x, y + stone_y)).collect();
-            self.rooms.push(BlockRoom { x, y, width, depth, height, shape, stones });
-            for row in 0..depth {
-                for column in 0..width {
-                    if outlined.takes[row * width + column] {
-                        self.cells[at(x + column, y + row)] = Cell::Room(number);
-                        self.ceilings[at(x + column, y + row)] = height;
-                    }
-                }
-            }
+            let spot = (0..SPOTS)
+                .map(|_| {
+                    (part.x + 1 + lane.below(part.width - width - 1), part.y + 1 + lane.below(part.depth - depth - 1))
+                })
+                .find(|&(x, y)| self.clear(x, y, width, &outlined.takes));
+            let Some((x, y)) = spot else { continue };
+            self.carve_room(lane, style, (x, y, shape, width, depth), &outlined.takes);
+            let last = self.rooms.len() - 1;
+            self.rooms[last].stones =
+                outlined.stones.iter().map(|&(stone_x, stone_y)| (x + stone_x, y + stone_y)).collect();
         }
     }
 
     /// Whether a cell is rock standing inside a room, which no way cuts and no door stands on.
     pub(crate) fn stone(&self, cell: (usize, usize)) -> bool {
         self.rooms.iter().any(|room| room.stones.contains(&cell))
-    }
-
-    /// The cheapest way between two cells, through rock, rooms and corridors but never the rim (but `rim`'s cells and
-    /// the goal) or a room's stone; its cells, or None. Rock costs more than an open cell, so ways reuse ways.
-    fn route(&self, from: (usize, usize), to: (usize, usize), rim: &[(usize, usize)]) -> Option<Vec<(usize, usize)>> {
-        let cost = |index: usize| match self.cells[index] {
-            Cell::Rock => 3.0,
-            Cell::Room(_) => 2.0,
-            Cell::Corridor | Cell::Stair(_) | Cell::Void => 1.0,
-        };
-        let (start, goal) = (at(from.0, from.1), at(to.0, to.1));
-        let guess =
-            |index: usize| (index % BLOCK_CELLS).abs_diff(to.0) as f64 + (index / BLOCK_CELLS).abs_diff(to.1) as f64;
-        let mut distance = vec![f64::INFINITY; AREA];
-        let mut previous: Vec<Option<usize>> = vec![None; AREA];
-        distance[start] = 0.0;
-        let mut open = vec![start];
-        while !open.is_empty() {
-            let mut best = 0;
-            for candidate in 1..open.len() {
-                if distance[open[candidate]] + guess(open[candidate]) < distance[open[best]] + guess(open[best]) {
-                    best = candidate;
-                }
-            }
-            let index = open.remove(best);
-            if index == goal {
-                break;
-            }
-            for side in SIDES {
-                let Some((x, y)) = beside(index % BLOCK_CELLS, index / BLOCK_CELLS, side) else { continue };
-                let next = at(x, y);
-                if (on_rim(x, y) && !rim.contains(&(x, y)) && next != goal) || self.stone((x, y)) {
-                    continue;
-                }
-                let through = distance[index] + cost(next);
-                if through < distance[next] {
-                    distance[next] = through;
-                    previous[next] = Some(index);
-                    if !open.contains(&next) {
-                        open.push(next);
-                    }
-                }
-            }
-        }
-        if !distance[goal].is_finite() {
-            return None;
-        }
-        let mut path = vec![to];
-        let mut index = goal;
-        while let Some(before) = previous[index] {
-            path.push((before % BLOCK_CELLS, before / BLOCK_CELLS));
-            index = before;
-        }
-        path.reverse();
-        Some(path)
-    }
-
-    /// Carves a way's rock into corridor.
-    fn carve(&mut self, path: &[(usize, usize)]) {
-        for &(x, y) in path {
-            if self.cells[at(x, y)] == Cell::Rock {
-                self.cells[at(x, y)] = Cell::Corridor;
-                self.ceilings[at(x, y)] = CORRIDOR_HEIGHT_M;
-            }
-        }
     }
 
     /// A room's cells, row by row.
@@ -268,66 +252,13 @@ impl BlockLayout {
             .collect()
     }
 
-    /// Joins the block's way through, one room after another: from its way in (the opening from the block before, or
-    /// for the way in's block its first room), through each room in turn, nearest the way in and farthest from the way
-    /// on first, to the opening onto the next block; each by its cheapest way. One way from room to room keeps a block
-    /// a run from one end to the other rather than a maze.
-    fn join(&mut self, ends: Ends) {
-        let middles: Vec<(usize, usize)> = (0..self.rooms.len())
-            .map(|number| {
-                let cells = self.room_cells(number);
-                cells.get(cells.len() / 2).copied().unwrap_or((self.rooms[number].x, self.rooms[number].y))
-            })
-            .collect();
-        let apart = |a: (usize, usize), b: (usize, usize)| (a.0.abs_diff(b.0) + a.1.abs_diff(b.1)) as isize;
-        let (entry, exit) = (ends.entry.map(opening_cell), ends.exit.map(opening_cell));
-        let along =
-            |cell: (usize, usize)| entry.map_or(0, |from| apart(from, cell)) - exit.map_or(0, |to| apart(to, cell));
-        let mut order: Vec<usize> = (0..self.rooms.len()).collect();
-        order.sort_by_key(|&number| (along(middles[number]), number));
-        let stops: Vec<(usize, usize)> =
-            entry.into_iter().chain(order.iter().map(|&number| middles[number])).chain(exit).collect();
-        let rim: Vec<(usize, usize)> = entry.into_iter().chain(exit).collect();
-        for pair in stops.windows(2) {
-            if let Some(path) = self.route(pair[0], pair[1], &rim) {
-                self.carve(&path);
-            }
-        }
-        self.order = order;
-    }
-
-    /// The layout of one try: its rooms, its way in and its way on cut through the rim, and the way through it joined.
-    fn laid(seed: u32, ends: Ends, style: &Style) -> Self {
+    /// The layout of one try: its plan's ways, its rooms, and its ways joined (`ways.rs`).
+    fn laid(seed: u32, plan: &StoreyPlan, style: &Style) -> Self {
         let mut lane = Lane::new(seed);
-        let mut block = Self::empty();
-        block.carve_rooms(&mut lane, style);
-        for opening in [ends.entry, ends.exit].into_iter().flatten() {
-            let (x, y) = opening_cell(opening);
-            block.cells[at(x, y)] = Cell::Corridor;
-            block.ceilings[at(x, y)] = CORRIDOR_HEIGHT_M;
-            block.openings.push(opening);
-        }
-        block.join(ends);
+        let mut block = Self::empty(plan);
+        block.carve_rooms(&mut lane, style, plan);
+        block.join(&mut lane, plan);
         block
-    }
-
-    /// Whether every room and opening is one walk: every open cell reached from the first.
-    fn one_walk(&self) -> bool {
-        let Some(first) = self.cells.iter().position(|&cell| cell != Cell::Rock) else { return false };
-        let mut reached = vec![false; AREA];
-        let mut todo = vec![first];
-        reached[first] = true;
-        while let Some(index) = todo.pop() {
-            for side in SIDES {
-                let Some((x, y)) = beside(index % BLOCK_CELLS, index / BLOCK_CELLS, side) else { continue };
-                let next = at(x, y);
-                if !reached[next] && self.cells[next] != Cell::Rock {
-                    reached[next] = true;
-                    todo.push(next);
-                }
-            }
-        }
-        !self.rooms.is_empty() && self.cells.iter().zip(&reached).all(|(&cell, &seen)| cell == Cell::Rock || seen)
     }
 
     /// A room's cells no side of which meets a corridor, row by row.
@@ -354,8 +285,10 @@ impl BlockLayout {
                 cells.sort_by_key(off);
                 for (x, y) in cells {
                     for side in SIDES {
-                        let rock =
-                            |(bx, by): (usize, usize)| self.cells[at(bx, by)] == Cell::Rock && !self.stone((bx, by));
+                        let rock = |(bx, by): (usize, usize)| {
+                            let index = at(bx, by);
+                            self.cells[index] == Cell::Rock && !self.blocked[index] && !self.stone((bx, by))
+                        };
                         if beside(x, y, side).is_some_and(rock) {
                             return Some((x, y, side));
                         }
@@ -366,15 +299,23 @@ impl BlockLayout {
         None
     }
 
-    /// The block's sound layout: its own seed, then sub-seeds, until one is one walk and, for the way in's block, has a
-    /// place for its exit door; past TRIES, its simplest form, one small room.
-    pub(crate) fn sound(seed: u32, ends: Ends, style: &Style, way_in: bool) -> Self {
+    /// The block storey's sound layout: its own seed, then sub-seeds, until one is one walk with a room (or its
+    /// gallery), one dead end at most and, for the way in's storey, a place for its exit door; past TRIES, its simplest
+    /// form, one small room.
+    pub(crate) fn sound(seed: u32, plan: &StoreyPlan, style: &Style, way_in: bool) -> Self {
+        let roomed = |block: &Self| !block.rooms.is_empty() || plan.gallery.is_some();
         for attempt in 0..TRIES {
-            let block = Self::laid(seed.wrapping_add(attempt.wrapping_mul(TRY_STEP)), ends, style);
-            if block.one_walk() && (!way_in || block.exit_spot().is_some()) {
+            let block = Self::laid(seed.wrapping_add(attempt.wrapping_mul(TRY_STEP)), plan, style);
+            let sound = block.one_walk() && roomed(&block) && block.dead_ends() <= 1;
+            if sound && (!way_in || block.exit_spot().is_some()) {
                 return block;
             }
         }
-        Self::laid(seed, ends, &Style { rooms: (1, 1), forms: SIMPLEST_FORMS, heights: SIMPLEST_HEIGHTS, ..*style })
+        let simplest = Style { rooms: (1, 1), forms: SIMPLEST_FORMS, heights: SIMPLEST_HEIGHTS, ..*style };
+        let plain = StoreyPlan { great: None, ..plan.clone() };
+        (0..TRIES)
+            .map(|attempt| Self::laid(seed.wrapping_add(attempt.wrapping_mul(TRY_STEP)), &plain, &simplest))
+            .find(|block| block.one_walk() && roomed(block) && (!way_in || block.exit_spot().is_some()))
+            .unwrap_or_else(|| Self::laid(seed, &plain, &simplest))
     }
 }

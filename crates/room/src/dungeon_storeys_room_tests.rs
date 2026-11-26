@@ -89,3 +89,153 @@ fn a_player_respawns_on_a_lower_storeys_checkpoint() {
     let body = room.at_checkpoint().expect("won");
     assert_eq!((body.x, body.y, body.z), (x, y, -8.0));
 }
+
+/// The forge and the room's opening (its ground and its navmesh's bake) timed natively over the deepest of the
+/// largest dungeons: five blocks, as many storeys as come. Run with `cargo test -p room --release -- --ignored
+/// --nocapture cost`.
+#[test]
+#[ignore = "a measure of cost, not a check"]
+fn cost_of_the_largest_dungeons() {
+    let deep: Vec<(u32, dungeon::Style)> = (0..400_u32)
+        .map(|seed| (seed, dungeon::STYLES[seed as usize % dungeon::STYLES.len()]))
+        .filter(|&(seed, style)| {
+            let laid = Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+            laid.squares.len() == 5 && laid.block_storeys.iter().sum::<usize>() >= 12
+        })
+        .take(6)
+        .collect();
+    for (seed, style) in deep {
+        let started = std::time::Instant::now();
+        let laid = Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+        let forged = started.elapsed();
+        let opened = std::time::Instant::now();
+        let room = Room::laid_dungeon("cost", &laid, LEVELS, (REEVE, Miniboss), None).expect("its room");
+        println!(
+            "seed {seed} {}: {} block storeys, forge {forged:?}, room opened {:?}, {} foes",
+            style.key,
+            laid.block_storeys.iter().sum::<usize>(),
+            opened.elapsed(),
+            room.garrison.iter().map(|post| post.members.len()).sum::<usize>()
+        );
+    }
+}
+
+#[test]
+fn a_gallerys_balustrades_are_blocks_a_body_climbs_and_its_vaults_stand_their_chests() {
+    let (seed, style) = (0..2000_u32)
+        .map(|seed| (seed, dungeon::STYLES[seed as usize % dungeon::STYLES.len()]))
+        .find(|&(seed, style)| !Dungeon::forge(seed, style).balustrades.is_empty())
+        .expect("a dungeon with a gallery");
+    let laid = Dungeon::forge(seed, style);
+    let room = Room::laid_dungeon("gallery", &laid, LEVELS, (REEVE, Miniboss), None).expect("its room");
+    for &[min_x, min_y, max_x, max_y, bottom, top] in &laid.balustrades {
+        let block = movement::Block { min_x, min_y, max_x, max_y, top, bottom };
+        assert!(room.blocks.contains(&block), "a balustrade the room's block");
+    }
+    assert_eq!(room.finds.vaults, laid.vaults, "each vault stands its chest");
+}
+
+#[test]
+fn a_vault_is_guarded_once_the_main_ways_bands_are_stood_where_foes_remain() {
+    let mut guarded = 0;
+    for seed in 0..60_u32 {
+        let laid = Dungeon::forge(seed, dungeon::STYLES[seed as usize % dungeon::STYLES.len()]);
+        let size = |room: &usize| band_size(laid.rooms[*room].cells.len());
+        let rooms = band_rooms(&laid, crate::NODE_FOES_MOST);
+        let on_way = |room: &usize| laid.rooms[*room].cells.iter().any(|cell| laid.main_way.contains(cell));
+        let mut left = crate::NODE_FOES_MOST - rooms.iter().filter(|room| on_way(room)).map(size).sum::<usize>();
+        let mut vaults = laid.vaults.clone();
+        vaults.sort_by_key(|&vault| (laid.rooms[vault].walk, vault));
+        for vault in &vaults {
+            if rooms.contains(vault) {
+                guarded += 1;
+                left -= size(vault);
+            } else {
+                let sizes: Vec<usize> = rooms.iter().map(size).collect();
+                assert!(
+                    size(vault) >= left,
+                    "seed {seed}: vault {vault} of {} left with {left}: {rooms:?} {sizes:?}",
+                    size(vault)
+                );
+            }
+        }
+    }
+    assert!(guarded > 0, "some vaults guarded");
+}
+
+#[test]
+#[ignore = "a probe"]
+fn probe_paths() {
+    let (seed, style) = dungeon::of_patrol("thunderhoof-grasslands", 1);
+    let laid = Dungeon::forge(seed, style);
+    let room = Room::dungeon("thunderhoof-grasslands", 1, LEVELS).expect("room");
+    let (arrival, _) = laid.arrival();
+    println!("storeys {:?} stairs {:?}", laid.block_storeys, laid.stairs);
+    for (number, found) in laid.rooms.iter().enumerate() {
+        let at = laid.standing_point(found.cells[found.cells.len() / 2]);
+        let near = room.nav.nearest_point(at);
+        let path = room.nav.find_path([arrival[0], arrival[1], 0.0], at);
+        println!(
+            "room {number} storey {} walk {} near {near:?} path {}",
+            found.storey,
+            found.walk,
+            path.map_or(0, |p| p.len())
+        );
+    }
+    for &cell in &laid.main_way {
+        let mut at = laid.standing_point(cell);
+        if let dungeon::Cell::Stair(number) = laid.cells[cell] {
+            at[2] = laid.stairs[usize::from(number)].slope_at(laid.columns, at[0], at[1]);
+        }
+        let solid = laid.boxes().iter().any(|b| {
+            at[0] > b[0] && at[0] < b[2] && at[1] > b[1] && at[1] < b[3] && b[4] <= at[2] + 0.1 && b[5] > at[2]
+        });
+        let path = room.nav.find_path([arrival[0], arrival[1], 0.0], at);
+        if path.is_none() && !solid {
+            let boxes: Vec<[f64; 6]> = laid
+                .boxes()
+                .into_iter()
+                .filter(|b| {
+                    (b[0] + b[2]) / 2.0 > at[0] - 4.0
+                        && (b[0] + b[2]) / 2.0 < at[0] + 4.0
+                        && (b[1] + b[3]) / 2.0 > at[1] - 4.0
+                        && (b[1] + b[3]) / 2.0 < at[1] + 4.0
+                })
+                .collect();
+            let plane = laid.plane();
+            let around: Vec<String> = (0..laid.storeys)
+                .map(|storey| {
+                    format!(
+                        "{:?}",
+                        [
+                            cell % plane - 1,
+                            cell % plane,
+                            cell % plane + 1,
+                            cell % plane - laid.columns,
+                            cell % plane + laid.columns
+                        ]
+                        .map(|at| laid.cells[storey * plane + at])
+                    )
+                })
+                .collect();
+            println!(
+                "first unreached main-way cell {cell} {:?} at {at:?} near {:?} boxes {boxes:?} around {around:?} spans {:?}",
+                laid.cells[cell],
+                room.nav.nearest_point(at),
+                laid.spans(cell % plane)
+            );
+            break;
+        }
+    }
+    for stair in &laid.stairs {
+        for &cell in &stair.cells {
+            let [x, y] = laid.centre(cell);
+            let z = laid.stairs[0].slope_at(laid.columns, x, y);
+            println!(
+                "flight cell {cell} at {x},{y} slope {} near {:?}",
+                stair.slope_at(laid.columns, x, y),
+                room.nav.nearest_point([x, y, z])
+            );
+        }
+    }
+}

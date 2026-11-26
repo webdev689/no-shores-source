@@ -45,8 +45,7 @@ fn strike(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64) {
 /// A point in the end room, by its first cell's middle.
 fn in_court(room: &Room) -> [f64; 3] {
     let cell = room.encounters.as_ref().expect("encounters").court_cells[0];
-    let [x, y] = crate::encounters::encounters_tests::middle_of(room, cell);
-    [x, y, 0.0]
+    crate::encounters::encounters_tests::middle_of(room, cell)
 }
 
 /// Raises the first ward and breaks it.
@@ -310,8 +309,15 @@ fn the_warded_boss_slams_round_it_every_eight_seconds_shown_two_seconds_first() 
 fn the_warded_boss_runs_back_to_its_post_and_stands_there() {
     let (mut room, player, boss) = court();
     let post = room.garrison[0].at;
+    // A cell of the Court about a cell from its post.
+    let off = room.encounters.as_ref().expect("encounters").court_cells.clone().into_iter().find_map(|cell| {
+        let at = crate::encounters::encounters_tests::middle_of(&room, cell);
+        let apart = libm::hypot(at[0] - post[0], at[1] - post[1]);
+        (apart > 3.0 && apart < 3.4).then_some(at)
+    });
+    let at = off.expect("a cell of the Court beside its post's");
     let body = &mut room.foes.get_mut(&boss).expect("it").fighter.body;
-    (body.x, body.y) = (post[0] + 3.0, post[1]);
+    (body.x, body.y, body.z) = (at[0], at[1], at[2]);
     let most = room.foes[&boss].fighter.health_max;
     strike(&mut room, player, boss, most);
     // Once the blow it was winding up has landed.
@@ -350,11 +356,11 @@ fn the_reckoning_reaches_the_end_room_and_the_rooms_sharing_a_doorway_with_it_an
     let away = room.encounters.as_ref().expect("encounters").plan.seals[0].pieces[0];
     let cell = room.encounters.as_ref().expect("encounters").plan.cell_at(away).expect("its cell");
     assert!(!reach.contains(&cell), "the first seal's room lies beyond its reach");
-    let [x, y] = laid.centre(laid.rooms[beside].cells[0]);
+    let [x, y, z] = laid.standing_point(laid.rooms[beside].cells[0]);
     let before = [room.players[&near].fighter.health, room.players[&far].fighter.health];
     for _ in 0..RECKONING_WARNING {
         put(&mut room, player, light);
-        put(&mut room, near, [x, y, 0.0]);
+        put(&mut room, near, [x, y, z]);
         put(&mut room, far, away);
         room.tick();
     }

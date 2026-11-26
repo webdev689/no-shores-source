@@ -4,7 +4,7 @@
 
 use super::*;
 use crate::encounters::SealState;
-use crate::encounters::encounters_tests::{elite_room, hardy, middle_of, put, seal_of, ticks, told};
+use crate::encounters::encounters_tests::{elite_room, elite_room_with, hardy, middle_of, put, seal_of, ticks, told};
 
 fn plan(room: &Room, seal: usize) -> SealPlan {
     room.encounters.as_ref().expect("encounters").plan.seals[seal].clone()
@@ -17,7 +17,7 @@ fn state(room: &Room, seal: usize) -> Seal {
 /// A player stood in a seal's room, on a cell none of its pieces is on, so the seal runs.
 fn inside(room: &mut Room, player: PlayerId, seal: &SealPlan) {
     let away = seal.cells.iter().copied().find(|&cell| {
-        let [x, y] = middle_of(room, cell);
+        let [x, y, _] = middle_of(room, cell);
         let clear = |piece: &[f64; 3]| libm::hypot(piece[0] - x, piece[1] - y) > 2.0;
         seal.pieces.iter().all(clear)
             && seal
@@ -25,15 +25,15 @@ fn inside(room: &mut Room, player: PlayerId, seal: &SealPlan) {
                 .iter()
                 .all(|pad| x < pad.min_x - 1.0 || x > pad.max_x + 1.0 || y < pad.min_y - 1.0 || y > pad.max_y + 1.0)
     });
-    let [x, y] = middle_of(room, away.unwrap_or(seal.cells[0]));
-    put(room, player, [x, y, 0.0]);
+    let [x, y, z] = middle_of(room, away.unwrap_or(seal.cells[0]));
+    put(room, player, [x, y, z]);
 }
 
 /// One of the dungeon's foes stood at a point, as a wave's are; its number.
-pub(crate) fn stand_one(room: &mut Room, at: [f64; 2]) -> FighterId {
+pub(crate) fn stand_one(room: &mut Room, at: [f64; 3]) -> FighterId {
     let before: Vec<FighterId> = room.foes.keys().copied().collect();
     let mut encounters = room.encounters.take().expect("encounters");
-    room.stand_foes(&mut encounters, None, &[[at[0], at[1], 0.0]], 1);
+    room.stand_foes(&mut encounters, None, &[at], 1);
     room.encounters = Some(encounters);
     *room.foes.keys().find(|id| !before.contains(id)).expect("one stood")
 }
@@ -54,21 +54,21 @@ fn kill(room: &mut Room, id: FighterId) {
 
 #[test]
 fn a_seal_waits_while_a_foe_of_the_garrison_stands_in_its_room_and_its_drowned_floor_harms_only_once_it_runs() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room_with(SealKind::Ascent);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Ascent);
     let laid = plan(&room, seal);
     let guard = guard(&mut room, &laid);
     let wet = laid.drowned.iter().copied().find(|&cell| {
-        let [x, y] = middle_of(&room, cell);
+        let [x, y, _] = middle_of(&room, cell);
         laid.pads
             .iter()
             .all(|pad| x < pad.min_x - 0.5 || x > pad.max_x + 0.5 || y < pad.min_y - 0.5 || y > pad.max_y + 0.5)
     });
-    let [x, y] = middle_of(&room, wet.expect("a wet cell"));
+    let [x, y, z] = middle_of(&room, wet.expect("a wet cell"));
     room.take_events();
     for _ in 0..DROWNED_EVERY * 2 {
-        put(&mut room, player, [x, y, 0.0]);
+        put(&mut room, player, [x, y, z]);
         let body = &mut room.foes.get_mut(&guard).expect("it").fighter.body;
         (body.x, body.y) = (x + 1.0, y);
         room.tick();
@@ -76,11 +76,11 @@ fn a_seal_waits_while_a_foe_of_the_garrison_stands_in_its_room_and_its_drowned_f
     assert_eq!(told(&room.take_events(), EventKind::Drowned), 0, "no harm while it waits");
     assert_eq!(state(&room, seal).state, SealState::Waiting, "guarded, it waits");
     kill(&mut room, guard);
-    put(&mut room, player, [x, y, 0.0]);
+    put(&mut room, player, [x, y, z]);
     room.tick();
     assert_eq!(state(&room, seal).state, SealState::Running, "its guard fallen, it runs");
     for _ in 0..DROWNED_EVERY {
-        put(&mut room, player, [x, y, 0.0]);
+        put(&mut room, player, [x, y, z]);
         room.tick();
     }
     assert_eq!(told(&room.take_events(), EventKind::Drowned), 1, "running, it harms once a second");
@@ -88,7 +88,7 @@ fn a_seal_waits_while_a_foe_of_the_garrison_stands_in_its_room_and_its_drowned_f
 
 #[test]
 fn a_dead_player_alone_in_a_seals_room_leaves_it_waiting() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     let laid = plan(&room, seal);
@@ -101,7 +101,7 @@ fn a_dead_player_alone_in_a_seals_room_leaves_it_waiting() {
 
 #[test]
 fn a_litany_shows_its_runes_in_turn_and_breaks_once_they_are_stepped_in_order() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     let laid = plan(&room, seal);
@@ -126,7 +126,7 @@ fn a_litany_shows_its_runes_in_turn_and_breaks_once_they_are_stepped_in_order() 
 
 #[test]
 fn a_wrong_rune_darkens_them_all_and_wakes_two_of_the_dungeons_foes_but_harms_no_one() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     let laid = plan(&room, seal);
@@ -162,7 +162,7 @@ fn a_wrong_rune_darkens_them_all_and_wakes_two_of_the_dungeons_foes_but_harms_no
 
 #[test]
 fn a_wrong_rune_shows_wrong_for_a_second() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     let laid = plan(&room, seal);
@@ -180,7 +180,7 @@ fn a_wrong_rune_shows_wrong_for_a_second() {
 
 #[test]
 fn a_litany_ignores_a_lit_rune_stepped_again() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     let laid = plan(&room, seal);
@@ -199,7 +199,7 @@ fn a_litany_ignores_a_lit_rune_stepped_again() {
 
 #[test]
 fn a_litanys_show_loops_while_it_runs_and_a_step_too_slow_starts_it_over_with_no_foes() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     ticks(&mut room, RUNE_SHOWN_TICKS);
     let seal = seal_of(&room, SealKind::Litany);
@@ -230,7 +230,7 @@ fn a_litanys_show_loops_while_it_runs_and_a_step_too_slow_starts_it_over_with_no
 
 #[test]
 fn a_litany_counts_no_step_from_a_body_in_the_air() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     let laid = plan(&room, seal);
@@ -247,7 +247,7 @@ fn a_litany_counts_no_step_from_a_body_in_the_air() {
 
 #[test]
 fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_nothing_with_a_plate_empty() {
-    let mut room = elite_room("saltworm-warrens");
+    let mut room = elite_room_with(SealKind::Weighing);
     let players = [hardy(&mut room), hardy(&mut room)];
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -261,7 +261,7 @@ fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_n
     assert_eq!(state(&room, seal).state, SealState::Running);
     room.tick();
     assert_eq!(state(&room, seal).state, SealState::Broken, "held twenty seconds in all");
-    let mut three = elite_room("saltworm-warrens");
+    let mut three = elite_room_with(SealKind::Weighing);
     let company = [hardy(&mut three), hardy(&mut three), hardy(&mut three)];
     put(&mut three, company[0], laid.pieces[0]);
     put(&mut three, company[1], laid.pieces[1]);
@@ -276,7 +276,7 @@ fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_n
 
 #[test]
 fn a_weighing_counts_only_the_living_players_in_its_room() {
-    let mut room = elite_room("saltworm-warrens");
+    let mut room = elite_room_with(SealKind::Weighing);
     let company = [hardy(&mut room), hardy(&mut room), hardy(&mut room)];
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -297,7 +297,7 @@ fn a_weighing_counts_only_the_living_players_in_its_room() {
 
 #[test]
 fn a_plate_stays_held_after_its_player_steps_off_so_one_player_can_hold_two() {
-    let mut room = elite_room("saltworm-warrens");
+    let mut room = elite_room_with(SealKind::Weighing);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -319,7 +319,7 @@ fn a_plate_stays_held_after_its_player_steps_off_so_one_player_can_hold_two() {
 
 #[test]
 fn one_player_holds_a_weighing_walking_between_its_two_plates() {
-    let mut room = elite_room("cinder-deep");
+    let mut room = elite_room_with(SealKind::Weighing);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -331,7 +331,7 @@ fn one_player_holds_a_weighing_walking_between_its_two_plates() {
         put(&mut room, player, if crossing % 2 == 0 { first } else { second });
         ticks(&mut room, 60);
         // Walking between them, on neither.
-        put(&mut room, player, [(first[0] + second[0]) / 2.0, (first[1] + second[1]) / 2.0, 0.0]);
+        put(&mut room, player, [(first[0] + second[0]) / 2.0, (first[1] + second[1]) / 2.0, first[2]]);
         ticks(&mut room, walk);
         if state(&room, seal).state == SealState::Broken {
             return;
@@ -342,13 +342,13 @@ fn one_player_holds_a_weighing_walking_between_its_two_plates() {
 
 #[test]
 fn a_seals_wave_counts_the_living_players_in_its_room_not_the_run() {
-    let mut room = elite_room("saltworm-warrens");
+    let mut room = elite_room_with(SealKind::Weighing);
     let company: Vec<PlayerId> = (0..4).map(|_| hardy(&mut room)).collect();
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
-    let ([x, y], others) = (middle_of(&room, laid.cells[0]), &company[1..]);
+    let ([x, y, z], others) = (middle_of(&room, laid.cells[0]), &company[1..]);
     for (nth, player) in others.iter().enumerate() {
-        put(&mut room, *player, [x + nth as f64 * 0.5, y, 0.0]);
+        put(&mut room, *player, [x + nth as f64 * 0.5, y, z]);
     }
     ticks(&mut room, WEIGHING_FIRST_WAVE_TICKS + 2);
     assert_eq!(room.foes.len(), 3, "one for each of the three in its room, the fourth away");
@@ -356,7 +356,7 @@ fn a_seals_wave_counts_the_living_players_in_its_room_not_the_run() {
 
 #[test]
 fn a_weighings_first_wave_comes_three_seconds_in_and_the_next_every_twelve_from_its_doorways() {
-    let mut room = elite_room("saltworm-warrens");
+    let mut room = elite_room_with(SealKind::Weighing);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Weighing);
     let laid = plan(&room, seal);
@@ -376,21 +376,21 @@ fn a_weighings_first_wave_comes_three_seconds_in_and_the_next_every_twelve_from_
 
 #[test]
 fn an_ascents_drowned_floor_harms_while_its_seal_holds_and_its_stone_held_two_seconds_breaks_it() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room_with(SealKind::Ascent);
     let player = room.join().expect("in");
     let seal = seal_of(&room, SealKind::Ascent);
     let laid = plan(&room, seal);
     let wet = laid.drowned.iter().copied().find(|&cell| {
-        let [x, y] = middle_of(&room, cell);
+        let [x, y, _] = middle_of(&room, cell);
         laid.pads
             .iter()
             .all(|pad| x < pad.min_x - 0.5 || x > pad.max_x + 0.5 || y < pad.min_y - 0.5 || y > pad.max_y + 0.5)
     });
-    let [x, y] = middle_of(&room, wet.expect("a wet cell"));
+    let [x, y, z] = middle_of(&room, wet.expect("a wet cell"));
     let whole = room.players[&player].fighter.health_max;
     let mut taken = Vec::new();
     for _ in 0..DROWNED_EVERY * 2 {
-        put(&mut room, player, [x, y, 0.0]);
+        put(&mut room, player, [x, y, z]);
         let before = room.players[&player].fighter.health;
         room.tick();
         taken.push(before - room.players[&player].fighter.health);
@@ -408,7 +408,7 @@ fn an_ascents_drowned_floor_harms_while_its_seal_holds_and_its_stone_held_two_se
     assert_eq!(state(&room, seal).state, SealState::Broken, "the stone held two seconds");
     assert!((stone[2] - top.top).abs() < 1e-12);
     for _ in 0..DROWNED_EVERY * 2 {
-        put(&mut room, player, [x, y, 0.0]);
+        put(&mut room, player, [x, y, z]);
         room.tick();
     }
     assert_eq!(room.players[&player].fighter.health, health, "drained once the seal is broken");
@@ -416,7 +416,7 @@ fn an_ascents_drowned_floor_harms_while_its_seal_holds_and_its_stone_held_two_se
 
 #[test]
 fn a_holdfast_is_held_in_its_ring_and_a_relic_drained_by_foes_halves_the_hold() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Holdfast);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Holdfast);
     let laid = plan(&room, seal);
@@ -438,7 +438,7 @@ fn a_holdfast_is_held_in_its_ring_and_a_relic_drained_by_foes_halves_the_hold() 
     // A foe in the ring drains a twentieth of the relic a second.
     room.send_foes_away();
     room.encounters.as_mut().expect("encounters").seals[seal].relic = 1.0;
-    let foe = stand_one(&mut room, [laid.pieces[0][0] + 0.5, laid.pieces[0][1]]);
+    let foe = stand_one(&mut room, [laid.pieces[0][0] + 0.5, laid.pieces[0][1], laid.pieces[0][2]]);
     for _ in 0..60 {
         let body = &mut room.foes.get_mut(&foe).expect("it").fighter.body;
         (body.x, body.y) = (laid.pieces[0][0] + 0.5, laid.pieces[0][1]);
@@ -459,7 +459,7 @@ fn a_holdfast_is_held_in_its_ring_and_a_relic_drained_by_foes_halves_the_hold() 
 
 #[test]
 fn a_holdfasts_relic_regains_a_fortieth_a_second_while_no_foe_stands_in_its_ring() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Holdfast);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Holdfast);
     let laid = plan(&room, seal);
@@ -475,7 +475,7 @@ fn a_holdfasts_relic_regains_a_fortieth_a_second_while_no_foe_stands_in_its_ring
 
 #[test]
 fn an_ascents_stone_holds_only_while_every_living_player_in_its_room_stands_on_it() {
-    let mut room = elite_room("pale-undercroft");
+    let mut room = elite_room_with(SealKind::Ascent);
     let players = [hardy(&mut room), hardy(&mut room)];
     let seal = seal_of(&room, SealKind::Ascent);
     let laid = plan(&room, seal);
@@ -498,7 +498,7 @@ fn an_ascents_stone_holds_only_while_every_living_player_in_its_room_stands_on_i
 
 #[test]
 fn a_holdfast_breaks_once_held_forty_five_seconds_in_all() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Holdfast);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Holdfast);
     let laid = plan(&room, seal);
@@ -525,7 +525,7 @@ fn a_litanys_show_lights_each_rune_in_turn_then_waits() {
 
 #[test]
 fn a_seals_wave_stands_one_foe_for_each_living_player_two_to_four_each_hunting_the_nearest() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Holdfast);
     let players: Vec<PlayerId> = (0..5).map(|_| hardy(&mut room)).collect();
     let seal = seal_of(&room, SealKind::Holdfast);
     let laid = plan(&room, seal);
@@ -537,7 +537,7 @@ fn a_seals_wave_stands_one_foe_for_each_living_player_two_to_four_each_hunting_t
     room.encounters = Some(encounters);
     // Each hunts the living player nearest it.
     for (at, player) in players.iter().enumerate() {
-        put(&mut room, *player, [laid.pieces[0][0] + at as f64 * 40.0, laid.pieces[0][1], 0.0]);
+        put(&mut room, *player, [laid.pieces[0][0] + at as f64 * 40.0, laid.pieces[0][1], laid.pieces[0][2]]);
     }
     let mut encounters = room.encounters.take().expect("encounters");
     room.send_foes_away();
@@ -549,7 +549,7 @@ fn a_seals_wave_stands_one_foe_for_each_living_player_two_to_four_each_hunting_t
 
 #[test]
 fn a_waves_foe_standing_in_a_waiting_seals_room_does_not_hold_it() {
-    let mut room = elite_room("krakens-grotto");
+    let mut room = elite_room_with(SealKind::Litany);
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Litany);
     let laid = plan(&room, seal);

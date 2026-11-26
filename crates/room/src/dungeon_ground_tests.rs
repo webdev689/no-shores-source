@@ -2,8 +2,9 @@ use super::*;
 use dungeon::{CELL_M, Dungeon, SIDES, STYLES, Side};
 use movement::{Body, Controls, Mode, TICK_SECONDS, standing, step_body};
 
+/// A dungeon of one storey: these pin the ground within a storey (`dungeon_storeys_tests.rs` the ground across them).
 fn forged(seed: u32) -> (Dungeon, DungeonGround) {
-    let dungeon = Dungeon::forge(seed, STYLES[seed as usize % STYLES.len()]);
+    let dungeon = Dungeon::forge_storeys(seed, STYLES[seed as usize % STYLES.len()], dungeon::BLOCKS, 1);
     let ground = DungeonGround::of(&dungeon).unwrap();
     (dungeon, ground)
 }
@@ -133,7 +134,9 @@ fn way_out(dungeon: &Dungeon, solid: &[f64; 5]) -> Option<(usize, Side)> {
     let cell = cell_of(solid);
     let side = SIDES.into_iter().find(|&side| {
         dungeon.beside(cell, side).is_some_and(|next| {
-            dungeon.room_at(next) == dungeon.room_at(cell) && solids.iter().all(|other| cell_of(other) != next)
+            dungeon.room_at(cell).is_some()
+                && dungeon.room_at(next) == dungeon.room_at(cell)
+                && solids.iter().all(|other| cell_of(other) != next)
         })
     })?;
     Some((cell, side))

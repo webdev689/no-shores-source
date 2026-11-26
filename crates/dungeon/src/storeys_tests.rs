@@ -2,9 +2,10 @@ use crate::hand_made::{ROOM_HEIGHT_M, VOID_AT, two_storeys};
 use crate::{CELL_M, Cell, Dungeon, FLIGHT_CEILING_M, FLOOR_M, STYLES, Span, storey_floor};
 
 #[test]
-fn a_forged_dungeon_is_one_storey_with_its_floor_at_nought() {
+fn a_dungeon_asked_for_one_storey_is_one_storey_with_its_floor_at_nought() {
     for seed in 0..40_u32 {
-        let dungeon = Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]);
+        let style = STYLES[seed as usize % STYLES.len()];
+        let dungeon = Dungeon::forge_storeys(seed.wrapping_mul(2_654_435_761), style, crate::BLOCKS, 1);
         assert_eq!(dungeon.storeys, 1);
         assert!(dungeon.stairs.is_empty());
         assert_eq!(dungeon.cells.len(), dungeon.plane());
@@ -101,4 +102,19 @@ fn a_void_over_rock_opens_nothing() {
     let under = dungeon.plane() + VOID_AT.1 * dungeon.columns + VOID_AT.0;
     dungeon.cells[under] = Cell::Rock;
     assert!(dungeon.spans(VOID_AT.1 * dungeon.columns + VOID_AT.0).is_empty());
+}
+
+#[test]
+fn the_walls_round_a_room_are_the_cells_of_its_grown_rectangle_not_its_own_on_its_storey() {
+    let dungeon = two_storeys();
+    let room = &dungeon.rooms[2];
+    let walls = dungeon.walls_round(2);
+    assert_eq!(walls.len() + room.cells.len(), (room.width + 2) * (room.depth + 2));
+    let floor = storey_floor(room.storey);
+    for [west, north, east, south, bottom, top] in walls {
+        let cell = dungeon.cell_at([west + CELL_M / 2.0, north + CELL_M / 2.0, floor]);
+        assert!(!room.cells.contains(&cell), "{cell} is the room's own");
+        assert!((east - west - CELL_M).abs() < 1e-9 && (south - north - CELL_M).abs() < 1e-9);
+        assert!(bottom == floor && top == floor + crate::STOREY_M);
+    }
 }

@@ -160,12 +160,31 @@ impl Dungeon {
         self.cells.get(cell).is_some_and(|&kind| kind != Cell::Rock)
     }
 
-    /// The cells a walk steps to from a cell: those beside it on its storey that are open, and a flight's twin.
+    /// The cells round a room and within its rectangle that are not its own, each as a box from its floor to the
+    /// storey over (west, north, east, south, bottom, top): what a leap across the room may not cross.
+    #[must_use]
+    pub fn walls_round(&self, room: usize) -> Vec<[f64; 6]> {
+        let found = &self.rooms[room];
+        let (first, floor) = (found.storey * self.plane(), storey_floor(found.storey));
+        let columns = found.x.saturating_sub(1)..(found.x + found.width + 1).min(self.columns);
+        let rows = found.y.saturating_sub(1)..(found.y + found.depth + 1).min(self.rows);
+        let squares = rows.flat_map(|row| columns.clone().map(move |column| (column, row)));
+        squares
+            .filter(|&(column, row)| !found.cells.contains(&(first + row * self.columns + column)))
+            .map(|(column, row)| {
+                let [west, north] = [column as f64 * CELL_M, row as f64 * CELL_M];
+                [west, north, west + CELL_M, north + CELL_M, floor, floor + STOREY_M]
+            })
+            .collect()
+    }
+
+    /// The cells a walk steps to from a cell: those beside it on its storey that are open but open air, which is a
+    /// way down alone, and a flight's twin.
     pub fn walk_from(&self, cell: usize) -> impl Iterator<Item = usize> + '_ {
         SIDES
             .into_iter()
             .filter_map(move |side| self.beside(cell, side))
-            .filter(|&next| self.open(next))
+            .filter(|&next| self.open(next) && self.cells[next] != Cell::Void)
             .chain(self.stair_twin(cell))
     }
 }

@@ -7,8 +7,8 @@ fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
     (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
 }
 
-fn cell_at(dungeon: &Dungeon, x: f64, y: f64) -> usize {
-    (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize
+fn cell_at(dungeon: &Dungeon, x: f64, y: f64, z: f64) -> usize {
+    dungeon.cell_at([x, y, z])
 }
 
 #[test]
@@ -19,7 +19,7 @@ fn every_room_is_lit_by_a_torch_or_a_fixture() {
             .iter()
             .map(|torch| torch.at)
             .chain(dungeon.fixtures.iter().map(|fixture| fixture.at))
-            .map(|at| cell_at(&dungeon, at[0], at[1]))
+            .map(|at| cell_at(&dungeon, at[0], at[1], at[2]))
             .collect();
         for room in &dungeon.rooms {
             assert!(room.cells.iter().any(|cell| lit_cells.contains(cell)), "{} stands lit", room.name);
@@ -31,13 +31,34 @@ fn every_room_is_lit_by_a_torch_or_a_fixture() {
 fn each_fixture_burns_where_its_kind_does() {
     let mut kinds = [0; 6];
     for dungeon in every_dungeon(1200) {
-        let torch_walls: Vec<(usize, crate::Side)> =
-            dungeon.torches.iter().map(|torch| (cell_at(&dungeon, torch.at[0], torch.at[1]), torch.wall)).collect();
+        let torch_walls: Vec<(usize, crate::Side)> = dungeon
+            .torches
+            .iter()
+            .map(|torch| (cell_at(&dungeon, torch.at[0], torch.at[1], torch.at[2]), torch.wall))
+            .collect();
         for fixture in &dungeon.fixtures {
             kinds[usize::from(fixture.kind.number())] += 1;
             let [x, y, z] = fixture.at;
-            let cell = cell_at(&dungeon, x, y);
-            let room = dungeon.room_at(cell).expect("a fixture burns in a room");
+            let cell = cell_at(&dungeon, x, y, z);
+            // A pair of braziers flanking a doorway the main way leaves by may stand in the corridor past it.
+            let outside = fixture.kind == Kind::Brazier
+                && dungeon.cells[cell] == Cell::Corridor
+                && SIDES
+                    .into_iter()
+                    .any(|side| dungeon.beside(cell, side).is_some_and(|at| dungeon.room_at(at).is_some()));
+            if outside {
+                continue;
+            }
+            let Some(room) = dungeon.room_at(cell) else {
+                panic!(
+                    "a {:?} at {:?} burns in {:?} storey {}",
+                    fixture.kind,
+                    fixture.at,
+                    dungeon.cells[cell],
+                    dungeon.storey_of(cell)
+                )
+            };
+            let floor = crate::storey_floor(dungeon.rooms[room].storey);
             let look = dungeon.looks[dungeon.rooms[room].look].key;
             let [middle_x, middle_y] = dungeon.centre(cell);
             let rock =
@@ -58,7 +79,7 @@ fn each_fixture_burns_where_its_kind_does() {
                             && (max_y - min_y - 2.0 * BRAZIER_HALF_M).abs() < 1e-9
                     );
                     assert!(((min_x + max_x) / 2.0 - x).abs() < 1e-9 && ((min_y + max_y) / 2.0 - y).abs() < 1e-9);
-                    assert!((top - BRAZIER_TOP_M).abs() < 1e-12 && z > top, "its flame over its bowl");
+                    assert!((top - floor - BRAZIER_TOP_M).abs() < 1e-12 && z > top, "its flame over its bowl");
                 }
                 Kind::Candles => {
                     assert!(fixture.solid.is_none());
@@ -76,13 +97,20 @@ fn each_fixture_burns_where_its_kind_does() {
                     assert_eq!(look, "caverns", "crystals and fungus glow in the caverns");
                     let [min_x, min_y, max_x, max_y, top] = fixture.solid.expect("a cluster is a solid");
                     let tall = if fixture.kind == Kind::Fungus { FUNGUS_TOP_M } else { CRYSTALS_TOP_M };
-                    assert!(x > min_x && x < max_x && y > min_y && y < max_y && z < top && (top - tall).abs() < 1e-12);
+                    assert!(
+                        x > min_x
+                            && x < max_x
+                            && y > min_y
+                            && y < max_y
+                            && z < top
+                            && (top - floor - tall).abs() < 1e-12
+                    );
                     let side = wall_off(0.3).expect("against a rock wall");
                     assert!(!torch_walls.contains(&(cell, side)), "never on a torch's wall");
                 }
                 Kind::Lantern => {
                     assert_eq!(look, "mines", "lanterns hang in the mines");
-                    assert!(fixture.solid.is_none() && (z - LANTERN_M).abs() < 1e-12);
+                    assert!(fixture.solid.is_none() && (z - floor - LANTERN_M).abs() < 1e-12);
                     let on_post = dungeon.props.iter().any(|prop| {
                         let Some([min_x, min_y, max_x, max_y, _]) = prop.solid else { return false };
                         let post = prop_model(prop.model).is_some_and(|model| model.piece == Piece::Post);

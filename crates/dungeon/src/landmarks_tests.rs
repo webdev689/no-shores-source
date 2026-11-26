@@ -47,8 +47,8 @@ fn rectangle(placed: &Placed) -> [f64; 4] {
 }
 
 /// The cell a point stands in.
-fn cell_at(dungeon: &Dungeon, at: [f64; 2]) -> usize {
-    (at[1] / CELL_M) as usize * dungeon.columns + (at[0] / CELL_M) as usize
+fn cell_at(dungeon: &Dungeon, at: [f64; 3]) -> usize {
+    dungeon.cell_at(at)
 }
 
 /// Whether a cell is one of `cells` or beside one.
@@ -162,8 +162,9 @@ fn every_footprint_lies_on_its_rooms_cells_clear_of_its_rim_or_backed_on_rock_it
             assert!(column as f64 * CELL_M == west && row as f64 * CELL_M == north, "on whole cells");
             let (across, down) =
                 (((east - west) / CELL_M).round() as usize, ((south - north) / CELL_M).round() as usize);
+            let first = dungeon.rooms[placed.room].storey * dungeon.plane();
             let want: Vec<usize> = (row..row + down)
-                .flat_map(|y| (column..column + across).map(move |x| y * dungeon.columns + x))
+                .flat_map(|y| (column..column + across).map(move |x| first + y * dungeon.columns + x))
                 .collect();
             assert_eq!(placed.cells, want, "its cells, row by row");
             let back =
@@ -240,19 +241,20 @@ fn no_prop_fixture_pillar_torch_doorway_arrival_or_portal_stands_on_a_footprint(
         for placed in &dungeon.landmarks {
             let footprint = &placed.cells;
             for prop in &dungeon.props {
-                let at = prop.solid.map_or([prop.at[0], prop.at[1]], |solid| {
-                    [(solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0]
+                let at = prop.solid.map_or([prop.at[0], prop.at[1], prop.at[2] + 0.5], |solid| {
+                    [(solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0, solid[4]]
                 });
                 assert!(!footprint.contains(&cell_at(dungeon, at)), "a prop on {}", placed.landmark.module);
             }
             for fixture in &dungeon.fixtures {
-                assert!(!footprint.contains(&cell_at(dungeon, [fixture.at[0], fixture.at[1]])), "a fixture on it");
+                assert!(!footprint.contains(&cell_at(dungeon, fixture.at)), "a fixture on it");
             }
             for torch in &dungeon.torches {
-                assert!(!footprint.contains(&cell_at(dungeon, [torch.at[0], torch.at[1]])), "a torch's wall on it");
+                assert!(!footprint.contains(&cell_at(dungeon, torch.at)), "a torch's wall on it");
             }
             let [west, north, east, south] = rectangle(placed);
-            for &[x, y, _] in &dungeon.pillars {
+            let storey = dungeon.rooms[placed.room].storey;
+            for &[x, y, _] in dungeon.pillars.iter().filter(|pillar| dungeon.storey_under(pillar[2]) == storey) {
                 let apart = x + PILLAR_HALF_M <= west
                     || x - PILLAR_HALF_M >= east
                     || y + PILLAR_HALF_M <= north
@@ -261,7 +263,7 @@ fn no_prop_fixture_pillar_torch_doorway_arrival_or_portal_stands_on_a_footprint(
             }
             let room = &dungeon.rooms[placed.room];
             assert!(!room.cells.iter().any(|&cell| doorway(dungeon, cell) && touches(dungeon, footprint, cell)));
-            for cell in [dungeon.way_in.cell, dungeon.portal.cell, cell_at(dungeon, arrival)] {
+            for cell in [dungeon.way_in.cell, dungeon.portal.cell, cell_at(dungeon, [arrival[0], arrival[1], 0.0])] {
                 assert!(!touches(dungeon, footprint, cell), "the way in, the arrival or the portal by it");
             }
         }
@@ -275,7 +277,11 @@ fn the_boxes_end_with_the_landmarks_solids() {
             .landmarks
             .iter()
             .flat_map(|placed| {
-                placed.solids.iter().map(|&[min_x, min_y, max_x, max_y, top]| [min_x, min_y, max_x, max_y, 0.0, top])
+                let floor = crate::storey_floor(dungeon.rooms[placed.room].storey);
+                placed
+                    .solids
+                    .iter()
+                    .map(move |&[min_x, min_y, max_x, max_y, top]| [min_x, min_y, max_x, max_y, floor, top])
             })
             .collect();
         let boxes = dungeon.boxes();
