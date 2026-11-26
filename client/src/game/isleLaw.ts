@@ -3,7 +3,7 @@
 // (the route planner's grid is far coarser than an island), and an island's room and place on foot.
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { SeenIsle } from '../network/seaHarbour.ts';
+import type { SeenIsle, SeenMark } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Use } from './footGear.ts';
 import type { IsleHeld } from './isles.ts';
@@ -65,9 +65,17 @@ export interface KeptClear {
   readonly radius: number;
 }
 
-/** What a voyage keeps clear of round each island: its built reach, or the farthest any reaches, and `KEEP_CLEAR_M`. */
-export function keptClear(isles: readonly IsleAt[]): KeptClear[] {
-  return isles.map((isle) => ({ at: isle.seen.at, radius: (isle.built?.reach ?? UNBUILT_REACH_M) + KEEP_CLEAR_M }));
+/** What a voyage keeps clear of round each island: its built reach, or the farthest any reaches, and `KEEP_CLEAR_M`;
+ *  and round each island the sea's chart `marks` that the room has not told of, as of one not built, since a travel's
+ *  last leg is refused across any island standing. */
+export function keptClear(isles: readonly IsleAt[], marks: readonly SeenMark[] = []): KeptClear[] {
+  const told = isles.map((isle) => ({
+    at: isle.seen.at,
+    radius: (isle.built?.reach ?? UNBUILT_REACH_M) + KEEP_CLEAR_M,
+  }));
+  const known = new Set(told.map(({ at }) => `${at[0]},${at[1]}`));
+  const marked = marks.filter(({ at, kind }) => kind !== 'hostile' && !known.has(`${at[0]},${at[1]}`));
+  return [...told, ...marked.map(({ at }) => ({ at, radius: UNBUILT_REACH_M + KEEP_CLEAR_M }))];
 }
 
 /** A voyage's points with each leg that passes through a circle bent round it: two points at 45 degrees either side

@@ -524,8 +524,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   view down to the helm and raises the [[Held Map]], where a destination is set; Stop while under way and Resume
   voyage once stopped short (both Space); the pace dial; and Manage (B) and Leave the helm (H)
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). A stopped voyage keeps its destination: resuming
-  plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination in
-  other waters asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
+  plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination
+  anywhere at sea, in the ship's own water or another, asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
   sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
 - **Manage** pans the view down over 1.4 s to the ship at its true size, from its starboard quarter 39 m off,
   looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The player
@@ -577,8 +577,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   read that one opening, the ship's first putting to sea awaiting it. The place's line at sea, at the helm and in
   Manage names
   the water the ship is in, its band and holder ("The Fen Deeps, levels 22-26, Grey Tithe"; "The Lantern Sea, Overlook's
-  home waters"; a ruined city's "The Lattice"). A notice (DFO's toast) says for 6 s when the ship enters another
-  water ("Entering The Mistwrack, levels 16-19, The Lattice.") and when a hostile ship is first sighted ("A Tithe Brig
+  home waters" within 10 km of its coast, "The Lantern Sea, levels 1-4, Grey Tithe" past it; a ruined city's "The
+  Lattice"). A notice (DFO's toast) says for 6 s when the line changes, the ship entering another water or crossing
+  the Lantern Sea's 10 km either way ("Entering The Mistwrack, levels 16-19, The Lattice.") and when a hostile ship is first sighted ("A Tithe Brig
   sighted, 12 km off."), the nearest first.
 - **The Grey Tithe's ships** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at its
   voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of the ship, and the voyage's line says so;

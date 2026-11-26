@@ -8,6 +8,8 @@ import {
   DOT,
   dotInks,
   fontOf,
+  HOSTILE_HALF,
+  HOSTILE_INK,
   ISLE_HALF,
   LIGHT_INK,
   paintLettering,
@@ -19,7 +21,14 @@ import { levelColour } from './watersWash.ts';
 
 /** A 2D context that records what is painted, each word 6 pixels a letter wide. */
 function recorder() {
-  const calls: { name: string; args: unknown[]; font: string; fillStyle: unknown; textAlign?: string }[] = [];
+  const calls: {
+    name: string;
+    args: unknown[];
+    font: string;
+    fillStyle: unknown;
+    strokeStyle: unknown;
+    textAlign?: string;
+  }[] = [];
   const state = {
     font: '',
     fillStyle: '' as unknown,
@@ -39,6 +48,7 @@ function recorder() {
           args,
           font: state.font,
           fillStyle: state.fillStyle,
+          strokeStyle: state.strokeStyle,
           ...(String(key) === 'fillText' ? { textAlign: state.textAlign } : {}),
         });
     },
@@ -66,7 +76,11 @@ test('the words, marks and key are painted on the parchment’s picture, each at
   const { painter, calls } = recorder();
   paintLettering(painter, { width: 800, height: 500 }, { x: 20, y: 18 }, 2, LETTERING);
   assert.deepEqual(calls[0]?.args, [1, 0, 0, 1, 0, 0]);
-  assert.deepEqual(calls[1], { name: 'clearRect', args: [0, 0, 800, 500], font: '', fillStyle: '' }, 'cleared first');
+  assert.deepEqual(
+    calls[1],
+    { name: 'clearRect', args: [0, 0, 800, 500], font: '', fillStyle: '', strokeStyle: '' },
+    'cleared first',
+  );
   assert.deepEqual(calls[2]?.args, [2, 0, 0, 2, 40, 36], 'at the map’s place, device pixels');
   const words = calls.filter((call) => call.name === 'fillText').map((call) => call.args[0]);
   assert.deepEqual(words, [
@@ -228,4 +242,29 @@ test('at sea each other player’s ship on the sheet is a dot in their nameplate
   const lastWord = calls.findLastIndex((call) => call.name === 'fillText');
   const arrow = calls.findLastIndex((call) => call.name === 'fill' && call.fillStyle === ROUTE);
   assert.ok(dots.every((index) => index > lastWord && index < arrow));
+});
+
+test('a hostile ship is marked whole or not at all, a hull under a sail in the Tithe’s slate edged in the parchment, over the dots, under the arrow', () => {
+  const ink = { width: 800, height: 500 };
+  const hostile = (x: number, y: number) => ({ at: [x, y] as const });
+  const hostiles = dotInks(
+    [hostile(10, 2000), hostile(100, 2000), hostile(7990, 4990)],
+    (x, y) => [x / 10, y / 10],
+    ink,
+    HOSTILE_HALF,
+  );
+  assert.deepEqual(
+    hostiles,
+    [{ x: 10, y: 200, company: false }],
+    'one that would spill past the map’s edge is left off',
+  );
+  const { painter, calls } = recorder();
+  const others = [{ x: 300, y: 50, company: false }];
+  paintLettering(painter, ink, { x: 0, y: 0 }, 1, LETTERING, [], others, hostiles);
+  const slate = calls.findIndex((call) => call.name === 'fill' && call.fillStyle === HOSTILE_INK);
+  assert.ok(slate >= 0, 'filled in the Tithe’s slate');
+  assert.equal(calls.slice(0, slate).findLast((call) => call.name === 'stroke')?.strokeStyle, PARCHMENT);
+  const dot = calls.findIndex((call) => call.name === 'arc' && call.args[2] === DOT.radius);
+  const arrow = calls.findLastIndex((call) => call.name === 'fill' && call.fillStyle === ROUTE);
+  assert.ok(dot < slate && slate < arrow, 'over the dots, under the arrow');
 });

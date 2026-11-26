@@ -133,8 +133,9 @@ The sea room holds its islands (`sea_islands.rs`):
 - The sea snapshot carries the islands the player is told of; the page builds each once through the room module, one
   at a time in a worker of its own (`islePlanWorker.ts`), so a build never holds up a frame (`isles.ts`, by its
   number and seed, let go of once the room tells of it no more), and every
-  voyage's legs are bent round each island in sight, since the route planner's grid is far coarser than an island
-  (`isleLaw.ts`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
+  voyage's legs are bent round each island in sight, and each the sea's chart marks in the ship's water that the room
+  has not told of (as far as an island not built reaches), since the route planner's grid is far coarser than an
+  island and a travel's last leg is refused across any island standing (`isleLaw.ts`, `keptClear`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
   from its middle through that point. An island come into sight bends the voyage still ahead round it.
 - Within 700 m past an island's coast the ship is offered to go ashore on it ("Go ashore on a cove"); taken, the ship sails
   out to the island's offing on its landing's bearing, round it where it must, and in to its anchorage, and once it lies

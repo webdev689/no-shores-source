@@ -46,10 +46,11 @@ export function chartMarksOf(
 /** The islands the sea's map marks: those the player has `found`, wherever they lie, and each standing in their ship's
  *  water among the chart's `marks`, each once. */
 export function isleMarksOf(found: readonly SeenIsle[], marks: readonly SeenMark[]): IsleMark[] {
-  const isles = [...found, ...marks].flatMap(({ at, kind }) => (kind === 'hostile' ? [] : [{ at, kind }]));
-  const first = ([east, south]: readonly [number, number]) =>
-    isles.findIndex((isle) => isle.at[0] === east && isle.at[1] === south);
-  return isles
-    .filter(({ at }, index) => first(at) === index)
-    .map(({ at, kind }) => ({ at, kind, isle: kind !== 'cove' }));
+  const marked = new Set<string>();
+  return [...found, ...marks].flatMap(({ at, kind }) => {
+    const key = `${at[0]},${at[1]}`;
+    if (kind === 'hostile' || marked.has(key)) return [];
+    marked.add(key);
+    return [{ at, kind, isle: kind !== 'cove' }];
+  });
 }

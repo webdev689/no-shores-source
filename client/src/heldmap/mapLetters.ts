@@ -214,6 +214,9 @@ export function paintDot(painter: Painter, company: boolean): void {
   painter.stroke();
 }
 
+/** Units from a hostile ship's mark's middle to its farthest edge, its parchment edge included. */
+export const HOSTILE_HALF = 8.5;
+
 /** A hostile ship's mark at the origin: a hull under a sail, in its dark slate, edged in the parchment. */
 export function paintHostile(painter: Painter): void {
   painter.beginPath();
@@ -241,15 +244,17 @@ export interface DotInk {
 }
 
 /** Other players' ships at sea (world metres) as their dots on the sheet `ink` (`inkOf`), those on it alone, to the
- *  quarter pixel; marks of no company (hostile ships) as of none. */
+ *  quarter pixel; marks of no company (hostile ships) as of none. With `half`, a mark reaching that far from its middle,
+ *  ink pixels, only those whole on it. */
 export function dotInks(
   others: readonly { readonly at: Point2; readonly company?: boolean }[],
   inkOf: (x: number, y: number) => readonly [number, number],
   ink: { readonly width: number; readonly height: number },
+  half = 0,
 ): DotInk[] {
   return others.flatMap(({ at, company = false }) => {
     const [x, y] = inkOf(at[0], at[1]);
-    const onSheet = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
+    const onSheet = x >= half && y >= half && x <= ink.width - half && y <= ink.height - half;
     return onSheet ? [{ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, company }] : [];
   });
 }

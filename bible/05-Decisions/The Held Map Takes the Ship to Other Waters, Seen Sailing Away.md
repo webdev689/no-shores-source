@@ -18,4 +18,4 @@ status: in force
 
 How it is built: [[Sailing]], [[World Map]]; Claude's choices: [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]].
 
-Widened by [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: a course anywhere at sea, in the ship's own water too, asks whether to travel there.
+Replaced in part by [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]: a course anywhere at sea, in the ship's own water too, asks whether to travel there.

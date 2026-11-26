@@ -121,7 +121,7 @@ export class Sea {
     ];
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
     this.passage = new Passage(outlines, () => this.landmass.mask, start, heading, hull.way);
-    this.passage.keepClear = () => keptClear(this.isles?.all() ?? []);
+    this.passage.keepClear = () => keptClear(this.isles?.all() ?? [], this.room?.chartMarks);
     this.view = new SeaView(start, heading, () => this.drawn.ownDeck());
     this.setLandmass(landmass);
   }

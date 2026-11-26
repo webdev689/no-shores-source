@@ -456,8 +456,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (!sea || playing.flow.mode !== 'sea') return;
     // An island new in sight bends the voyage ahead round it.
     if (isles.update(sea.sighted?.islands ?? [])) sea.bendRound();
-    const found = isles.all().flatMap(({ seen }) => (seen.found ? [seen] : []));
-    playing.helmMap.held?.setIsles(isleMarksOf(found, sea.sighted?.chartMarks ?? []));
+    // Marked only while the map is up, the only time they are drawn.
+    const found = playing.helmMap.shown ? isles.all().flatMap(({ seen }) => (seen.found ? [seen] : [])) : null;
+    if (found) playing.helmMap.held?.setIsles(isleMarksOf(found, sea.sighted?.chartMarks ?? []));
     // Ashore only once nothing else is under way: the map put away, the deck left, the fight's view panned home.
     if (!free() || sea.fight) return;
     const washed = playing.seaWord?.washedIsle ?? null;

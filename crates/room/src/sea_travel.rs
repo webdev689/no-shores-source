@@ -26,7 +26,7 @@ pub enum TravelRefused {
 
 impl TravelRefused {
     /// The number the page is told: 1 fighting, 2 off the helm, 3 chased, 5 across land, 6 too soon, 7 any other
-    /// course refused (4, its own water, is no longer refused).
+    /// course refused; 4 is not used.
     #[must_use]
     pub fn number(self) -> f64 {
         match self {

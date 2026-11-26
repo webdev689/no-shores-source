@@ -157,3 +157,28 @@ test('E scavenges a wreck within reach until the room says it is spent, else ope
   assert.deepEqual(doors, [{ room: 'sea-dungeon-continent-4-caverns-000000ff--elite', at: [1000, 2030], facing: 2.5 }]);
   assert.equal(uses(1000, 2100, ask), null);
 });
+
+test('a voyage keeps clear of an island marked on the map that the room has not told of, as of one not built', () => {
+  const told = built(1, [0, 0]);
+  const marks = [
+    { at: [0, 0] as Point2, kind: 'cove' as const },
+    { at: [0, 2_000] as Point2, kind: 'ruin' as const },
+    { at: [0, 4_000] as Point2, kind: 'hostile' as const },
+  ];
+  assert.deepEqual(
+    keptClear([told], marks).map(({ at }) => at),
+    [
+      [0, 0],
+      [0, 2_000],
+    ],
+    'the told island once, the marked one besides, no hostile ship',
+  );
+  const course = detour(
+    [
+      [0, 1_000],
+      [0, 3_000],
+    ],
+    keptClear([], marks),
+  );
+  assert.ok(keepsOff(course, [0, 2_000], 250), 'round the marked island');
+});

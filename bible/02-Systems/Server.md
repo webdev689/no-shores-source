@@ -288,8 +288,7 @@ will take it, by the room's own tick.
   points are refused.
 - **Travel.** A course asked with the travel flag (the held map's, [[Sailing]], "Travel by the held
   map") takes the ship most of the way at once (`sea_travel.rs`). It is refused while the player fights, stands on a deck or boards,
-  is off the helm, or is any hostile ship's quarry, when the course ends in the water the ship is in, and as any
-  course is refused; its last leg and the place it would lie are judged besides against every standing island, told
+  is off the helm, or is any hostile ship's quarry, and as any course is refused; its last leg and the place it would lie are judged besides against every standing island, told
   to the player or not, and judged before anything is set, so a refusal there leaves the ship, its course and its turn as they were. Taken, the ship lies on the course's last leg 400 m short of its end (at the leg's start where the
   leg is shorter), heading along it, its course the end alone at the pace asked, and the player's next roll for a
   hostile ship waits its first 30 s again; the hostile ships no player keeps go as ever. Either way the player is told

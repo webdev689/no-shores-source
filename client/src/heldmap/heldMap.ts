@@ -26,7 +26,7 @@ import {
   wheelFactor,
   zoomAt,
 } from './heldMapLaw.ts';
-import { askLines, MapAsk, paintHover, paintTravelAsk, type HoverSaid } from './heldMapAsk.ts';
+import { askLines, MapAsk, paintHover, paintTravelAsk, type HoverSaid, type WaterJudge } from './heldMapAsk.ts';
 import { heldCardNode } from './heldMapCard.ts';
 import { Kept, layoutKey } from './heldMapKept.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
@@ -36,7 +36,7 @@ import type { LandSheet, MapMarks } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
-import { dotInks, fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
+import { dotInks, fontOf, HOSTILE_HALF, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
 import type { MapWater, MapWaters } from './watersWash.ts';
 import { motionReduced } from '../plus/kit.ts';
 import type { Child } from '../ui/node.ts';
@@ -179,12 +179,13 @@ export class HeldMap {
    *  from now on, and marks the ruins; the water a point lies in is judged by their rules, the room's. */
   setWaters(open: {
     readonly map: MapWaters;
-    readonly rules: { waterAt(point: Point2): { readonly continent: number } | null };
-    readonly table: { readonly sea: { readonly homeReachM: number } };
+    readonly rules: { waterAt: WaterJudge };
+    readonly table: { readonly sea: { readonly homeReachM: number; readonly travelShortM: number } };
   }): void {
-    this.waters = new HeldMapWaters(open.map, (point) => open.rules.waterAt(point)?.continent ?? null);
+    const reach = { distance: this.field.distance, reachM: open.table.sea.homeReachM };
+    this.waters = new HeldMapWaters(open.map, open.rules.waterAt, open.table.sea.travelShortM, reach);
     this.chartings++;
-    this.view.setWash(this.waters.wash({ distance: this.field.distance, reachM: open.table.sea.homeReachM }));
+    this.view.setWash(this.waters.wash());
   }
 
   /** The islands the map marks from now on, each where it lies: those found, and those standing in the ship's water. */
@@ -321,7 +322,7 @@ export class HeldMap {
       course: this.plan(point),
       place: mark?.place.id ?? null,
     };
-    if (this.waters) this.ask.choose(this.waters.waters, this.waters.judge, this.choice.course, this.shipAt);
+    if (this.waters) this.ask.choose(this.waters, this.choice.course, this.shipAt);
   }
 
   /** The wheel at a point on the screen: the map zooms about it. */
@@ -370,7 +371,7 @@ export class HeldMap {
     this.ink = stage.ink;
     this.shipAt = scene.ship;
     const waters = this.land || this.press?.panning ? null : this.waters;
-    const hovered = waters && this.ask.hover(waters.waters, waters.judge, this.mapView, this.ink, scene.ship);
+    const hovered = waters && this.ask.hover(waters, this.mapView, this.ink, scene.ship);
     if (hovered?.cells) this.view.setLit(hovered.cells);
     const scaled = (rect: Rect, down: number): Rect => ({
       x: rect.x * dpr,
@@ -460,7 +461,7 @@ export class HeldMap {
     const isles = this.isleInks(lettering.scale);
     const inkOf = (x: number, y: number) => toInk(this.mapView, x, y);
     const others = dotInks(scene.moving?.others ?? [], inkOf, this.ink);
-    const hostiles = dotInks(scene.moving?.hostiles ?? [], inkOf, this.ink);
+    const hostiles = dotInks(scene.moving?.hostiles ?? [], inkOf, this.ink, HOSTILE_HALF * lettering.scale);
     const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
     const sea = [this.measuredFonts, lettering, isles, others, hostiles, said, asked];
     const shape = JSON.stringify([width, height, inkAt, dpr, sea]);

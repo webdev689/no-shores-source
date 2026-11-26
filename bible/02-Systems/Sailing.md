@@ -313,7 +313,7 @@ player elsewhere (the company's Go to them waits); a travel left behind any othe
    28 m up, carried along with the ship as it gets under way on the course at the world's own pace, 3 s.
 2. The camera holds there, looking at the ship as it sails off, while the picture fades to black over 2 s; the veil, the
    loading screen with "Sailing for <water>" ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]), comes up in its last 0.7 s. The travel is asked of the sea room as the fade begins
-   ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
+   ([[Server]], "The sea"): the course with the travel flag, sent in its turn as any course is, and no
    other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
    since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
    answered); one that gives no answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight

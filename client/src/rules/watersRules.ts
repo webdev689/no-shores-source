@@ -65,6 +65,7 @@ export interface SeaFacts {
   readonly holdReachM: number;
   readonly repairReachM: number;
   readonly homeReachM: number;
+  readonly travelShortM: number;
   readonly shipNames: readonly (readonly string[])[];
 }
 
@@ -178,6 +179,7 @@ interface TableAnswer {
     hold_reach_m: number;
     repair_reach_m: number;
     home_reach_m: number;
+    travel_short_m: number;
     ship_names: string[][];
   };
 }
@@ -250,6 +252,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
           holdReachM: answer.sea.hold_reach_m,
           repairReachM: answer.sea.repair_reach_m,
           homeReachM: answer.sea.home_reach_m,
+          travelShortM: answer.sea.travel_short_m,
           shipNames: answer.sea.ship_names,
         },
       };
@@ -258,7 +261,13 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
       const byte = exports.waters_at(x, y);
       if (byte === NOT_OPEN) throw new Error('the waters are not open');
       if (byte === LAND_CELL) return null;
-      return { continent: byte, holder: HOLDERS[exports.waters_holder(x, y)] ?? holders[byte] ?? 'home' };
+      // The holder is a second search of the coasts, made only for a caller that reads it.
+      return {
+        continent: byte,
+        get holder(): WaterHolder {
+          return HOLDERS[exports.waters_holder(x, y)] ?? holders[byte] ?? 'home';
+        },
+      };
     },
     grid: (cellM) => {
       opened();

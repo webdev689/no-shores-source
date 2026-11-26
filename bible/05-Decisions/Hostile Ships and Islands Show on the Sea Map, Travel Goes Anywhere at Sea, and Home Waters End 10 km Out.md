@@ -43,7 +43,9 @@ to at least 30 s."
   standing ([[Islands]], "At sea").
 - A course chosen anywhere at sea on the held map, in the ship's own water or another, asks to travel there, and a yes
   travels there as travel to other waters does ([[Held Map]], [[Sailing]], "Travel by the held map"). Every travel
-  holds the next hostile roll back to at least 30 s.
+  holds the next hostile roll back to at least 30 s. This replaces in part
+  [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]] and
+  [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]], where only another water asked.
 - The held map at sea marks every hostile ship and every standing procedural island in the water the ship lies in
   ([[Held Map]]).
 
