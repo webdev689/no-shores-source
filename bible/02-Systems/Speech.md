@@ -50,7 +50,9 @@ types each line as it is heard, and short barks over a speaker's head, their wor
 - **Moving on** ([[Dialogue Waits for a Click by Default, With Auto as a Setting]]). By default a line waits once typed: a press of Continue
   (the left click, Space or E, the pad's A, rebindable as every control is) while it types shows it whole, and once
   it is typed moves to the next. While a line takes the press, the press is the line's alone: it neither swings, nor
-  jumps, nor uses, nor takes the stranger's hand. Once typed, the waiting line shows a small prompt at the right of
+  jumps, nor uses, nor takes the stranger's hand, nor sails the ship there; off the story its keys held do nothing
+  else either (a drawn bow does not fire), while in the story Space held still skips. A bark said in the box moves on
+  by itself, as barks over heads do. Once typed, the waiting line shows a small prompt at the right of
   the name's band: the cap of the key or button bound to Continue, for the keys or the pad as the player played last
   (the mouse drawn with its left button lit, a key's name, the pad's button drawn), then "Continue". Under Auto,
   chosen in Settings' Controls (kept in this browser, `pace.ts`), a line moves on by itself 1.6 s after it is typed,

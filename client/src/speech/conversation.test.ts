@@ -89,3 +89,20 @@ test('a line that moves on by itself never takes a press nor waits for one', () 
     assert.equal(talk.waits, false);
   }
 });
+
+test('a bark in the box is shouted and gone: it moves on by itself and takes no press, though the rest wait', () => {
+  const talk = new Conversation(
+    [
+      { who: 'mate', say: 'Wreckers!', kind: 'bark' },
+      { who: 'bosun', say: 'Hold on.' },
+    ],
+    CAST,
+    false,
+  );
+  assert.equal(talk.takesPresses, false);
+  for (let frame = 0; frame < 300 && talk.index === 0; frame += 1) talk.step(1 / 60);
+  assert.equal(talk.index, 1, 'the bark moved on by itself');
+  assert.equal(talk.takesPresses, true, 'the line after it waits');
+  for (let frame = 0; frame < 300; frame += 1) talk.step(1 / 60);
+  assert.equal(talk.index, 1);
+});

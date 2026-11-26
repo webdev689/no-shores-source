@@ -152,16 +152,20 @@ test('the deep cut short says nothing more and flashes no more', () => {
   assert.ok(!calls.some((call) => call.startsWith('stage.play') || call.includes('flash')));
 });
 
-test('the deep ends only once its voice has said its last line, which may wait for a press, and on its own clock once said', async () => {
+test('the deep fades to black and ends only once its voice has said its last line, which may wait for a press', async () => {
   let said: () => void = () => undefined;
   const voice = new Promise<void>((resolve) => (said = resolve));
-  const { story } = recorded({ 'stage.play': voice });
+  const { story, calls } = recorded({ 'stage.play': voice });
   const beat = new Deep(story, layout, scenery);
   for (let step = 0; step < 30; step++) beat.frame(tick(1));
   assert.equal(beat.done, false, 'its time run, the voice still waits');
+  assert.ok(!calls.includes('stage.parts.screen.fade(1, 2)'), 'its words are not hidden under the black');
   said();
   await voice;
   beat.frame(tick(0.1));
+  assert.ok(calls.includes('stage.parts.screen.fade(1, 2)'), 'said, the black comes');
+  assert.equal(beat.done, false);
+  beat.frame(tick(2));
   assert.equal(beat.done, true);
 });
 

@@ -42,7 +42,12 @@ export class Conversation {
 
   /** Whether its lines are moved on by a press, not by themselves: the press is then theirs while one stands. */
   get takesPresses(): boolean {
-    return !this.auto && !this.finished;
+    return !this.movesOnByItself && !this.finished;
+  }
+
+  /** A bark is shouted and gone: it moves on by itself, as the barks over heads do, under either pace. */
+  private get movesOnByItself(): boolean {
+    return this.auto || this.emphasis;
   }
 
   /** Whether a line stands typed whole, waiting for the press that moves it on. */
@@ -61,7 +66,7 @@ export class Conversation {
   step(seconds: number): boolean {
     if (this.finished) return false;
     const voiced = this.typing.step(seconds);
-    if (this.auto && this.typing.done) {
+    if (this.movesOnByItself && this.typing.done) {
       this.heldS += seconds;
       if (this.heldS >= AUTO_HOLD_S) this.next();
     }

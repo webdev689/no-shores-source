@@ -519,9 +519,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const read = withoutTaken(input.frame());
     hud.controls.frame(seconds, input.padButtons);
     // A line of the dialogue box that waits for a press takes Continue's: moved on, it is heard by no other control.
+    // Its keys held still act in the story, where Space held skips a cutscene and no line waits while the player plays.
     const talking = !top && !bound && dialogueWaits();
     if (talking && read.pressed('continue')) continueDialogue();
-    const heard = talking ? pressTakenBy(read, 'continue') : read;
+    const heard = talking ? pressTakenBy(read, 'continue', playing.flow.mode !== 'story') : read;
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
     const size = { width: canvas.width, height: canvas.height };

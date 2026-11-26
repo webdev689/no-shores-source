@@ -285,8 +285,12 @@ test("a scene's lines wait for a press by default, move on by themselves under A
   await stage.play('sighted');
   await stage.play('sighted', true);
   const kept = new Map([['noshores.dialogue', 'auto']]);
+  const before = (globalThis as { localStorage?: unknown }).localStorage;
   Object.assign(globalThis, { localStorage: { getItem: (key: string) => kept.get(key) ?? null } });
-  await stage.play('sighted');
-  Object.assign(globalThis, { localStorage: undefined });
+  try {
+    await stage.play('sighted');
+  } finally {
+    Object.assign(globalThis, { localStorage: before });
+  }
   assert.deepEqual(paced, [false, true, true]);
 });

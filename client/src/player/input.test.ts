@@ -239,9 +239,12 @@ test('the pad fights with the pointer free once the menu is shut; the keys and m
 test("a press a waiting line takes is no other control's: Space jumps not, E uses not, the left button guards not", () => {
   const down = new Set(['jump', 'use', 'guard', 'continue', 'forward']);
   const frame: InputFrame = { ...IDLE, pressed: (action) => down.has(action), held: (action) => down.has(action) };
-  const taken = pressTakenBy(frame, 'continue', DEFAULTS);
-  for (const action of ['jump', 'use', 'guard', 'continue'] as const)
+  const taken = pressTakenBy(frame, 'continue', true, DEFAULTS);
+  for (const action of ['jump', 'use', 'guard', 'continue'] as const) {
     assert.equal(taken.pressed(action), false, action);
+    assert.equal(taken.held(action), false, `${action} held: a drawn bow fires not`);
+  }
   assert.equal(taken.pressed('forward'), true, 'a key the line does not take still acts');
-  assert.equal(taken.held('jump'), true, 'held, Space still skips a cutscene');
+  assert.equal(taken.held('forward'), true);
+  assert.equal(pressTakenBy(frame, 'continue', false, DEFAULTS).held('jump'), true, 'in the story Space held skips');
 });

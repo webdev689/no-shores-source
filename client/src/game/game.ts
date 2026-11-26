@@ -66,7 +66,7 @@ import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
 import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
 import { returnToShip } from './toShip.ts';
-import { speaking } from '../speech/dialogue.ts';
+import { dialogueWaits, speaking } from '../speech/dialogue.ts';
 import { obtainedLayer } from './obtained.ts';
 
 /**
@@ -571,7 +571,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   seaPointer(canvas, input, {
     // On a struck ship's deck the pointer and the wheel are the fight's on foot.
     atSea: () => playing.flow.mode === 'sea' && !playing.sea?.boarding.onDeck,
-    overInterface: () => ui.takesPointer,
+    overInterface: () => ui.takesPointer || dialogueWaits(),
     sea: () => playing.sea,
     map: () => playing.helmMap.held,
   });
