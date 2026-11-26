@@ -656,7 +656,7 @@ fn a_leaving_players_vestige_still_lying_is_in_their_character_before_the_room_l
 }
 
 /// Two islands of the traffic, Overlook's and Sunspire's, 100 km squares 200 km apart on the line y = 150 km, their
-/// ports in their middles: the lane between them runs east through the Grey Tithe's waters past x = 300 km.
+/// ports in their middles: the lane between them runs east through the Grey Tithe's waters past x = 210 km.
 pub const TRAFFIC_SEA: &str = r#"{ "layout": { "continents": [
     { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
     { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }

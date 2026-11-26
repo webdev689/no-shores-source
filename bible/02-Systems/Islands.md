@@ -69,8 +69,8 @@ arctangents. Its frame is its own: metres from its middle, x east, y south.
 The sea room holds its islands (`sea_islands.rs`):
 
 - **Rolled** every ten seconds round each ship at sea that has fewer than three islands within 8 km, 0.45 of the
-  time: 3 to 7 km from it, in hostile water (never in home waters, within 10 km of Overlook's coast; the Lantern Sea
-  past them is hostile), 3 km clear of every coast and every other island, 1.2 km clear of every ship and hostile ship,
+  time: 3 to 7 km from it, in hostile water (never in home waters, within 10 km of Overlook's coast, nor reaching into
+  them, its anchorage included; the Lantern Sea past them is hostile), 3 km clear of every coast and every other island, 1.2 km clear of every ship and hostile ship,
   and clear of every ship's course by its reach and 300 m. At most 144 stand
   ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). An island in a climate the contract does not dress is not rolled; the Lantern Sea's
   temperate coast is dressed as woodland's.

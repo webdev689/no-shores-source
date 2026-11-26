@@ -266,6 +266,7 @@ impl Islands {
             let Some(point) = super::whole(&place) else { continue };
             let reach = isle::reach_of(seed);
             let open = water.holder != Holder::Home
+                && clear_of_home(charted, place, reach)
                 && !super::on_land(coasts, point)
                 && charted.clearance(place) >= CLEAR_OF_COAST_M
                 && self.standing.iter().all(|island| apart(island.at, place) >= CLEAR_OF_ISLANDS_M)
@@ -285,6 +286,17 @@ impl Islands {
         }
         None
     }
+}
+
+/// Whether an island at `place` whose coast reaches `reach` from its middle stands wholly out of home waters, its
+/// anchorage too: judged at eight points round it, far enough out that a straight edge of home waters crossing it
+/// meets one.
+fn clear_of_home(charted: &Charted, place: [f64; 2], reach: f64) -> bool {
+    let off = (reach + isle::sites::ANCHORAGE_OFF_M) / libm::cos(core::f64::consts::PI / 8.0);
+    (0..8).all(|step| {
+        let bearing = f64::from(step) * core::f64::consts::FRAC_PI_4;
+        !charted.home([place[0] + libm::sin(bearing) * off, place[1] - libm::cos(bearing) * off])
+    })
 }
 
 impl Sea {

@@ -28,6 +28,8 @@ fn the_chart_reads_each_water_its_band_and_refuses_a_step_into_home_waters() {
     assert!(chart.open([310_000.0, 150_000.0], [290_000.0, 150_000.0]), "the Lantern Sea's open sea");
     assert!(!chart.open([215_000.0, 150_000.0], [205_000.0, 150_000.0]), "into home waters");
     assert!(chart.open([205_000.0, 150_000.0], [215_000.0, 150_000.0]), "a ship left inside them sails out");
+    assert!(!chart.open([208_000.0, 150_000.0], [207_000.0, 150_000.0]), "never deeper in");
+    assert!(!chart.open([208_000.0, 150_000.0], [208_000.0, 151_000.0]), "nor along them");
     assert!(!chart.open([350_000.0, 150_000.0], [450_000.0, 150_000.0]), "onto land");
     assert!((chart.coast([350_000.0, 150_000.0]) - 50_000.0).abs() < 1.0);
     assert_eq!(chart.lane([350_000.0, 150_000.0]), None, "no ports, no lanes");
@@ -140,4 +142,32 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
     });
     assert_eq!(flips.count(), 0, "no swinging back and forth: {headings:?}");
     assert!(sailed > 0.8 * crate::sighting::way_of(elite.rank) * 600.0, "it kept sailing along the edge: {sailed} m");
+}
+
+#[test]
+fn a_ship_left_inside_home_waters_never_comes_nearer_their_coast_even_for_a_player_there() {
+    use crate::hostiles::{Hostile, Hostiles, Voyager};
+    let layout = layout();
+    let charted = Charted::new(&layout, &[]);
+    let coasts = Coast::of(&layout);
+    let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
+    let player = Voyager {
+        player: 1,
+        at: [203_000.0, 150_000.0],
+        heading: 0.0,
+        pace: 0,
+        fighting: false,
+        home: true,
+        clock: 1.0,
+        hull: 1.0,
+        hull_kind: sailing::HullKind::Sloop,
+    };
+    let minor = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Minor };
+    let mut hostiles = Hostiles::new(1);
+    hostiles.sailing.push(Hostile::standing(1, 1, minor, [208_000.0, 150_000.0], 1.5 * std::f64::consts::PI, true));
+    for _ in 0..60 {
+        hostiles.tick(1.0, &[player], &chart);
+        let Some(ship) = hostiles.sailing.iter().find(|ship| ship.id == 1) else { break };
+        assert!(ship.x >= 208_000.0 - 1e-6, "it came nearer the coast, to {}", ship.x);
+    }
 }

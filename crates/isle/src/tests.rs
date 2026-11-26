@@ -96,7 +96,7 @@ fn coves_are_about_150_m_across_and_isles_300_to_500() {
 }
 
 #[test]
-fn an_unknown_climate_makes_no_island_and_home_waters_dress_theirs_as_woodland() {
+fn an_unknown_climate_makes_no_island_and_the_lantern_seas_open_sea_dresses_its_as_woodland() {
     assert!(Plan::new(1, "moon").is_none());
     let dressing = |climate: &str| format!("{:?}", catalog().climates[climate]);
     assert_eq!(dressing("temperate-coast"), dressing("woodland"), "past home's reach, islands as woodland's");

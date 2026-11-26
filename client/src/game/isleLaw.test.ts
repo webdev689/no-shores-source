@@ -166,7 +166,7 @@ test('a voyage keeps clear of an island marked on the map that the room has not 
     { at: [0, 4_000] as Point2, kind: 'hostile' as const },
   ];
   assert.deepEqual(
-    keptClear([told], marks).map(({ at }) => at),
+    keptClear([told], marks).map((circle) => circle.at),
     [
       [0, 0],
       [0, 2_000],

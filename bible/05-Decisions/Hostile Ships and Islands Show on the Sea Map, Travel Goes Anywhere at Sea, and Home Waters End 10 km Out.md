@@ -61,3 +61,9 @@ to at least 30 s."
 | How the marks come | The room sends each player the hostile ships and islands in their ship's water with the sea's chart, about once a second | The room alone knows them all; one chart a second already feeds the map |
 | The ask for a course in the ship's own water | The same card as for another water, "Travel to <water>?" | One prompt for every travel; No still keeps the course to sail with Set sail |
 | The water's line at sea | Past 10 km it reads the Grey Tithe's, as the room's rule says | The line names who holds the sea under the ship |
+| The prompt's and the hover's holder | Who holds the sea at the course's end, and under the pointer as the wash shows it | The prompt never calls the Tithe's sea home |
+| A course too short to move the ship | Asks nothing; Set sail sails it | A travel lays the ship 400 m short of its end, so a shorter one would leave it where it lies after the whole cinematic |
+| Islands marked but not told of | A voyage keeps clear of them as of an island not built | A travel's last leg is refused across any island standing, told or not |
+| Hostile ships in a player's fight | Marked, where the fight has them | The owner asked for every hostile ship in the water |
+| An island by home waters' edge | Rolled only wholly past them, its anchorage too | No Tithe island with a safe anchorage |
+| A Tithe ship left inside home waters by a clash | Takes only steps away from their coast | It sails out, never hunting deeper in |

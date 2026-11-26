@@ -358,3 +358,10 @@ fn a_bold_ship_by_the_edge_of_home_waters_meets_no_player_inside_them() {
     hostiles.chase(5, Some(1));
     assert!(hostiles.tick(1.0, &[inside], &home).is_empty(), "nor one it chases");
 }
+
+#[test]
+fn each_player_rolls_for_a_hostile_ship_at_the_owners_rates() {
+    assert_eq!(super::FIRST_ROLL_S, 30.0, "half a minute after reaching the water");
+    assert_eq!(super::ROLL_EVERY_S, [30.0, 70.0], "then every 30 to 70 s");
+    assert_eq!(super::DENSITY, 3, "none while three sail in sight");
+}

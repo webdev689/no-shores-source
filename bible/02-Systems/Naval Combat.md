@@ -619,8 +619,8 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   ten tries that fit, it takes the one nearest a friendly lane (a leg of a route between the port cities,
   `world::traffic`) within 50 km, heading along it the way nearer its slant toward the player; with no lane that near,
   the one nearest a coast, heading across the player's waters on a slant. A hostile ship sails at the Sloop's 2.4 m/s times its rank's way (Minor 0.9, Major 1, Elite 1.1,
-  Miniboss 1.2). Blocked by land or the edge of home waters, which no hostile ship enters (one a clash left inside them may
-  sail out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
+  Miniboss 1.2). Blocked by land or the edge of home waters, which no hostile ship enters (one a clash left inside them takes
+  only steps away from their coast, so it sails out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
   either way, so it follows the coast round; with none open it goes about. Its temper is its
   seed's: an Elite and a Miniboss are always bold, any other one in four.
 - **Coming for the player.** A bold ship that has sighted a player who is not fighting comes for them (`come_for`):

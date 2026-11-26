@@ -67,9 +67,11 @@ pub(crate) struct SeaChart<'sea> {
 
 impl Chart for SeaChart<'_> {
     fn open(&self, from: [f64; 2], to: [f64; 2]) -> bool {
-        // Only a step into home waters is refused: one a fight among captains left inside them sails out.
-        let home = self.charted.home(to) && !self.charted.home(from);
-        !home && self.clear(from, to)
+        // No step leads into home waters, nor within them unless away from their coast: one a fight among captains
+        // left inside them sails out.
+        let inward = self.charted.home(to)
+            && (!self.charted.home(from) || self.charted.clearance(to) <= self.charted.clearance(from));
+        !inward && self.clear(from, to)
     }
 
     fn clear(&self, from: [f64; 2], to: [f64; 2]) -> bool {

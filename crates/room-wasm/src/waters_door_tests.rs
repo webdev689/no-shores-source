@@ -44,7 +44,7 @@ fn the_door_answers_waters_grid_and_ships() {
     let overlook = [2_809_214.0, 1_201_477.0];
     assert_eq!(water_byte(overlook[0], overlook[1]), 255, "the city stands on land");
     assert_eq!(water_byte(2_400_000.0, 1_100_000.0), 0, "the sea west of Overlook is the Lantern Sea");
-    assert_eq!(holder_byte(2_400_000.0, 1_100_000.0), 1, "400 km out, the Grey Tithe's open sea");
+    assert_eq!(holder_byte(2_400_000.0, 1_100_000.0), 1, "119 km off its coast, the Grey Tithe's open sea");
     assert_eq!(holder_byte(overlook[0], overlook[1]), 255, "land is held by no water");
     // Sailing in toward Overlook, the last sea before its coast is home.
     let toward = |share: f64| {

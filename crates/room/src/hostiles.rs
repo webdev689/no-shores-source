@@ -201,8 +201,8 @@ impl Hostiles {
         self.chasing.get(&player).copied()
     }
 
-    /// Sets the player's next roll to wait at least its first wait, as a ship that has travelled to new waters: never
-    /// sooner than it would have come, so travelling on and on brings no more ships than sailing.
+    /// Sets the player's next roll to wait at least its first wait, as a ship that has travelled does: never sooner
+    /// than it would have come, so travelling on and on brings no more ships than sailing.
     pub fn wait_first(&mut self, player: PlayerId) {
         let wait = self.waits.entry(player).or_insert(FIRST_ROLL_S);
         *wait = wait.max(FIRST_ROLL_S);

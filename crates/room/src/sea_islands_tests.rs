@@ -4,7 +4,8 @@ use crate::PlayerId;
 use crate::harbour::{Harbours, SUNK_KEPT, WASHED_UP};
 
 /// A square continent 100 km a side, its north-west corner 100 km from the frame's. Of `id` and `climate`: the
-/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters.
+/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters within 10 km of
+/// its coast and the Grey Tithe's past them.
 fn sea_round(id: &str, climate: &str) -> Sea {
     let text = format!(
         r#"{{ "continents": [{{ "id": "{id}", "climate": "{climate}", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }}], "isles": [] }}"#
@@ -55,7 +56,23 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
         assert!(island.anchorage != island.at);
     }
     let near = islands.iter().filter(|island| apart(island.at, [50_000.0, 50_000.0]) <= NEAR_M).count();
-    assert!(near <= super::WANTED_NEAR, "{near} near the ship: more than it wants");
+    assert!(near <= 3, "{near} near the ship: more than it wants");
+}
+
+#[test]
+fn the_sea_rolls_islands_at_the_owners_rates() {
+    assert_eq!((super::WANTED_NEAR, super::ROLL_CHANCE, super::MOST), (3, 0.45, 144));
+    assert_eq!(super::ROLL_EVERY_TICKS, 10 * 60, "every ten seconds");
+}
+
+#[test]
+fn an_island_is_rolled_only_wholly_past_home_waters_its_anchorage_too() {
+    // The east coast is the line x = 200 km, home waters reaching to 210 km; each island reaches 250 m.
+    let lantern = sea_round("continent-1", "temperate-coast");
+    assert!(!super::clear_of_home(&lantern.chart, [210_100.0, 150_000.0], 250.0), "its west side in home waters");
+    assert!(super::clear_of_home(&lantern.chart, [210_400.0, 150_000.0], 250.0), "past them, its anchorage too");
+    let tithe = sea_round("continent-4", "desert");
+    assert!(super::clear_of_home(&tithe.chart, [203_000.0, 150_000.0], 250.0), "no home waters there");
 }
 
 #[test]

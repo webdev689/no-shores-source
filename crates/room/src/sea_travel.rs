@@ -1,7 +1,8 @@
 //! Travel by the held map: a course anywhere at sea, in the ship's own water or another, asked with the travel flag,
 //! takes the ship most of the way at once. The room judges it as any course, and refuses it besides while the ship
-//! fights, has a hostile ship on its heels, or its player is off the helm. Taken, the ship lies on the course's last leg short of its end,
-//! heading along it, and sails the rest; the player's next roll for a hostile ship waits its first wait again.
+//! fights, has a hostile ship on its heels, or its player is off the helm. Taken, the ship lies on the course's last
+//! leg short of its end, heading along it, and sails the rest; the player's next roll for a hostile ship waits its
+//! first wait again.
 
 use super::{COURSE_EVERY_TICKS, Coast, CourseRefused, Sea, leg_meets_land, on_land};
 use crate::PlayerId;
@@ -53,6 +54,9 @@ impl Sea {
     fn try_travel(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), TravelRefused> {
         let sailing = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref());
         let ship = sailing.ok_or(TravelRefused::Course(CourseRefused::BadCourse))?.ship;
+        if points.is_empty() {
+            return Err(TravelRefused::Course(CourseRefused::BadCourse));
+        }
         if self.fights.fighting(player) || self.on_deck(player) {
             return Err(TravelRefused::Fighting);
         }
@@ -81,7 +85,8 @@ impl Sea {
         let &end = held.back().ok_or(TravelRefused::Course(CourseRefused::BadCourse))?;
         let start = held.len().checked_sub(2).map_or([sailing.ship.x, sailing.ship.y], |before| held[before]);
         let (placed, heading) = placed_on(start, end);
-        (sailing.ship.x, sailing.ship.y, sailing.ship.heading) = (placed[0], placed[1], heading);
+        (sailing.ship.x, sailing.ship.y) = (placed[0], placed[1]);
+        sailing.ship.heading = heading.unwrap_or(sailing.ship.heading);
         sailing.course.drain(..sailing.course.len() - 1);
         self.hostiles.wait_first(player);
         Ok(())
@@ -116,12 +121,12 @@ fn last_leg(points: &[[f64; 2]], ship: [f64; 2]) -> Option<[[f64; 2]; 2]> {
 }
 
 /// Where a travel lays the ship on the leg from `start` to `end`: `SHORT_OF_END_M` short of its end, or at its start
-/// on a shorter leg; and its heading along it, radians clockwise from north.
-fn placed_on(start: [f64; 2], end: [f64; 2]) -> ([f64; 2], f64) {
+/// on a shorter leg; and its heading along it, radians clockwise from north, none for a leg of no length.
+fn placed_on(start: [f64; 2], end: [f64; 2]) -> ([f64; 2], Option<f64>) {
     let (east, south) = (end[0] - start[0], end[1] - start[1]);
     let length = (east * east + south * south).sqrt();
     let short = if length > SHORT_OF_END_M { SHORT_OF_END_M / length } else { 1.0 };
-    let heading = libm::atan2(east, -south).rem_euclid(core::f64::consts::TAU);
+    let heading = (length > 0.0).then(|| libm::atan2(east, -south).rem_euclid(core::f64::consts::TAU));
     ([end[0] - east * short, end[1] - south * short], heading)
 }
 

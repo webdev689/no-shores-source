@@ -268,11 +268,10 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
     })
 }
 
-/// Each ship's marks for the held map: every hostile ship (0) and standing island (its kind's number and 1) in the
-/// water the ship lies in.
+/// Each ship's marks for the held map: every hostile ship (0), sailing or fighting, and standing island (its kind's
+/// number and 1) in the water the ship lies in.
 fn marks_by_water(sea: &room::sea::Sea) -> Vec<(PlayerId, Vec<ChartMark>)> {
-    let hostiles =
-        sea.hostiles().into_iter().map(|hostile| (sea.water_index([hostile.x, hostile.y]), [hostile.x, hostile.y], 0));
+    let hostiles = sea.hostiles_marked().into_iter().map(|at| (sea.water_index(at), at, 0));
     let islands = sea.islands().standing().map(|island| (Some(island.continent), island.at, island.kind.number() + 1));
     let marks: Vec<_> = hostiles.chain(islands).collect();
     sea.ships()
