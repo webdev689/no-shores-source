@@ -45,6 +45,8 @@ import { QuestWatch } from './questWatch.ts';
 export interface QuestVoice {
   play(lines: readonly Line[], cast: Cast, options: { auto: boolean }): Promise<void>;
   frame(seconds: number): void;
+  /** A fight begun while lines are said: from now they move on by themselves. */
+  fightBegins(): void;
 }
 
 type Art = (typeof arts.arts)[number];
@@ -177,6 +179,8 @@ export class Quests {
     const head = this.saying === null ? this.waiting[0] : undefined;
     const onScreen = head !== undefined && held ? sayInScreen(this.scenes[head] ?? []) : null;
     if (head !== undefined && (onScreen || !held)) this.say(this.waiting.shift() ?? head, onScreen, fighting);
+    // A fight begun mid-scene: its lines move on by themselves from now, so the player's presses are the fight's.
+    if (fighting) this.spoken?.fightBegins();
     this.spoken?.frame(held ? 0 : seconds);
   }
 

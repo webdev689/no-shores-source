@@ -106,3 +106,14 @@ test('a bark in the box is shouted and gone: it moves on by itself and takes no 
   for (let frame = 0; frame < 300; frame += 1) talk.step(1 / 60);
   assert.equal(talk.index, 1);
 });
+
+test('a fight begun while a line waits moves it on by itself from then, and it takes no press', () => {
+  const talk = new Conversation(LINES, CAST, false);
+  for (let frame = 0; frame < 120; frame += 1) talk.step(1 / 60);
+  assert.equal(talk.waits, true);
+  talk.fightBegins();
+  assert.equal(talk.takesPresses, false);
+  assert.equal(talk.waits, false);
+  for (let frame = 0; frame < 120; frame += 1) talk.step(1 / 60);
+  assert.equal(talk.index, 1, 'moved on by itself');
+});

@@ -181,6 +181,12 @@ export class DialogueBox {
     return done;
   }
 
+  /** A fight begun while its lines are said: from now they move on by themselves and take no press. */
+  fightBegins(): void {
+    this.talk?.fightBegins();
+    this.show();
+  }
+
   /** A press: finishes the typing, or moves to the next line. */
   advance(): void {
     this.talk?.advance();

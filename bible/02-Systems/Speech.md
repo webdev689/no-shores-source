@@ -58,7 +58,8 @@ types each line as it is heard, and short barks over a speaker's head, their wor
   chosen in Settings' Controls (kept in this browser, `pace.ts`), a line moves on by itself 1.6 s after it is typed,
   with no prompt. A line said while a fight is on moves on by itself under either: in the story the sea fight's
   cries, the wreck's fight (the wisp's coming among it) and the ram; on land or at sea a house road's scene begun
-  while the music hears the player in a fight (a foe engaged, a blow struck, a fight at sea; [[Music]]). A speaker
+  while the music hears the player in a fight (a foe engaged, a blow struck, a fight at sea; [[Music]]), or still
+  being said when one begins, from then on. A speaker
   whose name is empty is a voice from nowhere: no box, the words alone in the middle of the screen, faint; it waits
   as any line does, its prompt under its words, as faint. The game draws the box itself, as a layer put under every other of
   its interface, so the HUD's own layers (the menu, a window, the veil) stand over it, and the barks over heads stand

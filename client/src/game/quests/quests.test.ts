@@ -57,6 +57,7 @@ function roads() {
   const warmed: string[][] = [];
   let finish: () => void = () => undefined;
   let now = 0;
+  let fightsBegun = 0;
   const voice = {
     play: (lines: readonly Line[], _cast: unknown, options: { auto: boolean }) => {
       said.push(lines[0]?.say ?? '');
@@ -64,6 +65,7 @@ function roads() {
       return new Promise<void>((resolve) => (finish = resolve));
     },
     frame: () => undefined,
+    fightBegins: () => void (fightsBegun += 1),
   };
   const keeping = { getItem: (key: string) => kept.get(key) ?? null, setItem: kept.set.bind(kept) };
   const forge = {
@@ -93,6 +95,7 @@ function roads() {
     quests,
     said,
     paced,
+    fightsBegun: () => fightsBegun,
     kept,
     warmed,
     noticed,
@@ -272,6 +275,15 @@ test("a road's scene waits for a press in the box, but one said while the player
   quests.hear(gear(VEIL, task, { pledge: 3, fails: [2] }));
   await frame(true, false, true);
   assert.deepEqual(paced, [false, true]);
+});
+
+test("a road's scene begun out of a fight moves on by itself once one begins, so the player's presses are the fight's", async () => {
+  const { quests, frame, fightsBegun } = roads();
+  quests.hear(gear(1, 0));
+  await frame();
+  assert.equal(fightsBegun(), 0, 'out of a fight its lines wait');
+  await frame(true, false, true);
+  assert.equal(fightsBegun(), 1);
 });
 
 test('no scene starts while a screen holds the view; a begin said is kept in the browser for the account', async () => {

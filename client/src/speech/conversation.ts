@@ -13,7 +13,7 @@ export class Conversation {
   private heldS = 0;
   private readonly lines: readonly Line[];
   private readonly cast: Cast;
-  private readonly auto: boolean;
+  private auto: boolean;
 
   constructor(lines: readonly Line[], cast: Cast, auto: boolean) {
     this.lines = lines;
@@ -53,6 +53,11 @@ export class Conversation {
   /** Whether a line stands typed whole, waiting for the press that moves it on. */
   get waits(): boolean {
     return this.takesPresses && this.typing.done;
+  }
+
+  /** A fight begun while its lines are said: from now they move on by themselves, as a scene said in a fight does. */
+  fightBegins(): void {
+    this.auto = true;
   }
 
   /** A press: finishes the typing, or moves to the next line. */
