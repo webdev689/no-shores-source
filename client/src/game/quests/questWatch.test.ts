@@ -204,7 +204,10 @@ function madeWalk(run: (walk: number) => void): void {
   const road = QUESTS[LAMP - 1] as unknown as { tasks: unknown[] };
   const walk = road.tasks.length;
   const goals = [
-    { kind: 'escort', text: 'Walk', node: 'moors', from: 'a', to: 'b', greet: 'madeGreet', shout: 'madeShout' },
+    {
+      ...{ kind: 'escort', text: 'Walk', node: 'moors', from: 'a', to: 'b' },
+      ...{ greet: 'madeGreet', shout: 'madeShout', mount: 'madeMount' },
+    },
     { kind: 'reach', text: 'There', node: 'moors', place: 'b', scene: 'madeThere' },
   ];
   road.tasks.push({ id: 'made-walk', task: 'Walk', goals, end: 'madeEnd' });
@@ -231,6 +234,17 @@ test("an escort's greeting as it first walks, once a task; its shout as an ambus
     const held = heard(walking(0));
     held.look(walking(1), false);
     assert.deepEqual(held.look(walking(1), true).scenes, ['madeGreet'], 'held through the welcome');
+  });
+});
+
+test('an escort waiting for its player to mount says so as it begins to wait; it greets them as it sets off', () => {
+  madeWalk((walk) => {
+    const walking = (figure: number) => gear(LAMP, walk, { pledge: 2, figures: [figure] });
+    const watch = heard(walking(0));
+    assert.deepEqual(watch.look(walking(5), true).moments, ['madeMount'], 'near, on foot');
+    assert.deepEqual(watch.look(walking(5), true).moments, [], 'once while it waits');
+    assert.deepEqual(watch.look(walking(1), true).scenes, ['madeGreet'], 'mounted: they set off');
+    assert.deepEqual(watch.look(walking(5), true).moments, ['madeMount'], 'off the horse again');
   });
 });
 

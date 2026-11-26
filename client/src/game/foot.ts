@@ -9,7 +9,7 @@ import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
-import { WorldSounds } from '../combat/worldSounds.ts';
+import { type WorldFrame, WorldSounds } from '../combat/worldSounds.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -128,6 +128,8 @@ export class Foot {
    *  (null while none may be). */
   private readonly follow = new FollowCamera();
   followable: string | null = null;
+  /** The road's escort on its horse as last drawn, heard as a rider is (quests.ts `riders`). */
+  questRiders: NonNullable<WorldFrame['riders']> = [];
   /** The chests and containers the room stands for the player (`finds.ts`). */
   readonly finds = new FootFinds();
   /** A node being gathered, or a find opened, while E is held. */
@@ -473,6 +475,7 @@ export class Foot {
       landed: dropped.landed,
       crates: this.held.gear?.crates ?? null,
       heard: [...shownPublic.sounds, ...found.sounds],
+      riders: this.questRiders,
     });
     const playerFall = { id: fight.player, feet, tumbling: !!walker.fall?.tumbling };
     const heard = { ...playerFall, lying: walker.fall?.tumbling === false };

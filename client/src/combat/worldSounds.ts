@@ -90,6 +90,8 @@ export interface WorldFrame {
   readonly crates: number | null;
   /** Cues heard where something else happened (game/publicView.ts): a public event's beats, a Breach's moments. */
   readonly heard?: readonly HeardSound[];
+  /** Riders who are no player: a road's escort on its horse (quests.ts `riders`). */
+  readonly riders?: readonly Rider[];
 }
 
 type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => AudioBufferSourceNode | null;
@@ -465,8 +467,9 @@ interface Heard extends HeardSound {
   readonly short?: true;
 }
 
-/** Everyone as their horse is heard: the player by their walker, every other player as they are drawn. */
-function heardRiders({ fight, walker, others }: WorldFrame): Rider[] {
+/** Everyone as their horse is heard: the player by their walker, every other player as they are drawn, and every
+ *  other rider as given. */
+function heardRiders({ fight, walker, others, riders = [] }: WorldFrame): Rider[] {
   const own = { id: fight.player, feet: walker.feet, mounted: walker.mounted, boosting: walker.boosting ?? 0 };
-  return [own, ...ridersOf(others, fight.others)];
+  return [own, ...ridersOf(others, fight.others), ...riders];
 }

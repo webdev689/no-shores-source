@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'json' };
 import castFile from '../../../../content/story/cast.json' with { type: 'json' };
 import { layersOf } from '../../forge/looks.ts';
 import type { QuestState } from '../../network/questMessages.ts';
@@ -10,7 +11,7 @@ import type { FoeType } from '../../rules/roster.ts';
 import { castOf } from '../../speech/cast.ts';
 import { KEEPERS } from '../keepers.ts';
 import { QUESTS } from './questBook.ts';
-import { WARD_PLATE_ID, questActors, wardPlate } from './questFigures.ts';
+import { FIGURE_MOVES, FigureGlides, WARD_PLATE_ID, questActors, wardPlate } from './questFigures.ts';
 import { FACES, ROSTER_LOOKS, SPEAKERS, faceOf, speakerFace } from './questLooks.ts';
 
 const CAST = castOf(castFile);
@@ -91,7 +92,7 @@ const wardName = (): string | undefined => {
   return QUESTS[quest.quest - 1]?.tasks[quest.task]?.goals.find((goal) => goal.kind === 'defend')?.ward;
 };
 
-test('the figures a step walks stand where the room sends them, walking or standing by their state, facing as sent', () => {
+test('the figures a step walks stand where the room sends them, going or standing by their state, facing as sent', () => {
   const figures = [
     { look: lookOf('tobin'), x: 10, y: 20, z: 3, facing: 1.2, state: 1 },
     { look: lookOf('tobin'), x: 11, y: 21, z: 3, facing: 0.4, state: 4 },
@@ -103,16 +104,76 @@ test('the figures a step walks stand where the room sends them, walking or stand
   assert.deepEqual(
     actors.map(({ anim, x, y, z, facing, scale }) => [anim, x, y, z, facing, scale]),
     [
-      ['walk', 10, 20, 3, 1.2, 0.85],
-      ['idle', 11, 21, 3, 0.4, 0.85],
+      ['horsegallop', 10, 20, 3, 1.2, 0.85],
+      ['horseidle', 11, 21, 3, 0.4, 0.85],
       ['walk', 0, 0, 0, 0, undefined],
-      ['idle', 50, 60, 2, 2.5, 0.85],
+      ['horseidle', 50, 60, 2, 2.5, 0.85],
     ],
-    'walking; held by an ambush; a quarry that noticed walking back; a look none knows left out; arrived, standing',
+    'riding; held by an ambush; a quarry that noticed walking back; a look none knows left out; arrived, standing',
   );
   assert.equal(new Set(actors.map((actor) => actor.id)).size, 4, 'each its own figure');
   assert.deepEqual(questActors(undefined, [], ground), []);
   assert.deepEqual(questActors(lamp('escort', { figures, claimed: false }), [COLLECTOR], ground), []);
+});
+
+test("an escort's figure rides its horse in the coat its goal names: galloping while it goes, else standing", () => {
+  const state = lamp('escort', {
+    figures: [
+      { look: lookOf('tobin'), x: 1, y: 2, z: 3, facing: 0.5, state: 1 },
+      { look: lookOf('tobin'), x: 1, y: 2, z: 3, facing: 0.5, state: 5 },
+      { look: lookOf('tobin'), x: 1, y: 2, z: 3, facing: 0.5, state: 4 },
+      { look: ROSTER_LOOKS + COLLECTOR.type, x: 0, y: 0, z: 0, facing: 0, state: 1 },
+    ],
+  });
+  const escort = QUESTS[state.quest - 1]?.tasks[state.task]?.goals.find((goal) => goal.kind === 'escort');
+  const coat = escort?.horse;
+  assert.ok(coat, 'the coat it rides');
+  const actors = questActors(state, [COLLECTOR], ground);
+  assert.deepEqual(
+    actors.map(({ anim, fps, dress }) => [anim, fps, dress.outfit.coat]),
+    [
+      ['horsegallop', 16, coat],
+      ['horseidle', 4, coat],
+      ['horseidle', 4, coat],
+      ['walk', undefined, undefined],
+    ],
+    'galloping; waiting for the player to mount; reined in by an ambush; another look on foot',
+  );
+  for (const anim of ['horsegallop', 'horseidle']) assert.ok(FIGURE_MOVES.includes(anim), `${anim} warmed`);
+});
+
+test('every escort rides a coat the forge draws, and each rider and their horse are drawn in its moves', () => {
+  const tables = { male: drawnBy('male'), female: drawnBy('female') };
+  const coats = new Set(cosmetics.cosmetics.filter((each) => each.kind === 'coat').map((each) => each.id));
+  const escorts = QUESTS.flatMap((quest) => quest.tasks.flatMap((task) => task.goals)).filter(
+    (goal) => goal.kind === 'escort',
+  );
+  assert.ok(escorts.length >= 2);
+  for (const { who, horse } of escorts) {
+    assert.ok(horse && coats.has(horse), `${who} rides a coat: ${horse}`);
+    const dress = FACES[who ?? '']?.dress;
+    assert.ok(dress, `${who} has a face`);
+    const drawn = tables[dress.body as 'male' | 'female'];
+    for (const anim of ['horsegallop', 'horseidle']) {
+      const layers = layersOf(figureOf(dress, drawn, anim), anim, {
+        bodies: { [dress.body]: { anims: {}, layers: drawn } },
+      });
+      assert.ok(layers.includes('horse'), `${who}'s horse in ${anim}: ${layers.join(', ')}`);
+      assert.ok(layers.includes('body'), `${who} on it in ${anim}`);
+    }
+  }
+});
+
+test("a figure is drawn between the room's words, turning the short way round", () => {
+  const glides = new FigureGlides();
+  const word = (facing: number, x: number) => ({ look: 1, x, y: 0, z: 0, facing, state: 1 });
+  glides.heard([word(3, 0)], 0);
+  glides.heard([word(-3, 2.4)], 200);
+  const half = glides.place(0, 300);
+  assert.ok(half);
+  assert.equal(half[0], 1.2, 'half way along');
+  assert.ok(Math.abs(Math.abs(half[3]) - Math.PI) < 1e-9, `through south, not round by north: ${half[3]}`);
+  assert.equal(glides.place(0, 400)?.[3], -3, 'at the newest word');
 });
 
 test("the ward stands with a plate in the players' green, its name and health; a named one has no figure", () => {

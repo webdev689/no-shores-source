@@ -29,6 +29,8 @@ code:
   - client/src/game/quests/questNews.ts#metBetween
   - client/src/game/quests/questNews.ts#giftsBetween
   - client/src/game/quests/questFigures.ts#FigureGlides
+  - crates/room/src/steps_kinds.rs#walk_figure
+  - client/src/game/quests/quests.ts#riders
   - client/src/game/tasks.ts#toldChange
   - client/src/game/journalWords.ts#questCardsOf
   - client/src/game/characterPage.ts#NO_ART_WORDS
@@ -70,7 +72,7 @@ out) and its kind:
 | `land` | Landing on a sea island | `island` (`cove` or `isle`) |
 | `scavenge` | A wreck searched on a sea island | |
 | `enter` | Arriving in a node | `node` |
-| `escort` | A figure met at a place walking to another while the player keeps up; it waits while they lag and while an ambush stands | `node`, `from`, `to` (places), `who` (a speaker of the cast), `near` (metres), `ambush` (`[type, rank]`s stood halfway), `shout` (its bark as they come), `greet` (said as its figure first walks) |
+| `escort` | A figure met at a place riding a horse at a gallop to another while the player rides with it; it waits while they lag, while they are off their horse and while an ambush stands | `node`, `from`, `to` (places), `who` (a speaker of the cast), `horse` (the coat its horse wears), `near` (metres; 30 on both roads), `ambush` (`[type, rank]`s stood halfway), `shout` (its bark as they come), `greet` (said as its figure first rides), `mount` (said as it waits for the player to get on their horse) |
 | `tail` | Following a figure from place to place at a distance: never nearer than `far`, never past `near`; nearer, it notices and walks back to start again | `node`, `from`, `to`, `who` or `foe` (a roster type's look), `far`, `near`, `noticed` (its line), `greet` (said as its figure first walks) |
 | `defend` | A ward standing at a place through its waves of foes, one after another; if it falls, the waves leave and it is tried again after a wait | `node`, `place`, `ward` (its name) or `who`, `waves` (lists of `[type, rank]`), `lost` (its line) |
 | `puzzle` | Points round a place used in the right order, or in any order when it gives none (a point lit already does nothing); a wrong one puts them all out and stops uses for 2 s, then 4, then 8 (ask 66 answers 103 meanwhile) | `node`, `place`, `points` (each a `name`, a `bearing` in degrees from north and `at` metres out), `order` (any order when left out), `wrong` (its line) |
@@ -231,14 +233,22 @@ before, on the houses, which its stall serves; the stranger is heard in a social
   ([[A Keeper With Something for You Pulses and Is Seen From Everywhere]]; [[Game]], "Over what a player can use").
 - **What is shown and said**: the page shows, says and marks nothing from a word not on the player's own character
   (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an escort's
-  or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they happen,
+  or tail's `greet` as its figure first goes, once a task; a goal's failure line, an escort's shout, and its `mount` as
+  its figure begins to wait for the player to get on their horse, as they happen,
   once while one waits or is said, and not at all while the story or the welcome holds the screen. Everything else waits
   for the welcome to pass. The tracker runs the clock as m:ss for a race, a defence, a tail and an unseen step (down
   from the room's last word on it, which sets it afresh), shows a defended ward's health as a percentage, and is read
   aloud as a clock starts, at each half minute and in its last 10 s, and as a ward's health passes each quarter.
-  Figures glide between the room's words, a quarry walking back when it noticed and one arrived standing where it is;
+  Figures glide between the room's words, turning the short way round, a quarry walking back when it noticed and one
+  arrived standing where it is;
   the ward's plate stays in view as a fought foe's; a lit point offers no Use. With no Art worn (and while the story is told, which says nothing of houses) the Character page says "Pledge to a house; its road gives its
   Art.", and the Arts' screen shows all three locked.
+- **The escort rides** ([[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]):
+  its figure sits on a horse in its goal's `horse` coat (Tobin a dun, Wren a black), in the player's own horse moves,
+  galloping (16 frames a second) while it goes and standing (4) while it waits, is held or has arrived; its hooves
+  are heard as another rider's are. A tail's quarry walks on foot. While the figure waits for the player near it to
+  mount, the step says "Get on your horse" under its words, or, with no horse worn, "No horse worn: the Tack in
+  Overlook gives one".
 - **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
   ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with
   "Use" and its name within reach; the tracker shows the running clock (`quest_clock`); and a goal's line is said as
@@ -251,7 +261,11 @@ before, on the houses, which its stall serves; the stranger is heard in a social
 - **Online only.** A page playing alone (no `?room=`) keeps no character, so it walks no road, as it keeps no gear.
 - **Saves by id**: a road is kept by its quest's id and its place by its task's id; a task the file no longer holds
   reads as its quest's first.
-- **Steps**: a task holds one of the six varied kinds at most. A figure walks at the game's walk (4.43 m/s) along the
+- **Steps**: a task holds one of the six varied kinds at most. An escort's figure rides at the player's gallop
+  (`ride_gallop`, 12 m/s) and sets off only while its player is mounted (the room's word on them, never the page's) and
+  within `near`; within it on foot, it waits in a state of its own (5 on the wire), and farther, as any figure waits.
+  A tail's quarry walks at the game's walk (4.43 m/s). A figure turns to face its way at one full turn a second, so at a
+  gallop it rounds a corner over some 3 m. Either goes along the
   layout's paths between its places (each path's points within 6 m join it to another), straight where none comes
   within a place's reach, on the ground's height, and is no fighter. An ambush stands 6 m round it, on a mesh baked
   there. A ward has 700 health (a player's is 100), stands where it is put and fights no one, and only its player is
@@ -259,7 +273,7 @@ before, on the houses, which its stall serves; the stranger is heard in a social
   it (6 m at least), or, where the middle is off the mesh, onto the mesh within 6 m
   ([[What a Body Meets Keeps to What Is Drawn]]). A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing, and so do those of a wave or an escort's ambush (its one wave) the character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice: [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it, beside a public event's kept places ([[Public Events]]); wards count against no cap. A place's mesh is baked the first
   time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
-- **Figures, wards and points are the player's own**: they stand where the room's last word put them, unglided, and
+- **Figures, wards and points are the player's own**: they stand where the room's last word put them (a figure glided there), and
   show only from the room the player is in, once it has spoken; other players do not see them.
 - **A word that ends two tasks at once** says each task's end and the next task's start in turn.
 - **The first word on the player's own character is where they stand**: it says nothing. A word that goes back is never

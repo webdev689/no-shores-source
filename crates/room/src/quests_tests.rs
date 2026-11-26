@@ -61,7 +61,7 @@ fn every_foe_a_road_names_is_one_of_the_roster_at_a_rank_it_comes_in() {
         r#"{ "kind": "kill", "node": "n", "types": ["Reev"], "text": "t" }"#.to_owned(),
         format!(r#"{{ "kind": "kill", "node": "n", "place": "p", "spawn": [["{boss}", "Boss"]], "text": "t" }}"#),
         r#"{ "kind": "defend", "node": "n", "place": "p", "ward": "w", "waves": [[["Runner", "Minor"]], [["Runer", "Minor"]]], "text": "t" }"#.to_owned(),
-        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "near": 15, "ambush": [["Brut", "Major"]], "text": "t" }"#.to_owned(),
+        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "horse": "dun", "near": 30, "ambush": [["Brut", "Major"]], "text": "t" }"#.to_owned(),
         r#"{ "kind": "unseen", "node": "n", "place": "p", "spawn": [["Runner", "Huge"]], "text": "t" }"#.to_owned(),
         r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "foe": "Colector", "far": 10, "near": 40, "text": "t" }"#.to_owned(),
     ] {

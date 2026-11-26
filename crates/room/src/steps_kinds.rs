@@ -2,9 +2,9 @@
 //! clock, a puzzle's points used; and what the player is sent of it, and where its mark stands.
 
 use super::{
-    ARRIVED, Defence, FIGURE_PACE, HELD, Lit, NOTICED, POINT_REACH, RETRY_MOST, RETRY_TICKS, Raced, STOPPED_MOST,
-    STOPPED_TICKS, Step, StepSeen, Stepping, WAITING, WALKING, WARD_HEALTH, WATCHED_WITHIN, Watched, ahead, along_way,
-    apart, way_length,
+    ARRIVED, Defence, FIGURE_PACE, FIGURE_TURN, HELD, Lit, MOUNTING, NOTICED, POINT_REACH, RETRY_MOST, RETRY_TICKS,
+    Raced, STOPPED_MOST, STOPPED_TICKS, Step, StepSeen, Stepping, WAITING, WALKING, WARD_HEALTH, WATCHED_WITHIN,
+    Watched, ahead, along_way, apart, way_length,
 };
 use crate::foes::Foe;
 use crate::garrison::SPREAD;
@@ -45,18 +45,19 @@ pub(super) fn doubled(first: u64, most: u64, times: u16) -> u64 {
 }
 
 impl Room {
-    /// A figure's tick: held while its ambush stands (or waits room to stand); walking back after it noticed the
-    /// player (a tail), waiting at its way's start until `RETRY_TICKS` after; noticing a player nearer than `far` as it
-    /// walks; walking while the player is within `near`, its ambush standing as it passes halfway, and arriving at its
-    /// way's end; else waiting.
+    /// A figure's tick at `pace`: held while its ambush stands (or waits room to stand); walking back after it noticed
+    /// the player (a tail), waiting at its way's start until `RETRY_TICKS` after; noticing a player nearer than `far`
+    /// as it walks; with the player within `near`, waiting while they are `afoot` (an escort rides only with its
+    /// player on their horse), else walking, its ambush standing as it passes halfway, and arriving at its way's end;
+    /// else waiting. It turns to face its way at `FIGURE_TURN`, never at once, but turns about as it notices.
     pub(super) fn walk_figure(
         &mut self,
         player: PlayerId,
         goal: &'static GoalDef,
-        (near, far, ambushed): (f64, Option<f64>, bool),
+        (pace, near, far, ambushed, afoot): (f64, f64, Option<f64>, bool, bool),
         at: [f64; 2],
     ) {
-        let (clock, step) = (self.clock, FIGURE_PACE * TICK_SECONDS);
+        let (clock, step) = (self.clock, pace * TICK_SECONDS);
         let (foes, floor) = (&self.foes, &self.floor);
         let Some(Step { kind: Stepping::Figure(figure), .. }) = self.quests.steps.get_mut(&player) else { return };
         let standing = |ids: &Vec<FighterId>| ids.iter().any(|id| foes.get(id).is_some_and(|foe| !foe.fighter.dead()));
@@ -71,6 +72,8 @@ impl Room {
             }
         } else if figure.state == WALKING && far.is_some_and(|far| away < far) {
             (figure.state, figure.noticed, noticed) = (NOTICED, Some(clock), true);
+        } else if away <= near && afoot {
+            figure.state = MOUNTING;
         } else if away <= near {
             if ambushed && figure.ambush.is_none() && figure.along >= length / 2.0 {
                 // It waits halfway, held only once its ambush stands, so the page never shouts one that is not there.
@@ -84,9 +87,14 @@ impl Room {
             figure.state = WAITING;
         }
         let ([x, y], bearing) = along_way(&figure.way, figure.along);
-        let moved = [x, y] != [figure.at[0], figure.at[1]] || figure.state != before;
+        let aim = if figure.state == NOTICED { bearing + PI } else { bearing };
+        // A quarry that notices the player, or walks again once back, turns about at once, never walking backwards.
+        let about = (figure.state == NOTICED) != (before == NOTICED);
+        let turn = if about { PI } else { FIGURE_TURN * TICK_SECONDS };
+        let facing = libm::remainder(figure.facing + libm::remainder(aim - figure.facing, TAU).clamp(-turn, turn), TAU);
+        let moved = [x, y] != [figure.at[0], figure.at[1]] || figure.state != before || facing != figure.facing;
         figure.at = [x, y, floor.height_at(x, y)];
-        figure.facing = if figure.state == NOTICED { bearing + PI } else { bearing };
+        figure.facing = facing;
         let standing_at = figure.at;
         if noticed {
             self.failed(player);

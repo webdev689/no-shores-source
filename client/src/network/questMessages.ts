@@ -44,8 +44,9 @@ export interface QuestFigure {
   readonly state: number;
 }
 
-/** A figure's states by their number on the wire. */
-export const FIGURE_STATES = { waiting: 0, walking: 1, noticed: 2, arrived: 3, ambushed: 4 } as const;
+/** A figure's states by their number on the wire (`mounting`: an escort waiting, its player near, for them to get on
+ *  their horse). */
+export const FIGURE_STATES = { waiting: 0, walking: 1, noticed: 2, arrived: 3, ambushed: 4, mounting: 5 } as const;
 
 /** A defended ward: where it stands and its health's share, 0 to 1. */
 export interface QuestWard {

@@ -76,8 +76,8 @@ fn goal(text: &str) -> Result<GoalDef, String> {
 #[test]
 fn a_figures_greeting_and_every_line_a_step_says_are_scenes_the_file_checks() {
     let lines = |text: &str| goal(text).expect(text).goal.lines().into_iter().map(str::to_owned).collect::<Vec<_>>();
-    let escort = r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "near": 15, "greet": "hello", "shout": "ambush", "text": "t" }"#;
-    assert_eq!(lines(escort), ["hello", "ambush"]);
+    let escort = r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "horse": "dun", "near": 30, "greet": "hello", "shout": "ambush", "mount": "up", "text": "t" }"#;
+    assert_eq!(lines(escort), ["hello", "ambush", "up"]);
     let tail = r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "foe": "Runner", "far": 10, "near": 40, "greet": "hello", "noticed": "seen", "text": "t" }"#;
     assert_eq!(lines(tail), ["hello", "seen"]);
     let scene =
@@ -114,8 +114,12 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         (r#"{ "kind": "sea", "side": "hostiles", "text": "t" }"#, "side"),
         (r#"{ "kind": "land", "island": "rock", "text": "t" }"#, "island"),
         (
-            r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "nobody", "near": 15, "text": "t" }"#,
+            r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "nobody", "horse": "dun", "near": 30, "text": "t" }"#,
             "who",
+        ),
+        (
+            r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "horse": "zebra", "near": 30, "text": "t" }"#,
+            "horse",
         ),
         (
             r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "who": "wren", "foe": "Runner", "far": 10, "near": 40, "text": "t" }"#,

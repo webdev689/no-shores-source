@@ -6,10 +6,12 @@
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
 import type { MarkedFoe } from '../../combat/foePlate.ts';
+import type { Rider } from '../../combat/horseSounds.ts';
 import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { placeMarks } from '../../overworld/overworldMarks.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
+import { MOUNT_SLOT, worn } from '../../player/gear.ts';
 import type { FoeType } from '../../rules/roster.ts';
 import { type Cast, type Line, castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
@@ -59,6 +61,8 @@ export class Quests {
   private toasted: { readonly text: string; readonly until: number }[] = [];
   /** The step's figures, drawn between the room's words on them. */
   private readonly glides = new FigureGlides();
+  /** The step's figures on horseback as last drawn, heard as riders are, by numbers no fighter has. */
+  private riding: Rider[] = [];
   /** When the room's last word on the quest came, milliseconds on `now`. */
   private heardAt = 0;
   /** Where the compass last pointed for the quest walked, and each step's word, from where the player stood. */
@@ -94,8 +98,15 @@ export class Quests {
   ): CardAt[] {
     const now = this.now();
     const actors = questActors(this.here?.quest, this.roster, groundAt, (index, figure) => {
-      return this.glides.place(index, now) ?? [figure.x, figure.y, figure.z];
+      return this.glides.place(index, now) ?? [figure.x, figure.y, figure.z, figure.facing];
     });
+    const ridden = actors.filter((actor) => actor.anim.startsWith('horse'));
+    this.riding = ridden.map((actor) => ({
+      id: -actor.id,
+      feet: [actor.x, actor.y, actor.z],
+      mounted: true,
+      boosting: 0,
+    }));
     const forge = this.forge;
     if (!forge) return [];
     for (const actor of actors) forge.warm(actor.dress, () => FIGURE_MOVES, 0, actor.id);
@@ -167,9 +178,15 @@ export class Quests {
     return this.guided;
   }
 
+  /** The step's figures on horseback as last drawn (`cards`), for their hooves to be heard. */
+  get riders(): readonly Rider[] {
+    return this.riding;
+  }
+
   /** What the tracker shows: the quest walked, once the story and the welcome are past, each step with its way. */
   get tracked(): Quest | null {
-    const tracked = this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000) : null;
+    const horsed = !this.gear || worn(this.gear, MOUNT_SLOT) !== undefined;
+    const tracked = this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000, horsed) : null;
     if (!tracked) return null;
     const { notes } = this.guided;
     return {

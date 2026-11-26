@@ -596,7 +596,8 @@
               "from": "Shingle Landing",
               "to": "Ewe Fold",
               "who": "tobin",
-              "near": 15,
+              "horse": "dun",
+              "near": 30,
               "greet": "lampWalk",
               "ambush": [
                 [
@@ -613,7 +614,8 @@
                 ]
               ],
               "shout": "lampAmbush",
-              "text": "Keep Tobin close as he walks"
+              "mount": "lampMount",
+              "text": "Ride with Tobin, and keep him close"
             },
             {
               "kind": "reach",
@@ -1155,9 +1157,11 @@
               "from": "Vale Mouth",
               "to": "Hollow Coven",
               "who": "wren",
-              "near": 15,
+              "horse": "black",
+              "near": 30,
               "greet": "veilWren",
-              "text": "Keep up with Wren"
+              "mount": "veilMount",
+              "text": "Ride with Wren, and keep up"
             },
             {
               "kind": "reach",

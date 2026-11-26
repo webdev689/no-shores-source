@@ -286,7 +286,13 @@ fn slain(slay: &Slay) -> Option<&'static str> {
 }
 
 fn escorted(escort: &Escort) -> Option<&'static str> {
-    if !speaks(Some(&escort.who)) { Some("who") } else { (escort.near <= 0.0).then_some("near") }
+    if !speaks(Some(&escort.who)) {
+        Some("who")
+    } else if crate::horses::horse(0, &escort.horse).is_none() {
+        Some("horse")
+    } else {
+        (escort.near <= 0.0).then_some("near")
+    }
 }
 
 fn tailed(tail: &Tail) -> Option<&'static str> {
