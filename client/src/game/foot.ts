@@ -157,8 +157,7 @@ export class Foot {
     const layout = opened.dungeon?.layout;
     // In a dungeon, on the player's own storey.
     const felt = layout && feltAt(layout, () => context.walker.player.body.z);
-    this.groundAt = felt ? felt.ground : (opened.groundAt ?? context.groundAt);
-    this.roof = felt ? felt.roof : null;
+    [this.groundAt, this.roof] = felt ? [felt.ground, felt.roof] : [opened.groundAt ?? context.groundAt, null];
     this.link = parts.link;
     this.fight = parts.fight;
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);

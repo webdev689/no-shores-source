@@ -149,8 +149,8 @@ fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 6]], at: [f64; 2], arrive: [f64;
 
 /// The zone's layings under ground in its style, each from the next seed, the first first; a lamp's zone only where
 /// a room but the way in's is tall enough to stand the lamp in and the lamp stands clear of the Forge's solids, a
-/// Hold's where a room holds its ring whole, and any where its floor gives its deal every spot it wants, its seeds
-/// tried once in turn, else its first seed's alone. None for a style the Forge does not know.
+/// Hold's where a room holds its ring whole, and any where its floor gives its deal every spot it wants, every way on
+/// its mouth and its foes a post, its seeds tried once in turn, else its first seed's alone. None for a style the Forge does not know.
 pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<impl Iterator<Item = (Dungeon, Sites)>> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();
@@ -185,7 +185,9 @@ pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<i
         .map(laid_out.clone())
         .filter(move |laid| !hold || ring_whole(laid))
         .filter(move |laid| !lamp || lamp_whole(laid))
-        .filter(move |(_, sites)| sites.spots.len() >= wanted);
+        // Every way on its mouth and the foes a post: a laying of one great room has neither.
+        .filter(move |(_, sites)| sites.spots.len() >= wanted && sites.onward.len() == onward_count)
+        .filter(|(_, sites)| !sites.posts.is_empty());
     let mut tall = tall.peekable();
     let laid: Box<dyn Iterator<Item = (Dungeon, Sites)>> =
         if tall.peek().is_some() { Box::new(tall) } else { Box::new(std::iter::once(laid_out(forged(0)))) };
@@ -207,13 +209,21 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         .rooms
         .iter()
         .enumerate()
-        .filter(|(number, _)| *number != dungeon.way_in.room)
+        // A zone laid as one great room stands its foes in it, away from the arrival as ever.
+        .filter(|(number, _)| *number != dungeon.way_in.room || dungeon.rooms.len() == 1)
         .map(|(_, room)| {
             let cells = if room.quiet.is_empty() { &room.cells } else { &room.quiet };
             // A band stands on open floor: the middle of the room's cells no prop, fixture or landmark fills.
             let open: Vec<usize> = cells.iter().copied().filter(|&cell| !dungeon.holds_solid(cell)).collect();
             let cells = if open.is_empty() { cells } else { &open };
-            let middle = cells.get(cells.len() / 2).map_or([0.0, 0.0], |&cell| dungeon.centre(cell));
+            // In a zone of one room, its clear floor farthest from the arrival.
+            let far = |cell: &&usize| apart(dungeon.centre(**cell), arrive);
+            let farthest = cells
+                .iter()
+                .filter(|&&cell| clear(dungeon.centre(cell)))
+                .max_by(|one, other| far(one).total_cmp(&far(other)));
+            let pick = if dungeon.rooms.len() == 1 { farthest } else { cells.get(cells.len() / 2) };
+            let middle = pick.map_or([0.0, 0.0], |&cell| dungeon.centre(cell));
             (room.walk, middle)
         })
         .collect();

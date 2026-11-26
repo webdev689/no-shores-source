@@ -122,11 +122,13 @@ passages' own pieces standing in it with their solids.
   12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room but the
   way in's, three cells or more each way, on the quiet cell nearest the room's middle where its plinth and stones,
   facing the arrival, stand on its rooms' floor clear of every prop, fixture, landmark, pillar and doorway, else in the next room as great
-  and as tall. A zone is forged from the first of its seeds where its floor gives its deal every spot it wants; a
+  and as tall. A zone is forged one storey deep (`forge_storeys`) from the first of its seeds where its floor gives
+  its deal every spot it wants, every way on its mouth and its foes a post; a
   lamp's zone also where a room but the way in's is tall enough and the lamp stands clear, and a Hold's where its ring
   lies whole on the room floor at its spot (no rock or corridor cell, nor the dungeon's edge, within 6 m of its middle), the spot
   where the ring lies whole, else where most of it does. A band's post is the
-  middle of a room's cells that no prop, fixture or landmark fills, and the deal's spots are quiet cells that hold none.
+  middle of a room's cells that no prop, fixture or landmark fills, the way in's room's none but in a zone laid as one
+  great room, whose post is its clear floor farthest from the arrival; the deal's spots are quiet cells that hold none.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
   little and stepping down in shelves, each easing into the next over an 8 m bank; its walls rise 12 to 25 m within
