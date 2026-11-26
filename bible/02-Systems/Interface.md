@@ -248,7 +248,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **Notices of what is obtained** (`obtained.ts`), after the reference's: a band across the foot of the view, over
   every layer (the menu's too) but the pad's cursor, edged at its top by a 2 px cyan line, dark under it; in its
   middle a round icon in a cyan ring (a keeper's mark, an Art's emblem, a find's glyph or its rarity's crystal), a
-  title and a line, the key to press on a keycap where there is one, and dim at the far right that key and what it
+  bold title over a lighter line, the key to press on a keycap where there is one, and dim at the far right that key and what it
   opens ("Open Character"). They come for a keeper's gift, a road's reward (an Art, a Tenet, a fragment to choose, or
   its Aurem), a quest acquired, a step done, a quest done, and a Legendary or Atheric piece or Vestige found (the rest
   stand in the Acquired feed); the armour's gift tells the Character key, the horse's the Mount key. One stands at a
@@ -339,8 +339,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
   everything on the screen and kept above the footer, the pointer passing through it to what it describes where
   there is no room beside it; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
-  reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view, and
-  Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
+  reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view (the hints
+  wrapping in their row on a phone, the presses beside them), and Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
   Art's and Appearance stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
   the figures, the horse and the keepers drawn from the forge's pixels, kept whole. A page that needs no gear (Ship,
   Social, Settings and the pages to come) takes only the interface, the room, the sizes and the holds
