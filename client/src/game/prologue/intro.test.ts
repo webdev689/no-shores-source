@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
 import type { Landmass } from '../landmass.ts';
 import type { Tick } from './beat.ts';
-import { beginPrompt, Intro } from './intro.ts';
+import { beginPrompt, Intro, type TitleGate } from './intro.ts';
 import { takeHandPrompt } from './shore.ts';
 import type { Sailing } from './sailing.ts';
 import { Stage, type StageParts } from './stage.ts';
@@ -34,7 +34,7 @@ const tick = (seconds: number): Tick => ({
 const PROMPT = 'Press any key to begin';
 
 /** The intro over a stage of the test's own, writing down what it lays over the view and where its camera stands. */
-function intro() {
+function intro(gate: TitleGate | null = null) {
   Object.assign(globalThis, { window: globalThis });
   const shown: string[] = [];
   const quiet = () => undefined;
@@ -52,7 +52,7 @@ function intro() {
     roster: [],
   } as unknown as StageParts);
   const sailing = { frame: () => [] } as unknown as Sailing;
-  const beat = new Intro(stage, sailing);
+  const beat = new Intro(stage, sailing, gate);
   const heights: number[] = [];
   /** Plays `seconds` of the intro a quarter second a frame. */
   const play = (seconds: number) => {
@@ -133,4 +133,37 @@ test('the story asks for a press by what the player plays with: on the pad, its 
   );
   assert.equal(takeHandPrompt(false, true), 'Press A to take her hand');
   assert.equal(takeHandPrompt(false, false), 'Click or press any key to take her hand');
+});
+
+test('with accounts, beginning opens the character screen; the intro ends once it answers, or the title comes back', async () => {
+  const answers: ((answer: 'story' | 'onward' | 'title') => void)[] = [];
+  const gate: TitleGate = { straight: false, open: () => new Promise((answer) => answers.push(answer)) };
+  const { beat, shown, play } = intro(gate);
+  play(1);
+  beat.skip?.();
+  play(3);
+  beat.key?.('enter', true);
+  assert.equal(answers.length, 1, 'the screen opened');
+  assert.equal(beat.done, false, 'the intro waits on it, its scene behind');
+  answers[0]?.('title');
+  await Promise.resolve();
+  assert.equal(shown.at(-1), 'title', 'the title rises again');
+  play(3);
+  assert.equal(shown.at(-1), PROMPT, 'and its prompt after it');
+  beat.press();
+  answers[1]?.('onward');
+  await Promise.resolve();
+  assert.ok(beat.done);
+  assert.equal(beat.onward, true, 'past the story');
+});
+
+test('marked by the tab, the screen opens at once, and the title never rises behind it', () => {
+  let opened = 0;
+  const gate: TitleGate = { straight: true, open: () => (opened++, new Promise(() => undefined)) };
+  const { beat, shown, play } = intro(gate);
+  assert.equal(opened, 1);
+  play(30);
+  assert.ok(!shown.includes('title'), 'the scene alone behind the screen');
+  assert.ok(!shown.includes(PROMPT));
+  assert.equal(beat.done, false);
 });

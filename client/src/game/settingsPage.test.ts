@@ -5,7 +5,7 @@ import { AccountPanel } from './accountTab.ts';
 import { drawn, fakeLink, fakePage, heard, settle } from './menuPagesForTests.ts';
 import { Rebinding } from './rebinding.ts';
 import { resolution, setResolution } from './renderScale.ts';
-import { SETTINGS_TABS, Settings, type SettingsTab, titleAddress } from './settingsPage.ts';
+import { SETTINGS_TABS, SWITCH, Settings, type SettingsTab, titleAddress } from './settingsPage.ts';
 
 /** Settings drawn at `tab`, its account `account` (none offline), leaving or closing `page`, in `room`. */
 function settingsAt(
@@ -286,4 +286,27 @@ test("Settings shown anew drops the binding's last words; Exit to Menu loads the
   assert.ok(!page.shows().includes('Defaults'));
   hold(page, 'settings-exit-menu', 2);
   assert.deepEqual(done, ['reload']);
+});
+
+test('online, Switch character stands beside Exit to Menu, held, leaving for the character screen; offline it is not', () => {
+  const offline = settingsAt('graphics');
+  offline.frame();
+  assert.doesNotMatch(offline.shows(), /SWITCH CHARACTER/);
+  const { page: browser, done } = fakePage('https://game/?at=overlook-social&room=wss://rooms');
+  const kept: Record<string, string> = {};
+  const tab = {
+    getItem: (key: string) => kept[key] ?? null,
+    setItem: (key: string, value: string) => void (kept[key] = value),
+    removeItem: (key: string) => void delete kept[key],
+  };
+  const rebinding = new Rebinding();
+  const online = new Settings(() => ({ nodes: () => [] }) as unknown as AccountPanel, browser, rebinding, tab);
+  const page = { settings: online, ...drawn((context) => online.node(context)) };
+  page.frame();
+  assert.match(page.shows(), /ACCOUNT \| SWITCH CHARACTER \| EXIT TO MENU \| EXIT TO DESKTOP \|/);
+  page.click(SWITCH);
+  assert.deepEqual(done, [], 'a click does nothing');
+  hold(page as unknown as ReturnType<typeof settingsAt>, SWITCH, 2);
+  assert.deepEqual(done, ['assign https://game/?room=wss%3A%2F%2Frooms']);
+  assert.equal(kept['noshores.characters.open'], 'characters', 'the page loaded again opens the screen at once');
 });

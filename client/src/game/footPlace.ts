@@ -27,7 +27,7 @@ import type { Standing } from './hudLaw.ts';
 import type { Quest } from './tasks.ts';
 import { guildRead } from './guild/guildHeld.ts';
 import { GUILD_CHANGED } from './gearScreen.ts';
-import { nodeRoom } from './rooms.ts';
+import { nodeRoom, testZoneOf } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
@@ -106,7 +106,10 @@ export function nodeAddress(
   guild: string | null,
 ): string | null {
   if (!context.rooms) return null;
-  return `${context.rooms(nodeRoom(node, seas, guild))}${joinAsk(asked)}`;
+  // Launched for a Breach's test run, the player joins the zone's copy its test is opened from.
+  const breach = typeof asked === 'object' ? asked.breach : undefined;
+  const room = (breach !== undefined && testZoneOf(breach)) || nodeRoom(node, seas, guild);
+  return `${context.rooms(room)}${joinAsk(asked)}`;
 }
 
 /** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out; or
