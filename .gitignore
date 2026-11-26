@@ -45,3 +45,4 @@ bible/.trash/
 
 # The design tool's own working folder (its live server and saved critiques), never the repo's.
 .impeccable/
+/figures-work/
