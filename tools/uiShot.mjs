@@ -20,6 +20,7 @@ const address = server.httpServer?.address();
 const base = `http://localhost:${typeof address === 'object' && address ? address.port : 5173}`;
 const browser = await chromium.launch({
   args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
+  ...(process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY, bypass: 'localhost,127.0.0.1' } } : {}),
 });
 let failed = false;
 try {
@@ -34,6 +35,24 @@ try {
   });
   // A zone drawn whole on the software GPU takes minutes.
   page.setDefaultTimeout(600_000);
+  await page.route(
+    (url) => url.hostname.endsWith('.r2.dev'),
+    async (route) => {
+      for (let tries = 0; ; tries++) {
+        try {
+          const response = await route.fetch({
+            headers: { ...route.request().headers(), origin: 'http://localhost:5173' },
+          });
+          if (response.status() >= 500 && tries < 4) throw new Error(String(response.status()));
+          await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } });
+          return;
+        } catch (error) {
+          if (tries >= 4) return route.abort();
+          await new Promise((wake) => setTimeout(wake, 500 * (tries + 1)));
+        }
+      }
+    },
+  );
   await page.goto(`${base}/src/ui/shot.ts`);
   for (const one of asked.shots) {
     const [width, height] = one.size ?? asked.size ?? [640, 360];

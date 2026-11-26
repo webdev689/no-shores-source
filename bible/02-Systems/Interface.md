@@ -351,7 +351,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   map, the land's view or the Islands mode's island to its right, its overlays' marks drawn on the GPU and their names
   in the interface; a captain's fight shows the game's own readout over the view.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
-  writes a PNG, hearing a shot's events on its second frame, once the first has laid what they press. `ui/gallery.ts`
+  writes a PNG, hearing a shot's events on its second frame, once the first has laid what they press. It serves on
+  port 5173 where free, the next port otherwise, and fetches R2's packs for the page as from 5173 (through
+  `HTTPS_PROXY` where set), so a second checkout's pictures still draw the real pieces. `ui/gallery.ts`
   holds what a screen is mostly built of: a window under a header panel, presses at rest, primary, warn and disabled,
   words in a span's colour wrapping across a break, at two sizes, with a halo and with a hard shadow, a chip, a field
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
