@@ -390,11 +390,10 @@ will take it, by the room's own tick.
   of a continent's coast or a standing sea island's (`PARKED_REACH_M`: where a docked ship lies), out of a fight and
   their account no guest's (`unkept:`), leaves it lying parked where it is, kept by their account. It is never one of
   the sea's ships: no hostile ship, fight or island heeds it. Every room on an island (a node's room, its dungeons'
-  and runs', a sea island's room and its dungeon's; a passage zone's names none, so a diver's ship lies unseen while
-  they dive) names the accounts of the players it holds to the sea rooms they
-  land from (every tier's for a social space, an outpost and a run started at sea, `reach.social`; its own tier's
-  otherwise) as each account is known and every 15 seconds after (`ashoreWord`, `room_sea_ashore`), with its island
-  (its node's continent, a sea island's number and seed, or none for a run started at sea) and the host's time in
+  and runs', a passage zone's under its island, a sea island's room and its dungeon's) names the accounts of the
+  players it holds to the sea rooms they land from (every tier's for a social space, an outpost, a passage zone and a
+  run started at sea; its own tier's otherwise) as each account is known and every 15 seconds after (`ashoreWord`, `room_sea_ashore`), with its island
+  (its node's or a passage zone's continent, a sea island's number and seed, or none for a run started at sea) and the host's time in
   seconds. Every naming is timed by that time, which the sea keeps, carries on by its own ticks between words, and
   never puts before the minute the host sets as it starts ticking, since a sea room stops ticking while nobody sails
   it. A named account's parked ship lying within 5 km of that island's coast (a run's wherever it lies) is seen for

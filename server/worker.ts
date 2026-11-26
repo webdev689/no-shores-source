@@ -296,7 +296,7 @@ export class RoomHost extends DurableObject<Env> {
     const judge = (from: string | null, body: string | null) =>
       arrives(name, from, shipOf(body), reach, passagesOf(this.room, body));
     if (judged) this.keeper.judgingArrivals(judge, passage !== null);
-    if (reached && !tested) this.shore.stand(placeOf(name, reach, null));
+    if ((reached && !tested) || passage) this.shore.stand(placeOf(name, reach, null));
     // Every room on land, and the sea's flotsam and decks, roll their loot from seeds of their own that no player sees:
     // the sea's own seed shows in its islands'.
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));

@@ -8,7 +8,7 @@
  */
 
 import type { Reach } from './arrival.ts';
-import { nodeRoom, seaRoomName, startedAtSea } from './roomNames.ts';
+import { nodeRoom, passageRoom, seaRoomName, startedAtSea } from './roomNames.ts';
 
 /** How often a room names its players again: three times within the 45 s a naming keeps a ship seen. */
 export const ASHORE_EVERY_MS = 15_000;
@@ -31,6 +31,10 @@ export function placeOf(
   isle: { readonly id: number; readonly seed: string; readonly sea: string } | null,
 ): Place | null {
   if (isle) return { seas: [isle.sea], island: { island: isle.id, seed: isle.seed } };
+  // A passage zone lies under its island and is dived into from a patrol at any tier: its divers' ships may lie in any
+  // of the three seas.
+  const passage = passageRoom(name);
+  if (passage) return { seas: [0, 1, 2].map(seaRoomName), island: { continent: passage.island } };
   const node = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
   if (!node) return null;
   // Entered from any tier's sea (`arrives`), a run started at sea names its players to all three.

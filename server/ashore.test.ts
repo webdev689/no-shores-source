@@ -26,6 +26,11 @@ test('a room names its players to the seas they land from, at its island', () =>
     seas: ['sea--elite'],
     island: { island: 7, seed: '255' },
   });
+  // A passage zone under its island is entered from a patrol at any tier, so its divers' ships may lie in any sea.
+  assert.deepEqual(placeOf('passage-continent-1-w12-z3--run-a1b2c3d4', null, null), {
+    seas: ['sea', 'sea--elite', 'sea--abyss'],
+    island: { continent: 'continent-1' },
+  });
   assert.equal(placeOf('node-gullwing-vale', null, null), null, 'a node whose island is unknown');
   assert.equal(placeOf('fleet-trial', null, null), null, 'a room on no island');
 });

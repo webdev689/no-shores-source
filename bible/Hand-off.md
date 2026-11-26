@@ -1107,8 +1107,7 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The passages, after their merge** (#218): a diver's parked ship lies unseen while they dive, as a passage's room
-  names no one to the sea (#216's docking). Not yet played
+- **The passages, after their merge** (#218): not yet played
   live: every deal, a dive's way across zones, a public round, the held map's public way and its redesign on a real
   GPU, the sea's new ranks and salvage, a run of the week's Abyss Dungeon again; tested offline, and pictured
   headless (`tools/passageShots.json`, `target/passages/`); a Vein's nodes under ground not yet pictured. Unchecked
