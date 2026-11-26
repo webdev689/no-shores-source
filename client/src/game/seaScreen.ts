@@ -49,6 +49,8 @@ export function consoleOf(
   const { passage } = sea;
   const kept = game.kept();
   const ship = game.ship();
+  // Held near a hostile ship, it sails at the room's pace, not the one the page asked.
+  const paceNow = passage.heldTo ?? passage.paceNow;
   return {
     level: sea.level,
     name: ship.name ?? `The ${ship.hull}`,
@@ -58,8 +60,9 @@ export function consoleOf(
     sailing: passage.sailing,
     resumable: sea.resumable,
     pace: passage.pace,
-    paceNow: passage.paceNow,
-    speed: passage.sailing ? SHIP_SPEED * passage.way * passage.paceNow : 0,
+    paceNow,
+    held: passage.heldTo !== null,
+    speed: passage.sailing ? SHIP_SPEED * passage.way * paceNow : 0,
     bound: boundWords(game.landings.making),
     share: passage.share,
     line: sea.voyageNote,

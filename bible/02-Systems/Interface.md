@@ -1261,8 +1261,9 @@ columns, the last behind a rail:
   ship's brass needle and the wind's pale arrow are pictures drawn once and turned to their bearings each frame. Under
   it the heading ("274° W", of the sixteen winds) and the wind ("Wind 6 m/s from the ENE", or "Calm" under 0.5 m/s).
 - **The voyage**: under way, hove to or at anchor in brass, with its speed in m/s while it sails; its pace ("Pace ×200", eased "×1 (×200
-  set) · true speed while watched"), or at rest how a voyage is set ("Click the sea to sail at ×60; plan on the map for
-  ×200."); where it is bound while it makes for a landing; a bar of the way sailed on a voyage to a point; its line,
+  set) · true speed while watched", held near a hostile ship the room's "×5 (×200 set)"), or at rest how a voyage is
+  set in the view ("Click the sea to sail at ×60; plan on the map for ×200.", at sea level "W sails on; A and D
+  steer."); where it is bound while it makes for a landing; a bar of the way sailed on a voyage to a point; its line,
   where it says more than the words over it.
 - **The ship**: hull, canvas and crew as bars of whole, green over 60%, amber over 30%, red under, with their shares; and
   the water it is in.

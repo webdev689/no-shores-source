@@ -533,8 +533,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   to sail. Its head names the ship (its own name, else its class) beside its class, over the switch between the
   Oversea and the Sealevel views (V). Under it: a compass, north up, its brass needle the ship's heading and a pale
   arrow the way the wind blows, with the heading in degrees and the wind ("Wind 6 m/s from the ENE", or "Calm");
-  the voyage (under way, hove to or at anchor; its pace, and while eased "×1 (×200 set) · true speed while watched";
-  its speed in m/s; where it is bound when it makes for a landing; a bar of the way sailed; its line); and the ship
+  the voyage (under way, hove to or at anchor; its pace, and while eased "×1 (×200 set) · true speed while watched",
+  or held near a hostile ship the room's; its speed in m/s at it; where it is bound when it makes for a landing; a bar
+  of the way sailed; its line); and the ship
   (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
   Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
   Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)

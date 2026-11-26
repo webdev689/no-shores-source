@@ -124,6 +124,12 @@ export class Passage {
     return this.sailed;
   }
 
+  /** The pace the room holds it to under the pace it is sailed at, a hostile ship near; none while it is not held. */
+  get heldTo(): number | null {
+    const settled = this.voyage ? (this.room?.settledShip ?? null) : null;
+    return settled && settled.pace > 0 && settled.pace < this.sailed ? settled.pace : null;
+  }
+
   /** How far along a voyage to a point it has sailed, a share; none straight on or at rest. */
   get share(): number | null {
     return this.voyage && !this.straight ? Math.min(1, this.travelled / Math.max(1, this.voyage.lengthM)) : null;

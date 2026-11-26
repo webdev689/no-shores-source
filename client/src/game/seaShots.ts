@@ -12,7 +12,7 @@ import type { NodeInfo } from './worldData.ts';
 /** Under way at ×200 for Overlook's harbour, a quarter of the way there, the wind from the east. */
 const UNDER_WAY: ConsoleState = {
   ...{ level: 'oversea', name: 'The Gull', hull: 'Sloop', heading: 4.8, sailing: true, resumable: false },
-  ...{ wind: { toward: 4.2, speed: 6.4 }, pace: 200, paceNow: 200, speed: 2_400, share: 0.27 },
+  ...{ wind: { toward: 4.2, speed: 6.4 }, pace: 200, paceNow: 200, held: false, speed: 2_400, share: 0.27 },
   ...{ bound: "Overlook's harbour, to dock", line: 'Sailing · 31 km to go · 13 s' },
   ...{ water: "The Lantern Sea, Overlook's home waters", kept: { hull: 0.82, sail: 0.95, crew: 1 } },
   ...{ canLeave: true, canManage: true },

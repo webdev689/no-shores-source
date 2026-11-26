@@ -71,7 +71,7 @@ export const HINTS = {
     ['Esc', 'Close'],
     ALL_CONTROLS,
   ],
-  landing: [['Left button', 'Choose; again to land'], ['confirm', 'Land'], ['Esc', 'Back'], ALL_CONTROLS],
+  landing: [['Left button', 'Land or open'], ['confirm', 'Land or open the lit tile'], ['Esc', 'Back'], ALL_CONTROLS],
 } as const satisfies Record<string, readonly StripHint[]>;
 
 /** Each moment's name, as the strip's head says it. */

@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { maskFromOutlines } from '../overworld/seaRoute.ts';
 import type { Node } from '../ui/node.ts';
 import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
 import { consoleOf, consoleShown, boundWords } from './seaScreen.ts';
+import { Passage } from './passage.ts';
 import type { Sea } from './sea.ts';
 import type { SeaLandings } from './seaLandings.ts';
+import type { SeaRoom } from './seaRoom.ts';
 import {
   bearingWords,
   type ConsoleActions,
@@ -14,12 +17,16 @@ import {
   windOf,
 } from './shipConsole.ts';
 
+/** Open sea round a point well inside the world's frame. */
+const OPEN = { leftM: 900_000, topM: 900_000, widthM: 200_000, heightM: 200_000 };
+
 const STATE: ConsoleState = {
   ...{ level: 'oversea', name: 'The Gull', hull: 'Sloop', heading: Math.PI / 2, wind: null, sailing: true },
   ...{
     resumable: false,
     pace: 200,
     paceNow: 200,
+    held: false,
     speed: 2_400,
     bound: null,
     share: 0.25,
@@ -112,6 +119,11 @@ test('the console says the voyage’s pace and speed, where it is bound, how far
   assert.ok(eased.includes('×1 (×200 set) · true speed while watched'), eased);
   const atRest = wordsIn(laid({ ...STATE, sailing: false, share: null }).node).join(' | ');
   assert.ok(atRest.includes('At anchor') && atRest.includes('Click the sea to sail at ×60; plan on the map for ×200.'));
+  const atSeaLevel = wordsIn(laid({ ...STATE, level: 'sealevel', sailing: false, share: null }).node).join(' | ');
+  assert.ok(atSeaLevel.includes('W sails on; A and D steer.'), atSeaLevel);
+  assert.ok(!atSeaLevel.includes('Click the sea'), 'at sea level a click sets no course');
+  const held = wordsIn(laid({ ...STATE, paceNow: 5, held: true, speed: 60 }).node).join(' | ');
+  assert.ok(held.includes('Pace ×5 (×200 set)') && !held.includes('watched'), held);
   const bars = nodesOf(laid(STATE).node).filter((each) => each.width === '25%');
   assert.equal(bars.length, 1, 'a quarter of the way sailed');
 });
@@ -173,4 +185,16 @@ test('the console’s state: its speed at the pace sailed now, its name or its c
   );
   assert.equal(boundWords({ kind: 'dock', port: 'Overlook', harbour: [0, 0] }), "Overlook's harbour, to dock");
   assert.equal(boundWords(null), null);
+});
+
+test('held near a hostile ship, the console shows the pace the room sails it at, as its line does', () => {
+  const passage = new Passage([], () => maskFromOutlines([], OPEN), [1_000_000, 1_000_000], 0);
+  const settled = { ...{ player: 1, x: 1_000_000, y: 1_000_000, heading: 0, pace: 5 }, hull: 0, dress: [], name: [] };
+  passage.room = { settledShip: settled, ownShip: settled, course: () => 0, face: () => 0 } as unknown as SeaRoom;
+  passage.straightOn();
+  const ship = () => ({ name: null, hull: 'Sloop' });
+  const landings = { making: null } as SeaLandings;
+  const state = consoleOf(seaWith({ passage }), { landings, ship, kept: () => null }, null);
+  assert.match(passage.note, /Held to ×5/);
+  assert.deepEqual([state.pace, state.paceNow, state.held, state.speed], [60, 5, true, 60]);
 });

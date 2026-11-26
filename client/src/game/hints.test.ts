@@ -286,6 +286,12 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
     'pad:View All controls',
   ]);
   assert.equal(words(HINTS.landing, 'pad').at(-2), 'pad:B Back');
+  assert.deepEqual(words(HINTS.landing), [
+    'Left button Land or open',
+    'Enter Land or open the lit tile',
+    'Esc Back',
+    'K All controls',
+  ]);
   assert.ok(words(HINTS.fight).includes('A / D Steer'), 'the first key of each control');
   const swapped = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'c').binds;
   assert.deepEqual(words(footHints(AT_REST), 'keys', swapped).slice(2, 4), ['C Jump', 'Space Crouch']);
