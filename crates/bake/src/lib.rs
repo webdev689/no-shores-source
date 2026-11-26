@@ -117,16 +117,13 @@ pub struct Place {
 /// How far a run's place reaches round its mouth, metres.
 pub const RUN_REACH_M: f64 = 25.0;
 
-/// A layout's foes' sites a room stands groups at: a run's beats (a site naming nothing) and a coven's or a cave's
-/// area; a camp's, a ruin's and the rest stand in the garrison's square or wait on the owner's word.
+/// A layout's foes' sites a room stands groups at, its territories across the zone: every one it lays, a camp's, a
+/// ruin's, a keep's, a wreck's, an arena's, a coven's and a cave's area and its runs' beats (the room passes over
+/// one by a public event's ground, `stands.rs`).
 #[must_use]
 pub fn foes_of(layout: &layout::Layout) -> Vec<[f64; 2]> {
-    use layout::brief::AreaKind;
-    let cavern = |name: &String| {
-        layout.areas.iter().any(|area| &area.name == name && matches!(area.kind, AreaKind::Coven | AreaKind::Cave))
-    };
     let held = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Foes);
-    held.filter(|site| site.holds.as_ref().is_none_or(cavern)).map(|site| site.at).collect()
+    held.map(|site| site.at).collect()
 }
 
 /// A patrol's chest places, each x, y and the way it faces, in the layout's order.
@@ -410,7 +407,7 @@ mod tests {
     }
 
     #[test]
-    fn a_layout_s_foes_sites_its_room_stands_are_its_caverns_and_its_runs_beats_short_of_their_end_arenas() {
+    fn a_layout_s_foes_sites_its_room_stands_are_every_area_s_it_lays_and_its_runs_beats() {
         let (_, layout) = glade();
         let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
         let laid =
@@ -434,7 +431,7 @@ mod tests {
             site(layout::sites::SiteKind::Foes, [1.0, 2.0], None),
             site(layout::sites::SiteKind::Objective, [3.0, 4.0], Some(&cave.name)),
         ];
-        assert_eq!(foes_of(&glade), vec![glade.areas[0].at, [1.0, 2.0]]);
+        assert_eq!(foes_of(&glade), vec![glade.areas[0].at, glade.areas[1].at, [1.0, 2.0]]);
     }
 
     #[test]

@@ -140,17 +140,23 @@ impl Room {
         if kinds.is_empty() || mouths.is_empty() {
             return Vec::new();
         }
-        (0..count)
-            .filter_map(|at| {
-                let kind = kinds[(nth + at) % kinds.len()];
-                let mouth = mouths[(nth + at) % mouths.len()];
-                let spread = [mouth[0] + (at % 3) as f64 - 1.0, mouth[1] + (at / 3) as f64 - 0.5, mouth[2]];
-                if !self.room_for_lesser(breach) {
-                    return None;
-                }
-                self.stand_breach_foe(breach, kind, spread, None)
-            })
-            .collect()
+        let mut stood: Vec<(usize, FighterId)> = Vec::new();
+        for at in 0..count {
+            let kind = kinds[(nth + at) % kinds.len()];
+            let mouth = (nth + at) % mouths.len();
+            let [x, y, z] = mouths[mouth];
+            let spread = [x + (at % 3) as f64 - 1.0, y + (at / 3) as f64 - 0.5, z];
+            if !self.room_for_lesser(breach) {
+                break;
+            }
+            stood.extend(self.stand_breach_foe(breach, kind, spread, None).map(|id| (mouth, id)));
+        }
+        // Each mouth's foes form under a crown of crystal over it (`arrivals.rs`).
+        for mouth in 0..mouths.len() {
+            let at_mouth: Vec<FighterId> = stood.iter().filter(|(of, _)| *of == mouth).map(|(_, id)| *id).collect();
+            self.under_crown(&at_mouth);
+        }
+        stood.into_iter().map(|(_, id)| id).collect()
     }
 
     /// Whether an encounter's foe still stands.

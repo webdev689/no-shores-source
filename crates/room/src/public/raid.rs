@@ -287,6 +287,7 @@ impl Room {
         let start = draws.draw() * TAU;
         let (formed, home) = (raid.formed, raid.home);
         let count = members.len();
+        let before = raid.wave_foes.len();
         for (turn, member) in members.into_iter().enumerate() {
             let facing = start + TAU * turn as f64 / count as f64;
             let place = [formed[0] + libm::sin(facing) * COME_IN, formed[1] - libm::cos(facing) * COME_IN, formed[2]];
@@ -304,6 +305,8 @@ impl Room {
                 self.post_collector(raid, id);
             }
         }
+        // The Tithe's airships set each wave down where it forms (`arrivals.rs`).
+        self.by_airship(&raid.wave_foes[before..]);
     }
 
     /// The tithe-taker comes in from where the waves form to walk his round of the standing stores, nearest first, and
@@ -337,7 +340,10 @@ impl Room {
         };
         self.inert.insert(foe);
         raid.taker = Some(Taker { foe, round, leg: 0, counting: None, pace });
-        (running.heroic, running.heroic_ticks) = (Heroic::Offered, TITHE_TAKER_TICKS);
+        // He comes by airship too: his round's time is counted from when he stands on the ground.
+        self.by_airship(&[foe]);
+        let flown = self.arrival_of(foe).map_or(0, |arrival| arrival.lands - self.clock);
+        (running.heroic, running.heroic_ticks) = (Heroic::Offered, TITHE_TAKER_TICKS + flown);
     }
 
     /// The tithe-taker walks his round and counts each store; back at the approach, or his time up, he is gone and the

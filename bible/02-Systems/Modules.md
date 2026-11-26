@@ -28,6 +28,9 @@ code:
   - client/src/city/eventProps.ts#eventProps
   - client/src/game/eventPropsDraw.ts#EventPropsDraw
   - tools/modules/outpost_kit.py#fits
+  - tools/modules/shipkit.py#hull
+  - tools/modules/airship.py#airship
+  - tools/modules/crown.py#crown
   - tools/modules/catalogue.py#OUTPOST
 ---
 # Modules
@@ -135,6 +138,27 @@ are written with paving last, since the first group carries the parts and paving
     `client/src/city/chestModules.ts` and listed after the manifest's modules: `chest` and `chest-heroic`, each with
     its lid (`chest-lid`, `chest-heroic-lid`), a module of its own with its hinge at its origin, and the chest's `hinge`
     socket where that hinge sits on it.
+- **What brings foes** ([[Enemies]], "Arrivals"; [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Foe Arrivals as Claude Builds Them]]), drawn by the page as it
+  flies or forms, never placed by a layout:
+  - The Grey Tithe's airship (`tithe-airship`, `airship.py`): the Brig's own hull, built by the ships' builder
+    (`shipkit.py` takes `tools/ships/ship_hull.py` in, its painted parts read as the kit's timber, canvas and iron),
+    its masts and sails left off; two outrigger beams through its bulwarks braced to its sides with iron, a drum
+    thruster hung under each end (an intake cowl forward, five bands, a flared bell aft, its throat alight), two lift
+    bells under its keel in iron frames run up into its bottom, an iron furnace house amidships with a glowing firebox
+    door, coal between it and the fore beam and two banded stacks with flared caps, pipes run from the furnace house's
+    sides down to the beams and out along them, iron stays from its foremast's stub and its stacks to the beams' ends,
+    iron plate laid on its lower sides (bent with its planking, proud of it everywhere) under two wales, an iron spur at
+    its stem, its drop hatch's frame strutted to its bottom and the doors hung open under it, a lantern on an iron post
+    at its bow and one on its rail each side of its stern, its cabin's windows lit round its stern where the Brig has
+    them, a crow's nest and a grey
+    banner on its foremast's stub, its mainmast's stump, crates and barrels on deck. Its bow points along the
+    module's front, its keel's bottom amidships at the origin; its sockets are each thruster's mouth (`thrust-1` to
+    `-4`, facing aft), each lift's (`lift-1`, `-2`), each stack's top (`stack-1`, `-2`) and its hatch (`hatch`). Its
+    canvas is the Tithe's grey. 17,992 triangles.
+  - The Lattice's crown (`lattice-crown`, `crown.py`): a heart of its light held in seven great spars reaching down
+    like a claw, seven shorter splayed nearly level between them, a cluster pointing down and points standing up, a halo of
+    small shards round its waist and a long shard dripping from each spar's end, all the Lattice's own shards
+    (`latticekit`). Its origin is its heart: it reaches some 4 m down. 1,544 triangles.
 - **The Drowned Vale's** ([[Breaches]], "Its art"): the Sunken Gate's hollow (`breach-gate`), the run's nine spaces
   (`breach-descent`, `-mending`, `-choir`, `-ways`, `-stair`, `-hall`, `-shore-was`, `-shore-is`, `-court`) and its
   pieces (`breach-seal`, `-slab`, `-bell`, `-lodestone`), from `tools/modules/breach_*.py`.
@@ -200,7 +224,8 @@ Their rock (`organic`) is likewise roughed out along normals worked out once in 
 tools/modules/test_kit.py` checks both on small meshes, and the workflow runs it before it bakes. A module's random
 draws are seeded by its place in the catalogue, so a new module goes at the catalogue's end; the event props, after the
 hub's, and the outposts' structures keep seeds of their own. The `modules` workflow bakes on every change to the module tools, to the Lattice's
-builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make the committed
+builders and the forge files they take in, to the ships' builder (`tools/ships/*.py`, which the airship's hull takes
+in), or to `tools/r2.py`; it fails if the bake does not make the committed
 manifest or if a second bake does not make the same bytes, keeping both bakes of a failed run, as far as each went, for
 a week (`modules-differed`) to set beside each other and another machine's, and a second job, which installs nothing,
 publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
@@ -233,10 +258,12 @@ publishes the first bake's meshes with the repository's `CLOUDFLARE_TOKEN`.
   after the layouts and before the nature) from a list it is handed (`eventProps` makes it from the room's event
   marks and the player's chests): each prop at its place, turn and scale, risen out of the ground as far as it has
   come (the growth rising and sinking, a banner driven in; what is under the ground is not drawn), the fissure opening
-  from a line as it widens and deepens, a lid swung about its hinge, its crystal glowing as strongly as it is asked.
-  Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the Tithe's banner
-  its unmarked grey, as its sails are); the crystal is lit as above, its
-  brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A Breach's
+  from a line as it widens and deepens, a lid swung about its hinge (an airship's nose, pitched), a module that does
+  not open leaning about its own length as far as it is asked (an airship banking), its crystal glowing as strongly as
+  it is asked. Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the
+  Tithe's banner and its airship's canvas their unmarked grey, as its sails are); the crystal is lit as above, its
+  brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`), an airship's
+  thrusters each a fire's lamp as hard as it burns. A Breach's
   pieces light lamps from their own surfaces: each 3 m cell its crystal, glow or glass falls in is one lamp at their
   middle (`moduleLights.ts`), cells within a cell of each other one lamp and a lamp inside a solid moved out through
   the nearest face that leaves it in no solid, red, warm or the glass's coloured light. Underground (a sky with a

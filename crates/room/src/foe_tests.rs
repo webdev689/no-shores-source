@@ -310,6 +310,13 @@ fn a_bosss_crew_comes_alert_to_the_foe_it_fights() {
         let whole = room.players[&player].fighter.health_max;
         room.players.get_mut(&player).unwrap().fighter.health = whole;
         if room.foes.len() > 1 {
+            // Called, the crew are built where they stand (`arrivals.rs`) and first think once landed.
+            let mut sequence = sequence;
+            while room.foes_seen().any(|seen| seen.arrival.is_some()) {
+                sequence += 1;
+                room.input(player, asking(&room, sequence, None, Controls::default())).unwrap();
+                room.tick();
+            }
             room.input(player, asking(&room, sequence + 1, None, Controls::default())).unwrap();
             room.tick();
             let crew: Vec<u8> = room.foes_seen().filter(|seen| seen.foe != boss).map(|seen| seen.alert).collect();

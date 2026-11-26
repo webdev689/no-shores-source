@@ -40,9 +40,9 @@ fn guards(draws: &mut naval::random::Mulberry32) -> [Group; 3] {
     let camp = [(RUNNER, Minor), (COLLECTOR, Minor), (CROSSBOWMAN, Minor), (ENFORCER, Major)];
     let at_camp = 2 + index(draws, 3);
     [
-        Group { members: leader.to_vec(), leads: true, farthest: false },
-        Group { members: band.to_vec(), leads: false, farthest: false },
-        Group { members: camp[..at_camp].to_vec(), leads: false, farthest: false },
+        Group { members: leader.to_vec(), leads: true, farthest: false, holds: false },
+        Group { members: band.to_vec(), leads: false, farthest: false, holds: false },
+        Group { members: camp[..at_camp].to_vec(), leads: false, farthest: false, holds: false },
     ]
 }
 

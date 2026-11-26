@@ -307,3 +307,15 @@ test("the player's own Anima cast lays its sigil at their feet as it charges", (
     assert.ok((out[start + 2] ?? 0) < 0.1, 'on the ground');
   }
 });
+
+test("Arc Lash's bolts pass a foe still arriving, as the room's spells do, and find it once it has landed", () => {
+  const marksWith = (foes: Map<number, object>) => {
+    const looks = new SpellLooks(new Sparks(() => 0.5), () => 0.5);
+    const spells = withSpells(spellOf(SPELLS.arcLash, 1, { heads: [0, -7, 1] }));
+    return looks.marks(fightOf({ spells, foes }), EYE, 0, 3);
+  };
+  const foe = { id: 7, view: { x: 0, y: -3, z: 0 } };
+  const arriving = { ...foe, arrival: { kind: 1, from: 1, drops: 50, lands: 200 } };
+  assert.deepEqual(marksWith(new Map([[7, arriving]])), marksWith(new Map()));
+  assert.notDeepEqual(marksWith(new Map([[7, foe]])), marksWith(new Map()), 'a landed foe is found');
+});

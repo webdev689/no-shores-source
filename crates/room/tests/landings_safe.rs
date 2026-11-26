@@ -28,7 +28,7 @@ fn a_player_standing_where_they_land_in_a_patrol_zone_is_never_struck() {
         let floor = Floor::Land(Box::new(node.ground.clone()));
         let mut room = Room::garrisoned(floor, blocks, section, node.kind, (&node.id, levels));
         room.set_island(&node.continent);
-        // Its caverns' and runs' groups too, any within reach of the landing standing as the player lands.
+        // Its territories' and runs' groups too, any within reach of the landing standing as the player lands.
         room.set_foe_sites(&node.foes);
         assert!(room.foes_seen().count() > 0, "{}'s garrison stands", node.id);
         let player = room.join().expect("a player joins");

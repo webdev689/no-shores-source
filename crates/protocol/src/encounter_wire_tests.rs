@@ -56,6 +56,7 @@ fn bare() -> Snapshot<'static> {
         breach: None,
         darkness: false,
         reviving: &[],
+        arrivals: &[],
     }
 }
 

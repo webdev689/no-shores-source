@@ -4,6 +4,7 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees.
 
+mod arrivals;
 mod arts;
 pub mod asks;
 mod atheric;
@@ -78,6 +79,7 @@ pub mod threat;
 mod told;
 pub mod winds;
 
+pub use arrivals::{ArrivalSeen, Bringer, FoeArrival};
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
@@ -86,7 +88,7 @@ pub use entrances::Entrance;
 pub use find_holds::{CHEST_REACH, FIND_HEIGHT, OPEN_TICKS, SEARCH_REACH, SEARCH_TICKS};
 pub use finds::{ChestPlace, Holder};
 pub use floor::{Floor, standing_on};
-pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
+pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, PATROL_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
 pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
@@ -205,7 +207,7 @@ pub struct Room {
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
     /// A patrol's foes' sites, each with whether its group has stood there yet (`stands.rs`).
-    pub(crate) foe_sites: Vec<([f64; 2], bool)>,
+    pub(crate) foe_sites: Vec<garrison::Site>,
     /// Since when no player has come near each half-fallen patrol group, by its first foe as it stood (`stands.rs`).
     pub(crate) unvisited: BTreeMap<FighterId, u64>,
     pub(crate) drops: Vec<Drop>,
@@ -262,6 +264,8 @@ pub struct Room {
     pub(crate) breach_gate: Option<Box<breach::gate::Gate>>,
     /// Its fallen being revived, and where they respawn (`revive.rs`).
     pub(crate) respawning: revive::Respawning,
+    /// What brings foes now, the Tithe's airships and the Lattice's crowns, and the foes arriving (`arrivals.rs`).
+    pub(crate) arrivals: arrivals::Arrivals,
 }
 
 impl Room {
@@ -349,6 +353,7 @@ impl Room {
             breach: None,
             breach_gate: None,
             respawning: revive::Respawning::default(),
+            arrivals: arrivals::Arrivals::default(),
         }
     }
 
@@ -470,6 +475,7 @@ impl Room {
         self.step_players();
         self.keep_spots();
         self.spawn_asked();
+        self.keep_arrivals();
         self.keep_patrol();
         self.keep_gathering();
         self.keep_finds();

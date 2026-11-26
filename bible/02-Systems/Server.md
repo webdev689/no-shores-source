@@ -475,7 +475,10 @@ input names): the players and foes that changed, each as only its numbers that c
 own fighter likewise but whole, and those gone. The fight's events, dresses changed and balls stopped since that
 tick go each time until a later one is shown, so a snapshot lost on the way costs nothing the next does not carry.
 A player whose screen is further behind is sent everything. A foe's packed numbers end with its companion's four (0
-for a foe). An island's room measures from its middle, floored to whole metres; a course's from the world's middle. A
+for a foe) and last, while it arrives, what brings it (1 an airship, 2 a crown, 3 a call), the number of what brings
+it, the tick it is let down and the tick it lands (0 each once it has landed); every airship and crown bringing foes
+crosses whole in each snapshot while it lasts (`Arrival`: its number, what it is, its ground, its heading, how high it
+hangs and the ticks it set out, hangs, leaves and is gone; none in a room with none; [[Enemies]], "Arrivals"). An island's room measures from its middle, floored to whole metres; a course's from the world's middle. A
 deck boarded at sea sends each boarder their own snapshot inside the sea's: their fighter whole, the rest packed, and
 all of it each tick, since the sea's snapshot is not built on another. At sea, each player is sent their own fight
 alone. An input may carry the inputs before it, which the room takes when it has not had them (`read_inputs`); a
@@ -852,11 +855,10 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   city's where any reach in, never its whole section; a foe that chases a player off it walks straight. A node's room
   opens in 0.15 to 0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned
   nodes (tested offline, on an idle machine); Saltmere's three zones, baking their public events' grounds too, in
-  0.71 to 1.0 s ([[Public Events]]). Their caverns' and runs' foes' sites stand nothing as a room opens: with them
-  the three open in 0.62 to 0.95 s of WebAssembly and 0.57 to 0.78 s natively, as they do without (tested offline, on
-  a machine shared with other builds); a site's group stands once a player first comes within 150 m of it and its
+  0.71 to 1.0 s ([[Public Events]]). Their foes' sites, its territories and its runs' beats, stand nothing as a room
+  opens; a site's group stands once a player first comes within 150 m of it and its
   navmesh is baked, a slice a tick over some 45 ticks, each 15 ms at most natively ([[Navmesh]], [[Enemies]],
-  "Caverns and runs").
+  "Territories and runs").
 - A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms
   of WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,
   the same after an hour open (tested offline).

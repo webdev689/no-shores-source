@@ -41,8 +41,9 @@ struct Vertex {
 struct Placed { from_eye: vec3f, normal: vec3f, below: f32 }
 
 // A vertex of the module where its prop stands, measured from the eye: opened (widened from a line and deepened) or
-// risen out of the ground, swung up about its own x at its origin (a lid's hinge), scaled, and turned clockwise from
-// north. 'below' is how far under its foot it stands once risen: what is under the ground is not drawn.
+// risen out of the ground and rolled about its own y (an airship leaning; a module that opens has no roll, its about.w
+// its lips' count), swung up about its own x at its origin (a lid's hinge, an airship's nose), scaled, and turned
+// clockwise from north. 'below' is how far under its foot it stands once risen: what is under the ground is not drawn.
 fn placed(vertex: Vertex) -> Placed {
   let prop = props[vertex.prop];
   var local = vertex.position;
@@ -67,6 +68,9 @@ fn placed(vertex: Vertex) -> Placed {
     local.z -= (1.0 - prop.shape.y) * prop.about.y;
     // Cut at the ground only while rising: standing, a lid's hasp hangs under its hinge and stays drawn.
     below = select(1.0, local.z, prop.shape.y < 1.0);
+    let roll = vec2f(cos(prop.about.w), sin(prop.about.w));
+    local = vec3f(local.x * roll.x + local.z * roll.y, local.y, local.z * roll.x - local.x * roll.y);
+    normal = vec3f(normal.x * roll.x + normal.z * roll.y, normal.y, normal.z * roll.x - normal.x * roll.y);
   }
   let lid = vec2f(cos(prop.shape.z), sin(prop.shape.z));
   local = vec3f(local.x, local.y * lid.x - local.z * lid.y, local.y * lid.y + local.z * lid.x);

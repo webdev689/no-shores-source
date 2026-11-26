@@ -536,6 +536,22 @@ fn a_gate_whose_day_is_past_answers_shut_before_its_room_ticks_again() {
 }
 
 #[test]
+fn a_bulwark_sent_out_forms_under_a_crown_over_its_mouth() {
+    let (mut room, players) = gate_room(3);
+    for &player in &players {
+        room.breach_company(player, "run-a", Tier::Normal);
+    }
+    hold_moorings(&mut room, &players);
+    room.tick();
+    let claimers = room.breach_gate.as_ref().expect("gate").claimers.clone();
+    assert!(!claimers.is_empty(), "a Bulwark sent as the Waking begins");
+    for (bulwark, _) in claimers {
+        let arrival = room.arrival_of(bulwark).expect("it arrives");
+        assert_eq!(arrival.kind, crate::arrivals::Bringer::Crown, "formed under a crown, as the Waking's are");
+    }
+}
+
+#[test]
 fn in_a_test_room_one_player_on_one_mooring_fills_the_spire_and_wakes_the_gate_and_elsewhere_it_does_not() {
     let filled = |test: bool| {
         let (mut room, players) = gate_room(1);

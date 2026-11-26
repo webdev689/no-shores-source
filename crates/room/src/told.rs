@@ -26,7 +26,12 @@ impl Room {
         let verdicts = std::mem::take(&mut self.verdicts);
         let ended = std::mem::take(&mut self.ended_telegraphs);
         let tick = self.clock;
+        // A foe still arriving hears nothing: it neither thinks nor steps until it lands (`arrivals.rs`).
+        let arriving: Vec<FighterId> = self.arrivals.foes.keys().copied().filter(|id| self.arriving(*id)).collect();
         for (id, Foe { fighter, brain, .. }) in &mut self.foes {
+            if arriving.contains(id) {
+                continue;
+            }
             // Only a blow from another side is a threat to answer: an ally's would only crowd it out, and so would a
             // swing begun at another, which is not a swing begun at it.
             let at = [fighter.body.x, fighter.body.y];

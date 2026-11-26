@@ -223,7 +223,9 @@ table Seen {
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
 // leaves after it. Then, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
 // and family names' places in content/gear/crew.json, and its officer's post (0 First Mate to 4 Lookout), which it is
-// dressed by. All of it but the name below crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
+// dressed by. Then, while it arrives, what brings it (1 a Grey Tithe airship, 2 a Lattice crown, 3 a Boss's call), the
+// number of the Arrival that brings it (0 for a call), the tick it is let down and the tick it lands (0 each once
+// landed). All of it but the name below crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
 // `foe_numbers`); the fields between `id` and `packed` are kept deprecated only so the table's field numbers hold.
 // Last, the name it stands under in place of its type's (absent for none), sent each time the foe is: a public
 // event's Warden or Marrow, or the Fissure's growth.
@@ -252,6 +254,22 @@ table Foe {
   // here for each; the rest stand as they stood.
   changed: [ubyte];
   name: string;
+}
+
+// What brings foes on land, sent whole in each snapshot while it lasts: its number, what it is (1 a Grey Tithe airship,
+// 2 a Lattice crown of crystal), the point on the ground it brings them to (x, y, z), the way an airship comes in
+// (radians clockwise from north; a crown's turn), how high an airship hangs over that ground (metres), and the ticks it
+// set out (a crown began forming), hangs there (a crown stands whole), lets its last foe go (a crown breaks) and is gone.
+table Arrival {
+  id: uint;
+  kind: ubyte;
+  at: [double];
+  heading: double;
+  high: double;
+  began: ulong;
+  hangs: ulong;
+  leaves: ulong;
+  gone: ulong;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -588,8 +606,8 @@ table BreachSeen {
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
 // and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
 // sets its weather. Then, at sea, the islands the player sees or has found. Then, in a zone that holds them, its
-// public events, sent whole in each snapshot; in an Elite Dungeon, its encounters; last, on land, the darkness where
-// the player lies and each revive under way.
+// public events, sent whole in each snapshot; in an Elite Dungeon, its encounters; on land, the darkness where the
+// player lies and each revive under way; and last, on land, what is bringing foes.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -646,6 +664,8 @@ table Snapshot {
   // At sea, every ship in the room, the player's own among them, about once a second, for the held map: none in the
   // snapshots between, nor in any other room.
   charted: [Charted];
+  // On land, every airship and crown bringing foes (Arrival), whole in each snapshot while it lasts.
+  arrivals: [Arrival];
 }
 
 // What a room sends: exactly one of these is present.
