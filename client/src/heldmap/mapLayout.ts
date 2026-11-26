@@ -104,6 +104,8 @@ export interface Lettering {
   readonly ship: { readonly x: number; readonly y: number; readonly heading: number } | null;
   readonly key: KeyPlace | null;
   readonly scale: number;
+  /** The box each name laid covers, ink pixels. */
+  readonly named: readonly Rect[];
 }
 
 /** What the map asks to letter: places and waters at their points, ink pixels, and the key's size, in the words'
@@ -183,15 +185,16 @@ export function layOut(ask: LayoutAsk): Lettering {
     ...ask.waters.map((water) => ({ ...water, x: 0, y: 0, kind: 'water', chosen: false })),
     ...(ask.islands ?? []).map((island) => ({ ...island, continent: -1, kind: 'island', chosen: false, spots: [] })),
   ];
-  const first = laidOut(ask, asked, [...ask.covers, ...marks]);
+  const seas = seasKnown(ask);
+  const first = laidOut(ask, asked, [...ask.covers, ...marks], seas);
   const lettered = (letters: readonly MapLetter[]) => [
     ...letters,
     ...locks.map((lock) => ({ text: '', ...lock, kind: 'lock', chosen: false, side: null })),
   ];
-  if (!ask.key) return { letters: lettered(first.letters), ship: ask.ship, key: null, scale };
+  if (!ask.key) return { letters: lettered(first.letters), ship: ask.ship, key: null, scale, named: first.boxes };
   const size = { width: ask.key.width * scale, height: ask.key.height * scale };
   const clearKey = keyPlace(ink, size, scale, [...ask.covers, ...marks, ...first.boxes], ask.land, ask.current);
-  if (clearKey) return { letters: lettered(first.letters), ship: ask.ship, key: clearKey, scale };
+  if (clearKey) return { letters: lettered(first.letters), ship: ask.ship, key: clearKey, scale, named: first.boxes };
   // No corner clear: the key takes a corner, or a place along the top or bottom edge, clear of the hands, the marks and
   // the ports' and the chosen place's names (where it stood first),
   // round which the names laid again lose least: a water's name lost counts ten, land under the key five, any other
@@ -208,7 +211,7 @@ export function layOut(ask: LayoutAsk): Lettering {
   const tries = places
     .filter((place) => !yielding.some((box) => overlaps(box, place.box)))
     .map((place) => {
-      const again = laidOut(ask, asked, [...ask.covers, ...marks, place.box]);
+      const again = laidOut(ask, asked, [...ask.covers, ...marks, place.box], seas, { first, added: place.box });
       const named = (kind: string) =>
         again.letters.filter((letter) => (kind === 'water') === (letter.kind === 'water') && letter.side).length;
       const lost = (named('water') - first.letters.filter((letter) => letter.kind === 'water').length) * -10;
@@ -219,9 +222,21 @@ export function layOut(ask: LayoutAsk): Lettering {
     (most, each) => (most && most.cost <= each.cost ? most : each),
     null,
   );
-  if (!best) return { letters: lettered(first.letters), ship: ask.ship, key: null, scale };
+  if (!best) return { letters: lettered(first.letters), ship: ask.ship, key: null, scale, named: first.boxes };
   const { place: key, again } = best;
-  return { letters: lettered(again.letters), ship: ask.ship, key, scale };
+  return { letters: lettered(again.letters), ship: ask.ship, key, scale, named: again.boxes };
+}
+
+/** Whether the ship's arrow at `ship` (ink pixels, null off the map) has no room in `lettering`: it covers a name
+ *  or the key, or the lettering left it none, laid with the arrow off the map. Until it has none, the lettering laid
+ *  round where the arrow was keeps every word clear of it, and stands. */
+export function shipRoomLost(lettering: Lettering, ship: { readonly x: number; readonly y: number } | null): boolean {
+  if (!ship) return false;
+  if (!lettering.ship) return true;
+  const box = markBox('ship', ship.x, ship.y, lettering.scale);
+  return (
+    (lettering.key !== null && overlaps(box, lettering.key.box)) || lettering.named.some((each) => overlaps(each, box))
+  );
 }
 
 /** Which marks stand where they lie when two meet: a port's, then a ruin's, then any node's. */
@@ -290,9 +305,31 @@ type Asked = {
   spots: readonly { x: number; y: number }[];
 };
 
+/** How a sea's name at a spot in a fit stands on its sea (`LayoutAsk.sea`), asked once a layout: each layout of the
+ *  key's places tried asks the same boxes again, and the passes for wholly and partly on it ask each box twice. */
+function seasKnown(ask: LayoutAsk) {
+  const known = new Map<Asked, Int8Array[]>();
+  return (letter: Asked, fit: number, spot: number, box: Rect): 0 | 1 | 2 => {
+    let fits = known.get(letter);
+    if (!fits) known.set(letter, (fits = []));
+    const answers = (fits[fit] ??= new Int8Array(letter.spots.length).fill(-1));
+    const answer = answers[spot] ?? -1;
+    if (answer >= 0) return answer as 0 | 1 | 2;
+    const asked = ask.sea(box, letter.continent);
+    answers[spot] = asked;
+    return asked;
+  };
+}
+
 /** Each name laid in its priority, clear of `blocked` and of the names before it: the letters, and each laid name's
  *  box with its kind and its place in `asked`. */
-function laidOut(ask: LayoutAsk, asked: readonly Asked[], blocked: readonly Rect[]) {
+function laidOut(
+  ask: LayoutAsk,
+  asked: readonly Asked[],
+  blocked: readonly Rect[],
+  seaOf: ReturnType<typeof seasKnown>,
+  again?: { readonly first: Laid; readonly added: Rect },
+): Laid {
   const { scale, ink } = ask;
   const taken = [...blocked];
   const within = (box: Rect) =>
@@ -310,14 +347,26 @@ function laidOut(ask: LayoutAsk, asked: readonly Asked[], blocked: readonly Rect
   const boxes: Rect[] = [];
   const kinds: string[] = [];
   const indices: number[] = [];
+  const boxOf = new Map<number, Rect>();
   const keep = (box: Rect, index: number, kind: string) => {
+    boxOf.set(index, box);
     taken.push(box);
     boxes.push(box);
     kinds.push(kind);
     indices.push(index);
   };
+  // Laid again with one more box blocked (`again`), each name stands as it first did until one meets that box: with
+  // the same names before it and more blocked, a spot clear now was clear then, and none before it was.
+  let same = again !== undefined;
   for (const { letter, index } of order) {
     const { text, x, y, kind, chosen, quest } = letter;
+    const before = again?.first.byIndex[index];
+    if (same && again && before !== undefined && !(before.box && overlaps(before.box, again.added))) {
+      if (before.letter) laid[index] = before.letter;
+      if (before.box) keep(before.box, index, kind);
+      continue;
+    }
+    same = false;
     if (kind === 'island') {
       const box = nameBox(letter, ask.widthOf(`${text}, ${letter.band ?? ''}`, kind), scale);
       if (!clear(box)) continue;
@@ -332,18 +381,40 @@ function laidOut(ask: LayoutAsk, asked: readonly Asked[], blocked: readonly Rect
     // Spread wide wholly on its own sea at any spot that allows it, else closer; else on no land, its middle on its sea.
     const width = ask.widthOf(text, kind);
     let found: { spot: { x: number; y: number }; fit: (typeof SEA_FITS)[number]; box: Rect } | null = null;
+    // A box's size is the same at every spot, and whether a spot is clear the same in both passes: each worked out once.
+    const shapes = SEA_FITS.map((fit) =>
+      nameBox({ x: 0, y: 0, kind, text }, (width * fit.px) / SEA_PX, scale, fit.spread),
+    );
+    const clearAt = SEA_FITS.map(() => new Int8Array(letter.spots.length).fill(-1));
     for (const sea of [2, 1] as const)
-      for (const fit of SEA_FITS) {
+      for (const [fitIndex, fit] of SEA_FITS.entries()) {
         if (found) break;
-        const sized = (width * fit.px) / SEA_PX;
-        const boxAt = (point: { x: number; y: number }) => nameBox({ ...point, kind, text }, sized, scale, fit.spread);
-        const fits = letter.spots.find((each) => clear(boxAt(each)) && ask.sea(boxAt(each), letter.continent) === sea);
-        if (fits) found = { spot: fits, fit, box: boxAt(fits) };
+        const shape = shapes[fitIndex]!;
+        const known = clearAt[fitIndex]!;
+        for (const [spotIndex, spot] of letter.spots.entries()) {
+          if (known[spotIndex] === 0) continue;
+          const box = { ...shape, x: spot.x + shape.x, y: spot.y + shape.y };
+          if (known[spotIndex] === -1) known[spotIndex] = clear(box) ? 1 : 0;
+          if (known[spotIndex] === 0 || seaOf(letter, fitIndex, spotIndex, box) !== sea) continue;
+          found = { spot, fit, box };
+          break;
+        }
       }
     if (!found) continue;
     keep(found.box, index, kind);
     const { spread, px } = found.fit;
     laid[index] = { text, kind, chosen: false, ...found.spot, side: 'centre', spread, px };
   }
-  return { letters: laid.filter((letter) => letter !== null), boxes, kinds, indices };
+  const byIndex = laid.map((letter, index) => ({ letter, box: boxOf.get(index) ?? null }));
+  return { letters: laid.filter((letter) => letter !== null), boxes, kinds, indices, byIndex };
 }
+
+/** A layout's names: the letters, each laid name's box with its kind and its place in the names asked, and for each
+ *  name asked, its letter and its box (null where it was dropped or has none). */
+type Laid = {
+  readonly letters: readonly MapLetter[];
+  readonly boxes: readonly Rect[];
+  readonly kinds: readonly string[];
+  readonly indices: readonly number[];
+  readonly byIndex: readonly { readonly letter: MapLetter | null; readonly box: Rect | null }[];
+};

@@ -4,6 +4,9 @@ status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
   - client/src/heldmap/heldMapKept.ts#layoutKey
+  - client/src/heldmap/mapLayout.ts#shipRoomLost
+  - client/src/heldmap/seaLettering.ts#SeaLettering
+  - client/src/heldmap/routeTiles.ts#routeTiles
   - client/src/heldmap/heldMapAsk.ts#MapAsk
   - client/src/heldmap/heldMapAsk.ts#litCells
   - client/src/heldmap/heldMapAsk.ts#WaterJudge
@@ -116,10 +119,15 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
-  over the picture, a node of the game's interface. They are laid out again only when something the layout reads has changed
-  (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the waters set, the ship's point
-  and heading, the places and islands shown, the place chosen); a still frame lays out nothing (at 1920 × 1080,
-  0.02 ms against 8 ms). How it reads:
+  over the picture, a node of the game's interface. They are laid out again only when something the layout reads has
+  changed (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the waters set, the places
+  and islands shown, the place chosen), or when the ship's arrow, painted where it is each frame, would cover a name
+  or the key (`shipRoomLost`): so the names stand still while the ship sails on under them. A still frame lays out
+  nothing, and while only the arrow moves, only the pixels round where it was and is are painted again and sent to
+  the GPU (`SeaLettering`). A layout of the whole world at 1920 × 1080 takes some 30 ms in Node, the opening view
+  some 14 ms: each spot a sea's name is tried at is asked whether it lies on its sea once a layout, a row of the
+  cells under it that is all open sea passed at once, and the key's places laid round reuse the first layout up to
+  the first name the key would cover. How it reads:
   - *Sizes.* In the game's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
     mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
@@ -256,7 +264,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
 - A route is planned on every continent's outline.
 - The coast field is a cell's middle every 4.8 km, interpolated: a headland narrower than a few kilometres is drawn
   softened.
-- The route is inked through at most 128 of its points.
+- The route is inked through at most 128 of its points. Each 32 px tile of the map is told which of the route's
+  legs pass near it (`routeTiles`), so a pixel measures itself against those alone.
 - On land, the map marks a keeper a quest step names, not the place of a quest's other goals.
 - A water's sea is judged a 4.8 km cell at a
   time, so its words may stand over an isle smaller than a cell.
