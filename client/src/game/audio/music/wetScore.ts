@@ -339,7 +339,8 @@ function tunes(w: Write, { section, lead }: Line): void {
   } else lay(w, lead ? 'reed' : 'clarinet', 0, DOWN_LINE, 80, { octave: -lead, legato: 0.97, accent: 4 });
 }
 
-/** The takes, each section in two or three feels: no two takes of a section share a feel. */
+/** The takes, each section in its feels, the tune's halves each feel over its own chords and over the turned ones:
+ *  no two takes of a section share a feel and a harmony. */
 const TAKES: readonly Line[] = [
   { section: 'vamp', feel: 0, lead: 0, drive: 1 },
   { section: 'vamp', feel: 1, lead: 1, drive: 1 },
@@ -357,6 +358,14 @@ const TAKES: readonly Line[] = [
   { section: 'break', feel: 2, lead: 1, drive: 3 },
   { section: 'down', feel: 0, lead: 0, drive: 0 },
   { section: 'down', feel: 1, lead: 1, drive: 0 },
+  { section: 'a1', feel: 0, lead: 1, drive: 3 },
+  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true },
+  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true },
+  { section: 'a2', feel: 1, lead: 0, drive: 2 },
+  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true },
+  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true },
+  { section: 'break', feel: 0, lead: 1, drive: 3 },
+  { section: 'down', feel: 2, lead: 0, drive: 0 },
 ];
 
 /** The fight: every take, every layer in its role. */
@@ -421,5 +430,36 @@ const defeat = (): Song =>
     w.note('croak', 1, 3.5, 0.3, 'G2', 58);
   });
 
-/** Wet's fight score: the fight, and its cadence, victory and defeat. */
-export const wetScore = () => ({ song: fight(), cadence: cadence(), victory: victory(), defeat: defeat() });
+/** The second cadence: the reed down from B through G sharp to C sharp, the clarinet holding, home to F sharp minor. */
+const secondCadence = (): Song =>
+  makeSong({ ...SONG, name: 'wet-cadence-2', bars: 3, level: LEVEL, edge: ONCE }, (w) => {
+    stingBed(w, harmony('Bm | C# | F#m'), 0.85);
+    lay(w, 'reed', 0, tune('B4:1.5 A4:.5 F#4:2 | G#4:1 F4:1 C#4:2 | F#4:4'), 90, { octave: -1, legato: 0.97 });
+    lay(w, 'clarinet', 0, tune('D4:4 | C#4:4 | C#4:4'), 72, { legato: 0.98 });
+    w.hit('deep', 2, 0, 80);
+    w.hit('heart', 1, 0, 64);
+  });
+
+/** The second victory: the tune's opening on B and on C sharp, then F sharp major, the congas in their second groove. */
+const secondVictory = (): Song =>
+  makeSong({ ...SONG, name: 'wet-victory-2', bars: 4, level: LEVEL, edge: ONCE }, (w) => {
+    stingBed(w, harmony('Bm | C# | F# | F#'), 1);
+    const rise = tune('B4:.75 D5:.75 F#5:.5 D5:2 | C#5:.75 F5:.75 G#5:.5 F5:2 | A#4:.75 C#5:.75 F#5:.5 C#5:2 | F#5:4');
+    lay(w, 'reed', 0, rise, 104, { octave: -1 });
+    lay(w, 'strings', 0, rise, 80, { octave: -1 });
+    for (let bar = 0; bar < 2; bar++) drums(w, bar, 1, 2, bar === 1 ? 1 : null);
+    for (const n of keys('C#4 F#4 A#4')) w.note('horn', 2, 0, 7, n, 90);
+    w.hit('deep', 2, 0, 116);
+    w.hit('kick', 2, 0, 110);
+    w.hit('crash', 2, 0, 104);
+  });
+
+/** Wet's fight score: the fight, its two cadences and two victories, heard in turn, and its defeat. */
+export const wetScore = () => ({
+  song: fight(),
+  cadence: cadence(),
+  victory: victory(),
+  defeat: defeat(),
+  secondCadence: secondCadence(),
+  secondVictory: secondVictory(),
+});

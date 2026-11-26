@@ -62,12 +62,29 @@ test('the sea song for the sky: the night after dusk, the still sea in a light w
 });
 
 test('a sea song plays once through, then minutes of silence before another may come', () => {
-  const { heard } = sail(800, () => sailing);
-  assert.deepEqual(runs(heard).slice(0, 3), [
+  const { heard } = sail(1100, () => sailing);
+  assert.deepEqual(runs(heard).slice(0, 5), [
     ['open', 100],
+    ['none', MIDDLE_REST_S],
+    ['swell', 100],
     ['none', MIDDLE_REST_S],
     ['open', 100],
   ]);
+  const still = sail(800, () => ({ ...sailing, sky: { ...fair, windMS: 2 } })).heard;
+  assert.deepEqual(
+    runs(still)
+      .filter(([cue]) => cue !== 'none')
+      .map(([cue]) => cue),
+    ['calm', 'glass'],
+    "each sky's two pieces in turn",
+  );
+  const night = sail(800, () => ({ ...sailing, sky: { ...fair, night: true } })).heard;
+  assert.deepEqual(
+    runs(night)
+      .filter(([cue]) => cue !== 'none')
+      .map(([cue]) => cue),
+    ['night', 'lantern'],
+  );
   assert.deepEqual(REST_S, [4 * 60, 8 * 60]);
   const lowest = { ...songs, random: () => 0 };
   let memory = AT_SEA;

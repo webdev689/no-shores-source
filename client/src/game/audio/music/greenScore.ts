@@ -352,7 +352,8 @@ function tunes(w: Write, bars: readonly Held<Chord>[][], { section, lead }: Line
   } else lay(w, lead ? 'horn' : 'fiddle', 0, DOWN_LINE, lead ? 84 : 78, { octave: -lead, legato: 0.97, accent: 4 });
 }
 
-/** The takes, each section in two or three feels: no two takes of a section share a feel. */
+/** The takes, each section in its feels, the tune's halves each feel over its own chords and over the turned ones:
+ *  no two takes of a section share a feel and a harmony. */
 const TAKES: readonly Line[] = [
   { section: 'vamp', feel: 0, lead: 0, drive: 1 },
   { section: 'vamp', feel: 1, lead: 1, drive: 1 },
@@ -373,6 +374,14 @@ const TAKES: readonly Line[] = [
   { section: 'break', feel: 2, lead: 1, drive: 3 },
   { section: 'down', feel: 0, lead: 0, drive: 0 },
   { section: 'down', feel: 1, lead: 1, drive: 0 },
+  { section: 'a1', feel: 0, lead: 1, drive: 3 },
+  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true },
+  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true },
+  { section: 'a2', feel: 1, lead: 0, drive: 2 },
+  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true },
+  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true },
+  { section: 'break', feel: 0, lead: 1, drive: 3 },
+  { section: 'down', feel: 2, lead: 0, drive: 0 },
 ];
 
 /** The fight: every take, every layer in its role. */
@@ -437,5 +446,38 @@ const defeat = (): Song =>
       w.hit('heart', bar, 0, velocity);
   });
 
-/** Green's fight score: the fight, and its cadence, victory and defeat. */
-export const greenScore = () => ({ song: fight(), cadence: cadence(), victory: victory(), defeat: defeat() });
+/** The second cadence: the horn's tune's last phrase falling home over the minor four and five, the fiddle holding
+ *  over it, the heart under. */
+const secondCadence = (): Song =>
+  makeSong({ ...SONG, name: 'green-cadence-2', bars: 3, level: LEVEL, edge: ONCE }, (w) => {
+    stingBed(w, harmony('Am | Bm | Em'), 0.85);
+    lay(w, 'horn', 0, tune('C5:1.5 B4:1.5 | A4:1 B4:1 G4:1 | E4:3'), 86, { legato: 0.98 });
+    lay(w, 'fiddle', 0, tune('E5:3 | F#5:1.5 D5:1.5 | E5:3'), 74, { legato: 0.98 });
+    w.note('timpani', 2, 0, 0.9, 'E2', 84);
+    w.hit('heart', 1, 0, 76);
+    w.hit('heart', 2, 0, 58);
+  });
+
+/** The second victory: the gale's rise on the fiddle over the horn, through C and D into E major, the drums in their
+ *  second groove. */
+const secondVictory = (): Song =>
+  makeSong({ ...SONG, name: 'green-victory-2', bars: 4, level: LEVEL, edge: ONCE }, (w) => {
+    stingBed(w, harmony('C | D | E | E'), 1);
+    lay(w, 'fiddle', 0, tune('G4:.5 A4:.5 B4:.5 E5:1.5 | F#5:1 E5:.5 D5:1.5 | E5:1.5 G#5:1.5 | E5:3'), 104);
+    lay(w, 'horn', 0, tune('E4:1.5 C4:1.5 | D4:1.5 F#4:1.5 | G#4:3 | B3:3'), 96);
+    for (let bar = 0; bar < 2; bar++) drums(w, bar, 1, 2, bar === 1 ? 2 : null);
+    w.note('timpani', 2, 0, 0.9, 'E2', 112);
+    for (const n of keys('E2 B2')) w.note('lowBrass', 2, 0, 5.5, n, 104);
+    w.hit('kick', 2, 0, 116);
+    w.hit('crash', 2, 0, 108);
+  });
+
+/** Green's fight score: the fight, its two cadences and two victories, heard in turn, and its defeat. */
+export const greenScore = () => ({
+  song: fight(),
+  cadence: cadence(),
+  victory: victory(),
+  defeat: defeat(),
+  secondCadence: secondCadence(),
+  secondVictory: secondVictory(),
+});

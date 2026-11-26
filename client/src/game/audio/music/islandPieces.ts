@@ -1,5 +1,6 @@
-// The islands' calm pieces, two for each family of climates, heard now and then while roaming with minutes of silence
-// between them: weathered, never bright, each closing on the world's leitmotif in its key. Green: Moorlight, E Aeolian
+// The islands' calm pieces, four for each family of climates (the second pair in islandPiecesMore.ts), heard now and
+// then while roaming with minutes of silence between them: weathered, never bright, each closing on the world's
+// leitmotif in its key. The first pair here. Green: Moorlight, E Aeolian
 // in 6/8 on a low whistle over a rolling harp; Cairn, E Dorian, horn calls over a pulsing piano. Dry: Sunscorch, A
 // Phrygian dominant, an oud's ostinato under the oboe; Dust Road, F sharp Phrygian, a lone cello over a sparse harp.
 // Wet: Mistwrack, F sharp Aeolian, a low marimba in three, three and two under the clarinet; Fen, C sharp minor, a
@@ -8,6 +9,7 @@
 
 import type { Family } from './directorLaw.ts';
 import { DRUMS, INSTRUMENTS, calmPiece, inRole } from './calm.ts';
+import { moreIslandPieces } from './islandPiecesMore.ts';
 import type { Song } from './score.ts';
 
 const { pad, strings, bass, piano, harp, oud, marimba, kalimba, cello, horn, flute, oboe, clarinet, bassoon } =
@@ -441,10 +443,14 @@ function whiteout(): Song {
   });
 }
 
-/** Each family's calm pieces, one at a time, never the same twice running. */
-export const islandPieces = (): Readonly<Record<Family, readonly Song[]>> => ({
-  green: [moorlight(), cairn()],
-  dry: [sunscorch(), dustRoad()],
-  wet: [mistwrack(), fen()],
-  cold: [rime(), whiteout()],
-});
+/** Each family's calm pieces, these two and the two of islandPiecesMore.ts, one at a time, never the same twice
+ *  running. */
+export const islandPieces = (): Readonly<Record<Family, readonly Song[]>> => {
+  const more = moreIslandPieces();
+  return {
+    green: [moorlight(), cairn(), ...more.green],
+    dry: [sunscorch(), dustRoad(), ...more.dry],
+    wet: [mistwrack(), fen(), ...more.wet],
+    cold: [rime(), whiteout(), ...more.cold],
+  };
+};

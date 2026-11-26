@@ -220,8 +220,15 @@ export const fairForSong = (sky: HeardSky | null): boolean =>
   !sky || (sky.falling < FOUL.falling && sky.storm < FOUL.storm && sky.fog < FOUL.fog);
 
 /** The sea song for a fair sky: the night's after dusk, the still sea's in a light wind, else the open sea's. */
-export const voyageSongFor = (sky: HeardSky | null): SeaSong =>
+export const voyageSongFor = (sky: HeardSky | null): 'night' | 'calm' | 'open' =>
   sky?.night ? 'night' : sky && sky.windMS < STILL_WIND_MS ? 'calm' : 'open';
+
+/** Each sky's second piece, heard in turn with its first. */
+const SKY_SECONDS: Readonly<Record<ReturnType<typeof voyageSongFor>, SeaSong>> = {
+  open: 'swell',
+  calm: 'glass',
+  night: 'lantern',
+};
 
 /** How the law hears the calm pieces: each one's length played once through, seconds; how many pieces a place has;
  *  and a die for the rests and the choices. */
@@ -241,7 +248,12 @@ function pieceFor(
   songs: SongClock,
   breach: HeardBreach | null,
 ): Cue | null {
-  if (where === 'sea') return { kind: 'sea', song: voyageSongFor(sky) };
+  if (where === 'sea') {
+    // The sky's two pieces in turn: its first, unless that was the one begun last.
+    const first = voyageSongFor(sky);
+    const again = last?.kind === 'sea' && last.song === first;
+    return { kind: 'sea', song: again ? SKY_SECONDS[first] : first };
+  }
   const count = songs.pieces(where);
   if (where === 'breach' && breach && breach.piece < count) {
     const own: Cue = { kind: 'vale', piece: breach.piece };

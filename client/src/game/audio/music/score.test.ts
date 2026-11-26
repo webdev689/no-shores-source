@@ -30,7 +30,7 @@ const vale = valeFights();
 const valeSongs = Object.values(vale).map((score) => score.song);
 const valeStings = Object.values(vale).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
 const { scrivener, steward } = valeBosses();
-const { open, calm, night, ...band } = sea;
+const { open, calm, night, swell, glass, lantern, ...band } = sea;
 /** The calm pieces out of danger: the social space's, the islands', the sea's. */
 const calmPieces: readonly Song[] = [
   ...socialPieces(),
@@ -38,6 +38,9 @@ const calmPieces: readonly Song[] = [
   open,
   calm,
   night,
+  swell,
+  glass,
+  lantern,
   ...valeCalm(),
 ];
 const { ram, ...storyLooped } = storyScores();
@@ -270,7 +273,7 @@ test('each family fight plays all six layers in a metre and tempo of its own', (
 
 test("each family's cadence, victory and defeat is two to eight bars of its fight's metre, played once and done", () => {
   for (const score of Object.values(families))
-    for (const sting of [score.cadence, score.victory, score.defeat]) {
+    for (const sting of [score.cadence, score.victory, score.defeat, score.secondCadence, score.secondVictory]) {
       const bars = sting.durationTicks / sting.ticksPerBar;
       assert.ok(bars >= 2 && bars <= 8, `${sting.name} is ${bars} bars`);
       assert.equal(sting.ticksPerBar, score.song.ticksPerBar, `${sting.name} keeps its fight's metre`);
@@ -301,6 +304,24 @@ test("each calm piece runs a minute and a half to two and a half, every instrume
       [0, 7, 8, 7, 0],
       `${piece.name} closes on the leitmotif`,
     );
+  }
+});
+
+test('each island family has four calm pieces, the social space four, each sky two; none of a place shares a tempo or a lead', () => {
+  const sky = seaSongs();
+  const places: Readonly<Record<string, readonly Song[]>> = {
+    ...islandPieces(),
+    social: socialPieces(),
+    open: [sky.open, sky.swell],
+    still: [sky.calm, sky.glass],
+    night: [sky.night, sky.lantern],
+  };
+  for (const [place, pieces] of Object.entries(places)) {
+    assert.ok(pieces.length >= (place in islandPieces() || place === 'social' ? 4 : 2), `${place}: ${pieces.length}`);
+    const tempos = pieces.map((piece) => Math.round(60 / (piece.secondsPerTick * TICKS_PER_BEAT)));
+    const leads = pieces.map((piece) => piece.tracks.find((track) => track.channel === 3)?.program);
+    assert.equal(new Set(tempos).size, pieces.length, `${place}: tempos ${tempos}`);
+    assert.equal(new Set(leads).size, pieces.length, `${place}: leads ${leads}`);
   }
 });
 

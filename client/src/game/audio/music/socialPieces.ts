@@ -1,13 +1,13 @@
-// The social space's calm pieces: Saltmere, where players gather between voyages, under the Grey Tithe's levy. Three,
+// The social space's calm pieces: Saltmere, where players gather between voyages, under the Grey Tithe's levy. Four,
 // one at a time with minutes of silence between them, none of them happy: the port's own theme turned to G Dorian,
 // its climb G, A, B flat, D in a dotted step leaning on the sixth, over a harp and a pulsing bass; Lamplight, a
-// nocturne in D minor on the world's leitmotif; and the Tithe, E Phrygian over low strings ticking a half step, a
-// bassoon and a far taiko.
+// nocturne in D minor on the world's leitmotif; the Tithe, E Phrygian over low strings ticking a half step, a
+// bassoon and a far taiko; and the Ropewalk, C Dorian, the oboe over plucked strings, the horn answering.
 
 import { DRUMS, INSTRUMENTS, calmPiece, inRole } from './calm.ts';
 import type { Song } from './score.ts';
 
-const { pad, strings, bass, piano, harp, pizzicato, cello, horn, flute, bassoon, fiddle } = INSTRUMENTS;
+const { pad, strings, bass, piano, harp, pizzicato, cello, horn, flute, oboe, bassoon, fiddle } = INSTRUMENTS;
 
 /** Saltmere's theme, the port's own: G Dorian in 3/4 at 76, its tune on the cello, then the fiddle. */
 function saltmere(): Song {
@@ -189,5 +189,62 @@ function tithe(): Song {
   });
 }
 
+/** The Ropewalk: C Dorian at 80, the oboe over plucked strings and a pulsing bass, the horn answering, as the rope
+ *  is laid along the quay. */
+function ropewalk(): Song {
+  const tune =
+    'C4:1.5 D4:.5 Eb4:2 | F4:1 A4:1 G4:1 F4:1 | D4:3 F4:1 | Eb4:4 | G4:1.5 F4:.5 Eb4:1 C4:1 | A4:2 F4:2 | Ab4:1.5 G4:.5 F4:1 Eb4:1 | D4:4';
+  return calmPiece({
+    name: 'ropewalk',
+    bpm: 80,
+    beatsPerBar: 4,
+    tracks: { pad, bass, arp: pizzicato, lead: oboe, counter: horn },
+    chords: {
+      Cm: { bass: 'C2', pad: 'G3 C4 Eb4', arp: 'C3 G3 C4 Eb4' },
+      F: { bass: 'F2', pad: 'F3 A3 C4', arp: 'F2 C3 A3 C4' },
+      Bb: { bass: 'Bb1', pad: 'F3 Bb3 D4', arp: 'Bb2 F3 Bb3 D4' },
+      Eb: { bass: 'Eb2', pad: 'G3 Bb3 Eb4', arp: 'Eb3 Bb3 Eb4 G4' },
+      Gm: { bass: 'G2', pad: 'G3 Bb3 D4', arp: 'G2 D3 G3 Bb3' },
+      Ab: { bass: 'Ab1', pad: 'Ab3 C4 Eb4', arp: 'Ab2 Eb3 Ab3 C4' },
+    },
+    arp: { step: 0.5, order: [0, 2, 1, 2, 0, 2, 1, 3], velocity: [56, 34, 44, 34, 50, 34, 42, 36] },
+    bass: { step: 0.5, velocity: [74, 38, 50, 38, 66, 38, 50, 38] },
+    kit: {
+      keys: { frame: 41, tap: 45 },
+      drums: DRUMS,
+      bar: [
+        ['frame', 0, 56],
+        ['tap', 1, 30],
+        ['frame', 2, 44],
+        ['tap', 3, 32],
+        ['tap', 3.5, 24],
+      ],
+    },
+    sections: [
+      { bars: 'Cm | F | Cm | F', parts: ['pad', 'arp', 'bass'], level: 0.7 },
+      { bars: 'Cm | F | Bb | Eb | Cm | F | Ab | Gm', parts: ['pad', 'arp', 'bass', 'lead'], lead: tune },
+      {
+        bars: 'Eb | Bb | F | Cm | Ab | Eb | F | Gm',
+        parts: ['pad', 'arp', 'bass', 'counter', 'lead'],
+        counter: 'Bb3:2 G3:2 | F3:2 D4:2 | C4:2 A3:2 | G3:4 | C4:2 Eb4:2 | Bb3:2 G3:2 | A3:2 C4:2 | Bb3:4',
+        lead: 'Eb4:4 | D4:4 | F4:4 | Eb4:4 | Eb4:4 | G4:4 | F4:4 | D4:4',
+        level: 0.9,
+      },
+      {
+        bars: 'Cm | F | Bb | Eb | Cm | F | Ab | Gm',
+        parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
+        lead: tune,
+        counter: 'G3:4 | A3:4 | F3:4 | G3:4 | G3:4 | A3:4 | C4:4 | Bb3:4',
+      },
+      {
+        bars: 'Cm | Ab | Gm | Cm',
+        parts: ['pad', 'arp', 'lead'],
+        lead: 'C4:2 G4:2 | Ab4:4 | G4:4 | C4:4',
+        level: 0.65,
+      },
+    ],
+  });
+}
+
 /** The social space's pieces, played one at a time, never the same twice running. */
-export const socialPieces = (): Song[] => [saltmere(), lamplight(), tithe()];
+export const socialPieces = (): Song[] => [saltmere(), lamplight(), tithe(), ropewalk()];

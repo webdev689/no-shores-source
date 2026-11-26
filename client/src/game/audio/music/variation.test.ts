@@ -132,6 +132,21 @@ test('over ten minutes a fight hears every take it has, and never one take twice
     }
 });
 
+test("a family's fight plays ten minutes before any pairing of its takes comes again", () => {
+  for (const family of Object.values(scores.families)) {
+    const song = family?.song;
+    if (!song) continue;
+    const takes = song.form?.takes ?? [];
+    for (const seed of SEEDS) {
+      const played = takesPlayed(song, new Arranger(die(seed)), 600);
+      const pairs = played.slice(1).map((take, index) => `${played[index]}-${take}`);
+      const again = pairs.findIndex((pair, index) => pairs.indexOf(pair) !== index);
+      const seconds = played.slice(0, again + 1).reduce((sum, take) => sum + (takes[take]?.bars ?? 0), 0);
+      assert.ok(again < 0 || seconds * barSeconds(song) >= 600, `${song.name}, seed ${seed}: again at ${seconds} bars`);
+    }
+  }
+});
+
 test('two fights begun in a row open differently, in their danger and in their fight', () => {
   for (const song of FIGHTS)
     for (const seed of SEEDS) {

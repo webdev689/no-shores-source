@@ -110,6 +110,14 @@ test("a sting's song: a boss's wake, fall and the player's end where its score h
   assert.equal(stingOf(scores, { kind: 'defeat', cue: dry })?.name, 'dry-defeat');
   assert.equal(stingOf(scores, { kind: 'victory', cue: dry })?.name, 'dry-victory');
   assert.equal(stingOf(scores, { kind: 'cadence', cue: dry })?.name, 'dry-cadence');
+  const turns = [0, 1, 2, 3].map((nth) => stingOf(scores, { kind: 'victory', cue: dry }, nth)?.name);
+  assert.deepEqual(
+    turns,
+    ['dry-victory', 'dry-victory-2', 'dry-victory', 'dry-victory-2'],
+    'its two victories in turn',
+  );
+  assert.equal(stingOf(scores, { kind: 'cadence', cue: dry }, 1)?.name, 'dry-cadence-2');
+  assert.equal(stingOf(scores, { kind: 'defeat', cue: dry }, 1)?.name, 'dry-defeat', 'one defeat');
   const [song, cadence] = scores.bosses.wrath.phases;
   const written = { ...scores, families: { ...scores.families, dry: song && cadence ? { song, cadence } : null } };
   assert.equal(stingOf(written, { kind: 'cadence', cue: dry }), cadence);
