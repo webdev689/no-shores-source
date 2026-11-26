@@ -31,7 +31,7 @@ import type { Story } from './story.ts';
 import { castBetween, CastFreeze, castPrompt, teachable } from './stormTeaching.ts';
 import { Arming, beginAt, pageDevStart } from './wreckDevStart.ts';
 import { STORM } from './wreckTeaching.ts';
-import { type Done, Freeze, Tutorial } from './tutorial.ts';
+import { DodgeWatch, type Done, Freeze, Tutorial } from './tutorial.ts';
 import { WispScene } from './wispScene.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
@@ -50,6 +50,8 @@ const PUSH_M = 2.6;
 const PUSH_NEAREST_M = 4.2;
 /** The fewest seconds between two of Thule's barks of one kind. */
 const BARK_GAP_S = 9;
+/** How often, seconds at most, the boarder is sent at a player it has stopped fighting. */
+const REHUNT_S = 1;
 /** How long the screen takes to fade out on the fight's end, seconds. */
 const END_S = SCENE.outS;
 /** What the frozen fight asks of the player, naming the key as bound now on the keys or the pad. */
@@ -96,6 +98,7 @@ export class WreckFight implements Beat {
   /** The teaching on the wreck's quiet deck, then the fight's own task; and the fight frozen on a blow to teach. */
   private readonly tutorial = new Tutorial(this.devStart?.stage ?? 'find');
   private readonly freeze = new Freeze();
+  private readonly dodges = new DodgeWatch();
   private readonly castFreeze = new CastFreeze();
   /** The wisp's coming, while it plays; the bar of the Storm's abilities and the shots left last frame, for what was
    *  cast and loosed since. */
@@ -116,6 +119,10 @@ export class WreckFight implements Beat {
   /** Whether the player has struck Thule since he last told them to kneel: he says it again only then. */
   private struckSinceKneel = true;
   private clock = 0;
+  /** When the boarder was last sent at the player again. */
+  private rehunted = -Infinity;
+  /** Whether the player fell in the duel and the boarder has not yet come for them since. */
+  private fellInDuel = false;
   private lastHealth: { boss: number; you: number } | null = null;
   /** Whether a Tithe hand has cried out at the player. */
   private spotted = false;
@@ -459,8 +466,19 @@ export class WreckFight implements Beat {
   private teach(run: WreckRun, fight: FootFight, seconds: number): Quest {
     const quest = this.tutorial.frame(this.didNow(run, fight, seconds));
     if (this.tutorial.wantsBoarder(run.boarder)) run.standBoarder();
+    // A player risen from a fall is no one the boarder fights: it is sent at them again, so its blows come on.
+    const boarder = run.boarderView;
+    const dead = fight.own?.action.kind === 'dead';
+    this.fellInDuel = (this.fellInDuel || dead) && boarder?.target !== fight.player;
+    const risen = this.fellInDuel && !dead && (fight.own?.health ?? 0) > 0;
+    if (this.tutorial.stage === 'duel' && boarder && risen && this.clock - this.rehunted >= REHUNT_S) {
+      this.rehunted = this.clock;
+      void run.openRoom.story({ ask: 'hunt', foe: run.boarderId });
+    }
     const fell = run.boarderPlace;
     if (this.tutorial.bowDrops && fell && run.storyArms.bow === 'none') run.storyArms.dropBow(fell);
+    // Each of the Storm's abilities first cast is charged again, to be tried again while the fight runs on.
+    if (this.tutorial.chargeAgain()) run.giveStorm();
     // The wisp's coming holds them too: the room's word of the Storm comes before its end.
     run.holdWaves(this.tutorial.holding || !!this.wisp);
     return quest;
@@ -496,7 +514,7 @@ export class WreckFight implements Beat {
       menu: gearScreenOpen(),
       healed: drank,
       parried: befell([EVENT.parried]),
-      dodged: befell([EVENT.dodged, EVENT.perfect]),
+      dodged: this.dodges.frame(run.boarderView, fight.own, player, fight.events, seconds),
       boarder: run.boarder,
       foes: hostile.length,
       boss: this.fought || run.arena,

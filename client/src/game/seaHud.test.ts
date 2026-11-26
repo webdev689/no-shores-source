@@ -220,3 +220,37 @@ test("other players' ships wear their marks out of a fight, and none while the v
     showSeaHud(hud as unknown as Hud, sea(helmView), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.deepEqual(shownPlayers, [players, []]);
 });
+
+test("in the Harbourmaster's hulk's fight the tracker keeps the quest; in any other fight, the fight's own task", () => {
+  const shownTasks: unknown[] = [];
+  const hud = new Proxy(
+    {},
+    { get: (_target, key) => (key === 'tasks' ? { show: (task: unknown) => shownTasks.push(task) } : () => undefined) },
+  );
+  const fight = {
+    messages: () => [],
+    readout: () => ({ left: 1, men: 0 }),
+    captains: [],
+    vessel: { ship: [0, 0, 0] },
+    aimingNow: false,
+    view: { lay: null, captain: { name: 'Tithe Sloop' } },
+    display: () => null,
+  };
+  const sea = (hulk: boolean) =>
+    ({
+      view: { helmView: false },
+      aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
+      boarding: { words: null },
+      waterWords: null,
+      fight,
+      sighted: { others: [], hostiles: [], hulk },
+    }) as unknown as Sea;
+  const lesson = { title: 'A House of Your Own', task: 'Learn the helm', steps: [] };
+  const roads = { ...ROADS, quests: { ...ROADS.quests, tracked: lesson } };
+  const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
+  const state = { ...roads, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
+  for (const hulk of [true, false])
+    showSeaHud(hud as unknown as Hud, sea(hulk), shown as unknown as SeaFrame, state as unknown as SeaHudState);
+  assert.equal(shownTasks[0], lesson, 'the lesson in the hulk’s fight');
+  assert.deepEqual(shownTasks[1], seaFightQuest('Sea fight', 1, 0), 'a Tithe ship met meanwhile shows its own task');
+});

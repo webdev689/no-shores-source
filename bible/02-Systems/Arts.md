@@ -24,6 +24,7 @@ code:
   - crates/gear/src/arts.rs#ArtRefusal
   - client/src/game/artLevels.ts#levelOf
   - crates/room/src/arts.rs#Casting
+  - crates/room/src/steps_horde.rs#unbounded
   - crates/room/src/arts.rs#spell_power
   - crates/room/src/spells.rs#SpellSeen
   - crates/protocol/src/gear_wire.rs#WEAR_ART
@@ -136,8 +137,14 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   under its icon, and a screen reader hears it after the ability's name: the key bound now (R, Q and G at first), or
   while the pad was played last its button, drawn on the cap as the ship's bar draws one (`hudKeys`, `capFace`). A
   spell just cast flashes its frame white for 0.5 s; while the player cannot cast (staggered, down, drinking or dead),
-  every icon greys under a hatch. At the display's larger step (1500 by 900 and up) the diamond is 102 px and a ring
-  66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
+  every icon greys under a hatch. While a house's horde runs for the player (the room's `quest_horde`; [[Quests]], "A
+  house's horde"; [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]), the Art is unbounded and the bar shows it: each ability glows in the Art's colour, stronger than a
+  ready one and swelling slowly from 2 to 4 px over 4 s (still at 3 px with less motion asked for), under an infinity
+  mark, 11 by 5 cells, standing above it to say it costs nothing; a screen reader hears "unbounded, ready". The glow
+  and the marks go the frame the room's word no longer holds the horde, and while the player cannot cast; an ability
+  not earned keeps its padlock alone. At the display's larger step (1500 by 900 and up) the diamond is 102 px and a
+  ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and each Tenet's recharge, as
+  shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
   ship's bar in a sea fight is built of the same rings and keycaps (`combat/ringSlot.ts`; [[Interface]], "The sea
   fight's readout").
 
@@ -165,6 +172,12 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   Arc Lash) earned and charged full, so its bar shows and each is cast as anywhere ([[Prologue]], "The teaching"). The
   prologue's end (`Ask::FinishPrologue`) takes it back from a character that had not finished it, unearned and
   unworn ([[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]).
+- **A house's horde.** While a house's horde runs for a player, the room holds their worn Art unbounded
+  (`Room::unbounded`): its Anima and both Tenets are full every tick, a cast spending its share for that tick alone,
+  and all three abilities cast, earned or not; the page lends the worn Art whole to its bar and keys while the gear
+  message's `quest_horde` says it runs (`ArtState.lent`), `arts_earned` saying only what is earned. It
+  holds for that player alone, and ends with the horde, by its fall, the player's or a leave ([[Quests]], "A house's
+  horde").
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), one set
   already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.

@@ -5,6 +5,8 @@
 // draw, loose and put away; a wisp gives them the Storm, and the next fight teaches each of its abilities. Each step
 // is ticked once it is done, read from what their body and their fight did, and steps done early stay done. The
 // wreck's waves wait until the Storm is given.
+import { EVENT } from '../../combat/cues.ts';
+import type { FightEvent } from '../../network/messages.ts';
 import type { BindId } from '../../player/binds.ts';
 import { BINDS } from '../../player/input.ts';
 import { RUNNING } from '../../player/others.ts';
@@ -25,6 +27,11 @@ const MET_HOLD_S = 1.5;
  *  as bound now on the keys or the pad. */
 export const reminder = (): string => `${askedKey('guard')} parries a blow as it lands; ${askedKey('dodge')} dodges it`;
 const REMIND_S = 6;
+/** Once each of the Storm's abilities is first cast, how long the fight runs on before the next is asked, seconds
+ *  counted while a foe stands to try it on: long enough for Quicken's Haste (6 s) to run out twice. Cast again, the
+ *  next is asked once its moment has played out, this long after (Tempest's orbs live 4 s). */
+export const STORM_PAUSE_S = 12;
+export const AGAIN_PAUSE_S = 6;
 
 /** Where the player's sword and shield are: on the deck, in their pack, or worn. */
 export type Arms = 'lying' | 'carried' | 'worn';
@@ -129,6 +136,10 @@ export class Tutorial {
   private metFor = 0;
   private reached: number;
   private remindFor = 0;
+  /** The Storm's ability last first cast and the fight's seconds left before the next is asked; none between. */
+  private pause: { readonly spell: Spell; left: number } | null = null;
+  /** Whether an ability was first cast since the room last charged the Storm again. */
+  private charge = false;
 
   /** A teaching begun at `from`, every stage before it passed over: a page under development pictures one so. */
   constructor(from: Stage = 'find') {
@@ -153,8 +164,16 @@ export class Tutorial {
 
   /** The Storm's ability the next fight freezes on to teach, in turn; none once each is cast. */
   get spell(): Spell | null {
-    if (this.stage !== 'storm') return null;
+    if (this.stage !== 'storm' || this.pause) return null;
     return SPELLS.find((spell) => !this.learned.has(spell)) ?? null;
+  }
+
+  /** Whether the room should charge the Storm again now, once after each of its abilities is first cast, so the
+   *  player can cast it again while the fight runs on; asked, it is answered once. */
+  chargeAgain(): boolean {
+    const charge = this.charge;
+    this.charge = false;
+    return charge;
   }
 
   /** Whether the boarder that fell drops the bow: it fell once both lessons were learned. */
@@ -181,6 +200,7 @@ export class Tutorial {
   /** The tasks as they stand after `done`. */
   frame(done: Done): Quest {
     const lesson = this.lesson;
+    this.paced(done);
     this.learn(done);
     this.remindFor = lesson !== null && this.lesson === null ? REMIND_S : Math.max(0, this.remindFor - done.seconds);
     if (done.boss) return { name: QUEST, task: 'Face Captain Brannoc Thule', steps: [] };
@@ -196,6 +216,19 @@ export class Tutorial {
     const shown = { name: QUEST, task, steps: steps.map((step) => stepOf(step, this.learned.has(step))) };
     if (this.metFor >= MET_HOLD_S) [this.reached, this.metFor] = [this.reached + 1, 0];
     return shown;
+  }
+
+  /** The Storm's lesson paced: an ability first cast holds the next a while, which a second cast of it shortens, and
+   *  which runs only while foes stand. */
+  private paced(done: Done): void {
+    if (this.pause && done.foes > 0) this.pause.left -= done.seconds;
+    if (this.pause && done.cast.includes(this.pause.spell)) this.pause.left = Math.min(this.pause.left, AGAIN_PAUSE_S);
+    if (this.pause && this.pause.left <= 0) this.pause = null;
+    const first =
+      this.stage === 'storm' && SPELLS.find((spell) => done.cast.includes(spell) && !this.learned.has(spell));
+    if (!first) return;
+    this.pause = { spell: first, left: STORM_PAUSE_S };
+    this.charge = true;
   }
 
   /** Ticks off whatever `done` shows learned. Lying dead the player is raised at a checkpoint: their walk and their
@@ -314,5 +347,59 @@ export class Freeze {
     if (lesson === 'dodge') return left <= DODGE_AT;
     const unparried = action.kind === 'telegraph' && (action.iron || action.shape === 'aimed');
     return parryOpen && !unparried && left <= PARRY_AT;
+  }
+}
+
+/** What the room says of a blow that found the player: it hit them, their guard took it or broke under it, or they
+ *  parried it. */
+const FOUND: ReadonlySet<number> = new Set([EVENT.hit, EVENT.blocked, EVENT.guardBroken, EVENT.parried]);
+/** How long after a dodged blow lands the teaching waits for word of it finding the player, seconds: past the room's
+ *  judging of it as the player saw it (crates/room/src/players.rs VIEW_LAG, 24 ticks) and the word's way back. */
+const STRUCK_WAIT_S = 0.6;
+/** A blow last seen this many ticks or fewer from landing, gone from view, is taken to have landed. */
+const LANDING_TICKS = 6;
+
+/** A dodge that got the player clear of a blow, however: the room's word that a blow passed through it (perfect or
+ *  not), or the player seen dodging while the boarder's blow wound up at them and no word of it finding them once it
+ *  landed, as when the hop carried them out of its reach, which the room tells nothing of. */
+export class DodgeWatch {
+  /** Whether the player was seen dodging as the blow now winding up at them came, and its ticks left as last seen. */
+  private dodging = false;
+  private left: number | null = null;
+  /** Seconds since the dodged blow landed, while word of it finding the player is waited for; null while none is. */
+  private landed: number | null = null;
+  /** Whether word came of a blow finding the player since the one watched began. */
+  private found = false;
+
+  /** Whether a dodge got the player clear of a blow this frame: `view` the boarder as the room last showed it (null
+   *  once it has fallen), `own` the player's fighter, `events` the room's words this frame. */
+  frame(
+    view: FighterView | null,
+    own: FighterView | null,
+    player: number,
+    events: readonly FightEvent[],
+    seconds: number,
+  ): boolean {
+    const onPlayer = events.filter((event) => event.defender === player);
+    if (onPlayer.some((event) => event.kind === EVENT.dodged || event.kind === EVENT.perfect)) {
+      [this.dodging, this.left, this.landed] = [false, null, null];
+      return true;
+    }
+    const left = view ? ticksToLand(view, player) : null;
+    const winding = left !== null && left > 0;
+    if (winding && this.left === null && this.landed === null) this.found = false;
+    if (onPlayer.some((event) => FOUND.has(event.kind))) this.found = true;
+    // A blow seen about to land that has now landed (or that struck past its tick): not one cut short far off, nor
+    // one whose boarder fell.
+    const landing = !!view && !winding && this.left !== null && (left !== null || this.left <= LANDING_TICKS);
+    if (landing && this.dodging) this.landed = 0;
+    if (!view || landing) this.dodging = false;
+    if (winding && own?.action.kind === 'dodge') this.dodging = true;
+    this.left = winding ? left : null;
+    if (this.landed === null) return false;
+    this.landed += seconds;
+    if (this.landed < STRUCK_WAIT_S) return false;
+    this.landed = null;
+    return !this.found;
   }
 }

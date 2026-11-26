@@ -118,12 +118,17 @@ export class Wake implements Beat {
   skip(): void {
     this.skipped = true;
     this.cues.finish();
-    const { screen } = this.story.stage.parts;
-    screen.darken(0);
-    screen.blur(0);
+    this.leave();
     // The director frames a beat once more after its skip: that frame is the wake's last, eyes open.
     this.since = CONTROL_S;
     this.done = true;
+  }
+
+  /** However the wake is left, its waking goes with it: the view neither dark nor blurred. */
+  leave(): void {
+    const { screen } = this.story.stage.parts;
+    screen.darken(0);
+    screen.blur(0);
   }
 
   /** Nothing over the ringing and the heart; then, as the camera leaves the eyes, the Boarding's first part, tense. */
@@ -150,9 +155,13 @@ export class Wake implements Beat {
     }
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
-    const { screen } = stage.parts;
-    screen.darken(darkAt(this.since, motionReduced() ? undefined : this.heart));
-    screen.blur(blurAt(this.since, this.heart));
+    // Skipped, the eyes are open: the heart's few beats would blur the view again.
+    if (this.skipped) this.leave();
+    else {
+      const { screen } = stage.parts;
+      screen.darken(darkAt(this.since, motionReduced() ? undefined : this.heart));
+      screen.blur(blurAt(this.since, this.heart));
+    }
     if (this.since >= CONTROL_S) this.done = true;
     const shot = this.shotAt(this.since);
     return {

@@ -110,8 +110,9 @@ const FRIDAY_AT = 29_919_420 * 60_000;
 function boardOf(shown: GearState, width = 1280) {
   const { ui, step } = fakeInterface(width, 900);
   const asked: unknown[] = [];
-  // The menu's window stands 32 in from each side, its body's padding 20 inside its own 2.
-  const room = { width: width - 2 * 32 - 2 * 2 - 2 * 20, height: 600 };
+  // The menu's window stands 32 in from each side inside its edge of 2; a station's screen bleeds to its body's edges
+  // (`gearWindow.ts`), so the body's padding takes none of the room.
+  const room = { width: width - 2 * 32 - 2 * 2, height: 600 };
   let card: Node | null = null;
   const context = {
     ui,
@@ -263,7 +264,7 @@ test('on a phone the stage stands over the bounties, all within the room the men
   const { ui } = boardOf(PLEDGED, 390);
   const [board, stage, first] = [ui.boxOf('board'), ui.boxOf('board-stage'), ui.boxOf('bounty-0')];
   assert.ok(board && stage && first);
-  assert.ok(board.width <= 390 - 2 * 32 - 2 * 2 - 2 * 20, 'no wider than its room');
+  assert.ok(board.width <= 390 - 2 * 32 - 2 * 2, 'no wider than its room');
   assert.ok(stage.y + stage.height <= first.y, 'over the tiles');
   for (const id of [...TOWN_IDS, ...THEIR_IDS]) {
     const box = ui.boxOf(id);

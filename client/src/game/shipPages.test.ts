@@ -47,7 +47,7 @@ const ship = (fields: Partial<GearShip> = {}): GearShip => ({
   ...fields,
 });
 
-/** Guns fitted, the Sails carried, and the Shipwright's six modules for sale after the smiths' eighteen wares. */
+/** Guns fitted, the Sails carried, and the Shipwright's six modules for sale after the smiths' thirty-four wares. */
 const gear = (fields: Partial<GearState> = {}): GearState =>
   ({
     aurem: 12_480,
@@ -56,7 +56,7 @@ const gear = (fields: Partial<GearState> = {}): GearState =>
       sampleItem({ id: 23, kind: 26, rarity: 3, level: 5, at: 0, bucket: 9, prestige: 6 }),
     ],
     wares: [
-      ...Array.from({ length: 18 }, (unused, place) => sampleItem({ id: 100 + place, kind: 13, price: 500 })),
+      ...Array.from({ length: 34 }, (unused, place) => sampleItem({ id: 100 + place, kind: 13, price: 500 })),
       ...[24, 25, 26, 27, 24, 26].map((kind, place) =>
         sampleItem({ id: 120 + place, kind, level: 2 + place, price: place === 5 ? 13_400 : 2_400 }),
       ),

@@ -14,7 +14,8 @@ import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { emblemOf } from '../plus/emblemArt.ts';
-import { type Gain, gainsOf } from './gains.ts';
+import { type Gain, gainsOf, lootNotices } from './gains.ts';
+import { notify } from './obtained.ts';
 import { fineGlyph } from './gearGlyphs.ts';
 import {
   INK,
@@ -93,11 +94,12 @@ export class AcquiredFeed {
     this.tell(gains);
   }
 
-  /** Shows `gains`, and chimes for the rarest of them. */
+  /** Shows `gains`, chimes for the rarest of them, and notices the finest at the foot of the screen. */
   tell(gains: readonly Gain[]): void {
     if (gains.length === 0) return;
     gains.forEach((gain) => this.show(gain));
     chime(Math.max(0, ...gains.map((each) => each.rarity ?? 0)));
+    notify(...lootNotices(gains));
   }
 
   private show(gain: Gain): void {

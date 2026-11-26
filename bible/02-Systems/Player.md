@@ -48,7 +48,9 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   (`ridesIn`, on foot, in the prologue's wreck and on the Test Ground alike); one taken off under its rider sets them
   on foot. With none, a press does nothing and the frame it was pressed in says "You have no horse." once for it,
   ashore or at sea; the story says nothing. Getting down is never refused. A new character's first horse is the
-  Bay the Tack gives on the opening's round ([[Gear]]).
+  Bay the Tack gives on the opening's round ([[Gear]]), and the opening's next task teaches riding it: getting up,
+  a walk, a gallop, the boost, getting down, and riding up to the Harbourmaster's stall, each ticked by the room from
+  what the body did ([[Quests]], "The lessons").
 - **The boost** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]): a rider taps the jump's key (Space, or the pad's A, as the jump is
   rebound; a horse never jumps, so a rider's jump is its boost) for half again the horse's pace, walking or
   galloping, for 4 s; then it recharges for 12 s before it may boost again. The run stays as it is. It is the

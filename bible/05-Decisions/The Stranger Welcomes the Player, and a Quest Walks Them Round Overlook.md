@@ -29,5 +29,9 @@ status: in force
 - **The quest then guides them to each vendor**, says what each is for, has them buy simple starting gear, and ends by
   introducing each faction. The pledge follows as before ([[Quests]]).
 
+Replaced in part by [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]: the stranger gives no Aurem, the camera
+no longer goes to each place she names, and the round gives the starting gear as each keeper's gift instead of having it
+bought.
+
 Replaces [[Elder Maren Hale Welcomes the Player to Overlook]] as the welcome. How it is built: [[Prologue]],
 [[Quests]], [[Gear]].

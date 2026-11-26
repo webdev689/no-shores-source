@@ -575,6 +575,11 @@ The sea room ([[Server]]) sails hostile ships among the players' on the [[Overwo
 the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]). A ship lying parked while its player is
 ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chases or meets it.
 
+- **The Harbourmaster's hulk** (`sea_lessons.rs`): a captain on the opening's gunnery lesson who sails within 900 m of
+  the struck Tithe Sloop moored off Overlook is put into a fight of their own with it, as one met at sea is: it lies
+  hove to, fires nothing, is never scuttled nor boarded, leaves the fight once they are 1,500 m off it (900 m once
+  their ball is in), and lays and pays nothing as it goes down ([[Quests]], "The lessons").
+
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
   falls due while they fight comes as the fight ends. A travel to other waters waits the next roll at least half a
   minute, never sooner than it would have come, so travelling on brings no more ships than sailing. While fewer than three hostile ships sail within their sight of

@@ -133,6 +133,7 @@ pub struct Sea {
     decks: decks::Decks,
     islands: islands::Islands,
     parked: parked::ParkedShips,
+    lessons: lessons::Lessons,
     /// The minute it is, counted from the Unix epoch, as the host sets it.
     pub minute: u64,
 }
@@ -170,6 +171,7 @@ impl Sea {
             decks: decks::Decks::default(),
             islands: islands::Islands::new(seed, layout.continents.iter().map(islands::climate_and_resource).collect()),
             parked: parked::ParkedShips::new(layout),
+            lessons: lessons::Lessons::default(),
             minute: 0,
         }
     }
@@ -429,6 +431,7 @@ impl Sea {
         let at_sea = (&mut self.clashes, &mut self.hostiles);
         let joined = self.fights.take_in(met, &ships, at_sea, &mut heave, (&self.coasts, &self.weather, time));
         self.tell_joined(&joined);
+        self.keep_lessons();
     }
 
     /// Sets the world time the room's clock started at, seconds since the Unix epoch: its fights' weather is the world's
@@ -564,6 +567,8 @@ mod guilds;
 pub mod islands;
 #[path = "sea_parked.rs"]
 pub mod parked;
+#[path = "sea_lessons.rs"]
+pub mod lessons;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;

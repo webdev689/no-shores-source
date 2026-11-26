@@ -45,6 +45,10 @@ impl Sea {
         for ship in sank {
             // A boarded ship sunk under its boarders sends them back to their own ships.
             self.end_deck(ship.hostile.id);
+            // The Harbourmaster's hulk lays nothing, pays nothing and counts for no road or bounty as it goes down.
+            if super::lessons::hulks_captain(ship.hostile.id).is_some() {
+                continue;
+            }
             self.lay_flotsam(ship, (1, 0));
             let paid = crate::ship_power::pay_sinking(ship, self.hostiles.difficulty, &mut self.harbour.characters);
             self.pay_boarders(ship, &paid);
@@ -76,7 +80,7 @@ impl Sea {
 
     /// Tells a player's quest log of a ship beaten: their deck room's while they fight on a captain's deck, which
     /// holds their character then, else the one the sea keeps.
-    fn tell_sea(&mut self, player: PlayerId, event: &QuestEvent<'_>) {
+    pub(super) fn tell_sea(&mut self, player: PlayerId, event: &QuestEvent<'_>) {
         if let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player)) {
             deck.room.tell_quest(deck.aboard[&player], event);
         } else if self.harbour.characters.get_mut(&player).is_some_and(|character| character.tell(event)) {

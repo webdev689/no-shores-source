@@ -10,12 +10,14 @@ use crate::factions::factions;
 use crate::horses::FIRST_HORSE;
 use crate::kinds::Slot;
 pub use crate::quest_defs::{
-    KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key, quests, speaker_place,
+    KEEPERS, OfferDef, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key,
+    keeper_number, quests, speaker_place,
 };
 pub use crate::quest_goals::{
-    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, InSlot, KILL_PAST, Landing, Plain, PointDef,
-    Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
+    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, HORDE_WAVE_MOST, InSlot, KILL_PAST, Landing, Plain,
+    PointDef, Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
 };
+pub use crate::quest_lessons::{Ride, RideAct, Sail, SailAct, Use, UseAct};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -75,6 +77,15 @@ pub enum Event<'told> {
     Bought(Slot),
     /// A piece worn in a slot.
     Worn(Slot),
+    /// A rider's act, and the keeper's counter (by its key) an arrival is made at.
+    Ride {
+        act: RideAct,
+        at: Option<&'told str>,
+    },
+    /// A captain's act at sea.
+    Sail(SailAct),
+    /// A keeper's gift used, as the room answered the ask (`UseAct::of`).
+    Used(UseAct),
     /// A step the room ran met, of a kind, in a node, at its goal's anchor (`GoalDef::anchor`).
     Stepped {
         kind: GoalKind,
@@ -111,6 +122,15 @@ pub struct QuestLog {
     /// met: a `buy` goal is met by one, however long before its task the piece was bought.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub bought: Vec<Slot>,
+    /// The keepers' gifts given, by name (`gifts::Gift::key`; one a later room names kept as read), each once ever.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub gifts: Vec<String>,
+    /// The slots the Weaponsmith still gives a starter piece for free, her gift chosen at her counter.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub free: Vec<Slot>,
+    /// The quests acquired from the keeper who offers them, by id, each once.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub acquired: Vec<String>,
     /// Keys this room does not know, from a later room's save, written back as read.
     #[serde(flatten)]
     pub unknown: UnknownKeys,
@@ -165,7 +185,7 @@ impl QuestLog {
                 (road.task, road.counts, road.fought) = (now.id.clone(), Vec::new(), Vec::new());
             }
             // A task this file does not hold (another build's) reads as a character kept before the quest's tasks
-            // did: a reward before `kept`, such as the stranger's gift, may already be paid.
+            // did: a reward before `kept`, such as a keeper's gift on the round, may already be paid.
             if !quest.tasks.iter().any(|task| task.id == road.task) {
                 let first = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
                 road.task = quest.kept.clone().unwrap_or(first);
@@ -209,6 +229,10 @@ impl QuestLog {
         }
         let road = self.roads.entry(def.id.clone()).or_default();
         (road.task, road.counts, road.done, road.fought) = (at.id.clone(), vec![0; at.goals.len()], false, Vec::new());
+        // A place set is a place walked to: the quest is held as acquired, as one walked there was.
+        if !self.acquired.contains(&def.id) {
+            self.acquired.push(def.id.clone());
+        }
     }
 
     /// A quest's place, by the quest's place in the file.
@@ -250,6 +274,18 @@ impl Character {
         Some((quest, task.unwrap_or(0)))
     }
 
+    /// The keeper who offers the quest walked while it waits to be acquired from them, by the number ask 64 sends:
+    /// on the task its offer names, nothing counted there yet (a save from before offers keeps its place), and not
+    /// acquired. None otherwise.
+    #[must_use]
+    pub fn quest_offered(&self) -> Option<u8> {
+        let (quest, task) = self.quest_now()?;
+        let def = &quests().quests[quest];
+        let (from, keeper) = def.offered()?;
+        let begun = self.quest_counts().iter().any(|count| *count > 0);
+        (task == from && !begun && !self.quests.acquired.contains(&def.id)).then_some(keeper)
+    }
+
     /// The counts of the task the player is on, one for each of its goals.
     #[must_use]
     pub fn quest_counts(&self) -> Vec<u16> {
@@ -259,10 +295,12 @@ impl Character {
         (0..goals).map(|goal| road.get(goal).copied().unwrap_or(0)).collect()
     }
 
-    /// The goals of the task the player is on not yet met, each with its place in the task.
+    /// The goals of the task the player is on not yet met, each with its place in the task; none while the quest waits
+    /// to be acquired, so the room neither walks nor marks a goal that cannot count yet.
     pub fn goals_unmet(&self) -> impl Iterator<Item = (usize, &'static GoalDef)> {
         let counts = self.quest_counts();
-        let now = self.quest_now().and_then(|(quest, task)| quests().quests[quest].tasks.get(task));
+        let now = self.quest_now().filter(|_| self.quest_offered().is_none());
+        let now = now.and_then(|(quest, task)| quests().quests[quest].tasks.get(task));
         let goals = now.map_or(&[][..], |task| task.goals.as_slice());
         goals.iter().enumerate().filter(move |(at, goal)| counts.get(*at).is_some_and(|count| *count < goal.count))
     }
@@ -271,6 +309,10 @@ impl Character {
     /// counts once more, a goal's reward given as it is met; every goal met, the task's reward is given and the next
     /// begins at once, its counts at nothing, or the quest is done. Whether anything counted.
     pub fn tell(&mut self, event: &Event<'_>) -> bool {
+        // A quest waiting to be acquired counts nothing until it is.
+        if self.quest_offered().is_some() {
+            return false;
+        }
         let Some((quest, task)) = self.quest_now() else { return false };
         let def = &quests().quests[quest];
         let Some(goals) = def.tasks.get(task).map(|task| &task.goals) else { return false };
@@ -309,24 +351,36 @@ impl Character {
         }
         // A task that sent the player out, not one of words, purchases or dress at a keeper's, pays as a mission's
         // clear does, at their level: Destiny 1 paid each mission done.
-        let errand = |kind| matches!(kind, GoalKind::Talk | GoalKind::Pledge | GoalKind::Buy | GoalKind::Wear);
+        let errand =
+            |kind| matches!(kind, GoalKind::Talk | GoalKind::Pledge | GoalKind::Buy | GoalKind::Wear | GoalKind::Use);
         if !goals.iter().all(|goal| errand(goal.kind())) {
             let level = self.level();
             self.pay(crate::rewards::Clear::Mission.worth(), level, None, crate::world::Difficulty::Normal);
         }
         self.reward(def.faction, def.tasks[task].reward);
         self.find_lore_due(crate::lore::lore());
+        // The next task counts the pieces held as it begins, whatever met this one: a docking as much as an ask.
+        self.tell_held();
         true
     }
 
     /// Tells the quest walked of every piece worn but plain clothes, and of every slot a smith has sold a piece for, so
-    /// a piece bought or put on before its task was reached counts once it is.
+    /// a piece bought or put on before its task was reached counts once it is; and, to a use goal, of a Vestige opened
+    /// and a letter taken while none is left to open or take, so a save that used them before the task is not stuck.
     pub(crate) fn tell_held(&mut self) {
         // Told again until nothing more counts: a task met here may reach one the pieces held already meet.
         loop {
             let asks = |kind| self.goals_unmet().any(|(_, goal)| goal.kind() == kind);
             let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
             let mut told = false;
+            if asks(GoalKind::Use) {
+                if self.vestiges.is_empty() {
+                    told |= self.tell(&Event::Used(UseAct::Identify));
+                }
+                if self.mail.is_empty() {
+                    told |= self.tell(&Event::Used(UseAct::Letter));
+                }
+            }
             for slot in Slot::VESTIGE {
                 // Plain clothes are not what a wear goal asks put on: armour of the player's own.
                 if wear && self.worn(slot).is_some_and(|item| !item.plain) {
@@ -342,12 +396,15 @@ impl Character {
         }
     }
 
-    /// A task's or a goal's reward: its Aurem, the Bay, worn where no horse is (never a second: one horse of each
-    /// coat), the Sloop to one who keeps no ship, and of its house's Art, the Art earned and worn at once, a Tenet
+    /// A task's or a goal's reward: its Aurem, a keeper's gift (`give_gift`), the Bay, worn where no horse is (never a
+    /// second: one horse of each coat), the Sloop to one who keeps no ship, and of its house's Art, the Art earned and worn at once, a Tenet
     /// earned, fragments to choose. A fragment beyond those the Art has left unowned and unchosen is its price at the
     /// counter in Aurem instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {
         self.materials.add_aurem(reward.aurem);
+        if let Some(gift) = reward.gift {
+            self.give_gift(gift);
+        }
         if reward.ship {
             self.give_first_ship();
         }
@@ -418,9 +475,24 @@ impl Character {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        if !self.goals_unmet().any(|(_, goal)| matches!(&goal.goal, Goal::Talk(talk) if talk.to == key)) {
+        // A quest waiting to be acquired has no goal unmet, so asks no word yet: Acquire is the word.
+        let asked = self.goals_unmet().any(|(_, goal)| matches!(&goal.goal, Goal::Talk(talk) if talk.to == key));
+        if !asked {
             return Err(Refusal::NothingToSay);
         }
+        self.tell(&Event::Talk(key));
+        Ok(None)
+    }
+
+    /// Acquires the quest walked from the keeper who offers it, by the number ask 64 sends, at their counter: it is a
+    /// word with them, so a goal of its task asking one is met by it.
+    pub(crate) fn acquire(&mut self, keeper: u8, here: Here) -> Result<Option<Done>, Refusal> {
+        let key = keeper_key(keeper).ok_or(Refusal::NoSuchKeeper)?;
+        if !here.social {
+            return Err(Refusal::NotHere);
+        }
+        let quest = self.quest_now().filter(|_| self.quest_offered() == Some(keeper)).ok_or(Refusal::NothingOffered)?;
+        self.quests.acquired.push(quests().quests[quest.0].id.clone());
         self.tell(&Event::Talk(key));
         Ok(None)
     }
