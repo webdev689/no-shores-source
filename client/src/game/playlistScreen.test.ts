@@ -352,9 +352,10 @@ test('scrolled, a crest’s dot, padlock and their marks stay inside the list, n
   const body = screen.ui.boxOf('playlist-body');
   assert.ok(body);
   const marks = screen.ui.laid.filter((each) =>
-    /^(playlist waiting|playlist ripple|icon)/.test(each.node.picture?.key ?? ''),
+    /^(playlist waiting|playlist ripple|journal icon locked)/.test(each.node.picture?.key ?? ''),
   );
-  assert.ok(marks.length > 0);
+  const kinds = new Set(marks.map(({ node }) => /^(playlist \w+|journal icon locked)/.exec(node.picture?.key ?? '')?.[1]));
+  assert.deepEqual([...kinds].sort(), ['journal icon locked', 'playlist ripple', 'playlist waiting']);
   for (const { clip, node } of marks)
     assert.ok(clip.y >= body.y - 0.5, `${node.picture?.key} clipped at ${clip.y}, the list at ${body.y}`);
 });

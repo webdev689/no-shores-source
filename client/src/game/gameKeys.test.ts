@@ -197,6 +197,36 @@ test('Escape opens Settings with nothing else over the game, and steps back from
   assert.equal(opened.length, 2, 'not on the way to the helm’s map, behind the veil, nor over a window');
 });
 
+test('Enter over the island’s tiles does the lit tile’s press, never behind a window', () => {
+  const { window } = fakeWindow();
+  const landed: (string | null)[] = [];
+  listenForControls({
+    playing: {
+      flow: { mode: 'landing', chosen: null },
+      sea: afloat(),
+      foot: null,
+      helmMap: { key: () => false },
+      through: null,
+      after: { holding: false },
+    },
+    input: { onPad: () => undefined },
+    ui: { typing: false },
+    hud: { controls: { rebinding: {}, open: false } },
+    story: null,
+    retry: () => null,
+    landings: { asking: null },
+    change: () => undefined,
+    landAt: (id: string | null) => void landed.push(id),
+  } as unknown as Controlled);
+  const enter = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'Enter', code: 'Enter' }));
+  setGearScreenOpen(true);
+  enter();
+  setGearScreenOpen(false);
+  assert.deepEqual(landed, [], 'never behind the menu');
+  enter();
+  assert.deepEqual(landed, [null], 'the first place’s, with none lit');
+});
+
 test('Escape or B while a piece of decoration is placed lets it go first and opens nothing', () => {
   const { window } = fakeWindow();
   const opened: unknown[] = [];

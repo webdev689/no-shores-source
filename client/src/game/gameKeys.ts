@@ -113,7 +113,8 @@ export function listenForControls(game: Controlled): void {
     else if (acts('use') && sea?.aboard.walking) game.takeHelm();
     else if (acts('use') && flow.mode === 'foot' && playing.through) game.goThrough();
     else if (acts('use') && flow.mode === 'foot') playing.foot?.use();
-    else if (acts('confirm') && flow.mode === 'landing') game.landAt(flow.chosen);
+    // Over the island's tiles, as no window above them hears it.
+    else if (acts('confirm') && flow.mode === 'landing' && !overGame()) game.landAt(flow.chosen);
     else if (acts('respawn') && flow.mode === 'foot') game.respawn();
     else if (acts('seaView') && flow.mode === 'sea') sea?.switchLevel();
   };
