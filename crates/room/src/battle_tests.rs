@@ -1,6 +1,7 @@
 use super::*;
 use crate::clash::tests::{at_sea, still};
 use naval::fight::CAPTAIN;
+use naval::guns::Shot;
 use naval::ranks::{GREY_TITHE, Rank};
 use sailing::HullKind;
 
@@ -150,4 +151,23 @@ fn a_player_who_leaves_and_comes_back_keeps_a_spent_last_stand_and_no_ship_numbe
     characters.insert(2, gear::Character::starting());
     fights.fit(&characters);
     assert!(fights.list[0].fight.fitting(back).is_some_and(|fitted| fitted.stood), "its stand spent this fight");
+}
+
+#[test]
+fn presses_sent_in_two_orders_within_one_tick_are_kept_until_a_step_uses_them() {
+    let mut fights = begun();
+    let quiet =
+        Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: true, load: None, boost: false };
+    let pressed =
+        Orders { helm: Helm { steer: 0.0, climb: 1 }, fire: true, load: Some(Shot::Chain), boost: true, ..quiet };
+    assert!(fights.orders(1, pressed));
+    // The page's next message carries no press: it must not undo the ones before it.
+    assert!(fights.orders(1, quiet));
+    let crew = fights.list[0].crews[&1];
+    assert!(crew.orders.fire && crew.orders.boost && crew.orders.brace);
+    assert_eq!((crew.orders.helm.climb, crew.orders.load), (1, Some(Shot::Chain)));
+    fights.step(&[], 0.0);
+    let crew = fights.list[0].crews[&1];
+    assert!(!crew.orders.fire && !crew.orders.boost && crew.orders.brace, "a step uses the presses once");
+    assert_eq!((crew.orders.helm.climb, crew.orders.load), (0, None));
 }
