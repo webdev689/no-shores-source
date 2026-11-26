@@ -51,7 +51,7 @@ import { arrivalFacing, FIRST_NODE } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { inspectAgainst } from './social/social.ts';
 import { rejoinOnGuild } from './footPlace.ts';
-import { listenForControls } from './gameKeys.ts';
+import { clickedOnLine, listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { companyPlaces, nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
 import { notYet } from './companyJoin.ts';
@@ -66,7 +66,7 @@ import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
 import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
 import { returnToShip } from './toShip.ts';
-import { speaking } from '../speech/dialogue.ts';
+import { dialogueWaits, speaking } from '../speech/dialogue.ts';
 import { obtainedLayer } from './obtained.ts';
 
 /**
@@ -561,7 +561,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   canvas.addEventListener('click', () => {
     // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open
     // the pointer stays free, though the click comes before the interface has heard where it is.
-    if (ui.takesPointer || gearScreenOpen()) return;
+    if (ui.takesPointer || gearScreenOpen() || clickedOnLine(input.locked)) return;
     if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     const { flow, foot, sea, helmMap } = playing;
     const onFoot = flow.mode === 'foot' && !helmMap.looking && foot?.standing.kind !== 'dead';
@@ -571,7 +571,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   seaPointer(canvas, input, {
     // On a struck ship's deck the pointer and the wheel are the fight's on foot.
     atSea: () => playing.flow.mode === 'sea' && !playing.sea?.boarding.onDeck,
-    overInterface: () => ui.takesPointer,
+    overInterface: () => ui.takesPointer || dialogueWaits(),
     sea: () => playing.sea,
     map: () => playing.helmMap.held,
   });

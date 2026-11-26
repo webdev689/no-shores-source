@@ -333,6 +333,12 @@ export class MusicDirector {
     this.asked = kind;
   }
 
+  /** Whether the player was in a fight as the music last heard them: a foe engaged, a blow struck, or a fight at sea
+   *  (`hear`). A line of the dialogue box said then moves on by itself (`pace.ts`). */
+  get fighting(): boolean {
+    return this.memory.lastFight === this.memory.clock;
+  }
+
   /** A frame on foot in `node` of `world`, from the fight it showed. */
   onFoot(
     world: Parameters<typeof hearNode>[0],
