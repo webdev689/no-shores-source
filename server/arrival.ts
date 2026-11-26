@@ -24,10 +24,11 @@ export const NO_WAY_HERE = 'You cannot reach this place from where you were.';
 export const LANDFALL_M = 32_000;
 
 /** What a node's room knows of where its node lies and what leads into it: whether it is landed on from every tier's
- *  sea (a social space, or an outpost site, whose rooms are at Normal alone), its island's coast, and the nodes whose
- *  gates lead into it. */
+ *  sea (a social space, or an outpost site, whose rooms are at Normal alone), its island (its continent's id) and that
+ *  island's coast, and the nodes whose gates lead into it. */
 export interface Reach {
   readonly social: boolean;
+  readonly continent: string;
   readonly coast: readonly Point[];
   readonly gatedFrom: readonly string[];
 }
@@ -51,7 +52,7 @@ export function reachOf(
   const outline = continents.find((each) => each.id === node.continent)?.outline ?? [];
   const coast = outline.map(([x = 0, y = 0]): Point => [x, y]);
   const gatedFrom = index.filter((each) => each.gates?.includes(id)).map((each) => each.id);
-  return { social: node.kind === 'social' || node.kind === 'outpost', coast, gatedFrom };
+  return { social: node.kind === 'social' || node.kind === 'outpost', continent: node.continent, coast, gatedFrom };
 }
 
 /** Where a kept character's ship lies, as the sea last kept it; null for none, or a character that does not read. */
@@ -88,8 +89,13 @@ export function arrives(
   if (!to) return false;
   const left = passageRoom(from);
   if (left) return passages !== null && !inside(to) && to.guild === null && litHome(left, to, passages);
-  // A run started from the Playlist, beside any port, is entered from the sea alone.
-  if (startedAtSea(room)) return from !== null && seaRoom(from) !== null;
+  // A run started at sea (from the Playlist, beside any port, or an Elite Dungeon's at Normal) is entered from the
+  // sea alone; one at Normal, from its island's tile, with the ship off that island's coast.
+  if (startedAtSea(room)) {
+    if (from === null || seaRoom(from) === null) return false;
+    const offIsland = !!ship && !!reach && toCoast(ship, reach.coast) <= LANDFALL_M;
+    return to.seas > 0 || to.playlist !== null || offIsland;
+  }
   // A guild dungeon's run is entered from its guild's outpost alone and left back to it, at whatever tier it runs.
   if ((to.guild !== null && inside(to)) || (was !== null && was.guild !== null && inside(was)))
     return was?.id === to.id && was.guild === to.guild && inside(was) !== inside(to);
@@ -101,7 +107,7 @@ export function arrives(
     // Normal) from its node at any, as its tier is its own whatever the seas; out of the node's own dungeon or run at
     // the seas it was gone into at.
     if (inside(to)) return !inside(was) && (was.seas === to.seas || (to.dungeon === null && to.run !== null));
-    // A run started from the Playlist is left back to the sea, never onto its dungeon's island.
+    // A run started at sea is left back to the sea, never onto its dungeon's island.
     if (inside(was)) return was.seas === to.seas && !startedAtSea(from ?? '');
   }
   if (inside(to)) return false;

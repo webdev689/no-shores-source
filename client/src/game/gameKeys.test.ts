@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Controlled, contextOf, listenForControls, withoutTaken } from './gameKeys.ts';
+import { type Controlled, contextOf, interfaceKeys, listenForControls, withoutTaken } from './gameKeys.ts';
 import { OPEN_AT, setGearScreenOpen } from './gearScreen.ts';
 import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import { PLACING_STRIP, placingNow, startPlacing } from './guild/decorPlacing.ts';
@@ -55,6 +55,7 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
     hud: {},
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: nothing,
   } as unknown as Controlled);
   const repair = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'r', code: 'KeyR' }));
@@ -87,6 +88,7 @@ test("the pad's Start opens the Character page in the story as the key does, for
     hud: { controls: { open: false, rebinding: { slot: null } } },
     story: { press: nothing },
     retry: () => null,
+    landings: { asking: null },
     change: nothing,
   } as unknown as Controlled);
   pad(new Set(['character']), new Set(['Start']));
@@ -115,6 +117,7 @@ test('while the stranger speaks her welcome Escape opens Settings; no other game
     hud: { controls: { rebinding: {}, open: false, toggle: () => changes.push('sheet') }, keysOffered: true },
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: (asked: unknown) => changes.push(asked),
     openMap: () => changes.push('map'),
     respawn: () => changes.push('respawn'),
@@ -165,6 +168,7 @@ test('Escape opens Settings with nothing else over the game, and steps back from
     hud: { controls: { rebinding: {}, open: false } },
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: (asked: unknown) => changes.push(asked),
   } as unknown as Controlled);
   window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
@@ -193,6 +197,36 @@ test('Escape opens Settings with nothing else over the game, and steps back from
   assert.equal(opened.length, 2, 'not on the way to the helm’s map, behind the veil, nor over a window');
 });
 
+test('Enter over the island’s tiles does the lit tile’s press, never behind a window', () => {
+  const { window } = fakeWindow();
+  const landed: (string | null)[] = [];
+  listenForControls({
+    playing: {
+      flow: { mode: 'landing', chosen: null },
+      sea: afloat(),
+      foot: null,
+      helmMap: { key: () => false },
+      through: null,
+      after: { holding: false },
+    },
+    input: { onPad: () => undefined },
+    ui: { typing: false },
+    hud: { controls: { rebinding: {}, open: false } },
+    story: null,
+    retry: () => null,
+    landings: { asking: null },
+    change: () => undefined,
+    landAt: (id: string | null) => void landed.push(id),
+  } as unknown as Controlled);
+  const enter = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'Enter', code: 'Enter' }));
+  setGearScreenOpen(true);
+  enter();
+  setGearScreenOpen(false);
+  assert.deepEqual(landed, [], 'never behind the menu');
+  enter();
+  assert.deepEqual(landed, [null], 'the first place’s, with none lit');
+});
+
 test('Escape or B while a piece of decoration is placed lets it go first and opens nothing', () => {
   const { window } = fakeWindow();
   const opened: unknown[] = [];
@@ -213,6 +247,7 @@ test('Escape or B while a piece of decoration is placed lets it go first and ope
     hud: { controls: { rebinding: {}, open: false } },
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: () => undefined,
   } as unknown as Controlled);
   startPlacing('gull-cove-outpost', 'bench');
@@ -237,4 +272,138 @@ test('Escape or B while a piece of decoration is placed lets it go first and ope
     ['[', ']'],
     'the turn as its two keys',
   );
+});
+
+test('at sea a landing’s confirmation takes Enter as yes and Escape as no; V switches the view; over an island Enter lands', () => {
+  const { window } = fakeWindow();
+  const done: string[] = [];
+  const sea = { ...afloat(), switchLevel: () => done.push('switch') };
+  const playing = {
+    ...{ flow: { mode: 'sea' } as { mode: string; chosen?: string | null }, sea, foot: null },
+    ...{ helmMap: { key: () => false, busy: false }, through: null, after: {} },
+  };
+  const landings = { asking: null as object | null, answer: (yes: boolean) => done.push(`answer ${yes}`) };
+  listenForControls({
+    playing,
+    input: { onPad: () => undefined },
+    ui: { typing: false },
+    hud: {},
+    story: null,
+    retry: () => null,
+    landings,
+    change: () => undefined,
+    landAt: (id: string | null) => done.push(`land ${id}`),
+  } as unknown as Controlled);
+  const key = (name: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name }));
+  landings.asking = {};
+  key('Enter');
+  key('Escape');
+  landings.asking = null;
+  key('v');
+  playing.flow = { mode: 'landing', chosen: null };
+  key('Enter');
+  assert.deepEqual(done, ['answer true', 'answer false', 'switch', 'land null']);
+});
+
+test('on the pad at sea A asks after the landing the sea offers, and answers yes; B answers no', () => {
+  fakeWindow();
+  const done: string[] = [];
+  const playing = {
+    ...{ flow: { mode: 'sea' }, sea: afloat({ chaseChosen: () => false }), foot: null },
+    ...{ helmMap: { key: () => false, busy: false }, through: null, after: {} },
+  };
+  const landings = {
+    asking: null as object | null,
+    askHere: () => done.push('ask'),
+    answer: (yes: boolean) => done.push(`answer ${yes}`),
+  };
+  const pads: ((pressed: Set<string>, buttons: Set<string>) => void)[] = [];
+  listenForControls({
+    playing,
+    input: { onPad: (heard: (pressed: Set<string>, buttons: Set<string>) => void) => pads.push(heard) },
+    ui: { typing: false },
+    hud: { controls: { rebinding: { slot: null }, open: false } },
+    story: null,
+    retry: () => null,
+    landings,
+    change: () => undefined,
+  } as unknown as Controlled);
+  pads[0]?.(new Set(['confirm']), new Set(['A']));
+  landings.asking = {};
+  pads[0]?.(new Set(['confirm']), new Set(['A']));
+  pads[0]?.(new Set(['manage']), new Set(['B']));
+  assert.deepEqual(done, ['ask', 'answer true', 'answer false']);
+});
+
+test('B (Manage) and H (Leave the helm) act at sea level alone, as its console offers them', () => {
+  const { window } = fakeWindow();
+  const done: string[] = [];
+  const sea = { ...afloat(), level: 'oversea' };
+  listenForControls({
+    playing: {
+      flow: { mode: 'sea' },
+      sea,
+      foot: null,
+      helmMap: { key: () => false, busy: false },
+      through: null,
+      after: {},
+    },
+    input: { onPad: () => undefined },
+    ui: { typing: false },
+    hud: {},
+    story: null,
+    retry: () => null,
+    landings: { asking: null },
+    change: () => undefined,
+    manage: () => done.push('manage'),
+    leaveHelm: () => done.push('leave'),
+  } as unknown as Controlled);
+  const key = (name: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name }));
+  key('b');
+  key('h');
+  assert.deepEqual(done, [], 'over the ship');
+  sea.level = 'sealevel';
+  key('b');
+  key('h');
+  assert.deepEqual(done, ['manage', 'leave']);
+});
+
+test('over the island’s tiles the game’s Enter and A yield to a tile the keys or the pad have focused', () => {
+  const { window } = fakeWindow();
+  const landed: (string | null)[] = [];
+  const pads: ((pressed: Set<string>, buttons: Set<string>) => void)[] = [];
+  const ui = { typing: false, focused: 'island:maw' as string | null };
+  listenForControls({
+    playing: {
+      flow: { mode: 'landing', chosen: 'maw' },
+      sea: afloat(),
+      foot: null,
+      helmMap: { key: () => false, busy: false },
+      through: null,
+      after: { holding: false },
+    },
+    input: { onPad: (heard: (pressed: Set<string>, buttons: Set<string>) => void) => pads.push(heard) },
+    ui,
+    hud: { controls: { rebinding: { slot: null }, open: false } },
+    story: null,
+    retry: () => null,
+    landings: { asking: null },
+    change: () => undefined,
+    landAt: (id: string | null) => void landed.push(id),
+  } as unknown as Controlled);
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'Enter', code: 'Enter' }));
+  pads[0]?.(new Set(['confirm']), new Set(['A']));
+  assert.deepEqual(landed, [], 'the interface presses the tile focused, once');
+  ui.focused = null;
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'Enter', code: 'Enter' }));
+  pads[0]?.(new Set(['confirm']), new Set(['A']));
+  assert.deepEqual(landed, ['maw', 'maw'], 'with none focused, the lit one');
+});
+
+test('the interface takes keys and pad over a window, the sheet and the island’s tiles, not while binding', () => {
+  assert.equal(interfaceKeys('sea', { window: false, binding: false, sheet: false }), false, 'at sea the keys sail');
+  assert.equal(interfaceKeys('landing', { window: false, binding: false, sheet: false }), true, 'over the tiles');
+  assert.equal(interfaceKeys('foot', { window: true, binding: false, sheet: false }), true);
+  assert.equal(interfaceKeys('landing', { window: false, binding: true, sheet: false }), false, 'a control binding');
+  assert.equal(interfaceKeys('foot', { window: false, binding: true, sheet: true }), true, 'the sheet waits on it');
 });

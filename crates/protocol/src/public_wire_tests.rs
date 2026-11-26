@@ -62,6 +62,7 @@ fn public_bytes() -> (usize, usize) {
         darkness: false,
         reviving: &[],
         arrivals: &[],
+        ships: &[],
         passage: None,
     };
     let mark =

@@ -5,7 +5,19 @@ import type { Interface } from '../ui/ui.ts';
 import { INK, words } from './gearNodes.ts';
 import { iconNode } from './journalIcons.ts';
 import { modifierNode } from './journalTimers.ts';
-import { CHOSEN_SCALE, drawCrest, drawWaiting } from './playlistMap.ts';
+import {
+  CHOSEN_SCALE,
+  SHEEN_S,
+  SHEEN_STEPS,
+  drawArcs,
+  drawCrest,
+  drawDial,
+  drawGlow,
+  drawRipple,
+  drawSheen,
+  drawWaiting,
+  faded,
+} from './playlistCrest.ts';
 import type { PlaylistEntry, PlaylistReward } from './playlistWords.ts';
 
 /** Each crest is `playlist-tile-<its place>`. */
@@ -18,6 +30,46 @@ const CREST_TOP = 6;
 /** How a crest is drawn this frame: chosen (lit, larger, its name ruled), under the pointer or the focus (lit), or at
  *  rest. */
 export type CrestLook = 'chosen' | 'lit' | 'rest';
+
+/** The clocks a crest moves by: seconds since the screen opened, seconds its sweep's node has stood (it stands while
+ *  the crest is lit or chosen), and whether the player asked for reduced motion, when nothing moves. */
+export interface CrestMotion {
+  readonly opened: number;
+  readonly swept: number;
+  readonly still: boolean;
+}
+
+/** How bright a crest's glow stands at rest, lit and chosen, and at the foot of the chosen one's breath. */
+const GLOW = { rest: 0.42, lit: 0.67, chosen: 1, chosenLow: 0.8 } as const;
+/** Seconds a chosen crest's glow takes to breathe out and in again. */
+const BREATH_S = 3;
+/** A waiting reward's ring: seconds between one and the next, and how many dots across it grows to. */
+const RIPPLE = { seconds: 2, reach: 3.2 } as const;
+/** The ring is drawn at the size it stands, in steps of this many pixels, so its line is never read between texels
+ *  and a few pictures serve its whole growth. */
+const RIPPLE_STEP = 2;
+/** The crests rise into place as the screen opens: each this many seconds after the one before, over this many,
+ *  from this many pixels below. */
+const RISE = { after: 0.05, seconds: 0.3, from: 12 } as const;
+/** The node a crest's sweep stands on while it is lit or chosen, one for each, so a choice sweeps it again however
+ *  long it was lit. */
+export const sweepOf = (place: number, look: CrestLook): string => `${TILE}${place}-sweep-${look}`;
+/** How fast the dials turn, degrees a second: every open entry's, and the chosen one's arcs against it. */
+const TURN = { dial: 3, arcs: -10 } as const;
+/** How bright a dial stands at rest, lit and chosen; a shut entry's at rest. */
+const DIAL = { rest: 0.45, lit: 0.7, chosen: 1, shut: 0.35 } as const;
+/** How far across a dial is drawn, in a playlist's shield's sides. */
+export const DIAL_WIDE = 1.9;
+
+/** What draws a picture into its square. */
+type Draw = (context: OffscreenCanvasRenderingContext2D, drawn: number) => void;
+
+/** How far a crest has risen into place, 0 to 1, eased to a stop. */
+function risen(place: number, motion: Pick<CrestMotion, 'opened' | 'still'>): number {
+  if (motion.still) return 1;
+  const share = Math.min(1, Math.max(0, (motion.opened - place * RISE.after) / RISE.seconds));
+  return 1 - (1 - share) ** 3;
+}
 
 /** A small heading over a part of the card, in capitals. */
 const heading = (said: string, size: number): Node => words(said.toUpperCase(), size, INK.brass, { tracking: 2 });
@@ -157,10 +209,11 @@ export function cardOf(entry: PlaylistEntry, note: string, size: number, wide: N
   };
 }
 
-/** An entry's crest, its shield `side` pixels: the shield (lit and a little larger while chosen), a dot while a
- *  reward of it waits or a padlock while it is shut, its name and a brass rule as wide as the name while chosen, and
- *  what it is beneath, or why it is shut; its words wrapped to `wide`. Its shield's middle floated onto `spot` (shares of the chart)
- *  where given, else laid where its parent lays it. */
+/** An entry's crest, its shield `side` pixels: its glow (breathing while chosen) and the shield (a little larger
+ *  while chosen), a dot while a reward of it waits with a ring spreading from it, or a padlock while it is shut, the
+ *  light that sweeps it as it is lit or chosen; its name and a brass rule as wide as the name while chosen, and what it
+ *  is beneath, or why it is shut; its words wrapped to `wide`. It rises into place as the screen opens. Its shield's
+ *  middle floated onto `spot` (shares of the chart) where given, else laid where its parent lays it. */
 export function crestOf(
   entry: PlaylistEntry,
   place: number,
@@ -169,12 +222,26 @@ export function crestOf(
   side: number,
   wide: number,
   spot: readonly [number, number] | null,
+  motion: CrestMotion,
 ): Node {
-  const waiting = entry.shut === null && entry.rewards.some((reward) => reward.taken === false);
+  const shut = entry.shut !== null;
+  const waiting = !shut && entry.rewards.some((reward) => reward.taken === false);
   const box = Math.round(side * CHOSEN_SCALE);
   const dot = Math.round(side / 9);
   const small = Math.max(1, size - 1);
   const chosen = look === 'chosen';
+  const glow = chosen
+    ? motion.still
+      ? GLOW.chosen
+      : GLOW.chosenLow +
+        (GLOW.chosen - GLOW.chosenLow) * (0.5 + 0.5 * Math.cos((motion.opened / BREATH_S) * 2 * Math.PI))
+    : look === 'lit'
+      ? GLOW.lit
+      : GLOW.rest;
+  const step = Math.floor((motion.swept / SHEEN_S) * SHEEN_STEPS);
+  const ripple = (motion.opened % RIPPLE.seconds) / RIPPLE.seconds;
+  const ring = Math.ceil((dot * (1 + (RIPPLE.reach - 1) * ripple)) / RIPPLE_STEP) * RIPPLE_STEP;
+  const rise = risen(place, motion);
   return {
     id: `${TILE}${place}`,
     press: true,
@@ -184,27 +251,69 @@ export function crestOf(
     width: wide,
     gap: 6,
     padding: [CREST_TOP, 0, 6, 0],
+    ...(rise < 1 && { opacity: rise, offset: [0, Math.round((1 - rise) * RISE.from)] as const }),
     ...(spot && { float: { to: 'parent', anchor: [0.5, 0], at: spot, y: -(CREST_TOP + box / 2) } }),
     children: [
       {
         width: box,
         height: box,
-        picture: {
-          key: `playlist crest ${entry.kind} ${entry.shut !== null} ${look} ${box}`,
-          source: { draw: drawCrest(entry.kind, entry.shut !== null, look === 'rest' ? 0 : chosen ? 2 : 1) },
-        },
-        children: [
-          // A shut entry's padlock stands on its shield's shoulder, where an open one's waiting reward would.
-          entry.lock !== null && {
-            ...iconNode('locked', 12 * Math.max(1, Math.round(side / 40))),
-            float: { to: 'parent', anchor: [0.5, 0.5], at: [0.84, 0.2] },
+        ...(!shut && {
+          picture: {
+            key: `playlist glow ${entry.kind} ${box}`,
+            source: { draw: drawGlow(entry.kind) },
+            tint: faded(glow),
           },
-          waiting && {
-            width: dot,
-            height: dot,
-            // As Destiny marks a node with a reward still to earn.
-            picture: { key: `playlist waiting ${dot}`, source: { draw: drawWaiting } },
-            float: { to: 'parent', anchor: [0.5, 0.5], at: [0.86, 0.18] },
+        }),
+        children: [
+          {
+            width: box,
+            height: box,
+            picture: {
+              key: `playlist crest ${entry.kind} ${shut} ${chosen} ${box}`,
+              source: { draw: drawCrest(entry.kind, shut, chosen) },
+            },
+            children: [
+              // Stands while the crest is lit or chosen, so its age says how far the light has swept.
+              look !== 'rest' && {
+                id: sweepOf(place, look),
+                width: box,
+                height: box,
+                through: true,
+                float: { to: 'parent', anchor: [0, 0], at: [0, 0], clipped: true },
+                ...(!motion.still &&
+                  !shut &&
+                  step < SHEEN_STEPS && {
+                    picture: {
+                      key: `playlist sheen ${chosen} ${step} ${box}`,
+                      source: { draw: drawSheen(chosen, step) },
+                    },
+                  }),
+              },
+              // A shut entry's padlock stands on its shield's shoulder, where an open one's waiting reward would.
+              entry.lock !== null && {
+                ...iconNode('locked', 12 * Math.max(1, Math.round(side / 40))),
+                float: { to: 'parent', anchor: [0.5, 0.5], at: [0.84, 0.2], clipped: true },
+              },
+              waiting &&
+                !motion.still && {
+                  width: ring,
+                  height: ring,
+                  through: true,
+                  picture: {
+                    key: `playlist ripple ${ring}`,
+                    source: { draw: drawRipple },
+                    tint: faded(0.9 * (1 - ripple)),
+                  },
+                  float: { to: 'parent', anchor: [0.5, 0.5], at: [0.86, 0.18], clipped: true },
+                },
+              waiting && {
+                width: dot,
+                height: dot,
+                // As Destiny marks a node with a reward still to earn.
+                picture: { key: `playlist waiting ${dot}`, source: { draw: drawWaiting } },
+                float: { to: 'parent', anchor: [0.5, 0.5], at: [0.86, 0.18], clipped: true },
+              },
+            ],
           },
         ],
       },
@@ -235,6 +344,35 @@ export function crestOf(
   };
 }
 
+/** The dial behind an entry's crest on the chart, `across` pixels, its middle on `spot`: ticked, turning slowly while
+ *  the entry is open, brighter lit and brightest chosen, the chosen one's arcs turning against it. Laid before the
+ *  crests, so it stands under them and their words. */
+export function dialOf(
+  entry: PlaylistEntry,
+  place: number,
+  look: CrestLook,
+  across: number,
+  spot: readonly [number, number],
+  motion: Pick<CrestMotion, 'opened' | 'still'>,
+): Node[] {
+  const shut = entry.shut !== null;
+  const turning = !motion.still && !shut;
+  const tint = faded(shut ? DIAL.shut : DIAL[look]);
+  const rise = risen(place, motion);
+  const laid = (key: string, draw: Draw, turn: number): Node => ({
+    width: across,
+    height: across,
+    through: true,
+    ...(rise < 1 && { opacity: rise }),
+    picture: { key: `${key} ${across}`, source: { draw }, tint, turn: turning ? (motion.opened * turn) % 360 : 0 },
+    float: { to: 'parent', anchor: [0.5, 0.5], at: spot },
+  });
+  const dial = laid(`playlist dial ${entry.kind} ${shut}`, drawDial(entry.kind, shut), TURN.dial);
+  return look === 'chosen' && !shut
+    ? [dial, laid(`playlist arcs ${entry.kind}`, drawArcs(entry.kind), TURN.arcs)]
+    : [dial];
+}
+
 /** How tall the fade over a scrolled list's foot stands: about a line and a half, so a line cut there fades out. */
 const FADE = 28;
 /** The room a scrolled list keeps at its right for its bar. */
@@ -250,14 +388,15 @@ function drawFade(context: OffscreenCanvasRenderingContext2D, width: number, hei
 }
 
 /** `children`, laid as `laying` says, in a list `id` that scrolls when taller than its room (`frame` sizes it), read
- *  from `ui`'s last frame:
- *  a fade over its foot while more lies below, and a thin bar at its right whose thumb stands where the list does. */
+ *  from `ui`'s last frame: a fade over its foot while more lies below (unless `faded` is false, for a list over the
+ *  world), and a thin bar at its right whose thumb stands where the list does. */
 export function scrolledNode(
   ui: Interface,
   id: string,
   frame: Pick<Node, 'width' | 'height'>,
   laying: Partial<Node>,
   children: readonly Child[],
+  faded = true,
 ): Node {
   const [room, held] = [ui.boxOf(id), ui.boxOf(`${id}-held`)];
   const most = room && held ? held.height - room.height : 0;
@@ -275,7 +414,8 @@ export function scrolledNode(
         padding: [0, BAR_ROOM, 0, 0],
         children: [{ width: 'grow', ...laying, id: `${id}-held`, children }],
       },
-      most > 1 &&
+      faded &&
+        most > 1 &&
         share < 0.999 && {
           id: `${id}-fade`,
           width: '100%',

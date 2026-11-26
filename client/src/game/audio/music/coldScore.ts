@@ -223,16 +223,19 @@ interface Line {
   readonly lead: number;
   readonly drive: number;
   readonly turn?: boolean;
+  /** The voicing of another feel, where a take shares its feel and its section with another. */
+  readonly voice?: 0 | 1 | 2;
 }
 
 /** The bars under the tunes: the bed in the feel's bass and voicing, the shiver, the gusts, the ticks and the slow
  *  heart, the low strings, the drums and timpani, and the peak's choir and the swell into the next take. */
-function underneath(w: Write, bars: readonly Held<Chord>[][], { feel, drive, section }: Line): void {
+function underneath(w: Write, bars: readonly Held<Chord>[][], { feel, drive, section, voice }: Line): void {
   const { shiver, gusts, ticks, heart, ostinato, bass, voicing } = FEELS[feel] ?? FEELS[0]!;
-  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
+  // A take voiced as another feel strikes its bed again each bar, so no bar of it sounds as its feel's other take.
+  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS, voice !== undefined)) {
     const tones = CHORDS[name];
     if (bass === 'held') w.note('bass', bar, beat, beats, tones.bass, 90);
-    for (const n of voiced(tones.air, voicing)) w.note('air', bar, beat, beats, n, 52);
+    for (const n of voiced(tones.air, voice ?? voicing)) w.note('air', bar, beat, beats, n, 52);
     for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 66);
     // Two octaves under their voicing: held high, these strings were a whine.
     if (shiver === 'held') for (const n of tones.shiver) w.note('shiver', bar, beat, beats, n - 24, 64);
@@ -316,7 +319,8 @@ function tunes(w: Write, bars: readonly Held<Chord>[][], { section, lead }: Line
   } else lay(w, lead ? 'fiddle' : 'horn', 0, DOWN_LINE, lead ? 78 : 84, { octave: lead, legato: 0.97, accent: 4 });
 }
 
-/** The takes, each section in two or three feels: no two takes of a section share a feel. */
+/** The takes, each section in its feels, the tune's halves each feel over its own chords and over the turned ones:
+ *  no two takes of a section share a feel and a harmony. */
 const TAKES: readonly Line[] = [
   { section: 'vamp', feel: 0, lead: 0, drive: 1 },
   { section: 'vamp', feel: 1, lead: 1, drive: 1 },
@@ -334,6 +338,13 @@ const TAKES: readonly Line[] = [
   { section: 'break', feel: 2, lead: 1, drive: 3 },
   { section: 'down', feel: 0, lead: 0, drive: 0 },
   { section: 'down', feel: 1, lead: 1, drive: 0 },
+  { section: 'a1', feel: 0, lead: 1, drive: 3, voice: 1 },
+  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true, voice: 2 },
+  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true, voice: 0 },
+  { section: 'a2', feel: 1, lead: 0, drive: 2, voice: 2 },
+  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true, voice: 1 },
+  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true, voice: 0 },
+  { section: 'down', feel: 2, lead: 0, drive: 0 },
 ];
 
 /** The fight: every take, every layer in its role. */
@@ -395,5 +406,39 @@ const defeat = (): Song =>
       w.hit('heart', bar, 0, velocity);
   });
 
-/** Cold's fight score: the fight, and its cadence, victory and defeat. */
-export const coldScore = () => ({ song: fight(), cadence: cadence(), victory: victory(), defeat: defeat() });
+/** The second cadence: the horn down G, F sharp, E to C sharp and the low B, the fiddle falling slow over it. */
+const secondCadence = (): Song =>
+  makeSong({ ...SONG, name: 'cold-cadence-2', bars: 3, level: LEVEL, edge: ONCE }, (w) => {
+    stingBed(w, harmony('Em | F#m | Bm'), 0.85);
+    lay(w, 'horn', 0, tune('G4:2 F#4:1 E4:2 | C#4:3 A3:2 | B3:5'), 90, { legato: 0.98 });
+    lay(w, 'fiddle', 0, tune('B4:5 | A4:5 | F#4:5'), 74, { legato: 0.98 });
+    w.hit('gust', 0, 0, 60);
+    w.note('timpani', 2, 0, 0.9, 'B2', 84);
+    w.hit('heart', 1, 0, 76);
+    w.hit('heart', 2, 0, 58);
+  });
+
+/** The second victory: the horn climbing E, G, B and F sharp, A, C sharp into B major, the fiddle over it, the taiko
+ *  in its second groove. */
+const secondVictory = (): Song =>
+  makeSong({ ...SONG, name: 'cold-victory-2', bars: 4, level: LEVEL, edge: ONCE }, (w) => {
+    stingBed(w, harmony('Em | F#m | B | B'), 1);
+    const climb = tune('E4:2 G4:1 B4:2 | F#4:2 A4:1 C#5:2 | B4:3 D#5:2 | B4:5');
+    lay(w, 'horn', 0, climb, 106);
+    lay(w, 'brass', 0, climb, 90);
+    lay(w, 'fiddle', 0, tune('B4:5 | C#5:5 | D#5:3 F#5:2 | F#5:5'), 88);
+    for (let bar = 0; bar < 2; bar++) drums(w, bar, 1, 2, bar === 1 ? 1 : null);
+    w.note('timpani', 2, 0, 0.9, 'B2', 112);
+    w.hit('taiko', 2, 0, 120);
+    w.hit('crash', 2, 0, 106);
+  });
+
+/** Cold's fight score: the fight, its two cadences and two victories, heard in turn, and its defeat. */
+export const coldScore = () => ({
+  song: fight(),
+  cadence: cadence(),
+  victory: victory(),
+  defeat: defeat(),
+  secondCadence: secondCadence(),
+  secondVictory: secondVictory(),
+});

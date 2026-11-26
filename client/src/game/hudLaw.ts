@@ -85,7 +85,6 @@ export const KIND_WORDS = {
   boss: 'World boss',
   outpost: 'Outpost site',
   port: 'Port',
-  playlist: 'Elite and Abyss dungeons',
   hostile: 'Hostile',
   quest: 'Quest',
 } as const;
@@ -94,6 +93,8 @@ export type MarkKind = keyof typeof KIND_WORDS;
 
 /** The islands' names the owner has given, by continent. */
 export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
+/** The sea's name where no water of the waters' table holds the ship. */
+export const REGION = 'The Pale Expanse';
 
 /** The words under a place's name: the room of a dungeon the player stands in, the place's kind, its island's name
  *  where it has one, in an Abyss run the revives its company has left (-1, none counted, elsewhere), whether it is a

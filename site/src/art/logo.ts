@@ -1,7 +1,7 @@
 // The owner's logo, drawn cell for cell from the game's own pixel picture of it, and the tab's icon cut from it.
 import { LOGO } from '../../../client/src/cinema/logoPicture.ts';
 import type { PixelPicture } from '../../../client/src/combat/dropPictures.ts';
-import { box, dot, fade, halo, makeSheet, type Sheet } from './sheet.ts';
+import { box, dot, fade, halo, makeSheet, type Sheet } from '../../../client/src/art/sheet.ts';
 
 /** A pixel picture as a sheet, one cell to one pixel; its letters name its colours, 'a' the first. */
 export function pictureSheet(picture: PixelPicture): Sheet {

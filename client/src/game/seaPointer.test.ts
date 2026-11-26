@@ -8,7 +8,7 @@ import { type SeaPointing, fightControls, seaPointer } from './seaPointer.ts';
 
 /** The sea's pointer on a canvas that keeps its listeners, at sea with no menu up; `fire` runs each kind's listeners
  *  on a press at one spot. */
-function pointed(pointing: Omit<SeaPointing, 'atSea'>) {
+function pointed(pointing: Omit<SeaPointing, 'atSea' | 'clicked'> & Partial<Pick<SeaPointing, 'clicked'>>) {
   const page = globalThis as unknown as Record<string, unknown>;
   const listeners = new Map<string, ((event: unknown) => void)[]>();
   const listen = (kind: string, run: (event: unknown) => void) =>
@@ -16,7 +16,11 @@ function pointed(pointing: Omit<SeaPointing, 'atSea'>) {
   page['addEventListener'] = () => undefined;
   page['document'] = { addEventListener: () => undefined };
   const canvas = { addEventListener: listen, setPointerCapture: () => undefined, clientHeight: 720 };
-  seaPointer(canvas as unknown as HTMLCanvasElement, { locked: false }, { atSea: () => true, ...pointing });
+  seaPointer(
+    canvas as unknown as HTMLCanvasElement,
+    { locked: false },
+    { atSea: () => true, clicked: () => undefined, ...pointing },
+  );
   delete page['addEventListener'];
   delete page['document'];
   const spot = { offsetX: 10, offsetY: 10, pointerId: 1, deltaY: 100, deltaMode: 0 };
@@ -32,16 +36,21 @@ test('a press on what the game draws over the sea is the interface’s: the sea 
     boarding: { onDeck: false },
     pointerDown: () => heard.push('down'),
     pointerMove: () => heard.push('move'),
-    pointerUp: () => heard.push('up'),
+    pointerUp: () => (heard.push('up'), { kind: 'sea', point: [1, 2, 0] }),
     pointerCancel: () => undefined,
   } as unknown as Sea;
   let over = true;
-  const fire = pointed({ overInterface: () => over, sea: () => sea, map: () => null });
+  const clicked = (pick: unknown) => void heard.push(`clicked ${JSON.stringify(pick)}`);
+  const fire = pointed({ overInterface: () => over, sea: () => sea, map: () => null, clicked });
   fire('pointerdown', 'pointermove', 'pointerup');
   assert.deepEqual(heard, []);
   over = false;
   fire('pointerdown', 'pointermove', 'pointerup');
-  assert.deepEqual(heard, ['down', 'move', 'up']);
+  assert.deepEqual(
+    heard,
+    ['down', 'move', 'up', 'clicked {"kind":"sea","point":[1,2,0]}'],
+    'what it met is the landings’',
+  );
 });
 
 test('the held map takes no press, drag or wheel that the interface is over, and takes them beside it', () => {

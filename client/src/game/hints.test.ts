@@ -32,6 +32,7 @@ const AT_REST: OnFoot = {
   free: false,
 };
 const SAILING: AtSea = {
+  level: 'oversea',
   fighting: false,
   aiming: false,
   landing: false,
@@ -59,7 +60,8 @@ test("the strip's head names the moment: the stance on foot, what the player doe
   assert.equal(title({ mounted: true, drawn: true }), 'Riding');
   assert.equal(title({ mode: 'hang' }), 'Ledge');
   assert.equal(title({ mode: 'climb', drawn: true }), 'Climbing');
-  assert.equal(seaStrip(SAILING).title, 'Sailing');
+  assert.equal(seaStrip(SAILING).title, 'Oversea');
+  assert.equal(seaStrip({ ...SAILING, level: 'sealevel' }).title, 'Sea level');
   assert.equal(seaStrip({ ...SAILING, fighting: true, aiming: true }).title, 'Guns laid');
   for (const name of Object.keys(HINTS) as (keyof typeof HINTS)[]) assert.notEqual(stripOf(name).title, '', name);
 });
@@ -209,7 +211,10 @@ test('fallen in a Breach the follow key names whom the camera follows, first und
 
 test('at sea the keys shown follow what the player is doing, a fight first and its aim within it', () => {
   const seaHints = (state: AtSea) => seaStrip(state).hints;
-  assert.equal(seaHints(SAILING), HINTS.sea);
+  assert.equal(seaHints(SAILING), HINTS.oversea);
+  assert.equal(seaHints({ ...SAILING, level: 'sealevel' }), HINTS.sealevel);
+  // The helm's keys sail at sea level alone, so the Oversea strip names none of them.
+  assert.ok(!words(HINTS.oversea).some((entry) => /Steer|Sail on|Heave to/.test(entry)));
   assert.equal(seaHints({ ...SAILING, managing: true }), HINTS.manage);
   assert.equal(seaHints({ ...SAILING, walking: true }), HINTS.deck);
   assert.equal(words(seaHints({ ...SAILING, walking: true, free: true }))[0], 'Left button Look round');
@@ -217,7 +222,8 @@ test('at sea the keys shown follow what the player is doing, a fight first and i
   assert.equal(seaHints({ ...SAILING, landing: true }), HINTS.landing);
   assert.equal(seaHints({ ...SAILING, walking: true, fighting: true }), HINTS.fight);
   assert.equal(seaHints({ ...SAILING, fighting: true, aiming: true }), HINTS.aim);
-  assert.ok(!words(HINTS.sea).some((entry) => entry.startsWith('M ')), 'nothing to leave at sea');
+  for (const strip of [HINTS.oversea, HINTS.sealevel])
+    assert.ok(!words(strip).some((entry) => entry.startsWith('M ')), 'nothing to leave at sea');
   assert.ok(words(HINTS.aim).includes('Right button Release to fire'));
   assert.ok(words(HINTS.fight).includes('Shift Burst'));
 });
@@ -265,10 +271,11 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
     'pad:RT Fire',
   ]);
   assert.deepEqual(words(footHints({ ...AT_REST, worn: 1 }), 'pad').at(-3), 'pad:LB+RB / pad:LB / pad:RB Arts');
-  assert.deepEqual(words(HINTS.sea, 'pad'), [
+  assert.deepEqual(words(HINTS.sealevel, 'pad'), [
     'pad:LS across Steer',
     'pad:LS up Sail on',
     'pad:LS down Heave to',
+    'pad:Left Oversea',
     'pad:View All controls',
   ]);
   assert.deepEqual(words(HINTS.aim, 'pad'), [
@@ -279,6 +286,12 @@ test("the strip shows the pad's buttons while the pad was played last, a stick f
     'pad:View All controls',
   ]);
   assert.equal(words(HINTS.landing, 'pad').at(-2), 'pad:B Back');
+  assert.deepEqual(words(HINTS.landing), [
+    'Left button Land or open',
+    'Enter Land or open the lit tile',
+    'Esc Back',
+    'K All controls',
+  ]);
   assert.ok(words(HINTS.fight).includes('A / D Steer'), 'the first key of each control');
   const swapped = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'c').binds;
   assert.deepEqual(words(footHints(AT_REST), 'keys', swapped).slice(2, 4), ['C Jump', 'Space Crouch']);

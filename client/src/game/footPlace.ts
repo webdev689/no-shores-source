@@ -7,7 +7,7 @@ import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { FoeAsk, Reviving } from '../network/messages.ts';
+import type { FoeAsk, Reviving, SeenShip } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
@@ -178,6 +178,8 @@ export interface Held {
   passage: PassageSeenState | null;
   /** A Breach as its run or its gate's patrol zone last said; null in any other room. */
   breach: BreachSeen | null;
+  /** The other players' ships lying parked by the island the room stands on, as it last said. */
+  ships: readonly SeenShip[];
 }
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,

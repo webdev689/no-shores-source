@@ -52,11 +52,11 @@ export class Afloat {
     return wakeStirs(this.place(view, 1), waterline.lengthM / 2, waterline.beamM / 2, this.way());
   }
 
-  /** Its footprint on the water, for the water's surface. */
-  hull(view: LandView, waterline: Waterline): HullMask {
+  /** Its footprint on the water in its hull's `line`, for the water's surface. */
+  hull(view: LandView, waterline: Waterline, line: Float32Array): HullMask {
     const { x, y, heading } = this.place(view, 1);
     const [halfLength, halfBeam] = [waterline.lengthM / 2, waterline.beamM / 2];
-    return { id: 'own', x, y, heading, halfLength, halfBeam, way: this.way() };
+    return { id: 'own', x, y, heading, halfLength, halfBeam, way: this.way(), line };
   }
 
   /** Its way, m/s. */

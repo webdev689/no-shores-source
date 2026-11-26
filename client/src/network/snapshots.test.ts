@@ -29,6 +29,7 @@ const snapshot = (tick: bigint, more: Partial<Snapshot> = {}): Snapshot =>
     events: [],
     shots: [],
     dressed: [],
+    ships: [],
     ...more,
   }) as Snapshot;
 
@@ -169,4 +170,13 @@ test("a snapshot that leaves out the zone's events has them as its base had them
   const sent = { ...raid, phase: 2 };
   assert.deepEqual(kept.whole(snapshot(21n, { base: 20n, public: sent }))?.public, sent, 'sent: as sent');
   assert.equal(kept.whole(snapshot(22n, { public: null }))?.public, null, 'built on none: none');
+});
+
+test('the ships parked by a land room’s island are the base’s while a snapshot built on it sends none, and none once a whole one does', () => {
+  const kept = new SnapshotKeeper();
+  const lying = [{ player: 7, x: 10, y: 20, heading: 0, pace: 0, hull: 1 }] as unknown as Snapshot['ships'];
+  assert.deepEqual(kept.whole(snapshot(10n, { ships: lying }))?.ships, lying);
+  assert.deepEqual(kept.whole(snapshot(11n, { base: 10n, ships: [] }))?.ships, lying, 'as the base’s');
+  assert.deepEqual(kept.whole(snapshot(12n, { base: 11n, ships: [] }))?.ships, lying, 'held on');
+  assert.deepEqual(kept.whole(snapshot(13n, { ships: [] }))?.ships, [], 'a whole snapshot with none: none');
 });

@@ -1,4 +1,4 @@
-use super::{heights_bytes, hold_ashore, isle_landing, open_island, plan_json, sea_dungeon, sea_island, sea_landed};
+use super::{heights_bytes, isle_landing, open_island, plan_json, sea_dungeon, sea_island, sea_landed};
 use crate::{Opened, with_open};
 use isle::{Kind, Plan};
 
@@ -62,7 +62,8 @@ fn an_islands_room_opens_on_the_seas_word_with_its_guards() {
 fn with_no_sea_open_there_is_no_word_on_an_island() {
     assert!(open_island(br#"{"seed":"5","climate":"desert","at":[0,0],"guards":0,"levels":null}"#));
     assert!(sea_island(1).is_empty());
-    assert!(!hold_ashore(1, 5));
+    let word = br#"{"named":[],"island":1,"seed":"5","seconds":1800000000}"#;
+    assert!(crate::parked_door::sea_ashore(word).is_empty(), "a word that reads, answered by no sea");
 }
 
 /// The plans of a cove and a quarry, pinned: server/isle.test.ts pins the same of the page's WebAssembly, so every

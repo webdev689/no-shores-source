@@ -34,6 +34,7 @@ mod gear_door;
 mod guild_door;
 mod isle_door;
 mod outpost_door;
+mod parked_door;
 mod passage_door;
 mod passage_room_door;
 mod plate_door;

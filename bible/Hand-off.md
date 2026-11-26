@@ -13,9 +13,8 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
   vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
   its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
   check; it conflicts with `main` in `roomThread.test.ts`).
-- **Other sessions' work under way**: #227 (the hub's ground and walks, the ship's stern on the water, music that
-  repeats less), #221 (hostile ships and islands on the sea map, travel anywhere at sea) and #216 (the sea reworked,
-  docking in sight, the island's places as painted tiles, the Playlist's crests).
+- **Other sessions' work under way**: #221 (hostile ships and islands on the sea map, travel anywhere at sea; it
+  shares the sea's files with #216, merged, so it takes `main` in again).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -57,6 +56,8 @@ yet played by hand or with other players in a deployed room.
 - **Timed on a real GPU**: the game in and out of its worker; the hub with some 125 figures; the wreck with every
   fire; the light layer of the attack visuals; ships and marks under the lamps; the meadow (some 180,000 tufts on open
   grass); the curved wake; the loading screen; everything the performance pass changed ([[Game]], "Limits").
+- **#227's**: the hub's walks and their joints, the paving's seams and the ship's stern on a real GPU (pictured
+  headless before the audit; no Frigate under way after the stern's fix); its music heard (checked by its notes).
 - **Heard**: the music, the ambience, the world's, sea's and menu's sounds and their levels; the prologue's music and
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.
@@ -114,6 +115,15 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 - **The toolkit's barriers** (observations 0040, 0116, 0117, each seen a third time): a worker's run ending before the
   2-hour kill with its edits committed, its target/ deleted once merged, and no picture run driving another
   checkout's server.
+- **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
+  four decisions before it): the three landing zones of Saltmere's patrol zones, the zone's map and their fast travel,
+  not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
+  does not sail out from the berth; parked ships kept in the sea rooms' memory alone, so a deploy loses them; a ship
+  ashore vanishes up to 15 s after it sails; the island's Elite Dungeon scene and the website's gate alike but not
+  shared; the port's tile paints Overlook wherever it is docked. Not yet seen in a running game, on a real GPU or in
+  a deployed room: docking and undocking, parked ships ashore and at sea, the tiles and their icons, the console, the
+  Playlist's crests.
+
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").

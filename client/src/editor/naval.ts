@@ -7,6 +7,7 @@ import { fightDisplay } from '../ships/fightDisplay.ts';
 import { type Cue, type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import type { MarkView } from '../ships/markView.ts';
 import { factionSide } from '../ships/dress.ts';
+import { HULL_LINES } from '../ships/hullLines.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { barOver, type ShipBar } from '../ships/shipBars.ts';
@@ -232,12 +233,13 @@ export class Naval {
     return aimed.orbit;
   }
 
-  /** Its footprint on the water while it floats, at its hull's waterline. */
+  /** Its footprint on the water while it floats, at its hull's waterline and in its own line. */
   hull(view: Window): HullMask | null {
     const captain = this.fight?.view.captain;
     if (!captain || captain.state === 'sinking' || captain.state === 'sunk') return null;
     const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = captain.ship;
-    const waterline = hullWaterline(this.shown(hullOfCaptain(captain)));
+    const hull = this.shown(hullOfCaptain(captain));
+    const waterline = hullWaterline(hull);
     return {
       id: `captain ${captain.id}`,
       x: x - view.leftM,
@@ -246,6 +248,7 @@ export class Naval {
       halfLength: waterline.lengthM / 2,
       halfBeam: waterline.beamM / 2,
       way: Math.hypot(ahead, abeam),
+      line: HULL_LINES.line(hull),
     };
   }
 
