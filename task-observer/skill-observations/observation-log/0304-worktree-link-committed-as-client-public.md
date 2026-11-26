@@ -1,5 +1,5 @@
 ---
-id: 303
+id: 304
 title: "A worktree's link to the main checkout's client/public was committed by git add -A, and merging it replaced the main checkout's folder"
 status: open
 type: internal
