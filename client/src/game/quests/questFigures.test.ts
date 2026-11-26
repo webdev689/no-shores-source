@@ -76,11 +76,12 @@ test("a figure's look is a speaker's face, a keeper's own dress, or a roster typ
   assert.ok(faceOf(lookOf('mate'), [])?.dress, 'a speaker with no face of their own in plain dress');
 });
 
-/** The Lamplighters' road at its first task holding a goal of `kind` (its first task for none), with the varied fields
- *  `more`. */
+/** The Lamplighters' road at its first task holding a goal of `kind` (its first task for none), a horde no defence of
+ *  a ward, with the varied fields `more`. */
 function lamp(kind: string | null, more: Partial<QuestState> = {}): QuestState {
   const quest = QUESTS.findIndex((each) => each.id === 'lamplighters');
-  const holds = (task: { goals: readonly { kind: string }[] }) => task.goals.some((goal) => goal.kind === kind);
+  const holds = (task: { goals: readonly { kind: string; horde?: boolean }[] }) =>
+    task.goals.some((goal) => goal.kind === kind && !goal.horde);
   const task = kind === null ? 0 : (QUESTS[quest]?.tasks.findIndex(holds) ?? -1);
   assert.ok(task >= 0, `a ${kind} step on the Lamplighters' road`);
   return { quest: quest + 1, task, counts: [], done: [0, 0, 0, 0], choices: [0, 0, 0], at: null, ...more };

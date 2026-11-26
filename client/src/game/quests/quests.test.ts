@@ -347,6 +347,35 @@ test("a step's ward stands in the room the player is in, its plate held in view"
   );
 });
 
+test("a horde's Art is toasted unbounded while it runs, and bound again as it falls or is left", async () => {
+  const { quests, frame, clock } = roads();
+  const task = QUESTS[STORM - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.horde)) ?? -1;
+  const running = (horde: QuestState['horde']) => {
+    const word = gear(STORM, task, { pledge: STORM, horde });
+    return { ...word, arts: { art: 1, cores: [], anima: 1, tenets: [1, 1] as const } };
+  };
+  clock(1_000);
+  quests.hear(running(null));
+  await frame();
+  assert.deepEqual(quests.toasts, [], 'none before it runs');
+  quests.hear(running({ left: 29, all: 29 }));
+  await frame();
+  assert.deepEqual(quests.toasts, ['Storm unbounded: every ability ready']);
+  quests.hear(running({ left: 3, all: 29 }));
+  await frame();
+  assert.deepEqual(quests.toasts, ['Storm unbounded: every ability ready'], 'said once, as long as it runs');
+  quests.hear(running(null));
+  await frame();
+  assert.deepEqual(quests.toasts, ['Storm bound again'], 'its end seen');
+  clock(6_000);
+  await frame();
+  assert.deepEqual(quests.toasts, [], 'and gone a while after');
+  quests.hear(running({ left: 29, all: 29 }));
+  quests.hear(null);
+  await frame();
+  assert.deepEqual(quests.toasts, ['Storm bound again'], 'left: bound again too');
+});
+
 test('the tracker runs a step’s clock down between the room’s words, and each word sets it again', async () => {
   const { quests, frame, clock } = roads();
   const { task, goal } = stepOf(STORM, 'race');

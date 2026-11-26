@@ -13,8 +13,8 @@ pub use crate::quest_defs::{
     KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key, quests, speaker_place,
 };
 pub use crate::quest_goals::{
-    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, InSlot, KILL_PAST, Landing, Plain, PointDef,
-    Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
+    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, HORDE_WAVE_MOST, InSlot, KILL_PAST, Landing, Plain,
+    PointDef, Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;

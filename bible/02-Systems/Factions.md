@@ -40,7 +40,7 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
 - **The pledge.** A character keeps the faction pledged (none at first), and for each faction its reputation and the
   packages collected (`Allegiance`). Pledging is an ask served only at that faction's counter: the first is free, a
   switch costs 2,500 Aurem, the faction already pledged is refused. A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
-  of its fragments are earned. Reputation with every faction is kept across a switch. A saved character from before
+  of its fragments are earned, the Art first shown off unbounded against a horde. Reputation with every faction is kept across a switch. A saved character from before
   the factions reads pledged to none, and a broken one is made whole.
 - **The houses introduced.** Before the pledge the opening quest has the player hear all three, each keeper
   introducing their house when spoken to at its counter (`content/story/houses.json`): Arlo Kestrel the Stormcallers,

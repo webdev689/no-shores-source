@@ -360,7 +360,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut.
   `game/journalShots.ts`' `settingsShot` draws Settings at its first tab, its others pressed by a shot's events.
   `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing over the
-  sea bar, and the pad's buttons), each shot's display kept across its frames. `game/itemShots.ts` opens the menu
+  sea bar, and the pad's buttons), each shot's display kept across its frames; `game/hordeShots.ts` draws a house's
+  horde on the HUD, running (the tracker counting its foes left of all, the Art toasted unbounded, the ability bar
+  whole and glowing under its infinity marks) and fallen (the Art bound again, its unearned Tenets locked).
+  `game/itemShots.ts` opens the menu
   over sample gear carrying a Legendary sword with its whole grid, an Atheric bow and a Legendary helm, its stats asked
   of the room's rules, so a shot's events open a flyout, hover a card or a node, open a page or press Compare; and
   `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame

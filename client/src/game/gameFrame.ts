@@ -234,7 +234,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const heard = playing.after.heard(controls);
     // While she speaks the figures are drawn for the tour's eye (last frame's), not the player's own camera.
     const eye = playing.after.seen?.eye ?? null;
-    const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
+    const own = here.frame(heard, seconds, clock, {
+      paused,
+      looking,
+      hands: handsFree(heard, paused),
+      aspect,
+      eye,
+      riders: playing.quests.riders,
+    });
     const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
@@ -339,7 +346,6 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       (x, y) => parts.groundAt(x, y) ?? body.z,
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
-    here.questRiders = quests.riders;
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
     // While she speaks, none but her and the player stands within reach of the tour's eye.
     const near = [...shown.figures, ...nodes, ...walking, ...crews];

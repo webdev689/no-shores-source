@@ -30,6 +30,7 @@ import { GUILD_CHANGED } from './gearScreen.ts';
 import { nodeRoom } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { MapMarks } from '../heldmap/landSheet.ts';
+import type { WorldFrame } from '../combat/worldSounds.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -192,6 +193,8 @@ export interface FootAsk {
   readonly hands: boolean;
   readonly aspect: number;
   readonly eye?: readonly [number, number, number] | null;
+  /** The road's escort on its horse as last drawn, heard as a rider is (quests.ts `riders`). */
+  readonly riders?: NonNullable<WorldFrame['riders']>;
 }
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the

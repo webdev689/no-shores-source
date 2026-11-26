@@ -79,6 +79,16 @@ export const LOCK_MAP: readonly string[] = [
   'aaaaaaaaaa',
 ];
 
+/** An infinity mark, 11 × 5, in an Art's light on its outline: an ability that costs nothing while the Art is
+ *  unbounded. */
+export const UNBOUNDED_MAP: readonly string[] = [
+  '.aaaa.aaaa.',
+  'addddadddda',
+  'ad..ddd..da',
+  'addddadddda',
+  '.aaaa.aaaa.',
+];
+
 /** Each Art's emblem in its diamond, 24 × 24, by the Art's key. */
 export const EMBLEM_MAPS: Readonly<Record<string, readonly string[]>> = {
   storm: [

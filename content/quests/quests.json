@@ -318,6 +318,148 @@
           "end": "stormCalled"
         },
         {
+          "id": "break-tithe-downs",
+          "task": "Break the Tithe on the High Downs",
+          "start": "stormHorde",
+          "goals": [
+            {
+              "kind": "defend",
+              "node": "saltgrass-downs",
+              "place": "The High Downs",
+              "horde": true,
+              "waves": [
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ]
+              ],
+              "lost": "stormOverrun",
+              "text": "The Tithe's horde"
+            }
+          ],
+          "end": "stormSpent"
+        },
+        {
           "id": "pell-trail",
           "task": "Find Pell's trail",
           "start": "stormTrail",
@@ -695,6 +837,148 @@
           "reward": {
             "art": true
           },
+          "end": "lampDark"
+        },
+        {
+          "id": "burn-barrow-wreckers",
+          "task": "Burn the wreckers off the Barrow Field",
+          "start": "lampHorde",
+          "goals": [
+            {
+              "kind": "defend",
+              "node": "saltgrass-downs",
+              "place": "The Barrow Field",
+              "horde": true,
+              "waves": [
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ]
+              ],
+              "lost": "lampOverrun",
+              "text": "The wreckers' horde"
+            }
+          ],
           "end": "lampSunwell"
         },
         {
@@ -1039,6 +1323,148 @@
           "reward": {
             "art": true
           },
+          "end": "veilUnseen"
+        },
+        {
+          "id": "loose-dark-adit",
+          "task": "Let the dark out at the Chalk Adit",
+          "start": "veilHorde",
+          "goals": [
+            {
+              "kind": "defend",
+              "node": "saltgrass-downs",
+              "place": "The Chalk Adit",
+              "horde": true,
+              "waves": [
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ]
+              ],
+              "lost": "veilOverrun",
+              "text": "The adit's horde"
+            }
+          ],
           "end": "veilRaven"
         },
         {

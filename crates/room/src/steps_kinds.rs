@@ -33,7 +33,7 @@ const WATCH_STREAM: u64 = 0x7761_7463;
 
 /// What came of standing a wave: its foes; no room for it now (the foes' cap, or a mesh not yet baked), so it waits; or
 /// no ground the mesh holds round any point it may stand at, so it stands nobody.
-enum Stood {
+pub(super) enum Stood {
     Foes(Vec<FighterId>),
     Waits,
     Nobody,
@@ -468,6 +468,12 @@ impl Room {
                     seen.ward = vec![defence.at[0], defence.at[1], share];
                 }
                 seen.clock = defence.retry.filter(|tick| clock < *tick).map_or(-1.0, left);
+            }
+            Stepping::Horde(horde) => {
+                if let Goal::Defend(defend) = &step.goal.goal {
+                    seen.horde = super::horde::seen(defend, horde);
+                }
+                seen.clock = horde.retry.filter(|tick| clock < *tick).map_or(-1.0, left);
             }
             Stepping::Puzzle(Lit { points, lit, .. }) => {
                 let shown =

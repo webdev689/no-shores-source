@@ -9,7 +9,7 @@ import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
-import { type WorldFrame, WorldSounds } from '../combat/worldSounds.ts';
+import { WorldSounds } from '../combat/worldSounds.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -59,6 +59,7 @@ import { hearing, placingFolk, roomNote, rulesOf } from './footRoom.ts';
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
 import { mapMarksOf } from './mapMarks.ts';
+import { hordeRunning } from './quests/questBook.ts';
 
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
@@ -128,8 +129,6 @@ export class Foot {
    *  (null while none may be). */
   private readonly follow = new FollowCamera();
   followable: string | null = null;
-  /** The road's escort on its horse as last drawn, heard as a rider is (quests.ts `riders`). */
-  questRiders: NonNullable<WorldFrame['riders']> = [];
   /** The chests and containers the room stands for the player (`finds.ts`). */
   readonly finds = new FootFinds();
   /** A node being gathered, or a find opened, while E is held. */
@@ -338,7 +337,7 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect, eye: cutscene = null }: FootAsk,
+    { paused, looking = false, hands, aspect, eye: cutscene = null, riders = [] }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
@@ -475,7 +474,7 @@ export class Foot {
       landed: dropped.landed,
       crates: this.held.gear?.crates ?? null,
       heard: [...shownPublic.sounds, ...found.sounds],
-      riders: this.questRiders,
+      riders,
     });
     const playerFall = { id: fight.player, feet, tumbling: !!walker.fall?.tumbling };
     const heard = { ...playerFall, lying: walker.fall?.tumbling === false };
@@ -528,7 +527,7 @@ export class Foot {
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
       parryWindow: fight.parryWindow,
-      abilities: fight.abilities,
+      abilities: fight.abilities && { ...fight.abilities, unbounded: hordeRunning(gear?.gear?.quest) },
       rider: walker.player.mounted ? walker.player.body : null,
       // The shots left stand beside the crosshair, wherever it shows; the Lodestone's bearer holds no weapon.
       ammo: sights && !bearer ? (ownView?.ammo ?? null) : null,

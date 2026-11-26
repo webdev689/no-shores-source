@@ -1,6 +1,7 @@
 //! What the gear message carries of the houses' roads: the quest walked, its task and that task's counts, each quest
 //! done, each Art's earned bits and fragment choices, where the task's first unmet goal with a place stands in the
-//! player's room, and their step there: its clock, each goal's failures, its points, its figure and its ward.
+//! player's room, and their step there: its clock, each goal's failures, its points, its figure, its ward and its
+//! horde.
 
 use flatbuffers::{FlatBufferBuilder, Vector, WIPOffset};
 use gear::Character;
@@ -20,6 +21,7 @@ pub(crate) struct Quests<'built> {
     pub points: WIPOffset<Vector<'built, f64>>,
     pub figures: WIPOffset<Vector<'built, f64>>,
     pub ward: WIPOffset<Vector<'built, f64>>,
+    pub horde: WIPOffset<Vector<'built, u16>>,
 }
 
 /// Builds the quest fields for a player of `room`: the quest by its place in the file counted from 1 (0 for none).
@@ -33,7 +35,9 @@ pub(crate) fn quests_of<'built>(
     let number = |at: usize| u8::try_from(at).unwrap_or(u8::MAX);
     let arts = &gear::arts::arts().arts;
     let done: Vec<u8> = character.quests_done().into_iter().map(u8::from).collect();
-    let earned: Vec<u8> = arts.iter().map(|art| character.earned(art.id)).collect();
+    // A horde lends its player the worn Art whole while it runs, so the page shows and casts every ability of it.
+    let lent = |art: u8| if room.unbounded(player) && character.arts.worn == art { gear::arts::ALL_EARNED } else { 0 };
+    let earned: Vec<u8> = arts.iter().map(|art| character.earned(art.id) | lent(art.id)).collect();
     let choices: Vec<u8> = arts.iter().map(|art| character.fragment_choices(art.id)).collect();
     let at = room.quest_at(player).map_or_else(Vec::new, |at| at.to_vec());
     let step = room.step_seen(player);
@@ -50,5 +54,6 @@ pub(crate) fn quests_of<'built>(
         points: builder.create_vector(&step.points),
         figures: builder.create_vector(&step.figures),
         ward: builder.create_vector(&step.ward),
+        horde: builder.create_vector(&step.horde),
     }
 }

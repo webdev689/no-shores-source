@@ -6,7 +6,7 @@
 use crate::arts::arts;
 use crate::factions::factions;
 use crate::kinds::Slot;
-use crate::quest_goals::{Defend, Escort, Goal, GoalDef, Puzzle, Race, Slay, Tail};
+use crate::quest_goals::{Defend, Escort, Foes, Goal, GoalDef, HORDE_WAVE_MOST, Puzzle, Race, Slay, Tail};
 use serde::Deserialize;
 use serde::de::{Deserializer, IgnoredAny, MapAccess, Visitor};
 use std::sync::OnceLock;
@@ -306,10 +306,13 @@ fn tailed(tail: &Tail) -> Option<&'static str> {
 }
 
 fn defended(defend: &Defend) -> Option<&'static str> {
-    if defend.ward.is_some() == defend.who.is_some() || !speaks(defend.who.as_deref()) {
+    let warded = defend.ward.is_some() || defend.who.is_some();
+    let wave_most = if defend.horde { HORDE_WAVE_MOST } else { usize::MAX };
+    if defend.horde == warded || defend.ward.is_some() && defend.who.is_some() || !speaks(defend.who.as_deref()) {
         Some("ward")
     } else {
-        (defend.waves.is_empty() || defend.waves.iter().any(Vec::is_empty)).then_some("waves")
+        let wrong = |wave: &Foes| wave.is_empty() || wave.len() > wave_most;
+        (defend.waves.is_empty() || defend.waves.iter().any(wrong)).then_some("waves")
     }
 }
 

@@ -1,6 +1,6 @@
 //! The roads' steps a room runs a player at a time (`gear::quests::GoalKind::stepped`): a figure met at a place and
 //! walked to another, the player keeping up with it (an escort, with an ambush halfway) or following it unseen (a
-//! tail); a ward held through waves of foes; a puzzle's points used in order, or in any (ask 66); a place reached
+//! tail); a ward held through waves of foes; a horde fought with the house's Art unbounded; a puzzle's points used in order, or in any (ask 66); a place reached
 //! unseen, its watchers standing; and a race between checkpoints against the clock. A figure, a ward and a puzzle's
 //! points are the player's own, sent to them alone; a ward is a fighter on the players' side that thinks nothing and
 //! fights no one, kept out of every snapshot, which the waves' foes come at. What met counts on the player's quest log;
@@ -62,6 +62,7 @@ pub(crate) struct Step {
 pub(crate) enum Stepping {
     Figure(Figure),
     Defence(Defence),
+    Horde(Horde),
     Puzzle(Lit),
     Unseen(Watched),
     Race(Raced),
@@ -91,6 +92,17 @@ pub(crate) struct Defence {
     pub retry: Option<u64>,
 }
 
+/// A horde: the point its waves stand round while it runs (none before the player comes, and while it waits after
+/// they fell), the next wave to stand, its foes standing, how many of its foes fell, and when it may be tried again.
+#[derive(Debug, Default)]
+pub(crate) struct Horde {
+    pub at: Option<[f64; 3]>,
+    pub wave: usize,
+    pub standing: Vec<FighterId>,
+    pub fallen: usize,
+    pub retry: Option<u64>,
+}
+
 /// A puzzle: its points on the ground, those lit in the order they were, and the tick it takes a use again from.
 #[derive(Debug, Default)]
 pub(crate) struct Lit {
@@ -115,7 +127,8 @@ pub(crate) struct Raced {
     pub started: Option<u64>,
 }
 
-/// What a player is sent of their step: the clock, each goal's failures, the puzzle's points, the figure and the ward.
+/// What a player is sent of their step: the clock, each goal's failures, the puzzle's points, the figure, the ward,
+/// and a horde's foes left and all of them while it runs.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct StepSeen {
     pub clock: f64,
@@ -123,6 +136,7 @@ pub struct StepSeen {
     pub points: Vec<f64>,
     pub figures: Vec<f64>,
     pub ward: Vec<f64>,
+    pub horde: Vec<u16>,
 }
 
 /// A point `out` metres from another at a bearing (radians from north, clockwise).
@@ -299,6 +313,7 @@ impl Room {
                 let Some(figure) = self.figure_at(from, to, who.as_deref(), foe.as_deref()) else { return false };
                 Stepping::Figure(figure)
             }
+            Goal::Defend(defend) if defend.horde => Stepping::Horde(Horde::default()),
             Goal::Defend(_) => Stepping::Defence(Defence::default()),
             Goal::Puzzle(puzzle) => {
                 let Some(middle) = self.place_named(&puzzle.place) else { return false };
@@ -355,6 +370,7 @@ impl Room {
         let Some(step) = self.quests.steps.remove(&player) else { return };
         let gone = match step.kind {
             Stepping::Defence(defence) => defence.ward.into_iter().chain(defence.standing).collect(),
+            Stepping::Horde(horde) => horde.standing,
             Stepping::Figure(figure) => {
                 let ambush = figure.ambush.clone().unwrap_or_default();
                 if figure.state == ARRIVED {
@@ -413,6 +429,7 @@ impl Room {
             Goal::Tail(tail) => {
                 self.walk_figure(player, goal, (FIGURE_PACE, tail.near, Some(tail.far), false, false), at)
             }
+            Goal::Defend(defend) if defend.horde => self.keep_horde(player, goal, defend, at),
             Goal::Defend(defend) => self.defend(player, goal, defend, at),
             Goal::Unseen(unseen) => self.keep_unseen(player, goal, unseen, at),
             Goal::Race(race) => self.race(player, goal, race, at),
@@ -436,6 +453,9 @@ impl Room {
 #[path = "steps_kinds.rs"]
 mod kinds;
 
+#[path = "steps_horde.rs"]
+mod horde;
+
 #[cfg(test)]
 #[path = "steps_tests.rs"]
 mod steps_tests;
@@ -447,3 +467,7 @@ mod step_grounds_tests;
 #[cfg(test)]
 #[path = "step_play_tests.rs"]
 mod step_play_tests;
+
+#[cfg(test)]
+#[path = "horde_tests.rs"]
+mod horde_tests;

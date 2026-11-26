@@ -538,6 +538,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         quest_points: Some(quests.points),
         quest_figures: Some(quests.figures),
         quest_ward: Some(quests.ward),
+        quest_horde: Some(quests.horde),
         claimed: found.claimed,
         scavenged: Some(scavenged),
         dungeons,

@@ -17,6 +17,7 @@ import {
   goalNodes,
   goalOf,
   MOUNT_NOTES,
+  hordeRunning,
   linesBetween,
   puzzlePoints,
   talkAt,
@@ -193,6 +194,22 @@ test('an escort waiting for its player to mount says so under its step, and wher
   assert.equal(noteOf(5, false), MOUNT_NOTES.none);
   assert.equal(noteOf(1, true), undefined, 'riding: nothing');
   assert.equal(noteOf(0, false), undefined, 'too far off to be waited for: the waypoint leads');
+});
+
+test("a house's horde shows its foes left while it runs, its wait after a fall, and its words alone before", () => {
+  for (const quest of [STORM, LAMP, VEIL]) {
+    const task = QUESTS[quest - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.horde)) ?? -1;
+    const goal = goalsOf(quest, task).findIndex((each) => each.horde);
+    assert.ok(task >= 0 && goal >= 0, `a horde on road ${quest}`);
+    const horde = { left: 17, all: 29 };
+    assert.equal(trackedOf(onTask(quest, task, [], { horde }))?.steps[goal]?.count, '17/29', 'its foes left of all');
+    const waiting = trackedOf(onTask(quest, task, [], { clock: 6 }))?.steps[goal];
+    assert.deepEqual([waiting?.clock, waiting?.count], [6, undefined], 'the wait to start again');
+    assert.equal(trackedOf(onTask(quest, task))?.steps[goal]?.count, undefined, 'none running here');
+    assert.equal(hordeRunning(onTask(quest, task, [], { horde })), true, 'its Art unbounded');
+    assert.equal(hordeRunning(onTask(quest, task, [], { horde, claimed: false })), false, 'not on the own character');
+    assert.equal(hordeRunning(onTask(quest, task)), false, 'bound once none runs');
+  }
 });
 
 test("a defence shows its ward's health; a puzzle its points lit of all", () => {

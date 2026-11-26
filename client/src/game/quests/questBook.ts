@@ -9,11 +9,11 @@ import type { Quest as Tracked, Step } from '../tasks.ts';
 /** A goal as the file writes it: its tracker words, its count (1 when left out), its kind, and what its kind names:
  *  the counter a `talk` goal speaks at (`to`), the scene said as it is met, the node and place a goal stands at, the
  *  places an `escort` or a `tail` walks between (`from`, `to`) and its figure (`who` a speaker, `foe` a roster type)
- *  with the line said as it first walks (`greet`), a `defend` goal's ward, a `puzzle`'s points and their `order`, a
- *  `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`), an escort's `shout`
- *  as an ambush springs, its `mount` as it waits for the player to get on their horse and the coat of the horse it
- *  rides (`horse`), the slot a `buy` or a `wear` goal names, and what it gives as it is met. The rest the rules read
- *  alone. */
+ *  with the line said as it first walks (`greet`), a `defend` goal's ward or its `horde`, a `puzzle`'s points and
+ *  their `order`, a `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`), an
+ *  escort's `shout` as an ambush springs, its `mount` as it waits for the player to get on their horse and the coat of
+ *  the horse it rides (`horse`), the slot a `buy` or a `wear` goal names, and what it gives as it is met. The rest the
+ *  rules read alone. */
 export interface Goal {
   readonly kind: string;
   readonly text: string;
@@ -26,6 +26,7 @@ export interface Goal {
   readonly who?: string;
   readonly foe?: string;
   readonly ward?: string;
+  readonly horde?: boolean;
   readonly points?: readonly { readonly name: string }[];
   readonly checkpoints?: readonly string[];
   readonly lost?: string;
@@ -140,16 +141,16 @@ export const MOUNT_NOTES = {
 
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
  *  count, ticked once met; the clock running beside the first unmet goal that runs it, a ward's health beside its
- *  defence while it stands, a puzzle's points lit of all of them, and under an escort waiting for the player to mount
- *  what to do (`MOUNT_NOTES`). None while no quest is walked. The clock runs down `ran` seconds from the room's last
- *  word on it, never below none. */
+ *  defence while it stands, a horde's foes left of all of them beside it while it runs, a puzzle's points lit of all
+ *  of them, and under an escort waiting for the player to mount what to do (`MOUNT_NOTES`). None while no quest is
+ *  walked. The clock runs down `ran` seconds from the room's last word on it, never below none. */
 export function trackedOf(state: QuestState | null | undefined, ran = 0, horsed = true): Tracked | null {
   const now = walked(state);
   if (!state || !now) return null;
   const clocked = now.task.goals.findIndex(
     (goal, index) => CLOCKED.has(goal.kind) && !met(goal, now.counts[index] ?? 0),
   );
-  const { points = [], clock, ward, figures = [] } = state;
+  const { points = [], clock, ward, horde, figures = [] } = state;
   const mounting = figures.some((figure) => figure.state === FIGURE_STATES.mounting);
   const steps = now.task.goals.map((goal, index): Step => {
     const left = Math.max(0, most(goal) - (now.counts[index] ?? 0));
@@ -159,12 +160,18 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0, horsed 
       return { ...shown, clock: Math.max(0, clock - ran) };
     if (goal.kind === 'defend' && ward) return { ...shown, share: ward.health };
     if (goal.kind === 'escort' && mounting) return { ...shown, note: horsed ? MOUNT_NOTES.horsed : MOUNT_NOTES.none };
+    if (goal.kind === 'defend' && goal.horde && horde) return { ...shown, count: `${horde.left}/${horde.all}` };
     if (goal.kind === 'puzzle' && points.length > 0)
       return { ...shown, count: `${points.filter((point) => point.lit).length}/${points.length}` };
     return most(goal) > 1 ? { ...shown, count: left } : shown;
   });
   return { name: now.quest.name, task: now.task.task, steps };
 }
+
+/** Whether the room's word `state` holds a house's horde running for the player's own character, its worn Art
+ *  unbounded the while. */
+export const hordeRunning = (state: QuestState | null | undefined): boolean =>
+  !!state?.horde && state.claimed !== false;
 
 /** The task's first goal of `kind`, if it has one. */
 export function goalOf(state: QuestState | null | undefined, kind: string): Goal | null {

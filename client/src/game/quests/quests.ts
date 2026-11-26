@@ -2,7 +2,9 @@
 // quest walked; its lines are said in the dialogue box one scene after another (questWatch.ts); a counter that a talk
 // goal of the task names offers to speak with its keeper; the HUD marks where the task's next goal stands and the
 // held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what
-// a road gives is toasted. Each is the room's word read, never a judgement of the page's own.
+// a road gives is toasted, and so is a house's horde: its Art unbounded while it runs, and bound again as it ends.
+// Each is the room's word read, never a judgement of the page's own.
+import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
 import type { MarkedFoe } from '../../combat/foePlate.ts';
@@ -38,6 +40,10 @@ export interface QuestVoice {
 
 /** How long a toast for a road's gift stands, milliseconds. */
 const TOAST_MS = 4000;
+
+/** What the toasts say of a horde's Art, by its name: while it runs, and as it ends. */
+export const unboundedWords = (art: string): string => `${art} unbounded: every ability ready`;
+export const boundWords = (art: string): string => `${art} bound again`;
 /** How far over the ground the quest's mark stands, metres; its size on the screen; and how far in from the top and
  *  foot it is held, clear of the place's name and the fight's bars. */
 const MARK_RISE_M = 2;
@@ -59,6 +65,8 @@ export class Quests {
   /** The scene being said, if one is. */
   private saying: string | null = null;
   private toasted: { readonly text: string; readonly until: number }[] = [];
+  /** The name of the Art a horde holds unbounded in the room the player is in, while it runs. */
+  private unbounded: string | null = null;
   /** The step's figures, drawn between the room's words on them. */
   private readonly glides = new FigureGlides();
   /** The step's figures on horseback as last drawn, heard as riders are, by numbers no fighter has. */
@@ -127,6 +135,12 @@ export class Quests {
     if (own !== this.here) this.glides.heard(own?.quest?.figures ?? [], this.now());
     // Each word sets the step's clock afresh; between words the tracker runs it down from when it came.
     if (own && own.quest !== this.gear?.quest) this.heardAt = this.now();
+    const art = arts.arts.find((each) => each.id === own?.arts?.art);
+    const unbounded = own?.quest?.horde && art ? art.name : null;
+    // The horde over, fallen or left, the power ends where the player sees it.
+    if (this.unbounded && this.unbounded !== unbounded)
+      this.toasted.push({ text: boundWords(this.unbounded), until: this.now() + TOAST_MS });
+    this.unbounded = unbounded;
     this.here = own;
     if (own) this.gear = own;
   }
@@ -162,9 +176,9 @@ export class Quests {
     });
   }
 
-  /** The toasts for what the roads gave lately. */
+  /** The toasts for what the roads gave lately, a horde's Art unbounded first while it runs. */
   get toasts(): string[] {
-    return this.toasted.map((toast) => toast.text);
+    return [...(this.unbounded ? [unboundedWords(this.unbounded)] : []), ...this.toasted.map((toast) => toast.text)];
   }
 
   /** Where the compass points for the quest walked from where the player stands (`standing`), over `chart`, kept for
