@@ -1,5 +1,5 @@
 ---
-id: 284
+id: 291
 title: "A worker reported tsc clean having run only tsconfig.json; tsconfig.node.json failed on its test file after merge"
 status: open
 type: open-source

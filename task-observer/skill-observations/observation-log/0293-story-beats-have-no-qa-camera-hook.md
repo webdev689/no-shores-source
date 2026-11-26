@@ -1,5 +1,5 @@
 ---
-id: 286
+id: 293
 title: "The prologue story has no QA camera hook (__qaEye works in nodes only), so pictures of a story scene need pointer-locked mouse moves"
 status: open
 type: open-source
