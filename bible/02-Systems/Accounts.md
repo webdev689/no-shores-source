@@ -41,6 +41,8 @@ code:
   - crates/gear/src/last.rs#Last
   - crates/room/src/left.rs#stand_where_left
   - server/accounts/lastPlace.ts#lastPlace
+  - server/accounts/slots.ts#slotsAsk
+  - server/accounts/migrations/20261126003000_character_slots.sql
   - client/src/game/relog.ts#resume
   - client/src/game/relog.ts#keepPlace
 ---
@@ -119,6 +121,23 @@ they play in holds it while they are there.
 
 ## The character, kept
 
+- **Four characters, one in play** ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]];
+  Claude's calls in [[Character Slots and the Test Room as Claude Builds Them]]). The one in play is the `characters`
+  row, its `slot` 0 to 3 and its `look` (the figure the page chose, as JSON) beside its body, so the Roster, the bot,
+  Find a Company, the guild's weeks, the outposts and the chat read it as the account's character. The other three
+  wait in `benched`, one row a slot, each with its body, look, room and the room before, as it was when another was
+  chosen; a slot with no row is empty. The vault and Aurem are the account's, in `vaults` (`gear::shared` as JSON), and
+  never move as a character is switched or deleted. Each table's rows go with their account, so a guest swept goes
+  whole.
+- **The vault joined in a room.** A claim answers the account's vault beside the character (`vault`, null before a
+  room first kept one apart). The room joins it into the character it gives the player, so the page and every rule
+  see one whole character, and each save and the last release send the two parted again (`keptApart`): the accounts
+  write the character and the vault in one batch, the vault only while that holder still holds the character, so a
+  room that lost it writes neither. A release with no body (turned away) writes neither. A character kept before the
+  vault was the account's still holds its own vault and Aurem; the first save after parts them into the account's
+  row, once, so nothing is lost or doubled; switched away from or deleted before that, the accounts part them first,
+  as the rules would. A switch also counts the guild's week from the chosen character's own record on, so a switch
+  back gives the guild nothing twice, and the benched characters' errands keep their answers as the one in play's.
 - **One room at a time.** A node's room ([[Server]]) holds each signed-in player's character: the gear crate's
   `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the
   room claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can
@@ -322,6 +341,27 @@ table holds one row an account: what differs from the game's defaults, as JSON, 
   waits on a read that answers, so nothing is kept over binds never read: what the player bound before the read is
   laid over what the account kept, and that is saved. Where the accounts do not answer, the game plays on with what
   it has, the defaults at first, and saves nothing until a read answers.
+
+## The four characters
+
+The character screen reads and changes the four by the session's bearer token, 120 asks an hour an account
+(`slots.ts`).
+
+- **`GET /v1/characters`** answers `playing` (the slot in play), `developer` (asked of the bot, "Who is a developer"),
+  `aurem` (the account's, or the character in play's while no vault is kept apart yet) and `slots`, four entries by
+  slot: null for an empty one, else its `slot`, `shown` (as the Roster reads it, null before a room kept one), `pledge`
+  (the faction's number, or null), `look` (or null), `place` (where it logs back in, as `/v1/me`'s), `prologue`
+  (whether it played the story through) and `saved` (when it was last saved, in ms). A slot in play with no body and
+  no look is empty.
+- **`POST /v1/characters/play`** with `{ "slot" }` makes that slot the one in play: the one in play goes to the bench
+  (unless empty) and the chosen one comes off it, or a new character for an empty slot, who plays the prologue; one
+  batch. It waits while a room holds the one in play, refused 409 "Your character is still in a room. Try again in a
+  moment."; the slot already in play answers as `GET`; a slot outside 0 to 3 is refused 400. Answers as `GET`.
+- **`POST /v1/characters/delete`** with `{ "slot" }` deletes a benched character, or empties the one in play (its slot
+  stays in play; refused 409 while a room holds it). The vault stays the account's. Answers as `GET`.
+- **`PUT /v1/characters/look`** with `{ "look" }` keeps the look of the one in play: an object of `body`, `race`,
+  `tone` and `hair` as the page writes it, at most 512 characters as JSON; anything else is refused 400. Answers 204.
+- **`GET /v1/me`**'s `place` is the character in play's.
 
 ## Running it here
 

@@ -27,7 +27,7 @@ async function world(...names: string[]) {
   const save = async (name: string, record: object) => {
     const holder = `node-overlook:${name}`;
     await kept.claim(tokens[name] ?? '', holder);
-    return kept.save(await accountOf(name), holder, JSON.stringify({ xp: 1, guild: record }));
+    return kept.save(await accountOf(name), holder, JSON.stringify({ xp: 1, guild: record }), '{}');
   };
   const guild = async () => {
     const row = await made.deps.database.prepare('SELECT id, xp FROM guilds').first<{ id: string; xp: number }>();

@@ -10,7 +10,14 @@ const ROOM = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
 
 /** Accounts whose tokens are their accounts' names: each one's guild, each one's company, and whether they answer. */
 function accounts(guilds: Record<string, string>, companies: Record<string, string[]>, answering = () => true) {
-  const claimed = (token: string): Claimed => ({ account: token, body: '{}', from: null, name: null, tag: null });
+  const claimed = (token: string): Claimed => ({
+    account: token,
+    body: '{}',
+    vault: null,
+    from: null,
+    name: null,
+    tag: null,
+  });
   const asked = <T>(answer: T) => (answering() ? Promise.resolve(answer) : Promise.reject(new Error('down')));
   return {
     look: (token: string) => asked(claimed(token)),
@@ -149,7 +156,14 @@ test('a member who changes guild reads the new guild’s tag, in any room', asyn
   const kept = accounts(guilds, {});
   const tags: Record<string, string> = { [GUILD]: 'SALT', other: 'BRINE' };
   kept.look = (token: string) =>
-    Promise.resolve({ account: token, body: '{}', from: null, name: null, tag: tags[guilds[token] ?? ''] ?? null });
+    Promise.resolve({
+      account: token,
+      body: '{}',
+      vault: null,
+      from: null,
+      name: null,
+      tag: tags[guilds[token] ?? ''] ?? null,
+    });
   const room = roomOf();
   const keeper = new Keeper(
     kept,

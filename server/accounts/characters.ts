@@ -23,12 +23,14 @@ const LOOK_MS = 250;
 /** The longest character kept: far past any the gear's limits allow. */
 const BODY_MOST = 1_000_000;
 
-/** A claim answered: the account, its character as last kept (null before a room first keeps one), the room that
- *  held it before (null before any did), and its username and its guild's tag, which others read over the player's
- *  head (null for a guest, and for one in no guild). */
+/** A claim answered: the account, its character in play as last kept (null before a room first keeps one), the
+ *  account's vault and Aurem (`gear::shared`, null before a room first saves them apart), the room that held it before
+ *  (null before any did), and its username and its guild's tag, which others read over the player's head (null for a
+ *  guest, and for one in no guild). */
 export interface Claimed {
   readonly account: string;
   readonly body: string | null;
+  readonly vault: string | null;
   readonly from: string | null;
   readonly name: string | null;
   readonly tag: string | null;
@@ -51,8 +53,8 @@ export async function liveAccount(database: Db, token: string, now: number): Pro
 export interface Characters {
   look(token: string): Promise<Claimed | null>;
   claim(token: string, holder: string): Promise<Claimed | null>;
-  save(account: string, holder: string, body: string): Promise<boolean>;
-  release(account: string, holder: string, body: string | null): Promise<boolean>;
+  save(account: string, holder: string, body: string, vault: string): Promise<boolean>;
+  release(account: string, holder: string, body: string | null, vault: string | null): Promise<boolean>;
   present(token: string, room: string | null, water?: string | null): Promise<boolean>;
   companions(account: string, room: string): Promise<string[]>;
   launched(account: string, room: string, within?: number): Promise<boolean>;
@@ -93,9 +95,22 @@ export function characters(
     ).first<{ body: string | null; came_from: string | null }>();
   const live = (token: string) => liveAccount(database, token, now());
   const namesOf = async (account: string) => ({
+    vault:
+      (await database.prepare('SELECT body FROM vaults WHERE account_id = ?1').bind(account).first<{ body: string }>())
+        ?.body ?? null,
     name: await usernameOf(database, account),
     tag: await guildTagOf(database, account),
   });
+  // The account's vault, saved beside its character only while `holder` still holds it (the vault's statement goes
+  // first in each batch, as a release lets the holder go).
+  const vaultSaved = (account: string, holder: string, vault: string) =>
+    database
+      .prepare(
+        `INSERT INTO vaults (account_id, body, saved_at) SELECT ?1, ?2, ?3
+         WHERE EXISTS (SELECT 1 FROM characters WHERE account_id = ?1 AND holder = ?4)
+         ON CONFLICT (account_id) DO UPDATE SET body = excluded.body, saved_at = excluded.saved_at`,
+      )
+      .bind(account, vault, now(), holder);
   return {
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */
@@ -144,16 +159,19 @@ export function characters(
         await wait(LOOK_MS);
       }
     },
-    /** Saves a character its holder still holds, and holds it longer; false once another has taken it. */
-    async save(account, holder, body) {
-      if (body.length > BODY_MOST) return false;
-      const saved = await database
-        .prepare(
-          'UPDATE characters SET body = ?1, held_until = ?2, saved_at = ?3 WHERE account_id = ?4 AND holder = ?5',
-        )
-        .bind(body, now() + HOLD_MS, now(), account, holder)
-        .run();
-      if (saved.meta.changes !== 1) return false;
+    /** Saves a character its holder still holds, with the account's vault, and holds it longer; false once another
+     *  has taken it, which saves neither. */
+    async save(account, holder, body, vault) {
+      if (body.length > BODY_MOST || vault.length > BODY_MOST) return false;
+      const [, saved] = await database.batch([
+        vaultSaved(account, holder, vault),
+        database
+          .prepare(
+            'UPDATE characters SET body = ?1, held_until = ?2, saved_at = ?3 WHERE account_id = ?4 AND holder = ?5',
+          )
+          .bind(body, now() + HOLD_MS, now(), account, holder),
+      ]);
+      if (saved?.meta.changes !== 1) return false;
       // What the save added to the member's guild week goes to their guild; a failure there loses no save.
       await creditGuild(database, account, body).catch((error: unknown) => console.error('guild credit:', error));
       return true;
@@ -161,23 +179,26 @@ export function characters(
     /** Lets a character go, saving it last if the room has it to give; false if another had already taken it. Let go
      *  with nothing (the room turned it away, or never gave it), it was never there: the room before still held it
      *  last. */
-    async release(account, holder, body) {
-      const statement =
-        body === null || body.length > BODY_MOST
-          ? database
-              .prepare(
-                `UPDATE characters SET holder = NULL, held_until = 0, room = came_from
+    async release(account, holder, body, vault) {
+      const kept = body !== null && vault !== null && body.length <= BODY_MOST && vault.length <= BODY_MOST;
+      const statement = !kept
+        ? database
+            .prepare(
+              `UPDATE characters SET holder = NULL, held_until = 0, room = came_from
                  WHERE account_id = ?1 AND holder = ?2`,
-              )
-              .bind(account, holder)
-          : database
-              .prepare(
-                `UPDATE characters SET body = ?3, holder = NULL, held_until = 0, saved_at = ?4
+            )
+            .bind(account, holder)
+        : database
+            .prepare(
+              `UPDATE characters SET body = ?3, holder = NULL, held_until = 0, saved_at = ?4
                  WHERE account_id = ?1 AND holder = ?2`,
-              )
-              .bind(account, holder, body, now());
-      if ((await statement.run()).meta.changes !== 1) return false;
-      if (body !== null && body.length <= BODY_MOST)
+            )
+            .bind(account, holder, body, now());
+      const released = kept
+        ? (await database.batch([vaultSaved(account, holder, vault), statement]))[1]
+        : await statement.run();
+      if (released?.meta.changes !== 1) return false;
+      if (kept)
         await creditGuild(database, account, body).catch((error: unknown) => console.error('guild credit:', error));
       return true;
     },

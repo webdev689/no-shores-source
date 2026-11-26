@@ -39,12 +39,12 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
     return this.kept.claim(token, holder);
   }
 
-  save(account: string, holder: string, body: string): Promise<boolean> {
-    return this.kept.save(account, holder, body);
+  save(account: string, holder: string, body: string, vault: string): Promise<boolean> {
+    return this.kept.save(account, holder, body, vault);
   }
 
-  release(account: string, holder: string, body: string | null): Promise<boolean> {
-    return this.kept.release(account, holder, body);
+  release(account: string, holder: string, body: string | null, vault: string | null): Promise<boolean> {
+    return this.kept.release(account, holder, body, vault);
   }
 
   present(token: string, room: string | null, water: string | null = null): Promise<boolean> {
