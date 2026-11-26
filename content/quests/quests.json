@@ -6,7 +6,7 @@
       "name": "A House of Your Own",
       "faction": 0,
       "begin": "roundBegin",
-      "offer": {"keeper": "weaponsmith", "at": "find-your-way", "kind": "A welcome to Overlook", "rarity": 2, "words": "Hear each keeper round Overlook and take their gifts. Then take your ship from the Harbourmaster, put on what you were given, and choose a house.", "quote": "Everyone here has something for you. Go and hear them all.", "story": "roundOffer"},
+      "offer": {"keeper": "weaponsmith", "at": "find-your-way", "kind": "A welcome to Overlook", "rarity": 2, "words": "Hear each keeper round Overlook and take their gifts. Learn to ride the Tack's horse, then take your ship from the Harbourmaster and learn its helm. Put on what you were given, and choose a house.", "quote": "Everyone here has something for you. Go and hear them all.", "story": "roundOffer"},
       "kept": "hear-three-houses",
       "tasks": [
         {

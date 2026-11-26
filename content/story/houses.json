@@ -6,7 +6,7 @@
     ],
     "roundOffer": [
       { "who": "weaponsmith", "say": "Every keeper in Overlook has a gift for a newcomer. Hear them all." },
-      { "who": "weaponsmith", "say": "Then take your ship from the Harbourmaster, and choose a house." }
+      { "who": "weaponsmith", "say": "Learn the Tack's horse and the Harbourmaster's ship. Then choose a house." }
     ],
     "roundWeaponsmith": [
       { "who": "weaponsmith", "say": "Pick one blade and one to shoot with. Both are my gift." },
