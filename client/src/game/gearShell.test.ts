@@ -20,8 +20,8 @@ test("on the pad a tab's keycap is the pad's button, never its name's words", ()
   const { ui } = fakeInterface(1600, 1080);
   BINDS.device = 'pad';
   try {
-    const words = nodesOf(tabsNode(ui, 'journal', 8 * 200 + 36, { width: 1600, height: 1080 }, 1)).flatMap(
-      (node) => node.text?.words ?? [],
+    const words = nodesOf(tabsNode(ui, 'journal', 8 * 200 + 36, { width: 1600, height: 1080 }, 1)).flatMap((node) =>
+      typeof node.text?.words === 'string' ? [node.text.words] : [],
     );
     assert.ok(!words.some((said) => said.startsWith('pad:')), words.join(' | '));
   } finally {
