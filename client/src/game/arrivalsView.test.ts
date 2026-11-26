@@ -67,3 +67,34 @@ test('a broken crown’s shards come to rest on the land under each, sloping or 
   assert.equal(lying.length, 7, 'its seven shards');
   for (const { at } of lying) assert.ok(Math.abs(at[2] - sloped(at[0])) < 1e-9, `${at} on the land`);
 });
+
+test('an airship’s rumble is heard once it comes within a whole sound’s reach, not as it sets out 340 m off', () => {
+  const ship: ArrivalSeen = { ...CROWN_SEEN, id: 3, kind: 1, heading: 0, high: 16, gone: 900 };
+  const view = new ArrivalsView();
+  const eye: readonly [number, number, number] = [0, 30, 2];
+  const rumbled: number[] = [];
+  for (let tick = ship.began; tick <= ship.hangs; tick++) {
+    const frame = view.frame(fightAt(tick, [ship]), tick / 60, [], eye, flat);
+    if (frame.sounds.some((sound) => sound.cue === 'amb.thunder.roll')) rumbled.push(tick);
+  }
+  assert.equal(rumbled.length, 1, `heard at ${rumbled}`);
+  assert.ok((rumbled[0] ?? 0) > ship.began, 'not as it sets out');
+});
+
+test('the dust a foe throws up landing off its beam stays where it landed as the foe runs off', () => {
+  const ship: ArrivalSeen = { ...CROWN_SEEN, id: 4, kind: 1, heading: 0, high: 16, gone: 900 };
+  const arrival = { kind: 1, from: 4, drops: 200, lands: 260 };
+  const dust = (runs: boolean) => {
+    const view = new ArrivalsView();
+    let marks: number[] = [];
+    for (let tick = 190; tick <= 275; tick++) {
+      const off = runs && tick >= arrival.lands ? (tick - arrival.lands) * 0.2 : 0;
+      const foes = new Map([[9, { arrival: tick < arrival.lands ? arrival : null, view: { x: off, y: 0, z: 5 } }]]);
+      marks = [];
+      view.frame({ roomTick: tick, arrivals: [ship], foes }, tick / 60, marks, [0, 30, 2], flat);
+    }
+    assert.ok(marks.length > 0, 'its dust is laid');
+    return marks;
+  };
+  assert.deepEqual(dust(true), dust(false));
+});

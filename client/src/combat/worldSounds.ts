@@ -96,7 +96,7 @@ type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => A
 const NEAR_M = 2;
 const MOST_M = 40;
 /** A cue heard whole is heard this far, metres: a toll or a bell across a Breach's space. */
-const WHOLE_MOST_M = 160;
+export const WHOLE_MOST_M = 160;
 /** A cue heard where something else happened (a public event's) holds its voice this long at most (seconds), fading
  *  out over the last of it, so no long recording keeps a voice from the fight. */
 export const HEARD_MOST_S = 5;

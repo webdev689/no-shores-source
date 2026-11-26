@@ -24,9 +24,9 @@ export const FLIGHT = {
 } as const;
 const TICKS_A_SECOND = 60;
 
-/** An airship as drawn at a moment: its keel's middle (world metres), the way its bow points (radians clockwise from
- *  north), its nose up (pitch) and its lean to port (roll), radians; and how hard its main thrusters and its lift
- *  thrusters burn, each 0 to 1. */
+/** An airship as drawn at a moment: the middle of its keel's bottom, the model's origin (world metres); the way its
+ *  bow points (radians clockwise from north), its nose up (pitch) and its lean to port (roll), radians; and how hard
+ *  its main thrusters and its lift thrusters burn, each 0 to 1. */
 export interface ShipPose {
   readonly at: Point;
   readonly heading: number;

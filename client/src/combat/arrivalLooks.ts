@@ -93,7 +93,7 @@ export function layBeam(out: number[], eye: Point, hatch: Point, feet: Point, le
     const foot: Point = [feet[0] + sideX * side, feet[1] + sideY * side, feet[2]];
     layLine(out, eye, top, foot, 0.05 + 0.04 * fade, edge);
   }
-  layLine(out, eye, hatch, feet, 0.12 * fade, BEAM.core as unknown as Point);
+  layLine(out, eye, hatch, feet, 0.12 * fade, BEAM.core);
   const ring = Math.max(2, Math.round(6 + 10 * (1 - left)));
   layFlat(out, ringSprite(ring, 3, 1), POWDER, feet, 0.06);
 }

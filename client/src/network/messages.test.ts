@@ -307,7 +307,7 @@ test('a room’s darkness and a revive under way the server wrote read back, its
 });
 
 test('every airship and crown the server wrote reads back whole', async () => {
-  // protocol_tests.rs writes it: airship 3 and crown 4, over the same ground.
+  // arrival_wire_tests.rs writes it: airship 3 and crown 4, over the same ground.
   const read = readFromRoom(await written('arrivals.bin'));
   assert.equal(read?.kind, 'snapshot');
   if (read?.kind !== 'snapshot') return;

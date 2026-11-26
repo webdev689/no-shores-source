@@ -70,9 +70,10 @@ export class FightEffects {
     const lookOf = (event: FightEvent) => blowLook(event, { player: fight.player, own: this.ownLook, spellLook });
     const healthOf = (id: number) => (id === fight.player ? healthMax : (fight.foes.get(id)?.view.healthMax ?? null));
     this.impacts.update(events, seconds, { where, lookOf, healthOf });
+    // A kill's chain leaps to no foe still arriving, which no blow meets until it lands.
     const foesBut = (id: number) =>
-      [...fight.foes.values()].flatMap(({ id: other, view }) =>
-        other !== id && view.action.kind !== 'dead' ? [[view.x, view.y, view.z] as const] : [],
+      [...fight.foes.values()].flatMap(({ id: other, view, arrival }) =>
+        other !== id && !arrival && view.action.kind !== 'dead' ? [[view.x, view.y, view.z] as const] : [],
       );
     this.kills.update(events, seconds, { where, lookOf, foesBut, ...(dissolve ? { dissolve } : {}) });
     return events;

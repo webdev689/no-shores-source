@@ -18,7 +18,7 @@ import {
 import { CROWN, crownState } from '../combat/crownLife.ts';
 import { RoomTicks } from '../combat/foeArrivals.ts';
 import { latticeWaves } from '../combat/latticeLooks.ts';
-import type { HeardSound } from '../combat/worldSounds.ts';
+import { type HeardSound, WHOLE_MOST_M } from '../combat/worldSounds.ts';
 import type { EventProp } from '../city/eventProps.ts';
 import { moduleNumber, moduleSocket, moduleSocketFacing } from '../city/modules.ts';
 import { type ArrivalSeen, BRINGER, type FoeArrival } from '../network/arrivalMessages.ts';
@@ -56,8 +56,8 @@ interface Falling {
 }
 
 /** How a broken crown's shards fall (m/s²), how long one lies before it sinks and how long it takes to sink, seconds;
- *  how many there are. Stacks smoke this often, seconds. How long before it the engines' rumble is heard as a ship
- *  comes in, and how often its fire roars, seconds; how near the ground a ship is kept on its way. */
+ *  how many there are. Stacks smoke this often, seconds. How often a ship's fire roars, seconds; how near the ground a
+ *  ship is kept on its way. */
 const FALL = { gravity: 14, lies: 0.8, sinks: 0.7, shards: 7 } as const;
 const SMOKE_EVERY_S = 0.14;
 const ROAR_EVERY_S = 2.6;
@@ -79,7 +79,10 @@ export class ArrivalsView {
   /** The ships and crowns already heard beginning, hanging, leaving and breaking, by their number. */
   private readonly heard = new Map<number, Set<string>>();
   /** Each foe heard let down or begun forming: what brought it, the room tick it lands and the page's second it did. */
-  private readonly coming = new Map<number, { kind: number; lands: number; landed: number | null }>();
+  private readonly coming = new Map<
+    number,
+    { kind: number; lands: number; landed: { readonly at: Point; readonly when: number } | null }
+  >();
   private falling: Falling[] = [];
   /** The numbers of the ships and crowns in this frame's word, kept from frame to frame; the room's last tick seen. */
   private readonly live = new Set<number>();
@@ -183,7 +186,7 @@ export class ArrivalsView {
       const left = 1 - (tick - arrival.drops) / Math.max(1, arrival.lands - arrival.drops);
       layBeam(out.marks, eye, hatch, [foe.view.x, foe.view.y, foe.view.z], left);
     }
-    this.shipSounds(ship, tick, clock, socketAt, out.sounds);
+    this.shipSounds(ship, { tick, clock, eye }, socketAt, out.sounds);
   }
 
   /** Smoke out of the ship's stacks, puffed as it flies and drifting off behind it. */
@@ -210,17 +213,17 @@ export class ArrivalsView {
     layPuffs(marks, eye, kept.puffs, clock);
   }
 
-  /** A ship's sounds: its engines rumbling as it sets out, its fire roaring as it drives, its timbers as it hangs, its
-   *  engines opening up as it leaves. Each beat heard once, and none it was long past when first seen. */
+  /** A ship's sounds: its engines rumbling as it comes within a whole sound's reach of the eye on its way in, its fire
+   *  roaring as it drives, its timbers as it hangs, its engines opening up as it leaves. Each beat heard once, and none
+   *  it was long past when first seen. */
   private shipSounds(
     ship: ArrivalSeen,
-    tick: number,
-    clock: number,
+    { tick, clock, eye }: { tick: number; clock: number; eye: Point },
     socketAt: (name: string) => Point,
     sounds: HeardSound[],
   ): void {
     const beats = this.beatsOf(ship.id, tick, [
-      ['set out', ship.began],
+      ['rumbles', ship.hangs],
       ['creaks', ship.hangs],
       ['leaves', ship.leaves],
     ]);
@@ -230,7 +233,8 @@ export class ArrivalsView {
       sounds.push(whole ? { cue, at: where, whole: true } : { cue, at: where });
     };
     const middle = socketAt('hatch');
-    once('set out', 'amb.thunder.roll', middle, true);
+    const near = Math.hypot(middle[0] - eye[0], middle[1] - eye[1], middle[2] - eye[2]) <= WHOLE_MOST_M;
+    if (tick < ship.hangs && near) once('rumbles', 'amb.thunder.roll', middle, true);
     if (tick >= ship.hangs) once('creaks', 'amb.sea.hull.creak', middle);
     if (tick >= ship.leaves) once('leaves', 'ship.blast', socketAt('thrust-1'), true);
     const kept = this.smoke.get(ship.id);
@@ -346,8 +350,11 @@ export class ArrivalsView {
         this.coming.set(id, coming);
         sounds.push({ cue: arrival.kind === BRINGER.crown ? 'amb.ice.crack' : 'story.whoosh', at: feet });
       }
-      if (coming && coming.landed === null && (tick >= coming.lands || !arrival)) coming.landed = clock;
-      if (coming?.kind === BRINGER.airship && coming.landed !== null) layLanding(marks, feet, clock - coming.landed);
+      // Where it landed: it may run off at once, and its dust stays.
+      if (coming && coming.landed === null && (tick >= coming.lands || !arrival))
+        coming.landed = { at: feet, when: clock };
+      if (coming?.kind === BRINGER.airship && coming.landed)
+        layLanding(marks, coming.landed.at, clock - coming.landed.when);
     }
     for (const id of this.coming.keys()) if (!fight.foes.has(id)) this.coming.delete(id);
   }
