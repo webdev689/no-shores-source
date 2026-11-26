@@ -15,7 +15,7 @@ const BRIDGE: [&str; 3] = ["client/src/ui/canvasEvents.ts", "client/src/ui/page.
 /// What builds, styles or writes into a page's elements, and what each is called in a problem. A line is read
 /// `normalized`, so `document['createElement'] ('div')` is read as `document.createElement('div')`, and a word that
 /// ends in a letter is read whole, so `new Image` is refused but `new ImageData` is not.
-const REFUSED: [(&str, &str); 46] = [
+const REFUSED: [(&str, &str); 52] = [
     ("createElement", "makes an element"),
     ("createElementNS", "makes an element"),
     ("createTextNode", "makes an element"),
@@ -45,14 +45,20 @@ const REFUSED: [(&str, &str); 46] = [
     ("DOMParser", "writes HTML"),
     ("document.write", "writes HTML"),
     ("document.writeln", "writes HTML"),
-    ("textContent", "writes words into the page"),
+    (".textContent", "writes words into the page"),
+    ("'textContent'", "writes words into the page"),
+    ("\"textContent\"", "writes words into the page"),
+    ("textContent:", "writes words into the page"),
     ("innerText", "writes words into the page"),
     ("outerText", "writes words into the page"),
     ("nodeValue", "writes words into the page"),
     ("setAttribute", "styles an element"),
     ("setAttributeNS", "styles an element"),
-    ("classList", "styles an element"),
-    ("className", "styles an element"),
+    (".classList", "styles an element"),
+    (".className", "styles an element"),
+    ("'className'", "styles an element"),
+    ("\"className\"", "styles an element"),
+    ("'classList'", "styles an element"),
     (".style.", "styles an element"),
     (".style[", "styles an element"),
     ("cssText", "styles an element"),

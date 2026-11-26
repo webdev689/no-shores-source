@@ -67,7 +67,7 @@ impl Sea {
             return Err(TravelRefused::Chased);
         }
         // The waters and the islands are searched for a player's travel at most once a course's wait, taken or not;
-        // a refused one keeps no course of theirs waiting.
+        // one they refuse keeps no course of theirs waiting (one the course itself refuses starts the course's wait).
         let clock = self.clock;
         let berth = self.berths.get_mut(&player).ok_or(TravelRefused::Course(CourseRefused::NoSuchPlayer))?;
         if berth.travel_at.is_some_and(|at| clock < at + COURSE_EVERY_TICKS) {

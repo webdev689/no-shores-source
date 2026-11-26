@@ -289,7 +289,7 @@ fn has_date(words: &str) -> bool {
     numbered || named
 }
 
-/// A number after `#`, or after "PR" or "issue" as a word: a pull request's or an issue's.
+/// A number after `#`, or after "PR" as a word: a pull request's or an issue's.
 fn has_issue_number(words: &str) -> bool {
     let bytes = words.as_bytes();
     let marked = bytes.iter().enumerate().any(|(at, &byte)| {
@@ -301,7 +301,7 @@ fn has_issue_number(words: &str) -> bool {
         words.split(|ch: char| !ch.is_ascii_alphanumeric()).filter(|token| !token.is_empty()).collect();
     let named = tokens.windows(2).any(|two| {
         let number = two[1].len() >= 2 && two[1].chars().all(|ch| ch.is_ascii_digit());
-        number && (two[0] == "PR" || two[0].eq_ignore_ascii_case("issue"))
+        number && two[0] == "PR"
     });
     marked || named
 }

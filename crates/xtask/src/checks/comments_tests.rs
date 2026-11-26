@@ -95,7 +95,6 @@ fn history_in_a_comment_is_a_problem() {
         "// changed on 2026/11/14\n",
         "// changed on November 17, 2026\n",
         "// fixed in PR 1674\n",
-        "// the issue 210 asked for\n",
     ];
     for case in cases {
         assert_eq!(problems_in("crates/core/src/lib.rs", case).len(), 1, "{case}");
@@ -109,6 +108,7 @@ fn ordinary_words_are_not_history() {
         "// The hull rolls at 0.5 rad and 20 Hz; see the Sailing note.\n",
         "// x-axis and y-axis meet at the keel.\n",
         "// ISO-8601 times, RFC-3339 stamps, May 2026's swell, 3 maybe 2026 ships\n",
+        "// the GPU may issue 64 draws a frame\n",
     ];
     for case in cases {
         assert!(problems_in("crates/core/src/lib.rs", case).is_empty(), "{case}");

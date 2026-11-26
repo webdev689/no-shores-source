@@ -168,7 +168,13 @@ impl Sea {
             let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(player)) else {
                 continue;
             };
-            let Some(found) = deck.room.players.get_mut(&deck.aboard[player]) else { continue };
+            let (Some(found), Some(held)) =
+                (deck.room.players.get_mut(&deck.aboard[player]), self.harbour.characters.get(player))
+            else {
+                continue;
+            };
+            // Paid by the ship the sea sails now, which may have risen since boarding, as the sea's copy was.
+            found.character = with_sea_kept(found.character.clone(), held);
             let foe = crate::flotsam::foe_of(rank);
             found.character.reward_sinking(foe, rank.number(), sank.hostile.level, difficulty);
             found.gear_changed = true;

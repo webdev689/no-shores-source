@@ -63,6 +63,7 @@ fn a_script_that_puts_an_element_or_words_into_the_page_is_refused() {
         "label.textContent = 'Name';",
         "Object.assign(label, { textContent: 'Name' });",
         "Reflect.set(label, 'className', 'menu');",
+        "label[\"className\"] = 'menu';",
         "node.innerText = 'x';",
         "node.outerText = 'x';",
         "node.firstChild.nodeValue = 'x';",
@@ -254,4 +255,11 @@ fn a_line_is_read_in_its_plainest_spelling() {
     assert_eq!(normalized("document [ 'create' + 'Element' ] ('div')"), "document.createElement('div')");
     assert_eq!(normalized("node?.['style'].left"), "node?..style.left");
     assert_eq!(normalized("list[index]"), "list[index]");
+}
+
+#[test]
+fn a_name_of_the_games_own_that_an_element_also_has_is_no_element() {
+    for line in ["const className = 'Sloop';", "const textContent = words.join(' ');"] {
+        assert!(script("client/src/game/hulls.ts", line).is_empty(), "{line}");
+    }
 }

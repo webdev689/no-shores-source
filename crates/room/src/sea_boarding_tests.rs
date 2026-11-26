@@ -538,3 +538,32 @@ fn a_ship_sunk_toward_a_guild_bounty_while_its_player_fights_a_deck_is_still_cou
     assert!(!sea.on_deck(player), "stepped off");
     assert_eq!(sea.harbour.characters[&player].guild.counts, counted, "and kept off the deck");
 }
+
+#[test]
+fn a_sinking_paid_by_a_ship_risen_since_boarding_pays_the_boarder_too() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    let mut character = gear::Character::starting();
+    character.earn_ship_xp(u32::try_from(gear::power::xp_for_level(15)).expect("fits"));
+    sea.harbour.characters.insert(player, character);
+    strike(&mut sea, player);
+    sea.board(player).unwrap();
+    // An earlier sinking of the fight raised the ship a level while its captain fought on the deck.
+    let risen = gear::power::xp_for_level(16) - gear::power::xp_for_level(15);
+    sea.harbour.characters.get_mut(&player).unwrap().earn_ship_xp(u32::try_from(risen).expect("fits"));
+    let before = sea.harbour.characters[&player].xp;
+    let boarded = sea.decks.boarded[0].hostile;
+    let hostile = crate::hostiles::Hostile { id: boarded.id + 100, level: 19, ..boarded };
+    let sank = crate::battle::Sank { hostile, at: [0.0, 0.0], players: vec![player], wind: [0.0, 0.0], struck: false };
+    sea.after_fights(Vec::new(), &[sank]);
+    let room = &mut sea.decks.boarded[0].room;
+    let hands = room.ashore.hands.clone();
+    for (id, foe) in &mut room.foes {
+        if !hands.contains_key(id) {
+            foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+        }
+    }
+    sea.tick();
+    ticks(&mut sea, HOLD_TICKS as usize + 1);
+    assert!(!sea.on_deck(player), "stepped off");
+    assert!(sea.harbour.characters[&player].xp > before, "three levels below her now, so she pays");
+}
