@@ -85,8 +85,10 @@ pub(crate) struct Zone {
     pub pieces: Vec<Piece>,
     pub round: Round,
     pub holds: BTreeMap<PlayerId, Hold>,
-    /// The tick each player came into the zone, which a Gauntlet's time runs from.
+    /// The tick each player came into the zone, which a Gauntlet's time runs from; and each account's first, which
+    /// holds for any player it keeps, so a reload never begins that time again.
     pub arrived: BTreeMap<PlayerId, u64>,
+    pub came: BTreeMap<String, u64>,
     /// The bands the zone's most foes held back, stood in turn once there is room; and those a round begun again left
     /// down, by their posts, stood again in turn once there is room.
     pub held: Vec<HeldBand>,
@@ -190,6 +192,7 @@ impl Room {
             round: Round::default(),
             holds: BTreeMap::new(),
             arrived: BTreeMap::new(),
+            came: BTreeMap::new(),
             held: Vec::new(),
             spare: Vec::new(),
             most_seen: 1,
@@ -217,6 +220,8 @@ impl Room {
             let nodes = plan.pieces.iter().filter(|piece| matches!(piece.kind, PieceKind::Node(_)));
             room.resource_nodes =
                 nodes.map(|piece| crate::ResourceNode { x: piece.at[0], y: piece.at[1], resource }).collect();
+            // Its nodes return as a patrol's (`keep_patrol`), so one who gathered them can gather a later round.
+            room.patrol = true;
         }
         Some(room)
     }

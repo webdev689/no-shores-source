@@ -332,6 +332,8 @@ impl Room {
         let Some(zone) = self.zone() else { return };
         let (guards, targets, waves) =
             (zone.round.guards.clone(), zone.round.targets.clone(), zone.round.wave_foes.clone());
+        // A Hunt's marked band is its target, which stands again whoever is there.
+        let marked = guards.first().copied().filter(|_| zone.zone.deal == Deal::Mission(Mission::Hunt));
         for id in targets.into_iter().chain(waves) {
             self.gone(id);
         }
@@ -342,7 +344,7 @@ impl Room {
         for post in cleared {
             let size = self.band_counted(post);
             // As the bands first stood: the first always, then each the most foes make room for.
-            if (standing == 0 && again.is_empty()) || standing + size <= self.counted_most() {
+            if Some(post) == marked || (standing == 0 && again.is_empty()) || standing + size <= self.counted_most() {
                 standing += size;
                 again.push(post);
             } else {

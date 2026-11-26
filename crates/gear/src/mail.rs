@@ -98,17 +98,16 @@ impl Character {
         }
     }
 
-    /// Keeps a Vestige a first clear pays: in the carried ten, else in the vault, else posted, so it is never lost.
+    /// Keeps a Vestige a first clear pays: in the carried ten, else in the vault, else posted, so it is never lost; never
+    /// in a dive's haul, which a fall loses, wherever the player stands.
     pub fn keep_paid(&mut self, vestige: Vestige) {
-        if self.pick_up(vestige.clone()) {
+        let vaulted = self.vestiges_held(false) >= VESTIGES_MOST;
+        if vaulted && self.vestiges_held(true) >= VAULT_MOST {
+            self.post(Source::Clear, Posted::Vestige(vestige));
             return;
         }
-        if self.vestiges_held(true) < VAULT_MOST {
-            let id = self.take_id();
-            self.vestiges.insert(id, (Vestige { id, ..vestige }, true));
-        } else {
-            self.post(Source::Clear, Posted::Vestige(vestige));
-        }
+        let id = self.take_id();
+        self.vestiges.insert(id, (Vestige { id, ..vestige }, vaulted));
     }
 
     /// Takes a Vestige into the carried ten, or with them full posts it from `source`; whether it was carried.

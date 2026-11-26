@@ -52,6 +52,24 @@ fn a_respawn_after_the_section_killed_loses_the_haul_and_is_refused_in_gloom() {
 }
 
 #[test]
+fn a_respawn_loses_the_vestiges_lying_for_the_player_with_the_haul() {
+    let (week, plan, mut room) = zone_room(Deal::Skirmish, None, Route::Public);
+    let player = diver(&mut room, week, &plan);
+    let vestige = gear::Vestige::new(0, gear::Rarity::Rare, gear::Slot::Head, 5);
+    room.lay_drop(
+        player,
+        crate::drops::Dropped::Vestige(vestige),
+        [plan.sites.arrive[0] + 30.0, plan.sites.arrive[1], 0.0],
+    );
+    section_dead(&mut room, player);
+    room.step_dead(player, Input { respawn: true, ..Input::default() }, room.clock, &[]);
+    assert!(standing_again(&room, player), "stood again");
+    run(&mut room, crate::drops::DROP_TICKS + 1);
+    assert!(room.drops_for(player).next().is_none(), "nothing lying for them");
+    assert!(dive(&room, player).is_some_and(|dive| dive.haul.vestiges.is_empty()), "nor lapsed into the new haul");
+}
+
+#[test]
 fn a_lamp_lit_for_a_dive_stays_lit_for_it_through_a_round_begun_again_and_a_reconnect() {
     let (_, _, mut room, player) = lit_lamp();
     run(&mut room, super::passage_deal::AGAIN_TICKS + 2);
@@ -354,6 +372,42 @@ fn a_deals_own_waves_are_held_apart_from_its_bands_and_a_strand_hunt_is_led_by_t
     assert!(deck.contains(&room.foes[&leader].brain.foe_type.number), "the deck crew's Elite leads it");
 }
 
+/// Gathers every node of the room's vein as `player` through the gather ask, its foes kept down meanwhile.
+fn gather_vein(room: &mut Room, player: PlayerId) {
+    for node in 0..u8::try_from(room.resource_nodes.len()).expect("few") {
+        let spot = room.resource_nodes[usize::from(node)];
+        stand_at(room, player, [spot.x + 0.5, spot.y]);
+        kill_all(room);
+        room.answer(player, crate::asks::Asked::Gather { node });
+        for _ in 0..=crate::asks::GATHER_TICKS {
+            kill_all(room);
+            room.tick();
+        }
+    }
+}
+
+#[test]
+fn a_public_veins_nodes_return_as_a_patrols_so_one_who_gathered_them_after_a_round_can_finish_the_next() {
+    let (week, plan, mut room) = zone_room(Deal::Vein, None, Route::Public);
+    let first = diver(&mut room, week, &plan);
+    run(&mut room, 1);
+    for node in 0..u8::try_from(room.resource_nodes.len()).expect("few") {
+        room.vein_gathered(first, node);
+    }
+    run(&mut room, 1);
+    assert!(room.zone().is_some_and(|zone| zone.round.done_at.is_some()), "the round done");
+    let late = diver(&mut room, week, &plan);
+    gather_vein(&mut room, late);
+    assert!(room.players[&late].spent.len() == room.resource_nodes.len(), "every node gathered while it was done");
+    run(&mut room, super::passage_deal::AGAIN_TICKS);
+    assert!(room.zone().is_some_and(|zone| zone.round.done_at.is_none()), "begun again");
+    room.set_minute(room.minute + crate::patrol::RETURN_MINUTES);
+    run(&mut room, 1);
+    gather_vein(&mut room, late);
+    run(&mut room, 1);
+    assert!(room.passage_seen(late).is_some_and(|seen| seen.done), "alone, they finish the next round");
+}
+
 /// The first day from 20_000 whose board posts the passages' bounty for `deed`, its place on the board, and a minute
 /// of it.
 fn day_posting(deed: gear::objectives::Deed) -> (u64, u8, u64) {
@@ -410,6 +464,59 @@ fn a_gauntlet_pays_each_runner_by_their_own_time_though_two_reach_its_far_mouth_
     run(&mut room, 2);
     assert!(dive(&room, fresh).is_some_and(|dive| dive.paid == [plan.zone.number]), "in their 90 s");
     assert!(dive(&room, early).is_some_and(|dive| dive.paid.is_empty() && dive.done), "late: open, no cache");
+}
+
+#[test]
+fn a_hunt_begun_again_marks_its_first_band_though_fewer_players_are_there() {
+    let (week, plan) =
+        plan_where(|zone| zone.deal == Deal::Mission(Mission::Hunt) && zone.size == passage::Size::Large);
+    let mut room = room_of(week, &plan);
+    let company: Vec<PlayerId> = (0..4).map(|_| diver(&mut room, week, &plan)).collect();
+    let keep = |room: &mut Room, ticks: u64, marked: Option<usize>| {
+        for _ in 0..ticks {
+            if let Some(post) = marked {
+                for id in room.garrison[post].standing.clone() {
+                    let foe = room.foes.get_mut(&id).expect("standing");
+                    (foe.fighter.health, foe.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+                }
+            }
+            for found in room.players.values_mut() {
+                found.fighter.health = 1e9;
+            }
+            room.tick();
+        }
+    };
+    keep(&mut room, 2, None);
+    let first = room.zone().expect("a zone").round.guards[0];
+    keep(&mut room, 2, Some(first));
+    assert!(room.zone().is_some_and(|zone| zone.round.done_at.is_some()), "the Marked down: done");
+    for &player in &company[1..] {
+        room.leave(player);
+    }
+    keep(&mut room, super::passage_deal::AGAIN_TICKS + 2, None);
+    assert!(room.zone().is_some_and(|zone| zone.round.done_at.is_none()), "begun again");
+    let marked: Vec<_> =
+        room.names.iter().filter(|(id, named)| **named == "The Marked" && room.foes.contains_key(id)).collect();
+    let leads_first = marked.iter().any(|(id, _)| room.garrison[first].standing.first() == Some(id));
+    assert!(leads_first, "the Marked leads the first band again: {marked:?}");
+}
+
+#[test]
+fn a_late_gauntlet_runner_back_from_a_reload_is_still_late() {
+    let (week, plan, mut room) = zone_room(Deal::Mission(Mission::Gauntlet), None, Route::Public);
+    let early = diver(&mut room, week, &plan);
+    assert!(room.own(early, "runner"));
+    run(&mut room, super::passage_deal::GAUNTLET_TICKS + 2);
+    let character = room.players[&early].character.to_json();
+    room.leave(early);
+    let again = room.join().expect("joined");
+    assert!(room.restore_character(again, &character));
+    assert!(room.own(again, "runner"), "owned after its character is given back, as the server does");
+    run(&mut room, 2);
+    let far = room.far_mouth().expect("a far mouth");
+    stand_at(&mut room, again, far);
+    run(&mut room, 2);
+    assert!(dive(&room, again).is_some_and(|dive| dive.paid.is_empty() && dive.done), "late still: open, no cache");
 }
 
 #[test]

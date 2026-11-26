@@ -195,24 +195,25 @@ at depth 20. The two zones not done are each a foe that climbed a hollow's cliff
 | Call | Choice |
 |---|---|
 | A reliquary | Opened by E held 5 s within 3 m of its chest, the Kindle's hold; the first hold calls a wave, its keepers. Done once opened, its guard down or not |
-| A vein | Done once its six nodes are gathered, by any who take part, each gather calling a wave of two; its guard need not fall. Its nodes go into the haul as a patrol's do, and its cache pays two fragments |
+| A vein | Done once its six nodes are gathered, by any who take part, each gather calling a wave of two; its guard need not fall. Its nodes go into the haul and return for their gatherer 9 minutes on, as a patrol's do, so one who gathered them in a round done can finish a later one; its cache pays two fragments |
 | A Sever's posts | Struck as a foe is, standing still, named "Tally Post", and drawn as the post alone, as the Fissure's crystal growth is |
 | A Reckoning's collectors | Walk away when found, never fight back, and are named "Collector" |
-| A Hunt's marked Elite | Named "The Marked" |
+| A Hunt's marked Elite | Named "The Marked"; its band, the deal's target, stands again in a round begun again however few players are there |
 | Holds and the ring | A dead lamp kindles, a reliquary opens and a Hold's ring is held only while no foe stands within 8 m of it; a hold begun with one near is refused so |
 | A Hold's ring | A piece of its own at its spot, its 6 m drawn on the floor in 32 worn flat stones of the passages' grey-green stone, laid end to end, none 5 cm over the floor, so it needs no solid; it stands where all of it lies on the floor, under ground a zone forged from a seed with a room for it |
-| A Gauntlet's far mouth | Marked among the zone's sites, so its sign can say so. It counts only one whose dive is in the zone and not done and who stood at the arrival this round; its seconds left run from each one's arrival or the round's start, the later |
+| A Gauntlet's far mouth | Marked among the zone's sites, so its sign can say so. It counts only one whose dive is in the zone and not done and who stood at the arrival this round; its seconds left run from each one's arrival or the round's start, the later; an account's first arrival in the zone holds through a reload, so a reload never begins them again; it holds for a later dive of that account in the same round too, as the room cannot tell the two apart, and a late reach ends the round, which begins again for everyone |
 | The most foes | By the zone's size, 7, 9 and 12 standing at once (small, medium, large); Crowded's extra foes are not counted, so it holds as many bands. A band past it is held back. Waves are held to it apart from the bands, so a deal's own waves still come |
 | A company | As a public event's waves and great foes rise: three more foes standing for each player past the first, a band held back standing once there is room and no player is near its post; a wave a foe more for each player past the first, three at most; a Miniboss or a Boss half its health more for each, the most players seen. Every one who takes part is paid the whole cache |
 | Waves | Drawn from the zone's own roster, taking its currents: Crowded's more foes, Veteran's Majors, Hardened's health, Shielded's shields |
-| A respawn | However a body fell, the section's ring among them, a respawn asked for empties the haul and is refused in Gloom, where a company all down, the section's dead among them, falls back |
+| A respawn | However a body fell, the section's ring among them, a respawn asked for empties the haul, the Vestiges still lying for the player lost with it, and is refused in Gloom, where a company all down, the section's dead among them, falls back |
 | The lamp lit | Lit for a player while their dive in the zone has lit it, kept with the dive: a round begun again, a reconnect or a dive begun at the lamp find it lit |
-| Leaving fallen | A body left fallen comes back fallen; past its two minutes it comes back whole, its haul lost as a respawn's |
+| Leaving fallen | A body left fallen comes back fallen; past its two minutes it comes back whole, its haul lost as a respawn's. A homeward dive left fallen comes home with its haul lost, as a fall costs it |
 | A vein's stock | A gather is refused against the haul's stock while the haul takes it |
 | Taking part | Bringing down one of the zone's foes, lighting a dead lamp, opening the reliquary, gathering a node of the vein, holding the ring, or reaching the far mouth |
 | A vault's garrison | Takes no Crowded or Veteran; Hardened applies |
 | Drops | From the dungeons' content under ground, the world's above it |
 | The haul's size | At most 64 Vestiges and 64 items; a find past that is let go |
+| Paid outright | A Vestige paid as a reward (a guild's or a faction's package, a lamp's, a first clear's) is never hauled, wherever the player stands: carried, else the vault, else the mail |
 | Going home | Asked of a lamp lit for the dive, wherever in its zone the player stands |
 | The passages' bounties on the board | The town's, at places 15 and 16 after the factions' 6 to 14, so no place a save keeps changes meaning: the town's six stay 0 to 5. They are drawn as the board's fourth pool, kept under the town's keys, and shown in the town's row after its six, in its one design, their card's mark a lamp |
 
