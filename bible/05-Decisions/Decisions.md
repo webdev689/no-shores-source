@@ -407,6 +407,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Drawing Click Swings, and the Player's Own Hits Show at Once]]
 - [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
+- [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]
+- [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]
+- [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
 
 ## Replaced
 
