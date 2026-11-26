@@ -228,9 +228,15 @@ The decisions in [[Open Questions]] are not repeated here.
   a boarded deck for good; the chat never sends a line as though no one blocked its speaker; a company's kick and lead,
   an outpost's Horn and deposit, a second socket of one account, sea keys let go over the interface, `pointercancel`,
   the rejoin waits, the Breach gate's answer and the travel's wait; and the repo checks' gaps the last hand-off listed,
-  but `.after(`/`.before(` and a style held under another name. Tested offline; CI's full check on the PR's head. Left
-  for the owner, in the PR: three workflow changes (`site.yml` by hand, the Lattice's concurrency group, `forge.yml`'s
-  paths), the foes' fall-back with no way out, a shot loosed inside a cliff, and the city's picture cache's budget.
+  but `.after(`/`.before(` and a style held under another name. Then, on the owner's "Audit this", four more read-only
+  audits of the PR itself (its rules and checks, server, page and notes), each finding fixed with a test that failed
+  first: the sea fight's presses held, not dropped, while the room is quiet; the older socket's mail posted before its
+  body is taken on; a boarder's pay judged by the ship as it stands now; the story fight's aim let go under the
+  controls sheet; the checks' false refusals of a plain `className` and the verb "issue". Tested offline; CI's full
+  check on the PR's head. Left for the owner, in the PR: three workflow changes (`site.yml` by hand, the Lattice's
+  concurrency group, `forge.yml`'s paths), the foes' fall-back with no way out, a shot loosed inside a cliff, the
+  city's picture cache's budget, and the hold's blind spot: an upload held up while the room's snapshots still come
+  in.
 - **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
   the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
   each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
