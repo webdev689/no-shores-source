@@ -3,7 +3,7 @@
 // (mapLayout.ts) and painted with the parchment's ink (mapLetters.ts).
 import { ruinedName } from '../ruinedName.ts';
 import type { CoastField } from './coastField.ts';
-import type { MapPlace } from './heldMap.ts';
+import type { MapPlace } from './heldMapScene.ts';
 import type { WaterJudge } from './heldMapAsk.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { anyCellUnder } from './mapKey.ts';
