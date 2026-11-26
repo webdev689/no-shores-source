@@ -250,8 +250,10 @@ The decisions in [[Open Questions]] are not repeated here.
   hulk at sea (the offline room cannot load a character on those steps), anything in a deployed room or on a real GPU,
   or played by hand.
 
-- **Foe arrivals** (#211, a draft on branch `ccr-9e470c58-pm6nyz`, waiting on the owner's yes to merge), on the
-  owner's "some enemies are already on the ground, while others come in from a dropship or spawn effect", the Grey
+- **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
+  rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
+  modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,
+  which a session cannot), on the owner's "some enemies are already on the ground, while others come in from a dropship or spawn effect", the Grey
   Tithe's airships ("Large modified vessels retrofitted with combustible thrusters") and the Lattice's "crystallized
   structure that appears, as the enemies spawn below", with patrol groups varied and "present moreso"
   ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]). The owner then turned
@@ -274,14 +276,15 @@ The decisions in [[Open Questions]] are not repeated here.
   the outcomes they pin), and again on `6825fc83` (main at #206 merged in, the only clashes two bible lists, both
   sides kept); the last audit's fixes by the room's and room-wasm's whole suites, the server's twins, the page's
   changed tests, tsc, ESLint, clippy and `cargo xtask repo` (the raid's fingerprint moves, its outcome does not); every
-  check again on `e503de28` (main at #217 merged in, the only clashes three notes' lists); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
+  check again on `e503de28` (main at #217 merged in, the only clashes three notes' lists) and on `1c525609` (main at
+  #220 and #219 merged in, two Breach gate tests at one place both kept), CI's too; a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
   15); the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the
   raid's first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the
-  deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in the game and which
+  deployed game, a real GPU, the raid with players. Now merged: the owner judges the look in the game and which
   areas hold territories ([[Open Questions]], "Foe arrivals"), and how a cleared territory far from players is
   retaken; the door test's scripted pair loses the heroic raid's last wave, pinned as it is.
-- **Four character slots, Switch character and the developers' Test Room** (#219, a draft on branch
-  `ccr-4f741534-p0zwai`, waiting on CI on its head and the owner's yes to merge), on the owner's "Implement 4 character
+- **Four character slots, Switch character and the developers' Test Room** (#219, merged: CI's run 1171 on `main`
+  passed), on the owner's "Implement 4 character
   slots ... switch character option in the ingame settings menu" and "a test room option to launch activities"
   ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]],
   [[Developers Launch Activities From a Test Room, in Max Gear]]; every call in
@@ -293,8 +296,8 @@ The decisions in [[Open Questions]] are not repeated here.
   past the prologue); a switch counts the guild's week from the chosen character on; the Developer
   role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
   before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
-- **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
-  accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
+- **A second codebase audit** (#217, merged on the owner's "Merge and deploy": CI's run 1154 on `main` passed), on the
+  owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
   review of the whole diff, every fix with a test shown failing first but two (the PR says which and why). Among them: a
   stalled network that resumes no longer gets the player sent away (`UNHEARD_MOST`); a sinking pays a player fighting on
@@ -874,8 +877,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first review) and #114 (the gear message carries
-  the pledge once); and other sessions' work under way: #204 (Passages), #211 (foes by airship and crown, varied
-  patrols), #216 (the Playlist's nodes in more detail, and moving).
+  the pledge once); and other sessions' work under way: #204 (Passages), #216 (the Playlist's nodes in more detail, and moving).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
