@@ -345,7 +345,9 @@ impl Room {
             | Goal::Scavenge(_)
             | Goal::Enter(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => return false,
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_) => return false,
         };
         if matches!(kind, Stepping::Figure(_)) {
             self.quests.arrived.remove(&player);
@@ -445,7 +447,9 @@ impl Room {
             | Goal::Scavenge(_)
             | Goal::Enter(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => {}
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_) => {}
         }
     }
 }

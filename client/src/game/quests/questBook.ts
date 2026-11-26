@@ -12,8 +12,8 @@ import type { Quest as Tracked, Step } from '../tasks.ts';
  *  with the line said as it first walks (`greet`), a `defend` goal's ward or its `horde`, a `puzzle`'s points and
  *  their `order`, a `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`), an
  *  escort's `shout` as an ambush springs, its `mount` as it waits for the player to get on their horse and the coat of
- *  the horse it rides (`horse`), the slot a `buy` or a `wear` goal names, and what it gives as it is met. The rest the
- *  rules read alone. */
+ *  the horse it rides (`horse`), the slot a `buy` or a `wear` goal names, the act a `ride` or a `sail` lesson asks
+ *  (`act`, a riding arrival's counter its `to`), and what it gives as it is met. The rest the rules read alone. */
 export interface Goal {
   readonly kind: string;
   readonly text: string;
@@ -44,6 +44,7 @@ export interface Goal {
   readonly rank?: string;
   readonly island?: string;
   readonly side?: string;
+  readonly act?: string;
   readonly reward?: Reward;
 }
 
@@ -110,7 +111,9 @@ const most = (goal: Goal): number => goal.count ?? 1;
 
 /** The quest walked and its task now, with that task's goals' counts; none for no quest or one the file lacks, and
  *  none from a word not on the player's own character (a room's starting character, before theirs is given). */
-function walked(state: QuestState | null | undefined): { quest: QuestLine; task: Task; counts: number[] } | null {
+export function walked(
+  state: QuestState | null | undefined,
+): { quest: QuestLine; task: Task; counts: number[] } | null {
   const quest = state && state.claimed !== false ? QUESTS[state.quest - 1] : undefined;
   const task = quest?.tasks[state?.task ?? 0];
   if (!state || !quest || !task) return null;

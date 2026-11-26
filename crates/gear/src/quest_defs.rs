@@ -254,13 +254,21 @@ impl GoalDef {
             Goal::Puzzle(puzzle) => puzzled(puzzle),
             Goal::Unseen(unseen) => (!(unseen.within > 0.0 && unseen.within <= PLACE_SQUARE)).then_some("within"),
             Goal::Race(race) => raced(race),
+            Goal::Ride(ride) => {
+                let keeper = ride.to.as_deref().is_none_or(|to| (1..=u8::MAX).any(|key| keeper_key(key) == Some(to)));
+                (!(ride.fits() && keeper)).then_some("to")
+            }
+            Goal::Sail(_) => None,
         };
         // A piece held is told again on every ask (`tell_held`), so one piece would meet a count above one.
-        let once = self.kind().stepped() || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_));
+        let once =
+            self.kind().stepped() || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_) | Goal::Ride(_) | Goal::Sail(_));
         if let Some(field) = wrong.or((!ranks).then_some("rank")) {
             Some(format!("{text}: {field} holds a value none of its own"))
         } else if self.count == 0 || once && self.count != 1 {
-            Some(format!("{text}: count must be 1 on a step or a piece bought or worn, and 1 or more on any goal"))
+            Some(format!(
+                "{text}: count must be 1 on a step, a lesson or a piece bought or worn, and 1 or more on any goal"
+            ))
         } else if self.reward.art || self.reward.tenet > 0 || self.reward.fragments > 0 || self.reward.ship {
             // A house's gifts come with its tasks, in their order (`house_problems`), and the Sloop with its task, the
             // one `give_ship_due` looks for; a goal gives Aurem, the horse or a keeper's gift.

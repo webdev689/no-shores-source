@@ -38,6 +38,24 @@ your baby". Each is the owner's to change.
 
 | Call | Chosen | Why |
 |---|---|---|
+| Where the riding task stands | "Ride the Bay", the task after the round, in Overlook's social space, where the room lets a rider ride | The Tack gives the Bay mid-round; the round's goals are met in any order, so the lesson waits for the round to end and the next keeper is the Harbourmaster |
+| The marked point | The Harbourmaster's stall, ridden up to in the saddle (within 8 m of her counter), pointed at by the compass and the screen's mark as a keeper's counter is | The next task is hers: riding there takes the player where they go next |
+| How the riding steps are judged | By the room each tick from the body it stepped: up on a horse; 10 m at a walk; 30 m faster than 10.5 m/s (past a boosted walk's 9, short of a gallop's 12); a boost running; down after riding; at the counter mounted | The room already steps the rider and the boost's clocks; any input that moves the body serves |
+| The sailing tasks | "Learn the helm" (board, set sail, steer, trim, raise the chart, fire at the hulk) after "Take your ship", then "Bring it home" (dock at Overlook) | The steps met in any order; docking first would end the voyage before the gunnery, so the return is a task of its own after the rest |
+| "Trim" | The pace dial moved while under way (`[` and `]`) | Its sails trim themselves to the wind (`gaffTrim`); the pace dial is the canvas the player sets |
+| "Steer" | 30 degrees turned in all while under way; turning onto a course's first leg as it puts to sea does not count | A tap of A or D turns the ship by its helm; a course set from rest is not steering |
+| "Board" | Aboard the Sloop at sea (in the sea room with their character); ashore the step reads "Hold M to return to your ship" | Holding M is the way to the ship from any land |
+| The held map | Asked of the sea as ask 4 of the course message each time the map is raised at the helm; the sea takes it only for a captain whose task asks it | Only the page sees the map raised; the course message already carries the sea's asks |
+| The target | A Grey Tithe Sloop of the lowest rank, colours struck, moored on the first bearing from north whose water is clear 1,200 m off Overlook's roadstead (else 1,000, each past the 900 m that calls it, so a ship is not called before it has sailed); within 900 m the sea puts it into a fight of the captain's own: hove to, firing nothing, never scuttled or boarded, leaving the fight 1,500 m off, laying and paying nothing as it goes down | The rules' own guns fire only in a fight; a struck ship already lies hove to and draws its flag down; its own fight keeps other players and the Tithe's ships out of it in Overlook's home waters |
+| A ball in it | Any ball of the captain's that strikes it; in the hulk's fight alone (the sea's word says which, `lesson`) the tracker shows the quest, not the fight's task: the step, then the way home | The step is to hit it; sinking it is the captain's choice; a Tithe ship met during the lesson is a real fight and shows its own task |
+| Leaving the hulk | It leaves the captain's fight 1,500 m off while the step waits, 900 m once the ball is in | Its mooring lies 1,000 m or more from the roadstead: once the ball is in the fight is over before they reach Overlook and may dock |
+| Where the hulk is marked | The sea's gear carries its mooring as the task's place (`quest_at`), so the compass points at it | The page draws nothing the sea did not say |
+| The lines | The Harbourmaster calls the player down to her stall as the ride begins; her round's lines send them to the hulk ("There's a Tithe hulk moored offshore. Put a ball in it, then come home."); one line as they dock ("Back afloat, and that hulk the worse for it. You'll do.") | The Tack's round lines are said just before: her saying more would be four lines in a row ([[Dialogue]]) |
+| Announcing each step | A toast for each step as the room ticks it, "Riding: Gallop", through the quest's news (`lessonsBetween`) | The quest's news is where the notices are made; the keeper screen's restyle picks it up |
+| Their keys | Each step's keys as bound now on the keys or the pad played last, beside it in the tracker, as the wreck's teaching names them | The owner's "taught as the wreck teaches" |
+| Pay | Each lesson's task pays a mission's clear, as every task that sends the player out does | The rule already stands for every goal but talk, pledge, buy and wear |
+| A task begun by an event | Counts the pieces held as it begins (`tell_held`), so "Put them on", which now follows a docking, counts the pieces worn at once | It followed an ask before; a docking is not one |
+| Saves | Kept by task id: on the round, the ride follows; on "Take your ship" or later, kept where it is; a pledge midway through a lesson is taken | The owner's word for these lessons is for new players; no save is sent back |
 
 ## The escort on horseback
 

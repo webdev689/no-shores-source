@@ -46,6 +46,7 @@ pub mod playlist;
 pub mod power;
 mod quest_defs;
 mod quest_goals;
+mod quest_lessons;
 pub mod quests;
 pub mod rarity;
 mod refusal;

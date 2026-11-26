@@ -16,6 +16,14 @@ code:
   - crates/room/src/quests.rs#ground_of
   - crates/room/src/quests.rs#held_near
   - crates/gear/src/quest_goals.rs#GoalDef
+  - crates/gear/src/quest_lessons.rs#RideAct
+  - crates/gear/src/quest_lessons.rs#SailAct
+  - crates/room/src/lessons.rs#keep_lessons
+  - crates/room/src/sea_lessons.rs#keep_lessons
+  - crates/room/src/sea_lessons.rs#moor_hulk
+  - crates/room/src/sea_lessons.rs#charted
+  - client/src/game/quests/lessons.ts#lessonKeys
+  - client/src/game/quests/questNews.ts#lessonsBetween
   - crates/gear/src/quest_defs.rs#speaker_place
   - crates/room/src/steps.rs#Step
   - crates/room/src/steps.rs#way_between
@@ -82,6 +90,8 @@ out) and its kind:
 | `buy` | A smith's ware bought, of the day's or the starter stock: the character keeps each slot a smith has sold it a piece for (`bought`), so one bought before its task counts as the task begins; a piece looted or given never does; the slots are let go once a task with a buy goal is met, so a later one counts only its own purchases | `slot`: `melee`, `ranged`, `head`, `torso`, `arms` or `legs` |
 | `wear` | A piece worn in a slot; one worn already counts as its task begins (the room hears every piece worn after each ask) | `slot`, as `buy`'s |
 | `race` | Passing checkpoints in order before the clock runs out; the clock starts as the player leaves the first's reach; late, it starts again from the first. A race is run over the ground, not along the paths | `node`, `checkpoints` (places, two or more), `seconds`, `late` (its line) |
+| `ride` | A rider's act, as the room steps them each tick, however it was pressed: `mount` up on a horse, `walk` 10 m ridden at a walk, `gallop` 30 m ridden faster than 10.5 m/s, `boost` a boost running, `dismount` down from the saddle after riding there, `arrive` within 8 m of a keeper's counter in the saddle | `act`, `to` (an arrival's counter, as `talk`'s, and no other act's) |
+| `sail` | A captain's act, as the sea sails their ship each tick: `board` aboard at sea, `sail` under way, `steer` turned 30 degrees in all while under way (a ship putting to sea turns onto its first leg unsteered), `trim` the pace dial moved while under way, `map` the held map raised at the helm (the page's word, ask 4), `fire` a ball of theirs striking the Harbourmaster's hulk ("The lessons") | `act` |
 
 A `kill` goal with a `spawn` stands its foes at its place: a list of `[type, rank]`, each the roster's name and a rank
 it comes in. A player on that goal coming within 150 m of the place stands the group there, at the node's island levels
@@ -98,6 +108,7 @@ gift (`gift`, by its name: `weapons`, `armour`, `vestige`, `cloak`, `dye` or `le
 is the quest's house's. A task's reward is given as it ends; a goal may carry one of its own (`reward` beside its other
 fields), given as it is met, of Aurem, the first horse or a gift alone: a house's gifts come with its tasks, in their
 order, and the ship with its own task ([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]).
+A lesson's goal (`ride`, `sail`) has a count of 1.
 Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy` and `wear`) pays a mission's
 clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Destiny 1 paid each mission done
 ([[Gear]], "A clear"; [[The Balance and Economy Pass as Claude Shapes It]]).
@@ -127,11 +138,14 @@ their counter is for and what they give, and giving it as they are spoken with (
 Each gift is given once a character, kept by name in its quest log (`gifts`), so a second hearing, a reload, a rejoin or
 a later round never gives it again; the Weaponsmith's slots still free are kept beside it (`free`) until taken. A gift
 with no room where it goes is kept as anything found is: armour carried, else in the vault, else posted; a Vestige
-carried, else posted; the cloak in the vault, else carried, else posted. Then **Take your ship from the
-Harbourmaster**, its reward the Sloop (`"ship": true`), which a new player has none of until then ([[Shipyard]]); and
-**Put them on**, a wear goal for each of the Melee weapon, the four armour pieces and the Ranged weapon, each a count
-of 1, told of the pieces held after every answered ask, again until nothing more counts, so pieces worn during the
-round meet it as the last keeper is heard; plain clothes never do. The Tack's Bay is worn unless one is, never a second,
+carried, else posted; the cloak in the vault, else carried, else posted. Then **Ride the Bay**, the Tack's lesson
+("The lessons"), the Harbourmaster calling the player down to her stall as it begins (`rideBegin`); **Take your ship
+from the Harbourmaster**, its reward the Sloop (`"ship": true`), which a new player has none of until then
+([[Shipyard]]), her lines sending the player out to a Tithe hulk moored offshore; **Learn the helm**, her lesson at
+sea; **Bring it home**, an `enter` goal of Overlook's social space ("Dock at Overlook"), her line said as it is done
+(`sailHome`); and **Put them on**, a wear goal for each of the Melee weapon, the four armour pieces and the Ranged weapon, each a count
+of 1, told of the pieces held after every answered ask and as every task begins, again until nothing more counts, so
+pieces worn during the round meet it as soon as it begins; plain clothes never do. The Tack's Bay is worn unless one is, never a second,
 and at her counter for nothing to one who pledged before the round reached her
 ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]],
 [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]). Then
@@ -141,6 +155,44 @@ Arlo's word to hear all three.
 
 The page announces each gift as it comes, in a toast ([[Interface]]), through one function, `giftNotice`: the
 Weaponsmith's, the Armorsmith's and the rest as their goals are met, the Sloop as its task is done.
+
+### The lessons
+
+Riding and sailing are taught as the wreck teaches ([[Prologue]], "The teaching";
+[[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]): each step
+a goal the rooms tick from what the body, the horse or the ship did, so any input serves; a step done early stays
+done; the tracker names each step's keys as bound now on the keys or the pad played last (`lessonKeys`), the defaults
+on the keys below; and the page announces each step as the room ticks it, in a toast through the quest's news
+(`lessonsBetween`: "Riding: Gallop", "Sailing: Steer").
+
+- **Ride the Bay**, in Overlook's social space, where the room lets a rider ride: Get up on your horse (`,`), Ride at
+  a walk (W), Gallop (Shift), Spur it on (Space: a rider's jump is the boost), Get down (`,`), and Ride to the
+  Harbourmaster's stall, in the saddle. The room watches a rider each tick while their task asks a riding act
+  (`Room::keep_lessons`), measuring their stretches at a walk and at a gallop from the body's own pace, and forgets
+  them once it asks none. The compass and the screen's mark point at the Harbourmaster's counter; the other steps
+  read "Anywhere".
+- **Learn the helm**, at sea: Go aboard your Sloop (M held, its step reading "Hold M to return to your ship" ashore),
+  Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Raise your chart (N), and Put a ball in the
+  hulk (the right button laid and let go, the pad's RT). The sea watches each captain on it each tick
+  (`Sea::keep_lessons`), keeping their heading and pace as last seen and how far they have turned under way. The page
+  asks the sea (ask 4) each time the held map is raised at the helm (`Sea::charted`); the sea takes it only for a
+  captain whose task asks it.
+- **The hulk**: a Grey Tithe Sloop of the lowest rank, its colours struck, moored off Overlook's roadstead on the first
+  bearing clockwise from north, 15 degrees apart, whose water lies clear 1,200 m out and is reached from the roadstead
+  over no land (else 1,000 m; `Sea::mooring`). A captain on its step who sails within 900 m of it, out of a
+  fight, is put into a fight of their own with it, their ship hove to (`moor_hulk`): it lies hove to with its hull at
+  the share it struck at, is never scuttled and never boarded, and fires nothing. A ball of the captain's that strikes
+  it is the step. Sailed more than 1,500 m from it while the step waits, or 900 m once the ball is in (short of the
+  roadstead, so the way in is open), it leaves the fight, which ends; while the step waits it is put in again as
+  they come near. Gone down, it lays nothing, pays nothing, and counts for no road and no bounty. While the
+  step waits the sea's gear marks its mooring (`quest_at`, from `Sea::lesson_mark`), which the compass points at,
+  and in its fight (the sea's word says which fight is the hulk's, `lesson`) the tracker keeps the quest in place of
+  the fight's own task: the step, then the way home. A Tithe ship met during the lesson is fought on its own task.
+- **Bring it home**: docking at Overlook enters its social space, which meets it.
+
+Each lesson's task pays a mission's clear as it is done, as every task that sends the player out does. A save kept
+before the lessons keeps its place by its task's id: one on the round rides once it is done, one on **Take your ship**
+or later is not sent back, and one that pledges midway through a lesson walks its house's road from then on.
 
 Every save keeps its place. A save on the old **Arm yourself** task (a Melee weapon and the four armour pieces bought)
 reads on **Put them on** (its `was`), its counts at nothing. A save kept partway round the counters before the keepers
@@ -216,7 +268,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
 - **Asks**: 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
   the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster, 17 the Postmaster), answered only within reach of
   that counter; 18 the stranger, answered anywhere in a social space;
-  65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
+  65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list). At sea, a
+  course message's ask 4 says the held map was raised at the helm, for the sailing lesson.
 - **Whose word**: the gear message says whether its character is the player's own as their account keeps it
   (`claimed`). A player who sends an input before any token keeps no character, so the one the room holds is theirs
   from then on (`none_kept`), on land as at sea.
@@ -224,7 +277,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   from 1, 0 for none), its task (`quest_task`), that task's goals' counts (`quest_counts`), each quest done
   (`quests_done`, 1 or 0 by place), each Art's earned bits (`arts_earned`: 1 the Art, 2 its first Tenet, 4 its
   second), each Art's fragment choices waiting (`fragment_choices`), and where the task's first unmet goal with a
-  place stands in the player's room (`quest_at`: x, y and reach, empty when none is here).
+  place stands in the player's room (`quest_at`: x, y and reach, empty when none is here; at sea, the Harbourmaster's
+  hulk while the sailing lesson asks a ball in it).
 
 ## In the browser
 
@@ -233,7 +287,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   at its task, and one for each quest done, in the file's order, each its name, the first line its `begin` says, and
   its task's number and words; nothing from a word not on the player's own character.
 - **The tracker** shows the quest walked, on foot and at sea, once the story and the stranger's welcome are past: its
-  name, its task and each goal's words with its count, and under an unmet goal's words its way ("Marks").
+  name, its task and each goal's words with its count, under an unmet goal's words its way ("Marks"), and beside an
+  unmet lesson's step its keys ("The lessons").
 - **Lore**: a chapter the lore's file gives to a task is found as the task is done ([[Lore]]). Each house's road
   gives its house's book a chapter a task, the last as the road ends ([[Each House's Lore Book Tells Its Art's Origin]]).
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
@@ -256,8 +311,10 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
     with its keeper, gathering at the nearest patrol with materials; one done at sea (a ship of its side beaten, an
     isle or a cove landed on, wrecks searched, an isle's leader) at the nearest in sight at sea, its step saying "None
     in sight: sail the open sea" while none is, and "Hold M to return to your ship" from land;
-  - a goal done anywhere (an Art's spell cast, a piece worn) at nothing, its step saying "Anywhere"; the stranger,
-    heard anywhere in a social space, "Anywhere here" there;
+  - a goal done anywhere (an Art's spell cast, a piece worn, a riding act but riding up to a counter, and at sea a
+    sailing act but the gunnery) at nothing, its step saying "Anywhere"; the stranger, heard anywhere in a social
+    space, "Anywhere here" there; riding up to a counter at the counter, as a talk; the gunnery at sea at the sea's
+    mark, and from land "Hold M to return to your ship", as every sailing act;
   - inside a dungeon, only what stands in it (a foe of the goal's types, the room's mark); on a sea's island, its
     wrecks not yet searched and, if it is of the goal's kind, its leader, any other goal back to the ship.
 

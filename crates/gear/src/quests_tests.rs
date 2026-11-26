@@ -64,6 +64,8 @@ fn meeting<'told>(goal: &'told GoalDef, places: &'told [Place]) -> Event<'told> 
         Goal::Race(_) => stepped(GoalKind::Race),
         Goal::Buy(buy) => Event::Bought(buy.slot),
         Goal::Wear(wear) => Event::Worn(wear.slot),
+        Goal::Ride(ride) => Event::Ride { act: ride.act, at: ride.to.as_deref() },
+        Goal::Sail(sail) => Event::Sail(sail.act),
     }
 }
 
@@ -110,6 +112,8 @@ fn each_kind_of_goal_is_met_by_its_own_event_alone() {
         r#"{ "kind": "race", "node": "n", "checkpoints": ["a", "p"], "seconds": 60, "text": "t" }"#,
         r#"{ "kind": "buy", "slot": "melee", "text": "t" }"#,
         r#"{ "kind": "wear", "slot": "melee", "text": "t" }"#,
+        r#"{ "kind": "ride", "act": "gallop", "text": "t" }"#,
+        r#"{ "kind": "sail", "act": "fire", "text": "t" }"#,
     ]
     .map(goal);
     for (at, one) in goals.iter().enumerate() {
@@ -121,6 +125,20 @@ fn each_kind_of_goal_is_met_by_its_own_event_alone() {
     let stepped = |kind, node, anchor| Event::Stepped { kind, node, anchor };
     assert!(race.met_by(&stepped(GoalKind::Race, "n", "p")), "a race at its last checkpoint");
     assert!(!race.met_by(&stepped(GoalKind::Race, "n", "a")) && !race.met_by(&stepped(GoalKind::Race, "m", "p")));
+}
+
+#[test]
+fn a_lesson_is_met_by_its_own_act_and_an_arrival_only_at_its_own_counter() {
+    use crate::quests::{RideAct, SailAct};
+    let gallop = goal(r#"{ "kind": "ride", "act": "gallop", "text": "t" }"#);
+    assert!(gallop.met_by(&Event::Ride { act: RideAct::Gallop, at: None }));
+    assert!(!gallop.met_by(&Event::Ride { act: RideAct::Walk, at: None }), "another act");
+    let arrive = goal(r#"{ "kind": "ride", "act": "arrive", "to": "harbourmaster", "text": "t" }"#);
+    assert!(arrive.met_by(&Event::Ride { act: RideAct::Arrive, at: Some("harbourmaster") }));
+    assert!(!arrive.met_by(&Event::Ride { act: RideAct::Arrive, at: Some("tack") }), "another counter");
+    let map = goal(r#"{ "kind": "sail", "act": "map", "text": "t" }"#);
+    assert!(map.met_by(&Event::Sail(SailAct::Map)) && !map.met_by(&Event::Sail(SailAct::Trim)));
+    assert!(!map.kind().stepped() && !gallop.kind().stepped(), "the room counts them, it runs no step");
 }
 
 /// A foe's fall at the world's middle, with no places.

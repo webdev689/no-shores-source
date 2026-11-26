@@ -78,10 +78,20 @@ fn opening_tasks() -> Vec<&'static str> {
 }
 
 #[test]
-fn the_opening_hears_the_stranger_walks_round_the_counters_takes_its_ship_dresses_then_hears_the_houses() {
+fn the_opening_hears_the_stranger_walks_round_rides_takes_its_ship_sails_dresses_then_hears_the_houses() {
     assert_eq!(
         opening_tasks(),
-        ["hear-the-stranger", "find-your-way", "your-ship", "wear-them", "hear-three-houses", "choose-house"]
+        [
+            "hear-the-stranger",
+            "find-your-way",
+            "ride-the-bay",
+            "your-ship",
+            "learn-the-helm",
+            "bring-it-home",
+            "wear-them",
+            "hear-three-houses",
+            "choose-house"
+        ]
     );
     let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
     let talks = |task: usize| -> Vec<(&str, Option<&str>)> {
@@ -97,8 +107,8 @@ fn the_opening_hears_the_stranger_walks_round_the_counters_takes_its_ship_dresse
     let counters: Vec<&str> = talks(1).iter().map(|(to, _)| *to).collect();
     assert_eq!(counters, ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail"]);
     assert!(talks(1).iter().all(|(_, scene)| scene.is_some()), "each keeper says what their counter is for");
-    assert_eq!(talks(2), [("harbourmaster", Some("roundHarbour"))], "then the Harbourmaster, alone");
-    assert!(opening.tasks[2].reward.ship && opening.tasks.iter().filter(|task| task.reward.ship).count() == 1);
+    assert_eq!(talks(3), [("harbourmaster", Some("roundHarbour"))], "then the Harbourmaster, alone");
+    assert!(opening.tasks[3].reward.ship && opening.tasks.iter().filter(|task| task.reward.ship).count() == 1);
     assert_eq!(opening.tasks[0].reward.aurem, 0, "the stranger gives no Aurem");
 }
 
@@ -244,15 +254,19 @@ fn plain_clothes_worn_meet_no_goal_to_put_armour_on_and_the_gifts_worn_do() {
     assert!(character.worn(Slot::Torso).is_some_and(|item| item.plain), "dressed in plain clothes");
     assert!(character.worn(Slot::Legs).is_some_and(|item| item.plain));
     assert!(character.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE).is_ok());
-    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
+    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail"] {
         assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
     }
-    let level = character.level();
+    character.ride_the_lesson();
+    assert!(character.ask(Ask::Speak { keeper: keeper("harbourmaster") }, SOCIAL, &DICE).is_ok());
+    character.sail_the_lesson();
+    // The lessons send the player out, so each pays a mission's clear; the weapons cost nothing of it.
+    let (level, paid) = (character.level(), character.materials.aurem);
     for kind in [Kind::SwordAndShield, Kind::Bow] {
         let ware = starter(Vendor::Weaponsmith, kind, level);
         assert!(character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware, day: 4 }, SOCIAL, &DICE).is_ok());
     }
-    assert_eq!(character.materials.aurem, 0, "the Weaponsmith's gift, chosen free");
+    assert_eq!(character.materials.aurem, paid, "the Weaponsmith's gift, chosen free");
     let task = |character: &Character| {
         character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str())
     };
@@ -286,9 +300,43 @@ fn pieces_put_on_during_the_round_dress_the_player_as_its_last_keeper_is_heard()
     for (item, slot) in pieces {
         assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
     }
-    for key in ["mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
+    for key in ["mage", "vault", "tailor", "tack", "mail"] {
         assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
     }
+    character.ride_the_lesson();
+    assert!(character.ask(Ask::Speak { keeper: keeper("harbourmaster") }, SOCIAL, &DICE).is_ok());
+    character.sail_the_lesson();
     let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
     assert_eq!(task, Some("hear-three-houses"), "dressed by the pieces already worn");
+}
+
+#[test]
+fn the_lessons_hold_no_save_back_and_stop_no_pledge() {
+    let opening = quests().quests.iter().position(|quest| quest.faction == 0).expect("the opening");
+    let at = |id: &str| quests().quests[opening].tasks.iter().position(|task| task.id == id).expect("a task");
+    let task = |character: &Character| {
+        character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str())
+    };
+    // A save on the Harbourmaster's task or later keeps its place by its task's id, never sent back to a lesson.
+    for past in ["your-ship", "wear-them", "hear-three-houses"] {
+        let mut character = welcomed();
+        character.quests.set_task(opening, at(past));
+        let read = Character::from_json(&character.to_json()).expect("read");
+        assert_eq!(task(&read), Some(past), "{past} is not sent back to a lesson");
+    }
+    // One on the round rides once it is done, and takes the ship once the ride is.
+    let mut character = welcomed();
+    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail"] {
+        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    }
+    assert_eq!(task(&character), Some("ride-the-bay"));
+    let early = character.ask(Ask::Speak { keeper: keeper("harbourmaster") }, SOCIAL, &DICE);
+    assert_eq!(early, Err(Refusal::NothingToSay), "the ship waits for the ride");
+    character.ride_the_lesson();
+    assert_eq!(task(&character), Some("your-ship"));
+    assert!(character.ask(Ask::Speak { keeper: keeper("harbourmaster") }, SOCIAL, &DICE).is_ok());
+    assert_eq!(task(&character), Some("learn-the-helm"));
+    // A pledge midway through a lesson is taken: the houses' roads are walked from then on.
+    assert!(character.ask(Ask::Pledge { faction: 1 }, SOCIAL, &DICE).is_ok());
+    assert!(character.quest_now().is_some_and(|(quest, _)| quest != opening));
 }

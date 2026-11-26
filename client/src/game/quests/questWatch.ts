@@ -6,7 +6,16 @@
 // ambush) is said only as it happens or not at all.
 import type { GearState } from '../../network/gearMessages.ts';
 import { QUESTS, beginOf, linesBetween } from './questBook.ts';
-import { type Kept, behind, giftsBetween, greetBetween, keptOf, metBetween, momentsBetween } from './questNews.ts';
+import {
+  type Kept,
+  behind,
+  giftsBetween,
+  greetBetween,
+  keptOf,
+  lessonsBetween,
+  metBetween,
+  momentsBetween,
+} from './questNews.ts';
 
 /** Where the browser keeps, for an account (`<key>.<account>`), the quests whose begin it has said, by id. */
 export const BEGUN_KEY = 'noshores.roads.begun';
@@ -50,7 +59,7 @@ export class QuestWatch {
       if (after.task === 0 && after.counts.every((count) => count === 0)) this.begin(after.quest);
     } else if (after && before && !behind(before, after)) {
       this.kept = after;
-      toasts = giftsBetween(before, after);
+      toasts = [...giftsBetween(before, after), ...lessonsBetween(before, after)];
       moments = past ? momentsBetween(before, after) : [];
       this.hold([...this.greet(before, after), ...metBetween(before, after), ...linesBetween(before, after)], 0);
       if (after.task === 0 && before.quest !== after.quest) this.begin(after.quest);

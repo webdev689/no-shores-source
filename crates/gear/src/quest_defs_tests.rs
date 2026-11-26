@@ -30,7 +30,9 @@ fn places_of(goal: &GoalDef) -> Vec<&str> {
         | Goal::Scavenge(_)
         | Goal::Enter(_)
         | Goal::Buy(_)
-        | Goal::Wear(_) => goal.goal.place().into_iter().collect(),
+        | Goal::Wear(_)
+        | Goal::Ride(_)
+        | Goal::Sail(_) => goal.goal.place().into_iter().collect(),
     }
 }
 
@@ -40,8 +42,16 @@ fn the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_tha
     let scenes = content(include_str!("../../../content/story/houses.json"));
     let continent = content(include_str!("../../../content/world/land/continent-1.json"));
     let briefs = content(include_str!("../../../content/world/briefs.json"));
-    let nodes: Vec<&str> =
-        continent["nodes"].as_array().unwrap().iter().filter_map(|node| node["id"].as_str()).collect();
+    let social = content(include_str!("../../../content/world/social.json"));
+    let socials: Vec<String> = social["open"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|city| Some(format!("{}-social", city.as_str()?)))
+        .collect();
+    let drawn = continent["nodes"].as_array().unwrap().iter().filter_map(|node| node["id"].as_str());
+    // A goal may name an open city's social space as a node: a player docking there enters it.
+    let nodes: Vec<&str> = drawn.chain(socials.iter().map(String::as_str)).collect();
     let named = |node: &str, place: &str| {
         let brief = &briefs[node];
         ["areas", "runs"].iter().any(|list| {
@@ -55,7 +65,7 @@ fn the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_tha
             for goal in &task.goals {
                 said.extend(goal.scene.as_deref().into_iter().chain(goal.goal.lines()));
                 if let Some(node) = goal.goal.node() {
-                    assert!(nodes.contains(&node), "{node} is a node of continent-1");
+                    assert!(nodes.contains(&node), "{node} is a node of continent-1 or an open social space");
                     for place in places_of(goal) {
                         assert!(named(node, place), "{place} is a place of {node}");
                     }
@@ -163,6 +173,12 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         // A piece held is told again on every ask, so one piece would meet a count above one.
         (r#"{ "kind": "wear", "slot": "head", "count": 2, "text": "t" }"#, "count"),
         (r#"{ "kind": "buy", "slot": "melee", "count": 3, "text": "t" }"#, "count"),
+        // A lesson's step is done once; an arrival names a keeper's counter, and no other act names one.
+        (r#"{ "kind": "ride", "act": "walk", "count": 2, "text": "t" }"#, "count"),
+        (r#"{ "kind": "sail", "act": "steer", "count": 2, "text": "t" }"#, "count"),
+        (r#"{ "kind": "ride", "act": "arrive", "text": "t" }"#, "to"),
+        (r#"{ "kind": "ride", "act": "arrive", "to": "nobody", "text": "t" }"#, "to"),
+        (r#"{ "kind": "ride", "act": "mount", "to": "tack", "text": "t" }"#, "to"),
     ] {
         let problem = goal(text).expect(text).problem();
         assert!(problem.as_deref().is_some_and(|said| said.contains(field)), "{text}: {problem:?}");
@@ -320,6 +336,9 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("lamplighters", "find-lens-buyer"),
     ("lamplighters", "set-grey-point"),
     ("lamplighters", "burn-barrow-wreckers"),
+    ("house", "ride-the-bay"),
+    ("house", "learn-the-helm"),
+    ("house", "bring-it-home"),
     ("veiled", "meet-wren-follow"),
     ("veiled", "lift-collectors-tallies"),
     ("veiled", "wait-under-valeguard"),

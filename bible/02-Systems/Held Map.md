@@ -47,6 +47,8 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   On the way down every ship shrinks from the Overworld's scale to its own, so at the wheel the Sloop is its true size
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). There the
   painting rises from below the screen over 0.42 s, eased at both ends; it never fades. The ship sails on meanwhile.
+  As it rises the page tells the sea room (a course message's ask 4), which ticks the opening's sailing lesson's step
+  for it ([[Quests]], "The lessons").
 - **The art** is the owner's, from their Blender pipeline, published with the [[Sprite Forge]]'s renders: the
   parchment (`@art/held-map-forge-sheet.png`, 1648 × 1086) and over it the gauntlets of the set worn
   (`@art/held-map-forge-hands-<Set>.png`; bare hands with none), a strip of 17 frames drawn six times over. The

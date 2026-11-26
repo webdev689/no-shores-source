@@ -222,7 +222,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
 
 /// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the one its key
 /// (`gear::quests::KEEPERS`) names; the stranger keeps none.
-fn keeper_counter(keeper: u8) -> Option<CounterKind> {
+pub(crate) fn keeper_counter(keeper: u8) -> Option<CounterKind> {
     if let Some(house) = gear::factions::factions().faction(keeper) {
         return Some(CounterKind::Faction(house.id));
     }

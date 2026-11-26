@@ -530,7 +530,9 @@ impl Room {
             | Goal::Scavenge(_)
             | Goal::Enter(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => None,
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_) => None,
         }
     }
 }
