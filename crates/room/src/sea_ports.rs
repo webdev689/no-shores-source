@@ -402,16 +402,16 @@ impl Sea {
             return false;
         }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
-        let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
-        let start = self.harbour.harbours.starting();
-        let at = at.or(start);
+        let kept_at =
+            character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
+        let at = kept_at.or(self.harbour.harbours.starting());
         if at.is_some() && self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);
         }
         if let (Some([x, y]), Some(berth)) = (at, self.berths.get_mut(&player)) {
-            let kept =
-                character.ship_heading.filter(|_| character.ship_at.is_some()).map(|turned| turned as f64 / 1000.0);
+            // The heading kept belongs to the place kept: a ship put at the starting port instead faces as a new one.
+            let kept = character.ship_heading.filter(|_| kept_at.is_some()).map(|turned| turned as f64 / 1000.0);
             let heading = kept.unwrap_or_else(|| berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading));
             berth.sailing =
                 Some(super::Sailing { ship: Ship { x, y, heading, pace: 0, rate: 0 }, course: Default::default() });
