@@ -8,6 +8,7 @@
 
 import { companionsOf, launchedFor } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
+import { type Developers, isDeveloper } from './developers.ts';
 import { creditGuild, guildTold } from './guildWeeks.ts';
 import type { Stuff } from '../../client/src/game/guild/outpostLaw.ts';
 import { type Deposited, deliver, deposit, outpostFor, soundHorn, takeStores } from './outpostStores.ts';
@@ -68,10 +69,18 @@ export interface Characters {
   takeStores(account: string, room: string, stuff: Stuff, amount: number, rid?: string): Promise<number>;
   soundHorn(account: string, room: string, rid?: string): Promise<number>;
   outpost(room: string): ReturnType<typeof outpostFor>;
+  /** The account a session's token is for and its username, when it is a developer's (`developers.ts`); null
+   *  otherwise, or when the token is no session. */
+  developer(token: string): Promise<{ account: string; name: string | null } | null>;
 }
 
-/** The characters on a database, with a clock and a way to wait. */
-export function characters(database: Db, now: () => number, wait: (millis: number) => Promise<void>): Characters {
+/** The characters on a database, with a clock, a way to wait and the bot that says who is a developer. */
+export function characters(
+  database: Db,
+  now: () => number,
+  wait: (millis: number) => Promise<void>,
+  bot: Developers | null = null,
+): Characters {
   // A holder is its room's name, then `:`; the room held before is read as the row was, before this claim.
   const holding = `UPDATE characters SET holder = ?1, held_until = ?2, came_from = room,
     room = substr(?1, 1, instr(?1, ':') - 1) WHERE account_id = ?3`;
@@ -99,6 +108,11 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     takeStores: (account, room, stuff, amount, rid) => takeStores(database, account, room, stuff, amount, now(), rid),
     soundHorn: (account, room, rid) => soundHorn(database, account, room, now(), rid),
     outpost: (room) => outpostFor(database, room),
+    async developer(token) {
+      const account = await live(token);
+      if (account === null || !(await isDeveloper(database, bot, account))) return null;
+      return { account, name: await usernameOf(database, account) };
+    },
     /** Notes that a session's player is in a room that keeps no character, at sea in which water, or with none that
      *  they left it; false when the token is no live session. */
     async present(token, room, water = null) {

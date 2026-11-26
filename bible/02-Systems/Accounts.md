@@ -7,6 +7,7 @@ code:
   - server/accounts/companies.ts#companionsOf
   - server/accounts/discord.ts#callback
   - server/accounts/discord.ts#taken
+  - server/accounts/developers.ts#isDeveloper
   - server/accounts/secrets.ts#hashPassword
   - server/accounts/worker.ts#CharacterKeeper
   - server/accounts/worker.ts#LinkedCharacters
@@ -83,6 +84,10 @@ they play in holds it while they are there.
   (`linked.ts`). Given up to 1000 Discord ids in one ask (`pledges`), the name of the faction each linked one is
   pledged to, or null for none; an id linked to no account is left out, and more than 1000 answer nothing. Nothing
   else: no account id, no email, no gear.
+- **Who is a developer** ([[Developers Launch Activities From a Test Room, in Max Gear]]): an account linked to a
+  Discord account that holds a developer's role, as the bot answers through the accounts' binding to its `Members`
+  ([[Discord Bot]], "The game module"). The rooms ask through `CharacterKeeper.developer`, with a session's token: its
+  account and username for a developer's, null otherwise. No Discord, or a bot that does not answer, is no developer.
 - **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
   guests an hour (an IPv6 address by its /48 for guests) and every address together 500
   ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and one

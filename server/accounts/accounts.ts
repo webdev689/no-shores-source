@@ -9,6 +9,7 @@ import { addressKey, guestKey } from '../address.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type AccountRow, HEADERS, LAPSED, bodyOf, json, refused, sessionOf, signedIn, within } from './http.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
+import type { Developers } from './developers.ts';
 import { INVITE_MS } from './companies.ts';
 import { bindsAsk } from './binds.ts';
 import { lastPlace } from './lastPlace.ts';
@@ -17,13 +18,14 @@ import { forgetAnswers, outpostAllowed, plotReadAllowed } from './outpostStores.
 import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
 
-/** What the API runs on: the database, the clock, the Discord app if its keys are set, and the pages (by origin and
- *  path) a Discord sign-in may come back to. */
+/** What the API runs on: the database, the clock, the Discord app if its keys are set, the pages (by origin and
+ *  path) a Discord sign-in may come back to, and the bot that says who is a developer (none: no one is). */
 export interface Deps {
   readonly database: Db;
   readonly now: () => number;
   readonly discord: DiscordApp | null;
   readonly pages: readonly string[];
+  readonly bot?: Developers | null;
 }
 
 const PASSWORD_LEAST = 8;

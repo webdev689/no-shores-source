@@ -398,6 +398,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Meadow's Green Stands a Shade Darker]]
 - [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
 - [[The Desktop App as Claude Builds It]]
+- [[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]
+- [[Developers Launch Activities From a Test Room, in Max Gear]]
+- [[Character Slots and the Test Room as Claude Builds Them]]
 
 ## Replaced
 

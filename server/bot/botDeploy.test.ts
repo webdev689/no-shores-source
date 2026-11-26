@@ -7,7 +7,7 @@ import { REPO, codeOf, decided, importedFrom, refused, underCode, workflowText }
 const botCode = codeOf(workflowText('bot.yml'));
 
 test('every file the bot’s Worker and its command writer are built from lies under the bot’s code', () => {
-  const files = importedFrom(['server/bot/worker.ts', 'tools/botCommands.ts']);
+  const files = importedFrom(['server/bot/main.ts', 'tools/botCommands.ts']);
   assert.ok(files.includes('server/accounts/linked.ts'), 'the reach into the accounts is followed');
   for (const path of files) assert.ok(existsSync(new URL(path, REPO)) && underCode(botCode, path), path);
 });
