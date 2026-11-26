@@ -172,7 +172,11 @@ export function layOut(ask: LayoutAsk): Lettering {
   const spacedPlaces = spaced(ask.places, scale, ink);
   const marks: Rect[] = spacedPlaces.map((place) => markBox(place.kind, place.x, place.y, scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, scale));
-  const locks = ask.locks ?? [];
+  // A lock stands only where it is whole inside the map.
+  const locks = (ask.locks ?? []).filter(({ x, y }) => {
+    const box = markBox('lock', x, y, scale);
+    return box.x >= 0 && box.y >= 0 && box.x + box.width <= ink.width && box.y + box.height <= ink.height;
+  });
   marks.push(...locks.map((lock) => markBox('lock', lock.x, lock.y, scale)));
   const asked: Asked[] = [
     ...spacedPlaces.map((place) => ({ ...place, continent: -1, spots: [] })),

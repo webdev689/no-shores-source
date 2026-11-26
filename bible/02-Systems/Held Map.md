@@ -86,8 +86,8 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   colour reads at least 4.5 : 1 against the parchment it is haloed in. It is laid before the seas' names.
 - **Locked seas.** Every other island's sea, and its land, is darkened toward the ink by up to 0.42, softly at its
   edge (`shutCells` on the waters' grid, the land by its outline and its coast's island), and a padlock stands out at
-  its label point: the lock in the ink on a disc of the parchment ringed in the ink (`paintLock`). The lock is never
-  dropped, and names keep clear of it.
+  its label point, while it stands whole inside the map: the lock in the ink on a disc of the parchment ringed in the
+  ink (`paintLock`). A lock is never dropped for a name, and names keep clear of it.
 - **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
   holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
   its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's

@@ -99,6 +99,8 @@ test('a locked sea’s padlock stands at its middle, never dropped, and its sea�
   const sea = lettering.letters.find((letter) => letter.kind === 'water');
   assert.deepEqual([sea?.x, sea?.y], [300, 320]);
   assert.ok(!overlaps(boxOf(sea!), markBox('lock', 300, 200, 1)));
+  const edge = layOut({ ...ASK, locks: [{ x: 6, y: 200 }] });
+  assert.equal(edge.letters.length, 0, 'none where it would hang over the map’s edge');
 });
 
 test('a sea’s name spreads its letters wide where it fits, closer where it does not, and at a word’s size last', () => {
