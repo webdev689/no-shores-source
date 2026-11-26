@@ -229,8 +229,8 @@ acquired are kept by quest id (`acquired`). Claude's calls:
   ([[Interface]], "The social space's counters"), which asks 64 as it opens and says the goal's scene there as the room
   meets it, or shows the quest's card with Acquire. Otherwise the counter opens as before.
 - **A quest offered**: while it waits, the tracker shows its name, "Acquire it" and the keeper's goal words, its mark
-  leads to their counter and their keeper is lit; once acquired, the keeper's screen shows its card, its boxes ticking,
-  until it is done. The Journal's card of a quest shows the same card in its hover card, a quest done with every box
+  leads to their counter and their keeper is lit; once acquired, the keeper's screen shows it as a small tile beside the crest, its
+  card, its boxes ticking, on the pointer, the keys or a tap, until it is done. The Journal's card of a quest shows the same card in its hover card, a quest done with every box
   of its last task ticked, one waiting saying whom it is acquired from (`bookCard`); the tracker's steps wear the
   card's box.
 - **What is noticed**: a quest acquired, each step done and a quest done, each gift and each Art, Tenet or fragment a

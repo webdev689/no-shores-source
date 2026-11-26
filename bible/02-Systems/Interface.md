@@ -246,7 +246,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   keeps the text caret, and while the pad's cursor is out the mouse's pointer is hidden. The World Editor keeps the
   system's pointers.
 - **Notices of what is obtained** (`obtained.ts`), after the reference's: a band across the foot of the view, over
-  every layer (the menu's too) but the pad's cursor, edged at its top by a 2 px cyan line, dark under it; in its
+  every layer (the menu's too) but the pad's cursor, edged at its top by a 2 px cyan line, a translucent grey under it (alpha 0.72, the screen showing through, its
+  line still 4.5:1 over white); in its
   middle a round icon in a cyan ring (a keeper's mark, an Art's emblem, a find's glyph or its rarity's crystal), a
   bold title over a lighter line, the key to press on a keycap where there is one, and dim at the far right that key and what it
   opens ("Open Character"). They come for a keeper's gift, a road's reward (an Art, a Tenet, a fragment to choose, or
@@ -1402,10 +1403,14 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   each a square box filled once met, with what is left of a count; a rule; the keeper's quote in italics, "A note
   from" them; at its foot a mouse and Acquire, or "Acquired" once it is); beside it the quest's name in capitals over
   a rule, the keeper's longer words in italics (its offer's scene) and "Follow its steps in the tracker, and in the
-  Journal, to see it through.", and under them its tile framed in gold (a house's emblem, or the keeper's mark). On a
-  phone the card takes the column's width and the tile and words stand under it. Acquire, clicked or pressed with
-  Enter or the pad's A, asks the room (ask 85); it takes the focus as the card first shows. The card stays, its boxes
-  ticking, until the quest is done.
+  Journal, to see it through.", under them its tile framed in gold (a house's emblem, or the keeper's mark), and under
+  that the keeper's wares, so they show beside the card while it is offered. On a phone the card takes the column's
+  width, the tile and words stand under it and the wares under them. Acquire, clicked or pressed with Enter or the
+  pad's A, asks the room (ask 85); it takes the focus as the card first shows. Once acquired the card steps aside and
+  the wares lead: the quest stands as its small tile framed in gold with its name and "Acquired", left of the crest
+  (the crest narrower beside it), or under the crest on a phone, until the quest is done. Its card, its boxes
+  ticking, floats beside the tile where the pointer rests on it or the keys focus it; a tap or a press (Enter, the
+  pad's A) opens it at the head of the rows instead, as a phone has no pointer, and a second closes it.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: SUPPLIES, the Ammo
   crate with how many of the five are carried, then WEAPONS, the day's six, then TO START, every Melee kind and every
