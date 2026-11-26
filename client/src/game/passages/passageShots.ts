@@ -347,7 +347,8 @@ async function hollowFrames(
   // The embers' fires, over the picture where the scene's depth lets them show, as the game's scene draws them.
   const [flames, copy] = [new Flames(gpu), new DepthCopy(gpu)];
   flames.seeThroughM = 0.3;
-  for (const fire of CITY_LAMPS.fires) flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts);
+  for (const fire of CITY_LAMPS.fires)
+    flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts, fire.glassed);
   const flat = device.createTexture({
     size: [width, height],
     format: 'r32float',

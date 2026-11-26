@@ -101,8 +101,8 @@ what show the ground there.
   lit again only as a view changes them: a fire on coals casts its light as a lamp reaching eight times its height (at
   least four metres), seeded as its flames are; a lantern's flame and the Beacon's fires are lit by their place's own
   lamp, seeded alike. A flame shows through 0.3 m of what stands nearer, a lantern's glass drawn solid round it, and its
-  smoke leans with the wind. `lanternLights` marks a lantern's flame `glassed`, which `Flames.light` takes to keep its
-  smoke and embers in its glass; the land's scene lights its fires without it, so a land lantern's flame smokes.
+  smoke leans with the wind. `lanternLights` marks a lantern's flame `glassed`, and `Flames.light` gives a glassed
+  flame no smoke and no embers, so a lantern burns inside its glass.
 - **Lamps at sea.** Each ship's lanterns are lamps where they burn, moved with it each frame, reaching thirteen metres
   as a carried lantern does, and a sea fight's flashes, blasts and fires are lamps for as long as each lasts
   ([[Sailing]], "Its lanterns"; [[Naval Combat]]); they join the city's lamps through `CITY_LAMPS`, told anew only

@@ -476,7 +476,7 @@ export class GameScene {
     if (this.landFires.changed === CITY_LAMPS.firesChanged) return;
     for (const id of this.landFires.ids) this.fires.out(id);
     const ids = CITY_LAMPS.fires.map((fire) =>
-      this.fires.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts),
+      this.fires.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts, fire.glassed),
     );
     this.landFires = { changed: CITY_LAMPS.firesChanged, ids };
   }
