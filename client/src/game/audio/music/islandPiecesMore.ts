@@ -119,13 +119,13 @@ function barrow(): Song {
       {
         bars: 'Dm | F | Gm | F | Bb | Gm | C | A',
         parts: ['pad', 'arp', 'bass', 'lead'],
-        lead: 'A3:2 D4:3 C4:1 | A3:2 C4:3 A3:1 | Bb3:2 D4:3 Bb3:1 | A3:4 F3:2 | F3:2 Bb3:3 C4:1 | Bb3:2 D4:2 G3:2 | E3:2 G3:3 F3:1 | E3:6',
+        lead: 'A3:2 D4:3 C4:1 | A3:2 C4:3 A3:1 | Bb3:2 D4:3 Bb3:1 | A3:4 F3:2 | F3:2 Bb3:3 C4:1 | Bb3:2 D4:2 G3:2 | E3:2 G3:3 C3:1 | E3:6',
       },
       {
         bars: 'Bb | C | Dm | Am | Gm | Bb | C | A',
         parts: ['pad', 'arp', 'bass', 'counter', 'drums'],
         counter:
-          'D5:2 C5:3 Bb4:1 | G4:2 E4:3 C4:1 | F4:2 A4:3 D5:1 | C5:2 E4:4 | D4:2 G4:3 A4:1 | Bb4:2 D5:3 F4:1 | E4:2 G4:3 C5:1 | C#5:6',
+          'D5:2 C5:3 Bb4:1 | G4:2 E4:3 C4:1 | F4:2 A4:3 D5:1 | C5:2 E4:4 | D4:2 G4:3 Bb4:1 | Bb4:2 D5:3 F4:1 | E4:2 G4:3 C5:1 | C#5:6',
       },
       {
         bars: 'Dm | Bb | Am | Dm',
@@ -139,8 +139,8 @@ function barrow(): Song {
 
 function mirage(): Song {
   const tune =
-    'A4:1.5 D4:1 F#4:1 | G4:1 Bb4:1 A4:1.5 | G4:1 C4:1 Eb4:1.5 | D4:1 Eb4:.5 F#4:2 | G4:1 Bb4:1 Eb5:1.5 | D5:1 C5:1 G4:1.5' +
-    ' | Bb4:1 A4:1 G4:.5 F#4:1 | D4:3.5';
+    'A4:1.5 D4:1 F#4:1 | G4:1 A4:.5 Bb4:2 | G4:1 C4:1 Eb4:1.5 | D4:1 Eb4:.5 F#4:2 | G4:1 Bb4:1 Eb5:1.5 | Eb5:1 C5:1 G4:1.5' +
+    ' | Bb4:1.5 G4:1 D4:1 | D4:3.5';
   return calmPiece({
     name: 'mirage',
     bpm: 80,
@@ -198,7 +198,7 @@ function mirage(): Song {
 
 function caravan(): Song {
   const tune =
-    'E3:1 G#3:1 B3:1 | F3:1 A3:1 D4:1 | C4:2 A3:1 | G#3:1 F3:1 E3:1 | E4:1.5 C4:.5 A3:1 | B3:1 D4:1 G3:1' +
+    'E3:1 G#3:1 B3:1 | F3:1 A3:1 D4:1 | C4:2 A3:1 | G#3:1.5 F3:.5 E3:1 | E4:1.5 C4:.5 A3:1 | B3:1 D4:1 G3:1' +
     ' | F3:1.5 C4:.5 A3:1 | E3:3';
   return calmPiece({
     name: 'caravan',
@@ -336,7 +336,7 @@ function peat(): Song {
       {
         bars: 'Am | Dm | Am | F | C | G | Dm | E',
         parts: ['pad', 'arp', 'bass', 'lead'],
-        lead: 'C5:2 B4:1 A4:2 | F4:3 A4:2 | E5:2 D5:1 C5:2 | A4:3 F4:2 | G4:2 E4:1 G4:2 | B4:3 D5:2 | D5:2 C5:1 A4:2 | G#4:5',
+        lead: 'C5:2 D5:1 A4:2 | F4:3 A4:2 | E5:2 D5:1 C5:2 | A4:3 F4:2 | G4:2 E4:1 G4:2 | B4:3 D5:2 | D5:2 C5:1 A4:2 | G#4:5',
       },
       {
         bars: 'F | G | Em | Am | Dm | G | C | E',

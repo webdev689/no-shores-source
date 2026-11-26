@@ -338,7 +338,7 @@ function fen(): Song {
         bars: 'C#m | A | E | B | C#m | F#m | E | G#m',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
         lead: 'C#3:2 E3:1 G#3:1 | A3:3 r:1 | G#3:1.5 F#3:.5 E3:2 | D#3:4 | E3:1.5 F#3:.5 G#3:2 | A3:2 C#4:2 | B3:1.5 A3:.5 F#3:2 | G#3:4',
-        counter: 'G#3:4 | E3:4 | B3:4 | F#3:4 | E3:4 | C#4:4 | A3:4 | B3:4',
+        counter: 'G#3:4 | E3:4 | B3:4 | F#3:4 | E3:4 | C#4:4 | B3:4 | B3:4',
       },
       {
         bars: 'C#m | A | G#m | C#m',

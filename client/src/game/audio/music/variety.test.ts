@@ -4,7 +4,7 @@ import { coldScore } from './coldScore.ts';
 import { dryScore } from './dryScore.ts';
 import { greenScore } from './greenScore.ts';
 import { islandPieces } from './islandPieces.ts';
-import type { Song } from './score.ts';
+import { type Song, TICKS_PER_BEAT } from './score.ts';
 import { seaPieces } from './seaPieces.ts';
 import { socialPieces } from './socialPieces.ts';
 import { wetScore } from './wetScore.ts';
@@ -16,9 +16,12 @@ const CALM: readonly Song[] = [
   ...socialPieces(),
   ...Object.values(seaPieces()),
 ];
-/** The pieces' lead is their third track; their last tune note is their key's home. */
-const LEAD_CHANNEL = 3;
+/** A piece's tracks in order: the pad, the bass, the ostinato, the lead (its last note its key's home), the
+ *  counter-line. */
+const PAD_CHANNEL = 0;
 const BASS_CHANNEL = 1;
+const LEAD_CHANNEL = 3;
+const COUNTER_CHANNEL = 4;
 /** As many bars as the older pieces, each its own, share at most: Dust Road and the Tithe share three bars of the
  *  same degrees at the same places in the bar; Moorlight and Mistwrack four of the same degrees in any rhythm. */
 const MOST_SAME_BARS = 3;
@@ -90,5 +93,37 @@ test("a family's second cadence and second victory are figures of their own, not
   for (const score of [greenScore(), dryScore(), wetScore(), coldScore()]) {
     assert.notEqual(figureOf(score.secondVictory), figureOf(score.victory), `${score.secondVictory.name}`);
     assert.notEqual(figureOf(score.secondCadence), figureOf(score.cadence), `${score.secondCadence.name}`);
+  }
+});
+
+/** The older pieces written with a half step against their pad as their colour: a major seventh or an added ninth in
+ *  the chord's voicing, Sunscorch's flat second over its root, the Tithe's E against F. */
+const WRITTEN_RUBS = new Set([
+  'moorlight',
+  'cairn',
+  'sunscorch',
+  'mistwrack',
+  'rime',
+  'saltmere',
+  'lamplight',
+  'tithe',
+  'sea-night',
+]);
+/** A line's note held near a beat or more: a beat laid legato sounds a little under it. */
+const HELD = TICKS_PER_BEAT * 0.9;
+
+test("no calm piece's tune or counter-line holds a note a half step from the pad under it", () => {
+  for (const song of CALM) {
+    if (WRITTEN_RUBS.has(song.name)) continue;
+    const pad = song.notes.filter((note) => note.channel === PAD_CHANNEL);
+    const lines = song.notes.filter(
+      (note) => (note.channel === LEAD_CHANNEL || note.channel === COUNTER_CHANNEL) && note.duration >= HELD,
+    );
+    for (const line of lines)
+      for (const under of pad.filter((note) => note.tick <= line.tick && note.tick + note.duration > line.tick))
+        assert.ok(
+          ![1, 11].includes(Math.abs(line.note - under.note) % 12),
+          `${song.name}, bar ${Math.floor(line.tick / song.ticksPerBar)}: ${line.note} on ${under.note}`,
+        );
   }
 });
