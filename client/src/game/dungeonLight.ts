@@ -95,8 +95,8 @@ export const CRYSTAL_GLOW: Colour = [0.36, 0.86, 1];
 export const FUNGUS_GLOW: Colour = [0.75, 1.35, 0.45];
 export const LANTERN_GLOW: Colour = [1, 0.77, 0.43];
 export const EMBER_GLOW: Colour = [0.9, 0.3, 0.08];
-/** Daylight far down an open mouth's way on. */
-export const DAYLIGHT_GLOW: Colour = [0.95, 1.0, 1.1];
+/** Daylight far down an open mouth's way on, dimmed by the distance, so it reads as light beyond and not a hole. */
+export const DAYLIGHT_GLOW: Colour = [0.6, 0.66, 0.74];
 /** Candle wax, lit as a surface is. */
 export const WAX: Colour = [0.86, 0.8, 0.66];
 

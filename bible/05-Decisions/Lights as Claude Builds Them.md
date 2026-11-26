@@ -35,7 +35,7 @@ of them. How it works is in [[Sky]] ("Lamps"), [[Dungeons]], [[Cities]], [[Layou
 | A cluster of candles | Each candle its own small fire, the centre one seeded as the cluster's light | One light, several flames: they should not burn in step |
 | A kit piece's or a landmark's flame | Stays the piece's own glowing part, flickering with its light, not a fire | Where in the piece its flame burns is not known to the game |
 | The passages' lamp under ground | A fire in its cage and its light at the cage's middle (3.2 m), a dead lamp's in its glass off its crook | Its light stood at the middle of its post |
-| An open mouth under ground | Its way on drawn in daylight's pale colour, not stone | The owner: every glowing thing is redesigned; it was drawn as the cell's stone |
+| An open mouth under ground | Its way on drawn in daylight's pale colour, some two thirds as bright as a lit sky, not stone | The owner: every glowing thing is redesigned; it was drawn as the cell's stone |
 | Where an open mouth stands under ground | Chosen by its place on its wall, then stood 0.45 m out from it, its whole piece in front of the wall's face | Its way on's daylight lies 0.4 m behind its foot: stood at the wall, it is behind the wall's face |
 | The light carried under ground | The dungeon's own torch or lantern kind at the hand, as on land, seeded apart from every place | The owner: the carried torch casts light under ground |
 | A ship's lantern | A glass between six iron posts on its taffrail post; its flame drawn through the glass by the ship's shader, a soft halo round it, its light a lamp reaching 13 m, as a carried lantern's | The ship's pieces are one mesh: the flame is drawn on its glass, not as a separate model |
