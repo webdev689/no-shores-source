@@ -230,8 +230,10 @@ The decisions in [[Open Questions]] are not repeated here.
   autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
   audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
   [[Passages as Claude Builds Them]]; how it works in [[Passages]]. With it, on the owner's "Retune both into band",
-  the sea's low bands send fewer Minor ships and the week's Abyss Dungeon run again pays four fifths
-  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]).
+  the sea's low bands send fewer Minor ships, the week's Abyss Dungeon run again pays four fifths, and, once #220's
+  four-times kill drops lifted a patrol zone's loot, a ship's piece holds a module three times as often
+  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]); and the held map at sea redesigned on the owner's
+  word ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]).
 - **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
   accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
@@ -1004,10 +1006,14 @@ The decisions in [[Open Questions]] are not repeated here.
 ## Next
 
 - **The passages, to finish** (#218): the hand-off's four steps are done (the design round, the band set once, the
-  rules round reviewed, the check and the pictures), and the band's two outside it retuned on the owner's word. Left:
-  the check green in CI on the head, and the owner's yes to merge. Not yet played live: every deal, a dive's way
-  across zones, a public round, the held map's public way, the sea's new ranks and a run of the week's Abyss Dungeon
-  again; tested offline, and pictured headless (`tools/passageShots.json`, `target/passages/`).
+  rules round reviewed, the check and the pictures), the band's outliers retuned and the held map at sea redesigned on
+  the owner's word. Left: the check green in CI on the head, and the owner's yes to merge. Claude's calls in the
+  redesign, for the owner to confirm: a node the quest names keeps its red-brown ring at sea; a sea is locked while
+  its island has no name in `ISLANDS` (`hudLaw.ts`), so naming one unlocks it; a locked sea is still sailed and
+  travelled to as before (the lock is drawn, not enforced); a sea's name falls back to a plain word's size where its
+  arch fits nowhere. Not yet played live: every deal, a dive's way across zones, a public round, the held map's public
+  way and its redesign on a real GPU, the sea's new ranks and salvage, a run of the week's Abyss Dungeon again; tested
+  offline, and pictured headless (`tools/passageShots.json`, `target/passages/`).
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
