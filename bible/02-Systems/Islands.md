@@ -134,8 +134,9 @@ The sea room holds its islands (`sea_islands.rs`):
   (`isleLaw.ts`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
   from its middle through that point. An island come into sight bends the voyage still ahead round it.
 - A click on an island, or on the water within 400 m of its reach, asks to go ashore on it ("Go ashore on the cove?"),
-  and so does L within 700 m past its coast ([[Game]], "Landings"); yes sails the ship to the island's offing on its
-  landing's bearing, planned on water as a click's course is, round it where it must, and in to its anchorage, and once it lies
+  and so does L within 700 m past its coast ([[Game]], "Landings"); yes docks in sight, the view switched to the
+  Oversea view: the ship sails at ×60 to the island's offing on its landing's bearing, planned on water as a click's
+  course is, round it where it must, and in to its anchorage, and once it lies
   there, once nothing else is under way (the map put away, the deck left, no fight), the player walks ashore on its
   beach behind the veil ("Going ashore on a cove"). Steered, sent elsewhere, chasing, in a fight or left by its
   player, the ship gives the landing up. The sea is left only once the island's room has opened: one that does not leaves the player aboard, told so,

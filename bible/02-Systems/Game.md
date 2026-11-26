@@ -493,7 +493,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   (`seaClose.ts`) brings the eye down along the camera's own look to 25 m from the point 4.5 m over its waterline that
   the World Editor looks at, every ship drawn as its size coming in has it, from whatever height the Oversea view
   stood at. V (the pad's left) or the console's switch moves between them, eased over about a second; the wheel never
-  does, and at sea level it changes nothing. Going ashore, the view eases back up as it flies off. Clicks and marks
+  does, and at sea level it changes nothing. Docking switches to the Oversea view ("Landings"), and going ashore the
+  view eases back up as it flies off. Clicks and marks
   are taken on the picture as shown.
 - **The pace follows the view** (`easedPace`). In the Oversea view a voyage sails at the pace it was set at: ×200
   planned on the held map, ×60 set by a click (`PLANNED_PACE`, `CLICK_PACE`). Once the view comes down to sea level,
@@ -656,16 +657,27 @@ pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the hel
 sea.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
-to dock there; anywhere else, to go ashore. Yes within reach lands at once, or once nothing else holds the player
-(another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked) at ×60
-and lands once it is within reach, which the console names ("Bound for Overlook's harbour, to dock"). Another course
+to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the
+player (another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked)
+at ×60 and docks in sight once it is within reach, which the console names ("Bound for Overlook's harbour, to dock").
+Another course
 given meanwhile (a click, W, a chase), a fight, or the player leaving the sea (to join a company member elsewhere, say)
 lets the landing go ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]); a
 stop keeps it with the voyage, to be resumed.
 
-Landing flies the view up over the island the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s, framed on
-the nodes of its side, the city's social space among them when docking; the ship heaves to, its voyage kept to be
-resumed. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
+Docking in sight (`docking.ts`, `berths.ts`) switches to the Oversea view, and the ship sails at ×60 to its berth
+(`Sea.sailIn`): planned on water to the berth's offing, on to the offing itself where the plan ends at the water
+nearest it, then straight in. At a living port the berth is the first place of its pier (the city's moorings) with no
+player's ship within 15 m of it, as the sea shows the ships; its offing is the port's roadstead (out from the city's
+middle through its harbour to water 4 m deep, then 600 m on). Every place taken, or at a port with no pier (Sunspire's
+and Rimeholt's plans have none), the ship anchors at the roadstead, or 100 m at a time across the way out from it,
+either side, where the water is 4 m deep and no ship lies within 100 m. At a coast with no port the berth is just off
+the shore nearest the point clicked (or the ship, asked with L): straight out from the shore, where the water is first
+4 m deep and 50 m clear of the room's coast, its offing 600 m on. At a sea island it is the island's anchorage, from
+its offing. Once the ship lies at rest within 30 m of its berth the landing is made, and the ship lies docked there.
+
+Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
+framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
 `islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
 island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner; then every
 patrol zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. A click on a
@@ -675,10 +687,10 @@ card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist'
 the lit tile does (the one under the pointer or the focus, else the first place's). Escape, or Back to the sea, flies
 back down.
 
-A sea island's landing sails for its offing, out on the bearing it is landed on, planned on water as any route and bent
-round every island in sight, then in to its anchorage, which the console names ("Bound for a cove, to go ashore"); the
-same courses, a fight and leaving the sea let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]],
-"On the page"). A player washed up on a found island walks ashore there.
+A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
+the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its
+anchorage, which the console names ("Bound for a cove, to go ashore"); the same courses, a fight and leaving the sea
+let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]], "On the page"). A player washed up on a found island walks ashore there.
 
 ## Rooms
 
