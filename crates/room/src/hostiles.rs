@@ -154,15 +154,15 @@ pub(crate) fn round_the_coast(
 }
 
 /// A ship's heading after `seconds` at its `clock`, and the player it comes for: the one it came for while still in
-/// its sight and not fighting, else the nearest such; it steers to intercept them, at most at the helm's rate. A bold
-/// ship comes for anyone; a wary one only for a ship it would take (`wary_takes`, DFO's `takesPrize`). One with no
-/// one to come for keeps its heading.
+/// its sight, not fighting and not in home waters, else the nearest such; it steers to intercept them, at most at the
+/// helm's rate. A bold ship comes for anyone; a wary one only for a ship it would take (`wary_takes`, DFO's
+/// `takesPrize`). One with no one to come for keeps its heading.
 fn come_for(hostile: &Hostile, ships: &[Voyager], (seconds, clock): (f64, f64)) -> (f64, Option<PlayerId>) {
     let at = [hostile.x, hostile.y];
     let takes = |ship: &Voyager| {
         hostile.bold || wary_takes(hostile.commission, hostile.strength(), (ship.hull_kind, ship.hull))
     };
-    let open = |ship: &&Voyager| !ship.fighting && hostile.sees(ship.at) && takes(ship);
+    let open = |ship: &&Voyager| !ship.fighting && !ship.home && hostile.sees(ship.at) && takes(ship);
     let kept = ships.iter().filter(open).find(|ship| Some(ship.player) == hostile.quarry);
     let nearest = || ships.iter().filter(open).min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
     let Some(ship) = kept.or_else(nearest) else { return (hostile.heading, None) };
@@ -215,7 +215,7 @@ impl Hostiles {
     }
 
     /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
-    /// nearest it if it is farther than the ship's, sails on and goes once no player keeps it; then each player's roll
+    /// nearest it if it is farther than the ship's, sails on and goes once no player past home waters keeps it; then each player's roll
     /// comes due. Answers each bold ship that came within `ENGAGE_RANGE` of a player this tick, with that player, for
     /// their fight; it leaves the sea.
     pub fn tick(&mut self, seconds: f64, ships: &[Voyager], chart: &impl Chart) -> Vec<(PlayerId, Hostile)> {
@@ -245,7 +245,8 @@ impl Hostiles {
                 }
             }
         }
-        self.sailing.retain(|hostile| ships.iter().any(|ship| hostile.kept_by(ship.at)));
+        // Home waters shelter a player whole: none is hunted there, and none keeps a ship at sea.
+        self.sailing.retain(|hostile| ships.iter().any(|ship| !ship.home && hostile.kept_by(ship.at)));
         let mut met = Vec::new();
         for ship in ships {
             // One by the edge of home waters meets no player inside them.

@@ -416,6 +416,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Developers Launch Activities From a Test Room, in Max Gear]]
 - [[Character Slots and the Test Room as Claude Builds Them]]
 - [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
+- [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]
 
 ## Replaced
 

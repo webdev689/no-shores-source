@@ -145,7 +145,7 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
 }
 
 #[test]
-fn a_ship_left_inside_home_waters_never_comes_nearer_their_coast_even_for_a_player_there() {
+fn a_ship_left_inside_home_waters_never_comes_nearer_their_coast() {
     use crate::hostiles::{Hostile, Hostiles, Voyager};
     let layout = layout();
     let charted = Charted::new(&layout, &[]);
@@ -162,12 +162,14 @@ fn a_ship_left_inside_home_waters_never_comes_nearer_their_coast_even_for_a_play
         hull: 1.0,
         hull_kind: sailing::HullKind::Sloop,
     };
+    // Past home waters, 5.2 km off: near enough to keep the ship at sea, too far for it to see.
+    let out = Voyager { player: 2, at: [213_200.0, 150_000.0], home: false, ..player };
     let minor = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Minor };
     let mut hostiles = Hostiles::new(1);
     hostiles.sailing.push(Hostile::standing(1, 1, minor, [208_000.0, 150_000.0], 1.5 * std::f64::consts::PI, true));
     for _ in 0..60 {
-        hostiles.tick(1.0, &[player], &chart);
-        let Some(ship) = hostiles.sailing.iter().find(|ship| ship.id == 1) else { break };
+        hostiles.tick(1.0, &[player, out], &chart);
+        let ship = hostiles.sailing.iter().find(|ship| ship.id == 1).expect("kept at sea");
         assert!(ship.x >= 208_000.0 - 1e-6, "it came nearer the coast, to {}", ship.x);
     }
 }

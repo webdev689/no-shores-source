@@ -525,7 +525,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   voyage once stopped short (both Space); the pace dial; and Manage (B) and Leave the helm (H)
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination
-  anywhere at sea, in the ship's own water or another, asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
+  anywhere at sea, in the ship's own water or another, asks whether to travel there, and yes travels there as the picture fades out and in: the flow stays at
   sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
 - **Manage** pans the view down over 1.4 s to the ship at its true size, from its starboard quarter 39 m off,
   looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The player

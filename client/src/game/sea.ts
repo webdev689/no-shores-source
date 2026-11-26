@@ -85,7 +85,7 @@ export class Sea {
   /** Its wake; and whether the sea room's link was lost. */
   private readonly wake = new Wake();
   private roomLost = false;
-  /** A travel to other waters under way, seen sailing away, until the player has the ship again. */
+  /** A travel by the held map under way, faded out and in, until the player has the ship again. */
   travelling: SeaTravel | null = null;
   private press: Press | null = null;
   private room: SeaRoom | null = null;
@@ -433,12 +433,12 @@ export class Sea {
     const boarded = this.boarding.frame(this.room, combat?.view ?? null, input);
     if (boarded) combat?.letGo();
     const helmShot = view.helmShot(trueLying, seaShot.far);
-    const travelled = this.travelling?.away.shot(ship, helmShot);
+    const travelled = this.travelling?.away;
     const down =
       combat && fought
         ? { near: boarded?.shot ?? fought, share: combat.share }
         : travelled
-          ? { near: { ...helmShot, ...travelled.near }, share: travelled.share }
+          ? { near: helmShot, share: travelled.helmShare }
           : view.kind === 'helm'
             ? { near: helmShot, share: view.helmShare }
             : aboardShot && { near: aboardShot, share: this.aboard.share };

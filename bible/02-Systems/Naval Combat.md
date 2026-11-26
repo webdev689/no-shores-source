@@ -612,7 +612,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
   rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100, so one met head-on stays in
   sight half a minute and more. Each keeps the largest sight it has been given, from the pace of the player nearest
-  it, and goes once no player is within 1.1 times it.
+  it, and goes once no player past home waters is within 1.1 times it.
 - **Where.** Between 0.9 and 1 of its sight out from the player, within 60 degrees of their heading while under way and
   anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of it
   (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
@@ -623,7 +623,8 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   only steps away from their coast, so it sails out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
   either way, so it follows the coast round; with none open it goes about. Its temper is its
   seed's: an Elite and a Miniboss are always bold, any other one in four.
-- **Coming for the player.** A bold ship that has sighted a player who is not fighting comes for them (`come_for`):
+- **Coming for the player.** A bold ship that has sighted a player who is not fighting and not in home waters comes
+  for them (`come_for`; home waters shelter a player whole, [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]):
   it steers to intercept, heading to where their ship will be when it can reach it at its way on that player's
   clock (lead pursuit; straight at them where it cannot reach them, as when they sail away faster), turning at most
   at a Sloop's helm rate, 10 degrees a second of its clock. It keeps after the one it came for while they stay in

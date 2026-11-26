@@ -60,6 +60,24 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
 }
 
 #[test]
+fn islands_keep_clear_of_the_friendly_ships_lanes() {
+    // A lane along y = 50 km, ships 4 km north of it: islands rolled round them fall on both sides of it.
+    let mut sea = sea_round("continent-4", "desert");
+    sea.chart.lanes = vec![[[0.0, 50_000.0], [600_000.0, 50_000.0]]];
+    for step in 0..10_u32 {
+        let player = sea.join();
+        sea.course(player, &[[230_000.0 + f64::from(step) * 20_000.0, 54_000.0]], 10).expect("open sea");
+    }
+    ticks(&mut sea, 60 * 60 * 3);
+    let islands = &sea.islands().standing;
+    assert!(islands.len() >= 10, "{} islands", islands.len());
+    for island in islands {
+        let off = (island.at[1] - 50_000.0).abs();
+        assert!(off >= isle::reach_of(island.seed) + 300.0, "island {} {off} m off the lane", island.id);
+    }
+}
+
+#[test]
 fn the_sea_rolls_islands_at_the_owners_rates() {
     assert_eq!((super::WANTED_NEAR, super::ROLL_CHANCE, super::MOST), (3, 0.45, 144));
     assert_eq!(super::ROLL_EVERY_TICKS, 10 * 60, "every ten seconds");

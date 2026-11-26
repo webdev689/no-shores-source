@@ -35,14 +35,13 @@ function travelling() {
     room,
   } as unknown as Passage;
   const travel = new SeaTravel('The Elmwater', [550_000, 150_000], passage, () => true);
-  const toFade = () => travel.step(SAIL_AWAY.outS + 0.01, room);
+  const toFade = () => travel.step(0.01, room);
   return { travel, asked, room, passage, toFade, answer: (number: number) => (answer = number) };
 }
 
-test('the travel is asked as the fade begins; taken, the ship is laid where the room put it and sails on', () => {
+test('the travel is asked as the fade begins, at once; taken, the ship is laid where the room put it and sails on', () => {
   const { travel, asked, room, toFade, answer } = travelling();
-  travel.step(1, room);
-  assert.deepEqual(asked, [], 'nothing asked on the rail out');
+  assert.deepEqual(asked, [], 'nothing asked before its first step');
   toFade();
   assert.deepEqual(asked, ['travel']);
   answer(0);
@@ -69,7 +68,7 @@ test('taken late, the black holds until frames drawn since the answer show the n
   assert.equal(travel.away.step, 'black', 'something of the new waters stands in');
   for (let frame = 0; frame < WHOLE_FRAMES; frame++) frameDrawn(true);
   travel.step(SAIL_AWAY.blackLeastS, room);
-  assert.equal(travel.away.step, 'arrive');
+  assert.equal(travel.away.step, 'lift');
   frameDrawn(false);
 });
 
@@ -103,8 +102,8 @@ test('no answer is taken before the travel is asked', () => {
   const { travel, asked, room, answer } = travelling();
   answer(0);
   travel.step(1, room);
-  assert.deepEqual(asked, [], 'the stale answer is left alone');
-  assert.equal(travel.away.answered, false);
+  assert.deepEqual(asked, ['travel'], 'asked in its first step');
+  assert.equal(travel.away.answered, false, 'an answer standing before it is not taken in the same step');
 });
 
 test('yes travels to the prompt’s own water, named as it named it, though no water lies at the place sailed for', () => {
@@ -129,7 +128,7 @@ test('yes travels to the prompt’s own water, named as it named it, though no w
 test('a voyage stopped before the fade asks no travel and is answered at once, never waiting out the black', () => {
   const { travel, asked, room, passage } = travelling();
   (passage as { sailing: boolean }).sailing = false;
-  travel.step(SAIL_AWAY.outS + 0.01, room);
+  travel.step(0.01, room);
   assert.deepEqual(
     asked.filter((each) => each === 'travel'),
     [],

@@ -14,7 +14,7 @@ pub struct Charted {
     waters: Waters,
     ids: Vec<String>,
     bands: Vec<Option<(u8, u8)>>,
-    lanes: Vec<[[f64; 2]; 2]>,
+    pub(crate) lanes: Vec<[[f64; 2]; 2]>,
     pub traffic: Option<Traffic>,
 }
 

@@ -117,6 +117,19 @@ fn a_travel_while_a_hostile_ship_chases_the_player_is_refused() {
 }
 
 #[test]
+fn a_travel_from_home_waters_is_never_refused_as_chased() {
+    let (mut sea, traveller, _) = an_island_out_of_sight();
+    let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    let standing = Hostile::standing(1, 7, commission, [212_000.0, 150_000.0], 0.0, true);
+    sea.hostiles.sailing.push(Hostile { quarry: Some(traveller), sight_m: 10_000.0, ..standing });
+    let other = sea.join();
+    sea.course_anywhere(other, &[[215_000.0, 150_000.0]], 10).unwrap();
+    sea.tick();
+    assert!(sea.hostiles.sailing.iter().all(|hostile| hostile.quarry != Some(traveller)), "none hunts them there");
+    assert_eq!(sea.travel(traveller, &[[550_000.0, 300_000.0]], 10), Ok(()));
+}
+
+#[test]
 fn a_travel_while_fighting_is_refused() {
     let mut sea = sea();
     let player = at_sea(&mut sea);

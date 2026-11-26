@@ -24,7 +24,7 @@ const WANTED_NEAR: usize = 3;
 const ROLL_EVERY_TICKS: u64 = 600;
 const ROLL_CHANCE: f64 = 0.45;
 /// How far from the ship an island is rolled, metres, and how clear it stands of coasts, of other islands, and of
-/// ships and their courses.
+/// ships, and of their courses and the friendly ships' lanes past its reach.
 const ROLL_FROM_M: f64 = 3_000.0;
 const ROLL_TO_M: f64 = 7_000.0;
 const CLEAR_OF_COAST_M: f64 = 3_000.0;
@@ -249,7 +249,7 @@ impl Islands {
     }
 
     /// An island rolled round a ship at `at`, in the first of eight places drawn that is hostile open sea, clear of the
-    /// coasts, the islands, every ship and hostile, and every course.
+    /// coasts, the islands, every ship and hostile, every course and the friendly ships' lanes.
     fn roll(
         &mut self,
         at: [f64; 2],
@@ -279,7 +279,8 @@ impl Islands {
                         .chain(course)
                         .zip(course)
                         .all(|(&from, &to)| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M)
-                });
+                })
+                && charted.lanes.iter().all(|&[from, to]| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M);
             if open && let Some(island) = self.island(seed, place, (water.continent, water.holder, levels)) {
                 return Some(island);
             }

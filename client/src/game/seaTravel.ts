@@ -1,4 +1,4 @@
-// A travel by the held map, as the page sails it: the cinematic (`SailAway`) round the room's answer. The travel is
+// A travel by the held map, as the page sails it: the fade out and in (`SailAway`) round the room's answer. The travel
 // asked as the picture fades; taken, the ship is laid where the room put it, short of the course's end, and sails on
 // to it; refused, it heaves to, its voyage kept, and its line says why.
 import { SailAway } from '../cinema/sailAway.ts';

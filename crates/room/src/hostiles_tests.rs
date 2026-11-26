@@ -84,7 +84,8 @@ fn no_ship_comes_before_the_first_roll_or_to_a_fighting_player_and_each_comes_ne
         }
         assert!(hostiles.sailing.iter().filter(|hostile| hostile.sees(ship)).count() <= DENSITY);
     }
-    // About one roll in 100 s, a hostile ship on 0.24 of them: some 35 in four hours.
+    // A roll about every 50 s, a hostile ship on 0.24 of them, but none while three sail in sight, as the wary ones
+    // that linger often do: some 30 in four hours.
     assert!((15..70).contains(&launched.len()), "{} ships in four hours", launched.len());
     for &out in launched.values() {
         let way = way_of(Rank::Miniboss);
@@ -364,4 +365,16 @@ fn each_player_rolls_for_a_hostile_ship_at_the_owners_rates() {
     assert_eq!(super::FIRST_ROLL_S, 30.0, "half a minute after reaching the water");
     assert_eq!(super::ROLL_EVERY_S, [30.0, 70.0], "then every 30 to 70 s");
     assert_eq!(super::DENSITY, 3, "none while three sail in sight");
+}
+
+#[test]
+fn a_player_inside_home_waters_is_no_ships_quarry_and_keeps_none_at_sea() {
+    let home = Voyager { home: true, ..voyager(1, [3_000.0, 0.0], 0, false) };
+    let out = voyager(2, [9_000.0, 0.0], 0, false);
+    let mut hostiles = Hostiles { sailing: vec![standing(1, [4_000.0, 0.0], 0.0, true)], ..Hostiles::default() };
+    hostiles.tick(1.0, &[home, out], &HOSTILE_WATER);
+    let quarries: Vec<_> = hostiles.sailing.iter().map(|hostile| hostile.quarry).collect();
+    assert_eq!(quarries, [Some(2)], "it comes for the player past home waters, never the one inside them");
+    hostiles.tick(1.0, &[home], &HOSTILE_WATER);
+    assert!(hostiles.sailing.is_empty(), "a player inside home waters keeps no ship at sea");
 }
