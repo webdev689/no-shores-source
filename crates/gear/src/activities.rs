@@ -231,6 +231,16 @@ impl Weekly {
         }
     }
 
+    /// The share of its kills' and its cache's pay and loot a run pays a player who has taken its first clear this
+    /// week: the Abyss's four fifths, so an hour of it run again keeps within the band (`band`).
+    #[must_use]
+    pub const fn run_again_share(self) -> f64 {
+        match self {
+            Weekly::Elite => 1.0,
+            Weekly::Abyss => 0.8,
+        }
+    }
+
     /// The level every foe in it stands at, whatever the island's band.
     #[must_use]
     pub const fn foes_at(self) -> u8 {

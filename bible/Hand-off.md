@@ -222,9 +222,9 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The passages and the regions** (#218 on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
   autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
   audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
-  [[Passages as Claude Builds Them]]; how it works in [[Passages]]. Its check is red only on the band's test, which
-  two of `main`'s own activities fail (the sea at level 5, the week's Abyss Dungeon run again at level 30): the
-  owner's to decide, in [[Open Questions]].
+  [[Passages as Claude Builds Them]]; how it works in [[Passages]]. With it, on the owner's "Retune both into band",
+  the sea's low bands send fewer Minor ships and the week's Abyss Dungeon run again pays four fifths
+  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]).
 - **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
   the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
   each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
@@ -982,11 +982,10 @@ The decisions in [[Open Questions]] are not repeated here.
 ## Next
 
 - **The passages, to finish** (#218): the hand-off's four steps are done (the design round, the band set once, the
-  rules round reviewed, the check and the pictures). Left: the owner's answer on the band's two outside it, then that
-  answer made true (a retune of `main`'s sea or Abyss rerun in `crates/gear`, new bounds in `gear::band`, or the test
-  held to the passages), [[Activities]]' "The band" and [[Passages]] rewritten to match, the check green in CI on the
-  head, and the owner's yes to merge. Not yet played live: every deal, a dive's way across zones, a public round, the
-  held map's public way; tested offline, and pictured headless (`tools/passageShots.json`, `target/passages/`).
+  rules round reviewed, the check and the pictures), and the band's two outside it retuned on the owner's word. Left:
+  the check green in CI on the head, and the owner's yes to merge. Not yet played live: every deal, a dive's way
+  across zones, a public round, the held map's public way, the sea's new ranks and a run of the week's Abyss Dungeon
+  again; tested offline, and pictured headless (`tools/passageShots.json`, `target/passages/`).
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes

@@ -285,10 +285,13 @@ need to keep all our content within this band", [[Passages Web Out From the Patr
 - **Loot** is weighed by colour, each twice the one below, as each colour drops half or less as often.
 - **The band**, against a patrol zone's hour at the same level: XP and Aurem 0.7 to 2, loot 0.75 to 5
   (`PAY_BAND`, `LOOT_BAND`), the owner's order asking harder content to drop more. A test fails for any activity
-  outside it, and another if the passages drop the most loot at any level or pay the most XP at every level. Two stand
-  outside it now, waiting on the owner: the sea at level 5 (0.65, 0.62 and 0.66 of the patrol zone's XP, Aurem and
-  loot) and the week's Abyss Dungeon run again at level 30 (2.15, 2.02 and 6.03). The passages stand at 0.79 to 1.55
-  of its XP, 0.73 to 1.43 of its Aurem and 1.03 to 1.96 of its loot.
+  outside it, and another if the passages drop the most loot at any level or pay the most XP at every level. Every
+  activity stands inside it, as the owner chose ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]): the
+  sea's low bands send fewer Minor ships and more Elites ([[Naval Combat]]), which lifts the sea at level 5 from 0.65
+  to 0.78 of the patrol zone's XP; and the week's dungeon run again by a player who has taken its first clear that
+  week pays a share of its kills' and its cache's XP, Aurem and chances (`Weekly::run_again_share`): the Abyss's four
+  fifths, the Elite's whole, which brings the Abyss's at level 30 from 2.15 of the XP and 6.03 of the loot to 1.72 and
+  4.84. The passages stand at 0.79 to 1.55 of its XP, 0.73 to 1.43 of its Aurem and 1.03 to 1.96 of its loot.
 - **Not counted**: bounties and the Abyss boon, which pay alike whatever is played, and the cold lantern, a bounty's.
   Shapes come from the week's Abyss alone and are not loot here.
 
@@ -297,11 +300,11 @@ As the measuring printed it (`cargo test -p gear --release measure_the_band -- -
 | Level | Activity | XP | Aurem | Vestiges, Normal to Atheric | Items, Normal to Atheric | Materials | Essence | XP, Aurem, loot against the patrol zone |
 |---|---|---|---|---|---|---|---|---|
 | 5 | Patrol zone | 20098 | 1610 | 4.96/2.01/0.79/0.00/0.00 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
-| 5 | Sea | 13014 | 991 | 0.19/0.05/0.02/0.00/0.00 | 3.87/1.16/0.35/0.00/0.00 | 56 | 0.0 | 0.65, 0.62, 0.66 |
+| 5 | Sea | 15590 | 1176 | 0.22/0.07/0.02/0.00/0.00 | 4.46/1.40/0.45/0.00/0.00 | 64 | 0.0 | 0.78, 0.73, 0.78 |
 | 5 | Passages, depth 4 | 15948 | 1179 | 6.75/2.24/0.76/0.00/0.00 | 0.24/0.09/0.03/0.00/0.00 | 36 | 0.0 | 0.79, 0.73, 1.22 |
 | 10 | Patrol zone | 30105 | 2384 | 4.96/2.01/0.79/0.00/0.00 | 0.00/0.00/0.00/0.00/0.00 | 201 | 1.0 | 1.00, 1.00, 1.00 |
 | 10 | Patrol dungeon | 33205 | 2470 | 7.48/2.62/0.94/0.00/0.00 | 5.47/2.03/0.78/0.00/0.00 | 0 | 0.0 | 1.10, 1.04, 2.40 |
-| 10 | Sea | 22668 | 1710 | 0.22/0.06/0.02/0.00/0.00 | 4.35/1.35/0.43/0.00/0.00 | 62 | 0.0 | 0.75, 0.72, 0.76 |
+| 10 | Sea | 24692 | 1853 | 0.23/0.07/0.02/0.00/0.00 | 4.66/1.47/0.48/0.00/0.00 | 66 | 0.0 | 0.82, 0.78, 0.82 |
 | 10 | Elite Playlist | 33059 | 2410 | 7.47/2.91/1.19/0.00/0.00 | 5.20/2.14/0.91/0.00/0.00 | 0 | 0.3 | 1.10, 1.01, 2.57 |
 | 10 | Passages, depth 10 | 30716 | 2296 | 7.55/2.56/0.88/0.00/0.00 | 0.74/0.28/0.11/0.00/0.00 | 34 | 0.1 | 1.02, 0.96, 1.47 |
 | 10 | Passages, depth 11 | 37737 | 2772 | 8.24/2.80/0.97/0.00/0.00 | 0.73/0.27/0.10/0.00/0.00 | 34 | 0.1 | 1.25, 1.16, 1.60 |
@@ -319,7 +322,7 @@ As the measuring printed it (`cargo test -p gear --release measure_the_band -- -
 | 30 | Elite Playlist | 71992 | 5324 | 7.06/2.73/1.11/0.47/0.21 | 4.81/1.96/0.89/0.40/0.18 | 0 | 0.3 | 1.02, 0.95, 2.70 |
 | 30 | Abyss Playlist | 95990 | 7099 | 9.35/3.61/1.46/0.62/0.28 | 6.41/2.62/1.18/0.54/0.24 | 0 | 0.4 | 1.37, 1.27, 3.58 |
 | 30 | Elite Dungeon of the week | 100603 | 7449 | 11.66/4.45/1.79/0.82/0.33 | 8.29/3.38/1.53/0.70/0.31 | 0 | 0.4 | 1.43, 1.33, 4.53 |
-| 30 | Abyss Dungeon of the week | 151468 | 11315 | 15.54/5.93/2.38/1.06/0.45 | 11.05/4.51/2.04/0.93/0.41 | 0 | 0.7 | 2.15, 2.02, 6.03 |
+| 30 | Abyss Dungeon of the week | 121175 | 9052 | 12.43/4.74/1.90/0.86/0.37 | 8.84/3.61/1.63/0.74/0.33 | 0 | 0.7 | 1.72, 1.62, 4.84 |
 | 30 | Passages, depth 20 | 103504 | 7621 | 8.54/3.06/1.13/0.45/0.16 | 1.25/0.55/0.27/0.13/0.06 | 30 | 0.7 | 1.47, 1.36, 1.96 |
 
 ## Bounties

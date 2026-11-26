@@ -234,6 +234,11 @@ impl Room {
         let bountiful = self.current(passage::Current::Bountiful).map(|strength| passage::zone::BOUNTIFUL * strength);
         // A passage zone's foe pays its share of a kill: the passages pay through their caches.
         let share = if self.zone().is_some() { gear::lamps::KILL_SHARE } else { 1.0 };
+        // The week's dungeon run again pays its share to one who has had its first clear this week.
+        let weekly = self.run.as_ref().and_then(|run| match run.pays {
+            crate::run::Pays::Week { weekly, .. } => Some(weekly),
+            _ => None,
+        });
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
@@ -241,6 +246,7 @@ impl Room {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let character = &mut found.character;
+            let share = weekly.map_or(share, |weekly| character.week_share(week, weekly));
             let reward = character.reward_share(worth, (rank, level), Some(hand), (self.difficulty, share));
             let looted = deck || spoilless;
             let mut vestiges = if looted {

@@ -174,11 +174,26 @@ impl Character {
         source: Source,
         dice: &Dice,
     ) -> Vec<Vestige> {
-        self.pay(clear.worth(), level, None, difficulty);
+        self.reward_clear_share(clear, level, (difficulty, 1.0), source, dice)
+    }
+
+    /// `reward_clear` at `share` of its XP, Aurem and chances, as the week's dungeon run again pays
+    /// (`Weekly::run_again_share`).
+    pub fn reward_clear_share(
+        &mut self,
+        clear: Clear,
+        level: u8,
+        (difficulty, share): (Difficulty, f64),
+        source: Source,
+        dice: &Dice,
+    ) -> Vec<Vestige> {
+        let (xp, aurem) = clear.worth();
+        let shared = |amount: u32| libm::round(f64::from(amount) * share) as u32;
+        self.pay((shared(xp), shared(aurem)), level, None, difficulty);
         if clear != Clear::Dungeon {
             return Vec::new();
         }
-        let raised = difficulty.reward();
+        let raised = difficulty.reward() * share;
         self.loot((vestige::chance(MINIBOSS) * raised, raised), MINIBOSS, level, source, dice)
     }
 

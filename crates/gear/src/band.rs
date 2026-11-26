@@ -73,9 +73,9 @@ pub const SEA_FIGHT_SECONDS: f64 = 240.0;
 /// The ranks a sighting sends by the band's first level, Minor to Miniboss (`room::sighting::RANKS_BY_BAND`).
 pub const SEA_RANKS: [(u8, [f64; 4]); 9] = [
     (1, [0.50, 0.40, 0.10, 0.0]),
-    (4, [0.45, 0.42, 0.13, 0.0]),
-    (7, [0.40, 0.43, 0.17, 0.0]),
-    (10, [0.35, 0.45, 0.20, 0.0]),
+    (4, [0.34, 0.44, 0.22, 0.0]),
+    (7, [0.30, 0.47, 0.23, 0.0]),
+    (10, [0.27, 0.49, 0.24, 0.0]),
     (13, [0.25, 0.45, 0.25, 0.05]),
     (16, [0.20, 0.45, 0.27, 0.08]),
     (19, [0.15, 0.45, 0.30, 0.10]),
@@ -313,15 +313,16 @@ pub fn playlist(which: Playlist, level: u8) -> Option<Hour> {
     Some(runs.plus(daily(day_clear(foes_at, tier))).plus(weekly(week)))
 }
 
-/// An hour of the week's Elite or Abyss Dungeon at `level`: its runs again, and its first clear's Vestige and Essence
-/// once a week; none below the level it opens at. Its Shapes are counted apart (`week_shapes`).
+/// An hour of the week's Elite or Abyss Dungeon at `level`: its runs again, at their share once its first clear is
+/// taken (`Weekly::run_again_share`), and its first clear's Vestige and Essence once a week; none below the level it
+/// opens at. Its Shapes are counted apart (`week_shapes`).
 #[must_use]
 pub fn week_dungeon(which: crate::activities::Weekly, level: u8) -> Option<Hour> {
     let foes_at = which.foes_at();
     if level + 2 < foes_at {
         return None;
     }
-    let runs = elite_run(foes_at, which.tier()).times(runs_an_hour(level, foes_at));
+    let runs = elite_run(foes_at, which.tier()).times(runs_an_hour(level, foes_at) * which.run_again_share());
     let first = vestiges(1.0, shares(which.colours(), foes_at));
     Some(runs.plus(weekly(Hour { essence: 2.0 * f64::from(which.essence()), ..first })))
 }
