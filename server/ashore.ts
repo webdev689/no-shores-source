@@ -33,7 +33,8 @@ export function placeOf(
   if (isle) return { seas: [isle.sea], island: { island: isle.id, seed: isle.seed } };
   const node = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
   if (!node) return null;
-  if (startedAtSea(name)) return { seas: [seaRoomName(node.seas)], island: null };
+  // Entered from any tier's sea (`arrives`), a run started at sea names its players to all three.
+  if (startedAtSea(name)) return { seas: [0, 1, 2].map(seaRoomName), island: null };
   if (!reach) return null;
   const seas = reach.social ? [0, 1, 2].map(seaRoomName) : [seaRoomName(node.seas)];
   return { seas, island: { continent: reach.continent } };

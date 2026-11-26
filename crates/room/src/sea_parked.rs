@@ -1,7 +1,7 @@
 //! Ships lying parked: a player who leaves the sea with their ship at rest leaves it lying where it is, kept by their
 //! account. It is seen, at sea and from the island, only while a place's room names that account ashore at the island
-//! it lies at, and let go once no room has named it for a while (its player logged off or gone elsewhere) or as its
-//! player comes back to the sea, the ship theirs again. A parked ship is never one of the sea's ships: no hostile
+//! it lies at; unseen once no room names it (its player logged off or gone elsewhere), seen again as one does, and let
+//! go after a day unnamed or as its player comes back to the sea, the ship theirs again. A parked ship is never one of the sea's ships: no hostile
 //! ship, fight or island heeds it.
 
 use super::{Sea, Ship, ShipLook, whole};
@@ -16,6 +16,9 @@ pub const LANDFALL_M: i64 = 32_000;
 /// How long a naming keeps a parked ship seen, ticks, and how long one no room has named yet is kept: three of a
 /// place's namings, each about 15 s apart, so one lost on the way lets nothing go.
 pub const NAMED_TICKS: u64 = 45 * 60;
+/// How long a parked ship no room names is kept unseen before it is let go: a day, so a player who logs off on their
+/// island finds it docked there again, and the sea keeps no ship for ever.
+pub const KEPT_TICKS: u64 = 24 * 3600 * 60;
 
 /// Where a place's room stands as it names its players to the sea: on an island of the layout, by its continent's
 /// id; on a sea island, by its number and seed; or anywhere, a run started at sea, whose players' ships stay parked
@@ -56,8 +59,7 @@ impl Sea {
     /// Leaves a leaving player's ship parked where it lies, if it is at rest, out of any fight and its account known;
     /// those no room named in time are let go.
     pub(super) fn park(&mut self, player: PlayerId) {
-        let clock = self.clock;
-        self.parked.by_account.retain(|_, parked| clock <= parked.until);
+        self.let_go_unnamed();
         let Some(account) = self.harbour.accounts.get(&player) else { return };
         let berth = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref());
         let Some(sailing) = berth.filter(|sailing| sailing.course.is_empty()) else { return };
@@ -81,7 +83,7 @@ impl Sea {
     /// a room at no island, or at a sea island that does not stand.
     pub fn ashore(&mut self, place: Ashore<'_>, accounts: &[&str]) -> Vec<(String, Parked)> {
         let clock = self.clock;
-        self.parked.by_account.retain(|_, parked| clock <= parked.until);
+        self.let_go_unnamed();
         if let Ashore::Island { id, seed } = place {
             self.hold_ashore(id, seed);
         }
@@ -103,8 +105,15 @@ impl Sea {
                 (parked.named, parked.until) = (true, clock + NAMED_TICKS);
             }
         }
-        let seen = self.parked.by_account.iter().filter(|(_, parked)| parked.named && lies_at(&parked.ship));
+        let seen = (self.parked.by_account.iter())
+            .filter(|(_, parked)| parked.named && clock <= parked.until && lies_at(&parked.ship));
         seen.map(|(account, parked)| (account.clone(), parked.clone())).collect()
+    }
+
+    /// Lets go of every parked ship no room has named for `KEPT_TICKS`.
+    fn let_go_unnamed(&mut self) {
+        let clock = self.clock;
+        self.parked.by_account.retain(|_, parked| clock <= parked.until + KEPT_TICKS);
     }
 
     /// Every parked ship seen: those a room has named, and whose naming holds.

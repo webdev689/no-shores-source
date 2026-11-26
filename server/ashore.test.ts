@@ -17,7 +17,11 @@ test('a room names its players to the seas they land from, at its island', () =>
   assert.deepEqual(placeOf('node-gullwing-vale--elite--dungeon-1--run-a1b2c3d4', reach(false), null)?.seas, [
     'sea--elite',
   ]);
-  assert.deepEqual(placeOf('node-krakens-grotto--sea--run-k3j4h5g6', null, null), { seas: ['sea'], island: null });
+  // A run started at sea is entered from any tier's sea, so its players' ships may lie in any of them.
+  assert.deepEqual(placeOf('node-krakens-grotto--sea--run-k3j4h5g6', null, null), {
+    seas: ['sea', 'sea--elite', 'sea--abyss'],
+    island: null,
+  });
   assert.deepEqual(placeOf('isle-7-00000000000000ff--elite', null, { id: 7, seed: '255', sea: 'sea--elite' }), {
     seas: ['sea--elite'],
     island: { island: 7, seed: '255' },

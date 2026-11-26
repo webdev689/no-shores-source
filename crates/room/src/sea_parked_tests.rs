@@ -4,7 +4,7 @@
 
 use super::tests::{sea, ticks};
 use super::*;
-use crate::sea::parked::{Ashore, NAMED_TICKS};
+use crate::sea::parked::{Ashore, KEPT_TICKS, NAMED_TICKS};
 
 /// 20 km west of the tests' square continent's west coast, and 80 km west of it.
 const OFF_COAST: [f64; 2] = [80_000.0, 150_000.0];
@@ -44,14 +44,17 @@ fn a_ship_left_at_rest_lies_parked_seen_only_while_a_room_names_its_account_on_t
 }
 
 #[test]
-fn a_ship_named_from_another_island_is_not_seen_and_is_let_go_once_no_room_names_it() {
+fn a_ship_named_from_another_island_is_not_seen_and_is_let_go_once_no_room_names_it_for_a_day() {
     let mut sea = sea();
     left_at(&mut sea, "ann", FAR_OUT);
     assert!(sea.ashore(Ashore::Continent("continent-4"), &["ann"]).is_empty(), "80 km off its coast");
     assert!(shown(&sea).is_empty());
     ticks(&mut sea, usize::try_from(NAMED_TICKS).unwrap() + 1);
     left_at(&mut sea, "bea", OFF_COAST);
-    assert_eq!(sea.parked.by_account.keys().collect::<Vec<_>>(), ["bea"], "named by no room in time, let go");
+    assert_eq!(sea.parked.by_account.len(), 2, "named by no room in time, kept unseen");
+    sea.clock += NAMED_TICKS + KEPT_TICKS;
+    left_at(&mut sea, "cal", OFF_COAST);
+    assert_eq!(sea.parked.by_account.keys().collect::<Vec<_>>(), ["cal"], "named by no room for a day, let go");
 }
 
 #[test]
@@ -65,7 +68,15 @@ fn a_ship_is_seen_while_its_naming_is_renewed_and_no_longer_once_it_stops() {
     assert_eq!(shown(&sea), [left], "renewed in time");
     sea.tick();
     assert!(shown(&sea).is_empty(), "logged off or gone elsewhere, its naming lapsed");
-    assert!(sea.ashore(Ashore::Continent("continent-4"), &["ann"]).is_empty(), "and let go");
+    let bea = left_at(&mut sea, "bea", OFF_COAST);
+    assert_eq!(
+        answered(&sea.ashore(Ashore::Continent("continent-4"), &["bea"])),
+        ["bea"],
+        "a lapsed one never answered"
+    );
+    let again = sea.ashore(Ashore::Continent("continent-4"), &["ann", "bea"]);
+    assert_eq!(answered(&again), ["ann", "bea"], "back on the island, docked and seen again");
+    assert_eq!(shown(&sea), [left, bea]);
 }
 
 #[test]
