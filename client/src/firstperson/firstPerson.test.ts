@@ -360,3 +360,15 @@ test("a swap between loadouts of different factions' colours keeps the pictures 
   await drawn(sword, bow);
   assert.equal(asked.length, before, 'each loadout, asked for ahead of the swap in its own colour, is kept');
 });
+
+test("a drink shows the flask's frame by its progress where the flask is published, and nothing where it is not", async () => {
+  const { frame, asked } = firstPerson((path) => wholeFrames(path) || path.startsWith('forge/held/FLASK_'));
+  const drinking = (share: number) => ({ ...standing, drawn: false, drinking: share });
+  const begun = await frame(0.016, drinking(0.1));
+  assert.deepEqual(begun.quads, [{ x: 318, y: 199, width: 2, height: 1, flip: false }], 'flush in the corner');
+  assert.ok(asked.includes('forge/held/FLASK_0-0_Flask.png'));
+  assert.ok(asked.includes('forge/held/FLASK_0-3_Flask.png'), 'every frame asked for ahead');
+  assert.deepEqual((await frame(0.016, standing)).quads, [{ x: 50, y: 80, width: 2, height: 1, flip: false }]);
+  const { frame: bare } = firstPerson(wholeFrames);
+  assert.deepEqual((await bare(0.016, drinking(0.5))).quads, [], 'unpublished, the weapon is put away and no more');
+});
