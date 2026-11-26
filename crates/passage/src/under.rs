@@ -125,15 +125,26 @@ fn lamp(dungeon: &Dungeon, arrive: [f64; 2]) -> Option<[f64; 2]> {
 }
 
 /// Whether the lamp at `at`, facing the arrival, stands on a cell that holds no solid with its plinth and stones
-/// clear of the dungeon's `boxes`.
+/// on its rooms' floor and clear of the dungeon's `boxes`.
 fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 5]], at: [f64; 2], arrive: [f64; 2]) -> bool {
     let overlap = |one: &[f64; 5], other: &[f64; 5]| {
         one[0] < other[2] && other[0] < one[2] && one[1] < other[3] && other[1] < one[3]
     };
+    let cell_at = |[x, y]: [f64; 2]| {
+        let (column, row) = ((x / CELL_M).floor(), (y / CELL_M).floor());
+        let inside =
+            column >= 0.0 && row >= 0.0 && (column as usize) < dungeon.columns && (row as usize) < dungeon.rows;
+        inside.then(|| row as usize * dungeon.columns + column as usize)
+    };
+    let on_room_floor =
+        |point: [f64; 2]| cell_at(point).is_some_and(|cell| matches!(dungeon.cells[cell], Cell::Room(_)));
     let facing = libm::atan2(arrive[0] - at[0], -(arrive[1] - at[1]));
     let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], facing);
-    let cell = (at[1] / CELL_M) as usize * dungeon.columns + (at[0] / CELL_M) as usize;
-    !dungeon.holds_solid(cell) && solids.iter().all(|solid| boxes.iter().all(|held| !overlap(solid, held)))
+    let whole = |&[west, north, east, south, _]: &[f64; 5]| {
+        [[west, north], [east, north], [east, south], [west, south]].into_iter().all(on_room_floor)
+    };
+    cell_at(at).is_some_and(|cell| !dungeon.holds_solid(cell))
+        && solids.iter().all(|solid| whole(solid) && boxes.iter().all(|held| !overlap(solid, held)))
 }
 
 /// The zone's layings under ground in its style, each from the next seed, the first first; a lamp's zone only where
@@ -235,7 +246,7 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
 }
 
 /// The share of a Hold's ring round `middle`, sampled every 10 degrees, that lies on a cell of the dungeon's floor.
-pub(crate) fn ring_on_floor(dungeon: &Dungeon, middle: [f64; 2]) -> f64 {
+fn ring_on_floor(dungeon: &Dungeon, middle: [f64; 2]) -> f64 {
     let cell_of = |at: [f64; 2]| ((at[0] / CELL_M).floor() as i64, (at[1] / CELL_M).floor() as i64);
     let floor: std::collections::BTreeSet<(i64, i64)> =
         dungeon.rooms.iter().flat_map(|room| room.cells.iter()).map(|&cell| cell_of(dungeon.centre(cell))).collect();
@@ -247,6 +258,8 @@ pub(crate) fn ring_on_floor(dungeon: &Dungeon, middle: [f64; 2]) -> f64 {
     on.count() as f64 / 36.0
 }
 
+/// Whether a Hold's ring round `middle` lies whole on the floor of the dungeon's rooms: no rock or corridor cell, and
+/// no edge of the dungeon, comes within `RING_M` of its middle.
 pub(crate) fn ring_clear(dungeon: &Dungeon, middle: [f64; 2]) -> bool {
     let (radius, half) = (crate::plan::RING_M, CELL_M / 2.0);
     let within = |at: f64, cells: usize| at - radius >= 0.0 && at + radius <= cells as f64 * CELL_M;

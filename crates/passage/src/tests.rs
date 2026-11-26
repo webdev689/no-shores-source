@@ -447,10 +447,20 @@ fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_a
         for piece in plan.pieces.iter().filter(|piece| !matches!(piece.kind, Kind::WayIn | Kind::Mouth(_))) {
             let at = [piece.at[0], piece.at[1]];
             let solids = piece.kind.solids_at(piece.at, piece.facing);
+            let on_rock = |&[west, north, east, south, _]: &[f64; 5]| {
+                [[west, north], [east, north], [east, south], [west, south]]
+                    .into_iter()
+                    .any(|corner| !matches!(dungeon.cells[cell_of(&dungeon, corner)], dungeon::Cell::Room(_)))
+            };
             if dungeon.holds_solid(cell_of(&dungeon, at))
-                || solids.iter().any(|solid| boxes.iter().any(|held| overlaps(solid, held)))
+                || solids.iter().any(|solid| on_rock(solid) || boxes.iter().any(|held| overlaps(solid, held)))
             {
                 in_solid.push(format!("{what}: {:?} at {at:?}", piece.kind));
+            }
+        }
+        for &spot in &plan.sites.spots {
+            if dungeon.holds_solid(cell_of(&dungeon, spot)) {
+                in_solid.push(format!("{what}: a spot at {spot:?}"));
             }
         }
         for door in &plan.sites.onward {
@@ -471,7 +481,9 @@ fn every_under_ground_lamp_of_ten_years_stands_under_a_ceiling_tall_enough() {
     let mut low = Vec::new();
     for (what, plan, dungeon) in under_plans(2_900..3_420, Zone::has_lamp) {
         let Some(lamp) = plan.sites.lamp else { continue };
-        let tallest = dungeon.rooms.iter().map(|room| room.height).fold(0.0, f64::max);
+        // The lamp never stands in the way in's room.
+        let rooms = dungeon.rooms.iter().enumerate().filter(|(number, _)| *number != dungeon.way_in.room);
+        let tallest = rooms.map(|(_, room)| room.height).fold(0.0, f64::max);
         let ceiling = dungeon.ceilings[cell_of(&dungeon, lamp)];
         if ceiling < tallest.min(crate::LAMP_CEILING_M) {
             low.push(format!("{what}: {ceiling} under {tallest}"));
