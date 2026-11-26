@@ -12,7 +12,9 @@ import { statusesOf } from '../rules/fighters.ts';
 import { AnimaMoments, type AnimaScreen, QUIET, animaOf } from './animaMoment.ts';
 import { chainMarks, chainVerdict } from './chainLooks.ts';
 import { EVENT, HOW } from './cues.ts';
+import { HealLights, type HealScreen, QUIET_HEAL } from './healLight.ts';
 import type { Fighting } from './fighting.ts';
+import { motionReduced } from '../plus/kit.ts';
 import type { Sparks } from './sparks.ts';
 import { DRAWERS, type Kept, TRAILED, TRAIL_S, ended, landed } from './spellDrawers.ts';
 import type { KeptSpell } from './spellEffects.ts';
@@ -151,6 +153,7 @@ export class SpellLooks {
   private readonly streaks = new Tails();
   private readonly lands = new Lands();
   private readonly anima = new AnimaMoments();
+  private readonly heals = new HealLights();
   private readonly hits: FightEvent[] = [];
   private readonly chains: FightEvent[] = [];
   /** The room tick of the last snapshot drawn from, and the seconds since it came. */
@@ -170,9 +173,15 @@ export class SpellLooks {
     return this.since > STALE_S ? QUIET : this.anima.screen;
   }
 
+  /** The player's own screen as their heal takes it through their own eyes: its edge and the motes rising there. */
+  get healScreen(): HealScreen {
+    return this.since > STALE_S ? QUIET_HEAL : this.heals.screen;
+  }
+
   /** Takes a frame's fight events: each spell that lands on a foe marks where it lands, and each Atheric's leap or
-   *  burst where it went, the next frame drawn. */
+   *  burst where it went, the next frame drawn; each drink's heal lights its drinker. */
   struck(events: readonly FightEvent[]): void {
+    this.heals.heard(events);
     for (const event of events) {
       if (event.how === HOW.spell && event.kind === EVENT.hit && this.hits.length < 64) this.hits.push(event);
       if (chainVerdict(event) && this.chains.length < 64) this.chains.push(event);
@@ -192,6 +201,7 @@ export class SpellLooks {
       this.lands.clear();
       this.hits.length = 0;
       this.chains.length = 0;
+      this.heals.clear();
       return ground.laid();
     }
     const [players, foes] = [playersOf(fight, drawn), foesOf(fight, drawn)];
@@ -210,6 +220,7 @@ export class SpellLooks {
     const jobs: Job[] = [];
     this.spells(fight, frame, jobs);
     this.statuses(fight, frame, jobs);
+    this.heals.frame(frame, jobs, motionReduced());
     const own = players.find((player) => player.id === fight.player);
     this.anima.frame(frame, fight.castSent, own?.feet ?? null);
     this.lands.jobs(frame, jobs);

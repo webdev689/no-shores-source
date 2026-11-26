@@ -1,9 +1,9 @@
-import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { pushedIn } from '../combat/animaMoment.ts';
 import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { litMarksSeen, marksHidden, marksSeen } from '../combat/marksOver.ts';
-import { FightEffects } from '../combat/fightEffects.ts';
+import { FightEffects, quietEdges } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
@@ -483,7 +483,7 @@ export class Foot {
     const strikers = strikersOf(fight, yours, foes, otherViews, this.otherPlayers.placed);
     // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
-    showAnimaEdge(effects.anima);
+    effects.showEdges();
     // E does nothing while a menu or the held map is up, or the player lies dead, past the edge or felled by a foe.
     const able = !still && !this.fallen;
     const gear = this.gear;
@@ -592,7 +592,7 @@ export class Foot {
     this.falling.close();
     // The figure stands again wherever the walker goes next, at sea as on foot.
     this.context.walker.fall = null;
-    // An Anima's edge frame cast just before leaving must not stay over the next place.
-    showAnimaEdge(QUIET);
+    // An Anima's edge frame or a heal's edge just before leaving must not stay over the next place.
+    quietEdges();
   }
 }
