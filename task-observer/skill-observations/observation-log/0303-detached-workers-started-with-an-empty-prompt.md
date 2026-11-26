@@ -1,5 +1,5 @@
 ---
-id: 295
+id: 303
 title: "Three detached workers started with an empty prompt; the launcher fed the brief through cat at the last moment and checked nothing"
 status: open
 type: internal
