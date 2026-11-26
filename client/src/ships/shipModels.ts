@@ -8,6 +8,7 @@ import type { ShipLook } from './dress.ts';
 import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
 import type { SailRig } from './sails.ts';
 import type { ShipCrew } from './shipCrew.ts';
+import { HULL_LINES } from './hullLines.ts';
 import { loadShip } from './shipMesh.ts';
 import { standIn } from '../standIns.ts';
 import { type ShipCamera, type ShipPlace, SHIP_SLOTS, ShipView } from './shipView.ts';
@@ -25,9 +26,14 @@ export interface DrawnShip {
 /** Opens a hull's model by its number. */
 export type OpenHull = (hull: number) => Promise<ShipView>;
 
-/** A hull's model from R2 by its manifest entry, on the device, `slots` ships of it a frame. */
+/** A hull's model from R2 by its manifest entry, on the device, `slots` ships of it a frame; its mesh gives the water
+ *  its hull's line too (`HULL_LINES`). */
 export function openHull(gpu: Gpu, slots = SHIP_SLOTS): OpenHull {
-  return async (hull) => ShipView.open(gpu, await loadShip(hullName(hull)), hullSails(hull), hullPaint(hull), slots);
+  return async (hull) => {
+    const mesh = await loadShip(hullName(hull));
+    HULL_LINES.take(hull, mesh);
+    return ShipView.open(gpu, mesh, hullSails(hull), hullPaint(hull), slots);
+  };
 }
 
 /** A failed fetch is tried again from a frame this long after it failed, milliseconds, doubling each time to the

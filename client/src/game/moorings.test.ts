@@ -13,25 +13,28 @@ const SWELL: Swell = {
   bearing: 0,
 };
 const deep = () => Infinity;
+/** Each hull's own line, as if its mesh had come: its number at every station, so a footprint shows whose it holds. */
+const LINES = { line: (hull: number) => new Float32Array(16).fill(hull + 1) };
 
 test('a moored ship rides the swell as every ship does, and lies level in still water', () => {
   const moorings = [[100, 200, 0.5]] as const;
   const { lengthM, beamM } = hullWaterline(SLOOP_HULL);
   for (const time of [0, 1.3, 4.5]) {
-    const [ship] = mooredShips(moorings, time, { swell: SWELL, depthAt: deep }).ships;
+    const [ship] = mooredShips(moorings, time, { swell: SWELL, depthAt: deep }, LINES).ships;
     const pose = poseOnSwell(SWELL, deep, { x: 100, y: 200, heading: 0.5 }, lengthM / 2, beamM / 2, time);
     assert.deepEqual(
       [ship?.place.z, ship?.place.pitch, ship?.place.roll, ship?.place.heading],
       [pose.heave, pose.pitch, pose.roll, 0.5],
     );
   }
-  const [still] = mooredShips(moorings, 3, { swell: undefined, depthAt: deep }).ships;
+  const [still] = mooredShips(moorings, 3, { swell: undefined, depthAt: deep }, LINES).ships;
   assert.deepEqual([still?.place.z, still?.place.pitch, still?.place.roll], [0, 0, 0]);
 });
 
 test('the moored ships are drawn as friendly sloops, each with a still footprint at her place', () => {
-  const { ships, hulls } = mooredShips([[100, 200, 0.5]], 3, { swell: undefined, depthAt: deep });
+  const { ships, hulls } = mooredShips([[100, 200, 0.5]], 3, { swell: undefined, depthAt: deep }, LINES);
   assert.equal(ships.length, 1);
   assert.equal(ships[0]?.look.side, 'friendly');
   assert.deepEqual([hulls[0]?.x, hulls[0]?.y, hulls[0]?.heading, hulls[0]?.way], [100, 200, 0.5, 0]);
+  assert.deepEqual([...(hulls[0]?.line ?? [])], [...LINES.line(SLOOP_HULL)], "her hull's own line");
 });

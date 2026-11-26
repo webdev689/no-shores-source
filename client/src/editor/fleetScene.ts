@@ -5,6 +5,7 @@ import type { LandView } from '../rules/landRules.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import { factionSide } from '../ships/dress.ts';
+import { HULL_LINES } from '../ships/hullLines.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { barOver, type ShipBar, shipName } from '../ships/shipBars.ts';
@@ -116,14 +117,15 @@ export class FleetScene {
     return ships;
   }
 
-  /** Every other ship's footprint on the water while it floats, at its hull's waterline. */
+  /** Every other ship's footprint on the water while it floats, at its hull's waterline and in its own line. */
   hulls(view: LandView): HullMask[] {
     return this.play
       .others()
       .filter((vessel) => vessel.state !== 'sinking' && vessel.state !== 'sunk')
       .map((vessel) => {
         const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
-        const waterline = hullWaterline(this.hullOf(vessel));
+        const hull = this.hullOf(vessel);
+        const waterline = hullWaterline(hull);
         return {
           id: `fleet ${vessel.id}`,
           x: x - view.leftM,
@@ -132,6 +134,7 @@ export class FleetScene {
           halfLength: waterline.lengthM / 2,
           halfBeam: waterline.beamM / 2,
           way: Math.hypot(ahead, abeam),
+          line: HULL_LINES.line(hull),
         };
       });
   }
