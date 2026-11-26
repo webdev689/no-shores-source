@@ -325,8 +325,9 @@ impl Room {
         }
     }
 
-    /// A public room's deal begins again: its guards cleared stand again (a band still standing keeps its own), its
-    /// targets with them, its progress from nothing.
+    /// A public room's deal begins again: its guards cleared stand again (a band still standing keeps its own) while
+    /// the players there now make room for them, the rest kept to stand as more come; its targets with them, its
+    /// progress from nothing.
     fn begin_again(&mut self) {
         let Some(zone) = self.zone() else { return };
         let (guards, targets, waves) =
@@ -334,15 +335,29 @@ impl Room {
         for id in targets.into_iter().chain(waves) {
             self.gone(id);
         }
-        let cleared: Vec<usize> = guards
-            .into_iter()
-            .filter(|&post| self.garrison.get(post).is_some_and(|post| post.cleared_at.is_some()))
-            .collect();
-        for &post in &cleared {
+        let cleared = |post: &usize| self.garrison.get(*post).is_some_and(|post| post.cleared_at.is_some());
+        let (cleared, still): (Vec<usize>, Vec<usize>) = guards.into_iter().partition(cleared);
+        let mut standing: usize = still.iter().map(|&post| self.band_counted(post)).sum();
+        let (mut again, mut spare) = (Vec::new(), Vec::new());
+        for post in cleared {
+            let size = self.band_counted(post);
+            // As the bands first stood: the first always, then each the most foes make room for.
+            if (standing == 0 && again.is_empty()) || standing + size <= self.counted_most() {
+                standing += size;
+                again.push(post);
+            } else {
+                spare.push(post);
+            }
+        }
+        for &post in &again {
             self.stand_post(post);
         }
-        self.harden(&cleared);
-        self.toughen_posts(&cleared);
+        self.harden(&again);
+        self.toughen_posts(&again);
+        if let Some(zone) = self.zone_mut() {
+            zone.round.guards.retain(|post| !spare.contains(post));
+            zone.spare.extend(spare);
+        }
         let clock = self.clock;
         if let Some(zone) = self.zone_mut() {
             zone.round.number += 1;

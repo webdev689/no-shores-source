@@ -227,7 +227,8 @@ taking its currents (Crowded's more, Veteran's Majors, Hardened's health) standi
 player but 12 m from every one, each hunting the nearest player. A wave's foe, and a deal's target, stands on the
 floor at the navmesh's point nearest its place, never on a dungeon's rock or on a solid's top. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
 and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, opened
-the reliquary, gathered a node of the vein, held the ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again; a player who came after
+the reliquary, gathered a node of the vein, held the ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again, its bands as the players there
+now make room for, the rest standing again as more come; a player who came after
 it was done goes on once that round is done. A company's room does not begin again, and a member who comes after it
 was done finds it done.
 

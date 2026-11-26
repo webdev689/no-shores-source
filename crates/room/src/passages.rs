@@ -87,8 +87,10 @@ pub(crate) struct Zone {
     pub holds: BTreeMap<PlayerId, Hold>,
     /// The tick each player came into the zone, which a Gauntlet's time runs from.
     pub arrived: BTreeMap<PlayerId, u64>,
-    /// The bands the zone's most foes held back, stood in turn once there is room.
+    /// The bands the zone's most foes held back, stood in turn once there is room; and those a round begun again left
+    /// down, by their posts, stood again in turn once there is room.
     pub held: Vec<HeldBand>,
+    pub spare: Vec<usize>,
     /// The most players seen in the zone at once, whom its Minibosses and Bosses stand toughened for.
     pub most_seen: usize,
     /// Above ground, the hollow's floor's ring, which its bands' posts and beats keep inside as the section's ring does
@@ -189,6 +191,7 @@ impl Room {
             holds: BTreeMap::new(),
             arrived: BTreeMap::new(),
             held: Vec::new(),
+            spare: Vec::new(),
             most_seen: 1,
             floor: if let Laid::Open(hollow) = &plan.ground { Some(hollow.ring.clone()) } else { None },
         })));

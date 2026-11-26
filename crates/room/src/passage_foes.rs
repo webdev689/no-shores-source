@@ -119,8 +119,13 @@ impl Room {
         self.counted_most() + self.band_crowding() * bands
     }
 
+    /// A band's foes at a post as they count against the most, Crowded's extra not counted.
+    pub(crate) fn band_counted(&self, post: usize) -> usize {
+        self.garrison.get(post).map_or(0, |post| post.members.len().saturating_sub(self.band_crowding()))
+    }
+
     /// The most foes, Crowded's not counted: the size's, and three more for each player in the zone past the first.
-    fn counted_most(&self) -> usize {
+    pub(crate) fn counted_most(&self) -> usize {
         let Some(zone) = self.zone() else { return self.foes_most };
         zone.zone.size.foes_most() + FOES_PER_PLAYER * self.players.len().saturating_sub(1)
     }
@@ -224,6 +229,9 @@ impl Room {
             }
         }
         self.foes_most = self.zone_foes_most();
+        if self.stand_spare(running) {
+            return;
+        }
         let Some((members, farthest, at)) = self.zone().and_then(|zone| zone.held.first().cloned()) else { return };
         let group = Group { members, leads: false, farthest };
         // The bands stood, their foes fallen or not, hold the zone's most: only more players stand more.
@@ -242,6 +250,29 @@ impl Room {
                 zone.held.remove(0);
             }
         }
+    }
+
+    /// A band a round begun again left down stood again, the first in turn, once the round runs, there is room for it
+    /// and no player is within CLEAR_M of its post: whether one waits.
+    fn stand_spare(&mut self, running: bool) -> bool {
+        let Some(post) = self.zone().and_then(|zone| zone.spare.first().copied()) else { return false };
+        let guards = self.zone().map(|zone| zone.round.guards.clone()).unwrap_or_default();
+        let stood: usize = guards.iter().map(|&each| self.band_counted(each)).sum();
+        let at = self.garrison.get(post).map_or([0.0; 3], |post| post.at);
+        let clear = self
+            .players
+            .values()
+            .all(|player| apart([player.fighter.body.x, player.fighter.body.y], [at[0], at[1]]) >= CLEAR_M);
+        if running && clear && stood + self.band_counted(post) <= self.counted_most() {
+            self.stand_post(post);
+            self.harden(&[post]);
+            self.toughen_posts(&[post]);
+            if let Some(zone) = self.zone_mut() {
+                zone.spare.remove(0);
+                zone.round.guards.push(post);
+            }
+        }
+        true
     }
 
     /// The Minibosses and Bosses standing anew at these posts take the health of the most players the zone has seen.

@@ -411,3 +411,41 @@ fn a_gauntlet_pays_each_runner_by_their_own_time_though_two_reach_its_far_mouth_
     assert!(dive(&room, fresh).is_some_and(|dive| dive.paid == [plan.zone.number]), "in their 90 s");
     assert!(dive(&room, early).is_some_and(|dive| dive.paid.is_empty() && dive.done), "late: open, no cache");
 }
+
+#[test]
+fn a_public_round_begun_again_stands_only_the_bands_the_players_there_now_make_room_for() {
+    let held = (2_900..2_990).find_map(|week| {
+        let web = web(week);
+        web.zones.iter().filter(|zone| zone.deal == Deal::Skirmish).find_map(|zone| {
+            let plan = Plan::of(&web, zone.number)?;
+            let room = room_of(week, &plan);
+            room.zone().is_some_and(|zone| !zone.held.is_empty()).then_some((week, plan))
+        })
+    });
+    let (week, plan) = held.expect("a skirmish with a band held back");
+    let mut room = room_of(week, &plan);
+    let company: Vec<PlayerId> = (0..4).map(|_| diver(&mut room, week, &plan)).collect();
+    run(&mut room, 2);
+    let guards = |room: &Room| room.zone().expect("a zone").round.guards.len();
+    let raised = guards(&room);
+    let living = |room: &Room| {
+        let posts = room.zone().expect("a zone").round.guards.clone();
+        let standing = posts.iter().filter_map(|&post| room.garrison.get(post)).flat_map(|post| post.standing.clone());
+        standing.filter(|id| room.foes.get(id).is_some_and(|foe| !foe.fighter.dead())).count()
+    };
+    for _ in 0..4 {
+        kill_all(&mut room);
+        room.tick();
+    }
+    assert!(room.passage_seen(company[0]).is_some_and(|seen| seen.done));
+    for &id in &company[1..] {
+        room.leave(id);
+    }
+    run(&mut room, super::passage_deal::AGAIN_TICKS + 2);
+    assert!(living(&room) <= room.zone_foes_most(), "one alone faces {} of {}", living(&room), room.zone_foes_most());
+    for _ in 1..4 {
+        diver(&mut room, week, &plan);
+    }
+    run(&mut room, 2);
+    assert_eq!(guards(&room), raised, "the company back, its bands stand again");
+}
