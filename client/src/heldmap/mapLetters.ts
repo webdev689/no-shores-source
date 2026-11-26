@@ -214,23 +214,23 @@ export function paintAnchor(painter: Painter, faded: boolean): void {
  *  the ink on it, its keyhole in the parchment. */
 export function paintLock(painter: Painter): void {
   painter.beginPath();
-  painter.arc(0, 0, 10, 0, 2 * Math.PI);
+  painter.arc(0, 0, 14, 0, 2 * Math.PI);
   painter.fillStyle = PARCHMENT;
   painter.fill();
-  painter.lineWidth = 1.8;
+  painter.lineWidth = 2.2;
   painter.strokeStyle = INK;
   painter.stroke();
   painter.beginPath();
-  painter.arc(0, -2, 3, Math.PI, 2 * Math.PI);
-  painter.lineWidth = 1.8;
+  painter.arc(0, -2.8, 4.2, Math.PI, 2 * Math.PI);
+  painter.lineWidth = 2.4;
   painter.stroke();
   painter.fillStyle = INK;
-  painter.fillRect(-4.8, -2, 9.6, 7.4);
+  painter.fillRect(-6.7, -2.8, 13.4, 10.4);
   painter.fillStyle = PARCHMENT;
   painter.beginPath();
-  painter.arc(0, 1, 1.2, 0, 2 * Math.PI);
+  painter.arc(0, 1.4, 1.7, 0, 2 * Math.PI);
   painter.fill();
-  painter.fillRect(-0.5, 1, 1, 2.6);
+  painter.fillRect(-0.7, 1.4, 1.4, 3.6);
 }
 
 /** Another player's dot on the map, in their nameplate's square's colour, edged in the ink; its radius, units. */

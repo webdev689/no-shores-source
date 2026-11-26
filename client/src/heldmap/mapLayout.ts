@@ -27,7 +27,7 @@ export const LINE = 16;
 export const NAME_GAP = 5;
 const SPACE = 2;
 /** Each mark's half width: a port's anchor, a ruin's, a locked sea's padlock, a node's ring, and the ship's arrow. */
-const MARK_HALF: Readonly<Record<string, number>> = { port: 6, ruin: 6, lock: 11, ship: 10 };
+const MARK_HALF: Readonly<Record<string, number>> = { port: 6, ruin: 6, lock: 15, ship: 10 };
 const NODE_HALF = 4;
 /** The clear gap a mark keeps round it from a mark laid before it, units. */
 const MARK_GAP = 1.5;
