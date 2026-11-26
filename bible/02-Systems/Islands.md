@@ -70,12 +70,12 @@ The sea room holds its islands (`sea_islands.rs`):
 
 - **Rolled** every ten seconds round each ship at sea that has fewer than two islands within 8 km, three times in ten:
   3 to 7 km from it, in hostile water (never in home waters), 3 km clear of every coast and every other island, 1.2 km
-  clear of every ship and hostile ship, and clear of every ship's course by its reach and 300 m. At most 96 stand.
+  clear of every ship, hostile ship and parked ship, and clear of every ship's course by its reach and 300 m. At most 96 stand.
   An island in a climate the contract does not dress is not rolled.
 - **Seen and found.** Each player is told of the islands within 20 km of their ship and of those they have found;
   a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand.
 - **Held and faded.** A ship within 8 km holds an island; so does its room while players stand ashore, telling the
-  sea each minute. One held by nothing for ten minutes fades, and is forgotten by those who found it.
+  sea every 15 seconds. One held by nothing for ten minutes fades, and is forgotten by those who found it.
 - **Land.** A standing island's coast, 34 m out past it (its shallows' 14 m and 20 m more), is land to the player told
   of it: a course that crosses an island in sight of the ship, or one they found, is refused, as the page bends its
   voyages round those alone; and the hostile ships' chart keeps them off every one. A ship a fight or a roll left within
@@ -90,9 +90,9 @@ The sea room holds its islands (`sea_islands.rs`):
 - **The room.** An island's room is `isle-<number>-<seed>` (its seed in 16 hex digits, so an island rolled after the
   sea restarts never opens an older one's room). It opens only on the sea's word: the server's room asks the `sea`
   room for the island by its number, and opens it if it stands with that seed ([[Server]]); while players stand ashore
-  it holds that island, by its number and seed, each minute, until the sea says it no longer stands. Its ground and blocks
-  stand in the world's metres, the island's own moved to its place, as a node's do, so the page predicts the player on
-  the room's own ground to the bit.
+  it holds that island, by its number and seed, as it names them to the sea every 15 seconds ([[Server]], "Parked
+  ships"). Its ground and blocks stand in the world's metres, the island's own moved to its place, as a node's do, so
+  the page predicts the player on the room's own ground to the bit.
 - **Guards.** An isle stands three groups of the Grey Tithe's foes at its water's levels: one led by a Reeve at its
   Elite rank at the landmark, a band at the door and two to four at the camp, on a navmesh baked over
   their posts. A cove holds none.
@@ -133,13 +133,17 @@ The sea room holds its islands (`sea_islands.rs`):
   voyage's legs are bent round each island in sight, since the route planner's grid is far coarser than an island
   (`isleLaw.ts`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
   from its middle through that point. An island come into sight bends the voyage still ahead round it.
-- Within 700 m past an island's coast the ship is offered to go ashore on it ("Go ashore on a cove"); taken, the ship sails
-  out to the island's offing on its landing's bearing, round it where it must, and in to its anchorage, and once it lies
+- A click on an island, or on the water within 400 m of its reach, asks to go ashore on it ("Go ashore on the cove?"),
+  and so does L within 700 m past its coast ([[Game]], "Landings"); yes docks in sight, the view switched to the
+  Oversea view once the ship sets sail: it sails at ×60 to the island's offing on its landing's bearing, planned on
+  water as a click's course is, round it where it must, and in to its anchorage (or abreast of it, 15 m at a time,
+  where another ship lies there), and once it lies
   there, once nothing else is under way (the map put away, the deck left, no fight), the player walks ashore on its
-  beach behind the veil ("Going ashore on a cove"). Steered, sent elsewhere or chasing, the ship gives the landing
-  up. The sea is left only once the island's room has opened: one that does not leaves the player aboard, told so,
+  beach behind the veil ("Going ashore on a cove"). Steered, sent elsewhere, chasing or in a fight, the ship gives the
+  landing up; left by its player, it gives up its voyage there too. The sea is left only once the island's room has opened: one that does not leaves the player aboard, told so,
   and online the sea room is joined again, as the island's room may have taken the character from it.
-  The leave held ([[Interface]], "The leave held") takes them back aboard, where the ship lies.
+  Ashore, their ship is drawn anchored where it lies ([[Game]], "On foot"). The leave held ([[Interface]], "The leave
+  held") takes them back aboard, where the ship lies, and it sails out to the island's offing ([[Game]], "Landings").
 - On foot E scavenges a wreck within 3 m not spent for them ("Scavenge the wreck") and tries the door ("Enter the
   caverns").
 

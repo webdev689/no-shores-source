@@ -483,8 +483,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
   ship drops as one foe of its rank and level does, its Vestige, Ammo box and crate in the first piece laid for each
   player, and a boarded hold as one foe a rank higher, items from a Miniboss or a Boss kept as on land; every piece
   holds the ship's salvage ([[Ship Power]]). A kill on a boarded deck leaves no Vestige or item: the hold is the
-  boarding's loot. Each piece is kept for its player, gathered by their ship within 25 m, what they have no room for
-  lost with it, but a Vestige they have no room for sent to the mail (`room::flotsam`).
+  boarding's loot. Each piece is kept for its player, gathered by their ship within 25 m of the way it sailed each
+  tick (at ×200 it sails 40 m and more a tick), what they have no room for lost with it, but a Vestige they have no room for sent to the mail (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the

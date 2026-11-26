@@ -36,7 +36,7 @@ export interface Measure {
  *  the sea has them. */
 export interface Voyaging {
   readonly heading: number;
-  readonly paceStep: number;
+  readonly pace: number;
   readonly voyageNote: string;
 }
 
@@ -165,7 +165,7 @@ export function shipPanelOf(
               heading: 'Voyage',
               rows: [
                 ['Heading', compassOf(voyage.heading)],
-                ['Pace', `×${voyage.paceStep}`],
+                ['Pace', `×${voyage.pace}`],
                 ['Now', voyage.voyageNote],
               ] as const,
             },

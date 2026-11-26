@@ -5,7 +5,18 @@ import type { DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
 import { EVENT } from '../combat/cues.ts';
 import type { FightEvent, Reviving } from '../network/messages.ts';
-import { dungeonPlace, Entrances, heardRun, openAlone, roomNameAt, takeWipe, tripAt, type Trips } from './footTrips.ts';
+import {
+  dungeonPlace,
+  Entrances,
+  hearRoom,
+  heardRun,
+  openAlone,
+  roomNameAt,
+  takeWipe,
+  tripAt,
+  type Trips,
+  unheard,
+} from './footTrips.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import { WORLD_CLOCK, roomNow } from '../sky/worldClock.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -120,6 +131,22 @@ test('an Abyss run’s revives, the darkness and revives under way are heard fro
   assert.equal(takeWipe(held, false), false, 'heard behind a veil, which refuses the way out: it waits');
   assert.equal(takeWipe(held, true), true, 'taken on foot');
   assert.equal(takeWipe(held, true), false, 'once');
+});
+
+test("a land room's word on the ships parked by its island is held, each snapshot's in place of the last", () => {
+  const held = { gear: null, alone: null, ...unheard() };
+  const heard = hearRoom(
+    held,
+    () => null,
+    () => undefined,
+    { online: true, asks: false },
+  );
+  const parked = { player: 4, x: 10, y: 20, heading: 1, pace: 0, hull: 2, dress: [], name: [], emblem: 0 };
+  const word = { cache: [], revives: -1, events: [], encounter: null, darkness: false, reviving: [], outpost: 0 };
+  heard.snapshot({ ...word, ships: [parked] } as never);
+  assert.deepEqual(held.ships, [parked]);
+  heard.snapshot({ ...word, ships: [] } as never);
+  assert.deepEqual(held.ships, []);
 });
 
 test("a run played alone opens on the minute by the rooms' clock, not a page clock that is wrong", async () => {

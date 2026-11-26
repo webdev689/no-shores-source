@@ -157,12 +157,6 @@ pub fn sea_dungeon(room: &str) -> String {
     id.flatten().map(sea_island).unwrap_or_default()
 }
 
-/// Holds the open sea's island `id` of `seed` while players stand ashore on it: whether it stands.
-#[must_use]
-pub fn hold_ashore(id: u32, seed: u64) -> bool {
-    with_open(|opened| if let Opened::Sea(sea) = opened { sea.hold_ashore(id, seed) } else { false }).unwrap_or(false)
-}
-
 /// An island's plan's JSON (`plan_json`), from its seed's halves and its climate's name written at `address`.
 ///
 /// # Safety
@@ -218,13 +212,6 @@ pub unsafe extern "C" fn room_sea_dungeon(address: *const u8, length: usize) -> 
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let room = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(address, length) }).into_owned();
     hand_over(sea_dungeon(&room).into_bytes())
-}
-
-/// Holds the open sea's island `id` of the seed whose halves are given while players stand ashore (`hold_ashore`); 1
-/// if it stands, 0 if not.
-#[unsafe(no_mangle)]
-pub extern "C" fn room_hold_ashore(id: u32, low: u32, high: u32) -> u32 {
-    u32::from(hold_ashore(id, seed_of(low, high)))
 }
 
 /// The number of the open sea's landing of `account` on its standing island `id` of `seed` (its ship at rest at that

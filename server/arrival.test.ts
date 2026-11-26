@@ -25,7 +25,12 @@ const COAST: [number, number][] = [
   [1_100_000, 1_100_000],
   [1_000_000, 1_100_000],
 ];
-const reach = (gatedFrom: string[] = [], social = false): Reach => ({ social, coast: COAST, gatedFrom });
+const reach = (gatedFrom: string[] = [], social = false): Reach => ({
+  social,
+  continent: 'continent-1',
+  coast: COAST,
+  gatedFrom,
+});
 const [OFF_COAST, FAR_OFF]: [number, number][] = [
   [1_050_000, 1_120_000],
   [1_050_000, 1_200_000],
@@ -117,6 +122,20 @@ test('a playlist’s run is launched from the sea, from beside any port, and lef
   assert.equal(arrives('node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6', 'sea', null, null), false);
 });
 
+test('an Elite Dungeon’s run at Normal started at sea is entered from the sea off its island alone, and left back to it', () => {
+  const run = 'node-krakens-grotto--sea--run-k3j4h5g6';
+  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(run, sea, OFF_COAST, reach()), true, sea);
+  assert.equal(arrives(run, 'sea', FAR_OFF, reach()), false, 'never from a ship far from its island');
+  assert.equal(arrives(run, 'sea', null, reach()), false, 'nor from one the sea kept nowhere');
+  assert.equal(arrives(run, 'sea', OFF_COAST, null), false, 'nor where its island is unknown');
+  assert.equal(arrives(run, 'node-krakens-grotto', null, null), false, 'never through the dungeon’s door');
+  assert.equal(arrives(run, 'node-overlook-social', null, null), false);
+  assert.equal(arrives(run, null, null, null), false);
+  assert.equal(arrives(run, run, null, null), true, 'a rejoin');
+  assert.equal(cameOutOf('node-krakens-grotto', run, 0), false, 'it leaves to the sea, not the door');
+  assert.equal(arrives('node-krakens-grotto', run, null, reach()), false, 'nor onto its dungeon’s island');
+});
+
 test('a player stands out of an entrance only as they come out of its dungeon or its run', () => {
   const patrol = 'node-gullwing-vale--elite';
   assert.equal(cameOutOf(patrol, 'node-gullwing-vale--elite--dungeon-2--run-k3j4h5g6', 2), true);
@@ -139,6 +158,7 @@ test('a node’s reach reads from the bake’s index, and a ship’s place from 
   const continents = [{ id: 'continent-1', outline: COAST }];
   assert.deepEqual(reachOf(index, continents, 'tidewall'), {
     social: false,
+    continent: 'continent-1',
     coast: COAST,
     gatedFrom: ['gullwing-vale'],
   });

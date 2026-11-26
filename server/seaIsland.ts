@@ -1,15 +1,13 @@
 // The rooms that stand on a sea's island, its own and its dungeon's: each opens only on the word of the sea that holds
-// the island, with the seed that sea gives it, and while players stand ashore it keeps the island held there.
+// the island, with the seed that sea gives it; while players stand ashore it keeps the island held (`ashore.ts`).
 import type { RoomDoor } from './roomDoor.ts';
 import { isleRoom, seaDungeonRoom, seaRoomName } from './roomNames.ts';
 
-/** The island a room stands on: its number at sea, its seed, its sea room's name, and when the room last told that
- *  sea players stand ashore. */
+/** The island a room stands on: its number at sea, its seed and its sea room's name. */
 export interface HeldIsland {
   readonly id: number;
   readonly seed: string;
   readonly sea: string;
-  told: number;
 }
 
 /** What a sea room says of its islands, by its name: its word on an island, and on an island's dungeon. */
@@ -31,7 +29,7 @@ export async function openIsland(
   const sea = seaRoomName(named.seas);
   const word = await seas(sea).islandWord(named.id);
   if (!word || (JSON.parse(word) as { seed?: string }).seed !== named.seed) return null;
-  const island = { id: named.id, seed: named.seed, sea, told: Date.now() };
+  const island = { id: named.id, seed: named.seed, sea };
   const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
   // Only an account the sea says is landed here scavenges: nobody sails ashore from afar by naming the room.
   const opened = room.openIsland(word) && room.checkLandings() && room.difficulty(named.seas);
@@ -49,5 +47,5 @@ export async function behindDoor(name: string, seas: Seas): Promise<HeldIsland |
   const word = await seas(sea).dungeonWord(name.split('--')[0] ?? '');
   if (!word) return null;
   const { id, seed } = JSON.parse(word) as { id: number; seed: string };
-  return { id, seed, sea, told: Date.now() };
+  return { id, seed, sea };
 }

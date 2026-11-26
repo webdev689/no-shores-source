@@ -56,6 +56,8 @@ pub struct Snapshot<'snapshot> {
     pub reviving: &'snapshot [Reviving],
     /// Every airship and crown bringing foes (`Room::arrivals_seen`), whole each time; none in a room with none.
     pub arrivals: &'snapshot [room::ArrivalSeen],
+    /// The ships parked at the room's island, each its number, at rest, and its looks; left out when there are none.
+    pub ships: &'snapshot [(PlayerId, room::sea::Ship, room::sea::ShipLook)],
     /// In a passage zone, its deal as it stands for the player (`Room::passage_seen`); none in any other room.
     pub passage: Option<room::PassageSeen>,
 }
@@ -232,6 +234,10 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         builder.create_vector(&each)
     });
     let arrivals = (!snapshot.arrivals.is_empty()).then(|| arrivals_vector(&mut builder, snapshot.arrivals));
+    let ships: Vec<_> = (snapshot.ships.iter())
+        .map(|&(player, ship, look)| crate::sea_snapshot::ship_offset(&mut builder, player, ship, Some(look)))
+        .collect();
+    let ships = (!ships.is_empty()).then(|| builder.create_vector(&ships));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -254,6 +260,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         darkness: snapshot.darkness,
         reviving,
         arrivals,
+        ships,
         passage,
         ..messages::SnapshotArgs::default()
     };

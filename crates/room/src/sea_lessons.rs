@@ -146,8 +146,8 @@ impl Sea {
                     SailAct::Board => true,
                     SailAct::Sail => under_way,
                     SailAct::Steer => helmed.is_some_and(|(_, now)| now.turned >= STEERED_RAD),
-                    // The page eases the pace to the world's own while the view is close on the ship: only the dial's
-                    // paces are trimmed.
+                    // The page eases the pace to the world's own while the view is close on the ship: only the ladder's
+                    // paces are trimmed, as sailing on at a click's ×60 and a voyage planned at ×200 set them.
                     SailAct::Trim => helmed.is_some_and(|(was, now)| {
                         let dialed = |pace: u16| super::PACES.contains(&pace);
                         was.under_way && under_way && dialed(was.pace) && dialed(now.pace) && now.pace != was.pace

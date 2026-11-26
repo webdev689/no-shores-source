@@ -8,7 +8,7 @@ import { heroLayers, shareCard } from './heroScene.ts';
 import { LAND_SCENES } from './landScenes.ts';
 import { QUAY_SCENES } from './quayScenes.ts';
 import { SEA_SCENES } from './seaScenes.ts';
-import type { Sheet } from './sheet.ts';
+import type { Sheet } from '../../../client/src/art/sheet.ts';
 
 /** Every picture the pages may name, by its name. */
 export const SCENES: Readonly<Record<string, () => Sheet>> = {

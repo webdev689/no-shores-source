@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { serverIconSheet } from '../../site/src/art/logo.ts';
-import { pngOf } from '../../site/src/art/sheet.ts';
+import { pngOf } from '../../site/src/art/png.ts';
 
 const out = path.join(import.meta.dirname, '..', 'out', 'resources', 'icon.png');
 mkdirSync(path.dirname(out), { recursive: true });

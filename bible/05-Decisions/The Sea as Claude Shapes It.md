@@ -1,5 +1,5 @@
 ---
-type: decision
+type: claude-calls
 date: 2026-11-20
 status: in force
 ---
@@ -92,8 +92,10 @@ Their courses, number and pace are replaced by [[Friendly Ships Take Several Cou
 ### Close in
 
 - **Its pace eases** down the voyage's steps to the world's own time while it is watched close (close in, the helm,
-  Manage, the deck), a step each 0.15 s, and back up as the view rises. The dial keeps its step.
-- **Its size grows** by the same ratio each notch of the wheel coming in, never under its true size ([[Game]], "Its
+  Manage, the deck), a step each 0.15 s, and back up as the view rises. The dial keeps its step (replaced: no dial;
+  the voyage keeps the pace it was set at, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
+- **Its size grows** by the same ratio each notch of the wheel coming in, never under its true size (replaced: the
+  wheel no longer brings the view in; it grows the same way as the view eases down to sea level, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]) ([[Game]], "Its
   size coming in").
 
 ### The ruins

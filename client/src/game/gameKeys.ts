@@ -6,12 +6,13 @@
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
 import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
-import type { Happening } from './flow.ts';
+import type { Flow, Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { openGearWindow } from './gearScreen.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { letGo, placingNow } from './guild/decorPlacing.ts';
 import type { Hud } from './hud.ts';
+import type { SeaLandings } from './seaLandings.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { deckKey, fightAsk } from './seaWord.ts';
 import { chatOpen, openChat, socialUp } from './social/social.ts';
@@ -28,14 +29,16 @@ export interface Controlled {
   readonly retry: () => (() => void) | null;
   readonly change: (happening: Happening) => void;
   readonly respawn: () => void;
-  readonly goAshore: () => void;
+  /** The sea's landings: the confirmation answered, and the landing the sea offers asked after. */
+  readonly landings: SeaLandings;
   readonly stopOrResume: () => void;
   readonly openMap: () => void;
   readonly manage: () => void;
   readonly leaveHelm: () => void;
   readonly takeHelm: () => void;
   readonly goThrough: () => void;
-  readonly landAt: (id: string) => void;
+  /** Does what the island's panel's chosen entry does (`islandPanel.ts`), its first's with none chosen. */
+  readonly landAt: (id: string | null) => void;
 }
 
 /** Where the player's controls act now: in a window, dead (past the edge, or fallen in a fight), at the helm, in a fight
@@ -50,6 +53,16 @@ export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Cont
   if (sea?.boarding.onDeck) return down(sea.boarding.foot) ? 'dead' : 'foot';
   if (sea?.aboard.walking) return 'foot';
   return sea?.fight ? 'fight' : 'helm';
+}
+
+/** Whether the interface takes the keys and the pad this frame: under a window (the menu, the creation, the chat) or
+ *  over the island's tiles, which the arrows, Tab and the pad's cross walk and Enter and A press; never while a
+ *  control waits to be bound, but the sheet's, which waits for it itself. */
+export function interfaceKeys(
+  mode: Flow['mode'],
+  over: { readonly window: boolean; readonly binding: boolean; readonly sheet: boolean },
+): boolean {
+  return ((over.window || mode === 'landing') && !over.binding) || over.sheet;
 }
 
 /** What the pad's B pressed as it let go of a piece being placed, taken from the next frame's controls. */
@@ -76,10 +89,10 @@ export function clickedOnLine(locked: boolean): boolean {
 /** Hears the keys and the pad's presses for what `game` does with them. */
 export function listenForControls(game: Controlled): void {
   const { playing, input, ui, hud, story, change } = game;
-  /** What the controls `pressed` do here, Escape among them for a key: the helm's map first, a struck deck's asks, a
-   *  retry once a travel failed, the chat, then the sea's and the foot's own. */
   /** Whether a window or the chat stands over the game. */
   const overGame = () => gearScreenOpen() || socialUp() || chatOpen();
+  /** What the controls `pressed` do here, Escape among them for a key: the helm's map first, a struck deck's asks, a
+   *  retry once a travel failed, the chat, then the sea's and the foot's own. */
   const act = (pressed: (id: BindId) => boolean, escape: boolean) => {
     const here = contextOf(playing);
     const acts = (id: BindId) => pressed(id) && CONTROLS[id].where.includes(here);
@@ -90,6 +103,8 @@ export function listenForControls(game: Controlled): void {
     if (sea?.travelling) return;
     if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
+    // A landing's confirmation standing at sea is answered first: Enter yes, Escape no.
+    if (sailing && game.landings.asking && (escape || acts('confirm'))) return game.landings.answer(!escape);
     // A piece of decoration being placed is let go first, and nothing opens.
     if (escape && placingNow() && !overGame()) return letGo();
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
@@ -101,11 +116,13 @@ export function listenForControls(game: Controlled): void {
     } else if (escape && (flow.mode === 'foot' || flow.mode === 'sea') && !playing.helmMap.busy && !overGame())
       openGearWindow({ view: 'settings' });
     else if (acts('confirm') && sailing && sea?.chaseChosen()) return;
-    else if (acts('ashore') || (acts('confirm') && sailing)) game.goAshore();
+    // Enter, or the pad's A, asks after the landing the sea offers where the ship lies, as L does.
+    else if (acts('ashore') || (acts('confirm') && sailing)) game.landings.askHere();
     else if (acts('voyage') && flow.mode === 'sea') game.stopOrResume();
     else if (acts('map') || acts('landMap')) game.openMap();
-    else if (acts('manage')) game.manage();
-    else if (acts('leaveHelm')) game.leaveHelm();
+    // Manage and Leave the helm are the Sealevel view's, as its console offers them.
+    else if (acts('manage') && sea?.level === 'sealevel') game.manage();
+    else if (acts('leaveHelm') && sea?.level === 'sealevel') game.leaveHelm();
     // The repair is the helm's, and its key repairs walking the ship's own deck too, where the Arts are not cast.
     else if (
       pressed('repair') &&
@@ -118,9 +135,11 @@ export function listenForControls(game: Controlled): void {
     else if (acts('use') && sea?.aboard.walking) game.takeHelm();
     else if (acts('use') && flow.mode === 'foot' && playing.through) game.goThrough();
     else if (acts('use') && flow.mode === 'foot') playing.foot?.use();
-    else if (acts('confirm') && flow.mode === 'landing' && flow.chosen) game.landAt(flow.chosen);
+    // Over the island's tiles, as no window above them hears it; a tile the keys or the pad focused is pressed by the
+    // interface itself, so Enter acts once.
+    else if (acts('confirm') && flow.mode === 'landing' && !overGame() && !ui.focused) game.landAt(flow.chosen);
     else if (acts('respawn') && flow.mode === 'foot') game.respawn();
-    else if ((acts('slower') || acts('faster')) && flow.mode === 'sea') sea?.stepPace(acts('faster') ? 1 : -1);
+    else if (acts('seaView') && flow.mode === 'sea') sea?.switchLevel();
   };
   addEventListener('keydown', (event) => {
     const key = keyNameOf(event);
@@ -133,10 +152,10 @@ export function listenForControls(game: Controlled): void {
     if (welcome && continues) return void playing.after.press();
     act((id) => !welcome && BINDS.now[id].keys.includes(key), key === 'escape');
   });
-  // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
-  // Escape at the helm's map, at a landing and while a piece of decoration is placed; in the story A is a tap, and
-  // while she speaks Continue moves her words on. Start and View open and shut the menu and the sheet wherever their
-  // keys would.
+  // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are. B is Escape at
+  // the helm's map, at a landing, at a landing's confirmation and while a piece of decoration is placed; in the story
+  // A is a tap, and while she speaks Continue moves her words on. Start and View open and shut the menu and the sheet
+  // wherever their keys would.
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
     if (hud.controls.rebinding.slot) return;
@@ -144,7 +163,9 @@ export function listenForControls(game: Controlled): void {
     const welcome = playing.after.holding;
     if (welcome && !waits && pressed.has('continue')) playing.after.press();
     const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
-    const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing' || !!placingNow());
+    const asking = playing.flow.mode === 'sea' && !!game.landings.asking;
+    const escape =
+      buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing' || !!placingNow() || asking);
     if (escape && placingNow()) taken = new Set([...pressed].filter((id) => BINDS.now[id].pad.includes('B')));
     // A waiting line's press is the line's: the frame moves it on.
     if (waits) return;

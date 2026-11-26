@@ -1,5 +1,5 @@
-// Pictures of the Playlist screen, headless (`tools/uiShot.mjs`): the screen as a Playlist's mark opens it beside a
-// port, over a sample day and week and a character's record. The game never imports it.
+// Pictures of the Playlist screen, headless (`tools/uiShot.mjs`): the screen as its tile over a port's island opens
+// it, over a sample day and week and a character's record. The game never imports it.
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { type PlaylistSearch, PlaylistView } from './playlistScreen.ts';
@@ -125,7 +125,7 @@ const BREACH_SCREEN: PlaylistScreenState = {
 /** The screen the last shot showed. */
 let showing: PlaylistView | null = null;
 
-/** The screen shown as its mark opens it (the sample's, unless `screen` says), one a picture, searching as `search`
+/** The screen shown as its tile opens it (the sample's, unless `screen` says), one a picture, searching as `search`
  *  says, the arrows pressed `right` times to choose another entry. */
 function screenShot(search: Partial<PlaylistSearch>, right = 0, screen = SAMPLE_SCREEN): (ui: Interface) => Node {
   const views = new WeakMap<Interface, PlaylistView>();

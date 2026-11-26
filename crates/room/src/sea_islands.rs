@@ -33,7 +33,8 @@ const CLEAR_OF_SHIPS_M: f64 = 1_200.0;
 const CLEAR_OF_COURSES_M: f64 = 300.0;
 /// How long an island stands once nothing holds it: ten minutes.
 pub const FADE_TICKS: u64 = 10 * 60 * 60;
-/// How long a word from its room that players stand ashore holds an island: two minutes, past its minute's ping.
+/// How long a word from its room that players stand ashore holds an island: two minutes, well past its room's naming
+/// of them every 15 seconds.
 pub const ASHORE_TICKS: u64 = 2 * 60 * 60;
 /// The most islands the sea holds at once.
 const MOST: usize = 96;
@@ -83,7 +84,7 @@ pub struct Islands {
 }
 
 /// How far a point lies from a leg.
-fn off_leg(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
+pub(crate) fn off_leg(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
     let (along_x, along_y) = (to[0] - from[0], to[1] - from[1]);
     let length = along_x * along_x + along_y * along_y;
     let share = if length > 0.0 {
@@ -199,7 +200,7 @@ impl Islands {
         self.standing.iter().find(|island| island.id == id)
     }
 
-    /// Holds an island while players stand ashore on it: its room's word, each minute.
+    /// Holds an island while players stand ashore on it: its room's naming of them, every 15 seconds.
     pub fn hold_ashore(&mut self, id: u32, seed: u64, clock: u64) -> bool {
         let Some(island) = self.standing.iter_mut().find(|island| island.id == id && island.seed == seed) else {
             return false;
@@ -249,7 +250,7 @@ impl Islands {
     }
 
     /// An island rolled round a ship at `at`, in the first of eight places drawn that is hostile open sea, clear of the
-    /// coasts, the islands, every ship and hostile, and every course.
+    /// coasts, the islands, every ship, hostile and parked ship (`others`), and every course.
     fn roll(
         &mut self,
         at: [f64; 2],
@@ -324,7 +325,8 @@ impl Sea {
 
     /// The islands' tick, after the ships have sailed.
     pub(super) fn tick_islands(&mut self) {
-        // Only a roll keeps clear of the ships' courses and the hostile ships: on other ticks neither is gathered.
+        // Only a roll keeps clear of the ships' courses, the hostile ships and the parked ones: on other ticks none is
+        // gathered.
         let rolls = self.clock.is_multiple_of(ROLL_EVERY_TICKS);
         let ships: Vec<ShipAndCourse> = self
             .berths
@@ -334,8 +336,13 @@ impl Sea {
                 Some((*player, [ship.x, ship.y], if rolls { course.iter().copied().collect() } else { Vec::new() }))
             })
             .collect();
-        let others: Vec<[f64; 2]> =
-            if rolls { self.hostiles().iter().map(|hostile| [hostile.x, hostile.y]).collect() } else { Vec::new() };
+        // A parked ship rolled over would lie drawn on the island's land, and be found there by its player back at sea.
+        let parked = self.parked.by_account.values().map(|parked| [parked.ship.x, parked.ship.y]);
+        let others: Vec<[f64; 2]> = if rolls {
+            self.hostiles().iter().map(|hostile| [hostile.x, hostile.y]).chain(parked).collect()
+        } else {
+            Vec::new()
+        };
         self.islands.tick(self.clock, &ships, &others, (&self.chart, &self.coasts));
         // A ship at rest at an island's anchorage lands its account there; under way or elsewhere at sea, it is landed
         // nowhere. An account gone ashore keeps its landing, until its island fades.

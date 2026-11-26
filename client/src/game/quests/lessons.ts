@@ -16,7 +16,8 @@ const LESSON_KEYS: Readonly<Record<string, string>> = {
   'sail:board': 'leave',
   'sail:sail': 'sailOn',
   'sail:steer': 'steerLeft / steerRight',
-  'sail:trim': 'slower / faster',
+  // The pace dial is gone: W sails on at a click's ×60, a voyage planned on the map at ×200.
+  'sail:trim': 'sailOn / map',
   'sail:map': 'map',
   'sail:fire': 'aim|fire',
   'use:dye': 'character',
