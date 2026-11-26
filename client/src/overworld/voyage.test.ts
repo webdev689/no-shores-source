@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { Point2 } from './ground.ts';
 import {
@@ -92,4 +93,10 @@ test('a point is found along the voyage where the nearest leg passes it, looking
   assert.equal(alongNear(voyage, [600, -990], 1_500, 3_000), 1_600, 'on the second leg');
   assert.equal(alongNear(voyage, [600, -990], 100, 200), 990, 'only the legs near where it looks: the first');
   assert.equal(alongNear(voyageOf([]), [0, 0], 0, 100), null);
+});
+
+test("the page's paces are the sea room's ladder, step for step, so no eased step is refused", () => {
+  const rules = readFileSync(new URL('../../../crates/room/src/sea.rs', import.meta.url), 'utf8');
+  const listed = /pub const PACES: \[u16; \d+\] = \[([^\]]*)\];/.exec(rules)?.[1] ?? '';
+  assert.deepEqual([...PACE_STEPS], listed.split(',').map(Number));
 });

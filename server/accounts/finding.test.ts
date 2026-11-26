@@ -231,7 +231,7 @@ test('an Elite Dungeon at Normal from the sea is found as from its door: any lev
   for (const socket of all) assert.deepEqual(socket.sent, ['{"run":"node-krakens-grotto--sea--run-k3j4h5g6"}']);
   const apart = await world(names, 5);
   const body = JSON.stringify({ shown: { level: 24 }, story: { prologue: true } });
-  await apart.kept.save(apart.ids['Dee'] ?? '', 'room:Dee', body);
+  await apart.kept.save(apart.ids['Dee'] ?? '', 'room:Dee', body, '{}');
   const banded = apart.finderOf('node-krakens-grotto--sea');
   for (const name of names) await seeking(banded, apart.tokens[name] ?? '');
   await banded.tick();

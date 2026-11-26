@@ -254,7 +254,7 @@ export class Finder {
     // A Breach is no stranger's: it is launched for a company, never matched.
     if (breach !== undefined && !held.alone) return this.letGo(socket, 4003, BREACH_LAUNCHED);
     // Only a playlist's run and a Breach's are launched alone: an Elite Dungeon's and the week's start from their
-    // entrances.
+    // entrances, or from the sea (`--sea`).
     const alone = held.alone && (playlist !== null || breach !== undefined);
     const replaced = this.queue.join({ socket, account, band: band ?? 0, since: this.deps.now(), apart, alone });
     if (replaced !== null) this.letGo(replaced, 4003, ANOTHER_TAB);
