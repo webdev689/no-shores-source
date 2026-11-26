@@ -309,4 +309,8 @@ test('online, Switch character stands beside Exit to Menu, held, leaving for the
   hold(page as unknown as ReturnType<typeof settingsAt>, SWITCH, 2);
   assert.deepEqual(done, ['assign https://game/?room=wss%3A%2F%2Frooms']);
   assert.equal(kept['noshores.characters.open'], 'characters', 'the page loaded again opens the screen at once');
+  // In a test run the tab is marked for the Test Room, and Switch character goes back there too.
+  kept['noshores.characters.open'] = 'test';
+  hold(page as unknown as ReturnType<typeof settingsAt>, SWITCH, 2);
+  assert.equal(kept['noshores.characters.open'], 'test');
 });

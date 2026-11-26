@@ -103,6 +103,22 @@ test('an answer read defensively: unknown fields pass, broken slots are empty, a
   assert.equal(charactersOf('nope'), null);
 });
 
+test("who the page is says the slot in play, so what it keeps by character is that character's from the start", async () => {
+  const meOf = (playing: unknown) => ({
+    account: { id: 'acct', username: null, discord: false, guest: true },
+    playing,
+  });
+  for (const [playing, keptAs] of [
+    [2, 'acct#2'],
+    [9, 'acct'],
+    [undefined, 'acct'],
+  ] as const) {
+    const { link } = linkAnswering(() => Response.json(meOf(playing)));
+    await link.session();
+    assert.equal(link.keptAs, keptAs, String(playing));
+  }
+});
+
 test('what the page keeps by account is kept by account and slot, the first slot as before', () => {
   assert.equal(keptFor('acct', 0), 'acct');
   assert.equal(keptFor('acct', null), 'acct');

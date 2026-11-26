@@ -30,6 +30,8 @@ const PAD_Y = 3;
 
 export const STILL_LEAVING = 'Your character is still leaving its last room. Try again.';
 export const NOT_ANSWERED = 'The accounts did not answer.';
+/** Why Launch waits: a test run sets out from the character in play, which arriving would mark past the prologue. */
+export const PLAY_FIRST = 'A test run sets out from your character in play. Play it past the prologue first.';
 
 /** How the screen ends: the story played from its storm, on past it, or back at the title. */
 /** How the screen ends: the story from its storm, onward past it, back to the title, or `unread`, the accounts not
@@ -156,7 +158,11 @@ export function openCharacters(
       const slot = chosen;
       busy = answer.slots[slot] ? 'Entering the world...' : 'Making a new character...';
       said = null;
-      const heard = await persist(() => link.play(slot));
+      // Another slot answered in play is the switch not made (a room took the character first): asked again.
+      const heard = await persist(async () => {
+        const four = await link.play(slot);
+        return typeof four === 'object' && 'playing' in four && four.playing !== slot ? { held: STILL_LEAVING } : four;
+      });
       busy = null;
       if (!heard) return;
       const kept = heard.slots[slot] ?? null;
@@ -184,9 +190,17 @@ export function openCharacters(
       announce('Test Room');
     };
     const launch = (entry: TestEntry) => {
+      const four = typeof answer === 'object' ? answer : null;
+      if (!four?.developer) return;
+      if (!four.slots[four.playing]?.prologue) {
+        said = PLAY_FIRST;
+        announce(said);
+        sound('refused');
+        return;
+      }
       keepTestRun(reach.tab, entry.room(reach.instance()));
       // The arrival before the test room is the character in play's, as the browser then keeps it.
-      if (typeof answer === 'object' && answer) takeSlot(reach.browser, answer.slots[answer.playing] ?? null, link);
+      takeSlot(reach.browser, four.slots[four.playing] ?? null, link);
       finish('onward');
     };
     const stopKeys = reach.keys((key, down) => {
@@ -254,6 +268,8 @@ export function openCharacters(
     };
 
     const testRoom = (ui: Interface, shown: number) => {
+      // Opened straight at the Test Room for an account no longer a developer's: back to the characters.
+      if (typeof answer === 'object' && answer && !answer.developer) [view, focusFirst] = ['characters', true];
       const entries = reach.entries();
       entries?.forEach((entry, index) => ui.clicked(launchId(index)) && busy === null && launch(entry));
       if (focusFirst && entries?.length) {
@@ -261,11 +277,11 @@ export function openCharacters(
         focusFirst = false;
       }
       if (ui.clicked(TEST_BACK) || (ui.escaped && view === 'test')) {
-        view = 'characters';
+        [view, said] = ['characters', null];
         focusFirst = true;
         sound('back');
       }
-      return testRoomNode(ui, { entries, busy, hints: hintsOf('test', true, false), shown });
+      return testRoomNode(ui, { entries, busy, said, hints: hintsOf('test', true, false), shown });
     };
 
     const removeLayer = stack.add((ui) => {

@@ -1,7 +1,7 @@
 import { AccountLink, type Kept, LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import { BREACH_TIERS } from '../../../server/roomNames.ts';
+import { BREACH_TIERS, testRoom } from '../../../server/roomNames.ts';
 
 /**
  * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, the rooms' worker
@@ -119,11 +119,14 @@ export function nodeOfRoom(room: string): {
   // A Breach's run names its gate's zone and its tier alone, and is only ever a run (server/roomNames.ts).
   const breach = tier === undefined ? null : BREACH_TIERS.indexOf(tier as (typeof BREACH_TIERS)[number]);
   if (breach !== null && (named !== undefined || dungeon !== null || run === undefined)) return null;
+  // A test room is one the rooms open (server/roomNames.ts); a Breach's gate's zone copy is no run.
+  if (kind === 'test' && !testRoom(room)) return null;
+  const zoneCopy = kind === 'test' && breach === null && named === undefined;
   return {
     id,
     seas,
     dungeon,
-    run: run ?? null,
+    run: zoneCopy ? null : (run ?? null),
     playlist,
     guild: guild ?? null,
     breach,

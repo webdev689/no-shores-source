@@ -64,6 +64,7 @@ test('a kept character shows as its room kept it, its Aurem its own until a room
   });
   const seen = await world.ask('GET', '/v1/me', undefined, token);
   assert.deepEqual(seen.body.place, { kind: 'sea' }, '/v1/me answers the place of the character in play');
+  assert.equal(seen.body.playing, 0, 'and its slot');
   assert.equal(await kept.save(claimed.account, 'node-overlook-social:1', '{"xp":1}', '{"aurem":45}'), true);
   const after = await slots();
   assert.equal(after.body.aurem, 45, 'the account’s vault row, once kept');
@@ -120,6 +121,34 @@ test('the one in play is neither switched nor deleted while a room holds it', as
   assert.equal((await slots('POST', '/play', { slot: 0 })).body.playing, 0, 'the slot in play answers as GET');
   world.clock.now += 61_000;
   assert.equal((await slots('POST', '/play', { slot: 1 })).body.playing, 1, 'a hold lapsed holds nothing');
+  assert.equal(
+    (await world.ask('GET', '/v1/me', undefined, token)).body.playing,
+    1,
+    '/v1/me says the slot switched to',
+  );
+});
+
+test('a room claiming the one in play between the read and the switch leaves all as it was, answered as held', async () => {
+  const { slots, kept, token, world, row } = await guest();
+  const claimed = await kept.claim(token, 'node-a:1');
+  assert.ok(claimed);
+  await kept.save(claimed.account, 'node-a:1', '{"xp":1}', '{}');
+  await kept.release(claimed.account, 'node-a:1', '{"xp":1}', '{}');
+  const { database } = world.deps;
+  const batch = database.batch.bind(database);
+  // A second tab's room claims the character as the switch's batch is sent.
+  database.batch = async (statements) => (await kept.claim(token, 'node-b:1'), batch(statements));
+  for (const [ask, slot] of [
+    ['/play', 1],
+    ['/delete', 0],
+  ] as const) {
+    const refused = await slots('POST', ask, { slot });
+    assert.deepEqual([refused.status, refused.body.error], [409, STILL_IN_A_ROOM], ask);
+    await kept.release(claimed.account, 'node-b:1', null, null);
+  }
+  database.batch = batch;
+  assert.equal((await row('characters', 0))?.body, '{"xp":1}', 'still in play, as it was');
+  assert.equal(await row('benched', 0), null);
 });
 
 test('a slot outside 0 to 3, or a look the game does not know, is refused', async () => {

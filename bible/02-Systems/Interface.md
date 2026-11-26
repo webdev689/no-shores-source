@@ -1286,8 +1286,11 @@ the test character summarised in a well (Level 30, Prestige 120, Max gear, and "
 falls, one counts as a company"), and six banners, each its name, its line and Launch: the Elite Playlist and the Abyss
 Playlist ("An Elite Dungeon drawn as it starts · Foes at level 32"), the Elite and the Abyss Dungeon of the week (its
 place and its foes' level), and the Breach at Normal and at Hard ("From the gate in a copy of Gullwing Vale of its
-own"), named from the rules (`testRuns.ts`, from `activities_json` and `room_breach`). Launch keeps the test room in the
-tab and goes past the title with no character put in play; once the player stands on foot the page goes into it as
+own"), named from the rules (`testRuns.ts`, from `activities_json` and `room_breach`). Launch waits, saying "A test run
+sets out from your character in play. Play it past the prologue first.", while the character in play is none or has
+not played the prologue, as arriving on foot would mark it past; a screen opened at the Test Room for an account no
+longer a developer's shows the characters. Launch keeps the test room in the tab and goes past the title with no
+character put in play; once the player stands on foot the page goes into it as
 any trip goes in, behind the veil (`testLaunch.ts`: a playlist's or a week's run by `intoRun`, the Breach to its gate
 in its zone copy, `node-<zone>--test-<instance>`, launched as a company is). While in it the tab is marked, so Exit to
 Menu or Switch character opens the Test Room; leaving it any way loads the page again at the Test Room. Back or Escape

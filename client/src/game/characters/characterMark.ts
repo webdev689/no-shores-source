@@ -16,6 +16,8 @@ const TEST_RUN_KEY = 'noshores.characters.testRun';
 /** Marks the tab so the page, loaded again, opens `screen` at once, past the title's intro. */
 export function markCharacters(tab: Kept, screen: ScreenMarked): void {
   try {
+    // In a test run the tab is marked for the Test Room, and switching character from it goes back there too.
+    if (screen === 'characters' && tab.getItem(SCREEN_KEY) === 'test') return;
     tab.setItem(SCREEN_KEY, screen);
   } catch {
     // A tab that keeps nothing opens on the title, a press away from the screen.

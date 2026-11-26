@@ -129,12 +129,12 @@ export function lookOf(value: unknown): string | null {
 /** Makes `slot` the one in play: the one in play now goes to the bench under its slot (unless it is empty), and the
  *  chosen one comes off it, or a new character for an empty slot. Each statement holds only while nothing changed
  *  under it, so a room that claims it meanwhile changes nothing. */
-async function play(database: Db, account: string, from: number, slot: number, now: number) {
+async function play(database: Db, account: string, from: number, slot: number, now: number): Promise<boolean> {
   // ?1 the account, ?2 the slot in play now, ?3 now, ?4 the slot chosen. The holder goes, so a room whose hold lapsed
   // saves nothing over the character chosen.
   const free = 'account_id = ?1 AND slot = ?2 AND (holder IS NULL OR held_until < ?3)';
   const benched = (column: string) => `(SELECT ${column} FROM benched WHERE account_id = ?1 AND slot = ?4)`;
-  await database.batch([
+  const done = await database.batch([
     ...vaultParted(database, account, now),
     database
       .prepare(
@@ -157,8 +157,11 @@ async function play(database: Db, account: string, from: number, slot: number, n
       )
       .bind(account, slot),
   ]);
+  // A room that claimed the character since it was read changed nothing: the switch did not happen.
+  if (done[3]?.meta.changes !== 1) return false;
   // The guild's week counts from the chosen character's own record on, so a switch back credits nothing twice.
   await countFromJoining(database, account);
+  return true;
 }
 
 /** For a character in play kept before the vault was the account's, with no vault kept apart yet: its vault and Aurem
@@ -216,17 +219,22 @@ export async function slotsAsk(
       await database.prepare('DELETE FROM benched WHERE account_id = ?1 AND slot = ?2').bind(account.id, slot).run();
     else if (route === 'POST /v1/characters/delete' || !inPlay) {
       if (held(playing, now)) return refused(409, STILL_IN_A_ROOM);
-      if (route === 'POST /v1/characters/play') await play(database, account.id, playing.slot, slot, now);
-      else
-        await database.batch([
-          ...vaultParted(database, account.id, now),
-          database
-            .prepare(
-              `UPDATE characters SET body = NULL, look = NULL, room = NULL, came_from = NULL, holder = NULL,
-               held_until = 0 WHERE account_id = ?1 AND slot = ?2 AND (holder IS NULL OR held_until < ?3)`,
-            )
-            .bind(account.id, slot, now),
-        ]);
+      const done =
+        route === 'POST /v1/characters/play'
+          ? await play(database, account.id, playing.slot, slot, now)
+          : (
+              await database.batch([
+                ...vaultParted(database, account.id, now),
+                database
+                  .prepare(
+                    `UPDATE characters SET body = NULL, look = NULL, room = NULL, came_from = NULL, holder = NULL,
+                     held_until = 0 WHERE account_id = ?1 AND slot = ?2 AND (holder IS NULL OR held_until < ?3)`,
+                  )
+                  .bind(account.id, slot, now),
+              ])
+            )[2]?.meta.changes === 1;
+      // Claimed by a room between the read and the batch: as held, and nothing changed.
+      if (!done) return refused(409, STILL_IN_A_ROOM);
     }
   }
   return json(await slotsOf(database, bot, account.id));

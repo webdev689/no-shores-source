@@ -13,10 +13,11 @@ export const TEST_BACK = 'test-room-back';
 export const launchId = (index: number): string => `test-room-launch-${index}`;
 
 /** What the Test Room shows this frame: its entries once the rules are read (null until then), what is under way,
- *  the keys, and the screen's fade in. */
+ *  why a Launch was refused, the keys, and the screen's fade in. */
 export interface TestRoomShown {
   readonly entries: readonly TestEntry[] | null;
   readonly busy: string | null;
+  readonly said: string | null;
   readonly hints: readonly Hint[];
   readonly shown: number;
 }
@@ -132,6 +133,11 @@ export function testRoomNode(ui: Interface, shown: TestRoomShown): Child {
           },
           characterNode(fit.large),
           shown.busy !== null && words(shown.busy, 1, INK.faint, SHADOW),
+          shown.said !== null && {
+            width: 'grow',
+            text: { words: shown.said, colour: INK.loss, ...SHADOW },
+            label: shown.said,
+          },
           ...(shown.entries === null
             ? [words('Reading the rules...', 1, INK.faint, SHADOW)]
             : shown.entries.map((entry, index) => entryNode(ui, entry, index, fit.large))),

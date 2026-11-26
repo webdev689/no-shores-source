@@ -11,6 +11,7 @@ import {
   type CharactersAnswer,
   DELETE_MS,
   NOT_ANSWERED,
+  PLAY_FIRST,
   STILL_LEAVING,
   charactersOpen,
   openCharacters,
@@ -84,7 +85,7 @@ function opened(
     place: null as unknown,
     session: async () => (await answers.session?.()) ?? null,
     characters: async () => (asked.push('list'), answers.list?.() ?? FOUR),
-    play: async (slot: number) => (asked.push(`play ${slot}`), answers.play?.(slot) ?? FOUR),
+    play: async (slot: number) => (asked.push(`play ${slot}`), answers.play?.(slot) ?? { ...FOUR, playing: slot }),
     deleteCharacter: async (slot: number) => (asked.push(`delete ${slot}`), answers.remove?.(slot) ?? FOUR),
     keepLook: async (look: unknown) => (asked.push(`look ${JSON.stringify(look)}`), null),
   };
@@ -231,6 +232,14 @@ test('a character still held by a room is asked for again, then the screen says 
   passes.click(PLAY);
   await passes.settle();
   assert.equal(passes.ended(), 'onward', 'held twice, then let go');
+  // Answered with another slot in play: the switch was not made, so it is asked again as held.
+  let asks = 0;
+  const other = opened({ play: () => (++asks < 3 ? { ...FOUR, playing: 0 } : FOUR) });
+  await other.settle();
+  other.click(PLAY);
+  await other.settle();
+  assert.equal(asks, 3);
+  assert.equal(other.ended(), 'onward');
 });
 
 test('the accounts not answering are said, with Try again', async () => {
@@ -329,8 +338,28 @@ test("the Test Room is a developer's alone: T or its press opens it, Launch keep
   assert.equal(developer.browser.kept[PROLOGUE_KEY], 'played', 'the browser set from the character in play');
 });
 
-test('Escape goes back to the title; from the Test Room, back to the characters', async () => {
+test('Launch waits for a character in play past the prologue, as arriving would mark it past', async () => {
+  for (const kept of [null, slotAt(1, { prologue: false })]) {
+    const slots = [FOUR.slots[0] ?? null, kept, null, null];
+    const screen = opened({ list: () => ({ ...FOUR, developer: true, slots }) }, { first: 'test' });
+    await screen.settle();
+    screen.click(launchId(0));
+    await screen.settle();
+    assert.equal(screen.ended(), null, kept ? 'not past the prologue' : 'an empty slot');
+    assert.match(screen.shows(), new RegExp(PLAY_FIRST.slice(0, 30)));
+    assert.equal(screen.tab.kept['noshores.characters.testRun'], undefined, 'no test room kept');
+  }
+});
+
+test("a Test Room opened from the tab for an account no longer a developer's shows the characters", async () => {
   const screen = opened({}, { first: 'test' });
+  await screen.settle();
+  assert.match(screen.shows(), /CHARACTERS/);
+  assert.equal(screen.ui.boxOf(launchId(0)), null, 'no Launch');
+});
+
+test('Escape goes back to the title; from the Test Room, back to the characters', async () => {
+  const screen = opened({ list: () => ({ ...FOUR, developer: true }) }, { first: 'test' });
   await screen.settle();
   assert.match(screen.shows(), /TEST ROOM/);
   screen.key('escape');

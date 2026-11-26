@@ -365,7 +365,10 @@ The character screen reads and changes the four by the session's bearer token, 1
   stays in play; refused 409 while a room holds it). The vault stays the account's. Answers as `GET`.
 - **`PUT /v1/characters/look`** with `{ "look" }` keeps the look of the one in play: an object of `body`, `race`,
   `tone` and `hair` as the page writes it, at most 512 characters as JSON; anything else is refused 400. Answers 204.
-- **`GET /v1/me`**'s `place` is the character in play's.
+- **`GET /v1/me`**'s `place` is the character in play's, and `playing` its slot, so the page keeps what it keeps by
+  character under the right one however it came in.
+- **A switch or a deletion** answers 409 as held when a room claimed the character in play between the accounts'
+  read and their write, which then changed nothing.
 
 ## Running it here
 

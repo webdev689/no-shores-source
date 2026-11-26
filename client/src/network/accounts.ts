@@ -1,5 +1,5 @@
 import type { LastPlace } from '../../../server/accounts/lastPlace.ts';
-import { type Characters, type Held, charactersOf, keptFor } from './characters.ts';
+import { type Characters, type Held, SLOTS, charactersOf, keptFor } from './characters.ts';
 
 /** Where the deployed accounts are (`server/accounts`). */
 export const LIVE_ACCOUNTS = 'https://overlook-accounts.mackcothran.workers.dev';
@@ -260,7 +260,8 @@ export class AccountLink {
   /** How long an ask may go unanswered, milliseconds, before it is given up as out of reach: a host that never
    *  answers would otherwise hold whatever waits on it until the browser's own limit. */
   patienceMs = 10_000;
-  /** The slot of the account's character in play, once the accounts have said; none before. */
+  /** The slot of the account's character in play, once the accounts have said (with who the page is, and as the four
+   *  are read or one put in play); none before, or from accounts older than the four, whose one is the first. */
   playing: number | null = null;
 
   constructor(base: string, kept: Kept, ask: typeof fetch = (...given) => fetch(...given), passing: Kept = kept) {
@@ -430,6 +431,9 @@ export class AccountLink {
       const known = await this.call('GET', '/v1/me');
       if (typeof known !== 'string') {
         this.place = (known['place'] as LastPlace | undefined) ?? null;
+        const playing = known['playing'];
+        this.playing =
+          Number.isInteger(playing) && Number(playing) >= 0 && Number(playing) < SLOTS ? Number(playing) : null;
         return known['account'] as Account;
       }
       if (known !== 'Not signed in.' && known !== LAPSED) return null;

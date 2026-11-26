@@ -228,8 +228,8 @@ The decisions in [[Open Questions]] are not repeated here.
   play", "The vault joined in a room"), [[Interface]] ("The character screen"), [[Activities]] ("Test runs"),
   [[Breaches]], [[Discord Bot]] ("The game module"). Tested offline only (the PR lists each suite); the forge's figures
   on the screen, a real GPU, the live flow into a test room and the Discord role check against Discord are not seen.
-  Open for the owner, listed in the PR: a Launch passes through the character in play's place first (from an empty
-  slot it makes that slot's character); a switch counts the guild's week from the chosen character on; the Developer
+  Open for the owner, listed in the PR: a Launch passes through the character in play's place first (and waits for one
+  past the prologue); a switch counts the guild's week from the chosen character on; the Developer
   role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
   before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
 
