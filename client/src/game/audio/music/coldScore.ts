@@ -223,16 +223,19 @@ interface Line {
   readonly lead: number;
   readonly drive: number;
   readonly turn?: boolean;
+  /** The voicing of another feel, where a take shares its feel and its section with another. */
+  readonly voice?: 0 | 1 | 2;
 }
 
 /** The bars under the tunes: the bed in the feel's bass and voicing, the shiver, the gusts, the ticks and the slow
  *  heart, the low strings, the drums and timpani, and the peak's choir and the swell into the next take. */
-function underneath(w: Write, bars: readonly Held<Chord>[][], { feel, drive, section }: Line): void {
+function underneath(w: Write, bars: readonly Held<Chord>[][], { feel, drive, section, voice }: Line): void {
   const { shiver, gusts, ticks, heart, ostinato, bass, voicing } = FEELS[feel] ?? FEELS[0]!;
-  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
+  // A take voiced as another feel strikes its bed again each bar, so no bar of it sounds as its feel's other take.
+  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS, voice !== undefined)) {
     const tones = CHORDS[name];
     if (bass === 'held') w.note('bass', bar, beat, beats, tones.bass, 90);
-    for (const n of voiced(tones.air, voicing)) w.note('air', bar, beat, beats, n, 52);
+    for (const n of voiced(tones.air, voice ?? voicing)) w.note('air', bar, beat, beats, n, 52);
     for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 66);
     // Two octaves under their voicing: held high, these strings were a whine.
     if (shiver === 'held') for (const n of tones.shiver) w.note('shiver', bar, beat, beats, n - 24, 64);
@@ -335,12 +338,12 @@ const TAKES: readonly Line[] = [
   { section: 'break', feel: 2, lead: 1, drive: 3 },
   { section: 'down', feel: 0, lead: 0, drive: 0 },
   { section: 'down', feel: 1, lead: 1, drive: 0 },
-  { section: 'a1', feel: 0, lead: 1, drive: 3 },
-  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true },
-  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true },
-  { section: 'a2', feel: 1, lead: 0, drive: 2 },
-  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true },
-  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true },
+  { section: 'a1', feel: 0, lead: 1, drive: 3, voice: 1 },
+  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true, voice: 2 },
+  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true, voice: 0 },
+  { section: 'a2', feel: 1, lead: 0, drive: 2, voice: 2 },
+  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true, voice: 1 },
+  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true, voice: 0 },
   { section: 'down', feel: 2, lead: 0, drive: 0 },
 ];
 

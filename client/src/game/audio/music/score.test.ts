@@ -277,6 +277,23 @@ test('each family fight plays all six layers in a metre and tempo of its own', (
   assert.equal(new Set(metres).size, familySongs.length, metres.join(', '));
 });
 
+test("no line of a family's tune's halves rubs a half step on the chord under it, over its own chords or turned ones", () => {
+  for (const song of familySongs)
+    for (const take of song.form?.takes ?? []) {
+      if (take.section !== 'a1' && take.section !== 'a2') continue;
+      const [from, to] = [take.first * song.ticksPerBar, (take.first + take.bars) * song.ticksPerBar];
+      const notes = song.notes.filter((note) => note.tick >= from && note.tick < to);
+      const bed = notes.filter((note) => note.role === 'bed');
+      // A line's note held a beat or more, against a bed note sounding through its start.
+      for (const line of notes.filter((note) => note.role === 'lead' && note.duration >= TICKS_PER_BEAT))
+        for (const under of bed.filter((note) => note.tick <= line.tick && note.tick + note.duration > line.tick))
+          assert.ok(
+            ![1, 11].includes(Math.abs(line.note - under.note) % 12),
+            `${song.name} take at bar ${take.first}: ${line.note} on ${under.note}, bar ${Math.floor((line.tick - from) / song.ticksPerBar)}`,
+          );
+    }
+});
+
 test("each family's cadence, victory and defeat is two to eight bars of its fight's metre, played once and done", () => {
   for (const score of Object.values(families))
     for (const sting of [score.cadence, score.victory, score.defeat, score.secondCadence, score.secondVictory]) {
