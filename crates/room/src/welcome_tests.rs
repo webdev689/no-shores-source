@@ -1,5 +1,6 @@
-//! The welcome to Overlook in a room: the stranger is heard anywhere in a social space and nowhere else, her gift
-//! of Aurem given once, the Bay given by the Tack at her counter, the Postmaster spoken with at the mail counter, and
+//! The welcome to Overlook in a room: the stranger is heard anywhere in a social space and nowhere else, once, giving
+//! nothing; the Bay given by the Tack at her counter, the Postmaster spoken with at the mail counter, his letter
+//! posted as he is, and
 //! the Harbourmaster at theirs, who hands over the Sloop a new player has none of until then and answers every ask for
 //! the player's ships.
 
@@ -21,16 +22,16 @@ fn aurem(room: &Room, player: crate::PlayerId) -> u32 {
 }
 
 #[test]
-fn the_stranger_is_heard_anywhere_in_a_social_space_and_gives_her_gift_once() {
+fn the_stranger_is_heard_anywhere_in_a_social_space_once_and_gives_no_aurem() {
     let mut room = node_room("harbour-social", &[]);
     room.counters = Some(vec![Counter { kind: CounterKind::Mage, at: [100.0, 0.0] }]);
     let player = joined(&mut room, &Character::starting(), [0.0, 0.0]);
     assert_eq!(keeper_key(STRANGER), Some("stranger"));
     assert_eq!(speak(&mut room, player, STRANGER), 0, "far from every counter");
-    assert_eq!(aurem(&room, player), 400);
+    assert_eq!(aurem(&room, player), 0, "her Aurem is gone: the keepers give gifts");
     assert!(!room.player(player).expect("in").character.may_ride(), "no horse from her: the Tack gives it");
     assert_eq!(speak(&mut room, player, STRANGER), answer_code(Err(Refusal::NothingToSay)), "a second hearing");
-    assert_eq!(aurem(&room, player), 400);
+    assert_eq!(aurem(&room, player), 0);
     let mut afield = node_room("a-patrol", &[]);
     afield.counters = None;
     let player = joined(&mut afield, &Character::starting(), [0.0, 0.0]);
@@ -51,7 +52,7 @@ fn the_tack_gives_the_bay_worn_as_she_is_spoken_with_at_her_counter_on_the_round
     assert_eq!(speak(&mut room, player, tack), 0);
     let character = &room.player(player).expect("in").character;
     assert!(character.may_ride() && character.keeps_horse(gear::horses::FIRST_HORSE), "the Bay worn");
-    assert_eq!(aurem(&room, player), 400, "the Bay is given, not sold");
+    assert_eq!(aurem(&room, player), 0, "the Bay is given, not sold");
 }
 
 #[test]
@@ -67,6 +68,8 @@ fn the_postmaster_is_spoken_with_at_the_mail_counter() {
     let goals = &quests().quests[quest].tasks[task].goals;
     let heard = goals.iter().zip(counts).any(|(goal, count)| goal.text == "The Postmaster" && count == 1);
     assert!(heard, "the Postmaster heard");
+    let mail = &room.player(player).expect("in").character.mail;
+    assert!(mail.len() == 1 && mail[0].from == gear::mail::Source::Gift as u8, "his letter posted as he is heard");
     stand_at(&mut room, player, [60.0, 0.0]);
     assert_eq!(speak(&mut room, player, 10), answer_code(Err(Refusal::NotHere)), "the Mage keeps no counter here");
 }

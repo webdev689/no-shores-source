@@ -284,7 +284,8 @@ impl Character {
 
     /// Buys a vendor's ware of the day or of their starter stock, at the buyer's own level, carried with its slot's:
     /// only in a social space, and only as shown today, since the wares at each place change as the day turns. A
-    /// smith's sale is kept by its slot for the quests (`tell_held`).
+    /// smith's sale is kept by its slot for the quests (`tell_held`). A piece the Weaponsmith owes as her gift is free
+    /// (`ware_given`), and spends that slot's gift.
     fn vend(&mut self, vendor: Vendor, ware: u8, day: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
@@ -295,7 +296,8 @@ impl Character {
         let level = if vendor.for_ship() { self.ship_level() } else { self.level() };
         let wares = vendor::stock(vendor, here.day, level);
         let mut item = wares.into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
-        let cost = vendor::price(item.rarity);
+        let given = self.ware_given(vendor, &item);
+        let cost = self.ware_price(vendor, &item);
         if self.materials.aurem < cost {
             return Err(Refusal::Short);
         }
@@ -306,7 +308,10 @@ impl Character {
         self.materials.aurem -= cost;
         let slot = item.kind.slot();
         self.items.insert(item.id, (item, At::Carried));
-        if !vendor.for_ship() && !self.quests.bought.contains(&slot) {
+        // The Weaponsmith's gift is spent, one piece a slot; a piece given is never one bought.
+        if given {
+            self.quests.free.retain(|free| *free != slot);
+        } else if !vendor.for_ship() && !self.quests.bought.contains(&slot) {
             self.quests.bought.push(slot);
         }
         Ok(None)

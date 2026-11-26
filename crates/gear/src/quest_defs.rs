@@ -35,8 +35,8 @@ const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
 /// What a task gives as it is done, or a goal as it is met: Aurem, its house's Art, a Tenet (1 or 2, 0 none),
-/// fragments to choose, the first horse (`FIRST_HORSE`, the Bay), and the first ship (the Sloop,
-/// `Character::give_first_ship`). A goal gives only Aurem and the horse.
+/// fragments to choose, the first horse (`FIRST_HORSE`, the Bay), the first ship (the Sloop,
+/// `Character::give_first_ship`), and a keeper's gift (`gifts.rs`). A goal gives only Aurem, the horse and a gift.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
@@ -46,6 +46,7 @@ pub struct RewardDef {
     pub fragments: u8,
     pub horse: bool,
     pub ship: bool,
+    pub gift: Option<crate::gifts::Gift>,
 }
 
 /// One task: its id and the ids it had before (a save of one is read as this), the tracker's words, the scenes played
@@ -262,8 +263,10 @@ impl GoalDef {
             Some(format!("{text}: count must be 1 on a step or a piece bought or worn, and 1 or more on any goal"))
         } else if self.reward.art || self.reward.tenet > 0 || self.reward.fragments > 0 || self.reward.ship {
             // A house's gifts come with its tasks, in their order (`house_problems`), and the Sloop with its task, the
-            // one `give_ship_due` looks for; a goal gives Aurem or the horse.
-            Some(format!("{text}: a goal's reward gives Aurem or the first horse, nothing of a house's nor the ship"))
+            // one `give_ship_due` looks for; a goal gives Aurem, the horse or a keeper's gift.
+            Some(format!(
+                "{text}: a goal's reward gives Aurem, the first horse or a gift, nothing of a house's nor the ship"
+            ))
         } else {
             None
         }

@@ -29,6 +29,7 @@ pub mod errand;
 pub mod factions;
 pub mod finds;
 pub mod gate;
+pub mod gifts;
 pub mod grid;
 pub mod guild;
 pub mod horses;
@@ -102,6 +103,8 @@ mod faction_perks_tests;
 mod factions_tests;
 #[cfg(test)]
 mod gate_tests;
+#[cfg(test)]
+mod gifts_tests;
 #[cfg(test)]
 mod horses_tests;
 #[cfg(test)]

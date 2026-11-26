@@ -93,15 +93,7 @@ test("a counter answers the task's unmet talk goal that names it, and no other",
 test('the opening hears the stranger, then the round of the counters, each keeper with a scene of their own', () => {
   assert.deepEqual(
     QUESTS[0]?.tasks.map((task) => task.id),
-    [
-      'hear-the-stranger',
-      'find-your-way',
-      'your-ship',
-      'arm-yourself',
-      'wear-them',
-      'hear-three-houses',
-      'choose-house',
-    ],
+    ['hear-the-stranger', 'find-your-way', 'your-ship', 'wear-them', 'hear-three-houses', 'choose-house'],
   );
   const ship = goalsOf(1, taskOf(1, 'your-ship'));
   assert.deepEqual(
@@ -115,14 +107,22 @@ test('the opening hears the stranger, then the round of the counters, each keepe
 });
 
 test('a smith whose ware a buy goal of the task asks is the one it lights, until it is bought', () => {
-  const arm = taskOf(1, 'arm-yourself');
-  const goals = goalsOf(1, arm);
-  const melee = goals.findIndex((goal) => goal.slot === 'melee');
-  assert.equal(buyAt(onTask(1, arm), 'weaponsmith'), true);
-  assert.equal(buyAt(onTask(1, arm), 'armorsmith'), true);
-  assert.equal(buyAt(onTask(1, arm), 'mage'), false);
-  const bought = goals.map((_goal, index) => (index === melee ? 1 : 0));
-  assert.equal(buyAt(onTask(1, arm, bought), 'weaponsmith'), false, 'bought');
+  // No task of the file asks a purchase now the keepers give the opening's gear: a task of buy goals, made here.
+  const goals: Goal[] = [
+    { kind: 'buy', slot: 'melee', text: 'A Melee weapon' },
+    { kind: 'buy', slot: 'head', text: 'Head armour' },
+  ];
+  const opening = QUESTS[0] as unknown as { tasks: unknown[] };
+  opening.tasks.push({ id: 'buy-here', task: 'Buy here', goals });
+  try {
+    const arm = taskOf(1, 'buy-here');
+    assert.equal(buyAt(onTask(1, arm), 'weaponsmith'), true);
+    assert.equal(buyAt(onTask(1, arm), 'armorsmith'), true);
+    assert.equal(buyAt(onTask(1, arm), 'mage'), false);
+    assert.equal(buyAt(onTask(1, arm, [1, 0]), 'weaponsmith'), false, 'bought');
+  } finally {
+    opening.tasks.pop();
+  }
   assert.equal(buyAt(onTask(1, taskOf(1, 'wear-them')), 'armorsmith'), false, 'worn is no smith of theirs');
 });
 

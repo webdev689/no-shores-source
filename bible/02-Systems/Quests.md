@@ -7,6 +7,9 @@ code:
   - crates/gear/src/quest_defs.rs#QuestsDef
   - crates/gear/src/quests.rs#QuestLog
   - crates/gear/src/quests.rs#Event
+  - crates/gear/src/gifts.rs#Gift
+  - crates/gear/src/gifts.rs#give_gift
+  - client/src/game/quests/questNews.ts#giftNotice
   - crates/gear/src/arts.rs#WornArts
   - crates/room/src/quests.rs#QuestGround
   - crates/room/src/quests.rs#set_places
@@ -86,10 +89,11 @@ place, fights there and walks back to its post as a garrison's group does.
 
 A reward gives Aurem (`aurem`, any quest's), the Art (`art`, its Anima with it, worn at once), a Tenet (`tenet`: 1 or
 2, in the Art's order), fragments to choose (`fragments`: how many choices), the first horse (`horse`: the Bay,
-worn where none is, never a second), or the first ship (`ship`: the Sloop, never a second; [[Shipyard]]). Which Art is
-the quest's house's. A task's reward is given as it ends; a goal may carry one of its own (`reward` beside its other
-fields), given as it is met, of Aurem or the first horse alone: a house's gifts come with its tasks, in their order,
-and the ship with its own task ([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]).
+worn where none is, never a second), the first ship (`ship`: the Sloop, never a second; [[Shipyard]]), or a keeper's
+gift (`gift`, by its name: `weapons`, `armour`, `vestige`, `cloak`, `dye` or `letter`; below, "The opening"). Which Art
+is the quest's house's. A task's reward is given as it ends; a goal may carry one of its own (`reward` beside its other
+fields), given as it is met, of Aurem, the first horse or a gift alone: a house's gifts come with its tasks, in their
+order, and the ship with its own task ([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]).
 Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy` and `wear`) pays a mission's
 clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Destiny 1 paid each mission done
 ([[Gear]], "A clear"; [[The Balance and Economy Pass as Claude Shapes It]]).
@@ -97,22 +101,52 @@ clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Des
 ## The opening
 
 "A House of Your Own" walks a new player round Overlook, then to a house
-([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]; Claude's calls in
-[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]): **Hear the stranger out** (her welcome,
-[[Prologue]]; its reward the 400 Aurem she gives); **Find your way round Overlook**, speaking at each counter in turn
-(the Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack and the Postmaster), each keeper saying what
-their counter is for, the Tack giving the Bay Horse as she is spoken with (her goal's `"horse": true`, worn unless one
-is, never a second, and at her counter for nothing to one who pledged before the round reached her, [[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]); **Take your ship from the Harbourmaster**, its reward the Sloop (`"ship": true`), which
-a new player has none of until then ([[Shipyard]]); **Arm yourself**, a Melee weapon bought of the
-Weaponsmith and the four armour pieces of the Armorsmith, which the starter stock sells for 50 Aurem each ([[Gear]]);
-**Put them on**. Both are told of the pieces held after every answered ask, again until nothing more counts, so pieces
-bought and worn during the round meet both as the last keeper is heard; a buy or wear goal names a weapon's or
-armour's slot and a count of 1; **Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house,
-[[Factions]]); and **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses'
-task begins with Arlo's word to hear all three. A character whose log stood at the houses before keeps its place by
-its task's id, and one kept with no place in the opening reads at "Hear the three houses" (its `kept`): neither is
-walked round again, nor owed the gift. The Test Ground's player reads as one kept before, on the houses, which its
-stall serves; the stranger is heard in a social space alone, never at the stall.
+([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]], the keepers' gifts in
+[[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]; Claude's
+calls in [[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]] and
+[[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]): **Hear the stranger out** (her
+welcome, [[Prologue]]; it gives nothing); **Find your way round Overlook**, speaking at each counter in turn (the
+Weaponsmith, the Armorsmith, the Mage, the Vault, the Tailor, the Tack and the Postmaster), each keeper saying what
+their counter is for and what they give, and giving it as they are spoken with (their goal's `gift`, given by the room,
+`gear::gifts`):
+
+| Keeper | Gift | What it teaches |
+|---|---|---|
+| The Weaponsmith | One Melee and one Ranged piece of her starter stock, free, chosen at her counter: every Melee and every Ranged kind is offered there, Normal at the player's level, and one of each slot is free while owed (`weapons`) | Choosing a loadout, and buying at a smith's counter |
+| The Armorsmith | Her starter stock's head, torso, arms and legs, Normal at the player's level, carried (`armour`) | Wearing armour |
+| The Mage | A sealed Magic Vestige for the head, at the player's level, carried (`vestige`) | Having a Vestige opened |
+| The Vault Keeper | A Normal cloak at the player's level, laid in the vault (`cloak`) | Taking a piece out of the vault |
+| The Tailor | Harbour Blue, a dye, kept (`dye`) | Wearing a dye |
+| The Tack | The Bay Horse, worn (`"horse": true`), as before | Riding |
+| The Postmaster | A letter (its source the keepers' gift) holding a sealed Magic Vestige for the legs, at the player's level (`letter`) | Taking a letter |
+
+Each gift is given once a character, kept by name in its quest log (`gifts`), so a second hearing, a reload, a rejoin or
+a later round never gives it again; the Weaponsmith's slots still free are kept beside it (`free`) until taken. A gift
+with no room where it goes is kept as anything found is: armour carried, else in the vault, else posted; a Vestige
+carried, else posted; the cloak in the vault, else carried, else posted. Then **Take your ship from the
+Harbourmaster**, its reward the Sloop (`"ship": true`), which a new player has none of until then ([[Shipyard]]); and
+**Put them on**, a wear goal for each of the Melee weapon, the four armour pieces and the Ranged weapon, each a count
+of 1, told of the pieces held after every answered ask, again until nothing more counts, so pieces worn during the
+round meet it as the last keeper is heard; plain clothes never do. The Tack's Bay is worn unless one is, never a second,
+and at her counter for nothing to one who pledged before the round reached her
+([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]],
+[[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]). Then
+**Hear the three houses** (Arlo Kestrel, Elder Maren Hale and Sable each introducing their house, [[Factions]]); and
+**Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses' task begins with
+Arlo's word to hear all three.
+
+The page announces each gift as it comes, in a toast ([[Interface]]), through one function, `giftNotice`: the
+Weaponsmith's, the Armorsmith's and the rest as their goals are met, the Sloop as its task is done.
+
+Every save keeps its place. A save on the old **Arm yourself** task (a Melee weapon and the four armour pieces bought)
+reads on **Put them on** (its `was`), its counts at nothing. A save kept partway round the counters before the keepers
+gave gifts is given, as it is read, the gift of each keeper it has heard, and the rest as it hears them. One who pledges
+before the round is done is given, as they pledge, every gift the opening's tasks still held, the Weaponsmith's choice
+kept free at her counter, as the Tack gives the Bay. A character past the round before the gifts (on **Put them on** or
+later, or pledged) is owed nothing new, as one past the Tack's goal is given no Bay. A character whose log stood at the
+houses before keeps its place by its task's id, and one kept with no place in the opening reads at "Hear the three
+houses" (its `kept`): neither is walked round again, nor owed a gift. The Test Ground's player reads as one kept
+before, on the houses, which its stall serves; the stranger is heard in a social space alone, never at the stall.
 
 ## In the rules
 
@@ -120,8 +154,9 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A new character begins
   every quest at its first task; one that holds no place in a quest (kept before it was laid out) reads at the
   quest's `kept` task, else its first; and one kept on a task this room does not hold (a task renamed keeps its old
-  id in `was`) reads at the quest's `kept` task too, else its first, so the opening's gift, before `kept`, is never
-  paid twice.
+  id in `was`) reads at the quest's `kept` task too, else its first, so the opening's round, before `kept`, is never
+  walked twice. The keepers' gifts given are kept by name (`gifts`) and the Weaponsmith's slots still free (`free`), so
+  none is given twice whatever the place reads as.
 - **Read leniently**: a quest log of a shape this room cannot read reads as one kept before (above) and is written back as it was. A
   fragment choice waiting for an Art none of whose fragments is left to own is paid at its price as soon as the room
   answers any ask.

@@ -32,6 +32,8 @@ pub enum Source {
     Salvage = 4,
     /// A Normal item found as itself while its slot carried nine and the vault was full.
     Found = 5,
+    /// A keeper's gift on the opening's round: the Postmaster's letter, or a gift with no room for it where it goes.
+    Gift = 6,
 }
 
 /// What a letter holds.
