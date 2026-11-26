@@ -100,7 +100,8 @@ beat that fails ends the story with its screen kept, so the black lifts only onc
 The intro offers no skip once it has reached Saltmere. Each beat sets its own weather, sound and lightning at
 its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
 has played the story to its end (kept in the browser, `noshores.prologue`) sees the intro and the title, and Begin
-takes them straight to Overlook's social space. Every way onto foot comes after the story, played through or passed
+takes them straight to Overlook's social space. Where the page has accounts, Begin opens the character screen first
+([[Interface]], "The character screen"), which sets `noshores.prologue` and `noshores.look` from the character chosen. Every way onto foot comes after the story, played through or passed
 over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
 on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
 character, the page's word while the prologue pays nothing ([[The Server Is the Authority Over Everything]]). At

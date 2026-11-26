@@ -188,6 +188,7 @@ export function modulePlans(ids: Ids): readonly ModulePlan[] {
         houses: Object.entries(HOUSE_ROLES)
           .map(([faction, key]) => ({ faction, role: role(key) }))
           .filter((house) => house.role),
+        developers: ['founder', 'developer'].map(role).filter(Boolean),
       },
     },
   ];

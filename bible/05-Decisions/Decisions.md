@@ -412,6 +412,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Drawing Click Swings, and the Player's Own Hits Show at Once]]
 - [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
+- [[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]
+- [[Developers Launch Activities From a Test Room, in Max Gear]]
+- [[Character Slots and the Test Room as Claude Builds Them]]
 
 ## Replaced
 

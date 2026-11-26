@@ -22,8 +22,12 @@ export function roomOf(gate: (kept: string | null) => string = () => ''): KeptRo
     named,
     tagged,
     guilds,
-    character: (player) => held.get(player) ?? null,
-    restoreCharacter: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
+    // Its characters hold no vault apart: each is kept beside an empty one.
+    keptApart: (player) => {
+      const body = held.get(player);
+      return body === undefined ? null : { body, vault: '{}' };
+    },
+    restoreJoined: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player, name) => held.has(player) && Boolean(named.set(player, name)),
     tag: (player, tag) => held.has(player) && Boolean(tagged.set(player, tag)),

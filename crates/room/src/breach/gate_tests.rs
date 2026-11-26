@@ -550,3 +550,23 @@ fn a_bulwark_sent_out_forms_under_a_crown_over_its_mouth() {
         assert_eq!(arrival.kind, crate::arrivals::Bringer::Crown, "formed under a crown, as the Waking's are");
     }
 }
+
+#[test]
+fn in_a_test_room_one_player_on_one_mooring_fills_the_spire_and_wakes_the_gate_and_elsewhere_it_does_not() {
+    let filled = |test: bool| {
+        let (mut room, players) = gate_room(1);
+        if test {
+            room.make_test();
+        }
+        room.breach_company(players[0], "run-a", Tier::Hard);
+        hold_moorings(&mut room, &players);
+        ticks(&mut room, 600);
+        (room.breach_gate.as_ref().expect("gate").fill, room)
+    };
+    assert_eq!(filled(false).0, 0, "one of three held lets it ebb");
+    let (fill, mut room) = filled(true);
+    assert!(fill >= 590, "one player is the whole company: {fill}");
+    room.breach_gate.as_mut().expect("gate").fill = SPIRE_TICKS - 1;
+    room.tick();
+    assert!(room.breach_opened("run-a"), "woken, the gate opens to the tester");
+}
