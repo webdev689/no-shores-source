@@ -532,7 +532,15 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       if (!fight) throw new Error(`snapshot fight ${index} does not read`);
       const { faction, rank } = commissionOf(fight.faction(), fight.rank());
       const view = withOthers(fight.viewArray() ?? [], fight.othersArray());
-      return { player: fight.player(), view, faction, rank, hull: fight.hull(), mayBoard: fight.mayBoard(), lesson: fight.lesson() };
+      return {
+        player: fight.player(),
+        view,
+        faction,
+        rank,
+        hull: fight.hull(),
+        mayBoard: fight.mayBoard(),
+        lesson: fight.lesson(),
+      };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
     return {
