@@ -31,6 +31,7 @@ import type { GlowPoint } from '../sky/glowPoints.ts';
 import { glowsOf, LIGHT_KINDS, type PoolMap, poolMapSteps, postMeshes } from './nightLights.ts';
 import { streetLampSteps } from './streetLamps.ts';
 import { DISTRICTS } from './windowLights.ts';
+import { grainsOf } from './walkGrain.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
 export const CHUNK_CELLS = 4;
@@ -336,6 +337,7 @@ export function* cityBuildSteps(
     ...heaps,
   ];
   const onRamp = rampWall(plan);
+  const grains = grainsOf(plan.social);
   for (const [solid, meshes] of [
     ...solids.map((solid) => [solid, chunkMeshes] as const),
     ...detail.map((solid) => [solid, detailMeshes] as const),
@@ -347,7 +349,8 @@ export function* cityBuildSteps(
     const layer = retaining(solid) || onRamp(solid) ? book.terrace : book.materials[solid.material];
     const picture = book.pictures[layer] ?? { width: 64, height: 64 };
     const grounded = GROUNDS.has(solid.material);
-    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height, grounded }, meshes[chunk]);
+    const surface = { layer, width: picture.width, height: picture.height, grounded, grain: grains.get(solid) };
+    meshSolid(solid, origin, surface, meshes[chunk]);
     const reach = solidReach(solid);
     const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
     const box = solidBoxes[chunk];

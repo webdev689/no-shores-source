@@ -5,7 +5,7 @@
 import type { GlowPoint } from '../sky/glowPoints.ts';
 import type { MeshData } from './mesh.ts';
 import type { CityLight, Solid } from './plan.ts';
-import { solidModel } from './solidMesh.ts';
+import { solidModel } from './solidModel.ts';
 
 /** Each kind of light: how high its flame burns over its post's foot, its light's colour (linear), its glow's size
  *  across, and how far its pool of light reaches on the ground round it, metres. The harbour mouth's is the tallest

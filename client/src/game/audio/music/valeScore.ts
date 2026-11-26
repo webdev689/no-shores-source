@@ -120,7 +120,7 @@ export function sting(song: ValeSong, kind: string, chords: string, write: (w: W
 /** A song's moments: its cadence (the minor four home, a timpani roll into the boom), its victory (rising through
  *  the flat sixth and seventh into D major, the theme's close on the choir high) and its defeat (the theme's head
  *  falling on the low cello, fading). */
-export function valeStings(song: ValeSong): Required<Omit<FightScore, 'song'>> {
+export function valeStings(song: ValeSong): Required<Omit<ValeFight, 'song'>> {
   const key = song.key;
   const map = (note: number) => note + key;
   const cadence = sting(song, 'cadence', 'iv | i', (w) => {
@@ -150,9 +150,12 @@ export const defeatOf = (song: ValeSong): Song =>
     w.hit('heart', 2, 0, 52);
   });
 
+/** A Vale fight: its song, one cadence, one victory and one defeat. */
+type ValeFight = Required<Pick<FightScore, 'song' | 'cadence' | 'victory' | 'defeat'>>;
+
 /** Each of the Drowned Vale's fights, its song in takes and its moments. */
-export function valeFights(): Readonly<Record<BreachSong, Required<FightScore>>> {
-  const scores = {} as Record<BreachSong, Required<FightScore>>;
+export function valeFights(): Readonly<Record<BreachSong, ValeFight>> {
+  const scores = {} as Record<BreachSong, ValeFight>;
   for (const [name, song] of Object.entries(VALE_FIGHTS) as [BreachSong, ValeSong][])
     scores[name] = { song: valeSong(song), ...valeStings(song) };
   return scores;

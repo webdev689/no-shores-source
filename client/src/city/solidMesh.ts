@@ -1,23 +1,25 @@
 // The city's own solids (its landmark, wall, towers, quays and terraces) meshed from their specs: each shape built
 // in its own frame (x across, y along, z up from the middle of its base), rolled about its own y, leaned toward its
 // own +y, turned clockwise from north, and stood at its place. Every face is wound out of the solid.
-import { addPolygon, cross, dot, emptyMesh, type MeshData, minus, normalised, type Vector } from './mesh.ts';
+import { addPolygon, cross, dot, type MeshData, minus, normalised, type Vector } from './mesh.ts';
 import { moduleHeight, moduleMesh } from './modules.ts';
 import type { Solid } from './plan.ts';
+import { type Grain, grainUvs } from './walkGrain.ts';
 import { rockMesh } from '../rules/rockMesh.ts';
 
 /** Texels a metre a solid's picture is laid at: coarser than the forged models' forty, so a landmark's or a wall's
  *  courses read as monumental ashlar from the plaza and across the city, not as a fine grain. */
 export const SOLID_TEXELS_PER_METRE = 24;
 
-/** The picture a solid wears: its layer and its size in texels, which sets how its UVs tile. */
 /** A solid's picture: its layer and size. A ground's (`grounded`) top takes its pattern from the world, not from the
- *  solid, so its pieces join as one surface where they meet or overlap. */
+ *  solid, so its pieces join as one surface where they meet or overlap; a top with a `grain` (a walk's piece, the
+ *  hub's paving) from that grain. */
 export type Surface = {
   readonly layer: number;
   readonly width: number;
   readonly height: number;
   readonly grounded?: boolean;
+  readonly grain?: Grain;
 };
 
 type Uv = readonly [number, number];
@@ -567,8 +569,13 @@ export function meshSolid(solid: Solid, origin: readonly [number, number], surfa
       return [turned[0] + place[0], turned[1] + place[1], turned[2] + place[2]] as Vector;
     });
     const facing = solidTurn(solid, face.facing);
-    const laid = surface.grounded && facing[2] > 0.95 * Math.hypot(...facing);
-    const uvs = laid ? planarUvs(corners, [0, 0, 1], surface) : face.uvs;
+    const laid = (surface.grounded || surface.grain !== undefined) && facing[2] > 0.95 * Math.hypot(...facing);
+    const uvs =
+      laid && surface.grain
+        ? grainUvs(corners, surface.grain, origin, surface.width / SOLID_TEXELS_PER_METRE)
+        : laid
+          ? planarUvs(corners, [0, 0, 1], surface)
+          : face.uvs;
     addPolygon(
       into,
       corners,
@@ -578,18 +585,4 @@ export function meshSolid(solid: Solid, origin: readonly [number, number], surfa
       facing,
     );
   }
-}
-
-/** Solids standing at the origin, each in its layer, as one forged model's mesh: its x right, y up and z forward
- *  (the solids' east, up and north), so it is placed by instance as a forged model is. */
-export function solidModel(parts: readonly { readonly solid: Solid; readonly layer: number }[]): MeshData {
-  const mesh = emptyMesh();
-  for (const { solid, layer } of parts) meshSolid(solid, [0, 0], { layer, width: 64, height: 64 }, mesh);
-  for (const values of [mesh.positions, mesh.normals])
-    for (let first = 0; first < values.length; first += 3) {
-      const [south, up] = [values[first + 1], values[first + 2]];
-      values[first + 1] = up;
-      values[first + 2] = -south;
-    }
-  return mesh;
 }

@@ -50,14 +50,18 @@ export interface Run<C extends string> {
 }
 
 /** The chords of `bars`, a chord that follows itself held on rather than struck again: a pad or a bass breathes
- *  where the harmony moves, not every bar. */
-export function runsOf<C extends string>(bars: readonly (readonly Held<C>[])[], beatsPerBar: number): Run<C>[] {
+ *  where the harmony moves, not every bar; or, `everyBar`, struck again on each bar line. */
+export function runsOf<C extends string>(
+  bars: readonly (readonly Held<C>[])[],
+  beatsPerBar: number,
+  everyBar = false,
+): Run<C>[] {
   const runs: { -readonly [K in keyof Run<C>]: Run<C>[K] }[] = [];
   bars.forEach((held, bar) =>
     held.forEach(({ chord, beat, beats }) => {
       const last = runs[runs.length - 1];
-      if (last && last.chord === chord && last.bar * beatsPerBar + last.beat + last.beats === bar * beatsPerBar + beat)
-        last.beats += beats;
+      const tied = last && last.chord === chord && (!everyBar || last.bar === bar);
+      if (tied && last.bar * beatsPerBar + last.beat + last.beats === bar * beatsPerBar + beat) last.beats += beats;
       else runs.push({ chord, bar, beat, beats });
     }),
   );

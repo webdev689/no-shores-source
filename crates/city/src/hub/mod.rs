@@ -57,6 +57,8 @@ pub(crate) struct Laid {
     pub stations: Vec<Station>,
     pub spots: Vec<[f64; 2]>,
     pub sockets: Vec<(String, String, [f64; 3], [f64; 2])>,
+    /// The grain of each walk piece among `solids` (`ground::walks`).
+    pub grains: Vec<crate::social::Grain>,
 }
 
 impl Laid {
@@ -150,6 +152,7 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
         plants,
         board: laid.board,
         solids: laid.solids,
+        grains: laid.grains,
         stations: laid.stations,
         visitor_spots: laid.spots,
         ways,
@@ -167,3 +170,5 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
 
 #[cfg(test)]
 pub(crate) mod tests;
+#[cfg(test)]
+mod walk_tests;

@@ -19,6 +19,7 @@ import type { Walker } from '../../player/walker.ts';
 import type { MovementRules } from '../../rules/movementRules.ts';
 import type { FoeType } from '../../rules/roster.ts';
 import type { MarkView } from '../../ships/markView.ts';
+import { HULL_LINES } from '../../ships/hullLines.ts';
 import { loadShip, shipSails } from '../../ships/shipMesh.ts';
 import { HULL_NAMES, hullPaint } from '../../ships/hulls.ts';
 import { ShipView } from '../../ships/shipView.ts';
@@ -113,6 +114,8 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
   // The stranger's welcome to Overlook is said on the story's stage, as its last moment.
   const readScenes = { ...scenesOf(scenes, readCast), ...scenesOf(welcome, readCast) };
   const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
+  HULL_LINES.take(HULL_NAMES.indexOf('brig'), brigMesh);
+  HULL_LINES.take(HULL_NAMES.indexOf('frigate'), frigateMesh);
   // The ships' views open on the device's kit, so both are opened before the story takes them; one that opened is let
   // go if the other did not.
   const opening = [

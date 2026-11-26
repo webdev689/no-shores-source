@@ -31,7 +31,7 @@ impl movement::Terrain for Ground<'_> {
     }
 }
 
-fn ring_bounds(ring: &[[f64; 2]]) -> [f64; 4] {
+pub(super) fn ring_bounds(ring: &[[f64; 2]]) -> [f64; 4] {
     ring.iter().fold([f64::MAX, f64::MAX, f64::MIN, f64::MIN], |[west, north, east, south], &[x, y]| {
         [west.min(x), north.min(y), east.max(x), south.max(y)]
     })
@@ -480,4 +480,49 @@ fn the_harbourmaster_and_the_chandler_keep_stalls_in_the_beacon_walks_market() {
         let from_walk = libm::hypot(station.counter[0] - walk[0], station.counter[1] - walk[1]);
         assert!(from_walk < 100.0, "{kind:?} stands {from_walk:.1} m from the Beacon Walk's middle");
     }
+}
+
+#[test]
+fn the_platform_round_the_plaza_is_floored_as_the_plaza_is_never_left_to_the_land() {
+    // The city's plate is drawn a few centimetres under its level, where the land's grass stands: a walk floored by
+    // the plate alone shows the two in turn as the eye moves. Every walked point needs a floor of the hub's own, its top
+    // at the level or over it, or a piece standing on it.
+    use crate::solids::Shape;
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let level = social.level;
+    let floors: Vec<_> = social
+        .solids
+        .iter()
+        .filter(|solid| {
+            matches!(solid.shape, Shape::Block | Shape::Module { .. }) && solid.lean == 0.0 && solid.roll == 0.0
+        })
+        .filter(|solid| solid.at[2] <= level + 0.01 && solid.at[2] + solid.size[2] >= level - 1e-9)
+        .collect();
+    let floored = |[x, y]: [f64; 2]| {
+        floors.iter().any(|solid| {
+            let ([dx, dy], (sine, cosine)) = ([x - solid.at[0], y - solid.at[1]], libm::sincos(solid.turn));
+            let (across, along) = (dx * cosine + dy * sine, -dx * sine + dy * cosine);
+            across.abs() <= solid.size[0] / 2.0 + 1e-6 && along.abs() <= solid.size[1] / 2.0 + 1e-6
+        })
+    };
+    let [west, north, east, south] = ring_bounds(&social.ring);
+    let mut bare = Vec::new();
+    let mut y = north + 0.25;
+    while y < south {
+        let mut x = west + 0.25;
+        while x < east {
+            if super::dress::inside(&social.ring, [x, y]) && !floored([x, y]) {
+                bare.push([x, y]);
+            }
+            x += 2.0;
+        }
+        y += 2.0;
+    }
+    assert!(
+        bare.is_empty(),
+        "{} points of the platform floored by the plate alone, e.g. {:?}",
+        bare.len(),
+        &bare[..bare.len().min(4)]
+    );
 }

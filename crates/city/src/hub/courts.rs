@@ -25,8 +25,10 @@ const RANGE_PIECES: [(&str, f64); 5] =
     [("range", 24.0), ("range-gate", 12.0), ("range", 24.0), ("range-gate", 12.0), ("range", 24.0)];
 /// The obelisk's middle, metres seaward of the plaza's middle.
 const OBELISK_TOWARD_M: f64 = 8.0;
-/// How thick a band laid in the paving is, metres: too low to step over, and clear of the paving's face.
+/// How thick a band laid in the paving is, metres: too low to step over, and clear of the paving's face; and how much
+/// the obelisk's round stands over the band running into it, so the two never lie level and show in turn.
 const INLAY_M: f64 = 0.02;
+const INLAY_OVER_M: f64 = 0.005;
 /// The notice board's landing: its middle across, its size across and along, and its height (three steps of 0.15).
 pub const BOARD_LANDING_M: [f64; 4] = [-51.5, 6.0, 9.0, 0.45];
 /// Where the Postmaster's counter stands: metres seaward of the plaza's middle, and across it, on the court's west
@@ -44,6 +46,13 @@ fn landward(frame: &Frame) -> [f64; 2] {
 
 fn scaled(direction: [f64; 2], by: f64) -> [f64; 2] {
     [direction[0] * by, direction[1] * by]
+}
+
+/// The grain the platform's paving is laid in, for the solid at `solid`: the plaza's, from its middle, so the walks'
+/// floors laid beside it carry its pattern on across their seams.
+pub(crate) fn paving_grain(frame: &Frame, solid: usize) -> crate::social::Grain {
+    let turn = turn_toward(frame.seaward).rem_euclid(std::f64::consts::PI);
+    crate::social::Grain { solid, turn, middle: frame.middle, width: 2.0 * HALF_LENGTH_M }
 }
 
 /// The seaward walk: the parapet along the plaza's sea edge with a lantern every 40 m, the plaza's ends walled where
@@ -72,6 +81,7 @@ pub fn seaward_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
     let [x, y] = frame.middle;
     let size = [2.0 * HALF_LENGTH_M, 2.0 * HALF_DEPTH_M, 0.05];
     let paving = Solid::upright(Shape::Block, [x, y, frame.level - 0.05], size, Material::Paving);
+    laid.grains.push(paving_grain(frame, laid.solids.len()));
     laid.solids.push(paving.turned(turn_toward(frame.seaward)));
     for step in -3_i32..=3 {
         let along = f64::from(step) * 40.0;
@@ -120,7 +130,7 @@ pub fn watch_court(frame: &Frame, laid: &mut Laid) {
     let from = -HALF_DEPTH_M;
     let to = RANGE_SEAWARD_M - 1.0;
     laid.solids.push(frame.block((from + to) / 2.0, 0.0, 0.0, [6.0, to - from, INLAY_M], Material::Stone));
-    laid.solids.push(frame.round(OBELISK_TOWARD_M, 0.0, 0.0, [26.0, INLAY_M, 1.0], Material::Stone));
+    laid.solids.push(frame.round(OBELISK_TOWARD_M, 0.0, 0.0, [26.0, INLAY_M + INLAY_OVER_M, 1.0], Material::Stone));
     for side in [-1.0, 1.0] {
         let vault = stand_at("stall-vault", "counter", frame.at(-30.0, side * 24.0), frame.level, frame.seaward);
         laid.stall(StationKind::Vault, vault);

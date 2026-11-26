@@ -25,6 +25,7 @@ import { BOOST_KEY } from '../ships/helmKeys.ts';
 import type { BindId } from '../player/binds.ts';
 import { BINDS, type InputFrame, axis } from '../player/input.ts';
 import { boundCap, boundWord, shipKeys } from './controls.ts';
+import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import type { MarkView } from '../ships/markView.ts';
@@ -493,8 +494,9 @@ export class SeaCombat {
   }
 
   /** Each ship's footprint on the water, at its hull's waterline drawn `scale` times its size, while it floats: the
-   *  player's first, then the captains nearest it, so the water's budget never leaves the player's out. */
-  hulls(scale: number): HullMask[] {
+   *  player's first, then the captains nearest it, so the water's budget never leaves the player's out; each in its
+   *  hull's own line from `lines`. */
+  hulls(scale: number, lines: Pick<HullLines, 'line'> = HULL_LINES): HullMask[] {
     const [own, ...captains] = this.vessels().map(({ vessel, hull, number }) => {
       const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
       const way = Math.hypot(ahead, abeam) > 0.5 ? UNDER_WAY : 0;
@@ -502,7 +504,7 @@ export class SeaCombat {
       const [halfLength, halfBeam] = [(waterline.lengthM / 2) * scale, (waterline.beamM / 2) * scale];
       const afloat = vessel.state !== 'sunk' && vessel.state !== 'sinking';
       const id = number === 0 ? 'own' : `captain ${number}`;
-      return { mask: { id, x, y, heading, halfLength, halfBeam, way, scale }, afloat };
+      return { mask: { id, x, y, heading, halfLength, halfBeam, way, scale, line: lines.line(hull) }, afloat };
     });
     if (!own) return [];
     const away = ({ mask }: { mask: HullMask }) => Math.hypot(mask.x - own.mask.x, mask.y - own.mask.y);

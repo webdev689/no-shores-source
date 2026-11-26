@@ -57,7 +57,7 @@ fn overlook_is_planned_as_it_was() {
     let mail = plan.social.stations.iter().filter(|station| station.kind == city::stations::StationKind::Mail);
     assert_eq!(mail.count(), 1, "and the mail counter");
     // The plan with its hub's bounty board and mail counter, pinned: a port city's plan must not change with the ruins.
-    assert_eq!(fingerprint(&plan), "61a3f93912c65bad");
+    assert_eq!(fingerprint(&plan), "8148332eb6f36c57");
 }
 
 #[test]
@@ -131,8 +131,8 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     let mut bare = ruin.clone();
     bare.landmark.retain(|solid| solid.material != Material::Crystal);
     bare.works.retain(|solid| solid.material != Material::Crystal);
-    assert_eq!(fingerprint(&bare), "0aa79975fce0e825");
-    assert_eq!(fingerprint(&ruin), "8796736ff57b82ff");
+    assert_eq!(fingerprint(&bare), "99480e5e99759ea5");
+    assert_eq!(fingerprint(&ruin), "fb749be070bccdbf");
 }
 
 #[test]

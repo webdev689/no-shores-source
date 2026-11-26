@@ -5,7 +5,8 @@
 import { randomFromSeed } from '../models/random.ts';
 import type { MeshData } from './mesh.ts';
 import { type Solid, solidReach } from './plan.ts';
-import { solidModel, solidTurn } from './solidMesh.ts';
+import { solidModel } from './solidModel.ts';
+import { solidTurn } from './solidMesh.ts';
 
 /** The faces round a spire; its body's share of its height, its body's top a share of its width (as the crate's). */
 const SPIRE_SIDES = 6;
