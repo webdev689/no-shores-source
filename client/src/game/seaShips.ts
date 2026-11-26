@@ -17,7 +17,7 @@ import type { Waterline } from '../ships/shipMesh.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
 import { poseOnSwell, slams, sprayOf, turnHeel } from '../ships/swellPose.ts';
-import { HullLines } from '../ships/hullLines.ts';
+import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { HULLS, type HullMask } from '../water/hullMask.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
@@ -135,7 +135,7 @@ export class SeaShips {
 
   constructor(
     shown: (hull: number) => number = (hull) => hull,
-    lines: Pick<HullLines, 'line'> = new HullLines(),
+    lines: Pick<HullLines, 'line'> = HULL_LINES,
     ownSeen: () => SeenShip | null = () => null,
   ) {
     this.shown = shown;

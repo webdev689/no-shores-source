@@ -17,6 +17,8 @@ const SWELL: Swell = {
   bearing: 0,
 };
 const deep = () => Infinity;
+/** Each hull's own line, as if its mesh had come: its number at every station, so a footprint shows whose it holds. */
+const LINES = { line: (hull: number) => new Float32Array(16).fill(hull + 1) };
 const FRIGATE = 3;
 
 test('a moored ship rides the swell as every ship does, and lies level in still water', () => {
@@ -39,7 +41,7 @@ test('each moored ship is drawn as its own hull, its sails furled, with a still 
     { x: 100, y: 200, heading: 0.5, hull: SLOOP_HULL },
     { x: 300, y: 200, heading: 1, hull: FRIGATE },
   ];
-  const { ships, hulls } = mooredShips(lying, 3, { swell: undefined, depthAt: deep });
+  const { ships, hulls } = mooredShips(lying, 3, { swell: undefined, depthAt: deep }, LINES);
   assert.deepEqual(
     ships.map((ship) => [ship.hull, ship.look.side]),
     [
@@ -49,7 +51,16 @@ test('each moored ship is drawn as its own hull, its sails furled, with a still 
   );
   for (const ship of ships) assert.deepEqual(ship.rig?.canvas(), new SailRig(hullSails(ship.hull)).canvas(), 'furled');
   const { lengthM, beamM } = hullWaterline(FRIGATE);
-  assert.deepEqual(hulls[1], { x: 300, y: 200, heading: 1, halfLength: lengthM / 2, halfBeam: beamM / 2, way: 0 });
+  const line = LINES.line(FRIGATE);
+  assert.deepEqual(hulls[1], {
+    x: 300,
+    y: 200,
+    heading: 1,
+    halfLength: lengthM / 2,
+    halfBeam: beamM / 2,
+    way: 0,
+    line,
+  });
 });
 
 /** Overlook's pier, its two places, as its city's plan gives them. */

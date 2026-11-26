@@ -3,7 +3,7 @@
 //! plaza's ends; the Stair Yard on round the base's east side, where the Tack keeps a stable by the head of the
 //! harbour way; and the sealed gates where the platform runs on round the base and at the harbour way's head.
 
-use super::courts::{HALF_LENGTH_M, PLATFORM_FROM_M, brazier};
+use super::courts::{HALF_LENGTH_M, PLATFORM_FROM_M, brazier, paving_grain};
 use super::{Laid, parapet, stand_against, stand_at};
 use crate::courtyard::Frame;
 use crate::landmarks::turn_toward;
@@ -44,6 +44,10 @@ pub(crate) const DOOR_M: [f64; 2] = [12.0, 9.5];
 pub fn beacon_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
     let across = [-frame.seaward[1], frame.seaward[0]];
     laid.solids.extend(portico(frame));
+    for floor in floors(frame) {
+        laid.grains.push(paving_grain(frame, laid.solids.len()));
+        laid.solids.push(floor);
+    }
     for side in [-1.0, 1.0] {
         laid.solids.extend(brazier(frame, BASE_FACE_M + 22.0, side * 36.0));
         let edge = side * PLATFORM_EDGE_M;
@@ -94,6 +98,31 @@ pub fn beacon_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
     for side in [-1.0, 1.0] {
         laid.piece(stand_at("lamp-post", "front", frame.at(-77.5, side * 142.0), frame.level, north));
     }
+}
+
+/// The walks' own paved floor, laid as the plaza's is (`courts::seaward_walk`): each walk's span less the plaza's, its
+/// top at the platform's level. The city's plate is drawn a few centimetres under the level, where the land's grass
+/// stands, so a walk left to the plate alone shows the two in turn as the eye moves.
+fn floors(frame: &Frame) -> Vec<Solid> {
+    let spans = super::ring::platform_spans();
+    let ([plaza_west, plaza_east], [plaza_low, plaza_high]) = spans[0];
+    let mut pieces = Vec::new();
+    for &([west, east], [low, high]) in &spans[1..4] {
+        // Landward and seaward of the plaza, then beside it within its depth.
+        pieces.push(([west, east], [low, high.min(plaza_low)]));
+        pieces.push(([west, east], [low.max(plaza_high), high]));
+        let beside = [low.max(plaza_low), high.min(plaza_high)];
+        pieces.push(([west, east.min(plaza_west)], beside));
+        pieces.push(([west.max(plaza_east), east], beside));
+    }
+    pieces
+        .into_iter()
+        .filter(|&([west, east], [low, high])| east - west > 1e-6 && high - low > 1e-6)
+        .map(|([west, east], [low, high])| {
+            let size = [east - west, high - low, 0.05];
+            frame.block((low + high) / 2.0, (west + east) / 2.0, -0.05, size, Material::Paving)
+        })
+        .collect()
 }
 
 /// The portico before the Hall's great door in the base's face: a podium up two steps, running on through the

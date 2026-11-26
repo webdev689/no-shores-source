@@ -116,14 +116,18 @@ export function openingOf(form: Form, heard: Heard, random: () => number): numbe
 }
 
 /** The take after `from`: one its section may lead to, never itself; a pairing never heard before any heard (else
- *  the one heard longest ago), and of those a take heard longest ago. */
+ *  the one heard longest ago), and of those a take heard longest ago. With none of them unheard, one that may lead to
+ *  a take unheard, so a section few others lead to (a vamp) is reached within the fight. */
 export function takeAfter(form: Form, from: number, heard: Heard, random: () => number): number {
   const paired = (take: number): number => {
     for (let i = heard.takes.length - 1; i > 0; i--)
       if (heard.takes[i] === take && heard.takes[i - 1] === from) return i;
     return -1;
   };
-  return freshest(candidates(form, from), paired, heard, random);
+  const choices = candidates(form, from);
+  const unheard = (take: number) => lastHeard(heard, take) < 0;
+  const toward = choices.filter((take) => candidates(form, take).some(unheard));
+  return freshest(choices.some(unheard) || toward.length === 0 ? choices : toward, paired, heard, random);
 }
 
 /** Between one fight's takes and the next's in what was heard: no take follows another across it. */

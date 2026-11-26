@@ -5,6 +5,7 @@
 // Hangar showed the ships that brought its Guardians, the city's sloops at the places of its plan no player's ship
 // lies in.
 import type { SeenShip } from '../network/messages.ts';
+import { HULL_LINES, type HullLines } from '../ships/hullLines.ts';
 import { hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig } from '../ships/sails.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
@@ -77,11 +78,12 @@ export function shipsLying(
 }
 
 /** The ships lying still as a frame draws them at `time` (seconds), in friendly colours, their sails furled, riding
- *  the swell, and their still footprints on the water. */
+ *  the swell, and their still footprints on the water, each in its hull's own line from `lines`. */
 export function mooredShips(
   lying: readonly LyingShip[],
   time: number,
   water: FriendlyWater,
+  lines: Pick<HullLines, 'line'> = HULL_LINES,
 ): { ships: DrawnShip[]; hulls: HullMask[] } {
   const drawn = lying.map(({ x, y, heading, hull }) => {
     const { lengthM, beamM } = hullWaterline(hull);
@@ -89,7 +91,7 @@ export function mooredShips(
     const pose = poseOnSwell(water.swell, water.depthAt, { x, y, heading }, halfLength, halfBeam, time);
     const place = { x, y, z: pose.heave, heading, pitch: pose.pitch, roll: pose.roll };
     const ship: DrawnShip = { hull, place, rig: furled(hull), look: { side: 'friendly' } };
-    return { ship, footprint: { x, y, heading, halfLength, halfBeam, way: 0 } };
+    return { ship, footprint: { x, y, heading, halfLength, halfBeam, way: 0, line: lines.line(hull) } };
   });
   return { ships: drawn.map((each) => each.ship), hulls: drawn.map((each) => each.footprint) };
 }
