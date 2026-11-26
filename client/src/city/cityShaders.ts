@@ -185,7 +185,7 @@ ${LIGHT_MOTION_WGSL}
 // How far alight the crystal's core is: a module's, or a ruin's formation's (set by the surface drawing it).
 var<private> crystal_glow: f32 = CITY_CRYSTAL_GLOW;
 
-// How a glow at 'from_eye' moves: with its own lamp where one is lit near it (a lantern's glass with its flame, a
+// How a glow at 'from_eye' moves: with its own lamp where one is lit near it (a lantern's glass with its light, a
 // brazier's coals with its fire, a crown with its light), a 'stone' (crystal) only with a stone's; else by where it
 // stands, all of one 3 m cell together.
 fn glow_motion(from_eye: vec3f, stone: bool) -> f32 {

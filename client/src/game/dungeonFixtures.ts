@@ -120,13 +120,12 @@ function hearthFire(mesh: MeshBuilder, [x, y, z]: Point): void {
 }
 
 /** The flames a fixture burns, as the layout stands it (x, y, the light's height and its kind): a brazier's over its
- *  embers, one on each candle's wick, a lantern's small one behind its glass (`glassed`), and a hearth's along its embers; none
- *  for crystals and fungus, which glow. */
+ *  embers, one on each candle's wick, and a hearth's along its embers; none for a lantern, an enclosed light
+ *  whose glass glows, nor for crystals and fungus, which glow. */
 export function fixtureFlames([x = 0, y = 0, z = 0, kind]: readonly number[]): FlameAt[] {
   if (kind === FIXTURE.brazier) return [{ at: [x, y, z - 0.19], sizeM: 0.45 }];
   if (kind === FIXTURE.candles)
     return candlesOf([x, y, z]).map(({ foot, tall }) => ({ at: [foot[0], foot[1], foot[2] + tall], sizeM: 0.09 }));
-  if (kind === FIXTURE.lantern) return [{ at: [x, y, z - 0.15], sizeM: 0.14, glassed: true }];
   if (kind === FIXTURE.hearth) return [{ at: [x - 0.24, y, z - 0.29], sizeM: 0.45, along: [0.48, 0, 0] }];
   return [];
 }

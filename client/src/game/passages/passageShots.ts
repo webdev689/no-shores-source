@@ -147,12 +147,17 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
       { drawInto: (pass, fromEye, eyed, time) => dungeon.drawInto(pass, fromEye, eyed.eye, time) },
       { drawInto: (pass, fromEye, eyed) => pieces.drawInto(pass, fromEye, eyed) },
     ];
-    for (let frame = 0; frame < 3; frame++) {
-      // Under ground the sky only says so, with no dark to fade into, as the game's dungeon frame has it.
-      scene.draw(shot, view, 0, drawers, { look: { ...runSky(0), darkM: 0 }, lamps: [] });
-      await device.queue.onSubmittedWorkDone();
-      // Room for the dungeon's pictures to be painted before the next frame.
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      for (let frame = 0; frame < 3; frame++) {
+        // Under ground the sky only says so, with no dark to fade into, as the game's dungeon frame has it.
+        scene.draw(shot, view, 0, drawers, { look: { ...runSky(0), darkM: 0 }, lamps: [] });
+        await device.queue.onSubmittedWorkDone();
+        // Room for the dungeon's pictures to be painted before the next frame.
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    } finally {
+      // Let go before its device is, so no flames of a destroyed device stay shown (`DUNGEON_FLAMES`).
+      dungeon.clear();
     }
   }
   const picture = await readBack(device, target);
@@ -346,9 +351,7 @@ async function hollowFrames(
   });
   // The embers' fires, over the picture where the scene's depth lets them show, as the game's scene draws them.
   const [flames, copy] = [new Flames(gpu), new DepthCopy(gpu)];
-  flames.seeThroughM = 0.3;
-  for (const fire of CITY_LAMPS.fires)
-    flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts, fire.glassed);
+  for (const fire of CITY_LAMPS.fires) flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts);
   const flat = device.createTexture({
     size: [width, height],
     format: 'r32float',

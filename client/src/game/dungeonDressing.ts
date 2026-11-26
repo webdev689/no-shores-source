@@ -118,35 +118,27 @@ export function passagePiecesLaid(
 
 /** How far behind an open mouth's face its light stands, metres, and how high. */
 const MOUTH_LIGHT = { back: 0.4, up: 1.5 } as const;
-/** The lamp's flame in its cage, over its foot (metres), and how tall it burns; its light at the cage's middle. */
-const LAMP_FLAME = { up: 2.97, sizeM: 0.3, lightUp: 3.2 } as const;
-/** A dead lamp's flame in its small cage, hung from its crook out from its post along its facing, and how tall. */
-const KINDLE_FLAME = { out: 0.17, up: 2.11, sizeM: 0.1, lightUp: 2.16 } as const;
+/** The lamp's light at its cage's middle, over its foot (metres). */
+const LAMP_LIGHT_UP = 3.2;
+/** A dead lamp's light at its small cage's middle, hung from its crook out from its post along its facing. */
+const KINDLE_LIGHT = { out: 0.17, up: 2.16 } as const;
 /** The lamp lit, home's light: a lantern's, reaching across its room. */
 const LAMP_LIT = { ...LIGHT_KINDS.lantern, colour: [1.8, 1.25, 0.65], reach: 13 } as const;
 
 /** The lights a passage zone's pieces burn under ground as `state` finds them, numbered from 0 among their own: the
- *  lamp lit and each dead lamp lit burn as a lantern from a flame in their glass, and an open mouth shows its way on
+ *  lamp lit and each dead lamp lit burn as a lantern, their caged glass glowing with no flame seen, and an open mouth shows its way on
  *  in daylight's pale light behind its face; cold and shut, none. */
 export function passagePieceLights(pieces: readonly PassagePiece[], state: PieceState): Light[] {
   const lights: Light[] = [];
-  const burn = (place: readonly [number, number, number], burning: Light['burning'], flames?: Light['flames']) =>
-    lights.push({ at: place, number: lights.length, burning, ...(flames ? { flames } : {}) });
+  const burn = (place: readonly [number, number, number], burning: Light['burning']) =>
+    lights.push({ at: place, number: lights.length, burning });
   for (const piece of pieces) {
     const [x, y, z] = piece.at;
-    if (piece.kind === 'lamp' && state.lampLit)
-      burn([x, y, z + LAMP_FLAME.lightUp], LAMP_LIT, [
-        { at: [x, y, z + LAMP_FLAME.up], sizeM: LAMP_FLAME.sizeM, glassed: true },
-      ]);
+    if (piece.kind === 'lamp' && state.lampLit) burn([x, y, z + LAMP_LIGHT_UP], LAMP_LIT);
     if (piece.kind === 'kindle' && state.kindled.includes(piece.number)) {
       // The cage hangs off the crook, turned with the piece as its module is (`facingModule`).
-      const [east, south] = [Math.cos(piece.facing) * KINDLE_FLAME.out, Math.sin(piece.facing) * KINDLE_FLAME.out];
-      const flame = {
-        at: [x + east, y + south, z + KINDLE_FLAME.up] as const,
-        sizeM: KINDLE_FLAME.sizeM,
-        glassed: true,
-      };
-      burn([x + east, y + south, z + KINDLE_FLAME.lightUp], LIGHT_KINDS.lantern, [flame]);
+      const [east, south] = [Math.cos(piece.facing) * KINDLE_LIGHT.out, Math.sin(piece.facing) * KINDLE_LIGHT.out];
+      burn([x + east, y + south, z + KINDLE_LIGHT.up], LIGHT_KINDS.lantern);
     }
     if (piece.kind === 'mouth' && state.openMouths.includes(piece.number)) {
       // A door faces into the room, so its way on lies behind it.

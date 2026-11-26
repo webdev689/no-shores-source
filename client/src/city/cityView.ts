@@ -197,7 +197,7 @@ export class CityView implements CityDrawer {
     this.building = null;
     this.clear();
     this.drawn = built.made;
-    // Its lights once whole, when its modules' meshes have come: a lamp post's flames stand at its lanterns.
+    // Its lights once whole, when its modules' meshes have come: a lamp post's lights stand at its lanterns.
     const lights = glowLights(building.plan);
     CITY_LAMPS.set(this, [...lights.lamps, ...built.made.data.lamps], lights.fires);
     this.frame.buildMs = building.spentMs;

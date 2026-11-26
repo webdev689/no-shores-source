@@ -24,13 +24,13 @@ export const MOST_MASTS = 4;
 /** The most lanterns a hull carries, its stern's with room to spare. */
 export const MOST_LANTERNS = 2;
 /** A ship's uniforms: its place, look and paint (60 floats), then each yard's pivot and turn, each mast's fall, and
- *  each lantern's flame. */
+ *  each lantern's middle. */
 export const PLACE_FLOATS = 60 + MOST_YARDS * 4 + MOST_MASTS * 8 + MOST_LANTERNS * 4;
 /** Where in its uniforms each yard's pivot and turn start, each mast's fall (`mastFalls`) and each lantern. */
 export const YARD_FLOATS_AT = 60;
 export const MAST_FLOATS_AT = 60 + MOST_YARDS * 4;
 export const LANTERN_FLOATS_AT = MAST_FLOATS_AT + MOST_MASTS * 8;
-/** A lantern's glass round its flame, metres: how far out from its middle and how far above and below it. Its frame's
+/** A lantern's glass round its middle, metres: how far out from its middle and how far above and below it. Its frame's
  *  posts stand just outside it, its cap and base just above and below. */
 export const GLASS_M = { radius: 0.172, half: 0.19 } as const;
 
@@ -60,8 +60,8 @@ struct Place {
   turn: mat4x4f,
   // Its middle from the eye, metres as drawn.
   offset: vec4f,
-  // How light it is drawn: 1 as modelled, less for a darker ship; then how bright its lanterns' flames burn now (their
-  // flicker) and the seconds their flames sway by.
+  // How light it is drawn: 1 as modelled, less for a darker ship; then how bright its lanterns' glass glows now (its
+  // flicker).
   shade: vec4f,
   // Its side's paint for its hull, its stripe and its canvas, each its colour and 1 where it is laid, 0 where not.
   hull: vec4f,
@@ -76,7 +76,7 @@ struct Place {
   // Each mast's fall, two a mast: its foot's height, the cosine and sine of its turn over its side, and 1 while it
   // shows; then how far astern it has drifted and how far it has sunk.
   masts: array<vec4f, ${MOST_MASTS * 2}>,
-  // Each lantern's flame in its frame, and 1 where it has the lantern, 0 where not.
+  // Each lantern's middle in its frame, and 1 where it has the lantern, 0 where not.
   lanterns: array<vec4f, ${MOST_LANTERNS}>,
 };
 
@@ -161,38 +161,19 @@ fn vertex_main(
   return drawn;
 }
 
-// A lantern's glass, lit from inside, at 'at' in its frame (seen along 'from_eye'): its flame shows through it as a
-// small tongue on its wick, swaying and stretching as it flickers, in an amber glow brightest round it. Alpha 0 off
-// every lantern's glass. It burns by day as by night, brighter against the dark, as the city's flames do.
-fn lantern_glass(at: vec3f, from_eye: vec3f) -> vec4f {
+// A lantern's glass, lit from inside, at 'at' in its frame: an enclosed light, it shows no flame, only an amber glow
+// flickering with its light, brightest at its middle. Alpha 0 off every lantern's glass. It burns by day as by night,
+// brighter against the dark, as the city's lanterns do.
+fn lantern_glass(at: vec3f) -> vec4f {
   for (var index = 0u; index < MOST_LANTERNS; index++) {
     let lantern = place.lanterns[index];
     let off = at - lantern.xyz;
     if (lantern.w < 0.5 || length(off.xy) > GLASS_RADIUS || abs(off.z) > GLASS_HALF) {
       continue;
     }
-    // The line of sight's nearest pass by the flame, in true metres up the ship and across the view.
-    let middle = (place.turn * vec4f(lantern.xyz, 0.0)).xyz + place.offset.xyz;
-    let lifted = (place.turn * vec4f(0.0, 0.0, 1.0, 0.0)).xyz;
-    let size = length(lifted);
-    let up = lifted / size;
-    let ray = normalize(from_eye);
-    let miss = ray * dot(middle, ray) - middle;
-    let side = cross(ray, up);
-    let across_way = side / max(length(side), 1e-4);
-    let burn = place.shade.y;
-    let seconds = place.shade.z + f32(index) * 1.7;
-    // Up its tongue, 0 at the wick to 1 at its tip, which reaches higher as it flares.
-    let rise = (dot(miss, up) / size + 0.08) / (0.17 * max(burn, 0.1));
-    let sway = (sin(seconds * 4.1) * 0.012 + sin(seconds * 9.7) * 0.006) * rise * rise;
-    let across = abs(dot(miss, across_way) / size - sway);
-    let width = 0.06 * sqrt(clamp(rise, 0.0, 1.0)) * (1.0 - clamp(rise, 0.0, 1.0));
-    let tongue = (1.0 - smoothstep(width * 0.45, width, across)) * step(0.0, rise) * step(rise, 1.0);
-    let heart = 1.0 - smoothstep(0.0, width * 0.6, across);
     let fire = mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w);
-    let flame = mix(vec3f(2.2, 0.95, 0.3), vec3f(2.6, 2.2, 1.4), heart * (1.0 - rise * 0.6));
-    let glow = fire * burn * (0.35 + 0.3 * (1.0 - length(off.xy) / GLASS_RADIUS));
-    return vec4f(mix(glow, flame, tongue), 1.0);
+    let glow = fire * place.shade.y * (0.35 + 0.3 * (1.0 - length(off.xy) / GLASS_RADIUS));
+    return vec4f(glow, 1.0);
   }
   return vec4f(0.0);
 }
@@ -227,7 +208,7 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   }
   let light = ambient + sky_direct(normal, sun) + sky_lamps(drawn.from_eye, normal);
   if (drawn.part == IRON_PART) {
-    let glass = lantern_glass(drawn.at, drawn.from_eye);
+    let glass = lantern_glass(drawn.at);
     if (glass.a > 0.0) {
       return vec4f(glass.rgb, 1.0);
     }

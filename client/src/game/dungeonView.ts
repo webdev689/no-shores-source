@@ -34,9 +34,6 @@ import { LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from 
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
-/** How far through what stands nearer a flame still shows, metres: a lantern's flame through its glass, the widest the
- *  passages' lamp's (0.16 m from its flame to each pane, 0.23 m seen across a corner). */
-const SEE_THROUGH_M = 0.24;
 /** Each flame after a light's first is seeded this much past it, so a cluster's candles burn each their own way. */
 const FLAME_SEED_STEP = 0.37;
 
@@ -104,7 +101,6 @@ export class DungeonView {
     this.gpu = gpu;
     this.pipelines = dungeonPipelines(gpu);
     this.flames = new Flames(gpu);
-    this.flames.seeThroughM = SEE_THROUGH_M;
   }
 
   /** Lights a fire for each flame the lights burn from, seeded by the light's number. */
@@ -112,7 +108,7 @@ export class DungeonView {
     this.flames.clear();
     for (const { number, flames } of lights)
       flames?.forEach((flame, index) =>
-        this.flames.light(flame.at, flame.sizeM, number + index * FLAME_SEED_STEP, flame.along, true, flame.glassed),
+        this.flames.light(flame.at, flame.sizeM, number + index * FLAME_SEED_STEP, flame.along),
       );
   }
 

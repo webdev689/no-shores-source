@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SLOOP_HULL } from './hulls.ts';
 import { CITY_LAMPS } from '../sky/lamps.ts';
-import { lanternAt, RETRY_MS, ShipModels } from './shipModels.ts';
+import { lanternAt, RETRY_MS, ShipModels, shipSeed } from './shipModels.ts';
 import { standIns } from '../standIns.ts';
 import type { ShipPlace, ShipView } from './shipView.ts';
 
@@ -167,4 +167,26 @@ test("each ship's lanterns light the sky's lamps, in view or not, with the fight
   models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 5);
   models.shine();
   assert.equal(shown().length, 0, 'gone with the ships');
+});
+
+test("a ship's lantern flickers as a lantern, by a seed of its own ship: no two ships, of one hull or two, in step", async () => {
+  const device: unknown = new Proxy(() => device, { get: () => device, apply: () => device });
+  const lit = { ...viewOf([]), lanterns: [[-10, 0, 4]], gpu: { device, format: 'bgra8unorm' } } as unknown as ShipView;
+  const models = new ShipModels(async () => lit);
+  await Promise.all([models.load(0), models.load(1)]);
+  const ship = (hull: number) => ({ hull, place: PLACE, rig: null, look: { side: 'tithe' as const } });
+  models.draw({} as GPURenderPassEncoder, [ship(0), ship(0), ship(1)], CAMERA, undefined, 3);
+  models.shine();
+  const lanterns = CITY_LAMPS.current.filter((lamp) => lamp.reachM === 13);
+  assert.deepEqual(
+    lanterns.map((lamp) => lamp.motion),
+    ['lantern', 'lantern', 'lantern'],
+  );
+  assert.deepEqual(
+    lanterns.map((lamp) => lamp.seed),
+    [shipSeed(0, 0), shipSeed(0, 1), shipSeed(1, 0)],
+  );
+  assert.equal(new Set(lanterns.map((lamp) => lamp.seed)).size, 3);
+  models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 3);
+  models.shine();
 });

@@ -196,13 +196,12 @@ picture's grain, the picture's lightness about its mean kept:
   painted to the halfway between them. Its deck,
   its fittings and the insides of its bulwarks keep their timber.
 - **Its lanterns.** A Schooner's, a Brig's and a Frigate's stern lantern stands on a post at its taffrail: its glass
-  between six iron posts under a cap and a ring, an empty named `Lantern` in its model at its flame, which the export
-  writes to its manifest (`lanterns`; the Sloop's model has none). The glass is lit from inside as the city's flames
-  are, by day as by night and brighter against the dark: a small tongue of flame shows through it on its wick,
-  swaying and stretching as it flickers, the glass glowing amber round it, and a soft halo stands round the glass,
-  brighter at night (`ShipModels`). Its drawn flame flickers with the lamps' `flicker`, shielded to 0.4 of a fire's
-  depth, each slot of a hull on its own beat; its light is a lamp ([[Sky]], "Lamps at sea"), flickering as every lamp
-  does, on its deck and hull, the sea round it and the people aboard. A ship settled more than three metres into the
+  between six iron posts under a cap and a ring, an empty named `Lantern` in its model at its middle, which the export
+  writes to its manifest (`lanterns`; the Sloop's model has none). Caged, it shows no flame ([[An Enclosed Light Hides Its Flame]]): the glass is lit from
+  inside as the city's lanterns are, by day as by night and brighter against the dark, glowing amber, brightest at
+  its middle, and a soft halo stands round it, brighter at night (`ShipModels`). Its glass and its light, a lamp
+  ([[Sky]], "Lamps at sea"), flicker alike as a lantern, seeded by the ship (`shipSeed`: its hull and its slot of that
+  hull's model), so no two ships drawn in a frame flicker in step; its light falls on its deck and hull, the sea round it and the people aboard. A ship settled more than three metres into the
   sea, sinking, and a wreck have their lanterns out
   ([[Every Light Is Redesigned and Animated, and Each Casts Light]], [[Lights as Claude Builds Them]]).
 - **Its stripe** is 0.6 m deep along the line through the mouths of its upper tier of guns, rising with its sheer.

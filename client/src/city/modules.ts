@@ -51,6 +51,11 @@ export function moduleHeight(module: number): number {
   return modules[module]?.size[2] ?? 1;
 }
 
+/** A module's name by its place in the manifest, or '' for none. */
+export function moduleName(module: number): string {
+  return modules[module]?.name ?? '';
+}
+
 /** A module's place in the manifest by its name, or -1. */
 export function moduleNumber(name: string): number {
   return modules.findIndex((module) => module.name === name);

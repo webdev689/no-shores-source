@@ -100,13 +100,12 @@ export const DAYLIGHT_GLOW: Colour = [0.6, 0.66, 0.74];
 /** Candle wax, lit as a surface is. */
 export const WAX: Colour = [0.86, 0.8, 0.66];
 
-/** A flame drawn as a fire (../cinema/flameParts.ts): its base, how tall it burns, for one burning along a hearth
- *  the run of its edge, and whether it burns behind a lantern's glass, which keeps its smoke and embers in. */
+/** A flame drawn as a fire (../cinema/flameParts.ts): its base, how tall it burns, and for one burning along a
+ *  hearth the run of its edge. */
 export interface FlameAt {
   readonly at: Point;
   readonly sizeM: number;
   readonly along?: Point;
-  readonly glassed?: boolean;
 }
 
 /** A light where it burns, its number among the dungeon's (no two flicker in step), how it burns, and the flames it

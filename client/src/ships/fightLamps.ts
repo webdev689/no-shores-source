@@ -1,6 +1,6 @@
 // A sea fight's lights as the sky's lamps: each muzzle's flash, each burning ship's fire and each magazine's blast
 // (the effects' `light` marks) lights the hulls, the sea and the people round it for as long as it lasts, as the
-// land's lamps do.
+// land's lamps do. Each is steady as a lamp: its mark's brightness already moves (a flash fading, a fire flickering).
 import type { LampPlace } from '../sky/lamps.ts';
 import type { Mark } from './effects.ts';
 
@@ -14,7 +14,8 @@ interface Kept {
   at: [number, number, number];
   reachM: number;
   light: [number, number, number];
-  seed: number;
+  readonly seed: 0;
+  readonly motion: 'steady';
 }
 
 /** A fight's lamps, kept from frame to frame: the same places while their number holds, moved and dimmed in place,
@@ -28,7 +29,7 @@ export class FightLamps {
     let count = 0;
     for (const mark of marks) {
       if (mark.blend !== 'light') continue;
-      const lamp = (this.kept[count] ??= { at: [0, 0, 0], reachM: 0, light: [0, 0, 0], seed: count + 1 });
+      const lamp = (this.kept[count] ??= { at: [0, 0, 0], reachM: 0, light: [0, 0, 0], seed: 0, motion: 'steady' });
       count += 1;
       lamp.at[0] = mark.x + window.leftM;
       lamp.at[1] = mark.y + window.topM;

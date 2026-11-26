@@ -93,16 +93,17 @@ what show the ground there.
   its WGSL twin), seeded by its source: a flame's flicker, held through each of the fire's ten frames a second, never
   below 80% at full depth; and a glow's slow breath, about seven seconds a swell, for crystal, fungus, runes and a
   portal. A flame drawn and the light it casts share its seed, so they move together ([[Lights as Claude Builds Them]]).
-  On land a lamp carries how it moves (a fire's flicker, a lantern's shallower one, a stone's breath, and its seed) to
+  On land a lamp carries how it moves (a fire's flicker, a lantern's shallower one, a stone's breath, or none for
+  a steady one (a sea fight's, whose brightness already moves), and its seed) to
   the sky's uniform, and a glowing surface near it (a lantern's glass, a brazier's coals, a crystal's core, an island's
   ember, a prop's flame) moves with the nearest lamp within a third of its reach (`sky_lamp_motion`, `light_motion`);
   one with no lamp near moves by where it stands.
 - **Fires.** The game's scene burns the land's fires (`GameScene.fires`, the prologue's fire of [[Cinema]], "Flames"),
-  lit again only as a view changes them: a fire on coals casts its light as a lamp reaching eight times its height (at
-  least four metres), seeded as its flames are; a lantern's flame and the Beacon's fires are lit by their place's own
-  lamp, seeded alike. A flame shows through 0.3 m of what stands nearer, a lantern's glass drawn solid round it, and its
-  smoke leans with the wind. `lanternLights` marks a lantern's flame `glassed`, and `Flames.light` gives a glassed
-  flame no smoke and no embers, so a lantern burns inside its glass.
+  lit again only as a view's fires really change (`CityLamps.set` compares them by `fireKey`), and then only the new
+  are lit and the gone put out (`relightFires`): a fire on coals casts its light as a lamp reaching eight times its
+  height (at least four metres), seeded as its flames are; the Beacon's fires are lit by its own lamp, seeded alike.
+  A flame is hidden by whatever stands nearer, and its smoke leans with the wind. A lantern is an enclosed light and
+  burns no fire: its glass glows and flickers with its lamp (`lanternLamp`, [[An Enclosed Light Hides Its Flame]]).
 - **Lamps at sea.** Each ship's lanterns are lamps where they burn, moved with it each frame, reaching thirteen metres
   as a carried lantern does, and a sea fight's flashes, blasts and fires are lamps for as long as each lasts
   ([[Sailing]], "Its lanterns"; [[Naval Combat]]); they join the city's lamps through `CITY_LAMPS`, told anew only

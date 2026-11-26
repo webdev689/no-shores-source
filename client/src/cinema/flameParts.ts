@@ -13,8 +13,6 @@ export interface Fire {
   readonly sizeM: number;
   readonly seed: number;
   readonly along?: Point;
-  /** Behind glass, as a lantern's: its glass keeps its smoke and embers in. */
-  readonly glassed?: boolean;
 }
 
 /** A fire at one moment, each part in world metres: its tongues of flame, the wisps torn from their tips, its smoke,
@@ -135,7 +133,7 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
     }),
   );
 
-  const puffCount = fire.glassed ? 0 : many(PUFFS * run);
+  const puffCount = many(PUFFS * run);
   const smoke = Array.from({ length: puffCount }, (_slot, index) => {
     const lived = held / SMOKE_LIFE_S + index / puffCount + lot(7_000 + index);
     const age = lived % 1;
@@ -157,7 +155,7 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
   });
   smoke.sort((first, second) => second.age - first.age);
 
-  const emberCount = fire.glassed ? 0 : Math.min(MOST_EMBERS, many((EMBERS + EMBERS_A_METRE * size) * run));
+  const emberCount = Math.min(MOST_EMBERS, many((EMBERS + EMBERS_A_METRE * size) * run));
   const embers = Array.from({ length: emberCount }, (_slot, index) => {
     const life = 1.1 + 0.9 * lot(8_000 + index);
     const lived = held / life + index / emberCount + lot(9_000 + index);

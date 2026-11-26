@@ -90,7 +90,7 @@ test("a light's motion code carries its kind and its seed's phase, and moves as 
     light_breath: breath,
   };
   const body = (found[1] ?? '').replace(/\blet /g, 'const ');
-  for (const code of [1.25, 2.6, 3.01]) {
+  for (const code of [0, 1.25, 2.6, 3.01]) {
     const shaded = runInNewContext(`(() => {${body}})()`, { ...context, code, time: 3.3 });
     assert.ok(Math.abs(shaded - lightMotion(code, 3.3)) < 1e-9, `${code}`);
   }

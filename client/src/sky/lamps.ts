@@ -16,15 +16,42 @@ export interface LampPlace {
 
 /** A fire a place burns, drawn as the game's fire (../cinema/flames.ts): its base (world metres), how tall it burns,
  *  the seed it flickers by, the run of an edge it burns along, and whether it casts its own light as a fire does, or
- *  its light is a lamp of the place's, seeded alike (a lantern's flame behind its glass), and whether it burns behind
- *  glass, which keeps its smoke and embers in. */
+ *  its light is a lamp of the place's, seeded alike (the Beacon's fires round its glass). */
 export interface FirePlace {
   readonly at: readonly [number, number, number];
   readonly sizeM: number;
   readonly seed: number;
   readonly along?: readonly [number, number, number];
   readonly casts: boolean;
-  readonly glassed?: boolean;
+}
+
+/** A fire as a key, the same for two fires burning alike, so a view's fires built again compare as they burn. */
+export function fireKey({ at, sizeM, seed, along, casts }: FirePlace): string {
+  return `${at.join()}|${sizeM}|${seed}|${along?.join() ?? ''}|${casts}`;
+}
+
+/** What lights and puts out fires by id (../cinema/flames.ts). */
+export interface FireLighter {
+  light(base: Point, sizeM: number, seed: number, along?: Point, casts?: boolean): number;
+  out(id: number): void;
+}
+
+/** Burns `fires` in `flames` in place of those `burning` (each fire's ids by its `fireKey`), lighting only the new and
+ *  putting out only the gone, so a change of a few leaves every other fire burning; gives the ids now burning. */
+export function relightFires(
+  flames: FireLighter,
+  burning: ReadonlyMap<string, readonly number[]>,
+  fires: readonly FirePlace[],
+): Map<string, number[]> {
+  const left = new Map([...burning].map(([key, ids]) => [key, [...ids]]));
+  const now = new Map<string, number[]>();
+  for (const fire of fires) {
+    const key = fireKey(fire);
+    const id = left.get(key)?.pop() ?? flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts);
+    now.set(key, [...(now.get(key) ?? []), id]);
+  }
+  for (const ids of left.values()) for (const id of ids) flames.out(id);
+  return now;
 }
 
 /** What the land drawn now lights and burns (a city, its layouts, the islands, a passage zone's hollow, the events'
@@ -43,7 +70,8 @@ export class CityLamps {
     if (lamps.length > 0 || fires.length > 0) this.byView.set(view, { lamps, fires });
     else this.byView.delete(view);
     this.every = [...this.byView.values()].flatMap((each) => each.lamps);
-    if (before.length === 0 && fires.length === 0) return;
+    // A view built again with the fires it burned (an island coming into sight beside a city) changes none.
+    if (before.length === fires.length && before.map(fireKey).join() === fires.map(fireKey).join()) return;
     this.burning = [...this.byView.values()].flatMap((each) => each.fires);
     this.firesChanged++;
   }
@@ -88,22 +116,10 @@ export function glowLamp(place: Point, largest: number, seed: number, motion: Li
   };
 }
 
-/** A lantern's flame as a share of its glass's narrowest side, and the least and most it burns, metres. */
-const LANTERN_FLAME = { share: 0.6, least: 0.1, most: 0.35 } as const;
-
-/** A lantern whose glass stands round `middle`, `narrowest` across at its narrowest and `largest` at its largest: its
- *  flame inside, its base a little under the middle, and its light at the middle, flickering as the flame does. */
-export function lanternLights(
-  middle: Point,
-  narrowest: number,
-  largest: number,
-): { readonly fire: FirePlace; readonly lamp: LampPlace } {
-  const seed = seedAt(middle);
-  const sizeM = Math.min(LANTERN_FLAME.most, Math.max(LANTERN_FLAME.least, narrowest * LANTERN_FLAME.share));
-  return {
-    fire: { at: [middle[0], middle[1], middle[2] - sizeM * 0.4], sizeM, seed, casts: false, glassed: true },
-    lamp: glowLamp(middle, largest, seed, 'lantern'),
-  };
+/** A lantern whose glass stands round `middle`, `largest` across at its largest: an enclosed light, it shows no
+ *  flame, only its glass glowing and its light at the middle, flickering as a lantern does. */
+export function lanternLamp(middle: Point, largest: number): LampPlace {
+  return glowLamp(middle, largest, seedAt(middle), 'lantern');
 }
 
 /** A fire burning on glowing coals `wide` across whose top stands at `top`, a little sunk into them, casting its own

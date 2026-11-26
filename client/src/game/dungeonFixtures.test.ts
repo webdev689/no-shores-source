@@ -33,7 +33,7 @@ test('each fixture is drawn in its own colours: iron, wax, crystal, lantern glas
     assert.ok(!has(kind, [COLOUR.glow, 0]), `${kind} draws its flames as fires`);
 });
 
-test('a fixture burns its flames as fires: over a brazier, on each candle, in a lantern, along a hearth; crystal and fungus none', () => {
+test('a fixture burns its flames as fires: over a brazier, on each candle, along a hearth; a caged lantern, crystal and fungus none', () => {
   const where = [4, 6, 1.1] as const;
   const [brazier] = fixtureFlames([...where, FIXTURE.brazier]);
   assert.ok(brazier && brazier.at[2] < where[2] && brazier.sizeM > 0.3);
@@ -41,11 +41,7 @@ test('a fixture burns its flames as fires: over a brazier, on each candle, in a 
   assert.ok(candles.length >= 3 && candles.length <= 5 && candles.every((flame) => flame.sizeM < 0.15));
   const { high } = drawnOf(FIXTURE.candles);
   assert.ok(Math.abs(Math.max(...candles.map((flame) => flame.at[2])) - high) < 1e-5, 'the tallest on its wick');
-  const [lantern] = fixtureFlames([...where, FIXTURE.lantern]);
-  assert.ok(
-    lantern?.glassed && lantern.at[2] > where[2] - 0.16 && lantern.at[2] + lantern.sizeM < where[2] + 0.12,
-    'in its glass, which keeps its smoke and embers in',
-  );
+  assert.deepEqual(fixtureFlames([...where, FIXTURE.lantern]), [], 'its glass glows, no flame seen');
   const [hearth] = fixtureFlames([...where, FIXTURE.hearth]);
   assert.ok(hearth?.along && hearth.along[0] > 0.3);
   assert.deepEqual(fixtureFlames([...where, FIXTURE.crystals]), []);

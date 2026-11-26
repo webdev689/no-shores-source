@@ -60,6 +60,13 @@ interface Kept {
   reachM: number;
   light: [number, number, number];
   seed: number;
+  readonly motion: 'lantern';
+}
+
+/** A ship's seed, its lanterns' glass and light flicker by: its hull and its slot of that hull's model, so no two
+ *  ships drawn in a frame flicker in step. */
+export function shipSeed(hull: number, slot: number): number {
+  return hull * SHIP_SLOTS + slot + 1;
 }
 
 /** Where a lantern (`lantern`, in its ship's frame) burns for a ship drawn at `place`, in the place's metres. */
@@ -183,27 +190,30 @@ export class ShipModels {
       // Its lanterns light round them whether or not it is in view: a ship astern lights the water ahead. A ship
       // sinking has them out.
       const lit = seconds !== null && ship.place.z > -SINKING_M ? seconds : null;
-      if (lit !== null) for (const lantern of model.lanterns) this.light(ship, lantern, slot);
+      const seed = shipSeed(ship.hull, slot);
+      if (lit !== null) for (const lantern of model.lanterns) this.light(ship, lantern, seed);
       const bounds = model.boundsAt(ship.place, camera.eye, ship.rig);
       if (!bounds || sphereSeen(planes, ...bounds))
-        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, lit);
+        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, lit, seed);
       if (!this.halo && model.lanterns.length > 0) this.halo = new PuffView(model.gpu);
     });
     this.halo?.set(this.halos, camera);
   }
 
-  /** Lights `lantern` of `ship` (in its `slot`) this frame: its lamp, moved to where it burns, and its halo. */
-  private light(ship: DrawnShip, lantern: readonly [number, number, number], slot: number): void {
+  /** Lights `lantern` of `ship` this frame: its lamp, moved to where it burns, flickering as a lantern by the ship's
+   *  `seed` as its glass does, and its halo. */
+  private light(ship: DrawnShip, lantern: readonly [number, number, number], seed: number): void {
     const kept = (this.lanterns[this.lanternCount] ??= {
       at: [0, 0, 0],
       reachM: LANTERN_LIGHT.reachM,
       light: [...LANTERN_LIGHT.light],
       seed: 0,
+      motion: 'lantern',
     });
     this.lanternCount += 1;
     lanternAt(ship.place, lantern, kept.at);
     kept.reachM = LANTERN_LIGHT.reachM * (ship.place.scale ?? 1);
-    kept.seed = slot + 1;
+    kept.seed = seed;
     const glow = HALO.day + (HALO.night - HALO.day) * lampsLit(SKY_NOW.current.look.daylight);
     this.halos.push({
       x: kept.at[0],

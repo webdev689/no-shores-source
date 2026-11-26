@@ -270,7 +270,7 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let face = flat_normal * select(-1.0, 1.0, dot(flat_normal, to_eye) >= 0.0);
   let time = view.eye.w;
   let span = reaching(surface.point);
-  // Each glow moves with the light nearest it: a flame's embers and a lantern's glass flicker with its flame, a
+  // Each glow moves with the light nearest it: a flame's embers and a lantern's glass flicker with their light, a
   // crystal, a fungus cap and the open portal breathe as their light does.
   let fiery = layer == GLOW || layer == EMBER || layer == LANTERN_GLASS;
   let glows = fiery || layer == CRYSTAL || layer == FUNGUS || portal;

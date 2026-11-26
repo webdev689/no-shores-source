@@ -304,14 +304,8 @@ test('under ground a lit lamp, a lit dead lamp and an open mouth each light the 
   assert.deepEqual([lamp.at[2], kindle.at[2]], [3.2, 2.16], 'each from its glass, over the floor');
   // Facing south, the dead lamp's cage hangs off its crook south of its post.
   assert.ok(Math.abs(kindle.at[0] - 10) < 1e-6 && Math.abs(kindle.at[1] - 20.17) < 1e-6);
-  // Each burns from a flame in its glass, drawn as a fire; the mouth's daylight from none.
-  const [lampFlame] = lamp.flames ?? [];
-  const [kindleFlame] = kindle.flames ?? [];
-  assert.ok(lampFlame && kindleFlame && !mouth.flames);
-  // Each behind its glass, which keeps its smoke and embers in.
-  assert.ok(lampFlame.glassed && kindleFlame.glassed);
-  assert.ok(lampFlame.at[2] < lamp.at[2] && lampFlame.at[2] + lampFlame.sizeM > lamp.at[2]);
-  assert.ok(kindleFlame.at[2] < kindle.at[2] && kindleFlame.sizeM < lampFlame.sizeM);
+  // Caged, each shows no flame: its glass glows with its light; the mouth's daylight burns none either.
+  assert.ok(!lamp.flames && !kindle.flames && !mouth.flames);
   // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.
   assert.ok(mouth.at[0] < 10 && Math.abs(mouth.at[1] - 20) < 1e-6);
 });
