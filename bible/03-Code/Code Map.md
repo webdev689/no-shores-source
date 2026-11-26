@@ -191,7 +191,7 @@ decision, made in the same change as its entry here.
 | `tools/meadow/` | Writes the owner's meadow sprites into the client as pixel pictures ([[Meadow]]) |
 | `tools/forgedParts.mjs` | Writes the boxes each forged prop's drawn shape fills into `content/forged/parts.json` ([[Forged Models]]) |
 | `bible/` | This vault |
-| `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `rooms.yml` to deploy the accounts and the rooms when their code changed, then `pages.yml` and `site.yml` to publish the client to GitHub Pages and the site, once the rooms deployed or had nothing to, while that commit is still `main`'s head, and `bot.yml` to deploy the Discord bot; actions are pinned by commit |
+| `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `rooms.yml` to deploy the accounts and the rooms when their code changed, then `pages.yml` and `site.yml` to publish the client to GitHub Pages and the site, once the rooms deployed or had nothing to, while that commit is still `main`'s head or its own run deployed the rooms, and `bot.yml` to deploy the Discord bot; actions are pinned by commit |
 
 ## The client's layers
 
