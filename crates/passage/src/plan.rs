@@ -74,6 +74,29 @@ impl Kind {
             Kind::Reliquary => vec![[-0.7, -0.45, 0.7, 0.45, 0.9]],
         }
     }
+
+    /// Its solids standing with its foot at `at`, facing `facing`, in the zone's frame, each (west, north, east,
+    /// south, top).
+    #[must_use]
+    pub fn solids_at(self, at: [f64; 3], facing: f64) -> Vec<[f64; 5]> {
+        let (sine, cosine) = (libm::sin(facing), libm::cos(facing));
+        let turned = |[west, north, east, south, top]: [f64; 5]| {
+            // A box turned is held as the square round its turned corners.
+            let corners = [[west, north], [east, north], [east, south], [west, south]]
+                .map(|[x, y]| [at[0] + x * cosine - y * sine, at[1] + x * sine + y * cosine]);
+            let fold = |pick: fn(f64, f64) -> f64, axis: usize, start: f64| {
+                corners.iter().map(|corner| corner[axis]).fold(start, pick)
+            };
+            [
+                fold(f64::min, 0, f64::MAX),
+                fold(f64::min, 1, f64::MAX),
+                fold(f64::max, 0, f64::MIN),
+                fold(f64::max, 1, f64::MIN),
+                at[2] + top,
+            ]
+        };
+        self.solids().into_iter().map(turned).collect()
+    }
 }
 
 /// A piece standing in a zone: its kind, its middle at its foot (x, y, z) and the way its front faces.
@@ -233,25 +256,6 @@ impl Plan {
     /// Every piece's solids in the zone's frame, turned with it, each (west, north, east, south, top).
     #[must_use]
     pub fn piece_solids(&self) -> Vec<[f64; 5]> {
-        let mut solids = Vec::new();
-        for piece in &self.pieces {
-            let (sine, cosine) = (libm::sin(piece.facing), libm::cos(piece.facing));
-            for [west, north, east, south, top] in piece.kind.solids() {
-                // A box turned is held as the square round its turned corners.
-                let corners = [[west, north], [east, north], [east, south], [west, south]]
-                    .map(|[x, y]| [piece.at[0] + x * cosine - y * sine, piece.at[1] + x * sine + y * cosine]);
-                let fold = |pick: fn(f64, f64) -> f64, axis: usize, start: f64| {
-                    corners.iter().map(|corner| corner[axis]).fold(start, pick)
-                };
-                solids.push([
-                    fold(f64::min, 0, f64::MAX),
-                    fold(f64::min, 1, f64::MAX),
-                    fold(f64::max, 0, f64::MIN),
-                    fold(f64::max, 1, f64::MIN),
-                    piece.at[2] + top,
-                ]);
-            }
-        }
-        solids
+        self.pieces.iter().flat_map(|piece| piece.kind.solids_at(piece.at, piece.facing)).collect()
     }
 }

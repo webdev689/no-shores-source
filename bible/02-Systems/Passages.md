@@ -114,13 +114,18 @@ behind it, an onward mouth for each way on, the lamp, the foes' posts and spots 
 passages' own pieces standing in it with their solids.
 
 - **Under ground**: the Forge's dungeon in the zone's style, in one, two or three blocks by its size. Its way in is
-  the mouth behind; its onward mouths stand on rock walls of its rooms, the end room's portal wall first, then the
+  the mouth behind; its onward mouths stand on rock walls of its rooms (never on a great cave's free-standing stones),
+  the end room's portal wall first, then the
   rooms farthest along the way, each in a room of its own where there are enough, 9 m apart and 16 m from the way in,
   clear of torches, props, fixtures and landmarks; where a small dungeon cannot hold them so, they keep 6 m apart and
-  12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room, three
-  cells or more each way; a lamp's zone is forged only from a seed with a room tall enough, and a Hold's from one where its ring
-  lies whole on the floor at its spot, the spot where most of the ring does. A band's post is the
-  middle of a room's cells that no prop, fixture or landmark fills.
+  12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room but the
+  way in's, three cells or more each way, on the quiet cell nearest the room's middle where its plinth and stones,
+  facing the arrival, stand clear of every prop, fixture, landmark, pillar and doorway, else in the next room as great
+  and as tall. A zone is forged from the first of its seeds where its floor gives its deal every spot it wants; a
+  lamp's zone also where a room but the way in's is tall enough and the lamp stands clear, and a Hold's where its ring
+  lies whole on the room floor at its spot (no other cell, nor the dungeon's edge, within 6 m of its middle), the spot
+  where the ring lies whole, else where most of it does. A band's post is the
+  middle of a room's cells that no prop, fixture or landmark fills, and the deal's spots are quiet cells that hold none.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
   little and stepping down in shelves, each easing into the next over an 8 m bank; its walls rise 12 to 25 m within
