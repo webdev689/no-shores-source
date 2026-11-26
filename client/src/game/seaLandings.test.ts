@@ -10,7 +10,15 @@ import type { Landfall } from './seaLaw.ts';
 import { aimOf, clickContext, landingAskNode, SeaLandings } from './seaLandings.ts';
 
 const HARBOUR: Point2 = [1_000, -2_000];
-const PLAN = { id: 'overlook', name: 'Overlook', harbour: HARBOUR, ruined: false };
+/** Its pier's two places, out from the harbour. */
+const PIER = [
+  [1_000, -2_050, 0],
+  [1_020, -2_060, 0],
+] as const;
+const PLAN = {
+  ...{ id: 'overlook', name: 'Overlook', harbour: HARBOUR, ruined: false },
+  ...{ centre: [1_000, 3_000], social: { moorings: PIER } },
+};
 /** The landmass's coast: a square 100 km a side from the world's corner. */
 const COAST: Point2[] = [
   [0, 0],
@@ -39,6 +47,9 @@ function seaOf() {
     fight: null as object | null,
     busy: false,
     view: { kind: 'sail' },
+    sighted: { others: [] as { x: number; y: number }[], settledShip: null as { x: number; y: number } | null },
+    passage: { sailAlong: (points: Point2[]) => void asked.push(`out ${points.join(' ')}`) },
+    switchLevel: (level: string) => void asked.push(`view ${level}`),
     sailTo: (point: Point2) => {
       asked.push(`sail ${point.join(',')}`);
       sea.bound = point;
@@ -61,7 +72,7 @@ function landingsOf(ruined = false, isles = NO_ISLES) {
   const held = { now: false };
   const landings = new SeaLandings({
     sea: () => sea as unknown as Sea,
-    landmass: () => ({ id: 'continent-1', plan: { ...PLAN, ruined }, outline: COAST }) as never,
+    landmass: () => ({ id: 'continent-1', plan: { ...PLAN, ruined }, outline: COAST, heightAt: () => -50 }) as never,
     isles,
     free: () => !held.now,
     land: (aim) => void (!held.now && landed.push(aim)),
@@ -80,7 +91,7 @@ test('a click on the sea sails at once; on the island it asks first, and no answ
   assert.deepEqual([landings.asking, asked.length], [null, 1], 'no lets it go, nothing sailed');
 });
 
-test('yes to dock out of reach makes for the harbour, and docks once the sea offers it; in reach it docks at once', () => {
+test('yes to dock out of reach makes for the harbour; in reach it sails in to its pier in sight, and docks there', () => {
   const { landings, sea, asked, landed } = landingsOf();
   landings.click({ kind: 'mark', id: 'overlook-port' });
   landings.answer(true);
@@ -88,6 +99,10 @@ test('yes to dock out of reach makes for the harbour, and docks once the sea off
   landings.frame();
   assert.equal(landed.length, 0, 'not yet in reach');
   sea.landfall = { kind: 'dock', port: 'Overlook' };
+  landings.frame();
+  assert.deepEqual(asked.slice(1), ['view oversea', 'in 1000,-2050'], 'seen from the Oversea view, in to its pier');
+  assert.deepEqual([landed.length, landings.making?.kind], [0, 'dock'], 'not docked till it lies there');
+  [sea.position, sea.course] = [[1_000, -2_050], []];
   landings.frame();
   assert.deepEqual(
     landed.map((aim) => aim.kind),
@@ -98,7 +113,17 @@ test('yes to dock out of reach makes for the harbour, and docks once the sea off
   landings.click({ kind: 'land', point: [1, 1, 3] });
   assert.equal(landings.asking?.near, true, 'lying off the harbour now');
   landings.answer(true);
-  assert.equal(landed.length, 2, 'docked at once');
+  landings.frame();
+  assert.equal(landed.length, 2, 'lying at its berth, docked at once');
+});
+
+test("a port's berth is the place of its pier no player's ship lies in, as the sea shows the ships", () => {
+  const { landings, sea, asked } = landingsOf();
+  sea.landfall = { kind: 'dock', port: 'Overlook' };
+  sea.sighted.others = [{ x: 1_002, y: -2_049 }];
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  assert.deepEqual(asked, ['view oversea', 'in 1020,-2060']);
 });
 
 test('another course given while making for a landing lets it go; a fight puts the question by', () => {
@@ -171,13 +196,33 @@ test('a question still standing is put by once the player is no longer at sea', 
   assert.equal(landings.asking, null, 'walked ashore on an island, or taken elsewhere');
 });
 
+test('leaving the sea while the ship sails for a landing said yes to forgets the landing, on a coast or an island', () => {
+  const { landings, sea, landed } = landingsOf(false, WITH_COVE);
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  assert.equal(landings.making?.kind, 'dock');
+  landings.frame(false);
+  assert.equal(landings.making, null, 'taken elsewhere, the landing is forgotten');
+  sea.landfall = { kind: 'dock', port: 'Overlook' };
+  landings.frame();
+  assert.deepEqual(landed, [], 'back at sea, the ship never docks of itself');
+  landings.click({ kind: 'sea', point: [0, -50_500, 0] });
+  landings.answer(true);
+  landings.frame(false);
+  [sea.position, sea.course] = [[0, -50_150], []];
+  assert.equal(landings.anchored(), null, 'nor walks ashore on the island');
+});
+
 test('yes to go ashore on a coast clicked far inland makes for the coast nearest it, not the point clicked', () => {
-  const { landings, asked } = landingsOf(true);
+  const { landings, sea, asked } = landingsOf(true);
   landings.click({ kind: 'land', point: [50_000, 30_000, 200] });
   assert.equal(landings.asking?.aim.kind, 'ashore');
   landings.answer(true);
   assert.deepEqual(asked, ['sail 50000,0']);
   assert.equal(landings.making?.kind, 'ashore', 'made for');
+  sea.landfall = { kind: 'ashore' };
+  landings.frame();
+  assert.deepEqual(asked.slice(1), ['view oversea', 'in 50000,-50'], 'in reach, in to just off the shore');
 });
 
 test('yes within reach while something else holds the player keeps the landing, made once nothing does', () => {
@@ -193,6 +238,9 @@ test('yes within reach while something else holds the player keeps the landing, 
   assert.equal(landed.length, 0);
   hold(false);
   landings.frame();
+  assert.equal(landed.length, 0, 'sailing in to its berth');
+  [sea.position, sea.course] = [[1_000, -2_050], []];
+  landings.frame();
   assert.deepEqual(
     landed.map((aim) => aim.kind),
     ['dock'],
@@ -204,7 +252,7 @@ test('yes to a sea island makes for its anchorage, named as made for, and lands 
   landings.click({ kind: 'sea', point: [0, -50_500, 0] });
   assert.equal(landings.asking?.aim.kind, 'isle');
   landings.answer(true);
-  assert.deepEqual(asked, ['in 0,-50150']);
+  assert.deepEqual(asked, ['view oversea', 'in 0,-50150']);
   assert.deepEqual(landings.making, { kind: 'isle', id: 3, words: 'a cove' });
   landings.frame();
   assert.equal(landings.anchored(), null, 'under way to it');
@@ -241,4 +289,20 @@ test('with nothing made for, what the sea offers is never asked of it each frame
   landings.frame();
   landings.frame();
   assert.equal(read, 0);
+});
+
+test('back aboard after docking, the ship sails out from its berth once the room has placed it', () => {
+  const { landings, sea, asked, landed } = landingsOf();
+  [sea.landfall, sea.position] = [{ kind: 'dock', port: 'Overlook' }, [1_000, -2_050]];
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  landings.frame();
+  assert.equal(landed.length, 1, 'docked at its pier');
+  landings.frame(false);
+  landings.cameAboard();
+  landings.frame();
+  assert.deepEqual(asked, ['view oversea'], 'not before the room has placed it');
+  sea.sighted.settledShip = { x: 1_000, y: -2_050 };
+  landings.frame();
+  assert.deepEqual(asked, ['view oversea', 'out 1000,-2600'], 'out to the roadstead');
 });

@@ -1,8 +1,10 @@
 // The sea's clicks and the landings they ask after: a click on the sea sails (in the Oversea view), on a hostile
 // ship's mark chases it, and on a port's icon, its island, a coast with no port or one of the sea's islands asks the
-// player to confirm the landing. Yes lands at once where the ship lies within reach and nothing else holds the player,
-// else sets it making for it (a sea island's anchorage always) and lands once it can; a fight or another course lets a
-// landing made for go, on the coast and on a sea island alike. And the confirmation's card, in the middle of the view.
+// player to confirm the landing. Yes docks in sight where the ship lies within reach and nothing else holds the player
+// (a sea island's anchorage always): the ship sails in to its berth, seen from the Oversea view, and lands once it
+// lies there; else it makes for the landing and docks once it can. A fight, another course or the player leaving the
+// sea lets a landing made for go, on the coast and on a sea island alike. And the confirmation's card, in the middle of
+// the view.
 import type { Point2 } from '../overworld/ground.ts';
 import { coastPoint } from '../overworld/islandView.ts';
 import type { Pick as Picked } from '../overworld/overworldPick.ts';
@@ -12,8 +14,9 @@ import { withKey } from './controls.ts';
 import { DIM } from './hudPieces.ts';
 import { footer, header, hudPress, said } from './hudParts.ts';
 import { ISLANDS } from './hudLaw.ts';
+import { berthOf } from './berths.ts';
+import { type Berthed, Docking } from './docking.ts';
 import { isleWords } from './isleLaw.ts';
-import { IsleLanding } from './isleVisit.ts';
 import type { IsleHeld, Isles } from './isles.ts';
 import { askWords, type ClickContext, clickAtSea, inReach, LandingCourse, type LandingAim } from './landingAsk.ts';
 import type { Landmass } from './landmass.ts';
@@ -35,7 +38,7 @@ export interface Asking {
  *  the island the ship lies off, to choose where. */
 export interface LandingsGame {
   readonly sea: () => Sea | null;
-  readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'outline'>;
+  readonly landmass: () => Pick<Landmass, 'id' | 'plan' | 'outline' | 'heightAt'>;
   readonly isles: Isles;
   readonly free: () => boolean;
   readonly land: (aim: LandingAim) => void;
@@ -66,13 +69,13 @@ export function aimOf(landfall: Landfall, here: ClickContext, ship: Point2): Lan
   return { kind: 'ashore', coast: here.coast, toward: ship };
 }
 
-/** The sea's clicks and the landings they ask after, answered and made for: on the open landmass's coast, and on a
- *  sea island, whose ship sails in to its anchorage. */
+/** The sea's clicks and the landings they ask after, answered, made for and docked in sight: on the open landmass's
+ *  coast, and on a sea island. */
 export class SeaLandings {
   /** The confirmation standing, if any. */
   asking: Asking | null = null;
   private readonly course = new LandingCourse();
-  private readonly isle = new IsleLanding();
+  private readonly docking = new Docking();
   private readonly game: LandingsGame;
 
   constructor(game: LandingsGame) {
@@ -105,57 +108,83 @@ export class SeaLandings {
     if (sea) this.asking = { aim, near: inReach(aim, sea.landfall) };
   }
 
-  /** The confirmation answered: yes lands now within reach while nothing else holds the player, else makes for it
-   *  (a sea island's anchorage always, the coast nearest a point clicked inland); no lets it go. */
+  /** The confirmation answered: yes docks in sight within reach while nothing else holds the player (at a sea island
+   *  always), else makes for it (the coast nearest a point clicked inland); no lets it go. */
   answer(yes: boolean): void {
     const [asked, sea] = [this.asking, this.game.sea()];
     this.asking = null;
     if (!yes || !asked || !sea) return;
     const { aim } = asked;
     this.letGo();
-    if (aim.kind === 'isle') return void this.isle.begin(sea, this.game.isles, aim.id);
     const near = inReach(aim, sea.landfall);
-    if (near && this.game.free()) {
-      this.game.land(aim);
-      return;
-    }
+    if (aim.kind === 'isle' || (near && this.game.free())) return this.dock(sea, aim);
     const to = aim.kind === 'dock' ? aim.harbour : coastPoint(aim.toward, this.game.landmass().outline);
     if (!near) sea.sailTo(to);
     this.course.begin(aim, to);
   }
 
+  /** Docks in sight: the ship sails in to the landing's berth, among the ships the sea shows, from the Oversea view. */
+  private dock(sea: Sea, aim: LandingAim): void {
+    const [landmass, ships] = [this.game.landmass(), sea.sighted?.others ?? []];
+    const berth = berthOf(aim, landmass, this.game.isles.all(), ships);
+    if (berth) this.docking.begin(sea, { aim, berth, landmass: landmass.id });
+  }
+
   /** The landing being made for, if any, as the ship's panel names where it is bound. */
   get making(): LandingAim | null {
-    const isle = this.isle.making;
-    return this.course.making ?? (isle && { kind: 'isle', ...isle });
+    return this.course.making ?? this.docking.making;
   }
 
-  /** Lets any landing made for go: another course set, a fight, or the player washed up. */
+  /** Lets any landing made for go: another course set, a fight, or the player washed up or gone from the sea. */
   letGo(): void {
     this.course.cancel();
-    this.isle.cancel();
+    this.docking.cancel();
   }
 
-  /** The sea island the ship has come to anchor off for its landing, taken once; asked only while nothing else holds
-   *  the player. */
+  /** Where the ship lies docked, if it does, until it sails out again. */
+  get docked(): Berthed | null {
+    return this.docking.docked;
+  }
+
+  /** The player is back aboard: a ship docked sails out from its berth once the room has placed it. */
+  cameAboard(): void {
+    this.docking.cameAboard();
+  }
+
+  /** The sea island the ship has come to anchor off for its landing, taken once, the landing given up if the island no
+   *  longer stands; asked only while nothing else holds the player. */
   anchored(): IsleHeld | null {
-    const sea = this.game.sea();
-    return sea && this.isle.arrived(sea, this.game.isles);
+    const [sea, making] = [this.game.sea(), this.docking.making];
+    if (!sea || making?.kind !== 'isle') return null;
+    const held = this.game.isles.byId(making.id);
+    if (!held || !this.game.isles.all().some(({ seen, built }) => seen.id === making.id && built)) {
+      this.docking.cancel();
+      return null;
+    }
+    return this.docking.arrived(sea) && held;
   }
 
   /** Each frame: the question put by once the player is not `atSea` or the ship's view is not theirs to answer it
-   *  from, a landing made for let go in a fight, and one on the coast made once the ship lies within reach of it and
-   *  nothing else holds the player. */
+   *  from, a landing made for let go in a fight or once the player has left the ship; out of a fight, a ship back from
+   *  its berth sailed out once placed; and while nothing else holds the player, a landing on the coast docked in sight
+   *  once the ship lies within reach of it, and made once the ship lies at its berth. */
   frame(atSea = true): void {
     const sea = this.game.sea();
-    if (!atSea) this.asking = null;
+    if (!atSea) {
+      this.asking = null;
+      this.letGo();
+    }
     if (!sea || !atSea) return;
     if (sea.fight) this.letGo();
     if (sea.fight || sea.view.kind !== 'sail' || sea.busy) this.asking = null;
+    if (!sea.fight) this.docking.undock(sea);
+    if (!this.game.free()) return;
     // What the sea offers is asked only while a landing on the coast is made for.
-    if (!this.course.making || !this.game.free()) return;
-    const due = this.course.due(sea.landfall, sea.bound);
-    if (due) this.game.land(due);
+    const due = this.course.making && this.course.due(sea.landfall, sea.bound);
+    if (due) this.dock(sea, due);
+    // A sea island's landing walks ashore (`anchored`); one on the coast flies the view up over the island.
+    const docked = this.docking.making?.kind === 'isle' ? null : this.docking.arrived(sea);
+    if (docked) this.game.land(docked);
   }
 }
 

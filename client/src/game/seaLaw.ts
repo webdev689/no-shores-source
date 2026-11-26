@@ -23,23 +23,36 @@ export function firstAnchorage(landmass: Pick<Landmass, 'plan' | 'nodes' | 'heig
   return { anchorage, heading: bearingTo(anchorage, from) };
 }
 
-/** A ship's place off a harbour (`through`), out along the way from `from` to it; the harbour itself where no water
- *  that deep lies that way. */
+/** A ship's place off a harbour (`through`), out along the way from `from` to it (its roadstead); the harbour itself
+ *  where no water that deep lies that way. */
 export function offshore(heightAt: HeightAt, from: Point2, through: Point2): Point2 {
+  return offshoreStretch(heightAt, from, through).offing;
+}
+
+/** The water off a harbour or a shore (`through`), out along the way from `from` to it, unbroken from where it first
+ *  lies `OFFSHORE.depthM` deep and off `land` (the room's coasts, which judge a course) to `OFFSHORE.clearM` on: its
+ *  near end, just off the shore, and its far end, the offing. Both the harbour itself where none lies that way. */
+export function offshoreStretch(
+  heightAt: HeightAt,
+  from: Point2,
+  through: Point2,
+  land: (point: Point2) => boolean = () => false,
+): { readonly inshore: Point2; readonly offing: Point2 } {
   const length = Math.hypot(through[0] - from[0], through[1] - from[1]) || 1;
   const way = [(through[0] - from[0]) / length, (through[1] - from[1]) / length] as const;
+  const pointAt = (along: number): Point2 => [through[0] + way[0] * along, through[1] + way[1] * along];
   let deepFrom: number | null = null;
   for (let along = 0; along <= OFFSHORE.farthestM; along += OFFSHORE.stepM) {
-    const point: Point2 = [through[0] + way[0] * along, through[1] + way[1] * along];
+    const point = pointAt(along);
     const ground = heightAt(point[0], point[1]);
-    if (Number.isFinite(ground) && ground > -OFFSHORE.depthM) {
+    if ((Number.isFinite(ground) && ground > -OFFSHORE.depthM) || land(point)) {
       deepFrom = null;
       continue;
     }
     deepFrom ??= along;
-    if (along - deepFrom >= OFFSHORE.clearM) return point;
+    if (along - deepFrom >= OFFSHORE.clearM) return { inshore: pointAt(deepFrom), offing: point };
   }
-  return through;
+  return { inshore: through, offing: through };
 }
 
 /** A standing body's eye over its feet, metres (crates/movement/src/body.rs `TUNING.eye`). */

@@ -174,12 +174,17 @@ export class Passage {
   }
 
   /** Plans a voyage to `point` as `sailTo` does, then sets sail through it and on straight through `after`, at a
-   *  click's pace: the way in to an island's anchorage from its offing. Whether it set sail; if not, it says why. */
+   *  click's pace: the way in to a berth from its offing. A plan that ends at the water nearest the point, its cell of
+   *  the mask holding land, goes on to the point itself. Whether it set sail; if not, it says why. */
   sailVia(point: Point2, after: readonly Point2[]): boolean {
     const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
-    if (!route.ok) this.said = REFUSED[route.reason];
-    else this.sailAlong([...detour(route.points, this.keepClear()).slice(1), ...after]);
-    return route.ok;
+    if (!route.ok) {
+      this.said = REFUSED[route.reason];
+      return false;
+    }
+    const onTo = route.toShore ? [point] : [];
+    this.sailAlong([...detour(route.points, this.keepClear()).slice(1), ...onTo, ...after]);
+    return true;
   }
 
   /** Asks the room to travel the voyage still ahead: to take the ship to the other waters it ends in (`SeaTravel`).

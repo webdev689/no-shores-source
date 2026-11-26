@@ -69,6 +69,9 @@ code:
   - client/src/game/seaClose.ts#CloseZoom
   - client/src/game/landingAsk.ts#clickAtSea
   - client/src/game/seaLandings.ts#SeaLandings
+  - client/src/game/docking.ts#Docking
+  - client/src/game/berths.ts#berthOf
+  - client/src/game/moorings.ts#shipsLying
   - client/src/game/shipConsole.ts#shipConsoleNode
   - client/src/game/islandWords.ts#islandPanelOf
   - client/src/game/islandPanel.ts#islandScreen
@@ -218,6 +221,12 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   true size, sails set and filled, posed on the swell, its footprint on the water, as at sea (below); so ships coming
   and going are seen from each port's plaza and harbour. They are lit as the ships layer lights every ship, by its
   own sun, and cast no shadow.
+- **Ships lying by the island** (`moorings.ts`; [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
+  On every node of the island the player's ship is docked at (for a sea island, its beach alone) the ship is drawn
+  where it lies, and every other player's parked there as the land room's snapshot tells (its `ships`, never the
+  player's own), each in its own hull, its sails furled, riding the swell, its footprint still on the water. At a
+  social space the city's sloops lie at its pier, in the places of its plan's moorings no player's ship lies within
+  15 m of.
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
   there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
   as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
@@ -463,7 +472,8 @@ Breach's fallen keep its own times and places ([[Breaches]]).
 ## At sea
 
 `Sea` is the [[Overworld]] in play. The first return puts the ship off Overlook's harbour: out from the city's middle
-through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left.
+through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left, and a ship left docked
+sails out from its berth ("Landings").
 
 - **The ship** is the hull the player sails, in its parts' pictures and the dress they laid on it ([[Shipyard]]), the
   Sloop as built until the room says otherwise.
@@ -471,7 +481,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   Its sails are set while it is under way and furled at rest, filled by the weather's wind ([[World Map]], [[Weather]]).
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times its length), so one reads from the raised
   view, and every hull the same four times its own, so a Frigate reads larger than a Sloop. Every other player's ship
-  is drawn in its own hull and dress, as the sea's snapshot says. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
+  is drawn in its own hull and dress, as the sea's snapshot says; one lying parked while its player is ashore (its pace
+  0) lies at rest as any ship still does, its sails furled and no way on its footprint. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
   Sloop until the wire carries one ([[Sailing]], "Its look"); in a fight and in a fleet room too, each read through
   `hullOfCaptain` (at sea and in a fleet its `hull`, in a fight's view its `hull_kind`). Every hull's model and its
   shell tags are made ready behind the sea's veil (`SeaHull.warm`), so the first of each seen holds no frame. At the
@@ -493,7 +504,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   (`seaClose.ts`) brings the eye down along the camera's own look to 25 m from the point 4.5 m over its waterline that
   the World Editor looks at, every ship drawn as its size coming in has it, from whatever height the Oversea view
   stood at. V (the pad's left) or the console's switch moves between them, eased over about a second; the wheel never
-  does, and at sea level it changes nothing. Going ashore, the view eases back up as it flies off. Clicks and marks
+  does, and at sea level it changes nothing. Docking switches to the Oversea view ("Landings"), and going ashore the
+  view eases back up as it flies off. Clicks and marks
   are taken on the picture as shown.
 - **The pace follows the view** (`easedPace`). In the Oversea view a voyage sails at the pace it was set at: ×200
   planned on the held map, ×60 set by a click (`PLANNED_PACE`, `CLICK_PACE`). Once the view comes down to sea level,
@@ -656,14 +668,34 @@ pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the hel
 sea.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
-to dock there; anywhere else, to go ashore. Yes within reach lands at once, or once nothing else holds the player
-(another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked) at ×60
-and lands once it is within reach, which the console names ("Bound for Overlook's harbour, to dock"). Another course
-given meanwhile (a click, W, a chase) or a fight lets the landing go; a stop keeps it with the voyage, to be resumed.
+to dock there; anywhere else, to go ashore. Yes within reach docks in sight at once, or once nothing else holds the
+player (another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked)
+at ×60 and docks in sight once it is within reach, which the console names ("Bound for Overlook's harbour, to dock").
+Another course
+given meanwhile (a click, W, a chase), a fight, or the player leaving the sea (to join a company member elsewhere, say)
+lets the landing go ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]); a
+stop keeps it with the voyage, to be resumed.
 
-Landing flies the view up over the island the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s, framed on
-the nodes of its side, the city's social space among them when docking; the ship heaves to, its voyage kept to be
-resumed. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
+Docking in sight (`docking.ts`, `berths.ts`) switches to the Oversea view, and the ship sails at ×60 to its berth
+(`Sea.sailIn`): planned on water to the berth's offing, on to the offing itself where the plan ends at the water
+nearest it, then straight in. At a living port the berth is the first place of its pier (the city's moorings) with no
+player's ship within 15 m of it, as the sea shows the ships; its offing is the port's roadstead (out from the city's
+middle through its harbour to water 4 m deep, then 600 m on). Every place taken, or at a port with no pier (Sunspire's
+and Rimeholt's plans have none), the ship anchors at the roadstead, or 100 m at a time across the way out from it,
+either side, where the water is 4 m deep and no ship lies within 100 m. At a coast with no port the berth is just off
+the shore nearest the point clicked (or the ship, asked with L): straight out from the shore, where the water is first
+4 m deep and 50 m clear of the room's coast, its offing 600 m on. At a sea island it is the island's anchorage, from
+its offing. Once the ship lies at rest within 30 m of its berth the landing is made, and the ship lies docked there.
+
+Leaving undocks it. Back aboard (`goSea`), once the room has placed the ship (its settled word on the ship lying
+within 2 m of where the page has it, after any `MOORED` word has been taken), a ship lying within 30 m of its berth
+sails out at ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen
+pulling away, and is the player's to sail from there. A course the player sets first, or the room placing the ship
+away from its berth, leaves it as it is; either way it is docked no more, as it is once it sails off its berth with
+the player never gone from it (back to the sea from the island's tiles).
+
+Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
+framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
 `islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
 island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner; then every
 patrol zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. A click on a
@@ -673,10 +705,10 @@ card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist'
 the lit tile does (the one under the pointer or the focus, else the first place's). Escape, or Back to the sea, flies
 back down.
 
-A sea island's landing sails for its offing, out on the bearing it is landed on, planned on water as any route and bent
-round every island in sight, then in to its anchorage, which the console names ("Bound for a cove, to go ashore"); the
-same courses and a fight let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]],
-"On the page"). A player washed up on a found island walks ashore there.
+A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
+the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its
+anchorage, which the console names ("Bound for a cove, to go ashore"); the same courses, a fight and leaving the sea
+let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]], "On the page"). A player washed up on a found island walks ashore there.
 
 ## Rooms
 
@@ -889,8 +921,9 @@ blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, op
   as long after each that did not help, up to 160 s. A browser may round its timestamps: Chrome rounds them to
   0.1 ms unless its WebGPU developer features are on, so a short pass reads 0 or 0.1 ms and only the means hold.
 - The people seen aboard another ship are drawn, not the room's: another player's ship shows plain people, not that
-  player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships moored by a
-  social space's pier carry no one. A captain's ship met at sea is known by its sea number and in its fight by its
+  player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships lying by an
+  island ashore, the pier's sloops and the players' docked and parked ships, carry no one and are drawn in friendly
+  colours, not in their players' dress. A captain's ship met at sea is known by its sea number and in its fight by its
   fight's, which the fight's view does not tie together: its hands are laid out afresh as its fight begins and ends,
   each starting from a spot of its own.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
