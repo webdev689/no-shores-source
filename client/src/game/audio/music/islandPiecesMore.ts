@@ -64,12 +64,12 @@ function bracken(): Song {
       { bars: 'Am | G | Am | G', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       { bars: 'Am | G | Am | D | C | G | Am | Em', parts: ['pad', 'arp', 'bass', 'lead'], lead: tune },
       {
-        bars: 'F | C | G | D | F | C | Em | Em',
+        bars: 'F | Em | Am | D | F | C | Em | Em',
         parts: ['pad', 'arp', 'bass', 'counter', 'lead'],
         counter:
-          'A3:1.5 C4:1.5 F3:1.5 | G3:3 E3:1.5 | D3:1.5 G3:1.5 B3:1.5 | A3:3 F#3:1.5 | F3:1.5 A3:1.5 C4:1.5 | E3:3 G3:1.5' +
+          'A3:1.5 C4:1.5 F3:1.5 | G3:3 E3:1.5 | E3:1.5 A3:1.5 C4:1.5 | A3:3 F#3:1.5 | F3:1.5 A3:1.5 C4:1.5 | E3:3 G3:1.5' +
           ' | B3:1.5 G3:1.5 E3:1.5 | E3:4.5',
-        lead: 'C5:4.5 | E4:4.5 | D5:4.5 | F#4:4.5 | A4:4.5 | G4:4.5 | G4:4.5 | E4:4.5',
+        lead: 'A4:4.5 | G4:4.5 | E5:4.5 | F#4:4.5 | A4:4.5 | G4:4.5 | G4:4.5 | E4:4.5',
         level: 0.9,
       },
       {
@@ -155,7 +155,7 @@ function mirage(): Song {
       Dsus: { bass: 'D2', pad: 'G3 A3 D4', arp: 'D3 A3 D4 G4' },
     },
     // Seven eighths, two, two and three: the oud leans on the first of each.
-    arp: { step: 0.5, order: [0, 1, 2, 1, 3, 1, 2], velocity: [70, 40, 60, 40, 62, 38, 44] },
+    arp: { step: 0.5, order: [0, 2, 3, 1, 2, 3, 1], velocity: [70, 40, 60, 40, 62, 38, 44] },
     bass: { step: null, velocity: [70] },
     kit: {
       keys: { frame: 41, tap: 45 },
