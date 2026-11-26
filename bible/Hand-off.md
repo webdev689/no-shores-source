@@ -219,10 +219,12 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The passages and the regions** (#204, a draft on `ccr-9b9e80b0-5e314s-passages`), built on the owner's
+- **The passages and the regions** (#PRNUM on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
   autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
   audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
-  [[Passages as Claude Builds Them]]; how it works in [[Passages]].
+  [[Passages as Claude Builds Them]]; how it works in [[Passages]]. Its check is red only on the band's test, which
+  two of `main`'s own activities fail (the sea at level 5, the week's Abyss Dungeon run again at level 30): the
+  owner's to decide, in [[Open Questions]].
 - **The codebase audit** (#209, open, waiting on the owner's yes to merge), on the owner's "a comprehensive codebase
   audit to ensure everything is 100%. Remove any dead code and cleanup also, while not breaking anything or
   regressing". Dead code found mechanically (every TypeScript identifier resolved through the compiler, every Rust
@@ -920,29 +922,12 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The passages, to finish** (#204), in order:
-  1. The client design round, stopped part-way on `passages-fx-design` (60b73921, work in progress, untested:
-     `passageGame.ts` being split into `passageAsks.ts`, `mouthsCard.ts` and `zoneStood.ts`). Still to do: the Hold's
-     ring modelled in Blender as `passage.ring` (its pack publishes on a push of `tools/dungeon/**`; take the manifest
-     from CI); the Gauntlet's far mouth's sign (`sites.far`); "The Marked" and "Collector" over their heads and the
-     Tally Post read as struck; the public way (`public` in the web) on the map and the card; words for ask 87 and
-     refusal 181 (the page's 182); a cold fourth lamp's prompt to kindle; the lamp begins and "The First Lamp" checked
-     on the page; tests for `wayOut` (out of font-importing `travel.ts`), `bake::crossings_of`, the `?from=` path,
-     `resumeIn` and `homeTo`'s seas; pictures by the game's own camera at a ravine's arrival, by a strand's wreck, of
-     the held map at sea over a lit region and of an open mouth under ground, and "Limits" made true.
-  2. The band, set once, stopped part-way on `passages-fix-rules` (8a1fd725, work in progress). Both sides by the
-     same scripted player: round three's measured a patrol garrison's foe at 12.5 s, a patrol dungeon's at 28 and an
-     Elite Dungeon's at 24, where `band.rs` still has 25, 55 and 45; if one of main's own activities leaves the band,
-     say so rather than retune it. Every deal played to done or named with its cause, the root found where the walker
-     stands within a blow of a foe it never brings down (veins 0 of 3 alone, a Skirmish, a Sever, a Vault, an Ambush,
-     the fourth lamp's Boss at about 14 minutes); a hollow's beat margin read from the grid's edge, not the floor's;
-     `measure_the_pace` still names removed patrol zones (thunderhoof-grasslands, whitewind-tundra). Then the band's
-     tables in [[Passages]] and [[Activities]], and "The band, measured" in [[Passages as Claude Builds Them]].
-  3. A fresh review of the rules round together (`git diff e7f89516 9e822b36`: the dive, play and web workers and the
-     merge's resolution in 9d4e2579), which was stopped unrun when the session moved.
-  4. `cargo xtask check` locally and in CI on the head, pictures, #204's description rewritten (the draft is stale:
-     the nine-foe cap, the fourth lamp's Abyss roll, limits since fixed), then the owner asked.
-  Workers start detached and are waited on by `wait-worker.sh` ([[Toolkit]]), three at most on this container.
+- **The passages, to finish** (#PRNUM): the hand-off's four steps are done (the design round, the band set once, the
+  rules round reviewed, the check and the pictures). Left: the owner's answer on the band's two outside it, then that
+  answer made true (a retune of `main`'s sea or Abyss rerun in `crates/gear`, new bounds in `gear::band`, or the test
+  held to the passages), [[Activities]]' "The band" and [[Passages]] rewritten to match, the check green in CI on the
+  head, and the owner's yes to merge. Not yet played live: every deal, a dive's way across zones, a public round, the
+  held map's public way; tested offline, and pictured headless (`tools/passageShots.json`, `target/passages/`).
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
@@ -968,8 +953,8 @@ The decisions in [[Open Questions]] are not repeated here.
   flyout at 960x540 (measured by the screens' layout harness; the offline page has no gear).
 - **A cloud session runs on the `no-shores-source` environment** (personal, set up with the owner's approval): its
   network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts` fetches meshes from, and
-  its setup script runs `npm ci`. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`: Node's `fetch`
-  ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
+  it has no setup script yet, so run `npm ci` first. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`:
+  Node's `fetch` ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
   stops before the build, the bundle and the repo checks. The Context7 and SkillsMP keys are on neither environment.
 - **The encounters' headless run's WebGPU error** ("Instance range ... requires a larger buffer (28) than the bound
   buffer size (24) ..."): the dungeon entrances' instance, fixed by #155 (f895eb80); the error it hid, the entrances

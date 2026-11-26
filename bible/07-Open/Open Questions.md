@@ -78,6 +78,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   draws (mithril); their own art waits (the owner: "Not now").
 - **The balance pass's open point** ([[The Balance and Economy Pass as Claude Shapes It]]): Conduit (Deepwatch) brings
   a Tenet back about every 27 s against 105.
+- **The band's two outside it.** The sea at level 5 (0.65 of a patrol zone's XP an hour) and the week's Abyss
+  Dungeon run again at level 30 (2.15 of its XP, 6.03 of its loot) stand outside the band, and its test fails on them:
+  whether to retune them, widen the band, or hold only the passages to it ([[Activities]], "The band").
 - **Signing the desktop app.** Unsigned, its Windows installer meets "Windows protected your PC" and its Mac app opens
   only from Privacy & Security, and cannot update itself. Signing takes the owner's accounts and keys: Apple's
   Developer Program for a Mac (a Developer ID and notarizing), and for Windows a code-signing certificate or Azure's
