@@ -174,3 +174,16 @@ test('placed away from its berth, or set on a course of the player’s first, th
   steered.docking.undock(steered.sea);
   assert.deepEqual([steered.sea.course, steered.docking.docked], [course, null], 'the player’s course kept');
 });
+
+test('sailed off its berth with its player still aboard (back from the island’s tiles), the ship is docked no more', async () => {
+  const { at, offing } = berth(ASHORE);
+  const { sea } = await seaAt(at);
+  const docking = new Docking();
+  docking.begin(sea, { aim: ASHORE, berth: { at, offing }, landmass: 'continent-9' });
+  docking.arrived(sea);
+  docking.undock(sea);
+  assert.notEqual(docking.docked, null, 'lying at its berth, it stays docked');
+  sea.sailTo(place(0, 0));
+  docking.undock(sea);
+  assert.equal(docking.docked, null);
+});

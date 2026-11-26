@@ -74,12 +74,14 @@ export class Docking {
 
   /** Back aboard, once the room has placed the ship (its settled word lies where the page has it): lying at its berth,
    *  it sails out at ×60 to the berth's offing, straight, as it came in. Set on a course of the player's first, or lying
-   *  elsewhere, it takes none. Either way it is docked no more. */
+   *  elsewhere, it takes none. Either way it is docked no more; as it is once it sails off with the player never gone
+   *  from it (back to the sea from the island's tiles). */
   undock(sea: Pick<Sea, 'position' | 'course' | 'sighted' | 'passage'>): void {
     const docked = this.docked;
+    const setOff = sea.course.length > 0;
+    if (docked && !this.aboard && setOff) this.docked = null;
     if (!this.aboard || !docked) return;
     const placed = sea.sighted?.settledShip ?? null;
-    const setOff = sea.course.length > 0;
     if (!setOff && (!placed || apart([placed.x, placed.y], sea.position) >= PLACED_M)) return;
     [this.aboard, this.docked] = [false, null];
     const { at, offing } = docked.berth;

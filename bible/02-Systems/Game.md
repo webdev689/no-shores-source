@@ -688,7 +688,8 @@ Leaving undocks it. Back aboard (`goSea`), once the room has placed the ship (it
 within 2 m of where the page has it, after any `MOORED` word has been taken), a ship lying within 30 m of its berth
 sails out at ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen
 pulling away, and is the player's to sail from there. A course the player sets first, or the room placing the ship
-away from its berth, leaves it as it is; either way it is docked no more.
+away from its berth, leaves it as it is; either way it is docked no more, as it is once it sails off its berth with
+the player never gone from it (back to the sea from the island's tiles).
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
 framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
