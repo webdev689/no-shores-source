@@ -159,3 +159,13 @@ your baby". Each is the owner's to change.
 | Pay | None: it is done at the keepers' counters, as "Put them on" is | The rule pays a mission's clear only for a task that sends the player out |
 | The tracker | The Mage's, the Vault Keeper's and the Postmaster's counters pointed at; the dye "Anywhere", its key the Character key | As the lessons name their places and keys |
 | The houses' begins | Each begin's first line now opens with the gift ("Wear our colours. The Tithe took our storm-glass, and Pell went after it.") | Said with the piece given, in place of the leader's own line |
+
+## The house's pieces in the world's loot
+
+| Call | Chosen | Why |
+|---|---|---|
+| "The world" | A Vestige of the world's content (`Source::World`: a kill's or a chest's in the patrols and the world's places, a sea fight's, a public event's, a mission's, a faction's or a guild's package, the keepers' Vestiges) as it is opened; not a dungeon's, an Elite or Abyss Dungeon's, a sea dungeon's or a Breach's, which keep their own sets | The owner's "the world loot pool": each of those contents' drops wears its own set ([[Every Drop Wears Its Content's Set, With Random Perks]]); the world's alone is the pool |
+| Where it is rolled | As the Vestige is opened at the Mage's (`identify`), on the opened rarity, Magic or Rare | Magic and finer drop sealed: the piece is made when it is opened, so the share is of what opens Magic or Rare. A smith's ware and a ship's module are made elsewhere and never become one |
+| The dice | A purpose of its own (`HouseDrop`, 3,000), one roll for whether and one for which | No roll any other purpose makes moves, so every other drop, and native and WebAssembly, stay as they were |
+| Which piece | Evenly among the house's four armour pieces and its two weapons, whatever slot the Vestige held | The owner's "its four armour pieces and its weapons"; each its own kind, so the slot follows the piece |
+| One way for both | `vestige::house_piece`: the entry's kind, look and name on a piece rolled at the rarity given, its content the factions' | The leader's Magic gift and the drops at Magic and Rare are the same piece; the catalogue, the wares and the Legendary pieces stay as they were |

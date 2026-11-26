@@ -162,10 +162,8 @@ impl Character {
             return;
         }
         let level = self.level().clamp(1, NAMED_LEVEL);
-        let made = crate::vestige::make(0, Rarity::Magic, Slot::Torso, level, crate::source::Source::Faction, dice);
-        let Some(mut piece) = made.filter(|piece| piece.kind == Kind::Torso) else { return };
+        let piece = crate::vestige::house_piece(0, named, Rarity::Magic, level, dice);
         self.quests.gifts.push(named.id.clone());
-        piece.named = Some(named.id.clone());
         let at = if self.carried_in(Slot::Torso) < CARRIED_MOST {
             At::Carried
         } else if self.vaulted(piece.kind.stock()) < VAULT_MOST {

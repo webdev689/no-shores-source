@@ -184,6 +184,14 @@ number is one of [[Gear as Claude Shapes It]].
   level 20, its Prestige a Legendary's, its nodes asking for an island's resource rolled among the catalogue's, and a
   Breach's Legendary armour climbs to 28 Prestige from Normal (19, and 3 an upgrade) and to 30 from Hard (21). A Breach's armour or weapon rolls its perk columns from the
   Breaches' own perks ("Verbs", "The Breaches' perks"). A ship's Legendary module is a named one ([[Ship Power]]).
+- **The house's pieces in the world's loot** ([[Magic and Rare House Pieces Drop in the World, for the Pledged House]]).
+  One in ten of the Magic and Rare pieces a Vestige of the world's content opens to (`vestige::house_drop`, on its own
+  dice, `Purpose::HouseDrop`) is a piece of the house the player is pledged to, drawn evenly among its four armour
+  pieces and its two weapons, never its cape: its entry's kind, look and name, at the rarity and level opened, its
+  content the factions', its traits rolled as any piece of that rarity's and a weapon's element as any weapon's
+  (`vestige::house_piece`). A player not pledged finds none; a dungeon's, an Elite or Abyss Dungeon's, a sea
+  dungeon's and a Breach's Vestiges open to their own sets alone. The catalogue's entries stay the Legendary pieces
+  the house sells ([[Factions]], "The faction's wares"); the leader's gift is made the same way, at Magic.
 - **Commons drop as themselves** ([[Commons Drop as Themselves, Never as Vestiges]]). A Vestige is Magic or finer:
   wherever a Vestige rolls Normal (a kill's, a Boss's or a Miniboss's, at sea too, a chest's, a first clear's, a
   playlist's, the [[Test Ground]]'s), the Normal item comes instead, made as that Vestige would have opened, at

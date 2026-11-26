@@ -483,8 +483,12 @@ impl Character {
         }
         let rarity = vestige::opens_to(vestige.rarity, vestige.level, dice);
         let item_id = self.id_to_take();
-        let mut item = vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
-            .ok_or(Refusal::NoSuchItem)?;
+        let house = vestige::house_drop(self.allegiance.pledge, vestige.source, rarity, dice);
+        let mut item = match house {
+            Some(named) => vestige::house_piece(item_id, named, rarity, vestige.level, dice),
+            None => vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
+                .ok_or(Refusal::NoSuchItem)?,
+        };
         item.hard = vestige.hard && item.breach;
         if item.hard {
             item.element = element::forged(item.kind, dice);

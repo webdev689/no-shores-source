@@ -113,6 +113,8 @@ mod gifts_tests;
 #[cfg(test)]
 mod horses_tests;
 #[cfg(test)]
+mod house_drops_tests;
+#[cfg(test)]
 mod item_tests;
 #[cfg(test)]
 mod keep_tests;
