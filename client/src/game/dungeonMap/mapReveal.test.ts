@@ -67,6 +67,15 @@ test('on a storeyed layout sight goes down a flight to the storey under, never u
   assert.ok(!lower.cells.has(cellIndex(STOREYED, 0, 0, 0)), 'never the storey over');
 });
 
+test('from half way down a flight, sight goes on down it and never back up', () => {
+  const storeys = storeysOf(STOREYED);
+  const reveal = new Reveal(STOREYED, storeys);
+  reveal.tick([8, 1.6, -3], REVEAL.everyS);
+  assert.ok(reveal.cells.has(cellIndex(STOREYED, 1, 4, 0)), 'the flight under the feet');
+  assert.ok(reveal.cells.has(cellIndex(STOREYED, 1, 5, 0)), 'the landing at its foot');
+  assert.ok(!reveal.cells.has(cellIndex(STOREYED, 0, 0, 0)), 'not the landing at its head, a rise away');
+});
+
 test('what was revealed is kept and given back', () => {
   const reveal = revealOf(row);
   reveal.tick([1.6, 1.6, 0], REVEAL.everyS);

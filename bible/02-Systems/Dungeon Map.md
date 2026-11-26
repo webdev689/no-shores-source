@@ -30,7 +30,8 @@ Only what the player has walked or seen is drawn, never the whole dungeon.
   N again or Escape shuts it. It covers the whole view at once: the game's own picture is drawn first and the map over
   it, and the interface shows nothing over the paper but the map's own words and marks and the controls' sheet. The
   player stands still while it is up, as with the held map (the frame takes it as `looking`), and the pointer is let
-  go. While it is up every key is the map's, so nothing in the game behind it acts.
+  go. While it is up every key is the map's, so nothing in the game behind it acts; a key held goes on turning or
+  panning it, but a held N never shuts it again.
 - **The view** (`mapCamera.ts`). The plan seen along one line, no perspective: a point (x east, y south, z up) lies at
   u = a cos(yaw) - b sin(yaw), v = (a sin(yaw) + b cos(yaw)) sin(pitch) - (z - z0) cos(pitch) from the paper's middle,
   times the scale, where (a, b) is the point less the view's middle and z0 the floor looked at; pitch a quarter turn
@@ -44,20 +45,23 @@ Only what the player has walked or seen is drawn, never the whole dungeon.
 - **Storeys** (`mapStoreys.ts`). The map reads a layout's `storeys`, `floors`, `storeyM` and `stairs` where it has
   them, and a layout without them as one storey at 0 m with no flights. Cells are storey-major. A flight's cells are
   named by `stairs` on both its storeys; any cell code but a room's, a corridor's and rock is open air over the storey
-  under. It opens cut over the player's storey. PgUp or ] steps the cut a storey up, PgDn or [ a storey down, the view
+  under. A body is on the storey with the highest floor under its feet by less than half a storey, so a flight's
+  upper half is the storey over's. It opens cut over the player's storey. PgUp or ] steps the cut a storey up, PgDn or [ a storey down, the view
   keeping the new floor where the old one lay; Home goes back to the player's storey, centred on them. L shows every
   storey, each cut over its own floor, its flights never cut, and each storey but the one looked at inked at 0.3.
   The words over the paper say "Storey 2 of 3, you are on 1" where a dungeon has more than one.
 - **The reveal** (`mapReveal.ts`, DFO's own law over our 3.2 m cells). The feet are read five times a second, opened
   or not, onto a metre's grid, the walked trail; a step between two reads up to 3 m is walked through, a longer one is
   a carry. From each metre newly walked, 144 lines of sight run across the floor up to 20 m, a sample every 0.5 m,
-  each stopped by rock, by a solid that stands over 1.2 m above the floor it was cast from, or by the floor rising more
+  each cast from the floor under the feet (a flight's where they stand on one) and stopped by rock, by a solid that stands over 1.2 m above the floor it was cast from, or by the floor rising more
   than 1.2 m from one cell to the next. Sight goes down a flight onto the storey under (past the flight's middle) and
   across open air, never up a flight nor onto the storey over. A cell is drawn once walked or seen; a flight's cell on
   both its storeys.
 - **Kept** (`mapKept.ts`). Each dungeon's view and its revealed cells are kept in the browser's storage under
   `noShores.dungeonMaps`, by the dungeon's ask (the same dungeon at any tier shares one), for the last 30 dungeons,
-  the oldest written going first: on shutting the map, on leaving the dungeon, and every 3 s while new cells come in.
+  the oldest written going first, and the oldest let go while the storage is too full to take the newest: on shutting
+  the map, on leaving the dungeon, and within 3 s of new cells. The cells are kept as a bit each, so a great dungeon's
+  are a few thousand letters.
 - **The ink** (`mapShaders.ts`, `mapInk.ts`). The map draws the dungeon's own mesh, the very buffers the dungeon's
   view holds (`DungeonView.mesh`), with two pipelines of its own on the game's device, into targets of its own, then
   over the finished picture. The first pass draws each face whose normal looks toward the eye, so a room's near wall

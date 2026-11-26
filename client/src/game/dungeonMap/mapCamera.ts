@@ -142,7 +142,10 @@ export function restView(
     (paper.height * ORBIT.fit) / Math.max(height, 1),
   );
   const scale = clamp(fits, ORBIT.restLeast, ORBIT.scaleMost);
-  const middle: Paper = [(Math.max(...acrosses) + Math.min(...acrosses)) / 2, (Math.max(...downs) + Math.min(...downs)) / 2];
+  const middle: Paper = [
+    (Math.max(...acrosses) + Math.min(...acrosses)) / 2,
+    (Math.max(...downs) + Math.min(...downs)) / 2,
+  ];
   const [east, south] = floorMove({ ...onPlayer, scale: 1 }, middle);
   const fitted: MapView = { ...orbit, scale, centre: [player[0] + east, player[1] + south, player[2]] };
   const [across, down] = toPaper(fitted, player);

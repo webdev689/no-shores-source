@@ -53,11 +53,12 @@ test('a flight is walked as its ramp, from the upper floor down to the lower', (
   assert.equal(floorAt(STOREYED, storeys, 1, 0, 0), null);
 });
 
-test('the storey a body stands on is the highest floor within a step under its feet', () => {
+test('the storey a body stands on is the highest floor under its feet by less than half a storey', () => {
   const storeys = storeysOf(STOREYED);
   assert.equal(storeyOfHeight(storeys, 0), 0);
   assert.equal(storeyOfHeight(storeys, -0.4), 0);
-  assert.equal(storeyOfHeight(storeys, -3), 1);
+  assert.equal(storeyOfHeight(storeys, -3), 0, "on the flight's upper half, still the storey over");
+  assert.equal(storeyOfHeight(storeys, -5), 1);
   assert.equal(storeyOfHeight(storeys, -8), 1);
   assert.equal(storeyOfHeight(storeys, -30), 1);
 });

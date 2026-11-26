@@ -16,7 +16,8 @@ export const REVEAL = { trailM: 1, everyS: 0.2, fillM: 3, sightM: 20, rays: 144,
 /** A solid as sight meets it: its footprint and the heights it stands between (m). */
 type Solid = { minX: number; minY: number; maxX: number; maxY: number; bottom: number; top: number };
 
-/** A layout's solids, its boxes with a bottom (a storeyed layout's sixth number, else its one floor) and a top. */
+/** A layout's solids: a storeyed layout's boxes end in their bottom and top, an older layout's in their top alone,
+ *  standing on its one floor. */
 function solidsOf(layout: DungeonLayout): Solid[] {
   return layout.boxes.map((box: readonly number[]) => {
     const [minX, minY, maxX, maxY] = box;
@@ -102,8 +103,10 @@ export class Reveal {
   private cast(feet: Point, startStorey: number, bearing: number): void {
     const { layout, storeys } = this;
     const [east, south] = [Math.cos(bearing), Math.sin(bearing)];
-    let [storey, floor] = [startStorey, storeys.floors[startStorey] ?? 0];
     let [lastColumn, lastRow] = [Math.floor(feet[0] / layout.cell), Math.floor(feet[1] / layout.cell)];
+    // Cast from the floor under the feet: a flight's where they stand on one.
+    const under = floorAt(layout, storeys, startStorey, lastColumn, lastRow);
+    let [storey, floor] = [startStorey, under ?? storeys.floors[startStorey] ?? 0];
     for (let reach = REVEAL.sightStep; reach <= REVEAL.sightM; reach += REVEAL.sightStep) {
       const [x, y] = [feet[0] + east * reach, feet[1] + south * reach];
       const [column, row] = [Math.floor(x / layout.cell), Math.floor(y / layout.cell)];

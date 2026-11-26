@@ -26,6 +26,23 @@ test('only the last dungeons are kept, the one written last the newest', () => {
   assert.deepEqual(readKept('dungeon 1', storage)?.cells, [9], 're-written, it is kept as the newest');
 });
 
+test('a dungeon of many cells is kept small, and a full storage lets the oldest go to keep the newest', () => {
+  const kept = new Map<string, string>();
+  const small = {
+    getItem: (key: string) => kept.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      if (value.length > 6000) throw new Error('full');
+      kept.set(key, value);
+    },
+  };
+  const cells = Array.from({ length: 12_000 }, (unused, cell) => cell * 2);
+  writeKept('great', { view: null, cells }, small);
+  assert.deepEqual(readKept('great', small)?.cells, cells, 'twelve thousand cells kept in under 6,000 letters');
+  for (let each = 0; each < 5; each++) writeKept(`more ${each}`, { view: null, cells }, small);
+  assert.deepEqual(readKept('more 4', small)?.cells, cells);
+  assert.equal(readKept('great', small), null);
+});
+
 test('a storage that is broken or refuses keeps nothing and breaks nothing', () => {
   const broken = {
     getItem: () => '{not json',

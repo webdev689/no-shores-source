@@ -86,6 +86,24 @@ test('E turns the view an eighth, eased there', () => {
   assert.ok(Math.abs((shown?.view.yaw ?? 0) - (ORBIT.yawRest + Math.PI / 4)) < 1e-6);
 });
 
+test('cells found are kept within a few seconds, whether or not the map is looked at', () => {
+  const kept = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => kept.get(key) ?? null,
+    setItem: (key: string, value: string) => void kept.set(key, value),
+  };
+  Object.assign(globalThis, { localStorage: storage });
+  try {
+    const map = walking();
+    map.frame(0, paper, []);
+    void map.dungeon;
+    for (let read = 0; read < 20; read++) map.tick(you, REVEAL.everyS);
+    assert.ok([...kept.values()].some((value) => value.includes('test dungeon')));
+  } finally {
+    Reflect.deleteProperty(globalThis, 'localStorage');
+  }
+});
+
 test('the ink is told each cell walked or seen and each flight cell', () => {
   const map = walking();
   const words = map.dungeon?.words;

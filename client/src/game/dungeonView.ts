@@ -262,7 +262,6 @@ export class DungeonView {
     return drawn.shown?.open ? [...drawn.burning, drawn.portalLight] : drawn.burning;
   }
 
-
   /** The dungeon's mesh as drawn now, which its map inks from the same buffers; null with no dungeon set. */
   get mesh(): Buffers | null {
     return this.drawn?.floor ?? null;

@@ -36,10 +36,14 @@ export function listenToMap(canvas: HTMLCanvasElement): void {
   canvas.addEventListener(
     'pointerup',
     (event) => {
-      if (taken(event)) DUNGEON_MAP.pointerUp();
+      taken(event);
+      DUNGEON_MAP.pointerUp();
     },
     heard,
   );
+  // A press let go anywhere, or taken back, lets go of the drag, whether or not the map is still open.
+  for (const name of ['pointercancel', 'lostpointercapture'] as const)
+    canvas.addEventListener(name, () => DUNGEON_MAP.pointerUp(), heard);
   canvas.addEventListener(
     'wheel',
     (event) => {

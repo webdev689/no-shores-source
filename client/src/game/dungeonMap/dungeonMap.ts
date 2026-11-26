@@ -65,7 +65,9 @@ class Walked {
   readonly reveal: Reveal;
   view: MapView | null;
   words: Uint32Array;
+  /** Cells found since the ink's words were last laid, and since the reveal was last kept. */
   changed = true;
+  unkept = false;
   sinceKept = 0;
 
   constructor(key: string, layout: DungeonLayout) {
@@ -96,6 +98,7 @@ class Walked {
   keep(): void {
     writeKept(this.key, { view: this.view, cells: [...this.reveal.cells] });
     this.sinceKept = 0;
+    this.unkept = false;
   }
 }
 
@@ -143,16 +146,17 @@ export class DungeonMap {
     const walked = this.walked;
     this.player = player;
     if (!walked) return;
-    if (walked.reveal.tick(player.feet, seconds)) walked.changed = true;
+    if (walked.reveal.tick(player.feet, seconds)) [walked.changed, walked.unkept] = [true, true];
     walked.sinceKept += seconds;
-    if (walked.changed && walked.sinceKept >= KEEP_EVERY_S) walked.keep();
+    if (walked.unkept && walked.sinceKept >= KEEP_EVERY_S) walked.keep();
   }
 
   /** Opens the map over the view, at the player's storey, on the view it was left at or at rest; or shuts it. */
   toggle(): void {
     const walked = this.walked;
     if (!walked || this.up) return this.shut();
-    this.up = true;
+    [this.up, this.beforePlan] = [true, null];
+    this.pointerUp();
     const feet = this.player?.feet ?? [0, 0, 0];
     this.storey = storeyOfHeight(walked.storeys, feet[2]);
     const floor = walked.storeys.floors[this.storey] ?? 0;

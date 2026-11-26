@@ -36,8 +36,6 @@ type StoreyKeys = {
 
 /** How far apart the storeys stand where the layout does not say (m). */
 const STOREY_M = 8;
-/** How high a body steps up (m): it stands on the highest floor within this of its feet. */
-const STEP_M = 0.5;
 
 /** The storeys of `layout`. */
 export function storeysOf(layout: DungeonLayout): Storeys {
@@ -92,11 +90,11 @@ export function floorAt(
   return top - drop * storeys.storeyM;
 }
 
-/** The storey a body with its feet at `z` stands on: the one with the highest floor within a step under its feet,
- *  else the lowest. */
+/** The storey a body with its feet at `z` stands on: the one with the highest floor under its feet by less than half
+ *  a storey, so a flight's upper half is the storey over's and its lower half the one under's; else the lowest. */
 export function storeyOfHeight(storeys: Storeys, z: number): number {
   let found = storeys.count - 1;
   for (let storey = storeys.count - 1; storey >= 0; storey--)
-    if ((storeys.floors[storey] ?? 0) <= z + STEP_M) found = storey;
+    if ((storeys.floors[storey] ?? 0) <= z + storeys.storeyM / 2) found = storey;
   return found;
 }
