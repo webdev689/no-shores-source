@@ -200,3 +200,58 @@ fn a_guests_ship_is_never_parked_and_past_the_most_the_one_parked_longest_ago_is
     let first = format!("account-{PARKED_MOST:04}");
     assert!(!sea.parked.by_account.contains_key(&first), "the one parked longest ago let go");
 }
+
+#[test]
+fn a_hosts_time_near_the_most_neither_panics_nor_wraps_round_to_show_a_lapsed_naming_again() {
+    let mut sea = sea();
+    let near_most = u64::MAX - 100;
+    sea.tell_seconds(near_most);
+    let left = left_at(&mut sea, "ann", OFF_COAST);
+    assert_eq!(answered(&sea.ashore(ISLAND, &["ann"])), ["ann"]);
+    sea.tell_seconds(near_most + NAMED_S + 1);
+    assert!(sea.ashore(ISLAND, &[]).is_empty(), "lapsed, though kept unseen");
+    ticks(&mut sea, 120 * 60);
+    assert!(!shown(&sea).contains(&left), "still lapsed as the sea ticks on past the most");
+    left_at(&mut sea, "bea", OFF_COAST);
+    assert_eq!(answered(&sea.ashore(ISLAND, &["bea"])), ["bea"], "and a ship parked then is named as any is");
+}
+
+#[test]
+fn a_parked_ship_lies_at_the_one_coast_nearest_it_and_only_that_places_rooms_see_it() {
+    // Two continents 4 km apart: a ship 1 km off the first lies within 5 km of both.
+    let text = r#"{ "continents": [{ "id": "continent-4", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }, { "id": "continent-5", "outline": [[204000, 100000], [304000, 100000], [304000, 200000], [204000, 200000]] }], "isles": [] }"#;
+    let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
+    let ann = left_at(&mut sea, "ann", [201_000.0, 150_000.0]);
+    let bea = left_at(&mut sea, "bea", [203_500.0, 150_000.0]);
+    let other = Ashore::Continent("continent-5");
+    assert_eq!(answered(&sea.ashore(other, &["ann", "bea"])), ["bea"], "Ann's lies nearer the first's coast");
+    assert_eq!(shown(&sea), [bea], "and is not named from the other's");
+    assert_eq!(answered(&sea.ashore(ISLAND, &["ann", "bea"])), ["ann"], "nor Bea's from the first's");
+    assert_eq!(shown(&sea), [ann, bea]);
+}
+
+#[test]
+fn an_island_is_rolled_clear_of_a_parked_ship_as_of_one_sailing() {
+    // The first island rolled near a ship lying still, and the tick it stood; with Ann's ship parked at `moored` first.
+    let rolled = |moored: Option<[f64; 2]>, most: usize| {
+        let text = r#"{ "continents": [{ "id": "continent-4", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+        let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
+        left_at(&mut sea, "ann", OFF_COAST);
+        if let Some([x, y]) = moored {
+            let parked = &mut sea.parked.by_account.get_mut("ann").unwrap().ship;
+            (parked.x, parked.y) = (x, y);
+        }
+        let player = sea.join();
+        sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+        for tick in 0..most {
+            sea.tick();
+            if let Some(island) = sea.islands().standing().next() {
+                return Some((island.at, tick + 1));
+            }
+        }
+        None
+    };
+    let (first, at) = rolled(None, 60 * 60 * 3).expect("an island rolled near the ship");
+    let clear = rolled(Some(first), at).map(|(island, _)| island);
+    assert!(clear.is_none_or(|island| combat::sight::apart(island, first) >= 1_200.0), "not on the parked ship");
+}

@@ -41,6 +41,16 @@ impl Coast {
             && point.y <= self.south + reach;
         near_box && !circle_clear_of_ring(point, reach, &self.ring)
     }
+
+    /// How far a point lies from the coast, metres: none on or inside it.
+    pub(crate) fn off(&self, point: Point) -> f64 {
+        if ring_contains(&self.ring, point) {
+            return 0.0;
+        }
+        let metres = |corner: Point| [corner.x as f64, corner.y as f64];
+        let off_edge = |(from, to)| crate::sea::islands::off_leg(metres(point), metres(from), metres(to));
+        edges(&self.ring).map(off_edge).fold(f64::INFINITY, f64::min)
+    }
 }
 
 /// Each continent of a layout with three corners or more: those with a coast.

@@ -386,25 +386,33 @@ will take it, by the room's own tick.
   players are in it, lets go of an account the sea has not landed there (one the sea did not answer for, or not within
   20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then
   is shown as any other.
-- **Parked ships** (`sea_parked.rs`, `ashore.ts`). A player who leaves the sea with their ship at rest within 5 km
-  of a continent's coast or a standing sea island's (`PARKED_REACH_M`: where a docked ship lies), out of a fight and
-  their account no guest's (`unkept:`), leaves it lying parked where it is, kept by their account. It is never one of
-  the sea's ships: no hostile ship, fight or island heeds it. Every room on an island (a node's room, its dungeons'
-  and runs', a passage zone's under its island, a sea island's room and its dungeon's) names the accounts of the
-  players it holds to the sea rooms they land from (every tier's for a social space, an outpost, a passage zone and a
-  run started at sea; its own tier's otherwise) as each account is known and every 15 seconds after (`ashoreWord`, `room_sea_ashore`), with its island
-  (its node's or a passage zone's continent, a sea island's number and seed, or none for a run started at sea) and the host's time in
-  seconds. Every naming is timed by that time, which the sea keeps, carries on by its own ticks between words, and
-  never puts before the minute the host sets as it starts ticking, since a sea room stops ticking while nobody sails
-  it. A named account's parked ship lying within 5 km of that island's coast (a run's wherever it lies) is seen for
-  45 seconds more; one no room has named for 45 seconds lies unseen, seen again once a room names it (its player
-  back on the island), and is let go after a day unnamed (`KEPT_S`) or as its player comes back to the sea, the ship
-  theirs again. The sea keeps 1,024 parked ships at most, letting go of the one parked longest ago first. The sea
-  sends each ship seen to the players within 60 km of it, at rest, with its looks and its plate, under the number its
-  player had as they left, and answers each naming with every ship seen at that island, which the room sends in its
-  snapshots to every player, the ship's own too, so a page reloaded ashore still draws its own (`room_parked`; a
-  social space's ships from the Elite and Abyss seas numbered 2^30 and 2^31 past their own). Parked ships live only
-  in the sea room's memory: they are lost as it restarts, on a deploy or once the host evicts it idle.
+- **Parked ships** (`sea_parked.rs`, `ashore.ts`). A player who leaves the sea with their ship at rest within 5 km of
+  a continent's coast or a standing sea island's (`PARKED_REACH_M`: where a docked ship lies), out of a fight and
+  their account no guest's (`unkept:`), leaves it lying parked where it is, kept by their account. It lies at the one
+  coast nearest it of those within 5 km, a continent's or a standing sea island's, as a sea island may stand 3 km off
+  a coast or another island. It is never one of the sea's ships: no hostile ship or fight heeds it, and a sea island
+  is rolled 1.2 km clear of it. Every room on an island (a node's room, its dungeons' and runs', a passage zone's
+  under its island, a sea island's room and its dungeon's) names the players it holds to all three seas, as a player
+  may come ashore from any tier's (a social space or an outpost from any, an Elite Dungeon's run, a Breach's zone and
+  run and a passage zone from a node at any), as each account is known and every 15 seconds after (`ashoreWord`,
+  `room_sea_ashore`), with its island (its node's or a passage zone's continent, a sea island's number and seed, or
+  none for a run started at sea) and the host's time in seconds. Each player named carries their account and, as their
+  character has them now (`room_named`, `ShipLook::of`), the ship they sail as others see it and their level, which
+  their parked ship takes on: a ship bought, dressed or renamed ashore, or a level gained, shows on it. Every naming
+  is timed by the host's time, which the sea keeps, carries on by its own ticks between words, holds at its most
+  rather than overflowing, and never puts before the minute the host sets as it starts ticking, since a sea room stops
+  ticking while nobody sails it. A named account's parked ship lying at that island (a run's wherever it lies) is seen
+  for 45 seconds more; one no room has named for 45 seconds lies unseen, seen again once a room names it (its player
+  back on the island), and is let go after a day unnamed (`KEPT_S`) or as its player comes back to any sea: the sea
+  that learns their account tells the other two, by the same word naming no one (`afloat`), to let go of theirs. The
+  sea keeps 1,024 parked ships at most, letting go of the one parked longest ago first. It sends each ship seen to the
+  players within 60 km of it, at rest, with its looks and its plate, under the number its player had as they left, and
+  answers each naming with every ship seen at that island. A room whose page draws them (a node's own ground or a sea
+  island's, not a dungeon, a run or a passage zone) sends those in its snapshots to every player, the ship's own too,
+  so a page reloaded ashore still draws its own (`room_parked`; every room numbers the Elite and Abyss seas' ships
+  2^30 and 2^31 past their own), and hands on a sea's last answer for 45 seconds at most once that sea stops
+  answering. Parked ships live only in the sea room's memory: they are lost as it restarts, on a deploy or once the
+  host evicts it idle.
 
 ## A fleet
 
@@ -485,7 +493,7 @@ an older reader skips them.
 | Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 24 numbers their body, its rider's boost's two clocks among them, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; the plates changed since it, each player's newest alone; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); in a Breach's run, or a zone that holds its gate, the Breach whole (`breach`, `BreachSeen`: each
 encounter's phase, the stage reached, the seals open, the attempt's revives, the Lodestone, the Rewritten, the chests
 open and the encounter under way; at its gate, the Waking, the company holding it, who it is open to and the companies
-inside; [[Breaches]]); and at sea every ship near the player (as "The sea" cuts it), those lying parked among them: its player, position, heading and pace, 0 at rest, and as its player keeps it, its hull, its four dresses, its name's two words and its player's emblem ([[Shipyard]], "Seen by others"); every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire"); and on land whether the room is a darkness zone (`darkness`) and each fallen player being revived, with their reviver and the hold's share per mille (`reviving`, [[Revives]]); and on land every ship parked at the room's island, the player's own too, as the sea sends a ship (`ships`, at rest), left out of one built on a base while they stand as the base's, one that has none where its base had some sent whole; and in a passage zone its deal as it stands for the player (`passage`, [[Passages]], "On the wire") |
+inside; [[Breaches]]); and at sea every ship near the player (as "The sea" cuts it), those lying parked among them: its player, position, heading and pace, 0 at rest, and as its player keeps it, its hull, its four dresses, its name's two words and its player's emblem ([[Shipyard]], "Seen by others"); every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea that the player's ship keeps in sight, as a hostile ship is kept (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire"); and on land whether the room is a darkness zone (`darkness`) and each fallen player being revived, with their reviver and the hold's share per mille (`reviving`, [[Revives]]); and on an island's own ground (a node's room or a sea island's) every ship parked at the room's island, the player's own too, as the sea sends a ship (`ships`, at rest), left out of one built on a base while they stand as the base's, one that has none where its base had some sent whole; and in a passage zone its deal as it stands for the player (`passage`, [[Passages]], "On the wire") |
 
 **Plates.** On land each player's plate, what others read over their head ([[Interface]], "Players"), crosses as a table
 of its own: their number, their username (none for a guest), their level, whether a menu is open on their screen, as their
