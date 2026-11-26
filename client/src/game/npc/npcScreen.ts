@@ -12,7 +12,7 @@ import { motionReduced } from '../../plus/kit.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import { emblemOf, emblemPixels } from '../../plus/emblemArt.ts';
 import { cardFrame, nameCard } from '../gearCard.ts';
-import { type Hint, INK, glyphNode, svgNode, words } from '../gearNodes.ts';
+import { type Hint, INK, focusRing, glyphNode, svgNode, words } from '../gearNodes.ts';
 import type { View } from '../gearScreen.ts';
 import { KEEPER_KINDS, type KeeperKind, keeperOf } from '../keepers.ts';
 import type { MenuContext } from '../menuPage.ts';
@@ -50,6 +50,9 @@ export const npcChoosing = (): boolean => choosing;
 /** The rows' own id, which scrolls where a screen is too short for them all; and Acquire's. */
 const ROWS = 'npc-rows';
 const ACQUIRE = 'npc-acquire';
+/** The acquired quest's tile, and whether a tap or a press has opened its card in the rows. */
+const QUEST_TILE = 'npc-quest';
+let questOpen = false;
 
 /** Whether a view of the menu is a keeper's screen: every counter's, the vault's among them. */
 export const isKeeperView = (view: View): view is KeeperKind => (KEEPER_KINDS as readonly string[]).includes(view);
@@ -73,7 +76,7 @@ let offerShown = 0;
 /** The screen opens at `view`: a keeper's (the Harbourmaster's among them) is spoken in, and greets the player on its
  *  first frame (`greet`); any other view hushes the last. */
 export function npcOpened(view: View): void {
-  [choosing, pending, focusNext, pressesShown, greeted, offerWaiting, offerShown] = [
+  [choosing, pending, focusNext, pressesShown, greeted, offerWaiting, offerShown, questOpen] = [
     false,
     null,
     null,
@@ -81,6 +84,7 @@ export function npcOpened(view: View): void {
     false,
     false,
     0,
+    false,
   ];
   mailOpened();
   hush();
@@ -260,12 +264,13 @@ function offerNode(
   width: number,
   narrow: boolean,
   ask: MenuContext['ask'],
-): Node | null {
+  body: readonly Child[],
+): { readonly rows: readonly Child[]; readonly tile: Node | null } {
   const { ui, gear, sizes } = context;
   const text = sizes.label;
   const offered = offeredAt(gear.quest, kind);
   offerWaiting = offered !== null && !offered.acquired;
-  if (!offered || !gear.quest) return null;
+  if (!offered || !gear.quest) return { rows: body, tile: null };
   const column = COUNTERS[kind];
   // Asked once until the room answers, as a ware is bought once.
   if (offerWaiting && column !== undefined && ui.clicked(ACQUIRE) && !pending) ask({ kind: ASKS.acquire, column });
@@ -275,25 +280,81 @@ function offerNode(
   const keeper = nameOf(keeperOf(kind)?.speaker ?? '');
   const cardWidth = narrow ? width : Math.min(text > 1 ? 600 : 440, Math.floor(width * 0.55));
   const card = questCardNode({ ...offered, steps, keeper }, cardWidth, text, ACQUIRE);
+  if (offered.acquired) {
+    // The tile's press turns its card first, so the card follows on the frame it was pressed.
+    const tile = acquiredTile(context, offered, card);
+    return { rows: [questOpen && { id: `${QUEST_TILE}-card`, width: 'grow', children: [card] }, ...body], tile };
+  }
   const tile = questTileNode(offered.quest, offered.offer, text > 1 ? 104 : 76);
   const gap = text > 1 ? 28 : 18;
   if (narrow)
     return {
-      width: 'grow',
-      direction: 'column',
-      gap,
-      children: [card, { gap, children: [tile, questStoryNode(offered.quest, offered.offer, width - 76 - gap, 1)] }],
+      tile: null,
+      rows: [
+        {
+          width: 'grow',
+          direction: 'column',
+          gap,
+          children: [
+            card,
+            { gap, children: [tile, questStoryNode(offered.quest, offered.offer, width - 76 - gap, 1)] },
+          ],
+        },
+        ...body,
+      ],
     };
+  // The card leads; the story, its tile and then the wares stand beside it, so the wares show while it is offered.
   return {
-    width: 'grow',
-    gap,
-    children: [
-      card,
+    tile: null,
+    rows: [
       {
         width: 'grow',
-        direction: 'column',
         gap,
-        children: [questStoryNode(offered.quest, offered.offer, width - cardWidth - gap, text), tile],
+        children: [
+          card,
+          {
+            width: 'grow',
+            direction: 'column',
+            gap,
+            children: [questStoryNode(offered.quest, offered.offer, width - cardWidth - gap, text), tile, ...body],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** The quest acquired, stepped aside so the wares lead: its small tile framed in gold with its name and "Acquired",
+ *  as Destiny's vendor keeps a quest it gave. Its card floats beside it where the pointer or the keys rest on it; a
+ *  tap or a press opens it in the rows instead, as a phone has no pointer, and a second closes it. */
+function acquiredTile(context: MenuContext, offered: NonNullable<ReturnType<typeof offeredAt>>, card: Node): Node {
+  const { ui, sizes } = context;
+  const text = sizes.label;
+  const size = text > 1 ? 64 : 48;
+  if (ui.clicked(QUEST_TILE)) questOpen = !questOpen;
+  if (!questOpen) context.card(QUEST_TILE, () => card);
+  const lit = ui.hovered(QUEST_TILE) || (ui.focused(QUEST_TILE) && ui.keyFocused);
+  return {
+    id: QUEST_TILE,
+    press: true,
+    label: `${offered.quest.name}, acquired. ${questOpen ? 'Close' : 'Open'} its card`,
+    gap: text > 1 ? 14 : 10,
+    alignY: 'center',
+    children: [
+      {
+        children: [
+          questTileNode(offered.quest, offered.offer, size),
+          ui.focused(QUEST_TILE) &&
+            ui.keyFocused && { ...focusRing(size, size), float: { to: 'parent', x: -4, y: -4 } },
+        ],
+      },
+      {
+        direction: 'column',
+        gap: 4,
+        children: [
+          words(offered.quest.name.toUpperCase(), text, lit ? INK.word : 'rgba(239,232,214,0.86)', { tracking: 2 }),
+          words('Acquired', text, INK.faint),
+        ],
       },
     ],
   };
@@ -325,7 +386,7 @@ export function keeperScreen(
     motionReduced(),
     FIGURE_KEPT,
   );
-  const offer = offerNode(context, kind, width, stage.narrow, ask);
+  const offer = offerNode(context, kind, width, stage.narrow, ask, body);
   return keeperFrame(room, text, {
     glow,
     figure,
@@ -333,7 +394,14 @@ export function keeperScreen(
     name: nameOf(keeper?.speaker ?? ''),
     about: keeper?.words ?? '',
     speech: speechBand(kind, glow, stage.narrow ? 1 : text, stage.width - (stage.narrow ? 32 : text > 1 ? 96 : 64)),
-    crest: crestOf(context, kind, glow, Math.min(width, text > 1 ? 760 : 520)),
+    // Narrower beside an acquired quest's tile, so the two share the row.
+    crest: crestOf(
+      context,
+      kind,
+      glow,
+      Math.min(width - (offer.tile && !stage.narrow ? (text > 1 ? 420 : 300) : 0), text > 1 ? 760 : 520),
+    ),
+    quest: offer.tile,
     body: [
       {
         id: ROWS,
@@ -342,7 +410,7 @@ export function keeperScreen(
         scroll: true,
         direction: 'column',
         gap: text > 1 ? 22 : 14,
-        children: [offer, ...body],
+        children: offer.rows,
       },
       foot,
     ],

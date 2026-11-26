@@ -9,6 +9,7 @@ import { sizesOf } from '../gearNodes.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { COUNTERS, QUESTS } from '../quests/questBook.ts';
 import { npcOpened, npcPage } from './npcScreen.ts';
+import { rowsOf } from './npcWares.ts';
 
 // The keeper's thanks are typed a frame at a time, and no frame comes here.
 globalThis.requestAnimationFrame ??= () => 0;
@@ -23,6 +24,7 @@ const QUEST = { quest: OPENING, task: ROUND, counts: [] as number[], done: [0, 0
 function screenOf(kind: 'weaponsmith' | 'armorsmith' = 'weaponsmith', quest = { ...QUEST, offered: WEAPONSMITH }) {
   const { ui, step } = fakeInterface(1280, 720);
   const asked: GearAsk[] = [];
+  const cards: string[] = [];
   const holds = new Holds(() => 0);
   let gear: GearState = state({ quest, cratePrice: 300 });
   const context = (): MenuContext =>
@@ -33,7 +35,7 @@ function screenOf(kind: 'weaponsmith' | 'armorsmith' = 'weaponsmith', quest = { 
       room: { width: 1280, height: 600 },
       holds,
       ask: (ask: GearAsk) => asked.push(ask),
-      card: () => undefined,
+      card: (id: string) => cards.push(id),
       picture: () => null,
       forge: null,
     }) as unknown as MenuContext;
@@ -48,7 +50,7 @@ function screenOf(kind: 'weaponsmith' | 'armorsmith' = 'weaponsmith', quest = { 
   frame();
   frame();
   const regear = (fields: Partial<GearState>) => (gear = { ...gear, ...fields });
-  return { ui, asked, frame, regear };
+  return { ui, asked, cards, frame, regear, gear: () => gear };
 }
 
 test('opening the screen of a keeper a talk goal names tells the room the word (ask 64), once; an offer asks none', () => {
@@ -84,4 +86,38 @@ test('Acquire asks the room for the quest at this keeper once until it answers, 
   frame();
   assert.equal(ui.boxOf('npc-acquire'), null, 'nothing more to acquire');
   assert.ok(ui.focusedId?.startsWith('npc-'), `the focus on a ware beside it, not lost (${ui.focusedId})`);
+});
+
+test('an acquired quest steps aside for the wares: its small gold tile and name, its card on the pointer, keys or a tap', () => {
+  const { ui, cards, frame } = screenOf('weaponsmith', { ...QUEST, counts: [1], offered: 0 });
+  assert.equal(ui.boxOf('npc-acquire'), null, 'nothing to acquire');
+  const tile = ui.boxOf('npc-quest');
+  assert.ok(tile, 'the acquired quest is a tile');
+  assert.ok(tile.height <= 80, `a small tile, not the card (${tile.height} px)`);
+  assert.ok(tile.y < 200, `beside the crest at the top, not under the wares (${tile.y})`);
+  assert.equal(ui.boxOf('npc-quest-card'), null, 'its card not laid in the rows');
+  assert.ok(cards.includes('npc-quest'), 'its card shows where the tile is pointed at or focused');
+  const [x, y] = [tile.x + tile.width / 2, tile.y + tile.height / 2];
+  const tap = () =>
+    frame([
+      { kind: 'pointer', x, y },
+      { kind: 'down', x, y, button: 0 },
+      { kind: 'up', x, y, button: 0 },
+    ]);
+  tap();
+  frame();
+  assert.ok(ui.boxOf('npc-quest-card'), 'a tap (or a press) opens its card in the rows, as a phone has no pointer');
+  tap();
+  frame();
+  assert.equal(ui.boxOf('npc-quest-card'), null, 'and a second closes it');
+});
+
+test('while a quest is offered its card leads and the wares stand beside it, in sight without scrolling', () => {
+  const { ui, gear } = screenOf();
+  const card = ui.boxOf('npc-acquire');
+  const first = rowsOf('weaponsmith', gear(), false)[0]?.wares[0];
+  const ware = first ? ui.boxOf(`npc-${first.key}`) : null;
+  assert.ok(card && ware, 'Acquire and a ware are laid');
+  assert.ok(ware.y + ware.height <= 720, `the first ware is in sight (${ware.y + ware.height} px of 720)`);
+  assert.ok(ware.x > card.x, 'beside the card, at its right');
 });

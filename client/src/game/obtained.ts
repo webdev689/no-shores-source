@@ -19,6 +19,9 @@ const COME_S = 0.25;
 const GO_S = 0.35;
 /** The reference's cyan: the band's top edge and the icon's ring. */
 const CYAN = '#4fd8f0';
+/** The band's ground: the reference's translucent grey, the screen showing through it, dark enough that its line still
+ *  reads at 4.5:1 over white. */
+export const NOTICE_FILL = 'rgba(24,28,34,0.72)';
 /** Over every window and card the game lays, under the pad's cursor alone (`padCursor.ts`). */
 const NOTICE_Z = 900;
 /** The most notices kept waiting: past it the oldest waiting goes, so a flood never stands for minutes. */
@@ -168,7 +171,7 @@ export function noticeNode(
     float: { to: 'screen', at: [0, 1], anchor: [0, 1], y: Math.round((1 - come) * 12), z: NOTICE_Z },
     opacity: come,
     direction: 'column',
-    fill: 'rgba(9,11,14,0.94)',
+    fill: NOTICE_FILL,
     label: `${notice.title}. ${lineWords(notice)}`,
     children: [
       { width: 'grow', height: 2, fill: CYAN },

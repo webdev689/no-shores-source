@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Node } from '../ui/node.ts';
-import { NOTICE_S, Obtained, WITH_KEY_S, noticeNode } from './obtained.ts';
+import { NOTICE_FILL, NOTICE_S, Obtained, WITH_KEY_S, noticeNode } from './obtained.ts';
 
 const notice = (title: string, more = {}) => ({ title, line: `${title}, given`, icon: null, ...more });
 
@@ -55,4 +55,28 @@ test("the notice's band names it, its key on a keycap in its line, and the key a
   assert.equal(band.through, true, 'the pointer passes to what is under it');
   const phone = noticeNode(notice('The Sloop'), { width: 390, height: 844 }, 1);
   assert.ok(!said(phone).includes('Open Character'), 'no key: no hint at the right');
+});
+
+/** A channel's share of a colour's relative luminance, as WCAG reckons it. */
+const linear = (channel: number) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+const luminance = ([red, green, blue]: readonly number[]) =>
+  0.2126 * linear((red ?? 0) / 255) + 0.7152 * linear((green ?? 0) / 255) + 0.0722 * linear((blue ?? 0) / 255);
+/** `top` at `alpha` laid over `under`. */
+const blend = (top: readonly number[], alpha: number, under: readonly number[]) =>
+  top.map((channel, index) => channel * alpha + (under[index] ?? 0) * (1 - alpha));
+
+test("the notice's band is a translucent grey the screen shows through, its words reading on it over white or black", () => {
+  const [red = 0, green = 0, blue = 0, alpha = 1] = (NOTICE_FILL.match(/[\d.]+/g) ?? []).map(Number);
+  assert.ok(alpha <= 0.8 && alpha >= 0.5, `translucent, as the reference's (${alpha})`);
+  for (const under of [
+    [255, 255, 255],
+    [0, 0, 0],
+    [128, 128, 128],
+  ]) {
+    const ground = blend([red, green, blue], alpha, under);
+    // The line, the dimmer of its words: the menu's word ink at 0.86 over the band.
+    const line = blend([239, 232, 214], 0.86, ground);
+    const ratio = (luminance(line) + 0.05) / (luminance(ground) + 0.05);
+    assert.ok(ratio >= 4.5, `the line reads at 4.5:1 over ${under.join(',')} (${ratio.toFixed(2)}:1)`);
+  }
 });
