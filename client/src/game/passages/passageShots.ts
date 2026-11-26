@@ -3,6 +3,7 @@
 // modules and plants lit by the sky of the hollow's own climate, under ground the dungeon's scene lit by its torches
 // and the pieces' lights), its pieces over it; the way between zones as its camera frames the island, its dots over a
 // plain ground; the map; and the passages' panels. The game never imports it.
+import { isleTiles } from '../isleTiles.ts';
 import { REVERSED_DEPTH } from '../../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { ISLE_MANIFEST } from '../../islands/isleManifest.ts';
@@ -266,7 +267,7 @@ async function hollowFrames(
     .then(startSkyLaw);
   const sky = new SkyDriver(law, skyUniformFor(device), { seconds: () => (hour / 24) * DAY_S });
   await law;
-  const isles = new IslesView(gpu, ISLE_MANIFEST, null, undefined, GROWTH_ROLES);
+  const isles = new IslesView(gpu, ISLE_MANIFEST, null, undefined, GROWTH_ROLES, isleTiles(gpu));
   const nature = new IslesNature(gpu);
   isles.show([shown]);
   nature.show([shown]);
