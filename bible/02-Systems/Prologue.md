@@ -178,8 +178,9 @@ the player's from there.
 **The stranger's welcome** ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]],
 [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]). Her
 words (`content/story/welcome.json`, said on the story's stage in the dialogue box, `welcome/tour.ts`) are two lines,
-one a scene: a little of the world (the Grey Tithe taking a tenth of every hold, Overlook paying them nothing); then
-her farewell, wishing the player well and sending them to the keepers, each of whom has a gift for them ([[Quests]], "The opening"). She names no
+one a scene: a little of the world (grey sails taking a tenth of every hold, Overlook giving the Tithe nothing); then
+her farewell, telling the player that is why their ship never made port, sending them to the keepers, each of whom has
+a gift for them, and wishing them well ([[Quests]], "The opening"). She names no
 place and the camera flies to none: the round of the keepers shows the way. Both are seen face to face
 (`welcome/framing.ts`): from the side of the pair nearer the player's view unless a solid stands between, from 2.8, 3.4
 then 2.4 m over their feet, as far off as puts their crowns 14% and their feet 36% down the view (some 8 to 10 m), both

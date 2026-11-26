@@ -40,6 +40,14 @@ Tack's horse: a riding task (mount, walk, gallop, boost, dismount, ride to a mar
 ship: a sailing task at the harbour (board, set sail, steer, trim, fire at a target, open the held map, return).
 Taught as the wreck teaches: tracker steps ticked by doing them."
 
+After an audit of the work, asked whether the three house leaders the opening visits give a gift too, the owner
+answered: "Gift only from pledged house." Asked whether the stranger should name Overlook's places again, face to face
+with no camera pan, the owner answered: "Keep removed. Rework dialouge to be better. Quest already handles the
+tutorial". Asked whether the opening should teach the gifts the round does not use (the Mage's Vestige, the Vault
+Keeper's cloak, the Tailor's dye, the Postmaster's letter), the owner chose "Add steps", the option that read: "Add a
+step for each: open the Vestige at the Mage, take the cloak from the vault, wear the dye, take the letter. Claude
+writes them."
+
 ## What it settles
 
 - **The Weaponsmith gives the player a choice of one melee weapon and one ranged weapon** on the opening's round of
@@ -47,7 +55,10 @@ Taught as the wreck teaches: tracker steps ticked by doing them."
 - **Every keeper visited on the opening's round gives a gift** that fits what the keeper does, chosen by Claude
   ([[Quests]], [[Gear]]).
 - **The stranger gives no Aurem**, and her welcome no longer flies the camera to each stall: the round of the keepers
-  shows the way ([[Prologue]]).
+  shows the way ([[Prologue]]). She names no place; her words are reworked to read better ([[Prologue]]).
+- **Of the house leaders, only the leader of the house the player pledges to gives a gift** ([[Quests]], [[Factions]]).
+- **The opening teaches each gift**: a step each to open the Mage's Vestige, take the cloak from the vault, wear the
+  dye and take the letter, written by Claude ([[Quests]]).
 - **Each house road's step that gives its Art has a horde to fight**, the Art's abilities on no cooldown and fully
   charged. The wreck's Storm stays as it is ([[Quests]], [[Arts]]).
 - **The wreck's teaching is fixed**: the dodge lesson completes with any dodge that meets the blow, not only a perfect
