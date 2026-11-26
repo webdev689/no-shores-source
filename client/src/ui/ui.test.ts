@@ -480,6 +480,16 @@ test('a press held as it goes is let go', () => {
   assert.equal(ui.drag('gone'), null);
 });
 
+test('a press the browser takes back is let go, with no click and no drop', () => {
+  const { ui, step } = fakeInterface(400, 300);
+  const shown: Node = { children: [{ id: 'slider', press: true, width: 50, height: 20 }] };
+  step(shown);
+  step(shown, [{ kind: 'down', x: 5, y: 5, button: 0 }]);
+  assert.equal(ui.pressing('slider'), true);
+  step(shown, [{ kind: 'cancel' }]);
+  assert.deepEqual([ui.pressing('slider'), ui.drag('slider'), ui.clicked('slider')], [false, null, false]);
+});
+
 test('what the interface keeps by id goes with the ids, and a hidden field’s words go the frame it does', () => {
   const { ui, step } = fakeInterface(400, 300);
   for (let index = 0; index < 50; index++) {

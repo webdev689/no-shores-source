@@ -19,6 +19,7 @@ export const SITE_PAGES: readonly SitePage[] = [
   { id: 'home', folder: '', inBar: false, inFoot: true },
   { id: 'world', folder: 'world', inBar: true, inFoot: true },
   { id: 'game', folder: 'game', inBar: true, inFoot: true },
+  { id: 'app', folder: 'app', inBar: true, inFoot: true },
   { id: 'panel', folder: 'panel', inBar: false, inFoot: true },
   // served for any address with no page of its own, as `404.html` beside the pages (site.yml)
   { id: 'lost', folder: 'lost', inBar: false, inFoot: false },
@@ -31,6 +32,15 @@ export const SITE_PAGES: readonly SitePage[] = [
 export const OUTSIDE: Readonly<Record<string, string>> = {
   play: `${SITE_ORIGIN}/play/`,
   discord: 'https://discord.gg/RdDURveYus',
+};
+
+/** The desktop app's newest installers, by the names that never move, which the site's Worker answers (`worker.ts`). */
+export const DOWNLOADS: Readonly<Record<string, string>> = {
+  'windows': '/download/windows',
+  'mac-arm64': '/download/mac-arm64',
+  'mac-x64': '/download/mac-x64',
+  'linux-appimage': '/download/linux-appimage',
+  'linux-deb': '/download/linux-deb',
 };
 
 /** A page's own address, from the site's root. */
@@ -55,6 +65,8 @@ export function siteHref(
   const page = SITE_PAGES.find((candidate) => candidate.id === name);
   const tail = section ? `#${section}` : '';
   if (page) return { href: pagePath(page) + tail, outside: false };
+  const download = DOWNLOADS[name];
+  if (download) return { href: download, outside: false };
   const address = outside[name];
   if (address === undefined) return null;
   return { href: address && address + tail, outside: true };

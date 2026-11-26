@@ -9,8 +9,8 @@ import type { Sea } from './sea.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { drawnWhole, WHOLE_FRAMES } from '../standIns.ts';
 
-/** The room's answers (crates/room/src/sea_travel.rs `TravelRefused::number`): taken, and too soon after a course,
- *  which is asked again. */
+/** The room's answers (crates/room/src/sea_travel.rs `TravelRefused::number`): taken, and too soon after a course or
+ *  a travel, which is asked again. */
 const TAKEN = 0;
 const TOO_SOON = 6;
 /** How long the room may leave a travel unanswered before the page gives it up, seconds. */

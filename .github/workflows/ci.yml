@@ -97,6 +97,20 @@ jobs:
     uses: ./.github/workflows/rooms.yml
     secrets: inherit
 
+  # Releases the desktop app from main, once this same commit has passed the check, when what its installers are built
+  # from changed: the owner's yes to a merge covers it. Reading the deployments tells it what was released last.
+  desktop:
+    needs: check
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: read
+      deployments: read
+      checks: read
+    uses: ./.github/workflows/desktop.yml
+    with:
+      release: true
+    secrets: inherit
+
   # Deploys the Discord bot from main, once this same commit has passed the check, when its code changed: the owner's
   # yes to a merge covers it. It waits on the rooms' workflow, which deploys the accounts its service binding names.
   bot:

@@ -102,14 +102,17 @@ export function breachTrips(game: BreachGame) {
       }),
     /** Into the run the player was launched for, once the gate says it is open to them. */
     enterBreach: () => {
-      const [into, asker, enter] = [launched, game.foot()?.gear ?? null, game.intoBreach];
+      const [into, from, enter] = [launched, game.foot(), game.intoBreach];
+      const asker = from?.gear ?? null;
       if (!into || !asker?.gear || !enter) return;
       const before = asker.gear.answered;
       asker.ask({ kind: ASKS.enterBreach });
       void (async () => {
         for (let waited = 0; waited < ANSWER_WAIT_MS; waited += POLL_MS) {
           await wait(POLL_MS);
-          const now = game.foot()?.gear?.gear;
+          // Moved on meanwhile, the player hears no answer here: another room's is to another ask.
+          if (game.foot() !== from) return;
+          const now = from?.gear?.gear;
           if (!now || now.answered === before) continue;
           if (now.answer === INTO_BREACH)
             game.travel({ kind: 'enter', node: `${into.zone.id}--breach`, name: inSentence(into.plan.name) }, () =>

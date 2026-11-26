@@ -2,7 +2,7 @@
 // developer tools on F12 or Ctrl+Shift+I as in a browser, where a player hands over a report's lines. It loads the
 // game's address and, when that does not answer, asks to try again in a box the system draws, as the window has
 // nothing of its own to show. A page that stops is told and restarted at the player's word; one that stops answering
-// is offered a wait or a restart.
+// is offered a wait or a restart. The launcher's window opens the same way, at its own fixed size.
 import { BrowserWindow, type Input, dialog, screen } from 'electron';
 import path from 'node:path';
 import { ORIGIN_ARGUMENT } from './bridge.ts';
@@ -17,7 +17,7 @@ import {
   triesAgain,
   unreachableBox,
 } from './crashes.ts';
-import { LEAST_HEIGHT, LEAST_WIDTH, openingPlace } from './windowPlace.ts';
+import { LEAST_HEIGHT, LEAST_WIDTH, launcherPlace, openingPlace } from './windowPlace.ts';
 
 /** How long a window's moves and resizes settle before its place is kept. */
 const KEEP_AFTER_MS = 500;
@@ -32,6 +32,8 @@ export interface GameWindowSetup {
   /** The page's process went (`reason`, its exit code), for the log. */
   readonly gone: (reason: string, exitCode: number) => void;
   readonly quit: () => void;
+  /** The launcher's window: its own fixed size, centred, never maximized or whole-screen, keeping no place. */
+  readonly launcher?: boolean;
 }
 
 /** Shows `box` over `window`, shown first if it was not yet: a box over a window never shown is never seen on a Mac.
@@ -71,11 +73,13 @@ function shellKey(window: BrowserWindow, input: Input): boolean {
 /** Opens the game's window and loads the game. */
 export function openGameWindow(setup: GameWindowSetup): BrowserWindow {
   const screens = [screen.getPrimaryDisplay(), ...screen.getAllDisplays()].map((display) => display.workArea);
-  const place = openingPlace(setup.kept, screens);
+  const main = screens[0];
+  const place = setup.launcher ? main && launcherPlace(main) : openingPlace(setup.kept, screens);
   const window = new BrowserWindow({
     ...(place ? { x: place.x, y: place.y, width: place.width, height: place.height } : { width: 1600, height: 900 }),
-    minWidth: LEAST_WIDTH,
-    minHeight: LEAST_HEIGHT,
+    ...(setup.launcher
+      ? { resizable: false, maximizable: false, fullscreenable: false }
+      : { minWidth: LEAST_WIDTH, minHeight: LEAST_HEIGHT }),
     title: 'No Shores',
     backgroundColor: '#000000',
     show: false,
@@ -97,23 +101,28 @@ export function openGameWindow(setup: GameWindowSetup): BrowserWindow {
     if (place?.fullScreen) window.setFullScreen(true);
     window.show();
   });
-  let keepLater: NodeJS.Timeout | null = null;
-  const keepSoon = () => {
-    if (keepLater) clearTimeout(keepLater);
-    keepLater = setTimeout(() => !window.isDestroyed() && setup.keep(placeOf(window)), KEEP_AFTER_MS);
-  };
-  for (const event of ['resize', 'move', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'] as const)
-    window.on(event as 'resize', keepSoon);
-  window.on('close', () => {
-    if (keepLater) clearTimeout(keepLater);
-    setup.keep(placeOf(window));
-  });
+  if (!setup.launcher) keepPlace(window, setup.keep);
   window.webContents.on('before-input-event', (event, input) => {
     if (shellKey(window, input)) event.preventDefault();
   });
   watchPage(window, setup);
   void window.loadURL(setup.address).catch(() => undefined);
   return window;
+}
+
+/** Keeps the game window's place as it moves and resizes, settled, and as it closes. */
+function keepPlace(window: BrowserWindow, keep: (place: WindowPlace) => void): void {
+  let keepLater: NodeJS.Timeout | null = null;
+  const keepSoon = () => {
+    if (keepLater) clearTimeout(keepLater);
+    keepLater = setTimeout(() => !window.isDestroyed() && keep(placeOf(window)), KEEP_AFTER_MS);
+  };
+  for (const event of ['resize', 'move', 'maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'] as const)
+    window.on(event as 'resize', keepSoon);
+  window.on('close', () => {
+    if (keepLater) clearTimeout(keepLater);
+    keep(placeOf(window));
+  });
 }
 
 /** The page's own life: a load that failed, a process that went, a page that stopped answering. */

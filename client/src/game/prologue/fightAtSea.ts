@@ -299,6 +299,11 @@ export class StoryFight {
     this.combat.padFrame(pad, seconds);
   }
 
+  /** Lets go of every key held, as the window loses focus or the page is hidden (SeaCombat.letGo). */
+  letGo(): void {
+    this.combat.letGo();
+  }
+
   drag(right: number, down: number): void {
     this.combat.drag(right, down);
   }

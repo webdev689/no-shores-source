@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { LEAST_HEIGHT, LEAST_WIDTH, firstPlace, openingPlace } from './windowPlace.ts';
+import { LEAST_HEIGHT, LEAST_WIDTH, firstPlace, launcherPlace, openingPlace } from './windowPlace.ts';
 
 const fullHd = { x: 0, y: 0, width: 1920, height: 1040 };
 const right = { x: 1920, y: 0, width: 2560, height: 1400 };
@@ -47,4 +47,17 @@ test('a window kept smaller than the game lays out opens at the least', () => {
 
 test('with no screen known, the kept place stands', () => {
   assert.equal(openingPlace(null, []), null);
+});
+
+test("the launcher's window opens centred on the main screen at its own size, never larger than the screen", () => {
+  assert.deepEqual(launcherPlace(fullHd), {
+    x: 360,
+    y: 140,
+    width: 1200,
+    height: 760,
+    maximized: false,
+    fullScreen: false,
+  });
+  const small = launcherPlace({ x: 0, y: 0, width: 1024, height: 700 });
+  assert.deepEqual([small.x, small.y, small.width, small.height], [0, 0, 1024, 700]);
 });

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { type FightEvent, readFromRoom } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
-import { EVENT, edgeArrow, parryCue, threatens, wordOf } from './cues.ts';
+import { EVENT, edgeArrow, feltNow, parryCue, threatens, wordOf } from './cues.ts';
 
 const PLAYER = 1;
 const FOE = 40;
@@ -145,4 +145,22 @@ test("an Elite Dungeon's moments are numbered as the room numbers them on the wi
     kinds,
     told.map((name) => EVENT[name]),
   );
+});
+
+test("a hit is felt once: the player's own foreseen as it landed, and the room's word on it not again", () => {
+  const blow = (over: Partial<FightEvent>): FightEvent => ({
+    tick: 1n,
+    kind: EVENT.hit,
+    how: 1,
+    striker: 1,
+    defender: 7,
+    amount: 10,
+    stroke: 3,
+    ...over,
+  });
+  const foreseen = blow({ amount: 8 });
+  const felt = blow({ felt: true });
+  const other = blow({ striker: 7, defender: 1 });
+  assert.deepEqual(feltNow([foreseen], [felt, other]), [foreseen, other]);
+  assert.deepEqual(feltNow([], [blow({})]), [blow({})], 'one not foreseen is felt as the room tells it');
 });

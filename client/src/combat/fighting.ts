@@ -28,6 +28,7 @@ import { type FighterView, fighterView, glanceFrom, glanceView, trimmed } from '
 import type { AbilityState } from './abilityBar.ts';
 import { type AimRing, abilitiesAt } from './casting.ts';
 import { EVENT } from './cues.ts';
+import { Foresight } from './foresight.ts';
 import { SpellEffects } from './spellEffects.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
@@ -136,6 +137,8 @@ interface Asked {
   /** The room's tick it is expected to be stepped at: a Breach's run stands that tick's blocks under it. */
   readonly tick: number;
   fired: Fired | null;
+  /** Whether its tick's blow was foreseen to hit, so a replay foresees it no more. */
+  foresaw: boolean;
 }
 
 /**
@@ -206,6 +209,8 @@ export class Fighting {
   readonly foes = new Map<number, KeptFoe>();
   readonly others = new Map<number, SeenPlayer>();
   events: FightEvent[] = [];
+  /** The player's own hits foreseen, as the room would tell them. */
+  private foresight = new Foresight();
   /** The zone's public events as the room last sent them, and their events (begun, a shard set, won...) since the
    *  page last asked: kept apart from the fight's, which read every event as a blow. */
   private publicWord: PublicEvent | null = null;
@@ -242,6 +247,7 @@ export class Fighting {
     this.spells.clear();
     this.arrivals = [];
     this.struck = null;
+    this.foresight = new Foresight();
   }
 
   get player(): number {
@@ -372,6 +378,9 @@ export class Fighting {
       this.trimTaken = this.link.trim;
       this.fighter = trimmed(this.fighter, this.link.trim);
     }
+    // A room long unheard is sent nothing more until it speaks, and the player stands meanwhile: what a stalled
+    // network holds back reaches it at once, and past its budget it would send the player away.
+    if (this.link.quiet === true) return bodyOf(Array.from(this.fighter.subarray(0, BODY_FLOATS)));
     const { pitch } = this.buttons;
     const swing = this.latches.swing.tick(this.buttons.swing);
     // A swing asked takes the chain's next stroke that reaches from here, its first after a rest.
@@ -394,7 +403,7 @@ export class Fighting {
     const held = !allowed || allowed.length === 0 || allowed.includes(this.arms) ? this.arms : 0;
     const arms = this.bearing ? 0 : held;
     this.ahead += 1;
-    const asked: Asked = { intent, view, arms, tick: Number(this.seen) + this.ahead, fired: null };
+    const asked: Asked = { intent, view, arms, tick: Number(this.seen) + this.ahead, fired: null, foresaw: false };
     const sequence = this.prediction.next(asked);
     // Rejoining, the link sends nothing: what is asked then waits for the first input the new room takes.
     const holding = this.link.rejoining === true;
@@ -434,6 +443,7 @@ export class Fighting {
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
     this.fighter = predicted.fighter;
     asked.fired = predicted.fired;
+    asked.foresaw = this.foresight.foresee(predicted.hits, this.player, asked.tick);
     if (predicted.fired) {
       this.fired.push(predicted.fired);
       this.shotsLoosed += 1;
@@ -496,6 +506,8 @@ export class Fighting {
             this.shotsLoosed += 1;
           }
           asked.fired = replayed.fired ?? asked.fired;
+          // Likewise a hit foreseen only on the room's word.
+          if (!asked.foresaw) asked.foresaw = this.foresight.foresee(replayed.hits, this.player, asked.tick);
           return replayed.fighter;
         });
         continue;
@@ -525,7 +537,11 @@ export class Fighting {
     // the fight's.
     const fights = (kind: number) => kind >= EVENT.revived && kind <= EVENT.fellBack;
     const isPublic = (event: FightEvent) => event.kind >= EVENT.publicBegun && !fights(event.kind);
-    this.events = [...this.events, ...snapshot.events.filter((event) => !isPublic(event))].slice(-QUEUED_MOST);
+    this.foresight.expire(this.roomTick);
+    const told = snapshot.events
+      .filter((event) => !isPublic(event))
+      .map((event) => this.foresight.felt(event, this.player));
+    this.events = [...this.events, ...told].slice(-QUEUED_MOST);
     this.publicEvents = [...this.publicEvents, ...snapshot.events.filter(isPublic)].slice(-QUEUED_MOST);
     this.publicWord = snapshot.public ?? null;
     this.arrivals = snapshot.arrivals ?? [];
@@ -564,6 +580,11 @@ export class Fighting {
     const events = this.publicEvents;
     this.publicEvents = [];
     return this.holds ? events : [];
+  }
+
+  /** The player's own hits foreseen since the page last asked, handed over once (`Foresight`). */
+  takeForeseen(): FightEvent[] {
+    return this.foresight.take();
   }
 
   /** The events since the page last asked, handed over once. */

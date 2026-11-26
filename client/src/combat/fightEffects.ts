@@ -2,7 +2,7 @@ import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
-import { blowLook } from './cues.ts';
+import { blowLook, feltNow } from './cues.ts';
 import type { Fighting } from './fighting.ts';
 import { Flashes } from './flashes.ts';
 import { type Boosting, HoofDust } from './hoofDust.ts';
@@ -46,6 +46,8 @@ export class FightEffects {
   private mesh = new Float32Array(0);
   /** What the shots did as the marks were last laid: the player's own let go, and where any stopped. */
   shotsHeard: { readonly fired: readonly Fired[]; readonly struck: readonly Struck[] } = { fired: [], struck: [] };
+  /** The player's own hits foreseen as the events were last taken, felt with them (`feltNow`). */
+  foreseen: readonly FightEvent[] = [];
 
   constructor() {
     warmImpactPictures();
@@ -54,9 +56,11 @@ export class FightEffects {
 
   /** Takes the fight's events since the last frame, `seconds` long, and hands them back for the display and the
    *  blood: each struck figure flashes, each blow and clash lands where `fight` has its fighters, and each kill
-   *  shows; a foe killed in an element is handed to `dissolve` to dissolve in it. */
+   *  shows; a foe killed in an element is handed to `dissolve` to dissolve in it. The player's own hits foreseen
+   *  flash as they land, and the room's word on them flashes nothing more. */
   events(fight: Fighting, seconds: number, dissolve?: (id: number, look: GlowLook) => void): FightEvent[] {
     const events = fight.takeEvents();
+    this.foreseen = fight.takeForeseen();
     this.clock += seconds;
     this.sparks.update(seconds);
     const where = (id: number) => {
@@ -65,7 +69,8 @@ export class FightEffects {
     };
     const spellLook = (caster: number) => castLookOf(fight, caster);
     const healthMax = fight.own?.healthMax ?? 0;
-    this.flashes.update(events, seconds, { player: fight.player, look: this.ownLook, spellLook, healthMax, where });
+    const felt = feltNow(this.foreseen, events);
+    this.flashes.update(felt, seconds, { player: fight.player, look: this.ownLook, spellLook, healthMax, where });
     this.spellLooks.struck(events);
     const lookOf = (event: FightEvent) => blowLook(event, { player: fight.player, own: this.ownLook, spellLook });
     const healthOf = (id: number) => (id === fight.player ? healthMax : (fight.foes.get(id)?.view.healthMax ?? null));

@@ -138,6 +138,15 @@ export class CanvasEvents implements PageEvents {
       },
       first,
     );
+    addEventListener(
+      'pointercancel',
+      () => {
+        this.events.push({ kind: 'cancel' });
+        this.pressing = false;
+        this.wear();
+      },
+      first,
+    );
     canvas.addEventListener('wheel', (event) => {
       if (!locked()) this.events.push({ kind: 'wheel', ...placed(event), dy: event.deltaY });
     });

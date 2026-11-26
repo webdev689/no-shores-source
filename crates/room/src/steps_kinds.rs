@@ -389,6 +389,10 @@ impl Room {
         let Some(at) = self.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y]) else {
             return crate::asks::OUT_OF_REACH;
         };
+        // A fallen player uses nothing, as they find, gather and open nothing.
+        if !self.players.get(&player).is_some_and(crate::players::Player::living) {
+            return crate::asks::OUT_OF_REACH;
+        }
         let Some(Step { goal, kind: Stepping::Puzzle(lit), .. }) = self.quests.steps.get_mut(&player) else {
             return crate::asks::OUT_OF_REACH;
         };

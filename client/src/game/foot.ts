@@ -378,7 +378,7 @@ export class Foot {
     const publicEvents = fight.takePublicEvents();
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
-    feel.frame(events, fight.own, fight.player, seconds, new Set(fight.others.keys()));
+    feel.frame(events, fight.own, fight.player, seconds, new Set(fight.others.keys()), effects.foreseen);
     const firstPerson = walker.inFirstPerson;
     // The crosshair shows while a ranged weapon aims, and whenever the Ranged loadout is drawn in first person (a bow's
     // draw rings it); while it shows, the kick moves the view but never turns it, so it stays where shots land.
@@ -455,6 +455,7 @@ export class Foot {
       quiet: paused,
       fight,
       events,
+      foreseen: effects.foreseen,
       shots: effects.shotsHeard,
       eye: shot.eye,
       yaw: shot.yaw,

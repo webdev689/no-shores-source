@@ -1,4 +1,4 @@
-use super::{Problem, is_script};
+use super::{Problem, SCRIPT_EXTENSIONS, is_script};
 
 /// A part of the client and the parts it may import. Every folder directly under `client/src` is one, declared here
 /// on purpose when its first file arrives, so no folder becomes a layer unnoticed.
@@ -71,17 +71,29 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "cinema", may_import: &["water", "combat", "plus", "ui"] },
 ];
 
-/// The files a page or a worker starts from: the game's page, the game's worker the page starts, and the World
-/// Editor's page. The other files beside them (the GPU, the canvas size) are groundwork that any layer may import;
-/// an entry point sits above every layer and the groundwork, so nothing imports it but another entry point, as the
-/// page names the game's worker.
-const ENTRY_POINTS: [&str; 3] = ["client/src/main.ts", "client/src/gameWorker.ts", "client/src/editorPage.ts"];
+/// The files a page or a worker starts from: the game's page, the game's worker the page starts, the World Editor's
+/// page and the Test Ground's. The other files beside them (the GPU, the canvas size) are groundwork that any layer
+/// may import; an entry point sits above every layer and the groundwork, so nothing imports it but another entry
+/// point, as the page names the game's worker.
+const ENTRY_POINTS: [&str; 4] = [
+    "client/src/main.ts",
+    "client/src/gameWorker.ts",
+    "client/src/editorPage.ts",
+    "client/src/testground/testgroundMain.ts",
+];
 
-/// Whether `target`, resolved from an import, is an entry point: named with or without its extension or a query
-/// (`?worker`).
+/// A script's path without its extension, the TypeScript one or the JavaScript one an import may spell it with
+/// (`./main.js` is `./main.ts`).
+pub fn script_stem(path: &str) -> &str {
+    let ending = SCRIPT_EXTENSIONS.iter().find(|ending| path.ends_with(*ending));
+    ending.map_or(path, |ending| &path[..path.len() - ending.len()])
+}
+
+/// Whether `target`, resolved from an import, is an entry point: named with or without its extension, in either
+/// language's spelling, or with a query (`?worker`).
 fn is_entry_point(target: &str) -> bool {
     let named = target.split(['?', '#']).next().unwrap_or(target);
-    ENTRY_POINTS.iter().any(|entry| named == *entry || entry.strip_suffix(".ts") == Some(named))
+    ENTRY_POINTS.iter().any(|entry| script_stem(named) == script_stem(entry))
 }
 
 /// Node's modules, by the name before any subpath (`fs/promises` is `fs`'s): the game runs in the browser, so only
@@ -266,6 +278,8 @@ mod tests {
     #[test]
     fn nothing_imports_an_entry_point_but_the_page_starting_its_worker() {
         for (path, text) in [
+            ("client/src/editor/editorMain.ts", "import { fitCanvas } from '../main.js';\n"),
+            ("client/src/game/game.ts", "import '../testground/testgroundMain.ts';\n"),
             ("client/src/rules/landRules.ts", "import '../gameWorker.ts';\n"),
             ("client/src/game/game.ts", "const worker = new Worker(new URL('../gameWorker.ts', import.meta.url));\n"),
             ("client/src/game/game.ts", "import GameWorker from '../gameWorker.ts?worker';\n"),

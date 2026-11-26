@@ -504,11 +504,13 @@ export function startLandEditor(
   canvas.addEventListener('mousedown', (event) => {
     if (active && sailing && event.button === 0 && dragging) aim.down(0);
   });
-  canvas.addEventListener('pointerup', (event) => {
-    dragging = null;
-    aim.up(event.button);
-    strokes.end();
-  });
+  // A drag the system takes back (a pen or a touch) ends as one let go does, or the next hover would paint on.
+  for (const ended of ['pointerup', 'pointercancel'] as const)
+    canvas.addEventListener(ended, (event) => {
+      dragging = null;
+      aim.up(event.button);
+      strokes.end();
+    });
   canvas.addEventListener('dblclick', (event) => {
     if (!active || editor.takes(event.offsetX, event.offsetY)) return;
     tools.finish();
@@ -565,9 +567,7 @@ export function startLandEditor(
     }
     requestFrame();
   });
-  window.addEventListener('keyup', (event) => {
-    held.delete(event.key.toLowerCase());
-  });
+  window.addEventListener('keyup', (event) => held.delete(event.key.toLowerCase()));
   window.addEventListener('blur', () => held.clear());
 
   return Promise.resolve({

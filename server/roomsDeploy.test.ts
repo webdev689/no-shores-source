@@ -3,7 +3,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { test } from 'node:test';
 import numberedContent from '../tools/numbered.json' with { type: 'json' };
-import { REPO, codeOf, decided, filesUnder, refused, underCode, workflowText } from './deployReadyForTests.ts';
+import {
+  REPO,
+  codeOf,
+  decided,
+  filesUnder,
+  importedFrom,
+  refused,
+  underCode,
+  workflowText,
+} from './deployReadyForTests.ts';
 
 /** The paths the rooms are built from, as the workflow lists them. */
 const roomsCode = codeOf(workflowText('rooms.yml'));
@@ -67,16 +76,12 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
     .filter((path) => !path.startsWith('generated/'));
   // What the protocol's version hashes: the content numbered on the wire, and the list that names it.
   const numbered = [...numberedContent.paths, 'tools/numbered.json'];
-  // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates; the bot is
-  // its own Worker, deployed by its own workflow.
-  const imported = filesUnder('server')
-    .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts') && !path.startsWith('server/bot/'))
-    .flatMap((path) =>
-      [...readFileSync(new URL(path, repo), 'utf8').matchAll(/from '(\.[^']+)'/g)].map(([, file]) =>
-        normalize(join(dirname(path), file ?? '')),
-      ),
-    )
-    .filter((path) => !path.startsWith('server/') && !path.startsWith('target/'));
+  // What the Workers import from beyond their own folder, and what that imports in turn, but the room's WebAssembly
+  // built from the crates; the bot is its own Worker, deployed by its own workflow.
+  const workers = filesUnder('server').filter(
+    (path) => path.endsWith('.ts') && !path.endsWith('.test.ts') && !path.startsWith('server/bot/'),
+  );
+  const imported = importedFrom(workers).filter((path) => !path.startsWith('server/') && !path.startsWith('target/'));
   for (const [what, paths] of Object.entries({ included, baked, numbered, imported })) {
     assert.ok(paths.length > 0, `some ${what} found`);
     for (const path of paths) assert.ok(existsSync(new URL(path, repo)) && deployed(path), `${what}: ${path}`);

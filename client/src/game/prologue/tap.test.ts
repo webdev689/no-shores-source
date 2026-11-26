@@ -99,30 +99,18 @@ test('a window under the tap to start takes the focus only once it is tapped, so
   Object.assign(globalThis, { addEventListener: undefined, removeEventListener: undefined });
 });
 
-test('behind the launcher the tap to start stands but hears nothing, nor a pad button still held from Play', async () => {
-  const heard = page();
-  const { tapStanding } = await import('./tap.ts');
-  const pads = { pressed: false };
-  Object.assign(navigator, {
-    getGamepads: () => [{ buttons: [{ pressed: pads.pressed }] }],
-  });
+test('a pad button held as the title appears taps nothing; pressed anew, it taps', async () => {
+  page();
+  const pads = { pressed: true };
+  Object.assign(navigator, { getGamepads: () => [{ buttons: [{ pressed: pads.pressed }] }] });
   try {
     const stack = new Stack();
     const { ui } = fakeInterface();
-    let played: () => void = () => undefined;
-    const launcher = new Promise<void>((resolve) => (played = resolve));
     let tapped = false;
-    void tapToStart(stack, Promise.resolve(), undefined, launcher).then(() => (tapped = true));
-    assert.equal(tapStanding(), true, 'the windows under it still wait');
-    assert.equal(heard.size, 0, 'no key or press is heard while the launcher stands');
-    pads.pressed = true;
-    stack.node(ui);
-    played();
-    await settle();
-    assert.equal(heard.size, 1, 'once Play is pressed, the title hears the pointer and the keys (one listener)');
+    void tapToStart(stack, Promise.resolve()).then(() => (tapped = true));
     stack.node(ui);
     await settle();
-    assert.equal(tapped, false, "the pad's button held from Play taps nothing");
+    assert.equal(tapped, false, "a button held from before, as from the launcher's Play, taps nothing");
     pads.pressed = false;
     stack.node(ui);
     pads.pressed = true;

@@ -117,11 +117,12 @@ are in [[Crew]].
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
 - **What a fight pays.** A captain going down pays as twelve kills of a foe of its rank would, at its level, raised by
   the sea's tier (`reward_sinking`, `SINKING_KILLS`): its XP to the ship, its fitted modules and every officer aboard,
-  and its XP and Aurem to the player, their worn Art and their faction, as a kill pays them; nothing to a player
-  whose ship is four levels or more below it, as on land. A sea fight with the
-  sighting before it takes about as long as a dozen fights on foot, so a ship climbs as its player does on land and
-  the sea pays as a patrol ([[The Balance and Economy Pass as Claude Shapes It]]).
-  What floats holds ship salvage beside the ship's one kill's drop (`flotsam::Held`).
+  and its XP and Aurem to the player, their worn Art and their faction, as a kill pays them; nothing to a player whose
+  ship is four levels or more below it, as on land. A player fighting on a boarded deck meanwhile is paid on the deck
+  room's character too, which is theirs as they step off (`pay_boarders`), as is the guild bounty it counts. A sea fight
+  with the sighting before it takes about as long as a dozen fights on foot, so a ship climbs as its player does on land
+  and the sea pays as a patrol ([[The Balance and Economy Pass as Claude Shapes It]]). What floats holds ship salvage
+  beside the ship's one kill's drop (`flotsam::Held`).
 
 ## In the browser
 

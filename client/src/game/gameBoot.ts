@@ -18,7 +18,6 @@ import { FigureView } from './figureView.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { arriving, type Flow } from './flow.ts';
 import { StoryHost } from './prologue/host.ts';
-import { launcherWanted, openLauncher } from './launcher/launcher.ts';
 import { wakeOnGesture } from './uiSounds.ts';
 import { openForge } from './forge.ts';
 import { Hud } from './hud.ts';
@@ -54,13 +53,8 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
   // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
   hud.veil(flow.mode === 'loading' ? flow.words : null);
+  const story = flow.mode === 'story' ? new StoryHost(stack, canvas, () => hud.controls.open) : null;
   const base = import.meta.env.BASE_URL;
-  // In the desktop app the story's title stands behind the launcher, once a run, until Play.
-  const launcher =
-    flow.mode === 'story' && launcherWanted(sessionStorage)
-      ? openLauncher(stack, { local: localStorage, session: sessionStorage }, base)
-      : undefined;
-  const story = flow.mode === 'story' ? new StoryHost(stack, canvas, () => hud.controls.open, launcher) : null;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
   if (link) void keepBinds(link);
