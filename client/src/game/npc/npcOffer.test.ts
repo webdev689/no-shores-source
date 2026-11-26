@@ -5,7 +5,7 @@ import { state } from '../../network/gearForTests.ts';
 import type { UiEvent } from '../../ui/ui.ts';
 import { fakeInterface } from '../../ui/uiForTests.ts';
 import { Holds } from '../gearHold.ts';
-import { sizesOf } from '../gearNodes.ts';
+import { FOCUS, sizesOf } from '../gearNodes.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { COUNTERS, QUESTS } from '../quests/questBook.ts';
 import { npcOpened, npcPage } from './npcScreen.ts';
@@ -21,8 +21,12 @@ const QUEST = { quest: OPENING, task: ROUND, counts: [] as number[], done: [0, 0
 
 /** A keeper's screen drawn frame by frame, by default the Weaponsmith's offering the round (her supplies on sale),
  *  with every ask it made. */
-function screenOf(kind: 'weaponsmith' | 'armorsmith' = 'weaponsmith', quest = { ...QUEST, offered: WEAPONSMITH }) {
-  const { ui, step } = fakeInterface(1280, 720);
+function screenOf(
+  kind: 'weaponsmith' | 'armorsmith' = 'weaponsmith',
+  quest = { ...QUEST, offered: WEAPONSMITH },
+  [across, down] = [1280, 720],
+) {
+  const { ui, step } = fakeInterface(across, down);
   const asked: GearAsk[] = [];
   const cards: string[] = [];
   const holds = new Holds(() => 0);
@@ -31,8 +35,8 @@ function screenOf(kind: 'weaponsmith' | 'armorsmith' = 'weaponsmith', quest = { 
     ({
       ui,
       gear,
-      sizes: sizesOf(1280, 720, 1),
-      room: { width: 1280, height: 600 },
+      sizes: sizesOf(across, down, 1),
+      room: { width: across, height: down - 120 },
       holds,
       ask: (ask: GearAsk) => asked.push(ask),
       card: (id: string) => cards.push(id),
@@ -88,6 +92,20 @@ test('Acquire asks the room for the quest at this keeper once until it answers, 
   assert.ok(ui.focusedId?.startsWith('npc-'), `the focus on a ware beside it, not lost (${ui.focusedId})`);
 });
 
+test('Acquire is ringed and lit while the keys hold the focus on it, as every other press on the screen is', () => {
+  const { ui, frame } = screenOf();
+  const acquire = () => ui.laid.find((laid) => laid.node.id === 'npc-acquire')?.node;
+  assert.equal(acquire()?.outline, undefined, 'no ring while no key has moved the focus');
+  frame([{ kind: 'key', key: 'ArrowRight' }]);
+  assert.notEqual(ui.focusedId, 'npc-acquire', 'the keys moved on to a ware');
+  frame([{ kind: 'key', key: 'ArrowLeft' }]);
+  frame();
+  assert.equal(ui.focusedId, 'npc-acquire', 'and back');
+  assert.ok(ui.keyFocused);
+  assert.equal(acquire()?.outline?.colour, FOCUS, 'ringed in the focus colour');
+  assert.ok(acquire()?.fill, 'lit');
+});
+
 test('an acquired quest steps aside for the wares: its small gold tile and name, its card on the pointer, keys or a tap', () => {
   const { ui, cards, frame } = screenOf('weaponsmith', { ...QUEST, counts: [1], offered: 0 });
   assert.equal(ui.boxOf('npc-acquire'), null, 'nothing to acquire');
@@ -120,6 +138,20 @@ test('while a quest is offered its card leads and the wares stand beside it, in 
   assert.ok(card && ware, 'Acquire and a ware are laid');
   assert.ok(ware.y + ware.height <= 720, `the first ware is in sight (${ware.y + ware.height} px of 720)`);
   assert.ok(ware.x >= card.x + card.width, 'beside the card, right of its Acquire at its right edge');
+});
+
+test("an acquired quest's tile and the crest share the body's top row only where both fit: nothing runs past it", () => {
+  for (const across of [600, 640, 700, 760, 800, 900, 1024, 1280, 1920]) {
+    const down = Math.round(across * 0.6);
+    const { ui } = screenOf('weaponsmith', { ...QUEST, counts: [1], offered: 0 }, [across, down]);
+    const tile = ui.boxOf('npc-quest');
+    assert.ok(tile, `${across}: the acquired quest's tile`);
+    for (const laid of ui.laid)
+      assert.ok(
+        laid.box.x + laid.box.width <= across,
+        `${across}: ${laid.node.id ?? laid.node.label ?? JSON.stringify(laid.node.text?.words ?? '')} ends at ${laid.box.x + laid.box.width}`,
+      );
+  }
 });
 
 test("an acquired quest's tile keeps the focus from being lost when it is done, and its card shuts for the next", () => {

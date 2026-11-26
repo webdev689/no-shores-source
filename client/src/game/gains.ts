@@ -248,7 +248,9 @@ const NOTICED_RARITY = 3;
 export function lootNotices(gains: readonly Gain[]): Notice[] {
   return gains.flatMap((gain): Notice[] => {
     const rarity = RARITIES[gain.rarity ?? -1];
-    if (!rarity || (gain.rarity ?? 0) < NOTICED_RARITY || gain.compact) return [];
+    // A piece or a Vestige found; a cosmetic or a ship's dress bought at its rarity is no find.
+    const found = gain.key.startsWith('item-') || gain.key.startsWith('vestige-');
+    if (!rarity || !found || (gain.rarity ?? 0) < NOTICED_RARITY || gain.compact) return [];
     // A piece the forge draws has no glyph: its rarity's crystal stands for it.
     const crystal = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" shape-rendering="crispEdges"><path fill="${rarity.shade}" d="M3 0h2v1h1v1h1v1h1v2H7v1H6v1H5v1H3V7H2V6H1V5H0V3h1V2h1V1h1z"/><path fill="${rarity.colour}" d="M3 1h2v1h1v1h1v2H6v1H5v1H3V6H2V5H1V3h1V2h1z"/><path fill="${rarity.lit}" d="M3 2h1v1H3zM2 3h1v1H2z"/></svg>`;
     const svg = gain.icon ?? (gain.glyph === 'item' ? crystal : glyphSvg(gain.glyph, gain.rarity ?? 0, gain.tint));

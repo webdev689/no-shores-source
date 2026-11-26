@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Node, Span } from '../../ui/node.ts';
-import { hush, keeperSays, sayInScreen, screenOpened, speechBand } from './npcSpeech.ts';
+import { hush, keeperSays, keeperSpeaking, sayInScreen, screenOpened, speechBand } from './npcSpeech.ts';
 
 /** The band's line: what shows, and what keeps its room unseen. */
 function lineOf(band: Node): { shown: string; unseen: string } {
@@ -28,6 +28,35 @@ test('the keeper’s line types into the band, keeping its room, and is heard on
     assert.deepEqual(heard, [whole.shown], 'the whole line is heard, once');
     hush();
     assert.equal(lineOf(speechBand('armorsmith', '#c08a3e', 1, 400)).shown, '', 'hushed as the screen closes');
+  } finally {
+    [holder['requestAnimationFrame'], holder['document']] = [wasFrame, wasDocument];
+  }
+});
+
+test('the keeper is speaking while their line types and a while once typed, as the dialogue box holds a line', () => {
+  const holder = globalThis as unknown as Record<string, unknown>;
+  const [wasFrame, wasDocument] = [holder['requestAnimationFrame'], holder['document']];
+  const frames: FrameRequestCallback[] = [];
+  holder['requestAnimationFrame'] = (callback: FrameRequestCallback) => frames.push(callback);
+  holder['document'] = { ariaNotify: () => undefined };
+  try {
+    screenOpened('armorsmith');
+    assert.equal(keeperSpeaking(), false, 'nothing said yet');
+    keeperSays('armorsmith', 'Hello');
+    assert.equal(keeperSpeaking(), true, 'as the line types');
+    let clock = performance.now();
+    let typed = 0;
+    for (let nth = 1; frames.length > 0 && nth < 1_000; nth++) {
+      frames.shift()?.((clock += 100));
+      if (typed === 0 && lineOf(speechBand('armorsmith', '#c08a3e', 1, 400)).unseen === '') typed = nth;
+    }
+    assert.ok(typed > 0, 'the line was typed whole');
+    assert.equal(keeperSpeaking(), false, 'its while once typed past: the line stands, no longer spoken');
+    assert.notEqual(lineOf(speechBand('armorsmith', '#c08a3e', 1, 400)).shown, '', 'still in the band');
+    keeperSays('armorsmith', 'Hello');
+    hush();
+    assert.equal(keeperSpeaking(), false, 'hushed as the screen closes');
+    while (frames.length > 0) frames.shift()?.((clock += 100));
   } finally {
     [holder['requestAnimationFrame'], holder['document']] = [wasFrame, wasDocument];
   }

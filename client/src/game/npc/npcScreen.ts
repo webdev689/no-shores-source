@@ -281,7 +281,7 @@ function offerNode(
   const steps = trackedOf({ ...gear.quest, offered: 0 })?.steps ?? [];
   const keeper = nameOf(keeperOf(kind)?.speaker ?? '');
   const cardWidth = narrow ? width : Math.min(text > 1 ? 600 : 440, Math.floor(width * 0.55));
-  const card = questCardNode({ ...offered, steps, keeper }, cardWidth, text, ACQUIRE);
+  const card = questCardNode({ ...offered, steps, keeper }, cardWidth, text, ACQUIRE, ui);
   if (offered.acquired) {
     // The tile's press turns its card first, so the card follows on the frame it was pressed.
     const tile = acquiredTile(context, offered, card);
@@ -389,6 +389,10 @@ export function keeperScreen(
     FIGURE_KEPT,
   );
   const offer = offerNode(context, kind, width, stage.narrow, ask, body);
+  // An acquired quest's tile shares the top row only while the crest beside it keeps its least width (its emblem, a
+  // bar and the purse); else it stands under the crest, as on a phone.
+  const [crestMost, crestLeast, tileRoom] = text > 1 ? [760, 280, 420] : [520, 200, 300];
+  const beside = offer.tile !== null && !stage.narrow && width - tileRoom >= crestLeast;
   return keeperFrame(room, text, {
     glow,
     figure,
@@ -397,13 +401,9 @@ export function keeperScreen(
     about: keeper?.words ?? '',
     speech: speechBand(kind, glow, stage.narrow ? 1 : text, stage.width - (stage.narrow ? 32 : text > 1 ? 96 : 64)),
     // Narrower beside an acquired quest's tile, so the two share the row.
-    crest: crestOf(
-      context,
-      kind,
-      glow,
-      Math.min(width - (offer.tile && !stage.narrow ? (text > 1 ? 420 : 300) : 0), text > 1 ? 760 : 520),
-    ),
+    crest: crestOf(context, kind, glow, Math.min(width - (beside ? tileRoom : 0), crestMost)),
     quest: offer.tile,
+    questUnder: !beside,
     body: [
       {
         id: ROWS,

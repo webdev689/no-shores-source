@@ -250,15 +250,23 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   0.72, the screen showing through, its line still 4.5:1 over white); in its middle a round icon in a cyan ring (a
   keeper's mark, an Art's emblem, a find's glyph or its rarity's crystal), a bold title over a lighter line, the key to
   press on a keycap where there is one, and at the far right that key and what it opens ("Open Character"), in the
-  line's ink, since a dimmer one reads under 4.5:1 over a white scene through the band. A line with no key wraps inside
-  the view on a phone. They come for a keeper's gift, a road's reward (an Art, a Tenet, a fragment to choose, or its
-  Aurem), a quest acquired, a step done, a quest done, and a Legendary or Atheric piece or Vestige found (the rest stand
-  in the Acquired feed); the armour's gift tells the Character key, the horse's the Mount key. One stands at a time, in
-  the order they came, a repeat merged with the one waiting, at most 12 waiting: 4.5 s each, 6.5 s with a key, rising 12
-  px and brightening in over 0.25 s and fading over 0.35 s (still with less motion asked for). None stands while a named
-  speaker's words are up in the dialogue box, its while held. The pointer passes through it. Each is read to a screen
-  reader as it stands, its key named. On a phone (under 600 px) its words a step smaller and the far right's hint left
-  out. DFO's messages stay toasts, standing over the dialogue box.
+  line's ink, since a dimmer one reads under 4.5:1 over a white scene through the band. The key is the one bound on the
+  keys or the pad played last (the pad's button drawn as the pad's, the Character key Start, the Mount key Up); where
+  that control has none (the pad opens no inventory) the sentence asking for it and the far right's hint are left out.
+  The line wraps inside the view, a word at a time, its keycap among the words. The far right's hint stands in the
+  band's row with an empty match at the left, so the middle stays centred where both fit and moves left of it, never
+  under it, where they do not, at the band's top, clear of a window's footer presses in the screen's bottom 77 px (the
+  menu's Close); under 900 px it is left out, the line naming the key already. They come for a keeper's
+  gift, a road's reward (an Art, a Tenet, a fragment to choose, or its Aurem), a quest acquired, a step done, a quest
+  done, and a Legendary or Atheric piece or Vestige found (the rest, a Legendary dye, barding or ship's dress bought
+  among them, stand in the Acquired feed); the armour's gift tells the Character key, the horse's the Mount key. One
+  stands at a time, in the order they came, a repeat merged with the one waiting, at most 12 waiting: 4.5 s each, 6.5 s
+  with a key, rising 12 px and brightening in over 0.25 s and fading over 0.35 s (still with less motion asked for).
+  None stands while a named speaker's words are up in the dialogue box or in a keeper's screen (a line typing there and
+  1.6 s once typed, or a scene being said: `keeperSpeaking`), its while held; one standing as they begin fades out over
+  0.35 s and fades back in over 0.25 s once they end. The pointer passes through it. Each is read to a screen reader as
+  it stands, its key named. On a phone (under 600 px) its words a step smaller. DFO's messages stay toasts, standing
+  over the dialogue box.
 - **Announced.** A toast's words, a notice's, each press's label as focus reaches it (by the keys or the pad, or given by a
   screen), and a slider's value as the keys step it go to a screen reader through `document.ariaNotify` where the
   browser has it.
@@ -1484,11 +1492,13 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   it through.", under them its tile framed in gold (a house's emblem, or the keeper's mark), and under that the keeper's
   wares, so they show beside the card while it is offered. On a phone the card takes the column's width, the tile and
   words stand under it and the wares under them. Acquire, clicked or pressed with Enter or the pad's A, asks the room
-  (ask 85); it takes the focus as the card first shows. Once acquired the card steps aside and the wares lead: the quest
-  stands as its small tile framed in gold with its name and "Acquired", left of the crest (the crest narrower beside
-  it), or under the crest on a phone, until the quest is done. Its card, its boxes ticking, floats beside the tile where
-  the pointer rests on it or the keys focus it; a tap or a press (Enter, the pad's A) opens it at the head of the rows
-  instead, as a phone has no pointer, and a second closes it.
+  (ask 85); it takes the focus as the card first shows, and is lit under the pointer and the keys' focus and ringed by
+  the keys', as the screen's other presses are. Once acquired the card steps aside and the wares lead: the quest stands
+  as its small tile framed in gold with its name and "Acquired", left of the crest (the crest narrower beside it), or
+  under the crest on a phone or wherever the crest beside it would be squeezed under its least (200 px, 280 at the
+  larger words: a room under about 910 px, 1,290 at the larger words), until the quest is done. Its card, its boxes
+  ticking, floats beside the tile where the pointer rests on it or the keys focus it; a tap or a press (Enter, the pad's
+  A) opens it at the head of the rows instead, as a phone has no pointer, and a second closes it.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: SUPPLIES, the Ammo
   crate with how many of the five are carried, then WEAPONS, the day's six, then TO START, every Melee kind and every
