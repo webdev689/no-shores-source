@@ -533,8 +533,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   to sail. Its head names the ship (its own name, else its class) beside its class, over the switch between the
   Oversea and the Sealevel views (V). Under it: a compass, north up, its brass needle the ship's heading and a pale
   arrow the way the wind blows, with the heading in degrees and the wind ("Wind 6 m/s from the ENE", or "Calm");
-  the voyage (under way, hove to or at anchor; its pace, and while eased "×1 (×200 set) · true speed while watched";
-  its speed in m/s; where it is bound when it makes for a landing; a bar of the way sailed; its line); and the ship
+  the voyage (under way, hove to or at anchor; its pace, and while eased "×1 (×200 set) · true speed while watched",
+  or held near a hostile ship the room's; its speed in m/s at it; where it is bound when it makes for a landing; a bar
+  of the way sailed; its line); and the ship
   (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
   Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
   Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)
@@ -655,10 +656,10 @@ pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the hel
 sea.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
-to dock there; anywhere else, to go ashore. Yes within reach lands at once; out of reach the ship makes for the harbour
-(or the coast clicked) at ×60 and lands once it is within reach, which the console names ("Bound for Overlook's harbour,
-to dock"). Another course given meanwhile (a click, W, a chase) lets the landing go; a stop keeps it with the voyage, to
-be resumed.
+to dock there; anywhere else, to go ashore. Yes within reach lands at once, or once nothing else holds the player
+(another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked) at ×60
+and lands once it is within reach, which the console names ("Bound for Overlook's harbour, to dock"). Another course
+given meanwhile (a click, W, a chase) or a fight lets the landing go; a stop keeps it with the voyage, to be resumed.
 
 Landing flies the view up over the island the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s, framed on
 the nodes of its side, the city's social space among them when docking; the ship heaves to, its voyage kept to be
@@ -672,8 +673,10 @@ card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist'
 the lit tile does (the one under the pointer or the focus, else the first place's). Escape, or Back to the sea, flies
 back down.
 
-A sea island's landing sails round to its anchorage and the player walks ashore on its beach, into its room
-([[Islands]], "On the page"). A player washed up on a found island walks ashore there.
+A sea island's landing sails for its offing, out on the bearing it is landed on, planned on water as any route and bent
+round every island in sight, then in to its anchorage, which the console names ("Bound for a cove, to go ashore"); the
+same courses and a fight let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]],
+"On the page"). A player washed up on a found island walks ashore there.
 
 ## Rooms
 

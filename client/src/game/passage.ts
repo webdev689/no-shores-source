@@ -124,6 +124,12 @@ export class Passage {
     return this.sailed;
   }
 
+  /** The pace the room holds it to under the pace it is sailed at, a hostile ship near; none while it is not held. */
+  get heldTo(): number | null {
+    const settled = this.voyage ? (this.room?.settledShip ?? null) : null;
+    return settled && settled.pace > 0 && settled.pace < this.sailed ? settled.pace : null;
+  }
+
   /** How far along a voyage to a point it has sailed, a share; none straight on or at rest. */
   get share(): number | null {
     return this.voyage && !this.straight ? Math.min(1, this.travelled / Math.max(1, this.voyage.lengthM)) : null;
@@ -165,6 +171,15 @@ export class Passage {
     this.voyage = voyageOf(detour(route.points, this.keepClear()));
     [this.destination, this.travelled, this.straight, this.set] = [point, 0, false, pace];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
+  }
+
+  /** Plans a voyage to `point` as `sailTo` does, then sets sail through it and on straight through `after`, at a
+   *  click's pace: the way in to an island's anchorage from its offing. Whether it set sail; if not, it says why. */
+  sailVia(point: Point2, after: readonly Point2[]): boolean {
+    const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    if (!route.ok) this.said = REFUSED[route.reason];
+    else this.sailAlong([...detour(route.points, this.keepClear()).slice(1), ...after]);
+    return route.ok;
   }
 
   /** Asks the room to travel the voyage still ahead: to take the ship to the other waters it ends in (`SeaTravel`).

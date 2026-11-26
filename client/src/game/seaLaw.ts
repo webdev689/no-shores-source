@@ -235,7 +235,8 @@ export const heldNote = (sailed: SailedPace, room: RoomWord | null): string =>
 /** The world's own time, a pace of 1 (crates/room/src/sea.rs `WORLD_PACE`): a ship is sailed at it while watched close,
  *  so it is seen at its true speed. */
 export const WORLD_PACE = 1;
-/** The pace a ship is sailed at: its dial's step, or the world's own time while the view is close on it. */
+/** The pace a ship is sailed at: a step of the ladder, eased toward the pace its voyage was set at, or the world's own
+ *  time while the view is close on it. */
 export type SailedPace = Pace | typeof WORLD_PACE;
 /** The ladder the sailed pace eases along, DFO's steps down to the world's own time, and the seconds a step takes. */
 const EASED_LADDER: readonly SailedPace[] = [WORLD_PACE, ...PACE_STEPS];

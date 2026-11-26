@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
 import { byId, fakeInterface } from '../ui/uiForTests.ts';
-import type { Isles } from './isles.ts';
+import type { IsleAt } from './isleLaw.ts';
+import type { IsleHeld, Isles } from './isles.ts';
 import type { LandingAim } from './landingAsk.ts';
 import type { Sea } from './sea.ts';
 import type { Landfall } from './seaLaw.ts';
@@ -10,7 +11,21 @@ import { aimOf, clickContext, landingAskNode, SeaLandings } from './seaLandings.
 
 const HARBOUR: Point2 = [1_000, -2_000];
 const PLAN = { id: 'overlook', name: 'Overlook', harbour: HARBOUR, ruined: false };
+/** The landmass's coast: a square 100 km a side from the world's corner. */
+const COAST: Point2[] = [
+  [0, 0],
+  [100_000, 0],
+  [100_000, 100_000],
+  [0, 100_000],
+];
 const NO_ISLES = { all: () => [] } as unknown as Isles;
+/** A cove out at sea, landed on from the north: its anchorage 150 m north of its middle. */
+const COVE: IsleAt = {
+  seen: { id: 3, seed: '255', at: [0, -50_000], kind: 'cove', continent: 3, found: true },
+  built: { reach: 250, anchorage: [0, -50_150], landing: 0 },
+};
+const COVE_HELD = { seen: COVE.seen } as unknown as IsleHeld;
+const WITH_COVE = { all: () => [COVE], byId: (id: number) => (id === 3 ? COVE_HELD : null) } as unknown as Isles;
 
 /** A sea the landings drive: what it was asked, and what it offers. */
 function seaOf() {
@@ -20,6 +35,7 @@ function seaOf() {
     landfall: null as Landfall,
     position: [0, 0] as Point2,
     bound: null as Point2 | null,
+    course: [] as Point2[],
     fight: null as object | null,
     busy: false,
     view: { kind: 'sail' },
@@ -27,22 +43,30 @@ function seaOf() {
       asked.push(`sail ${point.join(',')}`);
       sea.bound = point;
     },
+    sailIn: (offing: Point2, anchorage: Point2) => {
+      asked.push(`in ${anchorage.join(',')}`);
+      [sea.bound, sea.course] = [anchorage, [sea.position, offing, anchorage]];
+      return true;
+    },
     sailToMark: (id: string) => void asked.push(`chase ${id}`),
   };
   return { sea, asked };
 }
 
-function landingsOf(ruined = false) {
+/** The landings over `seaOf`'s sea, off a port city's island (a ruined one's), among `isles`; `hold` says whether
+ *  something else holds the player, and the game lands only while nothing does. */
+function landingsOf(ruined = false, isles = NO_ISLES) {
   const { sea, asked } = seaOf();
   const landed: LandingAim[] = [];
+  const held = { now: false };
   const landings = new SeaLandings({
     sea: () => sea as unknown as Sea,
-    landmass: () => ({ id: 'continent-1', plan: { ...PLAN, ruined } }) as never,
-    isles: NO_ISLES,
-    free: () => true,
-    land: (aim) => void landed.push(aim),
+    landmass: () => ({ id: 'continent-1', plan: { ...PLAN, ruined }, outline: COAST }) as never,
+    isles,
+    free: () => !held.now,
+    land: (aim) => void (!held.now && landed.push(aim)),
   });
-  return { landings, sea, asked, landed };
+  return { landings, sea, asked, landed, hold: (holding: boolean) => (held.now = holding) };
 }
 
 test('a click on the sea sails at once; on the island it asks first, and no answer leaves the ship as it was', () => {
@@ -115,7 +139,7 @@ test('the island a click is judged against: its living port, its name, and a sea
   assert.equal(aimOf({ kind: 'isle', id: 3, words: 'the cove' }, here, [0, 0])?.kind, 'isle');
 });
 
-test('the confirmation asks in brass and answers yes with Enter’s press and no with Cancel’s', () => {
+test('the confirmation asks in brass; its yes’s press answers yes, and Cancel’s no', () => {
   const { ui, step } = fakeInterface(1280, 720);
   const answers: boolean[] = [];
   const asking = { aim: { kind: 'dock', port: 'Overlook', harbour: HARBOUR } as const, near: false };
@@ -125,15 +149,19 @@ test('the confirmation asks in brass and answers yes with Enter’s press and no
   assert.equal(card.id, 'sea:ask');
   assert.ok(byId(card, 'sea:ask-yes') && byId(card, 'sea:ask-no'));
   assert.match(card.label ?? '', /^Dock at Overlook\? Your ship will make for/);
-  const box = ui.boxOf('sea:ask-yes');
-  assert.ok(box);
-  const spot = { x: box.x + 4, y: box.y + 4 };
-  step(root, [
-    { kind: 'pointer', ...spot },
-    { kind: 'down', ...spot, button: 0 },
-    { kind: 'up', ...spot, button: 0 },
-  ]);
-  assert.deepEqual(answers, [true]);
+  const press = (id: string) => {
+    const box = ui.boxOf(id);
+    assert.ok(box, id);
+    const spot = { x: box.x + 4, y: box.y + 4 };
+    step(root, [
+      { kind: 'pointer', ...spot },
+      { kind: 'down', ...spot, button: 0 },
+      { kind: 'up', ...spot, button: 0 },
+    ]);
+  };
+  press('sea:ask-yes');
+  press('sea:ask-no');
+  assert.deepEqual(answers, [true, false]);
 });
 
 test('a question still standing is put by once the player is no longer at sea', () => {
@@ -141,4 +169,76 @@ test('a question still standing is put by once the player is no longer at sea', 
   landings.click({ kind: 'land', point: [400, 900, 20] });
   landings.frame(false);
   assert.equal(landings.asking, null, 'walked ashore on an island, or taken elsewhere');
+});
+
+test('yes to go ashore on a coast clicked far inland makes for the coast nearest it, not the point clicked', () => {
+  const { landings, asked } = landingsOf(true);
+  landings.click({ kind: 'land', point: [50_000, 30_000, 200] });
+  assert.equal(landings.asking?.aim.kind, 'ashore');
+  landings.answer(true);
+  assert.deepEqual(asked, ['sail 50000,0']);
+  assert.equal(landings.making?.kind, 'ashore', 'made for');
+});
+
+test('yes within reach while something else holds the player keeps the landing, made once nothing does', () => {
+  const { landings, sea, landed, hold } = landingsOf();
+  sea.landfall = { kind: 'dock', port: 'Overlook' };
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  assert.equal(landings.asking?.near, true);
+  hold(true);
+  landings.answer(true);
+  assert.deepEqual(landed, [], 'not while another landmass opens');
+  assert.equal(landings.making?.kind, 'dock', 'kept, made for');
+  landings.frame();
+  assert.deepEqual(landed, []);
+  hold(false);
+  landings.frame();
+  assert.deepEqual(
+    landed.map((aim) => aim.kind),
+    ['dock'],
+  );
+});
+
+test('yes to a sea island makes for its anchorage, named as made for, and lands once the ship lies there', () => {
+  const { landings, sea, asked } = landingsOf(false, WITH_COVE);
+  landings.click({ kind: 'sea', point: [0, -50_500, 0] });
+  assert.equal(landings.asking?.aim.kind, 'isle');
+  landings.answer(true);
+  assert.deepEqual(asked, ['in 0,-50150']);
+  assert.deepEqual(landings.making, { kind: 'isle', id: 3, words: 'a cove' });
+  landings.frame();
+  assert.equal(landings.anchored(), null, 'under way to it');
+  [sea.position, sea.course] = [[0, -50_150], []];
+  assert.equal(landings.anchored(), COVE_HELD);
+  assert.equal(landings.making, null, 'taken once');
+});
+
+test('a fight lets a landing made for go, on a sea island as on a coast; the ship never lands of itself after it', () => {
+  const { landings, sea, landed } = landingsOf(false, WITH_COVE);
+  landings.click({ kind: 'sea', point: [0, -50_500, 0] });
+  landings.answer(true);
+  sea.fight = {};
+  landings.frame();
+  assert.equal(landings.making, null, 'let go');
+  sea.fight = null;
+  [sea.position, sea.course] = [[0, -50_150], []];
+  landings.frame();
+  assert.equal(landings.anchored(), null, 'anchored after the fight, it stays aboard');
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  sea.fight = {};
+  landings.frame();
+  sea.fight = null;
+  sea.landfall = { kind: 'dock', port: 'Overlook' };
+  landings.frame();
+  assert.deepEqual(landed, [], 'nor docks');
+});
+
+test('with nothing made for, what the sea offers is never asked of it each frame', () => {
+  const { landings, sea } = landingsOf();
+  let read = 0;
+  Object.defineProperty(sea, 'landfall', { get: () => (read++, null) });
+  landings.frame();
+  landings.frame();
+  assert.equal(read, 0);
 });

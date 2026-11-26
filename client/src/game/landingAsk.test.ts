@@ -49,16 +49,19 @@ test('a click that meets a sea island’s own ground asks to go ashore on it, ne
   assert.deepEqual(clickAtSea({ kind: 'land', point: [60_000, 0, 40] }, 'oversea', RUINED), isle);
 });
 
-test('the confirmation says what yes does: lands at once within reach, else makes for it at ×60', () => {
+test('the confirmation says what yes does: lands at once within reach, else makes for it, at no pace a view eases', () => {
   assert.deepEqual(askWords(DOCK, false), {
     title: 'Dock at Overlook?',
-    line: "Your ship will make for Overlook's harbour at ×60 and dock there.",
+    line: "Your ship will make for Overlook's harbour and dock there.",
     yes: 'Dock',
   });
   assert.match(askWords(DOCK, true).line, /lies off Overlook's harbour/);
   const ashore: LandingAim = { kind: 'ashore', coast: 'Cairnwatch', toward: [0, 0] };
   assert.equal(askWords(ashore, false).title, 'Go ashore on Cairnwatch?');
-  assert.match(askWords(ashore, false).line, /No port stands on this coast/);
+  assert.equal(
+    askWords(ashore, false).line,
+    'No port stands on this coast. Your ship will make for it and you will go ashore.',
+  );
   assert.equal(askWords({ kind: 'isle', id: 7, words: 'the cove' }, false).yes, 'Go ashore');
 });
 

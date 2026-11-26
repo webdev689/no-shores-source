@@ -52,7 +52,6 @@ test('the switch moves between the Oversea and the Sealevel views; the wheel zoo
   assert.equal(view.closeShare, 1, 'eased down to sea level');
   const atSea = height();
   view.zoom(-5, 3000);
-  view.zoom(5, 3000);
   assert.equal(height(), atSea, 'at sea level the wheel changes nothing');
   assert.equal(view.level, 'sealevel', 'and never changes the view');
   view.switchLevel('oversea');

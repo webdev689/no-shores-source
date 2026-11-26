@@ -55,7 +55,8 @@ const dockAt = (port: NonNullable<ClickContext['port']>): LandingAim => ({
 });
 
 /** The confirmation's words for a landing: its question, what yes does (made at once where the ship lies within reach,
- *  `near`, else sailed for first), and its yes. */
+ *  `near`, else sailed for first), and its yes. They name no pace: a voyage set at ×60 eases to the ship's true speed
+ *  while the view is close on it, and the console shows which. */
 export function askWords(
   aim: LandingAim,
   near: boolean,
@@ -65,7 +66,7 @@ export function askWords(
       title: `Dock at ${aim.port}?`,
       line: near
         ? `Your ship lies off ${aim.port}'s harbour. Docking shows what its island holds.`
-        : `Your ship will make for ${aim.port}'s harbour at ×60 and dock there.`,
+        : `Your ship will make for ${aim.port}'s harbour and dock there.`,
       yes: 'Dock',
     };
   if (aim.kind === 'isle')
@@ -78,7 +79,7 @@ export function askWords(
     title: `Go ashore on ${aim.coast}?`,
     line: near
       ? 'No port stands on this coast. Going ashore shows what lies inland.'
-      : 'No port stands on this coast. Your ship will make for it at ×60 and you will go ashore.',
+      : 'No port stands on this coast. Your ship will make for it and you will go ashore.',
     yes: 'Go ashore',
   };
 }

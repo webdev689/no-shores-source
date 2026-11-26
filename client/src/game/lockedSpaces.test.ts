@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Mark } from '../overworld/overworldMarks.ts';
 import { LOCKED_WORDS, OPEN_SOCIAL_SPACES, socialLocked } from './nodes.ts';
 import { entriesOf, islandPanelOf } from './islandWords.ts';
-import { islandMarksOf, landable, landingChoice } from './seaMarks.ts';
+import { islandMarksOf, landable } from './seaMarks.ts';
 import { type WorldData, arrivalAt } from './worldData.ts';
 
 /** No draws read yet: the panel says what the island holds alone. */
@@ -82,7 +82,7 @@ test('of the locked social spaces only the two other ports’ say "Opens later";
   assert.equal(landable(desolate, 'cairnwatch-social'), null);
 });
 
-test('a social space still locked is a locked mark, which says it opens later when chosen', () => {
+test('a social space still locked is a locked mark, never landed at', () => {
   const where = { continent: 'continent-4', ring: [], spawns: [], centre: [0, 0] as const };
   const nodes = [
     { id: 'sunspire-social', kind: 'social', name: 'Sunspire', ...where },
@@ -93,6 +93,5 @@ test('a social space still locked is a locked mark, which says it opens later wh
     marks.map((mark) => mark.locked),
     [true, false],
   );
-  assert.deepEqual(landingChoice(marks, null, 'sunspire-social'), { kind: 'locked', words: 'Sunspire opens later' });
   assert.equal(landable(marks, 'sunspire-social'), null);
 });

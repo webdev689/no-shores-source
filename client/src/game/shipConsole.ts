@@ -6,7 +6,7 @@ import { CANVAS_FACE } from '../face.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { withKey } from './controls.ts';
+import { boundWord, withKey } from './controls.ts';
 import { DIM } from './hudPieces.ts';
 import { footer, header, hudPress, rail, said } from './hudParts.ts';
 import type { SeaLevel } from './seaView.ts';
@@ -22,9 +22,11 @@ export interface ConsoleState {
   readonly wind: { readonly toward: number; readonly speed: number } | null;
   readonly sailing: boolean;
   readonly resumable: boolean;
-  /** The pace its voyage was set at, the pace it sails at now (eased down while watched close), and its speed, m/s. */
+  /** The pace its voyage was set at, the pace it sails at now (eased down while watched close, or `held` lower by the
+   *  room near a hostile ship), and its speed, m/s. */
   readonly pace: number;
   readonly paceNow: number;
+  readonly held: boolean;
   readonly speed: number;
   /** Where it is bound, in words ("Overlook's harbour, to dock"); the voyage's share sailed, and its line. */
   readonly bound: string | null;
@@ -200,11 +202,20 @@ function shareBar(label: string, share: number): Node {
 /** A small heading over a column, in capitals. */
 const heading = (words: string): Node => said(words, { colour: DIM, tracking: 3, wrap: false });
 
-/** The voyage's column: what it is doing, its pace and speed, where it is bound, and a bar of its way sailed. */
+/** How a voyage is set at rest in the view switched to: by a click or the map in the Oversea view, by the helm's keys
+ *  at sea level, where a click sets no course. */
+const restWords = (level: SeaLevel): string =>
+  level === 'oversea'
+    ? 'Click the sea to sail at ×60; plan on the map for ×200.'
+    : `${boundWord('sailOn')} sails on; ${boundWord('steerLeft')} and ${boundWord('steerRight')} steer.`;
+
+/** The voyage's column: what it is doing, its pace and speed, where it is bound, and a bar of its way sailed. Held,
+ *  its line says why. */
 function voyageNode(state: ConsoleState): Node {
   const doing = state.sailing ? 'Under way' : state.resumable ? 'Hove to' : 'At anchor';
-  const pace =
-    state.paceNow < state.pace ? `×${state.paceNow} (×${state.pace} set) · true speed while watched` : `×${state.pace}`;
+  const under = state.paceNow < state.pace;
+  const why = state.held ? '' : ' · true speed while watched';
+  const pace = under ? `×${state.paceNow} (×${state.pace} set)${why}` : `×${state.pace}`;
   return {
     width: 'grow',
     direction: 'column',
@@ -220,12 +231,7 @@ function voyageNode(state: ConsoleState): Node {
           state.sailing && said(`${Math.round(state.speed)} m/s`, { colour: DIM }),
         ],
       },
-      said(
-        state.sailing || state.resumable ? `Pace ${pace}` : 'Click the sea to sail at ×60; plan on the map for ×200.',
-        {
-          colour: DIM,
-        },
-      ),
+      said(state.sailing || state.resumable ? `Pace ${pace}` : restWords(state.level), { colour: DIM }),
       state.bound !== null && said(`Bound for ${state.bound}`),
       state.share !== null && {
         width: 'grow',

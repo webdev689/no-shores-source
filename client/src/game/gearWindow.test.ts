@@ -522,7 +522,8 @@ test("a keeper's coin and the account's mark are named in a card on hover, and o
 /** The ship's console at sea level, under way, its helm to be left. */
 const SEA_LEVEL: ConsoleState = {
   ...{ level: 'sealevel', name: 'The Sloop', hull: 'Sloop', heading: 0, wind: null, sailing: true, resumable: false },
-  ...{ pace: 60, paceNow: 1, speed: 12, bound: null, share: 0.4, line: 'Sailing', water: 'The Lantern Sea' },
+  ...{ pace: 60, paceNow: 1, held: false, speed: 12, bound: null, share: 0.4 },
+  ...{ line: 'Sailing', water: 'The Lantern Sea' },
   ...{ kept: { hull: 1, sail: 1, crew: 1 }, canLeave: true, canManage: true },
 };
 
