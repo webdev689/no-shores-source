@@ -1,5 +1,5 @@
 ---
-id: 296
+id: 301
 title: "Auto mode refused `git checkout <commit> -- <file>` as irreversible local destruction"
 status: open
 type: internal
