@@ -255,15 +255,15 @@ The decisions in [[Open Questions]] are not repeated here.
   - Tested offline: `cargo xtask check` on `c087e1be` (the merge) and on `b06d383b` (the fixes: 5,421 TypeScript
     and 3,173 Rust tests, the build and the repo checks); `main` at #222 merged in after it, the only clash this
     note. Not seen in a running game, on a real GPU or in a deployed room.
-  - Open for the owner, asked in the pull request: whether a Normal run started at sea should need the ship near its
-    dungeon's island (the server lets one in from any sea room; a company member also joins it from anywhere at
-    sea); which dungeon "Procedural dungeon if applicable" meant (built as the Elite Dungeon at Normal); whether
-    "salts patrol spaces" meant Saltmere's zones or every zone's; whether leaving the sea lets a landing made for go
-    (the decision lets only another course or a fight); adding `client/src/art` to `desktop.yml`'s paths and `CODE`
-    list, since the icon's drawing moved there (a deploy rule). Left as they are: the island's Elite Dungeon scene
-    and the website's gate are alike but not shared (one picture or the other would change); the port's tile paints
-    Overlook wherever it is docked (only Overlook's social space is open); the key strip lifting over the docking
-    question on views under about 950 px wide (unmeasured).
+  - The owner's answers: a Normal run started at sea is entered only with the ship within 32 km of its island's coast
+    (`arrival.ts`; a company member still joins by the company's rule); the island's dungeon is its Elite Dungeon;
+    the three landing zones are Saltmere's, the other zones' deferred; `client/src/art` added to `desktop.yml`'s paths
+    and `CODE` list. Still open: whether leaving the sea lets a landing made for go (asked again in plainer words;
+    the decision lets only another course or a fight); `client/src/cinema/logoPicture.ts`, which the icon draws, is
+    in neither list either (not asked). Left as they are: the island's Elite Dungeon scene and the website's gate are
+    alike but not shared (one picture or the other would change); the port's tile paints Overlook wherever it is
+    docked (only Overlook's social space is open); the key strip lifting over the docking question on views under
+    about 950 px wide (unmeasured).
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
   modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,

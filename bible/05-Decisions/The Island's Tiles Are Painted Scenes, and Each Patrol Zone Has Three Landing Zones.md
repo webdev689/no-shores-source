@@ -15,6 +15,10 @@ details as small glyphs, the name only, or the name, levels and one line), the o
 > zones map as a larger panel allowing you to select where you want to land. Additionally, these should act as fast
 > travel points when in the zone itself"
 
+Asked whether "salts patrol spaces" meant Saltmere's patrol zones or every zone's, the owner answered:
+
+> "Yes. Other zones are defered"
+
 On the first tiles painted, the owner said:
 
 > "You can do better than this. We gave more detail to the website images"
@@ -23,8 +27,7 @@ On the first tiles painted, the owner said:
 
 - **Each island tile is a painted vignette** of its place, with very minimal text: its name and its levels, every other
   detail shown as small glyphs.
-- **Saltmere's patrol zones each have three landing zones** ("salts patrol spaces", read as Saltmere's; the owner has
-  not said whether every zone's are meant).
+- **Saltmere's patrol zones each have three landing zones**; the other zones' are deferred.
 - **A patrol zone's tile opens the zone's map as a larger panel**, where the player selects which landing zone to
   land at.
 - **The landing zones are fast travel points** while the player is in that zone.

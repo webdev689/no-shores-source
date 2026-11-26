@@ -38,6 +38,14 @@ status: in force
 > I want you to take autonomy and be as detailed as possible, minimizing bugs and bringing everything in line to be
 > more detailed. Please dont come back until this is 100% complete"
 
+Asked, first, whether a Normal run started at sea should need the ship near its dungeon's island, as the island's tile
+that starts it stands only there, and second, whether "Procedural dungeon if applicable" meant the island's Elite
+Dungeon or a patrol's dungeon, the owner answered:
+
+> "1. Yes
+>
+> 2. Yes islands elite dungeon"
+
 ## What it settles
 
 - **The sea has two views, Oversea and Sealevel.** The wheel no longer changes the view.
@@ -49,8 +57,10 @@ status: in force
   docking there, and so does a click anywhere else on its island.
 - **No Playlist at sea.**
 - **Docked, the island's nodes stand in a panel**, not on the map: detailed, out of the way and slightly
-  transparent, holding what the island has of its port, the Playlist, its patrol zone, its dungeon (a procedural one,
-  where it has one) and its mission. The owner noted that the dungeon nodes led into no dungeon. (Replaced in part: they stand as even tiles in a grid, [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].)
+  transparent, holding what the island has of its port, the Playlist, its patrol zone, its dungeon and its mission.
+  The owner noted that the dungeon nodes led into no dungeon.
+- **The island's dungeon is its Elite Dungeon**, gone into from the sea.
+- **A Normal run started at sea is entered only with the ship near its dungeon's island.** (Replaced in part: they stand as even tiles in a grid, [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].)
 - **The rest is Claude's**, on the owner's autonomy, recorded below and open to the owner's change.
 
 It replaces, in part, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]] (the keys in every view),
