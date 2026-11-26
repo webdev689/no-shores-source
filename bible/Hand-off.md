@@ -221,7 +221,7 @@ its system note.
 The decisions in [[Open Questions]] are not repeated here.
 
 - **The sea reworked, and the Playlist's crests in more detail** (#216, open, waiting on the owner's yes to merge;
-  a merge deploys the page, the site, the rooms and the bot). Two asks:
+  a merge deploys the page, the site, the rooms and the bot; `main` with #217 merged in). Three asks:
   - The owner's "I want you to redesign the Playlist nodes to be more detailed", both nodes, richer art and motion
     ([[The Playlist's Nodes Are Drawn in More Detail, and Move]]): the screen's crests are worked metal shields on
     ticked dials that turn, rising into place, the chosen glow breathing, a sweep as one is lit, a ring from a waiting
@@ -232,16 +232,25 @@ The decisions in [[Open Questions]] are not repeated here.
     its table): the Oversea and Sealevel views switched by V or the console, the wheel zooming the Oversea view alone;
     W, A, S and D at sea level only, a click sailing only Oversea; no pace dial, a voyage planned on the held map at
     ×200 and a click at ×60, the sea room's ladder to 200; the ship's console (`shipConsole.ts`) in place of the sea's
-    bar, each view's own presses; docking asks first (`landingAsk.ts`, `seaLandings.ts`), the dock button and the
-    Playlist at sea gone; over an island the island's panel (`islandPanel.ts`, `islandWords.ts`) in place of the
-    nodes: the port's snapshot, the Playlist's banner, every patrol zone, Elite Dungeon (entered from the sea at Normal,
-    `node-<id>--sea`), mission, world boss and outpost. At ×200 a ship sails past flotsam's 25 m reach in a tick, so
-    the room gathers along the leg sailed.
-  - Tested offline: the client suite (4461 pass; 5 fail only on R2, which this container cannot reach), `cargo test`
-    of `room`, `protocol` and `room-wasm`, `cargo xtask repo`; the console, the confirmation and the panel pictured
-    headless (`seaShots.ts`). An independent audit of the sea change; its findings are in the PR. Not seen in a running
-    game: this environment's network refuses R2 (`pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev`), so the page never
-    loads. Open for the owner: every call in the decision's table.
+    bar, each view's own presses; docking asks first (`landingAsk.ts`, `seaLandings.ts`; L, Enter or the pad's A asks
+    where the ship lies), the dock button and the Playlist at sea gone; an Elite Dungeon gone into from the sea at
+    Normal (`node-<id>--sea`). At ×200 a ship sails past flotsam's 25 m reach in a tick, so the room gathers along the
+    leg sailed.
+  - Then the owner's "evenly designed rectangles on the screen ... with space between each", the Playlist's opening
+    its screen when clicked
+    ([[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]): over an island the
+    island's tiles (`islandPanel.ts`, `islandWords.ts`), the island's own with its chart and the way back, the port,
+    the Playlist, every patrol zone, Elite Dungeon, mission, world boss and outpost, each with its details; a click
+    does what a tile does.
+  - An independent audit of the sea change found seven defects, each fixed with a test that failed first: the first
+    place's landing went nowhere (the flow lands only at the node chosen); the page refused a Normal run started at
+    sea; the sea card's search stopped at each minute; the pad could not dock or decline; a question outlived the sea;
+    a click on a sea island's hills at sea level met nothing; a voyage sailing alone dropped to ×60.
+  - Tested offline: every JavaScript test and `cargo test` of `room`, `protocol` and `room-wasm` (the few that fail
+    here fail only on R2, which this container cannot reach; the PR has the counts), `cargo xtask repo`; the console,
+    the confirmation and the tiles pictured headless (`seaShots.ts`). Not seen in a running game: this environment's
+    network refuses R2 (`pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev`), so the page never loads. Open for the owner:
+    every call in the two decisions' tables.
 - **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
   accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
