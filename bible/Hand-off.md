@@ -11,6 +11,19 @@ All of this is on `main`; a merge deploys the page, the site, the rooms and the 
 ([[The Rooms Deploy When Their Code Changes]], [[The Discord Bot Deploys on Each Merge]]). How each part works is in
 its system note.
 
+- **Four character slots, Switch character and the developers' Test Room** (#219, merged on the owner's "Merge and
+  deploy"; CI run 1171 on main, 47ffb700, passed its check and deployed the accounts with their migration, the rooms,
+  the bot, the site and the page, each answering CI's own check after; the desktop app unchanged). On the owner's
+  "Implement 4 character slots ... switch character option in the ingame settings menu" and "a test room option to
+  launch activities" ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]],
+  [[Developers Launch Activities From a Test Room, in Max Gear]]; every call in
+  [[Character Slots and the Test Room as Claude Builds Them]]). How it works: [[Accounts]] ("Four characters, one in
+  play", "The vault joined in a room"), [[Interface]] ("The character screen"), [[Activities]] ("Test runs"),
+  [[Breaches]], [[Discord Bot]] ("The game module"). The accounts' binding to the bot's `Members` deployed before the
+  bot's own deploy and held. Not yet seen: the forge's figures on the screen, a real GPU, a live run from the title
+  into a test room, and the Discord role check against Discord. For the owner: the Developer role appears once the
+  server layout is built again from the panel (or is added by hand and named in the game module's settings); a Launch
+  passes through the character in play's place first; a switch counts the guild's week from the chosen character on.
 - **The scaffold**: the client on WebGPU, the Rust repo checks, CI, this vault, the [[Pick List]] and [[Decisions]];
   the [[Toolkit]]; the [[World Map]], all nine continents drawn by the owner, and the [[World Editor]] on GitHub Pages.
 - **[[Land]]**: relief, erosion and water from the painted coasts, sculpting, carved rivers, roads, towns and ports,
@@ -226,19 +239,6 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **Four character slots, Switch character and the developers' Test Room** (#219, a draft on branch
-  `ccr-4f741534-p0zwai`, waiting on CI on its head and the owner's yes to merge), on the owner's "Implement 4 character
-  slots ... switch character option in the ingame settings menu" and "a test room option to launch activities"
-  ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]],
-  [[Developers Launch Activities From a Test Room, in Max Gear]]; every call in
-  [[Character Slots and the Test Room as Claude Builds Them]]). How it works: [[Accounts]] ("Four characters, one in
-  play", "The vault joined in a room"), [[Interface]] ("The character screen"), [[Activities]] ("Test runs"),
-  [[Breaches]], [[Discord Bot]] ("The game module"). Tested offline only (the PR lists each suite); the forge's figures
-  on the screen, a real GPU, the live flow into a test room and the Discord role check against Discord are not seen.
-  Open for the owner, listed in the PR: a Launch passes through the character in play's place first (and waits for one
-  past the prologue); a switch counts the guild's week from the chosen character on; the Developer
-  role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
-  before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
 - **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
   accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
