@@ -16,6 +16,7 @@ import {
   drawRipple,
   drawSheen,
   drawWaiting,
+  faded,
 } from './playlistCrest.ts';
 import type { PlaylistEntry, PlaylistReward } from './playlistWords.ts';
 
@@ -38,8 +39,8 @@ export interface CrestMotion {
   readonly still: boolean;
 }
 
-/** How bright a crest's glow stands at rest, lit, and at the foot and head of the chosen one's breath. */
-const GLOW = { rest: 0.42, lit: 0.67, chosenLow: 0.8 } as const;
+/** How bright a crest's glow stands at rest, lit and chosen, and at the foot of the chosen one's breath. */
+const GLOW = { rest: 0.42, lit: 0.67, chosen: 1, chosenLow: 0.8 } as const;
 /** Seconds a chosen crest's glow takes to breathe out and in again. */
 const BREATH_S = 3;
 /** A waiting reward's ring: seconds between one and the next, and how many dots across it grows to. */
@@ -58,9 +59,6 @@ export const DIAL_WIDE = 1.9;
 
 /** What draws a picture into its square. */
 type Draw = (context: OffscreenCanvasRenderingContext2D, drawn: number) => void;
-
-/** A white tint at `alpha`, rounded so a moving one names few colours. */
-const faded = (alpha: number) => `rgba(255,255,255,${Math.round(alpha * 100) / 100})`;
 
 /** How far a crest has risen into place, 0 to 1, eased to a stop. */
 function risen(place: number, motion: Pick<CrestMotion, 'opened' | 'still'>): number {
@@ -230,8 +228,9 @@ export function crestOf(
   const chosen = look === 'chosen';
   const glow = chosen
     ? motion.still
-      ? 1
-      : GLOW.chosenLow + (1 - GLOW.chosenLow) * (0.5 + 0.5 * Math.cos((motion.opened / BREATH_S) * 2 * Math.PI))
+      ? GLOW.chosen
+      : GLOW.chosenLow +
+        (GLOW.chosen - GLOW.chosenLow) * (0.5 + 0.5 * Math.cos((motion.opened / BREATH_S) * 2 * Math.PI))
     : look === 'lit'
       ? GLOW.lit
       : GLOW.rest;

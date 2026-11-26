@@ -15,6 +15,10 @@ const INKS = {
 
 /** How wide the shield stands in the ring, a share of the ring. */
 const SHIELD = 0.66;
+/** How wide the dial's ticks and the spreading ring are drawn, texels. The marks lay a mark's pictures at up to 2.56
+ *  texels a pixel (`texels` in `hudMarks.ts`) and the atlas is read a texel at a time, so a thinner line would be
+ *  missed in places and, turning, blink. */
+const LINE = 3.2;
 
 /** Draws the Playlist's shield about `middle` in a ring `ring` pixels across: its metal lit from the top left over a
  *  dark edge, its field, a gem at its head, and a list's three lines, each led by a square point. */
@@ -59,10 +63,10 @@ export function drawMarkDial(colour: string) {
   return (context: Context, drawn: number): void => {
     const [middle, edge] = [drawn / 2, drawn * 0.44];
     context.strokeStyle = colour;
-    context.lineWidth = Math.max(1, drawn * 0.025);
+    context.lineWidth = LINE;
     for (let tick = 0; tick < 24; tick += 1) {
       const turn = (tick * Math.PI) / 12;
-      const inward = tick % 4 === 0 ? drawn * 0.08 : drawn * 0.045;
+      const inward = tick % 4 === 0 ? Math.max(drawn * 0.08, 2 * LINE) : Math.max(drawn * 0.045, LINE);
       const [across, down] = [Math.cos(turn), Math.sin(turn)];
       context.beginPath();
       context.moveTo(middle + across * edge, middle + down * edge);
@@ -75,10 +79,9 @@ export function drawMarkDial(colour: string) {
 /** Draws the ring that spreads from the mark, `drawn` pixels across, in `colour`; the marks grow and fade it. */
 export function drawMarkRipple(colour: string) {
   return (context: Context, drawn: number): void => {
-    const width = Math.max(1, drawn * 0.03);
     context.beginPath();
-    context.arc(drawn / 2, drawn / 2, drawn / 2 - width, 0, Math.PI * 2);
-    context.lineWidth = width;
+    context.arc(drawn / 2, drawn / 2, drawn / 2 - LINE, 0, Math.PI * 2);
+    context.lineWidth = LINE;
     context.strokeStyle = colour;
     context.stroke();
   };

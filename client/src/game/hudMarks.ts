@@ -11,6 +11,7 @@ import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { ownOutpostColours } from './guild/guildHeld.ts';
 import { KIND_WORDS, type MarkKind } from './hudLaw.ts';
+import { faded } from './playlistCrest.ts';
 import { drawMarkDial, drawMarkRipple, drawPlaylistEmblem } from './playlistMark.ts';
 import type { HostileLook } from './seaHostiles.ts';
 
@@ -219,7 +220,8 @@ function signOf(sign: string, colour: string): Picture {
 
 /** The marks as nodes on the screen, the later over the earlier; a press on one calls `chosen` with its id. */
 export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (id: string) => void): Node[] {
-  return marks.flatMap((mark): Node[] => {
+  const ripples: Node[] = [];
+  const laid = marks.flatMap((mark): Node[] => {
     const id = `mark:${mark.id}`;
     if (ui.clicked(id)) {
       ui.focusOn(null);
@@ -241,6 +243,11 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
       float: { at: [0.5, 1], anchor: [0.5, 0], y: down },
       text: { words: text, size, colour: colourOf, edge: 'shadow', edgeColour: '#000', wrap: false },
     });
+    const motion =
+      mark.kind === 'playlist' && !mark.locked
+        ? playlistMotion(colour, size, { x, y, seconds: ui.age(id), lit: ui.hovered(id) || mark.chosen })
+        : null;
+    if (motion?.ripple) ripples.push(motion.ripple);
     const shown: Child[] = [
       mark.chosen && {
         width: size + 2 * GLOW,
@@ -258,9 +265,7 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
         float: { to: 'screen', anchor: [0.5, 0.5], x, y },
         picture: ring(glyph, colour, size, { hovered, chosen: mark.chosen, outlined: own !== null }, own?.device),
         children: [
-          ...(mark.kind === 'playlist' && !mark.locked
-            ? playlistMotion(colour, size, ui.age(id), ui.hovered(id) || mark.chosen)
-            : []),
+          motion?.dial,
           look?.emblem ? emblemNode(look.emblem, size) : null,
           look?.badge ? badgeNode(look.badge) : null,
           // Not by its colours alone: a light star over the ring marks the guild's own.
@@ -290,17 +295,24 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
     ];
     return shown.filter((node): node is Node => Boolean(node));
   });
+  // Under every mark's ring, so the Playlist's spreading ring never crosses the port's beside it.
+  return [...ripples, ...laid];
 }
 
-/** The Playlist's mark's motion over its ring, `size` pixels, `seconds` after it was first laid: its dial's ticks
- *  turning, brighter while `lit`, and the ring spreading from it; the ticks still and no ring under reduced motion. */
-function playlistMotion(colour: string, size: number, seconds: number, lit: boolean): Node[] {
+/** The Playlist's mark's motion, its ring `size` pixels round (x, y), `seconds` after it was first laid: its dial's
+ *  ticks over the ring, turning, brighter while `lit`; and the ring spreading from it, laid on the screen; the ticks
+ *  still and no ring under reduced motion. */
+function playlistMotion(
+  colour: string,
+  size: number,
+  where: { readonly x: number; readonly y: number; readonly seconds: number; readonly lit: boolean },
+): { readonly dial: Node; readonly ripple: Node | null } {
   const still = motionReduced();
   const side = texels(size);
   const { turn, rest, every, reach, ripple } = PLAYLIST_MOTION;
+  const { x, y, seconds, lit } = where;
   const spread = (seconds % every) / every;
   const grown = Math.round(size * (1 + (reach - 1) * spread));
-  const tint = (alpha: number) => `rgba(255,255,255,${Math.round(alpha * 100) / 100})`;
   const dial: Node = {
     width: size,
     height: size,
@@ -311,25 +323,26 @@ function playlistMotion(colour: string, size: number, seconds: number, lit: bool
       pixel: { width: side, height: side },
       source: { draw: drawMarkDial(colour) },
       turn: still ? 0 : (seconds * turn) % 360,
-      tint: tint(lit ? PLAYLIST_MOTION.lit : rest),
+      tint: faded(lit ? PLAYLIST_MOTION.lit : rest),
     },
   };
-  if (still) return [dial];
-  return [
+  return {
     dial,
-    {
-      width: grown,
-      height: grown,
-      through: true,
-      float: { at: [0.5, 0.5], anchor: [0.5, 0.5] },
-      picture: {
-        key: `mark ripple ${colour} ${side}`,
-        pixel: { width: side, height: side },
-        source: { draw: drawMarkRipple(colour) },
-        tint: tint(ripple * (1 - spread)),
-      },
-    },
-  ];
+    ripple: still
+      ? null
+      : {
+          width: grown,
+          height: grown,
+          through: true,
+          float: { to: 'screen', anchor: [0.5, 0.5], x, y },
+          picture: {
+            key: `mark ripple ${colour} ${side}`,
+            pixel: { width: side, height: side },
+            source: { draw: drawMarkRipple(colour) },
+            tint: faded(ripple * (1 - spread)),
+          },
+        },
+  };
 }
 
 /** A hostile ship's emblem in its ring, 62% of it across and its pixels kept hard. */

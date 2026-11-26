@@ -38,10 +38,11 @@ function standing(width = 1600, height = 900, search: PlaylistSearch = IDLE, sho
   view.show(shown, search);
   const { ui, step } = fakeInterface(width, height);
   let built: Child = null;
-  const frame = (events: UiEvent[] = []) =>
-    step(() => ({ width: 'grow', height: 'grow', children: [(built = view.layer(ui))] }), events);
+  const frame = (events: UiEvent[] = [], seconds?: number) =>
+    step(() => ({ width: 'grow', height: 'grow', children: [(built = view.layer(ui))] }), events, seconds);
   frame();
-  frame();
+  // A second past opening, so the crests have risen into place.
+  frame([], 1);
   const centre = (id: string) => {
     const box = ui.boxOf(id);
     assert.ok(box, id);
@@ -206,6 +207,12 @@ test('on the chart each crest stands on its dial, laid under the crests; stacked
   const dials = laid.flatMap((child, place) => (child.picture?.key.startsWith('playlist dial') ? [place] : []));
   const crests = laid.flatMap((child, place) => (child.id?.startsWith('playlist-tile-') ? [place] : []));
   assert.equal(dials.length, SAMPLE_SCREEN.entries.length, 'one each');
+  const spots = laid.flatMap((child) => (child.id?.startsWith('playlist-tile-') ? [child.float?.at] : []));
+  assert.deepEqual(
+    dials.map((place) => laid[place]?.float?.at),
+    spots,
+    'each on its crest’s spot',
+  );
   assert.ok(Math.max(...dials) < Math.min(...crests), 'under the crests and their words');
   const stacked = nodesOf(standing(800, 900).built()).filter((node) => node.picture?.key.startsWith('playlist dial'));
   assert.equal(stacked.length, 0);
@@ -335,6 +342,21 @@ test('the card scrolls to its end by Page Down and the right stick, its bar’s 
     screen.frame();
     assert.ok(screen.ui.boxOf(`${list}-fade`), 'a page back up, more below again');
   }
+});
+
+test('scrolled, a crest’s dot, padlock and their marks stay inside the list, never over the head', () => {
+  const screen = standing(390, 844);
+  screen.ui.scrollBy('playlist-body', 400);
+  screen.frame();
+  screen.frame();
+  const body = screen.ui.boxOf('playlist-body');
+  assert.ok(body);
+  const marks = screen.ui.laid.filter((each) =>
+    /^(playlist waiting|playlist ripple|icon)/.test(each.node.picture?.key ?? ''),
+  );
+  assert.ok(marks.length > 0);
+  for (const { clip, node } of marks)
+    assert.ok(clip.y >= body.y - 0.5, `${node.picture?.key} clipped at ${clip.y}, the list at ${body.y}`);
 });
 
 test('the right stick scrolls the list once a frame, under the focus, never again on top', () => {

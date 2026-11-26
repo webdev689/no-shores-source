@@ -1198,8 +1198,9 @@ lines, broken before "of"), and its level a part a line past its tier ("Levels 1
 level 10" before it), or, shut, why in neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no
 separator ends or starts a line. The chosen crest's name is lit over a brass rule as wide as the name, its shield drawn
 8% larger, its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps a
-crest's shield once as it is lit or chosen. The crests rise into place one after another as the screen opens. Each
-part is a picture drawn once and turned, faded or grown as it moves; under reduced motion nothing moves.
+crest's shield once as it is lit or chosen, in nine steps. The crests rise into place one after another as the screen
+opens. Each part is a picture drawn once (the sweep once a step) and turned, faded or grown as it moves; under reduced
+motion nothing moves.
 
 On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
 before its edges, faint stars, two wide rings, and dotted lines from each playlist to the Breach between them and to

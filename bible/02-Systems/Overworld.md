@@ -88,9 +88,9 @@ pointer picks the nearest.
 
 Each port city's harbour has a Playlist mark (`<city>-playlist`): the Playlist screen's shield in small, bearing a
 list's three lines, in an amber ring ticked as a dial, its ticks turning 8 degrees a second and brighter under the
-pointer or chosen, an amber ring spreading from it every 2.4 s, all still under reduced motion (`playlistMark.ts`,
-[[The Playlist's Nodes Are Drawn in More Detail, and Move]]). It stands at sea within the port's sight and over its
-island's side however the island is reached, docking or going ashore
+pointer or chosen, an amber ring spreading from it every 2.4 s under every mark's ring, all still under reduced motion
+(`playlistMark.ts`, [[The Playlist's Nodes Are Drawn in More Detail, and Move]]). It stands at sea within the port's
+sight and over its island's side however the island is reached, docking or going ashore
 ([[The Playlist Shows Over Its Island, Not Only at Sea]]), open whether or not the city's social space is. It is laid
 beside its city's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left: at
 sea its port's, never thinned away by it and shown while it is; over the side its social space's, or on its harbour

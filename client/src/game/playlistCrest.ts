@@ -1,8 +1,8 @@
 // An entry's crest on the Playlist screen (`playlistParts.ts` lays it), after the owner's reference, Destiny's Vanguard
 // screen: a shield of worked metal, bevelled and studded, a gem at its head and its device raised over a lit field;
 // the glow behind it, the dial behind that on the chart, the light that sweeps it as it is lit, and the dot of a
-// reward waiting with the ring that spreads from it. Each is drawn once and moved by the screen, never drawn again a
-// frame. Chevrons for the Elite Playlist, an eye of the deep for the Abyss Playlist, crossed swords for the Elite
+// reward waiting with the ring that spreads from it. Each is drawn once (the sweep once a step) and moved by the
+// screen, never drawn again a frame. Chevrons for the Elite Playlist, an eye of the deep for the Abyss Playlist, crossed swords for the Elite
 // Dungeon of the week, a crown over the deep for the Abyss's, and a gate under a crystal spire for a Breach.
 import type { PlaylistKind } from './playlistWords.ts';
 
@@ -42,6 +42,9 @@ const SHUT: CrestInks = {
 };
 /** What a device's shadow is drawn in, beneath and a little right of it. */
 const SHADOW = 'rgba(0,0,0,0.55)';
+
+/** A white tint at `alpha`, fading a picture drawn once; rounded, so a moving one names few colours. */
+export const faded = (alpha: number) => `rgba(255,255,255,${Math.round(alpha * 100) / 100})`;
 
 /** How much larger the chosen crest's shield is drawn than the rest. */
 export const CHOSEN_SCALE = 1.08;
@@ -208,8 +211,11 @@ const deepEye: Device = (context, side, ink) => {
   }
 };
 
+/** Where a sword's guard stands, a share of its length from its tip. */
+const GUARD = 0.68;
+
 /** A sword laid from its tip to its pommel (shares of the side): a point a share of its length along it and a share of
- *  the side out from it, and the share its guard stands at. */
+ *  the side out from it. */
 function sword(side: number, tip: readonly [number, number], pommel: readonly [number, number]) {
   const [fromX, fromY] = [tip[0] * side, tip[1] * side];
   const [toX, toY] = [pommel[0] * side, pommel[1] * side];
@@ -220,13 +226,12 @@ function sword(side: number, tip: readonly [number, number], pommel: readonly [n
     fromX + alongX * length * share + acrossX * side * out,
     fromY + alongY * length * share + acrossY * side * out,
   ];
-  return { point, guard: 0.68 };
+  return point;
 }
 
 /** Two swords crossed under a star, each a blade with a fuller down it, a guard, a grip and a pommel, the blade edged
  *  in `detail` so one crossing the other reads as two. */
 const crossedSwords: Device = (context, side, ink, detail) => {
-  context.fillStyle = ink;
   for (const [tip, pommel] of [
     [
       [0.69, 0.33],
@@ -237,8 +242,8 @@ const crossedSwords: Device = (context, side, ink, detail) => {
       [0.66, 0.75],
     ],
   ] as const) {
-    const { point, guard } = sword(side, tip, pommel);
-    const blade = [point(0, 0), point(0.1, 0.028), point(guard, 0.028), point(guard, -0.028), point(0.1, -0.028)];
+    const point = sword(side, tip, pommel);
+    const blade = [point(0, 0), point(0.1, 0.028), point(GUARD, 0.028), point(GUARD, -0.028), point(0.1, -0.028)];
     context.beginPath();
     for (const [x, y] of blade) context.lineTo(x, y);
     context.closePath();
@@ -249,18 +254,18 @@ const crossedSwords: Device = (context, side, ink, detail) => {
     context.stroke();
     context.beginPath();
     context.moveTo(...point(0.14, 0));
-    context.lineTo(...point(guard - 0.04, 0));
+    context.lineTo(...point(GUARD - 0.04, 0));
     context.stroke();
     context.strokeStyle = ink;
     context.lineWidth = side * 0.03;
     context.beginPath();
-    context.moveTo(...point(guard, 0));
+    context.moveTo(...point(GUARD, 0));
     context.lineTo(...point(0.95, 0));
     context.stroke();
     context.lineWidth = side * 0.04;
     context.beginPath();
-    context.moveTo(...point(guard, 0.075));
-    context.lineTo(...point(guard, -0.075));
+    context.moveTo(...point(GUARD, 0.075));
+    context.lineTo(...point(GUARD, -0.075));
     context.stroke();
     context.beginPath();
     context.arc(...point(1, 0), side * 0.03, 0, Math.PI * 2);
@@ -505,7 +510,8 @@ export function drawSheen(chosen: boolean, step: number) {
     context.translate((drawn - side) / 2, (drawn - side) / 2);
     shield(context, side);
     context.clip();
-    const across = side * (-0.2 + (1.4 * step) / (SHEEN_STEPS - 1));
+    // Its middle from the shield's top left corner (east plus south 0.27 of the side) to its foot's curve (1.49).
+    const across = side * (0.135 + (0.61 * step) / (SHEEN_STEPS - 1));
     const wide = side * 0.14;
     const light = context.createLinearGradient(across - wide, across - wide, across + wide, across + wide);
     light.addColorStop(0, 'rgba(255,248,230,0)');

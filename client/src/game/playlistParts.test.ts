@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Node } from '../ui/node.ts';
 import { byId, nodesOf } from '../ui/uiForTests.ts';
+import { SHEEN_STEPS, drawSheen } from './playlistCrest.ts';
 import { type CrestLook, type CrestMotion, TILE, crestOf, dialOf } from './playlistParts.ts';
 import { SAMPLE_SCREEN } from './playlistShots.ts';
 import type { PlaylistEntry } from './playlistWords.ts';
@@ -75,4 +76,29 @@ test('a dial turns while its entry is open and stands while it is shut; the chos
   assert.equal(dial(ELITE, 'chosen', 10, true)[0]?.picture?.turn, 0, 'still under reduced motion');
   const bright = (look: CrestLook) => alphaOf(dial(ELITE, look, 10)[0]);
   assert.ok(bright('rest') < bright('lit') && bright('lit') < bright('chosen'));
+});
+
+test('every step of the sweep lights the shield, from its top left corner to its foot', () => {
+  // The band's middle runs where east plus south is constant: on the shield that sum runs from 0.26 (its top left
+  // corner) to about 1.5 (its foot's curve), in shares of its side.
+  const middles = Array.from({ length: SHEEN_STEPS }, (_unused, step) => {
+    let middle = NaN;
+    const context = new Proxy({} as Record<string, unknown>, {
+      get: (_held, name: string) =>
+        name === 'createLinearGradient'
+          ? (fromX: number, fromY: number, toX: number, toY: number) => {
+              middle = (fromX + toX) / 2 / 100 + (fromY + toY) / 2 / 100;
+              return { addColorStop: () => undefined };
+            }
+          : () => undefined,
+      set: () => true,
+    }) as unknown as OffscreenCanvasRenderingContext2D;
+    drawSheen(true, step)(context, 100);
+    return middle;
+  });
+  for (const middle of middles) assert.ok(middle >= 0.26 && middle <= 1.5, `a step at ${middle.toFixed(2)}`);
+  assert.ok(
+    middles.every((middle, step) => step === 0 || middle > (middles[step - 1] ?? 0)),
+    'each further on',
+  );
 });
