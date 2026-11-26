@@ -26,5 +26,6 @@ Then the owner chose from Claude's options:
   ([[First Person]]).
 - The heal is shown in the healing charges' red: the flask glowing while it is drunk, then a ring at the feet, motes
   and small crosses rising off the body and a brief glow round the figure, drawn in cells as Mend's light is.
+  Replaced by [[The Heal Is a Subtle Swirl]]: the heal's light is now a subtle swirl.
 
 Links: [[Combat]], [[Sprite Forge]], [[First Person]], [[Three Healing Charges, Refilled by Blows and Kills]].

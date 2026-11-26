@@ -320,6 +320,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
 - [[One Loading Screen Covers Every Trip Until the Place Is Ready]]
 - [[The Healing Drink Is a Red Flask, Drunk in Both Views, and Heals in Red Light]]
+- [[The Heal Is a Subtle Swirl]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
