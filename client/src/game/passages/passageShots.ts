@@ -7,7 +7,9 @@ import { isleTiles } from '../isleTiles.ts';
 import { REVERSED_DEPTH } from '../../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { ISLE_MANIFEST } from '../../islands/isleManifest.ts';
-import type { IsleShown } from '../../islands/islePlan.ts';
+import { gridOf, type IsleShown, readIslePlan } from '../../islands/islePlan.ts';
+import { groundHeight } from '../../islands/isleGround.ts';
+import { islePlanner } from '../../network/islePlans.ts';
 import { GROWTH_ROLES, IslesView } from '../../islands/isleView.ts';
 import { cityClimate } from '../../city/plan.ts';
 import { ShadowMap } from '../../shadow.ts';
@@ -157,6 +159,63 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
   // A device let go, so the software GPU keeps room for the next picture's.
   device.destroy();
   return picture;
+}
+
+/** What an island's picture asks: its climate, the first seed tried (the first from it whose island holds `near`),
+ *  the module it frames (the first placement whose name begins `near`), the eye `back` m short of it and `up` m over
+ *  the ground there, and the world's `hour`. */
+export interface IsleAsked {
+  readonly climate: string;
+  readonly near: string;
+  readonly seed?: number;
+  readonly back?: number;
+  readonly up?: number;
+  readonly hour?: number;
+  readonly view?: { readonly width: number; readonly height: number };
+}
+
+/** An island drawn as the game draws one, built by the room module as the page builds it, framed on a module of it
+ *  (a camp's fire, a mine's adit) from out toward its coast, as a PNG's data URL. */
+export async function isleShot(asked: IsleAsked): Promise<string> {
+  const view = asked.view ?? { width: 1280, height: 720 };
+  const planner = islePlanner(await WebAssembly.compileStreaming(fetch('/room.wasm')));
+  for (let seed = asked.seed ?? 1; seed < (asked.seed ?? 1) + 200; seed++) {
+    const built = planner(String(seed), asked.climate, [0, 0]);
+    const plan = built && readIslePlan(built.json);
+    const placed = plan?.placements.find((one) => MODULE_NAMES[one[0]]?.startsWith(asked.near));
+    if (!built || !plan || !placed) continue;
+    const shown: IsleShown = { id: seed, at: [0, 0], climate: asked.climate, plan, heights: built.heights };
+    const floor = (x: number, y: number) => groundHeight(gridOf(built.heights), x, y);
+    // From out toward the coast, looking back in at it.
+    const [x, y, back, up] = [placed[1], placed[2], asked.back ?? 6, asked.up ?? 2];
+    const away = Math.hypot(x, y) || 1;
+    const [eyeX, eyeY] = [x + (x / away) * back, y + (y / away) * back];
+    const eye: [number, number, number] = [eyeX, eyeY, (floor(eyeX, eyeY) ?? placed[3]) + up];
+    const shot: Shot = {
+      eye,
+      yaw: Math.atan2(x - eyeX, -(y - eyeY)),
+      pitch: Math.atan2(eye[2] - placed[3] - 0.5, back),
+      fov: 1.1,
+      near: 0.1,
+      far: 2_000,
+    };
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) throw new Error('no GPU adapter');
+    const device = await adapter.requestDevice();
+    const format: GPUTextureFormat = 'rgba8unorm';
+    const target = device.createTexture({
+      size: [view.width, view.height],
+      format,
+      usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource,
+    });
+    const gpu = { device, format, context: { getCurrentTexture: () => target } } as unknown as Gpu;
+    const pieces = new PieceView(gpu);
+    await hollowFrames(gpu, shown, shot, { at: [0, 0], hour: asked.hour ?? 11 }, () => pieces);
+    const picture = await readBack(device, target);
+    device.destroy();
+    return picture;
+  }
+  throw new Error(`no island of ${asked.climate} holds ${asked.near}`);
 }
 
 /** What a zone's picture asks: the week, and the zone by its `number`, else the first laid of its `ground` (a form

@@ -156,7 +156,9 @@ red. A fire under half a metre tall (a torch's, a candle's) takes fewer of each 
 each. A fire's parts are worked out on the CPU once a frame of its flicker and kept; forty fires, a quarter of them
 along edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than 16,384 parts. Past where its
 tongues read from the eye, 120 times its height and never nearer than 12 m (`farFire`), a fire is its glow alone,
-worked out with no part.
+worked out with no part; past 600 times its height, where its glow is under some two pixels, it is not drawn at all,
+the glowing thing it burns in left to show it (`GLOW_READS_M`). `Flames.out` puts one fire out, and a fire lit without
+casting is left out of `Flames.lamps`, its place lighting a lamp of its own.
 
 `Flames.lamps` gives each fire's light as a lamp of the night's ([[Sky]]), and `seeThroughM` lets its flames show
 through what stands up to that far nearer than them: a lantern's flame through its glass.
