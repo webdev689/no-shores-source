@@ -220,6 +220,18 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **Hostile ships and islands on the sea map, travel anywhere at sea, home waters 10 km** (#221, waiting on the
+  owner's yes to merge, which deploys the page and the rooms;
+  [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]).
+  Home waters end 10 km from Overlook's coast and the Lantern Sea past it is the Grey Tithe's at levels 1 to 4;
+  hostile rolls every 30 to 70 s; islands up to 3 within 8 km, 0.45 a roll, 144 at most; a travel within the ship's
+  own water is taken and the map asks for it; the room sends each player the hostile ships and islands in their water
+  with the chart, the map marks them and washes the Lantern Sea's open sea as the Tithe's. Claude's call: Overlook's
+  temperate coast had no island dressing, so its islands dress as woodland's. Tested offline (the changed crates' and
+  the TypeScript suites; the sea clash fingerprint re-pinned); CI's full check on the PR's head. Not pictured: the
+  capture's `__qaSea()` left a fresh offline character on foot (unchecked: likely no ship yet), so the icons and the
+  wash are unseen; not played by hand, on a real GPU or in a deployed room. For the owner: with in-water travel, a
+  player who keeps travelling still meets no hostile ship (each travel holds the roll 30 s, as the owner chose).
 - **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
   accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
