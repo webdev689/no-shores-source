@@ -1,6 +1,9 @@
 // The regions of every island (`content/world/regions.json`), as the held map and the world's data read them: each
 // region's island, name, centre and anchorage, and its island's outline, which says whose land a point is.
-import type { Point2 } from './ground.ts';
+
+/** A point on the map, metres east and south of its north-west corner, as `ground.ts`'s: kept here, as the rooms
+ *  read this file alone. */
+type Point2 = readonly [number, number];
 
 /** One region as the map knows it: the island it is of (its continent's id), its name, its centre, the anchorage a
  *  ship sails for, 3 km off its coast where the coast is nearest its centre, and its island's outline (none for an
