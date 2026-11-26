@@ -110,13 +110,13 @@ fn a_players_ship_gathers_their_own_pieces_within_twenty_five_metres_and_no_one_
 
 #[test]
 fn a_harder_seas_ship_leaves_a_vestige_as_often_as_a_harder_voyages_kill_on_land() {
-    // A Miniboss leaves one 35 times in 100 on land, raised by half at Elite and doubled in the Abyss; about four in
+    // A Miniboss leaves one 50 times in 100 on land, raised by half at Elite and doubled in the Abyss; about four in
     // ten of them are sealed, finer than Normal, as a Normal one comes as its item.
     let counted =
         [Difficulty::Normal, Difficulty::Elite, Difficulty::Abyss].map(|difficulty| miniboss_vestiges(difficulty, 400));
-    assert!((35..80).contains(&counted[0]), "about 55 from 400 Miniboss ships: {counted:?}");
-    assert!((60..110).contains(&counted[1]), "about 83 at Elite: {counted:?}");
-    assert!((85..140).contains(&counted[2]), "about 110 in the Abyss: {counted:?}");
+    assert!((55..105).contains(&counted[0]), "about 79 from 400 Miniboss ships: {counted:?}");
+    assert!((90..150).contains(&counted[1]), "about 118 at Elite: {counted:?}");
+    assert!((125..195).contains(&counted[2]), "about 158 in the Abyss: {counted:?}");
 }
 
 #[test]
