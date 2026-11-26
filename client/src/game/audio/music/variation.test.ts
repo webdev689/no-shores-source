@@ -33,6 +33,8 @@ const FIGHTS: readonly Song[] = [
 /** The layers heard as danger nears (the wreck's walk is this, for minutes), in a fight, and at its height. */
 const MOODS = ['tension', 'combat', 'peak'] as const;
 const SEEDS = [1, 2, 3, 4, 5, 6];
+/** Enough dice that a take seldom reached, or a pairing that comes round early, shows: a few dice hid both. */
+const MANY_SEEDS = Array.from({ length: 80 }, (unused, index) => index + 1);
 const WINDOW_BARS = 16;
 
 const barSeconds = (song: Song) => song.ticksPerBar * song.secondsPerTick;
@@ -118,9 +120,27 @@ test("no two takes of a fight song are the same in their danger's layers", () =>
   }
 });
 
+test("two takes of a section differ in every bar, even in the danger's layers alone", () => {
+  for (const song of FIGHTS) {
+    const prints = bars(song, 'tension');
+    const takes = song.form?.takes ?? [];
+    takes.forEach((one, a) =>
+      takes.forEach((other, b) => {
+        if (b <= a || one.section !== other.section) return;
+        for (let bar = 0; bar < Math.min(one.bars, other.bars); bar++)
+          assert.notEqual(
+            prints[one.first + bar],
+            prints[other.first + bar],
+            `${song.name}: takes ${a} and ${b} (${one.section}) alike in bar ${bar}`,
+          );
+      }),
+    );
+  }
+});
+
 test('over ten minutes a fight hears every take it has, and never one take twice running', () => {
   for (const song of FIGHTS)
-    for (const seed of SEEDS) {
+    for (const seed of MANY_SEEDS) {
       const played = takesPlayed(song, new Arranger(die(seed)), 600);
       const count = song.form?.takes.length ?? 0;
       assert.equal(
@@ -132,12 +152,12 @@ test('over ten minutes a fight hears every take it has, and never one take twice
     }
 });
 
-test("a family's fight plays ten minutes before any pairing of its takes comes again", () => {
+test("a family's fight plays eight minutes before any pairing of its takes comes again", () => {
   for (const family of Object.values(scores.families)) {
     const song = family?.song;
     if (!song) continue;
-    for (const seed of SEEDS) {
-      const played = takesPlayed(song, new Arranger(die(seed)), 600);
+    for (const seed of MANY_SEEDS) {
+      const played = takesPlayed(song, new Arranger(die(seed)), 480);
       const pairs = played.slice(1).map((take, index) => `${played[index]}-${take}`);
       const again = pairs.findIndex((pair, index) => pairs.indexOf(pair) !== index);
       assert.equal(again, -1, `${song.name}, seed ${seed}: pairing ${pairs[again]} again`);

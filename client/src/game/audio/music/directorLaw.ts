@@ -163,11 +163,11 @@ export interface Memory {
   /** The calm piece playing out of danger and when it ends; none before the clock reaches `restUntil`. */
   readonly roaming: { readonly cue: Cue; readonly until: number } | null;
   readonly restUntil: number;
-  /** Where the last frame was heard, for its pieces and its rests; and the piece last begun, never begun twice running. */
+  /** Where the last frame was heard, for its pieces and its rests. */
   readonly where: Where | null;
-  readonly lastPiece: Cue | null;
-  /** The sea's piece last begun, kept through stops ashore, deaths and the story, so a sky's two come in turn. */
-  readonly lastSea: SeaSong | null;
+  /** Each place's piece last begun, never begun twice running there, kept through other places, deaths and the
+   *  story. */
+  readonly lastPieces: Readonly<Partial<Record<Where, Cue>>>;
   /** Whether it lay off a coast to land on last frame, and when landfall last began. */
   readonly offCoast: boolean;
   readonly landedAt: number;
@@ -188,8 +188,7 @@ export const QUIET: Memory = {
   roaming: null,
   restUntil: -Infinity,
   where: null,
-  lastPiece: null,
-  lastSea: null,
+  lastPieces: {},
   offCoast: false,
   landedAt: -Infinity,
 };
@@ -250,10 +249,10 @@ function pieceFor(
   last: Cue | null,
   songs: SongClock,
   breach: HeardBreach | null,
-  lastSea: SeaSong | null,
 ): Cue | null {
   if (where === 'sea') {
     // The sky's two pieces in turn; with neither begun last, one by the die.
+    const lastSea = last?.kind === 'sea' ? last.song : null;
     const [first, second] = [voyageSongFor(sky), SKY_SECONDS[voyageSongFor(sky)]];
     const turn = lastSea === first ? 1 : lastSea === second ? 0 : Math.floor(songs.random() * 2);
     return { kind: 'sea', song: turn ? second : first };
@@ -283,29 +282,28 @@ function roamOf(
   calm: boolean,
   hearing: Hearing,
   songs: SongClock,
-): Pick<Memory, 'roaming' | 'restUntil' | 'offCoast' | 'landedAt' | 'where' | 'lastPiece' | 'lastSea'> {
+): Pick<Memory, 'roaming' | 'restUntil' | 'offCoast' | 'landedAt' | 'where' | 'lastPieces'> {
   // Ashore it lies at the coast: sailing out from it is no landfall.
   const offCoast = hearing.sea ? hearing.sea.landfall : true;
   const where = whereOf(hearing.place, hearing.breach ?? null);
   const { after, least } = restsOf(where);
   const moved = where !== memory.where;
-  let { roaming, restUntil, landedAt, lastPiece, lastSea } = memory;
+  let { roaming, restUntil, landedAt, lastPieces } = memory;
   if (moved) [roaming, restUntil] = [null, clock + least];
   const landfall = roaming?.cue.kind === 'sea' && roaming.cue.song === 'landfall';
   const ended = roaming && (!calm || clock >= roaming.until || (!landfall && !fairForSong(hearing.sky)));
   if (ended) [roaming, restUntil] = [null, clock + after[0] + (after[1] - after[0]) * songs.random()];
-  const kept = { offCoast, landedAt, where, lastPiece, lastSea };
+  const kept = { offCoast, landedAt, where, lastPieces };
   if (!calm) return { ...kept, roaming, restUntil: Math.max(restUntil, clock + least) };
   const begin = (cue: Cue) => ({ cue, until: clock + songs.lengthOf(cue) });
   // A ship along the edge of a coast's reach comes off it again and again: landfall comes once in a rest's while.
   if (where === 'sea' && offCoast && !memory.offCoast && clock - landedAt >= REST_S[0])
     [roaming, landedAt] = [begin({ kind: 'sea', song: 'landfall' }), clock];
   else if (!roaming && clock >= restUntil && fairForSong(hearing.sky)) {
-    const cue = pieceFor(where, hearing.sky, lastPiece, songs, hearing.breach ?? null, lastSea);
-    if (cue) [roaming, lastPiece] = [begin(cue), cue];
-    if (cue?.kind === 'sea') lastSea = cue.song;
+    const cue = pieceFor(where, hearing.sky, lastPieces[where] ?? null, songs, hearing.breach ?? null);
+    if (cue) [roaming, lastPieces] = [begin(cue), { ...lastPieces, [where]: cue }];
   }
-  return { roaming, restUntil, offCoast, landedAt, where, lastPiece, lastSea };
+  return { roaming, restUntil, offCoast, landedAt, where, lastPieces };
 }
 
 export interface Verdict {
@@ -365,7 +363,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
     const sting: Sting | null = memory.dead ? null : { kind: 'defeat', cue: memory.cue };
     const rest = { restUntil: Math.max(memory.restUntil, clock + REST_S[0]) };
     return {
-      memory: { ...QUIET, ...rest, lastSea: memory.lastSea, clock, dead: true },
+      memory: { ...QUIET, ...rest, lastPieces: memory.lastPieces, clock, dead: true },
       mood: 'silent',
       cue: { kind: 'none' },
       sting,
@@ -379,7 +377,13 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
     const mood: Mood = story.kind === 'song' ? story.mood : 'silent';
     const rest = { restUntil: Math.max(memory.restUntil, clock + REST_S[0]) };
     const cut = story.kind === 'silence' && story.cut;
-    return { memory: { ...QUIET, ...rest, lastSea: memory.lastSea, clock, mood, cue }, mood, cue, sting: null, cut };
+    return {
+      memory: { ...QUIET, ...rest, lastPieces: memory.lastPieces, clock, mood, cue },
+      mood,
+      cue,
+      sting: null,
+      cut,
+    };
   }
   const { place, foes, sea } = hearing;
   const breach = hearing.breach ?? null;

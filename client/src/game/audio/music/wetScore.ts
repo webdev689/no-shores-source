@@ -260,16 +260,19 @@ interface Line {
   readonly lead: number;
   readonly drive: number;
   readonly turn?: boolean;
+  /** The voicing of another feel, where a take shares its feel and its section with another. */
+  readonly voice?: 0 | 1 | 2;
 }
 
 /** The bars under the tunes: the bed in the feel's bass and voicing, the drips, the heartbeat, the insects and the
  *  croak, the marimba, the drums, and the peak's choir, horns and the swell into the next take. */
-function underneath(w: Write, bars: readonly Held<Chord>[][], { section, feel, drive }: Line): void {
+function underneath(w: Write, bars: readonly Held<Chord>[][], { section, feel, drive, voice }: Line): void {
   const { drips, heart, insects, croak, marimba, bass, voicing } = FEELS[feel] ?? FEELS[0]!;
-  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
+  // A take voiced as another feel strikes its bed again each bar, so no bar of it sounds as its feel's other take.
+  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS, voice !== undefined)) {
     const tones = CHORDS[name];
     if (bass === 'held') w.note('bass', bar, beat, beats, tones.bass, 92);
-    for (const n of voiced(tones.pad, voicing)) w.note('pad', bar, beat, beats, n, 58);
+    for (const n of voiced(tones.pad, voice ?? voicing)) w.note('pad', bar, beat, beats, n, 58);
     for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 66);
     for (const n of tones.horn) w.note('horn', bar, beat, Math.min(beats, 4), n, 74);
   }
@@ -358,12 +361,12 @@ const TAKES: readonly Line[] = [
   { section: 'break', feel: 2, lead: 1, drive: 3 },
   { section: 'down', feel: 0, lead: 0, drive: 0 },
   { section: 'down', feel: 1, lead: 1, drive: 0 },
-  { section: 'a1', feel: 0, lead: 1, drive: 3 },
-  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true },
-  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true },
-  { section: 'a2', feel: 1, lead: 0, drive: 2 },
-  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true },
-  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true },
+  { section: 'a1', feel: 0, lead: 1, drive: 3, voice: 1 },
+  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true, voice: 2 },
+  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true, voice: 0 },
+  { section: 'a2', feel: 1, lead: 0, drive: 2, voice: 2 },
+  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true, voice: 1 },
+  { section: 'a2', feel: 2, lead: 2, drive: 2, turn: true, voice: 0 },
   { section: 'break', feel: 0, lead: 1, drive: 3 },
   { section: 'down', feel: 2, lead: 0, drive: 0 },
 ];
@@ -440,11 +443,12 @@ const secondCadence = (): Song =>
     w.hit('heart', 1, 0, 64);
   });
 
-/** The second victory: the tune's opening on B and on C sharp, then F sharp major, the congas in their second groove. */
+/** The second victory: a slow climb from F sharp through B and C sharp to F sharp major, the congas in their second
+ *  groove. */
 const secondVictory = (): Song =>
   makeSong({ ...SONG, name: 'wet-victory-2', bars: 4, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('Bm | C# | F# | F#'), 1);
-    const rise = tune('B4:.75 D5:.75 F#5:.5 D5:2 | C#5:.75 F5:.75 G#5:.5 F5:2 | A#4:.75 C#5:.75 F#5:.5 C#5:2 | F#5:4');
+    const rise = tune('F#4:2 A4:1 B4:1 | C#5:3 G#4:1 | A#4:2 C#5:2 | F#5:4');
     lay(w, 'reed', 0, rise, 104, { octave: -1 });
     lay(w, 'strings', 0, rise, 80, { octave: -1 });
     for (let bar = 0; bar < 2; bar++) drums(w, bar, 1, 2, bar === 1 ? 1 : null);

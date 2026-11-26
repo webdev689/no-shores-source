@@ -252,16 +252,19 @@ interface Line {
   readonly lead: number;
   readonly drive: number;
   readonly turn?: boolean;
+  /** The voicing of another feel, where a take shares its feel and its section with another. */
+  readonly voice?: 0 | 1 | 2;
 }
 
 /** The bars under the tunes: the bed in the feel's bass and voicing, the rub with the heart and the sand, the oud,
  *  the drums and the timpani, and the peak's choir, stabs and the swell into the next take. */
-function underneath(w: Write, bars: readonly Held<Chord>[][], { section, feel, drive }: Line): void {
+function underneath(w: Write, bars: readonly Held<Chord>[][], { section, feel, drive, voice }: Line): void {
   const { rub, heart, sand, oud, bass, voicing } = FEELS[feel] ?? FEELS[0]!;
-  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
+  // A take voiced as another feel strikes its bed again each bar, so no bar of it sounds as its feel's other take.
+  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS, voice !== undefined)) {
     const tones = CHORDS[name];
     if (bass === 'held') w.note('bass', bar, beat, beats, tones.bass, 90);
-    for (const n of voiced(tones.pad, voicing)) w.note('pad', bar, beat, beats, n, 56);
+    for (const n of voiced(tones.pad, voice ?? voicing)) w.note('pad', bar, beat, beats, n, 56);
     for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 70);
   }
   bars.forEach((held, bar) => {
@@ -366,12 +369,12 @@ const TAKES: readonly Line[] = [
   { section: 'break', feel: 2, lead: 1, drive: 3 },
   { section: 'down', feel: 0, lead: 0, drive: 0 },
   { section: 'down', feel: 1, lead: 1, drive: 0 },
-  { section: 'a1', feel: 0, lead: 1, drive: 3 },
-  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true },
-  { section: 'a1', feel: 2, lead: 0, drive: 3, turn: true },
-  { section: 'a2', feel: 1, lead: 0, drive: 2 },
-  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true },
-  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true },
+  { section: 'a1', feel: 0, lead: 1, drive: 3, voice: 1 },
+  { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true, voice: 2 },
+  { section: 'a1', feel: 2, lead: 2, drive: 3, turn: true, voice: 0 },
+  { section: 'a2', feel: 1, lead: 0, drive: 2, voice: 2 },
+  { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true, voice: 1 },
+  { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true, voice: 0 },
   { section: 'break', feel: 0, lead: 1, drive: 3 },
   { section: 'down', feel: 2, lead: 0, drive: 0 },
 ];
@@ -438,11 +441,11 @@ const defeat = (): Song =>
       w.hit('heart', bar, 0, velocity);
   });
 
-/** The second cadence: the reed falling G, F, E to the low A over the minor four, the strings leaning on C sharp. */
+/** The second cadence: the reed falling B flat, G, F, E to A in long steps, the strings leaning on C sharp. */
 const secondCadence = (): Song =>
   makeSong({ ...SONG, name: 'dry-cadence-2', bars: 3, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('Gm | Bb/A | A'), 0.85);
-    lay(w, 'reed', 0, tune('G4:1 Bb4:1 A4:1.5 | G4:1 F4:1 E4:.5 F4:.5 G4:.5 | A4:3.5'), 92, { legato: 0.97 });
+    lay(w, 'reed', 0, tune('Bb4:2 G4:1.5 | F4:2 E4:1.5 | A4:3.5'), 92, { legato: 0.97 });
     lay(w, 'strings', 0, tune('D4:2 Bb3:1.5 | D4:2 C#4:1.5 | A3:3.5'), 72, { legato: 0.98 });
     w.note('timpani', 2, 0, 0.9, 'A2', 84);
     w.hit('heart', 2, 0, 78);
