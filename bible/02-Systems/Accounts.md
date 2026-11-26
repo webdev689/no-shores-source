@@ -7,6 +7,7 @@ code:
   - server/accounts/companies.ts#companionsOf
   - server/accounts/discord.ts#callback
   - server/accounts/discord.ts#taken
+  - server/accounts/developers.ts#isDeveloper
   - server/accounts/secrets.ts#hashPassword
   - server/accounts/worker.ts#CharacterKeeper
   - server/accounts/worker.ts#LinkedCharacters
@@ -40,6 +41,8 @@ code:
   - crates/gear/src/last.rs#Last
   - crates/room/src/left.rs#stand_where_left
   - server/accounts/lastPlace.ts#lastPlace
+  - server/accounts/slots.ts#slotsAsk
+  - server/accounts/migrations/20261126003000_character_slots.sql
   - client/src/game/relog.ts#resume
   - client/src/game/relog.ts#keepPlace
 ---
@@ -83,6 +86,10 @@ they play in holds it while they are there.
   (`linked.ts`). Given up to 1000 Discord ids in one ask (`pledges`), the name of the faction each linked one is
   pledged to, or null for none; an id linked to no account is left out, and more than 1000 answer nothing. Nothing
   else: no account id, no email, no gear.
+- **Who is a developer** ([[Developers Launch Activities From a Test Room, in Max Gear]]): an account linked to a
+  Discord account that holds a developer's role, as the bot answers through the accounts' binding to its `Members`
+  ([[Discord Bot]], "The game module"). The rooms ask through `CharacterKeeper.developer`, with a session's token: its
+  account and username for a developer's, null otherwise. No Discord, or a bot that does not answer, is no developer.
 - **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
   guests an hour (an IPv6 address by its /48 for guests) and every address together 500
   ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and one
@@ -114,15 +121,37 @@ they play in holds it while they are there.
 
 ## The character, kept
 
+- **Four characters, one in play** ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]];
+  Claude's calls in [[Character Slots and the Test Room as Claude Builds Them]]). The one in play is the `characters`
+  row, its `slot` 0 to 3 and its `look` (the figure the page chose, as JSON) beside its body, so the Roster, the bot,
+  Find a Company, the guild's weeks, the outposts and the chat read it as the account's character. The other three
+  wait in `benched`, one row a slot, each with its body, look, room and the room before, as it was when another was
+  chosen; a slot with no row is empty. The vault and Aurem are the account's, in `vaults` (`gear::shared` as JSON), and
+  never move as a character is switched or deleted. Each table's rows go with their account, so a guest swept goes
+  whole.
+- **The vault joined in a room.** A claim answers the account's vault beside the character (`vault`, null before a
+  room first kept one apart). The room joins it into the character it gives the player, so the page and every rule
+  see one whole character, and each save and the last release send the two parted again (`keptApart`): the accounts
+  write the character and the vault in one batch, the vault only while that holder still holds the character, so a
+  room that lost it writes neither. A release with no body (turned away) writes neither. A character kept before the
+  vault was the account's still holds its own vault and Aurem; the first save after parts them into the account's
+  row, once, so nothing is lost or doubled; switched away from or deleted before that, the accounts part them first,
+  as the rules would. A switch also counts the guild's week from the chosen character's own record on, so a switch
+  back gives the guild nothing twice, and the benched characters' errands keep their answers as the one in play's.
+  A vault the room cannot read leaves the character untouched, new or kept, so no save writes an empty vault over it.
+  Either side deployed first loses nothing: a room meeting accounts older than the vault (a claim with no `vault` at
+  all) lets the character go untouched and plays it unkept, and the accounts save the body of a room older than the
+  vault alone (a save with no vault), its vault still in it.
 - **One room at a time.** A node's room ([[Server]]) holds each signed-in player's character: the gear crate's
-  `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the
-  room claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can
-  reach) and gives it to the player, trimming their fight by it. One account is one player in a room: a second
-  socket of theirs signed in (a rejoin before the room saw the first close, or a second tab) sends the first away
-  as played elsewhere before it is given the character, so a run keeps the first one's body for it, and the rules
-  refuse to note one account for two players (`Room::own`). A rejoin's old socket is one the page let go of already,
-  so it plays on; a second tab's page stops there and joins no more, so two tabs never take the character back and
-  forth.
+  `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the room
+  claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can reach)
+  and gives it to the player, trimming their fight by it. One account is one player in a room: a second socket of theirs
+  signed in (a rejoin before the room saw the first close, or a second tab) sends the first away as played elsewhere
+  before it is given the character, so a run keeps the first one's body for it, and the rules refuse to note one account
+  for two players (`Room::own`). While the accounts hold what this room last saved of the first, and gave no errand's
+  answer onto it since, the room's own body of it is the newest, and the second takes that on, saved anew under its
+  hold. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
+  joins no more, so two tabs never take the character back and forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
   and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the
@@ -192,13 +221,15 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
-- **The company**: eight at most, as a Breach's run is for ([[Breaches]]; every other run holds four), one its leader; a player alone leads their own. A player is
-  invited (the invite stands ten minutes, then is let go), or joins as the leader's privacy allows: Public, anyone;
-  Friends Only (each player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though
-  an invite still stands. The Roster shows the leader's privacy, the one that applies; a member's own applies once they
-  lead. A full company is refused before the player leaves their own, and joining one ends the invites they sent. The
-  leader makes another the leader or removes them; a leader who leaves hands the lead to the longest there. A member
-  away from the game ten minutes leaves it, but never the player asking.
+- **The company**: eight at most, as a Breach's run is for ([[Breaches]]; every other run holds four), one its leader;
+  a player alone leads their own. A player is invited (the invite stands ten minutes, then is let go), or joins as the
+  leader's privacy allows: Public, anyone; Friends Only (each player's first setting), the leader's friends; Invite
+  Only, those invited; Closed, no one, though an invite still stands. The Roster shows the leader's privacy, the one
+  that applies; a member's own applies once they lead. A full company is refused before the player leaves their own, and
+  joining one ends the invites they sent. The leader makes another the leader or removes them, each only while they
+  still lead and the other is still in it as it is written, so one who moved on meanwhile is never taken from their new
+  company; a leader who leaves hands the lead to the longest there. A member away from the game ten minutes leaves it,
+  but never the player asking.
 - **The guild**: a name of 3 to 24 characters, letters and digits starting with a letter, with single spaces, dashes
   or apostrophes between them, none too like another's; a tag of 2 to 4 letters or digits, unique however it is
   typed; and a motto of one line, 80 characters at most, with no control characters or marks that turn the text's
@@ -317,6 +348,30 @@ table holds one row an account: what differs from the game's defaults, as JSON, 
   waits on a read that answers, so nothing is kept over binds never read: what the player bound before the read is
   laid over what the account kept, and that is saved. Where the accounts do not answer, the game plays on with what
   it has, the defaults at first, and saves nothing until a read answers.
+
+## The four characters
+
+The character screen reads and changes the four by the session's bearer token, 120 asks an hour an account
+(`slots.ts`).
+
+- **`GET /v1/characters`** answers `playing` (the slot in play), `developer` (asked of the bot, "Who is a developer"),
+  `aurem` (the account's, or the character in play's while no vault is kept apart yet) and `slots`, four entries by
+  slot: null for an empty one, else its `slot`, `shown` (as the Roster reads it, null before a room kept one), `pledge`
+  (the faction's number, or null), `look` (or null), `place` (where it logs back in, as `/v1/me`'s), `prologue`
+  (whether it played the story through) and `saved` (when it was last saved, in ms). A slot in play with no body and
+  no look is empty.
+- **`POST /v1/characters/play`** with `{ "slot" }` makes that slot the one in play: the one in play goes to the bench
+  (unless empty) and the chosen one comes off it, or a new character for an empty slot, who plays the prologue; one
+  batch. It waits while a room holds the one in play, refused 409 "Your character is still in a room. Try again in a
+  moment."; the slot already in play answers as `GET`; a slot outside 0 to 3 is refused 400. Answers as `GET`.
+- **`POST /v1/characters/delete`** with `{ "slot" }` deletes a benched character, or empties the one in play (its slot
+  stays in play; refused 409 while a room holds it). The vault stays the account's. Answers as `GET`.
+- **`PUT /v1/characters/look`** with `{ "look" }` keeps the look of the one in play: an object of `body`, `race`,
+  `tone` and `hair` as the page writes it, at most 512 characters as JSON; anything else is refused 400. Answers 204.
+- **`GET /v1/me`**'s `place` is the character in play's, and `playing` its slot, so the page keeps what it keeps by
+  character under the right one however it came in.
+- **A switch or a deletion** answers 409 as held when a room claimed the character in play between the accounts'
+  read and their write, which then changed nothing.
 
 ## Running it here
 

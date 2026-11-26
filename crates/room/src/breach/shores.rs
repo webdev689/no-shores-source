@@ -129,7 +129,8 @@ impl Room {
             state.open = true;
             self.tell_all(EventKind::RiftOpened, rift as f64);
         }
-        if state.open && (claimed || clock >= state.last_held + CLOSES_TICKS) {
+        // In a test room an open rift stays open, so the one player crossing is never stranded.
+        if state.open && !self.test && (claimed || clock >= state.last_held + CLOSES_TICKS) {
             (state.open, state.held) = (false, 0);
             self.tell_all(EventKind::RiftClosed, rift as f64);
         }

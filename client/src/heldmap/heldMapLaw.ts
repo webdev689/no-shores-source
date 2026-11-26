@@ -60,7 +60,8 @@ export function stageOf(viewport: { readonly width: number; readonly height: num
   const foot = screenH - Math.max(FIT.foot * screenH, FIT.footPx);
   let width = (FIT.width * screenW) / sheetW;
   let height = width * aspect;
-  const tallest = Math.min(FIT.height * screenH, foot - head);
+  // A window shorter than the head and foot it keeps clear still holds a painting, however small, never one of no size.
+  const tallest = Math.max(1, Math.min(FIT.height * screenH, foot - head));
   if (height * sheetH > tallest) {
     height = tallest / sheetH;
     width = height / aspect;

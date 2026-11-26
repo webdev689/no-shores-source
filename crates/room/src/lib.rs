@@ -4,6 +4,7 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees.
 
+mod arrivals;
 mod arts;
 pub mod asks;
 mod atheric;
@@ -74,10 +75,12 @@ mod statuses;
 mod stepping;
 mod steps;
 mod story;
+mod test_room;
 pub mod threat;
 mod told;
 pub mod winds;
 
+pub use arrivals::{ArrivalSeen, Bringer, FoeArrival};
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
@@ -86,7 +89,7 @@ pub use entrances::Entrance;
 pub use find_holds::{CHEST_REACH, FIND_HEIGHT, OPEN_TICKS, SEARCH_REACH, SEARCH_TICKS};
 pub use finds::{ChestPlace, Holder};
 pub use floor::{Floor, standing_on};
-pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
+pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, PATROL_FOES_MOST, SHIELD_SHIFT};
 pub use guild_book::{GuildSeen, Guilds};
 pub use judging::{Event, EventKind, How};
 pub use outpost::{Errand, Material, OutpostAsk, PENDING, What, guild_key};
@@ -145,6 +148,8 @@ pub struct Room {
     arts: bool,
     /// Whether it plays the prologue's wreck (`story.rs`).
     story: bool,
+    /// Whether it is a developer's test room (`test_room.rs`).
+    pub(crate) test: bool,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     /// How many players have joined: the next stands at the spawn this many turns on.
@@ -203,7 +208,7 @@ pub struct Room {
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
     /// A patrol's foes' sites, each with whether its group has stood there yet (`stands.rs`).
-    pub(crate) foe_sites: Vec<([f64; 2], bool)>,
+    pub(crate) foe_sites: Vec<garrison::Site>,
     /// Since when no player has come near each half-fallen patrol group, by its first foe as it stood (`stands.rs`).
     pub(crate) unvisited: BTreeMap<FighterId, u64>,
     pub(crate) drops: Vec<Drop>,
@@ -260,6 +265,8 @@ pub struct Room {
     pub(crate) breach_gate: Option<Box<breach::gate::Gate>>,
     /// Its fallen being revived, and where they respawn (`revive.rs`).
     pub(crate) respawning: revive::Respawning,
+    /// What brings foes now, the Tithe's airships and the Lattice's crowns, and the foes arriving (`arrivals.rs`).
+    pub(crate) arrivals: arrivals::Arrivals,
 }
 
 impl Room {
@@ -278,6 +285,7 @@ impl Room {
             takes_foe_asks: section.is_none(),
             arts: true,
             story: false,
+            test: false,
             section,
             clock: 0,
             next_fighter: 1,
@@ -346,6 +354,7 @@ impl Room {
             breach: None,
             breach_gate: None,
             respawning: revive::Respawning::default(),
+            arrivals: arrivals::Arrivals::default(),
         }
     }
 
@@ -389,12 +398,23 @@ impl Room {
     /// A new player standing as `body` stands, with nothing drawn; in the prologue's wreck room, armed for the story.
     pub(crate) fn join_standing(&mut self, body: Body) -> PlayerId {
         let id = self.next_id();
-        let mut joined = Player::new(player(body, BARE_HANDS), self.clock, self.is_test_ground());
+        let character = if self.test {
+            gear::Character::max_test()
+        } else if self.is_test_ground() {
+            gear::Character::test_grounds()
+        } else {
+            gear::Character::starting()
+        };
+        let mut joined = Player::new(player(body, BARE_HANDS), self.clock, character);
         if self.story {
             story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
         self.arrived(id);
+        // The test character comes in its gear, its perks' trims and its weapon taken at once.
+        if self.test {
+            self.retrim(id);
+        }
         id
     }
 
@@ -456,6 +476,7 @@ impl Room {
         self.step_players();
         self.keep_spots();
         self.spawn_asked();
+        self.keep_arrivals();
         self.keep_patrol();
         self.keep_gathering();
         self.keep_finds();

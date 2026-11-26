@@ -87,3 +87,22 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   only from Privacy & Security, and cannot update itself. Signing takes the owner's accounts and keys: Apple's
   Developer Program for a Mac (a Developer ID and notarizing), and for Windows a code-signing certificate or Azure's
   Artifact Signing ([[Desktop App]], "Releases and downloads").
+- **Foe arrivals** ([[Foe Arrivals as Claude Builds Them]]), each the owner's to say:
+  - The airship's and the crown's look and flight, once seen in the game: their size, the airship's 16 m hang and
+    8 s flight in, the crown's claw and its 6.4 m height.
+  - Whether the Lattice also hold territories in patrol zones beyond the Fissure, forming under crowns; they hold no
+    ground in those zones ([[Enemies]], "Factions").
+  - Which areas hold territories ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]):
+    Claude's call is every area but a landing, a gate, an entrance, a hamlet, a wilds, a Breach's hollow and a guild's
+    plot, so farms, mills, docks, lighthouses and towers hold Tithe groups too.
+  - How a cleared territory is retaken ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]
+    says "its group brought back by airship while no player is near"): Claude's call brings it by airship when players
+    stay within 220 m but none within 40 m for 120 s; once none has come within 220 m for 90 s, it is let go and stands
+    afresh already on the ground when one comes back, with no airship.
+  - Whether a site's group may be one of the smaller groups too: a smaller group up a run's ledge, facing away, is
+    not met by a player walking the run (`sites_held`), so sites stand bands.
+  - The arrivals' sounds are recordings already picked for other things (a hull's creak, the thunder's roll, the
+    ice's crack, a shield breaking); a sheet of the airship's own engines, hatch and the crown's forming would let the
+    owner pick their own.
+  - Whether the heroic raid is as hard as wanted: the room door's scripted pair loses its last wave (Marrow); the
+    room's own raid test and the page's two bots beside its player win it ([[Public Events]], "Limits").

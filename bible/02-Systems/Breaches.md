@@ -21,6 +21,7 @@ code:
   - crates/room-wasm/src/breach_door.rs#breach_json
   - server/breach.ts#Breach
   - server/roomNames.ts#breachAsk
+  - crates/room/src/test_room.rs#TEST_HARM
   - server/accounts/finding.ts#BREACH_OPENS
   - content/dungeon/breach-drowned-vale.json
   - tools/modules/breach_gate.py
@@ -65,7 +66,9 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   One company holds the gate at a time: **the Waking**. Its three moorings held at once by its living players fill
   the Spire (150 s); fewer let it ebb (at a quarter the pace at Normal, a half at Hard), and a Bulwark sent out claims
   a mooring left empty, which holds nothing while it stands. Waves come from the hollow's four growths, two and one
-  more for every two of the company's living holders, six at most. The Spire woken, the gate opens to that company
+  more for every two of the company's living holders, six at most, each growth's foes forming under a crown of the
+  Lattice's crystal over it, and its perch's Ravager under its own; a Bulwark sent out forms under a crown over its
+  mouth ([[Enemies]], "Arrivals"; [[Foe Arrivals as Claude Builds Them]]). The Spire woken, the gate opens to that company
   alone until its Breach is cleared or a day has passed, and no company whose run opened takes the gate again; lost
   (a wipe, or the Spire standing empty a whole minute), the company stands whole at the gate's arrival and the gate is
   free. The zone hears only the runs it opened, so a run no one was let into shows no company inside. The gate's
@@ -88,13 +91,30 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
 - **Rewritten.** A mark the encounters lay on players; when its time comes the Rewritten are unwritten (killed)
   unless cleansed first.
 
+## The Breach's test
+
+A developer tests the Breach from the Test Room ([[Activities]], "Test runs"): its run is
+`node-gullwing-vale--breach-<normal|hard>--test-<instance>`, and its gate stands in a copy of the Gullwing Vale of its
+own, `node-gullwing-vale--test-<instance>`, opened as the zone's node is and made a test room. A developer who joins
+the copy with `?breach=` and the test run's name is held in that run's company at once, with nothing asked of the
+accounts, and arrives at the gate as a launched company does; the Waking and the gate open as they do. The test run
+asks its zone copy whether its gate opened, as a real run asks its zone (`breachRun` names the copy). In a test room
+alone:
+
+- **The Waking**: any one mooring held fills the Spire as all three do.
+- **The Two Shores**: a rift, once open, stays open whether its mooring is held or not, so no one is stranded.
+- **What unwrites the company** (the Mending's or the Seam's fusions, the Steward's last taking, the Lodestone left
+  lying, being Seen in the Ways at Hard) harms but loses no attempt: those are what one player cannot hold off alone.
+- **The fallen**: the tester never falls (their health stays at 1 at least), and one fallen into the dark stands again
+  at once.
+
 ## The Drowned Vale, in order
 
 | Part | What it is | Its rules |
 |---|---|---|
 | The Waking | The Spire at the Sunken Gate, in the zone | Above |
 | The Descent | Down the old mill race: drops, the fallen wheel across a gap, a jump; a hidden chest off a ledge | A traversal |
-| The Mending | The drowned green: three seams | Three stages of 60 s (north; west and east; all three), waves between; Penitents walk to the nearest open seam (turning to another as one shuts, falling apart with none open; one every 5 s for four, as much more often for more) and fuse, each fusion overtaking ground round it (a tenth of health a second), the walkers standing whatever the waves; four fusions (Hard three) wipe; the Mender last |
+| The Mending | The drowned green: three seams | Three stages of 60 s (north; west and east; all three), waves between (every encounter's waves forming under a crown over each mouth they come from, [[Enemies]], "Arrivals"); Penitents walk to the nearest open seam (turning to another as one shuts, falling apart with none open; one every 5 s for four, as much more often for more) and fuse, each fusion overtaking ground round it (a tenth of health a second), the walkers standing whatever the waves; four fusions (Hard three) wipe; the Mender last |
 | The Choir | The chapel: seven bells, five desks, the font | No spell seeks or strikes a bell or a Watcher, so the Arts never break the order; Rounds of 3 to 7 bells waking 1 s apart (Hard 0.7 s) and ringing 8 s (Hard 6 s) after the last; broken in waking order (a few blows each) or they ring; a wave stands as each round wakes; a ring Rewrites every living player in the run; the font cleanses, stays lit 3 s for the rest to reach it, then rests 25 s. Then the Scrivener, warded, at a desk, its aimed shot telegraphed, at half health quicker with two Flickers called behind it: Ground breaks the ward; every 25 s it marks a desk for 4 s, blotted by a player standing on it, or it moves there; every 30 s it writes, unwriting the Rewritten; a bell wakes 22 s before each writing; fury at 8 minutes |
 | The Unlit Ways | The old town's streets between houses bricked shut, and its Watchers | The Watchers listen from 3 s in; a Watcher sees 14 m in a 40° cone on its sweep; a living player in its sight 0.75 s, or sprinting within 8 m, is seen: at Normal they are unwritten, at Hard the company in 3 s, whoever reaches the Stair meanwhile; Watchers cannot be harmed; won when every living member of the company stands on the Stair; the Heart's chest opens to an attempt in which no one was seen, and shuts once anyone is |
 | The Broken Stair | Slabs over the dark | A traversal on the slabs' measure; a hidden chest on a side slab |

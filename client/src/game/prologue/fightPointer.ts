@@ -13,8 +13,13 @@ export interface Aimed {
   wheel(steps: number): void;
 }
 
-/** Hands the canvas's pointer to whichever fight `fight` answers while it answers one. */
-export function fightPointer(canvas: HTMLCanvasElement, fight: () => Aimed | null): void {
+/** Hands the canvas's pointer to whichever fight `fight` answers while it answers one; a button let go, or the pointer
+ *  lost, goes to `holding`, the fight whatever covers it, so no aim stays held. */
+export function fightPointer(
+  canvas: HTMLCanvasElement,
+  fight: () => Aimed | null,
+  holding: () => Aimed | null = fight,
+): void {
   let held = false;
   let aiming = false;
   const taken = (event: Event) => {
@@ -52,10 +57,10 @@ export function fightPointer(canvas: HTMLCanvasElement, fight: () => Aimed | nul
   canvas.addEventListener(
     'pointerup',
     (event) => {
-      const fought = fight();
+      const fought = holding();
       held = false;
       if (!fought) return;
-      taken(event);
+      if (fight()) taken(event);
       if (BINDS.now.aim.keys.includes(`mouse${event.button}`) && aiming) {
         aiming = false;
         fought.aim(false);
@@ -69,7 +74,7 @@ export function fightPointer(canvas: HTMLCanvasElement, fight: () => Aimed | nul
     held = false;
     if (!aiming) return;
     aiming = false;
-    fight()?.holdFire();
+    holding()?.holdFire();
   });
   canvas.addEventListener(
     'wheel',

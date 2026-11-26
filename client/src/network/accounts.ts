@@ -1,7 +1,10 @@
 import type { LastPlace } from '../../../server/accounts/lastPlace.ts';
+import { type Characters, type Held, SLOTS, charactersOf, keptFor } from './characters.ts';
 
 /** Where the deployed accounts are (`server/accounts`). */
 export const LIVE_ACCOUNTS = 'https://overlook-accounts.mackcothran.workers.dev';
+/** What an ask says when the accounts cannot be reached. */
+export const OUT_OF_REACH = 'The accounts could not be reached.';
 
 /** An account as its player sees it: a guest until it has a username or Discord. */
 export interface Account {
@@ -259,6 +262,9 @@ export class AccountLink {
   /** How long an ask may go unanswered, milliseconds, before it is given up as out of reach: a host that never
    *  answers would otherwise hold whatever waits on it until the browser's own limit. */
   patienceMs = 10_000;
+  /** The slot of the account's character in play, once the accounts have said (with who the page is, and as the four
+   *  are read or one put in play); none before, or from accounts older than the four, whose one is the first. */
+  playing: number | null = null;
 
   constructor(base: string, kept: Kept, ask: typeof fetch = (...given) => fetch(...given), passing: Kept = kept) {
     this.base = base.replace(/\/+$/, '');
@@ -281,6 +287,12 @@ export class AccountLink {
   /** The account the accounts last said the page plays as, none until they have. */
   get account(): Account | null {
     return this.known;
+  }
+
+  /** What the page keeps by account is kept under: the account and its character in play (`keptFor`); none until the
+   *  accounts have said who the page is. */
+  get keptAs(): string | null {
+    return keptFor(this.known?.id ?? null, this.playing);
   }
 
   /** The session's token, if the page holds one. */
@@ -323,6 +335,21 @@ export class AccountLink {
   }
 
   private async call(method: string, path: string, body?: unknown): Promise<Record<string, unknown> | string> {
+    const { status, read } = await this.called(method, path, body);
+    if (status >= 200 && status < 300) return read;
+    return status === 0
+      ? OUT_OF_REACH
+      : typeof read['error'] === 'string'
+        ? read['error']
+        : `The accounts answered ${status}.`;
+  }
+
+  /** An ask's status (0 for none: out of reach) and what came back with it, read as JSON where it is. */
+  private async called(
+    method: string,
+    path: string,
+    body?: unknown,
+  ): Promise<{ readonly status: number; readonly read: Record<string, unknown> }> {
     const token = this.token;
     try {
       const answer = await this.ask(`${this.base}${path}`, {
@@ -335,11 +362,50 @@ export class AccountLink {
         signal: AbortSignal.timeout(this.patienceMs),
       });
       const read = (await answer.json().catch(() => ({}))) as Record<string, unknown>;
-      if (answer.ok) return read;
-      return typeof read['error'] === 'string' ? read['error'] : `The accounts answered ${answer.status}.`;
+      return { status: answer.status, read };
     } catch {
-      return 'The accounts could not be reached.';
+      return { status: 0, read: {} };
     }
+  }
+
+  /** The four characters from an answer, the slot in play kept; 409's words as `held` while the character in play is
+   *  still held by a room; or why not. */
+  private charactersFrom(heard: {
+    readonly status: number;
+    readonly read: Record<string, unknown>;
+  }): Characters | Held | string {
+    const { status, read } = heard;
+    const words = typeof read['error'] === 'string' ? read['error'] : `The accounts answered ${status}.`;
+    if (status === 409) return { held: words };
+    if (status === 0) return OUT_OF_REACH;
+    if (status < 200 || status >= 300) return words;
+    const characters = charactersOf(read);
+    if (!characters) return 'The accounts gave an answer this page cannot read. Reload the page.';
+    this.playing = characters.playing;
+    return characters;
+  }
+
+  /** The account's four characters, or why not. */
+  async characters(): Promise<Characters | string> {
+    const answer = this.charactersFrom(await this.called('GET', '/v1/characters'));
+    return typeof answer === 'object' && 'held' in answer ? answer.held : answer;
+  }
+
+  /** Puts the character in `slot` in play (a new one, in an empty slot): the four as they stand then, `held` while the
+   *  character in play is still held by a room, or why not. */
+  async play(slot: number): Promise<Characters | Held | string> {
+    return this.charactersFrom(await this.called('POST', '/v1/characters/play', { slot }));
+  }
+
+  /** Deletes the character in `slot`, as `play` answers. */
+  async deleteCharacter(slot: number): Promise<Characters | Held | string> {
+    return this.charactersFrom(await this.called('POST', '/v1/characters/delete', { slot }));
+  }
+
+  /** Keeps the look of the character in play with it; why not, if it cannot. */
+  async keepLook(look: unknown): Promise<string | null> {
+    const answer = await this.call('PUT', '/v1/characters/look', { look });
+    return typeof answer === 'string' ? answer : null;
   }
 
   /** The account and its token from an answer that brings a new session, which is kept. */
@@ -367,6 +433,9 @@ export class AccountLink {
       const known = await this.call('GET', '/v1/me');
       if (typeof known !== 'string') {
         this.place = (known['place'] as LastPlace | undefined) ?? null;
+        const playing = known['playing'];
+        this.playing =
+          Number.isInteger(playing) && Number(playing) >= 0 && Number(playing) < SLOTS ? Number(playing) : null;
         return known['account'] as Account;
       }
       if (known !== 'Not signed in.' && known !== LAPSED) return null;

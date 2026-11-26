@@ -29,6 +29,8 @@
     { "tag": "finders", "new_sqlite_classes": ["CompanyFinder"] },
     { "tag": "chat", "new_sqlite_classes": ["ChatHall"] },
   ],
+  // The bot's Members (bot/main.ts), which says who is a developer, reached by RPC alone.
+  "services": [{ "binding": "BOT", "service": "noshores-bot", "entrypoint": "Members" }],
   // The pages a Discord sign-in may come back to, by origin and path: the game at noshores.online and on GitHub Pages,
   // where it is still published. `npm run accounts` gives the dev server's own.
   "vars": {

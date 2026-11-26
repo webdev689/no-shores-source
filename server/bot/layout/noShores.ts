@@ -70,6 +70,8 @@ export const ROLES: readonly LayoutRole[] = [
       'MUTE_MEMBERS',
     ],
   },
+  // A developer sees the Test Room on the game's character screen (the game module's `developers`, with the Founder).
+  { key: 'developer', name: 'Developer', colour: 0x9d8fd8, hoist: true, permissions: [] },
   // Each house in its own gear's colour (content/gear/factions.json), given by the game module from a member's pledge.
   { key: 'stormcallers', name: 'Stormcallers', colour: 0x447cc0, hoist: true, permissions: [] },
   { key: 'lamplighters', name: 'Lamplighters', colour: 0xc49a69, hoist: true, permissions: [] },

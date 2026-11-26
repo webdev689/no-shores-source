@@ -51,6 +51,7 @@ impl Sea {
             }
             self.lay_flotsam(ship, (1, 0));
             let paid = crate::ship_power::pay_sinking(ship, self.hostiles.difficulty, &mut self.harbour.characters);
+            self.pay_boarders(ship, &paid);
             self.harbour.changed.extend(paid);
             let how = if ship.struck { "strike" } else { "sink" };
             if let Some(side) = crate::quests::side_of(ship.hostile.commission.faction) {
@@ -74,7 +75,7 @@ impl Sea {
             }
         }
         let (fought, week) = (fought.into_iter().collect::<Vec<_>>(), gear::clock::week_of(self.minute));
-        super::guilds::guild_sunk(&mut self.harbour, week, &fought, water, rank);
+        super::guilds::guild_sunk(&mut self.harbour, &mut self.decks, week, &fought, (water, rank));
     }
 
     /// Tells a player's quest log of a ship beaten: their deck room's while they fight on a captain's deck, which

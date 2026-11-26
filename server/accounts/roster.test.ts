@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { accounts, slowly } from './accountsForTests.ts';
 import { characters } from './characters.ts';
+import type { Db, Statement } from './database.ts';
 import { INVITE_MS } from './companies.ts';
 import { foundRun } from './finding.ts';
 import type { Details, Roster } from './roster.ts';
@@ -34,7 +35,7 @@ async function world(...names: string[]) {
     const holder = `${room}:${name}`;
     const claimed = await kept.claim(tokens[name] ?? '', holder);
     const shown = { level, emblem: 'overlook', worn: [] };
-    await kept.save(claimed?.account ?? '', holder, JSON.stringify({ shown }));
+    await kept.save(claimed?.account ?? '', holder, JSON.stringify({ shown }), '{}');
   };
   return { ...made, tokens, player, play, kept };
 }
@@ -104,7 +105,7 @@ test('a company lets go of a member away from the game ten minutes', async () =>
   await player('Ada').ask('company/invite', { name: 'Ben' });
   await player('Ben').ask('company/accept', { name: 'Ada' });
   const ben = await kept.claim(tokens['Ben'] ?? '', 'node-overlook-social:Ben');
-  await kept.release(ben?.account ?? '', 'node-overlook-social:Ben', null);
+  await kept.release(ben?.account ?? '', 'node-overlook-social:Ben', null, null);
   clock.now += 9 * 60_000;
   await play('Ada', 'node-overlook-social');
   assert.equal((await player('Ada').roster())?.company?.members.length, 2, 'away nine minutes');
@@ -120,7 +121,7 @@ test('the Roster lists those in the same room beside the company, each with wher
   await play('Cal', 'node-saltgrass--elite');
   const guest = (await ask('POST', '/v1/guest')).body['token'] as string;
   const held = await kept.claim(guest, 'node-overlook-social:guest');
-  await kept.save(held?.account ?? '', 'node-overlook-social:guest', '{}');
+  await kept.save(held?.account ?? '', 'node-overlook-social:guest', '{}', '{}');
   const roster = await player('Ada').roster();
   assert.deepEqual(roster.me, {
     name: 'Ada',
@@ -133,7 +134,7 @@ test('the Roster lists those in the same room beside the company, each with wher
   assert.equal(roster.guests, 1, 'a guest is counted, not named');
   assert.equal(await kept.present(tokens['Cal'] ?? '', 'sea'), true);
   const cal = await kept.claim(tokens['Cal'] ?? '', 'node-saltgrass--elite:Cal');
-  await kept.release(cal?.account ?? '', 'node-saltgrass--elite:Cal', null);
+  await kept.release(cal?.account ?? '', 'node-saltgrass--elite:Cal', null, null);
   await player('Ada').ask('friend/ask', { name: 'Cal' });
   await player('Cal').ask('friend/accept', { name: 'Ada' });
   assert.deepEqual((await player('Ada').roster()).friends[0]?.place, 'sea', 'at sea, as the sea room says');
@@ -249,6 +250,84 @@ test('a leader and a member leaving at once leave no company of one', async () =
   assert.equal((await cal.roster()).company, null);
 });
 
+/** Runs `first` just before the first statement whose words `matches` runs, as another request landing between a
+ *  read and its write would. */
+function before(deps: { database: Db }, matches: (sql: string) => boolean, first: () => Promise<unknown>): void {
+  const { database } = deps;
+  let pending: (() => Promise<unknown>) | null = first;
+  const hooked = (statement: Statement, sql: string): Statement => ({
+    bind: (...values) => hooked(statement.bind(...values), sql),
+    first: () => statement.first(),
+    all: () => statement.all(),
+    run: async () => {
+      const going = matches(sql) ? pending : null;
+      if (going) [pending] = [null, await going()];
+      return statement.run();
+    },
+  });
+  const batch = (statements: Statement[]) => database.batch(statements);
+  Object.assign(deps, { database: { prepare: (sql: string) => hooked(database.prepare(sql), sql), batch } });
+}
+
+const leaderOf = async (database: Db, name: string) =>
+  database
+    .prepare(
+      `SELECT companies.leader_id = (SELECT id FROM accounts WHERE username = ?1) AS leads,
+       EXISTS (SELECT 1 FROM company_members WHERE account_id = companies.leader_id) AS member FROM companies
+       WHERE id = (SELECT company_id FROM company_members WHERE account_id = (SELECT id FROM accounts WHERE username = ?1))`,
+    )
+    .bind(name)
+    .first<{ leads: number; member: number }>();
+
+test('a kick or a lead judged again as it is written: one who moved on meanwhile is never taken from their new company', async () => {
+  const {
+    deps,
+    players: [ada, ben, cal, dee],
+  } = await playing('Ada', 'Ben', 'Cal', 'Dee');
+  for (const leader of [ada, cal]) await leader.ask('company/privacy', { privacy: 0 });
+  await ben.ask('company/join', { name: 'Ada' });
+  await dee.ask('company/join', { name: 'Cal' });
+  const real = deps.database;
+  before(
+    deps,
+    (sql) => sql.startsWith('DELETE FROM company_members'),
+    async () => {
+      Object.assign(deps, { database: real });
+      await ben.ask('company/leave');
+      await ben.ask('company/join', { name: 'Cal' });
+    },
+  );
+  assert.equal((await ada.ask('company/kick', { name: 'Ben' })).status, 404, 'he had gone');
+  Object.assign(deps, { database: real });
+  assert.deepEqual(names((await ben.roster()).company?.members ?? []).sort(), ['Ben', 'Cal', 'Dee'], 'still in Cal’s');
+  await ben.ask('company/leave');
+  await ben.ask('company/join', { name: 'Cal' });
+  before(
+    deps,
+    (sql) => sql.startsWith('UPDATE companies SET leader_id = ?1'),
+    async () => {
+      Object.assign(deps, { database: real });
+      await dee.ask('company/leave');
+    },
+  );
+  assert.equal((await cal.ask('company/lead', { name: 'Dee' })).status, 404, 'she had gone');
+  Object.assign(deps, { database: real });
+  assert.deepEqual({ ...(await leaderOf(real, 'Cal')) }, { leads: 1, member: 1 }, 'the lead stays with a member');
+  // Cal hands the lead on as his own kick is read: led by Ben now, the kick is his no longer.
+  await dee.ask('company/join', { name: 'Cal' });
+  before(
+    deps,
+    (sql) => sql.startsWith('DELETE FROM company_members'),
+    async () => {
+      Object.assign(deps, { database: real });
+      await cal.ask('company/lead', { name: 'Ben' });
+    },
+  );
+  assert.equal((await cal.ask('company/kick', { name: 'Dee' })).status, 404, 'no longer the leader');
+  Object.assign(deps, { database: real });
+  assert.deepEqual(names((await dee.roster()).company?.members ?? []).sort(), ['Ben', 'Cal', 'Dee'], 'Dee stays');
+});
+
 test('the privacy shown is the leader’s, which is the one that applies', async () => {
   const {
     players: [ada, ben],
@@ -267,7 +346,7 @@ test('a player who leaves the sea stays in the company until away ten minutes', 
   await player('Ada').ask('company/invite', { name: 'Ben' });
   await player('Ben').ask('company/accept', { name: 'Ada' });
   const ben = await deps.database.prepare("SELECT id FROM accounts WHERE username = 'Ben'").first<{ id: string }>();
-  await kept.release(ben?.id ?? '', 'node-overlook-social:Ben', null);
+  await kept.release(ben?.id ?? '', 'node-overlook-social:Ben', null, null);
   for (let reported = 0; reported < 40; reported++) {
     clock.now += 30_000;
     await kept.present(tokens['Ben'] ?? '', 'sea');

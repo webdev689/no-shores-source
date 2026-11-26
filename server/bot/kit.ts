@@ -46,6 +46,13 @@ export interface Vars {
   };
 }
 
+/** The user ids the deploy names as the bot's owners. */
+export const ownersOf = (vars: Vars): string[] =>
+  String(vars.BOT_OWNERS ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => /^\d{5,25}$/.test(entry));
+
 /** An error's words for a log line: its message, or the thing thrown when it is no Error. */
 export const errorWords = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 

@@ -545,3 +545,6 @@ mod breach_perks_tests;
 #[cfg(test)]
 #[path = "forged_perks_tests.rs"]
 mod forged_perks_tests;
+#[cfg(test)]
+#[path = "test_room_tests.rs"]
+mod test_room_tests;

@@ -15,8 +15,10 @@ export const CARD_LOOK_FLOATS = 12;
 /** A flash's stages: off, the whole figure, its outline alone. */
 export const FLASH = { off: 0, whole: 1, outline: 2 } as const;
 
-/** The dissolve's look an arriving card is built in, past the four elements' (`arrivals.ts`). */
-const ARRIVING = 4;
+/** The dissolve's looks an arriving card is built in, past the four elements': a player's (`arrivals.ts`), white from
+ *  the feet up; a Grey Tithe foe's, let down from an airship, the same, its cells landing white, then ember; a Lattice
+ *  foe's, formed under its crown from the head down, its cells landing in its crystal (`foeArrivals.ts`). */
+export const ARRIVING = { player: 4, tithe: 5, lattice: 6 } as const;
 
 /** A flash's colour where none is given. */
 const WHITE = [1, 1, 1] as const;
@@ -46,7 +48,7 @@ export function cardLookInto(
   out[start + 2] = time;
   out[start + 3] = shown.dissolve?.share ?? shown.arrival ?? 0;
   out[start + 4] = shown.charged ? 1 : 0;
-  out[start + 5] = shown.dissolve?.look ?? (shown.arrival ? ARRIVING : 0);
+  out[start + 5] = shown.dissolve?.look ?? (shown.arrival ? (shown.arriving ?? ARRIVING.player) : 0);
   out[start + 6] = shown.jitter ?? 0;
   out[start + 7] = smear ? FLASH.off : (flash?.stage ?? FLASH.off);
   out[start + 8] = colour[0];
@@ -67,7 +69,7 @@ const ramps = (looks: readonly (readonly Rgb[])[]) => looks.flatMap((ramp) => ra
 
 /**
  * A card's look in WGSL, from its uniform's `status` (Veiled, Exposed, the clock, the dissolve's share), `look`
- * (Charged, the dissolve's element or 4 for arriving, the shake in pixels, the flash's stage) and `tint` (the flash's
+ * (Charged, the dissolve's element or an arrival's look, ARRIVING, the shake in pixels, the flash's stage) and `tint` (the flash's
  * colour; w 1 for a smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic death,
  * drawn in toward the chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none. Everything
  * is drawn on the figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades through a
@@ -158,11 +160,21 @@ fn status_arc(texel: vec2f, root: vec2f, strike: f32, arc: f32) -> f32 {
 fn status_dissolve(element: u32, share: f32, texel: vec2i, high: f32, colour: vec3f, edge: bool, clock: f32) -> vec4f {
   let light = status_light(colour);
   let order = status_order(texel / 2);
-  if (element == ${ARRIVING}u) {
-    // Arriving: built from the feet up in 2 by 2 cells while 'share' is still to come, each white as it lands.
+  if (element == ${ARRIVING.player}u || element == ${ARRIVING.tithe}u) {
+    // Arriving: built from the feet up in 2 by 2 cells while 'share' is still to come, each white as it lands; a
+    // Tithe foe's then a moment ember, as its airship's fire.
     let left = high * 0.6 + order * 0.4 - (1.0 - share) * 1.05;
     if (left > 0.0) { return vec4f(0.0); }
     if (left > -0.1) { return vec4f(1.0, 1.0, 1.0, 1.0); }
+    if (element == ${ARRIVING.tithe}u && left > -0.18) { return vec4f(1.0, 0.55, 0.18, 1.0); }
+    return vec4f(colour, 1.0);
+  }
+  if (element == ${ARRIVING.lattice}u) {
+    // Formed under its crown from the head down, each cell landing in its crystal, bright then red.
+    let left = (1.0 - high) * 0.6 + order * 0.4 - (1.0 - share) * 1.05;
+    if (left > 0.0) { return vec4f(0.0); }
+    if (left > -0.08) { return vec4f(0.96, 0.87, 0.87, 1.0); }
+    if (left > -0.2) { return vec4f(0.83, 0.33, 0.35, 1.0); }
     return vec4f(colour, 1.0);
   }
   if (element == 1u) {

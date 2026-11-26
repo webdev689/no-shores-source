@@ -183,3 +183,15 @@ fn a_travel_refused_over_an_island_spends_no_course_turn() {
     assert!(sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10).is_err());
     assert_eq!(sea.course(traveller, &[[260_000.0, 150_000.0]], 10), Ok(()), "a course at once after it");
 }
+
+#[test]
+fn a_travel_refused_where_it_goes_waits_a_courses_wait_before_the_waters_are_searched_again() {
+    let mut sea = sea();
+    let player = at_sea(&mut sea);
+    assert_eq!(sea.travel(player, &[[260_000.0, 150_000.0]], 10), Err(TravelRefused::OwnWater));
+    sea.tick();
+    let far = [[-1.0e9, 0.0]];
+    assert_eq!(sea.travel(player, &far, 10), Err(TravelRefused::Course(CourseRefused::TooSoon)), "nothing searched");
+    ticks(&mut sea, COURSE_EVERY_TICKS);
+    assert_eq!(sea.travel(player, &[[550_000.0, 300_000.0]], 20), Ok(()), "taken once the wait is over");
+}

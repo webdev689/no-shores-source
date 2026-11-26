@@ -22,6 +22,29 @@ test('over its limit, the storage lets go of the files kept longest ago until it
   assert.deepEqual([...kept.keys()], ['c', 'd'], 'the two kept first go, bringing it to 900');
 });
 
+test('a kept copy that cannot be read whole is let go and fetched again', async (context) => {
+  // The page's one store, opened at its first use: put in place before any other test here fetches.
+  const stored = new Map<string, { arrayBuffer: () => Promise<ArrayBuffer>; headers: Headers }>();
+  const store = {
+    match: (key: string) => Promise.resolve(stored.get(key)),
+    put: (key: string, answer: Response) => Promise.resolve(void stored.set(key, answer)),
+    delete: (key: string) => Promise.resolve(stored.delete(key)),
+    keys: () => Promise.resolve([]),
+  };
+  Object.assign(globalThis, { caches: { open: () => Promise.resolve(store) } });
+  const unreadable = { arrayBuffer: () => Promise.reject(new Error('its body is gone')), headers: new Headers() };
+  stored.set('https://r2/broken.bin', unreadable);
+  stored.set('https://r2/cut.bin', new Response(new Uint8Array(2), { headers: { 'x-size': '4' } }));
+  const fetched = context.mock.method(globalThis, 'fetch', () =>
+    Promise.resolve(new Response(new Uint8Array(4), { status: 200 })),
+  );
+  for (const url of ['https://r2/broken.bin', 'https://r2/cut.bin']) {
+    assert.equal((await contentBytes(url)).bytes.byteLength, 4, url);
+    assert.notEqual(stored.get(url), unreadable);
+  }
+  assert.equal(fetched.mock.callCount(), 2, 'each fetched again');
+});
+
 test('a range the server sends whole is taken whole; one short is fetched past the cache, then fails', async (context) => {
   const answers = [
     new Response(new Uint8Array(10), { status: 200 }),

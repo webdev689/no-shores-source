@@ -89,7 +89,7 @@ out) and its kind:
 | `enter` | Arriving in a node | `node` |
 | `escort` | A figure met at a place riding a horse at a gallop to another while the player rides with it; it waits while they lag, while they are off their horse and while an ambush stands | `node`, `from`, `to` (places), `who` (a speaker of the cast), `horse` (the coat its horse wears), `near` (metres; 30 on both roads), `ambush` (`[type, rank]`s stood halfway), `shout` (its bark as they come), `greet` (said as its figure first rides), `mount` (said as it waits for the player to get on their horse) |
 | `tail` | Following a figure from place to place at a distance: never nearer than `far`, never past `near`; nearer, it notices and walks back to start again | `node`, `from`, `to`, `who` or `foe` (a roster type's look), `far`, `near`, `noticed` (its line), `greet` (said as its figure first walks) |
-| `defend` | A ward standing at a place through its waves of foes, one after another; if it falls, the waves leave and it is tried again after a wait. With `horde`, no ward: the waves come at the player (below, "A house's horde") | `node`, `place`, `ward` (its name) or `who`, or `horde: true` and neither, `waves` (lists of `[type, rank]`; a horde's 8 foes at most a wave), `lost` (its line, a horde's said as the player falls) |
+| `defend` | A ward standing at a place through its waves of foes, one after another, each brought by a Grey Tithe airship under the open sky ([[Foe Arrivals as Claude Builds Them]]; [[Enemies]], "Arrivals"); if it falls, the waves leave and it is tried again after a wait. With `horde`, no ward: the waves come at the player (below, "A house's horde") | `node`, `place`, `ward` (its name) or `who`, or `horde: true` and neither, `waves` (lists of `[type, rank]`; a horde's 8 foes at most a wave), `lost` (its line, a horde's said as the player falls) |
 | `puzzle` | Points round a place used in the right order, or in any order when it gives none (a point lit already does nothing); a wrong one puts them all out and stops uses for 2 s, then 4, then 8 (ask 66 answers 103 meanwhile) | `node`, `place`, `points` (each a `name`, a `bearing` in degrees from north and `at` metres out), `order` (any order when left out), `wrong` (its line) |
 | `unseen` | Standing within `within` m of a place's middle with no foe turned alert on the player; seen, it waits until no foe has been on them for 10 s. Its watch stands idle on a ring `within` m round the middle as the step begins, each facing outward; only a foe within 60 m of the middle counts as seeing | `node`, `place`, `seen` (its line), `spawn` (`[type, rank]`s), `within` (metres, 8 when left out, at most 35) |
 | `buy` | A smith's ware bought, of the day's or the starter stock: the character keeps each slot a smith has sold it a piece for (`bought`), so one bought before its task counts as the task begins; a piece looted or given never does; the slots are let go once a task with a buy goal is met, so a later one counts only its own purchases | `slot`: `melee`, `ranged`, `head`, `torso`, `arms` or `legs` |
@@ -225,7 +225,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
 
 - **How it runs** (`steps_horde.rs`): as the player comes within the place's reach, alive, the first wave stands 18
   m from the place's middle (nearer where a walk from the middle reaches no further, so none stands up a bank it
-  cannot come down), on the place's baked mesh, every foe hunting the player; one that loses them is set on them
+  cannot come down), on the place's baked mesh, standing at once rather than brought by an airship as a defence's
+  waves are, every foe hunting the player; one that loses them is set on them
   again. Once two or fewer of the foes standing are left, the next wave stands, so the horde keeps coming. A wave the
   room's cap on foes has no room for waits a tick; one that stands nobody counts as fallen. The last wave fallen meets
   the goal.
@@ -289,11 +290,12 @@ acquired are kept by quest id (`acquired`). Claude's calls:
 ## On the wire
 
 - **Asks**: 85 acquires the quest walked from the keeper who offers it (`column`: their number, as 64's), answered
-  only within reach of their counter and while it waits for them. 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
-  the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster, 17 the Postmaster), answered only within reach of
-  that counter; 18 the stranger, answered anywhere in a social space;
-  65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list). At sea, a
-  course message's ask 4 says the held map was raised at the helm, for the sailing lesson.
+  only within reach of their counter and while it waits for them. 66 uses a puzzle's point (`column`: its place among
+  the goal's points), answered within 3 m of it and never while fallen. 64 speaks with a keeper (`column`: a house's
+  number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13 the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the
+  Harbourmaster, 17 the Postmaster), answered only within reach of that counter; 18 the stranger, answered anywhere in
+  a social space; 65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
+  At sea, a course message's ask 4 says the held map was raised at the helm, for the sailing lesson.
 - **Whose word**: the gear message says whether its character is the player's own as their account keeps it
   (`claimed`). A player who sends an input before any token keeps no character, so the one the room holds is theirs
   from then on (`none_kept`), on land as at sea.

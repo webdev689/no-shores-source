@@ -81,6 +81,12 @@ pub(crate) fn foes_of<'list>(list: impl Iterator<Item = &'list (String, String)>
     found.filter(|(foe, rank)| foe.ranks.contains(rank)).map(|(foe, rank)| (foe.number, rank)).collect()
 }
 
+/// Whether a square's middle is a place's middle `at`, as near as a bake's sums keep it.
+fn round(bounds: &navmesh::Bounds, at: [f64; 2]) -> bool {
+    libm::fabs((bounds.min_x + bounds.max_x) / 2.0 - at[0]) < 0.5
+        && libm::fabs((bounds.min_y + bounds.max_y) / 2.0 - at[1]) < 0.5
+}
+
 /// The point the mesh holds nearest a point on the ground: there, else the nearest found looking outward in rings
 /// `RING_STEP` apart, as far as `reach`.
 pub(crate) fn held_near(mesh: &NavMesh, floor: &Floor, at: [f64; 2], reach: f64) -> Option<[f64; 3]> {
@@ -148,20 +154,8 @@ impl Room {
     /// it is whole, and none for another place meanwhile, which asks again on a later tick.
     pub(crate) fn ground_of(&mut self, place: &Place, reach: f64) -> Option<usize> {
         let at = place.at;
-        let holds = |bounds: &navmesh::Bounds| {
-            let within = |low: f64, high: f64, at: f64| low <= at - reach && at + reach <= high;
-            within(bounds.min_x, bounds.max_x, at[0]) && within(bounds.min_y, bounds.max_y, at[1])
-        };
-        if self.quests.square.as_ref().is_some_and(holds) {
-            return Some(0);
-        }
-        // One baked before round this same middle is kept, whatever the place is named; a namesake elsewhere has its own.
-        let round = |bounds: &navmesh::Bounds| {
-            libm::fabs((bounds.min_x + bounds.max_x) / 2.0 - at[0]) < 0.5
-                && libm::fabs((bounds.min_y + bounds.max_y) / 2.0 - at[1]) < 0.5
-        };
-        if let Some(found) = self.quests.grounds.iter().position(|(_, bounds, _)| round(bounds)) {
-            return Some(found + 1);
+        if let Some(had) = self.ground_had(at, reach) {
+            return Some(had);
         }
         if self.quests.baked_at == Some(self.clock) {
             return None;
@@ -175,7 +169,21 @@ impl Room {
         let mesh = baking.step(floor)?;
         let (name, bounds, _) = self.quests.baking.take()?;
         self.quests.grounds.push((name, bounds, mesh));
-        round(&bounds).then_some(self.quests.grounds.len())
+        round(&bounds, at).then_some(self.quests.grounds.len())
+    }
+
+    /// The mesh the room has round a place's middle `at` already, by its number: the node's own (0) where its square
+    /// holds all within `reach` each way of it, else one baked before round that same middle, whatever its place is
+    /// named (a namesake elsewhere has its own); none where one is yet to be baked.
+    pub(crate) fn ground_had(&self, at: [f64; 2], reach: f64) -> Option<usize> {
+        let holds = |bounds: &navmesh::Bounds| {
+            let within = |low: f64, high: f64, at: f64| low <= at - reach && at + reach <= high;
+            within(bounds.min_x, bounds.max_x, at[0]) && within(bounds.min_y, bounds.max_y, at[1])
+        };
+        if self.quests.square.as_ref().is_some_and(holds) {
+            return Some(0);
+        }
+        self.quests.grounds.iter().position(|(_, bounds, _)| round(bounds, at)).map(|found| found + 1)
     }
 
     /// One of the room's meshes by its number: 0 the node's own, else a place's.

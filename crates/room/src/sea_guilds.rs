@@ -3,6 +3,7 @@
 //! took toward the week's guild bounties. A guild bounty is claimed ashore.
 
 use super::Sea;
+use super::decks::Decks;
 use crate::PlayerId;
 use crate::guild_book::GuildSeen;
 use crate::harbour::Harbour;
@@ -26,11 +27,23 @@ impl Sea {
 }
 
 /// Counts a ship sunk or taken toward the guild bounties of each kept member who fought her, in `week`, together when
-/// another of her fighters is of their guild.
-pub(super) fn guild_sunk(harbour: &mut Harbour, week: u64, fought: &[PlayerId], water: Option<&str>, rank: u8) {
+/// another of her fighters is of their guild; on a captain's deck, on the character its room holds too, theirs again
+/// once they step off.
+pub(super) fn guild_sunk(
+    harbour: &mut Harbour,
+    decks: &mut Decks,
+    week: u64,
+    fought: &[PlayerId],
+    (water, rank): (Option<&str>, u8),
+) {
     let sunk = Feat::Sunk { water, rank };
     for player in fought {
         let Some(character) = harbour.characters.get_mut(player) else { continue };
         harbour.guilds.saw(*player, character, week, &sunk, fought);
+        let deck = decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(player));
+        if let Some(found) = deck.and_then(|deck| deck.room.players.get_mut(&deck.aboard[player])) {
+            harbour.guilds.saw(*player, &mut found.character, week, &sunk, fought);
+            found.gear_changed = true;
+        }
     }
 }

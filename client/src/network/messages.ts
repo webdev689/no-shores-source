@@ -14,6 +14,7 @@ import { type EncounterSeen, encounterOf } from './encounterMessages.ts';
 import { type BreachSeen, breachOf } from './breachMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
 import { type PlayerPlate, platesOf } from './plateMessages.ts';
+import { type ArrivalSeen, type FoeArrival, arrivalsOf, foeArrivalOf } from './arrivalMessages.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -129,6 +130,8 @@ export interface SeenFoe {
   readonly name?: string;
   /** The companion it is, an officer ashore fighting beside their leader; none for a foe. */
   readonly companion?: Companion | null;
+  /** Its arrival while it arrives (`arrivalMessages.ts`); none once landed. */
+  readonly arrival?: FoeArrival | null;
   /** All its numbers as they crossed, for the next snapshot to build on (`snapshots.ts`). */
   readonly numbers?: Float64Array;
   /** In a snapshot built on another, only its numbers that changed since, a bit set for each. */
@@ -151,8 +154,8 @@ export interface Changes {
   readonly numbers: Float64Array;
 }
 
-/** How many numbers a foe crosses as, packed: its glance and seventeen more (crates/protocol/src/land.rs). */
-const FOE_NUMBERS = GLANCE_FLOATS + 17;
+/** How many numbers a foe crosses as, packed: its glance and twenty-one more (crates/protocol/src/land.rs). */
+const FOE_NUMBERS = GLANCE_FLOATS + 21;
 
 /** A foe from all its numbers as they crossed: its glance, then the rest in the order the room packs them. */
 export function foeOf(id: number, numbers: Float64Array): SeenFoe {
@@ -162,10 +165,11 @@ export function foeOf(id: number, numbers: Float64Array): SeenFoe {
   const shield = (element ?? 0) > 0 ? { element: element ?? 0, left: left ?? 0, most: most ?? 0 } : null;
   const named = { type: type ?? 0, rank: rank ?? 0, faction: faction ?? 0, phase: phase ?? 0, alert: alert ?? 0 };
   const statuses = { expose: expose ?? 0, charge: charge ?? 0, chargeImmune: chargeImmune ?? 0 };
-  // Last, a companion's leader (0 for a foe), its officer's given and family names, and post.
-  const [leader = 0, given = 0, family = 0, post = 0] = more;
+  // Then a companion's leader (0 for a foe), its officer's given and family names, and post; last, its arrival.
+  const [leader = 0, given = 0, family = 0, post = 0, ...arriving] = more;
   const companion = leader > 0 ? { leader, given, family, post } : null;
-  return { id, kind: kind ?? 0, glance, level: level ?? 0, shield, ...named, statuses, companion, numbers };
+  const arrival = foeArrivalOf(arriving);
+  return { id, kind: kind ?? 0, glance, level: level ?? 0, shield, ...named, statuses, companion, arrival, numbers };
 }
 
 /** The values `bytes` packs for the bits set in `bits`, each measured from `middle` by the number it is. */
@@ -289,6 +293,8 @@ export type FromRoomMessage =
       /** On land, whether the room is a darkness zone, where no one respawns by their own ask; and who is reviving whom. */
       readonly darkness: boolean;
       readonly reviving: readonly Reviving[];
+      /** On land, every airship and crown bringing foes. */
+      readonly arrivals: readonly ArrivalSeen[];
     } & FleetPart &
       HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
@@ -569,6 +575,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       reviving: Array.from({ length: snapshot.revivingLength() }, (unused, index) =>
         revivingOf(snapshot.reviving(index)),
       ),
+      arrivals: arrivalsOf(snapshot),
       ...fleetOf(snapshot),
       ...harbourOf(snapshot),
     };

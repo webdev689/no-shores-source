@@ -5,6 +5,7 @@ code:
   - crates/gear/src/finds.rs#find
   - crates/gear/src/emblems.rs#emblems
   - crates/gear/src/looks.rs#shown
+  - crates/gear/src/shared.rs#Shared
   - client/src/player/sourceLooks.ts#earnedFrom
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/gearScreen.ts#itemDetailOf
@@ -167,8 +168,8 @@ number is one of [[Gear as Claude Shapes It]].
   times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
   below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
   arms 0.2625, legs 0.2375.
-- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). A kill may leave a Vestige for each player who
-  struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always;
+- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]). A kill may leave a Vestige for each player who
+  struck the foe, seen by them alone: by the foe's rank (Minor 8 in 100, Major 16, Elite 40, Miniboss 50, a Boss always;
   `vestige::chance`), raised by the voyage's tier, a chance past one leaving one sure and another by what is over; its
   colour weighted by its rank, for one slot, its item at the foe's level. At every rank each colour is half or less of
   the one below it, and each colour or better likelier the higher the rank (`vestige::colours`, in 1,000: Minor 750,
@@ -236,8 +237,8 @@ number is one of [[Gear as Claude Shapes It]].
   player still in the room who shared a kill of a foe of its own groups, not a wave's or a quest's, since its last
   clear ([[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]; as their account, so one who rejoined keeps it) is paid, at the garrison's highest level as a
   kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
-  (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
-  Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
+  (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige 35 times in 100
+  (`CLEAR_VESTIGE`). It pays once until a group stands again. A patrol never ends, so it pays none. A laid
   dungeon's room pays the same clear as its cache opens ([[Dungeons]], "The cache").
 - **A find** ([[Patrols and Dungeons Hold Chests, and Their Containers May Be Searched]], `gear::finds`): a chest
   opened in a patrol or a dungeon pays 30 Aurem at level 5, grown with the level as a kill's worth is, 2 to 4 of the
@@ -252,7 +253,11 @@ number is one of [[Gear as Claude Shapes It]].
   ([[Crew]]).
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. A slot read past nine from a kept character
-  carries what it holds, and takes no more until it is down to nine. Dismantling returns Aurem, fragments and, from a
+  carries what it holds, and takes no more until it is down to nine. The vault and Aurem are the account's, shared by
+  its four characters ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]); the rest is the
+  character's own. A room holds the two joined, so every rule sees one whole character, and parts them for each save
+  (`gear::shared`, `part_shared` and `join_shared`): a vaulted item or Vestige whose number the character already
+  holds takes a new one, and nothing is dropped however full the vault. Dismantling returns Aurem, fragments and, from a
   Legendary (2, or 3 one time in two) or an Atheric (3), Essence, with a third of what was spent on it.
 - **Chance** comes from a hash of the room's seed, its tick, a count of the rolls the room has made, the player and
   what the roll is for. A deployed room's seed is its host's own, random and never sent, so no player can foresee a
@@ -286,8 +291,8 @@ number is one of [[Gear as Claude Shapes It]].
   faction pledged, as the kill's own goes ([[Factions]]) (`boon_xp`).
 - **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens
   and pays every player then in the dungeon's room a dungeon's clear at the end foe's level, whoever struck it
-  (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige as often as its
-  Miniboss leaves one, poured out of the cache onto the floor before it for them ("Drops", below;
+  (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige 35 times in 100,
+  poured out of the cache onto the floor before it for them ("Drops", below;
   [[Dungeons]], "In the rooms"). A run's first clear in its period pays as well, the dungeon of the day's or the
   week's two's, its Vestige kept straight into the carried ten, else the vault, else the mail ([[Activities]], "What it
   pays, once").

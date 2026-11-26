@@ -125,3 +125,16 @@ test('the voyage card shuts a difficulty the player’s level shuts, says why, a
   assert.deepEqual(seasChoices('abyss', [null, null, null]), { picked: 'abyss', why: null });
   assert.deepEqual(seasChoices('elite', []), { picked: 'elite', why: null }, 'no word of the character: nothing shut');
 });
+
+test('a window shorter than the head and foot the map keeps clear still holds a painting, never one of no size', () => {
+  for (const viewport of [
+    { width: 800, height: 100 },
+    { width: 1, height: 1 },
+  ]) {
+    const { sprite, ink } = stageOf(viewport);
+    assert.ok(
+      [sprite.width, sprite.height, ink.width, ink.height].every((side) => side > 0),
+      JSON.stringify(viewport),
+    );
+  }
+});

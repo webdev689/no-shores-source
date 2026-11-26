@@ -276,6 +276,8 @@ impl Room {
         if stood.is_empty() {
             return Stood::Nobody;
         }
+        // A defence's waves come by airship (`arrivals.rs`).
+        self.by_airship(&stood);
         // A wave the character stood before in this task, before a rejoin or a return, drops nothing again.
         let quest = gear::quests::quests().quests.get(key[0]).map(|quest| quest.id.as_str());
         let fought = self.players.get_mut(&player).zip(quest).is_some_and(|(found, quest)| {
@@ -395,6 +397,10 @@ impl Room {
         let Some(at) = self.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y]) else {
             return crate::asks::OUT_OF_REACH;
         };
+        // A fallen player uses nothing, as they find, gather and open nothing.
+        if !self.players.get(&player).is_some_and(crate::players::Player::living) {
+            return crate::asks::OUT_OF_REACH;
+        }
         let Some(Step { goal, kind: Stepping::Puzzle(lit), .. }) = self.quests.steps.get_mut(&player) else {
             return crate::asks::OUT_OF_REACH;
         };

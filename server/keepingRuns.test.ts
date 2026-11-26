@@ -3,7 +3,15 @@ import { test } from 'node:test';
 import { accounts } from './accounts/accountsForTests.ts';
 import { characters } from './accounts/characters.ts';
 import { foundRun } from './accounts/finding.ts';
-import { ACCOUNTS_TROUBLE, FROM_THE_PLAYLIST, Keeper, SAVE_UNCHANGED_MS, SIGN_IN, SIGN_IN_FOR_RUN } from './keeping.ts';
+import {
+  ACCOUNTS_TROUBLE,
+  FROM_THE_PLAYLIST,
+  Keeper,
+  SAVE_AFTER_CHANGE_MS,
+  SAVE_UNCHANGED_MS,
+  SIGN_IN,
+  SIGN_IN_FOR_RUN,
+} from './keeping.ts';
 import { roomOf, world } from './keepingForTests.ts';
 
 test('a run its gate shuts judges before it claims, so the room playing the character keeps it', async () => {
@@ -161,7 +169,7 @@ test('a run found for strangers lets in each one found for it, and none of them 
   );
   const idOf = async (name: string) => {
     const claimed = await kept.claim(tokens[name] ?? '', `probe:${name}`);
-    await kept.release(claimed?.account ?? '', `probe:${name}`, null);
+    await kept.release(claimed?.account ?? '', `probe:${name}`, null, null);
     return claimed?.account ?? '';
   };
   const [ada, ben] = [await idOf('Ada'), await idOf('Ben')];
@@ -205,6 +213,50 @@ test('one account is one player in a room: a second socket signed in sends the f
   assert.deepEqual(sent, [[1, undefined]], 'and the newer keeps its hold');
 });
 
+test('a second socket of one account takes on what the first gained since this room last saved it', async () => {
+  const { clock, kept, token } = await world();
+  // What lies for a leaving player is posted to their mail first, as the room's door does.
+  const room = Object.assign(roomOf(), {
+    mailLying: (player: number) => {
+      const body = room.held.get(player);
+      if (body) room.held.set(player, body.replace(/}$/, ',"mailed":true}'));
+    },
+  });
+  room.held.set(1, '{}');
+  room.held.set(2, '{}');
+  const keeper = new Keeper(kept, room, 'node-a', () => undefined);
+  const [now, here] = [() => clock.now, () => true];
+  assert.equal(await keeper.signIn(1, token, now, here), true);
+  await keeper.due(clock.now + SAVE_UNCHANGED_MS);
+  room.held.set(1, '{"aurem":40}');
+  assert.equal(await keeper.signIn(2, token, now, here), true);
+  const taken = '{"aurem":40,"mailed":true}';
+  assert.equal(
+    room.held.get(2),
+    taken,
+    'the first socket’s body, its mail posted, not the older one the accounts held',
+  );
+  clock.now += SAVE_AFTER_CHANGE_MS;
+  await keeper.due(clock.now);
+  const looked = await kept.look(token);
+  assert.equal(looked?.body, taken, 'and saved under the new hold as soon as a change is');
+});
+
+test('a second socket keeps the answer the accounts gave a carried errand over the first socket’s body', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  const carrying = '{"errand":{"rid":"node-a:1:1:0","what":{"deposit":50}}}';
+  room.held.set(1, carrying);
+  room.held.set(2, '{}');
+  const keeper = new Keeper(kept, room, 'node-a', () => undefined);
+  const [now, here] = [() => clock.now, () => true];
+  assert.equal(await keeper.signIn(1, token, now, here), true);
+  await keeper.due(clock.now + SAVE_UNCHANGED_MS);
+  room.held.set(1, '{"errand":{"rid":"node-a:1:1:0","what":{"deposit":50}},"aurem":40}');
+  assert.equal(await keeper.signIn(2, token, now, here), true);
+  assert.match(room.held.get(2) ?? '', /"answer":/, 'the errand answered, to be settled');
+});
+
 test('a run is full by its four accounts: a member signing in again is kept, a fifth account refused', async () => {
   const made = accounts();
   const tokens: Record<string, string> = {};
@@ -244,7 +296,7 @@ test('a run is full by its four accounts: a member signing in again is kept, a f
 test('a run sends away a player whose kept body it cannot read, since it keeps no one unkept', async () => {
   const { clock, kept, token } = await world();
   const account = (await kept.claim(token, 'node-a:1'))?.account ?? '';
-  await kept.release(account, 'node-a:1', 'not readable');
+  await kept.release(account, 'node-a:1', 'not readable', '{}');
   const room = roomOf();
   room.held.set(1, '{"starting":true}');
   const sent: [number, string | undefined, boolean | undefined][] = [];

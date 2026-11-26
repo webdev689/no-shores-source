@@ -57,7 +57,12 @@ async function world(names: readonly string[], level = 5, prologue = true) {
     const token = (await made.ask('POST', '/v1/guest')).body['token'] as string;
     await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, token);
     const claimed = await kept.claim(token, `room:${name}`);
-    await kept.save(claimed?.account ?? '', `room:${name}`, JSON.stringify({ shown: { level }, story: { prologue } }));
+    await kept.save(
+      claimed?.account ?? '',
+      `room:${name}`,
+      JSON.stringify({ shown: { level }, story: { prologue } }),
+      '{}',
+    );
     [tokens[name], ids[name]] = [token, claimed?.account ?? ''];
   }
   const finderOf = (base: string) =>
@@ -456,7 +461,7 @@ test('a Breach is launched from its own zone at its tier’s level, Hard once No
   assert.equal(asked('/v1/find/node-overlook-social--breach-normal'), null, 'no Breach’s gate stands there');
   const { tokens: hardy, finderOf: hardOf, kept, ids } = await world(['Cal', 'Eve'], 29);
   const story = { prologue: true, breaches: ['drowned-vale/normal'] };
-  await kept.save(ids['Cal'] ?? '', 'room:Cal', JSON.stringify({ shown: { level: 29 }, story }));
+  await kept.save(ids['Cal'] ?? '', 'room:Cal', JSON.stringify({ shown: { level: 29 }, story }), '{}');
   const unwon = hardOf('node-gullwing-vale--breach-hard');
   const hard = new FakeSocket();
   await unwon.heard(unwon.opened(hard, true), hardy['Eve'] ?? '');

@@ -38,6 +38,7 @@ import { worldOutput } from '../uiSounds.ts';
 import type { BeatName } from './beat.ts';
 import { Brig } from './brig.ts';
 import { Epilogue } from './epilogue.ts';
+import type { TitleGate } from './intro.ts';
 import { FIRST_LOOK, armouredDress, keptLook, type Look } from './look.ts';
 import { Nameplate } from './nameplate.ts';
 import { stormPlaces } from './places.ts';
@@ -76,6 +77,8 @@ export interface StoryGame {
   readonly music: MusicDirector;
   /** The game's own soundscape. */
   readonly ambience: WorldAmbience;
+  /** The character screen beginning at the title opens, where the page has accounts. */
+  readonly gate?: TitleGate;
 }
 
 /** The story and the epilogue it leaves for the game to play on foot. */
@@ -190,6 +193,18 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       link: game.link,
       look,
       dress,
+      gate: game.gate && {
+        straight: game.gate.straight,
+        // The character chosen there is the one the story dresses, its look set in the browser as it was chosen.
+        open: () =>
+          game.gate!.open().then((answer) => {
+            if (answer !== 'title') {
+              story.look = keptLook(localStorage) ?? FIRST_LOOK;
+              story.dress = game.walker.you.dress = armouredDress(story.look);
+            }
+            return answer;
+          }),
+      },
     };
     // The player wears the story's look from its first beat; one that cannot begin leaves them as the game made them.
     const gameDress = game.walker.you.dress;

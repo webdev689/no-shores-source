@@ -1,14 +1,16 @@
 // The Settings page, set out as other games set theirs out: tabs for Graphics (the resolution the world is drawn at,
 // and in the desktop app its graphics API and version), Audio (the volumes, and the recorded sounds' credits behind a
 // press of their own), Controls (every control, bound anew there as in the sheet K opens) and Account (the account and
-// the players blocked or muted), down a rail with Exit to Menu and Exit to Desktop at its foot, each held. The
-// resolution and the volumes are kept in this browser, the binds with the account.
+// the players blocked or muted), down a rail with Switch character (online), Exit to Menu and Exit to Desktop at its
+// foot, each held. The resolution and the volumes are kept in this browser, the binds with the account.
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { PAGE, type Page } from '../ui/page.ts';
 import { button, choice, slider } from '../ui/controls.ts';
 import type { AccountPanel } from './accountTab.ts';
+import type { Kept } from '../network/accounts.ts';
+import { type ScreenMarked, markCharacters } from './characters/characterMark.ts';
 import { API_LIST, desktopNodes } from './desktopSettings.ts';
 import { bindingColumns, bindingWords } from './controlsSheet.ts';
 import { fillNode } from './gearHold.ts';
@@ -62,6 +64,8 @@ const LIST = 'settings-list';
 /** The page's drop-down lists, each shut as the page is shown again. */
 const RESOLUTION_LIST = 'resolution';
 const LISTS = [RESOLUTION_LIST, API_LIST];
+/** Switch character's held press. */
+export const SWITCH = 'settings-switch-character';
 /** The credits' press in Audio and their way back. */
 const CREDITS = 'settings-credits';
 const CREDITS_BACK = 'settings-credits-back';
@@ -74,6 +78,19 @@ export function titleAddress(href: string): string {
   if (PAST_THE_TITLE.some((ask) => url.searchParams.has(ask)))
     for (const ask of PAST_THE_TITLE) url.searchParams.delete(ask);
   return url.href;
+}
+
+/** Leaves the game for the title, as Exit to Menu does: the page loaded again. */
+export function leaveToTitle(page: Page = PAGE): void {
+  const [here, title] = [page.address(), titleAddress(page.address())];
+  if (title === here) page.reload();
+  else page.assign(title);
+}
+
+/** Leaves the game for the character screen, at `screen`: the tab marked, so the page loaded again opens it at once. */
+export function leaveToCharacters(screen: ScreenMarked, page: Page = PAGE, tab: Kept = sessionStorage): void {
+  markCharacters(tab, screen);
+  leaveToTitle(page);
 }
 
 export class Settings {
@@ -96,9 +113,17 @@ export class Settings {
   private readonly page: Page;
   private readonly rebinding: Rebinding;
 
-  /** Settings with its account panel (none offline), the page it leaves or closes, and the binding it binds through. */
-  constructor(account: () => AccountPanel | null, page: Page = PAGE, rebinding: Rebinding = REBINDING) {
-    [this.account, this.page, this.rebinding] = [account, page, rebinding];
+  private readonly browserTab: Kept;
+
+  /** Settings with its account panel (none offline), the page it leaves or closes, the binding it binds through, and
+   *  the tab it marks for the character screen. */
+  constructor(
+    account: () => AccountPanel | null,
+    page: Page = PAGE,
+    rebinding: Rebinding = REBINDING,
+    tab: Kept = globalThis.sessionStorage,
+  ) {
+    [this.account, this.page, this.rebinding, this.browserTab] = [account, page, rebinding, tab];
   }
 
   /** Shows `tab` anew: the credits put away, a binding under way given up and its last words gone. */
@@ -168,7 +193,8 @@ export class Settings {
         },
       ],
     };
-    const rail = 6 * ((wide ? PRESS_WIDE : PRESS) + 6) + 12;
+    // The tabs and the exits, Switch character among them online.
+    const rail = (SETTINGS_TABS.length + exits.filter(Boolean).length) * ((wide ? PRESS_WIDE : PRESS) + 6) + 12;
     if (stacked)
       return {
         id: 'page-settings',
@@ -213,13 +239,10 @@ export class Settings {
     ]);
   }
 
-  /** Exit to Menu and Exit to Desktop, each held, as what cannot be undone is: across the rail, or side by side. */
-  private exits(context: PlainContext, stacked: boolean): Node[] {
-    const toTitle = () => {
-      const [here, title] = [this.page.address(), titleAddress(this.page.address())];
-      if (title === here) this.page.reload();
-      else this.page.assign(title);
-    };
+  /** Switch character (online), Exit to Menu and Exit to Desktop, each held, as what cannot be undone is: across the
+   *  rail, or side by side. */
+  private exits(context: PlainContext, stacked: boolean): Child[] {
+    const toTitle = () => leaveToTitle(this.page);
     const toDesktop = () => {
       const asked = this.shownTimes;
       this.page.close();
@@ -230,7 +253,11 @@ export class Settings {
         announce(this.said);
       }, CLOSE_WAIT_MS);
     };
+    // Online, a character may be switched for another of the account's, on the character screen.
+    const toCharacters = () => leaveToCharacters('characters', this.page, this.browserTab);
     return [
+      this.account() !== null &&
+        held(context, SWITCH, 'Switch character', 'Hold to switch character', stacked, toCharacters),
       held(context, 'settings-exit-menu', 'Exit to Menu', 'Hold to exit to the menu', stacked, toTitle),
       held(context, 'settings-exit-desktop', 'Exit to Desktop', 'Hold to exit to the desktop', stacked, toDesktop),
     ];
