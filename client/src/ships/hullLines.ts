@@ -2,8 +2,7 @@
 // water keeps out of it and foams along its own sides rather than round an ellipse. Until its mesh has come, a fair
 // hull of its length and beam stands in.
 import { FAIR_LINE, HULL_FIT, STATIONS, stationPlace, stationShare } from '../water/hullMask.ts';
-import { HULL_NAMES, hullName } from './hulls.ts';
-import { loadShip, type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
+import { type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 
 /** How many times finer than its stations its waterline is read, to place each station and keep the line within it. */
 const FINE = 32;
@@ -101,34 +100,21 @@ function fillGaps(line: Float32Array): Float32Array {
   });
 }
 
-/** Every hull's line, each read from its mesh once it is asked for. */
+/** Every hull's line, each read from its mesh as that mesh comes to be drawn (`take`), the fair line until then. */
 export class HullLines {
-  private readonly load: (name: string) => Promise<ShipMesh>;
   private readonly lines = new Map<number, Float32Array>();
-  private readonly asked = new Set<number>();
 
-  constructor(load: (name: string) => Promise<ShipMesh> = loadShip) {
-    this.load = load;
-  }
-
-  /** Hull `hull`'s line: its mesh's once it has come, the fair line until then (asking for its mesh). */
+  /** Hull `hull`'s line: its mesh's once it has come, the fair line until then. */
   line(hull: number): Float32Array {
-    const kept = this.lines.get(hull);
-    if (kept) return kept;
-    if (!this.asked.has(hull)) {
-      this.asked.add(hull);
-      this.load(hullName(hull))
-        .then((mesh) => this.lines.set(hull, waterlineOf(mesh)))
-        // A mesh that did not come leaves it the fair line: the ship itself retries its own (`ShipModels`).
-        .catch(() => undefined);
-    }
-    return FAIR_LINE;
+    return this.lines.get(hull) ?? FAIR_LINE;
   }
 
-  /** Every hull's line in hull order. */
-  table(): Float32Array {
-    const out = new Float32Array(HULL_NAMES.length * STATIONS);
-    HULL_NAMES.forEach((_name, hull) => out.set(this.lines.get(hull) ?? FAIR_LINE, hull * STATIONS));
-    return out;
+  /** Reads hull `hull`'s line from its mesh, come to be drawn. */
+  take(hull: number, mesh: ShipMesh): void {
+    this.lines.set(hull, waterlineOf(mesh));
   }
 }
+
+/** The hull lines every ship's footprint on the water is drawn in: each hull's read once, from the mesh its model is
+ *  opened with (`openHull`), so a footprint takes its own line as its ship comes to be drawn in it. */
+export const HULL_LINES = new HullLines();

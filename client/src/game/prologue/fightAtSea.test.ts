@@ -6,6 +6,8 @@ import type { LandWorker } from '../../terrain/landClient.ts';
 import { ambushersAt, happenedOf, StoryFight } from './fightAtSea.ts';
 
 const near = (value: number, to: number): boolean => Math.abs(value - to) < 1e-6;
+/** Each hull's own line, as if its mesh had come: its number at every station, so a footprint shows whose it holds. */
+const LINES = { line: (hull: number) => new Float32Array(16).fill(hull + 1) };
 
 test('each ambusher is put to sea on its bearing off the bow, at its distance, heading for the player unless told', () => {
   const ship = { x: 1000, y: 2000, heading: Math.PI / 2 };
@@ -111,7 +113,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
     land,
     { x: 5000, y: 6000, heading: -Math.PI / 2 },
     ambushers,
-    { sails: [], marks },
+    { sails: [], marks, lines: LINES },
     0,
     () => wind,
   );
@@ -153,6 +155,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
   assert.deepEqual(winds[0], [14, 6], 'the first step sails in the storm drawn round it');
   assert.deepEqual(winds.at(-1), [3, 1], 'a later one in the wind the story eased to');
   assert.equal(frame.hulls.length, 1, 'only its footprint while the captains are gone');
+  assert.deepEqual([...(frame.hulls[0]?.line ?? [])], [...LINES.line(2)], "the Brig's own line under the player");
 });
 
 /** The land door, its fight begun with three afloat, then answering each step from `steps` in turn. */
@@ -169,7 +172,7 @@ const begunOn = (land: LandWorker) =>
     land,
     { x: 5000, y: 6000, heading: 0 },
     [0, 2, 4].map((bearing) => ({ bearing, distanceM: 300, faction: 1, rank: 2 }) as const),
-    { sails: [], marks: { drawInto: () => undefined } as unknown as MarkDrawer },
+    { sails: [], marks: { drawInto: () => undefined } as unknown as MarkDrawer, lines: LINES },
     0,
     () => [14, 6],
   );
@@ -216,7 +219,7 @@ test("the story fight draws its see-through puffs and its puffs' light after the
     door([]),
     { x: 5000, y: 6000, heading: 0 },
     [{ bearing: 2, distanceM: 300, faction: 1, rank: 2 }],
-    { sails: [], marks },
+    { sails: [], marks, lines: LINES },
     0,
     () => [14, 6],
   );

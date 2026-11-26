@@ -111,12 +111,11 @@ test('its footprint keeps inside its hull from its stern to its bow, a thin ster
   assert.ok(lineAt(line, 0.5) > 0.9, 'full forward of amidships');
 });
 
-test('a hull whose mesh has not come keeps the fair line, and takes its own once it has', async () => {
-  const lines = new HullLines(async () => diamond());
+test('a hull whose mesh has not come keeps the fair line, and takes its own once it has', () => {
+  const lines = new HullLines();
   assert.equal(lines.line(2), FAIR_LINE);
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.notEqual(lines.line(2), FAIR_LINE);
-  assert.deepEqual([...lines.table().slice(2 * STATIONS, 3 * STATIONS)], [...lines.line(2)]);
-  assert.deepEqual([...lines.table().slice(0, STATIONS)], [...FAIR_LINE]);
+  lines.take(2, diamond());
+  assert.deepEqual([...lines.line(2)], [...waterlineOf(diamond())]);
+  assert.equal(lines.line(0), FAIR_LINE, 'another hull keeps the fair line');
   assert.ok(lineAt(FAIR_LINE, 1) < 0.05 && lineAt(FAIR_LINE, 0) > 0.95, 'the fair line is pointed at its bow');
 });

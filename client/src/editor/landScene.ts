@@ -1,6 +1,7 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
+import { HULL_LINES } from '../ships/hullLines.ts';
 import { MarkView } from '../ships/markView.ts';
 import { type PlacedBar, ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
@@ -473,7 +474,7 @@ export class LandScene {
     const waterline = this.ship?.waterline;
     if (!waterline || !this.sailing) return [];
     const others = this.fleet ? this.fleet.hulls(view) : [this.naval.hull(view)];
-    return [this.sailing.hull(view, waterline), ...others.filter((hull) => hull !== null)];
+    return [this.sailing.hull(view, waterline, HULL_LINES.line(this.hull)), ...others.filter((hull) => hull !== null)];
   }
 
   /** The fight's lines for the panel, if one is on, or the fleet's. */

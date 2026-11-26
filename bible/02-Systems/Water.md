@@ -127,7 +127,8 @@ waterline's length, so a Frigate rides the short waves less than a Sloop ([[Sail
 down, the crest at its stem rises over it faster than 1 m/s, and throws spray.
 
 Its footprint is its own hull line at its waterline, read from its mesh where its faces cross it (16 stations, stern
-to bow, closer together at its ends, where the line turns fastest; a fair hull until its mesh comes), a hair inside
+to bow, closer together at its ends, where the line turns fastest; a fair hull until its mesh comes, read once as its
+model is opened, for every ship drawn in that hull: at sea, in a fight, moored or in the World Editor), a hair inside
 it: it holds no water, so none shows in its open hull or over its gunwale. Between two stations it runs evenly, and a
 station is lowered wherever that would stand past the hull, so no cut water shows past a thin stern post or
 cutwater. Under way:

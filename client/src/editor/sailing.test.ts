@@ -127,8 +127,10 @@ test('under way it stirs the water at its bow and quarters once it has run half 
     `its bow is ahead, north: ${JSON.stringify(bow)}`,
   );
   assert.equal(sailing.wake(view, waterline).length, 0, 'taken once');
-  const mask = sailing.hull(view, waterline);
+  const line = new Float32Array(16).fill(0.5);
+  const mask = sailing.hull(view, waterline, line);
   assert.deepEqual([mask.halfLength, mask.halfBeam, mask.way], [3, 1, 2]);
+  assert.equal(mask.line, line, "in its hull's own line");
 });
 
 test('it is put to sea heading where the camera looks, as a heading within a turn', async () => {

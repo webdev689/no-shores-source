@@ -9,7 +9,7 @@ import { hullWaterline } from '../ships/hulls.ts';
 import { poseOnSwell } from '../ships/swellPose.ts';
 import { plainCrew } from '../ships/shipCrew.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
-import { ASK_EVERY_S, friendlyFrame, FriendlyShips, friendlyMarks, reckoned } from './friendlyShips.ts';
+import { ASK_EVERY_S, friendlyFrame, friendlyHulls, FriendlyShips, friendlyMarks, reckoned } from './friendlyShips.ts';
 import { mapWatersOf } from './pageWaters.ts';
 import { compassNode } from './compassNode.ts';
 import { seaShipMarks } from './seaHud.ts';
@@ -26,6 +26,8 @@ const shipAt = (id: number, position: [number, number], direction: [number, numb
   lengthM: 1_000_000,
 });
 const still = { swell: undefined, depthAt: () => 50 };
+/** Each hull's own line, as if its mesh had come: its number at every station, so a footprint shows whose it holds. */
+const LINES = { line: (hull: number) => new Float32Array(16).fill(hull + 1) };
 /** The pace the tests' ships keep, m/s. */
 const FRIENDLY_SPEED_M_S = 5;
 /** As many of each hull as the ships layer holds. */
@@ -116,7 +118,7 @@ test('at sea they are drawn as their hulls in friendly colours, sails set, at th
   const fleet = new FriendlyShips(() => [shipAt(2, [100, 0], [0, -1]), shipAt(5, [40, 0], [1, 0])], 5);
   const own = { x: 0, y: 0, heading: 0, halfLength: 5, halfBeam: 2, way: 0 };
   const view = { centre: [0, 0] as const, radiusM: 60_000, scale: 6 };
-  const frame = friendlyFrame(fleet, view, still, [own], { seconds: 0.1, time: 3, slots: anyNumber });
+  const frame = friendlyFrame(fleet, view, still, [own], { seconds: 0.1, time: 3, slots: anyNumber, lines: LINES });
   assert.deepEqual(
     frame.ships.map((ship) => [ship.hull, ship.place.scale, ship.look.side]),
     [
@@ -146,7 +148,12 @@ test('on foot they are drawn at their true size, posed on the swell', () => {
     bearing: 0,
   };
   const deep = () => 50;
-  const frame = friendlyFrame(fleet, view, { swell, depthAt: deep }, [], { seconds: 0.1, time: 3, slots: anyNumber });
+  const frame = friendlyFrame(fleet, view, { swell, depthAt: deep }, [], {
+    seconds: 0.1,
+    time: 3,
+    slots: anyNumber,
+    lines: LINES,
+  });
   const place = frame.ships[0]?.place;
   assert.equal(place?.scale, 1);
   const { lengthM, beamM } = hullWaterline(0);
@@ -164,7 +171,7 @@ test('only as many of each hull as the ships layer can still draw are stepped, p
   const fleet = new FriendlyShips(() => [...sloops, ...brigs], 5);
   const view = { centre: [0, 0] as const, radiusM: 60_000, scale: 1 };
   const slots = (hull: number) => (hull === 0 ? 16 - 3 : 16);
-  const frame = friendlyFrame(fleet, view, still, [], { seconds: 0.1, time: 3, slots });
+  const frame = friendlyFrame(fleet, view, still, [], { seconds: 0.1, time: 3, slots, lines: LINES });
   const drawn = (hull: number) => frame.ships.filter((ship) => ship.hull === hull);
   assert.equal(drawn(0).length, 13);
   assert.equal(drawn(2).length, 2);
@@ -182,7 +189,7 @@ test('a ship arrived lies at anchor where it is: reckoned nowhere, no way on it'
   fleet.near([0, 0], 15_000, 100, 0);
   const [lying] = fleet.near([0, 0], 15_000, 100.2, 0.2);
   assert.ok(lying && lying.x === 3_000 && lying.lying);
-  const frame = friendlyFrame(fleet, view, still, [], { seconds: 0.1, time: 3, slots: anyNumber });
+  const frame = friendlyFrame(fleet, view, still, [], { seconds: 0.1, time: 3, slots: anyNumber, lines: LINES });
   assert.equal(frame.hulls[0]?.way, 0, 'no foam round a ship at anchor');
 });
 
@@ -234,4 +241,9 @@ test('a ship the room has taken off its route is drawn on it no more', () => {
     [5, 2],
     'let go, both on their routes',
   );
+});
+
+test("a friendly ship's footprint holds its own hull's line once its mesh has come", () => {
+  const [mask] = friendlyHulls([{ id: 2, hull: 3, x: 100, y: 0, heading: 0 }], 1, LINES);
+  assert.deepEqual([...(mask?.line ?? [])], [...LINES.line(3)]);
 });
