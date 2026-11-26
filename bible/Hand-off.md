@@ -226,59 +226,80 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The sea reworked, the island's places as painted tiles, docking in sight, and the Playlist's crests in more detail** (#216, open,
-  waiting on CI on its head and the owner's yes to merge; a merge deploys the page, the site, the rooms and the bot,
-  and releases the desktop app, whose icon's code it changes). Four asks, each with its decision and Claude's calls in
-  its table:
+- **The sea reworked, the island's places as painted tiles, docking in sight, and the Playlist's crests in more
+  detail** (#216, open, waiting on the full check and CI on its head and the owner's yes to merge; a merge deploys the
+  page, the site, the rooms and the bot, and releases the desktop app, whose icon's code it changes). Five decisions,
+  each with Claude's calls in its table:
   - "I want you to redesign the Playlist nodes to be more detailed" ([[The Playlist's Nodes Are Drawn in More Detail, and Move]]):
     the screen's crests are worked metal shields on ticked dials that turn, rising into place, the chosen glow
     breathing, a sweep as one is lit or chosen, a ring from a waiting reward (`playlistCrest.ts`); still under
     reduced motion. The map's mark went with the sea rework below.
   - The owner's five sea asks ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]):
-    the Oversea and Sealevel views, W, A, S and D at sea level only, a voyage planned on the held map at ×200 and a
-    click at ×60, the ship's console (`shipConsole.ts`), docking that asks first (`landingAsk.ts`, `seaLandings.ts`),
-    no dock button and no Playlist at sea, an Elite Dungeon gone into from the sea at Normal (`node-<id>--sea`).
+    the Oversea and Sealevel views; W, A, S and D, B (Manage) and H (Leave the helm) at sea level only; a voyage
+    planned on the held map at ×200 and a click at ×60; the ship's console (`shipConsole.ts`); docking that asks first
+    (`landingAsk.ts`, `seaLandings.ts`); no dock button and no Playlist at sea; an Elite Dungeon gone into from the sea
+    at Normal (`node-<id>--sea`), a Normal run started at sea only with the ship within 32 km of its island's coast
+    (`arrival.ts`).
   - "Evenly designed rectangles on the screen" ([[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]])
     and "Painted vignettes" ([[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]):
-    over an island its places stand as tiles in a grid, each a pixel scene painted with the website's kit, now shared
-    from `client/src/art/`. Not built yet: the three landing zones, the zone's map to choose one from, their fast
-    travel; a patrol zone's tile lands at its one landing site.
-  - Audited twice. The first audit's seven sea defects were fixed before. The second, five read-only audits after
-    `main` (#211, #219, #220) was merged in (`c087e1be`), found 74 points; every real one is fixed with a test seen
-    failing first, but removals and note fixes. Among them: the island's scenes drawn stretched in a tile's padding;
-    the Playlist tile's crests open while shut; the lit tile flickering between the focus and the pointer; Enter
-    landing behind the menu; a rising tile taking clicks; the island's own tile painting in 57 to 475 ms (now 10 to
-    57, every texel the same); flotsam gathered along a chord across a turn of the course; a sea island's landing
-    sailing straight across land, not stopping a chase, and outliving a fight; a landing clicked far inland dropped;
-    the console reading ×60 while the room held the ship to ×5; dead code from the sea bar and the marks over an
-    island; some 30 notes that said otherwise than the code.
-  - Then the owner's answer to docking ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]],
-    Claude's calls in its table): the ship sails at ×60 into its berth (a free pier place at a living port, else just
-    off the shore, a sea island's anchorage) before the tiles (`docking.ts`, `berths.ts`); back aboard it sails out
-    from its berth; leaving the sea mid-way forgets the landing. The sea keeps a ship left at rest within 5 km of a
-    coast parked (`sea_parked.rs`, at most 1,024, never a guest's), seen at sea and sent by the island's rooms
-    (`server/ashore.ts`, every 15 s, every tier's sea for a social space, an outpost or a run started at sea) while a
-    room names its player there, by the host's clock; unseen once no room does, let go after a day or as its player
-    sails again; kept in memory alone, so a deploy loses them. A ship comes back turned as it lay
-    (`Character.ship_heading`). A read-only review's four bugs are fixed with tests that failed first.
-  - Tested offline: `cargo xtask check` on `c087e1be` (the merge), `b06d383b` (the audit's fixes) and `63d7990b`
-    (docking: 5,442 TypeScript and 3,184 Rust tests); the review's fixes on `479cf45b` by the room, protocol,
-    room-wasm and gear crates' tests, clippy, rustfmt, the repo checks, the server's tests and the page's touched
-    ones. Not seen in a running game, on a real GPU or in a deployed room.
-  - The owner's answers: a Normal run started at sea is entered only with the ship within 32 km of its island's coast
-    (`arrival.ts`; a company member still joins by the company's rule); the island's dungeon is its Elite Dungeon;
-    the three landing zones are Saltmere's, the other zones' deferred; `client/src/art` added to `desktop.yml`'s paths
-    and `CODE` list. Still open: whether leaving the sea lets a landing made for go (asked again in plainer words;
-    the decision lets only another course or a fight); `client/src/cinema/logoPicture.ts`, which the icon draws, is
-    in neither list either (not asked). Left as they are: the island's Elite Dungeon scene and the website's gate are
-    alike but not shared (one picture or the other would change); the port's tile paints Overlook wherever it is
-    docked (only Overlook's social space is open); the key strip lifting over the docking question on views under
-    about 950 px wide (unmeasured). Docking's own, left: a parked ship's look and plate are as its player left them
-    (a change at the Harbourmaster shows once they sail); ships ashore are drawn in friendly colours, not their dress,
-    and lie bow in, not turned to the pier; a ship parked in one tier's sea may show again if its player boards from
-    another tier and docks there; a ship ashore vanishes up to 15 s after it sails; going back aboard after a reload
-    ashore does not sail out from the berth; the pier's test checks the course from the sea's roadstead, the page's
-    own offing checked only by a script once.
+    over an island its places stand as tiles in a grid, their sides in 4-pixel steps, each a pixel scene painted with
+    the website's kit (shared from `client/src/art/`), drawn 74% opaque so the island shows through; in words only its
+    name and levels, every other detail a glyph (the Journal's icons and nine of the tiles' own, `islandIconMaps.ts`);
+    Tab, the arrows and the pad's cross walk them. Not built yet: the three landing zones (Saltmere's, the other
+    zones' deferred), the zone's map to choose one from, their fast travel; a patrol zone's tile lands at its one
+    landing site.
+  - Docking ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]): from the
+    view over the ship, the ship sails at ×60 into its berth before the tiles (`docking.ts`, `berths.ts`): a free
+    place at a living port's pier, come to along it, else anchored clear of the ships there; just off the shore at a
+    coast; a sea island's anchorage, or abreast of it. Back at sea, aboard again or from the tiles, it sails out from
+    its berth; leaving the sea mid-way forgets the landing and its voyage. The sea keeps a ship left at rest within
+    5 km of a coast parked at the nearest one (`sea_parked.rs`, at most 1,024, never a guest's), in its player's
+    looks and level as they are now. Every room on land names its players to all three seas every 15 s
+    (`server/ashore.ts`), by the host's clock; an island's own ground sends the ships parked there, a dungeon, a run
+    or a passage zone none. A ship no room names lies unseen, and is let go after a day or as its player sails again
+    in any sea; parked ships are kept in memory alone, so a deploy loses them. A ship comes back turned as it lay
+    (`Character.ship_heading`).
+  - Audits. The first audit's seven sea defects were fixed before. The second, five read-only audits after `main`
+    (#211, #219, #220) was merged in (`c087e1be`), found 74 points; every real one is fixed with a test seen failing
+    first, but removals and note fixes. Among them: the island's scenes drawn stretched in a tile's padding; the
+    Playlist tile's crests open while shut; the lit tile flickering between the focus and the pointer; Enter landing
+    behind the menu; a rising tile taking clicks; the island's own tile painting in 57 to 475 ms (now 10 to 57, every
+    texel the same); flotsam gathered along a chord across a turn of the course; a sea island's landing sailing
+    straight across land, not stopping a chase, and outliving a fight; a landing clicked far inland dropped; the
+    console reading ×60 while the room held the ship to ×5; dead code from the sea bar and the marks over an island;
+    some 30 notes that said otherwise than the code. A read-only review of docking found four bugs, fixed with tests
+    that failed first. Then `main` was merged in again (`1c66fb39`, #218's passages), and a passage zone's room names
+    its divers to every sea (`8cb91207`).
+  - An audit of `8cb91207` found more, fixed on two branches merged in: the page's (`2497e13e`): parked ships drawn
+    only on an island's own ground; a ship docking clear of other ships, along its pier, and abreast at a sea island
+    within the sea's landing reach; a docking stopped and resumed still reaching its berth; a landing waiting for the
+    view over the ship; the ship undocking once its player has the helm, from the tiles as from going aboard; the keys
+    and the pad reaching the tiles, Enter acting once; B and H at sea level alone; the Playlist opening only once its
+    screen is built, its chart drawn again only at 64-pixel steps; every tile detail a glyph, the scenes see-through.
+    The rooms' (`94c9c987`): every room on land naming its players to all three seas, a dungeon's, a run's or a
+    passage zone's sending no ships; a sea's last answer lapsing after 45 s; the sea's time holding at its most; a
+    ship parked at the one coast nearest it; sea islands rolled clear of parked ships; a kept heading turning a ship
+    only at its kept place; a player back in any sea letting go of their ship in the other two; a parked ship's looks
+    and level following its player's character; two tests that could not fail. The notes it found saying otherwise
+    than the code are fixed after the merges.
+  - The owner's answers: the island's dungeon is its Elite Dungeon; `client/src/art` and the logo the icon draws
+    (`client/src/cinema/logoPicture.ts`) in `desktop.yml`'s paths and `CODE` list; leaving the sea forgets a landing
+    made for; and, recorded in `886a810f`, B and H at sea level alone, icons now for every tile's detail, and a parked
+    ship's look kept current, built in the fixes above. Still the owner's to say: what a docking within reach that
+    finds no way in should do ([[Open Questions]], "Docking with no way in").
+  - Left as they are: the island's Elite Dungeon scene and the website's gate are alike but not shared (one picture or
+    the other would change); the port's tile paints Overlook wherever it is docked (only Overlook's social space is
+    open); the key strip lifting over the docking question on views under about 950 px wide (unmeasured). Docking's
+    own: going back aboard after a reload ashore does not sail out from the berth; ships ashore are drawn in friendly
+    colours, not their dress; a ship ashore is still seen up to 15 s after it sails; the sea's test of the pier sails
+    from its roadstead straight to each place, not through the page's offing and along the pier.
+  - Tested offline: `cargo xtask check` on `c087e1be` (the merge), `b06d383b` (the audit's fixes), `63d7990b`
+    (docking: 5,442 TypeScript and 3,184 Rust tests) and `d70f8282` (#218 merged in: 5,601 TypeScript tests); the
+    review's fixes on `479cf45b` by the room, protocol, room-wasm and gear crates' tests, clippy, rustfmt, the repo
+    checks, the server's tests and the page's touched ones; the last fixes on their branches before the merges, the
+    page's by its changed tests, the rooms' by the room, room-wasm, protocol and gear crates' tests, the server's
+    tests, clippy and the repo checks. Not yet run on the merged head: the full check, and CI. Not seen in a running
+    game, on a real GPU or in a deployed room.
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
   modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,
@@ -328,7 +349,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The passages and the regions** (#218, merged into `main`, superseding #204), built on the owner's
   autonomy ("this is where I give you autonomy and make this your baby"), audited on "I want to do a comprehensive
   audit and detailed design pass on this entire arc" and again on "This is yours now, do a comprehensive audit on
-  it": not merged until the owner's yes, which deploys the page, the rooms and the accounts. Every call is in
+  it". Every call is in
   [[Passages as Claude Builds Them]]; how it works in [[Passages]]; with it the band's retune
   ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]) and the held map at sea's redesign
   ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]). Main is merged in to
@@ -918,7 +939,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first review) and #114 (the gear message carries
-  the pledge once); and other sessions' work under way: #204 (Passages); #216 is under "Waiting on the owner".
+  the pledge once); #216 is under "Waiting on the owner".
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
