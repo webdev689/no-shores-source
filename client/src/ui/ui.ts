@@ -376,6 +376,9 @@ export class Interface {
       case 'up':
         this.up(event.x, event.y, event.button, free);
         return;
+      case 'cancel':
+        [this.selecting, this.held, this.padCursor.pressing] = [null, null, false];
+        return;
       case 'wheel':
         this.wheel = scrolledAt(this.laid, event.x, event.y, event.dy, this.scrolls) || this.wheel;
         return;

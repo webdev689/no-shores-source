@@ -47,3 +47,22 @@ test('an aim whose pointer is lost unreleased is let go unfired, and the next ai
   press('lostpointercapture');
   assert.deepEqual(done, ['aim', 'hold', 'aim', 'fire']);
 });
+
+test('an aim let go while the controls sheet covers the fight still fires; a lost pointer still holds fire', () => {
+  const { canvas, press } = canvased();
+  const { fight, done } = fought();
+  let covered = false;
+  fightPointer(
+    canvas,
+    () => (covered ? null : fight),
+    () => fight,
+  );
+  press('pointerdown', 2);
+  covered = true;
+  press('pointerup', 2);
+  covered = false;
+  press('pointerdown', 2);
+  covered = true;
+  press('lostpointercapture');
+  assert.deepEqual(done, ['aim', 'fire', 'aim', 'hold']);
+});

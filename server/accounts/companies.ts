@@ -103,13 +103,34 @@ async function leave(database: Db, account: string): Promise<void> {
   const company = await companyOf(database, account);
   if (!company) return;
   await database.prepare('DELETE FROM company_members WHERE account_id = ?1').bind(account).run();
+  await afterLeaving(database, company.id);
+}
+
+/** Takes `account` out of the company `company` only while `leader` still leads it and they are still in it, as one
+ *  statement, so a member who moved on to another company meanwhile is never taken out of theirs. Whether it did. */
+async function kickFrom(database: Db, account: string, company: string, leader: string): Promise<boolean> {
+  const kicked = await database
+    .prepare(
+      `DELETE FROM company_members WHERE account_id = ?1 AND company_id = ?2
+       AND EXISTS (SELECT 1 FROM companies WHERE id = ?2 AND leader_id = ?3)`,
+    )
+    .bind(account, company, leader)
+    .run();
+  if (kicked.meta.changes !== 1) return false;
+  await afterLeaving(database, company);
+  return true;
+}
+
+/** A company after one left it: ended once fewer than two are in it, else led by its longest member if its leader
+ *  left. */
+async function afterLeaving(database: Db, company: string): Promise<void> {
   // Each step reads what is left as it runs, so two leaving at once still end a company of one and pass its lead.
   const ended = await database
     .prepare('DELETE FROM companies WHERE id = ?1 AND (SELECT COUNT(*) FROM company_members WHERE company_id = ?1) < 2')
-    .bind(company.id)
+    .bind(company)
     .run();
   if (ended.meta.changes === 1) {
-    await database.prepare('DELETE FROM company_members WHERE company_id = ?1').bind(company.id).run();
+    await database.prepare('DELETE FROM company_members WHERE company_id = ?1').bind(company).run();
     return;
   }
   await database
@@ -118,7 +139,7 @@ async function leave(database: Db, account: string): Promise<void> {
        ORDER BY joined_at, account_id LIMIT 1)
        WHERE id = ?1 AND leader_id NOT IN (SELECT account_id FROM company_members WHERE company_id = ?1)`,
     )
-    .bind(company.id)
+    .bind(company)
     .run();
 }
 
@@ -275,10 +296,18 @@ export async function companyAsk(
     case 'kick':
     case 'lead': {
       if (!mine || mine.leader !== own) return said(403, "Only your company's leader can do that.");
-      if (!mine.members.includes(them.id)) return said(404, 'They are not in your company.');
-      if (asked === 'kick') await leave(database, them.id);
-      else await database.prepare('UPDATE companies SET leader_id = ?1 WHERE id = ?2').bind(them.id, mine.id).run();
-      return done;
+      const notIn = () => said(404, 'They are not in your company.');
+      if (!mine.members.includes(them.id)) return notIn();
+      // Judged again as it is written: they may have left, or the lead passed, since it was read.
+      if (asked === 'kick') return (await kickFrom(database, them.id, mine.id, own)) ? done : notIn();
+      const led = await database
+        .prepare(
+          `UPDATE companies SET leader_id = ?1 WHERE id = ?2 AND leader_id = ?3
+           AND EXISTS (SELECT 1 FROM company_members WHERE account_id = ?1 AND company_id = ?2)`,
+        )
+        .bind(them.id, mine.id, own)
+        .run();
+      return led.meta.changes === 1 ? done : notIn();
     }
     default:
       return said(404, 'No such page.');

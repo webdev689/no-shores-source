@@ -93,6 +93,8 @@ fn history_in_a_comment_is_a_problem() {
         "// changed on 17 Nov 2026\n",
         "// changed on 3 September 2026\n",
         "// changed on 2026/11/14\n",
+        "// changed on November 17, 2026\n",
+        "// fixed in PR 1674\n",
     ];
     for case in cases {
         assert_eq!(problems_in("crates/core/src/lib.rs", case).len(), 1, "{case}");
@@ -106,6 +108,7 @@ fn ordinary_words_are_not_history() {
         "// The hull rolls at 0.5 rad and 20 Hz; see the Sailing note.\n",
         "// x-axis and y-axis meet at the keel.\n",
         "// ISO-8601 times, RFC-3339 stamps, May 2026's swell, 3 maybe 2026 ships\n",
+        "// the GPU may issue 64 draws a frame\n",
     ];
     for case in cases {
         assert!(problems_in("crates/core/src/lib.rs", case).is_empty(), "{case}");
@@ -119,6 +122,18 @@ fn python_docstrings_and_trailing_comments_are_read() {
     assert_eq!(lines, [2, 3, 4], "the docstring's two lines and the trailing comment, not the string");
     let long = format!("\"\"\"{}\"\"\"\n", "why\n".repeat(MAX_COMMENT_LINES + 1));
     assert_eq!(problems_in("forge/body.py", &long).len(), 1, "a long docstring is a long comment");
+}
+
+#[test]
+fn raw_and_one_line_docstrings_are_read_but_an_assigned_string_is_not() {
+    let raw = "def match():\n    r\"\"\"Changed on 2026-11-14.\"\"\"\n";
+    assert_eq!(problems_in("forge/body.py", raw).len(), 1, "a raw docstring");
+    let one_line = "def sail(x: int) -> dict[str, int]: \"\"\"Fixed in #1674.\"\"\"\n";
+    assert_eq!(problems_in("forge/body.py", one_line).len(), 1, "a docstring after a one-line header");
+    let class = "class Hull(Base): '''See #1674.'''\n";
+    assert_eq!(problems_in("forge/body.py", class).len(), 1, "a class's");
+    let assigned = "TEXT = \"\"\"Changed on 2026-11-14.\"\"\"\n";
+    assert!(problems_in("forge/body.py", assigned).is_empty(), "a string assigned is data, not a comment");
 }
 
 #[test]

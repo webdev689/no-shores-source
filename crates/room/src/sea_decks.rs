@@ -160,6 +160,27 @@ impl Sea {
         Ok(())
     }
 
+    /// A sinking's pay again for each of `paid` who fights on a captain's deck, into the character their deck's room
+    /// holds: off the deck that one is theirs, the sea's copy giving back only the ship's part (`with_sea_kept`).
+    pub(super) fn pay_boarders(&mut self, sank: &Sank, paid: &[PlayerId]) {
+        let (rank, difficulty) = (sank.hostile.commission.rank, self.hostiles.difficulty);
+        for player in paid {
+            let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(player)) else {
+                continue;
+            };
+            let (Some(found), Some(held)) =
+                (deck.room.players.get_mut(&deck.aboard[player]), self.harbour.characters.get(player))
+            else {
+                continue;
+            };
+            // Paid by the ship the sea sails now, which may have risen since boarding, as the sea's copy was.
+            found.character = with_sea_kept(found.character.clone(), held);
+            let foe = crate::flotsam::foe_of(rank);
+            found.character.reward_sinking(foe, rank.number(), sank.hostile.level, difficulty);
+            found.gear_changed = true;
+        }
+    }
+
     /// A boarder off the captain's deck, their character back with them; the last one off scuttles it.
     pub(super) fn step_off(&mut self, index: usize, player: PlayerId) {
         let Some(deck) = self.decks.boarded.get_mut(index) else { return };

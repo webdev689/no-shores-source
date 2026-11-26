@@ -224,3 +224,28 @@ test("the story fight draws its see-through puffs and its puffs' light after the
   fight.lightInto({} as GPURenderPassEncoder);
   assert.deepEqual(drawn, ['over', 'light']);
 });
+
+test('a key held in the story’s sea fight is let go with the window, so the Brig steers on no longer', async () => {
+  const sent: unknown[] = [];
+  const land = door([]);
+  const step = land.fightStep.bind(land);
+  Object.assign(land, {
+    fightStep: (orders: unknown, ...rest: unknown[]) => (
+      sent.push(orders),
+      step(...([orders, ...rest] as Parameters<typeof step>))
+    ),
+  });
+  const fight = await begunOn(land);
+  const input = { seconds: 0.1, time: 0, far: 1000, swell: undefined };
+  const steerOf = async (time: number) => {
+    fight.frame({ ...input, time });
+    await new Promise((settle) => setTimeout(settle, 0));
+    return JSON.stringify(sent.at(-1));
+  };
+  const resting = await steerOf(0);
+  fight.key('a', true);
+  const steering = await steerOf(0.1);
+  assert.notEqual(steering, resting, 'A held steers');
+  fight.letGo();
+  assert.equal(await steerOf(0.2), resting, 'let go, it steers no more');
+});

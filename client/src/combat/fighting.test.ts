@@ -196,16 +196,15 @@ function fightByHand() {
     predict: (fighter: Float64Array) => ({ fighter, fired: control.firing ? shot : null, hits: [] }),
     strokeReach: () => 1,
   } as unknown as CombatRules;
-  const link = {
-    player: 1,
-    dressed: [],
-    joins: 1,
-    rejoining: false,
-    lost: null,
-    send: () => undefined,
-    pump: () => undefined,
-  } as unknown as RoomLink;
-  const fighting = new Fighting(rules, link);
+  const sent: Uint8Array[] = [];
+  const link = { player: 1, dressed: [], joins: 1, rejoining: false, lost: null, quiet: false, sent, pump: () => {} };
+  const fighting = new Fighting(rules, {
+    ...link,
+    send: (bytes) => void sent.push(bytes),
+    get quiet() {
+      return link.quiet;
+    },
+  });
   let tick = 0n;
   const word = (acknowledged: number, shots: readonly FlyingShot[] = []) => {
     tick += 1n;
@@ -224,8 +223,20 @@ function fightByHand() {
   };
   const steps = fighting.steps(movement);
   const step = () => steps.step({} as Body, STILL);
-  return { fighting, control, word, step };
+  return { fighting, control, word, step, link };
 }
+
+test('a link gone quiet is sent no input, and the player stands, until the room speaks', () => {
+  const { link, word, step } = fightByHand();
+  word(0);
+  step();
+  link.quiet = true;
+  for (let tick = 0; tick < 5; tick++) step();
+  assert.equal(link.sent.length, 1, 'nothing is numbered or sent while the room is unheard');
+  link.quiet = false;
+  step();
+  assert.equal(link.sent.length, 2);
+});
 
 test("a shot an input lets go only once the room's word is replayed is handed over once; one already handed over is not", () => {
   const { fighting, control, word, step } = fightByHand();
