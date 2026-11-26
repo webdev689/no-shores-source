@@ -20,6 +20,8 @@ export interface FightSource {
   fightBegin(id: string, ship: ShipFloats, seed: number, time: number, hull?: number): Promise<FightView | null>;
   fightStep(id: string, orders: FightOrders, time: number, ticks: number): Promise<FightView | null>;
   fightEnd(): Promise<void>;
+  /** Whether a room it steps through has gone unheard, so no step is sent until it speaks; none for one that cannot. */
+  quiet?(): boolean;
 }
 
 /** What the player does in a frame: the keys held (the helm's, and C to brace), a rung press, the look they lay
@@ -153,7 +155,8 @@ export class Fighting {
     else if (!input.fire && this.fires === 0) this.lastLook = null;
     this.loadSteps += input.loadSteps;
     this.owed = Math.min(this.owed + seconds, MOST_TICKS * TICK_SECONDS);
-    if (this.pending || this.answer.over) return;
+    // Unheard, the room is sent nothing; the presses wait for the step after it speaks.
+    if (this.pending || this.answer.over || this.source.quiet?.() === true) return;
     const ticks = Math.floor(this.owed / TICK_SECONDS + 1e-6);
     if (ticks === 0) return;
     this.owed = Math.max(0, this.owed - ticks * TICK_SECONDS);

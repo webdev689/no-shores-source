@@ -352,9 +352,9 @@ export class SeaRoom {
     this.link.send(walkBytes(sequence, controls));
   }
 
-  /** The player's orders in their fight; none while the room has gone unheard, as every input waits for its word. */
+  /** The player's orders in their fight. */
   orders(orders: FightOrders): void {
-    if (!this.quiet) this.link.send(ordersBytes(ordersNumbers(orders)));
+    this.link.send(ordersBytes(ordersNumbers(orders)));
   }
 
   /** Lets the room's clock run `seconds`, where the room runs alone, in the rooms' worker. While the link rejoins,

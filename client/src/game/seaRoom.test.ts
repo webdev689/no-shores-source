@@ -5,7 +5,6 @@ import type { SeenShip } from '../network/messages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import type { SeenCharted } from '../network/seaHarbour.ts';
-import type { FightOrders } from '../rules/fightRules.ts';
 import { SeaRoom } from './seaRoom.ts';
 
 /** A sea room's link in the test: what the page sends, and its snapshots handed on by tick, with the ships at sea. */
@@ -190,16 +189,4 @@ test('the sea’s chart is the last the room sent, kept through the snapshots be
   link.rejoining = true;
   room.pump(0);
   assert.deepEqual(room.charted, []);
-});
-
-test('a sea room gone quiet is sent no orders for the fight until it speaks', async () => {
-  const { room, sent, link } = await joined();
-  const orders = { helm: 'steady', aim: null, fire: true, brace: false, load: null, boost: false } as const;
-  const before = sent.length;
-  Object.assign(link, { quiet: true });
-  room.orders(orders as unknown as FightOrders);
-  assert.equal(sent.length, before, 'held while the room is unheard');
-  Object.assign(link, { quiet: false });
-  room.orders(orders as unknown as FightOrders);
-  assert.equal(sent.length, before + 1);
 });
