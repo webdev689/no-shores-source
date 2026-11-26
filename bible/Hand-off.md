@@ -228,7 +228,9 @@ The decisions in [[Open Questions]] are not repeated here.
   down the timed airships ("Thats a band aid") for territories across each zone
   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]): a group at every area but landings,
   gates, entrances, hamlets, wilds, a Breach's hollow and a plot, standing as a player comes near, let go out of sight,
-  retaken by airship when cleared. Every call is in [[Foe Arrivals as Claude Builds Them]], how it works in [[Enemies]]
+  retaken by airship when cleared; on the owner's "2", the landing's own groups are let go the same way, their posts
+  kept and their places the rest of the zone's ([[The Landing's Groups Are Let Go as Territories Are]]). Every call is
+  in [[Foe Arrivals as Claude Builds Them]], how it works in [[Enemies]]
   ("Arrivals", "Territories and runs"), [[Lattice]] and [[Modules]]. The airship and the crown are Blender modules
   (`tools/modules/airship.py`, `crown.py`), published to R2 by the modules workflow on the branch's pushes. Three
   read-only audits' 39 points are fixed, each with a test that fails on the code before it, or answered in the pull
