@@ -7,11 +7,14 @@ import houses from '../../../../content/story/houses.json' with { type: 'json' }
 import { emblemOf } from '../../plus/emblemArt.ts';
 import { RARITIES } from '../../player/gear.ts';
 import { castOf, scenesOf } from '../../speech/cast.ts';
-import type { Child, Node } from '../../ui/node.ts';
+import type { Child, Node, Size } from '../../ui/node.ts';
 import { INK, emblemNode, over, svgNode, words } from '../gearNodes.ts';
 import { keeperMarkSvg } from '../npc/npcMarks.ts';
 import type { Step } from '../tasks.ts';
-import type { Offer, QuestLine } from './questBook.ts';
+import type { QuestState } from '../../network/questMessages.ts';
+import { nameOf } from '../npc/npcLines.ts';
+import { keeperOf } from '../keepers.ts';
+import { type Offer, QUESTS, type QuestLine, trackedOf } from './questBook.ts';
 import factions from '../../../../content/gear/factions.json' with { type: 'json' };
 
 /** The keepers' longer words, by scene, checked against the cast as every scene is. */
@@ -31,6 +34,8 @@ export interface Offered {
   readonly steps: readonly Step[];
   readonly acquired: boolean;
   readonly keeper: string;
+  /** What its foot says once it is acquired: "Acquired" unless said ("Done" in the Journal for a quest done). */
+  readonly said?: string;
 }
 
 /** A keeper's name as it is written mid-line: "the Weaponsmith", "Arlo Kestrel". */
@@ -42,13 +47,13 @@ export const storyLines = (offer: Offer): readonly string[] => (SCENES[offer.sto
 /** How the story ends: how to follow the quest's steps once it is acquired. */
 export const FOLLOW = 'Follow its steps in the tracker, and in the Journal, to see it through.';
 
-/** An objective's box, `size` pixels a side: empty, or filled in the rarity's lit colour once met. */
-function box(met: boolean, size: number, lit: string): Node {
+/** An objective's box, `size` pixels a side: empty, or filled in `lit` once met. The tracker's steps wear it too. */
+export function objectiveBox(met: boolean, size: number, lit: string): Node {
   return {
     width: size,
     height: size,
     outline: { width: 2, colour: BOX_EDGE },
-    padding: 4,
+    padding: Math.max(2, Math.round(size / 5)),
     children: [met && { width: 'grow', height: 'grow', fill: lit }],
   };
 }
@@ -72,7 +77,7 @@ function objectivesNode(steps: readonly Step[], text: number, lit: string): Node
       alignY: 'center',
       label: `${step.text}: ${step.done ? 'done' : 'not yet'}`,
       children: [
-        box(step.done === true, size, lit),
+        objectiveBox(step.done === true, size, lit),
         { width: 'grow', text: { words: step.text, size: text, colour: step.done ? INK.faint : INK.word } },
         !step.done && step.count !== undefined && words(`${step.count}`, text, INK.faint),
       ],
@@ -82,8 +87,8 @@ function objectivesNode(steps: readonly Step[], text: number, lit: string): Node
 
 /** The card of a quest offered, `width` pixels wide with its words at `text`: Acquire (press `press`) at its foot
  *  while it waits, "Acquired" once it is. */
-export function questCardNode(offered: Offered, width: number, text: number, press = 'npc-acquire'): Node {
-  const { quest, offer, steps, acquired, keeper } = offered;
+export function questCardNode(offered: Offered, width: Size, text: number, press = 'npc-acquire'): Node {
+  const { quest, offer, steps, acquired, keeper, said = 'Acquired' } = offered;
   const rarity = RARITIES[offer.rarity] ?? RARITIES[0];
   // The band in the rarity's colour, dulled toward the ground so the name in white reads on it.
   const band = over(rarity.rgb, 0.62, '#241f12');
@@ -144,7 +149,7 @@ export function questCardNode(offered: Offered, width: number, text: number, pre
             alignX: 'end',
             children: [
               acquired
-                ? words('Acquired', text, INK.faint)
+                ? words(said, text, INK.faint)
                 : {
                     id: press,
                     press: true,
@@ -208,4 +213,24 @@ export function questStoryNode(quest: QuestLine, offer: Offer, width: number, te
       { width: 'grow', text: { words: [{ words: FOLLOW, style: 'italic' }], size: text, colour: INK.faint } },
     ],
   };
+}
+
+/** A quest as the Journal's card shows it in its hover card, as its keeper offered it: the quest walked with its
+ *  task's objectives ticked as met, one done with its last task's all ticked; none for a quest no keeper offers or
+ *  one neither walked nor done. */
+export function bookCard(id: string, state: QuestState): Offered | null {
+  const place = QUESTS.findIndex((quest) => quest.id === id);
+  const quest = QUESTS[place];
+  const offer = quest?.offer;
+  if (!quest || !offer) return null;
+  const keeper = nameOf(keeperOf(offer.keeper)?.speaker ?? '');
+  if (state.done[place] === 1) {
+    const steps = (quest.tasks.at(-1)?.goals ?? []).map((goal) => ({ text: goal.text, done: true }));
+    return { quest, offer, steps, acquired: true, keeper, said: 'Done' };
+  }
+  if (state.quest !== place + 1) return null;
+  const steps = trackedOf({ ...state, offered: 0 })?.steps ?? [];
+  // The Journal acquires nothing: one waiting says where it is acquired.
+  const said = state.offered ? `Acquire it from ${midLine(keeper)}` : 'Acquired';
+  return { quest, offer, steps, acquired: true, keeper, said };
 }

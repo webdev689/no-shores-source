@@ -22,6 +22,7 @@ import {
   talkAt,
   trackedOf,
 } from './questBook.ts';
+import { bookCard } from './questCard.ts';
 
 // The roads are written by their story's own hand and change: these tests read what they expect from the file.
 
@@ -294,4 +295,19 @@ test('a quest offered by a keeper shows its offer at their counter, and the trac
   assert.equal(trackedOf(acquired)?.steps[0]?.done, true);
   const road = onTask(STORM, 0, [], { offered: COUNTERS.stormcallers });
   assert.equal(offeredAt(road, 'stormcallers')?.offer.story, 'stormBegin', 'a road from its leader, in their words');
+});
+
+test("the Journal's hover card is the keeper's card: the task's objectives ticked, a done quest's all, a waiting one where to acquire it", () => {
+  const opening = questOf('house');
+  const round = taskOf(opening, 'find-your-way');
+  const walking = bookCard('house', onTask(opening, round, [1, 0, 1]));
+  assert.deepEqual(
+    walking?.steps.slice(0, 3).map((step) => step.done),
+    [true, false, true],
+  );
+  assert.equal(walking?.said, 'Acquired');
+  assert.equal(bookCard('house', onTask(opening, round, [], { offered: 13 }))?.said, 'Acquire it from the Weaponsmith');
+  const done = bookCard('house', onTask(STORM, 0, [], { done: [1, 0, 0, 0] }));
+  assert.ok(done?.said === 'Done' && done.steps.every((step) => step.done));
+  assert.equal(bookCard('lamplighters', onTask(STORM, 0)), null, 'neither walked nor done');
 });

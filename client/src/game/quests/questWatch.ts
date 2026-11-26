@@ -6,17 +6,27 @@
 // ambush) is said only as it happens or not at all.
 import type { GearState } from '../../network/gearMessages.ts';
 import { QUESTS, beginOf, linesBetween } from './questBook.ts';
-import { type Kept, behind, giftsBetween, greetBetween, keptOf, metBetween, momentsBetween } from './questNews.ts';
+import type { Notice } from '../obtained.ts';
+import {
+  type Kept,
+  behind,
+  giftsBetween,
+  greetBetween,
+  keptOf,
+  metBetween,
+  momentsBetween,
+  stepsBetween,
+} from './questNews.ts';
 
 /** Where the browser keeps, for an account (`<key>.<account>`), the quests whose begin it has said, by id. */
 export const BEGUN_KEY = 'noshores.roads.begun';
 
 /** What a look finds new: the scenes to say in order, the moment's lines (said only if none like them waits), and the
- *  toasts. */
+ *  notices of what the player obtained. */
 export interface News {
   readonly scenes: readonly string[];
   readonly moments: readonly string[];
-  readonly toasts: readonly string[];
+  readonly notices: readonly Notice[];
 }
 
 /** What the browser keeps of the roads. */
@@ -42,7 +52,7 @@ export class QuestWatch {
    *  scenes found held until they are, the moment's lines dropped. */
   look(gear: GearState | null, past: boolean): News {
     const [before, after] = [this.kept, keptOf(gear)];
-    let [toasts, moments]: string[][] = [[], []];
+    let [notices, moments]: [Notice[], string[]] = [[], []];
     if (after && !before) {
       // The first word: where the player stands. One from before the roads, on a first task with nothing counted,
       // hears its road begin if this browser has not said it for the account.
@@ -50,12 +60,12 @@ export class QuestWatch {
       if (after.task === 0 && after.counts.every((count) => count === 0)) this.begin(after.quest);
     } else if (after && before && !behind(before, after)) {
       this.kept = after;
-      toasts = giftsBetween(before, after);
+      notices = [...stepsBetween(before, after), ...giftsBetween(before, after)];
       moments = past ? momentsBetween(before, after) : [];
       this.hold([...this.greet(before, after), ...metBetween(before, after), ...linesBetween(before, after)], 0);
       if (after.task === 0 && before.quest !== after.quest) this.begin(after.quest);
     }
-    return { scenes: past ? this.release() : [], moments, toasts };
+    return { scenes: past ? this.release() : [], moments, notices };
   }
 
   /** The step's greeting, the first time its figure walks in this task. */

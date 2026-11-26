@@ -6,6 +6,12 @@ import type { GearState } from '../../network/gearMessages.ts';
 import { ARRIVED, GEAR, LETTERS } from '../journalShots.ts';
 import { menuShot } from '../mountShots.ts';
 import { COUNTERS, QUESTS } from '../quests/questBook.ts';
+import { giftNotice } from '../quests/questNews.ts';
+import { bookCard, questCardNode } from '../quests/questCard.ts';
+import { type Notice, Obtained, obtainedLayer } from '../obtained.ts';
+import type { Node } from '../../ui/node.ts';
+import type { Interface } from '../../ui/ui.ts';
+import { keeperMarkSvg } from './npcMarks.ts';
 
 const place = (id: string) => QUESTS.findIndex((quest) => quest.id === id) + 1;
 const taskOf = (id: string, task: string) => QUESTS[place(id) - 1]?.tasks.findIndex((each) => each.id === task) ?? 0;
@@ -54,3 +60,30 @@ export const tackShot = menuShot('tack', GEAR);
 export const shapeShot = menuShot('shape', GEAR);
 export const harbourShot = menuShot('harbourmaster', GEAR);
 export const boardShot = menuShot('board', GEAR);
+
+/** The menu at `view` over `gear` with `notice` standing at the foot, as the game lays its notices over every layer. */
+function withNotice(view: string, gear: GearState, notice: Notice): (ui: Interface) => Node {
+  const menu = menuShot(view, gear);
+  const obtained = new Obtained(() => undefined);
+  obtained.notify(notice);
+  // A still clock: a picture's frames take longer than a notice stands.
+  const layer = obtainedLayer(
+    () => false,
+    obtained,
+    () => 0,
+  );
+  return (ui) => ({ width: 'grow', height: 'grow', children: [menu(ui), layer(ui)] });
+}
+
+export const acquiredNotice = withNotice('weaponsmith', ACQUIRED, {
+  title: 'Quest acquired',
+  line: 'A House of Your Own. Follow its steps in the tracker.',
+  icon: { key: 'keeper weaponsmith', svg: keeperMarkSvg('weaponsmith') },
+});
+export const armourNotice = withNotice('armorsmith', ARRIVED, giftNotice('armour'));
+export const horseNotice = withNotice('tack', GEAR, giftNotice('horse'));
+/** The card the Journal's hover card shows for the quest walked, as its keeper offered it, its objectives ticked. */
+export const journalCard = (): Node => {
+  const offered = ACQUIRED.quest ? bookCard('house', ACQUIRED.quest) : null;
+  return { padding: 40, fill: '#0e1013', children: [offered && questCardNode(offered, 560, 2)] };
+};

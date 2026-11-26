@@ -11,6 +11,7 @@ code:
   - client/src/speech/overheads.ts#Overheads
   - client/src/speech/place.ts#overheadPlace
   - client/src/speech/dialogue.ts#dialogueNode
+  - client/src/game/npc/npcSpeech.ts#sayInScreen
   - content/story/cast.json
 ---
 # Speech
@@ -53,9 +54,12 @@ types each line as it is heard, and short barks over a speaker's head, their wor
 - **Barks** stand over the speaker's head, typed and voiced as the box's lines are, held a second once typed, then
   faded. A new bark over a head replaces the last.
 
-- **Overlook's people.** The keepers speak on their screens: a greeting as it opens, thanks after a ware bought and a
-  line for a player short of the price, each a one-line scene of `content/story/keepers.json` said in turn
-  ([[Interface]], "The social space's counters"). The stranger's welcome to Overlook is `content/story/welcome.json`
+- **Overlook's people.** The keepers speak on their screens, as Destiny's vendors do: a greeting as it opens, thanks
+  after a ware bought and a line for a player short of the price, each a one-line scene of
+  `content/story/keepers.json` said in turn, and a quest's scene they say alone while their screen is open, a line at
+  a time, each held 1.6 s once typed (`sayInScreen`); the line stands over their name, their name in their screen's
+  colour ([[Interface]], "The social space's counters"). A scene with another speaker, and the stranger's, waits for
+  the screen to close and is said in the dialogue box, which keeps the face-to-face shot. The stranger's welcome to Overlook is `content/story/welcome.json`
   ([[Prologue]], "The stranger's welcome"). Each speaker talks in a voice of their own
   ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]]).
 

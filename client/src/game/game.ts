@@ -65,6 +65,7 @@ import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
 import { returnToShip } from './toShip.ts';
 import { speaking } from '../speech/dialogue.ts';
+import { obtainedLayer } from './obtained.ts';
 
 /**
  * The game: the player arrives in Overlook's social space, plays on foot, returns to their ship, sails the sea, views
@@ -551,7 +552,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     (error: unknown) => console.error('the gear pages have no rules to ask items’ numbers of:', error),
   );
   inspectAgainst(() => fed()?.gear ?? null);
-  stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
+  for (const layer of [screens.layer, obtainedLayer(speaking)]) stack.add(layer); // an entrance's card, the notices
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry, change, respawn, goAshore, stopOrResume, openMap },

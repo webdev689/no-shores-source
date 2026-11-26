@@ -14,6 +14,8 @@ import { FOCUS, INK, words } from './gearNodes.ts';
 import { iconNode, pixelNode } from './journalIcons.ts';
 import { timersNode } from './journalTimers.ts';
 import { CARDS_A_PAGE, type QuestCard, bountyColumnOf, questCardsOf } from './journalWords.ts';
+import type { QuestState } from '../network/questMessages.ts';
+import { bookCard, questCardNode } from './quests/questCard.ts';
 import type { PlainContext } from './menuPage.ts';
 
 /** What the Journal reads: the day's and the week's activities, and the last word of the character any room sent. */
@@ -157,7 +159,7 @@ export class Journal {
       width: 'grow',
       gap: 16,
       wrap: room.width < 600,
-      children: [this.quests(ui, cards, room.width >= 900, wide), this.bounties(ui, gear, week, plain)],
+      children: [this.quests(plain, cards, room.width >= 900, wide, gear?.quest), this.bounties(ui, gear, week, plain)],
     };
     if (!this.down) return page;
     // The page dimmed over the whole of its room, and no further than the body shows it.
@@ -188,8 +190,17 @@ export class Journal {
   }
 
   /** The quests: their head with how many are held and the page between its arrows, and the cards six a page, two
-   *  columns of three where `twoColumns`; with none, the banners a quest wears resting over the line saying why. */
-  private quests(ui: Interface, cards: readonly QuestCard[], twoColumns: boolean, wide: boolean): Node {
+   *  columns of three where `twoColumns`, each showing the card its keeper offered it as (quests/questCard.ts), its
+   *  objectives ticked, beside it while it is pointed at or holds the keys; with none, the banners a quest wears
+   *  resting over the line saying why. */
+  private quests(
+    plain: PlainContext,
+    cards: readonly QuestCard[],
+    twoColumns: boolean,
+    wide: boolean,
+    state: QuestState | null | undefined,
+  ): Node {
+    const { ui, sizes } = plain;
     const count = Math.max(1, Math.ceil(cards.length / CARDS_A_PAGE));
     if (ui.clicked('quests-back')) this.pageAt -= 1;
     if (ui.clicked('quests-next')) this.pageAt += 1;
@@ -264,6 +275,9 @@ export class Journal {
       // Each card its column's share of the row, a card alone in its row too, the gutter split between them.
       const cells = Array.from({ length: perRow }, (_unused, nth): Node => {
         const card = shown[first + nth];
+        const offered = card && state ? bookCard(card.id, state) : null;
+        if (card && offered)
+          plain.card(`quest-${card.id}`, () => questCardNode(offered, sizes.card, sizes.label, 'quest-acquire'));
         return {
           width: `${100 / perRow}%`,
           padding: [0, nth < perRow - 1 ? 8 : 0, 0, nth > 0 ? 8 : 0],

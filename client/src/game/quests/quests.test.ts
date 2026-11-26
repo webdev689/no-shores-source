@@ -12,6 +12,7 @@ import { useAt } from '../footGear.ts';
 import { OPEN_AT } from '../gearScreen.ts';
 import type { StationInfo } from '../nodes.ts';
 import { hush, screenOpened } from '../npc/npcSpeech.ts';
+import type { Notice } from '../obtained.ts';
 import { COUNTERS, QUESTS } from './questBook.ts';
 import { SPEAKERS } from './questLooks.ts';
 import { Quests } from './quests.ts';
@@ -67,8 +68,16 @@ function roads() {
     card: (id: number, _dress: unknown, anim: string) => ({ id, anim }),
     warm: (_dress: unknown, moves: () => readonly string[]) => void warmed.push([...moves()]),
   };
+  const noticed: Notice[] = [];
+  const parts = {
+    cast: CAST,
+    scenes: SCENES,
+    kept: keeping,
+    account: () => 'arlo-fan',
+    forge: forge as unknown as Cards,
+  };
   const quests = new Quests(
-    { cast: CAST, scenes: SCENES, kept: keeping, account: () => 'arlo-fan', forge: forge as unknown as Cards },
+    { ...parts, notify: (...notices: readonly Notice[]) => void noticed.push(...notices) },
     () => voice,
     () => now,
   );
@@ -77,7 +86,16 @@ function roads() {
     quests.frame(0.1, past, held);
     await Promise.resolve();
   };
-  return { quests, said, kept, warmed, frame, finish: () => finish(), clock: (millis: number) => (now = millis) };
+  return {
+    quests,
+    said,
+    kept,
+    warmed,
+    noticed,
+    frame,
+    finish: () => finish(),
+    clock: (millis: number) => (now = millis),
+  };
 }
 
 /** The first line of `scene`, as the box says it. */
@@ -300,8 +318,8 @@ test("the HUD marks where the task's next goal stands in the node the player is 
   );
 });
 
-test("a road's gift is toasted for a while", async () => {
-  const { quests, frame, clock } = roads();
+test("a road's gift is noticed at the foot of the screen", async () => {
+  const { quests, frame, noticed } = roads();
   const earned = (bits: number) =>
     state({
       ...gear(STORM, 2, { pledge: 1 }),
@@ -311,10 +329,10 @@ test("a road's gift is toasted for a while", async () => {
   await frame();
   quests.hear(earned(1));
   await frame();
-  assert.deepEqual(quests.toasts, ['Storm Art earned: Tempest']);
-  clock(5000);
-  await frame();
-  assert.deepEqual(quests.toasts, []);
+  assert.deepEqual(
+    noticed.map((notice) => notice.title),
+    ['Storm Art earned'],
+  );
 });
 
 test("a step's figures glide between the room's words, warmed to walk and stand; an arrived one stands where it is", async () => {

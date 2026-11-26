@@ -3,7 +3,7 @@
 // open and the keeper says the scene alone, else in the dialogue box; a counter that a talk goal of the task names (or
 // whose keeper offers the quest) offers to speak with its keeper, whose screen it opens; the HUD marks where the task's next goal stands and the
 // held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what
-// a road gives is toasted. Each is the room's word read, never a judgement of the page's own.
+// a road gives is noticed at the foot of the screen (obtained.ts). Each is the room's word read, never a judgement of the page's own.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
 import type { MarkedFoe } from '../../combat/foePlate.ts';
@@ -26,6 +26,7 @@ import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
+import { type Notice, notify } from '../obtained.ts';
 import { buyAt, goalNodes, talkAt, trackedOf } from './questBook.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { type Chart, type Guide, type Standing, guideOf } from './waypoint.ts';
@@ -37,8 +38,6 @@ export interface QuestVoice {
   frame(seconds: number): void;
 }
 
-/** How long a toast for a road's gift stands, milliseconds. */
-const TOAST_MS = 4000;
 /** How far over the ground the quest's mark stands, metres; its size on the screen; and how far in from the top and
  *  foot it is held, clear of the place's name and the fight's bars. */
 const MARK_RISE_M = 2;
@@ -59,7 +58,8 @@ export class Quests {
   private readonly waiting: string[] = [];
   /** The scene being said, if one is. */
   private saying: string | null = null;
-  private toasted: { readonly text: string; readonly until: number }[] = [];
+  /** Where what the roads give is noticed (obtained.ts). */
+  private readonly notify: (...notices: readonly Notice[]) => void;
   /** The step's figures, drawn between the room's words on them. */
   private readonly glides = new FigureGlides();
   /** When the room's last word on the quest came, milliseconds on `now`. */
@@ -79,6 +79,7 @@ export class Quests {
       readonly kept?: Pick<Storage, 'getItem' | 'setItem'>;
       readonly account?: () => string | null;
       readonly forge?: Cards;
+      readonly notify?: (...notices: readonly Notice[]) => void;
     },
     voice: () => QuestVoice,
     now: () => number = () => performance.now(),
@@ -86,6 +87,7 @@ export class Quests {
     [this.cast, this.scenes, this.voice, this.now] = [parts.cast, parts.scenes, voice, now];
     this.watch = new QuestWatch(parts.kept ?? null, parts.account);
     this.forge = parts.forge ?? null;
+    this.notify = parts.notify ?? notify;
   }
 
   /** The step's figures and its ward's figure in the room the player is in, as cards for an eye at `eye` at `clock`
@@ -127,15 +129,11 @@ export class Quests {
    *  view: what is new is taken, and the next scene waiting is said once none is and nothing holds the view. */
   frame(seconds: number, past: boolean, held: boolean): void {
     this.past = past;
-    const now = this.now();
     const news = this.watch.look(this.gear, past);
     this.waiting.push(...news.scenes);
     // A moment's line waiting or being said already is not said twice: the player hears it once for the moment.
     for (const line of news.moments) if (line !== this.saying && !this.waiting.includes(line)) this.waiting.push(line);
-    this.toasted = [
-      ...this.toasted.filter((toast) => toast.until > now),
-      ...news.toasts.map((text) => ({ text, until: now + TOAST_MS })),
-    ];
+    this.notify(...news.notices);
     // While a screen stands over the view, only a scene its keeper says alone is said, in their screen.
     const head = this.saying === null ? this.waiting[0] : undefined;
     const onScreen = head !== undefined && held ? sayInScreen(this.scenes[head] ?? []) : null;
@@ -157,14 +155,9 @@ export class Quests {
     });
   }
 
-  /** The toasts for what the roads gave lately. */
-  get toasts(): string[] {
-    return this.toasted.map((toast) => toast.text);
-  }
-
   /** Where the compass points for the quest walked from where the player stands (`standing`), over `chart`, kept for
    *  the tracker's words; none before the story and the welcome are past. At sea, where no frame runs the roads (their
-   *  lines and toasts wait for land), `past` says whether they are. */
+   *  lines and notices wait for land), `past` says whether they are. */
   guide(standing: Standing, chart: Chart, past = this.past): Guide {
     this.past = past;
     const marked = this.goalAt;
