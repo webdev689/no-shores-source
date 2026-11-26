@@ -160,3 +160,6 @@
 2026-11-26 00:00 [no-shores-source] session-start scan: files=257 parsed=248 principles=0
 2026-11-26 00:01 [no-shores-source] session-start scan: files=257 parsed=248 principles=0
 2026-11-26 00:06 [no-shores-source] session-start scan: files=257 parsed=248 principles=0
+2026-11-25 20:10 [no-shores-source] session-start scan: files=247 parsed=238 principles=0
+2026-11-25T20:28:01Z checkpoint after merge task: no observations
+2026-11-25T21:12:27Z passages: checkpoint after waypoint, public way, cold lamp, refusal test
