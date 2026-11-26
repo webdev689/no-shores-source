@@ -132,7 +132,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]
 - [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]
 - [[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]
-- [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map Comes to the Social Spaces and Every Land Area]]
 - [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]
 - [[The Sea as Claude Shapes It]]
@@ -413,6 +412,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 - [[The Sea and the Abyss Run Again Are Retuned Into the Band]]
+- [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]
 
 ## Replaced
 
@@ -434,3 +434,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]], by
   [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
 - [[The Asset Workflows Publish to R2 With a Token for R2 Alone]], by [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
+- [[The Held Map Colours Each Water's Name by Its Difficulty]], by [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]

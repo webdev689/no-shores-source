@@ -14,6 +14,7 @@ import type { Sea } from './sea.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { MapMarks } from '../heldmap/landSheet.ts';
 import { chartMarksOf } from './mapMarks.ts';
+import { ISLANDS } from './hudLaw.ts';
 
 /** How often the land's map gathers again what moves on it, seconds: each gathering may paint its parchment again
  *  and send it to the GPU, however many players move. */
@@ -78,6 +79,7 @@ export class HelmMap {
     );
     made.sailKey = () => boundWord('confirm');
     made.noKey = () => (BINDS.device === 'pad' ? 'B' : 'Escape');
+    made.regions.names = ISLANDS;
     made.onLowered((sail, travel) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();

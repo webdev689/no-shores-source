@@ -2,16 +2,19 @@
 // ([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]): every island is cut into
 // three, each point of its land (inside its outline) in the region of that island whose centre is nearest
 // (`content/world/regions.json`). The regions of the island whose waters the ship is in light as the pointer passes
-// over their land, named in the waters' own letters, and a click on one sets a course to its anchorage.
+// over their land, named on a card of parchment, and a click on one sets a course to its anchorage. A port's name
+// shows on the same card as the pointer passes over its anchor.
 import type { Point2 } from '../overworld/ground.ts';
 import type { MapRegion } from '../overworld/regions.ts';
 import type { HoverSaid, WaterJudge } from './heldMapAsk.ts';
-import { fontOf, type Painter, word } from './mapLetters.ts';
-import { INK } from './mapKey.ts';
-import type { MapWaters } from './watersWash.ts';
+import { LIGHT_INK, PARCHMENT, type Painter, word } from './mapLetters.ts';
+import { FACE, INK } from './mapKey.ts';
+import { PORT_PX } from './mapLayout.ts';
+import { difficultyColour, type MapWaters } from './watersWash.ts';
 
-/** Half a region's name's height, ink units at the lettering's scale 1, kept clear of the map's edge. */
-const NAME_HIGH = 12;
+/** The card a hovered name shows on, units at the lettering's scale 1: its title's and caption's sizes, the room
+ *  round its words, its inner rule's inset, its corner diamonds' half width, and how far over the point it stands. */
+const CARD = { title: PORT_PX, caption: 11, pad: 8, inset: 2.5, diamond: 1.8, above: 12 } as const;
 
 /** The region whose centre is nearest a point, of those given. */
 function nearest(regions: readonly MapRegion[], [x, y]: Point2): MapRegion | null {
@@ -27,7 +30,7 @@ function nearest(regions: readonly MapRegion[], [x, y]: Point2): MapRegion | nul
 /** The cells of the waters' grid whose middles lie inside `outline`, a byte each (1 inside), laid a row at a time by
  *  where the outline crosses it (even-odd); kept for each outline while the grid is the same. */
 const insides = new WeakMap<readonly Point2[], { readonly waters: MapWaters; readonly cells: Uint8Array }>();
-function insideCells(waters: MapWaters, outline: readonly Point2[]): Uint8Array {
+export function insideCells(waters: MapWaters, outline: readonly Point2[]): Uint8Array {
   const kept = insides.get(outline);
   if (kept?.waters === waters) return kept.cells;
   const { columns, rows, cellM } = waters;
@@ -86,30 +89,96 @@ export function regionCells(waters: MapWaters, regions: readonly MapRegion[], re
   return lit;
 }
 
-/** Paints a region's name as a water's is lettered, in the waters' face and the map's ink, centred at `x`, `y` (ink
- *  units, in the painter's ink transform, `scale` the lettering's), kept whole inside the map `ink`. */
-export function paintRegion(
+/** Paints a hovered name on a card of parchment centred over `x`, `y` (ink units, in the painter's ink transform,
+ *  `scale` the lettering's), kept whole inside the map `ink`: a double rule of ink with a diamond at each inner
+ *  corner, the name, and under a short rule its caption (a region's island) in the lighter ink. */
+export function paintCard(
   painter: Painter,
-  name: string,
+  { line, caption }: { readonly line: string; readonly caption?: string | undefined },
   [x, y]: readonly [number, number],
   ink: { readonly width: number; readonly height: number },
   scale: number,
 ): void {
+  const [titleFont, captionFont] = [`600 ${CARD.title}px ${FACE}`, `500 ${CARD.caption}px ${FACE}`];
   painter.save();
-  painter.font = fontOf('water');
-  const [half, high] = [(painter.measureText(name).width * scale) / 2, NAME_HIGH * scale];
-  painter.translate(Math.max(half, Math.min(x, ink.width - half)), Math.max(high, Math.min(y, ink.height - high)));
+  painter.font = titleFont;
+  const titleWidth = painter.measureText(line).width;
+  painter.font = captionFont;
+  const captionWidth = caption ? painter.measureText(caption).width : 0;
+  const width = Math.max(titleWidth, captionWidth) + CARD.pad * 2;
+  const height = CARD.title + (caption ? CARD.caption + 6 : 0) + CARD.pad * 2;
+  const [halfX, halfY] = [(width / 2) * scale, (height / 2) * scale];
+  const middleY = y - (CARD.above + height / 2) * scale;
+  painter.translate(
+    Math.max(halfX, Math.min(x, ink.width - halfX)),
+    Math.max(halfY, Math.min(middleY < halfY ? y + (CARD.above + height / 2) * scale : middleY, ink.height - halfY)),
+  );
   painter.scale(scale, scale);
+  const [left, top] = [-width / 2, -height / 2];
+  painter.fillStyle = PARCHMENT;
+  painter.fillRect(left, top, width, height);
+  painter.strokeStyle = INK;
+  painter.lineWidth = 1.4;
+  painter.strokeRect(left, top, width, height);
+  const inner = {
+    x: left + CARD.inset,
+    y: top + CARD.inset,
+    width: width - CARD.inset * 2,
+    height: height - CARD.inset * 2,
+  };
+  painter.lineWidth = 0.6;
+  painter.strokeRect(inner.x, inner.y, inner.width, inner.height);
+  painter.fillStyle = INK;
+  for (const [cornerX, cornerY] of [
+    [inner.x, inner.y],
+    [inner.x + inner.width, inner.y],
+    [inner.x, inner.y + inner.height],
+    [inner.x + inner.width, inner.y + inner.height],
+  ] as const) {
+    painter.beginPath();
+    painter.moveTo(cornerX, cornerY - CARD.diamond);
+    painter.lineTo(cornerX + CARD.diamond, cornerY);
+    painter.lineTo(cornerX, cornerY + CARD.diamond);
+    painter.lineTo(cornerX - CARD.diamond, cornerY);
+    painter.closePath();
+    painter.fill();
+  }
   painter.textAlign = 'center';
   painter.textBaseline = 'middle';
-  word(painter, name, 0, 0, INK);
+  const titleY = top + CARD.pad + CARD.title / 2;
+  painter.font = titleFont;
+  word(painter, line, 0, titleY, INK);
+  if (caption) {
+    const ruleY = titleY + CARD.title / 2 + 3;
+    painter.beginPath();
+    painter.moveTo(-captionWidth / 3, ruleY);
+    painter.lineTo(captionWidth / 3, ruleY);
+    painter.lineWidth = 0.6;
+    painter.strokeStyle = LIGHT_INK;
+    painter.stroke();
+    painter.font = captionFont;
+    word(painter, caption, 0, ruleY + 3 + CARD.caption / 2, LIGHT_INK);
+  }
   painter.restore();
+}
+
+/** The middle of an outline, by its area (the shoelace formula); its first point for one with none. */
+export function middleOf(outline: readonly Point2[]): Point2 {
+  let [area, x, y] = [0, 0, 0];
+  outline.forEach(([fromX, fromY], index) => {
+    const [toX, toY] = outline[(index + 1) % outline.length] ?? [fromX, fromY];
+    const cross = fromX * toY - toX * fromY;
+    [area, x, y] = [area + cross, x + (fromX + toX) * cross, y + (fromY + toY) * cross];
+  });
+  return area === 0 ? (outline[0] ?? [0, 0]) : [x / (3 * area), y / (3 * area)];
 }
 
 /** The regions on the map at sea: every island's, and the one of the ship's island lit under the pointer, with where
  *  its name stands (ink units). */
 export class MapRegions {
   all: readonly MapRegion[] = [];
+  /** The islands' names the owner has given, by their continent's id: an island with none has its sea locked. */
+  names: Readonly<Record<string, string>> = {};
   lit: { readonly region: MapRegion; readonly x: number; readonly y: number } | null = null;
   /** The map's view and place the name was stood by. */
   private seenOn = '';
@@ -158,8 +227,33 @@ export class MapRegions {
     return region ? regionCells(waters.waters, this.all, region) : ask.cellsNow(waters.waters);
   }
 
-  /** The lit region's name as the map letters it, where the pointer came into it; none for none. */
+  /** The lit region's name on its card, its island's name under it, where the pointer came into it; none for none. */
   said(): HoverSaid | null {
-    return this.lit && { line: this.lit.region.name, x: this.lit.x, y: this.lit.y, region: true };
+    if (!this.lit) return null;
+    const { region, x, y } = this.lit;
+    return { line: region.name, x, y, card: true, caption: this.names[region.island] };
+  }
+
+  /** Each named island in view lettered at its middle, ink pixels (`toInk`, `onSheet`), with its water's level band
+   *  and the band's colour on the difficulty ramp. */
+  islandLetters(
+    waters: MapWaters | null,
+    toInk: (x: number, y: number) => readonly [number, number],
+    onSheet: (x: number, y: number) => boolean,
+  ): { text: string; band: string; colour: string; x: number; y: number }[] {
+    return this.middles().flatMap(({ island, name, at }) => {
+      const [x, y] = toInk(at[0], at[1]);
+      const levels = waters?.waters.find((water) => water.id === island)?.levels ?? null;
+      const band = levels ? `${levels[0]}-${levels[1]}` : '';
+      return onSheet(x, y) ? [{ text: name, band, colour: difficultyColour(levels) ?? INK, x, y }] : [];
+    });
+  }
+
+  /** Each named island's middle, the world's metres, its outline's (a region's of it). */
+  middles(): { readonly island: string; readonly name: string; readonly at: Point2 }[] {
+    return Object.entries(this.names).flatMap(([island, name]) => {
+      const outline = this.all.find((region) => region.island === island)?.outline;
+      return outline?.length ? [{ island, name, at: middleOf(outline) }] : [];
+    });
   }
 }

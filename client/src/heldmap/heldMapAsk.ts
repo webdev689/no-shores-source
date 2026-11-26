@@ -127,8 +127,10 @@ export interface HoverSaid {
   readonly line: string;
   readonly x: number;
   readonly y: number;
-  /** A region's name, lettered as a water's is, not the pointer's words. */
-  readonly region?: boolean;
+  /** A region's or a port's name, shown on a card of parchment (`paintCard`), not the pointer's words; and a
+   *  region's island's name under it. */
+  readonly card?: boolean;
+  readonly caption?: string | undefined;
 }
 
 /** The held map's asks at sea: where the pointer is (screen pixels, none off the canvas), the water lit under it, and

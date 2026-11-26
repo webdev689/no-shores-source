@@ -71,16 +71,23 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   soft over a cell or two and never stepped. The Lattice's waters are hatched over their wash with fine level lines in
   a dark crystal red (`#60141c` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at 0.3), each 7
   device pixels apart (`HATCHES`). The wash is laid once, as the waters open.
-- **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
-  point, the name and a ring round it inked in the band's colour on the difficulty ramp
-  ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green `#256327` at level 1, gold `#6a5507` at 8,
-  orange `#894314` at 15, red `#a3241f` at 22 and deep purple `#5a1f6e` at 30, blended between and read at the band's
-  middle (`difficultyColour`). The ring is filled with the parchment's own colour, and every level's colour reads at
-  least 4.5 : 1 against it. A water is named while any of its sea is in view. Its name is tried first at its
-  label point, the middle of its sea cell farthest from land, from other waters and from the frame's edge
-  (`labelPoints`, chamfer distances in cells), then at every point of a grid 10 px apart over the map that lies on its
-  sea, nearest the middle of its sea in view first (`HeldMapWaters.letters`); on one line, then on two, its name over
-  its band, in a ring as tall.
+- **The seas' names** ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]).
+  Each sea's name (no level band) is arched across its sea along a circle whose middle stands below it, each letter
+  turned to the arc and spread apart, in the ink thinned to two fifths and with no halo, so it sinks into the sea
+  (`paintArched`, `archOf`). A sea is named while any of it is in view. Its name is tried first at its label point,
+  the middle of its sea cell farthest from land, from other waters and from the frame's edge (`labelPoints`, chamfer
+  distances in cells), then at every point of a grid 10 px apart over the map that lies on its sea, nearest the middle
+  of its sea in view first (`HeldMapWaters.letters`); spread wide (9 units between letters at 18 px), then closer
+  (4, then none), then at a plain word's 13 px (`SEA_FITS`).
+- **The islands' names.** An island the owner has named (Saltmere, `ISLANDS`) is lettered at its outline's middle
+  with its water's level band after it, "Saltmere, 1-4", the name in the ink and the band in its colour on the
+  difficulty ramp: green `#256327` at level 1, gold `#6a5507` at 8, orange `#894314` at 15, red `#a3241f` at 22 and
+  deep purple `#5a1f6e` at 30, blended between and read at the band's middle (`difficultyColour`); every level's
+  colour reads at least 4.5 : 1 against the parchment it is haloed in. It is laid before the seas' names.
+- **Locked seas.** Every other island's sea, and its land, is darkened toward the ink by up to 0.42, softly at its
+  edge (`shutCells` on the waters' grid, the land by its outline and its coast's island), and a padlock stands out at
+  its label point: the lock in the ink on a disc of the parchment ringed in the ink (`paintLock`). The lock is never
+  dropped, and names keep clear of it.
 - **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
   holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
   its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's
@@ -93,10 +100,11 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   any other name lost one. So it moves only when it must, and never back and forth while the map stands still
   (`keyPlace`). It is never laid on the
   parchment's margin, where the game's hints stand under the map.
-- **Places.** Every port is named at its city, and every node at its middle (`worldShown`). A city that is not
-  a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
-  is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
-  open every city is drawn as a port. The ship is a red-brown arrow along its heading, ringed in the parchment. The
+- **Places.** Every port is an anchor at its city, inked over a halo of the parchment; no node is marked, but for a
+  red-brown ring round one the quest names. A city that is not a port (the waters' table names the three,
+  [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]) is a faded anchor, in the lighter ink thinned,
+  named "Ruins of <name>" (`ruinedPlaces`); until the waters are open every city is drawn as a port. A place's name
+  shows only as the pointer comes within 16 px of its mark, on the card a region's name shows on, over the region's. The ship is a red-brown arrow along its heading, ringed in the parchment. The
   voyage under way is inked as a dashed red-brown line. Found islands (`setIsles`) are marked in the lighter ink under
   the words: a cove a small ring, an isle a wider ring with a tower in it (`paintIsle`, [[Island Drawing]]).
 - **Other ships** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]).
@@ -138,14 +146,15 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.
-- **Choosing.** A click picks the place within 16 px of it, or else the point of the sea under it; a node
-  is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
+- **Choosing.** A click picks the port or ruin within 16 px of it, or else the region or the point of the sea under
+  it; a port is sailed for at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **The regions** ([[World Map]], "Regions"). At sea, the land of the island whose waters the ship is in is lit by
   region as the pointer passes over it: the land's cells of the waters' grid whose middle lies inside the island's
   outline and nearest that region's centre of the island's own, its land brightened and lined as another water's sea
-  is (`mapRegions.ts`), and the region's name written where the pointer came onto it, in the face and ink the waters'
-  names are lettered in, whole inside the map, and stood anew by the pointer once the map is panned, zoomed or raised
+  is (`mapRegions.ts`), and the region's name shown where the pointer came onto it on a card of the parchment in a
+  double rule of ink with a diamond at each inner corner, its island's name under a short rule in the lighter ink
+  (`paintCard`), over the point, or under it where over would leave the map, whole inside the map, and stood anew by the pointer once the map is panned, zoomed or raised
   again; with the pointer off the map, none is lit. Its land lit, no water is; off it, the water under the pointer is
   lit again. A click on a region's land (no place's mark within 16 px) chooses its anchorage, named for the region:
   the way there is planned and inked as any course is, and sailed at the sea's own pace, the course judged by the

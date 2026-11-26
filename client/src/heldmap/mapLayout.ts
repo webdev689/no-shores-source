@@ -1,29 +1,41 @@
 // Where each word, mark and the key stand on the held map, worked out before anything is painted: every word at a
 // size that grows with the map, inside the part of the parchment the gauntlets leave clear, and never over another
-// word or mark. A word that finds no clear place is dropped, the least needed first. Nothing here draws.
+// word or mark. A word that finds no clear place is dropped, the least needed first. A place is its mark alone, its
+// name shown as the pointer passes over it; a sea's name is arched across its sea; an island's name carries its
+// level band. Nothing here draws.
 import { type Rect, stageOf } from './heldMapLaw.ts';
 import { keyCorners, keyEdges, type KeyPlace, keyPlace } from './mapKey.ts';
 
-/** The words' sizes at a 1280 x 720 screen, pixels: every word at least `WORD_PX`, a port's name a step larger. They
- *  grow with the map, `letterScale` times over, and every other length the lettering is drawn with grows with them. */
+/** The words' sizes at a 1280 x 720 screen, pixels: every word at least `WORD_PX`, a port's or an island's name a
+ *  step larger, a sea's larger again. They grow with the map, `letterScale` times over, and every other length the
+ *  lettering is drawn with grows with them. */
 export const WORD_PX = 13;
 export const PORT_PX = 15;
+export const SEA_PX = 18;
+/** A sea's name, arched across its sea: the room between its letters, units, and its size, pixels, spread wide where
+ *  it fits, closer where it does not, and at a plain word's size where nothing larger fits; and the arc's radius, a
+ *  share of the name's length along it. */
+export const SEA_FITS: readonly { readonly spread: number; readonly px: number }[] = [
+  { spread: 9, px: SEA_PX },
+  { spread: 4, px: SEA_PX },
+  { spread: 0, px: SEA_PX },
+  { spread: 0, px: WORD_PX },
+];
+const ARCH_RADIUS = 0.85;
 /** A line of the map's words, the gap between a mark and its name, and the clear space every word keeps round it. */
 export const LINE = 16;
 export const NAME_GAP = 5;
 const SPACE = 2;
-/** How far a water's ring stands out from its name either side, and its words' half height within it. */
-export const RING = 6;
-/** Each mark's half width: a port's filled ring, a ruin's diamond, a node's ring, and the ship's arrow. */
-const MARK_HALF: Readonly<Record<string, number>> = { port: 4.5, ruin: 5, ship: 10 };
+/** Each mark's half width: a port's anchor, a ruin's, a locked sea's padlock, a node's ring, and the ship's arrow. */
+const MARK_HALF: Readonly<Record<string, number>> = { port: 6, ruin: 6, lock: 11, ship: 10 };
 const NODE_HALF = 4;
 /** The clear gap a mark keeps round it from a mark laid before it, units. */
 const MARK_GAP = 1.5;
 export const markHalf = (kind: string) => MARK_HALF[kind] ?? NODE_HALF;
 
-/** Who is lettered first, and who is dropped first when no clear place is left: ports, waters' names, ruins, then
- *  nodes. The ship's arrow and every place's mark stand where they lie and are never dropped. */
-const PRIORITY: readonly string[] = ['port', 'water', 'ruin'];
+/** Who is lettered first, and who is dropped first when no clear place is left: islands' names, then seas'. The
+ *  ship's arrow, every place's mark and every lock stand where they lie and are never dropped. */
+const PRIORITY: readonly string[] = ['island', 'water'];
 const rankOf = (kind: string) => {
   const rank = PRIORITY.indexOf(kind);
   return rank < 0 ? PRIORITY.length : rank;
@@ -53,8 +65,8 @@ export function handsCover(sprite: Rect, ink: Rect): Rect[] {
   }));
 }
 
-/** A place's mark and name on the map, ink pixels: its name beside its mark (`side`, or null where it found no clear
- *  place and is dropped), or a water's name centred on its point. */
+/** A place's mark on the map, ink pixels (`side` null: its name is shown on hover), or a sea's or an island's name
+ *  centred on its point. */
 export interface MapLetter {
   readonly text: string;
   readonly x: number;
@@ -63,29 +75,26 @@ export interface MapLetter {
   readonly chosen: boolean;
   /** A place the quest walked names, ringed. */
   readonly quest?: boolean;
-  readonly side: 'right' | 'left' | 'centre' | null;
-  /** How far a place's name stands from its mark's middle, units: past its mark, or past the ship's arrow where that
-   *  stands on it. */
-  readonly away?: number | undefined;
-  /** A water's colour on the difficulty ramp, which its name and its ring are inked in. */
+  readonly side: 'centre' | null;
+  /** An island's level band, after its name, and the band's colour on the difficulty ramp. */
+  readonly band?: string | undefined;
   readonly colour?: string | undefined;
-  /** A water's words lettered as two lines, its name over its level band (`waterLines`), where one would not fit. */
-  readonly lines?: 1 | 2 | undefined;
+  /** A sea's name: the room between its letters, units, and its size, pixels (`SEA_FITS`). */
+  readonly spread?: number | undefined;
+  readonly px?: number | undefined;
 }
 
-/** A water's words as the lines they are lettered in: "The Fen Deeps, 22-26" whole, or its name over "22-26". */
-export function waterLines(text: string, lines: 1 | 2 | undefined): string[] {
-  const comma = text.lastIndexOf(', ');
-  return lines === 2 && comma > 0 ? [text.slice(0, comma), text.slice(comma + 2)] : [text];
+/** A sea's name arched along a circle: its `length` along the arc with its letters spread (units), the chord it spans
+ *  and how far its middle rises over its ends. */
+export function archOf(length: number): { readonly chord: number; readonly rise: number; readonly radius: number } {
+  const radius = Math.max(1, length * ARCH_RADIUS);
+  const half = length / (2 * radius);
+  return { chord: 2 * radius * Math.sin(half), rise: radius * (1 - Math.cos(half)), radius };
 }
 
-/** A word's width, units, as `widthOf` measures its kind's face: a water's on two lines the wider line's. */
-export function nameWidth(
-  letter: Pick<MapLetter, 'text' | 'kind' | 'lines'>,
-  widthOf: (text: string, kind: string) => number,
-) {
-  return Math.max(...waterLines(letter.text, letter.lines).map((line) => widthOf(line, letter.kind)));
-}
+/** A sea's name's length along its arc, units: its text `width` and the room between its letters. */
+export const archedLength = (text: string, width: number, spread: number) =>
+  width + spread * Math.max(0, [...text].length - 1);
 
 /** What one frame letters on the parchment, ink pixels from the map's top-left: the words and marks (each place's
  *  first, in the order asked, at its mark), the ship's arrow (null off the map), the key, and how many times over
@@ -105,14 +114,13 @@ export interface LayoutAsk {
   /** What the hands cover, ink pixels (`handsCover`). */
   readonly covers: readonly Rect[];
   readonly places: readonly { text: string; x: number; y: number; kind: string; chosen: boolean; quest?: boolean }[];
-  /** Each water in view: its name, its continent's index, its colour, and the spots its name may stand at, ink pixels,
-   *  the likeliest first (`HeldMapWaters.letters`). */
-  readonly waters: readonly {
-    text: string;
-    continent: number;
-    colour?: string | undefined;
-    spots: readonly { x: number; y: number }[];
-  }[];
+  /** Each water in view: its name, its continent's index, and the spots its name may stand at, ink pixels, the
+   *  likeliest first (`HeldMapWaters.letters`). */
+  readonly waters: readonly { text: string; continent: number; spots: readonly { x: number; y: number }[] }[];
+  /** Each named island in view: its name, its level band and the band's colour, at its middle, ink pixels. */
+  readonly islands?: readonly { text: string; band: string; colour: string; x: number; y: number }[];
+  /** A lock at the middle of each locked sea in view, ink pixels. */
+  readonly locks?: readonly { x: number; y: number }[];
   readonly ship: { readonly x: number; readonly y: number; readonly heading: number } | null;
   /** A word's width in its kind's face, units. */
   readonly widthOf: (text: string, kind: string) => number;
@@ -138,70 +146,48 @@ export function markBox(kind: string, x: number, y: number, scale: number): Rect
   return { x: x - half, y: y - half, width: half * 2, height: half * 2 };
 }
 
-/** The box a name covers, ink pixels, its text `width` units wide: beside its mark on `side`, or a water's centred
- *  in its ring; each with the clear space a word keeps. */
+/** The box a name covers, ink pixels, centred on its point, its text `width` units wide: a sea's arched with its
+ *  letters `spread` apart (`archOf`), an island's on one line; each with the clear space a word keeps. */
 export function nameBox(
-  letter: Pick<MapLetter, 'x' | 'y' | 'kind' | 'away' | 'lines'>,
-  side: 'right' | 'left' | 'centre',
+  letter: Pick<MapLetter, 'x' | 'y' | 'kind' | 'text'>,
   width: number,
   scale: number,
+  spread = 0,
 ): Rect {
-  const height = (letter.kind === 'water' ? LINE * (letter.lines ?? 1) + 2 : LINE) * scale;
-  const top = letter.y - height / 2 - SPACE * scale;
-  if (side === 'centre') {
-    const half = (width / 2 + RING) * scale;
-    return {
-      x: letter.x - half - SPACE * scale,
-      y: top,
-      width: half * 2 + SPACE * 2 * scale,
-      height: height + SPACE * 2 * scale,
-    };
-  }
-  const reach = (letter.away ?? markHalf(letter.kind) + NAME_GAP) * scale;
-  const span = (width + SPACE * 2) * scale;
-  const x = side === 'right' ? letter.x + reach - SPACE * scale : letter.x - reach - width * scale - SPACE * scale;
-  return { x, y: top, width: span, height: height + SPACE * 2 * scale };
+  const sea = letter.kind === 'water';
+  const arch = archOf(archedLength(letter.text, width, spread));
+  const [across, high] = sea ? [arch.chord, arch.rise + LINE] : [width, LINE];
+  const half = (across / 2 + SPACE) * scale;
+  const tall = (high / 2 + SPACE) * scale;
+  return { x: letter.x - half, y: letter.y - tall, width: half * 2, height: tall * 2 };
 }
 
-/** Where a place's name may stand: right of its mark, then left; where the ship's arrow stands on the mark, right and
- *  left of the arrow after. */
-function besideSpots<T extends { x: number; y: number; kind: string }>(
-  letter: T,
-  ship: { x: number; y: number } | null,
-  scale: number,
-): (T & { side: 'right' | 'left'; away: number | undefined })[] {
-  const spots = (['right', 'left'] as const).map((side) => ({
-    ...letter,
-    side,
-    away: undefined as number | undefined,
-  }));
-  if (ship && overlaps(markBox('ship', ship.x, ship.y, scale), markBox(letter.kind, letter.x, letter.y, scale))) {
-    const past = markHalf('ship') + NAME_GAP;
-    spots.push({ ...letter, side: 'right', away: past + (ship.x - letter.x) / scale });
-    spots.push({ ...letter, side: 'left', away: past + (letter.x - ship.x) / scale });
-  }
-  return spots;
-}
-
-/** Lays the map's lettering out: the ship and every mark first, then each name in its priority, beside its mark
- *  (right, else left), or a water's at the first of its spots wholly on its own sea, else on no land; then the key by its
- *  clear-corner rule (`keyPlace`). Every name stands inside the map and clear of the hands, of every mark and of every
- *  name laid before it. With no corner clear, the key takes the corner that costs least, and the names are laid again
- *  round it. */
+/** Lays the map's lettering out: the ship, every mark and every lock first, then each name in its priority: an
+ *  island's at its middle, a sea's arched at the first of its spots wholly on its own sea, else on no land, its letters
+ *  spread wide where it fits and closer where not; then the key by its clear-corner rule (`keyPlace`). Every name
+ *  stands inside the map and clear of the hands, of every mark and of every name laid before it. With no corner clear,
+ *  the key takes the corner that costs least, and the names are laid again round it. */
 export function layOut(ask: LayoutAsk): Lettering {
   const { scale, ink } = ask;
   const spacedPlaces = spaced(ask.places, scale, ink);
   const marks: Rect[] = spacedPlaces.map((place) => markBox(place.kind, place.x, place.y, scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, scale));
-  const asked = [
-    ...spacedPlaces.map((place) => ({ ...place, continent: -1, colour: undefined as string | undefined, spots: [] })),
+  const locks = ask.locks ?? [];
+  marks.push(...locks.map((lock) => markBox('lock', lock.x, lock.y, scale)));
+  const asked: Asked[] = [
+    ...spacedPlaces.map((place) => ({ ...place, continent: -1, spots: [] })),
     ...ask.waters.map((water) => ({ ...water, x: 0, y: 0, kind: 'water', chosen: false })),
+    ...(ask.islands ?? []).map((island) => ({ ...island, continent: -1, kind: 'island', chosen: false, spots: [] })),
   ];
   const first = laidOut(ask, asked, [...ask.covers, ...marks]);
-  if (!ask.key) return { letters: first.letters, ship: ask.ship, key: null, scale };
+  const lettered = (letters: readonly MapLetter[]) => [
+    ...letters,
+    ...locks.map((lock) => ({ text: '', ...lock, kind: 'lock', chosen: false, side: null })),
+  ];
+  if (!ask.key) return { letters: lettered(first.letters), ship: ask.ship, key: null, scale };
   const size = { width: ask.key.width * scale, height: ask.key.height * scale };
   const clearKey = keyPlace(ink, size, scale, [...ask.covers, ...marks, ...first.boxes], ask.land, ask.current);
-  if (clearKey) return { letters: first.letters, ship: ask.ship, key: clearKey, scale };
+  if (clearKey) return { letters: lettered(first.letters), ship: ask.ship, key: clearKey, scale };
   // No corner clear: the key takes a corner, or a place along the top or bottom edge, clear of the hands, the marks and
   // the ports' and the chosen place's names (where it stood first),
   // round which the names laid again lose least: a water's name lost counts ten, land under the key five, any other
@@ -229,9 +215,9 @@ export function layOut(ask: LayoutAsk): Lettering {
     (most, each) => (most && most.cost <= each.cost ? most : each),
     null,
   );
-  if (!best) return { letters: first.letters, ship: ask.ship, key: null, scale };
+  if (!best) return { letters: lettered(first.letters), ship: ask.ship, key: null, scale };
   const { place: key, again } = best;
-  return { letters: again.letters, ship: ask.ship, key, scale };
+  return { letters: lettered(again.letters), ship: ask.ship, key, scale };
 }
 
 /** Which marks stand where they lie when two meet: a port's, then a ruin's, then any node's. */
@@ -295,6 +281,7 @@ type Asked = {
   chosen: boolean;
   quest?: boolean;
   continent: number;
+  band?: string | undefined;
   colour?: string | undefined;
   spots: readonly { x: number; y: number }[];
 };
@@ -326,39 +313,33 @@ function laidOut(ask: LayoutAsk, asked: readonly Asked[], blocked: readonly Rect
     indices.push(index);
   };
   for (const { letter, index } of order) {
-    const width = ask.widthOf(letter.text, letter.kind);
-    if (letter.kind === 'water') {
-      // On one line or two, wholly on its own sea at any spot that allows it, else on no land, its middle on its sea.
-      let found: { spot: { x: number; y: number }; lines: 1 | 2; box: Rect } | null = null;
-      for (const sea of [2, 1] as const)
-        for (const lines of [1, 2] as const) {
-          if (found) break;
-          const shape = { kind: 'water', lines, text: letter.text };
-          const boxAt = (point: { x: number; y: number }): Rect =>
-            nameBox({ ...point, ...shape }, 'centre', nameWidth(shape, ask.widthOf), scale);
-          const fits = letter.spots.find(
-            (each) => clear(boxAt(each)) && ask.sea(boxAt(each), letter.continent) === sea,
-          );
-          if (fits) found = { spot: fits, lines, box: boxAt(fits) };
-        }
-      if (!found) continue;
-      keep(found.box, index, 'water');
-      laid[index] = {
-        text: letter.text,
-        kind: 'water',
-        chosen: false,
-        colour: letter.colour,
-        ...found.spot,
-        side: 'centre',
-        lines: found.lines,
-      };
+    const { text, x, y, kind, chosen, quest } = letter;
+    if (kind === 'island') {
+      const box = nameBox(letter, ask.widthOf(`${text}, ${letter.band ?? ''}`, kind), scale);
+      if (!clear(box)) continue;
+      keep(box, index, kind);
+      laid[index] = { text, x, y, kind, chosen, band: letter.band, colour: letter.colour, side: 'centre' };
       continue;
     }
-    const { text, x, y, kind, chosen, quest } = letter;
-    const place = { text, x, y, kind, chosen, ...(quest ? { quest } : {}) };
-    const spot = besideSpots(place, ask.ship, scale).find((each) => clear(nameBox(each, each.side, width, scale)));
-    if (spot) keep(nameBox(spot, spot.side, width, scale), index, letter.kind);
-    laid[index] = spot ?? { ...place, side: null };
+    if (kind !== 'water') {
+      laid[index] = { text, x, y, kind, chosen, ...(quest ? { quest } : {}), side: null };
+      continue;
+    }
+    // Spread wide wholly on its own sea at any spot that allows it, else closer; else on no land, its middle on its sea.
+    const width = ask.widthOf(text, kind);
+    let found: { spot: { x: number; y: number }; fit: (typeof SEA_FITS)[number]; box: Rect } | null = null;
+    for (const sea of [2, 1] as const)
+      for (const fit of SEA_FITS) {
+        if (found) break;
+        const sized = (width * fit.px) / SEA_PX;
+        const boxAt = (point: { x: number; y: number }) => nameBox({ ...point, kind, text }, sized, scale, fit.spread);
+        const fits = letter.spots.find((each) => clear(boxAt(each)) && ask.sea(boxAt(each), letter.continent) === sea);
+        if (fits) found = { spot: fits, fit, box: boxAt(fits) };
+      }
+    if (!found) continue;
+    keep(found.box, index, kind);
+    const { spread, px } = found.fit;
+    laid[index] = { text, kind, chosen: false, ...found.spot, side: 'centre', spread, px };
   }
   return { letters: laid.filter((letter) => letter !== null), boxes, kinds, indices };
 }

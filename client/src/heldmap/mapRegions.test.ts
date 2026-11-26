@@ -3,8 +3,11 @@ import { test } from 'node:test';
 import { HeldMap } from './heldMap.ts';
 import { MapAsk } from './heldMapAsk.ts';
 import { type MapRegion, regionsOf } from '../overworld/regions.ts';
-import { MapRegions, regionAt, regionCells } from './mapRegions.ts';
-import type { MapWaters } from './watersWash.ts';
+import { MapRegions, middleOf, paintCard, regionAt, regionCells } from './mapRegions.ts';
+import { recorder } from './painterForTests.ts';
+import { INK } from './mapKey.ts';
+import { PARCHMENT } from './mapLetters.ts';
+import { difficultyColour, type MapWaters } from './watersWash.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { readFileSync } from 'node:fs';
 
@@ -58,12 +61,13 @@ test("each point of an island's land lies in the region whose centre is nearest,
 test('the pointer coming onto a region lights its land, and leaving it lights the water under it again', () => {
   const lit = new MapRegions();
   lit.all = regions;
+  lit.names = { 'continent-1': 'Saltmere' };
   const ask = { pointer: { x: 140, y: 50 }, cellsNow: () => Uint8Array.from([9]) };
   const view = { left: 0, top: 0, scale: 1 };
   const ink = { x: 0, y: 0, width: 600, height: 100 };
   assert.deepEqual([...(lit.hover(judged, [40, 50], view, ink, ask, null) ?? [])], [0, 255, 0, 0, 0, 0]);
   assert.equal(lit.said()?.line, 'The Beacon Shore');
-  assert.equal(lit.said()?.region, true, "lettered as the waters' names are");
+  assert.deepEqual([lit.said()?.card, lit.said()?.caption], [true, 'Saltmere'], 'on its card, its island under it');
   assert.equal(lit.hover(judged, [40, 50], view, ink, ask, null), null, 'within it nothing changes');
   ask.pointer = { x: 40, y: 50 };
   assert.deepEqual([...(lit.hover(judged, [40, 50], view, ink, ask, null) ?? [])], [9], 'the water lit again');
@@ -163,4 +167,57 @@ test("every point of an island's land lights a region of that island, and of no 
     for (let cell = 0; cell < cells.length; cell++)
       assert.equal(cells[cell] === 255, regionAt(land, world, 'continent-8', middleOf(cell)) === region, region.name);
   }
+});
+
+test("a hovered name's card is parchment in a double rule of ink, diamonds at its corners, whole inside the map", () => {
+  const { painter, calls, texts, depth } = recorder();
+  paintCard(painter, { line: 'The Beacon Shore', caption: 'Saltmere' }, [590, 4], { width: 600, height: 300 }, 1);
+  assert.deepEqual(texts(), ['The Beacon Shore', 'Saltmere']);
+  const fills = calls.filter((call) => call.name === 'fillRect');
+  assert.equal(fills[0]?.fillStyle, PARCHMENT);
+  const rules = calls.filter((call) => call.name === 'strokeRect');
+  assert.equal(rules.length, 2, 'a double rule');
+  assert.equal(calls.filter((call) => call.name === 'fill' && call.fillStyle === INK).length, 4, 'four diamonds');
+  const [x, y] = calls.find((call) => call.name === 'translate')?.args as number[];
+  const [left, top, width, height] = fills[0]?.args as number[];
+  assert.ok(x + left >= 0 && x + left + width <= 600, 'inside the map across');
+  assert.ok(
+    y + top >= 0 && y + top + height <= 300,
+    'inside the map down: under the point where over it would not fit',
+  );
+  assert.equal(depth(), 0);
+});
+
+test("a named island is lettered at its outline's middle with its water's level band; an unnamed one is not", () => {
+  assert.deepEqual(middleOf(ringOf(100, 400)), [250, 50]);
+  const islands = new MapRegions();
+  islands.all = regions;
+  islands.names = { 'continent-1': 'Saltmere' };
+  const letters = islands.islandLetters(
+    waters,
+    (x, y) => [x / 2, y / 2],
+    () => true,
+  );
+  assert.deepEqual(letters, [{ text: 'Saltmere', band: '1-4', colour: difficultyColour([1, 4]), x: 125, y: 25 }]);
+  assert.deepEqual(
+    islands.islandLetters(
+      waters,
+      (x, y) => [x, y],
+      () => false,
+    ),
+    [],
+    'none off the sheet',
+  );
+});
+
+test("the pointer over a port's anchor shows its name on a card, before the region under it", () => {
+  const map = Object.create(HeldMap.prototype) as HeldMap;
+  const place = { id: 'overlook-port', name: 'Overlook', kind: 'port', at: [140, 50], sail: [140, 50] };
+  const ask = new MapAsk();
+  ask.pointer = { x: 143, y: 52 };
+  Object.assign(map, { ink: { x: 0, y: 0, width: 600, height: 100 }, placed: [{ place, x: 140, y: 50 }], ask });
+  const said = (map as unknown as { portUnder(): unknown }).portUnder();
+  assert.deepEqual(said, { line: 'Overlook', x: 140, y: 50, card: true });
+  ask.pointer = { x: 300, y: 50 };
+  assert.equal((map as unknown as { portUnder(): unknown }).portUnder(), null, 'none away from every anchor');
 });

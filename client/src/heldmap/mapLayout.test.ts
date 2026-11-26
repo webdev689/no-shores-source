@@ -2,10 +2,24 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Rect } from './heldMapLaw.ts';
 import { stageOf } from './heldMapLaw.ts';
-import { type LayoutAsk, layOut, letterScale, markBox, nameBox, PORT_PX, WORD_PX } from './mapLayout.ts';
+import {
+  type LayoutAsk,
+  layOut,
+  letterScale,
+  type MapLetter,
+  markBox,
+  nameBox,
+  PORT_PX,
+  SEA_PX,
+  WORD_PX,
+} from './mapLayout.ts';
 
 /** A word's width in the map's face, units: Pixelify's letters are a little over half their size wide, taken wide. */
-const widthOf = (text: string, kind: string) => text.length * 0.62 * (kind === 'port' ? PORT_PX : WORD_PX);
+const widthOf = (text: string, kind: string) =>
+  text.length * 0.62 * (kind === 'water' ? SEA_PX : kind === 'port' || kind === 'island' ? PORT_PX : WORD_PX);
+/** The box a laid sea's name covers, at the size and spread it was laid with. */
+const boxOf = (letter: MapLetter) =>
+  nameBox(letter, (widthOf(letter.text, 'water') * (letter.px ?? SEA_PX)) / SEA_PX, 1, letter.spread);
 
 const overlaps = (one: Rect, other: Rect) =>
   one.x < other.x + other.width &&
@@ -39,33 +53,64 @@ const ASK: LayoutAsk = {
 const water = (text: string, ...spots: [number, number][]) => ({
   text,
   continent: 0,
-  colour: '#256327',
   spots: spots.map(([x, y]) => ({ x, y })),
 });
 
-test('a name with no clear place is dropped by priority: a port before a water, a water before a ruin and a node', () => {
-  // Three marks clear of each other, one over another, their names in each other's way; a hand left of the node.
+test('a place is its mark alone, its name left for the pointer, and a sea’s name takes its next spot clear of it', () => {
   const lettering = layOut({
     ...ASK,
-    covers: [{ x: 100, y: 80, width: 95, height: 16 }],
     places: [
-      { text: 'Hollow Barrow', x: 200, y: 88, kind: 'patrol', chosen: false },
-      { text: 'Ruins of Elmhaven', x: 200, y: 112, kind: 'ruin', chosen: false },
+      { text: 'Ruins of Elmhaven', x: 200, y: 120, kind: 'ruin', chosen: false },
       { text: 'Overlook', x: 200, y: 100, kind: 'port', chosen: false },
     ],
-    waters: [water('The Lantern Sea, 1-4', [200, 100], [200, 60])],
+    waters: [water('The Lantern Sea', [200, 100], [300, 300])],
   });
-  const named = Object.fromEntries(lettering.letters.map((letter) => [letter.text, letter.side]));
-  assert.equal(named['Overlook'], 'right', 'the port takes the first place, right of its mark');
-  assert.equal(named['Ruins of Elmhaven'], 'left', 'the ruin the other side');
-  assert.equal(named['Hollow Barrow'], null, 'the node keeps its mark, its name dropped');
+  assert.deepEqual(
+    lettering.letters.filter((letter) => letter.kind !== 'water').map((letter) => [letter.text, letter.side]),
+    [
+      ['Ruins of Elmhaven', null],
+      ['Overlook', null],
+    ],
+  );
   const lantern = lettering.letters.find((letter) => letter.kind === 'water');
-  assert.deepEqual([lantern?.x, lantern?.y], [200, 60], 'the water takes its next spot, clear of the port');
+  assert.deepEqual([lantern?.x, lantern?.y, lantern?.side], [300, 300, 'centre']);
 });
 
-test('a name runs right of its mark, and left where the right is the map’s edge', () => {
-  const lettering = layOut({ ...ASK, places: [{ text: 'Windmere', x: 590, y: 200, kind: 'port', chosen: false }] });
-  assert.equal(lettering.letters[0]?.side, 'left');
+test('an island’s name and its level band stand at its middle, laid before a sea’s name', () => {
+  const lettering = layOut({
+    ...ASK,
+    islands: [{ text: 'Saltmere', band: '1-4', colour: '#256327', x: 300, y: 200 }],
+    waters: [water('The Lantern Sea', [300, 200], [300, 330])],
+  });
+  const island = lettering.letters.find((letter) => letter.kind === 'island');
+  assert.deepEqual([island?.x, island?.y, island?.band, island?.colour], [300, 200, '1-4', '#256327']);
+  const sea = lettering.letters.find((letter) => letter.kind === 'water');
+  assert.deepEqual([sea?.x, sea?.y], [300, 330]);
+});
+
+test('a locked sea’s padlock stands at its middle, never dropped, and its sea’s name keeps clear of it', () => {
+  const lettering = layOut({
+    ...ASK,
+    locks: [{ x: 300, y: 200 }],
+    waters: [water('The Elmwater', [300, 200], [300, 320])],
+  });
+  const lock = lettering.letters.find((letter) => letter.kind === 'lock');
+  assert.deepEqual([lock?.x, lock?.y, lock?.side], [300, 200, null]);
+  const sea = lettering.letters.find((letter) => letter.kind === 'water');
+  assert.deepEqual([sea?.x, sea?.y], [300, 320]);
+  assert.ok(!overlaps(boxOf(sea!), markBox('lock', 300, 200, 1)));
+});
+
+test('a sea’s name spreads its letters wide where it fits, closer where it does not, and at a word’s size last', () => {
+  const laid = (width: number) =>
+    layOut({ ...ASK, ink: { width, height: 400 }, waters: [water('The Lantern Sea', [width / 2, 200])] }).letters[0];
+  assert.deepEqual([laid(600)?.spread, laid(600)?.px], [9, SEA_PX]);
+  assert.deepEqual([laid(250)?.spread, laid(250)?.px], [4, SEA_PX]);
+  assert.deepEqual([laid(180)?.spread, laid(180)?.px], [0, SEA_PX]);
+  assert.deepEqual([laid(140)?.spread, laid(140)?.px], [0, WORD_PX]);
+  assert.equal(laid(100), undefined, 'dropped where nothing fits');
+  const box = boxOf(laid(600)!);
+  assert.ok(box.width > widthOf('The Lantern Sea', 'water') * 1.5, 'stretched across its sea');
 });
 
 test('a water’s name under a hand takes its next spot clear of it rather than vanishing', () => {
@@ -77,7 +122,7 @@ test('a water’s name under a hand takes its next spot clear of it rather than 
   });
   const elmwater = lettering.letters[0];
   assert.deepEqual([elmwater?.x, elmwater?.y], [380, 190]);
-  assert.ok(!overlaps(nameBox(elmwater!, 'centre', widthOf(elmwater!.text, 'water'), 1), cover));
+  assert.ok(!overlaps(boxOf(elmwater!), cover));
 });
 
 test('a water’s name stands only where it lies wholly on its own sea, else is dropped', () => {
@@ -107,7 +152,7 @@ test('with no corner clear the key takes the one covering fewest names, a water�
   assert.deepEqual(
     lettering.letters.map((letter) => [letter.text, letter.side, letter.x, letter.y]),
     [
-      ['Ruins', 'left', 150, 160],
+      ['Ruins', null, 150, 160],
       ['Fen', 'centre', 60, 160],
       ['Gilt', 'centre', 60, 40],
       ['Cairn', 'centre', 240, 40],
@@ -130,23 +175,7 @@ test('a water the key must cover is named again at its next spot clear of it', (
   assert.equal(lettering.key?.corner, 'lower-left');
   const fen = lettering.letters.find((letter) => letter.text === 'Fen');
   assert.deepEqual([fen?.x, fen?.y], [160, 100]);
-  for (const letter of lettering.letters)
-    assert.ok(!overlaps(nameBox(letter, 'centre', widthOf(letter.text, 'water'), 1), lettering.key!.box), letter.text);
-});
-
-test('a port the ship lies at keeps its name, beside the ship’s arrow where a mark takes its other side', () => {
-  const lettering = layOut({
-    ...ASK,
-    places: [
-      { text: 'Overlook', x: 300, y: 200, kind: 'port', chosen: false },
-      { text: 'The Broken Causeway', x: 288, y: 199, kind: 'patrol', chosen: false },
-    ],
-    ship: { x: 303, y: 198, heading: 1 },
-  });
-  const port = lettering.letters.find((letter) => letter.kind === 'port');
-  assert.equal(port?.side, 'right');
-  const box = nameBox(port!, 'right', widthOf('Overlook', 'port'), 1);
-  assert.ok(box.x >= 303 + 10, 'clear of the arrow');
+  for (const letter of lettering.letters) assert.ok(!overlaps(boxOf(letter), lettering.key!.box), letter.text);
 });
 
 test('with every corner over land the key still takes one clear of marks, hands and names, rather than vanishing', () => {
@@ -163,7 +192,7 @@ test('a water’s name takes a spot wholly on its own sea before an earlier one 
   assert.equal(lettering.letters[0]?.x, 400);
 });
 
-test("a node's mark over a ruin's moves out along the line between them, just clear, and its name with it", () => {
+test("a quest's node's mark over a ruin's moves out along the line between them, just clear", () => {
   const lettering = layOut({
     ...ASK,
     places: [
@@ -181,9 +210,8 @@ test("a node's mark over a ruin's moves out along the line between them, just cl
   assert.ok(Math.abs(away * 4 - down * 3) < 1e-6, `along the line from the ruin (${away}, ${down})`);
   const [ruinBox, nodeBox] = [markBox('ruin', ruin.x, ruin.y, 1), markBox('patrol', node.x, node.y, 1)];
   assert.ok(!overlaps(ruinBox, nodeBox), 'clear of the ruin');
-  assert.ok(Math.max(Math.abs(away), Math.abs(down)) >= 9 + 1.5, 'with a clear gap between them');
-  assert.ok(Math.max(Math.abs(away), Math.abs(down)) < 9 + 1.5 + 0.5, 'by no more than the overlap and a clear gap');
-  assert.ok(node.side && !overlaps(nameBox(node, node.side, widthOf(node.text, 'patrol'), 1), ruinBox), 'named beside');
+  assert.ok(Math.max(Math.abs(away), Math.abs(down)) >= 10 + 1.5, 'with a clear gap between them');
+  assert.ok(Math.max(Math.abs(away), Math.abs(down)) < 10 + 1.5 + 0.5, 'by no more than the overlap and a clear gap');
 });
 
 test('a node between two marks clears both, and one on another mark takes a clear spot beside it', () => {
@@ -191,8 +219,8 @@ test('a node between two marks clears both, and one on another mark takes a clea
     ...ASK,
     places: [
       { text: 'Sunspire', x: 100, y: 200, kind: 'port', chosen: false },
-      { text: 'Ruins of Cairnwatch', x: 112, y: 200, kind: 'ruin', chosen: false },
-      { text: 'The Highwater Fells', x: 106, y: 200, kind: 'patrol', chosen: false },
+      { text: 'Ruins of Cairnwatch', x: 114, y: 200, kind: 'ruin', chosen: false },
+      { text: 'The Highwater Fells', x: 107, y: 200, kind: 'patrol', chosen: false },
       { text: 'The Ochre Wastes', x: 300, y: 100, kind: 'patrol', chosen: false },
       { text: 'Shrine of Tides', x: 300, y: 100, kind: 'shrine', chosen: false },
     ],
@@ -205,7 +233,7 @@ test('a node between two marks clears both, and one on another mark takes a clea
     lettering.letters.slice(0, 2).map((letter) => [letter.x, letter.y]),
     [
       [100, 200],
-      [112, 200],
+      [114, 200],
     ],
     'the port and the ruin where they lie',
   );

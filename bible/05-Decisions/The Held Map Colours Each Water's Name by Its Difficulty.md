@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-20
-status: in force
+status: replaced
 ---
 # The Held Map Colours Each Water's Name by Its Difficulty
+
+Replaced by [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]: the level band
+stands with the island's name, and a sea's name is lettered across its sea.
 
 > "Do a detailed pass on the map"
 
