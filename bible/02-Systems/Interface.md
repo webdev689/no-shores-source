@@ -1323,10 +1323,10 @@ A tile's words are its name in brass at the larger size and its levels in short 
 at its head, the Journal's icons (`journalIcons.ts`): a patrol zone's dungeon of the day, its Elite and Abyss seas
 (dim while shut) and today's modifier; an Elite Dungeon's week, the Elite's or the Abyss's, and its modifiers; the
 Playlist's today; a padlock on a place that is shut. Its label reads all of it out: its name, its line, every glyph's
-meaning and its details. The tile under the pointer or the focus, else the first place's, is lit: a brass edge two
-pixels wide, raised 2 px, its chevron bright; Enter does what it does. A shut tile's name is dim and a click on it does
-nothing. A landing chooses its node before it lands, as the flow lands only at the node chosen. A desolate city's
-social space is listed nowhere.
+meaning and its details. The tile under the pointer, or the last it was on, else the first place's, is lit: a brass
+edge two pixels wide, raised 2 px, its chevron bright; Enter does what it does. A tile still rising takes no click. A
+shut tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
+only at the node chosen. A desolate city's social space is listed nowhere.
 
 ## The character screen
 
