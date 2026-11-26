@@ -162,7 +162,7 @@ export const stepLevel = (level: number, target: number, seconds: number, fade =
 /** A fade's gain at its level: equal power, so two crossing never dip or swell together. */
 export const fadeGain = (level: number): number => Math.sin((Math.PI / 2) * Math.max(0, Math.min(1, level)));
 
-/** A ship's way, 0 to 1: none hove to; under way, its pace dial's step (5 to 100 times), slow to full. */
+/** A ship's way, 0 to 1: none hove to; under way, by the pace its voyage was set at, slow at ×5 and full from ×100. */
 export const wayOf = (sailing: boolean, pace: number): number =>
   sailing ? Math.min(1, 0.3 + 0.7 * Math.sqrt(Math.max(0, pace) / 100)) : 0;
 

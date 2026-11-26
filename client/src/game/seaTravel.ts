@@ -4,6 +4,7 @@
 import { SailAway } from '../cinema/sailAway.ts';
 import type { MapWater } from '../heldmap/watersWash.ts';
 import type { Point2 } from '../overworld/ground.ts';
+import { PLANNED_PACE } from '../overworld/voyage.ts';
 import type { Passage } from './passage.ts';
 import type { Sea } from './sea.ts';
 import type { SeaRoom } from './seaRoom.ts';
@@ -93,7 +94,7 @@ export class SeaTravel {
     else if (answer === TAKEN && moved) {
       // Laid where the room has it, with no easing across the way it did not sail.
       this.passage.placeAt({ x: moved.x, y: moved.y, heading: moved.heading });
-      this.passage.sailAlong([this.sentEnd]);
+      this.passage.sailAlong([this.sentEnd], this.passage.pace);
       this.away.answer(null);
     } else if (answer !== null || !waiting) {
       const why = answer !== null && answer !== TAKEN ? travelRefusal(answer) : 'The sea did not answer.';
@@ -109,5 +110,5 @@ export class SeaTravel {
  *  (named as the prompt named it, never judged again at `to`), `ready` saying when the waters round the ship have
  *  loaded. */
 export function sailOrTravel(sea: Sea, to: Point2, travel: MapWater | null, ready: () => boolean): void {
-  if (!travel || !sea.travelTo(to, travel.name ?? travel.id, ready)) sea.sailTo(to);
+  if (!travel || !sea.travelTo(to, travel.name ?? travel.id, ready)) sea.sailTo(to, PLANNED_PACE);
 }

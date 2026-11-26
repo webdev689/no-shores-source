@@ -9,11 +9,14 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
+- **Merging on the owner's yes once CI passes on its head**: #216 (the sea reworked, docking in sight, the island's
+  places as painted tiles, the Playlist's crests; audited three times, the full check passing offline). A merge
+  deploys the page, the site, the rooms and the bot, and releases the desktop app.
 - **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **Other sessions' work under way**: #227 (the hub's ground and walks, the ship's stern on the water, music that
-  repeats less), #221 (hostile ships and islands on the sea map, travel anywhere at sea) and #216 (the sea reworked,
-  docking in sight, the island's places as painted tiles, the Playlist's crests).
+  repeats less) and #221 (hostile ships and islands on the sea map, travel anywhere at sea; it shares the sea's files
+  with #216, so whichever merges second takes `main` in again).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -103,6 +106,15 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   on hold, whose 48,000 renders publish with the repository's Cloudflare key.
 
 ## Next
+
+- **After #216** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]] and the
+  four decisions before it): the three landing zones of Saltmere's patrol zones, the zone's map and their fast travel,
+  not built; ships ashore drawn in friendly colours, not their dress; going back aboard after a page reload ashore
+  does not sail out from the berth; parked ships kept in the sea rooms' memory alone, so a deploy loses them; a ship
+  ashore vanishes up to 15 s after it sails; the island's Elite Dungeon scene and the website's gate alike but not
+  shared; the port's tile paints Overlook wherever it is docked. Not yet seen in a running game, on a real GPU or in
+  a deployed room: docking and undocking, parked ships ashore and at sea, the tiles and their icons, the console, the
+  Playlist's crests.
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they

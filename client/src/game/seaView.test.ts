@@ -38,3 +38,34 @@ test('the view flies up over an island side, its landings marked, and back down 
   view.shot(toward(5));
   assert.equal(view.kind, 'sail');
 });
+
+test('the switch moves between the Oversea and the Sealevel views; the wheel zooms the Oversea camera alone', () => {
+  const view = new SeaView([0, 0], 0);
+  assert.equal(view.level, 'oversea');
+  const height = () => view.shot(toward(10)).eye[2];
+  const start = height();
+  view.zoom(3, 3000);
+  assert.ok(height() < start, 'the wheel brings the Oversea camera down');
+  assert.equal(view.switchLevel(), true);
+  assert.equal(view.level, 'sealevel');
+  view.step(10);
+  assert.equal(view.closeShare, 1, 'eased down to sea level');
+  const atSea = height();
+  view.zoom(-5, 3000);
+  assert.equal(height(), atSea, 'at sea level the wheel changes nothing');
+  assert.equal(view.level, 'sealevel', 'and never changes the view');
+  view.switchLevel('oversea');
+  view.step(10);
+  assert.equal(view.closeShare, 0);
+});
+
+test('the switch acts over the ship alone; flying up over an island takes the view back up, noting a dock', () => {
+  const view = new SeaView([0, 0], 0);
+  view.switchLevel('sealevel');
+  view.flyToSide([quay], overSide, true);
+  assert.equal(view.level, 'oversea', 'up over the island from either view');
+  assert.equal(view.docked, true);
+  assert.equal(view.switchLevel('sealevel'), false, 'no switch while it flies');
+  view.flyToSide([quay], overSide);
+  assert.equal(view.docked, false, 'gone ashore');
+});

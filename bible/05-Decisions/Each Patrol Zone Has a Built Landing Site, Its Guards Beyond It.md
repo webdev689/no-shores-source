@@ -31,3 +31,6 @@ status: in force
 Refined by [[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]]: a fight brought into the landing goes on with
 the foes that brought it, no other joining; officers ashore there are left be; a player left be is struck by no blow
 aimed at another.
+
+Changed in part by [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]: three
+landing zones in each of Saltmere's patrol zones, chosen from the zone's map (not built yet).

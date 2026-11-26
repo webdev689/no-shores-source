@@ -1,10 +1,23 @@
 // The pictures of the story's turns ashore and below: the depths the captain sinks through toward the light that
 // calls, a ruined port overtaken by the Lattice's crystal, and Saltmere's shore where the captain wakes at first light.
 import { seeded } from '../../../client/src/seeded.ts';
-import { figure } from './figures.ts';
-import { clouds, LIGHTS, mist, range, sea, sky, stars } from './light.ts';
-import { beacon, cluster, crystalLight, isle, ruins, town } from './places.ts';
-import { box, dot, fade, glow, halo, land, line, makeSheet, patternOn, ridge, shape, type Sheet } from './sheet.ts';
+import { figure } from '../../../client/src/art/figures.ts';
+import { clouds, LIGHTS, mist, range, sea, sky, stars } from '../../../client/src/art/light.ts';
+import { beacon, cluster, crystalLight, isle, ruins, town } from '../../../client/src/art/places.ts';
+import {
+  box,
+  dot,
+  fade,
+  glow,
+  halo,
+  land,
+  line,
+  makeSheet,
+  patternOn,
+  ridge,
+  shape,
+  type Sheet,
+} from '../../../client/src/art/sheet.ts';
 
 const WIDE = 320;
 const TALL = 180;

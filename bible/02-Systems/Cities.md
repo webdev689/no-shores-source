@@ -160,7 +160,8 @@ generated and shaped, before any city stands on it:
    Stair Yard, and sealed gates: one where the platform runs on round the base either side, and one at the harbour
    way's head, where the city's switchback meets the Stair Yard's edge, a stone wall from the east sealed wall along
    that edge with the gate in it across the switchback's top landing ([[The Harbourmaster Stands in the Market, Rain Spares the Trees, and Patrol Nodes Always Stand]]). Below it the harbour way runs down the
-   switchback and ramps to the quay and its pier, where two ships lie moored at their posts, seen and not walked. Each
+   switchback and ramps to the quay and its pier, where two ships lie moored at their posts, seen and not walked (a
+   player's ship docked in a place lies there instead, [[Game]], "On foot"). Each
    keeper stands in a stall of their own placed by its sockets; the Harbourmaster's and the chandlery stand in the
    Beacon Walk's market, in its outer bays between the lamp posts, backs on the base's face and facing the walk. Its ways are laid as
    flagstone walks, every corner where they meet curved, and its gardens' ground as lawn and the Forge Yard's as earth

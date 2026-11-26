@@ -46,7 +46,7 @@ and picked from under the thumbs ([[The Sea Is Navigated From the Helm With the 
 
 ## Our version
 
-[[Held Map]]: opened from the navigation panel at sea, at the helm in first person. The forge's sheet and its hands, one strip a
-gauntlet metal of 17 frames 274 × 181 drawn six times over (a finger fidget, left hand then right), are the owner's own
-art from their Blender pipeline. The nine continents are inked on the sheet under fog of war: only what the player has
-discovered.
+[[Held Map]]: opened at sea by Plan a voyage on the ship's console in the Oversea view, or N, at the helm in first
+person. The forge's sheet and its hands, one strip a gauntlet metal of 17 frames 274 × 181 drawn six times over (a
+finger fidget, left hand then right), are the owner's own art from their Blender pipeline. The nine continents are
+inked on the sheet whole, with no fog of war.

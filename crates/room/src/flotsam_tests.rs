@@ -27,7 +27,7 @@ fn miniboss_vestiges(difficulty: Difficulty, ships: u32) -> usize {
             ..sank(Rank::Miniboss, vec![1])
         };
         flotsam.lay(&sunk, 0, (1, 0));
-        let spots: Vec<(PlayerId, [f64; 2])> = theirs(&flotsam, 1).map(|piece| (1, piece.at)).collect();
+        let spots: Vec<(PlayerId, [[f64; 2]; 2])> = theirs(&flotsam, 1).map(|piece| (1, [piece.at; 2])).collect();
         for (clock, spot) in spots.into_iter().enumerate() {
             let gathered = flotsam.tick(clock as u64 + 1, &[spot], &mut characters);
             vestiges += gathered.iter().filter(|(_, _, held)| held.vestige.is_some()).count();
@@ -98,14 +98,31 @@ fn a_players_ship_gathers_their_own_pieces_within_twenty_five_metres_and_no_one_
     let mut flotsam = Flotsam::new(1);
     flotsam.lay(&sank(Rank::Miniboss, vec![1, 2]), 0, (1, 0));
     let mut characters = BTreeMap::from([(1, Character::starting())]);
-    let gathered = flotsam.tick(1, &[(1, [1_000.0, 2_000.0])], &mut characters);
+    let gathered = flotsam.tick(1, &[(1, [[1_000.0, 2_000.0]; 2])], &mut characters);
     // Every one of a Miniboss's pieces lies within 30 m, so some lie past the ship's 25 m.
     assert!(!gathered.is_empty() && gathered.iter().all(|(_, by, _)| *by == 1));
     assert_eq!(theirs(&flotsam, 2).count(), 6, "the other player's pieces stay theirs");
     let crates = gathered.iter().filter(|(_, _, held)| held.ammo_crate).count();
     assert!(crates <= 1, "a Miniboss's ship holds one kill's Ammo crate at most: {crates}");
-    let far = flotsam.tick(2, &[(1, [5_000.0, 2_000.0])], &mut characters);
+    let far = flotsam.tick(2, &[(1, [[5_000.0, 2_000.0]; 2])], &mut characters);
     assert!(far.is_empty());
+}
+
+#[test]
+fn a_ship_gathers_a_piece_it_passes_within_twenty_five_metres_along_the_leg_it_sailed_this_tick() {
+    // At a pace of 200 a ship sails 40 m or more a tick: a piece 20 m off the middle of its leg lies past 25 m of both
+    // of its ends, yet the ship passed within reach of it.
+    let passing = |off: f64| {
+        let mut flotsam = Flotsam::new(1);
+        flotsam.lay(&sank(Rank::Miniboss, vec![1]), 0, (1, 0));
+        let mut characters = BTreeMap::from([(1, Character::starting())]);
+        let (id, at) = theirs(&flotsam, 1).next().map(|piece| (piece.id, piece.at)).unwrap();
+        let leg = [[at[0] - 25.0, at[1] + off], [at[0] + 25.0, at[1] + off]];
+        let gathered = flotsam.tick(1, &[(1, leg)], &mut characters);
+        gathered.iter().any(|(event, _, _)| matches!(event, Event::Gathered { id: taken, .. } if *taken == id))
+    };
+    assert!(passing(20.0), "passed within reach");
+    assert!(!passing(30.0), "passed out of reach");
 }
 
 #[test]
@@ -127,7 +144,7 @@ fn every_piece_gathered_holds_ship_materials_for_the_ship_and_what_was_taken_is_
     let mut gathered = Vec::new();
     for clock in 1..=4 {
         let at = theirs(&flotsam, 1).next().map_or([0.0, 0.0], |piece| piece.at);
-        gathered.extend(flotsam.tick(clock, &[(1, at)], &mut characters));
+        gathered.extend(flotsam.tick(clock, &[(1, [at; 2])], &mut characters));
     }
     let stock = |taken: gear::ship::materials::ShipStock| taken.timber + taken.canvas + taken.iron;
     assert!(!gathered.is_empty() && gathered.iter().all(|(_, _, held)| stock(held.salvage.materials) >= 1));
@@ -148,7 +165,7 @@ fn a_piece_holds_the_same_whoever_it_is_owned_by_now_so_a_rejoin_rolls_nothing_a
             piece.player = owner;
         }
         let mut characters = BTreeMap::from([(owner, Character::starting())]);
-        let spots: Vec<(PlayerId, [f64; 2])> = flotsam.pieces.iter().map(|piece| (owner, piece.at)).collect();
+        let spots: Vec<(PlayerId, [[f64; 2]; 2])> = flotsam.pieces.iter().map(|piece| (owner, [piece.at; 2])).collect();
         let mut opened = Vec::new();
         for (clock, spot) in spots.into_iter().enumerate() {
             for (_, _, held) in flotsam.tick(clock as u64 + 1, &[spot], &mut characters) {
@@ -164,7 +181,7 @@ fn a_piece_holds_the_same_whoever_it_is_owned_by_now_so_a_rejoin_rolls_nothing_a
 fn opened(mut flotsam: Flotsam) -> Vec<(Option<(gear::Rarity, gear::Slot)>, gear::ship::materials::ShipStock)> {
     flotsam.lay(&sank(Rank::Miniboss, vec![1]), 0, (2, 1));
     let mut characters = BTreeMap::from([(1, Character::starting())]);
-    let spots: Vec<(PlayerId, [f64; 2])> = flotsam.pieces.iter().map(|piece| (1, piece.at)).collect();
+    let spots: Vec<(PlayerId, [[f64; 2]; 2])> = flotsam.pieces.iter().map(|piece| (1, [piece.at; 2])).collect();
     let mut held = Vec::new();
     for (clock, spot) in spots.into_iter().enumerate() {
         for (_, _, opened) in flotsam.tick(clock as u64 + 1, &[spot], &mut characters) {
@@ -199,7 +216,7 @@ fn a_vestige_in_flotsam_gathered_with_the_carried_ten_full_goes_to_the_mail() {
     let mut gathered = Vec::new();
     for clock in 1..=8 {
         let at = theirs(&flotsam, 1).next().map_or([0.0, 0.0], |piece| piece.at);
-        gathered.extend(flotsam.tick(clock, &[(1, at)], &mut characters));
+        gathered.extend(flotsam.tick(clock, &[(1, [at; 2])], &mut characters));
     }
     assert!(gathered.iter().all(|(_, _, held)| held.vestige.is_none()), "none carried");
     assert_eq!(characters[&1].vestiges_held(false), gear::character::VESTIGES_MOST);

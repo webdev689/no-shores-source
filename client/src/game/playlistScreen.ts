@@ -1,4 +1,4 @@
-// The Playlist screen a Playlist's mark beside a port opens, after the owner's reference, Destiny's Vanguard screen:
+// The Playlist screen its tile over a living port's island opens, after the owner's reference, Destiny's Vanguard screen:
 // its entries as crests on a dark chart (`playlistMap.ts`), the chosen one's card beside them or under them
 // (`playlistParts.ts`), and a footer bar with Find a Company or Stop finding, Launch and Close.
 import { motionReduced } from '../plus/kit.ts';
@@ -9,8 +9,19 @@ import type { CardSearch } from './entranceCard.ts';
 import { INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import { iconNode } from './journalIcons.ts';
-import { drawChart, drawGround, spotShare } from './playlistMap.ts';
-import { type CrestLook, TILE, WORDS_WIDE, cardOf, crestOf, scrolledNode } from './playlistParts.ts';
+import { drawChart, drawGround, SPOTS_APART, spotShare } from './playlistMap.ts';
+import {
+  type CrestLook,
+  type CrestMotion,
+  DIAL_WIDE,
+  TILE,
+  WORDS_WIDE,
+  cardOf,
+  crestOf,
+  dialOf,
+  scrolledNode,
+  sweepOf,
+} from './playlistParts.ts';
 import type { PlaylistEntry, PlaylistKind, PlaylistScreenState } from './playlistWords.ts';
 import { play } from './uiSounds.ts';
 
@@ -42,12 +53,19 @@ const SIDE_BY_SIDE = 1000;
 const FOOTER_ONE_LINE = 1100;
 const CARD_MOST = 560;
 const CREST = 104;
+/** The steps a crest's side goes in as the screen is resized. */
+const SIDE_STEP = 4;
 /** The steps a chart's picture is drawn again at as the screen is resized, so a drag draws it a few times, not each
- *  pixel. */
+ *  pixel: its box is the room it stands in, in these steps down, laid in the middle of it. */
 const CHART_STEP = 64;
 /** The list that scrolls: the card's column side by side, the crests and the card together stacked. */
 const SCROLLS = { besides: 'playlist-card-column', stacked: 'playlist-body' } as const;
-const stepped = (pixels: number) => Math.max(1, Math.round(pixels / CHART_STEP)) * CHART_STEP;
+const stepped = (pixels: number) => Math.max(1, Math.floor(pixels / CHART_STEP)) * CHART_STEP;
+/** The room `id` as it was laid last frame (`guess` before it is), in `CHART_STEP` steps down. */
+const steppedRoom = (ui: Interface, id: string, guess: { readonly width: number; readonly height: number }) => {
+  const room = ui.boxOf(id) ?? guess;
+  return { width: stepped(room.width), height: stepped(room.height) };
+};
 /** The entry up or down takes the choice to: a playlist's and its week's dungeon, a Breach's two tiers. */
 const PAIRS: Readonly<Record<PlaylistKind, PlaylistKind>> = {
   elite: 'week-elite',
@@ -186,19 +204,45 @@ export class PlaylistView {
     this.scroll(ui, besides ? SCROLLS.besides : SCROLLS.stacked);
     const scale = Math.min(1.4, Math.max(0.7, view.height / 900));
     const cardWide = Math.min(CARD_MOST, Math.round(view.width * 0.34));
-    // Stacked, two crests share a row, each its words' width, and the two rows leave the card room below.
-    const most = besides ? Infinity : Math.min((view.width - 40) / 2 / WORDS_WIDE, view.height / 9);
-    const playlistSide = Math.floor(Math.min(CREST * scale, most));
+    // Side by side, each crest's words fit between its spot and the next on the chart; stacked, two crests share a
+    // row, each its words' width, and the two rows leave the card room below. The side goes in steps, so a resize
+    // draws the crests, glows and dials again only every few pixels.
+    const chartWide = view.width - cardWide - 80;
+    const most = besides
+      ? (chartWide * SPOTS_APART) / WORDS_WIDE
+      : Math.min((view.width - 40) / 2 / WORDS_WIDE, view.height / 9);
+    const playlistSide = Math.floor(Math.min(CREST * scale, most) / SIDE_STEP) * SIDE_STEP;
+    const [opened, still] = [ui.age('playlist-screen'), motionReduced()];
+    const looks = screen.entries.map((_one, place): CrestLook => {
+      const id = `${TILE}${place}`;
+      return place === this.chosen ? 'chosen' : ui.hovered(id) || (ui.focused(id) && ui.keyFocused) ? 'lit' : 'rest';
+    });
     const crests = screen.entries.map((one, place) => {
       const weekly = one.kind === 'week-elite' || one.kind === 'week-abyss';
       const side = Math.floor(playlistSide * (weekly ? 0.8 : 1));
-      const id = `${TILE}${place}`;
-      const look: CrestLook =
-        place === this.chosen ? 'chosen' : ui.hovered(id) || (ui.focused(id) && ui.keyFocused) ? 'lit' : 'rest';
+      const motion: CrestMotion = { opened, swept: ui.age(sweepOf(place, looks[place] ?? 'rest')), still };
       // Side by side a crest's words wrap a little over twice its side; stacked, each has its half of a row.
       const wide = besides ? Math.floor(playlistSide * WORDS_WIDE) : Math.floor((view.width - 40) / 2) - 8;
-      return crestOf(one, place, look, size, side, wide, besides ? spotShare(one.kind) : null);
+      return crestOf(
+        one,
+        place,
+        looks[place] ?? 'rest',
+        size,
+        side,
+        wide,
+        besides ? spotShare(one.kind) : null,
+        motion,
+      );
     });
+    // On the chart each crest stands on its dial, every dial the same size, as the chart's rings were.
+    const dials = besides
+      ? screen.entries.flatMap((one, place) =>
+          dialOf(one, place, looks[place] ?? 'rest', Math.round(playlistSide * DIAL_WIDE), spotShare(one.kind), {
+            opened,
+            still,
+          }),
+        )
+      : [];
     const middle: Node = besides
       ? {
           width: 'grow',
@@ -207,14 +251,21 @@ export class PlaylistView {
           padding: [0, 20],
           children: [
             {
-              id: 'playlist-chart',
+              // Clipped, so the chart's box from last frame never holds its room open past what it is given.
+              id: 'playlist-chart-room',
               width: 'grow',
               height: 'grow',
-              picture: {
-                key: `playlist chart ${stepped(view.width - cardWide - 80)} ${stepped(view.height - 170)}`,
-                source: { draw: drawChart },
-              },
-              children: crests,
+              clip: true,
+              alignX: 'center',
+              alignY: 'center',
+              children: [
+                {
+                  id: 'playlist-chart',
+                  ...steppedRoom(ui, 'playlist-chart-room', { width: chartWide, height: view.height - 170 }),
+                  picture: { key: 'playlist chart', source: { draw: drawChart } },
+                  children: [...dials, ...crests],
+                },
+              ],
             },
             scrolledNode(
               ui,
@@ -242,20 +293,26 @@ export class PlaylistView {
                   direction: 'column',
                   gap: 8,
                   padding: [8, 0],
-                  picture: {
-                    key: `playlist ground ${stepped(view.width - 40)} ${stepped(view.height / 2)}`,
-                    source: { draw: drawGround },
-                  },
-                  children: crests
-                    .flatMap((_crest, first) => (first % 2 === 0 ? [first] : []))
-                    .map((first) => ({
-                      width: 'grow',
-                      children: crests.slice(first, first + 2).map((crest) => ({
-                        width: '50%',
-                        alignX: 'center',
-                        children: [crest],
+                  children: [
+                    {
+                      // Its ground in steps of the crests' room, in the middle of it: between the scrim (19) and the
+                      // screen (20), so under the crests, and scrolled with them.
+                      ...steppedRoom(ui, 'playlist-chart', { width: view.width - 48, height: view.height / 2 }),
+                      through: true,
+                      float: { to: 'parent', anchor: [0.5, 0.5], at: [0.5, 0.5], z: 19.5, clipped: true },
+                      picture: { key: 'playlist ground', source: { draw: drawGround } },
+                    },
+                    ...crests
+                      .flatMap((_crest, first) => (first % 2 === 0 ? [first] : []))
+                      .map((first): Node => ({
+                        width: 'grow',
+                        children: crests.slice(first, first + 2).map((crest) => ({
+                          width: '50%',
+                          alignX: 'center',
+                          children: [crest],
+                        })),
                       })),
-                    })),
+                  ],
                 },
                 cardOf(entry, screen.note, size, 'grow'),
               ],
@@ -282,7 +339,7 @@ export class PlaylistView {
           direction: 'column',
           width: view.width,
           height: view.height,
-          opacity: motionReduced() ? 1 : Math.min(1, 0.25 + ui.age('playlist-screen') * 4),
+          opacity: still ? 1 : Math.min(1, 0.25 + opened * 4),
           float: { to: 'screen', z: 20 },
           children: [
             {

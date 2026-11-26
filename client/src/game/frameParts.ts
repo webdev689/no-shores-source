@@ -10,6 +10,7 @@ import type { seaWeatherOn } from '../water/seaWeather.ts';
 import type { Ambience } from './audio/ambience/ambience.ts';
 import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
+import type { Berthed } from './docking.ts';
 import type { Drain } from './drain.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
 import type { DungeonDrawers } from './dungeonDrawers.ts';
@@ -58,6 +59,8 @@ export interface FrameParts {
   /** The waterline and the build of the hull the player sails. */
   readonly waterline: () => Parameters<typeof showSeaHud>[3]['waterline'];
   readonly builtShip: () => HullBuild | null;
+  /** Where the player's ship lies docked, if it does (`docking.ts`), drawn there while they are on that island. */
+  readonly docked: () => Berthed | null;
   readonly closeSource: Parameters<GameScene['keepClose']>[1];
   readonly waterHere: () => FriendlyWater;
   /** The leave held through: back to the ship on the room's yes, or told why not. */

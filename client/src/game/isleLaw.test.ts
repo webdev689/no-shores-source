@@ -7,6 +7,7 @@ import {
   ANCHORED_M,
   type DungeonDoor,
   type IsleAt,
+  KEEP_CLEAR_M,
   approach,
   detour,
   dungeonRoomName,
@@ -75,13 +76,14 @@ test('a voyage is bent round every island its legs pass through, and left alone 
   assert.deepEqual(detour(clear, keptClear(isles)), clear);
 });
 
-test('the way to an island goes round it to its offing and in to its anchorage', () => {
+test('the way in to an island is from its offing, out on its landing bearing past the ring a voyage keeps clear of', () => {
   const isle = built(1, [0, 0]);
-  const course = approach([0, 3000], isle);
-  assert.deepEqual(course.at(-1), [0, -125]);
-  assert.ok(keepsOff(course, [0, 0], 80 + LAND_PAST_REACH_M), 'round the island, not over it');
-  const last = course.at(-2) ?? [0, 0];
-  assert.ok(last[1] < -125 - ANCHORED_M, 'in from the open sea on its landing bearing');
+  const way = approach(isle);
+  assert.deepEqual(way?.anchorage, [0, -125]);
+  const [offingX, offingY] = way?.offing ?? [0, 0];
+  assert.ok(Math.abs(offingX) < 1e-9, 'on its landing bearing');
+  assert.ok(offingY < -(80 + KEEP_CLEAR_M) && offingY < -125 - ANCHORED_M, 'out at sea, clear of it');
+  assert.equal(approach({ ...isle, built: null }), null, 'none for an island not yet built');
 });
 
 test('a voyage for an anchorage from the far side comes in through its gate, not over the island', () => {

@@ -18,6 +18,7 @@ interface Held {
   readonly players: ReadonlyMap<number, SeenPlayer>;
   readonly foes: ReadonlyMap<number, SeenFoe>;
   readonly public: PublicEvent | null;
+  readonly ships: Snapshot['ships'];
 }
 
 /** The zone's events `elapsed` ticks on, told nothing new: the countdown, the heroic window's and the next wave's run
@@ -76,7 +77,9 @@ export class SnapshotKeeper {
       foes.set(foe.id, foe.changes && held ? { ...foeOf(foe.id, changed(held, foe.changes)), ...named } : foe);
     }
     const shown = snapshot.public ?? countedOn(base?.public ?? null, snapshot.tick - snapshot.base);
-    this.held.set(snapshot.tick, { players, foes, public: shown });
+    // A land room sends the ships parked by its island only as they change: none on a built snapshot is the base's.
+    const ships = base && snapshot.ships.length === 0 ? base.ships : snapshot.ships;
+    this.held.set(snapshot.tick, { players, foes, public: shown, ships });
     for (const tick of this.held.keys()) if (tick + HELD_TICKS < snapshot.tick) this.held.delete(tick);
     const since = this.last;
     this.last = snapshot.tick;
@@ -88,6 +91,7 @@ export class SnapshotKeeper {
       players: byNumber(players),
       foes: byNumber(foes),
       public: shown,
+      ships,
       events: snapshot.events.filter((event) => event.tick > since),
       shots: snapshot.shots.filter((shot) => shot.stopped === 0n || shot.stopped > since),
     };

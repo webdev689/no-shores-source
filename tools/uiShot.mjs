@@ -1,9 +1,10 @@
 // Pictures of the interface drawn by the game, headless: starts Vite, opens a module of the client (no page), and
 // draws each shot asked through the real renderer, writing it as a PNG. `node tools/uiShot.mjs <shots.json>`, with
-// { "size": [w, h], "scale": 2, "frames": 10, "shots": [{ "module": "/src/game/journalShots.ts", "build":
-// "journalShot", "out": "target/ui/journal.png", "events": [...], "at": 3 }] }: `build` answers the tree for the
-// interface it is given, as `client/src/ui/shot.ts` hears `events`, `at` and `frames`; or, with "call": true, awaits
-// `build(...args)` for a PNG's data URL. "before" names an export awaited first, given "beforeArgs".
+// { "size": [w, h], "scale": 2, "frames": 10, "motion": true, "shots": [{ "module": "/src/game/journalShots.ts",
+// "build": "journalShot", "out": "target/ui/journal.png", "events": [...], "at": 3 }] }: `build` answers the tree for
+// the interface it is given, as `client/src/ui/shot.ts` hears `events`, `at` and `frames` (a frame 1/60 s); or, with
+// "call": true, awaits `build(...args)` for a PNG's data URL. "before" names an export awaited first, given
+// "beforeArgs". The page asks for reduced motion unless `motion` is true.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createRequire } from 'node:module';
@@ -23,7 +24,7 @@ const browser = await chromium.launch({
 });
 let failed = false;
 try {
-  const page = await browser.newPage({ reducedMotion: 'reduce' });
+  const page = await browser.newPage({ reducedMotion: asked.motion ? 'no-preference' : 'reduce' });
   page.on('console', (message) => {
     if (message.type() === 'error' || message.type() === 'warning')
       console.log(`page ${message.type()}: ${message.text()}`);
