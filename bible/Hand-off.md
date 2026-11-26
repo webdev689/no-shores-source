@@ -221,6 +221,26 @@ its system note.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
     dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels
     run the room while the pointer is free (#68).
+- **The welcome's gifts, the pledged house's piece, "Use your gifts", house drops in the world, the hordes, the riding
+  escort, the riding and sailing lessons, the wreck's fixes and the keepers' screens after Destiny 2's** (#223, merged
+  as `f11fc2fb` on the owner's "merge and deploy", which deploys the page, the site and the rooms; the owner's words in
+  [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]],
+  [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]] and
+  [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]; every call Claude made in
+  [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]). How each works is in [[Quests]]
+  ("The opening", "Using the gifts", "A house's horde", "Offered by a keeper", the lessons), [[Gear]], [[Factions]],
+  [[Arts]], [[Prologue]], [[Interface]] and [[Speech]]. Audited on the owner's "This is yours now, do a comprehensive
+  audit on it" by five read-only audits, every finding measured by a test that failed first and fixed, or put to the
+  owner and answered. The wreck's level is the wreck workflow's own (run 83's artifact, taken whole: its tools write the
+  Brig's mainmast stump and the Majors). Tested offline: `cargo xtask check` on the merge with main at #218; CI's full
+  check on the head 65a01556. Not seen: the escort on its horse, the hulk at sea, a deployed room, a real GPU, a hand.
+  The owner's to say, listed in the PR: old saves (on "Put them on" or at a road's first task), the horde's size, its
+  pay after a fall and its 36 m, which Vestiges are "the world's", a house piece dismantling as Normal, an escort ship's
+  ball at the hulk, a bought Legendary noticed as a find, the notice hint's place, the keeper screen's differences, the
+  duel's boarder at the step, the townsfolk's dyes dealt anew.
+- **The menu's tabs on the pad** (#226, on the owner's "merge and deploy" with #223): the Character tab's keycap is the
+  pad's button, not the words "pad:Start" (`gearShell.ts`, `hudParts.padCap`); it carries this hand-off and the wreck
+  level's source key from run 83. Tested offline: a gearShell test failing first, `npm run -s types`; CI on its head.
 
 ## Waiting on the owner
 
@@ -244,33 +264,6 @@ The decisions in [[Open Questions]] are not repeated here.
   and runs on the head. Not pictured, played by hand, on a real GPU or in a deployed room. Left: a click on an island
   marked but not yet told of asks and is refused; the chart's bytes unmeasured against [[Server]]'s figures; Lantern
   Sea islands carry brineglass.
-
-- **The welcome's gifts, the pledged house's piece, "Use your gifts", house drops in the world, the hordes, the riding
-  escort, the riding and sailing lessons, the wreck's fixes and the keepers' screens after Destiny 2's** (#223, open,
-  waiting on CI on its head and the owner's yes to merge, which deploys the page, the site and the rooms; the owner's
-  words in [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]],
-  [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]] and
-  [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]; every call Claude made in
-  [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]). How each works is in [[Quests]]
-  ("The opening", "Using the gifts", "A house's horde", "Offered by a keeper", the lessons), [[Gear]], [[Factions]],
-  [[Arts]], [[Prologue]], [[Interface]] and [[Speech]]. On the owner's "This is yours now, do a comprehensive audit on
-  it", five read-only audits (rules and server; the page; the design against the owner's words; the bible against the
-  code; the tests and regressions), every finding measured by a test that failed first and fixed, or put to the owner:
-  among them the horde's unbounded Art carried anywhere in the node (it now fails 36 m past its place, and lends only
-  the house's own Art), another ship's ball counting for the hulk, notices naming keyboard keys on the pad and
-  overlapping their hint, and about twenty notes untrue of the code. The wreck's republished mesh is taken, its heaps on
-  the deck, the level keeping the mast and rank 2 boarders the wreck tools do not write. The owner's answers to the
-  audit: only the pledged house's leader gives a gift, a piece of uncommon (Magic) faction gear, not the cape; the
-  stranger names no place, her two lines reworked; "Use your gifts" teaches the Vestige, cloak, dye and letter; the
-  keepers' painted ground kept ("Yeah I love this"); and, new, one in ten of the world's Magic and Rare Vestige pieces a
-  piece of the pledged house. Tested offline on the head: the room's, gear's, protocol's and xtask's suites, the page's
-  and the server's quest tests, tsc, clippy, `cargo xtask repo`; pictured headless at 1920x1080 and on a phone. Not
-  seen: the escort on its horse, the hulk at sea, a deployed room, a real GPU, a hand. The owner's to say, listed in the
-  PR: old saves (on "Put them on" or at a road's first task), the horde's size, its pay after a fall and its 36 m, which
-  Vestiges are "the world's", a house piece dismantling as Normal, an escort ship's ball at the hulk, a bought Legendary
-  noticed as a find, the notice hint's place, the keeper screen's differences, the duel's boarder at the step, the
-  townsfolk's dyes dealt anew. Left: the wreck tools should write the mast and the rank 2 boarders; the gear tabs show a
-  pad's key as "pad:Start" (on `main` before #223); a house piece posted for want of room gets no notice.
 
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
