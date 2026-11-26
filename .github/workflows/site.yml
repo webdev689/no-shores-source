@@ -10,6 +10,11 @@ name: site
 # R2 Storage: Edit it publishes with, which the bucket's rules need too.
 on:
   workflow_call:
+    inputs:
+      rooms_deployed:
+        description: 'Whether the run calling it deployed the rooms: its page then follows them, newest or not'
+        type: boolean
+        default: false
   workflow_dispatch:
 
 permissions:
@@ -49,7 +54,9 @@ jobs:
           retention-days: 1
 
   # One deploy at a time; a newer merge's deploy replaces one waiting. Merges are checked side by side, so an older one
-  # can finish last: it deploys only while it is still main's head. The token reaches only the steps that use it.
+  # can finish last: it deploys only while it is still main's head, or when its own run deployed the rooms, as the
+  # rooms then speak its protocol and the newer merge's deploy comes after it. The token reaches only the steps that use
+  # it.
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -88,7 +95,7 @@ jobs:
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - id: zone
-        if: steps.head.outputs.sha == github.sha
+        if: steps.head.outputs.sha == github.sha || inputs.rooms_deployed
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: |
