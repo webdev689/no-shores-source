@@ -141,6 +141,11 @@ export class SeaLandings {
     this.docking.cancel();
   }
 
+  /** The player is back aboard: a ship docked sails out from its berth once the room has placed it. */
+  cameAboard(): void {
+    this.docking.cameAboard();
+  }
+
   /** The sea island the ship has come to anchor off for its landing, taken once, the landing given up if the island no
    *  longer stands; asked only while nothing else holds the player. */
   anchored(): IsleHeld | null {
@@ -155,9 +160,9 @@ export class SeaLandings {
   }
 
   /** Each frame: the question put by once the player is not `atSea` or the ship's view is not theirs to answer it
-   *  from, a landing made for let go in a fight or once the player has left the ship; and while nothing else holds
-   *  the player, one on the coast docked in sight once the ship lies within reach of it, and made once the ship lies
-   *  at its berth. */
+   *  from, a landing made for let go in a fight or once the player has left the ship; out of a fight, a ship back from
+   *  its berth sailed out once placed; and while nothing else holds the player, a landing on the coast docked in sight
+   *  once the ship lies within reach of it, and made once the ship lies at its berth. */
   frame(atSea = true): void {
     const sea = this.game.sea();
     if (!atSea) {
@@ -167,6 +172,7 @@ export class SeaLandings {
     if (!sea || !atSea) return;
     if (sea.fight) this.letGo();
     if (sea.fight || sea.view.kind !== 'sail' || sea.busy) this.asking = null;
+    if (!sea.fight) this.docking.undock(sea);
     if (!this.game.free()) return;
     // What the sea offers is asked only while a landing on the coast is made for.
     const due = this.course.making && this.course.due(sea.landfall, sea.bound);

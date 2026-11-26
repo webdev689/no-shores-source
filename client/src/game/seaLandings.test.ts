@@ -47,7 +47,8 @@ function seaOf() {
     fight: null as object | null,
     busy: false,
     view: { kind: 'sail' },
-    sighted: { others: [] as { x: number; y: number }[] },
+    sighted: { others: [] as { x: number; y: number }[], settledShip: null as { x: number; y: number } | null },
+    passage: { sailAlong: (points: Point2[]) => void asked.push(`out ${points.join(' ')}`) },
     switchLevel: (level: string) => void asked.push(`view ${level}`),
     sailTo: (point: Point2) => {
       asked.push(`sail ${point.join(',')}`);
@@ -288,4 +289,20 @@ test('with nothing made for, what the sea offers is never asked of it each frame
   landings.frame();
   landings.frame();
   assert.equal(read, 0);
+});
+
+test('back aboard after docking, the ship sails out from its berth once the room has placed it', () => {
+  const { landings, sea, asked, landed } = landingsOf();
+  [sea.landfall, sea.position] = [{ kind: 'dock', port: 'Overlook' }, [1_000, -2_050]];
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  landings.frame();
+  assert.equal(landed.length, 1, 'docked at its pier');
+  landings.frame(false);
+  landings.cameAboard();
+  landings.frame();
+  assert.deepEqual(asked, ['view oversea'], 'not before the room has placed it');
+  sea.sighted.settledShip = { x: 1_000, y: -2_050 };
+  landings.frame();
+  assert.deepEqual(asked, ['view oversea', 'out 1000,-2600'], 'out to the roadstead');
 });

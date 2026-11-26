@@ -35,8 +35,15 @@ const berth = (aim: LandingAim): Berth => {
   return found;
 };
 
+const LISTS = { players: [], fights: [], flotsam: [], kept: [], told: [], decks: [], islands: [] };
+/** The sea room's word at `tick`, with the player's own ship (player 1) lying at `ship`, if given. */
+const wordOf = (tick: number, ship?: Point2) => {
+  const ships = ship ? [{ player: 1, x: ship[0], y: ship[1], heading: 0, pace: 0, hull: 0, dress: [], name: [] }] : [];
+  return { tick: BigInt(tick), hostiles: [], taken: [], friendlies: [], charted: [], plates: [], ships, ...LISTS };
+};
+
 /** The player's ship at sea at `start` beside the land, the cove's island kept clear of; and in a sea room that has
- *  sighted the Tithe ship `hostile` 3 km north of it. */
+ *  sighted the Tithe ship `hostile` 3 km north of it, whose next words `hand` hands on. */
 async function seaAt(start: Point2) {
   const hull = { waterline: { lengthM: 18, beamM: 5, draughtM: 2 }, shown: (hull: number) => hull, marks: {} };
   const sea = new Sea(LANDMASS as unknown as Landmass, [LAND], hull as unknown as SeaHull, start, 0, {} as FootContext);
@@ -45,9 +52,8 @@ async function seaAt(start: Point2) {
   const link = { player: 1, dressed: [], joins: 1, rejoining: false, lost: null, send: () => 0, pump: () => 0 };
   await sea.enterRoom((snapshot) => ((hand = snapshot), link));
   const hostile = { id: 7, x: start[0], y: start[1] - 3_000, heading: 0, faction: 1, rank: 1 };
-  const lists = { players: [], ships: [], fights: [], flotsam: [], kept: [], told: [], decks: [], islands: [] };
-  hand({ tick: 1n, hostiles: [hostile], taken: [], friendlies: [], charted: [], plates: [], ...lists } as never);
-  return sea;
+  hand({ ...wordOf(1), hostiles: [hostile] } as never);
+  return { sea, hand: (tick: number, ship?: Point2) => hand(wordOf(tick, ship) as never) };
 }
 
 /** Whether no leg of a course passes over the land, looked at every 100 m along it. */
@@ -65,7 +71,7 @@ function overWater(course: readonly Point2[]): boolean {
 }
 
 test('a landing on a sea island sails for its offing on water, round the land between, then in to its anchorage', async () => {
-  const sea = await seaAt(place(0, 0));
+  const { sea } = await seaAt(place(0, 0));
   const landing = new Docking();
   assert.equal(landing.begin(sea, ISLE, berth(ISLE)), true);
   assert.deepEqual(sea.course.at(-1), COVE.built?.anchorage);
@@ -75,7 +81,7 @@ test('a landing on a sea island sails for its offing on water, round the land be
 });
 
 test('from the far side of a sea island its landing goes round it, never over it', async () => {
-  const sea = await seaAt(place(62_000, 0));
+  const { sea } = await seaAt(place(62_000, 0));
   new Docking().begin(sea, ISLE, berth(ISLE));
   const middle = COVE.seen.at;
   const past = sea.course.slice(0, -1).every(([x, y]) => Math.hypot(x - middle[0], y - middle[1]) > 250);
@@ -84,7 +90,7 @@ test('from the far side of a sea island its landing goes round it, never over it
 });
 
 test('a landing on a sea island ends a chase, as any other course does', async () => {
-  const sea = await seaAt(place(0, 0));
+  const { sea } = await seaAt(place(0, 0));
   assert.equal(sea.sailToMark('hostile-7'), true);
   assert.match(sea.voyageNote, /^Chasing/);
   new Docking().begin(sea, ISLE, berth(ISLE));
@@ -93,7 +99,7 @@ test('a landing on a sea island ends a chase, as any other course does', async (
 });
 
 test('docking is seen from the Oversea view, the ship sailing at ×60 through its offing and in to its berth', async () => {
-  const sea = await seaAt(place(0, 0));
+  const { sea } = await seaAt(place(0, 0));
   sea.switchLevel('sealevel');
   const { at, offing } = berth(ASHORE);
   assert.equal(new Docking().begin(sea, ASHORE, { at, offing }), true);
@@ -123,4 +129,48 @@ test('the landing is made only once the ship lies at rest at its berth, once; tu
   sea.bound = place(5_000, 0);
   assert.equal(docking.arrived(sea as never), null);
   assert.equal(docking.making, null, 'sent elsewhere');
+});
+
+/** A ship come to rest at its coast berth and docked there, its player gone ashore and back aboard. */
+async function backAboard(lying: Point2) {
+  const { at, offing } = berth(ASHORE);
+  const { sea, hand } = await seaAt(lying);
+  const docking = new Docking();
+  docking.begin(sea, ASHORE, { at: lying, offing });
+  assert.equal(docking.arrived(sea), ASHORE, 'docked');
+  docking.cameAboard();
+  return { sea, hand, docking, at, offing };
+}
+
+test('back aboard, once the room has placed the ship at its berth, it sails out at ×60 to the offing', async () => {
+  const { at, offing } = berth(ASHORE);
+  const { sea, hand, docking } = await backAboard(at);
+  docking.undock(sea);
+  hand(50, at);
+  docking.undock(sea);
+  assert.deepEqual(sea.course, [], 'not before the room has placed it');
+  hand(120, at);
+  docking.undock(sea);
+  assert.deepEqual(sea.course, [at, offing], 'straight out');
+  assert.equal(sea.pace, CLICK_PACE);
+  sea.stop();
+  docking.undock(sea);
+  assert.deepEqual(sea.course, [], 'out once, then the ship is the player’s to sail');
+  assert.equal(docking.docked, null, 'docked no more');
+});
+
+test('placed away from its berth, or set on a course of the player’s first, the ship takes no course of itself', async () => {
+  const { at } = berth(ASHORE);
+  const away: Point2 = [at[0] - 500, at[1]];
+  const placedAway = await backAboard(away);
+  placedAway.docking.docked = { aim: ASHORE, berth: berth(ASHORE) };
+  placedAway.hand(50, away);
+  placedAway.hand(120, away);
+  placedAway.docking.undock(placedAway.sea);
+  assert.deepEqual([placedAway.sea.course, placedAway.docking.docked], [[], null]);
+  const steered = await backAboard(at);
+  steered.sea.sailTo(place(0, 0));
+  const course = steered.sea.course;
+  steered.docking.undock(steered.sea);
+  assert.deepEqual([steered.sea.course, steered.docking.docked], [course, null], 'the player’s course kept');
 });

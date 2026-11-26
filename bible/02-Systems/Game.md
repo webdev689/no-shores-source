@@ -463,7 +463,8 @@ Breach's fallen keep its own times and places ([[Breaches]]).
 ## At sea
 
 `Sea` is the [[Overworld]] in play. The first return puts the ship off Overlook's harbour: out from the city's middle
-through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left.
+through its harbour to water 4 m deep, then 600 m on. Later returns find it where it was left, and a ship left docked
+sails out from its berth ("Landings").
 
 - **The ship** is the hull the player sails, in its parts' pictures and the dress they laid on it ([[Shipyard]]), the
   Sloop as built until the room says otherwise.
@@ -675,6 +676,12 @@ either side, where the water is 4 m deep and no ship lies within 100 m. At a coa
 the shore nearest the point clicked (or the ship, asked with L): straight out from the shore, where the water is first
 4 m deep and 50 m clear of the room's coast, its offing 600 m on. At a sea island it is the island's anchorage, from
 its offing. Once the ship lies at rest within 30 m of its berth the landing is made, and the ship lies docked there.
+
+Leaving undocks it. Back aboard (`goSea`), once the room has placed the ship (its settled word on the ship lying
+within 2 m of where the page has it, after any `MOORED` word has been taken), a ship lying within 30 m of its berth
+sails out at ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen
+pulling away, and is the player's to sail from there. A course the player sets first, or the room placing the ship
+away from its berth, leaves it as it is; either way it is docked no more.
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
 framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
