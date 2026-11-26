@@ -92,6 +92,13 @@ pub unsafe extern "C" fn room_open_run(
     u32::from(open_run(text, patrol))
 }
 
+/// Makes the open room on land a developer's test room (`Room::make_test`), before anyone joins it: a test run, opened
+/// as its run is, or the zone copy whose Breach's gate opens one, opened as its node is. 1 if a room on land is open.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_make_test() -> u32 {
+    u32::from(crate::on_land(Room::make_test).is_some())
+}
+
 /// The week's Elite or Abyss Dungeon, its modifiers' keys, the level its foes stand at and the level that opens it.
 fn of_week(week: u64, weekly: Weekly) -> Value {
     let modifiers: Vec<String> = week_modifiers(week, weekly).into_iter().map(Modifier::key).collect();

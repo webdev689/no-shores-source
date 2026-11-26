@@ -286,7 +286,7 @@ impl Room {
                 *claim = None;
             }
         }
-        let held = moorings.iter().enumerate().all(|(nth, at)| {
+        let held_at = |(nth, at): (usize, &[f64; 3])| {
             gate.claims[nth].is_none()
                 && company.players.iter().any(|player| {
                     self.players.get(player).is_some_and(|found| {
@@ -294,7 +294,10 @@ impl Room {
                             && apart([found.fighter.body.x, found.fighter.body.y], [at[0], at[1]]) <= MOORING_REACH_M
                     })
                 })
-        });
+        };
+        // In a test room one player is the whole company: any one mooring held fills the Spire as all three do.
+        let held =
+            if self.test { moorings.iter().enumerate().any(held_at) } else { moorings.iter().enumerate().all(held_at) };
         // A company gone from the hollow lets the gate go to the next.
         let near = company.players.iter().any(|player| {
             self.players

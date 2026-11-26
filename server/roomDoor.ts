@@ -87,6 +87,9 @@ export interface RoomDoor {
   /** Turns on the open island room's check of landings: only the accounts `land` names scavenge and gather. Whether
    *  it is one. */
   checkLandings(): boolean;
+  /** Makes the open room on land a developer's test room, before anyone joins it: every player plays the test
+   *  character, and the test runs' rules hold (`room::test_room`). Whether a room on land is open. */
+  makeTest(): boolean;
   /** Lands an account on the open island room, on its sea's word, by its landing's number (a new number, a new
    *  visit): whether it is an island's room. */
   land(account: string, landing: number): boolean;
@@ -273,6 +276,7 @@ interface RoomExports {
   room_hold_ashore(id: number, low: number, high: number): number;
   room_sea_landed(id: number, low: number, high: number, address: number, length: number): number;
   room_isle_check_landings(): number;
+  room_make_test(): number;
   room_isle_land(address: number, length: number, landing: number): number;
   room_isle_plan(low: number, high: number, address: number, length: number): bigint;
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
@@ -415,6 +419,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return lend(bytes, (address) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, bytes.length));
     },
     checkLandings: () => exports.room_isle_check_landings() === 1,
+    makeTest: () => exports.room_make_test() === 1,
     land: (account, landing) =>
       openWith((address, length) => exports.room_isle_land(address, length, landing >>> 0), account),
     islePlan: (seed, climate) =>

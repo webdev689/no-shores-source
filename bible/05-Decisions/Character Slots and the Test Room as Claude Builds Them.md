@@ -31,3 +31,17 @@ change any of them.
 | A test run | Its own room, named `--test-<instance>` where a run is `--run-<instance>`, for developers alone; a Playlist's at its top band's foes | Kept apart from every real run, its company and its gates |
 | The Breach's test | Begins at the Sunken Gate in a copy of the Gullwing Vale of its own, so the Waking is tested too, then into the run | One player counts as the whole company there as inside |
 | Leaving a test run | Back to the Test Room on the character screen | Where it was launched from |
+
+## Test runs' rules
+
+| Call | Claude's choice | Why |
+|---|---|---|
+| The names | A playlist's, the week's and the Breach's test run named as the real run with `--test-<instance>` last; the Breach's gate in `node-gullwing-vale--test-<instance>`, the run's own instance; no test of a patrol's dungeon, a run at Normal, a guild's or one marked `--sea` | What the Test Room launches, and nothing more |
+| Making a room a test room | One door call (`makeTest`) after the room opens as its run or node does, for all three, rather than a word in each open's ask | One way in for the run, the Breach and the zone copy |
+| The test character's pieces | Rolled from one fixed seed: the same weapon kinds and perks for every tester, the first perk chosen in each column | Max gear is the same for everyone; a developer who wants another weapon changes it in the room |
+| The gate in a test room | Lets the tester in whatever it would ask: Hard without Normal won and any playlist's band, not Hard alone | A level 30 tester is outside the lower bands, which the Test Room launches too |
+| Cannot fall | Health never below 1 from any blow, the Unwriting's and a seal's among them; a fall into the dark stands them again at once, even at Hard inside an encounter | Falling into the dark is not a blow; waiting on a revive no one can give strands a solo tester |
+| What unwrites the company | In a test room it harms but loses no attempt: the Mending's and the Seam's fusions, the Steward's last taking, the Lodestone left lying, being Seen in the Ways at Hard | Each is what a company holds off together; one player cannot be at every seam or bell at once |
+| A rift held open | Once open, a Two Shores rift stays open in a test room | The decision's "a mooring holds while any one is held", where one player cannot hold a mooring and cross |
+| A developer's second socket | Sends the first away, as a run does | One account, one player, as everywhere |
+| The zone copy's life | Forgotten a minute after it empties, as a run's room is; the test run takes its gate's word once and keeps it while the run lives, so a tester who rejoins is let in; a run itself forgotten and opened again asks anew | The copy is a run's room in all but name; keeping it alive would need the run to hold it |

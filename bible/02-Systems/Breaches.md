@@ -21,6 +21,7 @@ code:
   - crates/room-wasm/src/breach_door.rs#breach_json
   - server/breach.ts#Breach
   - server/roomNames.ts#breachAsk
+  - crates/room/src/test_room.rs#TEST_HARM
   - server/accounts/finding.ts#BREACH_OPENS
   - content/dungeon/breach-drowned-vale.json
   - tools/modules/breach_gate.py
@@ -87,6 +88,23 @@ Claude's ([[The Drowned Vale as Claude Builds It]]).
   too; the stone is set down only standing; fallen into the dark with its bearer, it goes home to its plinth.
 - **Rewritten.** A mark the encounters lay on players; when its time comes the Rewritten are unwritten (killed)
   unless cleansed first.
+
+## The Breach's test
+
+A developer tests the Breach from the Test Room ([[Activities]], "Test runs"): its run is
+`node-gullwing-vale--breach-<normal|hard>--test-<instance>`, and its gate stands in a copy of the Gullwing Vale of its
+own, `node-gullwing-vale--test-<instance>`, opened as the zone's node is and made a test room. A developer who joins
+the copy with `?breach=` and the test run's name is held in that run's company at once, with nothing asked of the
+accounts, and arrives at the gate as a launched company does; the Waking and the gate open as they do. The test run
+asks its zone copy whether its gate opened, as a real run asks its zone (`breachRun` names the copy). In a test room
+alone:
+
+- **The Waking**: any one mooring held fills the Spire as all three do.
+- **The Two Shores**: a rift, once open, stays open whether its mooring is held or not, so no one is stranded.
+- **What unwrites the company** (the Mending's or the Seam's fusions, the Steward's last taking, the Lodestone left
+  lying, being Seen in the Ways at Hard) harms but loses no attempt: those are what one player cannot hold off alone.
+- **The fallen**: the tester never falls (their health stays at 1 at least), and one fallen into the dark stands again
+  at once.
 
 ## The Drowned Vale, in order
 

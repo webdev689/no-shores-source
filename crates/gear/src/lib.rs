@@ -39,6 +39,7 @@ pub mod left;
 pub mod looks;
 pub mod lore;
 pub mod mail;
+mod max_test;
 pub mod objectives;
 mod old_hands;
 pub mod playlist;
@@ -114,6 +115,8 @@ mod looks_tests;
 mod lore_tests;
 #[cfg(test)]
 mod mail_tests;
+#[cfg(test)]
+mod max_test_tests;
 #[cfg(test)]
 mod objectives_tests;
 #[cfg(test)]
