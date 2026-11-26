@@ -153,9 +153,10 @@ maps are not, as the game reads none. `fplayers.py --check` checks, without rend
 the canvas it was rendered on.
 The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without rendering.
 
-The `figures` workflow draws figure strips for both bodies and publishes them, only when a run is asked for (`anims`,
-the moves, and `layers`, empty for every layer): a cloud session holds no Cloudflare key, so this is how a figure strip
-reaches R2 from one. It runs a job for each set of layers (`layers.py --set`: classic, wardrobe, armour), body and move
+The `figures` workflow draws figure strips for both bodies and publishes them, only when a run is asked for: by hand
+(`anims`, the moves, and `layers`, empty for every layer), or by a push to a branch other than `main` that changes
+`tools/forge/figures-request.txt`, its first line the moves and its second the layers. A cloud session holds no
+Cloudflare key, so this is how a figure strip reaches R2 from one. It runs a job for each set of layers (`layers.py --set`: classic, wardrobe, armour), body and move
 in parallel, and one for each body's hair and beasts' layers in every move (`forge_publish.py jobs`), each with up to
 360 minutes and no secret. Each draws from an index begun empty, so its move's cell is reckoned from its own layers. One
 job then lays them all into the published tables (`forge_publish.py figures`, held by `tools/test_forge_figures.py`):

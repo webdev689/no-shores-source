@@ -1,16 +1,24 @@
 name: figures
 
 # Draws the forge's figure strips for both bodies and publishes them to R2 beside what is published, only when a run
-# is asked for. A job for each set of layers (layers.py --set), body and move draws in parallel, holding no secret,
-# each from an index begun empty, so its move's cell is reckoned from its own layers; the hair's and the beasts' few
-# layers draw every move in one job. One job lays them all into the tables (forge_publish.py `figures`) and publishes,
+# is asked for: by hand, or by a push that changes tools/forge/figures-request.txt on a branch other than main (its
+# first line the moves, its second the layers, empty for all), as a workflow not yet on main cannot be run by hand. A
+# job for each set of layers (layers.py --set), body and move draws in parallel, holding no secret, each from an index
+# begun empty, so its move's cell is reckoned from its own layers; the hair's and the beasts' few layers draw every
+# move in one job. One job lays them all into the tables (forge_publish.py `figures`) and publishes,
 # and its log ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
 on:
+  push:
+    # Never on main, where it runs only by hand: merging a branch that asked for a run must not start one there.
+    branches-ignore: [main]
+    paths:
+      - tools/forge/figures-request.txt
   workflow_dispatch:
     inputs:
       anims:
         description: "The moves to draw, comma-separated"
         required: true
+        default: ''
       layers:
         description: "Only these layers, comma-separated; empty for every layer of every set"
         required: false
@@ -25,6 +33,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       jobs: ${{ steps.plan.outputs.jobs }}
+      layers: ${{ steps.plan.outputs.layers }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -35,7 +44,14 @@ jobs:
         id: plan
         env:
           ANIMS: ${{ inputs.anims }}
-        run: echo "jobs=$(python3 -I tools/forge_publish.py jobs "$ANIMS")" >> "$GITHUB_OUTPUT"
+          LAYERS: ${{ inputs.layers }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            ANIMS=$(sed -n 1p tools/forge/figures-request.txt); LAYERS=$(sed -n 2p tools/forge/figures-request.txt)
+          fi
+          [[ "$LAYERS" =~ ^[a-z0-9_,]*$ ]] || { echo "::error::layers by their names, comma-separated"; exit 1; }
+          echo "layers=$LAYERS" >> "$GITHUB_OUTPUT"
+          echo "jobs=$(python3 -I tools/forge_publish.py jobs "$ANIMS")" >> "$GITHUB_OUTPUT"
 
   # No token here: the strips read only the forge's public tables. On four cores a strip's frame takes about 1.3 s,
   # and a set's layers in one move both bodies' are a few thousand frames, so a job has the hosted runner's most.
@@ -63,7 +79,7 @@ jobs:
           SET: ${{ matrix.set }}
           BODY: ${{ matrix.body }}
           ANIMS: ${{ matrix.anims }}
-          LAYERS: ${{ inputs.layers }}
+          LAYERS: ${{ needs.plan.outputs.layers }}
           OUT: ${{ runner.temp }}/figures/${{ matrix.name }}
         run: |
           start=$(date +%s)
