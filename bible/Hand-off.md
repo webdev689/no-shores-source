@@ -9,7 +9,8 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
+- **For the owner's yes**: #225 (this note rewritten, the owner's open points moved to [[Open Questions]], Claude's
+  calls typed `claude-calls`); #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
 - **Other sessions' work under way**: #223 (keepers' gifts, the house Arts' horde, escorts that ride, the horse and
   ship taught, keepers' screens after Destiny 2's), #221 (hostile ships and islands on the sea map, travel anywhere at
@@ -98,6 +99,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
+  splitting or tightening; held while #216, #218, #221 and #223, which edit all five, are open. The owner's to time.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The cloud environment.** A cloud session runs on the `no-shores-source` environment (personal, set up with the
