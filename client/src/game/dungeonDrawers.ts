@@ -21,6 +21,7 @@ import { DUNGEON_MAP, type MapBody } from './dungeonMap/dungeonMap.ts';
 import { MapInk } from './dungeonMap/mapInk.ts';
 import { PAPER, paperNode } from './dungeonMap/mapPaper.ts';
 import { listenToMap } from './dungeonMap/mapPointer.ts';
+import { chestsCounted } from './finds.ts';
 import { platedPlayers } from './social/social.ts';
 
 /** The door picture of Daggerfall's dungeon doors, where the props' table has not come. */
@@ -166,7 +167,8 @@ export class DungeonDrawers {
       }));
     const shown = DUNGEON_MAP.frame(you.seconds, paper, company);
     const walked = DUNGEON_MAP.dungeon;
-    PAPER.node = shown && paperNode(shown, dungeon.layout.name, PAPER.chests, performance.now() / 1000);
+    PAPER.node =
+      shown && paperNode(shown, dungeon.layout.name, chestsCounted(foot.gear?.gear), performance.now() / 1000);
     if (!shown || !walked) return null;
     const ink = (this.ink ??= new MapInk(this.gpu));
     ink.setCells(walked.words);
