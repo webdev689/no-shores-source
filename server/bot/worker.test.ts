@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { SESSION_IDLE_S, SESSION_MAX_S, STATE_KEEP_S, TICKET_KEEP_S, resetStarts } from './auth.ts';
+import { SESSION_IDLE_S, SESSION_MAX_S, STATE_COOKIE, STATE_KEEP_S, TICKET_KEEP_S, resetStarts } from './auth.ts';
 import {
   GUILD,
   MOD,
@@ -31,8 +31,11 @@ beforeEach(() => {
 const start = (to = '/panel/') => new Request(`https://bot.test/v1/auth/discord?to=${encodeURIComponent(to)}`);
 const stateOf = (answer: Response) => new URL(answer.headers.get('location') ?? '').searchParams.get('state') ?? '';
 const backOf = (answer: Response) => new URL(answer.headers.get('location') ?? '');
-const callback = (state: string, query = 'code=goodcode00000') =>
-  new Request(`https://bot.test/v1/auth/discord/callback?${query}&state=${state}`);
+/** Discord sending the browser back, which holds the state's cookie the start set (`held`: another's, or none). */
+const callback = (state: string, query = 'code=goodcode00000', held: string | null = state) =>
+  new Request(`https://bot.test/v1/auth/discord/callback?${query}&state=${state}`, {
+    headers: held === null ? {} : { Cookie: `theme=dark; ${STATE_COOKIE}=${held}` },
+  });
 
 /** A module with a command and a button, which says what reached it. */
 const greeter: ServerModule = {
@@ -243,6 +246,19 @@ test('sign-in: with no client secret or no application id, the panel is told sig
     const bot = await standWorker({ env });
     assert.equal(backOf(await bot.call(start())).hash, '#error=login-off');
   }
+});
+
+test('sign-in: a callback reached in a browser that did not start it is refused, as a link sent to sign someone in', async () => {
+  const bot = await standWorker();
+  const started = await bot.call(start());
+  const state = stateOf(started);
+  assert.match(started.headers.get('set-cookie') ?? '', new RegExp(`^${STATE_COOKIE}=${state};.*HttpOnly`));
+  assert.equal(backOf(await bot.call(callback(state, undefined, null))).hash, '#error=state', 'no cookie');
+  const other = stateOf(await bot.call(start()));
+  assert.equal(backOf(await bot.call(callback(state, undefined, other))).hash, '#error=state', "another's");
+  const back = await bot.call(callback(state));
+  assert.match(backOf(back).hash, /^#ticket=/, 'its own browser signs in');
+  assert.match(back.headers.get('set-cookie') ?? '', new RegExp(`^${STATE_COOKIE}=;.*Max-Age=0`), 'and lets it go');
 });
 
 test('sign-in: ten starts a minute from one address, then the panel is told to wait', async () => {

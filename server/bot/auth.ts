@@ -24,6 +24,10 @@ export const SEEN_EVERY_S = 300;
 /** Sign-ins one address may start a minute, in one isolate. */
 export const STARTS_A_MINUTE = 10;
 export const CALLBACK_PATH = '/v1/auth/discord/callback';
+/** The cookie the sign-in's state rides in, out to Discord and back: a callback carried to another browser (a link
+ *  sent to someone, to sign them in as its sender) finds none there, and is refused. */
+export const STATE_COOKIE = 'noshores_panel_state';
+const STATE_COOKIE_AT = `Path=/v1/auth/discord; HttpOnly; Secure; SameSite=Lax`;
 const CALL_TIMEOUT_MS = 8_000;
 
 export interface PanelUser {
@@ -120,21 +124,27 @@ export async function startLogin(context: AuthContext, url: URL): Promise<Respon
   discord.searchParams.set('code_challenge', await pkceChallenge(verifier));
   discord.searchParams.set('code_challenge_method', 'S256');
   discord.searchParams.set('prompt', 'none');
-  return redirect(discord.toString());
+  const away = redirect(discord.toString());
+  away.headers.append('Set-Cookie', `${STATE_COOKIE}=${state}; Max-Age=${STATE_KEEP_S}; ${STATE_COOKIE_AT}`);
+  return away;
 }
 
-/** GET /v1/auth/discord/callback: Discord sends the person back here. */
-export async function finishLogin(context: AuthContext, url: URL): Promise<Response> {
+/** GET /v1/auth/discord/callback: Discord sends the person back here, `cookies` the browser's own. */
+export async function finishLogin(context: AuthContext, url: URL, cookies: string | null): Promise<Response> {
   const panel = panelUrl(context.vars);
   if (!panel) return fail('panel-url', 500, {}, 'PANEL_URL is not set.');
   const back = (fragment: string, path = panel.pathname) => {
     const target = new URL(path, panel);
     target.hash = fragment;
-    return redirect(target.toString());
+    const sent = redirect(target.toString());
+    sent.headers.append('Set-Cookie', `${STATE_COOKIE}=; Max-Age=0; ${STATE_COOKIE_AT}`);
+    return sent;
   };
   const state = url.searchParams.get('state') ?? '';
   const code = url.searchParams.get('code') ?? '';
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(state)) return back('error=state');
+  const held = (cookies ?? '').split(/;\s*/).includes(`${STATE_COOKIE}=${state}`);
+  if (!held) return back('error=state');
   const row = await context.database
     .prepare('DELETE FROM oauth_states WHERE state_hash = ? RETURNING verifier, return_to, created_at')
     .bind(await sha256Hex(state))
