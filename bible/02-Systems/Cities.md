@@ -292,8 +292,14 @@ slowly. A picture is lighter or darker in patches some metres wide, so its repea
 (`path`) wear their own picture over the paving's, the flags in courses, lighter and warmer, so a way reads apart from
 the ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) wear their climate's own grass and
 dirt. These three take their pattern on top from the world, not the piece, so their pieces join as one surface where
-they meet or overlap (`solidMesh.ts`, `grounded`). The glow is lit warm and unshaded, brighter at night, each flame
-flickering on its own, and each glowing solid is a lamp ([[Sky]]). Faces are lit as the land is, with a
+they meet or overlap (`solidMesh.ts`, `grounded`). The glow is lit warm and unshaded, brighter at night, moving with its
+own light ([[Sky]], "Lamps"). Each glowing solid gives light by its shape and size (`cityLights.ts`,
+[[Lights as Claude Builds Them]]): coals (a brazier's, a hoop's, a pyramid's camp fire, a watchtower's) burn the game's
+fire on them, as tall as they are wide and a fifth more, casting its own light; a lantern (narrower than 0.65 m: a
+station's, a courtyard's, a mail rack's, a lamp post's at each of its flames) holds a small flame behind its glass,
+its lamp at the glass; the Beacon's 22 m glass burns eight great fires round its foot and lights one great lamp; a
+lantern room wider than 2 m (a lighthouse's) is its glass alone; a dome (a sunstone) breathes. A city's lights are
+laid once it is whole, its modules' meshes come. Faces are lit as the land is, with a
 little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.
 In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one, and each
 building's masses (its hull past where the masses are drawn) into the far one, a few boxes standing in for a model
@@ -446,7 +452,7 @@ building's place to the centimetre in the page, the same on every machine.
   All of it casts into both shadows but the near cells' and the crust, which cast into the near one. A spire's body has
   no top meshed: its tip stands on it.
 - **At night** a ruin's crystal glows brighter than any other crystal a city draws (its core 0.8 alight, against
-  0.45), so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
+  0.45), breathing, so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
   light (`CRYSTAL_LAMP`) a third of the way up it, reaching 6 m more than it stands tall, at most 30 m; with the
   crown's three, the sky's nearest lamps are chosen from them as from any city's.
 - **Its cost**, over the six ruins (`ruinBudget.test.ts` holds each under its limits): 101 276 to 157 326 triangles of

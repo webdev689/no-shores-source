@@ -403,8 +403,9 @@ The page says only what a choice or an act needs, in short words:
 - **The pieces** stand as the deal stands for the player (`PieceState`): a mouth open or shut, the lamp and the dead
   lamps lit (gold) or cold (grey), a tally post whole or broken, the reliquary shut or opened. Above ground they are
   the islands' kit's `passage` modules, placed in the hollow (`withPieces`), a lamp's and a dead lamp's lantern (the
-  kit's ember) glowing once lit and the kit's stone while cold; only while that pack has not come do they stand as
-  plain boxes. Under ground they are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each piece's
+  kit's ember) glowing once lit and the kit's stone while cold, a small flame burning in its glass and its light a
+  lantern's at the glass, as the islands light every ember ([[Island Drawing]], "The lights"); only while that pack
+  has not come do they stand as plain boxes. Under ground they are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each piece's
   foot turned to its facing, in the pictures of the cell it stands on, into a mesh of the dungeon's own made again as
   the deal's state changes; a lamp's and a dead lamp's `glow` part is lit, or the cell's stone while cold, and an open
   mouth's is daylight, drawn as light. The lamp lit burns from a flame in its cage, its light at the cage's middle
@@ -465,7 +466,8 @@ and a file of one's own asks for any other. Every picture is drawn by the game's
   (`aim`; a lamp from its arrival's side), or from the game's own camera behind a body at the arrival (`own`, and under
   ground wherever no `eye` is asked, its boom kept off the way in's leaf), or above ground some metres (`back`, 3 unless said)
   short of the placement nearest it whose module begins `near` (a strand's wreck), facing it. Above ground the hollow is the islands' layer's ground and modules and the land's own plants
-  (`IslesNature`), lit and shadowed by the sky of its climate where it lies at the world's `hour`, under a plain sky
+  (`IslesNature`), lit and shadowed by the sky of its climate where it lies at the world's `hour`, its embers' fires
+  burning and their lamps lit as the game's scene draws them, under a plain sky
   colour where the game draws its dome; under ground the dungeon's scene (`DungeonScene`) with its torches and the
   pieces' lights. The pieces' boxes are drawn only while their pack has not come, as in the game.
 - **The way between zones**: `wayShot`, its dots framed over the island at the moment `loadDoor` is given (seconds

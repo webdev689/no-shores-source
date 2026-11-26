@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CityLamps, carriedLight, flicker, type LampPlace, lampsLit, lampsRound } from './lamps.ts';
 import { AFTERNOON, LAMPS_MOST, PUDDLE_WRAP_M, skyNumbers, WRAP_M } from './skyUniform.ts';
+import { breath, lightMotion, motionCode } from './flicker.ts';
 
 const place = (x: number, seed = 0): LampPlace => ({ at: [x, 0, 2], reachM: 10, light: [1, 0.6, 0.3], seed });
 
@@ -85,7 +86,8 @@ test('of a city full of lamps, the nearest lit are those a full sort finds, in i
     lamps.map((lamp) => lamp.light[0]),
     ranked.slice(0, LAMPS_MOST).map(({ one, away }) => {
       const cut = ranked[LAMPS_MOST]?.away ?? Infinity;
-      return one.light[0] * flicker(one.seed, 0) * Math.min(1, (cut - away) / 10);
+      const motion = lightMotion(Math.fround(motionCode('fire', one.seed)), 0);
+      return one.light[0] * motion * Math.min(1, (cut - away) / 10);
     }),
   );
 });
@@ -156,4 +158,41 @@ test('a lamp too faint to show takes no place among the lit: a bright one furthe
   const lamps = lampsRound([0, 0, 0], [...faint, place(30, 9)], null, 0, 0);
   assert.equal(lamps.length, 1);
   assert.deepEqual(lamps[0]?.fromEye, [30, 0, 2]);
+});
+
+test("a view's fires are kept with its lamps, and a change to any view's fires is told", () => {
+  const lamps = new CityLamps();
+  const [city, isles] = [{}, {}];
+  const fire = (x: number) => ({ at: [x, 0, 0] as const, sizeM: 1, seed: x, casts: true });
+  lamps.set(city, [place(1)], [fire(1), fire(2)]);
+  const first = lamps.firesChanged;
+  lamps.set(isles, [], [fire(3)]);
+  assert.deepEqual(
+    lamps.fires.map((each) => each.at[0]),
+    [1, 2, 3],
+  );
+  assert.ok(lamps.firesChanged > first);
+  const second = lamps.firesChanged;
+  lamps.set(city, [place(2)]);
+  assert.deepEqual(
+    lamps.fires.map((each) => each.at[0]),
+    [3],
+    "the city's fires out with its last set",
+  );
+  assert.ok(lamps.firesChanged > second);
+  const third = lamps.firesChanged;
+  lamps.set(city, [place(4)]);
+  assert.equal(lamps.firesChanged, third, 'lamps alone changed: the fires burn on');
+});
+
+test("a lamp carries its motion to the uniform, a stone's breathing; one carried carries none", () => {
+  const stone: LampPlace = { ...place(1, 5), motion: 'stone' };
+  const [carried, lit] = lampsRound([0, 0, 0], [stone], { light: 'torch', feet: [0, 0, 0] }, 0, 3.3);
+  assert.equal(carried?.motion, undefined);
+  assert.equal(Math.floor(lit?.motion ?? 0), 3);
+  assert.ok(Math.abs((lit?.light[0] ?? 0) - breath(5, 3.3, 0.75)) < 1e-5);
+  const numbers = skyNumbers(AFTERNOON, [carried!, lit!]);
+  const firstLamp = 16 * 4;
+  assert.equal(numbers[firstLamp + 7], 0);
+  assert.equal(numbers[firstLamp + 15], lit?.motion);
 });

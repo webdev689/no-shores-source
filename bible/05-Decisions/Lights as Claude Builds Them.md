@@ -10,7 +10,8 @@ Asked how the game's flames and lamps should look and move: "your decision".
 ## What it settles
 
 Claude's choices in building [[Every Light Is Redesigned and Animated, and Each Casts Light]]. The owner can change any
-of them. How it works is in [[Sky]] ("Lamps"), [[Dungeons]], [[Cities]] and [[Cinema]] ("Flames").
+of them. How it works is in [[Sky]] ("Lamps"), [[Dungeons]], [[Cities]], [[Layouts]], [[Island Drawing]], [[Passages]],
+[[Modules]] and [[Cinema]] ("Flames").
 
 | Choice | Chosen | Why |
 |---|---|---|
@@ -37,3 +38,15 @@ of them. How it works is in [[Sky]] ("Lamps"), [[Dungeons]], [[Cities]] and [[Ci
 | A ship's lantern | A glass between six iron posts on its taffrail post; its flame drawn through the glass by the ship's shader, a soft halo round it, its light a lamp reaching 13 m, as a carried lantern's | The ship's pieces are one mesh: the flame is drawn on its glass, not as a separate model |
 | A sea fight's lights | Each flash, blast and fire is a lamp for its life at DFO's reach; a fire's light flickers from 0.6 of its full | They are DFO's point lights |
 | Lamps on the sea | Open water scatters a little of a lamp's light and its foam more; each lamp glitters on the waves toward the eye, fading more slowly than its light | A light's path across dark water is how a lamp at sea reads |
+| A glowing solid's kind on land | Read from its shape and size: a dome is a stone (a sunstone) and breathes; a column 8 m wide or more is the Beacon; a pyramid, or a block or column from 0.65 m to 2 m wide, is coals a fire burns on; one 2 m wide or more is a lantern room (the lighthouse's); a narrower one a lantern | The plan names no kind; its shapes and sizes tell its braziers, hoops, camp fires, watchtower fire and lanterns apart |
+| A fire on coals | As tall as the coals are wide and a fifth more, half a metre to four, sunk a fifth of the coals' height into them, casting its own light | Its tongues rise out of the coals, not off their top |
+| A lantern's flame on land | 0.6 of its glass's narrowest side, 0.1 m to 0.35 m, its base a little under the glass's middle; its light the lantern's as it stood (some ten metres) and a lantern's flicker | A lantern's light reached that far; a fire's eight times a small flame's height would leave a city's lanterns lighting nothing |
+| A module's lantern (a lamp post's, a sconce's, a candle) | A lantern at each of its flames, found where its mesh glows, its glass taken as 0.3 m; before its mesh has come, at its middle | The module's own flames say where its lanterns are |
+| The Beacon | Eight fires 4 m tall, each along a side of a ring round the foot of its 22 m glass, one great lamp at its middle seeded as the first | Its glass is too deep for a flame inside to show, and 4 m is the tallest fire drawn |
+| A lantern room wider than 2 m | Its glass alone, glowing and flickering with its lamp | A flame inside cannot show through it |
+| A glow on land moving with its light | Each lamp carries its kind and seed to the sky's uniform; a glowing surface moves with the nearest lamp within a third of its reach, a crystal only with a stone's; with none near, by where it stands | As under ground, one source's glow and light then move together without the mesh knowing which lamp it belongs to |
+| A flame seen through what stands nearer, on land | 0.3 m | A lantern's glass is drawn solid, its flame some 0.25 m behind it |
+| An island's ember | 0.5 m wide or more, coals (a camp fire's) with a fire on them; narrower, a lantern's glass (an adit's, a passage's lamp and a dead lamp lit) with a small flame inside; an open mouth's way on, none | The kit names one part for both; its size tells them apart |
+| An outpost's fire pit and braziers | Each flame of the module stays its own glowing part, flickering with a fire's lamp reaching 9 m at it | They are a kit piece's flames, as a dungeon's kit pieces' |
+| A fire's smoke on land | Leans with the sky's wind | The wind is known; smoke standing straight in a gale reads wrong |
+| Where a flame's glow stops reading | 600 times the fire's height (a lantern's 0.2 m flame some 120 m, the Beacon's fires 2.4 km): past it the fire is not drawn, its glowing glass or coals still glowing | A city burns hundreds of small flames; their glows past that are under two pixels and cost a frame's time |
