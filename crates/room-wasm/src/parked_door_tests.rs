@@ -138,3 +138,13 @@ fn room_tick_now() -> u64 {
     })
     .unwrap_or(0)
 }
+
+#[test]
+fn a_ship_whose_player_sails_another_tiers_sea_is_let_go_here_as_that_sea_says() {
+    let (_, near) = ann_left();
+    let afloat = format!(r#"{{"accounts":[],"afloat":["ann"],"seconds":{NOW}}}"#);
+    assert_eq!(sea_ashore(afloat.as_bytes()), "[]");
+    assert_eq!(sea_ashore(&word(r#""ann""#, NOW)), "[]", "let go: named again, it is seen no more");
+    snapshot_door::prepare();
+    assert_eq!(ships_in(&snapshot_door::snapshot_for(near)).0, [(near, 0)]);
+}

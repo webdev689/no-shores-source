@@ -98,8 +98,9 @@ impl Sea {
         }
     }
 
-    /// A player back at sea under `account` sails their ship again: it lies parked no more.
-    pub(super) fn unpark(&mut self, account: &str) {
+    /// A player back at sea under `account`, in this sea or another tier's, sails their ship again: it lies parked no
+    /// more.
+    pub fn unpark(&mut self, account: &str) {
         self.parked.by_account.remove(account);
     }
 

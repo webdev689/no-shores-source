@@ -257,7 +257,7 @@ export class RoomHost extends DurableObject<Env> {
         // Kept, a run's player plays; a sea island's dungeon's waits on the sea's word that they are landed.
         if (owned && !this.name.startsWith('sea-dungeon-')) this.guarded(() => this.room.hold(player, false), false);
         if (owned && this.island) void this.landOn(this.island, player, account);
-        if (owned) this.shore.own(player, account);
+        if (owned) this.shore.own(player, account, seaRoom(this.name));
         return owned;
       },
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),

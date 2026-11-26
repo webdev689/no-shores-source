@@ -128,3 +128,20 @@ test('a sea’s last answer is handed on no longer than 45 s once it stops answe
   await new Promise((settled) => setImmediate(settled));
   assert.equal(given, '[]', 'past 45 s, as its namings there have lapsed');
 });
+
+test('a sea that learns a player’s account tells the other two to let go of their ship parked there', () => {
+  const words: [string, string][] = [];
+  const sea = (name: string) => ({
+    ashoreWord: (word: string) => {
+      words.push([name, word]);
+      return Promise.resolve('[]');
+    },
+  });
+  const ashore = new Ashore(sea, () => undefined);
+  ashore.own(4, 'ann', 1);
+  const told = words.map(([name, word]) => [name, (JSON.parse(word) as { afloat: unknown }).afloat]);
+  assert.deepEqual(told, [
+    ['sea', ['ann']],
+    ['sea--abyss', ['ann']],
+  ]);
+});

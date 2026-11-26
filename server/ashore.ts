@@ -70,8 +70,17 @@ export class Ashore {
     this.place = place;
   }
 
-  /** A player's account, as the room learns it: the seas are told at once. */
-  own(player: number, account: string): void {
+  /** A player's account, as the room learns it: ashore, the seas are told at once. At sea (`seas`, this sea's tier),
+   *  the other two are told to let go of the player's ship parked there, as they sail it here now. */
+  own(player: number, account: string, seas: number | null = null): void {
+    if (seas !== null) {
+      const word = JSON.stringify({ accounts: [], afloat: [account], seconds: Math.floor(Date.now() / 1000) });
+      for (const sea of SEAS.filter((name) => name !== seaRoomName(seas)))
+        void this.sea(sea)
+          .ashoreWord(word)
+          .catch(() => undefined);
+      return;
+    }
     this.accounts.set(player, account);
     this.name(Date.now());
   }
