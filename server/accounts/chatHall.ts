@@ -331,7 +331,8 @@ export class Hall {
     const kept = this.kept.get(account);
     if (kept && now - kept.at < APART_KEPT_MS) return kept;
     const answered = await Promise.all([this.deps.apart(account), this.deps.mutedBy(account)]).catch(() => null);
-    if (answered === null) return kept ?? null;
+    // The last answer held now: another of the account's sockets may have been answered while this one waited.
+    if (answered === null) return this.kept.get(account) ?? null;
     const [apart, muters] = answered;
     const fresh = { at: now, apart: new Set(apart), muters: new Set(muters) };
     if (this.holds(account)) this.kept.set(account, fresh);

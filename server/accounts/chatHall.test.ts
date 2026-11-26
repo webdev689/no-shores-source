@@ -317,6 +317,9 @@ test('a line whose speaker’s blocks cannot be read is never sent as though nob
   await ada.say({ say: 'hello all', channel: 'world' });
   assert.deepEqual(lines(cal.sent), [], 'Cal blocks Ada');
   assert.equal(told(ada.sent), UNSENT, 'Ada is told it was not sent');
+  clock.now += 1_000;
+  await ada.say({ say: 'psst', channel: 'whisper', to: 'Cal' });
+  assert.deepEqual([lines(cal.sent), told(ada.sent)], [[], UNSENT], 'a whisper as well');
   failing.apart = false;
   clock.now += 1_000;
   await ada.say({ say: 'hello again', channel: 'world' });

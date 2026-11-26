@@ -313,6 +313,19 @@ test('a kick or a lead judged again as it is written: one who moved on meanwhile
   assert.equal((await cal.ask('company/lead', { name: 'Dee' })).status, 404, 'she had gone');
   Object.assign(deps, { database: real });
   assert.deepEqual({ ...(await leaderOf(real, 'Cal')) }, { leads: 1, member: 1 }, 'the lead stays with a member');
+  // Cal hands the lead on as his own kick is read: led by Ben now, the kick is his no longer.
+  await dee.ask('company/join', { name: 'Cal' });
+  before(
+    deps,
+    (sql) => sql.startsWith('DELETE FROM company_members'),
+    async () => {
+      Object.assign(deps, { database: real });
+      await cal.ask('company/lead', { name: 'Ben' });
+    },
+  );
+  assert.equal((await cal.ask('company/kick', { name: 'Dee' })).status, 404, 'no longer the leader');
+  Object.assign(deps, { database: real });
+  assert.deepEqual(names((await dee.roster()).company?.members ?? []).sort(), ['Ben', 'Cal', 'Dee'], 'Dee stays');
 });
 
 test('the privacy shown is the leader’s, which is the one that applies', async () => {

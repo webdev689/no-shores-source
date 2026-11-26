@@ -37,6 +37,8 @@ export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
 /** What the keeper needs of the room. */
 export interface KeptRoom {
   character(player: number): string | null;
+  /** Opens a leaving player's chests and posts what lies for them to their mail (`partFrom`). */
+  mailLying?(player: number): void;
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
@@ -255,7 +257,9 @@ export class Keeper {
     let takenOn = false;
     for (const [other, kept] of this.held)
       if (kept.account === claimed.account) {
-        const newest = kept.saved === claimed.body && body === claimed.body ? this.room.character(other) : null;
+        const takeOn = kept.saved === claimed.body && body === claimed.body;
+        if (takeOn) this.room.mailLying?.(other);
+        const newest = takeOn ? this.room.character(other) : null;
         this.held.delete(other);
         this.lost(other);
         if (newest !== null && newest !== body) takenOn ||= this.room.restoreCharacter(player, newest);
