@@ -1,8 +1,8 @@
 /**
- * Who stands ashore, told to the sea. Every room on an island (a node's room, its dungeons' and runs', a sea island's
- * room and its dungeon's) names the accounts of the players it holds to the sea rooms they land from (every tier's
- * for a social space, its own tier's otherwise) as each one's account is known and every 15 seconds after, with the
- * host's time, as a sea room stops ticking while nobody sails it. The sea keeps each named account's parked ship seen
+ * Who stands ashore, told to the sea. Every room on an island (a node's room, its dungeons' and runs', a passage
+ * zone's, a sea island's room and its dungeon's) names the accounts of the players it holds to all three seas as each
+ * one's account is known and every 15 seconds after, with the host's time, as a sea room stops ticking while nobody
+ * sails it. The sea keeps each named account's parked ship seen
  * while it lies at that island (a run started at sea keeps it seen wherever it lies), holds a sea island named, and
  * answers with every ship parked at the island, which the room sends in its snapshots (crates/room/src/sea_parked.rs).
  */
@@ -23,25 +23,25 @@ export interface Place {
   readonly island: { readonly continent: string } | { readonly island: number; readonly seed: string } | null;
 }
 
-/** Where the room `name` stands ashore: at the sea island it is on or behind (`isle`, with its sea's room), at its
- *  node's island (`reach`, null where unknown), or anywhere for a run started at sea; null for a room on no island. */
+/** Every sea, by its tier: a player may come ashore anywhere from any of them (a social space's or an outpost's node
+ *  from any tier, an Elite Dungeon's run, a Breach's zone and run and a passage zone from a node at any), so every
+ *  room on land names its players to all three. */
+const SEAS = [0, 1, 2].map(seaRoomName);
+
+/** Where the room `name` stands ashore: at the sea island it is on or behind (`isle`), at its node's island (`reach`,
+ *  null where unknown) or a passage zone's, or anywhere for a run started at sea; null for a room on no island. */
 export function placeOf(
   name: string,
   reach: Reach | null,
-  isle: { readonly id: number; readonly seed: string; readonly sea: string } | null,
+  isle: { readonly id: number; readonly seed: string } | null,
 ): Place | null {
-  if (isle) return { seas: [isle.sea], island: { island: isle.id, seed: isle.seed } };
-  // A passage zone lies under its island and is dived into from a patrol at any tier: its divers' ships may lie in any
-  // of the three seas.
+  if (isle) return { seas: SEAS, island: { island: isle.id, seed: isle.seed } };
   const passage = passageRoom(name);
-  if (passage) return { seas: [0, 1, 2].map(seaRoomName), island: { continent: passage.island } };
+  if (passage) return { seas: SEAS, island: { continent: passage.island } };
   const node = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
   if (!node) return null;
-  // Entered from any tier's sea (`arrives`), a run started at sea names its players to all three.
-  if (startedAtSea(name)) return { seas: [0, 1, 2].map(seaRoomName), island: null };
-  if (!reach) return null;
-  const seas = reach.social ? [0, 1, 2].map(seaRoomName) : [seaRoomName(node.seas)];
-  return { seas, island: { continent: reach.continent } };
+  if (startedAtSea(name)) return { seas: SEAS, island: null };
+  return reach ? { seas: SEAS, island: { continent: reach.continent } } : null;
 }
 
 /** A room's naming of its players ashore: where it stands (none for a room on no island, which names no one), each

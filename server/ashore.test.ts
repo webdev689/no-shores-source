@@ -5,30 +5,31 @@ import type { Reach } from './arrival.ts';
 
 const reach = (social: boolean): Reach => ({ social, continent: 'continent-1', coast: [], gatedFrom: [] });
 
-test('a room names its players to the seas they land from, at its island', () => {
+const SEAS = ['sea', 'sea--elite', 'sea--abyss'];
+
+test('every room on land names its players to all three seas, at its island', () => {
   assert.deepEqual(placeOf('node-overlook-social', reach(true), null), {
-    seas: ['sea', 'sea--elite', 'sea--abyss'],
+    seas: SEAS,
     island: { continent: 'continent-1' },
   });
   assert.deepEqual(placeOf('node-gullwing-vale--elite', reach(false), null), {
-    seas: ['sea--elite'],
+    seas: SEAS,
     island: { continent: 'continent-1' },
   });
-  assert.deepEqual(placeOf('node-gullwing-vale--elite--dungeon-1--run-a1b2c3d4', reach(false), null)?.seas, [
-    'sea--elite',
-  ]);
+  // An Elite Dungeon's run is entered from its node at any tier, so its players' ships may lie in any sea.
+  assert.deepEqual(placeOf('node-gullwing-vale--elite--dungeon-1--run-a1b2c3d4', reach(false), null)?.seas, SEAS);
   // A run started at sea is entered from any tier's sea, so its players' ships may lie in any of them.
   assert.deepEqual(placeOf('node-krakens-grotto--sea--run-k3j4h5g6', null, null), {
-    seas: ['sea', 'sea--elite', 'sea--abyss'],
+    seas: SEAS,
     island: null,
   });
-  assert.deepEqual(placeOf('isle-7-00000000000000ff--elite', null, { id: 7, seed: '255', sea: 'sea--elite' }), {
-    seas: ['sea--elite'],
+  assert.deepEqual(placeOf('isle-7-00000000000000ff--elite', null, { id: 7, seed: '255' }), {
+    seas: SEAS,
     island: { island: 7, seed: '255' },
   });
   // A passage zone under its island is entered from a patrol at any tier, so its divers' ships may lie in any sea.
   assert.deepEqual(placeOf('passage-continent-1-w12-z3--run-a1b2c3d4', null, null), {
-    seas: ['sea', 'sea--elite', 'sea--abyss'],
+    seas: SEAS,
     island: { continent: 'continent-1' },
   });
   assert.equal(placeOf('node-gullwing-vale', null, null), null, 'a node whose island is unknown');
