@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { entranceOf, roomName, sessionHash } from './joinRequest.ts';
+import { entranceOf, joinedRoom, roomName, sessionHash } from './joinRequest.ts';
+import { passageRoomName } from './roomNames.ts';
 
 const asked = (path: string) => new Request(`https://rooms.example/${path}`);
 
@@ -12,6 +13,34 @@ test('a join names its room by its one spelling, and only a room’s name', () =
   );
   for (const path of ['room/', 'room/Node-X', 'room/a/b', 'rooms/node-x', `room/${'a'.repeat(65)}`])
     assert.equal(roomName(asked(path)), null, path);
+});
+
+test('only a name the rooms open is a room: any other is refused before an object is made for it', () => {
+  const rooms = [
+    'sea',
+    'sea--abyss',
+    'node-tidewall--elite',
+    'isle-7-0123456789abcdef--elite',
+    'sea-dungeon-continent-1-crypt-0123abcd',
+    passageRoomName('continent-1', 3, 2),
+    'fleet-editor',
+    'test-room-launch-1',
+  ];
+  for (const name of rooms) assert.equal(roomName(asked(`room/${name}`)), name, name);
+  for (const name of ['a1', 'a99999', 'sea--normal', 'isle-zz', 'sea-dungeon-x', 'passage-x', 'node-', 'fleet', 'test'])
+    assert.equal(roomName(asked(`room/${name}`)), null, name);
+});
+
+test('the Worker answers a room asked for without a WebSocket 426, and a name no room has 404', async () => {
+  const upgraded = (path: string) =>
+    new Request(`https://rooms.example/${path}`, { headers: { Upgrade: 'websocket' } });
+  assert.equal(joinedRoom(upgraded('room/sea')), 'sea');
+  const plain = joinedRoom(asked('room/sea'));
+  assert.ok(plain instanceof Response && plain.status === 426);
+  const unknown = joinedRoom(upgraded('room/a1'));
+  assert.ok(unknown instanceof Response && unknown.status === 404);
+  const health = joinedRoom(asked('health'));
+  assert.ok(health instanceof Response && health.status === 200, await (health as Response).text());
 });
 
 test('a join stands at the entrance it asks for, one digit, or at none', () => {
