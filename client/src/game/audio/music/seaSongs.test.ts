@@ -109,7 +109,8 @@ test("a voyage broken by stops ashore, a death or the story still hears the sky'
     }
   };
   const silence = { ...sailing, story: { kind: 'silence', cut: false } } as const;
-  for (const between of [ashore, { ...ashore, dead: true }, silence]) {
+  // The death and the story each follow a voyage that ended on the swell, which the die would pick again.
+  for (const between of [{ ...ashore, dead: true }, ashore, silence]) {
     run(400, sailing);
     run(400, ashore);
     run(5, between);
