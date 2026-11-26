@@ -10,8 +10,6 @@ import resources from '../../../../content/gear/resources.json' with { type: 'js
 /** How near a mouth's middle, and a dead lamp or the lamp, a player stands to use it, metres. */
 export const MOUTH_REACH_M = 4;
 export const HOLD_REACH_M = 3;
-/** How long E is held at a dead lamp to kindle it, seconds (the lamp's is `LAMP_HOLD_S`). */
-export const KINDLE_HOLD_S = 3;
 
 type Point = readonly [number, number];
 const near = (spot: Point, x: number, y: number, reach: number) => Math.hypot(spot[0] - x, spot[1] - y) <= reach;

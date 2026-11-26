@@ -167,6 +167,16 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     assert.equal(desktop(), told);
     askDesktop({ ask: 'drawn' });
     assert.deepEqual(sent.at(-1), { kind: 'desktop', ask: { ask: 'drawn' } });
+    // A picture driver's hook that throws still answers, saying why.
+    Object.assign(globalThis, {
+      __qaBroken: () => {
+        throw new Error('no such view');
+      },
+    });
+    away.heard({ kind: 'qa', id: 7, hook: '__qaBroken', args: [] });
+    await new Promise((settled) => setTimeout(settled));
+    assert.deepEqual(sent.at(-1), { kind: 'qa', id: 7, answer: 'Error: no such view' });
+    delete (globalThis as { __qaBroken?: unknown }).__qaBroken;
   } finally {
     useDesktop(null, () => undefined);
     for (const [name, descriptor] of before)

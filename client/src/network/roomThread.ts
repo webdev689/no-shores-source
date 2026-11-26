@@ -238,6 +238,8 @@ export class RoomThread implements RoomLink {
 
   /** `told` posted, and the word answering it, as the worker answers each room's asks in turn. */
   private asked(told: ToRooms): Promise<string> {
+    // A worker that failed answers nothing: none at once, as for a room lost.
+    if (portFailed) return Promise.resolve('');
     const answer = new Promise<string>((resolve) => words.set(this.id, [...(words.get(this.id) ?? []), resolve]));
     roomPort().post(told);
     return answer;

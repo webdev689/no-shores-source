@@ -9,6 +9,7 @@ import type { FightEvent } from '../network/messages.ts';
 import type { BreachPlan } from './breachPlan.ts';
 import { TICKS_A_SECOND } from './hudLaw.ts';
 import { clockWords } from './tasks.ts';
+import { percentWords } from '../ui/percent.ts';
 
 type Point = readonly [number, number, number];
 
@@ -50,7 +51,6 @@ export function ticksWords(ticks: number): string {
   return ticks <= 0 ? '' : clockWords(ticks / TICKS_A_SECOND);
 }
 
-const percent = (share: number) => `${Math.round(share * 100)}%`;
 const tierName = (plan: BreachPlan, tier: number) => plan.tiers[tier]?.name ?? '';
 
 /** The revives left in words: "1 revive left", "No revives left"; empty where none are counted (-1). */
@@ -118,7 +118,7 @@ export function gateBanner(
     place,
     clock: '',
     objective,
-    bar: seen.heldBy && !seen.woken ? { share: seen.fill, label: `Spire ${percent(seen.fill)}` } : null,
+    bar: seen.heldBy && !seen.woken ? { share: seen.fill, label: `Spire ${percentWords(seen.fill)}` } : null,
     heroic: null,
     bonus: null,
     elsewhere: inside.length > 0 ? `Inside: ${inside.join('; ')}` : '',
@@ -128,7 +128,7 @@ export function gateBanner(
 /** The gate in one line, for the zone's banner while another stands there: "The Drowned Vale: the Waking, Spire 40%
  *  · Inside: Ada · Hard · The Choir". Empty while nothing stirs. */
 export function gateLine(plan: BreachPlan, seen: BreachSeen): string {
-  const waking = seen.woken ? 'the gate open' : seen.heldBy ? `the Waking, Spire ${percent(seen.fill)}` : '';
+  const waking = seen.woken ? 'the gate open' : seen.heldBy ? `the Waking, Spire ${percentWords(seen.fill)}` : '';
   const inside = insideWords(plan, seen);
   const parts = [waking, inside.length > 0 ? `Inside: ${inside.join('; ')}` : ''].filter(Boolean);
   return parts.length > 0 ? `${plan.name}: ${parts.join(' · ')}` : '';
@@ -139,8 +139,8 @@ export function gateLine(plan: BreachPlan, seen: BreachSeen): string {
 export function stoneWords(seen: BreachSeen, nameOf: (player: number) => string): string {
   if (seen.stone === STONE.plinth) return 'Lodestone on its plinth';
   if (seen.stone === STONE.borne) {
-    const hold = seen.held > 0 ? ` · Hold True ${percent(seen.held)}` : '';
-    return `Lodestone borne by ${nameOf(seen.bearer)} · charge ${percent(seen.charge)}${hold}`;
+    const hold = seen.held > 0 ? ` · Hold True ${percentWords(seen.held)}` : '';
+    return `Lodestone borne by ${nameOf(seen.bearer)} · charge ${percentWords(seen.charge)}${hold}`;
   }
   if (seen.stone === STONE.lying)
     return seen.lyingTicks > 0 ? `Lodestone lying · unwritten in ${ticksWords(seen.lyingTicks)}` : 'Lodestone lying';
@@ -248,7 +248,7 @@ function underWay(seen: BreachSeen, counts: RunCounts, nameOf: (player: number) 
           rift === RIFT.open
             ? 'open'
             : rift === RIFT.opening
-              ? `opening ${percent(seen.riftHeld[index] ?? 0)}`
+              ? `opening ${percentWords(seen.riftHeld[index] ?? 0)}`
               : 'shut';
         return `Rift of ${SHORES[index] ?? index} ${state}`;
       });

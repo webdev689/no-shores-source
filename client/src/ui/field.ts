@@ -134,6 +134,10 @@ export function edited(
   most: number,
 ): FieldState {
   const next = replaced(state, edit.from, edit.to, edit.text, most);
+  // Typing the most cut short leaves the caret after what went in, as a field with a most does, not where the browser
+  // put it for all it typed.
+  const put = next.text.length - (state.text.length - (edit.to - edit.from));
+  if (put < edit.text.length) return next;
   const within = (place: number) => Math.max(0, Math.min(next.text.length, place));
   return { ...next, caret: within(edit.caret), anchor: within(edit.anchor) };
 }

@@ -200,7 +200,7 @@ they play in holds it while they are there.
   joined again keeps the ask, so one who logged back in stands again at the spot last saved. One who has just played
   the story through, one with none kept, or one whose social space is not open on the landmass arrives at Overlook.
   The sea's tier is Normal, as every voyage's begins. Offline, where no room keeps a character, the page keeps the
-  place itself in the browser (`noshores.place`, every 10 s and as the page hides or goes, `keepPlace`), the ship
+  place itself in the browser (`noshores.place`, within a second of each change and as the page hides or goes, `keepPlace`), the ship
   where it lay and the player's spot across, not its height, and resumes from it the same way, the player on the
   ground under the spot. A page reloaded the moment it leaves a room may read the place before that room has saved
   it, and so resumes at the one before.
