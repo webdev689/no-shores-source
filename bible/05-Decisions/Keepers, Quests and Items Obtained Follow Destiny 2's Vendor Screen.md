@@ -26,11 +26,15 @@ The reference, a screenshot of Destiny 2's Gunsmith, Banshee-44, which stays out
   ("Finishers") and a line telling the key to press ("Press F1 to open your character screen."). At the far right,
   dim, the key and "Open Character".
 
+After an audit of the work, shown the keepers' screens as built, each keeper on a ground painted in their colour rather
+than in their own place, the owner answered: "Yeah I love this"
+
 ## What it settles
 
 - **Speaking with a keeper follows the reference** ([[Interface]], "The social space's counters"; [[Speech]]).
 - **A quest is an item the player acquires from a keeper**, shown as the reference's card: its name, its kind, its
   words, its objectives ticked as they are met, a quote, and Acquire ([[Quests]]).
 - **What the player obtains is announced as the reference's notice at the foot of the screen** ([[Interface]]).
+- **The keeper stands on a ground painted in their colour**, as built, not in their own place ([[Interface]]).
 - **The work is detailed and finished whole**; the rest is Claude's, the owner's to change:
   [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]].
