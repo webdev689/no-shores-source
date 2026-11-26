@@ -1,9 +1,10 @@
 //! Ships lying parked: a player who leaves the sea with their ship at rest by an island leaves it lying where it is,
 //! kept by their account. It is seen, at sea and from the island, only while a place's room names that account ashore
 //! at the island it lies at; unseen once no room names it (its player logged off or gone elsewhere), seen again as one
-//! does, and let go after a day unnamed or as its player comes back to the sea, the ship theirs again. A parked ship is
-//! never one of the sea's ships: no hostile ship, fight or island heeds it. Its namings are timed by the host's clock,
-//! as the rooms' words tell it (`tell_seconds`), for a sea room ticks only while someone sails it.
+//! does, and let go after a day unnamed or as its player comes back to any sea, the ship theirs again. A parked ship
+//! is never one of the sea's ships: no hostile ship or fight heeds it, though a sea island is rolled clear of it. Its
+//! namings are timed by the host's clock, as the rooms' words tell it (`tell_seconds`), for a sea room ticks only
+//! while someone sails it.
 
 use super::islands::Islands;
 use super::{Coast, Sea, Ship, ShipLook, whole};
