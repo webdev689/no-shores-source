@@ -231,14 +231,17 @@ The decisions in [[Open Questions]] are not repeated here.
   [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]],
   [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]). Home waters end 10 km
   from Overlook's coast and the Lantern Sea past it is the Grey Tithe's at levels 1 to 4; hostile rolls every 30 to
-  70 s; islands up to 3 within 8 km, 0.45 a roll, 144 at most; a travel anywhere at sea is taken and the map asks for
-  it; the room sends each player the hostile ships (fighting ones too) and islands in their water with the chart, the
-  map marks them and washes the Lantern Sea's open sea as the Tithe's. Then five read-only audits (the rules, the
-  wire and server, the page, the bible and tests, regressions elsewhere), each finding fixed with a test that failed
-  first or answered in the pull request; and the owner's four answers: home waters shelter fully, islands keep clear
-  of the lanes, travel is a fade out and in with no cinematic, the Lantern Sea keeps its mix. Tested offline (the
-  changed crates' and the TypeScript suites, the full check); CI's full check on the PR's head. Not pictured, played
-  by hand, on a real GPU or in a deployed room.
+  70 s (340 ships to 177 for a player under way over five seas of four hours; at rest the cap of three in sight
+  absorbs most of it); islands up to 3 within 8 km, 0.45 a roll, 144 at most, clear of every leg the traffic sails;
+  a travel anywhere at sea is a fade out and in, refused when it would not move the ship, and holds the next roll;
+  the room sends each player the hostile ships (still fighting ones too) and islands in their water with the chart.
+  Home waters shelter fully: no hostile hunts, keeps at sea, clocks or sights by a player inside them, no clash stays
+  for one, and a fight's captains break off once its players lie there. Two rounds of read-only audits (five, then
+  four), each finding fixed with a test shown failing first or answered in the pull request, and the owner's six
+  answers. Tested offline: the full check (the commit is in the pull request); CI's full check passed on `ce08e861`
+  and runs on the head. Not pictured, played by hand, on a real GPU or in a deployed room. Left: a click on an island
+  marked but not yet told of asks and is refused; the chart's bytes unmeasured against [[Server]]'s figures; Lantern
+  Sea islands carry brineglass.
 
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
