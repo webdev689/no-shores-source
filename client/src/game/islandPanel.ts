@@ -61,6 +61,8 @@ export interface IslandActs {
 /** The tiles rise into place as the island's view opens: each this many seconds after the one before, over this
  *  many, from this many pixels below. */
 const RISE = { after: 0.04, seconds: 0.35, from: 14 } as const;
+/** How far a lit tile steps up. */
+const LIT_STEP = 2;
 /** The scene each kind of place is painted as. */
 const SCENES: Readonly<Record<IslandEntry['kind'], Scene['kind']>> = {
   social: 'port',
@@ -86,11 +88,12 @@ interface TileState {
   readonly pointed?: boolean;
 }
 
-/** What a tile stands with as it rises and is lit: faded and lowered as it rises, a step up and a brass edge lit. */
+/** What a tile stands with as it rises and is lit: faded and lowered as it rises, the pointer passing through it
+ *  until it stands, so nothing unseen is lit or pressed; a step up and a brass edge lit. */
 const standing = ({ rise, lit }: TileState): Partial<Node> => ({
   outline: { width: lit ? 2 : 1, colour: lit ? TONES.brass : EDGE },
-  ...(rise < 1 && { opacity: rise }),
-  ...((rise < 1 || lit) && { offset: [0, Math.round((1 - rise) * RISE.from) - (lit ? 2 : 0)] as const }),
+  ...(rise < 1 && { opacity: rise, through: true }),
+  ...((rise < 1 || lit) && { offset: [0, Math.round((1 - rise) * RISE.from) - (lit ? LIT_STEP : 0)] as const }),
 });
 
 /** A tile's scene in pixels, `TEXEL` of the screen's to each, painted once at its size. */
@@ -290,7 +293,14 @@ export function islandPanelNode(
     label: `${panel.title}. ${panel.where}`,
     float: { to: 'screen', at: [0.5, 0], anchor: [0.5, 0], y: GRID.top },
     children: [
-      scrolledNode(ui, 'island-list', { width: 'grow', height: 'grow' }, { direction: 'column', gap: GRID.gap }, rows),
+      // Room above the first row for a lit tile's step up, so the list never cuts its edge.
+      scrolledNode(
+        ui,
+        'island-list',
+        { width: 'grow', height: 'grow' },
+        { direction: 'column', gap: GRID.gap, padding: [LIT_STEP, 0, 0, 0] },
+        rows,
+      ),
     ],
   };
 }

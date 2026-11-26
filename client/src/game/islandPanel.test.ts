@@ -189,6 +189,8 @@ function clicked(id: string, chosen: string | null = null) {
   let node = islandPanelNode(ui, panel, chosen, null, acts);
   const root = () => (node = islandPanelNode(ui, panel, chosen, null, acts));
   step(root);
+  // A second on, so every tile has risen into place.
+  step(root, [], 1);
   const box = ui.boxOf(id);
   assert.ok(box, id);
   const spot = { x: box.x + 4, y: box.y + 4 };
@@ -241,6 +243,7 @@ test('a press dragged off one tile onto another lights the one under the pointer
   };
   const root = () => islandPanelNode(ui, panel, chosen, null, acts);
   step(root);
+  step(root, [], 1);
   const [from, to] = [ui.boxOf('island:saltgrass-downs'), ui.boxOf('island:krakens-grotto')];
   assert.ok(from && to);
   const [a, b] = [
@@ -257,6 +260,34 @@ test('a press dragged off one tile onto another lights the one under the pointer
   for (let frame = 0; frame < 4; frame += 1) step(root);
   assert.deepEqual(chose, chosen === 'krakens-grotto' ? [] : ['krakens-grotto'], 'the tile under the pointer');
   assert.equal(chosen, 'krakens-grotto');
+});
+
+test('a tile takes no click or light until it has risen into place; a lit one’s edge is never cut by the list', () => {
+  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const { ui, step } = fakeInterface(1280, 720);
+  const heard: string[] = [];
+  const acts = {
+    choose: (entry: string) => void heard.push(`choose ${entry}`),
+    act: (entry: IslandEntry) => void heard.push(`act ${entry.id}`),
+    back: () => void heard.push('back'),
+  };
+  const root = () => islandPanelNode(ui, panel, 'overlook-social', null, acts);
+  step(root);
+  const box = ui.boxOf('island:tern-strand');
+  assert.ok(box);
+  const spot = { x: box.x + 8, y: box.y + 8 };
+  const click = [
+    { kind: 'pointer', ...spot },
+    { kind: 'down', ...spot, button: 0 },
+    { kind: 'up', ...spot, button: 0 },
+  ] as const;
+  step(root, [...click]);
+  assert.deepEqual(heard, [], 'unseen as it begins to rise');
+  step(root, [], 1);
+  step(root, [...click]);
+  assert.ok(heard.includes('act tern-strand'), heard.join());
+  const lit = ui.laid.find((each) => each.node.id === 'island:overlook-social');
+  assert.ok(lit && lit.clip.y <= lit.box.y, `its top edge shown: clipped at ${lit?.clip.y}, its box at ${lit?.box.y}`);
 });
 
 test('the island’s own tile names its levels at Normal; a shut tile’s label says why once', () => {
