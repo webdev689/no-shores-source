@@ -56,6 +56,8 @@ pub struct Snapshot<'snapshot> {
     pub reviving: &'snapshot [Reviving],
     /// Every airship and crown bringing foes (`Room::arrivals_seen`), whole each time; none in a room with none.
     pub arrivals: &'snapshot [room::ArrivalSeen],
+    /// In a passage zone, its deal as it stands for the player (`Room::passage_seen`); none in any other room.
+    pub passage: Option<room::PassageSeen>,
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and
@@ -215,6 +217,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let middle = builder.create_vector(&snapshot.middle);
     let cache = (!snapshot.cache.is_empty()).then(|| builder.create_vector(snapshot.cache));
     let revives = snapshot.revives.map_or(-1, |left| i8::try_from(left).unwrap_or(i8::MAX));
+    let passage = snapshot.passage.as_ref().map(|seen| crate::passage_wire::seen_offset(&mut builder, seen));
     let public_event = snapshot.public.map(|seen| crate::public_wire::public_offset(&mut builder, seen));
     let encounter = snapshot.encounter.map(|seen| crate::encounter_wire::encounter_offset(&mut builder, seen));
     let breach = snapshot.breach.map(|seen| crate::breach_wire::breach_offset(&mut builder, seen));
@@ -251,6 +254,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         darkness: snapshot.darkness,
         reviving,
         arrivals,
+        passage,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)

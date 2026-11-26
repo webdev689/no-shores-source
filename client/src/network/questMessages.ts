@@ -7,7 +7,7 @@ import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts'
  *  Art's fragment choices waiting in the Arts' order, and where the task's first unmet goal with a place stands in the
  *  player's room (x, y and its reach), null where none is here. Then the task's varied steps in the player's room:
  *  its running goal's clock in seconds (null for none), each goal's failures this task, a puzzle's points, the
- *  figures walking for it and a defended ward. */
+ *  figures walking for it, a defended ward, and a house's horde while it runs. */
 export interface QuestState {
   readonly quest: number;
   readonly task: number;
@@ -20,6 +20,12 @@ export interface QuestState {
   readonly points?: readonly QuestPoint[];
   readonly figures?: readonly QuestFigure[];
   readonly ward?: QuestWard | null;
+  /** A house's horde running in the player's room, its foes left and all of them; while it runs the worn Art is the
+   *  player's unbounded. Null while none runs. */
+  readonly horde?: QuestHorde | null;
+  /** The keeper who offers the quest walked while it waits to be acquired from them, by the number ask 64 names them
+   *  by (0 or left out for none): until it is, nothing of it counts. */
+  readonly offered?: number;
   /** Whether the word is on the player's own character: a room holds a starting character until the account's is
    *  given, and the page shows nothing of it. Left out, as a test's own word leaves it, it is. */
   readonly claimed?: boolean;
@@ -44,14 +50,21 @@ export interface QuestFigure {
   readonly state: number;
 }
 
-/** A figure's states by their number on the wire. */
-export const FIGURE_STATES = { waiting: 0, walking: 1, noticed: 2, arrived: 3, ambushed: 4 } as const;
+/** A figure's states by their number on the wire (`mounting`: an escort waiting, its player near, for them to get on
+ *  their horse). */
+export const FIGURE_STATES = { waiting: 0, walking: 1, noticed: 2, arrived: 3, ambushed: 4, mounting: 5 } as const;
 
 /** A defended ward: where it stands and its health's share, 0 to 1. */
 export interface QuestWard {
   readonly x: number;
   readonly y: number;
   readonly health: number;
+}
+
+/** A horde's foes: those left and all of them. */
+export interface QuestHorde {
+  readonly left: number;
+  readonly all: number;
 }
 
 /** The roads as a message holds them. */
@@ -82,6 +95,8 @@ export function questOf(gear: Gear): QuestState {
       }),
     ),
     ward: wardOf(Array.from(gear.questWardArray() ?? [])),
+    horde: hordeOf(Array.from(gear.questHordeArray() ?? [])),
+    offered: gear.questOffered(),
     claimed: gear.claimed(),
   };
 }
@@ -96,4 +111,9 @@ function chunked(numbers: readonly number[], size: number): number[][] {
 /** A ward as its three numbers hold it; none for none. */
 function wardOf([east, south, health]: readonly number[]): QuestWard | null {
   return east === undefined || south === undefined || health === undefined ? null : { x: east, y: south, health };
+}
+
+/** A horde as its two numbers hold it; none for none. */
+function hordeOf([left, all]: readonly number[]): QuestHorde | null {
+  return left === undefined || all === undefined ? null : { left, all };
 }

@@ -100,6 +100,8 @@ pub const SPEAK: u8 = 64;
 pub const CHOOSE_FRAGMENT: u8 = 65;
 /// A puzzle's point used, by its place among its goal's points in `column`.
 pub const USE_POINT: u8 = 66;
+/// Acquires the quest walked from the keeper who offers it (`column`: the keeper's number, as `SPEAK`'s).
+pub const ACQUIRE: u8 = 85;
 /// A return to the player's ship asked, which the room answers before the page leaves for the sea.
 pub const TO_SHIP: u8 = 73;
 /// A guild bounty claimed, by its slot among the week's four in `column`.
@@ -209,6 +211,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_COSMETIC => Asked::Gear(Ask::BuyCosmetic { cosmetic: u16::try_from(item).ok()? }),
         BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node, shown: item }),
         SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
+        ACQUIRE => Asked::Gear(Ask::Acquire { keeper: column }),
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
         FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
@@ -226,7 +229,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         TAKE_LODESTONE => Asked::TakeLodestone,
         DROP_LODESTONE => Asked::DropLodestone,
         ENTER_BREACH => Asked::EnterBreach,
-        _ => return None,
+        _ => return crate::passage_wire::asked_of(ask),
     })
 }
 
@@ -307,6 +310,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
                 args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, item: shown, ..args };
             }
             Ask::Speak { keeper } => args = messages::AskArgs { kind: SPEAK, column: keeper, ..args },
+            Ask::Acquire { keeper } => args = messages::AskArgs { kind: ACQUIRE, column: keeper, ..args },
             Ask::ChooseFragment { art, fragment } => {
                 args = messages::AskArgs { kind: CHOOSE_FRAGMENT, column: art, node: fragment, ..args };
             }
@@ -333,6 +337,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Find { number } => args = messages::AskArgs { kind: OPEN_FIND, item: *number, ..args },
         Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
         Asked::Outpost(outpost) => args = outpost_args(*outpost, args),
+        Asked::Passage(ask) => args = crate::passage_wire::ask_args(*ask, args),
         Asked::TakeLodestone => args = messages::AskArgs { kind: TAKE_LODESTONE, ..args },
         Asked::DropLodestone => args = messages::AskArgs { kind: DROP_LODESTONE, ..args },
         Asked::EnterBreach => args = messages::AskArgs { kind: ENTER_BREACH, ..args },
@@ -473,6 +478,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let cleared = Some(builder.create_vector(&cleared));
     let bounties = crate::bounty_wire::bounties_of(&mut builder, character, room.day());
     let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level(), 1);
+    let (dive, island_lamps, atheric_bounties) =
+        crate::passage_wire::passages_of(&mut builder, character, (room.day(), gear::clock::week_of(room.minute)));
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -528,6 +535,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         day: u32::try_from(room.day()).unwrap_or(u32::MAX),
         quest: quests.quest,
         quest_task: quests.task,
+        quest_offered: quests.offered,
         quest_counts: Some(quests.counts),
         quests_done: Some(quests.done),
         arts_earned: Some(quests.earned),
@@ -538,6 +546,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         quest_points: Some(quests.points),
         quest_figures: Some(quests.figures),
         quest_ward: Some(quests.ward),
+        quest_horde: Some(quests.horde),
         claimed: found.claimed,
         scavenged: Some(scavenged),
         dungeons,
@@ -563,6 +572,9 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         chests: Some(crate::finds_wire::chests_of(&mut builder, room, player)),
         searchables: Some(crate::finds_wire::searchables_of(&mut builder, room, player)),
         opened: room.last_opened(player),
+        dive,
+        island_lamps,
+        atheric_bounties,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

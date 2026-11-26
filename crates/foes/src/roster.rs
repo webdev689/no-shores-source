@@ -81,6 +81,10 @@ pub const ENFORCER: u8 = 4;
 pub const MARKSMAN: u8 = 5;
 pub const REEVE: u8 = 6;
 pub const DECKHAND: u8 = 7;
+pub const HOOKMAN: u8 = 8;
+pub const PISTOLEER: u8 = 9;
+pub const BOSUN: u8 = 10;
+pub const TITHE_MATE: u8 = 11;
 pub const HIGH_ASSESSOR: u8 = 18;
 /// The Lattice's types, numbered from 39 so they keep clear of the Bosses' 21 to 38, and the Grey Tithe's tithe-taker.
 pub const HUSK: u8 = 39;
@@ -106,10 +110,10 @@ pub const ROSTER: [FoeType; 48] = [
     FoeType { standoff: 1.5, ..row(MARKSMAN, GREY_TITHE, Land, "Marksman", Archer, "thunderlock", "", &[Rank::Elite]) },
     row(REEVE, GREY_TITHE, Land, "Reeve", Captain, "mace_iron", "shield_kite_iron", LEADER),
     row(DECKHAND, GREY_TITHE, Deck, "Deckhand", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
-    row(8, GREY_TITHE, Deck, "Hookman", Swordsman, "axe_iron", "", LOW),
-    row(9, GREY_TITHE, Deck, "Pistoleer", Archer, "pistolet", "", LOW),
-    row(10, GREY_TITHE, Deck, "Bosun", Brute, "warhammer_iron", "", HEAVY),
-    row(11, GREY_TITHE, Deck, "Tithe-Mate", Captain, "sword_steel", "", MATE),
+    row(HOOKMAN, GREY_TITHE, Deck, "Hookman", Swordsman, "axe_iron", "", LOW),
+    row(PISTOLEER, GREY_TITHE, Deck, "Pistoleer", Archer, "pistolet", "", LOW),
+    row(BOSUN, GREY_TITHE, Deck, "Bosun", Brute, "warhammer_iron", "", HEAVY),
+    row(TITHE_MATE, GREY_TITHE, Deck, "Tithe-Mate", Captain, "sword_steel", "", MATE),
     FoeType {
         boss_phases: &THULE,
         ..row(12, GREY_TITHE, Deck, "Captain Brannoc Thule", Captain, "sword_ebony", "", &[Rank::Boss])

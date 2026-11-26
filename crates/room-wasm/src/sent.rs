@@ -206,6 +206,7 @@ impl Sent {
             darkness: room.darkness_for(viewer),
             reviving: &now.reviving,
             arrivals: &now.arrivals,
+            passage: room.passage_seen(viewer),
         })
     }
 }

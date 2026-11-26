@@ -159,6 +159,10 @@ pub enum Ask {
     Speak {
         keeper: u8,
     },
+    /// Acquires the quest walked from the keeper who offers it, by the number `Speak` sends: at their counter.
+    Acquire {
+        keeper: u8,
+    },
     /// Owns one of an Art's fragments by its place, for a choice a house's road gave: anywhere.
     ChooseFragment {
         art: u8,
@@ -202,6 +206,7 @@ impl Character {
     ///
     /// The ask's refusal, having changed nothing.
     pub fn ask(&mut self, ask: Ask, here: Here, dice: &Dice) -> Result<Done, Refusal> {
+        let used = crate::quests::UseAct::of(&ask);
         match ask {
             Ask::Wear { item, slot } => self.wear(item, slot),
             Ask::TakeOff { slot } => self.take_off(slot),
@@ -228,7 +233,7 @@ impl Character {
             Ask::Dismiss { officer } => self.dismiss(officer),
             Ask::Train { officer, column, node } => self.train(officer, usize::from(column), node),
             Ask::ChooseOfficer { officer, column, node } => self.choose_officer(officer, usize::from(column), node),
-            Ask::Pledge { faction } => self.pledge(faction, here),
+            Ask::Pledge { faction } => self.pledge(faction, here, dice),
             Ask::BuyFactionWare { faction, ware } => self.buy_faction_ware(faction, ware, here, dice),
             Ask::CollectPackage { faction } => self.collect_package(faction, here, dice),
             Ask::RiseArt { art, fragment } => self.rise_art(art, fragment, here),
@@ -237,6 +242,7 @@ impl Character {
             Ask::BuyCosmetic { cosmetic } => self.buy_cosmetic(cosmetic, here),
             Ask::BuyFromShape { ware, shown } => self.buy_from_shape(ware, shown, here),
             Ask::Speak { keeper } => self.speak(keeper, here),
+            Ask::Acquire { keeper } => self.acquire(keeper, here),
             Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
             Ask::TakeLetter { letter } => self.take_letter(letter, here),
             Ask::TakeAllLetters => self.take_all_letters(here),
@@ -247,6 +253,9 @@ impl Character {
             // nothing to own is paid; a piece held or worn counts for the quest walked.
             self.earn_due();
             self.settle_choices();
+            if let Some(act) = used {
+                self.tell(&crate::quests::Event::Used(act));
+            }
             self.tell_held();
             done.unwrap_or(Done::Done)
         })
@@ -284,7 +293,8 @@ impl Character {
 
     /// Buys a vendor's ware of the day or of their starter stock, at the buyer's own level, carried with its slot's:
     /// only in a social space, and only as shown today, since the wares at each place change as the day turns. A
-    /// smith's sale is kept by its slot for the quests (`tell_held`).
+    /// smith's sale is kept by its slot for the quests (`tell_held`). A piece the Weaponsmith owes as her gift is free
+    /// (`ware_given`), and spends that slot's gift.
     fn vend(&mut self, vendor: Vendor, ware: u8, day: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
@@ -295,7 +305,8 @@ impl Character {
         let level = if vendor.for_ship() { self.ship_level() } else { self.level() };
         let wares = vendor::stock(vendor, here.day, level);
         let mut item = wares.into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
-        let cost = vendor::price(item.rarity);
+        let given = self.ware_given(vendor, &item);
+        let cost = self.ware_price(vendor, &item);
         if self.materials.aurem < cost {
             return Err(Refusal::Short);
         }
@@ -306,7 +317,10 @@ impl Character {
         self.materials.aurem -= cost;
         let slot = item.kind.slot();
         self.items.insert(item.id, (item, At::Carried));
-        if !vendor.for_ship() && !self.quests.bought.contains(&slot) {
+        // The Weaponsmith's gift is spent, one piece a slot; a piece given is never one bought.
+        if given {
+            self.quests.free.retain(|free| *free != slot);
+        } else if !vendor.for_ship() && !self.quests.bought.contains(&slot) {
             self.quests.bought.push(slot);
         }
         Ok(None)
@@ -469,8 +483,12 @@ impl Character {
         }
         let rarity = vestige::opens_to(vestige.rarity, vestige.level, dice);
         let item_id = self.id_to_take();
-        let mut item = vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
-            .ok_or(Refusal::NoSuchItem)?;
+        let house = vestige::house_drop(self.allegiance.pledge, vestige.source, rarity, dice);
+        let mut item = match house {
+            Some(named) => vestige::house_piece(item_id, named, rarity, vestige.level, dice),
+            None => vestige::make(item_id, rarity, vestige.slot, vestige.level, vestige.source, dice)
+                .ok_or(Refusal::NoSuchItem)?,
+        };
         item.hard = vestige.hard && item.breach;
         if item.hard {
             item.element = element::forged(item.kind, dice);

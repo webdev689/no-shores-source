@@ -229,7 +229,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The hub's ground and walks, the ship's stern on the water, and music that repeats less** (#227, branch
   `claude/sleepy-einstein-f6fqvk`, waiting on CI on its head and the owner's yes to merge), on four asks of the owner:
   grass flickering through stone near the Hall (the walks round the Beacon now paved, `hub/walks.rs` `floors`); the
-  walks' flags not along the walks (`solidMesh.ts` `walkUvs`); a pale square under a ship's stern (the footprint's
+  walks' flags not along the walks (`walkGrain.ts`); a pale square under a ship's stern (the footprint's
   line kept inside the hull, every ship's footprint in its own hull's line, `hullLines.ts`, `hullMask.ts`); and a
   detailed music pass, patrol zones first ([[The Music Repeats Less, Patrol Zones First]]). Tested offline, each fix
   with a test that failed first, pictured headless before and after; not heard, not on a real GPU. The owner left
@@ -237,6 +237,33 @@ The decisions in [[Open Questions]] are not repeated here.
   the grain of the walk on top there (`Social.grains`, `walkGrain.ts`), and the music is enough as it is. Known and
   left: the ship's footprint up to 0.37 m inside its hull near the ends; no Frigate under way pictured after the
   fix; the thin dark arcs round the obelisk's border, there before.
+- **The welcome's gifts, the pledged house's piece, "Use your gifts", house drops in the world, the hordes, the riding
+  escort, the riding and sailing lessons, the wreck's fixes and the keepers' screens after Destiny 2's** (#223, merged
+  into `main` as f11fc2fb; the owner's
+  words in [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]],
+  [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]] and
+  [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]; every call Claude made in
+  [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]). How each works is in [[Quests]]
+  ("The opening", "Using the gifts", "A house's horde", "Offered by a keeper", the lessons), [[Gear]], [[Factions]],
+  [[Arts]], [[Prologue]], [[Interface]] and [[Speech]]. On the owner's "This is yours now, do a comprehensive audit on
+  it", five read-only audits (rules and server; the page; the design against the owner's words; the bible against the
+  code; the tests and regressions), every finding measured by a test that failed first and fixed, or put to the owner:
+  among them the horde's unbounded Art carried anywhere in the node (it now fails 36 m past its place, and lends only
+  the house's own Art), another ship's ball counting for the hulk, notices naming keyboard keys on the pad and
+  overlapping their hint, and about twenty notes untrue of the code. The wreck's republished mesh is taken, its heaps on
+  the deck, the level keeping the mast and rank 2 boarders the wreck tools do not write. The owner's answers to the
+  audit: only the pledged house's leader gives a gift, a piece of uncommon (Magic) faction gear, not the cape; the
+  stranger names no place, her two lines reworked; "Use your gifts" teaches the Vestige, cloak, dye and letter; the
+  keepers' painted ground kept ("Yeah I love this"); and, new, one in ten of the world's Magic and Rare Vestige pieces a
+  piece of the pledged house. Tested offline on the head: the room's, gear's, protocol's and xtask's suites, the page's
+  and the server's quest tests, tsc, clippy, `cargo xtask repo`; pictured headless at 1920x1080 and on a phone. Not
+  seen: the escort on its horse, the hulk at sea, a deployed room, a real GPU, a hand. The owner's to say, listed in the
+  PR: old saves (on "Put them on" or at a road's first task), the horde's size, its pay after a fall and its 36 m, which
+  Vestiges are "the world's", a house piece dismantling as Normal, an escort ship's ball at the hulk, a bought Legendary
+  noticed as a find, the notice hint's place, the keeper screen's differences, the duel's boarder at the step, the
+  townsfolk's dyes dealt anew. Left: the wreck tools should write the mast and the rank 2 boarders; the gear tabs show a
+  pad's key as "pad:Start" (on `main` before #223); a house piece posted for want of room gets no notice.
+
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
   modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,
@@ -283,6 +310,19 @@ The decisions in [[Open Questions]] are not repeated here.
   past the prologue); a switch counts the guild's week from the chosen character on; the Developer
   role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
   before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
+- **The passages and the regions** (#218 on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
+  autonomy ("this is where I give you autonomy and make this your baby"), audited on "I want to do a comprehensive
+  audit and detailed design pass on this entire arc" and again on "This is yours now, do a comprehensive audit on
+  it": not merged until the owner's yes, which deploys the page, the rooms and the accounts. Every call is in
+  [[Passages as Claude Builds Them]]; how it works in [[Passages]]; with it the band's retune
+  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]) and the held map at sea's redesign
+  ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]). Main is merged in to
+  #222. Five read-only audits (the web and laying; the room and the dive; the server and wire; the page; the notes
+  and tools) found 46 points: 41 fixed, each code fix with a test that failed first but where the PR says not; the
+  decision note's copied tables cut to their calls; the workers' wait-ceiling variable checked present; Home from
+  anywhere in a lamp's zone and the Court's dark found meant; a hollow rebuilt whole at each piece's change left. A
+  review of the fixes found five more, all fixed. The owner's questions are in [[Open Questions]] ("The passages",
+  "The held map at sea's redesign"). Not seen: the deployed game, a real GPU, players together.
 - **A second codebase audit** (#217, merged on the owner's "Merge and deploy": CI's run 1154 on `main` passed), on the
   owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
@@ -962,7 +1002,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The wreck's teaching** ([[The Wreck Opens by Teaching the Player]]): the owner's "teaching them the inventory" is
   taught on the Character page (I), where gear is worn; whether the owner wants it otherwise.
 - **Saltmere's heights** ([[Zones Rise and Fall, Above and Below Ground]]), for the owner to look at before the other
-  24 zones take heights and runs. Switchbacks: the owner approved "ways that switch back down cliffs", but no
+  islands' eight patrol zones take heights and runs. Switchbacks: the owner approved "ways that switch back down cliffs", but no
   Saltmere way needs one as built (`map_planned.rs`); whether they are wanted as a cliff climb of their own, and where.
 - **Open points in merged descriptions:**
   - #98: the crew's bars under the fewer plates; whether the welcome's "Follow" moves onto the tracker and the
@@ -1053,6 +1093,12 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The passages, to finish** (#218): CI's check green on the head, then the owner's yes to merge. Not yet played
+  live: every deal, a dive's way across zones, a public round, the held map's public way and its redesign on a real
+  GPU, the sea's new ranks and salvage, a run of the week's Abyss Dungeon again; tested offline, and pictured
+  headless (`tools/passageShots.json`, `target/passages/`); a Vein's nodes under ground not yet pictured. Unchecked
+  from the audit's review: a public event's chest (`public/chest.rs`) and a grant (`grants.rs`) still go through
+  `pick_up`, which hauls a Vestige where the player stands in a passage zone.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
@@ -1078,8 +1124,9 @@ The decisions in [[Open Questions]] are not repeated here.
   flyout at 960x540 (measured by the screens' layout harness; the offline page has no gear).
 - **A cloud session runs on the `no-shores-source` environment** (personal, set up with the owner's approval): its
   network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts` fetches meshes from, and
-  its setup script runs `npm ci`. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`: Node's `fetch`
-  ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
+  its setup script runs `npm ci` (saved with the owner's approval, unproven until a fresh session starts on it). Run
+  the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`:
+  Node's `fetch` ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
   stops before the build, the bundle and the repo checks. The Context7 and SkillsMP keys are on neither environment.
 - **The encounters' headless run's WebGPU error** ("Instance range ... requires a larger buffer (28) than the bound
   buffer size (24) ..."): the dungeon entrances' instance, fixed by #155 (f895eb80); the error it hid, the entrances
@@ -1169,7 +1216,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The gear loop**: a signed ticket from the sea room naming the node and the seas a player may join at (the client
   names a voyage's seas now); Breaches, Elite Dungeons and Missions as loot sources; the wardrobe
   ([[Clothing Is Armour, With a Wardrobe Later]]).
-- **Zones**: the other 24 zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
+- **Zones**: the other islands' eight patrol zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
   enough to climb in places, so its runs' end arenas need cutting deeper or walling. The layouts' open ends
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites. The
   dungeons session (#82) plans to move each patrol's dungeon entrances onto the layouts' places, and will

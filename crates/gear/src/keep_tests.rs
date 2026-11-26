@@ -316,11 +316,12 @@ fn a_new_character_is_kept_short_of_the_prologue_and_one_kept_before_the_story_p
 #[test]
 fn a_kept_activity_holds_only_the_boards_bounties() {
     let mut character = Character::starting();
-    character.activity.today(20_778).bounties.extend([(0, 1), (5, 2), (6, 3), (200, 4)]);
+    character.activity.today(20_778).bounties.extend([(0, 1), (5, 2), (6, 3), (15, 7), (16, 8), (17, 9), (200, 4)]);
     character.activity.today.faction_bounties.extend([(1, 7), (6, 3), (14, 5), (15, 6)]);
     let mut read = Character::from_json(&character.to_json()).expect("a character");
     let today = read.activity.today(20_778);
-    assert_eq!(today.bounties, std::collections::BTreeMap::from([(0, 1), (5, 2)]), "the town's six");
+    let town = std::collections::BTreeMap::from([(0, 1), (5, 2), (15, 7), (16, 8)]);
+    assert_eq!(today.bounties, town, "the town's six and the passages' two");
     assert_eq!(today.faction_bounties, std::collections::BTreeMap::from([(6, 3), (14, 5)]), "the factions' nine");
 }
 

@@ -52,6 +52,10 @@ pub(crate) struct QuestGround {
     pub grounds: Vec<QuestMesh>,
     pub baking: Option<(String, navmesh::Bounds, navmesh::Baking)>,
     pub way_on: BTreeMap<FighterId, usize>,
+    /// Each rider the Tack's lesson watches here (`lessons.rs`).
+    pub ridden: crate::lessons::Riders,
+    /// Where another room marks the task's next goal, written in this one (the sea's, `Sea::lesson_mark`).
+    pub mark: Option<[f64; 3]>,
     /// The lore read for what lies in its node (`lore.rs`): the file's, unless a test gives its own.
     pub lore: Option<&'static gear::lore::LoreDef>,
 }
@@ -193,6 +197,11 @@ impl Room {
         self.quests.grounds.len()
     }
 
+    /// Sets where the task's next goal is marked for the player this room writes gear for at sea.
+    pub fn mark_quest(&mut self, mark: Option<[f64; 3]>) {
+        self.quests.mark = mark;
+    }
+
     /// Tells a player's quest log of something they did here.
     pub(crate) fn tell_quest(&mut self, player: PlayerId, event: &Event<'_>) {
         tell_one(&mut self.players, player, event);
@@ -224,6 +233,7 @@ impl Room {
             tell_one(&mut self.players, player, &Event::Enter(node));
         }
         self.tell_landed(player);
+        self.passage_arrived(player);
     }
 
     /// A foe's fall a player struck: its roster's name and rank's number, where it fell; on a sea island only for one
@@ -269,6 +279,9 @@ impl Room {
                     | Goal::Enter(_)
                     | Goal::Buy(_)
                     | Goal::Wear(_)
+                    | Goal::Ride(_)
+                    | Goal::Sail(_)
+                    | Goal::Use(_)
                     | Goal::Escort(_)
                     | Goal::Tail(_)
                     | Goal::Defend(_)
@@ -371,9 +384,13 @@ impl Room {
     }
 
     /// Where the first goal not yet met of a player's task with a place in this room stands: its middle and its
-    /// reach, or a step's own spot (`step_spot`); none when no such goal is here.
+    /// reach, or a step's own spot (`step_spot`); none when no such goal is here. A mark set from another room
+    /// (`mark_quest`) stands for it.
     #[must_use]
     pub fn quest_at(&self, player: PlayerId) -> Option<[f64; 3]> {
+        if self.quests.mark.is_some() {
+            return self.quests.mark;
+        }
         let node = self.quests.node.as_deref()?;
         let found = self.players.get(&player)?;
         found.character.goals_unmet().find_map(|(at, goal)| {

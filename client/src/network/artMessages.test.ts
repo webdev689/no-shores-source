@@ -82,3 +82,20 @@ test('a cast crosses in an input with its aim, and an Art’s asks with the fiel
   assert.deepEqual([ASKS.wearArt, ASKS.grantArts], [40, 36]);
   assert.deepEqual([spellNumber(1, 0), spellNumber(2, 2), spellNumber(3, 1)], [1, 6, 8]);
 });
+
+test("a horde running lends the worn Art whole for the bar and the keys, the road's earned bits read as earned", () => {
+  const word = (horde: number[]) => {
+    const builder = new flatbuffers.Builder(64);
+    const earned = Gear.createArtsEarnedVector(builder, [0b001, 0, 0]);
+    const running = Gear.createQuestHordeVector(builder, horde);
+    Gear.startGear(builder);
+    Gear.addArt(builder, 1);
+    Gear.addArtsEarned(builder, earned);
+    Gear.addQuestHorde(builder, running);
+    builder.finish(Gear.endGear(builder));
+    return artsOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
+  };
+  const lent = word([17, 29]);
+  assert.deepEqual([lent.lent, lent.earned], [true, [0b001, 0, 0]], 'the loan beside what is earned');
+  assert.equal(word([]).lent, false, 'none while none runs');
+});

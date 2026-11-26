@@ -127,6 +127,10 @@ export interface HoverSaid {
   readonly line: string;
   readonly x: number;
   readonly y: number;
+  /** A region's or a port's name, shown on a card of parchment (`paintCard`), not the pointer's words; and a
+   *  region's island's name under it. */
+  readonly card?: boolean;
+  readonly caption?: string | undefined;
 }
 
 /** The held map's asks at sea: where the pointer is (screen pixels, none off the canvas), the water lit under it, and
@@ -161,6 +165,11 @@ export class MapAsk {
     // Painted once as the pointer comes into a water, not again at each move within it.
     this.said = water && inked ? { line: hoverLine(water), x: inked.x, y: inked.y } : null;
     return { cells, said: this.said };
+  }
+
+  /** The cells of the water lit under the pointer now, none lit for none. */
+  cellsNow(waters: MapWaters): Uint8Array {
+    return litCells(waters, this.lit);
   }
 
   /** A course chosen (`course`, from the ship at `ship`): it asks to travel when its end lies in another water than

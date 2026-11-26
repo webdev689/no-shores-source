@@ -12,6 +12,8 @@ pub mod ammo;
 mod art_levels;
 pub mod arts;
 pub mod asks;
+pub mod atheric_bounty;
+pub mod band;
 pub mod bounties;
 pub mod breach;
 pub mod catalogue;
@@ -23,17 +25,20 @@ pub mod clock;
 pub mod cosmetics;
 pub mod crew;
 pub mod dice;
+pub mod dive;
 pub mod element;
 pub mod emblems;
 pub mod errand;
 pub mod factions;
 pub mod finds;
 pub mod gate;
+pub mod gifts;
 pub mod grid;
 pub mod guild;
 pub mod horses;
 pub mod item;
 pub mod kinds;
+pub mod lamps;
 pub mod last;
 pub mod left;
 pub mod looks;
@@ -42,10 +47,12 @@ pub mod mail;
 mod max_test;
 pub mod objectives;
 mod old_hands;
+pub mod passages;
 pub mod playlist;
 pub mod power;
 mod quest_defs;
 mod quest_goals;
+mod quest_lessons;
 pub mod quests;
 pub mod rarity;
 mod refusal;
@@ -105,7 +112,13 @@ mod factions_tests;
 #[cfg(test)]
 mod gate_tests;
 #[cfg(test)]
+mod gift_steps_tests;
+#[cfg(test)]
+mod gifts_tests;
+#[cfg(test)]
 mod horses_tests;
+#[cfg(test)]
+mod house_drops_tests;
 #[cfg(test)]
 mod item_tests;
 #[cfg(test)]

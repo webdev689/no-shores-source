@@ -287,6 +287,16 @@ test('instances sort by module, a run each, the trees and cliffs marked for the 
   assert.ok(Math.abs((floats[5] ?? 0) + 1) < 1e-6);
 });
 
+test('a placement stood cold carries it in its instance’s last float; one with no word of it stands lit', () => {
+  const lamp = MODULE_NAMES.indexOf('passage.lamp');
+  const { floats } = instancesOf([
+    [lamp, 0, 0, 0, 0, 1, 1, 1],
+    [lamp + 1, 0, 0, 0, 0, 1, 1],
+  ]);
+  assert.equal(floats[7], 1);
+  assert.equal(floats[15], 0);
+});
+
 test("the room module's own plans and ground read, every module named", { skip: !existsSync(ROOM) }, () => {
   const door = startRoomDoor(new WebAssembly.Module(readFileSync(ROOM)));
   for (const [seed, climate] of [

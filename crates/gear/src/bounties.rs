@@ -1,15 +1,18 @@
-//! The bounty board: the town's six bounties a day and each faction's three, the same for everyone, drawn by the
-//! clock's day (`crate::activities`). The town's are two on land, two at sea and two in dungeons and pay XP and Aurem;
-//! a faction's are three of its own four, taken only by a player pledged to it, counting only while they wear its
-//! cape, and pay XP and its reputation. Each is taken and turned in at the board by the day of the board shown, and
-//! pays once at the character's level, more for a bigger task, as Destiny 1's bounties paid in three tiers.
+//! The bounty board: the town's eight bounties a day and each faction's three, the same for everyone, drawn by the
+//! clock's day (`crate::activities`). The town's are two on land, two at sea, two in dungeons and two in the passages
+//! and pay XP and Aurem; a faction's are three of its own four, taken only by a player pledged to it, counting only
+//! while they wear its cape, and pay XP and its reputation. Each is taken and turned in at the board by the day of the
+//! board shown, and pays once at the character's level, more for a bigger task, as Destiny 1's bounties paid in three
+//! tiers.
 
 use crate::activities::{BOUNTY_DRAWS, drawn};
-use crate::activity::{BOUNTIES, BOUNTY_PLACES, FACTION_BOUNTIES, POSTING_FACTIONS};
+use crate::activity::{
+    BOUNTIES, BOUNTY_PLACES, FACTION_BOUNTIES, PASSAGE_BOUNTIES, PASSAGE_PLACES_FROM, POSTING_FACTIONS, is_town_place,
+};
 use crate::asks::{Done, Here, Refusal};
 use crate::character::Character;
 use crate::factions::factions;
-use crate::objectives::{ELITE_RANK, GREY_TITHE, MINIBOSS_RANK, Objective};
+use crate::objectives::{Deed, ELITE_RANK, GREY_TITHE, MINIBOSS_RANK, Objective};
 use crate::rewards::at_level;
 
 /// A bounty on the board: what it counts, how many, its words, its name, where it counts and who posts it.
@@ -20,7 +23,7 @@ pub struct Bounty {
     pub words: &'static str,
     /// Its short name, as its card heads it: content, never kept or matched.
     pub name: &'static str,
-    /// Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons.
+    /// Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons, 3 in the passages.
     pub pool: u8,
     /// Its tier, 1 to 3, by how big a task it is: it pays once, half again or twice a first tier's
     /// (`bounty_pay`), as Destiny 1's paid 2,500, 3,750 or 5,000 XP.
@@ -89,6 +92,23 @@ pub(crate) static DUNGEONS: [Template; 3] = [
     posted(cleared, 3, "Clear 3 dungeons.", "Deep Delver", 2, 3),
 ];
 
+/// The passages' six, of which the board shows two a day.
+pub(crate) static PASSAGES: [Template; 6] = [
+    posted(|| Objective::Passage(Deed::Lamp), 1, "Light a lamp in the passages.", "Lamplighter", 3, 3),
+    posted(
+        || Objective::Passage(Deed::Mission),
+        3,
+        "Finish 3 passage missions: a Kindle, Hold, Hunt, Reckoning, Gauntlet, Ambush or Sever.",
+        "Errand Runner",
+        3,
+        2,
+    ),
+    posted(|| Objective::Passage(Deed::Felled), 25, "Defeat 25 foes in the passages.", "Down Below", 3, 1),
+    posted(|| Objective::Passage(Deed::Deep(8)), 1, "Go 8 zones deep in the passages.", "Further In", 3, 2),
+    posted(|| Objective::Passage(Deed::Reliquary), 2, "Open 2 reliquaries in the passages.", "Relic Hunter", 3, 2),
+    posted(|| Objective::Passage(Deed::Vein), 1, "Gather a vein in the passages.", "Seam Worker", 3, 1),
+];
+
 /// Each faction's own four, by its number less one: the Stormcallers' fights, the Lamplighters' lamps and sea lanes,
 /// and the Veiled's quiet work against the strong.
 pub(crate) static FACTION_POOLS: [[Template; 4]; POSTING_FACTIONS as usize] = [
@@ -132,10 +152,12 @@ fn bounty_of(template: &Template, faction: u8) -> Bounty {
     Bounty { objective: objective(), target, words, name, pool, tier, faction }
 }
 
-/// The town's six: places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, each pair two of its pool.
+/// The town's eight, in its order: places 0 and 1 on land, 2 and 3 at sea, 4 and 5 in dungeons, then the passages'
+/// two at places 15 and 16 (`town_places`), each pair two of its pool. A pool's pair is drawn as it always was, so a
+/// kept place reads as the bounty it was.
 #[must_use]
-pub fn board(day: u64) -> [Bounty; 6] {
-    let pools: [&[Template]; 3] = [&LAND, &SEA, &DUNGEONS];
+pub fn board(day: u64) -> [Bounty; TOWN_BOUNTIES] {
+    let pools: [&[Template]; 4] = [&LAND, &SEA, &DUNGEONS, &PASSAGES];
     let pick = |place: usize| {
         let pool = pools[place / 2];
         let pair = u32::try_from(place / 2 * 2).unwrap_or(0);
@@ -151,7 +173,15 @@ pub fn board(day: u64) -> [Bounty; 6] {
     std::array::from_fn(pick)
 }
 
-/// The draws a faction's day is rolled at, clear of the town's pairs (0 to 5).
+/// How many bounties the town posts a day, the passages' two among them.
+pub const TOWN_BOUNTIES: usize = (BOUNTIES + PASSAGE_BOUNTIES) as usize;
+
+/// The town's places in its board's order: its six, then the passages' two after the factions'.
+pub fn town_places() -> impl Iterator<Item = u8> {
+    (0..BOUNTIES).chain(PASSAGE_PLACES_FROM..BOUNTY_PLACES)
+}
+
+/// The draws a faction's day is rolled at, clear of the town's pairs (0 to 7).
 const FACTION_DRAWS_FROM: u32 = 16;
 
 /// A faction's three of the day, by its number: its four in their order, less the one the day leaves out; none for a
@@ -171,12 +201,13 @@ pub fn faction_places(faction: u8) -> std::ops::Range<u8> {
     first..first.saturating_add(FACTION_BOUNTIES)
 }
 
-/// The faction whose bounty stands at a place, by its number; 0 for the town's; none past the board.
+/// The faction whose bounty stands at a place, by its number; 0 for the town's, the passages' among them; none past
+/// the board.
 #[must_use]
 pub fn faction_at(place: u8) -> Option<u8> {
     match place {
-        _ if place < BOUNTIES => Some(0),
-        _ if place < BOUNTY_PLACES => Some((place - BOUNTIES) / FACTION_BOUNTIES + 1),
+        _ if is_town_place(place) => Some(0),
+        _ if place < PASSAGE_PLACES_FROM => Some((place - BOUNTIES) / FACTION_BOUNTIES + 1),
         _ => None,
     }
 }
@@ -185,7 +216,7 @@ pub fn faction_at(place: u8) -> Option<u8> {
 #[must_use]
 pub fn bounty_at(day: u64, place: u8) -> Option<Bounty> {
     match faction_at(place)? {
-        0 => board(day).into_iter().nth(usize::from(place)),
+        0 => board(day).into_iter().nth(town_places().position(|at| at == place)?),
         faction => {
             let first = faction_places(faction).start;
             faction_board(day, faction)?.into_iter().nth(usize::from(place - first))

@@ -11,8 +11,8 @@ import {
   labelPoints,
   levelColour,
   type MapWaters,
+  shutCells,
   washOf,
-  waterWords,
 } from './watersWash.ts';
 
 const HOLDERS = ['home', 'grey-tithe', 'lattice'] as const;
@@ -91,9 +91,22 @@ test('a water is lettered from its sea cell farthest from land, other waters and
   assert.deepEqual(points.get(0), [2_500, 2_500], 'the middle of the open water');
   const [x, y] = points.get(2) ?? [0, 0];
   assert.equal(grid.water[Math.floor(y / 1_000) * grid.columns + Math.floor(x / 1_000)], 2, 'inside its own water');
-  assert.equal(
-    waterWords({ continent: 7, id: 'continent-8', name: 'The Fen Deeps', holder: 'grey-tithe', levels: [22, 26] }),
-    'The Fen Deeps, 22-26',
+});
+
+test('a locked sea and its island are shaded whole, softly at their edge, and an open one not at all', () => {
+  // Water 0 open beside water 2 locked, its island's land the last two columns: the first by its coast's island, the
+  // last inside its outline alone; three rows alike.
+  const row = [0, 0, 0, 2, 2, 2, LAND, LAND];
+  const grid = gridOf([row, row, row]);
+  const field = {
+    island: Uint8Array.from([0, 0, 0, 2, 2, 2, 2, 255, 0, 0, 0, 2, 2, 2, 2, 255, 0, 0, 0, 2, 2, 2, 2, 255]),
+  };
+  const outline = Uint8Array.from(Array.from({ length: 24 }, (unused, cell) => Number(cell % 8 === 7)));
+  const shade = [...shutCells(grid, field, new Set([2]), [outline])];
+  assert.deepEqual(shade.slice(8, 16), [0, 0, 85, 170, 255, 255, 255, 170], 'the middle row: open, soft edge, shut');
+  assert.ok(
+    [...shutCells(grid, field, new Set())].every((cell) => cell === 0),
+    'none locked, none shaded',
   );
 });
 

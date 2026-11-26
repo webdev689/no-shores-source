@@ -111,11 +111,23 @@ impl Character {
         weapon: Option<Slot>,
         difficulty: Difficulty,
     ) -> Reward {
+        self.reward_share(foe, (rank, foe_level), weapon, (difficulty, 1.0))
+    }
+
+    /// `reward_kill` at `share` of its XP and Aurem, as a passage zone's foe pays (`lamps::KILL_SHARE`).
+    pub fn reward_share(
+        &mut self,
+        foe: Foe,
+        (rank, foe_level): (u8, u8),
+        weapon: Option<Slot>,
+        (difficulty, share): (Difficulty, f64),
+    ) -> Reward {
         let worth = worth(foe, rank);
         if difficulty == Difficulty::Abyss {
             self.earn(crate::emblems::Deed::AbyssFoe);
         }
-        self.pay((worth.xp, worth.aurem), foe_level, weapon, difficulty)
+        let shared = |amount: u32| libm::round(f64::from(amount) * share) as u32;
+        self.pay((shared(worth.xp), shared(worth.aurem)), foe_level, weapon, difficulty)
     }
 
     /// What a kill of a foe of this rank and level leaves this player: Vestiges by its rank's chance, and from a
@@ -130,9 +142,27 @@ impl Character {
         source: Source,
         dice: &Dice,
     ) -> Vec<Vestige> {
-        let raised = difficulty.reward();
+        self.loot_share((rank, foe_level), (difficulty, 1.0), source, dice)
+    }
+
+    /// `loot_kill` at `share` of its chances, as a passage zone's foe drops (`lamps::KILL_SHARE`).
+    pub fn loot_share(
+        &mut self,
+        (rank, foe_level): (u8, u8),
+        (difficulty, share): (Difficulty, f64),
+        source: Source,
+        dice: &Dice,
+    ) -> Vec<Vestige> {
+        let raised = difficulty.reward() * share;
         let chances = (vestige::chance(rank) * raised, vestige::item_chance(rank) * raised);
         self.loot(chances, rank, foe_level, source, dice)
+    }
+
+    /// More Vestiges of a kill, as a passage's Bountiful gives: its rank's chance times `share`, on dice apart from
+    /// the kill's own.
+    pub fn loot_more(&mut self, share: f64, rank: u8, foe_level: u8, source: Source, dice: &Dice) -> Vec<Vestige> {
+        let dice = Dice { seed: dice.seed ^ 0x6d6f_7265, ..*dice };
+        self.loot((vestige::chance(rank) * share, 0.0), rank, foe_level, source, &dice)
     }
 
     /// Pays a cleared node to a player who fought it: its clear's XP and Aurem at its level, raised by a harder voyage
@@ -146,11 +176,26 @@ impl Character {
         source: Source,
         dice: &Dice,
     ) -> Vec<Vestige> {
-        self.pay(clear.worth(), level, None, difficulty);
+        self.reward_clear_share(clear, level, (difficulty, 1.0), source, dice)
+    }
+
+    /// `reward_clear` at `share` of its XP, Aurem and chances, as the week's dungeon run again pays
+    /// (`Weekly::run_again_share`).
+    pub fn reward_clear_share(
+        &mut self,
+        clear: Clear,
+        level: u8,
+        (difficulty, share): (Difficulty, f64),
+        source: Source,
+        dice: &Dice,
+    ) -> Vec<Vestige> {
+        let (xp, aurem) = clear.worth();
+        let shared = |amount: u32| libm::round(f64::from(amount) * share) as u32;
+        self.pay((shared(xp), shared(aurem)), level, None, difficulty);
         if clear != Clear::Dungeon {
             return Vec::new();
         }
-        let raised = difficulty.reward();
+        let raised = difficulty.reward() * share;
         self.loot((CLEAR_VESTIGE * raised, raised), MINIBOSS, level, source, dice)
     }
 
@@ -210,6 +255,10 @@ impl Character {
     /// its colour and slot at `level`, its foe's, to be laid, so nothing found is lost and none opens above what that
     /// foe could drop (a named item stands at 20, a cloak at 1, whatever its foe).
     pub fn keep_found(&mut self, item: Item, level: u8) -> Option<Vestige> {
+        // In a passage zone it goes into the dive's haul, kept only once a lamp is lit (`dive.rs`).
+        if self.haul_item(&item) {
+            return None;
+        }
         let at = if self.carried_in(item.bucket) < CARRIED_MOST {
             At::Carried
         } else if self.vaulted(item.kind.stock()) < VAULT_MOST {
@@ -246,6 +295,9 @@ impl Character {
 
     /// Takes a Vestige off the ground into the carried ten; refused, leaving it lying, when they are full.
     pub fn pick_up(&mut self, vestige: Vestige) -> bool {
+        if self.haul_vestige(&vestige) {
+            return true;
+        }
         if self.vestiges_held(false) >= crate::character::VESTIGES_MOST {
             return false;
         }
@@ -260,6 +312,7 @@ impl Character {
     pub fn gather(&mut self, resource: usize) -> u16 {
         let count = NODE_YIELD + u16::from(self.has_trait("forager"));
         self.earn(crate::emblems::Deed::Gathered);
-        self.materials.add(Stuff::Resource(resource), count)
+        self.haul_material(Stuff::Resource(resource), count)
+            .unwrap_or_else(|| self.materials.add(Stuff::Resource(resource), count))
     }
 }

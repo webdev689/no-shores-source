@@ -34,6 +34,8 @@ mod gear_door;
 mod guild_door;
 mod isle_door;
 mod outpost_door;
+mod passage_door;
+mod passage_room_door;
 mod plate_door;
 mod public_door;
 mod roster_door;
@@ -46,6 +48,7 @@ mod waters_door;
 pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
+pub use passage_room_door::open_passage;
 pub use public_door::parting;
 pub use run_door::{activities_json, gates_json, open_run};
 
@@ -75,9 +78,8 @@ pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
-/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, whether
-/// it is locked, a patrol's resource places (where its nodes stand), and the places the houses' roads name and the
-/// paths their figures walk. A page playing alone writes its own, never locked.
+/// A node's file as the bake writes it: its id, kind, name, section, window, rect, boxes, whether it is locked, a
+/// patrol's resource places, the roads' places and paths, and its passages' doors; a page alone writes its own, open.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
@@ -112,6 +114,8 @@ struct NodeFile {
     places: Vec<gear::quests::Place>,
     #[serde(default)]
     paths: Vec<Vec<[f64; 2]>>,
+    #[serde(default)]
+    doors: Vec<gear::quests::Place>,
     /// In a patrol area with a Breach's gate, where its module stands and its quarter turns.
     #[serde(default)]
     breach: Option<([f64; 3], u8)>,
@@ -190,6 +194,7 @@ pub fn open_node(text: &[u8]) -> bool {
         node.counters.iter().filter_map(gear_door::counter_of).chain(board).collect()
     });
     room.shape_spots = node.shape_spots;
+    passage_room_door::open_mouths(&mut room, &node.continent, &node.doors, &node.places);
     room.set_places(node.places);
     room.set_foe_sites(&node.foes);
     room.set_paths(node.paths);
@@ -206,21 +211,16 @@ pub fn open_node(text: &[u8]) -> bool {
         room.lay_elite_entrance(&node.id);
     }
     breach_door::stand_gate(&mut room, node.kind, node.breach);
-    let refusal = lock_words(node.locked, &node.name);
+    let refusal = dungeon_door::lock_words(node.locked, &node.name);
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });
     true
 }
 
-/// Why a locked node's room takes no player, in the words the page shows; None while it is open.
-fn lock_words(locked: bool, name: &str) -> Option<String> {
-    locked.then(|| format!("{name} is locked"))
-}
-
-/// Why the open room takes no player: a locked node's says so; None for any other room.
+/// Why the open room takes no player: a locked node's says so, a passage zone's once its week turned; else None.
 pub fn refusal() -> Option<String> {
     with_open(|opened| match opened {
-        Opened::Land { refusal, .. } => refusal.clone(),
+        Opened::Land { room, refusal, .. } => passage_room_door::refusal_of(room, refusal.as_deref()),
         Opened::Sea(_) | Opened::Fleet(_) => None,
     })
     .flatten()
@@ -352,6 +352,10 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
+                Ok(SeaInput::Chart) => {
+                    sea.charted(player);
+                    return TAKEN;
+                }
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =
                         if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };
@@ -495,7 +499,7 @@ pub extern "C" fn room_epoch(unix_ms: f64) {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join() -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, refusal: None, .. } => room.join(),
+        Opened::Land { room, refusal: None, .. } if !room.shifted() => room.join(),
         Opened::Land { .. } => None,
         Opened::Sea(sea) => Some(sea.join()),
         Opened::Fleet(fleet) => fleet.join(),

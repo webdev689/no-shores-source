@@ -64,6 +64,9 @@ fn meeting<'told>(goal: &'told GoalDef, places: &'told [Place]) -> Event<'told> 
         Goal::Race(_) => stepped(GoalKind::Race),
         Goal::Buy(buy) => Event::Bought(buy.slot),
         Goal::Wear(wear) => Event::Worn(wear.slot),
+        Goal::Ride(ride) => Event::Ride { act: ride.act, at: ride.to.as_deref() },
+        Goal::Sail(sail) => Event::Sail(sail.act),
+        Goal::Use(done) => Event::Used(done.act),
     }
 }
 
@@ -76,6 +79,10 @@ fn every_place() -> Vec<Place> {
 
 /// Meets every goal of the task the player is on, each until its count.
 fn meet_task(character: &mut Character, places: &[Place]) {
+    // A quest that waits to be acquired is acquired from its keeper first: nothing counts before.
+    if let Some(keeper) = character.quest_offered() {
+        character.ask(Ask::Acquire { keeper }, AT_COUNTER, &DICE).expect("acquired");
+    }
     let now = character.quest_now().expect("a task to meet");
     for (at, goal) in quests().quests[now.0].tasks[now.1].goals.iter().enumerate() {
         while character.quest_now() == Some(now) && character.quest_counts()[at] < goal.count {
@@ -102,7 +109,7 @@ fn each_kind_of_goal_is_met_by_its_own_event_alone() {
         r#"{ "kind": "land", "island": "isle", "text": "t" }"#,
         r#"{ "kind": "scavenge", "text": "t" }"#,
         r#"{ "kind": "enter", "node": "n", "text": "t" }"#,
-        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "p", "who": "tobin", "near": 15, "text": "t" }"#,
+        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "p", "who": "tobin", "horse": "dun", "near": 30, "text": "t" }"#,
         r#"{ "kind": "tail", "node": "n", "from": "a", "to": "p", "foe": "Runner", "far": 10, "near": 40, "text": "t" }"#,
         r#"{ "kind": "defend", "node": "n", "place": "p", "ward": "w", "waves": [[["Runner", "Minor"]]], "text": "t" }"#,
         r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "text": "t" }"#,
@@ -110,6 +117,8 @@ fn each_kind_of_goal_is_met_by_its_own_event_alone() {
         r#"{ "kind": "race", "node": "n", "checkpoints": ["a", "p"], "seconds": 60, "text": "t" }"#,
         r#"{ "kind": "buy", "slot": "melee", "text": "t" }"#,
         r#"{ "kind": "wear", "slot": "melee", "text": "t" }"#,
+        r#"{ "kind": "ride", "act": "gallop", "text": "t" }"#,
+        r#"{ "kind": "sail", "act": "fire", "text": "t" }"#,
     ]
     .map(goal);
     for (at, one) in goals.iter().enumerate() {
@@ -121,6 +130,20 @@ fn each_kind_of_goal_is_met_by_its_own_event_alone() {
     let stepped = |kind, node, anchor| Event::Stepped { kind, node, anchor };
     assert!(race.met_by(&stepped(GoalKind::Race, "n", "p")), "a race at its last checkpoint");
     assert!(!race.met_by(&stepped(GoalKind::Race, "n", "a")) && !race.met_by(&stepped(GoalKind::Race, "m", "p")));
+}
+
+#[test]
+fn a_lesson_is_met_by_its_own_act_and_an_arrival_only_at_its_own_counter() {
+    use crate::quests::{RideAct, SailAct};
+    let gallop = goal(r#"{ "kind": "ride", "act": "gallop", "text": "t" }"#);
+    assert!(gallop.met_by(&Event::Ride { act: RideAct::Gallop, at: None }));
+    assert!(!gallop.met_by(&Event::Ride { act: RideAct::Walk, at: None }), "another act");
+    let arrive = goal(r#"{ "kind": "ride", "act": "arrive", "to": "harbourmaster", "text": "t" }"#);
+    assert!(arrive.met_by(&Event::Ride { act: RideAct::Arrive, at: Some("harbourmaster") }));
+    assert!(!arrive.met_by(&Event::Ride { act: RideAct::Arrive, at: Some("tack") }), "another counter");
+    let map = goal(r#"{ "kind": "sail", "act": "map", "text": "t" }"#);
+    assert!(map.met_by(&Event::Sail(SailAct::Map)) && !map.met_by(&Event::Sail(SailAct::Trim)));
+    assert!(!map.kind().stepped() && !gallop.kind().stepped(), "the room counts them, it runs no step");
 }
 
 /// A foe's fall at the world's middle, with no places.
@@ -192,6 +215,54 @@ fn the_opening_is_walked_by_speaking_with_each_keeper_it_names_and_ends_in_a_ple
     }
     assert!(character.quests_done()[opening], "the opening done");
     assert_eq!(character.quest_now(), Some((road_of(1), 0)), "the pledged house's road begins");
+}
+
+#[test]
+fn a_quest_offered_by_a_keeper_counts_nothing_until_acquired_from_them_at_their_counter() {
+    let opening = road_of(0);
+    let mut character = Character::starting();
+    // The stranger's task walks before anything is offered.
+    assert_eq!(character.quest_offered(), None, "the stranger's word is heard before the opening is offered");
+    assert!(character.ask(Ask::Speak { keeper: keeper("stranger") }, AT_COUNTER, &DICE).is_ok());
+    let weaponsmith = keeper("weaponsmith");
+    assert_eq!(character.quest_offered(), Some(weaponsmith), "the Weaponsmith offers the round");
+    let (quest, task) = character.quest_now().expect("the opening");
+    assert_eq!(character.ask(Ask::Speak { keeper: weaponsmith }, AT_COUNTER, &DICE), Err(Refusal::NothingToSay));
+    assert!(!character.tell(&Event::Talk("armorsmith")), "nothing counts before it is acquired");
+    assert_eq!(character.goals_unmet().count(), 0, "so the room walks and marks none of its goals");
+    assert_eq!(character.ask(Ask::Acquire { keeper: weaponsmith }, AFIELD, &DICE), Err(Refusal::NotHere));
+    let before = character.clone();
+    let armorsmith = keeper("armorsmith");
+    assert_eq!(character.ask(Ask::Acquire { keeper: armorsmith }, AT_COUNTER, &DICE), Err(Refusal::NothingOffered));
+    assert_eq!(character, before, "a refusal changes nothing");
+    assert!(character.ask(Ask::Acquire { keeper: weaponsmith }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.quest_offered(), None, "acquired");
+    assert_eq!(character.quest_now(), Some((quest, task)), "on the same task");
+    assert_eq!(character.quest_counts()[0], 1, "acquiring is a word with the Weaponsmith: her goal is met");
+    assert!(character.quests.gifts.contains(&"weapons".to_owned()), "and her gift given");
+    assert_eq!(character.ask(Ask::Acquire { keeper: weaponsmith }, AT_COUNTER, &DICE), Err(Refusal::NothingOffered));
+    assert!(character.quests.acquired.contains(&quests().quests[opening].id));
+    // A house's road waits to be acquired from its leader at the pledge.
+    assert!(character.ask(Ask::Pledge { faction: 2 }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.quest_offered(), Some(2), "Maren Hale offers the Lamplighters' road");
+    assert!(character.ask(Ask::Acquire { keeper: 2 }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.quest_offered(), None);
+}
+
+#[test]
+fn a_save_with_a_place_past_an_offer_or_a_count_at_it_reads_as_acquired() {
+    let mut character = Character::starting();
+    assert!(character.ask(Ask::Speak { keeper: keeper("stranger") }, AT_COUNTER, &DICE).is_ok());
+    let (quest, task) = character.quest_now().expect("the opening");
+    // A save kept before quests were offered, partway round the counters.
+    character.quests.roads.get_mut(&quests().quests[quest].id).expect("its road").counts[1] = 1;
+    assert_eq!(character.quest_offered(), None, "a count at the task: it was walked before offers");
+    let mut later = Character::starting();
+    later.quests.set_task(quest, task + 1);
+    later.quests.acquired.clear();
+    assert_eq!(later.quest_offered(), None, "a task past the offer");
+    let json = serde_json::to_value(&later.quests).expect("written");
+    assert!(json.get("acquired").is_none(), "none acquired is not written");
 }
 
 #[test]

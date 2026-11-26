@@ -87,6 +87,10 @@ export interface GroundLook {
   readonly inland: readonly [number, number, number];
   readonly high: readonly [number, number, number];
   readonly snowM: number;
+  /** Whether its low ground is paved in flagstones (a passage's court). */
+  readonly paved?: boolean;
+  /** The rock of its walls and cliffs in place of its kit's (a passage's chalk hollow). */
+  readonly rock?: readonly [number, number, number];
 }
 
 const GRASS = [0.3, 0.42, 0.2] as const;

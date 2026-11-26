@@ -1,6 +1,6 @@
 use crate::activity::Activity;
 use crate::bounties::{board, bounty_pay};
-use crate::objectives::{Feat, Objective, count_ship_down};
+use crate::objectives::{Deed, Feat, Objective, count_ship_down};
 use crate::story::Story;
 use crate::{Character, Difficulty};
 use std::collections::{BTreeMap, BTreeSet};
@@ -27,13 +27,18 @@ fn an_objective_counts_only_the_feats_it_names() {
     assert!(hard.counts(&Feat::Cleared { island: Some("continent-3"), tier: Difficulty::Abyss }));
     assert!(!hard.counts(&Feat::Cleared { island: Some("continent-3"), tier: Difficulty::Normal }));
     assert!(!tithe.counts(&Feat::Gathered { resource: 1 }), "a feat of another kind");
+    let deep = Objective::Passage(Deed::Deep(8));
+    assert!(deep.counts(&Feat::Passage(Deed::Deep(9))) && !deep.counts(&Feat::Passage(Deed::Deep(7))));
+    assert!(Objective::Passage(Deed::Lamp).counts(&Feat::Passage(Deed::Lamp)));
+    assert!(!Objective::Passage(Deed::Lamp).counts(&Feat::Passage(Deed::Vein)));
 }
 
 #[test]
-fn the_board_offers_six_bounties_a_day_two_each_on_land_at_sea_and_in_dungeons() {
+fn the_board_offers_eight_bounties_a_day_two_each_on_land_at_sea_in_dungeons_and_in_the_passages() {
     let words = |day| board(day).map(|bounty| bounty.words);
+    // A kept place reads as the bounty it was before the passages' pool came.
     assert_eq!(
-        words(20_778),
+        words(20_778)[..6],
         [
             "Defeat 30 Grey Tithe foes.",
             "Defeat 2 foes of Miniboss rank or higher.",
@@ -44,7 +49,7 @@ fn the_board_offers_six_bounties_a_day_two_each_on_land_at_sea_and_in_dungeons()
         ]
     );
     assert_eq!(
-        words(20_777),
+        words(20_777)[..6],
         [
             "Gather 6 resource nodes.",
             "Defeat 2 foes of Miniboss rank or higher.",
@@ -65,10 +70,11 @@ fn the_board_offers_six_bounties_a_day_two_each_on_land_at_sea_and_in_dungeons()
         };
         assert!(on[..2].iter().all(on_land));
         assert!(on[2..4].iter().all(|bounty| matches!(bounty.objective, Objective::Sink { .. })));
-        assert!(on[4..].iter().all(|bounty| matches!(bounty.objective, Objective::Clear { .. })));
+        assert!(on[4..6].iter().all(|bounty| matches!(bounty.objective, Objective::Clear { .. })));
+        assert!(on[6..].iter().all(|bounty| matches!(bounty.objective, Objective::Passage(_)) && bounty.pool == 3));
         seen.extend(on.map(|bounty| bounty.words));
     }
-    assert_eq!(seen.len(), 10, "every bounty comes up");
+    assert_eq!(seen.len(), 16, "every bounty comes up");
     assert_eq!([bounty_pay(1, 1), bounty_pay(5, 1), bounty_pay(30, 1)], [(600, 36), (1_000, 60), (3_500, 210)]);
     assert_eq!([bounty_pay(5, 2), bounty_pay(5, 3)], [(1_500, 90), (2_000, 120)], "half again, then twice");
 }

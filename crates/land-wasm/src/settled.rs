@@ -35,8 +35,8 @@ pub fn blocks_from(request: &Value) -> Result<Blocks, String> {
 }
 
 /// What a request gives the layouts to build with: `rmbBlocks`, the RMB table's block files' lists; `forged`, the
-/// forged tables (`buildings`, `props` and the props' `parts`); `briefs`, every node's brief. Each missing part is
-/// empty.
+/// forged tables (`buildings`, `props` and the props' `parts`); `briefs`, every node's brief; `regions`, the
+/// regions' table that names each brief's region. Each missing part is empty.
 pub fn book_from(request: &Value) -> Result<(Book, Briefs), String> {
     let mut book = Book::default();
     if let Some(files) = request["rmbBlocks"].as_array() {
@@ -61,7 +61,7 @@ pub fn book_from(request: &Value) -> Result<(Book, Briefs), String> {
     if !request["forged"]["parts"].is_null() {
         book.parts = Book::parts(&request["forged"]["parts"].to_string())?;
     }
-    let briefs = if request["briefs"].is_null() {
+    let mut briefs = if request["briefs"].is_null() {
         Briefs::default()
     } else {
         Briefs(
@@ -69,6 +69,9 @@ pub fn book_from(request: &Value) -> Result<(Book, Briefs), String> {
                 .map_err(|error| format!("the briefs: {error}"))?,
         )
     };
+    if !request["regions"].is_null() {
+        briefs.regions(&request["regions"].to_string())?;
+    }
     Ok((book, briefs))
 }
 
@@ -272,5 +275,39 @@ mod tests {
         }
         assert_eq!(grounds_json("overlook-social"), "null");
         assert_eq!(grounds_json("nowhere"), "null");
+    }
+
+    /// The builders as the page joins them (`landTexts.ts`) give continent 2 the layouts the bake gives it: the same
+    /// regions, so each instance's gate leads from the patrol zone the room has.
+    #[test]
+    fn the_page_s_builders_lay_continent_2_as_the_bake_does() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let read = |path: &str| std::fs::read_to_string(root.join(path)).unwrap();
+        let index: Value = serde_json::from_str(&read("content/world/rmb/index.json")).unwrap();
+        let files: std::collections::BTreeSet<&str> =
+            index["blocks"].as_array().unwrap().iter().map(|row| row[1].as_str().unwrap()).collect();
+        let blocks: Vec<String> = files.iter().map(|file| read(&format!("content/world/rmb/{file}"))).collect();
+        let members = format!(
+            r#"{{"rmbBlocks":[{}],"forged":{{"buildings":{},"props":{},"parts":{}}},"briefs":{},"regions":{}}}"#,
+            blocks.join(","),
+            read("content/forged/buildings.json"),
+            read("content/forged/props.json"),
+            read("content/forged/parts.json"),
+            read("content/world/briefs.json"),
+            read("content/world/regions.json"),
+        );
+        let (book, briefs) = book_from(&serde_json::from_str(&members).unwrap()).unwrap();
+        let builders = bake::builders(&root).unwrap();
+        assert_eq!(briefs, builders.briefs);
+        let world = world::layout::parse(&read("content/world/layout.json")).unwrap();
+        let continent = world.continents.into_iter().find(|continent| continent.id == "continent-2").unwrap();
+        let rmb = Blocks::from_index(&read("content/world/rmb/index.json")).unwrap();
+        let lay = |book: &Book, briefs: &Briefs| {
+            let edits = land::edits::parse(&read("content/world/land/continent-2.json")).unwrap();
+            let mut landmass = land::landmass::generate(&continent, edits).unwrap();
+            city::settle(&mut landmass, &rmb).unwrap();
+            layout::settle::settle(&mut landmass, book, briefs)
+        };
+        assert!(lay(&book, &briefs) == lay(&builders.book, &builders.briefs), "the page's layouts are the bake's");
     }
 }

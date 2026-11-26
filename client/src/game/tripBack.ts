@@ -23,6 +23,18 @@ export interface Instead {
   readonly told: string;
 }
 
+/** A way between places (`passages/wayBetween.ts`) to `place` that failed: the veil's words, the flow the player
+ *  stands in behind it, and the trip back, to `back` (where they set out from, or the home it was taking them to)
+ *  or else the hub, as a trip that fails takes them. */
+export function wayFailed(
+  place: string,
+  back: Refuge | null,
+  hub: Fallback['hub'],
+): { readonly words: string; readonly flow: Flow; readonly fallback: Fallback } {
+  const words = `Returning from the way to ${place}`;
+  return { words, flow: { mode: 'loading', words, then: back?.flow ?? hub.flow }, fallback: { place, back, hub } };
+}
+
 /** How long the words that tell why stay on screen once the veil lifts, ms. */
 export const TOLD_MS = 8000;
 

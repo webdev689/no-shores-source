@@ -19,7 +19,7 @@ test("the lore's file holds what the page shows: names, covers in a cloth and a 
       assert.deepEqual(keys(chapter), ['found', 'id', 'text', 'title'], `${book.id}/${chapter.id}'s keys`);
       assert.ok(chapter.title.trim() && blocksOf(chapter.text).length > 0, `${book.id}/${chapter.id} has words`);
       assert.ok(
-        ['story', 'quest', 'place', 'breach'].includes(chapter.found.kind),
+        ['story', 'quest', 'place', 'breach', 'lamp'].includes(chapter.found.kind),
         `${book.id}/${chapter.id} is found somewhere`,
       );
     }

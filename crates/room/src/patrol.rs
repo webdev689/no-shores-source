@@ -73,6 +73,7 @@ impl Room {
         let under_way: Vec<PlayerId> =
             self.players.iter().filter(|(_, found)| found.gathering.is_some()).map(|(&id, _)| id).collect();
         let (isle, day) = (self.isle.as_ref().map(|isle| isle.seed), self.day());
+        let rich_seam = self.current(passage::Current::RichSeam).is_some();
         for player in under_way {
             let Some(gathering) = self.players.get(&player).and_then(|found| found.gathering) else { continue };
             let Some(fighter) = self.fighter(player).copied() else { continue };
@@ -100,8 +101,12 @@ impl Room {
             }
             let resource = node.resource;
             found.character.gather(usize::from(resource));
+            if rich_seam {
+                found.character.find_material(gear::character::Stuff::Resource(usize::from(resource)), 1);
+            }
             found.character.tell(&gear::quests::Event::Gather);
             self.saw(player, &gear::objectives::Feat::Gathered { resource });
+            self.vein_gathered(player, gathering.node);
         }
     }
 }
