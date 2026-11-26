@@ -1,10 +1,10 @@
 name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
-# weapons drawn large and the material nodes), and publishes them to R2 whenever their tools change on main or a run
-# is asked for on a branch; a run asked for may also draw the first person's dagger and sword frames for both hands
-# (`firstperson`); the figures workflow draws figure strips. The job that renders holds no secret and stages them, and
-# a second job, which only uploads them, holds the repository's R2 token.
+# weapons drawn large, the material nodes and the first person's flask), and publishes them to R2 whenever their tools
+# change on main or a run is asked for on a branch; a run asked for may also draw the first person's dagger and sword
+# frames for both hands (`firstperson`); the figures workflow draws figure strips. The job that renders holds no secret
+# and stages them, and a second job, which only uploads them, holds the repository's R2 token.
 # R2's objects are named by their hashes, so a run changes nothing already published; the render's log ends with the
 # forge's manifest on one line, which a commit takes into content/forge/renders.json once the run has published.
 on:
@@ -19,6 +19,9 @@ on:
       - tools/forge/tools/sprite-forge/specs/item-ramps.json
       - tools/forge/tools/sprite-forge/specs/pictures/nodes.json
       - tools/forge/tools/sprite-forge/artbirds-requirements.txt
+      # The first person's healing flask.
+      - tools/forge/tools/sprite-forge/fpflask.py
+      - tools/forge/tools/sprite-forge/specs/FLASK*.json
       - .github/workflows/forge.yml
   workflow_dispatch:
     inputs:
@@ -65,6 +68,12 @@ jobs:
         run: |
           nodes=$(python -c "import json; print(','.join(json.load(open('tools/sprite-forge/specs/pictures/nodes.json'))['pictures']))")
           python -I tools/sprite-forge/itempics.py --set pictures --only "$nodes" --out public/art/studio/forge
+      # The first person's hands drinking the healing flask (fpflask.py), in the bare glove and every set's gauntlets.
+      - name: Render the first person's flask
+        working-directory: tools/forge
+        run: |
+          python -I tools/sprite-forge/fpheldforge.py --spec tools/sprite-forge/specs/FLASK.json \
+            --out public/art/studio/forge/held --objects
       # A held weapon's layers (fplayers.py): the weapon alone in each metal asked for, the right hand's and the left's
       # twin, into the folder of the archive the game reads them from. The hands stay as published.
       - name: Draw the first-person frames asked for

@@ -49,16 +49,7 @@ The [[Test Ground]] shows them.
 
 The first-person frames are pictures of their own: each weapon's idle and its six strokes, the bow's draw and loose,
 fists and kicks, held things, and the hands that cast, climb, run, ride and work. DFO kept them outside the studio
-folder as its site's art; they are published with the rest. The healing flask is a held thing of the forge's own
-(`fpflask.py`, `specs/FLASK.json`): the figure's flask (`props3p.py` `flask`) at the first-person hand's size, in the
-right fist round the neck's foot, the neck and the cork standing clear past it. Its draught glows red, dark at its
-foot and bright at its top under a pale line, inside a clear glass shell pale at its rim, and lights the hand through
-the glass. Its four frames over the drink are keyed by hand on the screen, as no picture of Daggerfall's gives them:
-brought up from below the screen's right foot, half under it; raised before the face; tipped up at the lips, the neck
-toward the eye with the cork's end showing below the fist and the belly glowing past it; and lowered away, tilted out
-to the right. `fpflask.py --spec` writes the poses (`FLASK-fit.json`) and `--grade` the
-hands' grade, then `fpheldforge.py --spec tools/sprite-forge/specs/FLASK.json --objects` draws the flask and the hands
-in the bare glove and every armour set into `forge/held`. So are the instruments' first-person frames, and the
+folder as its site's art; they are published with the rest. So are the instruments' first-person frames, and the
 pictures of things the forge renders from models of its own: items, props and the light set's pieces
 ([[The Audit Branch's Forge Renders Come Over]]), and the material nodes a patrol gathers
 (`items/nodes.py`, `items/nodeplants.py`, `specs/pictures/nodes.json`), one for each island's resource and drawn as
@@ -68,6 +59,16 @@ pale flowers over low green, windthistle as purple thistles going to down, bog p
 water, and rimecrystal as frost crystals on rock. Each is laid from the forge's own models of stone, ore, crystal,
 amber and leaves where one fits, and each also as it looks spent, the same spot picked over and drawn at the same scale
 ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
+
+The healing flask is a held thing of the forge's own (`fpflask.py`, `specs/FLASK.json`): the figure's flask
+(`props3p.py` `flask`) at the first-person hand's size, in the right fist round the neck's foot, the neck and the cork
+standing clear past it. Its draught glows red, dark at its foot and bright at its top under a pale line, inside a clear
+glass shell pale at its rim, and lights the hand through the glass. Its four frames over the drink are keyed by hand on
+the screen, as no picture of Daggerfall's gives them: brought up from below the screen's right foot, half under it;
+raised before the face; tipped up at the lips, the neck toward the eye with the cork's end showing below the fist and
+the belly glowing past it; and lowered away, tilted out to the right. `fpflask.py --spec` writes the poses
+(`FLASK-fit.json`) and `--grade` the hands' grade, then `fpheldforge.py --spec tools/sprite-forge/specs/FLASK.json
+--objects` draws the flask and the hands in the bare glove and every armour set into `forge/held`.
 
 Each strip is a layer in one move: a row for each view, a cell for each frame, at 62 pixels a metre. A strip may be
 2304 texels wide (nine cells of 256, as a standing thrust's reach needs) and 2048 tall. Its twin, `_z`,
@@ -148,10 +149,10 @@ python -I tools/sprite-forge/forgepoints.py --body male
 A layer takes its set's or metal's own grades by its name (`layers.set_of`), a pair's left twin (`_l`) and a short
 sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
-The `forge` workflow renders the Arts' birds, the weapons drawn large and the material nodes, and adds them to what is
-published whenever `artbirds.py`, `weaponart.py`, the item forge's models
-(`items/`, which the nodes are laid from), `itempics.py`, the nodes' rows or their pinned packages change on main, or
-when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
+The `forge` workflow renders the Arts' birds, the weapons drawn large, the material nodes and the first person's flask,
+and adds them to what is published whenever `artbirds.py`, `weaponart.py`, the item forge's models (`items/`, which
+the nodes are laid from), `itempics.py`, the nodes' rows, `fpflask.py`, the flask's specs or their pinned packages
+change on main, or when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
 manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
 manifest into `content/forge/renders.json`.
 A run asked for may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
