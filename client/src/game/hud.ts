@@ -1,4 +1,5 @@
 import { hudLayout } from '../combat/hudLayout.ts';
+import { PAPER } from './dungeonMap/mapPaper.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
 import { SeaFightReadout } from '../combat/seaReadout.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
@@ -366,6 +367,8 @@ export class Hud {
       plates: plates.length > 0,
       seaFight: this.fightModel !== null,
     };
+    // The dungeon's map covers the view, and only the controls' sheet stands over it.
+    if (PAPER.node) return { width: 'grow', height: 'grow', children: [PAPER.node, this.controls.node(ui, view)] };
     const shade = this.shade.value(clock);
     const sea = this.sea;
     const standing = this.standing;

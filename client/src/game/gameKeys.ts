@@ -5,6 +5,7 @@
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
 import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { openGearWindow } from './gearScreen.ts';
@@ -114,6 +115,8 @@ export function listenForControls(game: Controlled): void {
   addEventListener('keydown', (event) => {
     const key = keyNameOf(event);
     if (event.repeat || ui.typing) return;
+    // The dungeon's map, while it is up, takes every key: its own, and the land map's or Escape to shut it.
+    if (DUNGEON_MAP.key(key, BINDS.now.landMap.keys)) return;
     if (playing.flow.mode === 'story') return void story?.key(key, true);
     // While the stranger speaks her welcome Space moves her words on, as in the story's cutscenes; no other game key
     // acts but Escape.

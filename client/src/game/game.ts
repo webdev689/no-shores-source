@@ -79,7 +79,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const { hud, stack, ui, story, rooms, link, session, world, landTexts, start, shown, roomModule, land } = boot;
   const { scene, shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor } = boot;
   const { builtHulls: hulls } = boot;
-  const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf);
+  const dungeons = new DungeonDrawers(gpu, figureView, boot.cityAssets, boot.biomeOf, canvas);
   const { continents } = world;
   const input = new Input(canvas, () => ui.typing);
   const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);

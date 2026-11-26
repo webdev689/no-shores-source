@@ -10,6 +10,7 @@ import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
 import type { Ambience } from './audio/ambience/ambience.ts';
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { HelmMap } from './helmMap.ts';
 import { musiciansOf } from './audio/music/band.ts';
 import type { MusicDirector } from './audio/music/director.ts';
@@ -220,7 +221,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     here.fight.menuOpen = gearScreenOpen() || socialUp();
     const aspect = size.width / Math.max(1, size.height);
     // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
-    const looking = helmMap.looking;
+    const looking = helmMap.looking || DUNGEON_MAP.open;
     if (looking !== (eyesBeforeMap !== null)) {
       const firstPerson = eyesBeforeMap ?? true;
       eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
@@ -344,7 +345,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // While she speaks, none but her and the player stands within reach of the tour's eye.
     const near = [...shown.figures, ...nodes, ...walking, ...crews];
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
-    if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
+    const you = { feet: [body.x, body.y, body.z] as const, facing: walker.player.facing, name: '', seconds };
+    if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain, you);
     else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain, carried);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);
