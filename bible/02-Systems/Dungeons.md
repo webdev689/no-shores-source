@@ -529,8 +529,9 @@ as standing none (`readDungeon`).
   brazier's embers, on each candle's wick, behind a lantern's glass and a lit passage lamp's, and along a hearth
   (`torchFlame`, `fixtureFlames`, `passagePieceLights`), each seeded by its light's number, so a flame and the light
   it casts flicker together ([[Lights as Claude Builds Them]]). The dungeon's scene draws them over the finished
-  picture (`DUNGEON_FLAMES`), seen through what stands up to 0.14 m nearer, so a lantern's shows through its glass;
-  past where its tongues read, a flame is its glow alone.
+  picture (`DUNGEON_FLAMES`), seen through what stands up to 0.24 m nearer, so a lantern's and the passage lamp's
+  show through their glass, which keeps their smoke and embers in (`glassed`); past where its tongues read, a flame
+  is its glow alone.
 - **Glows and water** (`dungeonShaders.ts`): an ember, a lantern's glass, a kit piece's or a landmark's flame, a
   crystal, a fungus cap and the open portal move with the light nearest them its cluster lists, an ember and glass
   flickering with their flame, the rest breathing (`nearest_seed`). A crystal's and a lantern's glass glow by each

@@ -135,11 +135,17 @@ export function passagePieceLights(pieces: readonly PassagePiece[], state: Piece
   for (const piece of pieces) {
     const [x, y, z] = piece.at;
     if (piece.kind === 'lamp' && state.lampLit)
-      burn([x, y, z + LAMP_FLAME.lightUp], LAMP_LIT, [{ at: [x, y, z + LAMP_FLAME.up], sizeM: LAMP_FLAME.sizeM }]);
+      burn([x, y, z + LAMP_FLAME.lightUp], LAMP_LIT, [
+        { at: [x, y, z + LAMP_FLAME.up], sizeM: LAMP_FLAME.sizeM, glassed: true },
+      ]);
     if (piece.kind === 'kindle' && state.kindled.includes(piece.number)) {
       // The cage hangs off the crook, turned with the piece as its module is (`facingModule`).
       const [east, south] = [Math.cos(piece.facing) * KINDLE_FLAME.out, Math.sin(piece.facing) * KINDLE_FLAME.out];
-      const flame = { at: [x + east, y + south, z + KINDLE_FLAME.up] as const, sizeM: KINDLE_FLAME.sizeM };
+      const flame = {
+        at: [x + east, y + south, z + KINDLE_FLAME.up] as const,
+        sizeM: KINDLE_FLAME.sizeM,
+        glassed: true,
+      };
       burn([x + east, y + south, z + KINDLE_FLAME.lightUp], LIGHT_KINDS.lantern, [flame]);
     }
     if (piece.kind === 'mouth' && state.openMouths.includes(piece.number)) {

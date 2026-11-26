@@ -100,6 +100,24 @@ test('embers swirl up in the heat, drift with the wind and burn out', () => {
   assert.ok(meanEast([5, 0]) > meanEast(CALM) + 1);
 });
 
+test("a small fire's embers climb no further for its size than a half-metre fire's", () => {
+  const climb = (sizeM: number) =>
+    Math.max(
+      ...[...Array(40).keys()].flatMap((frame) =>
+        fireParts({ ...FIRE, sizeM }, frame * FRAME_S, CALM).embers.map((ember) => ember.position[2] - FIRE.at[2]),
+      ),
+    ) / sizeM;
+  const full = climb(0.5);
+  for (const sizeM of [0.09, 0.27, 0.3]) assert.ok(climb(sizeM) <= full, `${sizeM}: ${climb(sizeM)} over ${full}`);
+});
+
+test('a flame behind glass keeps its smoke and embers in, its flames and light still burning', () => {
+  const glassed = fireParts({ ...FIRE, sizeM: 0.3, glassed: true }, 1.3, CALM);
+  const open = fireParts({ ...FIRE, sizeM: 0.3 }, 1.3, CALM);
+  assert.deepEqual([glassed.smoke.length, glassed.embers.length], [0, 0]);
+  assert.deepEqual([glassed.tongues, glassed.wisps, glassed.glows], [open.tongues, open.wisps, open.glows]);
+});
+
 test('a round fire throws its light from its middle, three times its height round', () => {
   const parts = fireParts(FIRE, 2, CALM);
   assert.equal(parts.glows.length, 1);

@@ -199,10 +199,11 @@ export class Flames {
   }
 
   /** Lights a fire `sizeM` tall (half a metre to four) with its base at `base` (world metres); gives its id. With
-   *  `along`, the run in metres of an edge burning from `base` (a rail, a spar), it burns all along that edge. */
-  light(base: Point, sizeM: number, seed: number, along?: Point): number {
+   *  `along`, the run in metres of an edge burning from `base` (a rail, a spar), it burns all along that edge;
+   *  `glassed`, behind a lantern's glass, it throws no smoke or embers. */
+  light(base: Point, sizeM: number, seed: number, along?: Point, glassed = false): number {
     const id = this.nextId++;
-    this.fires.set(id, along ? { at: base, sizeM, seed, along } : { at: base, sizeM, seed });
+    this.fires.set(id, { at: base, sizeM, seed, ...(along ? { along } : {}), ...(glassed ? { glassed } : {}) });
     this.lit = null;
     return id;
   }

@@ -308,6 +308,8 @@ test('under ground a lit lamp, a lit dead lamp and an open mouth each light the 
   const [lampFlame] = lamp.flames ?? [];
   const [kindleFlame] = kindle.flames ?? [];
   assert.ok(lampFlame && kindleFlame && !mouth.flames);
+  // Each behind its glass, which keeps its smoke and embers in.
+  assert.ok(lampFlame.glassed && kindleFlame.glassed);
   assert.ok(lampFlame.at[2] < lamp.at[2] && lampFlame.at[2] + lampFlame.sizeM > lamp.at[2]);
   assert.ok(kindleFlame.at[2] < kindle.at[2] && kindleFlame.sizeM < lampFlame.sizeM);
   // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.

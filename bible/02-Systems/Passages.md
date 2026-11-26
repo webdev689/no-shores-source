@@ -119,7 +119,9 @@ passages' own pieces standing in it with their solids.
   the end room's portal wall first, then the
   rooms farthest along the way, each in a room of its own where there are enough, 9 m apart and 16 m from the way in,
   clear of torches, props, fixtures and landmarks; where a small dungeon cannot hold them so, they keep 6 m apart and
-  12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room but the
+  12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Each is chosen by its place on its wall and
+  stands 0.45 m further out (`MOUTH_BACK_M`), its whole piece in front of the wall's face, so its way on's daylight
+  shows through its arch. Its lamp stands in its greatest room but the
   way in's, three cells or more each way, on the quiet cell nearest the room's middle where its plinth and stones,
   facing the arrival, stand on its rooms' floor clear of every prop, fixture, landmark, pillar and doorway, else in the next room as great
   and as tall. A zone is forged from the first of its seeds where its floor gives its deal every spot it wants; a

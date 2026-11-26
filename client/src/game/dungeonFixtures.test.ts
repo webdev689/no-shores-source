@@ -43,8 +43,8 @@ test('a fixture burns its flames as fires: over a brazier, on each candle, in a 
   assert.ok(Math.abs(Math.max(...candles.map((flame) => flame.at[2])) - high) < 1e-5, 'the tallest on its wick');
   const [lantern] = fixtureFlames([...where, FIXTURE.lantern]);
   assert.ok(
-    lantern && lantern.at[2] > where[2] - 0.16 && lantern.at[2] + lantern.sizeM < where[2] + 0.12,
-    'in its glass',
+    lantern?.glassed && lantern.at[2] > where[2] - 0.16 && lantern.at[2] + lantern.sizeM < where[2] + 0.12,
+    'in its glass, which keeps its smoke and embers in',
   );
   const [hearth] = fixtureFlames([...where, FIXTURE.hearth]);
   assert.ok(hearth?.along && hearth.along[0] > 0.3);

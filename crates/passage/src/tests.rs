@@ -441,7 +441,7 @@ fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_a
     let overlaps = |one: &[f64; 5], other: &[f64; 5]| {
         one[0] < other[2] && other[0] < one[2] && one[1] < other[3] && other[1] < one[3]
     };
-    let (mut in_solid, mut on_stone) = (Vec::new(), Vec::new());
+    let (mut in_solid, mut on_stone, mut behind_wall) = (Vec::new(), Vec::new(), Vec::new());
     for (what, plan, dungeon) in under_plans(2_900..2_952, |_| true) {
         let boxes = dungeon.boxes();
         for piece in plan.pieces.iter().filter(|piece| !matches!(piece.kind, Kind::WayIn | Kind::Mouth(_))) {
@@ -464,9 +464,15 @@ fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_a
             }
         }
         for door in &plan.sites.onward {
-            // The cell behind the mouth's wall, half a cell back from the way it faces.
-            let back = [door.at[0] - 0.5 * libm::sin(door.facing), door.at[1] + 0.5 * libm::cos(door.facing)];
-            let behind = cell_of(&dungeon, back);
+            let back = |metres: f64| {
+                [door.at[0] - metres * libm::sin(door.facing), door.at[1] + metres * libm::cos(door.facing)]
+            };
+            // Its piece, back to its rough back, stands in its own cell, in front of its wall's face.
+            if cell_of(&dungeon, back(crate::under::MOUTH_BACK_M)) != cell_of(&dungeon, door.at) {
+                behind_wall.push(format!("{what}: mouth at {:?}", door.at));
+            }
+            // The cell behind the mouth's wall, half a cell past it.
+            let behind = cell_of(&dungeon, back(crate::under::MOUTH_BACK_M + 0.5));
             if dungeon.rooms.iter().any(|room| room.stones.contains(&behind)) {
                 on_stone.push(format!("{what}: mouth at {:?}", door.at));
             }
@@ -474,6 +480,7 @@ fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_a
     }
     assert!(in_solid.is_empty(), "{} pieces in the Forge's solids: {in_solid:#?}", in_solid.len());
     assert!(on_stone.is_empty(), "{} mouths on a cave's stone: {on_stone:#?}", on_stone.len());
+    assert!(behind_wall.is_empty(), "{} mouths reaching behind their wall: {behind_wall:#?}", behind_wall.len());
 }
 
 #[test]
