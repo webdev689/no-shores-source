@@ -223,8 +223,10 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   own sun, and cast no shadow.
 - **Ships lying by the island** (`moorings.ts`; [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
   On every node of the island the player's ship is docked at (for a sea island, its beach alone) the ship is drawn
-  where it lies, and every other player's parked there as the land room's snapshot tells (its `ships`, never the
-  player's own), each in its own hull, its sails furled, riding the swell, its footprint still on the water. At a
+  where it lies, and every ship parked there as the land room's snapshot tells (its `ships`, the player's own among
+  them, left out where it lies within 5 m of their own as the page draws it, and drawn from the snapshot once the page
+  no longer knows it docked, after a reload), each in its own hull, its sails furled, riding the swell, its footprint
+  still on the water. At a
   social space the city's sloops lie at its pier, in the places of its plan's moorings no player's ship lies within
   15 m of.
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes

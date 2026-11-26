@@ -144,18 +144,16 @@ impl Sent {
         let middle = self.middle;
         let (Some(now), Some(latest)) = (self.now.as_ref(), self.held.back()) else { return Vec::new() };
         let (shown, joined) = room.heard(viewer).map_or((0, now.tick), |(_, shown, joined)| (shown, joined));
-        // The ships parked here as the viewer is sent them: every one but their own.
-        let owner = room.owner(viewer);
-        let theirs = |parked: &[Parked]| -> Vec<(PlayerId, room::sea::Ship, room::sea::ShipLook)> {
-            let others = parked.iter().filter(|(account, ..)| owner != Some(account.as_str()));
-            others.map(|&(_, number, ship, look)| (number, ship, look)).collect()
+        // The ships parked here, every one to everyone: a page that lost its own docking (reloaded) draws its own.
+        let sent = |parked: &[Parked]| -> Vec<(PlayerId, room::sea::Ship, room::sea::ShipLook)> {
+            parked.iter().map(|&(_, number, ship, look)| (number, ship, look)).collect()
         };
-        let ships = theirs(&latest.parked);
+        let ships = sent(&latest.parked);
         // Tick 0 is a screen that showed nothing yet, never a base, even where a snapshot was taken before the first tick.
         // Parked ships left out stand as the base's, so a snapshot that has none where its base had some is sent whole.
         let base = self.held.iter().find(|held| held.tick == shown && shown > 0 && shown < now.tick);
-        let base = base.filter(|held| !ships.is_empty() || theirs(&held.parked).is_empty());
-        let ships = if base.is_some_and(|held| theirs(&held.parked) == ships) { Vec::new() } else { ships };
+        let base = base.filter(|held| !ships.is_empty() || held.parked.is_empty());
+        let ships = if base.is_some_and(|held| sent(&held.parked) == ships) { Vec::new() } else { ships };
         let changed = |was: Option<&Vec<u64>>, is: Option<&Vec<u64>>| base.is_none() || was != is;
         let looked = |id: &PlayerId| base.is_none_or(|held| held.looks.get(id) != latest.looks.get(id));
         let players: Vec<Seen> = now

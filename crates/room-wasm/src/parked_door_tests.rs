@@ -1,6 +1,6 @@
 //! Parked ships through the door, as a place's room names its players to the sea and is told the ships lying at its
-//! island, and as each room sends them: the sea to players within sight, the island's room to everyone but the ship's
-//! own player. server/parked.test.ts runs the same through the WebAssembly and pins the same answer.
+//! island, and as each room sends them: the sea to players within sight, the island's room to everyone, the ship's own
+//! player too. server/parked.test.ts runs the same through the WebAssembly and pins the same answer.
 
 use super::{land_parked, sea_ashore};
 use crate::{TAKEN, gear_door, input, isle_door, open_sea, room_join, room_leave, room_tick, snapshot_door};
@@ -52,7 +52,7 @@ fn a_ship_left_at_rest_is_told_to_its_islands_room_and_seen_at_sea_within_sight_
 }
 
 #[test]
-fn an_islands_room_sends_every_ship_parked_at_it_but_the_viewers_own_whole_and_then_as_it_changes() {
+fn an_islands_room_sends_everyone_every_ship_parked_at_it_their_own_too_whole_and_then_as_it_changes() {
     assert!(!land_parked(b"[]"), "no room on land open");
     let word = r#"{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}"#;
     assert!(isle_door::open_island(word.as_bytes()));
@@ -68,7 +68,7 @@ fn an_islands_room_sends_every_ship_parked_at_it_but_the_viewers_own_whole_and_t
     assert!(!land_parked(b"not ships"));
     room_tick();
     let (shown, _, base) = ships_in(&snapshot_door::snapshot(ann));
-    assert_eq!((shown, base), (vec![(8, 0)], 0), "never the viewer's own ship");
+    assert_eq!((shown, base), (vec![(7, 0), (8, 0)], 0), "the viewer's own ship too, so a page reloaded draws it");
     let seen = |sequence: u32, player: PlayerId| {
         let tick = room_tick_now();
         let bytes = protocol::input_bytes(&room::Input { sequence, seen: tick, ..room::Input::default() });
@@ -80,9 +80,12 @@ fn an_islands_room_sends_every_ship_parked_at_it_but_the_viewers_own_whole_and_t
     assert!(shown.is_empty() && base > 0, "standing as the base's, left out");
     assert!(land_parked(format!("[{}]", ship("ann", 7)).as_bytes()));
     let (shown, _, base) = seen(2, ann);
-    assert_eq!((shown, base), (vec![], 0), "none now: sent whole");
+    assert!(shown == [(7, 0)] && base > 0, "changed, sent on the base");
     let (shown, _, base) = ships_in(&snapshot_door::snapshot(bea));
     assert_eq!((shown, base), (vec![(7, 0)], 0), "and to another, Ann's");
+    assert!(land_parked(b"[]"));
+    let (shown, _, base) = seen(3, ann);
+    assert_eq!((shown, base), (vec![], 0), "none now: sent whole");
 }
 
 /// The open room's clock.

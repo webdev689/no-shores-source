@@ -98,3 +98,16 @@ test("off the island it docked at the player's ship is not drawn; docked at a se
   assert.deepEqual(shipsLying({ ...COVE, id: 'isle-30-00000000000000ff' }, null, atCove, []), []);
   assert.deepEqual(shipsLying(DOWNS, null, atCove, []), []);
 });
+
+test("the player's own ship parked here is drawn from the land room's word once, where the page has no docking", () => {
+  const own: SeenShip = { ...PARKED, player: 9, x: 101.4, y: 198.6, heading: 3, hull: FRIGATE };
+  const reloaded = { docked: null, lies: undefined, hull: undefined };
+  assert.deepEqual(where(shipsLying(SOCIAL, PLAN, reloaded, [own, PARKED])), [
+    [101.4, 198.6, FRIGATE],
+    [131, 211, 2],
+  ]);
+  assert.deepEqual(where(shipsLying(SOCIAL, PLAN, OWN, [own, PARKED])), [
+    [101, 199, FRIGATE],
+    [131, 211, 2],
+  ]);
+});

@@ -45,12 +45,6 @@ impl Room {
         self.players.get(&player).map(|found| (found.received, found.shown_tick, found.joined))
     }
 
-    /// The account that keeps a player's character, once the room knows it.
-    #[must_use]
-    pub fn owner(&self, player: PlayerId) -> Option<&str> {
-        self.players.get(&player).and_then(|found| found.owner.as_deref())
-    }
-
     /// Every player as the room last stepped them, in the order of their numbers.
     pub fn seen(&self) -> impl Iterator<Item = Seen> + '_ {
         self.players.iter().map(|(&player, found)| Seen {

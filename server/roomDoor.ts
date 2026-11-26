@@ -85,7 +85,7 @@ export interface RoomDoor {
    *  `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`. Empty with no sea open. */
   seaAshore(word: string): string;
   /** Gives the open room on land the ships parked at its island, as its seas answered (`seaAshore`, each `number` as
-   *  the host gives it): its snapshots send each player every one but their own. Whether a room on land is open. */
+   *  the host gives it): its snapshots send every player all of them. Whether a room on land is open. */
   parked(ships: string): boolean;
   /** The number of the open sea's landing of an account on its island of that number and seed (its ship at rest at
    *  the island's anchorage when last at sea), or 0 if it is not landed there. */

@@ -276,7 +276,7 @@ side's colours, its pose, its heel and its footprint on the water taken from its
   and quarters each frame, as the editor's does.
 - **Its deck** and everyone on it lie with it: its heading, pitch, roll and drawn size (`deckToWorld`).
 - **Lying parked.** A ship whose player is ashore lies at rest where they left it: the sea room sends it to players
-  within sight at sea, and the rooms of the island it lies at to the players there, never to its own player
+  within sight at sea, and the rooms of the island it lies at to the players there, its own player among them
   ([[Server]], "Parked ships").
 
 ## Its deck

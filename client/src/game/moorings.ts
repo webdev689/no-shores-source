@@ -1,6 +1,7 @@
 // Ships lying still in the sea by an island while a player walks it, each in its own hull, its sails furled, riding
 // the sea's own swell as every other ship does: the player's own where it lies docked, while it is docked at this
-// island; every other player's parked there, as the land room tells; and beside a social space's pier, as the Tower's
+// island; every ship parked there, as the land room tells, the player's own among them once the page no longer knows
+// it docked (after a reload); and beside a social space's pier, as the Tower's
 // Hangar showed the ships that brought its Guardians, the city's sloops at the places of its plan no player's ship
 // lies in.
 import type { SeenShip } from '../network/messages.ts';
@@ -30,6 +31,10 @@ export interface OwnShip {
   readonly hull: number | undefined;
 }
 
+/** How near the page's own ship a parked ship the land room tells of lies to be that same ship, metres: the sea
+ *  keeps a ship docked where the page brought it to rest, and two ships never lie so close. */
+const SAME_M = 5;
+
 /** Each hull's sails furled: a rig never set, made once. */
 const FURLED = new Map<number, SailRig>();
 function furled(hull: number): SailRig {
@@ -47,8 +52,8 @@ function onIsland(node: Pick<NodeInfo, 'id' | 'continent'>, docked: Berthed): bo
 }
 
 /** The ships lying by the island a player walks at `node`: their own where it lies, while it is docked at this island;
- *  every other player's parked here (`parked`, the land room's word); and at a social space its city's pier's sloops
- *  (`plan`), in the places of it no player's ship lies in. */
+ *  every ship parked here (`parked`, the land room's word), but the one lying where the page draws their own; and at a
+ *  social space its city's pier's sloops (`plan`), in the places of it no player's ship lies in. */
 export function shipsLying(
   node: Pick<NodeInfo, 'id' | 'continent' | 'kind'>,
   plan: Pick<CityPlan, 'social'> | null,
@@ -57,7 +62,11 @@ export function shipsLying(
 ): LyingShip[] {
   const { docked, lies } = own;
   const ownLying = docked && lies && onIsland(node, docked) ? [{ ...lies, hull: own.hull ?? SLOOP_HULL }] : [];
-  const players = [...ownLying, ...parked.map(({ x, y, heading, hull }) => ({ x, y, heading, hull }))];
+  // The room's word on the player's own ship lies where the page draws it: it is drawn once, as the page has it.
+  const others = parked.filter((ship) =>
+    ownLying.every((each) => Math.hypot(each.x - ship.x, each.y - ship.y) > SAME_M),
+  );
+  const players = [...ownLying, ...others.map(({ x, y, heading, hull }) => ({ x, y, heading, hull }))];
   const pier = node.kind === 'social' ? (plan?.social.moorings ?? []) : [];
   return [...players, ...freePlaces(pier, players).map(([x, y, heading]) => ({ x, y, heading, hull: SLOOP_HULL }))];
 }

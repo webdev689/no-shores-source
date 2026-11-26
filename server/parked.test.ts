@@ -58,7 +58,7 @@ test('the sea answers an island’s room with the ships parked at it as it does 
   );
 });
 
-test('an island’s room sends each player the ships parked at it, never their own', () => {
+test('an island’s room sends each player every ship parked at it, their own too', () => {
   const door = startRoomDoor(compiled);
   assert.equal(door.openIsland('{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}'), true);
   const [ann, bea] = [door.join(), door.join()];
@@ -78,9 +78,10 @@ test('an island’s room sends each player the ships parked at it, never their o
   door.tick();
   const { account, number, ...seen } = ship('bea', 8);
   assert.equal(account, 'bea');
-  assert.deepEqual(shipsOf(door.snapshot(ann)), [{ ...seen, player: number, pace: 0 }]);
-  assert.deepEqual(
-    shipsOf(door.snapshot(bea)).map((each) => each.player),
-    [7],
-  );
+  assert.deepEqual(shipsOf(door.snapshot(ann))[1], { ...seen, player: number, pace: 0 });
+  for (const player of [ann, bea])
+    assert.deepEqual(
+      shipsOf(door.snapshot(player)).map((each) => each.player),
+      [7, 8],
+    );
 });

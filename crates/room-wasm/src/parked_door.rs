@@ -64,8 +64,8 @@ pub fn sea_ashore(text: &[u8]) -> String {
 }
 
 /// Gives the open room on land the ships parked at its island, as its seas told them (`sea_ashore`'s answers, each
-/// ship's number as its host gives it): its snapshots send each player all of them but their own. False, changing
-/// nothing, with no room on land open or for text that is not such ships.
+/// ship's number as its host gives it): its snapshots send every player all of them, so a page reloaded ashore draws
+/// its own. False, changing nothing, with no room on land open or for text that is not such ships.
 #[must_use]
 pub fn land_parked(text: &[u8]) -> bool {
     let Ok(words) = serde_json::from_slice::<Vec<ParkedWord>>(text) else { return false };
