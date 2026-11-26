@@ -59,7 +59,7 @@ function openWater(): Song {
       {
         bars: 'Dm | Bb | Asus | Dm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'D4:1.5 A4:1.5 | Bb4:3 | A4:3 | D4:3',
+        lead: 'D4:2 A4:1 | Bb4:3 | A4:3 | D4:3',
         level: 0.7,
       },
     ],
@@ -105,7 +105,7 @@ function stillWater(): Song {
       {
         bars: 'Am | F | Esus | Am',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'A4:2 E5:2 | F5:4 | E5:4 | A4:4',
+        lead: 'A4:1 E5:3 | F5:4 | E5:4 | A4:4',
         level: 0.65,
       },
     ],
@@ -157,7 +157,7 @@ function nightWatch(): Song {
       {
         bars: 'Gm | Eb | D | Gm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'G3:1.5 D4:1.5 | Eb4:3 | D4:3 | G3:3',
+        lead: 'G3:2 D4:1 | Eb4:3 | D4:3 | G3:3',
         level: 0.65,
       },
     ],
@@ -167,7 +167,7 @@ function nightWatch(): Song {
 /** The Long Swell, the open sea's second: E Dorian at 76, a fiddle over the harp rolling, the cello under it. */
 function swell(): Song {
   const tune =
-    'E5:1 B4:1 G4:2 | A4:1 F#4:1 D4:2 | C#5:1.5 B4:.5 E4:1 A4:1 | B4:4 | G4:2 C5:1 E5:1 | A4:1.5 B4:.5 A4:1 F#4:1' +
+    'E5:1 B4:1 G4:2 | A4:1 F#4:1 D4:2 | C#5:1.5 B4:.5 E4:1 A4:1 | B4:4 | E5:2 C5:1 E5:1 | A4:1.5 B4:.5 A4:1 F#4:1' +
     ' | G4:2 E4:2 | F#4:4';
   return calmPiece({
     name: 'sea-swell',
@@ -201,7 +201,7 @@ function swell(): Song {
         bars: 'G | A | Bm | Em | C | G | A | B',
         parts: ['pad', 'arp', 'bass', 'counter', 'lead'],
         counter: 'D4:2 B3:2 | C#4:2 E4:2 | D4:2 F#3:2 | G3:4 | G3:2 E4:2 | B3:2 D4:2 | C#4:2 E4:2 | D#4:4',
-        lead: 'B4:4 | A4:4 | F#4:4 | G4:4 | E4:4 | D4:4 | C#5:4 | D#5:4',
+        lead: 'B4:4 | A4:4 | F#4:4 | E4:4 | G4:4 | B4:4 | C#5:4 | D#5:4',
         level: 0.9,
       },
       {
@@ -210,7 +210,7 @@ function swell(): Song {
         lead: tune,
         counter: 'G3:4 | F#3:4 | E3:4 | G3:4 | G3:4 | F#3:4 | G3:4 | F#3:4',
       },
-      { bars: 'Em | Am | Em | Em', parts: ['pad', 'arp', 'lead'], lead: 'E4:2 B4:2 | C5:4 | B4:4 | E4:4', level: 0.65 },
+      { bars: 'Em | Am | Em | Em', parts: ['pad', 'arp', 'lead'], lead: 'E4:3 B4:1 | C5:4 | B4:4 | E4:4', level: 0.65 },
     ],
   });
 }
@@ -235,7 +235,7 @@ function glass(): Song {
     bass: { step: null, velocity: [62] },
     kit: { keys: { deep: 36 }, drums: DRUMS, bar: [['deep', 0, 36]] },
     sections: [
-      { bars: 'Bm | G | Bm | G', parts: ['pad', 'arp', 'bass'], level: 0.7 },
+      { bars: 'Bm | D | Em | F#', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       {
         bars: 'Bm | A | G | F#m | Em | G | A | F#',
         parts: ['pad', 'arp', 'bass', 'lead'],
@@ -251,7 +251,7 @@ function glass(): Song {
       {
         bars: 'Bm | Em | Bm | Bm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'B3:2 F#4:2 | G4:4 | F#4:4 | B3:4',
+        lead: 'B3:1 F#4:3 | G4:4 | F#4:4 | B3:4',
         level: 0.65,
       },
     ],
@@ -297,7 +297,7 @@ function lantern(): Song {
       {
         bars: 'Cm | Ab | Cm | Cm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'C4:2 G4:2 | Ab4:4 | G4:4 | C4:4',
+        lead: 'C4:1 G4:3 | Ab4:4 | G4:4 | C4:4',
         level: 0.65,
       },
     ],

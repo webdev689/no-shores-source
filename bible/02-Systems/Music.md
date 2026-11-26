@@ -260,22 +260,22 @@ on, and the sky over it.
     a far taiko, the levy's weight; the Ropewalk, C Dorian at 80, the oboe leaping a fourth over plucked strings, the
     horn answering. The plaza's band (`band.ts`, `bandScore.ts`) plays where it stands, through the silences between
     pieces as through a piece, and a piece gives way to it near it.
-  - The islands', four to a family (`islandPieces.ts`, `islandPiecesMore.ts`): green, Moorlight (E Aeolian in 6/8, a
-    low whistle over a rolling harp) and Cairn
-    (E Dorian, horn calls over a pulsing piano); dry, Sunscorch (A Phrygian dominant, an oud's ostinato under the
-    oboe) and Dust Road (F sharp Phrygian, a lone cello over a sparse harp); wet, Mistwrack (F sharp Aeolian, a low
-    marimba in three, three and two under the clarinet) and Fen (C sharp minor, a bassoon over a kalimba dripping);
-    cold, Rime (B Aeolian, a horn over open fifths) and Whiteout (B Phrygian at 56, the cello over the piano's half
-    notes). And a second pair each, each in a key, metre, tempo and lead of its own in its family: green, Bracken (A
-    Dorian, a slip jig in 9/8 at 84 on the fiddle over plucked strings) and Barrow (D Aeolian, a sarabande in 3/2 at
-    72, the cello over a slow harp, the flute answering); dry, with its flat second and major third, Mirage (D Phrygian
-    dominant in 7/8 at 80, a low flute over the oud) and Caravan (E Phrygian dominant in 3/4 at 63, a low clarinet
-    over plucked strings, the horn answering); wet, Mangrove (C Aeolian in 6/8 at 70, a low flute falling from the
-    fifth over the marimba, the bassoon under it) and Peat (A Aeolian in 5/4 at 64, the oboe over a kalimba); cold,
-    Floe (F Aeolian in 3/4 at 60, a flute over the harp's open fifths, the horn answering) and Polar Night (G Aeolian
-    in 5/4 at 66, a fiddle over plucked strings, the cello under it). No two calm pieces anywhere share their verse's
-    chords or their opening, nor more bars of tune than the older pieces did, and none but an older piece written so
-    holds its tune or counter-line a half step from its pad (`variety.test.ts`).
+  - The islands', four to a family (`islandPieces.ts`, `islandPiecesMore.ts`): green, Moorlight (E Aeolian in 6/8, a low
+    whistle over a rolling harp) and Cairn (E Dorian, horn calls over a pulsing piano); dry, Sunscorch (A Phrygian
+    dominant, an oud's ostinato under the oboe) and Dust Road (F sharp Phrygian, a lone cello over a sparse harp); wet,
+    Mistwrack (F sharp Aeolian, a low marimba in three, three and two under the clarinet) and Fen (C sharp minor, a
+    bassoon over a kalimba dripping); cold, Rime (B Aeolian, a horn over open fifths) and Whiteout (B Phrygian at 56,
+    the cello over the piano's half notes). And a second pair each, each in a key, metre, tempo and lead of its own in
+    its family: green, Bracken (A Dorian, a slip jig in 9/8 at 84 on the fiddle over plucked strings) and Barrow (D
+    Aeolian, a sarabande in 3/2 at 72, the cello over a slow harp, the flute answering); dry, with its flat second and
+    major third, Mirage (D Phrygian dominant in 7/8 at 80, a low flute over the oud) and Caravan (E Phrygian dominant in
+    3/4 at 63, a low clarinet over plucked strings, the horn answering); wet, Mangrove (C Aeolian in 6/8 at 70, a low
+    flute falling from the fifth over the marimba, the bassoon under it) and Peat (A Aeolian in 5/4 at 64, the oboe over
+    a kalimba); cold, Floe (F Aeolian in 3/4 at 60, a flute over the harp's open fifths, the horn answering) and Polar
+    Night (B flat Aeolian in 5/4 at 66, a fiddle over plucked strings, the cello under it). No two calm pieces anywhere
+    share their verse's chords or their opening, nor more bars of tune than the older pieces did, and none but an older
+    piece written so holds its tune or counter-line a half step from its pad; two pieces at home in one key share no
+    intro's bass, no first two notes and no closing bars (`variety.test.ts`).
   - The sea's, two to a sky: Open Water (D Dorian in 6/8, a horn over the harp's long swell) and the Long Swell (E
     Dorian at 76, a fiddle falling from the tonic over the harp); Still Water (A minor at 56, a low flute over the
     piano's quarters) and Glass (B Aeolian at 52, a low clarinet falling over the harp, a flute far over it); Night

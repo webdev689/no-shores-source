@@ -290,7 +290,7 @@ function mistwrack(): Song {
       {
         bars: 'F#m | D | C#m | F#m',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'F#3:2 C#4:2 | D4:4 | C#4:4 | F#3:4',
+        lead: 'F#3:3 C#4:1 | D4:4 | C#4:4 | F#3:4',
         level: 0.65,
       },
     ],

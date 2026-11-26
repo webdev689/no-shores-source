@@ -5,7 +5,7 @@
 // dominant in 7/8 (two, two, three) at 80, a low flute over the oud; Caravan, E Phrygian dominant in 3/4 at 63, a low
 // clarinet over plucked strings, the horn answering. Wet: Mangrove, C Aeolian in 6/8 at 70, a low flute over the
 // marimba, the bassoon under it; Peat, A Aeolian in 5/4 at 64, the oboe over a kalimba. Cold: Floe, F Aeolian in 3/4 at
-// 60, a flute over the harp's open fifths; Polar Night, G Aeolian in 5/4 at 66, a fiddle over plucked strings.
+// 60, a flute over the harp's open fifths; Polar Night, B flat Aeolian in 5/4 at 66, a fiddle over plucked strings.
 
 import type { Family } from './directorLaw.ts';
 import { DRUMS, INSTRUMENTS, calmPiece, inRole } from './calm.ts';
@@ -31,7 +31,7 @@ const {
 
 function bracken(): Song {
   const tune =
-    'E4:.5 A4:.5 A4:.5 B4:.5 A4:.5 G4:.5 A4:1.5 | D4:.5 G4:.5 G4:.5 B4:1 A4:.5 G4:1.5 | E4:.5 A4:.5 B4:.5 C5:1 B4:.5 A4:1.5' +
+    'E4:.5 G4:.5 A4:.5 B4:.5 A4:.5 G4:.5 A4:1.5 | D4:.5 G4:.5 G4:.5 B4:1 A4:.5 G4:1.5 | E4:.5 A4:.5 B4:.5 C5:1 B4:.5 A4:1.5' +
     ' | F#4:1 E4:.5 D4:1.5 A3:1.5 | G4:.5 E4:.5 G4:.5 C5:1.5 B4:.5 A4:.5 G4:.5 | D5:1 B4:.5 G4:1.5 B4:1.5' +
     ' | C5:.5 B4:.5 A4:.5 E4:1 G4:.5 A4:1.5 | B4:3 G4:1.5';
   return calmPiece({
@@ -139,8 +139,8 @@ function barrow(): Song {
 
 function mirage(): Song {
   const tune =
-    'A4:1.5 D4:1 F#4:1 | G4:1 A4:.5 Bb4:2 | G4:1 C4:1 Eb4:1.5 | D4:1 Eb4:.5 F#4:2 | G4:1 Bb4:1 Eb5:1.5 | Eb5:1 C5:1 G4:1.5' +
-    ' | Bb4:1.5 G4:1 D4:1 | D4:3.5';
+    'A4:1 D4:1 F#4:1.5 | G4:1 A4:.5 Bb4:2 | G4:1 C4:1 Eb4:1.5 | D4:1 Eb4:.5 F#4:2 | G4:1 Bb4:1 Eb5:1.5 | Eb5:1 C5:1 G4:1.5' +
+    ' | Bb4:1 G4:1 D4:1.5 | D4:3.5';
   return calmPiece({
     name: 'mirage',
     bpm: 80,
@@ -164,19 +164,19 @@ function mirage(): Song {
         ['frame', 0, 66],
         ['tap', 1, 36],
         ['frame', 2, 50],
-        ['tap', 2.5, 30],
-        ['tap', 3, 34],
+        ['tap', 2.5, 32],
+        ['tap', 3, 26],
       ],
     },
     sections: [
       { bars: 'D | Cm | Eb | D', parts: ['pad', 'arp', 'bass'], level: 0.75 },
       { bars: 'D | Gm | Cm | D | Eb | Cm | Gm | D', parts: ['pad', 'arp', 'bass', 'lead', 'drums'], lead: tune },
       {
-        bars: 'Cm | Bb | Eb | D | Gm | Eb | Cm | D',
+        bars: 'Cm | Bb | Eb | D | Eb | Gm | Cm | D',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter'],
         counter:
-          'C4:2 Eb4:1.5 | D4:2 Bb3:1.5 | Eb4:2 G3:1.5 | F#3:3.5 | G3:2 Bb3:1.5 | G3:2 Eb3:1.5 | Eb3:2 C3:1.5 | D3:3.5',
-        lead: 'r:2 Eb5:1.5 | D5:3.5 | Bb4:3.5 | F#4:3.5 | r:2 D5:1.5 | Eb5:3.5 | G4:3.5 | F#4:3.5',
+          'C4:2 Eb4:1.5 | D4:2 Bb3:1.5 | Eb4:2 G3:1.5 | F#3:3.5 | G3:2 Bb3:1.5 | G3:2 D3:1.5 | Eb3:2 C3:1.5 | D3:3.5',
+        lead: 'Eb5:2 C5:1.5 | D5:3.5 | Bb4:3.5 | F#4:3.5 | Eb5:2 Bb4:1.5 | G4:3.5 | G4:3.5 | F#4:3.5',
         level: 0.9,
       },
       { bars: 'Gm | D | Gm | D', parts: ['pad', 'arp', 'drums'], level: 0.7 },
@@ -199,7 +199,7 @@ function mirage(): Song {
 function caravan(): Song {
   const tune =
     'E3:1 G#3:1 B3:1 | F3:1 A3:1 D4:1 | C4:2 A3:1 | G#3:1.5 F3:.5 E3:1 | E4:1.5 C4:.5 A3:1 | B3:1 D4:1 G3:1' +
-    ' | F3:1.5 C4:.5 A3:1 | E3:3';
+    ' | A3:1.5 F3:.5 C4:1 | E3:3';
   return calmPiece({
     name: 'caravan',
     bpm: 63,
@@ -224,7 +224,7 @@ function caravan(): Song {
       ],
     },
     sections: [
-      { bars: 'E | F | E | F', parts: ['pad', 'arp', 'bass'], level: 0.7 },
+      { bars: 'E | Am | Dm | E', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       { bars: 'E | Dm | F | E | Am | G | F | E', parts: ['pad', 'arp', 'bass', 'lead'], lead: tune },
       {
         bars: 'Am | F | G | E | Dm | Am | F | E',
@@ -235,14 +235,14 @@ function caravan(): Song {
       },
       {
         bars: 'E | Dm | F | E | Am | G | F | E',
-        parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
+        // The horn answers in the second strain only: here it would sit on the low clarinet's top notes.
+        parts: ['pad', 'arp', 'bass', 'lead', 'drums'],
         lead: tune,
-        counter: 'E4:3 | D4:3 | C4:3 | B3:3 | C4:3 | D4:3 | C4:3 | B3:3',
       },
       {
         bars: 'E | Am | E | E',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'E3:1.5 B3:1.5 | C4:3 | B3:3 | E3:3',
+        lead: 'E4:1 B4:2 | C5:3 | B4:3 | E4:3',
         level: 0.65,
       },
     ],
@@ -279,7 +279,7 @@ function mangrove(): Song {
       ],
     },
     sections: [
-      { bars: 'Cm | Bb | Cm | Bb', parts: ['pad', 'arp', 'bass'], level: 0.7 },
+      { bars: 'Cm | Ab | Fm | G', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       { bars: 'Cm | Bb | Ab | Bb | Cm | Fm | G | Cm', parts: ['pad', 'arp', 'bass', 'lead'], lead: tune },
       {
         bars: 'Fm | Eb | Ab | G | Fm | Cm | Ab | G',
@@ -402,12 +402,12 @@ function polarNight(): Song {
     beatsPerBar: 5,
     tracks: { pad: strings, bass, arp: pizzicato, lead: fiddle, counter: inRole(cello, 'lead') },
     chords: {
-      Gm: { bass: 'G1', pad: 'D3 G3 D4', arp: 'G2 D3 G3 Bb3' },
-      Eb: { bass: 'Eb2', pad: 'Bb2 Eb3 G3', arp: 'Eb3 Bb3 Eb4 G4' },
-      Dm: { bass: 'D2', pad: 'A2 D3 A3', arp: 'D3 A3 D4 F4' },
-      Cm: { bass: 'C2', pad: 'G2 C3 G3', arp: 'C3 G3 C4 Eb4' },
-      Bb: { bass: 'Bb1', pad: 'F2 Bb2 F3', arp: 'Bb2 F3 Bb3 D4' },
-      D: { bass: 'D2', pad: 'A2 D3 F#3', arp: 'D3 A3 D4 F#4' },
+      Bbm: { bass: 'Bb1', pad: 'F3 Bb3 F4', arp: 'Bb2 F3 Bb3 Db4' },
+      Gb: { bass: 'Gb2', pad: 'Db3 Gb3 Bb3', arp: 'Gb3 Db4 Gb4 Bb4' },
+      Fm: { bass: 'F2', pad: 'C3 F3 C4', arp: 'F3 C4 F4 Ab4' },
+      Ebm: { bass: 'Eb2', pad: 'Bb2 Eb3 Bb3', arp: 'Eb3 Bb3 Eb4 Gb4' },
+      Db: { bass: 'Db2', pad: 'Ab2 Db3 Ab3', arp: 'Db3 Ab3 Db4 F4' },
+      F: { bass: 'F2', pad: 'C3 F3 A3', arp: 'F3 C4 F4 A4' },
     },
     // Ten eighths, three beats and two: the plucked strings lean where the bass does.
     arp: { step: 0.5, order: [0, 1, 2, 1, 3, 1, 0, 2, 3, 2], velocity: [56, 30, 36, 30, 38, 30, 48, 30, 36, 30] },
@@ -421,23 +421,23 @@ function polarNight(): Song {
       ],
     },
     sections: [
-      { bars: 'Gm | Dm | Gm | Dm', parts: ['pad', 'arp', 'bass'], level: 0.7 },
+      { bars: 'Bbm | Fm | Bbm | Fm', parts: ['pad', 'arp', 'bass'], level: 0.7 },
       {
-        bars: 'Gm | Eb | Gm | Dm | Cm | Bb | Eb | D',
+        bars: 'Bbm | Gb | Bbm | Fm | Ebm | Db | Gb | F',
         parts: ['pad', 'arp', 'bass', 'lead'],
-        lead: 'D4:2 Bb3:2 A3:1 | G3:3 Bb3:2 | D4:3 C4:1 Bb3:1 | A3:3 D4:2 | G4:2 Eb4:3 | F4:3 D4:2 | Bb4:2 G4:1 Eb4:2 | A4:5',
+        lead: 'F4:2 Db4:2 C4:1 | Bb3:3 Db4:2 | F4:3 Eb4:1 Db4:1 | C4:3 F4:2 | Bb4:2 Gb4:3 | Ab4:3 F4:2 | Db5:2 Bb4:1 Gb4:2 | C5:5',
       },
       {
-        bars: 'Cm | Gm | Eb | Bb | Cm | Dm | Eb | D',
+        bars: 'Ebm | Bbm | Gb | Db | Ebm | Fm | Gb | F',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
-        counter: 'G3:3 Eb3:2 | D3:3 G3:2 | G3:3 Bb3:2 | F3:3 D3:2 | Eb3:3 G3:2 | F3:3 A3:2 | G3:3 Eb3:2 | F#3:5',
-        lead: 'Eb4:5 | D4:5 | Bb3:5 | D4:5 | G4:5 | F4:5 | G4:5 | F#4:5',
+        counter: 'Bb3:3 Gb3:2 | F3:3 Bb3:2 | Bb3:3 Db4:2 | Ab3:3 F3:2 | Gb3:3 Bb3:2 | Ab3:3 C4:2 | Bb3:3 Gb3:2 | A3:5',
+        lead: 'Gb4:5 | F4:5 | Db4:5 | F4:5 | Bb4:5 | Ab4:5 | Bb4:5 | A4:5',
         level: 0.9,
       },
       {
-        bars: 'Gm | Eb | Dm | Gm',
+        bars: 'Bbm | Gb | Fm | Bbm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'G3:3 D4:2 | Eb4:5 | D4:5 | G3:5',
+        lead: 'Bb3:3 F4:2 | Gb4:5 | F4:5 | Bb3:5',
         level: 0.65,
       },
     ],

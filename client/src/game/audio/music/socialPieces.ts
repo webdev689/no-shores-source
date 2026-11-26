@@ -182,7 +182,7 @@ function tithe(): Song {
       {
         bars: 'F | Em | F | Em',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'E3:2 B3:2 | C4:4 | B3:4 | E3:4',
+        lead: 'E3:3 B3:1 | C4:4 | B3:4 | E3:4',
         level: 0.65,
       },
     ],
@@ -241,7 +241,7 @@ function ropewalk(): Song {
       {
         bars: 'Cm | Ab | Gm | Cm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'C4:2 G4:2 | Ab4:4 | G4:4 | C4:4',
+        lead: 'C4:3 G4:1 | Ab4:4 | G4:4 | C4:4',
         level: 0.65,
       },
     ],

@@ -371,7 +371,7 @@ const TAKES: readonly Line[] = [
   { section: 'down', feel: 1, lead: 1, drive: 0 },
   { section: 'a1', feel: 0, lead: 1, drive: 3, voice: 1 },
   { section: 'a1', feel: 1, lead: 2, drive: 2, turn: true, voice: 2 },
-  { section: 'a1', feel: 2, lead: 2, drive: 3, turn: true, voice: 0 },
+  { section: 'a1', feel: 2, lead: 2, drive: 1, turn: true, voice: 0 },
   { section: 'a2', feel: 1, lead: 0, drive: 2, voice: 2 },
   { section: 'a2', feel: 0, lead: 2, drive: 3, turn: true, voice: 1 },
   { section: 'a2', feel: 2, lead: 1, drive: 2, turn: true, voice: 0 },
