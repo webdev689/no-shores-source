@@ -33,7 +33,8 @@ const CLEAR_OF_SHIPS_M: f64 = 1_200.0;
 const CLEAR_OF_COURSES_M: f64 = 300.0;
 /// How long an island stands once nothing holds it: ten minutes.
 pub const FADE_TICKS: u64 = 10 * 60 * 60;
-/// How long a word from its room that players stand ashore holds an island: two minutes, past its minute's ping.
+/// How long a word from its room that players stand ashore holds an island: two minutes, well past its room's naming
+/// of them every 15 seconds.
 pub const ASHORE_TICKS: u64 = 2 * 60 * 60;
 /// The most islands the sea holds at once.
 const MOST: usize = 96;
@@ -199,7 +200,7 @@ impl Islands {
         self.standing.iter().find(|island| island.id == id)
     }
 
-    /// Holds an island while players stand ashore on it: its room's word, each minute.
+    /// Holds an island while players stand ashore on it: its room's naming of them, every 15 seconds.
     pub fn hold_ashore(&mut self, id: u32, seed: u64, clock: u64) -> bool {
         let Some(island) = self.standing.iter_mut().find(|island| island.id == id && island.seed == seed) else {
             return false;

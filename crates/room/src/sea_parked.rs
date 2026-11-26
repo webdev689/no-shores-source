@@ -16,8 +16,8 @@ use world::layout::Layout;
 /// How far off an island's coast a ship at rest is docked at it, and is parked as its player leaves, metres: a berth
 /// lies well within this of a port's, a ruined coast's or a sea island's shore, and a ship out at sea well past it.
 pub const PARKED_REACH_M: i64 = 5_000;
-/// How long a naming keeps a parked ship seen, seconds, and how long one no room has named yet is kept: three of a
-/// place's namings, each about 15 s apart, so one lost on the way lets nothing go.
+/// How long a naming keeps a parked ship seen, seconds: three of a place's namings, each 15 s apart, so one lost on the
+/// way lets nothing go. A ship no room has named yet is kept as one named as it was parked, though seen by no one.
 pub const NAMED_S: u64 = 45;
 /// How long a parked ship no room names is kept unseen before it is let go, seconds: a day, so a player who logs off
 /// on their island finds it docked there again, and the sea keeps no ship for ever.

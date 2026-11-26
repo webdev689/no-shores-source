@@ -75,7 +75,7 @@ The sea room holds its islands (`sea_islands.rs`):
 - **Seen and found.** Each player is told of the islands within 20 km of their ship and of those they have found;
   a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand.
 - **Held and faded.** A ship within 8 km holds an island; so does its room while players stand ashore, telling the
-  sea each minute. One held by nothing for ten minutes fades, and is forgotten by those who found it.
+  sea every 15 seconds. One held by nothing for ten minutes fades, and is forgotten by those who found it.
 - **Land.** A standing island's coast, 34 m out past it (its shallows' 14 m and 20 m more), is land to the player told
   of it: a course that crosses an island in sight of the ship, or one they found, is refused, as the page bends its
   voyages round those alone; and the hostile ships' chart keeps them off every one. A ship a fight or a roll left within
@@ -90,9 +90,9 @@ The sea room holds its islands (`sea_islands.rs`):
 - **The room.** An island's room is `isle-<number>-<seed>` (its seed in 16 hex digits, so an island rolled after the
   sea restarts never opens an older one's room). It opens only on the sea's word: the server's room asks the `sea`
   room for the island by its number, and opens it if it stands with that seed ([[Server]]); while players stand ashore
-  it holds that island, by its number and seed, each minute, until the sea says it no longer stands. Its ground and blocks
-  stand in the world's metres, the island's own moved to its place, as a node's do, so the page predicts the player on
-  the room's own ground to the bit.
+  it holds that island, by its number and seed, as it names them to the sea every 15 seconds ([[Server]], "Parked
+  ships"). Its ground and blocks stand in the world's metres, the island's own moved to its place, as a node's do, so
+  the page predicts the player on the room's own ground to the bit.
 - **Guards.** An isle stands three groups of the Grey Tithe's foes at its water's levels: one led by a Reeve at its
   Elite rank at the landmark, a band at the door and two to four at the camp, on a navmesh baked over
   their posts. A cove holds none.
