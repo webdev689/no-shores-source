@@ -586,12 +586,11 @@ so every decision is Rust and the shell only carries bytes and time.
   player where that character left the space (`standWhereLeft`; [[Accounts]], "Where a player logs back in"). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
-  second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. A page sends a
-  room at most two seconds of messages without hearing from it (`UNHEARD_MOST`, 120): past that the player stands and
-  nothing is numbered until the room speaks, so a stalled network that resumes lets through less than a second's
-  budget. Its player
+  second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
-  unread.
+  unread. A page sends a room at most two seconds of messages without hearing from it (`UNHEARD_MOST`, 120): past
+  that the player stands and nothing is numbered until the room speaks, so a stalled network that resumes lets
+  through less than a second's budget.
 - A kept player is named in the room by their account's username, which the claim answers (`Room::name_player`, or at
   sea `Sea::name_player`, through `room_name`), for their plate; a guest, or a player who plays unkept, has no name.
 - A browser's one text message is its session's token. In a node's room, a dungeon's, an island's and at sea the

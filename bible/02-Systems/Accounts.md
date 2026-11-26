@@ -120,10 +120,10 @@ they play in holds it while they are there.
   and gives it to the player, trimming their fight by it. One account is one player in a room: a second socket of theirs
   signed in (a rejoin before the room saw the first close, or a second tab) sends the first away as played elsewhere
   before it is given the character, so a run keeps the first one's body for it, and the rules refuse to note one account
-  for two players (`Room::own`). While the accounts hold what this room last saved of the first, the room's own body of
-  it is the newest, and the second takes that on, saved anew under its hold. A rejoin's old socket is one the page let
-  go of already, so it plays on; a second tab's page stops there and joins no more, so two tabs never take the character
-  back and forth.
+  for two players (`Room::own`). While the accounts hold what this room last saved of the first, and gave no errand's
+  answer onto it since, the room's own body of it is the newest, and the second takes that on, saved anew under its
+  hold. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
+  joins no more, so two tabs never take the character back and forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
   and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the

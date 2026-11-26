@@ -94,8 +94,8 @@ five parts: `sail` as canvas (one box a connected piece), `hull` and `deck` as t
 holds no secret. The second installs no package (the Lattice's, which renders in a job of its own before, installs
 only hash-pinned wheels), and it alone holds the repository's `CLOUDFLARE_TOKEN` secret, the
 token the deploys use ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]): it uploads what the first left as an artifact
-([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The `dungeon-modules` and `island-modules` workflows'
-second job runs their own publisher on the packs. In the others the first job runs its publisher with `R2_STAGE` set
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The `dungeon-modules`, `island-modules` and `lattice`
+workflows' last job runs their own publisher (the Lattice's `forge_publish.py`). In the others the first job runs its publisher with `R2_STAGE` set
 to a folder, where `tools/r2.py` writes each upload under its key instead of sending it, and reads it back from
 there; the second sends that folder with `python3 -I tools/r2.py upload <folder>`, which refuses it whole unless it is a folder and each
 file is named by the SHA-256 of its bytes, under a folder a publisher writes and with an extension that folder takes.

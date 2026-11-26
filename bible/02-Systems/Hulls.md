@@ -118,4 +118,5 @@ Left:
 
 - **The ram**: a ram bow that strikes harder than a stem, for the Tithe Ram.
 - **The Fluyt**: not yet modelled.
-- **Entering the cabin**: the cabin is built and furnished in every model, but nothing in the game opens it yet.
+- **Entering the cabin**: the one cabin every ship shares is built and furnished (`build_cabin.py`), and each ship's
+  companionway marks its entrance (`Cabin.Entrance`), but nothing in the game opens it yet.
