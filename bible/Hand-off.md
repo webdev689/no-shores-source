@@ -78,12 +78,18 @@ its system note.
   the owner: aiming in first person sees 43° (1.6 times from 65°, was 32.5°), and the iron blow's small red mark.
   Impeccable's design hook is on in every session, at v4.10.0 ([[Toolkit]]).
 - **The balance pass halfway back, loot in Destiny 1's order, and a whole-codebase audit** (#141, with the owner's
-  yes): on land a player's blow ×1.5 and a foe's ×0.75; Vestiges by rank, Minor 2 in 100 to a Boss always, each
+  yes): on land a player's blow ×1.5 and a foe's ×0.75; Vestiges by rank, Minor 2 in 100 to a Boss always (since raised, below), each
   colour half or less of the one below; items from Bosses, Minibosses and a dungeon's clear; clears that pay; Shapes
   from the week's Abyss Dungeon alone; eleven bugs the audit found, each with a test that fails without its fix
   ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
   [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Tested offline, the full
   check passing on `main` with it merged (117fa21e); not yet played by hand or in a deployed room.
+- **Kills drop four times as often** (#220, on the owner's "Merge and deploy";
+  [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]), after a streamer found one common in two hours: a
+  kill's Vestige by rank is Minor 8 in 100, Major 16, Elite 40, Miniboss 50, a Boss always (`vestige::CHANCE`); a Normal
+  one still comes as its common. A Miniboss's item stays 35 in 100 and a dungeon's clear its Vestige 35 in 100
+  (`rewards::CLEAR_VESTIGE`). A ship at sea rolls at its rank, so it rises too. Tested offline and by CI's full check;
+  not yet played.
 - The world's lore and its first crystal faction, #77, merged with #124 on the owner's "Merge and deploy". The owner's
   decisions: Raum's lore adapted into one mystery ([[Raum's Lore Is Adapted Into One Mystery]]), shown and hardly told
   ([[The Game Shows the Mystery and Explains Almost None of It]]); an ageless world with quiet nods to DFO and

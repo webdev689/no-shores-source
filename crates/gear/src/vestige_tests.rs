@@ -81,7 +81,7 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
 
 #[test]
 fn every_rank_drops_as_the_owner_set_and_each_colour_is_half_or_less_of_the_one_below() {
-    assert_eq!([1, 2, 3, 4, 5].map(chance), [0.02, 0.04, 0.10, 0.35, 1.0], "the owner's chances by rank");
+    assert_eq!([1, 2, 3, 4, 5].map(chance), [0.08, 0.16, 0.40, 0.50, 1.0], "the owner's chances by rank");
     assert_eq!([1, 2, 3, 4, 5].map(item_chance), [0.0, 0.0, 0.0, 0.35, 1.0], "items from a Miniboss and a Boss");
     for rank in 1..=5 {
         let weights = colours(rank);
@@ -153,8 +153,8 @@ fn a_boss_always_leaves_a_vestige_and_the_best_colours_wait_on_the_foes_level() 
     assert!(high_boss[4] > 80 && high_boss[4] < 200, "about 32 in 1,000 Atheric: {high_boss:?}");
     let minors = colours(1, 30, 20_000);
     let dropped_count: u32 = minors.iter().sum();
-    assert!((340..460).contains(&dropped_count), "2 in 100 from a Minor: {dropped_count}");
-    assert!(minors[4] <= 5, "a Minor all but never leaves an Atheric: {minors:?}");
+    assert!((1_450..1_750).contains(&dropped_count), "8 in 100 from a Minor: {dropped_count}");
+    assert!(minors[4] <= 12, "a Minor's Atheric about one kill in 4,000: {minors:?}");
 }
 
 #[test]

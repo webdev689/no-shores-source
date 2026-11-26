@@ -19,7 +19,7 @@ pub const ATHERIC_FROM: u8 = 20;
 const ITEM_STREAM: u64 = 0x6974_656d;
 /// A kill's chance of a Vestige for each player who struck it, by the foe's rank, Minor to Boss: a Boss always leaves
 /// one, as Destiny 1's bosses did, and every rank more often than the one below.
-const CHANCE: [f64; 5] = [0.02, 0.04, 0.10, 0.35, 1.0];
+const CHANCE: [f64; 5] = [0.08, 0.16, 0.40, 0.50, 1.0];
 /// A kill's chance of leaving an item as itself, by the foe's rank: a Miniboss's as often as its Vestige, a Boss's
 /// always, apart from its Vestige.
 const ITEM_CHANCE: [f64; 5] = [0.0, 0.0, 0.0, 0.35, 1.0];
