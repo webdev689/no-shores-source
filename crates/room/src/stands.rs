@@ -1,10 +1,10 @@
 //! Where a garrison's groups stand beyond its posts' first laying: a patrol's territories, every foes' site its layout
-//! lays (its camps', ruins', keeps', wrecks', arenas', covens' and caves' areas and its runs' beats), each standing a
-//! group the first time a player comes within SITE_NEAR of it, on a mesh baked round it then (`quests.rs`'
-//! `ground_of`), so a room's opening grows no slower; one no player has come near for a while, out of sight, let go
-//! to stand afresh when one does, so the zone's foes are where its players are within the room's limit; and a
-//! half-fallen patrol group made whole again once no player has come near its post for STAND_AGAIN, as a Destiny
-//! patrol area resets (the owner's "Whatever destiny does").
+//! lays (each area but a landing, a gate, an entrance, a hamlet, a wilds, a Breach's hollow and a guild's plot, and
+//! its runs' beats), each standing a group the first time a player comes within SITE_NEAR of it, on a mesh baked
+//! round it then (`quests.rs`' `ground_of`), so a room's opening grows no slower; one no player has come near for a
+//! while, out of sight, let go to stand afresh when one does, so the zone's foes are where its players are within the
+//! room's limit; and a half-fallen patrol group made whole again once no player has come near its post for
+//! STAND_AGAIN, as a Destiny patrol area resets (the owner's "Whatever destiny does").
 
 use super::{
     BEAT_STREAM, CLEAR_AROUND, FROM_SQUARE, Group, NODE_AROUND, PATROL, POSTS_APART, STAND_AGAIN, draws_of, foe_type,
@@ -114,8 +114,7 @@ impl Room {
                 ^ at[1].to_bits().wrapping_mul(0xc2b2_ae3d_27d4_eb4f);
             let seed = self.world_seed ^ SITE_STREAM ^ mix;
             let mut draws = draws_of(seed);
-            // A site's group is a band, as it was laid and walked: the smaller groups stand by the landing and come by
-            // airship (`smaller.rs`).
+            // A site's group is a band; the smaller groups stand only in the landing's square (`smaller.rs`).
             let group = band(&mut draws, &PATROL);
             if self.living_foes() + group.members.len() > self.others_most() {
                 continue;

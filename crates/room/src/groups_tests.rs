@@ -617,6 +617,10 @@ fn a_half_fallen_patrol_group_is_made_whole_once_no_player_has_come_within_40_m_
     let post = &room.garrison[0];
     assert!(!post.defending && post.anchor.is_none(), "whole again, it defends no more");
     assert_eq!(living(&room, 0).len(), 4, "its fallen stand at their places again");
+    let brought: Vec<FighterId> =
+        living(&room, 0).into_iter().filter(|id| !followers[2..].contains(id) && Some(*id) != post.leader).collect();
+    assert_eq!(brought.len(), 2, "two come back");
+    assert!(brought.iter().all(|id| room.arriving(*id)), "its fallen come back by airship");
     for id in living(&room, 0) {
         assert!(!room.foes[&id].brain.orders().defend);
     }

@@ -32,11 +32,13 @@ pub const LINGER: u64 = 72;
 pub const FLY_OUT: u64 = 9 * 60;
 pub const SHIP_MOST: usize = 6;
 const SECOND_SHIP_LAG: u64 = 90;
-/// Ships coming to ground nearer each other than this, metres, hang one over the other.
+/// Ships coming to ground nearer each other than this, metres, hang abreast.
 const SHIPS_APART: f64 = 40.0;
-/// How high a ship hangs over its ground, metres: each further ship this much higher.
+/// How high a ship hangs over its ground, metres: its keel's bottom, the model's origin.
 pub const HANGS_HIGH: f64 = 16.0;
-const HIGHER_EACH: f64 = 8.0;
+/// How far abeam of the ship before it, either way in turn, a further ship to the same ground hangs, metres: clear of
+/// its outriggers (20.4 m across), as one over the other would meet its hull and its climb out.
+const ABREAST: f64 = 24.0;
 /// A ship comes in toward the nearest player, swung this far either way off the line to them, radians.
 const SWING: f64 = 0.6;
 /// A crown's life, in ticks: forming in the air, each foe forming this long after the one before and taking this
@@ -111,7 +113,7 @@ impl Room {
 
     /// The Grey Tithe's `foes`, stood at their places, come by airship under the open sky: a ship for each SHIP_MOST
     /// of them, hanging over the middle of the places its foes stand at, coming in toward the nearest player; a ship
-    /// coming to ground another is over sets out a little later and hangs higher. Elsewhere they stand as stood.
+    /// coming to ground another is over sets out a little later and hangs abreast of it. Elsewhere they stand as stood.
     pub(crate) fn by_airship(&mut self, foes: &[FighterId]) {
         if !self.open_sky() {
             return;
@@ -122,6 +124,7 @@ impl Room {
                 bringer.kind == Bringer::Airship && apart([bringer.at[0], bringer.at[1]], [at[0], at[1]]) < SHIPS_APART
             };
             let nth = self.arrivals.bringers.iter().filter(over).count();
+            let first = self.arrivals.bringers.iter().find(over).map_or(at, |ship| ship.at);
             let began = self.clock + SECOND_SHIP_LAG * nth as u64;
             let id = self.next_arrival();
             let hangs = began + FLY_IN;
@@ -133,10 +136,22 @@ impl Room {
                 self.arrivals.foes.insert(*foe, arrival);
             }
             let heading = self.heading_in(at, id);
-            let high = HANGS_HIGH + HIGHER_EACH * nth as f64;
+            let abeam = ABREAST * nth.div_ceil(2) as f64 * if nth % 2 == 1 { 1.0 } else { -1.0 };
+            // shortcut: abeam of the first ship over, not of its own middle; middles tens of metres apart let their foes
+            // down on a longer slant. Place it from its own middle if that is seen.
+            let at = [first[0] + abeam * libm::cos(heading), first[1] + abeam * libm::sin(heading), at[2]];
             let leaves = last + LINGER;
-            let seen =
-                ArrivalSeen { id, kind: Bringer::Airship, at, heading, high, began, hangs, leaves, gone: leaves };
+            let seen = ArrivalSeen {
+                id,
+                kind: Bringer::Airship,
+                at,
+                heading,
+                high: HANGS_HIGH,
+                began,
+                hangs,
+                leaves,
+                gone: leaves,
+            };
             self.arrivals.bringers.push(ArrivalSeen { gone: leaves + FLY_OUT, ..seen });
         }
     }

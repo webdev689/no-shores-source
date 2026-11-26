@@ -125,7 +125,7 @@ fn a_foe_arriving_neither_thinks_nor_steps_and_takes_up_its_hunt_afresh_as_it_la
 }
 
 #[test]
-fn what_brought_foes_is_gone_once_it_has_flown_off_and_a_ship_coming_over_another_s_ground_hangs_higher_later() {
+fn what_brought_foes_is_gone_once_it_has_flown_off_and_a_ship_coming_to_another_s_ground_hangs_abreast_later() {
     let (mut room, _, foes) = brought();
     let first = room.arrivals_seen()[0];
     // A second ship to the same ground: its foes the same group's, stood again for the test.
@@ -136,7 +136,11 @@ fn what_brought_foes_is_gone_once_it_has_flown_off_and_a_ship_coming_over_anothe
     }
     room.by_airship(&more);
     let second = room.arrivals_seen()[1];
-    assert_eq!((second.began, second.high), (first.began + SECOND_SHIP_LAG, HANGS_HIGH + HIGHER_EACH));
+    assert_eq!((second.began, second.high), (first.began + SECOND_SHIP_LAG, HANGS_HIGH));
+    // Abeam of the first, clear of its outriggers, not over it, where a hull's height and its climb out would meet.
+    let abeam = apart([first.at[0], first.at[1]], [second.at[0], second.at[1]]);
+    let across = libm::sin(bearing([first.at[0], first.at[1]], [second.at[0], second.at[1]]) - second.heading).abs();
+    assert!(abeam >= ABREAST - 1.0 && across > 0.9, "{abeam:.1} m apart, {across:.2} across its way");
     run_to(&mut room, first.gone);
     assert_eq!(room.arrivals_seen().len(), 1, "the first is gone");
     run_to(&mut room, second.gone);
@@ -208,4 +212,14 @@ fn a_foe_arriving_hears_nothing_until_it_lands() {
     room.swings.push((player, attack));
     room.tell_brains();
     assert!(foes.iter().all(|id| room.foes[id].brain.heard().is_empty()), "no swing heard from the ship");
+}
+
+#[test]
+fn a_foe_arriving_hears_no_ally_s_shout_until_it_lands() {
+    let (mut room, _, foes) = brought();
+    let grounded: Vec<FighterId> = room.foes.keys().copied().filter(|id| !foes.contains(id)).take(2).collect();
+    let [shouter, ally] = grounded[..] else { panic!("two foes on the ground") };
+    room.shout(shouter, [0.0; 3], [0.0; 3]);
+    assert!(foes.iter().all(|id| room.foes[id].brain.heard().is_empty()), "no shout heard from the ship");
+    assert!(!room.foes[&ally].brain.heard().is_empty(), "an ally on the ground hears it");
 }

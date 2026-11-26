@@ -155,7 +155,7 @@ fn no_site_stands_by_a_public_event_s_ground_which_its_event_holds() {
 }
 
 #[test]
-fn a_cleared_group_and_a_half_fallen_group_s_fallen_come_back_by_airship() {
+fn a_cleared_group_comes_back_by_airship() {
     let mut room = node(NodeKind::Patrol, "glade");
     room.set_foe_sites(&[]);
     let player = room.join().unwrap();

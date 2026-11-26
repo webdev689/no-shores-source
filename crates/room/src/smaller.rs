@@ -1,7 +1,8 @@
 //! The smaller groups a patrol stands beside its bands, after the owner's "enemies should come in varied groups in
 //! patrol ... The largest groups being what we have now, and then smaller varied groups": a sentry, a scout, a
 //! Collector and his Runner, a shield and a bow, two bows on watch, and a Collector's round. A patrol's square stands
-//! two or three of them beside its bands; a site's group is a band, as its caverns and runs were laid and walked.
+//! two or three of them beside its bands. A site's group is a band: a smaller one up a run's ledge, facing away, is
+//! not met by a player walking the run.
 
 use super::{Group, draws_of, index};
 use crate::NodeKind;

@@ -439,12 +439,13 @@ impl Room {
     }
 
     /// A foe's shout as it turns alert, told to every ally: each that stands near enough and is not yet alert turns
-    /// alert toward the place.
-    fn shout(&mut self, shouter: FighterId, from: [f64; 3], at: [f64; 3]) {
+    /// alert toward the place. One still arriving hears nothing until it lands.
+    pub(crate) fn shout(&mut self, shouter: FighterId, from: [f64; 3], at: [f64; 3]) {
         let Some(side) = self.fighter(shouter).map(|fighter| fighter.side) else { return };
         let (shouted, tick) = (Seen::Shouted { from, at }, self.clock);
+        let arriving: Vec<FighterId> = self.arrivals.foes.keys().copied().filter(|id| self.arriving(*id)).collect();
         for (id, foe) in &mut self.foes {
-            if *id != shouter && foe.fighter.side == side {
+            if *id != shouter && foe.fighter.side == side && !arriving.contains(id) {
                 notice(&mut foe.brain, *id, &shouted, tick);
             }
         }
