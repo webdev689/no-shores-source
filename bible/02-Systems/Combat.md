@@ -293,13 +293,16 @@ A foe never drinks.
   flask taken from the belt, raised to the chin, tipped up at the lips with the head back, lowered before the chest; on
   the ground at a walk it plays `quaffwalk`, the same frames on the walk's legs, where the look is drawn whole in it,
   else the standing quaff ([[Sprite Forge]]). The flask's red draught glows in the art. Where the forge draws no quaff,
-  or the look wears a layer the quaff leaves out, the figure stands or walks with its weapon put away. Another player's figure shows the move their own page shows. As the room
-  tells the heal, the drinker's light comes in the healing charges' red, drawn in cells as Mend's is and gone in a
-  second (`combat/healLight.ts`): a ring at the feet swells in three steps and cools over its first half, a hollow
-  glow wraps the figure for its first 0.4 s, and motes and small crosses rise off the body, cooling a stop each third.
-  Through the drinker's own eyes the figure's light is not drawn: a red glow pulses round the screen's edge in six held
-  steps, light outside its body, with motes rising up its sides ([[First Person]], [[Interface]]). Reduced motion keeps
-  the ring at one size and the glows still, and lets no mote rise.
+  or the look wears a layer the quaff leaves out, the figure stands or walks with its weapon put away. Another
+  player's figure shows the move their own page shows. As the room tells the heal, the drinker's light comes in the
+  healing charges' red, drawn in cells as Mend's is and gone in a second
+  (`combat/healLight.ts`): a faint ring glints at the feet for its first quarter, and six small motes and three small
+  crosses swirl up round the figure, each leaving the feet in its own time and turning round it once and a quarter to
+  just over the head, before the figure on the near side of the turn and behind it on the far, red, then pale red,
+  then a single cell that goes out, never in the blood's dark. Through the drinker's own eyes the figure's light is
+  not drawn: a faint red light comes in from the screen's edge in six held steps, warm red at the rim paling inward,
+  with motes drifting up its sides in a gentle sway ([[First Person]], [[Interface]]). Reduced motion keeps only the
+  still glint and the edge: nothing circles or rises.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
   their meter toward the next charge by the share it took of the foe's most health and most shield together, times
   half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is

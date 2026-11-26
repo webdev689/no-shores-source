@@ -232,8 +232,8 @@ the middle. The hands give on the stride's beat, the left a beat behind; in a tu
 other gives. A drawn weapon takes the right hand, and a weapon, a shield or a light the left; an empty hand holds its
 rein, not its fist up.
 
-As a drink's heal comes, the first person shows no light on the body: a red glow pulses round the screen's edge and
-motes rise up its sides, drawn with the fight's display ([[Combat]], "Healing charges").
+As a drink's heal comes, the first person shows no light on the body: a faint red light comes in at the screen's edge
+and motes drift up its sides, drawn with the fight's display ([[Combat]], "Healing charges").
 
 ## Limits
 
