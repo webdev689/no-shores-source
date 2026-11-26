@@ -398,7 +398,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
    *  to choose where, only while the player is free (never while another landmass opens). */
   const landings = new SeaLandings({
     ...{ sea: () => playing.sea, landmass: () => playing.landmass, isles, free },
-    land: () => void (free() && playing.sea?.goAshore() && change({ kind: 'view-landings' })),
+    land: () =>
+      void (playing.flow.mode === 'sea' && free() && playing.sea?.goAshore() && change({ kind: 'view-landings' })),
   });
 
   /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
