@@ -1,3 +1,21 @@
+---
+id: 126
+title: "headroom learn wrote a push-before-check rule into project memory five times; new-observation.sh choked on dashed claims"
+status: open
+type: internal
+skill: []
+proposes_skill: []
+target_file: ["CLAUDE.md", "tools/claude-toolkit/install-all.sh"]
+siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26; the sibling check is due at the review"
+area: "end-of-session headroom learn and the Stop hook"
+date: 2026-11-22
+session_context: "overlook-source, and again on #161"
+parked_until:
+resolved:
+resolution:
+reference:
+commands_verified: none
+---
 # headroom learn wrote a push rule that breaks CLAUDE.md; new-observation.sh choked on dashed claims
 
 - Date: 2026-11-22

@@ -1,3 +1,21 @@
+---
+id: 114
+title: "Serena has no Python language server, so a worker brief's Serena steps fail on tools/*.py"
+status: open
+type: internal
+skill: []
+proposes_skill: []
+target_file: ["tools/claude-toolkit/workers/brief-common-template.md", "tools/claude-toolkit/workers/run-worker.sh"]
+siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26; the sibling check is due at the review"
+area: "worker briefs and Serena's languages"
+date: 2026-11-21
+session_context: "Public events' second audit; again on fpforge and #211's airship worker"
+parked_until:
+resolved:
+resolution:
+reference:
+commands_verified: none
+---
 # 0091 serena-has-no-python-server
 
 - Date: 2026-11-21

@@ -9,7 +9,7 @@ target_file: ["tools/claude-toolkit/toolkit-data.sh", "bible/03-Code/Toolkit.md"
 siblings_checked: "none: the target is the project's toolkit script, not a skill"
 area: "observation log storage"
 date: 2026-11-20
-session_context: "Overlook factions round: the session began before #96 merged, so its log (0001-0014) was never restored from the branch toolkit-data, which another session had filled with its own 0001-0012 and reviewed in #100; save refused, restore with --skip-old-files mixed the two without the marker; also overlook-source#63 merge session: its 0013 and 0014 met the factions round\'s 0013 and 0014 at save"
+session_context: "Overlook factions round: the session began before #96 merged, so its log (0001-0014) was never restored from the branch toolkit-data, which another session had filled with its own 0001-0012 and reviewed in #100; save refused, restore with --skip-old-files mixed the two without the marker; also overlook-source#63 merge session: its 0013 and 0014 met the factions round's 0013 and 0014 at save"
 parked_until:
 resolved:
 resolution:

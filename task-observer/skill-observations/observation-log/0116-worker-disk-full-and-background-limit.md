@@ -1,3 +1,21 @@
+---
+id: 116
+title: "Worker targets filled the disk allowance, and a background full check died at the default 10-minute limit"
+status: open
+type: internal
+skill: []
+proposes_skill: []
+target_file: ["tools/claude-toolkit/workers/run-worker.sh", "bible/03-Code/Toolkit.md"]
+siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26; the sibling check is due at the review"
+area: "worker disk and background limits"
+date: 2026-11-21
+session_context: "Public events' second audit, worker biblefix2"
+parked_until:
+resolved:
+resolution:
+reference:
+commands_verified: none
+---
 # worker-disk-full-and-background-limit
 
 - Date: 2026-11-21

@@ -1,6 +1,7 @@
 ---
+id: 145
 title: "The picture driver's waitFor and clickText read the page's DOM, which the drawn interface no longer has"
-status: resolved
+status: actioned
 type: internal
 skill: []
 proposes_skill: []

@@ -1,3 +1,21 @@
+---
+id: 117
+title: "A picture worker was stopped by the 2-hour background limit again, losing its end steps"
+status: open
+type: internal
+skill: []
+proposes_skill: []
+target_file: ["tools/claude-toolkit/workers/run-worker.sh"]
+siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26; the sibling check is due at the review"
+area: "picture briefs and the background limit"
+date: 2026-11-22
+session_context: "The public events' picture pass, resume-pictures2"
+parked_until:
+resolved:
+resolution:
+reference:
+commands_verified: none
+---
 # 0095 picture worker stopped by the 2-hour background limit again
 
 - Date: 2026-11-22

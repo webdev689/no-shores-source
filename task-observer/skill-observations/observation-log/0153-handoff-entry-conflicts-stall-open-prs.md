@@ -34,3 +34,8 @@ its own line, or have it edit the shared file last against the current tip.
 **Again (2026-11-24, #196):** the hand-off entry conflicted once more, with two code conflicts beside it; found only because a later audit read the PR's check runs (zero) and then its `mergeable_state`. Checking `mergeable_state` right after opening a PR, and after each merge to main while it waits, would have caught it within the hour.
 
 **Again (2026-11-24, #194):** a third instance, this time also in `Decisions.md`'s index, where every decision is appended to the same list end. The time went to looking for a CI outage before reading `mergeable_state`, which answers it in one call. Reading `mergeable_state` first whenever a PR shows no runs would end the search at once; the fix proposed above is still the root one.
+
+
+**Recurred the same evening:** #177 (the wake's track) went dirty at 22:07 when #172 (the prologue's rework) merged,
+again with only `bible/Hand-off.md`'s "Waiting on the owner" head conflicting, and again no CI ran on its head until
+main was merged in. Two of two PRs this session hit it.

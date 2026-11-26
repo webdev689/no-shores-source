@@ -1,3 +1,21 @@
+---
+id: 115
+title: "Render checks lost the headless WebGPU device while three workers shared four cores; vite preview and the file limit surfaced late"
+status: open
+type: internal
+skill: []
+proposes_skill: []
+target_file: ["tools/claude-toolkit/workers/brief-common-template.md"]
+siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26; the sibling check is due at the review"
+area: "render checks inside workers"
+date: 2026-11-21
+session_context: "Public events' second audit, worker pagefix2"
+parked_until:
+resolved:
+resolution:
+reference:
+commands_verified: none
+---
 # render-checks-lost-under-worker-load
 
 - Date: 2026-11-21

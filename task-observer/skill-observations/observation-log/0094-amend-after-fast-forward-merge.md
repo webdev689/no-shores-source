@@ -1,3 +1,21 @@
+---
+id: 94
+title: "An amend after a merge that fast-forwarded rewrote a worker's commit; a clean merge left no attribution trailers"
+status: open
+type: internal
+skill: []
+proposes_skill: []
+target_file: ["tools/claude-toolkit/git-hooks", "bible/04-Procedures/Branches and Merging.md"]
+siblings_checked: "assumed: header rebuilt from the body at repair on 2026-11-26; the sibling check is due at the review"
+area: "merging worker branches and main with trailers"
+date: 2026-11-21
+session_context: "Merging worker branches (overlook-source); again on #211"
+parked_until:
+resolved:
+resolution:
+reference:
+commands_verified: none
+---
 # amend-after-fast-forward-merge
 
 - Date: 2026-11-21

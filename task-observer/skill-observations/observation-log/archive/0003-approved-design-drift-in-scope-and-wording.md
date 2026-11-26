@@ -12,7 +12,7 @@ date: 2026-11-20
 session_context: "Building the owner-approved foe plate changes after Destiny's"
 parked_until:
 resolved: 2026-11-20
-resolution: "Applied on PR #96, waiting on the owner's merge, as a barrier (three breaks): tools/claude-toolkit/workers/fidelity-review.sh with a fixed brief, and .github/workflows/fidelity.yml failing a PR that changes bible/05-Decisions/ without its verdict; Recording a Decision, CLAUDE.md and the Toolkit say so. First run, on #95, found 8 findings incl. a real bug (first review, 2026-11-20). #96 merged; the owner then had the barrier removed, "Get rid of the reviewer tool completely" (https://github.com/Lattymoy/overlook-source/pull/105, 2026-11-20), so no structural guard holds this rule now: a recurrence is evidence for the owner, not grounds to re-add it unasked."
+resolution: "Applied on PR #96, waiting on the owner's merge, as a barrier (three breaks): tools/claude-toolkit/workers/fidelity-review.sh with a fixed brief, and .github/workflows/fidelity.yml failing a PR that changes bible/05-Decisions/ without its verdict; Recording a Decision, CLAUDE.md and the Toolkit say so. First run, on #95, found 8 findings incl. a real bug (first review, 2026-11-20). #96 merged; the owner then had the barrier removed, 'Get rid of the reviewer tool completely' (https://github.com/Lattymoy/overlook-source/pull/105, 2026-11-20), so no structural guard holds this rule now: a recurrence is evidence for the owner, not grounds to re-add it unasked."
 reference:
 commands_verified: none
 ---
