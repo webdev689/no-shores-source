@@ -12,6 +12,10 @@ use crate::solids::{Material, Shape, Solid};
 /// How wide a walk is laid and how high its flags stand over the cobbles, metres.
 const WALK_WIDE_M: f64 = 3.2;
 const WALK_HIGH_M: f64 = 0.06;
+/// How far a walk's strips stand over its rounds and fillets, and over each other walk leaving the same joint, metres:
+/// a strip's flags run along it (`solidMesh.ts` `walkUvs`) while the rounds and fillets wear the world's grain, so
+/// where two pieces of a different grain overlap, one lies over the other and never level with it.
+const WALK_RISE_M: f64 = 0.002;
 /// The longest piece a walk's strip is laid in, metres: the city is drawn a few centimetres nearer than it stands,
 /// which bends a long face, and a short one keeps over the lawn laid under it.
 const WALK_PIECE_M: f64 = 3.0;
@@ -30,17 +34,26 @@ pub(crate) fn walks(frame: &Frame, laid: &mut Laid) {
         .into_iter()
         .map(|[from, to]| [frame.at(from[0], from[1]), frame.at(to[0], to[1])])
         .collect();
+    // The levels the walks already leaving each joint stand at.
+    let mut stood: Vec<([f64; 2], usize)> = Vec::new();
+    let at_joint = |joint: [f64; 2], point: [f64; 2]| libm::hypot(joint[0] - point[0], joint[1] - point[1]) < 0.01;
     for [one, two] in joined(&links) {
         let along = [two[0] - one[0], two[1] - one[1]];
         let long = libm::hypot(along[0], along[1]);
         if long < 1e-6 {
             continue;
         }
+        let taken = |level: &usize| {
+            stood.iter().any(|&(joint, other)| other == *level && (at_joint(joint, one) || at_joint(joint, two)))
+        };
+        let level = (0..).find(|level| !taken(level)).unwrap_or(0);
+        stood.extend([(one, level), (two, level)]);
+        let high = WALK_HIGH_M + WALK_RISE_M * (level + 1) as f64;
         let pieces = (long / WALK_PIECE_M).ceil();
         for piece in 0..pieces as usize {
             let share = (piece as f64 + 0.5) / pieces;
             let middle = [one[0] + along[0] * share, one[1] + along[1] * share, frame.level];
-            let strip = Solid::upright(Shape::Block, middle, [WALK_WIDE_M, long / pieces, WALK_HIGH_M], Material::Path);
+            let strip = Solid::upright(Shape::Block, middle, [WALK_WIDE_M, long / pieces, high], Material::Path);
             laid.solids.push(strip.turned(turn_toward(along)));
         }
         let away = [along[0] / long, along[1] / long];

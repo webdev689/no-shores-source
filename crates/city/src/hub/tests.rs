@@ -481,3 +481,96 @@ fn the_harbourmaster_and_the_chandler_keep_stalls_in_the_beacon_walks_market() {
         assert!(from_walk < 100.0, "{kind:?} stands {from_walk:.1} m from the Beacon Walk's middle");
     }
 }
+
+#[test]
+fn the_platform_round_the_plaza_is_floored_as_the_plaza_is_never_left_to_the_land() {
+    // The city's plate is drawn a few centimetres under its level, where the land's grass stands: a walk floored by
+    // the plate alone shows the two in turn as the eye moves. Every walked point needs a floor of the hub's own, its top
+    // at the level or over it, or a piece standing on it.
+    use crate::solids::Shape;
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let level = social.level;
+    let floors: Vec<_> = social
+        .solids
+        .iter()
+        .filter(|solid| {
+            matches!(solid.shape, Shape::Block | Shape::Module { .. }) && solid.lean == 0.0 && solid.roll == 0.0
+        })
+        .filter(|solid| solid.at[2] <= level + 0.01 && solid.at[2] + solid.size[2] >= level - 1e-9)
+        .collect();
+    let floored = |[x, y]: [f64; 2]| {
+        floors.iter().any(|solid| {
+            let ([dx, dy], (sine, cosine)) = ([x - solid.at[0], y - solid.at[1]], libm::sincos(solid.turn));
+            let (across, along) = (dx * cosine + dy * sine, -dx * sine + dy * cosine);
+            across.abs() <= solid.size[0] / 2.0 + 1e-6 && along.abs() <= solid.size[1] / 2.0 + 1e-6
+        })
+    };
+    let [west, north, east, south] = ring_bounds(&social.ring);
+    let mut bare = Vec::new();
+    let mut y = north + 0.25;
+    while y < south {
+        let mut x = west + 0.25;
+        while x < east {
+            if super::dress::inside(&social.ring, [x, y]) && !floored([x, y]) {
+                bare.push([x, y]);
+            }
+            x += 2.0;
+        }
+        y += 2.0;
+    }
+    assert!(
+        bare.is_empty(),
+        "{} points of the platform floored by the plate alone, e.g. {:?}",
+        bare.len(),
+        &bare[..bare.len().min(4)]
+    );
+}
+
+#[test]
+fn where_a_walk_overlaps_another_piece_of_flagstones_one_of_another_grain_lies_under_it() {
+    // A walk's strip wears its flags along it, every other piece of flagstones the world's grain (`solidMesh.ts`):
+    // two of a different grain level with each other would show both in turn.
+    use crate::solids::{Material, Shape};
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let flags: Vec<_> = social.solids.iter().filter(|solid| solid.material == Material::Path).collect();
+    // A strip's grain: its way and the line it runs along; every other piece's the world's.
+    let grain = |solid: &crate::solids::Solid| {
+        let (sine, cosine) = libm::sincos(solid.turn);
+        let strip = matches!(solid.shape, Shape::Block) && solid.size[0] > 3.0;
+        strip.then(|| {
+            ((solid.turn * 1e3).round() as i64, ((solid.at[0] * cosine + solid.at[1] * sine) * 1e2).round() as i64)
+        })
+    };
+    let covers = |solid: &crate::solids::Solid, [x, y]: [f64; 2]| {
+        let ([dx, dy], (sine, cosine)) = ([x - solid.at[0], y - solid.at[1]], libm::sincos(solid.turn));
+        let (across, along) = (dx * cosine + dy * sine, -dx * sine + dy * cosine);
+        match solid.shape {
+            Shape::Column { .. } => libm::hypot(across, along) < solid.size[0] / 2.0 - 0.01,
+            _ => across.abs() < solid.size[0] / 2.0 - 0.01 && along.abs() < solid.size[1] / 2.0 - 0.01,
+        }
+    };
+    let [west, north, east, south] = ring_bounds(&social.ring);
+    let mut level = Vec::new();
+    let mut y = north;
+    while y < south {
+        let mut x = west;
+        while x < east {
+            let over: Vec<_> = flags.iter().filter(|solid| covers(solid, [x, y])).collect();
+            let top = over.iter().map(|solid| solid.at[2] + solid.size[2]).fold(f64::MIN, f64::max);
+            let topmost: Vec<_> = over.iter().filter(|solid| solid.at[2] + solid.size[2] > top - 0.001).collect();
+            if topmost.iter().any(|solid| grain(solid) != grain(topmost[0])) {
+                level.push([x, y]);
+            }
+            x += 0.5;
+        }
+        y += 0.5;
+    }
+    assert!(
+        level.is_empty(),
+        "{} points where two grains lie level, e.g. {:?}",
+        level.len(),
+        &level[..level.len().min(4)]
+    );
+}

@@ -141,26 +141,57 @@ test('a stretched module keeps its normals square to its stretched surface', () 
   assert.deepEqual(stretchedNormal([1, 0, 0], 0.75), [1, 0, 0]);
 });
 
-test("a ground's top takes its pattern from the world, so its pieces join as one surface however they turn", () => {
-  const ground = { layer: 3, width: 64, height: 64, grounded: true };
+/** Each top corner's place (from the origin) and its UV, of a ground solid meshed on a 64-texel picture. */
+function groundTops(solid: Solid): { at: [number, number]; uv: [number, number] }[] {
+  const mesh = emptyMesh();
+  meshSolid(solid, [1000, 2000], { layer: 3, width: 64, height: 64, grounded: true }, mesh);
+  const tops = [];
+  for (let k = 0; k < mesh.positions.length / 3; k++)
+    if ((mesh.normals[k * 3 + 2] ?? 0) > 0.95)
+      tops.push({
+        at: [mesh.positions[k * 3] ?? 0, mesh.positions[k * 3 + 1] ?? 0] as [number, number],
+        uv: [mesh.uvs[k * 2] ?? 0, mesh.uvs[k * 2 + 1] ?? 0] as [number, number],
+      });
+  return tops;
+}
+
+const groundPiece = (material: Solid['material'], place: [number, number], size: number[], turn: number): Solid => ({
+  shape: 'block',
+  at: [place[0], place[1], 0],
+  size: [size[0], size[1], 0.06],
+  turn,
+  lean: 0,
+  roll: 0,
+  material,
+});
+
+test("a lawn's top takes its pattern from the world, so its pieces join as one surface however they turn", () => {
   const scale = SOLID_TEXELS_PER_METRE / 64;
-  for (const turn of [0, 0.7, 2.1]) {
-    const solid: Solid = {
-      shape: 'block',
-      at: [1004, 2003, 0],
-      size: [3, 5, 0.06],
-      turn,
-      lean: 0,
-      roll: 0,
-      material: 'path',
-    };
-    const mesh = emptyMesh();
-    meshSolid(solid, [1000, 2000], ground, mesh);
-    for (let k = 0; k < mesh.positions.length / 3; k++) {
-      if ((mesh.normals[k * 3 + 2] ?? 0) < 0.95) continue;
-      assert.ok(Math.abs((mesh.uvs[k * 2] ?? 0) - (mesh.positions[k * 3] ?? 0) * scale) < 1e-9);
-      assert.ok(Math.abs((mesh.uvs[k * 2 + 1] ?? 0) - (mesh.positions[k * 3 + 1] ?? 0) * scale) < 1e-9);
+  for (const turn of [0, 0.7, 2.1])
+    for (const { at, uv } of groundTops(groundPiece('lawn', [1004, 2003], [3, 5], turn))) {
+      assert.ok(Math.abs(uv[0] - at[0] * scale) < 1e-9);
+      assert.ok(Math.abs(uv[1] - at[1] * scale) < 1e-9);
     }
+});
+
+test("a walk's flagstones are laid along it, edge to edge across it, and its pieces join along its way", () => {
+  for (const turn of [0, 0.7, 2.1]) {
+    // Two pieces of one walk 3.2 m wide, end to end along its way.
+    const along = [-Math.sin(turn), Math.cos(turn)];
+    const pieces = [0, 3].map((step) =>
+      groundTops(groundPiece('path', [1004 + along[0] * step, 2003 + along[1] * step], [3.2, 3], turn)),
+    );
+    for (const tops of pieces) {
+      // Whole pictures across the walk, from one edge to the other: one, as the picture is 2.7 m.
+      const across = tops.map(({ uv }) => uv[0]);
+      assert.ok(Math.abs(Math.min(...across)) < 1e-9, `${turn}: the picture starts at the walk's edge`);
+      assert.ok(Math.abs(Math.max(...across) - 1) < 1e-9, `${turn}: and ends at its other edge`);
+    }
+    // Where the pieces meet, their corners take the same UV.
+    for (const one of pieces[0])
+      for (const two of pieces[1])
+        if (Math.hypot(one.at[0] - two.at[0], one.at[1] - two.at[1]) < 1e-6)
+          assert.ok(Math.hypot(one.uv[0] - two.uv[0], one.uv[1] - two.uv[1]) < 1e-9, `${turn}: they join`);
   }
 });
 

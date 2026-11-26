@@ -272,7 +272,9 @@ retaining walls and a plate's skirts, 30 m down its open sides or to the lower p
 ground's colour, so the walls between the terraces read as terracing, not as a grid. The whole city is
 drawn nearer in depth than it stands (not on screen) by 5 cm and 1.2 % of the distance, above the sea only, since
 the 1 km land stands up to about 20 m off a terrace's level (`PULL_WGSL`); a plate is drawn 3 cm under its level, so a
-floor laid at that level shows over it. Where a city or a layout is drawn, a figure's lowest quarter metre is pulled
+floor laid at that level shows over it. The plate alone does not hold against the land under it, standing at the same
+level, once the eye looks along it from a body's height some metres off: a place walked needs a floor of its own laid
+at its level, as Overlook's hub paves its plaza and its walks round the Beacon. Where a city or a layout is drawn, a figure's lowest quarter metre is pulled
 the same way, fading to none above it, and so is its contact shade, so the walks, lawns and paving under it no longer
 cut its soles off; nothing at a body's height (a hit's star, a weapon's glow) moves in depth.
 
@@ -291,8 +293,11 @@ weave of uneven threads, taken unevenly; still water (`water`: a fountain, a tro
 slowly. A picture is lighter or darker in patches some metres wide, so its repeats do not line up. A walk's flagstones
 (`path`) wear their own picture over the paving's, the flags in courses, lighter and warmer, so a way reads apart from
 the ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) wear their climate's own grass and
-dirt. These three take their pattern on top from the world, not the piece, so their pieces join as one surface where
-they meet or overlap (`solidMesh.ts`, `grounded`). The glow is lit warm and unshaded, brighter at night, each flame
+dirt. A lawn and earth take their pattern on top from the world, not the piece, so their pieces join as one surface
+where they meet or overlap (`solidMesh.ts`, `grounded`); a walk's flags are laid along it, whole pictures across it from
+edge to edge, and measured along it from the city's origin, so its pieces join along its way while a diagonal walk's
+courses still run with it (`walkUvs`; its rounds, fillets and the narrow pieces keep the world's pattern, and lie a
+few millimetres under its strips, so two grains never lie level). The glow is lit warm and unshaded, brighter at night, each flame
 flickering on its own, and each glowing solid is a lamp ([[Sky]]). Faces are lit as the land is, with a
 little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen.
 In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one, and each

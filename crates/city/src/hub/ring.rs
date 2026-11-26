@@ -8,27 +8,30 @@ use super::walks::{BASE_FACE_M, PLATFORM_EDGE_M, SEALED_EAST_M, SEALED_M};
 use crate::courtyard::Frame;
 use crate::landmarks::BEACON_DOOR_M;
 
-/// The platform's walked rectangles (west, north, east, south), from the hub's spans across and seaward.
-#[must_use]
 pub fn platform_rects(frame: &Frame) -> Vec<[f64; 4]> {
-    let (near, far, half) = hall_span();
-    let door = BEACON_DOOR_M[0] / 2.0;
-    let [sealed, corner, _, _] = SEALED_M;
-    let spans: [([f64; 2], [f64; 2]); 6] = [
-        ([-HALF_LENGTH_M, HALF_LENGTH_M], [-HALF_DEPTH_M, HALF_DEPTH_M]),
-        ([-PLATFORM_EDGE_M, -corner], [sealed, PLATFORM_FROM_M]),
-        ([-corner, corner], [BASE_FACE_M, PLATFORM_FROM_M]),
-        ([corner, PLATFORM_EDGE_M], [SEALED_EAST_M, PLATFORM_FROM_M]),
-        ([-door, door], [near, BASE_FACE_M]),
-        ([-half, half], [far, near]),
-    ];
-    spans
+    platform_spans()
         .iter()
         .map(|&([west, east], [low, high])| {
             let [one, two] = [frame.at(low, west), frame.at(high, east)];
             [one[0].min(two[0]), one[1].min(two[1]), one[0].max(two[0]), one[1].max(two[1])]
         })
         .collect()
+}
+
+/// The platform's walked rectangles as metres across the plaza (from and to) and seaward of its middle (from and to):
+/// the plaza, the West Walk, the Beacon Walk, the East Walk round to the Stair Yard, the Beacon's door and its Hall.
+pub(crate) fn platform_spans() -> [([f64; 2], [f64; 2]); 6] {
+    let (near, far, half) = hall_span();
+    let door = BEACON_DOOR_M[0] / 2.0;
+    let [sealed, corner, _, _] = SEALED_M;
+    [
+        ([-HALF_LENGTH_M, HALF_LENGTH_M], [-HALF_DEPTH_M, HALF_DEPTH_M]),
+        ([-PLATFORM_EDGE_M, -corner], [sealed, PLATFORM_FROM_M]),
+        ([-corner, corner], [BASE_FACE_M, PLATFORM_FROM_M]),
+        ([corner, PLATFORM_EDGE_M], [SEALED_EAST_M, PLATFORM_FROM_M]),
+        ([-door, door], [near, BASE_FACE_M]),
+        ([-half, half], [far, near]),
+    ]
 }
 
 /// The outline of rectangles' union (west, north, east, south each), as a ring of points: its longest loop where the
