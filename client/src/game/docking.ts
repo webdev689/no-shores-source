@@ -70,15 +70,16 @@ export class Docking {
     this.pending = null;
   }
 
-  /** The player is back aboard: the ship docked sails out once the room has placed it. */
+  /** The player is back at sea, aboard again or back from the island's tiles: the ship docked sails out once the room
+   *  has placed it. */
   cameAboard(): void {
     this.aboard = this.docked !== null;
   }
 
-  /** Back aboard, once the room has placed the ship (its settled word lies where the page has it): lying at its berth,
-   *  it sails out at ×60 to the berth's offing, straight, as it came in. Set on a course of the player's first, or lying
-   *  elsewhere, it takes none. Either way it is docked no more; as it is once it sails off with the player never gone
-   *  from it (back to the sea from the island's tiles). */
+  /** Back at sea, once the room has placed the ship (its settled word lies where the page has it): lying at its
+   *  berth, it sails out at ×60 to the berth's offing, straight, as it came in. Set on a course of the player's first,
+   *  or lying elsewhere, it takes none. Either way it is docked no more; as it is once it sails off its berth before
+   *  then. */
   undock(sea: Pick<Sea, 'position' | 'course' | 'sighted' | 'passage'>): void {
     const docked = this.docked;
     if (!docked) return;

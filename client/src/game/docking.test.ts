@@ -186,7 +186,7 @@ test('placed away from its berth, or set on a course of the player’s first, th
   assert.deepEqual([steered.sea.course, steered.docking.docked], [course, null], 'the player’s course kept');
 });
 
-test('sailed off its berth with its player still aboard (back from the island’s tiles), the ship is docked no more', async () => {
+test('sailed off its berth before its player is back at sea, the ship is docked no more', async () => {
   const { at, offing } = berth(ASHORE);
   const { sea } = await seaAt(at);
   const docking = new Docking();
