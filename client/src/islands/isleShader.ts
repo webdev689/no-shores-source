@@ -1,18 +1,23 @@
 // How the islands are coloured and drawn on the GPU: each part's colour by climate, the shaders for the ground and the
-// instanced modules (drawn, and cast into the sun's shadow map), their vertex layouts and their pipelines.
+// instanced modules (drawn, and cast into the sun's shadow map), their vertex layouts and their pipelines. The ground
+// and the rock wear the land's ground tiles (groundGrain.ts) in the island's climate.
 import type { Gpu } from '../gpu.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
+import { TILE_GRAIN_WGSL } from '../groundGrain.ts';
 import { GROUND_FLOATS } from './isleGround.ts';
 import { kitOfClimate, PARTS, VERTEX_BYTES } from './isleModules.ts';
 
 /** Floats an instance: where it stands (x, y, z), its scale, its turn's sine and cosine, its lift, and whether its
  *  ember stands cold. */
 export const INSTANCE_FLOATS = 8;
-/** Floats in an island's uniform: its offset from the eye, its ground's two colours and snow line, each part's. */
-export const ISLE_FLOATS = 12 + PARTS.length * 4;
+/** Floats in an island's uniform: its offset from the eye, its ground's two colours and snow line, the ground tiles its
+ *  low and high ground wear (`groundTilesOf`), each part's colour. */
+export const ISLE_FLOATS = 16 + PARTS.length * 4;
+/** Where the parts' colours start in an island's uniform. */
+export const PARTS_FLOAT = 16;
 
 type Colour = readonly [number, number, number];
 const BASE_PARTS: Readonly<Record<string, Colour>> = {
@@ -73,6 +78,7 @@ struct Isle {
   offset: vec4f,
   inland: vec4f,
   high: vec4f,
+  tiles: vec4f,
   parts: array<vec4f, ${PARTS.length}>,
 };
 @group(0) @binding(0) var<uniform> frame: Frame;
@@ -89,6 +95,9 @@ export const DRAW_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
 ${COMMON}
+@group(0) @binding(2) var ground_tiles: texture_2d_array<f32>;
+@group(0) @binding(3) var tile_sampler: sampler;
+${TILE_GRAIN_WGSL}
 const SAND = vec3f(0.84, 0.76, 0.56);
 const WET = 0.72;
 const SEABED = vec3f(0.5, 0.52, 0.4);
@@ -97,6 +106,11 @@ const SNOW = vec3f(0.93, 0.94, 0.96);
 // Where the tide reaches up the beach, and how high and gentle a beach runs, metres.
 const TIDE_M = 0.5;
 const BEACH_M = 2.2;
+// How far the rock's picture reaches before it repeats, metres, and its wider reading's.
+const ROCK_M = 4.0;
+const ROCK_WIDE_M = 13.7;
+// A snow line this high is no snow line: the climates that never lie under snow (isleGround.ts GROUND_LOOKS).
+const SNOWLESS_M = 5000.0;
 
 struct Lit {
   @builtin(position) clip: vec4f,
@@ -108,6 +122,28 @@ struct Lit {
 };
 
 // value_noise is the shared WGSL's.
+
+// A ground tile's grain at a point of the island's own frame, whose small numbers keep the tiles exact.
+fn isle_grain(layer: i32, at: vec2f) -> vec3f {
+  return tile_grain_at(layer, at / TILE_M, TURN * at / WIDE_TILE_M);
+}
+
+// The climate's caverns' rock cast on a face at a point of the island, its beds level, so a cliff's is not stretched
+// down it: read plainly and again wider and shifted, as the ground's tiles are, so its repeats do not line up.
+fn isle_rock(at: vec3f, normal: vec3f) -> vec3f {
+  let near = rock_cast(at / ROCK_M, normal);
+  let wide = rock_cast(at / ROCK_WIDE_M + vec3f(0.37, 0.61, 0.23), normal);
+  // A face turned up (a boulder's top, a cliff's brow) is the ground's stone, as bare rock on the land is.
+  let top = isle_grain(STONE_TILE, at.xy);
+  return mix(near * mix(vec3f(1.0), wide, 0.5), top, smoothstep(0.7, 0.95, normal.z));
+}
+
+// The rock picture cast at a point given in its repeats, each height's beds slid along by a smooth noise, so the
+// picture's streaks do not stand in columns a repeat apart.
+fn rock_cast(at: vec3f, normal: vec3f) -> vec3f {
+  let slide = value_noise(vec2f(at.z * 0.8, 3.1)) * 2.5;
+  return cast_grain(ROCK_TILE, vec2f(at.y + slide, -at.z), vec2f(at.x + slide, -at.z), at.xy, normal);
+}
 
 @vertex
 fn ground_vertex(@location(0) position: vec3f, @location(1) normal: vec3f) -> Lit {
@@ -154,31 +190,42 @@ fn lit(colour: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
 
 // The ground by its height and slope: the seabed under water, wet sand below the tide's reach, a beach up to its
 // low gentle ground, the climate's ground inland turning to its high ground, rock where steep and snow above its line.
+// Each wears its ground tile's grain, and one gives way to the next by their grains (meet), as the land's do.
 @fragment
 fn ground_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @location(0) vec4f {
   let normal = normalize(surface.normal);
   let z = surface.local.z;
+  let at = surface.local.xy;
   let slope = length(normal.xy) / max(normal.z, 0.05);
   // The ground's rock is the kit's own stone; its grain a fine noise over patches some 30 m across.
   let rock = isle.parts[${PARTS.indexOf('rock')}].rgb;
-  let grain = value_noise(surface.local.xy * 0.35) * 0.45 + value_noise(surface.local.xy * 0.033) * 0.55;
-  // A floor paved (a passage's court) is flagstones: slabs 1.4 by 0.9 m in courses each set half over, each its own
-  // shade, their joints dark.
-  var inland = mix(isle.inland.rgb, isle.high.rgb, smoothstep(8.0, 40.0, z + grain * 6.0));
-  if (isle.inland.w > 0.5) {
-    let slab = vec2f(surface.local.x / 1.4 + 0.5 * floor(surface.local.y / 0.9), surface.local.y / 0.9);
-    let edge = min(fract(slab), 1.0 - fract(slab));
-    let joint = smoothstep(0.02, 0.06, min(edge.x * 1.4, edge.y * 0.9));
-    inland = inland * (0.82 + 0.3 * value_noise(floor(slab) * 3.1)) * mix(0.5, 1.0, joint);
+  let grain = value_noise(at * 0.35) * 0.45 + value_noise(at * 0.033) * 0.55;
+  let inland_grain = isle_grain(i32(isle.tiles.x), at);
+  // A tile read once where the high ground wears the low ground's (a hollow's one floor), and snow only on an island
+  // with a snow line: each island's own uniform, so the branches hold for every pixel alike.
+  var high_grain = inland_grain;
+  if (isle.tiles.y != isle.tiles.x) {
+    high_grain = isle_grain(i32(isle.tiles.y), at);
   }
-  let bare = mix(inland, rock * (0.85 + 0.3 * grain), smoothstep(0.55, 0.95, slope));
-  let snowy = mix(bare, SNOW, smoothstep(isle.high.w - 2.0, isle.high.w + 2.0, z + grain * 4.0) * (1.0 - smoothstep(0.9, 1.3, slope)));
+  var snow_grain = vec3f(1.0);
+  if (isle.high.w < SNOWLESS_M) {
+    snow_grain = isle_grain(SNOW_TILE, at);
+  }
+  let rock_grain = isle_rock(surface.local, normal);
+  let sand_grain = isle_grain(SAND_TILE, at);
+  var land = vec4f(isle.inland.rgb * inland_grain, raised(inland_grain));
+  land = meet(land, vec4f(isle.high.rgb * high_grain, raised(high_grain)), smoothstep(8.0, 40.0, z + grain * 6.0));
+  let bare = rock * (0.85 + 0.3 * grain) * rock_grain;
+  land = meet(land, vec4f(bare, raised(rock_grain) + ROCK_STANDS), smoothstep(0.55, 0.95, slope));
+  let snowy = smoothstep(isle.high.w - 2.0, isle.high.w + 2.0, z + grain * 4.0) * (1.0 - smoothstep(0.9, 1.3, slope));
+  land = meet(land, vec4f(SNOW * snow_grain, SNOW_SETTLES - raised(snow_grain)), snowy);
   let beach = (1.0 - smoothstep(BEACH_M - 0.6, BEACH_M + 0.6 + grain, z)) * (1.0 - smoothstep(0.25, 0.45, slope));
-  var dry = mix(snowy, SAND * (0.92 + 0.16 * grain), beach);
-  dry = mix(dry, SAND * WET, 1.0 - smoothstep(TIDE_M - 0.2, TIDE_M + 0.2, z));
+  let sand = SAND * sand_grain;
+  land = meet(land, vec4f(sand * (0.92 + 0.16 * grain), raised(sand_grain)), beach);
+  let dry = mix(land.rgb, sand * WET, 1.0 - smoothstep(TIDE_M - 0.2, TIDE_M + 0.2, z));
   let depth = max(-z, 0.0);
-  let bed = mix(mix(SAND * WET, SEABED, smoothstep(0.5, 8.0, depth)), DEEP_BED, smoothstep(8.0, 40.0, depth));
-  let colour = mix(dry, mix(bed, rock * 0.8, smoothstep(0.6, 1.0, slope)), smoothstep(-0.05, 0.05, -z));
+  let bed = mix(mix(sand * WET, SEABED, smoothstep(0.5, 8.0, depth)), DEEP_BED, smoothstep(8.0, 40.0, depth));
+  let colour = mix(dry, mix(bed, rock * 0.8 * rock_grain, smoothstep(0.6, 1.0, slope)), smoothstep(-0.05, 0.05, -z));
   return vec4f(lit(colour * (0.84 + 0.3 * grain), normal, surface.from_eye), 1.0);
 }
 
@@ -190,7 +237,10 @@ fn module_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
   let wears = select(own, vec4f(isle.parts[${PARTS.indexOf('stone')}].rgb, 0.0), cold);
   let normal = select(-1.0, 1.0, front) * normalize(surface.normal);
   let grain = value_noise(surface.local.xy * 1.7 + surface.local.z * 0.9);
-  let colour = wears.rgb * (0.9 + 0.2 * grain);
+  // The rock (cliffs, stacks, boulders, a hollow's walls) wears the climate's caverns' rock cast on its faces.
+  let rock_grain = isle_rock(surface.local, normal);
+  let rocky = surface.part == ${PARTS.indexOf('rock')}u || surface.part == ${PARTS.indexOf('rockAlt')}u;
+  let colour = wears.rgb * (0.9 + 0.2 * grain) * select(vec3f(1.0), rock_grain, rocky);
   return vec4f(select(lit(colour, normal, surface.from_eye), colour, wears.w > 0.5), 1.0);
 }
 `;
@@ -254,6 +304,8 @@ export function pipelinesOf(gpu: Gpu): Pipelines {
     entries: [
       { binding: 0, visibility: both, buffer: { type: 'uniform' } },
       { binding: 1, visibility: both, buffer: { type: 'uniform' } },
+      { binding: 2, visibility: 0x2, texture: { viewDimension: '2d-array' } },
+      { binding: 3, visibility: 0x2, sampler: {} },
     ],
   });
   const { caster, receiver } = shadowLayouts(device);

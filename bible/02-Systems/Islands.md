@@ -23,7 +23,8 @@ The sea's procedural islands ([[Procedural Islands Are Coves, With Rarer Guarded
 [[The Ship's Power, Crew and Islands as Claude Shapes Them]]): rolled by the sea room in hostile waters, each a place
 and a seed that every machine builds the same island from, landed on as a continent's node is, its wreckage
 scavenged for the ship and its door leading to a dungeon. The modules that dress them are made in Blender
-([[Island Modules]]) and drawn by the islands layer ([[Island Drawing]]).
+([[Island Modules]]) and drawn by the islands layer ([[Island Drawing]]), their ground and rock wearing the land's
+procedural textures ([[The Islands and the Passages' Hollows Wear the Procedural Textures]]).
 
 ## An island from its seed
 

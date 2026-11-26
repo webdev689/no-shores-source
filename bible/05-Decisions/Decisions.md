@@ -426,6 +426,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Lights as Claude Builds Them]]
 - [[The Passages' New Interface Says Less and Reads Better]]
 - [[The Islands and the Passages' Hollows Wear the Procedural Textures]]
+- [[Island Textures as Claude Builds Them]]
 
 ## Replaced
 
