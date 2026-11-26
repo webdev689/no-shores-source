@@ -267,7 +267,7 @@ fn the_cache_opens_with_a_dungeons_clear_for_each_player_in_when_the_reeve_falls
     assert!((apart([x, y], [post[0], post[1]]) - CACHE_FROM_POST_M).abs() < 1e-9 && open == 0.0, "shut by the Reeve");
     assert!((facing - bearing([x, y], [post[0], post[1]])).abs() < 1e-12, "facing the Reeve's post");
     let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
-    assert!(ground.clear_between([post[0], post[1]], [x, y], 0.0), "nothing between the Reeve and the cache");
+    assert!(ground.clear_between([post[0], post[1]], [x, y], 0.0, 0), "nothing between the Reeve and the cache");
     let players: Vec<PlayerId> = (0..2).map(|_| room.join().expect("room")).collect();
     run(&mut room, 1);
     assert!(players.iter().all(|player| room.drops_for(*player).count() == 0));
@@ -323,7 +323,7 @@ fn every_dungeons_cache_stands_by_its_reeve_its_open_chest_off_rock_every_solid_
                     let cell = (column >= 0.0 && row >= 0.0).then(|| row as usize * dungeon.columns + column as usize);
                     let open = cell.and_then(|cell| dungeon.cells.get(cell)).is_some_and(|&kind| kind != Cell::Rock);
                     assert!(open, "{seed} {key}: the chest in rock");
-                    let in_solid = ground.solids().iter().any(|&[min_x, min_y, max_x, max_y, _]| {
+                    let in_solid = ground.solids().iter().any(|&[min_x, min_y, max_x, max_y, _, _]| {
                         (min_x..=max_x).contains(&at_x) && (min_y..=max_y).contains(&at_y)
                     });
                     assert!(!in_solid, "{seed} {key}: the chest in a solid");
@@ -389,7 +389,7 @@ fn band_foe_and_two_places(room: &Room, dungeon: &Dungeon) -> Option<(FighterId,
         let near = open.iter().copied().find(|&there| {
             room_at(dungeon, [there[0], there[1], 0.0]) == own
                 && ahead(at, aim, there, 8.0)
-                && ground.clear_between(at, there, 0.0)
+                && ground.clear_between(at, there, 0.0, 0)
         })?;
         Some((id, beyond, near))
     })
@@ -438,7 +438,7 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
         let [x, y] = dungeon.centre(cell);
         for step in 0..64 {
             let post = [x - 1.4 + f64::from(step % 8) * 0.4, y - 1.4 + f64::from(step / 8) * 0.4];
-            if !ground.clear_between(post, post, TUNING.radius) {
+            if !ground.clear_between(post, post, TUNING.radius, 0) {
                 continue;
             }
             let cache = cache_by(&floor, &dungeon, [post[0], post[1], 0.0]).expect("its cache");
@@ -454,7 +454,7 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
             for vestige in &room.drops[before..] {
                 thrown += 1;
                 let lies = [vestige.at[0], vestige.at[1]];
-                assert!(ground.clear_between(post, lies, 0.0), "{post:?}: its Vestige thrown into rock or a solid");
+                assert!(ground.clear_between(post, lies, 0.0, 0), "{post:?}: its Vestige thrown into rock or a solid");
             }
         }
     }

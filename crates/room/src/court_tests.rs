@@ -348,7 +348,7 @@ fn the_reckoning_reaches_the_end_room_and_the_rooms_sharing_a_doorway_with_it_an
         .find(|&other| other != laid.end() && reach.contains(&laid.rooms[other].cells[0]))
         .expect("a room sharing a doorway with the end room");
     let away = room.encounters.as_ref().expect("encounters").plan.seals[0].pieces[0];
-    let cell = room.encounters.as_ref().expect("encounters").plan.cell_at([away[0], away[1]]).expect("its cell");
+    let cell = room.encounters.as_ref().expect("encounters").plan.cell_at(away).expect("its cell");
     assert!(!reach.contains(&cell), "the first seal's room lies beyond its reach");
     let [x, y] = laid.centre(laid.rooms[beside].cells[0]);
     let before = [room.players[&near].fighter.health, room.players[&far].fighter.health];

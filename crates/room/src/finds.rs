@@ -100,19 +100,19 @@ impl Finds {
             }
         }
         // A seal's room's containers are none of them searchable either: its floor is the seal's.
-        let in_kept = |[x, y]: [f64; 2]| {
-            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
-            dungeon.room_at(cell).is_some_and(|room| kept.contains(&room))
-        };
+        let in_kept = |at: [f64; 3]| dungeon.room_at(dungeon.cell_at(at)).is_some_and(|room| kept.contains(&room));
         let holders = dungeon
             .props
             .iter()
-            .filter(|prop| dungeon::models::holder(prop.model).is_some() && !in_kept([prop.at[0], prop.at[1]]))
+            .filter(|prop| dungeon::models::holder(prop.model).is_some() && !in_kept(prop.at))
             .filter_map(|prop| {
                 let model = f64::from(prop.model);
                 prop.solid.map(|[west, north, east, south, top]| [west, north, east, south, 0.0, top, model])
             })
-            .filter(|held| beside(held).iter().any(|&spot| ground.clear_between(spot, spot, movement::TUNING.radius)))
+            .filter(|held| {
+                let storey = dungeon.storey_under(held[5]);
+                beside(held).iter().any(|&spot| ground.clear_between(spot, spot, movement::TUNING.radius, storey))
+            })
             .collect();
         let count = dungeon.squares.len().min(places.len());
         Finds { places, groups, holders, patrol: false, count, ..Finds::default() }
@@ -193,7 +193,8 @@ fn against_walls(dungeon: &Dungeon, ground: &crate::dungeon_ground::DungeonGroun
             let (from, to) =
                 ([x - toward_y * along, y + toward_x * along], [x + toward_y * along, y - toward_x * along]);
             let facing = combat::sight::bearing([0.0, 0.0], [-toward_x, -toward_y]);
-            ground.clear_between(from, to, CHEST_HALF_DEEP_M).then_some([x, y, dungeon::FLOOR_M, facing])
+            let storey = dungeon.storey_of(cell);
+            ground.clear_between(from, to, CHEST_HALF_DEEP_M, storey).then_some([x, y, dungeon.floor_of(cell), facing])
         })
         .collect()
 }

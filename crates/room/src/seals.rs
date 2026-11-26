@@ -111,7 +111,10 @@ impl Room {
             .flat_map(|post| &post.standing)
             .filter_map(|id| self.foes.get(id))
             .filter(|foe| !foe.fighter.dead())
-            .any(|foe| plan.cell_at([foe.fighter.body.x, foe.fighter.body.y]).is_some_and(|cell| cells.contains(&cell)))
+            .any(|foe| {
+                plan.cell_at([foe.fighter.body.x, foe.fighter.body.y, foe.fighter.body.z])
+                    .is_some_and(|cell| cells.contains(&cell))
+            })
     }
 
     /// A Litany's tick: a rune newly stepped on is the next in order and stays lit, is one already lit and is ignored,
@@ -236,12 +239,8 @@ impl Room {
     }
 
     /// Where a seal's foes come in: its room's doorways, or its pieces where it has none.
-    fn doorways_of(plan: &SealPlan) -> Vec<[f64; 2]> {
-        if plan.doors.is_empty() {
-            plan.pieces.iter().map(|piece| [piece[0], piece[1]]).collect()
-        } else {
-            plan.doors.clone()
-        }
+    fn doorways_of(plan: &SealPlan) -> Vec<[f64; 3]> {
+        if plan.doors.is_empty() { plan.pieces.clone() } else { plan.doors.clone() }
     }
 
     /// Once a second, the drowned floor takes DROWNED_SHARE of their health from every living player standing on it,

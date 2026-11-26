@@ -11,7 +11,7 @@ use crate::{EventKind, Room};
 use combat::Action;
 use combat::Fighter;
 use combat::fighter::FighterId;
-use dungeon::{Cell, Dungeon, SIDES};
+use dungeon::{Cell, Dungeon};
 
 /// The shares of its health the Boss's wards hold it at, in turn.
 pub const WARDS: [f64; 2] = [2.0 / 3.0, 1.0 / 3.0];
@@ -43,8 +43,8 @@ pub const FURY_EVERY: u64 = 30 * 60;
 pub const FURY_STEP: f64 = 0.1;
 pub const FURY_MOST: f64 = 3.0;
 
-/// The cells a Reckoning reaches: the end room's, and every corridor and room its doorways open onto, as far as the
-/// next room's doorway.
+/// The cells a Reckoning reaches: the end room's, and every corridor, flight and room its doorways open onto, as far
+/// as the next room's doorway; another storey only down or up a flight.
 #[must_use]
 pub fn reckoning_reach(dungeon: &Dungeon) -> Vec<usize> {
     let end = dungeon.end();
@@ -53,9 +53,8 @@ pub fn reckoning_reach(dungeon: &Dungeon) -> Vec<usize> {
     let mut todo: Vec<usize> = court.cells.clone();
     while let Some(cell) = todo.pop() {
         let from_court = dungeon.room_at(cell) == Some(end);
-        for side in SIDES {
-            let Some(next) = dungeon.beside(cell, side) else { continue };
-            if reached.contains(&next) || dungeon.cells[next] == Cell::Rock {
+        for next in dungeon.walk_from(cell) {
+            if reached.contains(&next) {
                 continue;
             }
             match dungeon.room_at(next) {
@@ -66,7 +65,7 @@ pub fn reckoning_reach(dungeon: &Dungeon) -> Vec<usize> {
                     reached.extend(whole);
                 }
                 Some(_) => {}
-                None if from_court || dungeon.cells[cell] == Cell::Corridor => {
+                None if from_court || matches!(dungeon.cells[cell], Cell::Corridor | Cell::Stair(_)) => {
                     reached.push(next);
                     todo.push(next);
                 }
@@ -122,7 +121,7 @@ impl Room {
             return;
         }
         let clock = self.clock;
-        let anchors: Vec<[f64; 2]> = encounters.plan.anchors.iter().map(|at| [at[0], at[1]]).collect();
+        let anchors = encounters.plan.anchors.clone();
         let court = &mut encounters.court;
         let wave = if court.ward_told {
             court.ward_waves < 2 && clock - court.ward_at >= WARD_WAVE_AGAIN
@@ -237,13 +236,14 @@ impl Room {
         let Some(boss) = self.boss() else { return };
         let Some(encounters) = self.encounters.as_ref() else { return };
         let Some(light) = encounters.plan.anchors.get(usize::from(at)).copied() else { return };
-        let in_court = |x: f64, y: f64| {
-            encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.reckoning_cells.contains(&cell))
-        };
+        let in_court =
+            |at: [f64; 3]| encounters.plan.cell_at(at).is_some_and(|cell| encounters.reckoning_cells.contains(&cell));
         let outside: Vec<crate::PlayerId> = self
             .players
             .iter()
-            .filter(|(_, found)| found.living() && in_court(found.fighter.body.x, found.fighter.body.y))
+            .filter(|(_, found)| {
+                found.living() && in_court([found.fighter.body.x, found.fighter.body.y, found.fighter.body.z])
+            })
             .filter(|(_, found)| {
                 let body = found.fighter.body;
                 libm::hypot(body.x - light[0], body.y - light[1]) > LIGHT_REACH_M

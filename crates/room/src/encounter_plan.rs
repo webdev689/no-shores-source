@@ -71,16 +71,27 @@ pub struct SealPlan {
     pub pieces: Vec<[f64; 3]>,
     pub pads: Vec<Block>,
     pub drowned: Vec<usize>,
-    pub doors: Vec<[f64; 2]>,
+    pub doors: Vec<[f64; 3]>,
 }
 
 /// An Elite Dungeon's encounters: its seals in walk order, the Court's anchors (x, y, z) round the end foe's post,
-/// and the dungeon's columns, by which a point finds its cell.
+/// and the dungeon's columns, rows and storeys, by which a point finds its cell.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EncounterPlan {
     pub seals: Vec<SealPlan>,
     pub anchors: Vec<[f64; 3]>,
     pub columns: usize,
+    pub rows: usize,
+    pub storeys: usize,
+}
+
+impl SealPlan {
+    /// Its pieces and pads raised from the top storey's floor onto its room's.
+    fn onto(mut self, floor: f64) -> Self {
+        self.pieces.iter_mut().for_each(|piece| piece[2] += floor);
+        self.pads.iter_mut().for_each(|pad| (pad.top, pad.bottom) = (pad.top + floor, pad.bottom + floor));
+        self
+    }
 }
 
 impl EncounterPlan {
@@ -90,14 +101,15 @@ impl EncounterPlan {
         self.seals.iter().flat_map(|seal| seal.pads.iter().copied()).collect()
     }
 
-    /// The cell a point lies in, by the dungeon's columns.
+    /// The cell a point (x, y, z) lies in, on the storey whose floor lies nearest it.
     #[must_use]
-    pub fn cell_at(&self, [x, y]: [f64; 2]) -> Option<usize> {
+    pub fn cell_at(&self, [x, y, z]: [f64; 3]) -> Option<usize> {
         if x < 0.0 || y < 0.0 {
             return None;
         }
         let (column, row) = ((x / CELL_M) as usize, (y / CELL_M) as usize);
-        (column < self.columns).then_some(row * self.columns + column)
+        let storey = dungeon::storey_at(self.storeys, z);
+        (column < self.columns && row < self.rows).then_some((storey * self.rows + row) * self.columns + column)
     }
 }
 
@@ -116,6 +128,8 @@ fn fingerprint(dungeon: &Dungeon) -> String {
             Cell::Rock => 0,
             Cell::Corridor => 1,
             Cell::Room(_) => 2,
+            Cell::Stair(_) => 3,
+            Cell::Void => 4,
         })
         .collect();
     let cells = named(&String::from_utf8_lossy(&kinds));
@@ -128,9 +142,8 @@ pub(crate) fn walks(dungeon: &Dungeon) -> Vec<u32> {
     let mut todo = std::collections::VecDeque::from([dungeon.way_in.cell]);
     steps[dungeon.way_in.cell] = 0;
     while let Some(cell) = todo.pop_front() {
-        for side in SIDES {
-            let Some(next) = dungeon.beside(cell, side) else { continue };
-            if dungeon.cells[next] != Cell::Rock && steps[next] == u32::MAX {
+        for next in dungeon.walk_from(cell) {
+            if steps[next] == u32::MAX {
                 steps[next] = steps[cell] + 1;
                 todo.push_back(next);
             }
@@ -146,7 +159,7 @@ struct Reading<'laid> {
     walks: Vec<u32>,
     doorways: Vec<usize>,
     torched: Vec<usize>,
-    boxes: Vec<[f64; 5]>,
+    boxes: Vec<[f64; 6]>,
     furnished: Vec<[f64; 2]>,
 }
 
@@ -161,12 +174,11 @@ const fn on_floor([x, y]: [f64; 2]) -> [f64; 3] {
 
 impl<'laid> Reading<'laid> {
     fn of(dungeon: &'laid Dungeon) -> Self {
-        let cell_of = |[x, y]: [f64; 2]| (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
         Self {
             dungeon,
             walks: walks(dungeon),
             doorways: dungeon.frames.iter().map(|frame| frame.cell).collect(),
-            torched: dungeon.torches.iter().map(|torch| cell_of([torch.at[0], torch.at[1]])).collect(),
+            torched: dungeon.torches.iter().map(|torch| dungeon.cell_at(torch.at)).collect(),
             boxes: dungeon.boxes(),
             furnished: (dungeon.props.iter().map(|prop| [prop.at[0], prop.at[1]]))
                 .chain(dungeon.fixtures.iter().map(|fixture| [fixture.at[0], fixture.at[1]]))
@@ -196,7 +208,7 @@ impl<'laid> Reading<'laid> {
     fn spots(&self, room: usize, doorways: bool) -> Vec<[f64; 2]> {
         let (dungeon, door, portal) = (self.dungeon, self.dungeon.way_in.cell, self.dungeon.portal.cell);
         let clear = |[x, y]: [f64; 2]| {
-            self.boxes.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+            self.boxes.iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
                 let (east, south) = ((min_x - x).max(x - max_x).max(0.0), (min_y - y).max(y - max_y).max(0.0));
                 east * east + south * south >= SPOT_CLEAR_M * SPOT_CLEAR_M
             })
@@ -265,8 +277,17 @@ pub fn plan_encounters(dungeon: &Dungeon) -> EncounterPlan {
         }
     }
     seals.sort_by_key(|seal| (dungeon.rooms[seal.room].walk, seal.room));
-    let anchors = anchors_of(&reading);
-    EncounterPlan { seals, anchors, columns: dungeon.columns }
+    let seals = seals
+        .into_iter()
+        .map(|seal| {
+            let floor = dungeon::storey_floor(dungeon.rooms[seal.room].storey);
+            seal.onto(floor)
+        })
+        .collect();
+    let end_floor = dungeon.rooms.get(end).map_or(dungeon::FLOOR_M, |room| dungeon::storey_floor(room.storey));
+    let anchors = anchors_of(&reading).into_iter().map(|[x, y, z]| [x, y, z + end_floor]).collect();
+    let (columns, rows, storeys) = (dungeon.columns, dungeon.rows, dungeon.storeys);
+    EncounterPlan { seals, anchors, columns, rows, storeys }
 }
 
 /// A seal of `kind` laid in `room`, or none where it does not fit.
@@ -312,8 +333,11 @@ fn laid(reading: &Reading, lane: &mut Lane, kind: SealKind, room: usize) -> Opti
         }
     };
     let cells = reading.dungeon.rooms[room].cells.clone();
-    let doors =
-        cells.iter().filter(|cell| reading.doorways.contains(cell)).map(|&cell| reading.dungeon.centre(cell)).collect();
+    let doors = cells
+        .iter()
+        .filter(|cell| reading.doorways.contains(cell))
+        .map(|&cell| reading.dungeon.standing_point(cell))
+        .collect();
     Some(SealPlan { kind, room, cells, pieces, pads, drowned, doors })
 }
 
@@ -416,11 +440,11 @@ fn leaps(a: Footprint, b: Footprint) -> bool {
 
 /// Whether the way from one footprint's middle to the next's, as wide as a body and a hand besides, meets no solid: the
 /// dungeon's solids are walls to a body however high it leaps.
-fn open_air(a: Footprint, b: Footprint, boxes: &[[f64; 5]]) -> bool {
+fn open_air(a: Footprint, b: Footprint, boxes: &[[f64; 6]]) -> bool {
     let middle = |pad: Footprint| [(pad[0] + pad[2]) / 2.0, (pad[1] + pad[3]) / 2.0];
     let ([ax, ay], [bx, by]) = (middle(a), middle(b));
     let wide = TUNING.radius + 0.1;
-    boxes.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+    boxes.iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
         // The share of the way inside the box's span on each axis, widened; the way meets it where all overlap.
         let span = |from: f64, to: f64, low: f64, high: f64| {
             let (low, high, run) = (low - wide, high + wide, to - from);
@@ -453,7 +477,7 @@ fn ascent(reading: &Reading, room: usize) -> Option<(Vec<Block>, [f64; 3])> {
     let start = reading.entered_by(room)?;
     let padded = reading.padded(room);
     let clear = |pad: Footprint| {
-        reading.boxes.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+        reading.boxes.iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
             max_x <= pad[0] || min_x >= pad[2] || max_y <= pad[1] || min_y >= pad[3]
         })
     };
@@ -520,7 +544,7 @@ const LEAP_SEARCH: usize = 20_000;
 /// least leap from every other, ASCENT_PADS' most at the most; of two as long, the first found.
 fn leaping(
     spots: &[Footprint],
-    boxes: &[[f64; 5]],
+    boxes: &[[f64; 6]],
     path: &mut Vec<Footprint>,
     best: &mut Vec<Footprint>,
     budget: &mut usize,

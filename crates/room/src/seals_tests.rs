@@ -33,7 +33,7 @@ fn inside(room: &mut Room, player: PlayerId, seal: &SealPlan) {
 pub(crate) fn stand_one(room: &mut Room, at: [f64; 2]) -> FighterId {
     let before: Vec<FighterId> = room.foes.keys().copied().collect();
     let mut encounters = room.encounters.take().expect("encounters");
-    room.stand_foes(&mut encounters, None, &[at], 1);
+    room.stand_foes(&mut encounters, None, &[[at[0], at[1], 0.0]], 1);
     room.encounters = Some(encounters);
     *room.foes.keys().find(|id| !before.contains(id)).expect("one stood")
 }
@@ -542,7 +542,7 @@ fn a_seals_wave_stands_one_foe_for_each_living_player_two_to_four_each_hunting_t
     let mut encounters = room.encounters.take().expect("encounters");
     room.send_foes_away();
     let near = players[0];
-    room.stand_foes(&mut encounters, None, &[[laid.pieces[0][0] + 1.0, laid.pieces[0][1]]], 2);
+    room.stand_foes(&mut encounters, None, &[[laid.pieces[0][0] + 1.0, laid.pieces[0][1], laid.pieces[0][2]]], 2);
     room.encounters = Some(encounters);
     assert!(room.foes.values().all(|foe| foe.brain.target() == Some(near)), "hunting the nearest");
 }

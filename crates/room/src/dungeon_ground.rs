@@ -1,22 +1,30 @@
-//! A dungeon's ground for its bodies: the Forge's one floor at 0 m, its rock a wall, and its doorways' jambs and its
-//! pillars solid. They are the ground's own walls rather than blocks, since movement climbs a block too tall to step
-//! onto and a dungeon has ceilings over it. A body's middle keeps movement's half-width from every one of them, as a
-//! block keeps a body off its sides, so no body stands in a wall's face.
+//! A dungeon's ground for its bodies: its storeys' floors, its flights' slopes and its rock a wall, and its doorways'
+//! jambs, pillars, props, fixtures and landmarks solid. They are the ground's own walls rather than blocks, since
+//! movement climbs a block too tall to step onto and a dungeon has ceilings over it. A body's middle keeps movement's
+//! half-width from every one of them on its own storey, as a block keeps a body off its sides, so no body stands in a
+//! wall's face. Each column of cells holds open spans one over another (`Dungeon::spans`): a body stands on the
+//! highest floor at or below a step over its feet, and a line or a shot is stopped by rock and the slabs between.
 
+use dungeon::{Dungeon, Span, Stair, storey_at, storey_floor};
+use movement::heights::WALL_RISE_M;
 use movement::{Heights, TUNING, Terrain};
 
-/// A dungeon's ground: its cells' heights (0 m open, none for rock), its jambs and pillars (min x, min y, max x,
-/// max y, each as the dungeon's `boxes` give them, top last), and for each cell the solids within a body's half-width
-/// of it.
+/// A dungeon's ground: each storey's plane of open cells (a flight's and a Void's open), each column's spans, the
+/// flights, its solids (min x, min y, max x, max y, bottom, top, as the dungeon's `boxes` give them) with the storey
+/// each stands on, and for each column the solids within a body's half-width of it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct DungeonGround {
-    heights: Heights,
-    cell: f64,
-    columns: usize,
-    rows: usize,
+    planes: Vec<Heights>,
+    pub(crate) cell: f64,
+    pub(crate) columns: usize,
+    pub(crate) rows: usize,
+    pub(crate) storeys: usize,
     open: Vec<bool>,
-    solids: Vec<[f64; 5]>,
-    near: Vec<Vec<usize>>,
+    spans: Vec<Vec<Span>>,
+    stairs: Vec<Stair>,
+    pub(crate) solids: Vec<[f64; 6]>,
+    solid_storeys: Vec<usize>,
+    pub(crate) near: Vec<Vec<usize>>,
 }
 
 /// How far a point stands from a rectangle: outside, the distance to it; inside, less than nothing by the distance to
@@ -46,48 +54,98 @@ fn apart_from(x: f64, y: f64, min_x: f64, min_y: f64, max_x: f64, max_y: f64) ->
 impl DungeonGround {
     /// The ground of a dungeon as the Forge lays it.
     #[must_use]
-    pub fn of(dungeon: &dungeon::Dungeon) -> Option<Self> {
+    pub fn of(dungeon: &Dungeon) -> Option<Self> {
         let cell = dungeon::CELL_M;
-        let heights = Heights::new(0.0, 0.0, cell, dungeon.columns, dungeon.rows, dungeon.heights())?;
+        let (columns, rows, plane) = (dungeon.columns, dungeon.rows, dungeon.plane());
+        let planes = (0..dungeon.storeys)
+            .map(|storey| Heights::new(0.0, 0.0, cell, columns, rows, dungeon.heights(storey)))
+            .collect::<Option<Vec<_>>>()?;
         let open = dungeon.cells.iter().map(|&kind| kind != dungeon::Cell::Rock).collect();
         let solids = dungeon.boxes();
+        let solid_storeys = solids.iter().map(|solid| dungeon.storey_at(solid[4])).collect();
         let reach = TUNING.radius;
-        let mut near = vec![Vec::new(); dungeon.columns * dungeon.rows];
+        let mut near = vec![Vec::new(); plane];
         for (number, solid) in solids.iter().enumerate() {
             let first = |low: f64| ((low - reach) / cell).floor().max(0.0) as usize;
             let last = |high: f64, count: usize| (((high + reach) / cell).floor().max(0.0) as usize).min(count - 1);
-            for row in first(solid[1])..=last(solid[3], dungeon.rows) {
-                for column in first(solid[0])..=last(solid[2], dungeon.columns) {
-                    near[row * dungeon.columns + column].push(number);
+            for row in first(solid[1])..=last(solid[3], rows) {
+                for column in first(solid[0])..=last(solid[2], columns) {
+                    near[row * columns + column].push(number);
                 }
             }
         }
-        Some(Self { heights, cell, columns: dungeon.columns, rows: dungeon.rows, open, solids, near })
+        let spans = (0..plane).map(|at| dungeon.spans(at)).collect();
+        let (storeys, stairs) = (dungeon.storeys, dungeon.stairs.clone());
+        Some(Self { planes, cell, columns, rows, storeys, open, spans, stairs, solids, solid_storeys, near })
     }
 
-    /// The jambs and pillars, each (min x, min y, max x, max y, top).
+    /// The solids, each (min x, min y, max x, max y, bottom, top).
     #[must_use]
-    pub fn solids(&self) -> &[[f64; 5]] {
+    pub fn solids(&self) -> &[[f64; 6]] {
         &self.solids
     }
 
-    /// The cells' heights alone, without the jambs and pillars: what a navmesh bakes on, with those as its colliders.
+    /// How many storeys it holds.
     #[must_use]
-    pub const fn grid(&self) -> &Heights {
-        &self.heights
+    pub const fn storeys(&self) -> usize {
+        self.storeys
     }
 
-    /// The cell a point stands in, if it is in the grid.
-    fn cell_at(&self, x: f64, y: f64) -> Option<(usize, usize)> {
+    /// The storey feet at `z` stand on: the one whose floor lies nearest.
+    #[must_use]
+    pub fn storey_at(&self, z: f64) -> usize {
+        storey_at(self.storeys, z)
+    }
+
+    /// The column (a plane index) a point stands in, if it is in the grid.
+    pub(crate) fn column_at(&self, x: f64, y: f64) -> Option<usize> {
         let (column, row) = ((x / self.cell).floor(), (y / self.cell).floor());
         let inside = column >= 0.0 && row >= 0.0 && column < self.columns as f64 && row < self.rows as f64;
-        inside.then_some((column as usize, row as usize))
+        inside.then_some(row as usize * self.columns + column as usize)
     }
 
-    /// How far a point stands from the nearest rock, jamb, pillar or prop, less than nothing inside one; no more than
-    /// a body's half-width is ever asked, so only the cells round it are looked at.
-    fn clearance(&self, x: f64, y: f64) -> f64 {
-        let Some((column, row)) = self.cell_at(x, y) else { return 0.0 };
+    /// The open spans of a column, lowest first.
+    pub(crate) fn spans_of(&self, column: usize) -> &[Span] {
+        &self.spans[column]
+    }
+
+    /// A span's floor at (x, y): its storey's, or its flight's slope.
+    pub(crate) fn span_floor(&self, span: &Span, x: f64, y: f64) -> f64 {
+        span.stair
+            .and_then(|number| self.stairs.get(number))
+            .map_or(span.floor, |stair| stair.slope_at(self.columns, x, y))
+    }
+
+    /// A span's reach for a body or a line: from its floor to its ceiling, but below the deepest storey's floor and
+    /// over the top storey's ceiling nothing bounds it, as nothing did when a dungeon had one floor.
+    pub(crate) fn span_reach(&self, span: &Span) -> (f64, f64) {
+        let flat = span.stair.is_none();
+        let low = if flat && span.storey + 1 == self.storeys { f64::NEG_INFINITY } else { span.floor };
+        let high = if flat && span.storey == 0 { f64::INFINITY } else { span.ceiling };
+        (low, high)
+    }
+
+    /// Whether a column has a span that holds feet at `z`: its floor within a step of them and its ceiling over them.
+    fn holds(&self, x: f64, y: f64, z: f64) -> bool {
+        let Some(column) = self.column_at(x, y) else { return false };
+        self.spans[column].iter().any(|span| {
+            let (low, high) = self.span_reach(span);
+            let low = if low == f64::NEG_INFINITY { low } else { self.span_floor(span, x, y) };
+            low <= z + TUNING.step && z < high
+        })
+    }
+
+    /// Whether a solid stands on a storey.
+    pub(crate) fn on_storey(&self, number: usize, storey: usize) -> bool {
+        self.solid_storeys[number] == storey
+    }
+
+    /// How far a point stands from the nearest rock and solid of a storey, less than nothing inside one; no more
+    /// than a body's half-width is ever asked, so only the cells round it are looked at.
+    fn clearance(&self, x: f64, y: f64, storey: usize) -> f64 {
+        let Some(at) = self.column_at(x, y) else { return 0.0 };
+        let (column, row) = (at % self.columns, at / self.columns);
+        let first = storey * self.columns * self.rows;
         let mut nearest = TUNING.radius;
         for (step_column, step_row) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
             // Past the grid on any side is rock, as a cell holding none is.
@@ -96,225 +154,130 @@ impl DungeonGround {
                 && next_row >= 0
                 && (next_column as usize) < self.columns
                 && (next_row as usize) < self.rows;
-            if !inside || !self.open[next_row as usize * self.columns + next_column as usize] {
+            if !inside || !self.open[first + next_row as usize * self.columns + next_column as usize] {
                 let (west, north) = (next_column as f64 * self.cell, next_row as f64 * self.cell);
                 nearest = nearest.min(apart_from(x, y, west, north, west + self.cell, north + self.cell));
             }
         }
-        for &number in &self.near[row * self.columns + column] {
-            let [min_x, min_y, max_x, max_y, _] = self.solids[number];
+        for &number in self.near[at].iter().filter(|&&number| self.on_storey(number, storey)) {
+            let [min_x, min_y, max_x, max_y, _, _] = self.solids[number];
             nearest = nearest.min(apart_from(x, y, min_x, min_y, max_x, max_y));
         }
         nearest
     }
 
-    /// How deep a point lies inside a jamb, a pillar, a prop or a landmark, metres: 0 on open floor.
-    pub(crate) fn depth_in_solid(&self, x: f64, y: f64) -> f64 {
-        (-self.clearance(x, y)).max(0.0)
+    /// How deep a point with feet at `z` lies inside a solid of their storey, metres: 0 on open floor.
+    pub(crate) fn depth_in_solid(&self, x: f64, y: f64, z: f64) -> f64 {
+        (-self.clearance(x, y, self.storey_at(z))).max(0.0)
     }
 
-    /// Whether the straight line between two points passes `keep` metres or more from all rock, the grid's edge as
-    /// rock, and every jamb, pillar and prop: each rock cell near it and each solid, grown by `keep`, is tested against
-    /// the line as `clear_of` tests a rectangle.
+    /// Whether the straight line between two points of a storey passes `keep` metres or more from all its rock, the
+    /// grid's edge as rock, and every one of its solids: each rock cell near it and each solid, grown by `keep`, is
+    /// tested against the line as `clear_of` tests a rectangle.
     #[must_use]
-    pub fn clear_between(&self, from: [f64; 2], to: [f64; 2], keep: f64) -> bool {
+    pub fn clear_between(&self, from: [f64; 2], to: [f64; 2], keep: f64, storey: usize) -> bool {
+        let first_cell = storey * self.columns * self.rows;
         let first = |low: f64| ((low - keep) / self.cell).floor() as isize;
         let last = |high: f64| ((high + keep) / self.cell).floor() as isize;
         let rock_clear = (first(from[1].min(to[1]))..=last(from[1].max(to[1]))).all(|row| {
             (first(from[0].min(to[0]))..=last(from[0].max(to[0]))).all(|column| {
                 let inside = column >= 0 && row >= 0 && (column as usize) < self.columns && (row as usize) < self.rows;
                 let (west, north) = (column as f64 * self.cell, row as f64 * self.cell);
-                (inside && self.open[row as usize * self.columns + column as usize])
-                    || clear_of([west, north, west + self.cell, north + self.cell], from, to, keep)
+                (inside && self.open[first_cell + row as usize * self.columns + column as usize])
+                    || crate::dungeon_lines::clear_of(
+                        [west, north, west + self.cell, north + self.cell],
+                        from,
+                        to,
+                        keep,
+                    )
             })
         });
-        rock_clear && self.solids.iter().all(|solid| clear_of([solid[0], solid[1], solid[2], solid[3]], from, to, keep))
+        rock_clear
+            && self.solids.iter().enumerate().filter(|(number, _)| self.on_storey(*number, storey)).all(|(_, solid)| {
+                crate::dungeon_lines::clear_of([solid[0], solid[1], solid[2], solid[3]], from, to, keep)
+            })
     }
 
-    /// The highest top of the solids standing over a point, if one stands there.
-    fn solid_top(&self, x: f64, y: f64) -> Option<f64> {
-        let (column, row) = self.cell_at(x, y)?;
-        self.near[row * self.columns + column]
+    /// The highest floor or solid top at or below `reach` at a point; none where nothing is.
+    fn ground_below(&self, x: f64, y: f64, reach: f64, solids: bool) -> Option<f64> {
+        let column = self.column_at(x, y)?;
+        let floors = self.spans[column].iter().map(|span| self.span_floor(span, x, y));
+        let tops = self.near[column]
             .iter()
             .map(|&number| self.solids[number])
-            .filter(|&[min_x, min_y, max_x, max_y, _]| x >= min_x && x <= max_x && y >= min_y && y <= max_y)
-            .fold(None, |highest: Option<f64>, solid| Some(highest.map_or(solid[4], |top| top.max(solid[4]))))
+            .filter(|&[min_x, min_y, max_x, max_y, bottom, _]| {
+                solids && bottom <= reach && x >= min_x && x <= max_x && y >= min_y && y <= max_y
+            })
+            .map(|solid| solid[5]);
+        floors
+            .filter(|&floor| floor <= reach)
+            .chain(tops)
+            .fold(None, |highest: Option<f64>, height| Some(highest.map_or(height, |found| found.max(height))))
     }
-
-    /// The cells a straight line crosses, from its first end's to its last's or to the grid's edge, by each grid line it
-    /// passes; none when its first end lies off the grid. Walked as asked, since a look or a shot asks every tick.
-    fn cells_along(&self, from: [f64; 2], to: [f64; 2]) -> impl Iterator<Item = usize> + '_ {
-        let start = self.cell_at(from[0], from[1]);
-        let end = self.cell_at(to[0], to[1]).unwrap_or((usize::MAX, usize::MAX));
-        let (first_column, first_row) = start.unwrap_or((0, 0));
-        // How far along the line (0 to 1) the next grid line lies on an axis, how far apart they lie, and the step.
-        let crossing = |at: f64, index: usize, delta: f64| -> (f64, f64, isize) {
-            if delta > 0.0 {
-                (((index + 1) as f64 * self.cell - at) / delta, self.cell / delta, 1)
-            } else if delta < 0.0 {
-                ((index as f64 * self.cell - at) / delta, -self.cell / delta, -1)
-            } else {
-                (f64::INFINITY, f64::INFINITY, 0)
-            }
-        };
-        let (mut next_column, gap_column, step_column) = crossing(from[0], first_column, to[0] - from[0]);
-        let (mut next_row, gap_row, step_row) = crossing(from[1], first_row, to[1] - from[1]);
-        let (mut column, mut row) = (first_column as isize, first_row as isize);
-        let (mut walked, mut done) = (0, start.is_none());
-        core::iter::from_fn(move || {
-            let inside = column >= 0 && row >= 0 && (column as usize) < self.columns && (row as usize) < self.rows;
-            if done || !inside {
-                return None;
-            }
-            let cell = row as usize * self.columns + column as usize;
-            walked += 1;
-            done = (column as usize, row as usize) == end || walked > self.columns + self.rows;
-            if next_column < next_row {
-                column += step_column;
-                next_column += gap_column;
-            } else {
-                row += step_row;
-                next_row += gap_row;
-            }
-            Some(cell)
-        })
-    }
-
-    /// Whether the line passes through a jamb, a pillar or a prop below its top: only the solids near the cells it
-    /// crosses are looked at, each against the line by the slabs between its sides.
-    fn solid_across(&self, from: [f64; 3], to: [f64; 3]) -> bool {
-        let mut cells = self.cells_along([from[0], from[1]], [to[0], to[1]]).peekable();
-        let below = |number: &usize| crosses_below(&self.solids[*number], from, to);
-        if cells.peek().is_none() {
-            return (0..self.solids.len()).any(|number| below(&number));
-        }
-        cells.any(|cell| self.near[cell].iter().any(below))
-    }
-}
-
-/// Whether the straight line between two points passes `keep` metres or more from a rectangle (min x, min y, max x,
-/// max y): the rectangle grown by `keep` is tested against the line by the slabs between its sides.
-pub(crate) fn clear_of(rectangle: [f64; 4], from: [f64; 2], to: [f64; 2], keep: f64) -> bool {
-    let [min_x, min_y, max_x, max_y] = rectangle;
-    let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
-    for (start, end, low, high) in
-        [(from[0], to[0], min_x - keep, max_x + keep), (from[1], to[1], min_y - keep, max_y + keep)]
-    {
-        let step = end - start;
-        if step == 0.0 {
-            if start < low || start > high {
-                return true;
-            }
-        } else {
-            let (first, second) = ((low - start) / step, (high - start) / step);
-            enter = enter.max(first.min(second));
-            leave = leave.min(first.max(second));
-        }
-    }
-    enter > leave
-}
-
-/// How far along a segment (0 to 1) it enters a box from `low` to `high` (x, y, z), by the slabs between its faces.
-fn entry(low: [f64; 3], high: [f64; 3], from: [f64; 3], to: [f64; 3]) -> Option<f64> {
-    let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
-    for axis in 0..3 {
-        let step = to[axis] - from[axis];
-        if step == 0.0 {
-            if from[axis] < low[axis] || from[axis] > high[axis] {
-                return None;
-            }
-        } else {
-            let (first, second) = ((low[axis] - from[axis]) / step, (high[axis] - from[axis]) / step);
-            enter = enter.max(first.min(second));
-            leave = leave.min(first.max(second));
-        }
-    }
-    (enter <= leave).then_some(enter)
-}
-
-/// Whether a line (x, y, z) passes through a box below its top: where it is inside the box's sides, by the slabs
-/// between them, its lowest point there is under the top.
-fn crosses_below(solid: &[f64; 5], from: [f64; 3], to: [f64; 3]) -> bool {
-    let [min_x, min_y, max_x, max_y, top] = *solid;
-    let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
-    for (start, end, low, high) in [(from[0], to[0], min_x, max_x), (from[1], to[1], min_y, max_y)] {
-        let step = end - start;
-        if step == 0.0 {
-            if start < low || start > high {
-                return false;
-            }
-        } else {
-            let (first, second) = ((low - start) / step, (high - start) / step);
-            enter = enter.max(first.min(second));
-            leave = leave.min(first.max(second));
-        }
-    }
-    let height = |share: f64| from[2] + (to[2] - from[2]) * share;
-    enter <= leave && height(enter).min(height(leave)) < top
 }
 
 impl Terrain for DungeonGround {
-    /// The floor, or a solid's top over it, where a thrown drop comes to rest: a body is kept out of a solid by
-    /// `walled` all the same.
+    /// The highest ground of the column: the top storey's floor where it is open.
     fn height_at(&self, x: f64, y: f64) -> f64 {
-        self.solid_top(x, y).unwrap_or_else(|| self.heights.height_at(x, y))
+        self.height_under(x, y, f64::INFINITY)
     }
 
-    /// The one floor, under the rock and the solids as well: `wall_entry` meets a shot at their faces.
-    fn floor_at(&self, _x: f64, _y: f64) -> f64 {
-        dungeon::FLOOR_M
+    /// The floor of the column under the rock and the solids: `wall_entry` meets a shot at their faces.
+    fn floor_at(&self, x: f64, y: f64) -> f64 {
+        self.floor_under(x, y, f64::INFINITY)
     }
 
-    /// A move is walled when it crosses rock, or ends nearer than a body's half-width to rock, a jamb, a pillar or a
-    /// prop and nearer than it began: a body slides along a wall and steps away from one, but never into its face,
-    /// and one shoved inside a solid can only move out of it.
+    /// The highest floor or slope at or below a step over the feet, or a solid's top over it where a thrown drop comes
+    /// to rest (a body is kept out of a solid by `walled_at` all the same); a wall's height over the feet's storey
+    /// where the column has none.
+    fn height_under(&self, x: f64, y: f64, z: f64) -> f64 {
+        self.ground_below(x, y, z + TUNING.step, true).unwrap_or_else(|| storey_floor(self.storey_at(z)) + WALL_RISE_M)
+    }
+
+    /// A move is walled with the feet at the top ground's height at its start.
     fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
-        if self.heights.walled(from, to) {
+        self.walled_at(from, to, self.height_at(from.0, from.1))
+    }
+
+    /// A move is walled when it crosses rock of the feet's storey, ends where no span holds the feet (a slab over
+    /// them, or a floor more than a step over them), or ends nearer than a body's half-width to rock or a solid of
+    /// that storey and nearer than it began: a body slides along a wall and steps away from one, but never into its
+    /// face, and one shoved inside a solid can only move out of it.
+    fn walled_at(&self, from: (f64, f64), to: (f64, f64), z: f64) -> bool {
+        let storey = self.storey_at(z);
+        if self.planes[storey].walled(from, to) || !self.holds(to.0, to.1, z) {
             return true;
         }
-        let ends = self.clearance(to.0, to.1);
-        ends < TUNING.radius && ends < self.clearance(from.0, from.1)
+        let ends = self.clearance(to.0, to.1, storey);
+        ends < TUNING.radius && ends < self.clearance(from.0, from.1, storey)
     }
 
-    /// A line is walled where it crosses rock, as a move is, or passes through a jamb, a pillar or a prop below its
-    /// top: a look, a blow or a throw passes over a low coffin, never through a shelf.
+    /// The floor or slope a shot at `z` falls onto: the highest at or below a step under it, under the rock and the
+    /// solids as well; under rock, the floor of the storey it is on.
+    fn floor_under(&self, x: f64, y: f64, z: f64) -> f64 {
+        self.ground_below(x, y, z + TUNING.step, false).unwrap_or_else(|| storey_floor(self.storey_at(z)))
+    }
+
+    /// A line is walled where it crosses rock of its storey, as a move is, where it passes through rock or a slab
+    /// between storeys, or where it passes through a solid between its bottom and its top: a look, a blow or a throw
+    /// passes over a low coffin, never through a shelf.
     fn line_walled(&self, from: [f64; 3], to: [f64; 3]) -> bool {
-        self.heights.walled((from[0], from[1]), (to[0], to[1])) || self.solid_across(from, to)
+        let storey = self.storey_at(from[2]);
+        (storey == self.storey_at(to[2]) && self.planes[storey].walled((from[0], from[1]), (to[0], to[1])))
+            || self.slab_across(from, to)
+            || self.solid_across(from, to)
     }
 
-    /// A shot enters the first rock cell it crosses at that cell's side, the grid's edge as rock, or a jamb, a pillar
-    /// or a prop where it passes into the box below its top, whichever it meets first.
+    /// A shot enters the first rock or slab it meets, the grid's edge as rock, or a solid where it passes into the box,
+    /// whichever it meets first.
     fn wall_entry(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
-        let cells = || self.cells_along([from[0], from[1]], [to[0], to[1]]);
-        let (deep, high) = (-1.0e9, 1.0e9);
-        let square = |cell: usize| {
-            let (west, north) = ((cell % self.columns) as f64 * self.cell, (cell / self.columns) as f64 * self.cell);
-            entry([west, north, deep], [west + self.cell, north + self.cell, high], from, to)
-        };
-        let rock = cells().find(|&cell| !self.open[cell]).and_then(square);
-        // Past the grid is rock: a segment that leaves it enters rock where it does.
-        let (east, south) = (self.columns as f64 * self.cell, self.rows as f64 * self.cell);
-        let outside = (to[0] < 0.0 || to[1] < 0.0 || to[0] > east || to[1] > south)
-            .then(|| {
-                let along = [to[0] - from[0], to[1] - from[1]];
-                let leave = |start: f64, step: f64, edge: f64| {
-                    if step == 0.0 { 1.0 } else { ((if step > 0.0 { edge } else { 0.0 }) - start) / step }
-                };
-                leave(from[0], along[0], east).min(leave(from[1], along[1], south))
-            })
-            .filter(|share| *share <= 1.0)
-            .map(|share| share.max(0.0));
-        let solid = cells()
-            .flat_map(|cell| &self.near[cell])
-            .filter_map(|&number| {
-                let [min_x, min_y, max_x, max_y, top] = self.solids[number];
-                entry([min_x, min_y, deep], [max_x, max_y, top], from, to)
-            })
-            .reduce(f64::min);
-        [rock, outside, solid].into_iter().flatten().reduce(f64::min)
+        self.first_entry(from, to)
     }
 }
 
 #[cfg(test)]
 #[path = "dungeon_ground_tests.rs"]
 mod dungeon_ground_tests;
+#[cfg(test)]
+#[path = "dungeon_storeys_tests.rs"]
+mod dungeon_storeys_tests;

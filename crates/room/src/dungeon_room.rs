@@ -6,7 +6,7 @@
 //! foe's post stands the cache, shut while it stands; when it falls the cache opens and every player then in the room
 //! finds a Vestige before it, theirs alone, and a second where the run's first clear pays (`run_room.rs`).
 
-use crate::dungeon_ground::clear_of;
+use crate::dungeon_lines::clear_of;
 use crate::garrison::{DUNGEON, Post, draws_of, index, node_seed};
 use crate::run::Run;
 use crate::{Floor, NODE_FOES_MOST, PlayerId, Room};
@@ -45,8 +45,8 @@ pub(crate) struct Cache {
 /// about a third of the columns the land's 0.25 m would over the dungeon's whole rectangle.
 const NAV_CELL_M: f64 = CELL_M / 8.0;
 
-/// A dungeon room's navmesh: over the whole dungeon, its ground's jambs and pillars and its blocks (an Ascent's pads),
-/// kept to the floor the way in stands on, in cells of NAV_CELL_M.
+/// A dungeon room's navmesh: over the whole dungeon, its ground's lowest floors, the slabs between its storeys, its
+/// solids and its blocks (an Ascent's pads), kept to the floor the way in stands on, in cells of NAV_CELL_M.
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: &Section) -> NavMesh {
     let fold = |pick: fn(f64, f64) -> f64, start: f64, axis: usize| {
         section.ring.iter().fold(start, |kept, corner| pick(kept, corner[axis]))
@@ -60,23 +60,24 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     let agent = navmesh::Agent { cell_size: NAV_CELL_M, ..navmesh::AGENT };
     let anchor = [first.0, first.1, floor.height_at(first.0, first.1)];
     match floor {
-        // On the cells' heights alone, the jambs and pillars its colliders: a solid read as ground would make the
-        // floor beside it too steep to walk, and narrow every doorway past a body's width. Each stands a body's height
-        // at least, since the ground walls a solid however low: no path runs over a pool's rim or a dais.
+        // On the lowest floors, the slabs over them and the solids its colliders: a solid read as ground would make the
+        // floor beside it too steep to walk, and narrow every doorway past a body's width. Each solid stands a body's
+        // height at least over its own floor, since the ground walls a solid however low: no path runs over a pool's
+        // rim or a dais.
         Floor::Dungeon(ground) => {
-            // Each stands on the dungeon's one floor.
-            let standing = |&[min_x, min_y, max_x, max_y, top]: &[f64; 5]| Block {
+            let standing = |&[min_x, min_y, max_x, max_y, bottom, top]: &[f64; 6]| Block {
                 min_x,
                 min_y,
                 max_x,
                 max_y,
-                top: top.max(agent.height),
-                bottom: dungeon::FLOOR_M,
+                top: top.max(bottom + agent.height),
+                bottom,
             };
-            let mut solids: Vec<Block> = ground.solids().iter().map(standing).collect();
+            let mut solids: Vec<Block> = ground.slabs();
+            solids.extend(ground.solids().iter().map(standing));
             // An Ascent's pads too, so no foe paths up their sides or off their tops.
-            solids.extend(blocks.iter().map(|pad| Block { top: pad.top.max(agent.height), ..*pad }));
-            NavMesh::bake_anchored(&solids, ground.grid(), bounds, &agent, anchor)
+            solids.extend(blocks.iter().map(|pad| Block { top: pad.top.max(pad.bottom + agent.height), ..*pad }));
+            NavMesh::bake_anchored(&solids, &crate::dungeon_bake::Lowest(ground), bounds, &agent, anchor)
         }
         Floor::Flat | Floor::Dark | Floor::Sea(_) | Floor::Land(_) | Floor::Deck(_) | Floor::Island(_) => {
             NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor)
@@ -183,7 +184,8 @@ impl Room {
     ) -> Vec<(usize, usize)> {
         let (arrival, _) = dungeon.arrival();
         let end = dungeon.end();
-        let reeve = self.placed(dungeon, end, 1).first().copied().unwrap_or([arrival[0], arrival[1], 0.0]);
+        let way_in_floor = dungeon.floor_of(dungeon.way_in.cell);
+        let reeve = self.placed(dungeon, end, 1).first().copied().unwrap_or([arrival[0], arrival[1], way_in_floor]);
         let members = vec![(number, rank, reeve, bearing([reeve[0], reeve[1]], arrival))];
         self.garrison.push(Post {
             at: reeve,
@@ -215,7 +217,7 @@ impl Room {
                     (number, rank, place, bearing(middle, [place[0], place[1]]))
                 })
                 .collect();
-            let at = places.first().copied().unwrap_or([middle[0], middle[1], 0.0]);
+            let at = places.first().copied().unwrap_or([middle[0], middle[1], dungeon::storey_floor(found.storey)]);
             bands.push((self.garrison.len(), room));
             self.garrison.push(Post {
                 at,
@@ -237,14 +239,15 @@ impl Room {
         bands
     }
 
-    /// Where `count` foes stand in a room: its free cells nearest its middle, each on the navmesh.
+    /// Where `count` foes stand in a room: its free cells nearest its middle on its own storey's floor, each on the
+    /// navmesh.
     fn placed(&self, dungeon: &Dungeon, room: usize, count: usize) -> Vec<[f64; 3]> {
         dungeon
             .nearest_middle(room, count)
             .into_iter()
             .map(|cell| {
-                let [x, y] = dungeon.centre(cell);
-                let place = [x, y, self.floor.height_at(x, y)];
+                let [x, y, z] = dungeon.standing_point(cell);
+                let place = [x, y, self.floor.height_under(x, y, z)];
                 self.nav.nearest_point(place).unwrap_or(place)
             })
             .collect()
@@ -316,8 +319,10 @@ fn cache_by(floor: &Floor, dungeon: &Dungeon, post: [f64; 3]) -> Option<Cache> {
     let (half_x, half_y) = if toward_x == 0.0 { (ARCH_HALF_M, deep) } else { (deep, ARCH_HALF_M) };
     let arch = [middle_x - half_x, middle_y - half_y, middle_x + half_x, middle_y + half_y];
     let diagonal = CACHE_FROM_POST_M * core::f64::consts::FRAC_1_SQRT_2;
+    let storey = ground.storey_at(post[2]);
     let open_from_post = |[x, y]: [f64; 2]| {
-        ground.clear_between([post[0], post[1]], [x, y], 0.0) && !floor.walled((post[0], post[1]), (x, y))
+        ground.clear_between([post[0], post[1]], [x, y], 0.0, storey)
+            && !floor.walled_at((post[0], post[1]), (x, y), post[2])
     };
     let ways = [(0.0, -1.0), (1.0, -1.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0), (-1.0, 1.0), (-1.0, 0.0), (-1.0, -1.0)];
     let found = ways.into_iter().find_map(|(east, south): (f64, f64)| {
@@ -327,7 +332,7 @@ fn cache_by(floor: &Floor, dungeon: &Dungeon, post: [f64; 3]) -> Option<Cache> {
         let back = [x + (x - post[0]) * reach, y + (y - post[1]) * reach];
         // Nothing between the post and the cache, where the Vestiges lie, and the chest clear all round.
         let fits = open_from_post([x, y])
-            && ground.clear_between([x, y], back, CHEST_HALF_M)
+            && ground.clear_between([x, y], back, CHEST_HALF_M, storey)
             && clear_of(arch, [x, y], back, CHEST_HALF_M);
         fits.then_some((x, y))
     });
@@ -344,10 +349,13 @@ fn cache_by(floor: &Floor, dungeon: &Dungeon, post: [f64; 3]) -> Option<Cache> {
         let open = facings.into_iter().find(|&facing| open_from_post(before(at, facing)));
         (at, open.unwrap_or(0.0), open.map_or(at, |facing| before(at, facing)))
     };
-    let height = floor.height_at(at[0], at[1]);
+    let height = floor.height_under(at[0], at[1], post[2]);
     Some(Cache { at: [at[0], at[1], height], facing, vestige: [vestige[0], vestige[1], height], post: 0, open: false })
 }
 
 #[cfg(test)]
 #[path = "dungeon_room_tests.rs"]
 mod dungeon_room_tests;
+#[cfg(test)]
+#[path = "dungeon_storeys_room_tests.rs"]
+mod dungeon_storeys_room_tests;

@@ -293,7 +293,12 @@ fn every_dungeon_stands_a_chest_in_a_room_of_each_block_against_a_wall_clear_of_
                 assert_eq!(laid.cells[back], dungeon::Cell::Rock, "{patrol} {number}: its back to the wall");
                 let along = [libm::cos(*facing) * 0.2, libm::sin(*facing) * 0.2];
                 assert!(
-                    ground.clear_between([x - along[0], y - along[1]], [x + along[0], y + along[1]], CHEST_HALF_DEEP_M),
+                    ground.clear_between(
+                        [x - along[0], y - along[1]],
+                        [x + along[0], y + along[1]],
+                        CHEST_HALF_DEEP_M,
+                        0
+                    ),
                     "{patrol} {number}: clear of rock and every solid"
                 );
             }

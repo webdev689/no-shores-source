@@ -199,7 +199,7 @@ impl BlockLayout {
         let cost = |index: usize| match self.cells[index] {
             Cell::Rock => 3.0,
             Cell::Room(_) => 2.0,
-            Cell::Corridor => 1.0,
+            Cell::Corridor | Cell::Stair(_) | Cell::Void => 1.0,
         };
         let (start, goal) = (at(from.0, from.1), at(to.0, to.1));
         let guess =

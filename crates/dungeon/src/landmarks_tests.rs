@@ -271,7 +271,13 @@ fn no_prop_fixture_pillar_torch_doorway_arrival_or_portal_stands_on_a_footprint(
 #[test]
 fn the_boxes_end_with_the_landmarks_solids() {
     for dungeon in DUNGEONS.iter().take(300) {
-        let solids: Vec<[f64; 5]> = dungeon.landmarks.iter().flat_map(|placed| placed.solids.clone()).collect();
+        let solids: Vec<[f64; 6]> = dungeon
+            .landmarks
+            .iter()
+            .flat_map(|placed| {
+                placed.solids.iter().map(|&[min_x, min_y, max_x, max_y, top]| [min_x, min_y, max_x, max_y, 0.0, top])
+            })
+            .collect();
         let boxes = dungeon.boxes();
         assert_eq!(boxes[boxes.len() - solids.len()..], solids[..]);
     }

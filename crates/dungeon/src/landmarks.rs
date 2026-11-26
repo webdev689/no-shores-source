@@ -216,7 +216,7 @@ impl Dungeon {
         };
         let found = &self.rooms[room];
         let clear = !found.cells.iter().any(|&cell| doorway(cell) && touches(cell))
-            && !self.torches.iter().any(|torch| cells.contains(&self.cell_at([torch.at[0], torch.at[1]])))
+            && !self.torches.iter().any(|torch| cells.contains(&self.cell_at(torch.at)))
             && !touches(self.way_in.cell)
             && !touches(self.portal.cell);
         rim && !(backed && spot.back.is_none() && pinched) && clear && self.walk_round(room, &cells)

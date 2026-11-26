@@ -1,21 +1,24 @@
 //! The patrol areas' dungeons, laid as DFO's Forge lays them: blocks of 16 by 16 cells of 3.2 m, each block's rooms
 //! carved by a seeded split and joined through the rock by the cheapest ways, the blocks grown from the way in's and
 //! joined at their shared edges, in six styles. Each room has a purpose that furnishes and lights it, and one or two
-//! rooms a landmark. One floor:
-//! rooms and corridors stand at 0 m, under ceilings of their own heights. The same seed lays the same dungeon on
-//! every machine: the maths is + - * / and comparisons, and every draw is made on a lane of its own (`lane`).
+//! rooms a landmark. Storeys stand STOREY_M apart downward from the way in's at 0 m, joined by flights of stairs
+//! (`storeys`); the generator lays one. Rooms and corridors stand on their storey's floor, under ceilings of their own
+//! heights. The same seed lays the same dungeon on every machine: the maths is + - * / and comparisons, and every
+//! draw is made on a lane of its own (`lane`).
 
 mod banks;
 mod block;
 mod dungeon;
 mod fixtures;
 mod furnish;
+pub mod hand_made;
 mod landmarks;
 pub mod lane;
 pub mod models;
 mod props;
 mod purposes;
 mod shapes;
+mod storeys;
 mod styles;
 mod torches;
 
@@ -32,6 +35,9 @@ pub use models::{Piece, PropModel, prop_model};
 pub use props::{HUNG_M, POSTS_A_ROOM, Prop, posts_for};
 pub use purposes::{Bank, Facing, Lay, Light, Lit, Pattern, Purpose};
 pub use shapes::{Ceiling, Roof, Shape};
+pub use storeys::{
+    FLIGHT_CEILING_M, FLIGHT_CELLS, FLIGHT_M, STOREY_M, STOREYS_MOST, Span, Stair, storey_at, storey_floor,
+};
 pub use styles::{Form, STYLES, Style};
 pub use torches::{TORCH_M, TORCH_REACH_M, Torch};
 
@@ -43,12 +49,15 @@ pub const CORRIDOR_HEIGHT_M: f64 = 3.2;
 /// How many dungeons a patrol area holds.
 pub const PER_PATROL: usize = 3;
 
-/// What a cell is: rock, a room's (by its number in the dungeon), or a corridor.
+/// What a cell is: rock, a room's (by its number in the dungeon), a corridor, a flight of stairs' (by its number, on
+/// both its storeys), or open air over a room on the storey under it, where nothing stands.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cell {
     Rock,
     Room(u16),
     Corridor,
+    Stair(u16),
+    Void,
 }
 
 /// A cell's four sides, x east and y south.
@@ -155,5 +164,7 @@ mod props_tests;
 mod purposes_tests;
 #[cfg(test)]
 mod shapes_tests;
+#[cfg(test)]
+mod storeys_tests;
 #[cfg(test)]
 mod torches_tests;
