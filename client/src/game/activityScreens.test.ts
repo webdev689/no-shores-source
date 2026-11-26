@@ -332,6 +332,37 @@ test('from the sea, Find a Company searches for the run started at sea, and hold
   assert.ok(root.press('card-stop'));
 });
 
+test('from the sea, Enter goes in from the sea, and a company found there is joined in its run, never by the door', async () => {
+  fakeWindow();
+  const sockets: FinderSocket[] = [];
+  const trips: string[] = [];
+  const clock = {
+    now: () => FRIDAY_NINE * 60_000,
+    every: () => undefined,
+    open: (address: string) => sockets[sockets.push(new FinderSocket(address)) - 1] as never,
+  };
+  const screens = startActivityScreens(
+    module,
+    [grotto],
+    () => null,
+    {
+      enter: (number, name, run) => void trips.push(`enter ${number} ${name} ${run ?? ''}`),
+      intoRun: (node, run) => void trips.push(`into ${node.id} ${run}`),
+      fromSea: (node) => void trips.push(`from sea ${node.id}`),
+    },
+    link,
+    clock,
+    () => gearAt(12, nothing),
+  );
+  await module;
+  screens.seaCard(grotto);
+  drawn(screens).press('card-enter')?.click();
+  screens.seaCard(grotto);
+  drawn(screens).press('card-find')?.click();
+  sockets[0]?.fire('message', { data: '{"run":"node-krakens-grotto--sea--run-m9n8b7v6"}' });
+  assert.deepEqual(trips, ['from sea krakens-grotto', 'into krakens-grotto node-krakens-grotto--sea--run-m9n8b7v6']);
+});
+
 test('a search for the Elite Dungeon of the week ends as the week turns, and the card offers its Normal run', async () => {
   const cistern = dungeonAt('forsaken-cistern', 'Forsaken Cistern', 'continent-4');
   const { root, sockets, time, look } = await finding(cistern, 'elite', 26, 29_925_179);
