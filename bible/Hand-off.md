@@ -226,8 +226,11 @@ The decisions in [[Open Questions]] are not repeated here.
   place as the screen opens, the dials turn, the chosen glow breathes, a light sweeps a crest as it is lit or chosen,
   and a ring spreads from a waiting reward. The map's mark is the Playlist's shield in small in a ticked ring that
   turns, with a beacon ring spreading from it (`playlistMark.ts`), the face's ☰ gone. Nothing moves under reduced
-  motion. `tools/uiShot.mjs` takes `"motion": true`. Tested offline: new tests, pictures before and after and of the
-  motion; not yet seen in a running game.
+  motion. `tools/uiShot.mjs` takes `"motion": true`. An independent audit found the sweep lit the shield on only four
+  of its nine steps, the mark's ticks blinked at 1x, and its spreading ring crossed the port's mark; each is fixed
+  with a test that failed first. Tested offline: tests, pictures before and after and of the motion. Not seen in a
+  running game: this environment's network refuses R2 (`pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev`), so the page
+  never loads.
 - **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
   the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
   each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
