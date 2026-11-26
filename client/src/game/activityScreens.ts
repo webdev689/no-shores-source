@@ -182,7 +182,7 @@ export function startActivityScreens(
     const finds = atSea && card.finds !== null ? `${card.finds}--sea` : card.finds;
     opened = { entrance, atSea, card: { ...card, finds }, minute, gear: kept };
     // A search for a run the card no longer opens ends: the week turned, or a gate shut.
-    if (search && search.base !== card.finds) stopSearch();
+    if (search && search.base !== finds) stopSearch();
     render();
   };
   const playlists = startPlaylists({

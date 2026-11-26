@@ -440,8 +440,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     islesView.show(shown);
     islesNature.show(shown);
     const sea = playing.sea;
+    landings.frame(playing.flow.mode === 'sea');
     if (!sea || playing.flow.mode !== 'sea') return;
-    landings.frame();
     // An island new in sight bends the voyage ahead round it.
     if (isles.update(sea.sighted?.islands ?? [])) sea.bendRound();
     const found = isles.all().filter((each) => each.seen.found);

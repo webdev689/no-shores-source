@@ -40,10 +40,11 @@ export function clickAtSea(pick: Pick, level: SeaLevel, here: ClickContext): Sea
     return here.port && pick.id === here.port.id ? { kind: 'ask', aim: dockAt(here.port) } : null;
   }
   const point: Point2 = [pick.point[0], pick.point[1]];
-  if (pick.kind === 'land')
-    return { kind: 'ask', aim: here.port ? dockAt(here.port) : { kind: 'ashore', coast: here.coast, toward: point } };
+  // A sea island's own ground, or the water by it, is that island's before the open landmass's.
   const isle = here.isleAt(point);
   if (isle) return { kind: 'ask', aim: { kind: 'isle', ...isle } };
+  if (pick.kind === 'land')
+    return { kind: 'ask', aim: here.port ? dockAt(here.port) : { kind: 'ashore', coast: here.coast, toward: point } };
   return level === 'oversea' ? { kind: 'sail', point } : null;
 }
 

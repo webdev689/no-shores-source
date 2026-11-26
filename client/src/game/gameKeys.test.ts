@@ -274,3 +274,33 @@ test('at sea a landing’s confirmation takes Enter as yes and Escape as no; V s
   key('Enter');
   assert.deepEqual(done, ['answer true', 'answer false', 'switch', 'land null']);
 });
+
+test('on the pad at sea A asks after the landing the sea offers, and answers yes; B answers no', () => {
+  fakeWindow();
+  const done: string[] = [];
+  const playing = {
+    ...{ flow: { mode: 'sea' }, sea: afloat({ chaseChosen: () => false }), foot: null },
+    ...{ helmMap: { key: () => false, busy: false }, through: null, after: {} },
+  };
+  const landings = {
+    asking: null as object | null,
+    askHere: () => done.push('ask'),
+    answer: (yes: boolean) => done.push(`answer ${yes}`),
+  };
+  const pads: ((pressed: Set<string>, buttons: Set<string>) => void)[] = [];
+  listenForControls({
+    playing,
+    input: { onPad: (heard: (pressed: Set<string>, buttons: Set<string>) => void) => pads.push(heard) },
+    ui: { typing: false },
+    hud: { controls: { rebinding: { slot: null }, open: false } },
+    story: null,
+    retry: () => null,
+    landings,
+    change: () => undefined,
+  } as unknown as Controlled);
+  pads[0]?.(new Set(['confirm']), new Set(['A']));
+  landings.asking = {};
+  pads[0]?.(new Set(['confirm']), new Set(['A']));
+  pads[0]?.(new Set(['manage']), new Set(['B']));
+  assert.deepEqual(done, ['ask', 'answer true', 'answer false']);
+});

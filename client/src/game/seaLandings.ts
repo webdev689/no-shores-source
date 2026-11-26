@@ -121,11 +121,12 @@ export class SeaLandings {
     return this.course.making;
   }
 
-  /** Each frame at sea: the question put by once the ship's view is not the player's to answer it from, and the
-   *  landing made for made once the ship lies within reach of it and nothing else holds the player. */
-  frame(): void {
+  /** Each frame: the question put by once the player is not `atSea` or the ship's view is not theirs to answer it
+   *  from, and the landing made for made once the ship lies within reach of it and nothing else holds the player. */
+  frame(atSea = true): void {
     const sea = this.game.sea();
-    if (!sea) return;
+    if (!atSea) this.asking = null;
+    if (!sea || !atSea) return;
     if (sea.fight) this.course.cancel();
     if (sea.fight || sea.view.kind !== 'sail' || sea.busy) this.asking = null;
     if (!this.game.free()) return;

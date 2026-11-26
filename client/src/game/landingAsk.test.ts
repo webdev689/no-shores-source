@@ -43,6 +43,12 @@ test('a hostile ship’s mark sets the chase in either view; water by a sea isla
   });
 });
 
+test('a click that meets a sea island’s own ground asks to go ashore on it, never to dock at the port', () => {
+  const isle = { kind: 'ask', aim: { kind: 'isle', id: 7, words: 'the cove' } };
+  assert.deepEqual(clickAtSea({ kind: 'land', point: [60_000, 0, 40] }, 'sealevel', PORTED), isle);
+  assert.deepEqual(clickAtSea({ kind: 'land', point: [60_000, 0, 40] }, 'oversea', RUINED), isle);
+});
+
 test('the confirmation says what yes does: lands at once within reach, else makes for it at ×60', () => {
   assert.deepEqual(askWords(DOCK, false), {
     title: 'Dock at Overlook?',

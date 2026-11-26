@@ -107,9 +107,10 @@ export function nodeOfRoom(room: string): {
   const dungeon = number === undefined ? null : Number(number);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
   const playlist = listed === undefined ? null : Number(listed);
-  // A run started from the Playlist is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it.
+  // A run started from the Playlist is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it; one started
+  // at sea may be at Normal too, from the island's tiles (server/roomNames.ts).
   const marked = playlist !== null || atSea !== undefined;
-  if (marked && (dungeon !== null || run === undefined || seas === 'normal')) return null;
+  if (marked && (dungeon !== null || run === undefined || (seas === 'normal' && playlist !== null))) return null;
   // A guild's outpost is a bare node's; its dungeon a run at a tier, never a patrol's dungeon, a playlist's or a
   // Breach's.
   const guilded = dungeon !== null || marked || tier !== undefined || (named !== undefined && run === undefined);

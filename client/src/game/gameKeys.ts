@@ -95,7 +95,8 @@ export function listenForControls(game: Controlled): void {
     } else if (escape && (flow.mode === 'foot' || flow.mode === 'sea') && !playing.helmMap.busy && !overGame())
       openGearWindow({ view: 'settings' });
     else if (acts('confirm') && sailing && sea?.chaseChosen()) return;
-    else if (acts('ashore')) game.landings.askHere();
+    // Enter, or the pad's A, asks after the landing the sea offers where the ship lies, as L does.
+    else if (acts('ashore') || (acts('confirm') && sailing)) game.landings.askHere();
     else if (acts('voyage') && flow.mode === 'sea') game.stopOrResume();
     else if (acts('map') || acts('landMap')) game.openMap();
     else if (acts('manage')) game.manage();
@@ -127,7 +128,7 @@ export function listenForControls(game: Controlled): void {
     act((id) => !welcome && BINDS.now[id].keys.includes(key), key === 'escape');
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
-  // Escape at the helm's map, at a landing and while a piece of decoration is placed; in the story, and while she
+  // Escape at the helm's map, at a landing, a landing's confirmation and while a piece of decoration is placed; in the story, and while she
   // speaks, A is a tap. Start and View open and
   // shut the menu and the sheet wherever their keys would.
   input.onPad((pressed, buttons) => {
@@ -136,7 +137,9 @@ export function listenForControls(game: Controlled): void {
     const welcome = playing.after.holding;
     if (welcome && (pressed.has('jump') || pressed.has('confirm'))) playing.after.press();
     const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
-    const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing' || !!placingNow());
+    const asking = playing.flow.mode === 'sea' && !!game.landings.asking;
+    const escape =
+      buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing' || !!placingNow() || asking);
     if (escape && placingNow()) taken = new Set([...pressed].filter((id) => BINDS.now[id].pad.includes('B')));
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
     else if (playing.flow.mode !== 'story' && !covered)

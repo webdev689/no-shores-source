@@ -644,10 +644,12 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 Landing asks first ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]];
 `landingAsk.ts`, `seaLandings.ts`). A click on a port's icon, or anywhere on its island's land, asks "Dock at
 Overlook?"; on a coast with no living port (a ruined city's harbour is no port, `portOf`), "Go ashore on Cairnwatch?";
-on the water by one of the sea's islands, within 400 m of its reach, "Go ashore on the cove?". The key L asks after what
-the sea offers where the ship lies. The confirmation stands a little above the middle of the view, clear of the console,
-its question in brass and what yes does under it; Enter or its press says yes, Escape or Cancel no, and a click elsewhere puts it by, as does a fight,
-the helm, going aboard or a travel.
+on one of the sea's islands, its own ground (which a click meets as it meets the land's, `Isles.groundAt`) or the
+water within 400 m of its reach, "Go ashore on the cove?", before the open landmass's. L, Enter or the pad's A asks
+after what the sea offers where the ship lies. The confirmation stands a little above the middle of the view, clear of
+the console, its question in brass and what yes does under it; Enter, the pad's A or its press says yes, Escape, the
+pad's B or Cancel no, and a click elsewhere puts it by, as does a fight, the helm, going aboard, a travel or leaving the
+sea.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
 to dock there; anywhere else, to go ashore. Yes within reach lands at once; out of reach the ship makes for the harbour

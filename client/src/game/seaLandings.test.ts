@@ -135,3 +135,10 @@ test('the confirmation asks in brass and answers yes with Enter’s press and no
   ]);
   assert.deepEqual(answers, [true]);
 });
+
+test('a question still standing is put by once the player is no longer at sea', () => {
+  const { landings } = landingsOf();
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.frame(false);
+  assert.equal(landings.asking, null, 'walked ashore on an island, or taken elsewhere');
+});

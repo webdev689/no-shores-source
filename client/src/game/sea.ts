@@ -366,13 +366,14 @@ export class Sea {
     else if (this.view.kind === 'sail' && !this.aboard.active) this.view.drag(moved);
   }
 
-  /** A press let go: a click on a mark chooses it (`picked`), and in the Oversea view a click on the sea or the land
-   *  sails there (`sailed`); a drag only looked. Answers what the click met, null for none. */
+  /** A press let go: what the click met, the sea's islands' ground too, for the landings to answer; null for a drag. */
   pointerUp(x: number, y: number): ReturnType<typeof pickAt> | null {
     const press = this.press;
     this.press = null;
     if (!press || press.dragging || this.view.kind !== 'sail' || this.aboard.active || !this.pose) return null;
-    return pickAt(this.pose, this.viewport, x, y, this.landmass.heightAt, this.placed);
+    const ground = (east: number, south: number) =>
+      this.isles?.groundAt(east, south) ?? this.landmass.heightAt(east, south);
+    return pickAt(this.pose, this.viewport, x, y, ground, this.placed);
   }
 
   /** The view switched to over the ship, Oversea or Sealevel. */

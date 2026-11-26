@@ -302,6 +302,36 @@ test('Stop and Escape leave the search; the week’s Abyss Dungeon, a patrol and
   assert.ok(!(await finding(grotto, 'normal', 12, FRIDAY_NINE, null)).root.press('card-find'), 'offline');
 });
 
+test('from the sea, Find a Company searches for the run started at sea, and holds as the minute turns', async () => {
+  fakeWindow();
+  const sockets: FinderSocket[] = [];
+  const time = { now: FRIDAY_NINE * 60_000 };
+  let look = () => undefined as void;
+  const clock = {
+    now: () => time.now,
+    every: (run: () => void) => void (look = run),
+    open: (address: string) => sockets[sockets.push(new FinderSocket(address)) - 1] as never,
+  };
+  const screens = startActivityScreens(
+    module,
+    [grotto],
+    () => null,
+    nowhere,
+    link,
+    clock,
+    () => gearAt(12, nothing),
+  );
+  await module;
+  screens.seaCard(grotto);
+  const root = drawn(screens);
+  root.press('card-find')?.click();
+  assert.equal(sockets[0]?.address, 'ws://finder.test/v1/find/node-krakens-grotto--sea');
+  time.now += 61_000;
+  look();
+  assert.deepEqual(sockets[0]?.closed, [], 'the card built again for the new minute keeps its search');
+  assert.ok(root.press('card-stop'));
+});
+
 test('a search for the Elite Dungeon of the week ends as the week turns, and the card offers its Normal run', async () => {
   const cistern = dungeonAt('forsaken-cistern', 'Forsaken Cistern', 'continent-4');
   const { root, sockets, time, look } = await finding(cistern, 'elite', 26, 29_925_179);
