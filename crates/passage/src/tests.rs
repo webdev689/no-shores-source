@@ -355,8 +355,12 @@ fn a_weeks_public_way_is_one_zone_a_depth_each_reached_from_the_last() {
 
 #[test]
 fn a_holds_ring_lies_whole_on_its_zones_floor_under_ground_and_above() {
-    let mut off = Vec::new();
+    let (mut off, mut buried) = (Vec::new(), Vec::new());
     let mut rings = 0;
+    let edge_of = |middle: [f64; 2]| {
+        let round = (0..36).map(|step| f64::from(step) * std::f64::consts::TAU / 36.0);
+        round.map(move |turn| [middle[0] + plan::RING_M * libm::sin(turn), middle[1] - plan::RING_M * libm::cos(turn)])
+    };
     for week in 2_900..2_916 {
         let web = Web::of(saltmere(), week);
         for zone in web.zones.iter().filter(|zone| zone.deal == Deal::Mission(Mission::Hold)) {
@@ -366,11 +370,13 @@ fn a_holds_ring_lies_whole_on_its_zones_floor_under_ground_and_above() {
             let share = match &plan.ground {
                 Laid::Under(dungeon) => crate::under::ring_on_floor(dungeon, middle),
                 Laid::Open(hollow) => {
-                    let round = (0..36).map(|step| f64::from(step) * std::f64::consts::TAU / 36.0);
-                    let edge = round.map(|turn| {
-                        [middle[0] + plan::RING_M * libm::sin(turn), middle[1] - plan::RING_M * libm::cos(turn)]
-                    });
-                    edge.filter(|at| within(&hollow.ring, *at)).count() as f64 / 36.0
+                    // Its stones lie in the floor, no more than 4 cm over it or 25 cm under: the floor is levelled.
+                    let floor = plan.floor_at(middle);
+                    let laid = edge_of(middle).filter(|at| (-0.25..=0.04).contains(&(plan.floor_at(*at) - floor)));
+                    if laid.count() < 32 {
+                        buried.push((week, zone.number));
+                    }
+                    edge_of(middle).filter(|at| within(&hollow.ring, *at)).count() as f64 / 36.0
                 }
             };
             rings += 1;
@@ -381,4 +387,5 @@ fn a_holds_ring_lies_whole_on_its_zones_floor_under_ground_and_above() {
     }
     assert!(rings > 30, "{rings} rings");
     assert!(off.is_empty(), "{} of {rings} rings off the floor: {off:?}", off.len());
+    assert!(buried.is_empty(), "rings above ground buried or standing over the floor: {buried:?}");
 }

@@ -43,8 +43,11 @@ const MOUTH_IN_M: f64 = 1.0;
 /// How far inside the edge a spot or a post keeps, and the lattice they are drawn from, metres.
 const SPOT_IN_M: f64 = 3.5;
 const LATTICE_M: f64 = 3.0;
-/// How far inside the floor's ring a Hold's ring's edge lies at least.
+/// How far inside the floor's ring a Hold's ring's edge lies at least; how far past it its levelled floor reaches,
+/// and how far that floor eases into the floor round it, metres.
 const RING_CLEAR_M: f64 = 0.25;
+const LEVEL_PAST_M: f64 = 1.0;
+const LEVEL_BANK_M: f64 = 4.0;
 /// How far a piece of dressing's footprint keeps from the arrival, from a mouth's middle or a spot (a body's reach of
 /// it), from the lamp's middle (past its ring of stones) and past a band's spread round its post (a body's room),
 /// metres.
@@ -214,11 +217,23 @@ struct Laying {
     noise: Noise,
     rise: f64,
     shelf_turn: f64,
+    /// A Hold's ring's middle, where the floor is levelled round it, and its floor's height there.
+    level: Option<([f64; 2], f64)>,
 }
 
 impl Laying {
+    /// The floor's height at a point: its own, but levelled round a Hold's ring, a cleared circle whose stones lie in
+    /// it, eased into the floor round it over LEVEL_BANK_M.
+    fn floor(&self, at: [f64; 2]) -> f64 {
+        let own = self.own_floor(at);
+        let Some((middle, height)) = self.level else { return own };
+        let past = apart(at, middle) - crate::plan::RING_M - LEVEL_PAST_M;
+        let into = (past / LEVEL_BANK_M).clamp(0.0, 1.0);
+        height + (own - height) * into * into * (3.0 - 2.0 * into)
+    }
+
     /// The floor's own height at a point: rolling, and stepping down in shelves.
-    fn floor(&self, [x, y]: [f64; 2]) -> f64 {
+    fn own_floor(&self, [x, y]: [f64; 2]) -> f64 {
         let roll = self.noise.fractal(x / 18.0, y / 18.0, 3) * ROLL_M;
         let shelves = if self.outline.form == Form::Shelves {
             let along = x * libm::cos(self.shelf_turn) + y * libm::sin(self.shelf_turn);
@@ -498,16 +513,18 @@ pub(crate) fn layings(
     let mut draws = Draws::of(zone.seed, 0x401);
     let outline = Outline::new(form, zone.size.across(), &mut draws);
     let rise = draws.between(WALL_RISE_M.0, WALL_RISE_M.1);
-    let laying = Laying {
+    let mut laying = Laying {
         outline,
         noise: Noise::new(isle::draws::mix(zone.seed, 0x402)),
         rise,
         shelf_turn: draws.between(0.0, TAU),
+        level: None,
     };
     let wanted = crate::plan::spots_wanted(zone.deal);
     let ring = zone.deal == Deal::Mission(Mission::Hold);
     let asked = (onward_count, zone.has_lamp(), ring, wanted, zone.size.posts());
     let sites = sites(&laying.outline, asked, &mut draws);
+    laying.level = sites.spots.first().filter(|_| ring).map(|&middle| (middle, laying.own_floor(middle)));
     let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str()).to_owned();
     let ((ground, bounds), ring, seed) = (laying.ground(), laying.outline.ring(), zone.seed);
     (0..).map(move |attempt: u64| {

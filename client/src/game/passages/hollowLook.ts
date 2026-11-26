@@ -1,6 +1,7 @@
 // How a passage's hollow looks beyond what its room lays: its floor's ground by its form and name, and the meadow of
 // the islands' kit's grass and shrubs grown over that floor. Neither stands anything solid, so the page alone draws
 // them and the room's ground and blocks are as it lays them.
+import { RING_M } from './passagePieces.ts';
 import { groundHeight, type GroundLook, groundLook } from '../../islands/isleGround.ts';
 import { kitOfClimate, MODULE_NAMES } from '../../islands/isleModules.ts';
 import { gridOf, type IslePlacement, type Point2 } from '../../islands/islePlan.ts';
@@ -60,9 +61,11 @@ function growthOf(form: string, name: string): { readonly grass: number; readonl
   return { grass: 0.3, shrubs: 0.012 };
 }
 
-/** How far the meadow keeps from where a body arrives and from each piece, metres. */
+/** How far the meadow keeps from where a body arrives and from each piece, metres; from a Hold's ring's middle, its
+ *  whole levelled circle, so its stones lie in a clearing. */
 const CLEAR_OF_ARRIVAL_M = 3;
 const CLEAR_OF_PIECES_M = 2;
+const CLEAR_OF_RING_M = RING_M + 1;
 
 /** Whether a point lies inside a ring, by the crossings of a ray east from it. */
 function inside(ring: readonly Point2[], [x, y]: Point2): boolean {
@@ -97,7 +100,11 @@ export function meadow(plan: PassagePlan, heights: Float64Array, climate: string
       ([left, top, right, bottom]) => spot[0] < left || spot[0] > right || spot[1] < top || spot[1] > bottom,
     ) &&
     Math.hypot(spot[0] - plan.sites.arrive[0], spot[1] - plan.sites.arrive[1]) >= CLEAR_OF_ARRIVAL_M &&
-    plan.pieces.every((piece) => Math.hypot(spot[0] - piece.at[0], spot[1] - piece.at[1]) >= CLEAR_OF_PIECES_M);
+    plan.pieces.every(
+      (piece) =>
+        Math.hypot(spot[0] - piece.at[0], spot[1] - piece.at[1]) >=
+        (piece.kind === 'ring' ? CLEAR_OF_RING_M : CLEAR_OF_PIECES_M),
+    );
   const area = (east - west) * (south - north);
   const placed: IslePlacement[] = [];
   const grow = (count: number, modules: readonly number[], sizes: readonly [number, number], salt: number) => {

@@ -6,7 +6,7 @@ import { groundHeight, groundLook } from '../../islands/isleGround.ts';
 import { MODULE_NAMES, roleOf } from '../../islands/isleModules.ts';
 import { gridOf, type Point2 } from '../../islands/islePlan.ts';
 import { hollowGround } from './hollowLook.ts';
-import { UNTOUCHED } from './passagePieces.ts';
+import { RING_M, UNTOUCHED } from './passagePieces.ts';
 import { LOW } from './passageWay.ts';
 import { drawnHeights, floorOf, UNDER_FLOOR_M, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 
@@ -117,7 +117,10 @@ test('a hollow’s floor grows the kit’s grass and shrubs, which stand nothing
     for (const [module, x, y, z] of added) {
       assert.ok(['grass', 'shrub'].includes(roleOf(module) ?? ''), 'only what stands nothing solid');
       assert.ok(Math.hypot(x - plan.sites.arrive[0], y - plan.sites.arrive[1]) >= 3, 'clear of the arrival');
-      for (const piece of plan.pieces) assert.ok(Math.hypot(x - piece.at[0], y - piece.at[1]) >= 2);
+      for (const piece of plan.pieces) {
+        const clear = piece.kind === 'ring' ? RING_M + 1 : 2;
+        assert.ok(Math.hypot(x - piece.at[0], y - piece.at[1]) >= clear, `clear of the ${piece.kind}`);
+      }
       assert.ok(Math.abs(z - (groundHeight(grid, x, y) ?? Number.NaN)) < 1e-6, 'on the floor');
       const ring: readonly Point2[] = plan.ground.ring;
       const crossings = ring.filter(([fromX, fromY], index) => {
