@@ -16,6 +16,10 @@ const CUTS = 4;
 /** The highest a vault or a dome rises over its walls, and how much of its half span it rises at most. */
 const RISE_M = { vault: 1.6, dome: 2.2 };
 const RISE_SHARE = 0.6;
+/** How far a storey stands under the one over it, where a layout names none, and the rock a room's vault or dome
+ *  keeps under the floor over it (m). */
+const STOREY_M = 8;
+const SLAB_M = 0.4;
 /** A cave's ceiling rises this far over its walls at least and at most; its walls bulge this far either way. */
 const CAVE_RISE_M = [0.25, 1.1] as const;
 export const CAVE_BULGE_M = 0.22;
@@ -57,6 +61,8 @@ export function ceilingHeights(layout: DungeonLayout): (cell: number) => Height 
   };
   const shaped = layout.rooms.map((room): ((cell: number) => Height) | null => {
     const { cell: side } = layout;
+    // A room with a storey over it keeps its vault's or dome's top SLAB_M under that storey's floor.
+    const under = (room.storey ?? 0) > 0 ? Math.max(0, (layout.storeyM ?? STOREY_M) - SLAB_M - room.height) : Infinity;
     const [west, north] = [room.x * side, room.y * side];
     const [east, south] = [west + room.width * side, north + room.depth * side];
     const [middleX, middleY] = [(west + east) / 2, (north + south) / 2];
@@ -65,7 +71,7 @@ export function ceilingHeights(layout: DungeonLayout): (cell: number) => Height 
       rise * Math.sqrt(Math.max(0, 1 - (offset / half) * (offset / half)));
     if (room.ceiling === 'vault') {
       const across = room.width >= room.depth ? room.depth * side : room.width * side;
-      const rise = Math.min(RISE_M.vault, (across / 2) * RISE_SHARE);
+      const rise = Math.min(RISE_M.vault, (across / 2) * RISE_SHARE, under);
       return (cell) => {
         const height = layout.ceilings[cell] ?? 0;
         return (x, y) =>
@@ -74,7 +80,7 @@ export function ceilingHeights(layout: DungeonLayout): (cell: number) => Height 
     }
     if (room.ceiling === 'dome') {
       const radius = (Math.min(room.width, room.depth) * side) / 2;
-      const rise = Math.min(RISE_M.dome, radius * RISE_SHARE);
+      const rise = Math.min(RISE_M.dome, radius * RISE_SHARE, under);
       return (cell) => {
         const height = layout.ceilings[cell] ?? 0;
         return (x, y) => height + arc(Math.hypot(x - middleX, y - middleY), radius, rise);
@@ -169,7 +175,7 @@ export function closeEdge(
   }
 }
 
-/** Whether a cell's neighbour on `side` is open, and its index. */
+/** Whether a cell's neighbour on `side` is open, and its index: on a one-storey layout, as the mesh draws a storey. */
 export function besideOf(layout: DungeonLayout, column: number, row: number, side: number): number | null {
   const [east, south] = SIDE_STEPS[side] ?? [0, 0];
   return openAt(layout, column + east, row + south) ? (row + south) * layout.columns + column + east : null;

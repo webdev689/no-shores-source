@@ -242,6 +242,13 @@ export function storeyAt(layout: DungeonLayout, z: number): number {
   return Math.min(storeysOf(layout) - 1, Math.max(0, below));
 }
 
+/** The storey whose floor lies at or under a height and nearest it: where a thing standing or hung there belongs. A
+ *  storey's rooms keep 0.4 m of rock under the floor over them, so nothing of one reaches the next one's floor. */
+export function storeyUnder(layout: DungeonLayout, z: number): number {
+  const over = Math.ceil(-z / (layout.storeyM ?? STOREY_M) - 1e-6);
+  return Math.min(storeysOf(layout) - 1, Math.max(0, over));
+}
+
 /** A flight's slope at (x, y), as the rules walk it (crates/dungeon storeys.rs `Stair::slope_at`): its upper storey's
  *  floor at the head's edge, falling to the lower one's at the foot's edge, level past either end. */
 export function slopeAt(layout: DungeonLayout, stair: Stair, x: number, y: number): number {
@@ -305,12 +312,13 @@ export function groundAt(layout: DungeonLayout, x: number, y: number, z: number)
   return under.length > 0 ? Math.max(...under) : null;
 }
 
-/** The ceiling over feet at `z` at a point (m, absolute): the ceiling of the span they stand in, null over rock or
- *  off the grid. */
+/** The ceiling over feet at `z` at a point (m, absolute): the ceiling of the span they stand in, over a flight its
+ *  sloped ceiling there, so the camera keeps under it; null over rock or off the grid. */
 export function ceilingAt(layout: DungeonLayout, x: number, y: number, z = 0): number | null {
   const spans = spansAt(layout, Math.floor(x / layout.cell), Math.floor(y / layout.cell));
-  const standing = spans.filter((span) => span.floor <= z + STEP_M);
-  return standing[standing.length - 1]?.ceiling ?? null;
+  const span = spans.filter((each) => each.floor <= z + STEP_M).at(-1);
+  if (!span) return null;
+  return span.stair ? slopeAt(layout, span.stair, x, y) + FLIGHT_CEILING_M : span.ceiling;
 }
 
 /** The doorways' jambs, the pillars and the solids, and an Elite Dungeon's Ascents' pads, as blocks, each standing on

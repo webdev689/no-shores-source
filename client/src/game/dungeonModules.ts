@@ -53,6 +53,8 @@ export type Place = {
   readonly footprint?: readonly [number, number];
   readonly stretch?: { readonly from: number; readonly to: number };
   readonly fit?: { readonly above: number; readonly scale: number };
+  /** How far the piece rises for each metre along its own +x, sheared so, as a course follows a flight's slope. */
+  readonly slope?: number;
 };
 
 /** The set and the wall record a cell wears, as `lookOf` gives them. */
@@ -278,7 +280,7 @@ export function layModule(
     const local: Point = [
       positions[vertex * 3],
       positions[vertex * 3 + 1],
-      laidHeight(positions[vertex * 3 + 2], place),
+      laidHeight(positions[vertex * 3 + 2], place) + (place.slope ?? 0) * positions[vertex * 3],
     ];
     const [x, y, z] = turnAbout(local, place.turns);
     return [x + shiftX + place.origin[0], y + shiftY + place.origin[1], z + place.origin[2]];
@@ -310,7 +312,9 @@ export function layModule(
     const normal: Point = [(sign * across[0]) / area, (sign * across[1]) / area, (sign * across[2]) / area];
     const kept = vertices.map((vertex): Point => {
       const up = normals[vertex * 3 + 2] * squashOf(vertex);
-      const [x, y, z] = turnAbout([normals[vertex * 3], normals[vertex * 3 + 1], up], place.turns);
+      // A shear's normal leans back against it: x less the slope times z.
+      const along = normals[vertex * 3] - (place.slope ?? 0) * up;
+      const [x, y, z] = turnAbout([along, normals[vertex * 3 + 1], up], place.turns);
       const length = Math.hypot(x, y, z);
       return length > 1e-6 ? [x / length, y / length, z / length] : normal;
     });

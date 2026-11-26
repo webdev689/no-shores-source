@@ -1,7 +1,8 @@
 // A dungeon's light: no sky and no sun. Each light burns in its kind's colour and fades to nothing at its reach,
 // flickering as its kind does; a faint light lies everywhere, in the mood of the style of the cell, so a wall past
 // every light still reads. The page lights the figures by the same sums the shader lights the walls by (`LIGHT_WGSL`).
-import { type DungeonLayout, openAt, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
+import { type DungeonLayout, openAt, SIDE_STEPS, storeysOf, type StyleKey } from './dungeonLayout.ts';
+import { joinedCells, reachOf } from './dungeonSpaces.ts';
 
 type Colour = readonly [number, number, number];
 type Point = readonly [number, number, number];
@@ -65,20 +66,25 @@ export const MOODS: Readonly<Record<StyleKey, Colour>> = {
   mines: [0.25, 0.2, 0.15],
 };
 
-/** Set in a cell's word for rock, over its look. */
+/** Set in a cell's word for rock, over its look; and for a cell whose space joins the storey's next
+ *  (`dungeonSpaces.ts`). */
 export const CELL_ROCK = 1 << 16;
+export const CELL_JOINED = 1 << 17;
 
-/** Each cell's word for the shader: its look for its mood, an open cell's own and rock the look of the first open cell
- *  beside it (east, south, west, north), so a face that lies a little into the rock, as a cave's wall bulges, takes the
- *  mood of its room; and on rock `CELL_ROCK`, so still water mirrors no flame that rock hides. */
+/** Each cell's word for the shader, storey by storey: its look for its mood, an open cell's own and rock the look of
+ *  the first open cell beside it on its storey (east, south, west, north), so a face that lies a little into the rock,
+ *  as a cave's wall bulges, takes the mood of its room; on rock `CELL_ROCK`, so still water mirrors no flame that rock
+ *  hides; and on a joined cell `CELL_JOINED`. */
 export function cellWords(layout: DungeonLayout): Uint32Array {
+  const joined = storeysOf(layout) > 1 ? joinedCells(layout) : new Set<number>();
+  const plane = layout.columns * layout.rows;
   return Uint32Array.from(layout.cellLooks, (look, cell) => {
-    if (look >= 0) return look;
-    const [column, row] = [cell % layout.columns, Math.floor(cell / layout.columns)];
-    const open = SIDE_STEPS.find(([east, south]) => openAt(layout, column + east, row + south));
-    return (
-      CELL_ROCK | (open ? Math.max(0, layout.cellLooks[(row + open[1]) * layout.columns + column + open[0]] ?? 0) : 0)
-    );
+    if (look >= 0) return look | (joined.has(cell) ? CELL_JOINED : 0);
+    const storey = Math.floor(cell / plane);
+    const [column, row] = [cell % layout.columns, Math.floor((cell % plane) / layout.columns)];
+    const open = SIDE_STEPS.find(([east, south]) => openAt(layout, column + east, row + south, storey));
+    const beside = open ? storey * plane + (row + open[1]) * layout.columns + column + open[0] : -1;
+    return CELL_ROCK | Math.max(0, layout.cellLooks[beside] ?? 0);
   });
 }
 
@@ -93,26 +99,36 @@ export const EMBER_GLOW: Colour = [0.9, 0.3, 0.08];
 export const WAX: Colour = [0.86, 0.8, 0.66];
 export const GOLD: Colour = [0.85, 0.66, 0.27];
 
-/** A light where it burns, its number among the dungeon's (no two flicker in step), and how it burns. */
+/** A light where it burns, its number among the dungeon's (no two flicker in step), how it burns, and the spaces it
+ *  reaches (`dungeonSpaces.ts`; everywhere unless named). */
 export interface Light {
   readonly at: Point;
   readonly number: number;
   readonly burning: Burning;
+  readonly space?: number;
 }
 
 /** Every light a dungeon burns but the portal's: its torches, its fixtures and its landmarks' glows, numbered in that
  *  order. */
 export function burningOf(layout: DungeonLayout): Light[] {
   const torch = { ...LIGHT_KINDS.torch, reach: layout.torchReach };
+  const joined = storeysOf(layout) > 1 ? joinedCells(layout) : new Set<number>();
+  const space = (where: Point) => (storeysOf(layout) > 1 ? { space: reachOf(layout, joined, where) } : {});
   const placed =
     (kinds: readonly Burning[], first: number) =>
     ([x, y, z, kind]: readonly [number, number, number, number], index: number): Light => ({
       at: [x, y, z],
       number: first + index,
       burning: kinds[kind] ?? torch,
+      ...space([x, y, z]),
     });
   return [
-    ...layout.torches.map(([x, y, z], number): Light => ({ at: [x, y, z], number, burning: torch })),
+    ...layout.torches.map(([x, y, z], number): Light => ({
+      at: [x, y, z],
+      number,
+      burning: torch,
+      ...space([x, y, z]),
+    })),
     ...layout.fixtures.map(placed(FIXTURE_KINDS, layout.torches.length)),
     ...layout.glows.map(placed(GLOW_KINDS, layout.torches.length + layout.fixtures.length)),
   ];
@@ -138,15 +154,17 @@ export class NearestLights {
     this.portal = portal;
   }
 
-  /** The `most` lights nearest `eye`, the portal among them only while `open`: the same array every frame. */
-  nearest(eye: Point, open: boolean, most: number): readonly Light[] {
+  /** The `most` lights nearest `eye` of those that reach a space it sees (`seen`, `dungeonSpaces.ts` `seenFrom`;
+   *  every light unless named), the portal among them only while `open`: the same array every frame. */
+  nearest(eye: Point, open: boolean, most: number, seen?: number): readonly Light[] {
     const { order, past, chosen } = this;
     for (let index = 0; index < order.length; index++) {
-      const { at, number, burning } = order[index];
+      const { at, number, burning, space } = order[index];
       const east = at[0] - eye[0];
       const south = at[1] - eye[1];
       const up = at[2] - eye[2];
-      past[number] = Math.sqrt(east * east + south * south + up * up) - burning.reach;
+      const reaches = seen === undefined || space === undefined || (space & seen) !== 0;
+      past[number] = reaches ? Math.sqrt(east * east + south * south + up * up) - burning.reach : Infinity;
     }
     if (!open) past[this.portal.number] = Infinity;
     for (let index = 1; index < order.length; index++) {
@@ -155,7 +173,9 @@ export class NearestLights {
       for (; place > 0 && past[order[place - 1].number] > past[light.number]; place--) order[place] = order[place - 1];
       order[place] = light;
     }
-    chosen.length = Math.min(most, open ? order.length : order.length - 1);
+    let count = 0;
+    while (count < Math.min(most, order.length) && past[order[count].number] < Infinity) count++;
+    chosen.length = count;
     for (let index = 0; index < chosen.length; index++) chosen[index] = order[index];
     return chosen;
   }
@@ -189,11 +209,18 @@ export function shoulder(light: number): number {
   return Math.min(light, SHOULDER.knee) + over / (1 + over / (SHOULDER.ceiling - SHOULDER.knee));
 }
 
-/** The light at a point at `time`, from the lights and the faint light of the mood there, eased past its knee: what
- *  a figure standing there is lit by. */
-export function lightAt(lights: readonly Light[], point: Point, time: number, mood: Colour): [number, number, number] {
+/** The light at a point at `time`, from the lights that reach its space (`dungeonSpaces.ts` `spaceAt`; every light
+ *  unless named) and the faint light of the mood there, eased past its knee: what a figure standing there is lit by. */
+export function lightAt(
+  lights: readonly Light[],
+  point: Point,
+  time: number,
+  mood: Colour,
+  space?: number,
+): [number, number, number] {
   const light: [number, number, number] = [...mood];
-  for (const { at, number, burning } of lights) {
+  for (const { at, number, burning, space: reach } of lights) {
+    if (space !== undefined && reach !== undefined && (reach & space) === 0) continue;
     const distance = Math.hypot(at[0] - point[0], at[1] - point[1], at[2] - point[2]);
     const strength =
       falloff(distance, burning.reach) * flicker(time, number, burning.flicker) * pulse(time, number, burning.pulse);
@@ -206,7 +233,7 @@ export function lightAt(lights: readonly Light[], point: Point, time: number, mo
 const vector = (colour: Colour) => `vec3f(${colour.map((value) => value.toFixed(3)).join(', ')})`;
 
 /** The same light in WGSL: `lights_at(point, normal, time, mood, span)` sums the lights `span` names of those the view
- *  holds (`reaching`), each turned by how squarely it faces the surface, the mood coming from no way at all, and eases
+ *  holds (`reaching`) that reach the point's space (the including shader's `space_at` and `reaches`), each turned by how squarely it faces the surface, the mood coming from no way at all, and eases
  *  the sum as `shoulder` does. */
 export const LIGHT_WGSL = /* wgsl */ `
 const LIGHT_KNEE = ${SHOULDER.knee.toFixed(3)};
@@ -244,8 +271,10 @@ fn shoulder(light: f32) -> f32 {
 
 fn lights_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, span: vec3u) -> vec3f {
   var light = mood;
+  let space = space_at(point, normal);
   for (var order = 0u; order < span.y; order++) {
     let lamp = lights[reaching_light(span, order)];
+    if !reaches(lamp, space) { continue; }
     let towards = lamp.place.xyz - point;
     let distance = length(towards);
     let share = max(0.0, 1.0 - distance / lamp.colour.w);

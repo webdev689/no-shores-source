@@ -1,13 +1,16 @@
 // A dungeon's look, as DFO's Forge builds a floor's mesh (src/world/forge/forgeMesh.js): each open cell's floor and
 // ceiling; a wall with a trim band at its foot and head wherever it meets rock or the grid's edge; a wall from a lower
 // ceiling up to its own; each doorway's frame, a square pillar at each of a great room's corners, a bracket and a
-// flame at each torch, the exit door and the return portal. Points are the dungeon's own: x east, y south, z up from the floor. Each
+// flame at each torch, the exit door and the return portal. Points are the dungeon's own: x east, y south, z up from
+// the top storey's floor, each storey drawn from its own (`dungeonStoreyPlanes.ts`) and joined by `dungeonJoins.ts`. Each
 // face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { ARCH_M, caveWall, type FlatSpan } from './dungeonCaveWall.ts';
 import { besideOf, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
-import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
+import { type Joined, joinedOn, joinsMesh } from './dungeonJoins.ts';
+import { CORRIDOR, type DungeonLayout, ROCK, SIDE_STEPS, STAIR, VOID } from './dungeonLayout.ts';
+import { raised, type StoreyPlane, storeyPlanes } from './dungeonStoreyPlanes.ts';
 import { uvOf } from './dungeonUv.ts';
 
 /** The trim bands' heights at a wall's foot and head. */
@@ -103,7 +106,7 @@ export function lookAt(layout: DungeonLayout, cell: number): { set: number; wall
 
 /** A wall on a cell's side from `low` up to `high`, facing into the cell, with trim at its foot and its head where
  *  asked; its picture's top meets the cell's ceiling, so a wall's courses line up along a room. */
-function wall(
+export function wall(
   mesh: MeshBuilder,
   look: { set: number; wall: number },
   where: { column: number; row: number; side: number; cell: number },
@@ -362,6 +365,11 @@ export type Kitted = {
   readonly portal: boolean;
   readonly floorless: ReadonlySet<number>;
   readonly flats: ReadonlyMap<number, readonly FlatSpan[]>;
+  /** The flights' arches a kit piece stands for, by `stair * 2` at the head and `+ 1` at the foot; the flights whose
+   *  side courses kit pieces lay; and the galleries' edges, `cell * 4 + side`, whose balustrade a kit piece is. */
+  readonly arches?: ReadonlySet<number>;
+  readonly courses?: ReadonlySet<number>;
+  readonly rails?: ReadonlySet<number>;
 };
 const UNKITTED: Kitted = {
   pillars: new Set(),
@@ -371,15 +379,49 @@ const UNKITTED: Kitted = {
   flats: new Map(),
 };
 
-/** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it,
- *  and `kitted` says what it draws instead of the mesh. */
+/** The whole dungeon's mesh, storey by storey from each one's floor, the flights and the open air joining them, the
+ *  exit door wearing `door`, and the return portal; `furnish` lays what stands on each storey, from its floor, and
+ *  `kitted` says what it draws instead of the mesh. */
 export function dungeonMesh(
   layout: DungeonLayout,
   door: Picture,
-  furnish: (mesh: MeshBuilder) => void = () => undefined,
+  furnish: (mesh: MeshBuilder, plane: StoreyPlane) => void = () => undefined,
   kitted: Kitted = UNKITTED,
 ): ForgedModel {
   const mesh = meshBuilder();
+  const planes = storeyPlanes(layout);
+  const joined = joinedOn(layout);
+  for (const plane of planes) {
+    const local = kittedOn(kitted, plane, layout.columns * layout.rows);
+    storeyMesh(raised(mesh, plane.floor), plane.layout, local, joined(plane.storey));
+  }
+  joinsMesh(mesh, layout, kitted);
+  doorFace(raised(mesh, layout.exitDoor.z ?? 0), layout.exitDoor, layout.wayIn.side, door);
+  portal(raised(mesh, layout.portal.z ?? 0), layout, !kitted.portal);
+  for (const plane of planes) furnish(raised(mesh, plane.floor), plane);
+  return mesh.model();
+}
+
+/** What the mesh draws instead on one storey, by the storey's own numbers. */
+function kittedOn(kitted: Kitted, plane: StoreyPlane, cells: number): Kitted {
+  const first = plane.storey * cells;
+  const mine = (cell: number) => cell >= first && cell < first + cells;
+  const numbered = (all: ReadonlySet<number>, numbers: readonly number[]) =>
+    new Set(numbers.flatMap((number, index) => (all.has(number) ? [index] : [])));
+  return {
+    pillars: numbered(kitted.pillars, plane.pillars),
+    torches: numbered(kitted.torches, plane.torches),
+    portal: kitted.portal,
+    floorless: new Set([...kitted.floorless].filter(mine).map((cell) => cell - first)),
+    flats: new Map(
+      [...kitted.flats].filter(([key]) => mine(Math.floor(key / 4))).map(([key, spans]) => [key - first * 4, spans]),
+    ),
+  };
+}
+
+/** A storey's floors, walls, ceilings, doorways, pillars and torches, from its floor: a flight's cells and open air
+ *  are drawn by `joinsMesh`, and a cell under open air keeps only its floor here. */
+function storeyMesh(mesh: MeshBuilder, layout: DungeonLayout, kitted: Kitted, { opened, landings }: Joined): void {
   const { cell, columns, rows, cells, ceilings } = layout;
   const heightOf = ceilingHeights(layout);
   // A cell whose ceiling is not flat over it: a vaulted or domed room's, or a cave's.
@@ -400,7 +442,8 @@ export function dungeonMesh(
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
       const index = row * columns + column;
-      if (!openAt(layout, column, row)) continue;
+      const kind = cells[index] ?? ROCK;
+      if (kind === ROCK || kind === STAIR || kind === VOID) continue;
       const look = lookAt(layout, index);
       const ceiling = ceilings[index] ?? 0;
       const height = heightOf(index);
@@ -412,6 +455,7 @@ export function dungeonMesh(
         [west, north + cell, z],
       ];
       if (!kitted.floorless.has(index)) face(mesh, [look.set, ROLE.floor], square(0), [0, 0, 1], 0);
+      if (opened.has(index)) continue;
       if (curved(index)) curvedCeiling(mesh, [look.set, ROLE.ceiling], west, north, cell, height);
       else face(mesh, [look.set, ROLE.ceiling], square(ceiling), [0, 0, -1], ceiling);
       SIDE_STEPS.forEach(([east, south], side) => {
@@ -424,7 +468,9 @@ export function dungeonMesh(
           to: [edgeX + south * half, edgeY - east * half] as const,
           facing: [-east, -south, 0] as const,
         };
-        const next = besideOf(layout, column, row, side);
+        const beside = besideOf(layout, column, row, side);
+        // A flight is open only to its landing: from anywhere else it is rock.
+        const next = beside !== null && cells[beside] === STAIR && !landings.has(index * 4 + side) ? null : beside;
         if (next === null) {
           if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling, flatsOf(index * 4 + side));
           else wall(mesh, look, where, [0, ceiling], trims);
@@ -448,8 +494,4 @@ export function dungeonMesh(
     if (!kitted.pillars.has(index)) pillar(mesh, lookAt(layout, cellOf(x, y)), x, y, height, layout.pillarHalf);
   });
   layout.torches.forEach((each, index) => torch(mesh, each, cell, !kitted.torches.has(index)));
-  doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);
-  portal(mesh, layout, !kitted.portal);
-  furnish(mesh);
-  return mesh.model();
 }

@@ -48,6 +48,10 @@ test("a flight's slope falls a storey along it, as the rules walk it", () => {
   assert.equal(slopeAt(layout, stair, 16, 1.6), -8);
   assert.ok(Math.abs(slopeAt(layout, stair, 9.6, 1.6) + 4) < 1e-12);
   assert.ok(Math.abs((groundAt(layout, 9.6, 1.6, -3) ?? NaN) + 4) < 1e-12);
+  assert.ok(
+    Math.abs((ceilingAt(layout, 9.6, 1.6, -4) ?? NaN) + 0.8) < 1e-12,
+    "the camera keeps under the flight's slope",
+  );
 });
 
 test('the ground under a body is its own storey’s, a Void falls through, and rock or the outside holds none', () => {
