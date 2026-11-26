@@ -65,6 +65,7 @@ ${LIGHT_WGSL}
 
 const GLOW = ${COLOUR_LAYERS.glow}u;
 const WAX_LAYER = ${DUNGEON_LAYERS.wax}u;
+const GOLD_LAYER = ${DUNGEON_LAYERS.gold}u;
 const EMBER = ${DUNGEON_LAYERS.ember}u;
 const LANTERN_GLASS = ${DUNGEON_LAYERS.lanternGlass}u;
 const CRYSTAL = ${DUNGEON_LAYERS.crystal}u;
@@ -293,6 +294,9 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let light = lights_at(surface.point, normal, time, mood, span);
   if layer == WAX_LAYER {
     return vec4f(WAX * light, 1.0);
+  }
+  if layer == GOLD_LAYER {
+    return vec4f(GOLD * light, 1.0);
   }
   // Shut, the portal's face is sealed stone, sunk in shadow so its arch stands out round it.
   let albedo = sampled * select(1.0, 0.12, portal);

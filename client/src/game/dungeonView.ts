@@ -224,7 +224,7 @@ export class DungeonView {
     const drawn = this.drawn;
     if (!drawn) return;
     const shown = chests.map(foundChest);
-    const key = shown.map((chest) => `${chest.x},${chest.y},${(chest.lid ?? 0).toFixed(2)}`).join(';');
+    const key = shown.map((chest) => `${chest.x},${chest.y},${(chest.lid ?? 0).toFixed(2)},${chest.vault}`).join(';');
     if (key === drawn.findsShown) return;
     drawn.findsShown = key;
     for (const buffer of [drawn.finds?.vertices, drawn.finds?.indices]) buffer?.destroy();

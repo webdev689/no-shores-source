@@ -306,11 +306,14 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   the places a chest may stand (`of_dungeon`): against each rock wall of each cell of every room past the way in's but
   the end, and never an Elite Dungeon's seal's room, its back 0.5 m off the wall and facing into the room, its box
   (0.9 by 0.5 m) clear of rock and every solid; none on a doorway's cell, the way in's or the portal's, one holding a
-  prop, a fixture or a landmark, or under a torch (`against_walls`). It stands a chest for each block, each in a room
-  of its own drawn on the room's loot seed, and where rooms run short a room holds a second, two cells from every
-  other; and one of its props of the holding families in four searchable, 16 at most, none in a seal's room nor one
-  that rock and solids leave no body room to stand beside. All are drawn again as the
-  cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
+  prop, a fixture or a landmark, or under a torch (`against_walls`). It stands a chest for each block
+  (`dungeon_chests`), each in a room of its own drawn on the room's loot seed, and where rooms run short a room holds a
+  second, two cells from every other; a vault's chest in each room its generator names a vault (`stand_vault`), at a
+  place against its wall, and no plain chest there. A dungeon's chest pays more than a patrol's, a vault's the most
+  ([[Gear]], "A find"). Each player's gear counts the chests they have opened of all it stands, and the screen names
+  them under the place's name ("Chests 2 of 5"). It makes one of its props of the holding families in four
+  searchable, 16 at most, none in a seal's room nor one that rock and solids leave no body room to stand beside. All
+  are drawn again as the cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
   ([[Server]], "Chests and containers").
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
@@ -530,12 +533,13 @@ as standing none (`readDungeon`).
   (`flame_image`), so a dark lake still shows the far torches, unless rock stands between: the line to each is
   walked cell by cell (`rock_between`). A slow ripple moves it all.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
-  (`roomNameAt`, `placeWords`).
+  (`roomNameAt`, `placeWords`), and its chests counted end the line ("Chests 2 of 5", `chestsCounted`).
 - **The cache** (`chestMesh`): the owner's chest from DFO ([[Pick - Chest]]) in wood and iron at the room's
   `Snapshot.cache`, fitted to 0.9 by 0.5 m, its lid shut or open.
 - **The chests to find** (`chestsMesh`, `finds.ts`): the cache's chest at each the room stands for the player, centred
-  where it stands, built in one mesh, lit by the torches; one the player opens swings its lid over 0.6 s to the
-  model's 77 degrees, short of upright, coming no nearer the wall behind it than 0.36 m, clear of the kits there,
+  where it stands, built in one mesh, lit by the torches, a vault's with its hinge and latch in the heroic chest's
+  gold (`COLOUR.gold`, lit as a surface) where a plain one's are iron; one the player opens swings its lid over 0.6 s
+  to the model's 77 degrees, short of upright, coming no nearer the wall behind it than 0.36 m, clear of the kits there,
   none more than 0.3 m proud (`foundChest`), and stands open 4 seconds before it goes.
 - **The props** (`layout.props`): each forged prop laid by `layModel` as the city lays one, lit by the torches; the
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.

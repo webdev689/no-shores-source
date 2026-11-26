@@ -264,13 +264,18 @@ table Gear {
   abyss_playlist_taken: bool;
   elite_playlist_clears: ubyte;
   abyss_playlist_clears: ubyte;
-  // The chests standing in the room that they have not opened, five numbers each: its number, x, y, z and the way
-  // its front faces (radians clockwise from north); and the containers searchable that they have not searched, eight
-  // each: its number, its box across (west, north, east, south), its foot, its top and its model.
+  // The chests standing in the room that they have not opened, six numbers each: its number, x, y, z, the way its
+  // front faces (radians clockwise from north) and 1 for a vault's chest, else 0; and the containers searchable that
+  // they have not searched, eight each: its number, its box across (west, north, east, south), its foot, its top and
+  // its model.
   chests: [double];
   searchables: [double];
   // The number of the last chest or container the room paid them for, 0 for none: their page tells of it once.
   opened: uint;
+  // In a dungeon, how many of its chests they have opened and how many it stands, its vaults' among them; 0 of 0
+  // elsewhere.
+  chests_opened: ushort;
+  chests_total: ushort;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

@@ -369,3 +369,65 @@ fn a_container_no_body_can_stand_beside_as_one_inside_a_tent_is_never_searchable
     room.lay_finds(&[], vec![inside, open]);
     assert_eq!(room.finds.holders, vec![open], "the crate in the tent is left out");
 }
+
+/// A patrol's first dungeon with a vault's chest stood in a room that holds a place against a wall, its foes all
+/// fallen so none breaks an opening; its room, the vault's room and a player.
+fn vaulted() -> (Room, usize, PlayerId) {
+    let mut room = Room::dungeon("saltgrass-downs", 0, Some((5, 9))).expect("a dungeon");
+    let vault = *room.finds.groups.last().expect("a room with a place against a wall");
+    room.finds.stand_vault(vault);
+    let player = room.join().expect("space");
+    room.tick();
+    for found in room.foes.values_mut() {
+        found.fighter.health = 0.0;
+        found.fighter.action = combat::fighter::Action::Dead { elapsed: 0 };
+    }
+    room.tick();
+    (room, vault, player)
+}
+
+/// Opens a chest standing at its place, E held its time; the Aurem it paid.
+fn open(room: &mut Room, player: PlayerId, number: u32) -> u32 {
+    let [x, y, ..] = room.chests_for(player).iter().find(|(each, _)| *each == number).expect("standing").1;
+    stand(room, player, [x, y]);
+    let before = aurem(room, player);
+    assert_eq!(hold(room, player, number, OPEN_TICKS + 1), 0);
+    aurem(room, player) - before
+}
+
+#[test]
+fn a_vaults_chest_stands_in_its_room_beside_a_chest_for_each_block_and_pays_the_most() {
+    let (mut room, vault, player) = vaulted();
+    let (seed, style) = dungeon::of_patrol("saltgrass-downs", 0);
+    let laid = Dungeon::forge(seed, style);
+    let chests = room.chests_for(player);
+    assert_eq!(chests.len(), dungeon_chests(&laid) + 1, "a chest for each block, and the vault's");
+    let vaults: Vec<u32> =
+        chests.iter().map(|&(number, _)| number).filter(|&number| room.vault_chest(number)).collect();
+    let [vaults_chest] = vaults[..] else { panic!("one vault's chest: {vaults:?}") };
+    for chest in &room.finds.chests {
+        assert_eq!(room.finds.groups[chest.place] == vault, chest.vault, "only the vault's chest in its room");
+    }
+    let plain = chests.iter().map(|&(number, _)| number).find(|&number| number != vaults_chest).expect("a plain one");
+    let (plain_paid, vault_paid) = (open(&mut room, player, plain), open(&mut room, player, vaults_chest));
+    assert!(plain_paid > gear::finds::CHEST.aurem, "a dungeon's chest pays more than a patrol's: {plain_paid}");
+    // 60 and 150 Aurem at level 5, grown alike with the level, each rounded.
+    assert!((vault_paid * 2).abs_diff(plain_paid * 5) <= 5, "{plain_paid} and {vault_paid}");
+}
+
+#[test]
+fn a_dungeon_counts_the_chests_each_player_has_opened_of_all_it_stands_and_a_patrol_none() {
+    let (mut room, _, player) = vaulted();
+    let total = room.finds.chests.len();
+    assert_eq!(room.chests_counted(player), (0, total));
+    let (first, _) = room.chests_for(player)[0];
+    open(&mut room, player, first);
+    assert_eq!(room.chests_counted(player), (1, total), "one opened");
+    let other = room.join().expect("space");
+    room.tick();
+    assert_eq!(room.chests_counted(other), (0, total), "each player their own");
+    room.draw_finds();
+    assert_eq!(room.chests_counted(player), (0, total), "drawn again, counted afresh");
+    let (patrol, player) = patrol();
+    assert_eq!(patrol.chests_counted(player), (0, 0), "a patrol's chests move on, uncounted");
+}

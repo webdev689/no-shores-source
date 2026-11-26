@@ -174,7 +174,7 @@ function findGains(before: GearState, after: GearState): Gain[] {
   const opened = after.opened ?? 0;
   if (opened === 0 || opened === before.opened) return [];
   const chest = before.chests?.find((find) => find.number === opened);
-  if (chest) return [gain(`find-${opened}`, 'Chest', 1, { icon: CHEST_SVG, bare: true })];
+  if (chest) return [gain(`find-${opened}`, chest.vault ? 'Vault chest' : 'Chest', 1, { icon: CHEST_SVG, bare: true })];
   const held = before.searchables?.find((find) => find.number === opened);
   const searched = held && `Searched the ${holderName(held.model)}`;
   return searched ? [gain(`find-${opened}`, searched, 1, { icon: SEARCH_SVG, bare: true })] : [];
