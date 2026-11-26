@@ -11,6 +11,8 @@ How a pick comes over depends on where it lands ([[TypeScript and Rust]]):
   stores a picture bottom row first and No Shores top row first, so a v ported from DFO's UVs comes out flipped.
 - **Server and rules code**: rebuilt in Rust, with DFO's version as the specification.
 What may come is in the [[Pick List]]; why we draw on DFO at all is [[Built From What DFO Taught Us]].
+DFO's source is the repository `Lattymoy/dfo-online-source`: a cloud session attaches it and clones it shallow,
+read-only, beside this one.
 
 1. **The owner approves the pick.** Its row in the [[Pick List]] says approved.
 2. **Make its Pick note** from the Pick template, in `06-Port/Picks/`. It records the DFO paths and the commit read.
