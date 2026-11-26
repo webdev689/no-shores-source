@@ -1,5 +1,5 @@
 ---
-id: 0298
+id: 306
 title: "A worker stopping its preview servers by a command-line match killed a sibling worker's claude process"
 status: open
 type: internal

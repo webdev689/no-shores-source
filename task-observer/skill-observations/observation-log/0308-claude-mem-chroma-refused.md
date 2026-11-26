@@ -1,5 +1,5 @@
 ---
-id: 0300
+id: 308
 title: "claude-mem's semantic search refused its connection in workers; only the keyword fallback answered"
 status: open
 type: internal
