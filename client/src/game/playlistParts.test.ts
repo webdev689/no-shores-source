@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Node } from '../ui/node.ts';
 import { byId, nodesOf } from '../ui/uiForTests.ts';
 import { SHEEN_STEPS, drawSheen } from './playlistCrest.ts';
-import { type CrestLook, type CrestMotion, TILE, crestOf, dialOf, sweepOf } from './playlistParts.ts';
+import { type CrestLook, type CrestMotion, crestOf, dialOf, sweepOf } from './playlistParts.ts';
 import { SAMPLE_SCREEN } from './playlistShots.ts';
 import type { PlaylistEntry } from './playlistWords.ts';
 
