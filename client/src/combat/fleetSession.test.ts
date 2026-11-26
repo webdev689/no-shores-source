@@ -211,6 +211,33 @@ test('a session whose link joins a new fleet puts it to sea again where it lay, 
   assert.ok(Math.hypot(atX - x, atY - y) < 5, `the new fleet has it where it lay: ${atX}, ${atY}`);
 });
 
+test('a fleet room gone quiet is sent no orders until it speaks', () => {
+  const door = startRoomDoor(compiled);
+  door.openFleet();
+  const sent: Uint8Array[] = [];
+  const hold = { quiet: false };
+  const link = {
+    player: door.join(),
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: (bytes: Uint8Array<ArrayBuffer>) => void sent.push(bytes),
+    pump: () => undefined,
+    get quiet() {
+      return hold.quiet;
+    },
+  };
+  const play = new FleetSession(link, startFleetRules(compiled), [200_000, 300_000, 0]);
+  play.advance(TICK, sailing(0, 1), TICK);
+  hold.quiet = true;
+  for (let tick = 2; tick < 12; tick++) play.advance(TICK, sailing(1), tick * TICK);
+  assert.equal(sent.length, 1, 'nothing sent while the room is unheard');
+  hold.quiet = false;
+  play.advance(TICK, sailing(1), 12 * TICK);
+  assert.equal(sent.length, 2);
+});
+
 test("a fleet room's events reach the feel by each ship's own number, the sea's kinds by the one mapping", () => {
   const none = [0, 0, 0] as const;
   const told = (

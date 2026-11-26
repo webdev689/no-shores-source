@@ -56,7 +56,7 @@ function hall() {
     ['9'.repeat(64)]: person('guest', null, 'node-overlook-social'),
   };
   const blocking = [['cal', 'ada']];
-  const failing = { places: false, everyone: false, blocks: false };
+  const failing = { places: false, everyone: false, blocks: false, apart: false };
   const muting = [['ben', 'dee']];
   const signedOut = new Set<string>();
   const accounts = Object.values(people);
@@ -76,10 +76,12 @@ function hall() {
         }),
       );
     },
-    apart: async (account) =>
-      blocking.flatMap(([blocker, blocked]) =>
+    apart: async (account) => {
+      if (failing.apart) throw new Error('the accounts did not answer');
+      return blocking.flatMap(([blocker, blocked]) =>
         blocker === account ? [blocked] : blocked === account ? [blocker] : [],
-      ),
+      );
+    },
     mutedBy: async (account) => muting.filter(([, muted]) => muted === account).map(([muter]) => muter ?? ''),
     named: async (name) => {
       const found = accounts.find((each) => each.name?.toLowerCase() === name.toLowerCase());
@@ -306,4 +308,26 @@ test('a blocked word is starred letter for letter, look-alike letters too; one s
   const ada = await join('a');
   await ada.say({ say: 'f u c k', channel: 'local' });
   assert.equal(told(ada.sent), NOT_ALLOWED);
+});
+
+test('a line whose speaker’s blocks cannot be read is never sent as though nobody blocked them', async () => {
+  const { join, clock, failing } = hall();
+  const [ada, cal] = [await join('a'), await join('c')];
+  failing.apart = true;
+  await ada.say({ say: 'hello all', channel: 'world' });
+  assert.deepEqual(lines(cal.sent), [], 'Cal blocks Ada');
+  assert.equal(told(ada.sent), UNSENT, 'Ada is told it was not sent');
+  clock.now += 1_000;
+  await ada.say({ say: 'psst', channel: 'whisper', to: 'Cal' });
+  assert.deepEqual([lines(cal.sent), told(ada.sent)], [[], UNSENT], 'a whisper as well');
+  failing.apart = false;
+  clock.now += 1_000;
+  await ada.say({ say: 'hello again', channel: 'world' });
+  assert.deepEqual(lines(cal.sent), [], 'nor once the accounts answer');
+  assert.deepEqual(lines(ada.sent), ['hello again']);
+  failing.apart = true;
+  clock.now += 60_000;
+  await ada.say({ say: 'and again', channel: 'world' });
+  assert.deepEqual(lines(cal.sent), [], 'a failed ask later keeps the last answer');
+  assert.equal(lines(ada.sent).at(-1), 'and again');
 });

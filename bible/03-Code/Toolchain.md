@@ -64,8 +64,8 @@ code:
   `server`, `server:bundle` and `server:deploy` each run it first ([[Server]]), after building the messages' code and
   the rooms' WebAssembly, so none bundles a room older than its sources.
 - **`npm run server`** runs the rooms locally on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
-- **`npm run server:bundle`** bundles the Worker as a deploy would, into `target/server/`, without deploying.
-  `cargo xtask check` runs it last.
+- **`npm run server:bundle`** bundles the rooms' Worker as a deploy would, into `target/server/`, and the accounts'
+  into `target/accounts/`, without deploying. `cargo xtask check` runs it last.
 - **`npm run server:deploy`** builds what it bundles and deploys it. The `rooms` workflow does the same after a merge
   into `main` that changed the rooms' code ([[The Rooms Deploy When Their Code Changes]]), in two steps, so the token
   is held only by the one that runs `wrangler deploy`, never by a build. It needs `CLOUDFLARE_ACCOUNT_ID` and a
@@ -87,17 +87,19 @@ For the [[Sprite Forge]], which runs inside Blender: `pip install bpy==5.2.3` on
 
 For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bpy==5.3.0` on Python 3.13. Its
 `--dry-run` writes the mesh into the working folder, so run it from one outside the repo. It reads the objects named
-`Cannon.Port.<n>` and `Cannon.Starboard.<n>` (fore to aft) as its guns, and each face by its material, one of the
-five parts: `sail` as canvas (one box a connected piece), `hull` and `deck` as the hull a ball strikes, and `spar` and
-`iron` as what takes no balls; a face in an empty slot or any other material is refused ([[Naval Combat]]).
-`tools/r2.py` holds the R2 access the publishers use. In CI each workflow that publishes to R2 runs two jobs. The first builds with Blender, ffmpeg or the packages it installs, and
-holds no secret. The second installs no package, and it alone holds the repository's `CLOUDFLARE_TOKEN` secret, the
-token the deploys use ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]): it uploads what the first left as an artifact
-([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The `dungeon-modules` and `island-modules` workflows'
-second job runs their own publisher on the packs. In the others the first job runs its publisher with `R2_STAGE` set
-to a folder, where `tools/r2.py` writes each upload under its key instead of sending it, and reads it back from
-there; the second sends that folder with `python3 -I tools/r2.py upload <folder>`, which refuses it whole unless it is a folder and each
-file is named by the SHA-256 of its bytes, under a folder a publisher writes and with an extension that folder takes.
+`Cannon.Port.<n>` and `Cannon.Starboard.<n>` (fore to aft) as its guns, and each face by its material, one of the five
+parts: `sail` as canvas (one box a connected piece), `hull` and `deck` as the hull a ball strikes, and `spar` and `iron`
+as what takes no balls; a face in an empty slot or any other material is refused ([[Naval Combat]]). `tools/r2.py` holds
+the R2 access the publishers use. In CI each workflow that publishes to R2 runs two jobs. The first builds with Blender,
+ffmpeg or the packages it installs, and holds no secret. The second installs no package (the Lattice's, which renders in
+a job of its own before, installs only hash-pinned wheels), and it alone holds the repository's `CLOUDFLARE_TOKEN`
+secret, the token the deploys use ([[The Asset Workflows Publish to R2 With the Cloudflare Token]]): it uploads what the
+first left as an artifact ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). The `dungeon-modules`,
+`island-modules` and `lattice` workflows' last job runs their own publisher (the Lattice's `forge_publish.py`). In the
+others the first job runs its publisher with `R2_STAGE` set to a folder, where `tools/r2.py` writes each upload under
+its key instead of sending it, and reads it back from there; the second sends that folder with `python3 -I tools/r2.py
+upload <folder>`, which refuses it whole unless it is a folder and each file is named by the SHA-256 of its bytes, under
+a folder a publisher writes and with an extension that folder takes.
 
 For the modules (`tools/modules/`, [[Modules]]): on Python 3.13,
 `pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` (bpy 5.3.0 and what it needs, each

@@ -37,7 +37,11 @@ export class StoryHost {
     addEventListener('pointerdown', (event) => event.pointerType === 'touch' && this.story?.prologue.touch(true));
     for (const ending of ['pointerup', 'pointercancel'] as const)
       addEventListener(ending, (event) => event.pointerType === 'touch' && this.story?.prologue.touch(false));
-    fightPointer(canvas, () => (covered() ? null : (this.story?.prologue.fight ?? null)));
+    const fight = () => this.story?.prologue.fight ?? null;
+    fightPointer(canvas, () => (covered() ? null : fight()), fight);
+    // A key let go while the window is away is never heard: the sea fight holds none of them on, as at sea.
+    addEventListener('blur', () => this.story?.prologue.fight?.letGo());
+    document.addEventListener('visibilitychange', () => this.story?.prologue.fight?.letGo());
   }
 
   /** Starts the story on the game's parts, once the rooms' module has compiled; `failed` if it cannot start. */

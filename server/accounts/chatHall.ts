@@ -147,7 +147,7 @@ export class Hall {
     if (said.channel === 'whisper') return this.whisper(held, from, said.to ?? '', shown);
     if (said.channel === 'world') {
       if (!this.worldAllows()) return this.tell(held, { told: BUSY });
-      return this.toEach({ channel: 'world', from: from.name, text: shown }, from.account, () => true);
+      return this.toEach(held, { channel: 'world', from: from.name, text: shown }, from.account, () => true);
     }
     const [own, places] = await Promise.all([this.deps.places([from.account]).catch(() => null), this.listeners()]);
     if (!own) return this.tell(held, { told: UNSENT });
@@ -156,7 +156,7 @@ export class Hall {
     if (said.channel === 'region') {
       if (!atSea || here.water === null) return this.tell(held, { told: NOT_AT_SEA });
       const line: ChatLine = { channel: 'region', from: from.name, region: here.water, text: shown };
-      return this.toEach(line, from.account, (account) => {
+      return this.toEach(held, line, from.account, (account) => {
         const there = places.get(account);
         return there?.room === here.room && there.water === here.water;
       });
@@ -164,7 +164,7 @@ export class Hall {
     if (here.room === null) return this.tell(held, { told: NOWHERE });
     if (atSea) return this.tell(held, { told: ON_LAND });
     const line: ChatLine = { channel: 'local', from: from.name, text: shown };
-    return this.toEach(line, from.account, (account) => places.get(account)?.room === here.room);
+    return this.toEach(held, line, from.account, (account) => places.get(account)?.room === here.room);
   }
 
   /** A socket closed; whom its account is kept apart from is forgotten once it holds no other. What it may still say
@@ -244,8 +244,9 @@ export class Hall {
     const blocks = await this.deps.blocks(from.account, found.account).catch(() => null);
     if (blocks === null) return this.tell(held, { told: UNSENT });
     if (blocks) return this.tell(held, { told: `You blocked ${found.name}. Unblock them in Settings to whisper.` });
-    const { apart, muters } = await this.keptFrom(from.account);
-    const heard = !apart.has(found.account) && !muters.has(found.account);
+    const kept = await this.keptFrom(from.account);
+    if (kept === null) return this.tell(held, { told: UNSENT });
+    const heard = !kept.apart.has(found.account) && !kept.muters.has(found.account);
     const line: ChatLine = { channel: 'whisper', from: from.name, to: found.name, text };
     const said = JSON.stringify({ line });
     for (const each of this.sockets.values()) {
@@ -255,9 +256,16 @@ export class Hall {
   }
 
   /** `line` to every signed-in socket whose account `hears`, never one kept apart from or muting the speaker's, and
-   *  always back to the speaker's own. */
-  private async toEach(line: ChatLine, speaker: string, hears: (account: string) => boolean): Promise<void> {
-    const { apart, muters } = await this.keptFrom(speaker);
+   *  always back to the speaker's own; `held`, the speaker's socket, is told when who keeps apart cannot be known. */
+  private async toEach(
+    held: Held,
+    line: ChatLine,
+    speaker: string,
+    hears: (account: string) => boolean,
+  ): Promise<void> {
+    const kept = await this.keptFrom(speaker);
+    if (kept === null) return this.tell(held, { told: UNSENT });
+    const { apart, muters } = kept;
     const said = JSON.stringify({ line });
     for (const each of this.sockets.values()) {
       const account = each.speaker?.account;
@@ -316,15 +324,16 @@ export class Hall {
   }
 
   /** Those kept apart from `account` and those who mute it, asked again once older than APART_KEPT_MS; kept only
-   *  while it holds a socket. */
-  private async keptFrom(account: string): Promise<{ apart: ReadonlySet<string>; muters: ReadonlySet<string> }> {
+   *  while it holds a socket. An ask that fails keeps the last answer, and with none answers null: a line is never
+   *  sent as though no one kept apart from its speaker. */
+  private async keptFrom(account: string): Promise<{ apart: ReadonlySet<string>; muters: ReadonlySet<string> } | null> {
     const now = this.deps.now();
     const kept = this.kept.get(account);
     if (kept && now - kept.at < APART_KEPT_MS) return kept;
-    const [apart, muters] = await Promise.all([
-      this.deps.apart(account).catch(() => []),
-      this.deps.mutedBy(account).catch(() => []),
-    ]);
+    const answered = await Promise.all([this.deps.apart(account), this.deps.mutedBy(account)]).catch(() => null);
+    // The last answer held now: another of the account's sockets may have been answered while this one waited.
+    if (answered === null) return this.kept.get(account) ?? null;
+    const [apart, muters] = answered;
     const fresh = { at: now, apart: new Set(apart), muters: new Set(muters) };
     if (this.holds(account)) this.kept.set(account, fresh);
     return fresh;

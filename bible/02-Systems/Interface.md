@@ -272,7 +272,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   field stands low; the pad's cross walks them, A types the one it stands on and B puts them away, the field keeping the
   focus. While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
   field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is
-  `CanvasEvents`, which sends a held Enter or Space once, never its repeats, so it presses once as the pad's A does; the
+  `CanvasEvents`, which sends a held Enter or Space once, never its repeats, so it presses once as the pad's A does,
+  and a press the browser takes back (a touch or a pen's gesture) as a cancel, let go with no click and no drop; the
   interface hears plain events, and with the game in its worker ([[Game]], "Threads") hears them as the page sends them
   (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked
   to look round presses nothing.

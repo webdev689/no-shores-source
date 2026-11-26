@@ -53,7 +53,9 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
   never arrives; one the speaker blocks is told to be unblocked in Settings first; and a player cannot whisper to
   themself. `/r` answers the last who whispered.
 - **Blocks and mutes.** No line reaches a player who blocks its speaker, whom its speaker blocks, or who mutes its
-  speaker (each kept 30 s at a time). A mute is one way and hides only chat ([[A Player May Mute Another]]): the Roster
+  speaker (each kept 30 s at a time). When the accounts cannot say who those are, the last answer kept is used, and
+  with none the speaker is told the line could not be sent (`UNSENT`): a line never goes out as though no one blocked
+  them. A mute is one way and hides only chat ([[A Player May Mute Another]]): the Roster
   keeps the muted, and the page hides their lines too, from the moment it mutes them.
 - **Clean lines.** Each line is cleaned at both ends (`cleanLine`): control and format characters, marks that turn the
   text's direction and halves of a broken pair taken out (the joiner that builds an emoji kept), more than two marks
