@@ -84,7 +84,7 @@ export function otherHand(dress: Dress): Dress | null {
 }
 
 /** Whether the figure and the hands hold the weapon out in a fight this frame. While the rules are busy they keep the
- *  weapon the frame before held (`kept`): they take up another only at rest. The forge has no drinking pose, so it is
+ *  weapon the frame before held (`kept`): they take up another only at rest. The drink's flask takes the hands, so it is
  *  put away while a drink lasts; and the frame after one (`drank`) it comes from the player's own dress (`worn`), as
  *  the frame before had it put away only for the drink. */
 export function drawnInFight(hands: {
@@ -356,7 +356,9 @@ export class Walker {
     const swing = firstPerson.swing;
     this.strokes = strokesAfter(this.strokes, this.swingWas, swing?.progress ?? null);
     this.swingWas = swing?.progress ?? null;
-    const held = own ? fightOf(own) : null;
+    const fought = own ? fightOf(own) : null;
+    // A look the quaff drops a layer of drinks standing or walking as it is, rather than lose a piece.
+    const held = fought?.kind === 'drink' && !forge.drawsWhole(dress, 'quaff') ? null : fought;
     this.shown = shownMove(
       {
         mode: body.mode,
@@ -399,7 +401,7 @@ export class Walker {
       const [inRight, inLeft] = [drawn ? right : null, drawn ? left : null];
       const likely = () =>
         steady
-          ? steadyMoves(inRight, inLeft, draws)
+          ? steadyMoves(inRight, inLeft, draws, walking)
           : likelyMoves(inRight, inLeft, draws, drawn ? (grip ?? null) : null, walking);
       forge.warm(shown, likely, glow, owner);
     };

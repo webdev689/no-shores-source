@@ -43,10 +43,10 @@ export interface Doing {
 
 /** What a fight holds a figure to: dead, knocked down, staggered or flinching, hopping aside, deflecting a blow,
  *  guarding, winding up a telegraphed blow (`stroke` the move it is struck with), overreached after one, drawing a
- *  bow, or tumbling down dead from a fall. */
+ *  bow, tumbling down dead from a fall, or drinking a healing charge. */
 export type Fight =
   | {
-      readonly kind: 'dead' | 'down' | 'struck' | 'dodge' | 'parry' | 'guard' | 'draw' | 'tumble';
+      readonly kind: 'dead' | 'down' | 'struck' | 'dodge' | 'parry' | 'guard' | 'draw' | 'tumble' | 'drink';
       readonly progress: number;
     }
   | { readonly kind: 'windup' | 'overreach'; readonly stroke: string; readonly progress: number };
@@ -214,14 +214,28 @@ export function likelyMoves(
     'roll',
     guard,
     ownMove('hurt', right, draws),
+    ...drinkMoves(right, left, draws, walking),
   ];
   return [...new Set([...own, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
 }
 
+/** The drink's moves, standing and on the move where drawn: only for empty hands, as a drink puts the weapon away. */
+function drinkMoves(right: string | null, left: string | null, draws: Draws, walking: Walking): string[] {
+  if (right || left || !draws('quaff', null)) return [];
+  const walked = walking('quaff');
+  return walked ? ['quaff', walked] : ['quaff'];
+}
+
 /** The moves a figure shows standing and on the move with these hands: what a draw or a sheathe shows first. */
-export function steadyMoves(right: string | null, left: string | null, draws: Draws): string[] {
+export function steadyMoves(
+  right: string | null,
+  left: string | null,
+  draws: Draws,
+  walking: Walking = () => null,
+): string[] {
   const kit = kitOf(right, left, draws);
-  return [...new Set([kit.idle, kit.walk, ...(kit.run ? [kit.run] : []), 'idle', 'walk', 'run'])];
+  const drink = drinkMoves(right, left, draws, walking);
+  return [...new Set([kit.idle, kit.walk, ...(kit.run ? [kit.run] : []), 'idle', 'walk', 'run', ...drink])];
 }
 
 /** A move as the right hand's bow, crossbow or staff plays it, where the forge draws its own (`hurt_bow`); else the
@@ -344,8 +358,11 @@ export function shownMove(
   // A dodge rolls where the forge draws the roll; else it holds the figure to its hop only in the air, and on the
   // ground, before and after, it stands or walks. Mounted, the horse shows.
   const rolls = draws('roll', null);
-  const fight =
-    doing.fight?.kind === 'dodge' && (doing.mounted || (doing.mode !== 'air' && !rolls)) ? null : doing.fight;
+  // A drink shows the quaff where the forge draws it; else the figure stands or walks, its weapon put away.
+  const unshown =
+    (doing.fight?.kind === 'dodge' && (doing.mounted || (doing.mode !== 'air' && !rolls))) ||
+    (doing.fight?.kind === 'drink' && !draws('quaff', null));
+  const fight = unshown ? null : doing.fight;
   // Moving, an action plays its own on the move where the figure draws it whole; standing, the action's own.
   const moved = (anim: string): string => (doing.moving && doing.mode === 'ground' && walking(anim)) || anim;
   if (fight) return fightMove(doing, fight, frames, draws, byProgress, loop, moved);
@@ -455,6 +472,8 @@ function fightMove(
       return still(fight.stroke, fight.progress < 0.8 ? 0 : 1);
     case 'overreach':
       return still(fight.stroke, 2);
+    case 'drink':
+      return byProgress(moved('quaff'), fight.progress);
     case 'draw': {
       const shot = kitOf(right, left, draws).attack;
       const loose = LOOSES[shot]?.[0] ?? 1;

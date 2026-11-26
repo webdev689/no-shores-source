@@ -25,6 +25,8 @@ code:
   - crates/combat/src/tuning.rs#DRINK_HEALS
   - crates/room/src/recharge.rs#kill_share
   - crates/room/src/recharge.rs#DEALT_SHARE
+  - client/src/combat/healLight.ts#HealLights
+  - client/src/combat/healLight.ts#healEdgeNode
 ---
 # Combat
 
@@ -287,6 +289,17 @@ A foe never drinks.
   ending at full health (a spell topped the player up) or with no charge left heals nothing: each keeps what it
   holds. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it ends, and a drink pressed in a
   dodge never frees it early. Foes take no notice of a drink.
+- **How it looks.** The figure plays the forge's `quaff` by the drink's progress, four frames over its second: the
+  flask taken from the belt, raised to the chin, tipped up at the lips with the head back, lowered before the chest; on
+  the ground at a walk it plays `quaffwalk`, the same frames on the walk's legs ([[Sprite Forge]]). The flask's red
+  draught glows in the art. Where the forge draws no quaff, or the look wears a layer the quaff leaves out, the figure
+  stands or walks with its weapon put away. Another player's figure shows the move their own page shows. As the room
+  tells the heal, the drinker's light comes in the healing charges' red, drawn in cells as Mend's is and gone in a
+  second (`combat/healLight.ts`): a ring at the feet swells in three steps and cools over its first half, a hollow
+  glow wraps the figure for its first 0.4 s, and motes and small crosses rise off the body, cooling a stop each third.
+  Through the drinker's own eyes the figure's light is not drawn: a red glow pulses round the screen's edge in six held
+  steps, light outside its body, with motes rising up its sides ([[First Person]], [[Interface]]). Reduced motion keeps
+  the ring at one size and the glows still, and lets no mote rise.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
   their meter toward the next charge by the share it took of the foe's most health and most shield together, times
   half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is
