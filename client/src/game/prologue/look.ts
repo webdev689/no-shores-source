@@ -59,6 +59,15 @@ export function keepLook(kept: Pick<Storage, 'setItem'>, look: Look): void {
   }
 }
 
+/** Forgets the kept look, so the helm starts afresh for a new character. */
+export function forgetLook(kept: Pick<Storage, 'removeItem'>): void {
+  try {
+    kept.removeItem(KEY);
+  } catch {
+    // A browser that keeps nothing has nothing to forget.
+  }
+}
+
 /** The look on another body: the hair keeps its colour and takes that body's first style. */
 export function withBody(look: Look, body: Look['body']): Look {
   if (body === look.body) return look;

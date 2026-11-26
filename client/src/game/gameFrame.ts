@@ -38,6 +38,7 @@ import { gearTakesKeys } from './gearScreen.ts';
 import type { Drain } from './drain.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
 import { creationOpen } from './prologue/creation.ts';
+import { charactersOpen } from './characters/characterScreen.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Hud } from './hud.ts';
 import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
@@ -527,7 +528,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     last = now;
     clock += seconds;
     drain.step(seconds);
-    const windowUp = gearTakesKeys() || creationOpen() || socialUp();
+    const windowUp = gearTakesKeys() || creationOpen() || charactersOpen() || socialUp();
     // The open chat's field has the keys as a window's would, and the pad plays nothing of the game's under it.
     const covered = socialUp() || chatOpen();
     // The sheet takes the keys and the pad but while it waits for one to bind, as a window does; while a control waits

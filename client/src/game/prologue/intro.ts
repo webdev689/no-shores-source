@@ -1,6 +1,7 @@
 // The intro, the owner's first beat: the camera fades in high over the cloud at first light, goes down through the
 // cloud to Saltmere, where gulls wheel over the harbour, and ends as the title rises and a prompt to begin breathes.
-// Holding Space goes straight to the title.
+// Holding Space goes straight to the title. Where the page has accounts, beginning opens the character screen over the
+// title's scene, and the intro ends once a character is chosen there.
 import { railShot } from '../../cinema/rail.ts';
 import { playedByTouch } from '../../cinema/screen.ts';
 import { BINDS } from '../../player/input.ts';
@@ -29,6 +30,14 @@ const DRIFT_M_S = 3;
 
 type Phase = 'dark' | 'dawn' | 'cloud' | 'skipped' | 'home' | 'title';
 
+/** What beginning at the title opens, where the page has accounts: the character screen, which answers whether the
+ *  story is played from its storm, the player goes on past it, or comes back to the title. `straight`: it opens at
+ *  once, the title's intro passed (the page left the game for it). */
+export interface TitleGate {
+  readonly straight: boolean;
+  open(): Promise<'story' | 'onward' | 'title'>;
+}
+
 /** The title's prompt, by whatever the player plays with: on the pad, its jump's button. */
 export const beginPrompt = (touched: boolean, pad = BINDS.device === 'pad'): string =>
   touched ? 'Tap to begin' : pad ? `Press ${boundWord('jump', 'pad')} to begin` : 'Press any key to begin';
@@ -42,13 +51,22 @@ export class Intro implements Beat {
   private since = 0;
   private lastShot: Shot | null = null;
   private begun = false;
+  private readonly gate: TitleGate | null;
   done = false;
+  /** Whether the character screen sent the player on past the story; null where no screen stood (offline). */
+  onward: boolean | null = null;
 
-  constructor(stage: Stage, sailing: Sailing) {
+  constructor(stage: Stage, sailing: Sailing, gate: TitleGate | null = null) {
     this.stage = stage;
     this.sailing = sailing;
+    this.gate = gate;
     this.saltmere = islandFrame(stage.parts.landmass());
     stage.parts.screen.fade(1, 0);
+    if (gate?.straight) {
+      // The title's scene comes up behind the screen, from black.
+      this.enter('skipped');
+      this.begin();
+    }
   }
 
   /** Whether holding Space would cut the intro short: not once Saltmere is reached, or on the way there. */
@@ -120,7 +138,27 @@ export class Intro implements Beat {
     const { screen } = this.stage.parts;
     screen.showPrompt(null);
     screen.showTitle(false);
-    this.done = true;
+    if (!this.gate) {
+      this.done = true;
+      return;
+    }
+    void this.gate.open().then(
+      (answer) => {
+        if (answer === 'title') return this.toTitle();
+        this.onward = answer === 'onward';
+        this.done = true;
+      },
+      // A screen that failed leaves the story to go on as it would offline.
+      () => (this.done = true),
+    );
+  }
+
+  /** Back at the title from the character screen: the title rises again, and its prompt after it. */
+  private toTitle(): void {
+    this.begun = false;
+    if (this.phase !== 'title') return;
+    this.since = 0;
+    this.stage.parts.screen.showTitle(true);
   }
 
   /** The theme, whole, over the cloud, Saltmere and the title. */
@@ -182,7 +220,7 @@ export class Intro implements Beat {
         const glide = lens(railShot(homeRail(frame), this.since, LENS.fov, 'out'));
         if (this.since >= HOME_S) {
           this.enter('title');
-          screen.showTitle(true);
+          if (!this.begun) screen.showTitle(true);
         }
         return glide;
       }

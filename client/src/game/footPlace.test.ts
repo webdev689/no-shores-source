@@ -49,3 +49,19 @@ test("a guest lands in the room of the outpost of their companion's guild; anyon
   await new Promise((done) => setImmediate(done));
   assert.deepEqual(rejoined, ['gull-cove-outpost']);
 });
+
+test('launched for a Breach test run, the player joins its zone copy; for a real run, the zone itself', () => {
+  const context = { rooms: (name: string) => `wss://rooms/${name}` } as unknown as FootContext;
+  const zone = { id: 'gullwing-vale', kind: 'patrol' } as NodeInfo;
+  const launched = (breach: string) => ({ number: -1, x: 0, y: 0, facing: 0, breach });
+  const test = 'node-gullwing-vale--breach-normal--test-ab12cd34';
+  assert.equal(
+    nodeAddress(context, zone, 'normal', launched(test), null),
+    `wss://rooms/node-gullwing-vale--test-ab12cd34?breach=${encodeURIComponent(test)}`,
+  );
+  const real = 'node-gullwing-vale--breach-normal--run-ab12cd34';
+  assert.equal(
+    nodeAddress(context, zone, 'normal', launched(real), null),
+    `wss://rooms/node-gullwing-vale?breach=${encodeURIComponent(real)}`,
+  );
+});
