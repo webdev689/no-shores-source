@@ -535,10 +535,11 @@ fn where_a_walk_overlaps_another_piece_of_flagstones_one_of_another_grain_lies_u
     let (_, plan) = planned();
     let social = &plan.social;
     let flags: Vec<_> = social.solids.iter().filter(|solid| solid.material == Material::Path).collect();
-    // A strip's grain: its way and the line it runs along; every other piece's the world's.
+    // A strip's grain (a block a picture wide or more, 64 texels at 24 a metre): its way and the line it runs along;
+    // every other piece's the world's.
     let grain = |solid: &crate::solids::Solid| {
         let (sine, cosine) = libm::sincos(solid.turn);
-        let strip = matches!(solid.shape, Shape::Block) && solid.size[0] > 3.0;
+        let strip = matches!(solid.shape, Shape::Block) && solid.size[0] >= 64.0 / 24.0;
         strip.then(|| {
             ((solid.turn * 1e3).round() as i64, ((solid.at[0] * cosine + solid.at[1] * sine) * 1e2).round() as i64)
         })

@@ -8,6 +8,8 @@ use super::walks::{BASE_FACE_M, PLATFORM_EDGE_M, SEALED_EAST_M, SEALED_M};
 use crate::courtyard::Frame;
 use crate::landmarks::BEACON_DOOR_M;
 
+/// The platform's walked rectangles (west, north, east, south), from the hub's spans across and seaward.
+#[must_use]
 pub fn platform_rects(frame: &Frame) -> Vec<[f64; 4]> {
     platform_spans()
         .iter()
