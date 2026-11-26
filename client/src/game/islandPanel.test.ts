@@ -282,7 +282,7 @@ test('a tile takes no click or light until it has risen into place; a lit one’
     { kind: 'up', ...spot, button: 0 },
   ] as const;
   step(root, [...click]);
-  assert.deepEqual(heard, [], 'unseen as it begins to rise');
+  assert.equal(heard.length, 0, 'unseen as it begins to rise');
   step(root, [], 1);
   step(root, [...click]);
   assert.ok(heard.includes('act tern-strand'), heard.join());

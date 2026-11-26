@@ -187,10 +187,10 @@ test('yes within reach while something else holds the player keeps the landing, 
   assert.equal(landings.asking?.near, true);
   hold(true);
   landings.answer(true);
-  assert.deepEqual(landed, [], 'not while another landmass opens');
+  assert.equal(landed.length, 0, 'not while another landmass opens');
   assert.equal(landings.making?.kind, 'dock', 'kept, made for');
   landings.frame();
-  assert.deepEqual(landed, []);
+  assert.equal(landed.length, 0);
   hold(false);
   landings.frame();
   assert.deepEqual(
