@@ -66,7 +66,7 @@ export async function discordAway(
   back: string,
 ): Promise<{ readonly to: string } | string> {
   if ((await link.session()) === null) return OUT_OF_REACH;
-  return { to: await link.discord(back) };
+  return link.discord(back);
 }
 
 /** Where the tab marks that its player left the helm for Discord, so the story picks up there when they come back. */

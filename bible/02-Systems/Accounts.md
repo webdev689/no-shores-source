@@ -72,7 +72,9 @@ they play in holds it while they are there.
   `/v1/discord/callback` to the page with a one-time code in the address's fragment; nothing is signed in or linked
   yet. The page takes the code from `POST /v1/discord/finish`, showing its nonce. A Discord account already linked
   signs in to its account; one not linked links to the ticket's account, which only a session of that account may
-  take, and otherwise becomes a new account. The state sent to Discord is used once and must match a cookie set as
+  take, and otherwise becomes a new account. A ticket given that is used, run out or no ticket answers 400 and starts
+  nothing, and a page holding a session whose ticket did not come (the ticket limit, the accounts out of reach) does not
+  go to Discord but says why, so a sign-in never makes a new account whose session takes the guest's place. The state sent to Discord is used once and must match a cookie set as
   the player left; the code is used once and taken only with the nonce of the tab that began it; each lapses after
   ten minutes. So no one can finish another's sign-in, hand a player their own session, or link a player's Discord
   to their own account. A session's token never travels in an address. The Discord app must list
@@ -150,7 +152,7 @@ they play in holds it while they are there.
   before it is given the character, so a run keeps the first one's body for it, and the rules refuse to note one account
   for two players (`Room::own`). While the accounts hold what this room last saved of the first, and gave no errand's
   answer onto it since, the room's own body of it is the newest, and the second takes that on, saved anew under its
-  hold. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
+  hold; first the first one's chests are opened and what lies for them is posted to their mail, as at a leave. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
   joins no more, so two tabs never take the character back and forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
@@ -285,8 +287,8 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   port the Playlist was opened beside, and `node-gullwing-vale--breach-normal` and `--breach-hard` for the Drowned
   Vale, the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one that is no session, or that sends none within five
   seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
-  sockets with a token wait in one (a search past them is answered 503; a Launch is always taken, as it is gone at the
-  next look), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
+  sockets with a token wait in one (a search past them is answered 503; a Launch is taken past searches, as it is gone
+  at the next look, but past 64 Launches with a token it is answered 503 too, `launchesFull`), and at most 64 silent ones, the oldest let go as each new one comes, so silent sockets never shut out
   those that sign in; its clock stops once it holds none. It
   checks a base's shape alone, not that a rule lays it: the accounts' Worker does not load the rules, and the room
   judges the run.
