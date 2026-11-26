@@ -241,7 +241,8 @@ The decisions in [[Open Questions]] are not repeated here.
   `ad938908` (the territories, merged with main at #207 and #215, which move the door's event fingerprints but not
   the outcomes they pin), and again on `6825fc83` (main at #206 merged in, the only clashes two bible lists, both
   sides kept); the last audit's fixes by the room's and room-wasm's whole suites, the server's twins, the page's
-  changed tests, tsc, ESLint, clippy and `cargo xtask repo` (the raid's fingerprint moves, its outcome does not); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
+  changed tests, tsc, ESLint, clippy and `cargo xtask repo` (the raid's fingerprint moves, its outcome does not); every
+  check again on `e503de28` (main at #217 merged in, the only clashes three notes' lists); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
   15); the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the
   raid's first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the
   deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in the game and which
