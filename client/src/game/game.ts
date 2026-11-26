@@ -68,6 +68,7 @@ import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
 import { returnToShip } from './toShip.ts';
 import { speaking } from '../speech/dialogue.ts';
+import { obtainedLayer } from './obtained.ts';
 
 /**
  * The game: the player arrives in Overlook's social space, plays on foot, returns to their ship, sails the sea, views
@@ -125,7 +126,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     session,
     trips: onFoot,
     usePrompt: hud.usePrompt,
-    speak: (counter, ask) => quests.speak(counter, ask),
+    speak: (counter) => quests.speak(counter),
     passageUses: () => passages.uses(),
   };
   // The fight's display keeps clear of the HUD's hints, where the interface last laid them.
@@ -551,8 +552,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
   stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore, hulls));
   inspectAgainst({ roomModule }, () => fed()?.gear ?? null); // at sea the sea's word on the player's own pieces
-  stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
-  stack.add(passages.layer);
+  for (const layer of [screens.layer, passages.layer, obtainedLayer()]) stack.add(layer); // card, passages, notices
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry, change, respawn, goAshore, stopOrResume, openMap },

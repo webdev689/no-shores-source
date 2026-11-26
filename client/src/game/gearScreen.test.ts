@@ -117,7 +117,7 @@ test('each vendor’s stall shows its six wares of the day and its starter stock
     ...six({ kind: 13, rarity: 2 }, { kind: 14, rarity: 1 }),
     ...plain([13, 14, 15, 16]),
     ...six({ kind: 2, rarity: 2, attack: 120 }, { kind: 12, rarity: 1 }),
-    ...plain([12, 8]),
+    ...plain([12, 2, 22, 19, 18, 1, 3, 21, 20, 4, 6, 5, 7, 8, 9, 10, 23, 11]),
     ...six({ kind: 25, rarity: 1, bucket: 8, defense: 40 }, { kind: 24, rarity: 0, bucket: 7 }),
   ];
   const [armorsmith, weaponsmith, shipwright] = vendorsOf(state({ wares, aurem: 1_000, day: 20_400 }));
@@ -134,7 +134,7 @@ test('each vendor’s stall shows its six wares of the day and its starter stock
     armorsmith?.wares.slice(6).map((ware) => [ware.starter, ware.price, ware.press.ask.node]),
     [6, 7, 8, 9].map((node) => [true, 50, node]),
   );
-  assert.equal(weaponsmith?.wares.length, 8);
+  assert.equal(weaponsmith?.wares.length, 24, 'the day’s six, then every Melee and every Ranged kind to start');
   // Asked by its place, not the number it takes once bought, and by the day it was shown, so the room refuses it once
   // the day has turned.
   assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0, item: 20_400 });

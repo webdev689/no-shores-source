@@ -215,7 +215,7 @@ its system note.
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
     Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
-  - #155's, played by hand: the travel's fade out and in (#221 replaced its cinematic), the hover and the prompt on the pad;
+  - #155's, played by hand: the travel's cinematic from the helm to the arrival, the hover and the prompt on the pad;
     a clash of a Tithe ship and a merchant, joined; a ruin up close (its buildings' veins and sheets) and its wrecks
     from the sea at the sea's size.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
@@ -238,10 +238,39 @@ The decisions in [[Open Questions]] are not repeated here.
   Home waters shelter fully: no hostile hunts, keeps at sea, clocks or sights by a player inside them, no clash stays
   for one, and a fight's captains break off once its players lie there. Two rounds of read-only audits (five, then
   four), each finding fixed with a test shown failing first or answered in the pull request, and the owner's six
-  answers. Tested offline: the full check (the commit is in the pull request); CI's full check passed on `ce08e861`
+  answers; then the owner's "locked seas shouldnt be accessible": no course or travel into the sea of an island not
+  yet named (`content/world/islands.json`), Sunspire and Rimeholt locked with theirs
+  ([[Locked Seas Are Not Sailed or Travelled Into, Their Ports Locked With Them]]). Tested offline: the full check (the commit is in the pull request); CI's full check passed on `ce08e861`
   and runs on the head. Not pictured, played by hand, on a real GPU or in a deployed room. Left: a click on an island
   marked but not yet told of asks and is refused; the chart's bytes unmeasured against [[Server]]'s figures; Lantern
   Sea islands carry brineglass.
+
+- **The welcome's gifts, the pledged house's piece, "Use your gifts", house drops in the world, the hordes, the riding
+  escort, the riding and sailing lessons, the wreck's fixes and the keepers' screens after Destiny 2's** (#223, open,
+  waiting on CI on its head and the owner's yes to merge, which deploys the page, the site and the rooms; the owner's
+  words in [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]],
+  [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]] and
+  [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]; every call Claude made in
+  [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]). How each works is in [[Quests]]
+  ("The opening", "Using the gifts", "A house's horde", "Offered by a keeper", the lessons), [[Gear]], [[Factions]],
+  [[Arts]], [[Prologue]], [[Interface]] and [[Speech]]. On the owner's "This is yours now, do a comprehensive audit on
+  it", five read-only audits (rules and server; the page; the design against the owner's words; the bible against the
+  code; the tests and regressions), every finding measured by a test that failed first and fixed, or put to the owner:
+  among them the horde's unbounded Art carried anywhere in the node (it now fails 36 m past its place, and lends only
+  the house's own Art), another ship's ball counting for the hulk, notices naming keyboard keys on the pad and
+  overlapping their hint, and about twenty notes untrue of the code. The wreck's republished mesh is taken, its heaps on
+  the deck, the level keeping the mast and rank 2 boarders the wreck tools do not write. The owner's answers to the
+  audit: only the pledged house's leader gives a gift, a piece of uncommon (Magic) faction gear, not the cape; the
+  stranger names no place, her two lines reworked; "Use your gifts" teaches the Vestige, cloak, dye and letter; the
+  keepers' painted ground kept ("Yeah I love this"); and, new, one in ten of the world's Magic and Rare Vestige pieces a
+  piece of the pledged house. Tested offline on the head: the room's, gear's, protocol's and xtask's suites, the page's
+  and the server's quest tests, tsc, clippy, `cargo xtask repo`; pictured headless at 1920x1080 and on a phone. Not
+  seen: the escort on its horse, the hulk at sea, a deployed room, a real GPU, a hand. The owner's to say, listed in the
+  PR: old saves (on "Put them on" or at a road's first task), the horde's size, its pay after a fall and its 36 m, which
+  Vestiges are "the world's", a house piece dismantling as Normal, an escort ship's ball at the hulk, a bought Legendary
+  noticed as a find, the notice hint's place, the keeper screen's differences, the duel's boarder at the step, the
+  townsfolk's dyes dealt anew. Left: the wreck tools should write the mast and the rank 2 boarders; the gear tabs show a
+  pad's key as "pad:Start" (on `main` before #223); a house piece posted for want of room gets no notice.
 
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the

@@ -53,10 +53,10 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
 }
 
 /** What a player asks of the sea as its bytes, in a course's message: a repair by a port city, to board a captain
- *  who struck, or to leave its deck once its crew has fallen. */
-export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
+ *  who struck, to leave its deck once its crew has fallen, or the held map raised at the helm, for a lesson. */
+export function askBytes(ask: 'repair' | 'board' | 'leave-deck' | 'chart'): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];
+  const number = { repair: 1, board: 2, 'leave-deck': 3, chart: 4 }[ask];
   builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number, false));
   return builder.asUint8Array().slice();
 }

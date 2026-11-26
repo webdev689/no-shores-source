@@ -213,7 +213,7 @@ export interface Ware {
  *  by vendor. */
 const VENDORS = ['The Armorsmith', 'The Weaponsmith', 'The Shipwright'] as const;
 export const WARES = 6;
-export const STOCK = [WARES + 4, WARES + 2, WARES] as const;
+export const STOCK = [WARES + 4, WARES + 18, WARES] as const;
 
 /** The vendors' stalls: the Armorsmith's, the Weaponsmith's and the Shipwright's wares of the day and starter stock,
  *  each bought for its price in Aurem. */

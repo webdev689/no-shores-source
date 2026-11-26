@@ -78,6 +78,8 @@ export class SeaRoom {
   private told: number[][] = [];
   /** Whether the sea would take a boarding the player asked now, as its last word said. */
   mayBoard = false;
+  /** Whether the player's fight is the Harbourmaster's hulk's, as the sea's last word said. */
+  hulk = false;
   /** Their ship's kept hurts and repair, what floats for them, and the deck they stand on, as the room last said. */
   kept: SeenKept | null = null;
   flotsam: readonly SeenFlotsam[] = [];
@@ -173,6 +175,7 @@ export class SeaRoom {
     this.told.push(...snapshot.told.filter((told) => told.player === this.own).map((told) => [...told.numbers]));
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     this.mayBoard = own?.mayBoard ?? false;
+    this.hulk = own?.lesson ?? false;
     if (own) {
       const who = { name: shipName(own.faction, own.hull), faction: own.faction, rank: own.rank };
       const view = fightViewOf(own.view, who, shipName);

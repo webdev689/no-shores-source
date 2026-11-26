@@ -177,7 +177,10 @@ fn a_foe_felled_counts_toward_a_factions_bounty_only_for_the_player_wearing_its_
         character.ask(gear::Ask::Pledge { faction }, here, &dice).expect("pledged");
         if caped {
             character.ask(gear::Ask::BuyFactionWare { faction, ware: 0 }, here, &dice).expect("the cape");
-            let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == gear::Slot::Cloak);
+            let cape = character
+                .items
+                .iter()
+                .find(|(_, (item, at))| item.kind.slot() == gear::Slot::Cloak && *at != gear::character::At::Vault);
             let item = *cape.expect("the cape carried").0;
             character.ask(gear::Ask::Wear { item, slot: gear::Slot::Cloak }, here, &dice).expect("the cape worn");
         }

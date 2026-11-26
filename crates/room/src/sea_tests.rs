@@ -422,6 +422,7 @@ fn a_ship_met_at_sea_fights_under_its_own_faction_and_rank() {
     let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
     assert_eq!(captain.map(|command| command.mind.commission), Some(commission));
     assert_eq!(sea.fight_views().into_iter().map(|seen| seen.captain).collect::<Vec<_>>(), [commission]);
+    assert!(sea.fight_views().iter().all(|seen| !seen.lesson), "a sailing captain's fight is no lesson's");
 }
 
 /// A player at rest at (50 km, 50 km), and 1 km north of them two ships 400 m apart heading north: a Major of the

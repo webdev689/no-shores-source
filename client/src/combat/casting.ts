@@ -4,7 +4,7 @@
 // shows its word.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { GlowElement } from '../elementGlow.ts';
-import { type ArtState, type CastAsk, SPELLS, earnedOf, spellNumber } from '../network/artMessages.ts';
+import { ALL_EARNED, type ArtState, type CastAsk, SPELLS, earnedOf, spellNumber } from '../network/artMessages.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { AbilityState } from './abilityBar.ts';
@@ -62,7 +62,9 @@ export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number,
     art: taken.art,
     animaShare: runOn(taken.anima, art.anima.rechargeS),
     tenets: [runOn(taken.tenets[0], first?.rechargeS), runOn(taken.tenets[1], second?.rechargeS)],
-    earned: earnedOf(taken, taken.art),
+    // A horde running lends the worn Art whole: every ability on the bar and the keys, glowing unbounded.
+    earned: taken.lent ? ALL_EARNED : earnedOf(taken, taken.art),
+    unbounded: taken.lent === true,
     recharge: taken.recharge ?? 1,
   };
 }

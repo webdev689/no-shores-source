@@ -60,7 +60,11 @@ fn a_chest_pays_reputation_to_the_faction_pledged_while_its_cape_is_worn() {
     character.materials.aurem = 20_000;
     assert!(character.ask(Ask::Pledge { faction: 1 }, here, &DICE).is_ok());
     assert!(character.ask(Ask::BuyFactionWare { faction: 1, ware: 0 }, here, &DICE).is_ok());
-    let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == Slot::Cloak).map(|(id, _)| *id);
+    let cape = character
+        .items
+        .iter()
+        .find(|(_, (item, at))| item.kind.slot() == Slot::Cloak && *at != crate::character::At::Vault)
+        .map(|(id, _)| *id);
     let afield = Here { social: false, ..here };
     assert!(character.ask(Ask::Wear { item: cape.unwrap(), slot: Slot::Cloak }, afield, &DICE).is_ok());
     let chest = character.open_chest(2, (5, Difficulty::Normal, 0), None, &DICE).unwrap();

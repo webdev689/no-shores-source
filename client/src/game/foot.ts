@@ -336,7 +336,7 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect, eye: cutscene = null, walk = null }: FootAsk,
+    { paused, looking = false, hands, aspect, eye: cutscene = null, riders = [], walk = null }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
@@ -412,15 +412,14 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
     const { trips, speak } = this.context;
-    // The finds stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
+    // The finds and drops stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
     const gearHeard = this.held.gear ?? this.held.alone;
     const found = this.finds.frame(gearHeard, clock, !!this.dungeon, paused);
     const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
     marked.push(...found.marks, ...fallenMarks(fight.others));
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
-    // Drops are drawn online or alone, as a public event's chests are.
-    const laid = ((this.held.gear ?? this.held.alone)?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
+    const laid = (gearHeard?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
@@ -475,6 +474,7 @@ export class Foot {
       landed: dropped.landed,
       crates: this.held.gear?.crates ?? null,
       heard: [...shownPublic.sounds, ...found.sounds],
+      riders,
     });
     const playerFall = { id: fight.player, feet, tumbling: !!walker.fall?.tumbling };
     const heard = { ...playerFall, lying: walker.fall?.tumbling === false };

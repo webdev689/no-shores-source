@@ -412,8 +412,8 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_c
     let message = messages::root_as_from_room(&sent).unwrap();
     let wares = message.gear().unwrap().wares().unwrap();
     let starter = gear::vendor::Vendor::ALL.map(|vendor| vendor.starter_kinds().len());
-    assert_eq!(starter, [4, 2, 0], "the Armorsmith's four pieces, the Weaponsmith's two");
-    assert_eq!(wares.len(), 3 * gear::vendor::WARES + 6, "the Armorsmith's, the Weaponsmith's and the Shipwright's");
+    assert_eq!(starter, [4, 18, 0], "the Armorsmith's four pieces, the Weaponsmith's every Melee and Ranged kind");
+    assert_eq!(wares.len(), 3 * gear::vendor::WARES + 22, "the Armorsmith's, the Weaponsmith's and the Shipwright's");
     assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
     let head = wares.get(gear::vendor::WARES);
     assert_eq!((head.id(), head.price(), head.rarity()), (6, 50, 0), "the starter stock after, numbered on, at 50");

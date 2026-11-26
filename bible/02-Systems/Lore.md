@@ -48,7 +48,7 @@ Houses":
 | The Keeper's Hours | Lamplighters | dark amber, the lantern | a chapter for each task of "The Keeper's Lamp" |
 | Unwritten | The Veiled | dusk purple, the moon | a chapter for each task of "What the Tithe Writes" |
 
-Each house's book's eleven chapters come one as each task of its road is done, in the road's order, the last as the road ends.
+Each house's book's twelve chapters come one as each task of its road is done, in the road's order, the last as the road ends.
 Together they tell where each Art came from.
 
 In "The Passages" (the lantern), "Longer Than the Chart" (grey-green, the lantern) holds one chapter, "The First

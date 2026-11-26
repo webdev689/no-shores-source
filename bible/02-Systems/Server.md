@@ -350,7 +350,7 @@ will take it, by the room's own tick.
   snapshot carries what floats for each player, each ship's kept hurts and its repair's seconds left, what each player
   is told beside their fight's view (the naval crate's numbers, or the sea's own: washed up, what a piece held, who
   joined with its hull, moored; their codes one export on the page, `seaHarbour.ts` `TOLD`), whether each fighting
-  player may board now (`may_board`), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
+  player may board now (`may_board`) and whether their fight is the Harbourmaster's hulk's (`lesson`), and each deck boarded with its boarders and its room's own snapshot. The host takes the snapshot
   once a tick (`room_snapshot_prepare`) and sends each socket its own cut (`room_snapshot_for`): what floats, kept
   hurts, what is told and a deck's own snapshot reach only the players they are for, and each player is sent only the
   ships near them: the hostile ships within 1.1 times the distance each is sighted from (the share that keeps it at
