@@ -5,10 +5,12 @@
 //! never one of the sea's ships: no hostile ship, fight or island heeds it. Its namings are timed by the host's clock,
 //! as the rooms' words tell it (`tell_seconds`), for a sea room ticks only while someone sails it.
 
-use super::{Sea, Ship, ShipLook, whole};
+use super::islands::Islands;
+use super::{Coast, Sea, Ship, ShipLook, whole};
 use crate::PlayerId;
 use crate::plates::Plate;
 use std::collections::BTreeMap;
+use std::ptr;
 use world::layout::Layout;
 
 /// How far off an island's coast a ship at rest is docked at it, and is parked as its player leaves, metres: a berth
@@ -79,9 +81,7 @@ impl Sea {
         let berth = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref());
         let Some(sailing) = berth.filter(|sailing| sailing.course.is_empty()) else { return };
         let (Some(look), Some(plate)) = (self.look(player), self.plate(player)) else { return };
-        let by_coast = whole(&[sailing.ship.x, sailing.ship.y]).is_some_and(|at| {
-            self.coasts.iter().chain(self.islands.coasts()).any(|coast| coast.within(at, PARKED_REACH_M))
-        });
+        let by_coast = coast_at(&self.coasts, &self.islands, &sailing.ship).is_some();
         if !by_coast || self.fights.fighting(player) || self.on_deck(player) {
             return;
         }
@@ -117,8 +117,8 @@ impl Sea {
         seconds.saturating_add((self.clock - clock) / TICKS_A_SECOND).max(self.minute.saturating_mul(60))
     }
 
-    /// A place's room names the accounts of the players it holds: each one's parked ship lying at its island (any
-    /// parked ship for `Ashore::Anywhere`) is seen for `NAMED_S` more, and a sea island named is held as `hold_ashore`
+    /// A place's room names the accounts of the players it holds: each one's parked ship lying at its island (the
+    /// coast nearest it, `coast_at`; any parked ship for `Ashore::Anywhere`) is seen for `NAMED_S` more, and a sea island named is held as `hold_ashore`
     /// holds it. The answer is every parked ship seen that lies at the island, by its account: none for a room at no
     /// island, or at a sea island that does not stand.
     pub fn ashore(&mut self, place: Ashore<'_>, accounts: &[&str]) -> Vec<(String, Parked)> {
@@ -137,7 +137,7 @@ impl Sea {
             Ashore::Anywhere => None,
         };
         let lies_at = |ship: &Ship| {
-            coast.is_some_and(|coast| whole(&[ship.x, ship.y]).is_some_and(|at| coast.within(at, PARKED_REACH_M)))
+            coast.is_some_and(|coast| coast_at(&self.coasts, &self.islands, ship).is_some_and(|at| ptr::eq(at, coast)))
         };
         for account in accounts {
             let Some(parked) = self.parked.by_account.get_mut(*account) else { continue };
@@ -161,4 +161,13 @@ impl Sea {
         let now = self.host_seconds();
         self.parked.by_account.values().filter(move |parked| parked.named && now <= parked.until)
     }
+}
+
+/// The coast a ship lies at: of the continents' coasts and the standing sea islands' within `PARKED_REACH_M` of it,
+/// the nearest, the first of those as near; none out at sea. A sea island may stand closer than that to a coast or
+/// another island, and each ship lies at one place alone.
+fn coast_at<'sea>(coasts: &'sea [Coast], islands: &'sea Islands, ship: &Ship) -> Option<&'sea Coast> {
+    let at = whole(&[ship.x, ship.y])?;
+    let near = coasts.iter().chain(islands.coasts()).filter(|coast| coast.within(at, PARKED_REACH_M));
+    near.min_by(|one, other| one.off(at).total_cmp(&other.off(at)))
 }

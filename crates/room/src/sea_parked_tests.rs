@@ -215,3 +215,17 @@ fn a_hosts_time_near_the_most_neither_panics_nor_wraps_round_to_show_a_lapsed_na
     left_at(&mut sea, "bea", OFF_COAST);
     assert_eq!(answered(&sea.ashore(ISLAND, &["bea"])), ["bea"], "and a ship parked then is named as any is");
 }
+
+#[test]
+fn a_parked_ship_lies_at_the_one_coast_nearest_it_and_only_that_places_rooms_see_it() {
+    // Two continents 4 km apart: a ship 1 km off the first lies within 5 km of both.
+    let text = r#"{ "continents": [{ "id": "continent-4", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }, { "id": "continent-5", "outline": [[204000, 100000], [304000, 100000], [304000, 200000], [204000, 200000]] }], "isles": [] }"#;
+    let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
+    let ann = left_at(&mut sea, "ann", [201_000.0, 150_000.0]);
+    let bea = left_at(&mut sea, "bea", [203_500.0, 150_000.0]);
+    let other = Ashore::Continent("continent-5");
+    assert_eq!(answered(&sea.ashore(other, &["ann", "bea"])), ["bea"], "Ann's lies nearer the first's coast");
+    assert_eq!(shown(&sea), [bea], "and is not named from the other's");
+    assert_eq!(answered(&sea.ashore(ISLAND, &["ann", "bea"])), ["ann"], "nor Bea's from the first's");
+    assert_eq!(shown(&sea), [ann, bea]);
+}
