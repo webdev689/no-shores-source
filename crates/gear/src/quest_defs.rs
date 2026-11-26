@@ -301,7 +301,8 @@ impl GoalDef {
             Goal::Unseen(unseen) => (!(unseen.within > 0.0 && unseen.within <= PLACE_SQUARE)).then_some("within"),
             Goal::Race(race) => raced(race),
             Goal::Ride(ride) => {
-                let keeper = ride.to.as_deref().is_none_or(|to| (1..=u8::MAX).any(|key| keeper_key(key) == Some(to)));
+                // A keeper's counter to ride up to: the stranger keeps none.
+                let keeper = ride.to.as_deref().is_none_or(|to| keeper_number(to).is_some_and(|key| key != STRANGER));
                 (!(ride.fits() && keeper)).then_some("to")
             }
             Goal::Sail(_) => None,

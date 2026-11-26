@@ -476,7 +476,10 @@ impl Room {
                 seen.clock = defence.retry.filter(|tick| clock < *tick).map_or(-1.0, left);
             }
             Stepping::Horde(horde) => {
-                if let Goal::Defend(defend) = &step.goal.goal {
+                // The page reads the power from it, so it is sent only while the room lends it.
+                if let Goal::Defend(defend) = &step.goal.goal
+                    && self.unbounded(player)
+                {
                     seen.horde = super::horde::seen(defend, horde);
                 }
                 seen.clock = horde.retry.filter(|tick| clock < *tick).map_or(-1.0, left);

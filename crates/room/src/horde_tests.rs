@@ -206,6 +206,7 @@ fn a_player_leaving_mid_horde_takes_its_waves_and_its_power_with_them() {
     room.leave(player);
     run(&mut room, 1);
     assert!(living(&room).is_empty(), "its waves gone with them");
+    assert!(!room.unbounded(player) && !room.quests.steps.contains_key(&player), "and its power");
 }
 
 #[test]
@@ -217,4 +218,42 @@ fn a_horde_begun_with_no_wave_yet_standing_lends_no_power() {
     let Some(Step { kind: Stepping::Horde(horde), .. }) = room.quests.steps.get_mut(&player) else { panic!("a horde") };
     (horde.wave, horde.standing) = (0, Vec::new());
     assert!(!room.unbounded(player), "no foe to fight, no power to fight it with");
+    // Its first wave stands a tick on, room made: the page is told at once, before any foe of it falls.
+    room.players.get_mut(&player).expect("in").gear_changed = false;
+    run(&mut room, 1);
+    assert!(room.unbounded(player), "its first wave stood");
+    assert!(room.players[&player].gear_changed, "and the page is told of the power");
+}
+
+#[test]
+fn a_player_leaving_the_hordes_ground_sends_its_waves_away_and_takes_no_power_elsewhere() {
+    let (mut room, player, key, _) = horde(1, [0.0, 10.0]);
+    run_baked(&mut room, 1);
+    assert!(!living(&room).is_empty() && room.unbounded(player), "its first wave stood");
+    // Past the place's 60 m and its waves' ground, toward a camp or an event across the node.
+    stand_at(&mut room, player, [0.0, 150.0]);
+    run(&mut room, 1);
+    let seen = room.step_seen(player);
+    assert!(!room.unbounded(player), "no power carried off its ground");
+    assert!(living(&room).is_empty() && seen.horde.is_empty(), "its waves gone");
+    assert_eq!(seen.fails, counted(key, 1), "a failure, as a fall is");
+    room.players.get_mut(&player).expect("in").casting.tenets = [1.0; 2];
+    assert!(!cast(&mut room, player, 1), "its unearned Tenet refused there");
+}
+
+#[test]
+fn a_horde_lends_only_its_houses_art_not_another_worn() {
+    let (_, defend) = horde_of(1);
+    let (key, _) = horde_of(1);
+    let mut character = on_horde(key);
+    let other = gear::factions::factions().faction(2).expect("another house").art;
+    let earned = character.arts.earned.get_or_insert_with(Vec::new);
+    earned[usize::from(other) - 1] = EARNED_ART;
+    character.arts.worn = other;
+    let mut room = node_room(&defend.node, &[(defend.place.as_str(), [0.0, 0.0], 60.0)]);
+    let player = joined(&mut room, &character, [0.0, 10.0]);
+    run_baked(&mut room, 1);
+    assert!(!living(&room).is_empty(), "its first wave stood");
+    room.players.get_mut(&player).expect("in").casting.tenets = [1.0; 2];
+    assert!(!cast(&mut room, player, 1), "the other house's unearned Tenet refused");
 }

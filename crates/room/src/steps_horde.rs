@@ -1,8 +1,9 @@
 //! A house's horde, a tick at a time: its waves standing round its place as the player comes within its reach, each
 //! coming at the player, the next standing once the foes before it are down to `HORDE_NEXT_AT`, and the last fallen
-//! meeting the goal; the player fallen, its waves leaving and it waiting `RETRY_TICKS` to start again. While it runs
-//! the house's Art is the player's unbounded (`unbounded`): `arts.rs` keeps its Anima and Tenets full and casts them
-//! earned or not. Its foes drop nothing, so the horde pays as the task's clear and their kills do.
+//! meeting the goal; the player fallen or strayed off its ground, its waves leaving and it waiting `RETRY_TICKS` to
+//! start again. While it runs the house's Art, worn, is the player's unbounded (`unbounded`): `arts.rs` keeps its
+//! Anima and Tenets full and casts them earned or not. Its foes drop nothing, so the horde pays as the task's clear
+//! and their kills do.
 
 use super::kinds::Stood;
 use super::{Horde, RETRY_TICKS, Step, Stepping, ahead};
@@ -20,6 +21,9 @@ pub const HORDE_NEXT_AT: usize = 2;
 const HORDE_OUT: f64 = 18.0;
 const HORDE_REACH: f64 = 2.5;
 const HORDE_BEARINGS: u32 = 12;
+/// How far past its place's edge a player may go and keep their horde, metres: twice as far out as its waves stand,
+/// room to fight them, while the power is carried to no other fight of the node.
+const HORDE_STRAY: f64 = 2.0 * HORDE_OUT;
 /// The stream a horde's draws come from.
 const HORDE_STREAM: u64 = 0x686f_7264;
 
@@ -35,18 +39,25 @@ pub(super) fn seen(defend: &Defend, horde: &Horde) -> Vec<u16> {
 }
 
 impl Room {
-    /// Whether a player's house's Art is theirs unbounded now: their horde runs here and a wave of it has stood, so a
-    /// horde whose first wave waits on the room's cap on foes lends nothing meanwhile.
+    /// Whether a player's house's Art is theirs unbounded now: their horde runs here, a wave of it has stood (so a
+    /// horde whose first wave waits on the room's cap on foes lends nothing meanwhile), and the Art they wear is their
+    /// road's house's, not one earned on another road.
     #[must_use]
     pub fn unbounded(&self, player: PlayerId) -> bool {
         let running = self.quests.steps.get(&player);
-        matches!(running, Some(Step { kind: Stepping::Horde(Horde { at: Some(_), wave: 1.., .. }), .. }))
+        let Some(Step { key, kind: Stepping::Horde(Horde { at: Some(_), wave: 1.., .. }), .. }) = running else {
+            return false;
+        };
+        let quest = gear::quests::quests().quests.get(key[0]);
+        let house = quest.and_then(|quest| gear::factions::factions().faction(quest.faction)).map(|house| house.art);
+        let worn = self.players.get(&player).and_then(|found| found.character.worn_art()).map(|art| art.id);
+        house.is_some() && house == worn
     }
 
     /// A horde's tick: with none running, it starts as the player comes within its place's reach (alive, its wait
-    /// past), with its first wave; the player fallen, its waves leave, a failure counts and it waits; else its fallen
-    /// foes are counted, and with `HORDE_NEXT_AT` or fewer standing the next wave stands, or after the last the goal is
-    /// met.
+    /// past), with its first wave; the player fallen or past `HORDE_STRAY` off its place, its waves leave, a failure
+    /// counts and it waits; else its fallen foes are counted, and with `HORDE_NEXT_AT` or fewer standing the next wave
+    /// stands, or after the last the goal is met. The page is told whenever a foe falls or a wave stands.
     pub(super) fn keep_horde(
         &mut self,
         player: PlayerId,
@@ -61,7 +72,7 @@ impl Room {
             .get(&player)
             .is_none_or(|found| found.fighter.dead() || matches!(found.standing, Standing::Dead { .. }));
         let Some(Step { kind: Stepping::Horde(horde), .. }) = self.quests.steps.get(&player) else { return };
-        let (running, retry, standing) = (horde.at.is_some(), horde.retry, horde.standing.clone());
+        let (running, retry, standing, wave) = (horde.at.is_some(), horde.retry, horde.standing.clone(), horde.wave);
         if !running {
             if fallen || retry.is_some_and(|tick| clock < tick) || !place.holds(at, 0.0) {
                 return;
@@ -70,7 +81,7 @@ impl Room {
             let Some(spot) = held_near(self.mesh_by(ground), &self.floor, place.at, place.radius) else { return };
             self.set_horde(player, |horde| *horde = Horde { at: Some(spot), ..Horde::default() });
             self.next_horde_wave(player, goal, defend, &place);
-        } else if fallen {
+        } else if fallen || !place.holds(at, HORDE_STRAY) {
             self.send_away(&standing);
             self.set_horde(player, |horde| *horde = Horde { retry: Some(clock + RETRY_TICKS), ..Horde::default() });
             self.failed(player);
@@ -83,7 +94,9 @@ impl Room {
             if more {
                 self.next_horde_wave(player, goal, defend, &place);
             }
-            if gone.is_empty() {
+            let now = self.quests.steps.get(&player);
+            let stood = matches!(now, Some(Step { kind: Stepping::Horde(now), .. }) if now.wave != wave);
+            if gone.is_empty() && !stood {
                 return;
             }
         }

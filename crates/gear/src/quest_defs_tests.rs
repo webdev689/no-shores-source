@@ -178,6 +178,8 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         (r#"{ "kind": "sail", "act": "steer", "count": 2, "text": "t" }"#, "count"),
         (r#"{ "kind": "ride", "act": "arrive", "text": "t" }"#, "to"),
         (r#"{ "kind": "ride", "act": "arrive", "to": "nobody", "text": "t" }"#, "to"),
+        // The stranger keeps no counter to ride up to.
+        (r#"{ "kind": "ride", "act": "arrive", "to": "stranger", "text": "t" }"#, "to"),
         (r#"{ "kind": "ride", "act": "mount", "to": "tack", "text": "t" }"#, "to"),
     ] {
         let problem = goal(text).expect(text).problem();

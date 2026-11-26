@@ -231,12 +231,14 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   room's cap on foes has no room for waits a tick; one that stands nobody counts as fallen. The last wave fallen meets
   the goal.
 - **Unbounded**: while the horde runs, from its first wave standing (one waiting on the room's cap on foes lends
-  nothing), the player's worn Art is theirs whole, for them alone: the room keeps its
+  nothing), the player's worn Art, if it is their road's house's, is theirs whole, for them alone (another house's Art
+  worn is lent nothing, and the page is sent no count): the room keeps its
   Anima and both Tenets full (a cast spends its share as ever, and the next tick fills it, its word sent at once),
   and casts any of its three abilities, a Tenet the road has not yet given included. As it ends, by its fall, the
-  player's or a leave, the Art is bound again: what is earned, and the shares as they stand.
-- **A fall**: the player dead, the waves leave, a failure counts, and it starts again from the first wave whole 10
-  s on, once the player is back within reach; its `lost` line is said. **A leave**: the waves leave with the player;
+  player's, their straying or a leave, the Art is bound again: what is earned, and the shares as they stand.
+- **A fall**: the player dead, or strayed more than 36 m past the place's edge (`HORDE_STRAY`, twice as far as its
+  waves stand), the waves leave, a failure counts, and it starts again from the first wave whole 10 s on, once the
+  player is back within reach; its `lost` line is said. **A leave**: the waves leave with the player;
   back, it starts again from the first.
 - **What it pays**: its foes drop nothing (no Vestige, no item), so the horde pays as a defence's waves tried again
   do: each kill's XP and Aurem, and the task's clear ([[Gear]], "A clear").
