@@ -257,3 +257,18 @@ fn a_horde_lends_only_its_houses_art_not_another_worn() {
     room.players.get_mut(&player).expect("in").casting.tenets = [1.0; 2];
     assert!(!cast(&mut room, player, 1), "the other house's unearned Tenet refused");
 }
+
+#[test]
+fn a_character_set_on_another_task_mid_horde_sends_its_waves_away_and_its_power_ends() {
+    let (mut room, player, key, _) = horde(2, [0.0, 10.0]);
+    run_baked(&mut room, 1);
+    assert!(!living(&room).is_empty() && room.unbounded(player), "its first wave stood");
+    // Restored onto the road's next task, as a save kept elsewhere is.
+    let mut moved = room.player(player).expect("in").character.clone();
+    moved.quests.set_task(key[0], key[1] + 1);
+    assert!(room.restore_character(player, &moved.to_json()));
+    run(&mut room, 1);
+    assert!(living(&room).is_empty(), "its waves gone");
+    assert!(!room.unbounded(player) && !room.quests.steps.contains_key(&player), "and its power");
+    assert!(room.step_seen(player).horde.is_empty(), "the page told none runs");
+}

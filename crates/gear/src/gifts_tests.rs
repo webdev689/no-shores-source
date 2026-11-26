@@ -4,9 +4,10 @@
 //! past the round is owed nothing new.
 
 use crate::asks::{Ask, Here, Refusal};
-use crate::character::{At, Character};
+use crate::character::{At, CARRIED_MOST, Character, VAULT_MOST};
 use crate::dice::Dice;
 use crate::gifts::{GIFT_VESTIGE, Gift, MAGES_SLOT, POSTMASTERS_SLOT, TAILORS_DYE};
+use crate::item::Item;
 use crate::kinds::{Kind, Slot};
 use crate::mail::Source;
 use crate::quests::{Goal, keeper_key, quests};
@@ -197,8 +198,15 @@ fn a_gift_is_given_once_across_a_reload_and_never_again() {
         kept.give_gift(gift);
     }
     kept.give_gifts_due();
-    kept.give_gifts_ahead();
     assert_eq!((kept.items.len(), kept.vestiges.len(), kept.mail.len()), before);
+    // Set back on the round, where every keeper's gift lies ahead, as one who pledges there is paid them.
+    let opening = quests().quests.iter().position(|quest| quest.faction == 0).expect("the opening");
+    let tasks = &quests().quests[opening].tasks;
+    let round = tasks.iter().position(|task| task.id == "find-your-way").expect("the round");
+    let mut back = kept.clone();
+    back.quests.set_task(opening, round);
+    back.give_gifts_ahead();
+    assert_eq!((back.items.len(), back.vestiges.len(), back.mail.len()), before, "none given twice");
     assert_eq!(kept.ask(Ask::Speak { keeper: keeper("armorsmith") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
     // The Weaponsmith's choice, once taken, is not owed again after a reload.
     buy(&mut kept, Kind::Sword).expect("given");
@@ -279,4 +287,55 @@ fn a_gift_with_no_room_where_it_goes_is_kept_elsewhere_never_lost() {
     speak(&mut character, "mage");
     let posted = character.mail.iter().filter(|letter| letter.from == Source::Gift as u8 && letter.vestige.is_some());
     assert_eq!(posted.count(), 1, "the Mage's Vestige goes to the mail with the ten full");
+}
+
+/// Lays Normal pieces of a kind where given until that place holds `most` of its kind's bucket or stock.
+fn stow(character: &mut Character, kind: Kind, at: At, most: usize) {
+    let held = |character: &Character| match at {
+        At::Vault => character.vaulted(kind.stock()),
+        _ => character.carried_in(kind.slot()),
+    };
+    while held(character) < most {
+        let id = character.take_id();
+        character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, kind.slot()), at));
+    }
+}
+
+/// The pieces of a kind posted to the character as themselves.
+fn posted(character: &Character, kind: Kind) -> usize {
+    character.mail.iter().filter(|letter| letter.item.as_ref().is_some_and(|item| item.kind == kind)).count()
+}
+
+#[test]
+fn the_vault_keepers_cloak_with_the_vault_full_is_carried_and_with_its_bag_full_too_is_posted() {
+    let mut character = welcomed();
+    for key in &ROUND[..3] {
+        speak(&mut character, key);
+    }
+    let mut full = character.clone();
+    stow(&mut character, Kind::Head, At::Vault, VAULT_MOST);
+    speak(&mut character, "vault");
+    assert_eq!(count(&character, Kind::Cloak, At::Carried), 1, "carried, the vault full");
+    stow(&mut full, Kind::Head, At::Vault, VAULT_MOST);
+    stow(&mut full, Kind::Cloak, At::Carried, CARRIED_MOST);
+    speak(&mut full, "vault");
+    assert!(full.given(Gift::Cloak));
+    assert_eq!(count(&full, Kind::Cloak, At::Carried), CARRIED_MOST, "no room carried");
+    assert_eq!(posted(&full, Kind::Cloak), 1, "posted as itself, never lost");
+}
+
+#[test]
+fn the_armorsmiths_armour_with_no_room_is_posted_as_itself() {
+    let mut character = welcomed();
+    speak(&mut character, "weaponsmith");
+    let armour = [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs];
+    for kind in armour {
+        stow(&mut character, kind, At::Carried, CARRIED_MOST);
+    }
+    stow(&mut character, Kind::Head, At::Vault, VAULT_MOST);
+    let held = character.items.len();
+    speak(&mut character, "armorsmith");
+    assert!(character.given(Gift::Armour));
+    assert_eq!(character.items.len(), held, "no room carried or vaulted");
+    assert_eq!(armour.map(|kind| posted(&character, kind)), [1; 4], "each piece posted as itself");
 }

@@ -7,9 +7,13 @@ use crate::PlayerId;
 use crate::harbour::Harbours;
 use crate::sea::{COURSE_EVERY_TICKS, Sea};
 use gear::Character;
+use gear::objectives::Feat;
 use gear::quests::quests;
-use naval::damage::State;
-use naval::fight::{CAPTAIN, Event as FightEvent};
+use naval::damage::{State, Zone};
+use naval::fight::{Aim, CAPTAIN, Event as FightEvent, Orders, Part};
+use naval::guns::{SWIVEL, Shot};
+use naval::ranks::Rank;
+use naval::shots::{ShipId, ShotEvent};
 
 /// Overlook's roadstead out on the open sea, a continent far to its south-east.
 const ROADSTEAD: [f64; 2] = [50_000.0, 50_000.0];
@@ -58,6 +62,29 @@ fn met(sea: &Sea, player: PlayerId) -> Vec<&'static str> {
         .filter(|(_, count)| *count > 0)
         .map(|(goal, _)| goal.text.as_str())
         .collect()
+}
+
+/// A ball of `shooter`'s striking the hulk in the captain's fight, as the fight tells it: the ball, then its strike.
+fn struck_by(sea: &mut Sea, player: PlayerId, shooter: ShipId) {
+    let (fought, _) = sea.fights.of_mut(player).expect("the hulk's fight");
+    let (gun, zone, point) = (SWIVEL, Zone::Hull, [0.0; 3]);
+    let ball = ShotEvent::Hit {
+        shooter,
+        target: CAPTAIN,
+        zone,
+        point,
+        flight: 1.0,
+        gun,
+        shot: Shot::Round,
+        sail: None,
+        rigged: false,
+    };
+    fought.pending.extend([FightEvent::Shot(ball), FightEvent::Hit { ship: CAPTAIN, at: point, part: Part::Hull }]);
+}
+
+/// The captain's own ship's number in their fight.
+fn own_ship(sea: &mut Sea, player: PlayerId) -> ShipId {
+    sea.fights.of_mut(player).expect("fighting").1.ship
 }
 
 /// Sets a course once the wait since the last is over.
@@ -135,8 +162,8 @@ fn a_ball_in_the_hulk_is_the_act_and_it_leaves_as_the_captain_sails_off() {
     sail(&mut sea, player, &[[mooring[0], mooring[1] + 600.0]], 10);
     ticks(&mut sea, 1_200);
     assert!(!met(&sea, player).contains(&"Put a ball in the hulk"));
-    let (fought, _) = sea.fights.of_mut(player).expect("the hulk's fight");
-    fought.pending.push(FightEvent::Hit { ship: CAPTAIN, at: [0.0; 3], part: naval::fight::Part::Hull });
+    let own = own_ship(&mut sea, player);
+    struck_by(&mut sea, player, own);
     sea.tick();
     assert!(met(&sea, player).contains(&"Put a ball in the hulk"), "{:?}", met(&sea, player));
     assert_eq!(sea.lesson_mark(player), None, "nothing more to mark");
@@ -155,9 +182,29 @@ fn a_hulk_gone_down_lays_nothing_and_counts_for_no_road() {
     let mooring = sea.mooring().expect("open water off Overlook");
     sail(&mut sea, player, &[[mooring[0], mooring[1] + 600.0]], 10);
     ticks(&mut sea, 1_200);
-    let (fought, _) = sea.fights.of_mut(player).expect("the hulk's fight");
-    fought.pending.push(FightEvent::Hit { ship: CAPTAIN, at: [0.0; 3], part: naval::fight::Part::Hull });
+    let own = own_ship(&mut sea, player);
+    struck_by(&mut sea, player, own);
     sea.tick();
+    // A sea bounty of the day that the hulk's sinking would count toward, held at nothing.
+    let water = sea.chart.water_id(mooring).map(str::to_owned);
+    let sunk = Feat::Sunk { water: water.as_deref(), rank: Rank::Minor.number() };
+    let (minute, place) = (0..60)
+        .map(|day| 29_919_420 + day * 24 * 60)
+        .find_map(|minute| {
+            let board = gear::bounties::board(gear::clock::day_of(minute));
+            let place = board.iter().position(|bounty| bounty.objective.counts(&sunk))?;
+            Some((minute, u8::try_from(place).ok()?))
+        })
+        .expect("a day whose board holds a sea bounty the hulk would count toward");
+    sea.minute = minute;
+    let day = gear::clock::day_of(minute);
+    let character = sea.harbour.characters.get_mut(&player).expect("kept");
+    character.activity.today = gear::activity::Today { day, bounties: [(place, 0)].into(), ..Default::default() };
+    // Lying near it, so it goes down in their fight rather than leaving it as they lie off.
+    let (fought, crew) = sea.fights.of_mut(player).expect("the hulk's fight");
+    let at = fought.fight.vessel(CAPTAIN).expect("the hulk").ship;
+    let own = fought.fight.ships.get_mut(&crew.ship).expect("their ship");
+    (own.ship.x, own.ship.y, own.ship.ahead, own.ship.abeam, own.ship.rung) = (at.x - 100.0, at.y, 0.0, 0.0, 0);
     sea.fights.scuttle_by(hulk_of(player));
     let before = sea.harbour.characters[&player].to_json();
     ticks(&mut sea, 60 * 60);
@@ -165,4 +212,53 @@ fn a_hulk_gone_down_lays_nothing_and_counts_for_no_road() {
     assert!(sea.flotsam().is_empty(), "nothing floats");
     let after = &sea.harbour.characters[&player];
     assert_eq!(after.xp, Character::from_json(&before).expect("read").xp, "no sinking's pay");
+    assert_eq!(after.activity.today.bounties.get(&place), Some(&0), "no bounty counts it");
+}
+
+#[test]
+fn a_ball_of_another_ships_in_the_hulk_is_not_the_captains() {
+    let (mut sea, player) = aboard();
+    let mooring = sea.mooring().expect("open water off Overlook");
+    sail(&mut sea, player, &[[mooring[0], mooring[1] + 600.0]], 10);
+    ticks(&mut sea, 1_200);
+    // A ship number no one in the fight holds: neither theirs nor the hulk's.
+    struck_by(&mut sea, player, 99);
+    sea.tick();
+    assert!(!met(&sea, player).contains(&"Put a ball in the hulk"), "another ship's ball");
+}
+
+#[test]
+fn the_captains_own_broadside_into_the_hulk_is_the_act() {
+    let (mut sea, player) = aboard();
+    let mooring = sea.mooring().expect("open water off Overlook");
+    sail(&mut sea, player, &[[mooring[0], mooring[1] + 600.0]], 10);
+    ticks(&mut sea, 1_200);
+    // Lying 50 m west of the hulk, heading north: it is abeam to starboard.
+    let (fought, crew) = sea.fights.of_mut(player).expect("the hulk's fight");
+    let at = fought.fight.vessel(CAPTAIN).expect("the hulk").ship;
+    let orders = crew.orders;
+    let own = fought.fight.ships.get_mut(&crew.ship).expect("their ship");
+    (own.ship.x, own.ship.y, own.ship.heading) = (at.x - 50.0, at.y, 0.0);
+    (own.ship.ahead, own.ship.abeam, own.ship.turn, own.ship.rung) = (0.0, 0.0, 0.0, 0);
+    let aim = Some(Aim { bearing_deg: 90.0, range_m: 50.0, ray: None });
+    sea.orders(player, Orders { aim, fire: true, ..orders }).expect("fighting");
+    ticks(&mut sea, 120);
+    assert!(met(&sea, player).contains(&"Put a ball in the hulk"), "{:?}", met(&sea, player));
+}
+
+#[test]
+fn on_the_real_map_the_hulk_is_moored_in_open_water_off_overlook() {
+    let (layout, ports) = crate::measure_tests::world();
+    let overlook: Vec<_> = ports.into_iter().filter(|port| port.id == "overlook").collect();
+    assert_eq!(overlook.len(), 1, "Overlook is continent-1's port");
+    let sea = Sea::new(&layout, crate::deck::test_deck(), 7, &overlook);
+    let roadstead = sea.harbour.harbours.starting().expect("Overlook's roadstead");
+    let mooring = sea.mooring().expect("clear water off Overlook, so the helm can be learnt");
+    let out = libm::hypot(mooring[0] - roadstead[0], mooring[1] - roadstead[1]);
+    assert!((out - 1_000.0).abs() < 1.0 || (out - 1_200.0).abs() < 1.0, "{out} m out");
+    assert!(out > HULK_NEAR_M, "not called to it before they have sailed");
+    let point = crate::sea::whole(&mooring).expect("in the world");
+    assert!(!crate::coast::on_land(&sea.coasts, point), "on the water");
+    let from = crate::sea::whole(&roadstead).expect("in the world");
+    assert!(!crate::coast::leg_meets_land(&sea.coasts, from, point), "reached from the roadstead over no land");
 }

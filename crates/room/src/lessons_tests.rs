@@ -5,6 +5,7 @@ use crate::asks::{Counter, CounterKind};
 use crate::players::Input;
 use crate::quests::quests_tests::{joined, node_room, stand_at};
 use crate::{PlayerId, Room};
+use core::f64::consts::PI;
 use gear::Character;
 use gear::quests::quests;
 use movement::Controls;
@@ -123,4 +124,18 @@ fn a_mark_set_from_the_sea_is_where_the_gear_marks_the_next_goal() {
     assert_eq!(room.quest_at(player), None, "the riding task marks no place of its own");
     room.mark_quest(Some([50_000.0, 48_800.0, 60.0]));
     assert_eq!(room.quest_at(player), Some([50_000.0, 48_800.0, 60.0]));
+}
+
+#[test]
+fn one_riders_acts_tick_their_own_lesson_and_no_other_riders() {
+    let (mut room, first) = market();
+    // The rider who joined second rides; the first stands on foot.
+    let second = joined(&mut room, &rider(), [30.0, 0.0]);
+    crate::gear_tests::horsed(&mut room, second);
+    press(&mut room, second, RIDING, 2);
+    let walk = Controls { forward: 1.0, yaw: PI, ..RIDING };
+    press(&mut room, second, walk, 150);
+    press(&mut room, second, Controls { run: true, ..walk }, 200);
+    assert!(met(&room, second).contains(&"Gallop"), "{:?}", met(&room, second));
+    assert!(met(&room, first).is_empty(), "the other rider stood on foot: {:?}", met(&room, first));
 }
