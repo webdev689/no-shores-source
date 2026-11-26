@@ -4,10 +4,11 @@
 // island's placements one instance buffer sorted by module, so a draw is one module's every placement on the island.
 // A drawer of the same shape as the game's scene takes (client/src/game/scene.ts `Drawer`), by structure.
 import { boxSeen, viewPlanes } from '../frustum.ts';
-import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
+import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
-import { FAR_STRIDE, type GroundMesh, groundHeight, groundLook, groundMesh } from './isleGround.ts';
+import { TILE_LAYERS } from '../groundGrain.ts';
+import { FAR_STRIDE, type GroundMesh, groundHeight, groundLook, groundMesh, groundTilesOf } from './isleGround.ts';
 import {
   type IsleManifest,
   type KitPack,
@@ -20,7 +21,7 @@ import {
   roleOf,
   sizeOf,
 } from './isleModules.ts';
-import { INSTANCE_FLOATS, ISLE_FLOATS, partColours, type Pipelines, pipelinesOf } from './isleShader.ts';
+import { INSTANCE_FLOATS, ISLE_FLOATS, partColours, PARTS_FLOAT, type Pipelines, pipelinesOf } from './isleShader.ts';
 import { gridOf, type IsleGrid, type IslePlacement, type IsleShown } from './islePlan.ts';
 import { standIn } from '../standIns.ts';
 
@@ -111,6 +112,8 @@ interface Drawn {
   readonly runs: readonly Run[];
   readonly uniform: GPUBuffer;
   readonly group: GPUBindGroup;
+  /** Its climate's ground tiles. */
+  readonly tiles: GroundTiles;
   readonly kits: readonly string[];
   /** Its box in its own frame (`isleBox`). */
   readonly box: readonly number[];
@@ -163,6 +166,35 @@ export function instancesOf(
 
 /** How long a pack that failed to come waits before it is asked for again, milliseconds. */
 const PACK_RETRY_MS = 30_000;
+/** Tiles every texel white: every grain 1, the ground in its plain colours. */
+function plainTiles(gpu: Gpu): GroundTiles {
+  const texture = gpu.device.createTexture({
+    size: [1, 1, TILE_LAYERS.length],
+    format: 'rgba8unorm',
+    usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
+  });
+  const white = new Uint8Array(4 * TILE_LAYERS.length).fill(255);
+  gpu.device.queue.writeTexture({ texture }, white, { bytesPerRow: 4, rowsPerImage: 1 }, [1, 1, TILE_LAYERS.length]);
+  return {
+    view: texture.createView({ dimension: '2d-array' }),
+    painting: () => false,
+    destroy: () => texture.destroy(),
+  };
+}
+
+/** A climate's ground tiles (`TILE_LAYERS`' pictures, in that order, in one array), as the game paints the land's,
+ *  and whether they are still painting. */
+export interface GroundTiles {
+  readonly view: GPUTextureView;
+  painting(): boolean;
+  destroy(): void;
+}
+/** Paints a climate's ground tiles, telling `onPainted` as each comes. */
+export type TilesOf = (climate: string, onPainted: () => void) => GroundTiles;
+
+/** How long warming a place waits for its ground tiles to be painted, milliseconds: past it, it is shown with them
+ *  still coming. */
+const TILES_WAIT_MS = 5_000;
 
 export class IslesView {
   readonly frame: IslesFrame = { triangles: 0, draws: 0, near: 0, middle: 0, far: 0 };
@@ -178,19 +210,26 @@ export class IslesView {
   private readonly offset = new Float32Array(4);
   /** The roles another drawer draws in this one's place (`GROWTH_ROLES`, the game's plants). */
   private readonly leaves: ReadonlySet<string>;
+  /** Each climate's ground tiles, kept while any island is shown. */
+  private readonly tiles = new Map<string, GroundTiles>();
+  private readonly paintTiles: TilesOf;
+  private readonly tileSampler: GPUSampler;
   private drawn: Drawn[] = [];
 
   /** `manifest` says where the kits' packs are published, `prefix` overrides it (a page's `?islePacks=`),
-   *  `onLoaded` is told when a pack comes, so the page draws again, and the modules of the roles `leaves` are not
-   *  drawn: another drawer draws them. */
+   *  `onLoaded` is told when a pack or a ground tile comes, so the page draws again, the modules of the roles `leaves`
+   *  are not drawn: another drawer draws them, and `tilesOf` paints a climate's ground tiles (without it, the ground
+   *  is drawn in its plain colours). */
   constructor(
     gpu: Gpu,
     manifest: IsleManifest | null,
     prefix: string | null,
     onLoaded: () => void = () => {},
     leaves: ReadonlySet<string> = new Set(),
+    tilesOf: TilesOf | null = null,
   ) {
     this.gpu = gpu;
+    this.paintTiles = tilesOf ?? (() => plainTiles(gpu));
     this.leaves = leaves;
     this.pipelines = pipelinesOf(gpu);
     this.manifest = manifest;
@@ -199,6 +238,14 @@ export class IslesView {
     this.frameUniform = gpu.device.createBuffer({
       size: 64,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
+    });
+    this.tileSampler = gpu.device.createSampler({
+      addressModeU: 'repeat',
+      addressModeV: 'repeat',
+      magFilter: 'linear',
+      minFilter: 'linear',
+      mipmapFilter: 'linear',
+      maxAnisotropy: 8,
     });
   }
 
@@ -219,14 +266,30 @@ export class IslesView {
     for (const kit of new Set(next.flatMap((drawn) => drawn.kits))) this.ask(kit);
   }
 
-  /** Fetches the kits `isle` is drawn with before it is shown, so a place gone to has them by the time it is shown
-   *  (they go on the GPU as it is drawn): resolves once each has come or failed, never failing. */
+  /** Fetches the kits `isle` is drawn with and paints its climate's ground tiles before it is shown, so a place gone to
+   *  has them by the time it is shown (the kits go on the GPU as it is drawn): resolves once each has come or failed,
+   *  never failing. */
   async warm(isle: IsleShown): Promise<void> {
     const biome = kitOfClimate(isle.climate);
     const { runs } = instancesOf(isle.plan.placements, this.leaves);
     const kits = new Set([...(biome ? [biome] : []), ...runs.map((run) => run.kit)]);
     const urls = [...kits].map((kit) => [kit, packUrl(kit, this.manifest, this.prefix)] as const);
-    await Promise.all(urls.map(([kit, url]) => url && loadKitPack(kit, url)));
+    const tiles = this.tilesOf(isle.climate);
+    // Its climate's ground tiles painted too, waiting no longer than TILES_WAIT_MS.
+    const painted = async () => {
+      const until = performance.now() + TILES_WAIT_MS;
+      while (tiles.painting() && performance.now() < until) await new Promise((wake) => setTimeout(wake, 50));
+    };
+    await Promise.all([...urls.map(([kit, url]) => url && loadKitPack(kit, url)), painted()]);
+  }
+
+  /** A climate's ground tiles, painted once and kept. */
+  private tilesOf(climate: string): GroundTiles {
+    const known = this.tiles.get(climate);
+    if (known) return known;
+    const made = this.paintTiles(climate, this.onLoaded);
+    this.tiles.set(climate, made);
+    return made;
   }
 
   /** Whether a kit's pack has come holding `module`, so it is drawn. */
@@ -279,6 +342,7 @@ export class IslesView {
       if (near) frame.near++;
       else if (distance < MIDDLE_M) frame.middle++;
       else frame.far++;
+      if (drawn.tiles.painting()) standIn('ground pictures');
       pass.setPipeline(ground);
       pass.setBindGroup(0, drawn.group);
       pass.setBindGroup(1, shadow.receiverGroup(ground));
@@ -305,7 +369,10 @@ export class IslesView {
       ])
         buffer?.destroy();
     }
-    if (!drawn) this.drawn = [];
+    if (drawn) return;
+    this.drawn = [];
+    for (const tiles of this.tiles.values()) tiles.destroy();
+    this.tiles.clear();
   }
 
   private distanceOf(drawn: Drawn, shot: IsleShot): number {
@@ -426,15 +493,16 @@ export class IslesView {
       });
       device.queue.writeBuffer(instances, 0, floats);
     }
+    const tiles = this.tilesOf(shown.climate);
     const look = shown.ground ?? groundLook(shown.climate);
     const isle = new Float32Array(ISLE_FLOATS);
-    isle.set([...look.inland, look.paved ? 1 : 0, ...look.high, look.snowM], 4);
+    isle.set([...look.inland, 0, ...look.high, look.snowM, ...groundTilesOf(look)], 4);
     // A ground's own rock is its kit's rock, and its second rock a shade darker.
     const rocks: Record<string, readonly number[]> = look.rock
       ? { rock: look.rock, rockAlt: look.rock.map((channel) => channel * 0.88) }
       : {};
     partColours(shown.climate).forEach((colour, part) =>
-      isle.set([...(rocks[PARTS[part] ?? ''] ?? colour), PARTS[part] === 'ember' ? 1 : 0], 12 + part * 4),
+      isle.set([...(rocks[PARTS[part] ?? ''] ?? colour), PARTS[part] === 'ember' ? 1 : 0], PARTS_FLOAT + part * 4),
     );
     const uniform = device.createBuffer({
       size: isle.byteLength,
@@ -446,6 +514,8 @@ export class IslesView {
       entries: [
         { binding: 0, resource: { buffer: this.frameUniform } },
         { binding: 1, resource: { buffer: uniform } },
+        { binding: 2, resource: tiles.view },
+        { binding: 3, resource: this.tileSampler },
       ],
     });
     const biome = kitOfClimate(shown.climate);
@@ -458,6 +528,7 @@ export class IslesView {
       runs,
       uniform,
       group,
+      tiles,
       kits: [...new Set([...(biome ? [biome] : []), ...runs.map((run) => run.kit)])],
       box: isleBox(grid, shown.plan.placements),
       written: new Float64Array(3).fill(Number.NaN),

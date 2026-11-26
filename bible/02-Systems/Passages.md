@@ -357,10 +357,11 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
   (`zoneIsle`, by an id no sea island has), stood on as a sea island's beach, and drawn alone: no land or sea of the
   island round it and none of the sea's islands, under its own climate's sky read where its zone lies on the island
   (`hollowAir`). Its floor is its form's ground (`hollowGround`): a hollow the land's own grass or, named so, chalk; a
-  ravine stony earth; shelves turf, or bare rock; a court flagstones; a strand sand, or a shell bed's dry sea floor; a
-  grove leaf litter; a chalk hollow's walls chalk; and the page grows the islands' kit's grass and shrubs over it by
-  its form (`meadow`), which stand nothing solid, so the room's ground is as it lays it. Under ground its way in
-  offers no Leave. Either way the body is predicted on the zone's own ground from the same ask (`fighter_passage`,
+  ravine stony earth; shelves turf, or bare rock; a court paved; a strand sand, or a shell bed's dry sea floor; a
+  grove leaf litter; a chalk hollow's walls chalk; each wearing the land's ground tile for its ground and the walls
+  the caverns' rock ([[Island Drawing]], [[The Islands and the Passages' Hollows Wear the Procedural Textures]]);
+  and the page grows the islands' kit's grass and shrubs over it by its form (`meadow`), which stand nothing solid,
+  so the room's ground is as it lays it. Under ground its way in offers no Leave. Either way the body is predicted on the zone's own ground from the same ask (`fighter_passage`,
   `set_passage`): the ground and blocks its room stands bodies on (`passage_ground`), under ground the Forge's floor
   and the pieces' solids, above ground the hollow's heights, its dressing's blocks and the pieces' solids.
 - **Home**: the lamp's Home turns the dive homeward; the page joins the patrol zone's room at the seas the dive began

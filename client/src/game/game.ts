@@ -30,8 +30,7 @@ import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { shipPeopleOf } from './shipPeople.ts';
 import { type IsleHeld, Isles } from './isles.ts';
 import { islePlanWorker } from '../network/islePlans.ts';
-import { ISLE_MANIFEST, islePacksPrefix } from '../islands/isleManifest.ts';
-import { GROWTH_ROLES, IslesView } from '../islands/isleView.ts';
+import { gameIsles } from './isleTiles.ts';
 import { IslesNature } from './isleNature.ts';
 import type { Drawer } from './scene.ts';
 import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
@@ -186,7 +185,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   );
   const isleLanding = new IsleLanding();
   // The islands' trees, shrubs and grass are the land's own plants (`isleNature.ts`), not the islands' modules.
-  const islesView = new IslesView(gpu, ISLE_MANIFEST, islePacksPrefix(location.search), undefined, GROWTH_ROLES);
+  const islesView = gameIsles(gpu);
   const islesNature = new IslesNature(gpu);
   const islesDrawer: Drawer = {
     castInto: (pass, fromEye, shot, time, shadow) => {
