@@ -8,7 +8,8 @@ import { emblemOf } from '../../plus/emblemArt.ts';
 import { RARITIES } from '../../player/gear.ts';
 import { castOf, scenesOf } from '../../speech/cast.ts';
 import type { Child, Node, Size } from '../../ui/node.ts';
-import { INK, emblemNode, over, svgNode, words } from '../gearNodes.ts';
+import type { Interface } from '../../ui/ui.ts';
+import { FOCUS, INK, emblemNode, over, svgNode, words } from '../gearNodes.ts';
 import { keeperMarkSvg } from '../npc/npcMarks.ts';
 import type { Step } from '../tasks.ts';
 import type { QuestState } from '../../network/questMessages.ts';
@@ -87,8 +88,17 @@ function objectivesNode(steps: readonly Step[], text: number, lit: string): Node
 
 /** The card of a quest offered, `width` pixels wide with its words at `text`: Acquire (press `press`) at its foot
  *  while it waits, "Acquired" once it is. */
-export function questCardNode(offered: Offered, width: Size, text: number, press = 'npc-acquire'): Node {
+export function questCardNode(
+  offered: Offered,
+  width: Size,
+  text: number,
+  press = 'npc-acquire',
+  ui: Interface | null = null,
+): Node {
   const { quest, offer, steps, acquired, keeper, said = 'Acquired' } = offered;
+  // Acquire lit under the pointer or the keys' focus, and ringed by the keys', as the screen's other presses are.
+  const ringed = ui !== null && ui.focused(press) && ui.keyFocused;
+  const lit = ringed || (ui?.hovered(press) ?? false);
   const rarity = RARITIES[offer.rarity] ?? RARITIES[0];
   // The band in the rarity's colour, dulled toward the ground so the name in white reads on it.
   const band = over(rarity.rgb, 0.62, '#241f12');
@@ -154,6 +164,8 @@ export function questCardNode(offered: Offered, width: Size, text: number, press
                     id: press,
                     press: true,
                     label: `Acquire ${quest.name}`,
+                    ...(lit && { fill: 'rgba(239,232,214,0.1)' }),
+                    ...(ringed && { outline: { width: 2, colour: FOCUS } }),
                     padding: [4, 8],
                     gap: 8,
                     alignY: 'center',

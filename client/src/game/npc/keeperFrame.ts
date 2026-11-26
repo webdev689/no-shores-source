@@ -30,8 +30,10 @@ export interface FrameParts {
   readonly name: string;
   readonly about: string;
   readonly crest: Node;
-  /** A quest acquired here, as its small tile: at the crest's left, or under it on a phone. */
+  /** A quest acquired here, as its small tile: at the crest's left, or under it on a phone or where `questUnder`
+   *  says the two would not share the row. */
   readonly quest?: Child;
+  readonly questUnder?: boolean;
   readonly body: readonly Child[];
 }
 
@@ -184,6 +186,7 @@ export function keeperFrame(
   const stage = stageOf(room);
   const gutter = gutterOf(stage.narrow, text);
   const top = Math.round(stage.height * (stage.narrow ? 0.04 : FIGURE_TOP));
+  const questUnder = stage.narrow || parts.questUnder === true;
   const side: Node = {
     ...(id !== undefined && { id: `${id}-stage` }),
     width: stage.width,
@@ -223,8 +226,8 @@ export function keeperFrame(
       : [Math.round(gutter * 0.75), gutter, Math.round(gutter * 0.5), Math.round(gutter * 0.5)],
     children: [
       // An acquired quest's tile takes the room left of the crest, so it stays in sight above the wares.
-      { width: 'grow', alignX: 'end', children: [!stage.narrow && parts.quest, { width: 'grow' }, parts.crest] },
-      stage.narrow && parts.quest,
+      { width: 'grow', alignX: 'end', children: [!questUnder && parts.quest, { width: 'grow' }, parts.crest] },
+      questUnder && parts.quest,
       stage.narrow && parts.speech,
       ...parts.body,
     ],

@@ -15,7 +15,8 @@ import { keeperOf } from '../keepers.ts';
 import { KEEPER_LINES, LineTurns, type Moment, nameOf, voiceOf } from './npcLines.ts';
 
 const turns = new LineTurns(KEEPER_LINES);
-/** How long a scene's line stands once typed before the next, seconds: the dialogue box's in a cutscene. */
+/** How long a line stands once typed, seconds: a scene's before the next, and any as the keeper speaking
+ *  (`keeperSpeaking`); the dialogue box's in a cutscene. */
 const HELD_S = 1.6;
 
 /** The line being said: by whom, its typing, whether it has been heard whole, and how long it has stood since. */
@@ -59,8 +60,15 @@ function frame(now: number): void {
     scene = null;
     ended.done();
   }
-  if (line.typing.done && !scene) looping = false;
+  // A line said alone stands its while too, so `keeperSpeaking` lets go of it once that while is past.
+  if (line.typing.done && !scene && line.stood >= HELD_S) looping = false;
   else requestAnimationFrame(frame);
+}
+
+/** Whether a keeper's words are up in their screen: a line typing, or typed and standing its while (the dialogue
+ *  box's in a cutscene), or a scene being said. The line itself stays in the band until the screen closes. */
+export function keeperSpeaking(): boolean {
+  return said !== null && (scene !== null || !said.typing.done || said.stood < HELD_S);
 }
 
 /** The screen of the keeper of station `kind` opens: their lines are said in it until it closes. */

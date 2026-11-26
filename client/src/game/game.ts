@@ -552,7 +552,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     (error: unknown) => console.error('the gear pages have no rules to ask items’ numbers of:', error),
   );
   inspectAgainst(() => fed()?.gear ?? null);
-  for (const layer of [screens.layer, obtainedLayer(speaking)]) stack.add(layer); // an entrance's card, the notices
+  for (const layer of [screens.layer, obtainedLayer()]) stack.add(layer); // an entrance's card, the notices
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry, change, respawn, goAshore, stopOrResume, openMap },
