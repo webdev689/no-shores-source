@@ -215,10 +215,9 @@ pub struct Player {
 }
 
 impl Player {
-    /// A player joining at `joined`, on the Test Ground if `test_ground`, where every spell is tried as written.
+    /// A player joining at `joined`, playing `character` until a kept one is given them.
     #[must_use]
-    pub fn new(fighter: Fighter, joined: u64, test_ground: bool) -> Self {
-        let character = if test_ground { Character::test_grounds() } else { Character::starting() };
+    pub fn new(fighter: Fighter, joined: u64, character: Character) -> Self {
         Player {
             fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,
@@ -400,6 +399,10 @@ impl Room {
     /// Why the room's gate shuts to a character (`gear::gate`), or none when it may enter.
     #[must_use]
     pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {
+        // A test room lets its tester in wherever it leads: Hard without Normal, any playlist's band.
+        if self.test {
+            return None;
+        }
         self.place.and_then(|place| gear::gate::shut(character, place, self.difficulty))
     }
 

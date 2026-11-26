@@ -40,6 +40,9 @@ export const PROP_MODULES = [
   'breach-slab',
   'breach-bell',
   'breach-lodestone',
+  // What brings foes (`arrivalsView.ts`): the Grey Tithe's airship and the Lattice's crown.
+  'tithe-airship',
+  'lattice-crown',
 ] as const;
 export type PropModule = (typeof PROP_MODULES)[number];
 
@@ -64,6 +67,9 @@ export type EventProp = {
   /** Drawn as the dark of a way opened through it (a gate's doorway to the company it opened to), not as itself:
    *  the opening's half width and height, and how far its face stands in front of the prop's foot, metres. */
   readonly dark?: readonly [number, number, number];
+  /** Leaning about its own y, radians (an airship banking; `airshipFlight.ts`), before its lid's swing; none for a
+   *  module that opens. */
+  readonly roll?: number;
 };
 
 /** A mark of the running event as the room sends it (protocol PublicMark): what it is, its id, where it stands, its
@@ -134,7 +140,11 @@ const LAMPS = {
   growthReachM: 10,
   shardReachM: 5,
   chestReachM: 5,
+  thrustReachM: 16,
+  crownReachM: 14,
 } as const;
+/** The airship's thrusters' sockets (tools/modules/airship.py), each a fire lighting what is under it. */
+const THRUSTERS = ['thrust-1', 'thrust-2', 'thrust-3', 'thrust-4'] as const;
 const CHEST_LIGHT = [0.6, 0.42, 0.2] as const;
 /** A Breach's pieces' lamps, read from where each burns (moduleLights.ts): a crystal's red, by the square of how it
  *  glows (a shard's dark root lights little, a lit point much), full at CRYSTAL_FULL, at most CRYSTAL_MOST; a fire's
@@ -356,6 +366,7 @@ export function eventProps(
 export function propLamps(props: readonly EventProp[]): LampPlace[] {
   const lamps: LampPlace[] = [];
   const red = (strength: number) => CRYSTAL_LAMP.map((part) => part * strength) as unknown as Point;
+  const fire = (strength: number) => FIRELIGHT.map((part) => part * strength) as unknown as Point;
   props.forEach((each, index) => {
     const strength = Math.min(1.5, each.glow * each.rise);
     if (strength <= 0) return;
@@ -366,6 +377,14 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
         lamps.push({ at: place([along, 0, 0.6]), reachM: LAMPS.fissureReachM * each.rise, light: red(strength), seed });
     else if (each.module === 'lattice-growth')
       lamps.push({ at: place([0, 0, 2.5]), reachM: LAMPS.growthReachM, light: red(strength), seed });
+    else if (each.module === 'tithe-airship')
+      // Its thrusters burn as hard as it drives (its glow); its lean and pitch are left out, a lamp's few metres.
+      THRUSTERS.forEach((name, nth) => {
+        const burning = place(moduleSocket(moduleNumber(each.module), name));
+        lamps.push({ at: burning, reachM: LAMPS.thrustReachM, light: fire(strength), seed: seed + nth });
+      });
+    else if (each.module === 'lattice-crown')
+      lamps.push({ at: place([0, 0, 0]), reachM: LAMPS.crownReachM * each.scale, light: red(strength), seed });
     else if (each.module === 'lattice-shard')
       lamps.push({ at: place([0, 0, 0.3]), reachM: LAMPS.shardReachM * each.scale, light: red(strength * 0.7), seed });
     else if (each.module === 'tithe-banner')

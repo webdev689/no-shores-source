@@ -159,9 +159,12 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
   const held = new Map<number, string>();
   return {
     held,
-    character: (player) => held.get(player) ?? null,
+    keptApart: (player) => {
+      const body = held.get(player);
+      return body === undefined ? null : { body, vault: '{}' };
+    },
     judgedMoved: () => false,
-    restoreCharacter: (player, kept) => held.has(player) && Boolean(held.set(player, kept)),
+    restoreJoined: (player, kept) => held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player) => held.has(player),
     tag: (player) => held.has(player),

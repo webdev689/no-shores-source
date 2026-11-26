@@ -361,7 +361,7 @@ mod tests {
     }
 
     #[test]
-    fn a_layout_s_foes_sites_its_room_stands_are_its_caverns_and_its_runs_beats_short_of_their_end_arenas() {
+    fn a_layout_s_foes_sites_its_room_stands_are_every_area_s_it_lays_and_its_runs_beats() {
         let (_, layout) = glade();
         let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
         let laid =
@@ -385,7 +385,7 @@ mod tests {
             site(layout::sites::SiteKind::Foes, [1.0, 2.0], None),
             site(layout::sites::SiteKind::Objective, [3.0, 4.0], Some(&cave.name)),
         ];
-        assert_eq!(foes_of(&glade), vec![glade.areas[0].at, [1.0, 2.0]]);
+        assert_eq!(foes_of(&glade), vec![glade.areas[0].at, glade.areas[1].at, [1.0, 2.0]]);
     }
 
     #[test]

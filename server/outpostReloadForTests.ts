@@ -59,9 +59,9 @@ const guarded = <T>(call: () => T, fallback: T) => {
 /** A room that keeps characters, its keeper, and how a player joins and leaves it, as the worker does. */
 function keptRoom(room: RoomDoor, kept: Characters, name: string, lost: number[]) {
   const keeping = {
-    character: (player: number) => room.character(player),
+    keptApart: (player: number) => room.keptApart(player),
     judgedMoved: (player: number) => room.judgedMoved(player),
-    restoreCharacter: (player: number, body: string) => room.restoreCharacter(player, body),
+    restoreJoined: (player: number, body: string, vault: string | null) => room.restoreJoined(player, body, vault),
     own: (player: number, account: string) => room.own(player, account) && room.hold(player, false),
     shut: (player: number, body: string | null) => room.shut(player, body),
     name: (player: number, named: string) => room.name(player, named),
@@ -182,17 +182,23 @@ export async function outpostWorld() {
   };
   const body = (player: number, into = outpost) =>
     JSON.parse(into.room.character(player) ?? '{}') as { materials: { aurem: number; ship: { timber: number } } };
-  const keptBody = async (who: string) =>
-    JSON.parse(
-      (
-        await database
-          .prepare('SELECT body FROM characters WHERE account_id = ?1')
-          .bind(await accountOf(who))
-          .first<{
-            body: string;
-          }>()
-      )?.body ?? '{}',
-    ) as { materials: { aurem: number; ship: { timber: number } }; errand?: unknown };
+  /** A member's character as the accounts keep it, holding the account's Aurem once a save kept it apart. */
+  const keptBody = async (who: string) => {
+    const account = await accountOf(who);
+    const kept = await database
+      .prepare(
+        `SELECT characters.body, json_extract(vaults.body, '$.aurem') AS aurem
+         FROM characters LEFT JOIN vaults USING (account_id) WHERE account_id = ?1`,
+      )
+      .bind(account)
+      .first<{ body: string; aurem: number | null }>();
+    const body = JSON.parse(kept?.body ?? '{}') as {
+      materials: { aurem: number; ship: { timber: number } };
+      errand?: unknown;
+    };
+    if (typeof kept?.aurem === 'number') body.materials.aurem = kept.aurem;
+    return body;
+  };
   return {
     ...made,
     tokens,

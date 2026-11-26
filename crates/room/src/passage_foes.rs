@@ -146,6 +146,7 @@ impl Room {
                     members: vec![great],
                     leads: false,
                     farthest: true,
+                    holds: false,
                 });
                 let elites = if number >= 4 { 2 } else { 1 };
                 let bands: Vec<Group> = (0..elites).map(|_| self.band(&mut draws, depth, Some(true))).collect();
@@ -233,7 +234,7 @@ impl Room {
             return;
         }
         let Some((members, farthest, at)) = self.zone().and_then(|zone| zone.held.first().cloned()) else { return };
-        let group = Group { members, leads: false, farthest };
+        let group = Group { members, leads: false, farthest, holds: false };
         // The bands stood, their foes fallen or not, hold the zone's most: only more players stand more.
         let crowding = self.band_crowding();
         let counted = |members: usize| members.saturating_sub(crowding);
@@ -320,7 +321,7 @@ impl Room {
                 }
             }
         }
-        Group { members, leads: false, farthest: true }
+        Group { members, leads: false, farthest: true, holds: false }
     }
 
     /// One of the roster's foes at a depth, Veteran's share of its Minors standing as Majors.

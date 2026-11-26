@@ -62,6 +62,8 @@ export class Making implements Beat {
     if (signal.aborted) return;
     this.dressAs(chosen);
     keepLook(localStorage, chosen);
+    // The accounts keep it with the character too, so its slot shows it on any browser.
+    void story.link?.keepLook(chosen);
     this.turn = Math.atan2(Math.sin(this.turn), Math.cos(this.turn));
     this.turnTo = 0;
     this.chosen = true;

@@ -25,7 +25,7 @@ test('the account asked who it is says where its character logs back in, once a 
   const kept = characters(deps.database, deps.now, () => Promise.resolve());
   const held = await kept.claim(token, 'sea:1');
   assert.ok(held);
-  assert.equal(await kept.save(held.account, 'sea:1', '{"xp":5,"last":{"kind":"sea"}}'), true);
+  assert.equal(await kept.save(held.account, 'sea:1', '{"xp":5,"last":{"kind":"sea"}}', '{}'), true);
   assert.deepEqual((await ask('GET', '/v1/me', undefined, token)).body['place'], { kind: 'sea' });
 });
 

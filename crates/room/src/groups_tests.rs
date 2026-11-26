@@ -261,8 +261,13 @@ fn a_mission_calls_a_wave_as_it_falls_back_and_another_for_its_last_stand_and_a_
         let home = foe.brain.home().unwrap().at;
         assert!(apart([home[0], home[1]], [wave.at[0], wave.at[1]]) <= SPREAD + 0.5, "holding where it came");
     }
-    // It comes for the player and fights.
+    // It comes by airship (`arrivals.rs`), and once landed comes for the player and fights.
     let first: Vec<FighterId> = wave.standing.clone();
+    assert!(first.iter().all(|id| room.arriving(*id)), "brought by airship");
+    while first.iter().any(|id| room.arriving(*id)) {
+        whole(&mut room, player);
+        run(&mut room, 1);
+    }
     let mut reached = false;
     for _ in 0..600 {
         whole(&mut room, player);
@@ -612,6 +617,10 @@ fn a_half_fallen_patrol_group_is_made_whole_once_no_player_has_come_within_40_m_
     let post = &room.garrison[0];
     assert!(!post.defending && post.anchor.is_none(), "whole again, it defends no more");
     assert_eq!(living(&room, 0).len(), 4, "its fallen stand at their places again");
+    let brought: Vec<FighterId> =
+        living(&room, 0).into_iter().filter(|id| !followers[2..].contains(id) && Some(*id) != post.leader).collect();
+    assert_eq!(brought.len(), 2, "two come back");
+    assert!(brought.iter().all(|id| room.arriving(*id)), "its fallen come back by airship");
     for id in living(&room, 0) {
         assert!(!room.foes[&id].brain.orders().defend);
     }
@@ -623,4 +632,17 @@ fn a_half_fallen_patrol_group_is_made_whole_once_no_player_has_come_within_40_m_
         apart([now[0], now[1]], [was[0], was[1]]) > 1.0
     });
     assert!(moved, "and walks its beat again");
+}
+
+#[test]
+fn followers_still_arriving_do_not_break_as_their_leader_falls() {
+    let mut room = node(NodeKind::Patrol, "glade");
+    let player = room.join().unwrap();
+    provoke(&mut room, 0, player);
+    let leader = room.garrison[0].leader.unwrap();
+    let followers: Vec<FighterId> = living(&room, 0).into_iter().filter(|id| *id != leader).collect();
+    room.by_airship(&followers);
+    kill(&mut room, leader);
+    run(&mut room, 1);
+    assert!(followers.iter().all(|id| mood(&room, *id) == Mood::Steady), "not yet in the fight, none breaks");
 }

@@ -78,11 +78,13 @@ function playersOf(fight: Fighting, drawn: Drawn | null): SeenPlayer[] {
   return seen;
 }
 
-/** Every foe in the fight, where `drawn` has its figure (as the room sent it, with none). */
+/** Every foe in the fight but those still arriving, which no spell meets until they land, where `drawn` has its
+ *  figure (as the room sent it, with none). */
 function foesOf(fight: Fighting, drawn: Drawn | null): SeenFoe[] {
-  return [...fight.foes.values()].map((kept) => {
+  return [...fight.foes.values()].flatMap((kept) => {
+    if (kept.arrival) return [];
     const { x, y, z } = drawn?.foes.get(kept.id) ?? kept.view;
-    return { id: kept.id, feet: [x, y, z] };
+    return [{ id: kept.id, feet: [x, y, z] }];
   });
 }
 

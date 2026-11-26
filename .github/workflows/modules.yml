@@ -3,14 +3,15 @@ name: modules
 # Builds every handcrafted module in Blender, checks the bake makes exactly the manifest committed in
 # content/modules/modules.json (the meshes' keys are their hashes, so a commit's manifest names what this bake
 # uploads), and publishes the meshes to R2 with the repository's R2 token whenever the module tools change.
-# The bake takes in the Lattice's props and the sprite forge's bodies and materials (tools/modules/latticekit.py), so
-# their files start it too.
+# The bake takes in the Lattice's props and the sprite forge's bodies and materials (tools/modules/latticekit.py), and
+# the ships' hull builder for the Grey Tithe's airship (tools/modules/shipkit.py), so their files start it too.
 on:
   push:
     paths:
       - tools/modules/**
       - tools/lattice/props.py
       - tools/lattice/growth.py
+      - tools/ships/*.py
       - tools/forge/tools/sprite-forge/**
       - tools/r2.py
       - content/modules/**

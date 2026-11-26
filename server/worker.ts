@@ -14,6 +14,7 @@ import { OutpostHost, outpostGround } from './outpostHost.ts';
 import { openPassageRoom, passagesOf } from './passageHost.ts';
 import {
   breachAsk,
+  breachRun,
   nodeRoom,
   passageRoom,
   privateRun,
@@ -21,8 +22,11 @@ import {
   seaRoom,
   socketsMost,
   TEST_GROUND,
+  testRoom,
 } from './roomNames.ts';
 import { behindDoor, type HeldIsland, openIsland } from './seaIsland.ts';
+import { TestRun } from './testRuns.ts';
+import { present } from './presence.ts';
 import { SEA_PORTS } from './seaPorts.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 import { healthAnswer } from './health.ts';
@@ -106,6 +110,7 @@ export class RoomHost extends DurableObject<Env> {
     }
   >();
   private keeper: Keeper | null = null;
+  private tester: TestRun | null = null;
   private breach: Breach | null = null;
   /** The wait before an emptied run is forgotten, while it runs. */
   private closing: ReturnType<typeof setTimeout> | null = null;
@@ -171,6 +176,8 @@ export class RoomHost extends DurableObject<Env> {
       server.close(SHUT, this.why);
       return new Response(null, { status: 101, webSocket: client });
     }
+    // A test room opened as its run or node does is made one before anyone joins it.
+    if (this.tester) this.guarded(() => this.room.makeTest(), false);
     // Past its sockets the room still takes one, to say why it closes: a page never reads a refused upgrade's status.
     if (this.players.size >= socketsMost(this.name)) {
       server.accept();
@@ -215,7 +222,7 @@ export class RoomHost extends DurableObject<Env> {
         if (this.players.get(server) === held && !this.ashore.has(player))
           this.dismiss(server, AGAIN, 'the sea did not answer');
       }, LAND_WAIT_MS);
-    void this.keeper?.tokenDue(
+    void (this.tester ?? this.keeper)?.tokenDue(
       player,
       () => held.signed,
       () => this.players.get(server) === held,
@@ -236,10 +243,10 @@ export class RoomHost extends DurableObject<Env> {
     this.name = name;
     const accounts = this.env.ACCOUNTS;
     const room = toldBreach(() => this.breach, {
-      character: (player: number) => this.guarded(() => this.room.character(player), null),
+      keptApart: (player: number) => this.guarded(() => this.room.keptApart(player), null),
       judgedMoved: (player: number) => this.guarded(() => this.room.judgedMoved(player), false),
-      restoreCharacter: (player: number, kept: string) =>
-        this.guarded(() => this.room.restoreCharacter(player, kept), false),
+      restoreJoined: (player: number, body: string, vault: string | null) =>
+        this.guarded(() => this.room.restoreJoined(player, body, vault), false),
       own: (player: number, account: string) => {
         const owned = this.guarded(() => this.room.own(player, account), false);
         // Kept, a run's player plays; a sea island's dungeon's waits on the sea's word that they are landed.
@@ -252,20 +259,25 @@ export class RoomHost extends DurableObject<Env> {
       tag: (player: number, tag: string) => this.guarded(() => this.room.tag(player, tag), false),
       guild: (player: number, told: string) => this.guarded(() => this.room.guild(player, told), false),
     });
+    // A test room asks the accounts nothing but who is a developer: its zone copy holds one launched at once.
+    const tested = testRoom(name);
     this.breach = new Breach(name, {
       room: breachRoom(this.room, this.guarded.bind(this)),
       zone: (zone) => this.env.ROOMS.getByName(zone),
-      launched: (account, run, within) => accounts.launched(account, run, within),
+      launched: (account, run, within) => (tested ? Promise.resolve(true) : accounts.launched(account, run, within)),
     });
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
-    // Ground grants gear to try it, and a fleet room is the World Editor's.
+    // Ground grants gear to try it, a test room gives its test character, and a fleet room is the World Editor's.
     const seas = seaRoom(name);
     const keeps = ['node-', 'sea-dungeon-', 'isle-', 'passage-'].some((kind) => name.startsWith(kind)) || seas !== null;
-    this.keeper = new Keeper(keeps ? accounts : null, room, name, (player, why, rejoinable) => {
+    const away = (player: number, why?: string, rejoinable?: boolean) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       const code = why === undefined ? ELSEWHERE : rejoinable ? AGAIN : SHUT;
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
-    });
+    };
+    this.keeper = new Keeper(keeps && !tested ? accounts : null, room, name, away);
+    const gateOpen = breachRun(name) ? () => this.breach?.gateOpen() ?? Promise.resolve(false) : undefined;
+    this.tester = tested ? new TestRun({ accounts, room, away, ...(gateOpen ? { gateOpen } : {}) }) : null;
     if (privateRun(name)) this.keeper.forCompany();
     this.breach?.keep(this.keeper);
     // A node's room, its dungeons' and its runs' judge where each kept character comes from; a passage zone takes only
@@ -273,10 +285,11 @@ export class RoomHost extends DurableObject<Env> {
     const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
     const passage = passageRoom(name);
     if (reached?.guild) this.keeper.forGuild(reached.guild);
-    const reach = reached ? await this.reachOf(reached.id) : null;
+    const judged = (reached !== null && !tested) || passage !== null;
+    const reach = reached && !tested ? await this.reachOf(reached.id) : null;
     const judge = (from: string | null, body: string | null) =>
       arrives(name, from, shipOf(body), reach, passagesOf(this.room, body));
-    if (reached || passage) this.keeper.judgingArrivals(judge, passage !== null);
+    if (judged) this.keeper.judgingArrivals(judge, passage !== null);
     // Every room on land, and the sea's flotsam and decks, roll their loot from seeds of their own that no player sees:
     // the sea's own seed shows in its islands'.
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
@@ -395,23 +408,6 @@ export class RoomHost extends DurableObject<Env> {
     else if (socket && dungeon) this.dismiss(socket, AGAIN, 'the sea did not answer');
   }
 
-  /** Tells the accounts a player at sea is here, in `water`: each word after the last, so the last said is the last
-   *  kept; one not taken is said again the next second. */
-  private present(
-    held: { token: string | null; water?: string | null; presenting?: Promise<unknown> },
-    water: string | null,
-  ): void {
-    const token = held.token;
-    if (!token) return;
-    held.water = water;
-    held.presenting = (held.presenting ?? Promise.resolve())
-      .then(() => this.env.ACCOUNTS.present(token, this.name, water))
-      .catch(() => false)
-      .then((took) => {
-        if (!took && held.water === water) delete held.water;
-      });
-  }
-
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
     const held = this.players.get(socket);
     // A flood still arriving when its socket was let go of costs nothing more.
@@ -423,7 +419,7 @@ export class RoomHost extends DurableObject<Env> {
       held.signed = true;
       held.count = count;
       // Whatever the keeper answers, the sea then sails the course it held: from where it kept the ship, if it did.
-      void (this.keeper?.signIn(player, message, Date.now, here) ?? Promise.resolve(false))
+      void ((this.tester ?? this.keeper)?.signIn(player, message, Date.now, here) ?? Promise.resolve(false))
         .catch(() => false)
         .then(async (kept) => {
           // At sea a ship played unkept is its session's, so a rejoin brings it back where the sea last had it.
@@ -437,7 +433,7 @@ export class RoomHost extends DurableObject<Env> {
       // At sea the room also says who is there, for the Roster; the next second says in which water.
       if (seaRoom(this.name) !== null) {
         held.token = message;
-        this.present(held, null);
+        present(this.env.ACCOUNTS, this.name, held, null);
       }
       return;
     }
@@ -482,7 +478,8 @@ export class RoomHost extends DurableObject<Env> {
     // After any word on the water still in flight, so leaving is the last the accounts hear.
     if (token)
       void (held.presenting ?? Promise.resolve()).then(() => this.env.ACCOUNTS.present(token, null)).catch(() => false);
-    const part = () => partFrom(this.room, this.keeper, held.player, (call) => this.guarded(call, undefined));
+    const keeper = this.tester ?? this.keeper;
+    const part = () => partFrom(this.room, keeper, held.player, (call) => this.guarded(call, undefined));
     // At an outpost, the last save waits for what the player's errands give back.
     if (this.outpost) void this.outpost.settled(held.player).then(part);
     else part();
@@ -563,7 +560,7 @@ export class RoomHost extends DurableObject<Env> {
           if (!held.token) continue;
           const water = this.guarded(() => this.room.water(held.player), null);
           if (!again && water === held.water) continue;
-          this.present(held, water);
+          present(this.env.ACCOUNTS, this.name, held, water);
         }
       if (this.island && now - this.island.told >= ASHORE_EVERY_MS) {
         this.island.told = now;

@@ -1,5 +1,5 @@
 // The game module's shape: a linked member's No Shores character in the bot's messages, the words shown for a
-// member whose Discord is linked to no account, and the role each house's members hold.
+// member whose Discord is linked to no account, the role each house's members hold, and the roles a developer holds.
 
 import book from '../../../content/gear/factions.json' with { type: 'json' };
 import type { BotModule } from './modules.ts';
@@ -41,6 +41,14 @@ export const GAME_SHAPE: BotModule = {
           role: { type: 'role', use: 'give', label: 'Role', default: '' },
         },
       },
+    },
+    developers: {
+      type: 'list',
+      label: 'Developer roles',
+      help: "A linked member holding one of these roles is a developer: the game's character screen offers them the Test Room.",
+      max: 5,
+      default: [],
+      of: { type: 'role', use: 'name', label: 'Role', default: '' },
     },
   },
 };

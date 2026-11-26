@@ -23,6 +23,7 @@ import { binding } from './rebinding.ts';
 import { leaveOffered } from './leaveHold.ts';
 import { gearTakesKeys } from './gearScreen.ts';
 import { creationOpen } from './prologue/creation.ts';
+import { charactersOpen } from './characters/characterScreen.ts';
 import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
@@ -486,7 +487,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     last = now;
     clock += seconds;
     drain.step(seconds);
-    const windowUp = gearTakesKeys() || creationOpen() || socialUp();
+    const windowUp = gearTakesKeys() || creationOpen() || charactersOpen() || socialUp();
     // The open chat's field has the keys as a window's would, and the pad plays nothing of the game's under it.
     const covered = socialUp() || chatOpen();
     // The sheet takes the keys and the pad but while it waits for one to bind, as a window does; while a control waits

@@ -47,16 +47,13 @@ pub struct Place {
 /// How far a run's place reaches round its mouth, metres.
 pub const RUN_REACH_M: f64 = 25.0;
 
-/// A layout's foes' sites a room stands groups at: a run's beats (a site naming nothing) and a coven's or a cave's
-/// area; a camp's, a ruin's and the rest stand in the garrison's square or wait on the owner's word.
+/// A layout's foes' sites a room stands groups at, its territories across the zone: every one it lays, a camp's, a
+/// ruin's, a keep's, a wreck's, an arena's, a coven's and a cave's area and its runs' beats (the room passes over
+/// one by a public event's ground, `stands.rs`).
 #[must_use]
 pub fn foes_of(layout: &layout::Layout) -> Vec<[f64; 2]> {
-    use layout::brief::AreaKind;
-    let cavern = |name: &String| {
-        layout.areas.iter().any(|area| &area.name == name && matches!(area.kind, AreaKind::Coven | AreaKind::Cave))
-    };
     let held = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Foes);
-    held.filter(|site| site.holds.as_ref().is_none_or(cavern)).map(|site| site.at).collect()
+    held.map(|site| site.at).collect()
 }
 
 /// A patrol's chest places, each x, y and the way it faces, in the layout's order.

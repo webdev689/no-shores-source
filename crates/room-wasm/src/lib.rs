@@ -174,7 +174,7 @@ fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> boo
 }
 
 /// Opens a new node's room from its file's text: its bodies stand on its window of the ground among its boxes, its
-/// kind's garrison stands (a patrol's caverns' and runs' groups as players come near), and it judges against its
+/// kind's garrison stands (a patrol's territories' and runs' groups as players come near), and it judges against its
 /// section. Answers whether the text was a node with a section and a spawn.
 pub fn open_node(text: &[u8]) -> bool {
     let Ok(node) = serde_json::from_slice::<NodeFile>(text) else { return false };

@@ -246,7 +246,9 @@ from the sea, fresh water and the claim's edge), then:
    paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
    5 m clear of every way's edge and a metre clear of every building and of every module's foot, whose floors level
    the land under it once the sites are marked, each resource 12 m from every other and from each beacon, and where
-   foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   foes hold ground: a foes' site at the middle of every area but a landing, a gate, an entrance, a hamlet, a wilds, a
+   Breach's hollow and a guild's plot, its patrol's territories
+   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]; [[Enemies]], "Territories and runs"). Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
    the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
    laid), and a patrol stands its material nodes there, every one at once ([[Server]]). Each beacon and
@@ -327,7 +329,7 @@ out past its edge.
   within its half-width of the place's middle, where what the place holds stands, is not laid there. A climbing run ends at 0.55 so the face
   behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
   it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
-  road. Its beats are marked as foes' sites, where its room stands a group as a player first comes near ([[Enemies]], "Caverns and runs"); its end arena is an objective's site and its door a door's.
+  road. Its beats are marked as foes' sites, where its room stands a group as a player first comes near ([[Enemies]], "Territories and runs"); its end arena is an objective's site and its door a door's.
 - **What stands in it** (`run_kits`, `run_halls`, `halls`): its mouth marked so the zone sees where it goes (a fallen
   arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
   chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone
@@ -492,8 +494,8 @@ stands round its edges, so no roof stands over the massif (1 m thick at the leas
 the tunnel's roof starts 4 m in, where the cliff the
 tunnel opens in stands whole, and a tunnel mouth of rock frames the opening at the floor. The
 map takes the cavern as a roofed space joined to its area by a tunnel. In the Vale the Hollow Coven opens into one.
-Every coven's and cave's area marks a foes' site at its middle, where its room stands a group ([[Enemies]],
-"Caverns and runs").
+Every coven's and cave's area marks a foes' site at its middle, as every territory does, where its room stands a
+group ([[Enemies]], "Territories and runs").
 
 ## The map
 

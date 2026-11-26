@@ -110,7 +110,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     drawers: dungeons,
   });
   /** The houses' roads: their tracker, lines, marks and offers at the keepers' counters. */
-  const quests = questsOn(stack, () => link?.account?.id ?? null, forge, roomModule);
+  const quests = questsOn(stack, () => link?.keptAs ?? null, forge, roomModule);
   const footContext: FootContext = {
     movement,
     land,
@@ -141,7 +141,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     sea: null,
     after: new AfterStory(),
     quests,
-    lore: new Lore(localStorage, () => link?.account?.id ?? null),
+    lore: new Lore(localStorage, () => link?.keptAs ?? null),
     through: null,
     helmMap: new HelmMap({
       ...{ gpu, store, stack, outlines: continents.map((each) => each.outline) },
@@ -579,7 +579,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   if (story) {
     const game = { gpu, canvas, stack, hud, scene, figures: figureView, footView, forge, firstPerson, land };
     const more = { movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop, music };
-    const lands = { home: { landmass, drawers: playing.drawers }, closeSource, ambience };
+    const lands = { home: { landmass, drawers: playing.drawers }, closeSource, ambience, nodes: world.nodes };
     story.begin({ ...game, ...more, ...lands }, () => {
       playing.flow = arriving(FIRST_NODE, 'Overlook');
       arrive();

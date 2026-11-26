@@ -5,6 +5,7 @@ code:
   - crates/gear/src/finds.rs#find
   - crates/gear/src/emblems.rs#emblems
   - crates/gear/src/looks.rs#shown
+  - crates/gear/src/shared.rs#Shared
   - client/src/player/sourceLooks.ts#earnedFrom
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/gearScreen.ts#itemDetailOf
@@ -251,7 +252,11 @@ number is one of [[Gear as Claude Shapes It]].
   ([[Crew]]).
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. A slot read past nine from a kept character
-  carries what it holds, and takes no more until it is down to nine. Dismantling returns Aurem, fragments and, from a
+  carries what it holds, and takes no more until it is down to nine. The vault and Aurem are the account's, shared by
+  its four characters ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]); the rest is the
+  character's own. A room holds the two joined, so every rule sees one whole character, and parts them for each save
+  (`gear::shared`, `part_shared` and `join_shared`): a vaulted item or Vestige whose number the character already
+  holds takes a new one, and nothing is dropped however full the vault. Dismantling returns Aurem, fragments and, from a
   Legendary (2, or 3 one time in two) or an Atheric (3), Essence, with a third of what was spent on it.
 - **Chance** comes from a hash of the room's seed, its tick, a count of the rolls the room has made, the player and
   what the roll is for. A deployed room's seed is its host's own, random and never sent, so no player can foresee a

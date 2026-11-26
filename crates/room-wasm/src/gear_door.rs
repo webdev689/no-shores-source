@@ -144,6 +144,37 @@ pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
     .unwrap_or(false)
 }
 
+/// A player's character as kept (`character`) with the account's shared part (`gear::shared`) parted out of it, as
+/// JSON's bytes: `{ "body": <the character's JSON>, "vault": <the shared part's JSON> }`; empty as `character` is.
+#[must_use]
+pub fn kept(player: PlayerId) -> Vec<u8> {
+    let Some(mut character) = String::from_utf8(character(player)).ok().as_deref().and_then(gear::Character::from_json)
+    else {
+        return Vec::new();
+    };
+    let vault = character.part_shared().to_json();
+    serde_json::json!({ "body": character.to_json(), "vault": vault }).to_string().into_bytes()
+}
+
+/// A kept character and the account's shared part, as the keeper gives them.
+#[derive(Deserialize)]
+struct Joined {
+    body: String,
+    vault: Option<String>,
+}
+
+/// Gives a player their kept character with the account's shared part joined into it, from JSON's bytes as `kept`
+/// answers them (`vault` null for none kept yet); false if either is not one, or as `restore_character` is.
+pub fn restore_joined(player: PlayerId, bytes: &[u8]) -> bool {
+    let Ok(joined) = serde_json::from_slice::<Joined>(bytes) else { return false };
+    let Some(mut character) = gear::Character::from_json(&joined.body) else { return false };
+    if let Some(vault) = joined.vault {
+        let Some(shared) = gear::shared::Shared::from_json(&vault) else { return false };
+        character.join_shared(shared);
+    }
+    restore_character(player, character.to_json().as_bytes())
+}
+
 /// Why the open room's gate shuts to a player's character kept as JSON's bytes, in its words (`gear::gate`), with the
 /// story they already hold in the room carried forward (`Room::shut_to`), or at sea the sea's tier (`Sea::shut`); empty
 /// bytes are a new character's. Empty when it may enter, in a fleet, or when the bytes are no character, which the
@@ -247,6 +278,22 @@ pub extern "C" fn room_mail_lying(player: PlayerId) {
 pub unsafe extern "C" fn room_restore_character(player: PlayerId, address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(restore_character(player, unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// A player's character as kept with the shared part apart (`kept`), packed as `hand_over` packs.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_kept(player: PlayerId) -> u64 {
+    hand_over(kept(player))
+}
+
+/// Gives a player the character and shared part written at `address` (`restore_joined`); 1 if given, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_restore_joined(player: PlayerId, address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(restore_joined(player, unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Lays out the course's stall and resource nodes written at `address`; 1 if laid, 0 if not.
@@ -357,3 +404,7 @@ pub(crate) fn counter_of(found: &NodeCounter) -> Option<Counter> {
     };
     Some(Counter { kind, at: found.at })
 }
+
+#[cfg(test)]
+#[path = "gear_door_tests.rs"]
+mod gear_door_tests;

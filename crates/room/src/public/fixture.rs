@@ -55,6 +55,10 @@ pub(crate) fn place(room: &mut Room, player: PlayerId, [x, y]: [f64; 2]) {
 
 /// Lands `damage` of a player's swing on a foe, as the room settles a blow it judged a hit.
 pub(crate) fn strike(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64) {
+    // A foe still arriving is touched by nothing: the player waits for it to land, as they would.
+    while room.arriving(foe) {
+        room.tick();
+    }
     let blow = Blow {
         striker: player,
         kind: BlowKind::Swing(Stroke::Down),

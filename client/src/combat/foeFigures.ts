@@ -11,6 +11,7 @@ import type { Mode } from '../rules/movementRules.ts';
 import { type FoeType, shownType } from '../rules/roster.ts';
 import type { Fighting, KeptFoe } from './fighting.ts';
 import { type Flashes, dissolveShare } from './flashes.ts';
+import { RoomTicks, arrivalLook } from './foeArrivals.ts';
 import type { MarkedFoe } from './foeBars.ts';
 import { ironOutline } from './glints.ts';
 import {
@@ -103,6 +104,8 @@ export class FoeFigures {
   private seenIn: number | null = null;
   /** The room (by the fight's joins) the figures kept are of: one joined again may number its foes afresh. */
   private drawnIn: number | null = null;
+  /** The room's ticks run on between snapshots, for a foe's arrival to be built smoothly. */
+  private readonly ticks = new RoomTicks();
 
   /** Each type's dress, from the rules' roster, is made once. */
   constructor(roster: readonly FoeType[]) {
@@ -183,8 +186,12 @@ export class FoeFigures {
     // The Fissure's growth and a Sever's tally post are foes the room strikes like one, but only the crystal or the
     // post stands there: no figure.
     const growths = (fight.publicHeld?.marks ?? []).filter((mark) => mark.kind === MARK.growth).map((mark) => mark.id);
+    const tick = this.ticks.now(fight.roomTick, clock);
     for (const kept of fight.foes.values()) {
       if (growths.includes(kept.id) || kept.name === TALLY_POST) continue;
+      // A foe not yet let down from its airship, nor begun forming under its crown, is not seen (`foeArrivals.ts`).
+      const arriving = arrivalLook(kept.arrival, kept.faction, tick);
+      if (arriving.hidden) continue;
       const typeDress = this.dressOf(kept);
       if (!typeDress) continue;
       // A Lattice foe is drawn from its own pictures once they are published, else as a plain figure its size.
@@ -197,8 +204,9 @@ export class FoeFigures {
         const { x, y, z } = kept.view;
         placed = { id: nextFoeId--, x, y, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
         this.figures.set(kept.id, placed);
-        // The Fissure pours its foes out: each that comes while it runs climbs out of its death wave, played back.
-        if (kind && this.seenIn === fight.joins && pouring(fight.public, x, y))
+        // The Fissure pours its foes out: each that comes while it runs climbs out of its death wave, played back, but
+        // one forming under a crown, which is its coming.
+        if (kind && !kept.arrival && this.seenIn === fight.joins && pouring(fight.public, x, y))
           latticeWaves.burst([x, y, z], kind.strain, kind.scale, clock, true);
       }
       // Its moves as its drawing shows them, held back while a blow landing holds it.
@@ -306,6 +314,7 @@ export class FoeFigures {
           charged: (kept.statuses?.charge ?? 0) > 0,
           jitter: flashes.shakeOf(kept.id),
           dissolve,
+          ...(arriving.share !== undefined && { arrival: arriving.share, arriving: arriving.look }),
           smear: feel?.smear?.(kept.id) ?? null,
           ...(plain && kind && { scale: kind.scale }),
           ...(own && { crystal: true }),
@@ -395,22 +404,25 @@ export class FoeFigures {
 
   /** Each foe as the display marks it: its own name (a public event's Warden, Marrow or growth) or else its type's, and
    *  its faction from the roster, where its figure is drawn; a companion by their officer's own name, an ally of no
-   *  faction. */
+   *  faction; none still arriving. */
   marked(fight: Fighting): MarkedFoe[] {
-    return [...fight.foes.values()].map((kept) => {
-      const figure = this.figures.get(kept.id);
-      const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
-      const type = shownType(this.roster, kept);
-      if (kept.companion)
-        return { ...kept, name: officerName(kept.companion), faction: '', factionNumber: 0, view, ally: true };
-      return {
-        ...kept,
-        name: kept.name || (type?.name ?? 'Foe'),
-        faction: type?.factionName ?? '',
-        factionNumber: kept.faction || (type?.faction ?? 0),
-        view,
-      };
-    });
+    // A foe still arriving wears no plate: it is in no fight yet.
+    return [...fight.foes.values()]
+      .filter((kept) => !kept.arrival)
+      .map((kept) => {
+        const figure = this.figures.get(kept.id);
+        const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
+        const type = shownType(this.roster, kept);
+        if (kept.companion)
+          return { ...kept, name: officerName(kept.companion), faction: '', factionNumber: 0, view, ally: true };
+        return {
+          ...kept,
+          name: kept.name || (type?.name ?? 'Foe'),
+          faction: type?.factionName ?? '',
+          factionNumber: kept.faction || (type?.faction ?? 0),
+          view,
+        };
+      });
   }
 }
 

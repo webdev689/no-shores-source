@@ -437,6 +437,7 @@ export class Foot {
       held: fight.publicHeld,
       encounter: { layout: this.dungeon?.layout, seen: this.held.encounter },
       breach: { seen: this.held.breach, fight, others: this.otherPlayers },
+      arrivals: fight,
     });
     const [{ facing, mounted }, boosting] = [walker.player, body.boosting ?? 0];
     const marks = effects.marks(fight, seconds, {

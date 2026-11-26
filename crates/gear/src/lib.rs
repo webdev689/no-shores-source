@@ -43,6 +43,7 @@ pub mod left;
 pub mod looks;
 pub mod lore;
 pub mod mail;
+mod max_test;
 pub mod objectives;
 mod old_hands;
 pub mod passages;
@@ -55,6 +56,7 @@ pub mod rarity;
 mod refusal;
 pub mod rewards;
 pub mod shape;
+pub mod shared;
 pub mod ship;
 pub mod shown;
 pub mod source;
@@ -120,6 +122,8 @@ mod lore_tests;
 #[cfg(test)]
 mod mail_tests;
 #[cfg(test)]
+mod max_test_tests;
+#[cfg(test)]
 mod objectives_tests;
 #[cfg(test)]
 mod old_hands_tests;
@@ -139,6 +143,8 @@ mod rewards_tests;
 mod set_tests;
 #[cfg(test)]
 mod shape_tests;
+#[cfg(test)]
+mod shared_tests;
 #[cfg(test)]
 mod source_tests;
 #[cfg(test)]

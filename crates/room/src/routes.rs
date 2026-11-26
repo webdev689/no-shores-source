@@ -41,7 +41,7 @@ impl Room {
     /// Every foe thinks, in the order of their numbers, among `noticed`, over the mesh that holds it. A foe's way is
     /// kept from one tick to the next on its mesh; one that moved onto another finds its way afresh.
     pub(crate) fn think_foes(&mut self, noticed: &[(FighterId, Fighter)]) -> Vec<(FighterId, (Brain, combat::Intent))> {
-        let thinking = self.foes.keys().filter(|id| !self.inert.contains(id));
+        let thinking = self.foes.keys().filter(|id| !self.inert.contains(id) && !self.arriving(**id));
         let on: Vec<(FighterId, usize)> = thinking.map(|id| (*id, self.mesh_of(*id))).collect();
         let meshes: Vec<&NavMesh> =
             core::iter::once(&self.nav).chain(self.quests.grounds.iter().map(|(_, _, mesh)| mesh)).collect();

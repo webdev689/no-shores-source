@@ -59,3 +59,18 @@ test('the crosshair passes a dead foe and a companion to the living foe behind, 
   const [, y] = crosshairPoint(looking(0), 1, [], shotBodies(drawn, foes));
   assert.ok(Math.abs(y + 14.65) < 1e-6, `${y}`);
 });
+
+test('the crosshair passes a foe still arriving to the foe behind, as the room flies the shot through it', () => {
+  const ahead = (y: number) => ({ x: 0, y, z: 0 });
+  const drawn = new Map([
+    [5, ahead(-5)],
+    [7, ahead(-15)],
+  ]);
+  const idle = { side: 'foes', action: { kind: 'idle' } } as const;
+  const foes = new Map([
+    [5, { view: idle, arrival: { kind: 1, from: 2, drops: 10, lands: 70 } }],
+    [7, { view: idle, arrival: null }],
+  ]);
+  const [, y] = crosshairPoint(looking(0), 1, [], shotBodies(drawn, foes));
+  assert.ok(Math.abs(y + 14.65) < 1e-6, `${y}`);
+});

@@ -1,6 +1,7 @@
-//! A patrol zone's foes hold its caverns and its runs: on Saltmere's zones as the bake makes them, each foes' site
-//! stands its group the first time a player comes near it, and a player walked into a cavern or along a run meets the
-//! group there.
+//! A patrol zone's foes hold its territories and its runs: on Saltmere's zones as the bake makes them, every area but
+//! where players arrive or pass, where folk live, where events are fought, a Breach's hollow and a guild's plot, and
+//! its runs' beats; each foes' site stands its group as a player comes near it, and a player walked into a territory
+//! or along a run meets the group there.
 
 use combat::Intent;
 use layout::brief::AreaKind;
@@ -12,7 +13,7 @@ use std::path::Path;
 /// How near a player comes to a site before its group stands, as the room has it.
 const SITE_NEAR_M: f64 = 150.0;
 
-/// Continent 1's patrol zones as the bake makes them, each with its layout's runs and its caverns' middles.
+/// Continent 1's patrol zones as the bake makes them, each with its layout's runs and its territories' middles.
 fn zones() -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
@@ -29,9 +30,19 @@ fn zones() -> Vec<(bake::NodeFile, Vec<layout::runs::Run>, Vec<[f64; 2]>)> {
     patrols
         .map(|node| {
             let laid = layouts.iter().find(|laid| laid.id == node.id).expect("the zone is laid");
-            let caverns = laid.areas.iter().filter(|area| matches!(area.kind, AreaKind::Coven | AreaKind::Cave));
-            let caverns = caverns.map(|area| area.at).collect();
-            (node, laid.runs.clone(), caverns)
+            let held = laid.areas.iter().filter(|area| {
+                !matches!(
+                    area.kind,
+                    AreaKind::Landing
+                        | AreaKind::Entrance
+                        | AreaKind::Gate
+                        | AreaKind::Hamlet
+                        | AreaKind::Wilds
+                        | AreaKind::Breach
+                        | AreaKind::Plot
+                )
+            });
+            (node, laid.runs.clone(), held.map(|area| area.at).collect())
         })
         .collect()
 }
@@ -40,15 +51,28 @@ fn apart(one: [f64; 2], two: [f64; 2]) -> f64 {
     libm::hypot(one[0] - two[0], one[1] - two[1])
 }
 
+/// A point `far` from `site` inside the zone's section, round the compass from north: an area may lie by its edge,
+/// and a player standing outside strays to their death.
+fn inside_from(ring: &[[f64; 2]], site: [f64; 2], far: f64) -> [f64; 2] {
+    let ways = (0..16).map(|turn| f64::from(turn) * core::f64::consts::TAU / 16.0);
+    let mut points = ways.map(|way| [site[0] + libm::sin(way) * far, site[1] - libm::cos(way) * far]);
+    points.find(|&[x, y]| reach::inside(ring, x, y)).expect("a point that far inside the zone")
+}
+
 fn feet(room: &Room, player: PlayerId) -> [f64; 2] {
     let body = room.player(player).expect("the player").fighter.body;
     [body.x, body.y]
 }
 
+/// The foes not standing before (`known`) that stand within `reach` of `site`: its group, as it stands.
+fn stood_within(room: &Room, known: &BTreeSet<u32>, site: [f64; 2], reach: f64) -> BTreeSet<u32> {
+    let fresh = room.foes_seen().filter(|foe| !known.contains(&foe.foe));
+    fresh.filter(|foe| apart([foe.fighter.body.x, foe.fighter.body.y], site) <= reach).map(|foe| foe.foe).collect()
+}
+
 /// The foes not standing before (`known`) that stand within 5 m of `site`: its group, as it stands.
 fn stood_at(room: &Room, known: &BTreeSet<u32>, site: [f64; 2]) -> BTreeSet<u32> {
-    let fresh = room.foes_seen().filter(|foe| !known.contains(&foe.foe));
-    fresh.filter(|foe| apart([foe.fighter.body.x, foe.fighter.body.y], site) <= 5.0).map(|foe| foe.foe).collect()
+    stood_within(room, known, site, 5.0)
 }
 
 /// Whether any foe of `group` is stirred.
@@ -102,48 +126,60 @@ fn meets(room: &mut Room, player: PlayerId, group: &BTreeSet<u32>) -> bool {
 }
 
 #[test]
-fn a_player_walked_into_each_cavern_and_along_each_run_of_saltmere_meets_the_group_there() {
+fn a_player_walked_into_each_territory_and_along_each_run_of_saltmere_meets_the_group_there() {
     let zones = zones();
     assert_eq!(zones.len(), 3, "Saltmere's three zones");
-    let mut caverns_met = 0;
-    for (node, runs, caverns) in &zones {
+    let mut territories_met = 0;
+    for (node, runs, territories) in &zones {
         let held = |run: &layout::runs::Run| run.beats.split_last().map_or(&[][..], |(_, held)| held).to_vec();
         let beats: Vec<[f64; 2]> = runs.iter().flat_map(|run| held(run).into_iter().map(|beat| beat.at)).collect();
-        let mut named: Vec<[f64; 2]> = beats.iter().chain(caverns).copied().collect();
+        let mut named: Vec<[f64; 2]> = beats.iter().chain(territories).copied().collect();
         let mut written = node.foes.clone();
         let order = |one: &[f64; 2], two: &[f64; 2]| one[0].total_cmp(&two[0]).then(one[1].total_cmp(&two[1]));
         named.sort_by(order);
         written.sort_by(order);
-        assert_eq!(written, named, "{}: its runs' beats but their ends, and its caverns", node.id);
+        assert_eq!(written, named, "{}: its runs' beats but their ends, and its territories", node.id);
         let blocks = node.boxes.iter().map(Block::from_floats).collect();
         let section = Section { ring: node.ring.clone(), spawns: node.spawns.clone(), falls_kill: false };
         let levels = gear::world::island_levels(&node.continent);
         let floor = Floor::Land(Box::new(node.ground.clone()));
         let mut room = Room::garrisoned(floor, blocks, section, node.kind, (&node.id, levels));
         room.set_island(&node.continent);
-        // Each cavern and run walked by a player just joined, whole whatever the last one met.
+        // Each territory and run walked by a player just joined, whole whatever the last one met.
         let mut player = room.join().expect("a player joins");
         let mut fresh = |room: &mut Room| {
             room.leave(player);
             player = room.join().expect("a player joins");
             player
         };
-        for &site in caverns {
+        for &site in territories {
             let player = fresh(&mut room);
             let known = only(&mut room, site);
-            assert!(room.put_player(player, site[0], site[1] + SITE_NEAR_M + 10.0));
+            let far = inside_from(&node.ring, site, SITE_NEAR_M + 10.0);
+            assert!(room.put_player(player, far[0], far[1]));
             room.tick();
-            assert!(stood_at(&room, &known, site).is_empty(), "{}: none stands before a player is near", node.id);
-            assert!(room.put_player(player, site[0], site[1] + 100.0));
-            // Its place's mesh is baked a slice a tick, so the group stands within a second or two.
-            let group = (0..120).find_map(|_| {
+            // Its group stands at its middle, or where that lies past the section's edge, within 20 m inside it.
+            let reach = 30.0;
+            let none = stood_within(&room, &known, site, reach).is_empty();
+            assert!(none, "{}: none stands before a player is near", node.id);
+            let toward = inside_from(&node.ring, site, 100.0);
+            assert!(room.put_player(player, toward[0], toward[1]));
+            // Its place's mesh is baked a slice a tick, so the group stands within a few seconds (a keep's walls and
+            // floors bake slowest: Valeguard's in 174 ticks).
+            let group = (0..300).find_map(|_| {
                 room.tick();
-                Some(stood_at(&room, &known, site)).filter(|group| group.len() >= 2)
+                Some(stood_within(&room, &known, site, reach)).filter(|group| group.len() >= 2)
             });
-            let group = group.unwrap_or_else(|| panic!("{}: the cavern's group stands at {site:?}", node.id));
-            assert!(room.put_player(player, site[0], site[1]));
-            assert!(meets(&mut room, player, &group), "{}: the cavern's group at {site:?} meets the player", node.id);
-            caverns_met += 1;
+            let group = group.unwrap_or_else(|| panic!("{}: the territory's group stands at {site:?}", node.id));
+            // The player comes to it where it stands.
+            let near = nearest(&room, &group, player).expect("a foe of it");
+            assert!(room.put_player(player, near[0], near[1]));
+            assert!(
+                meets(&mut room, player, &group),
+                "{}: the territory's group at {site:?} meets the player",
+                node.id
+            );
+            territories_met += 1;
         }
         for run in runs {
             // From 8 m inside its area's floor, in through its mouth and along its line, beat by beat.
@@ -184,5 +220,5 @@ fn a_player_walked_into_each_cavern_and_along_each_run_of_saltmere_meets_the_gro
             assert!(met.iter().all(|met| *met), "{}: {} meets its beats' groups: {met:?}", node.id, run.name);
         }
     }
-    assert!(caverns_met >= 1, "the Hollow Coven at the least");
+    assert!(territories_met >= 15, "Saltmere's zones hold territories across them: {territories_met}");
 }

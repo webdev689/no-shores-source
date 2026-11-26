@@ -75,6 +75,7 @@ pub fn foes() -> Vec<FoeSeen> {
         shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
         companion: None,
         name: "The Warden of the Fissure",
+        arrival: Some(room::FoeArrival { kind: room::Bringer::Airship, from: 3, drops: 1230, lands: 1290 }),
     };
     // An officer ashore beside player 9: a hostile swordsman's figure on the players' side.
     let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Shield };
@@ -89,7 +90,17 @@ pub fn foes() -> Vec<FoeSeen> {
         brawler: false,
         out: false,
     };
-    let ashore = FoeSeen { foe: 13, kind: 2, foe_type: 14, faction: 0, fighter: mate, level: 4, name: "", ..brute };
+    let ashore = FoeSeen {
+        foe: 13,
+        kind: 2,
+        foe_type: 14,
+        faction: 0,
+        fighter: mate,
+        level: 4,
+        name: "",
+        arrival: None,
+        ..brute
+    };
     vec![brute, FoeSeen { shield: None, companion: Some(companion), ..ashore }]
 }
 
@@ -266,7 +277,7 @@ const MIDDLE: [f64; 2] = [1.0, -2.0];
 type Happened<'snapshot> = (&'snapshot [Shot], &'snapshot [(u64, Line)], &'snapshot [(PlayerId, room::Plate)]);
 
 /// The test snapshot, for player 9: whole, building on nothing.
-fn snapshot<'snapshot>(
+pub(crate) fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
     (shots, lines, plates): Happened<'snapshot>,
@@ -298,6 +309,7 @@ fn snapshot<'snapshot>(
         breach: None,
         darkness: false,
         reviving: &[],
+        arrivals: &[],
         passage: None,
     }
 }
@@ -463,8 +475,11 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let (glance, rest) = numbers.split_at(combat::floats::GLANCE_FLOATS);
     assert_eq!(foe.id(), 12);
     assert!(near(&foes[0].fighter.glance(), glance), "a foe's glance crosses packed");
-    // Its role, type, rank, faction, phase, alertness and level; its shield; its debuffs' ticks; no one's companion.
-    assert_eq!(rest, [3.0, 4.0, 3.0, 1.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0]);
+    // Its role, type, rank, faction, phase, alertness and level; its shield; its debuffs' ticks; no one's companion;
+    // and its airship's arrival: the ship's number, the tick it is let down and the tick it lands.
+    let arriving = [1.0, 3.0, 1230.0, 1290.0];
+    let stood = [3.0, 4.0, 3.0, 1.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0];
+    assert_eq!(rest, [stood.as_slice(), arriving.as_slice()].concat());
     assert_eq!(foe.name(), Some("The Warden of the Fissure"), "the name it stands under crosses");
     let event = read.public_event().unwrap();
     let counts = (event.kind(), event.phase(), event.ticks_left(), event.next_kind(), event.next_ticks());
@@ -479,7 +494,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let ashore = read.foes().unwrap().get(1);
     let numbers = unpack(ashore.packed().unwrap().bytes(), crate::land::FOE_NUMBERS, MIDDLE).unwrap();
     // A companion's leader, given and family names, and post (the Lookout), last.
-    assert_eq!(numbers[crate::land::FOE_NUMBERS - 4..], [9.0, 2.0, 5.0, 4.0]);
+    assert_eq!(numbers[crate::land::FOE_NUMBERS - 8..crate::land::FOE_NUMBERS - 4], [9.0, 2.0, 5.0, 4.0]);
+    assert_eq!(numbers[crate::land::FOE_NUMBERS - 4..], [0.0; 4], "landed: no arrival");
     assert_eq!(ashore.name(), None, "and no name of an event's");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
