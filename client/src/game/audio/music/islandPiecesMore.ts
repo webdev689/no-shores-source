@@ -130,7 +130,7 @@ function barrow(): Song {
       {
         bars: 'Dm | Bb | Am | Dm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'D3:3 A3:3 | Bb3:6 | A3:6 | D3:6',
+        lead: 'D3:2 A3:4 | Bb3:6 | A3:6 | D3:6',
         level: 0.65,
       },
     ],
@@ -139,7 +139,7 @@ function barrow(): Song {
 
 function mirage(): Song {
   const tune =
-    'A4:1 D4:1 F#4:1.5 | G4:1 A4:.5 Bb4:2 | G4:1 C4:1 Eb4:1.5 | D4:1 Eb4:.5 F#4:2 | G4:1 Bb4:1 Eb5:1.5 | Eb5:1 C5:1 G4:1.5' +
+    'F#4:1 A4:1 D5:1.5 | G4:1 A4:.5 Bb4:2 | G4:1 C4:1 Eb4:1.5 | D4:1 Eb4:.5 F#4:2 | G4:1 Bb4:1 Eb5:1.5 | Eb5:1 C5:1 G4:1.5' +
     ' | Bb4:1 G4:1 D4:1.5 | D4:3.5';
   return calmPiece({
     name: 'mirage',
@@ -175,7 +175,7 @@ function mirage(): Song {
         bars: 'Cm | Bb | Eb | D | Eb | Gm | Cm | D',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter'],
         counter:
-          'C4:2 Eb4:1.5 | D4:2 Bb3:1.5 | Eb4:2 G3:1.5 | F#3:3.5 | G3:2 Bb3:1.5 | G3:2 D3:1.5 | Eb3:2 C3:1.5 | D3:3.5',
+          'C4:2 Eb4:1.5 | D4:2 Bb3:1.5 | Eb4:2 G3:1.5 | F#3:3.5 | G3:2 Eb3:1.5 | G3:2 D3:1.5 | Eb3:2 C3:1.5 | D3:3.5',
         lead: 'Eb5:2 C5:1.5 | D5:3.5 | Bb4:3.5 | F#4:3.5 | Eb5:2 Bb4:1.5 | G4:3.5 | G4:3.5 | F#4:3.5',
         level: 0.9,
       },

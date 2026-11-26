@@ -126,7 +126,7 @@ function cairn(): Song {
       {
         bars: 'Em | Cmaj7 | Bm | Em',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'E3:2 B3:2 | C4:4 | B3:4 | E3:4',
+        lead: 'E3:1 B3:3 | C4:4 | B3:4 | E3:4',
         level: 0.7,
       },
     ],
@@ -436,7 +436,7 @@ function whiteout(): Song {
       {
         bars: 'Bm | Em | Bm | Bm',
         parts: ['pad', 'arp', 'lead'],
-        lead: 'B2:2 F#3:2 | G3:4 | F#3:4 | B2:4',
+        lead: 'B2:3 F#3:1 | G3:4 | F#3:4 | B2:4',
         level: 0.65,
       },
     ],

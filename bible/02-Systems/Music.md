@@ -275,7 +275,7 @@ on, and the sky over it.
     Night (B flat Aeolian in 5/4 at 66, a fiddle over plucked strings, the cello under it). No two calm pieces anywhere
     share their verse's chords or their opening, nor more bars of tune than the older pieces did, and none but an older
     piece written so holds its tune or counter-line a half step from its pad; two pieces at home in one key share no
-    intro's bass, no first two notes and no closing bars (`variety.test.ts`).
+    intro's bass, no first two notes and no closing bars, an octave apart or not (`variety.test.ts`).
   - The sea's, two to a sky: Open Water (D Dorian in 6/8, a horn over the harp's long swell) and the Long Swell (E
     Dorian at 76, a fiddle falling from the tonic over the harp); Still Water (A minor at 56, a low flute over the
     piano's quarters) and Glass (B Aeolian at 52, a low clarinet falling over the harp, a flute far over it); Night

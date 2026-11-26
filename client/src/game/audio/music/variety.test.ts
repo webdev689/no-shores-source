@@ -129,7 +129,8 @@ test("no calm piece's tune or counter-line holds a note a half step from the pad
 });
 
 /** A piece's home, the bass of its bars before the tune comes in (its intro), its head (the tune's first two notes)
- *  and its coda (the last four bars of its tune, each note at its place in its bar). */
+ *  and its coda (the last four bars of its tune, each note at its place in its bar), all in pitch classes: the same
+ *  line an octave away is the same line. */
 function framesOf(song: Song) {
   const lead = song.notes.filter((note) => note.channel === LEAD_CHANNEL);
   const bass = song.notes.filter((note) => note.channel === BASS_CHANNEL);
@@ -140,15 +141,15 @@ function framesOf(song: Song) {
     home: (lead[lead.length - 1]?.note ?? 0) % 12,
     intro: Array.from(
       { length: enters },
-      (unused, bar) => bass.find((note) => Math.floor(note.tick / song.ticksPerBar) === bar)?.note ?? -1,
+      (unused, bar) => (bass.find((note) => Math.floor(note.tick / song.ticksPerBar) === bar)?.note ?? -1) % 12,
     ).join(','),
     head: lead
       .slice(0, 2)
-      .map((note) => note.note)
+      .map((note) => note.note % 12)
       .join(','),
     coda: lead
       .filter((note) => note.tick >= lastBar * song.ticksPerBar)
-      .map((note) => `${note.note}@${(note.tick % song.ticksPerBar) / song.ticksPerBar}`)
+      .map((note) => `${note.note % 12}@${(note.tick % song.ticksPerBar) / song.ticksPerBar}`)
       .join(' '),
   };
 }
@@ -159,7 +160,9 @@ test('two calm pieces at home in one key share no intro, no head and no coda', (
     frames.slice(index + 1).forEach((other) => {
       if (one.home !== other.home) return;
       const pair = `${one.name} and ${other.name}`;
-      assert.notEqual(one.intro, other.intro, `${pair} begin on the same bass: ${one.intro}`);
+      // A piece whose tune comes in on its first bar has no intro to share.
+      if (one.intro && other.intro)
+        assert.notEqual(one.intro, other.intro, `${pair} begin on the same bass: ${one.intro}`);
       assert.notEqual(one.head, other.head, `${pair} open on the same notes: ${one.head}`);
       assert.notEqual(one.coda, other.coda, `${pair} close alike: ${one.coda}`);
     }),

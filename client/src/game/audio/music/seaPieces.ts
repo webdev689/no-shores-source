@@ -32,7 +32,7 @@ function openWater(): Song {
       {
         bars: 'Dm | G | Dm | C | F | C | G | Asus',
         parts: ['pad', 'arp', 'bass', 'lead'],
-        lead: 'D4:1.5 A3:1.5 | B3:1 D4:.5 G4:1.5 | F4:1 E4:.5 D4:1.5 | E4:3 | F4:1.5 A4:1.5 | G4:1 E4:.5 C4:1.5 | D4:1.5 B3:1.5 | A3:3',
+        lead: 'D4:1.5 F4:1.5 | B3:1 D4:.5 G4:1.5 | F4:1 E4:.5 D4:1.5 | E4:3 | F4:1.5 A4:1.5 | G4:1 E4:.5 C4:1.5 | D4:1.5 B3:1.5 | A3:3',
       },
       {
         bars: 'Bb | F | C | Dm | Bb | F | Am | Asus',
@@ -46,7 +46,7 @@ function openWater(): Song {
       {
         bars: 'Dm | G | Dm | C | F | C | G | Asus',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
-        lead: 'D4:1.5 A3:1.5 | B3:1 D4:.5 G4:1.5 | F4:1 E4:.5 D4:1.5 | E4:3 | F4:1.5 A4:1.5 | G4:1 E4:.5 C4:1.5 | D4:1.5 B3:1.5 | A3:3',
+        lead: 'D4:1.5 F4:1.5 | B3:1 D4:.5 G4:1.5 | F4:1 E4:.5 D4:1.5 | E4:3 | F4:1.5 A4:1.5 | G4:1 E4:.5 C4:1.5 | D4:1.5 B3:1.5 | A3:3',
         counter: 'D3:3 | B2:3 | A2:3 | C3:3 | F2:3 | E2:3 | D2:3 | A2:3',
       },
       {
@@ -210,7 +210,12 @@ function swell(): Song {
         lead: tune,
         counter: 'G3:4 | F#3:4 | E3:4 | G3:4 | G3:4 | F#3:4 | G3:4 | F#3:4',
       },
-      { bars: 'Em | Am | Em | Em', parts: ['pad', 'arp', 'lead'], lead: 'E4:3 B4:1 | C5:4 | B4:4 | E4:4', level: 0.65 },
+      {
+        bars: 'Em | Am | Em | Em',
+        parts: ['pad', 'arp', 'lead'],
+        lead: 'E4:1.5 B4:2.5 | C5:4 | B4:4 | E4:4',
+        level: 0.65,
+      },
     ],
   });
 }
