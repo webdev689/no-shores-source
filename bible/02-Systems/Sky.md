@@ -12,6 +12,7 @@ code:
   - client/src/sky/bolts.ts#underWeatherM
   - client/src/sky/lamps.ts#lampsRound
   - client/src/sky/glowPoints.ts#GlowPoints
+  - client/src/ships/shipLights.ts#ShipLights
   - client/src/nearest.ts#Nearest
   - client/src/sky/skyUniform.ts#SKY_WGSL
   - client/src/sky/skyDriver.ts#SkyDriver
@@ -96,6 +97,9 @@ what show the ground there.
   mouth's two lights, lay columns of their light on the water. They come up through the dusk as the lamps do. Their
   thousands are none of the sixteen: the pools are a light map written once, the flames glowing points drawn over the
   picture (`GlowPoints`, which any list of glowing points may use), the windows the city's own shaders'.
+- **Ships' lanterns.** A lit ship's lanterns near the eye are lamps among the sixteen, and far off warm points over the
+  water, laid again each frame where the ships are ([[Sailing]], "Lanterns at night";
+  [[Ships' Lanterns Come Over From DFO]]).
 - **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
   the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
   flickers, a lantern's thirteen and is steadier.
@@ -128,6 +132,6 @@ what show the ground there.
 - The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
   sails fill, in the weather's wind.
 - Lamps cast no shadows. Only Overlook's city lights its windows, lamps and lanterns at night, and those light no
-  figure and no ship.
+  figure and no ship. A ship's far lanterns are not fogged.
 - Standing at the Sloop's helm, the player's torch or lantern lights nothing; only walking its deck does it.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.

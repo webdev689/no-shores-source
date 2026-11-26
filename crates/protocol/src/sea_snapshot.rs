@@ -136,8 +136,8 @@ pub fn sea_snapshot_bytes(
     let each: Vec<_> = harbour
         .friendlies
         .iter()
-        .map(|&room::friendlies::Friendly { traffic, x, y, heading, hull, .. }| {
-            let args = messages::FriendlyArgs { traffic, x, y, heading, hull: hull.number() };
+        .map(|&room::friendlies::Friendly { traffic, x, y, heading, hull, dark, .. }| {
+            let args = messages::FriendlyArgs { traffic, x, y, heading, hull: hull.number(), dark };
             messages::Friendly::create(&mut builder, &args)
         })
         .collect();

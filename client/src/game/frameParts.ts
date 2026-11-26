@@ -5,6 +5,7 @@ import type { Gpu } from '../gpu.ts';
 import type { Input } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
+import type { ShipLights } from '../ships/shipLights.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
 import type { Ambience } from './audio/ambience/ambience.ts';
@@ -45,6 +46,8 @@ export interface FrameParts {
   readonly firstPerson: FirstPerson;
   readonly footView: FootView;
   readonly shipModels: ShipModels;
+  /** The ships' lanterns at night. */
+  readonly shipLights: ShipLights;
   readonly figureView: FigureView;
   /** The public events' props, set from the event's view each frame on foot and emptied at sea. */
   readonly eventProps: EventPropsDraw;

@@ -467,6 +467,8 @@ fn a_bold_tithe_ship_attacks_a_friendly_ship_with_no_player_near_and_the_winner_
 #[test]
 fn a_player_who_comes_within_sight_of_a_clash_joins_it_beside_the_friendly_ship() {
     let (mut sea, player) = friendly_at_sea(true);
+    // By day, half an hour into the world's hour: by night the friendly ship's lookout would not see the Tithe's yet.
+    sea.set_world_start(1_800.0);
     sea.tick();
     next_course(&mut sea, player, &[[50_000.0, 49_200.0]], 5).unwrap();
     for _ in 0..60 * 60 {

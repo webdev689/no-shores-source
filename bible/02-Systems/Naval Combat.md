@@ -56,6 +56,8 @@ code:
   - crates/room/src/friendlies.rs#Friendlies
   - crates/room/src/threat.rs#held_pace
   - client/src/game/seaCombat.ts#SeaCombat
+  - crates/naval/src/night.rs#night_sight
+  - crates/room/src/clash.rs#light_fight
   - client/src/ships/shipCrew.ts#captainInFight
   - crates/naval/src/ranks.rs#SCALES
   - crates/naval/src/ranks.rs#Commission
@@ -307,6 +309,20 @@ make one; its chance to set that ship alight is that share of the Sloop's ball's
 much hull, canvas, men and fire from a ship, whatever hull fires it. Each gun reloads and scatters as the Sloop's. Its
 balls fly from its own mouths, a ball meets its own hull's and sails' boxes, and it rams, is rammed and is kept apart
 by its own hull's box. A captain sizing up a ship reckons their hit share against that ship's hull.
+
+## Night sight
+
+By night a ship is seen as far as her lanterns show her ([[Ships' Lanterns Come Over From DFO]], [[Sailing]],
+"Lanterns at night"): a lit ship to 650 m and a dark one only to 220 m, never farther than by day (`night_sight`). Night
+is when the daylight is 0.375 or less, as the lamps are half up through the dusk ([[Sky]]).
+
+- **The captains' lookouts.** Each room tells its fights the daylight where they lie (`light_fight`), and a captain
+  sees a ship as she shows: its 750 m by day, 650 m for a lit one at night, 220 m for a Tithe ship or a friendly one
+  running dark; the one it fights it keeps on to 1.35 times that.
+- **The player's.** The page asks the same rule, compiled to WebAssembly, of the sky where the eye is
+  (`SkyLaw.nightSight`): by night the compass marks a ship, the sea marks a hostile ship and the voyage names one, a
+  chase picks one, and the held map marks another player's ship, only within that sight of the player's ship; by day
+  each as far as ever.
 
 ## How a fight ends
 
@@ -827,6 +843,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 - A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
   not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
   or run, and each hull's hull points are scaled to an exact gunner's fire.
+- By night a player joins a clash of a Tithe ship and a merchant from 750 m as by day, and a hostile ship at sea still
+  comes for a player it sights by day's reckoning: night sight is the captains' in a fight and the player's marks.
 - Every Tithe captain sails their rank's hull, a friendly ship the traffic's; there is no iron ram bow (the Tithe Ram)
   and no Fluyt yet, and no other classes.
 - A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where

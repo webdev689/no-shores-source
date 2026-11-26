@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, ShipState } from '../rules/fightRules.ts';
+import { shipsMarked } from '../plus/compass.ts';
 import { stripOf } from './hints.ts';
 import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
@@ -16,7 +17,14 @@ const ROADS = {
 import { seaFightQuest } from './seaPanel.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
-  ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile, run_out: [] }) as unknown as FightCaptain;
+  ({
+    ship: [x, y, 0],
+    pose: [0, 0, 0],
+    state,
+    hostile,
+    faction: hostile ? 1 : 0,
+    run_out: [],
+  }) as unknown as FightCaptain;
 
 test('out of a fight the compass marks every other player’s ship in bone and every hostile one in red', () => {
   const others = [{ player: 4, x: 10, y: -20, heading: 0, pace: 1, hull: 0, dress: [], name: [], emblem: 0 }];
@@ -26,8 +34,8 @@ test('out of a fight the compass marks every other player’s ship in bone and e
   ];
   assert.deepEqual(seaShipMarks(null, { others, hostiles }), [
     { x: 10, y: -20, kind: 'ship' },
-    { x: -300, y: 40, kind: 'hostile', rangeM: 5_000 },
-    { x: 9_000, y: 0, kind: 'hostile', rangeM: 25_920 },
+    { x: -300, y: 40, kind: 'hostile', rangeM: 5_000, dark: true },
+    { x: 9_000, y: 0, kind: 'hostile', rangeM: 25_920, dark: true },
   ]);
   assert.deepEqual(seaShipMarks(null, null), [], 'out of a room, none');
 });
@@ -42,9 +50,9 @@ test('in a fight it marks its captains: red while it would take the player, grey
   ];
   const hostiles = [{ id: 7, x: -300, y: 40, heading: 1, faction: 1, rank: 3 }];
   assert.deepEqual(seaShipMarks(captains, { others: [], hostiles }), [
-    { x: 100, y: 0, kind: 'hostile' },
-    { x: 0, y: 100, kind: 'ship' },
-    { x: 50, y: 50, kind: 'struck' },
+    { x: 100, y: 0, kind: 'hostile', dark: true },
+    { x: 0, y: 100, kind: 'ship', dark: false },
+    { x: 50, y: 50, kind: 'struck', dark: true },
   ]);
 });
 
@@ -259,8 +267,23 @@ test('while the ship sails away to other waters the sea bar goes, so nothing on 
 test('a friendly ship the room keeps at sea keeps its friendly mark on the compass', () => {
   const friendlies = [{ traffic: 2_605, x: 300, y: -40, heading: 0, hull: 1 }];
   assert.deepEqual(seaShipMarks(null, { others: [], hostiles: [], friendlies }), [
-    { x: 300, y: -40, kind: 'friendly' },
+    { x: 300, y: -40, kind: 'friendly', dark: false },
   ]);
+});
+
+test('by night the compass marks a ship only as far as the player can see her: a dark one only close', () => {
+  const night = (rangeM: number, lit: boolean) => Math.min(rangeM, lit ? 650 : 220);
+  const marks = [
+    { x: 600, y: 0, kind: 'friendly' as const },
+    { x: 700, y: 0, kind: 'ship' as const },
+    { x: 200, y: 0, kind: 'hostile' as const, dark: true },
+    { x: 0, y: 300, kind: 'hostile' as const, dark: true },
+  ];
+  assert.deepEqual(
+    shipsMarked(marks, [0, 0], night).map((mark) => mark.x),
+    [600, 200],
+  );
+  assert.equal(shipsMarked(marks, [0, 0], (rangeM) => rangeM).length, 4, 'by day each within its range');
 });
 
 test("other players' ships wear their marks out of a fight, and none while the view is down at the helm, where the map covers it", () => {

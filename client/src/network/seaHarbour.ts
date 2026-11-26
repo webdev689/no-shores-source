@@ -53,13 +53,15 @@ export interface SeenIsle {
 }
 
 /** A friendly ship of the traffic the room keeps at sea, off its route: its traffic id, where it is, its heading
- *  (radians clockwise from north) and its hull (0 the Sloop to 3 the Frigate). */
+ *  (radians clockwise from north), its hull (0 the Sloop to 3 the Frigate), and whether she runs dark, her lanterns out,
+ *  running from the Tithe ship that attacked her. */
 export interface SeenFriendly {
   readonly traffic: number;
   readonly x: number;
   readonly y: number;
   readonly heading: number;
   readonly hull: number;
+  readonly dark?: boolean;
 }
 
 /** A ship on the sea's chart: its player's number, where it lies (world metres), and its captain's name. */
@@ -135,6 +137,7 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
       y: friend.y(),
       heading: friend.heading(),
       hull: friend.hull(),
+      dark: friend.dark(),
     };
   });
   const charted = Array.from({ length: snapshot.chartedLength() }, (unused, index): SeenCharted => {

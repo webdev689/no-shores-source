@@ -10,7 +10,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { BoltView } from '../sky/bolts.ts';
 import { FallView } from '../sky/fall.ts';
-import { CITY_LAMPS, EVENT_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { CITY_LAMPS, EVENT_LAMPS, type LampPlace, SHIP_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
@@ -337,7 +337,9 @@ export class GameScene {
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
-      this.lamps.length > 0 || EVENT_LAMPS.current.length > 0 ? this.lampsJoined() : CITY_LAMPS.current,
+      this.lamps.length > 0 || EVENT_LAMPS.current.length > 0 || SHIP_LAMPS.current.length > 0
+        ? this.lampsJoined()
+        : CITY_LAMPS.current,
       light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,
@@ -458,6 +460,9 @@ export class GameScene {
     for (const lamp of CITY_LAMPS.current) joined.push(lamp);
     for (const lamp of EVENT_LAMPS.current) joined.push(lamp);
     for (const lamp of this.lamps) joined.push(lamp);
+    for (const lamp of SHIP_LAMPS.current) joined.push(lamp);
+    // A frame that draws no ships lights none of the last one's.
+    SHIP_LAMPS.current = [];
     return joined;
   }
 

@@ -49,6 +49,9 @@ export interface SkyLaw {
   strikes(x: number, y: number, reachM: number, fromS: number, toS: number, climate: string): Strike[];
   /** The wind a ship's sails feel at (x, y) at `worldS`, m/s east and south: the rules' own, held a world minute. */
   seaWind(x: number, y: number, worldS: number): readonly [number, number];
+  /** How far a lookout who sees `rangeM` by day sees a ship under `daylight` (0 night to 1 day), `lit` or dark: the
+   *  rules' own (crates/naval/src/night.rs). */
+  nightSight(rangeM: number, daylight: number, lit: boolean): number;
 }
 
 /** The way a wind (m/s east and south) blows toward, radians clockwise from north, as a swell's bearing runs. */
@@ -61,6 +64,7 @@ interface SkyExports {
   land_sky(address: number, length: number): bigint;
   land_strikes(address: number, length: number): bigint;
   land_sea_wind(address: number, length: number): bigint;
+  land_night_sight(address: number, length: number): bigint;
   land_climates(): bigint;
 }
 
@@ -134,5 +138,6 @@ export async function startSkyLaw(moduleBytes: BufferSource): Promise<SkyLaw> {
       const read = ask(exports.land_sea_wind, [x, y, worldS]);
       return [read[0] ?? 0, read[1] ?? 0];
     },
+    nightSight: (rangeM, daylight, lit) => ask(exports.land_night_sight, [rangeM, daylight, lit ? 1 : 0])[0] ?? rangeM,
   };
 }

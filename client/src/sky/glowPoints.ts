@@ -209,9 +209,9 @@ export class GlowPoints {
   private readonly pipeline: GPURenderPipeline;
   private readonly layout: GPUBindGroupLayout;
   private readonly view: GPUBuffer;
-  private readonly instances: GPUBuffer;
-  private readonly count: number;
-  private readonly origin: readonly [number, number];
+  private instances: GPUBuffer;
+  private count: number;
+  private origin: readonly [number, number];
   private readonly values = new Float32Array(VIEW_BYTES / 4);
   private bound: { depth: GPUTexture; group: GPUBindGroup } | null = null;
 
@@ -229,6 +229,21 @@ export class GlowPoints {
       usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
     });
     if (floats.byteLength) device.queue.writeBuffer(this.instances, 0, floats);
+  }
+
+  /** Lays `points`, measured from `origin`, in place of its last: points that move (ships' lanterns) are laid each
+   *  frame, the buffer grown only when they outgrow it. */
+  set(points: readonly GlowPoint[], origin: readonly [number, number]): void {
+    const floats = glowInstances(points, origin);
+    if (floats.byteLength > this.instances.size) {
+      this.instances.destroy();
+      this.instances = this.device.createBuffer({
+        size: floats.byteLength * 2,
+        usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
+      });
+    }
+    if (floats.byteLength) this.device.queue.writeBuffer(this.instances, 0, floats);
+    [this.count, this.origin] = [floats.length / GLOW_FLOATS, origin];
   }
 
   /** Bytes it holds on the GPU. */

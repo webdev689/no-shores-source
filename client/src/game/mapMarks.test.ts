@@ -64,3 +64,24 @@ test('the sea map marks every other ship on the sea’s chart in its captain’s
     },
   );
 });
+
+test('by night the sea map marks only the ships within sight of the player’s lanterns', () => {
+  const charted = [
+    { player: 2, at: [600, 0] as const, name: 'Near' },
+    { player: 3, at: [5_000, 0] as const, name: 'Far' },
+  ];
+  const night = (rangeM: number, lit: boolean) => Math.min(rangeM, lit ? 650 : 220);
+  const marked = chartMarksOf(charted, 1, () => false, [0, 0], night).others.map((mark) => mark.at[0]);
+  assert.deepEqual(marked, [600]);
+  assert.equal(
+    chartMarksOf(
+      charted,
+      1,
+      () => false,
+      [0, 0],
+      (rangeM) => rangeM,
+    ).others.length,
+    2,
+    'by day, all',
+  );
+});

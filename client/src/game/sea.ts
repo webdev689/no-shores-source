@@ -14,7 +14,7 @@ import { type Press, pressAt, pressMove } from '../overworld/overworldInput.ts';
 import type { Mark, PlacedMark } from '../overworld/overworldMarks.ts';
 import { pickAt } from '../overworld/overworldPick.ts';
 import type { Pace } from '../overworld/voyage.ts';
-import { lookOf, panShot, type Shot } from './camera.ts';
+import { lookOf, panShot, QA_EYE, type Shot } from './camera.ts';
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
@@ -442,7 +442,8 @@ export class Sea {
           : view.kind === 'helm'
             ? { near: helmShot, share: view.helmShare }
             : aboardShot && { near: aboardShot, share: this.aboard.share };
-    const shown = down ? panShot(seaShot, down.near, down.share) : seaShot;
+    const panned = down ? panShot(seaShot, down.near, down.share) : seaShot;
+    const shown = QA_EYE.shot ? { ...panned, ...QA_EYE.shot } : panned;
     const { near, share } = down ?? { near: view.closest(overworld, trueLying), share: view.closeShare };
     const posed = combat ? combat.lying : ship;
     const atShip = (view: Shot) => pictureAt(view, [posed.x, posed.y, 0]);

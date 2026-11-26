@@ -338,6 +338,7 @@ mod tests {
             heading: 0.0,
             to: [0.0; 2],
             lane: None,
+            dark: false,
         };
         let all = [friend(1, 4_000.0), friend(2, 40_000.0)];
         let seen = |own| friendlies_seen(own, &all).iter().map(|ship| ship.traffic).collect::<Vec<_>>();
