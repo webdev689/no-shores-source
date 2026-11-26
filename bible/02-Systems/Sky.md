@@ -84,19 +84,25 @@ the water's backdrop draws the sky from them, and the water reflects it.
 Night is in between: the open reads under the moon, while under trees and in alleys it is dark, and the lights are
 what show the ground there.
 
-- **Lamps.** A city's glowing solids (the Beacon's fire, the lanterns at its stations and courtyards) are its lamps:
-  a fire's warm light from the solid's middle, reaching some ten metres from a lantern and up to sixty from a great
-  fire. They flicker, each on its own beat, and are lit only as the daylight fades, coming up through the dusk. The
-  glowing surfaces themselves burn brighter at night than by day.
+- **Lamps.** The land's lights are its lamps ([[Cities]], [[Islands]], [[Passages]], [[Modules]]): a lantern's warm
+  light at its glass, reaching some ten metres, a great one's up to sixty; a fire's as the fire casts it; a crystal's
+  and a sunstone's red or warm light. Each view of the land (a city, its layouts, the islands, a passage's hollow)
+  lights its own lamps and fires (`CITY_LAMPS`) as it is shown and lets them go as it is cleared. They are lit only as
+  the daylight fades, coming up through the dusk. The glowing surfaces themselves burn brighter at night than by day.
 - **One flicker, one breath.** Every light in the game moves by the same two (`client/src/sky/flicker.ts`, each with
   its WGSL twin), seeded by its source: a flame's flicker, held through each of the fire's ten frames a second, never
   below 80% at full depth; and a glow's slow breath, about seven seconds a swell, for crystal, fungus, runes and a
-  portal. Under ground and for a fire of the game's scene, a flame drawn and the light it casts share its seed, so they
-  move together ([[Lights as Claude Builds Them]]); a city's glowing solids flicker by where they burn and their
-  lamps by their own seeds.
-- **Fires.** The game's scene burns the fires lit in the world (`GameScene.fires`, the prologue's fire of [[Cinema]],
-  "Flames"), each casting its light as a lamp reaching eight times its height (at least four metres), seeded as its
-  flames are.
+  portal. A flame drawn and the light it casts share its seed, so they move together ([[Lights as Claude Builds Them]]).
+  On land a lamp carries how it moves (a fire's flicker, a lantern's shallower one, a stone's breath, and its seed) to
+  the sky's uniform, and a glowing surface near it (a lantern's glass, a brazier's coals, a crystal's core, an island's
+  ember, a prop's flame) moves with the nearest lamp within a third of its reach (`sky_lamp_motion`, `light_motion`);
+  one with no lamp near moves by where it stands.
+- **Fires.** The game's scene burns the land's fires (`GameScene.fires`, the prologue's fire of [[Cinema]], "Flames"),
+  lit again only as a view changes them: a fire on coals casts its light as a lamp reaching eight times its height (at
+  least four metres), seeded as its flames are; a lantern's flame and the Beacon's fires are lit by their place's own
+  lamp, seeded alike. A flame shows through 0.3 m of what stands nearer, a lantern's glass drawn solid round it, and its
+  smoke leans with the wind; a lantern's flame is `glassed` (`lanternLights`), its glass keeping its smoke and embers
+  in, once the scene lights it so.
 - **Lamps at sea.** Each ship's lanterns are lamps where they burn, moved with it each frame, reaching thirteen metres
   as a carried lantern does, and a sea fight's flashes, blasts and fires are lamps for as long as each lasts
   ([[Sailing]], "Its lanterns"; [[Naval Combat]]); they join the city's lamps through `CITY_LAMPS`, told anew only

@@ -6,6 +6,7 @@
 import { boxSeen, viewPlanes } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { ShadowMap } from '../shadow.ts';
+import { CITY_LAMPS } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { TILE_LAYERS } from '../groundGrain.ts';
 import { FAR_STRIDE, type GroundMesh, groundHeight, groundLook, groundMesh, groundTilesOf } from './isleGround.ts';
@@ -23,6 +24,7 @@ import {
 } from './isleModules.ts';
 import { INSTANCE_FLOATS, ISLE_FLOATS, partColours, PARTS_FLOAT, type Pipelines, pipelinesOf } from './isleShader.ts';
 import { gridOf, type IsleGrid, type IslePlacement, type IsleShown } from './islePlan.ts';
+import { emberBox, isleLights } from './isleLights.ts';
 import { standIn } from '../standIns.ts';
 
 /** Where the eye is, world metres; the rest of a shot (yaw, pitch, field of view) is the scene's. */
@@ -208,6 +210,8 @@ export class IslesView {
   /** Each kit's pack asked for, and when one that failed may be asked for again (`performance.now()`). */
   private readonly asked = new Map<string, number>();
   private readonly offset = new Float32Array(4);
+  /** The scene's seconds as the frame's uniform takes them, after its matrix. */
+  private readonly seconds = new Float32Array(4);
   /** The roles another drawer draws in this one's place (`GROWTH_ROLES`, the game's plants). */
   private readonly leaves: ReadonlySet<string>;
   /** Each climate's ground tiles, painted once and kept until the view is let go of. */
@@ -236,7 +240,7 @@ export class IslesView {
     this.prefix = prefix;
     this.onLoaded = onLoaded;
     this.frameUniform = gpu.device.createBuffer({
-      size: 64,
+      size: 80,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
     });
     this.tileSampler = gpu.device.createSampler({
@@ -261,7 +265,14 @@ export class IslesView {
       } else next.push(this.build(shown));
     }
     for (const gone of kept.values()) this.destroy(gone);
+    // Its lights again only once an island is shown, gone, moved or replanned, not each time it is handed over.
+    const same = (one: Drawn | undefined, other: Drawn) =>
+      one?.shown.plan === other.shown.plan &&
+      one.shown.at[0] === other.shown.at[0] &&
+      one.shown.at[1] === other.shown.at[1];
+    const changed = next.length !== this.drawn.length || next.some((drawn, index) => !same(this.drawn[index], drawn));
     this.drawn = next;
+    if (changed) this.light();
     // A pack that failed is asked for again by a show once PACK_RETRY_MS have passed.
     for (const kit of new Set(next.flatMap((drawn) => drawn.kits))) this.ask(kit);
   }
@@ -325,8 +336,10 @@ export class IslesView {
     }
   }
 
-  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: IsleShot, _time: number, shadow: ShadowMap): void {
+  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: IsleShot, time: number, shadow: ShadowMap): void {
     this.gpu.device.queue.writeBuffer(this.frameUniform, 0, fromEye);
+    this.seconds[0] = time;
+    this.gpu.device.queue.writeBuffer(this.frameUniform, 64, this.seconds);
     this.prepareShot(shot);
     const frame = this.frame;
     [frame.triangles, frame.draws, frame.near, frame.middle, frame.far] = [0, 0, 0, 0, 0];
@@ -371,6 +384,7 @@ export class IslesView {
     }
     if (drawn) return;
     this.drawn = [];
+    CITY_LAMPS.set(this, []);
     for (const tiles of this.tiles.values()) tiles.destroy();
     this.tiles.clear();
   }
@@ -438,6 +452,20 @@ export class IslesView {
     }
   }
 
+  /** Lights the shown islands' embers (isleLights.ts) in place of what they lit before: as they are shown, and as a
+   *  pack comes that holds a module of theirs. */
+  private light(): void {
+    const boxOf = (module: string) => {
+      const pack = this.packs.get(kitOfModule(module))?.pack;
+      return pack ? emberBox(pack, module) : null;
+    };
+    const { lamps, fires } = isleLights(
+      this.drawn.map((drawn) => drawn.shown),
+      boxOf,
+    );
+    CITY_LAMPS.set(this, lamps, fires);
+  }
+
   private ask(kit: string): void {
     if (this.packs.has(kit) || performance.now() < (this.asked.get(kit) ?? 0)) return;
     const url = packUrl(kit, this.manifest, this.prefix);
@@ -461,6 +489,7 @@ export class IslesView {
         vertices: upload(pack.vertices, BUFFER_USAGE.vertex),
         indices: upload(pack.indices, BUFFER_USAGE.index),
       });
+      this.light();
       this.onLoaded();
     });
   }

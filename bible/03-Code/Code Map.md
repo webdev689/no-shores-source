@@ -215,9 +215,9 @@ nodes its display builds), `player` (imports `rules`, `network`, `forge`, `first
 the fight's display there), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules`, `water`
 and `sky`), `layout` (imports `city`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture
 drawer and `ui`), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`, `textures`,
-`models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus`, `sky` and `ui`) and
-`game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
-[[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
+`models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus`, `sky` and `ui`;
+[[The Cinema May Import the Sky Layer]]) and `game` (imports the layers it wires, `combat`, `cinema` and `speech`
+among them; [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
 import.
 
 ## The Rust crates

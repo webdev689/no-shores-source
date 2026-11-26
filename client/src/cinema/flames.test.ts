@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { FIRE_FRAMES_PER_SECOND, type Fire, fireFrame, fireParts, GLOW_REACH, inSmoke } from './flameParts.ts';
 import { farFire, fireLit, MOST_PARTS, packFires } from './flames.ts';
+import { fireGlows } from './flameParts.ts';
 import { flicker } from '../sky/flicker.ts';
 import { PART, PART_KINDS } from './flamesShader.ts';
 
@@ -310,4 +311,30 @@ test('past where its tongues read a fire is its glow alone, flickering as near',
   const far = packFires([torch], 2, CALM, [40, 0, 2], into);
   assert.deepEqual(far, { shown: 0, glows: 1 });
   assert.ok(Math.abs((into[11] ?? 0) - (fireParts(torch, 2, CALM).glows[0]?.strength ?? -1)) < 1e-6);
+});
+
+test('a fire past where its glow reads is not drawn at all', () => {
+  const into = new Float32Array(MOST_PARTS * 12);
+  const lantern = { at: [0, 0, 0] as const, sizeM: 0.2, seed: 3 };
+  assert.ok(packFires([lantern], 1, [0, 0], [0, 100, 2], into).glows > 0, 'its glow alone at 100 m');
+  assert.deepEqual(packFires([lantern], 1, [0, 0], [0, 130, 2], into), { shown: 0, glows: 0 });
+});
+
+test('a far fire packs its glows alone, as `fireGlows` gives them, frame after frame', () => {
+  const fire = { at: [0, 0, 0] as const, sizeM: 0.3, seed: 9, along: [4, 0, 0] as const };
+  const into = new Float32Array(MOST_PARTS * 12);
+  for (const seconds of [1, 1.05, 1.31, 2.77]) {
+    const written = packFires([fire], seconds, [0, 0], [0, 60, 0], into);
+    const glows = fireGlows(fire, seconds);
+    assert.deepEqual(written, { shown: 0, glows: glows.length });
+    glows.forEach((glow, index) => {
+      const first = index * 12;
+      assert.deepEqual(
+        [...into.subarray(first, first + 3)],
+        glow.position.map((value, axis) => Math.fround(value - [0, 60, 0][axis]!)),
+      );
+      assert.equal(into[first + 4], Math.fround(glow.reach));
+      assert.equal(into[first + 11], Math.fround(glow.strength));
+    });
+  }
 });

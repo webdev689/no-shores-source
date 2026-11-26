@@ -112,7 +112,7 @@ export class DungeonView {
     this.flames.clear();
     for (const { number, flames } of lights)
       flames?.forEach((flame, index) =>
-        this.flames.light(flame.at, flame.sizeM, number + index * FLAME_SEED_STEP, flame.along, flame.glassed),
+        this.flames.light(flame.at, flame.sizeM, number + index * FLAME_SEED_STEP, flame.along, true, flame.glassed),
       );
   }
 

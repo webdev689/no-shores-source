@@ -423,6 +423,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]
 - [[Every Light Is Redesigned and Animated, and Each Casts Light]]
+- [[The Cinema May Import the Sky Layer]]
 - [[Lights as Claude Builds Them]]
 - [[The Passages' New Interface Says Less and Reads Better]]
 - [[The Islands and the Passages' Hollows Wear the Procedural Textures]]

@@ -1,44 +1,117 @@
 // The night's lamps: the places that give light (a city's glowing solids), the light a player carries, and the ones
 // nearest the eye each frame, as the sky's uniform lays them out. A lamp is lit only as the daylight fades.
-import { flicker } from './flicker.ts';
+import { flicker, lightMotion, type LightMotion, motionCode } from './flicker.ts';
 import { Nearest } from '../nearest.ts';
 import { LAMPS_MOST, type Lamp } from './skyUniform.ts';
 
-/** A place that gives light: world metres (east, south, up), how far its light reaches, its colour at full, and a
- *  seed its flicker keeps to. */
+/** A place that gives light: world metres (east, south, up), how far its light reaches, its colour at full, a seed
+ *  its flicker keeps to, and how it moves (a fire's flicker where none is named). */
 export interface LampPlace {
   readonly at: readonly [number, number, number];
   readonly reachM: number;
   readonly light: readonly [number, number, number];
   readonly seed: number;
+  readonly motion?: LightMotion;
 }
 
-/** What the cities drawn now light, each view's lamps kept apart (a landmass draws its city and its layouts in two
- *  views): a view lights its own as it is shown and lets them go as it is cleared, never another's. */
-export class CityLamps {
-  private readonly byView = new Map<object, readonly LampPlace[]>();
-  private every: readonly LampPlace[] = [];
+/** A fire a place burns, drawn as the game's fire (../cinema/flames.ts): its base (world metres), how tall it burns,
+ *  the seed it flickers by, the run of an edge it burns along, and whether it casts its own light as a fire does, or
+ *  its light is a lamp of the place's, seeded alike (a lantern's flame behind its glass), and whether it burns behind
+ *  glass, which keeps its smoke and embers in. */
+export interface FirePlace {
+  readonly at: readonly [number, number, number];
+  readonly sizeM: number;
+  readonly seed: number;
+  readonly along?: readonly [number, number, number];
+  readonly casts: boolean;
+  readonly glassed?: boolean;
+}
 
-  /** Lights `view`'s lamps in place of its last; none lets them go. */
-  set(view: object, lamps: readonly LampPlace[]): void {
-    if (lamps.length > 0) this.byView.set(view, lamps);
+/** What the land drawn now lights and burns (a city, its layouts, the islands, a passage zone's hollow, the events'
+ *  props), each view's kept apart: a view lights its own as it is shown and lets them go as it is cleared, never
+ *  another's. */
+export class CityLamps {
+  private readonly byView = new Map<object, { lamps: readonly LampPlace[]; fires: readonly FirePlace[] }>();
+  private every: readonly LampPlace[] = [];
+  private burning: readonly FirePlace[] = [];
+  /** Turns each time the fires change, so whoever draws them lights them again only then. */
+  firesChanged = 0;
+
+  /** Lights `view`'s lamps and fires in place of its last; none lets them go. */
+  set(view: object, lamps: readonly LampPlace[], fires: readonly FirePlace[] = []): void {
+    const before = this.byView.get(view)?.fires ?? [];
+    if (lamps.length > 0 || fires.length > 0) this.byView.set(view, { lamps, fires });
     else this.byView.delete(view);
-    this.every = [...this.byView.values()].flat();
+    this.every = [...this.byView.values()].flatMap((each) => each.lamps);
+    if (before.length === 0 && fires.length === 0) return;
+    this.burning = [...this.byView.values()].flatMap((each) => each.fires);
+    this.firesChanged++;
   }
 
   /** Every view's lamps. */
   get current(): readonly LampPlace[] {
     return this.every;
   }
+
+  /** Every view's fires. */
+  get fires(): readonly FirePlace[] {
+    return this.burning;
+  }
 }
 
-/** The cities' lamps, as every view lights them. */
+/** The land's lamps and fires, as every view lights them. */
 export const CITY_LAMPS = new CityLamps();
 /** What the public events' props light now (their crystal, a chest opened), set each frame they are drawn. */
 export const EVENT_LAMPS: { current: readonly LampPlace[] } = { current: [] };
 
 /** A fire's light, linear red, green and blue. */
 export const FIRELIGHT = [1.0, 0.62, 0.3] as const;
+
+type Point = readonly [number, number, number];
+
+/** A seed from where a light stands, the same each time it is built, never below 0. */
+export function seedAt([x, y, z]: Point): number {
+  const mixed = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+  return Math.floor((mixed - Math.floor(mixed)) * 4093);
+}
+
+/** A glowing thing's lamp: from `place`, a lantern's light reaching some ten metres, a great one's (`largest` metres
+ *  across) more, up to sixty, and brighter. */
+export function glowLamp(place: Point, largest: number, seed: number, motion: LightMotion): LampPlace {
+  const strength = Math.min(1.3, 1 + largest / 40);
+  return {
+    at: place,
+    reachM: Math.min(60, 9 + 2 * largest),
+    light: [FIRELIGHT[0] * strength, FIRELIGHT[1] * strength, FIRELIGHT[2] * strength],
+    seed,
+    motion,
+  };
+}
+
+/** A lantern's flame as a share of its glass's narrowest side, and the least and most it burns, metres. */
+const LANTERN_FLAME = { share: 0.6, least: 0.1, most: 0.35 } as const;
+
+/** A lantern whose glass stands round `middle`, `narrowest` across at its narrowest and `largest` at its largest: its
+ *  flame inside, its base a little under the middle, and its light at the middle, flickering as the flame does. */
+export function lanternLights(
+  middle: Point,
+  narrowest: number,
+  largest: number,
+): { readonly fire: FirePlace; readonly lamp: LampPlace } {
+  const seed = seedAt(middle);
+  const sizeM = Math.min(LANTERN_FLAME.most, Math.max(LANTERN_FLAME.least, narrowest * LANTERN_FLAME.share));
+  return {
+    fire: { at: [middle[0], middle[1], middle[2] - sizeM * 0.4], sizeM, seed, casts: false, glassed: true },
+    lamp: glowLamp(middle, largest, seed, 'lantern'),
+  };
+}
+
+/** A fire burning on glowing coals `wide` across whose top stands at `top`, a little sunk into them, casting its own
+ *  light: as tall as the coals are wide and a fifth more, half a metre to four. */
+export function coalsFire(top: Point, wide: number, coalsM: number): FirePlace {
+  const base: Point = [top[0], top[1], top[2] - coalsM * 0.2];
+  return { at: base, sizeM: Math.min(4, Math.max(0.5, wide * 1.2)), seed: seedAt(top), casts: true };
+}
 
 /** The lights a hand carries: a torch reaches less and flickers more than a lantern's shielded flame. */
 const CARRIED = {
@@ -114,11 +187,14 @@ export function lampsRound(
   const cut = ranked.count > room ? (ranked.away[room] ?? Infinity) : Infinity;
   for (let nth = 0; nth < Math.min(room, ranked.count); nth++) {
     const place = places[ranked.order[nth] ?? 0] as LampPlace;
-    const shown = lit * flicker(place.seed, seconds) * Math.min(1, (cut - (ranked.away[nth] ?? 0)) / CUT_FADE_M);
+    // As the shader takes it, a float32, so a glow moving with this lamp moves as its light does.
+    const motion = Math.fround(motionCode(place.motion ?? 'fire', place.seed));
+    const shown = lit * lightMotion(motion, seconds) * Math.min(1, (cut - (ranked.away[nth] ?? 0)) / CUT_FADE_M);
     lamps.push({
       fromEye: fromEye(place.at),
       reachM: place.reachM,
       light: place.light.map((part) => part * shown) as Rgb,
+      motion,
     });
   }
   return lamps;
