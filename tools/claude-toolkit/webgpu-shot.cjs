@@ -163,8 +163,11 @@ const OWN_TEXTURE = () => {
 async function main() {
   const plan = JSON.parse(readFileSync(process.argv[2], 'utf8'));
   if (plan.noGpu && plan.steps.some((step) => step.shot || step.views)) throw new Error('noGpu draws nothing to picture');
-  // Behind a proxy (a cloud session's HTTPS_PROXY), the browser and its routes' own fetches go through it.
-  const proxy = process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY } } : {};
+  // Behind a proxy (a cloud session's HTTPS_PROXY), the browser and its routes' own fetches go through it, all but
+  // the page's own server here.
+  const proxy = process.env.HTTPS_PROXY
+    ? { proxy: { server: process.env.HTTPS_PROXY, bypass: 'localhost,127.0.0.1' } }
+    : {};
   const browser = await chromium.launch({
     channel: 'chromium',
     args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
