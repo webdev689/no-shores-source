@@ -6,27 +6,36 @@ import { sqliteForTests } from './accounts/sqliteForTests.ts';
 import type { KeptRoom } from './keeping.ts';
 
 /** A room on land whose players' characters are plain strings; `{` starts one it can read. Its gate shuts as `gate`
- *  says, open to all unless told. */
+ *  says, open to all unless told. A test adds a player to `moved` as what their arrival is judged by moves, and
+ *  `reads` counts the characters read out of the room. */
 export function roomOf(gate: (kept: string | null) => string = () => ''): KeptRoom & {
   readonly held: Map<number, string>;
   readonly named: Map<number, string>;
   readonly tagged: Map<number, string>;
   readonly guilds: Map<number, string>;
+  readonly moved: Set<number>;
+  readonly reads: { count: number };
 } {
   const held = new Map<number, string>();
   const named = new Map<number, string>();
   const tagged = new Map<number, string>();
   const guilds = new Map<number, string>();
+  const moved = new Set<number>();
+  const reads = { count: 0 };
   return {
     held,
     named,
     tagged,
     guilds,
+    moved,
+    reads,
     // Its characters hold no vault apart: each is kept beside an empty one.
     keptApart: (player) => {
+      reads.count++;
       const body = held.get(player);
       return body === undefined ? null : { body, vault: '{}' };
     },
+    judgedMoved: (player) => moved.delete(player),
     restoreJoined: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player, name) => held.has(player) && Boolean(named.set(player, name)),

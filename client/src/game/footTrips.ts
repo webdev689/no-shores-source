@@ -8,6 +8,7 @@ import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import type { Reviving } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
+import type { PassageSeenState } from '../network/passageMessages.ts';
 import type { BreachSeen } from '../network/breachMessages.ts';
 import { TIERS } from './activityWords.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
@@ -15,11 +16,11 @@ import { cacheOf } from './dungeonChest.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
-import type { MovementRules } from '../rules/movementRules.ts';
+import type { Block, MovementRules } from '../rules/movementRules.ts';
 import { type Speak, type Use, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Heard, Held } from './footPlace.ts';
-import type { Snapshot } from '../network/roomConnection.ts';
+import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** A dungeon the player plays in: the place outside it (a patrol, an Elite Dungeon's node, or a sea island's
@@ -30,6 +31,8 @@ export interface InDungeon {
   readonly ask: DungeonAsk;
   readonly room: string;
   readonly layout: DungeonLayout;
+  /** A passage zone under ground: its layout's exit is its way in, and no way out. */
+  readonly passage?: boolean;
 }
 
 /** What going in and out asks of the game: the forged props' table once read, and the ways in and out: a dungeon's,
@@ -113,6 +116,7 @@ export function hearRoom(
       held.cache = cacheOf(snapshot.cache);
       heardRun(held, snapshot, own());
       held.plots = snapshot.outpost;
+      held.passage = snapshot.passage ?? null;
     },
     gear: (sent) => {
       if (online) held.gear = sent;
@@ -157,6 +161,22 @@ export function standInDungeon(movement: MovementRules, combat: CombatRules, ask
   if (!combat.setDungeon(ask)) throw new Error('the dungeon’s ground did not load');
 }
 
+/** A passage zone under ground as a dungeon's way in takes it: its ask (`passageAsk`'s JSON), the blocks seen of it
+ *  (its walls and pieces) and how its room is joined. */
+export interface PassageInto {
+  readonly ask: string;
+  readonly blocks: readonly Block[];
+  link(heard: Heard, session: string | null): Promise<RoomLink>;
+}
+
+/** Stands the fight's rules on the passage zone an ask names as its room stands bodies (`setPassage`); the movement
+ *  rules, which only find the floor, on open ground at 0 m among `blocks`. */
+export function standInPassage(movement: MovementRules, combat: CombatRules, passage: PassageInto): void {
+  movement.setGround(null);
+  movement.setCourse(passage.blocks);
+  if (!combat.setPassage(passage.ask)) throw new Error('the passage’s ground did not load');
+}
+
 /** A patrol's entrances as its room last gave them, and each one's dungeon's name, asked of the room's module once:
  *  as the entrances are heard, once `namesFrom` says from which module and patrol, so the dungeon a name is forged
  *  from is forged behind the arrival's veil rather than as a player first reaches its door. */
@@ -192,8 +212,8 @@ export class Entrances {
 }
 
 /** What E offers about going in and out where a player stands at (x, y): in a dungeon, "Leave" within reach of its
- *  exit door, or of its return portal while that stands open; on a patrol or an Elite Dungeon's node, "Enter" and the
- *  dungeon's name within reach of an entrance's door. */
+ *  exit door, or of its return portal while that stands open, and none in a passage zone; on a patrol or an Elite
+ *  Dungeon's node, "Enter" and the dungeon's name within reach of an entrance's door. */
 export function tripAt(
   x: number,
   y: number,
@@ -207,6 +227,7 @@ export function tripAt(
   trips: Trips,
 ): Use | null {
   const { dungeon } = here;
+  if (dungeon?.passage) return null;
   if (dungeon) {
     const { exitDoor, portal } = dungeon.layout;
     const reaches = (door: { x: number; y: number }) => Math.hypot(door.x - x, door.y - y) <= DOOR_REACH_M;
@@ -250,5 +271,6 @@ export const unheard = () => ({
   reviving: [] as readonly Reviving[],
   encounter: null as EncounterSeen | null,
   plots: 0,
+  passage: null as PassageSeenState | null,
   breach: null as BreachSeen | null,
 });

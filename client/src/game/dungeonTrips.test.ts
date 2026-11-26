@@ -282,6 +282,30 @@ test('a company that falls is taken out by the way it came in, the veil saying i
   assert.deepEqual(sea.ways[1], ['sea', { x: 1, y: 0.5, facing: 0 }]);
 });
 
+test('a dungeon left leads nowhere from the next place under ground, a passage zone among them', async () => {
+  const here = { foot: standing(patrol, 'normal') as object | null };
+  const { trips, ways, settled } = recorded(here);
+  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  await settled();
+  trips.leave();
+  await settled();
+  assert.equal(ways.length, 2, 'in and out again');
+  // Later, under ground in a passage zone, which the page went into by no trip of these.
+  here.foot = { ...standing(patrol, 'normal'), dungeon: { room: 'passage-continent-1-w2921-z3' } };
+  trips.leave();
+  trips.fell();
+  await settled();
+  assert.equal(ways.length, 2, 'no way out of the dungeon left before');
+  // A dungeon left by another road (its room shut, the player sent to their ship) leads nowhere either.
+  here.foot = standing(patrol, 'normal');
+  trips.enter(1, 'The Halls of the Saltgrass Downs');
+  await settled();
+  here.foot = { ...standing(patrol, 'normal'), dungeon: { room: 'passage-continent-1-w2921-z3' } };
+  trips.fell();
+  await settled();
+  assert.equal(ways.length, 3, 'in, and no way out of it from the passage zone');
+});
+
 test('a dungeon is shown with the entrance gone in by, so its exit door wears that door', async () => {
   const entrance = { x: 10, y: 20, ground: 3, yaw: 0.5, model: 4 };
   for (const node of [patrol, elite('krakens-grotto', 'Kraken’s Grotto')]) {

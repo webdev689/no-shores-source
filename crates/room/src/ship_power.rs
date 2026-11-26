@@ -84,7 +84,7 @@ impl Fights {
     }
 }
 
-/// What a captain who went down pays each player who fought it, whose character the sea holds: twelve of its rank's
+/// What a captain who went down pays each player who fought it, whose character the sea holds: so many of its rank's
 /// foe's kills at its level, raised by the sea's tier (`gear::ship::SINKING_KILLS`), in XP to their ship and their
 /// officers aboard and, as a kill pays, in XP and Aurem to the player; none to one whose ship could do it no harm.
 /// Answers who was paid.

@@ -1,5 +1,5 @@
 // The held map's layout kept between frames: what it reads, as one key, and a value made again only when that changes.
-import type { HeldMapScene } from './heldMap.ts';
+import type { HeldMapScene } from './heldMapScene.ts';
 import type { Rect, View } from './heldMapLaw.ts';
 
 /** What the map's layout reads, as one string: the map's view, the stage's ink and hands, the face's loading, how often

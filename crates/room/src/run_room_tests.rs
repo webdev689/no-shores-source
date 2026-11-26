@@ -176,6 +176,25 @@ fn a_kill_under_the_abyss_boon_pays_a_quarter_more_xp() {
 }
 
 #[test]
+fn the_weeks_abyss_run_again_pays_four_fifths_of_a_kill_once_its_first_clear_is_taken_that_week() {
+    let xp = |cleared: bool| {
+        let of = RunOf::Elite { place: "saltworm-warrens".into() };
+        let mut room =
+            Room::dungeon_run(&of, gear::Difficulty::Abyss, FRIDAY_NINE).expect("week 2,968's Abyss Dungeon");
+        let player = room.join().expect("in");
+        room.players.get_mut(&player).expect("in").character.activity.this_week(2_968).abyss = cleared;
+        let foe = crate::arts::arts_tests::stand_foe(&mut room, 2.0, 0.0, 1.0);
+        let clock = room.clock;
+        room.foes.get_mut(&foe).expect("standing").struck_by.insert(player, (clock, gear::Slot::Melee));
+        room.pay_kill(foe);
+        room.players[&player].character.xp
+    };
+    let (first, again) = (xp(false), xp(true));
+    assert!(first > 0);
+    assert!((again as f64 / first as f64 - 0.8).abs() < 0.01, "{first} then {again}");
+}
+
+#[test]
 fn a_player_playing_unkept_finds_the_caches_vestige_alone_and_their_kept_character_still_takes_the_days_clear() {
     let shared = || {
         let mut room = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("today's dungeon of the day, shared");

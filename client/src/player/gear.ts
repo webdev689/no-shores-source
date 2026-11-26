@@ -195,6 +195,18 @@ const REFUSALS: Readonly<Record<number, string>> = {
   171: 'You sail that ship already.',
   172: 'It bears that name already.',
   173: 'It has a name already. Hold to rename it.',
+  174: 'You are on no passage here.',
+  175: 'There is no way on there.',
+  176: 'Shut until this place’s work is done.',
+  177: 'There is no lamp to light here.',
+  178: 'Light the lamp first.',
+  179: 'Not while its guard stands.',
+  180: 'Come closer.',
+  181: 'There is no passage here.',
+  182: 'The passage has shifted.',
+  183: 'It is lit already.',
+  184: 'Not while fallen.',
+  185: 'Not while foes are near.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

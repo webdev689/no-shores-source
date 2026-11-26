@@ -17,7 +17,6 @@ import {
   goalNodes,
   goalOf,
   MOUNT_NOTES,
-  hordeRunning,
   linesBetween,
   offeredAt,
   puzzlePoints,
@@ -219,9 +218,6 @@ test("a house's horde shows its foes left while it runs, its wait after a fall, 
     const waiting = trackedOf(onTask(quest, task, [], { clock: 6 }))?.steps[goal];
     assert.deepEqual([waiting?.clock, waiting?.count], [6, undefined], 'the wait to start again');
     assert.equal(trackedOf(onTask(quest, task))?.steps[goal]?.count, undefined, 'none running here');
-    assert.equal(hordeRunning(onTask(quest, task, [], { horde })), true, 'its Art unbounded');
-    assert.equal(hordeRunning(onTask(quest, task, [], { horde, claimed: false })), false, 'not on the own character');
-    assert.equal(hordeRunning(onTask(quest, task)), false, 'bound once none runs');
   }
 });
 

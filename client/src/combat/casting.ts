@@ -62,8 +62,9 @@ export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number,
     art: taken.art,
     animaShare: runOn(taken.anima, art.anima.rechargeS),
     tenets: [runOn(taken.tenets[0], first?.rechargeS), runOn(taken.tenets[1], second?.rechargeS)],
-    // A horde running lends the worn Art whole: every ability on the bar and the keys.
+    // A horde running lends the worn Art whole: every ability on the bar and the keys, glowing unbounded.
     earned: taken.lent ? ALL_EARNED : earnedOf(taken, taken.art),
+    unbounded: taken.lent === true,
     recharge: taken.recharge ?? 1,
   };
 }

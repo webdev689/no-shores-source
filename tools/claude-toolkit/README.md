@@ -92,7 +92,8 @@ hand; and no AI gateway or proxy is ever put in the API path (`ANTHROPIC_BASE_UR
 ```bash
 git worktree add ~/wt/my-task -b my-task
 cp $KIT_DIR/workers/brief-common-template.md ~/wt/my-task.md   # fill in every <...> line, add the task
-bash $KIT_DIR/workers/run-worker.sh ~/wt/my-task ~/wt/my-task.md          # from Claude: Bash run_in_background, timeout 7200000
+setsid nohup bash $KIT_DIR/workers/run-worker.sh ~/wt/my-task ~/wt/my-task.md >/dev/null 2>&1 </dev/null &   # detached
+bash $KIT_DIR/workers/wait-worker.sh my-task      # from Claude: Bash run_in_background, timeout 7200000; again at the limit
 python3 $KIT_DIR/workers/audit.py ~/wt/my-task                            # before merging: MISSING must say none
 ```
 

@@ -668,6 +668,27 @@ table Snapshot {
   charted: [Charted];
   // On land, every airship and crown bringing foes (Arrival), whole in each snapshot while it lasts.
   arrivals: [Arrival];
+  // In a passage zone, its deal as it stands for the player; none in any other room.
+  passage: PassageSeen;
+}
+
+// A passage zone's deal for one player: its key (crates/passage's `Deal::key`), whether it is done, its dead lamps
+// lit and its targets down (a bit each, in their order), the share of a Hold's ring held, the seconds left (a Hold's,
+// a Gauntlet's, or until a public deal begins again), the waves called, whether the zone's mouths are open for the
+// player and its lamp lit for them, and the hold of E under way (its target, a dead lamp's number or 255 the lamp,
+// and its share; 254 and 0 with none).
+table PassageSeen {
+  deal: string;
+  done: bool;
+  lit: ubyte;
+  broken: ubyte;
+  held: double;
+  left: double;
+  wave: ubyte;
+  open: bool;
+  lamp_lit: bool;
+  holding: ubyte = 254;
+  holding_share: double;
 }
 
 // What a room sends: exactly one of these is present.

@@ -88,6 +88,8 @@ pub enum Asked {
     },
     /// An ask at one's guild's outpost (`outpost.rs`).
     Outpost(crate::OutpostAsk),
+    /// An ask of the passages (`passage_asks.rs`).
+    Passage(crate::PassageAsk),
     /// In a Breach, takes the Lodestone up and sets it down (`breach/lodestone.rs`); and at a Breach's gate, asks
     /// whether it is open to the player's company (`breach/gate.rs`).
     TakeLodestone,
@@ -341,6 +343,7 @@ impl Room {
             if let Some(gathering) = found.gathering.as_mut() {
                 gathering.let_go = true;
             }
+            self.let_go_hold(player);
             self.finds.opening.entry(player).and_modify(|opening| opening.let_go = true);
             return;
         }
@@ -404,6 +407,7 @@ impl Room {
             Asked::Find { number } => self.open_find(player, number),
             Asked::ClaimGuild { slot } => self.claim_guild(player, slot),
             Asked::Outpost(ask) => self.ask_outpost(player, ask),
+            Asked::Passage(ask) => self.ask_passage(player, ask),
             Asked::TakeLodestone => {
                 if self.take_lodestone(player) {
                     0
@@ -466,11 +470,14 @@ impl Room {
             .as_ref()
             .and_then(|isle| isle.landed.as_ref())
             .is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains_key(owner)));
+        // While hauling, a gather goes into the haul, so the haul's stock is the one that fills.
+        let hauling = found.character.passage.as_ref().filter(|dive| dive.here).map(|dive| &dive.haul.materials);
+        let stock = hauling.unwrap_or(&found.character.materials);
         if found.spent.iter().any(|&(spent, _)| spent == node) || dead || !landed {
             Some(OUT_OF_REACH)
         } else if found.mounted {
             Some(MOUNTED)
-        } else if found.character.materials.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
+        } else if stock.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
             Some(STOCK_FULL)
         } else {
             None

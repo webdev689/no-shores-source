@@ -59,7 +59,6 @@ import { hearing, placingFolk, roomNote, rulesOf } from './footRoom.ts';
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
 import { mapMarksOf } from './mapMarks.ts';
-import { hordeRunning } from './quests/questBook.ts';
 
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
@@ -337,7 +336,7 @@ export class Foot {
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, looking = false, hands, aspect, eye: cutscene = null, riders = [] }: FootAsk,
+    { paused, looking = false, hands, aspect, eye: cutscene = null, riders = [], walk = null }: FootAsk,
   ): FootFrame {
     const still = paused || looking;
     const { walker, movement, forge } = this.context;
@@ -364,7 +363,8 @@ export class Foot {
     this.followable = down && (company?.length ?? 0) > 0 ? named : null;
     const aimed = () => playerCamera(this.follow.viewed(walker.player), movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
-    const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
+    const moved = walk ?? (still ? IDLE : { ...controls, locked: true });
+    const shown = this.player.frame(moved, this.steps, seconds, clock, {
       running: true,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),
@@ -412,15 +412,14 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const [muzzle, gearNow, floor, doors] = [walker.muzzle, this.gear?.gear ?? null, this.floor, this.held.entrances];
     const { trips, speak } = this.context;
-    // The finds stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
+    // The finds and drops stand alone too, as a public event's chests do: the room's word on the gear, online or alone.
     const gearHeard = this.held.gear ?? this.held.alone;
     const found = this.finds.frame(gearHeard, clock, !!this.dungeon, paused);
     const marked = markedHere(gearNow, countersOf(this.node), floor, trips.props(), speak, doors.entrances);
     marked.push(...found.marks, ...fallenMarks(fight.others));
     const lit = litMarksSeen(marked, shot.eye, clock);
     const hidden = marksHidden(marked, shot.eye, clock);
-    // Drops are drawn online or alone, as a public event's chests are.
-    const laid = ((this.held.gear ?? this.held.alone)?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
+    const laid = (gearHeard?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const dropped = dropsLaid(this.drops, laid, clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
@@ -499,7 +498,7 @@ export class Foot {
     };
     const placeUse = this.outpost
       ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing, controls.held('use'))
-      : (this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null);
+      : ((this.uses ?? this.context.passageUses?.())?.(x, y, (asked) => fight.askGear(asked)) ?? null);
     const counters = countersOf(this.node);
     // A fallen ally beside the player comes first, as Destiny's revive does, but for a Breach's Lodestone lying
     // counting down; then a public event's chest, then a find.
@@ -513,7 +512,8 @@ export class Foot {
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
     const gathered = this.using?.held ?? this.hold.share(clock, able && !mounted, gearHeard);
-    this.prompt.show(this.using?.words ?? null, revive.share ?? gathered, this.using?.idle === true);
+    const using = this.using;
+    this.prompt.show(using?.words ?? null, revive.share ?? gathered, using?.idle === true, using?.under ?? null);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
@@ -528,7 +528,7 @@ export class Foot {
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
       parryWindow: fight.parryWindow,
-      abilities: fight.abilities && { ...fight.abilities, unbounded: hordeRunning(gear?.gear?.quest) },
+      abilities: fight.abilities,
       rider: walker.player.mounted ? walker.player.body : null,
       // The shots left stand beside the crosshair, wherever it shows; the Lodestone's bearer holds no weapon.
       ammo: sights && !bearer ? (ownView?.ammo ?? null) : null,

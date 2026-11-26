@@ -9,6 +9,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { payOf, serves } from './bountyBoard.ts';
+import { athericCardNode, athericCards } from './passages/athericBounty.ts';
 import { bountyCardNode, bountyTileNode, stateWords, tileSide } from './bountyTiles.ts';
 import { FOCUS, INK, words } from './gearNodes.ts';
 import { iconNode, pixelNode } from './journalIcons.ts';
@@ -339,6 +340,8 @@ export class Journal {
         },
         ...lines,
         said,
+        // The Atheric bounties after the board's, as Destiny 1's exotic bounties stood apart from its dailies.
+        ...athericCards(gear?.athericBounties).map((card) => athericCardNode(card, sizes.label)),
       ],
     };
   }

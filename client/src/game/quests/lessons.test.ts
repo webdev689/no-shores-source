@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { QuestState } from '../../network/questMessages.ts';
 import { DEFAULTS, rebind } from '../../player/binds.ts';
+import type { StationInfo } from '../nodes.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { QUESTS } from './questBook.ts';
 import { type Kept, lessonsBetween } from './questNews.ts';
@@ -141,12 +142,12 @@ test('after Put them on, Use your gifts asks each gift used, at its counter or b
   assert.deepEqual(lessonKeys(dye, 'keys', DEFAULTS), ['I'], 'the dye worn on the Character screen');
   assert.deepEqual(lessonKeys(identify, 'keys', DEFAULTS), [], 'a counter, not a key');
   assert.ok(doneAnywhere(dye, false) && !doneAnywhere(letter, false));
-  const stations = ['mage', 'vault', 'mail'].map((kind, place) => ({
+  const stations = ['mage', 'vault', 'mail'].map((kind, place): StationInfo => ({
     kind,
     keeper: [1100 + place, 0],
     counter: [1100 + place, 1],
   }));
-  const square = { ...OVERLOOK, stations } as NodeInfo;
+  const square: NodeInfo = { ...OVERLOOK, stations };
   const guide = guideOf(onTask('use-your-gifts'), { ...ashore, node: square }, { nodes: [square], layouts: [] });
   assert.deepEqual(guide.at, [1100, 1], 'the Mage first');
   assert.deepEqual(

@@ -232,6 +232,15 @@ impl Room {
         let spoilless = self.quests.spoilless.contains(&defender);
         let rank = brain.rank as u8;
         let garrison = self.garrison.iter().any(|post| !post.arrival && post.standing.contains(&defender));
+        // Bountiful's share more Vestiges, in a passage zone that runs it.
+        let bountiful = self.current(passage::Current::Bountiful).map(|strength| passage::zone::BOUNTIFUL * strength);
+        // A passage zone's foe pays its share of a kill: the passages pay through their caches.
+        let share = if self.zone().is_some() { gear::lamps::KILL_SHARE } else { 1.0 };
+        // The week's dungeon run again pays its share to one who has had its first clear this week.
+        let weekly = self.run.as_ref().and_then(|run| match run.pays {
+            crate::run::Pays::Week { weekly, .. } => Some(weekly),
+            _ => None,
+        });
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
@@ -239,10 +248,17 @@ impl Room {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let character = &mut found.character;
-            let reward = character.reward_kill(worth, rank, level, Some(hand), self.difficulty);
+            let share = weekly.map_or(share, |weekly| character.week_share(week, weekly));
+            let reward = character.reward_share(worth, (rank, level), Some(hand), (self.difficulty, share));
             let looted = deck || spoilless;
-            let vestiges =
-                if looted { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, self.source, &dice) };
+            let mut vestiges = if looted {
+                Vec::new()
+            } else {
+                character.loot_share((rank, level), (self.difficulty, share), self.source, &dice)
+            };
+            if let Some(share) = bountiful.filter(|_| !looted) {
+                vestiges.extend(character.loot_more(share, rank, level, self.source, &dice));
+            }
             // A ship's deck is no island: what is felled there counts toward no land bounty and earns no boon.
             if !deck {
                 character.boon_xp(week, reward.xp, Some(hand));
@@ -259,6 +275,7 @@ impl Room {
             if !deck {
                 self.saw(player, &felled);
             }
+            self.passage_kill(player, hand);
         }
     }
 }

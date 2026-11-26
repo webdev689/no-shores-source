@@ -200,11 +200,6 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0, horsed 
   return { name: now.quest.name, task: now.task.task, steps };
 }
 
-/** Whether the room's word `state` holds a house's horde running for the player's own character, its worn Art
- *  unbounded the while. */
-export const hordeRunning = (state: QuestState | null | undefined): boolean =>
-  !!state?.horde && state.claimed !== false;
-
 /** The task's first goal of `kind`, if it has one. */
 export function goalOf(state: QuestState | null | undefined, kind: string): Goal | null {
   return walked(state)?.task.goals.find((goal) => goal.kind === kind) ?? null;

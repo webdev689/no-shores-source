@@ -1,8 +1,8 @@
 // The bounty board's screen in the menu, drawn by the game, opened at its counter in Overlook's plaza, after
 // Destiny's Bounty Tracker and laid in a keeper's frame (npc/keeperFrame.ts): the board itself at the left where a
 // keeper stands, its name and words at the foot; at the top right its mark and what the player holds, and under it the
-// day's bounties under "Available bounties" in a row to each kind (the town's six, then the pledged faction's three),
-// and the time to the next board at the foot.
+// day's bounties under "Available bounties" in a row to each kind (the town's eight, the passages' two after its six,
+// then the pledged faction's three), and the time to the next board at the foot.
 // The card of the tile pointed at or holding the keys floats beside it, and each bounty is taken and turned in there by
 // the day of the board shown. Nothing here judges a rule: the room refuses what the board no longer offers.
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
@@ -32,11 +32,12 @@ const FACTION_BOUNTIES = 3;
 const SLOT_CLOAK = SLOTS.indexOf('cloak');
 
 export interface BountyRow {
-  /** Its place on the board, which its asks name: the town's 0 to 5, then each faction's three. */
+  /** Its place on the board, which its asks name: the town's 0 to 5, then each faction's three, then the passages'
+   *  two (the town's) at 15 and 16. */
   readonly place: number;
   readonly words: string;
   readonly name: string;
-  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons. */
+  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons, 3 in the passages. */
   readonly pool: number;
   /** Its tier, 1 to 3, by how big a task it is. */
   readonly tier: number;
@@ -180,10 +181,10 @@ function footNode(until: number | null, size: number, width: number): Node {
 }
 
 /** The bounty board's screen: the board on its stage, and beside it its words and purse, "Available bounties" with the
- *  town's six in a row and the pledged faction's three under them (or three locked slots while pledged to none), and
- *  under them the time to the next board, all in a scroll of their own. The tile pointed at or holding the keys shows
- *  its card; a click, Enter or E on a tile takes or turns it in, E the one whose card shows; the arrows move between
- *  tiles. Before the prologue the tiles rest grey and their cards say why. */
+ *  town's eight in a row (the passages' two after its six) and the pledged faction's three under them (or three
+ *  locked slots while pledged to none), and under them the time to the next board, all in a scroll of their own. The
+ *  tile pointed at or holding the keys shows its card; a click, Enter or E on a tile takes or turns it in, E the one
+ *  whose card shows; the arrows move between tiles. Before the prologue the tiles rest grey and their cards say why. */
 export function boardPage(context: MenuContext, resetAt: () => number | null, now = roomNow): Node {
   const { ui, gear, room, sizes } = context;
   const wide = sizes.name > 1 && sizes.label > 1;

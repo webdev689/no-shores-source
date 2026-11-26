@@ -1,7 +1,6 @@
 //! Each tick's stepping of the players: their inputs taken in order, their asks, casts and blows, the dead lying
 //! still or standing again, and each judged against the section.
 
-use crate::players;
 use crate::{CATCH_UP, Floor, PlayerId, Room, Standing, allowed_arms, chain, riding};
 use combat::arms::{Arms, BARE_HANDS};
 use combat::player_tick;
@@ -47,21 +46,12 @@ impl Room {
                     input.intent.combat.heal = false;
                     found.fighter.kept.heal = 0;
                 }
-                let (bearer, may_respawn) = (self.bears_lodestone(id), self.may_respawn(id));
+                let bearer = self.bears_lodestone(id);
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
                 if let Standing::Dead { .. } = found.standing {
-                    found.chain = chain::Chain::default();
-                    found.shown = input.shown;
-                    found.remember(seen);
-                    let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
-                    found.fighter = player_tick(id, &dead, &lying, &view, &self.blocks, &self.floor).0;
-                    if input.respawn && found.standing.may_respawn() && may_respawn {
-                        let lain = found.fighter.body;
-                        let body = self.stand_again(id, lain.x, lain.y);
-                        self.stand_up(id, body, None);
-                    }
+                    self.step_dead(id, input, seen, &view);
                     continue;
                 }
                 // The Lodestone's bearer holds no weapon: their swing is its Strike (`breach/lodestone.rs`).

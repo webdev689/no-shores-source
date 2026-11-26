@@ -229,7 +229,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         TAKE_LODESTONE => Asked::TakeLodestone,
         DROP_LODESTONE => Asked::DropLodestone,
         ENTER_BREACH => Asked::EnterBreach,
-        _ => return None,
+        _ => return crate::passage_wire::asked_of(ask),
     })
 }
 
@@ -337,6 +337,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Find { number } => args = messages::AskArgs { kind: OPEN_FIND, item: *number, ..args },
         Asked::ClaimGuild { slot } => args = messages::AskArgs { kind: CLAIM_GUILD_BOUNTY, column: *slot, ..args },
         Asked::Outpost(outpost) => args = outpost_args(*outpost, args),
+        Asked::Passage(ask) => args = crate::passage_wire::ask_args(*ask, args),
         Asked::TakeLodestone => args = messages::AskArgs { kind: TAKE_LODESTONE, ..args },
         Asked::DropLodestone => args = messages::AskArgs { kind: DROP_LODESTONE, ..args },
         Asked::EnterBreach => args = messages::AskArgs { kind: ENTER_BREACH, ..args },
@@ -477,6 +478,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let cleared = Some(builder.create_vector(&cleared));
     let bounties = crate::bounty_wire::bounties_of(&mut builder, character, room.day());
     let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level(), 1);
+    let (dive, island_lamps, atheric_bounties) =
+        crate::passage_wire::passages_of(&mut builder, character, (room.day(), gear::clock::week_of(room.minute)));
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -569,6 +572,9 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         chests: Some(crate::finds_wire::chests_of(&mut builder, room, player)),
         searchables: Some(crate::finds_wire::searchables_of(&mut builder, room, player)),
         opened: room.last_opened(player),
+        dive,
+        island_lamps,
+        atheric_bounties,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

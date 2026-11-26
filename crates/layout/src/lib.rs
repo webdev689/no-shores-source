@@ -15,6 +15,7 @@ mod clearing;
 mod climbs;
 pub mod collide;
 pub mod compose;
+pub mod crossings;
 pub mod dressing;
 pub mod field;
 pub mod grounds;
@@ -62,11 +63,13 @@ use serde::Serialize;
 const MARGIN_M: f64 = 40.0;
 const RUNS_MARGIN_M: f64 = MARGIN_M + 52.0 * CELL_M;
 
-/// Another node a layout leads to or comes from: its id and the middle of its claim.
+/// Another node a layout leads to or comes from: its id, the middle of its claim, and whether it is another patrol
+/// area (one of the zones a patrol area links to besides its instances).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Link {
     pub id: String,
     pub towards: [f64; 2],
+    pub patrol: bool,
 }
 
 /// A node's layout.
@@ -147,7 +150,7 @@ pub fn plan(
     let seed = seed_of(0x1A70, &node.id);
     let field = Field::read(ground, &claim_of(node), MARGIN_M);
     let patrol = node.kind == NodeKind::Patrol;
-    let (areas, wanted) = place_areas(node, &field, brief, links, seed);
+    let (mut areas, wanted) = place_areas(node, &field, brief, links, seed);
     let moduled = modules::standing(&areas, brief.heights);
     let mut seating = compose::stand(&areas, (&wanted, &moduled), book, (ground, &field), (seed, brief.heights));
     let mut buildings = std::mem::take(&mut seating.buildings);
@@ -418,7 +421,9 @@ pub fn plan(
             chests::Standing { boxes, buildings, props, plantings: &plantings, paths: &ways, spawns: &spawns };
         sites.extend(chests::mark(&rounds, &field, &ring, standing, (&sites, &carved_height), seed));
     }
-    let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
+    let mut ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
+    let mut basins = basins;
+    crossings::add(links, (&mut areas, &mut basins), (&mut sites, &mut ways));
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
     let land = spaces::Land {
         floor: &|at| ground.height_at(at[0], at[1]) + raise(at),
@@ -472,7 +477,7 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
                    pull: &dyn Fn([f64; 2]) -> f64| {
         let radius = radius_of(kind, blocks);
         if let Some(at) = place(field, kind, radius, areas, seed ^ areas.len() as u32, pull) {
-            areas.push(Area { kind, name: name.to_owned(), at, radius, leads_to });
+            areas.push(Area { kind, name: name.to_owned(), at, radius, leads_to, crosses: false });
             wanted.push(if compose::stands_blocks(kind) { blocks.max(1) } else { 0 });
         }
     };
@@ -493,7 +498,7 @@ fn place_areas(node: &Node, field: &Field, brief: &Brief, links: &[Link], seed: 
             };
             put(&mut areas, AreaKind::Landing, &landing.name, 0, None, &shoreward);
         }
-        for link in links {
+        for link in links.iter().filter(|link| !link.patrol) {
             put(&mut areas, AreaKind::Gate, "", 0, Some(link.id.clone()), &edge_pull(link.towards));
         }
         // A plot lies near the landing, the ground a guild builds on in reach of its ships.

@@ -97,6 +97,25 @@ reaches them at the next bake: a merge redeploys them, and locally `npm run bake
 A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
 `&view=` picture it ([[Toolkit]], "Browser QA").
 
+## Regions
+
+Every island is cut into three regions
+([[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]],
+[[Passages as Claude Builds Them]], "The regions"), each holding its own nodes, as
+`content/world/regions.json` lists them: its name, its centre (a point its nodes lie round: its patrol zone's where it
+has one), its anchorage, and its nodes, each in the region whose centre is nearest. The anchorage lies on the bearing
+from the centre that leaves the island's outline soonest, walked out in whole kilometres on bearings 5 degrees apart
+(the first such bearing from east, turning south, on a tie), 3 km past the first point off the land. The bake's tests
+hold the table to these rules. Each point of an island's land lies in the region of that island whose centre is
+nearest. Saltmere's three are the Beacon Shore (Overlook and the Saltgrass Downs), the Weirlands (the Gullwing
+Vale) and the Grey Reach (the Driftwood Moors), a patrol zone in each; every other island keeps one patrol zone, the
+one by its port city, in its first region, and its other two regions hold nodes alone. An instance's gate leads only
+from a patrol zone of its own region ([[Layouts]], "How a layout is planned"); one in a region with no patrol zone is
+landed at from the sea.
+Each patrol zone of an island holds a gate toward each other one: Saltmere's three link each to both others
+([[Layouts]], "Gates"). At sea the held map lights the regions of the island whose waters the ship is in and sails
+for their anchorages ([[Held Map]], "Choosing").
+
 ## Waters
 
 The sea is split into nine waters, one an island ([[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]). The `world` crate judges them

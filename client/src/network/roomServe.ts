@@ -16,6 +16,8 @@ export type Opening =
     }
   | { readonly how: 'dungeon'; readonly patrolText: string; readonly number: number; readonly seas: number }
   | { readonly how: 'run'; readonly ask: string; readonly patrolText: string }
+  /** A passage zone's room from its ask (`open_passage`'s JSON: the island, the week, the zone, the route, the minute). */
+  | { readonly how: 'passage'; readonly ask: string }
   | {
       readonly how: 'sea';
       readonly layoutText: string;
@@ -110,6 +112,9 @@ export type FromRooms =
 /** The rooms' side: each room opened, told and ticked as the game's thread says, what it sends said back by `say`. */
 export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => void {
   const rooms = new Map<number, LocalRoom>();
+  // A dive goes on from room to room with the character, so a passage zone played alone is given the one its last
+  // room let go of, as the server's keeper hands it on.
+  let kept: string | null = null;
   const open = (id: number, module: WebAssembly.Module, opening: Opening): LocalRoom => {
     const snapshot = (whole: Snapshot) => say({ kind: 'snapshot', id, snapshot: whole });
     // Each word on the player's gear, before its tick's snapshot, as the room gives them.
@@ -121,6 +126,7 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
     if (opening.how === 'dungeon')
       return LocalRoom.openDungeon(module, opening.patrolText, opening.number, snapshot, gear, opening.seas);
     if (opening.how === 'run') return LocalRoom.openRun(module, opening.ask, opening.patrolText, snapshot, gear);
+    if (opening.how === 'passage') return LocalRoom.openPassage(module, opening.ask, snapshot, gear);
     if (opening.how === 'island') return LocalRoom.openIsland(module, opening.word, snapshot, opening.seas, gear);
     if (opening.how === 'overSea') return LocalRoom.openOverSea(module, opening.spawn, opening.blocks, snapshot, gear);
     const { layoutText, seed, ports, seas } = opening;
@@ -130,6 +136,7 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
     if (told.kind === 'open') {
       try {
         const room = open(told.id, told.module, told.opening);
+        if (told.opening.how === 'passage' && kept) room.restore(kept);
         rooms.set(told.id, room);
         say({ kind: 'opened', id: told.id, player: room.player, epoch: room.epoch });
       } catch (error) {
@@ -147,8 +154,10 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
       if (told.kind === 'input') room.send(told.bytes);
       else if (told.kind === 'word') say({ kind: 'word', id: told.id, word: room.isleWord(told.isle) });
       else if (told.kind === 'story') say({ kind: 'word', id: told.id, word: String(storyOn(room, told.story)) });
-      else if (told.kind === 'close') rooms.delete(told.id);
-      else room.pump(told.seconds);
+      else if (told.kind === 'close') {
+        kept = room.keptCharacter() ?? kept;
+        rooms.delete(told.id);
+      } else room.pump(told.seconds);
     } catch (error) {
       // A room that fails is lost, as a server's room can be: let go, and the game told why.
       rooms.delete(told.id);

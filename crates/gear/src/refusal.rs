@@ -122,4 +122,22 @@ pub enum Refusal {
     Sailed = 170,
     Called = 171,
     Named = 172,
+    /// The passages' asks (`dive.rs`): no dive under way, or one of another island or week; no onward mouth of that
+    /// number; the zone's deal not done while the player was in it; no lamp to light here, or none lit this week to
+    /// begin at; the lamp not lit for the player; the lamp's guard still standing; out of reach of the lamp or a
+    /// mouth; asked outside a passage zone or its patrol zone (the room's); asked of a zone whose week's web has
+    /// turned, but Home at a lamp already lit; a dead lamp or the lamp lit already; asked while fallen; a hold begun
+    /// while a foe stands near its piece.
+    NoDive = 173,
+    NoSuchMouth = 174,
+    DealNotDone = 175,
+    NoLamp = 176,
+    LampNotLit = 177,
+    LampGuarded = 178,
+    NotAtMouth = 179,
+    NotInPassage = 180,
+    Shifted = 181,
+    AlreadyLit = 182,
+    Fallen = 183,
+    FoesNear = 184,
 }

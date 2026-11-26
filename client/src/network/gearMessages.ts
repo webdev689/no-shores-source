@@ -7,6 +7,7 @@ import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
 import { FIND_ASKS, type FindState, findsOf } from './findMessages.ts';
 import { LORE_ASKS, type LoreState, loreOf } from './loreMessages.ts';
+import { PASSAGE_ASKS, type PassageGearState, passagesOf } from './passageMessages.ts';
 import { type GearShip, shipOf } from './shipMessages.ts';
 
 export type { GearOfficer, GearShip } from './shipMessages.ts';
@@ -104,6 +105,7 @@ export const ASKS = {
   takeLetter: 71,
   takeAllLetters: 72,
   ...LORE_ASKS,
+  ...PASSAGE_ASKS,
   ...FIND_ASKS,
   /** A return to the player's ship, which the room answers (107 yes, or 103 its character not yet given it, 105
    *  fallen, 106 struck in the last ten seconds, 109 no ship kept yet) before the page leaves for the sea. */
@@ -240,7 +242,7 @@ export interface GearNode {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
-export interface GearState extends LoreState, FindState {
+export interface GearState extends LoreState, PassageGearState<GearItem>, FindState {
   readonly xp: bigint;
   readonly level: number;
   readonly prestige: number;
@@ -330,13 +332,14 @@ export interface GearBounty {
   readonly count: number;
   readonly held: boolean;
   readonly paid: boolean;
-  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons. */
+  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons, 3 in the passages. */
   readonly pool: number;
   /** Its short name, as its card heads it. */
   readonly name: string;
   /** Its tier, 1 to 3: it pays a first tier's pay, half again or twice that, rounded down. */
   readonly tier: number;
-  /** Its place on the board, which its take and turn-in ask by: the town's 0 to 5, then each faction's three. */
+  /** Its place on the board, which its take and turn-in ask by: the town's 0 to 5, then each faction's three, then
+   *  the passages' two (the town's) at 15 and 16. */
   readonly place: number;
   /** The faction that posts it, by its number, paying its reputation for the town's Aurem; 0 the town's. */
   readonly faction: number;
@@ -529,6 +532,7 @@ export function gearOf(gear: Gear): GearState {
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
     ...loreOf(gear),
+    ...passagesOf(gear, itemOf),
     ...findsOf(gear),
   };
 }

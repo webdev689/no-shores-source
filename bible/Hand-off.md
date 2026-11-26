@@ -299,6 +299,19 @@ The decisions in [[Open Questions]] are not repeated here.
   past the prologue); a switch counts the guild's week from the chosen character on; the Developer
   role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
   before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
+- **The passages and the regions** (#218 on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
+  autonomy ("this is where I give you autonomy and make this your baby"), audited on "I want to do a comprehensive
+  audit and detailed design pass on this entire arc" and again on "This is yours now, do a comprehensive audit on
+  it": not merged until the owner's yes, which deploys the page, the rooms and the accounts. Every call is in
+  [[Passages as Claude Builds Them]]; how it works in [[Passages]]; with it the band's retune
+  ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]) and the held map at sea's redesign
+  ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]). Main is merged in to
+  #222. Five read-only audits (the web and laying; the room and the dive; the server and wire; the page; the notes
+  and tools) found 46 points: 41 fixed, each code fix with a test that failed first but where the PR says not; the
+  decision note's copied tables cut to their calls; the workers' wait-ceiling variable checked present; Home from
+  anywhere in a lamp's zone and the Court's dark found meant; a hollow rebuilt whole at each piece's change left. A
+  review of the fixes found five more, all fixed. The owner's questions are in [[Open Questions]] ("The passages",
+  "The held map at sea's redesign"). Not seen: the deployed game, a real GPU, players together.
 - **A second codebase audit** (#217, merged on the owner's "Merge and deploy": CI's run 1154 on `main` passed), on the
   owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
@@ -978,7 +991,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The wreck's teaching** ([[The Wreck Opens by Teaching the Player]]): the owner's "teaching them the inventory" is
   taught on the Character page (I), where gear is worn; whether the owner wants it otherwise.
 - **Saltmere's heights** ([[Zones Rise and Fall, Above and Below Ground]]), for the owner to look at before the other
-  24 zones take heights and runs. Switchbacks: the owner approved "ways that switch back down cliffs", but no
+  islands' eight patrol zones take heights and runs. Switchbacks: the owner approved "ways that switch back down cliffs", but no
   Saltmere way needs one as built (`map_planned.rs`); whether they are wanted as a cliff climb of their own, and where.
 - **Open points in merged descriptions:**
   - #98: the crew's bars under the fewer plates; whether the welcome's "Follow" moves onto the tracker and the
@@ -1069,6 +1082,12 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **The passages, to finish** (#218): CI's check green on the head, then the owner's yes to merge. Not yet played
+  live: every deal, a dive's way across zones, a public round, the held map's public way and its redesign on a real
+  GPU, the sea's new ranks and salvage, a run of the week's Abyss Dungeon again; tested offline, and pictured
+  headless (`tools/passageShots.json`, `target/passages/`); a Vein's nodes under ground not yet pictured. Unchecked
+  from the audit's review: a public event's chest (`public/chest.rs`) and a grant (`grants.rs`) still go through
+  `pick_up`, which hauls a Vestige where the player stands in a passage zone.
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The boxing's cost, further** (this branch): a leaning spire of the cities keeps within 13 m only, as boxes
@@ -1094,8 +1113,9 @@ The decisions in [[Open Questions]] are not repeated here.
   flyout at 960x540 (measured by the screens' layout harness; the offline page has no gear).
 - **A cloud session runs on the `no-shores-source` environment** (personal, set up with the owner's approval): its
   network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts` fetches meshes from, and
-  its setup script runs `npm ci`. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`: Node's `fetch`
-  ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
+  its setup script runs `npm ci` (saved with the owner's approval, unproven until a fresh session starts on it). Run
+  the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`:
+  Node's `fetch` ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
   stops before the build, the bundle and the repo checks. The Context7 and SkillsMP keys are on neither environment.
 - **The encounters' headless run's WebGPU error** ("Instance range ... requires a larger buffer (28) than the bound
   buffer size (24) ..."): the dungeon entrances' instance, fixed by #155 (f895eb80); the error it hid, the entrances
@@ -1185,7 +1205,7 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The gear loop**: a signed ticket from the sea room naming the node and the seas a player may join at (the client
   names a voyage's seas now); Breaches, Elite Dungeons and Missions as loot sources; the wardrobe
   ([[Clothing Is Armour, With a Wardrobe Later]]).
-- **Zones**: the other 24 zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
+- **Zones**: the other islands' eight patrol zones' runs once the owner has looked at Saltmere's; a swamp's massif is 12 m high, low
   enough to climb in places, so its runs' end arenas need cutting deeper or walling. The layouts' open ends
   ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities on the sites. The
   dungeons session (#82) plans to move each patrol's dungeon entrances onto the layouts' places, and will

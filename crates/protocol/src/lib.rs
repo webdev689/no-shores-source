@@ -49,6 +49,7 @@ mod quest_wire;
 mod sea_snapshot;
 pub mod ship_wire;
 pub use sea_snapshot::{IsleSeen, SeaHarbour, sea_snapshot_bytes};
+pub mod passage_wire;
 mod public_wire;
 mod standing_wire;
 

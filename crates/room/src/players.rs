@@ -208,6 +208,10 @@ pub struct Player {
     /// Where their kept character last left the overworld or a social space, as it was claimed: the spot logging back
     /// in stands them at, kept apart from the character's, which the room moves on as they stand (`keep_spots`).
     pub(crate) left_at: Option<gear::last::Last>,
+    /// The mark of what their arrival in the next room is judged by, and whether it moved since last asked
+    /// (`judged.rs`).
+    pub(crate) judged: u64,
+    pub(crate) judged_moved: bool,
 }
 
 impl Player {
@@ -235,7 +239,6 @@ impl Player {
             graced: 0,
             dress_next: None,
             dressed_at: None,
-            character,
             gear_changed: true,
             claimed: false,
             placed_sent: (false, false, false),
@@ -262,6 +265,9 @@ impl Player {
             reviving: false,
             respawn_asked: false,
             left_at: None,
+            judged: crate::judged::mark(&character),
+            judged_moved: false,
+            character,
         }
     }
 
@@ -375,6 +381,9 @@ impl Room {
         let placed = (self.at_mage(player), self.in_social_space(player), self.recruiting_at(player).is_some());
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.gear_changed |= placed != found.placed_sent;
+        if found.gear_changed {
+            found.mark_judged();
+        }
         let waiting = found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);
         if !found.gear_changed || waiting && !found.gear_urgent {
             return false;
@@ -431,6 +440,8 @@ impl Room {
         }
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.left_at = character.last.clone();
+        // Marked as restored, before its arrival here is handled: a dive the join ends shows as moved.
+        found.judged = crate::judged::mark(&character);
         found.character = character;
         (found.gear_changed, found.claimed) = (true, true);
         self.arrived(player);
@@ -487,6 +498,7 @@ impl Room {
         }
         found.gear_changed = true;
         self.give_casting_back(player, owner);
+        self.first_arrival(player);
         self.give_finds_back(player, owner);
         self.give_body_back(player, owner);
         self.tell_landed(player);
