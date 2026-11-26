@@ -776,7 +776,8 @@ A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault a
 the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header, each a
 whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
 its tab at the names' size);
-keys on keycaps where the menu is wide enough; Guild opens the player's guild after Destiny 2's clan screen
+keys on keycaps where the menu is wide enough, for the keys or the pad played last (the pad's button drawn as the key
+strip draws it; none where the pad has none, as for Inventory); Guild opens the player's guild after Destiny 2's clan screen
 ([[Guilds]]), with its Outposts page (each outpost's plan from above, a structure a block in its colour saying its
 mark and tier as the key does, with its front, hollow while built and banded while it rises, the decoration as dots,
 the key naming each by the law and each mark; the footprint's ghost green or red as one is placed, kept on the plot,

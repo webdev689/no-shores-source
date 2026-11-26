@@ -11,6 +11,7 @@ import { boundCap } from './controls.ts';
 import { TABS, type Tab, characterOf } from './gearScreen.ts';
 import { NEW_PIXELS, NEW_SVG } from './compendium/loreArt.ts';
 import { pixelNode } from './journalIcons.ts';
+import { padCap } from './hudParts.ts';
 
 /** Each tab's name, the control that opens it, and, for one still to come, what it will hold. */
 export const TAB_PRESSES: Readonly<
@@ -83,7 +84,9 @@ export function tabsNode(
         gap: keys ? 8 : 0,
         children: [
           name,
-          keys && key !== '' && keycap(key, capSize),
+          keys &&
+            key !== '' &&
+            (key.startsWith('pad:') ? padCap(key.slice('pad:'.length), capSize) : keycap(key, capSize)),
           soon,
           picked && {
             width: 'grow',

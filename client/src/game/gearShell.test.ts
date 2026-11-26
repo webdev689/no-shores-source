@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { BINDS } from '../player/input.ts';
 import { fakeInterface, nodesOf } from '../ui/uiForTests.ts';
 import { tabsNode } from './gearShell.ts';
 
@@ -13,4 +14,17 @@ test('where keys show, a tab’s name steps down a size once it and its keycap w
   const across = 8 * 160 + 36;
   assert.equal(sizeAt(across, { width: 1500, height: 1080 }), 1, 'with keys: name and keycap would overrun');
   assert.equal(sizeAt(across, { width: 1400, height: 1080 }), 2, 'without keys: the name alone fits');
+});
+
+test("on the pad a tab's keycap is the pad's button, never its name's words", () => {
+  const { ui } = fakeInterface(1600, 1080);
+  BINDS.device = 'pad';
+  try {
+    const words = nodesOf(tabsNode(ui, 'journal', 8 * 200 + 36, { width: 1600, height: 1080 }, 1)).flatMap(
+      (node) => node.text?.words ?? [],
+    );
+    assert.ok(!words.some((said) => said.startsWith('pad:')), words.join(' | '));
+  } finally {
+    BINDS.device = 'keys';
+  }
 });
