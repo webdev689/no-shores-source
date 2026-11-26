@@ -3,15 +3,16 @@
 // varied step's goal (a puzzle's, a ward's, an ambush's), and the scenes each step of a road says. The rules judge
 // every goal and give every reward; the page only shows.
 import book from '../../../../content/quests/quests.json' with { type: 'json' };
-import type { QuestState } from '../../network/questMessages.ts';
+import { FIGURE_STATES, type QuestState } from '../../network/questMessages.ts';
 import type { Quest as Tracked, Step } from '../tasks.ts';
 
 /** A goal as the file writes it: its tracker words, its count (1 when left out), its kind, and what its kind names:
  *  the counter a `talk` goal speaks at (`to`), the scene said as it is met, the node and place a goal stands at, the
  *  places an `escort` or a `tail` walks between (`from`, `to`) and its figure (`who` a speaker, `foe` a roster type)
  *  with the line said as it first walks (`greet`), a `defend` goal's ward, a `puzzle`'s points and their `order`, a
- *  `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`) and an escort's
- *  `shout` as an ambush springs, and the slot a `buy` or a `wear` goal names. The rest the rules read alone. */
+ *  `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`), an escort's `shout`
+ *  as an ambush springs, its `mount` as it waits for the player to get on their horse and the coat of the horse it
+ *  rides (`horse`), and the slot a `buy` or a `wear` goal names. The rest the rules read alone. */
 export interface Goal {
   readonly kind: string;
   readonly text: string;
@@ -33,6 +34,8 @@ export interface Goal {
   readonly wrong?: string;
   readonly shout?: string;
   readonly greet?: string;
+  readonly mount?: string;
+  readonly horse?: string;
   readonly order?: readonly number[];
   readonly slot?: string;
   readonly types?: readonly string[];
@@ -117,17 +120,23 @@ export function openGoals(state: QuestState | null | undefined): { readonly goal
  *  quarry that noticed, the player seen) is tried again. An escort waits on no clock: it waits for the player. */
 const CLOCKED: ReadonlySet<string> = new Set(['race', 'defend', 'tail', 'unseen']);
 
+/** What an escort's step says under it while its figure waits for the player, near it, to get on their horse: that,
+ *  or, `horsed` false (none worn in the Mount slot), where one is had. */
+const MOUNT_NOTES = { horsed: 'Get on your horse', none: 'No horse: the Tack in Overlook gives one' } as const;
+
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
  *  count, ticked once met; the clock running beside the first unmet goal that runs it, a ward's health beside its
- *  defence while it stands, and a puzzle's points lit of all of them. None while no quest is walked. The clock runs
- *  down `ran` seconds from the room's last word on it, never below none. */
-export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracked | null {
+ *  defence while it stands, a puzzle's points lit of all of them, and under an escort waiting for the player to mount
+ *  what to do (`MOUNT_NOTES`). None while no quest is walked. The clock runs down `ran` seconds from the room's last
+ *  word on it, never below none. */
+export function trackedOf(state: QuestState | null | undefined, ran = 0, horsed = true): Tracked | null {
   const now = walked(state);
   if (!state || !now) return null;
   const clocked = now.task.goals.findIndex(
     (goal, index) => CLOCKED.has(goal.kind) && !met(goal, now.counts[index] ?? 0),
   );
-  const { points = [], clock, ward } = state;
+  const { points = [], clock, ward, figures = [] } = state;
+  const mounting = figures.some((figure) => figure.state === FIGURE_STATES.mounting);
   const steps = now.task.goals.map((goal, index): Step => {
     const left = Math.max(0, most(goal) - (now.counts[index] ?? 0));
     const shown = { text: goal.text, done: left === 0 };
@@ -135,6 +144,7 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracke
     if (index === clocked && clock !== undefined && clock !== null)
       return { ...shown, clock: Math.max(0, clock - ran) };
     if (goal.kind === 'defend' && ward) return { ...shown, share: ward.health };
+    if (goal.kind === 'escort' && mounting) return { ...shown, note: horsed ? MOUNT_NOTES.horsed : MOUNT_NOTES.none };
     if (goal.kind === 'puzzle' && points.length > 0)
       return { ...shown, count: `${points.filter((point) => point.lit).length}/${points.length}` };
     return most(goal) > 1 ? { ...shown, count: left } : shown;

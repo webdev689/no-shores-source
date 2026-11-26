@@ -132,8 +132,9 @@ pub struct Arrival {
     pub node: String,
 }
 
-/// A figure met at a place and walked to another while the player keeps within `near`: who, the scene said as they
-/// meet (`greet`), an ambush stood halfway and its bark.
+/// A figure met at a place and ridden to another at a gallop while the player rides within `near`: who, the coat of
+/// the horse they ride (`horse`), the scene said as they set off (`greet`), an ambush stood halfway and its bark, and
+/// the line said as they wait for the player to get on their horse (`mount`).
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Escort {
@@ -141,11 +142,13 @@ pub struct Escort {
     pub from: String,
     pub to: String,
     pub who: String,
+    pub horse: String,
     pub near: f64,
     pub greet: Option<String>,
     #[serde(default)]
     pub ambush: Foes,
     pub shout: Option<String>,
+    pub mount: Option<String>,
 }
 
 /// A figure followed from place to place, never nearer than `far` nor past `near`: a speaker's look or a roster
@@ -412,7 +415,7 @@ impl Goal {
     #[must_use]
     pub fn lines(&self) -> Vec<&str> {
         let lines: Vec<&Option<String>> = match self {
-            Goal::Escort(escort) => vec![&escort.greet, &escort.shout],
+            Goal::Escort(escort) => vec![&escort.greet, &escort.shout, &escort.mount],
             Goal::Tail(tail) => vec![&tail.greet, &tail.noticed],
             Goal::Defend(defend) => vec![&defend.lost],
             Goal::Puzzle(puzzle) => vec![&puzzle.wrong],

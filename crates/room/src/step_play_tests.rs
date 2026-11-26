@@ -9,7 +9,7 @@ use crate::asks::{Asked, NOT_YET, OUT_OF_REACH};
 use crate::garrison::garrison_tests::{baked_ground, run_baked};
 use crate::quests::foes_of;
 use crate::quests::quests_tests::{counted, joined, living, node_room, on_goal, run, shoot_dead, stand_at};
-use crate::steps::steps_tests::{changed, met, step_of};
+use crate::steps::steps_tests::{changed, met, riding, step_of};
 use gear::quests::{Defend, GoalKind, Puzzle};
 
 /// The file's first defence, a room of its node with its place at the middle, and a player on it standing at a point.
@@ -152,6 +152,7 @@ fn a_ward_and_its_wave_and_an_ambush_stand_only_within_the_rooms_cap_on_foes() {
     let places = [(escort.from.as_str(), [0.0, 10.0], 20.0), (escort.to.as_str(), [0.0, -10.0], 20.0)];
     let mut room = node_room(&escort.node, &places);
     let player = joined(&mut room, &on_goal(key), [0.0, 12.0]);
+    riding(&mut room, player);
     room.foes_most = 1;
     run(&mut room, 600);
     let state = room.step_seen(player).figures[5] as u8;
@@ -345,6 +346,7 @@ fn an_escorts_ambush_fought_before_a_rejoin_drops_nothing_again_as_a_defences_wa
     let places = [(escort.from.as_str(), [0.0, 10.0], 20.0), (escort.to.as_str(), [0.0, -10.0], 20.0)];
     let mut room = node_room(&escort.node, &places);
     let player = joined(&mut room, &on_goal(key), [0.0, 12.0]);
+    riding(&mut room, player);
     let ambush = |room: &mut Room| {
         for _ in 0..1200 {
             if !living(room).is_empty() {
@@ -360,6 +362,7 @@ fn an_escorts_ambush_fought_before_a_rejoin_drops_nothing_again_as_a_defences_wa
     room.leave(player);
     run(&mut room, 2);
     let back = joined(&mut room, &kept, [0.0, 12.0]);
+    riding(&mut room, back);
     let again = ambush(&mut room);
     assert!(!again.is_empty() && again.iter().all(|id| room.quests.spoilless.contains(id)), "fought before: nothing");
     assert!(room.player(back).is_some());

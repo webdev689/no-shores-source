@@ -9,8 +9,8 @@ const CAST: &str = "content/story/cast.json";
 /// they put on the screen.
 pub const QUESTS: &str = "content/quests/quests.json";
 /// The fields of a quest, a task or a goal that name a scene, a speaker, or words shown on the screen.
-const SCENE_FIELDS: [&str; 11] =
-    ["begin", "start", "end", "scene", "greet", "shout", "lost", "late", "wrong", "noticed", "seen"];
+const SCENE_FIELDS: [&str; 12] =
+    ["begin", "start", "end", "scene", "greet", "shout", "mount", "lost", "late", "wrong", "noticed", "seen"];
 const SPEAKER_FIELDS: [&str; 1] = ["who"];
 const SHOWN_FIELDS: [&str; 3] = ["name", "task", "text"];
 

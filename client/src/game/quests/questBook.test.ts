@@ -183,6 +183,17 @@ test('the tracker runs a clock as m:ss for a race, a defence, a tail and an unse
   assert.equal(trackedOf(onTask(LAMP, escort.task, [], { clock: 7 }))?.steps[escort.goal]?.clock, undefined);
 });
 
+test('an escort waiting for its player to mount says so under its step, and where a horse is had without one', () => {
+  const escort = stepOf(LAMP, 'escort');
+  const figure = (state: number) => [{ look: 1, x: 0, y: 0, z: 0, facing: 0, state }];
+  const noteOf = (state: number, horsed: boolean) =>
+    trackedOf(onTask(LAMP, escort.task, [], { figures: figure(state) }), 0, horsed)?.steps[escort.goal]?.note;
+  assert.equal(noteOf(5, true), 'Get on your horse');
+  assert.equal(noteOf(5, false), 'No horse: the Tack in Overlook gives one');
+  assert.equal(noteOf(1, true), undefined, 'riding: nothing');
+  assert.equal(noteOf(0, false), undefined, 'too far off to be waited for: the waypoint leads');
+});
+
 test("a defence shows its ward's health; a puzzle its points lit of all", () => {
   const defend = stepOf(STORM, 'defend');
   const ward = { x: 0, y: 0, health: 0.64 };
@@ -259,14 +270,14 @@ test('no speaker says more than two lines in a row where one scene follows anoth
   }
 });
 
-test('every scene a road names is in its lines: begins, starts, ends, goals met, greetings, failures and shouts', () => {
+test('every scene a road names is in its lines: begins, starts, ends, goals met, greetings, failures, shouts and mounts', () => {
   const scenes = scenesOf(houses, castOf(castFile));
   for (const quest of QUESTS)
     for (const named of [
       quest.begin,
       ...quest.tasks.flatMap((task) => [task.start, task.end]),
       ...quest.tasks.flatMap((task) =>
-        task.goals.flatMap((goal) => [goal.scene, goal.greet, failLine(goal), goal.shout]),
+        task.goals.flatMap((goal) => [goal.scene, goal.greet, failLine(goal), goal.shout, goal.mount]),
       ),
     ])
       if (named !== undefined) assert.ok(scenes[named], `${quest.id} names ${named}`);

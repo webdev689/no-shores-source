@@ -31,6 +31,14 @@ pub(crate) fn changed(goal: &GoalDef, change: impl FnOnce(&mut Goal)) -> &'stati
     Box::leak(Box::new(goal))
 }
 
+/// Puts a player on a horse worn in their Mount slot, as their page riding would.
+pub(crate) fn riding(room: &mut Room, player: PlayerId) {
+    if !room.player(player).expect("in").character.may_ride() {
+        crate::gear_tests::horsed(room, player);
+    }
+    room.players.get_mut(&player).expect("in").mounted = true;
+}
+
 #[test]
 fn a_figure_walks_the_paths_that_join_two_places_and_straight_where_none_does() {
     let (from, to) = (place("A", [0.0, 0.0], 20.0), place("B", [100.0, 0.0], 20.0));
@@ -76,6 +84,7 @@ fn an_escort_walks_while_the_player_keeps_within_its_reach_holds_for_its_ambush_
     let places = [(escort.from.as_str(), [0.0, 100.0], 65.0), (escort.to.as_str(), [0.0, -100.0], 70.0)];
     let mut room = node_room(&escort.node, &places);
     let player = joined(&mut room, &on_goal(key), [0.0, 160.0]);
+    riding(&mut room, player);
     run(&mut room, 2);
     let look = u16::try_from(gear::quests::speaker_place(&escort.who).expect("it speaks") + 1).unwrap_or(0);
     assert_eq!(figure(&room, player), (look, [0.0, 100.0], WAITING), "60 m off: it waits at its first place");
@@ -135,6 +144,7 @@ fn an_escort_waits_while_the_player_is_past_its_reach() {
     let places = [(escort.from.as_str(), [0.0, 100.0], 40.0), (escort.to.as_str(), [0.0, -100.0], 65.0)];
     let mut room = node_room(&escort.node, &places);
     let player = joined(&mut room, &on_goal(key), [0.0, 100.0 + escort.near * 0.6]);
+    riding(&mut room, player);
     run(&mut room, 60);
     let (_, walked, state) = figure(&room, player);
     assert!(walked[1] < 99.0 && state == WALKING, "it walks with them near: {walked:?}");
@@ -143,6 +153,72 @@ fn an_escort_waits_while_the_player_is_past_its_reach() {
     let (_, waited, state) = figure(&room, player);
     assert_eq!(state, WAITING);
     assert!((waited[1] - walked[1]).abs() < 4.0, "it waits for them: {waited:?}");
+}
+
+#[test]
+fn an_escort_waits_for_its_player_to_get_on_their_horse_then_rides_at_a_gallop_within_30_m() {
+    let (key, goal) = step_of(GoalKind::Escort, |_| true);
+    let Goal::Escort(escort) = &goal.goal else { unreachable!("an escort") };
+    assert!((escort.near - 30.0).abs() < f64::EPSILON, "the player keeps within about 30 m: {}", escort.near);
+    let places = [(escort.from.as_str(), [0.0, 100.0], 40.0), (escort.to.as_str(), [0.0, -200.0], 65.0)];
+    let mut room = node_room(&escort.node, &places);
+    let player = joined(&mut room, &on_goal(key), [0.0, 110.0]);
+    run(&mut room, 60);
+    assert_eq!(figure(&room, player).1, [0.0, 100.0], "on foot beside it, it does not set off");
+    assert_eq!(figure(&room, player).2, MOUNTING, "it waits for them to mount");
+    riding(&mut room, player);
+    run(&mut room, 60);
+    let (_, rode, state) = figure(&room, player);
+    assert_eq!(state, WALKING);
+    let gallop = movement::TUNING.ride_gallop;
+    assert!((gallop - 12.0).abs() < f64::EPSILON && (FIGURE_RIDE - gallop).abs() < f64::EPSILON, "the gallop");
+    assert!((100.0 - rode[1] - gallop).abs() < 0.1, "a second at a gallop, 12 m: {rode:?}");
+    for _ in 0..60 {
+        let behind = figure(&room, player).1[1] + 25.0;
+        stand_at(&mut room, player, [0.0, behind]);
+        run(&mut room, 1);
+    }
+    let (_, kept, state) = figure(&room, player);
+    assert!(state == WALKING && kept[1] < rode[1] - 11.0, "25 m behind, still within reach: {kept:?}");
+    stand_at(&mut room, player, [0.0, kept[1] + 10.0]);
+    room.players.get_mut(&player).expect("in").mounted = false;
+    run(&mut room, 60);
+    let (_, off, state) = figure(&room, player);
+    assert_eq!(state, MOUNTING, "off their horse, it reins in");
+    assert!((off[1] - kept[1]).abs() < 0.5, "and stands: {off:?}");
+    let tail = step_of(GoalKind::Tail, |_| true).1;
+    let Goal::Tail(tail) = &tail.goal else { unreachable!("a tail") };
+    assert!(tail.who.is_some() || tail.foe.is_some(), "a tail's quarry stays on foot, at the walk: {FIGURE_PACE}");
+}
+
+#[test]
+fn a_galloping_figure_turns_at_a_corner_no_faster_than_a_turn_a_second() {
+    let (key, goal) =
+        step_of(GoalKind::Escort, |goal| matches!(goal, Goal::Escort(escort) if escort.ambush.is_empty()));
+    let Goal::Escort(escort) = &goal.goal else { unreachable!("an escort") };
+    let places = [(escort.from.as_str(), [0.0, 0.0], 10.0), (escort.to.as_str(), [100.0, -60.0], 10.0)];
+    let mut room = node_room(&escort.node, &places);
+    room.set_paths(vec![vec![[0.0, -5.0], [0.0, -60.0], [95.0, -60.0]]]);
+    let player = joined(&mut room, &on_goal(key), [0.0, 5.0]);
+    riding(&mut room, player);
+    let (mut facing, mut turned, mut most) = (None::<f64>, 0.0_f64, 0.0_f64);
+    for _ in 0..900 {
+        let at = room.step_seen(player).figures.get(1..3).map(|at| [at[0], at[1]]);
+        if let Some(at) = at {
+            stand_at(&mut room, player, [at[0] - 5.0, at[1] + 5.0]);
+        }
+        run(&mut room, 1);
+        let Some(&now) = room.step_seen(player).figures.get(4) else { continue };
+        if let Some(was) = facing {
+            let step = libm::remainder(now - was, core::f64::consts::TAU).abs();
+            (turned, most) = (turned + step, most.max(step));
+        }
+        facing = Some(now);
+    }
+    assert!(met(&room, player, key), "it arrived");
+    assert!((turned - core::f64::consts::FRAC_PI_2).abs() < 0.05, "it turned the corner: {turned}");
+    let tick = FIGURE_TURN * movement::TICK_SECONDS;
+    assert!(most <= tick + 1e-9, "never more than {tick} a tick: {most}");
 }
 
 #[test]

@@ -81,21 +81,25 @@ export function metBetween(before: Kept, after: Kept): string[] {
 }
 
 /** The lines of a moment in the task walked between `before` and `after`: each goal's own line as its failures rise,
- *  and an escort's shout as an ambush stops its figure. */
+ *  an escort's shout as an ambush stops its figure, and its mount line as its figure begins to wait for the player to
+ *  get on their horse. */
 export function momentsBetween(before: Kept, after: Kept): string[] {
   const task = QUESTS[after.quest - 1]?.tasks[after.task];
   if (!task || before.quest !== after.quest || before.task !== after.task) return [];
   const failed = task.goals.filter((_goal, index) => (after.fails[index] ?? 0) > (before.fails[index] ?? 0));
-  const held = (states: readonly number[]) => states.includes(FIGURE_STATES.ambushed);
-  const shout = held(after.figures) && !held(before.figures) ? task.goals.find((goal) => goal.shout)?.shout : undefined;
-  return [...failed.map(failLine), shout].filter((scene) => scene !== undefined);
+  const began = (state: number) => after.figures.includes(state) && !before.figures.includes(state);
+  const shout = began(FIGURE_STATES.ambushed) ? task.goals.find((goal) => goal.shout)?.shout : undefined;
+  const mount = began(FIGURE_STATES.mounting) ? task.goals.find((goal) => goal.mount)?.mount : undefined;
+  return [...failed.map(failLine), shout, mount].filter((scene) => scene !== undefined);
 }
 
-/** An escort's or a tail's greeting, as its figure first walks in the task walked: waiting before, walking after. */
+/** An escort's or a tail's greeting, as its figure first walks in the task walked: waiting before (for the player to
+ *  come near, or to mount), walking after. */
 export function greetBetween(before: Kept, after: Kept): string | undefined {
   const task = QUESTS[after.quest - 1]?.tasks[after.task];
   if (!task || before.quest !== after.quest || before.task !== after.task) return undefined;
-  const starts = before.figures.includes(FIGURE_STATES.waiting) && after.figures.includes(FIGURE_STATES.walking);
+  const waited = [FIGURE_STATES.waiting, FIGURE_STATES.mounting].some((state) => before.figures.includes(state));
+  const starts = waited && after.figures.includes(FIGURE_STATES.walking);
   return starts ? task.goals.find((goal) => goal.greet)?.greet : undefined;
 }
 

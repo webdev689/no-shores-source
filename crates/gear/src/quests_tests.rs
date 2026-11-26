@@ -102,7 +102,7 @@ fn each_kind_of_goal_is_met_by_its_own_event_alone() {
         r#"{ "kind": "land", "island": "isle", "text": "t" }"#,
         r#"{ "kind": "scavenge", "text": "t" }"#,
         r#"{ "kind": "enter", "node": "n", "text": "t" }"#,
-        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "p", "who": "tobin", "near": 15, "text": "t" }"#,
+        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "p", "who": "tobin", "horse": "dun", "near": 30, "text": "t" }"#,
         r#"{ "kind": "tail", "node": "n", "from": "a", "to": "p", "foe": "Runner", "far": 10, "near": 40, "text": "t" }"#,
         r#"{ "kind": "defend", "node": "n", "place": "p", "ward": "w", "waves": [[["Runner", "Minor"]]], "text": "t" }"#,
         r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "text": "t" }"#,

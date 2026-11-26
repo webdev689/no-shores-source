@@ -284,7 +284,7 @@ test("a road's gift is toasted for a while", async () => {
   assert.deepEqual(quests.toasts, []);
 });
 
-test("a step's figures glide between the room's words, warmed to walk and stand; an arrived one stands where it is", async () => {
+test("a step's figures glide between the room's words, warmed to ride and stand; an arrived one stands where it is", async () => {
   const { quests, frame, clock, warmed } = roads();
   const { task } = stepOf(VEIL, 'escort');
   const wren = SPEAKERS.indexOf('wren') + 1;
@@ -293,20 +293,25 @@ test("a step's figures glide between the room's words, warmed to walk and stand;
   clock(0);
   quests.hear(walkingAt(0, 1));
   await frame();
-  assert.deepEqual(drawn(quests), [['walk', 0]]);
+  assert.deepEqual(drawn(quests), [['horsegallop', 0]]);
   clock(100);
   quests.hear(walkingAt(2, 1));
-  assert.deepEqual(drawn(quests), [['walk', 0]], 'the newest word comes: it sets off toward it');
+  assert.deepEqual(drawn(quests), [['horsegallop', 0]], 'the newest word comes: it sets off toward it');
   clock(150);
-  assert.deepEqual(drawn(quests), [['walk', 1]], 'half the time the last two words took');
+  assert.deepEqual(drawn(quests), [['horsegallop', 1]], 'half the time the last two words took');
+  assert.deepEqual(
+    quests.riders.map((rider) => [rider.feet[0], rider.mounted]),
+    [[1, true]],
+    'its hooves heard where it is drawn',
+  );
   clock(200);
-  assert.deepEqual(drawn(quests), [['walk', 2]], 'there');
+  assert.deepEqual(drawn(quests), [['horsegallop', 2]], 'there');
   clock(250);
-  assert.deepEqual(drawn(quests), [['walk', 2]], 'and waits for the next word there');
+  assert.deepEqual(drawn(quests), [['horsegallop', 2]], 'and waits for the next word there');
   clock(300);
   quests.hear(walkingAt(40, 3));
-  assert.deepEqual(drawn(quests), [['idle', 40]], 'one set down far off is not walked there; arrived, it stands');
-  assert.ok(warmed.every((moves) => moves.includes('walk') && moves.includes('idle')) && warmed.length > 0);
+  assert.deepEqual(drawn(quests), [['horseidle', 40]], 'one set down far off is not walked there; arrived, it stands');
+  assert.ok(warmed.every((moves) => moves.includes('horsegallop') && moves.includes('horseidle')) && warmed.length > 0);
   quests.hear(null);
   assert.deepEqual(drawn(quests), [], 'a room just joined');
   quests.hear(state({ ...walkingAt(0, 1), quest: { ...walkingAt(0, 1).quest!, claimed: false } }));

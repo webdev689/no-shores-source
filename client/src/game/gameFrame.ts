@@ -339,6 +339,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       (x, y) => parts.groundAt(x, y) ?? body.z,
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
+    here.questRiders = quests.riders;
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
     // While she speaks, none but her and the player stands within reach of the tour's eye.
     const near = [...shown.figures, ...nodes, ...walking, ...crews];

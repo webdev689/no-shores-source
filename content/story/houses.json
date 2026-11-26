@@ -138,10 +138,13 @@
       { "who": "maren", "say": "False lights, lit where our Beacon should have reached. Keep that boy safe." }
     ],
     "lampFold": [
-      { "who": "maren", "say": "Ewe Fold will take him in. Walk him there, and keep him close." }
+      { "who": "maren", "say": "Ewe Fold will take him in. Ride with him there, and keep him close." }
     ],
     "lampWalk": [
       { "who": "tobin", "say": "Stay close? The ones who lit those lights could be watching." }
+    ],
+    "lampMount": [
+      { "who": "tobin", "say": "Get up on your horse. I'm not riding out there alone." }
     ],
     "lampBarrows": [
       { "who": "maren", "say": "Those are our barrows. That's where the false lights burn. Keep him moving." }
@@ -249,6 +252,9 @@
     ],
     "veilWren": [
       { "who": "wren", "say": "You're the one Thule couldn't drown. Keep up, and keep quiet." }
+    ],
+    "veilMount": [
+      { "who": "wren", "say": "On your horse. We ride hard, or we don't ride." }
     ],
     "veilOrchard": [
       { "who": "wren", "say": "Collectors work this orchard. Head down, and carry something." }

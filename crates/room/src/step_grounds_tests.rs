@@ -54,13 +54,31 @@ fn every_escorts_and_tails_way_runs_the_paths_inside_its_section_over_walkable_g
         let behind = |at: [f64; 2], facing: f64| ahead(at, facing + core::f64::consts::PI, gap);
         let (_, facing) = along_way(&way, 0.0);
         let (mut room, player) = on_step(node, key, behind(from.at, facing));
-        let most = (length / FIGURE_PACE * 1.5) as u32 * 60 + 600;
-        let mut ticks = 0;
+        let ridden = matches!(goal.goal, Goal::Escort(_));
+        if ridden {
+            crate::steps::steps_tests::riding(&mut room, player);
+        }
+        let pace = if ridden { FIGURE_RIDE } else { FIGURE_PACE };
+        let most = (length / pace * 1.5) as u32 * 60 + 600;
+        let (mut ticks, mut was, mut ambushed) = (0, None::<f64>, false);
+        let floor = crate::Floor::Land(Box::new(node.ground.clone()));
+        let boxes: Vec<movement::Block> = node.boxes.iter().map(movement::Block::from_floats).collect();
         while ticks < most && room.player(player).expect("in").character.quest_now() == Some((key[0], key[1])) {
             run_once(&mut room);
             ticks += 1;
             let Some(Step { kind: Stepping::Figure(figure), .. }) = room.quests.steps.get(&player) else { continue };
             let (at, facing, ambush) = ([figure.at[0], figure.at[1]], figure.facing, figure.ambush.clone());
+            // At a gallop it turns a corner smoothly, its hooves on the ground a body stands on there.
+            let turn = was.map_or(0.0, |was| libm::remainder(facing - was, core::f64::consts::TAU).abs());
+            assert!(turn <= FIGURE_TURN * movement::TICK_SECONDS + 1e-9, "{}: turned {turn} in a tick", goal.text);
+            let ground = movement::blocks::ground_at(&boxes, &floor, at[0], at[1], figure.at[2] + 1.0);
+            assert!((figure.at[2] - ground).abs() < 0.5, "{}: off the ground at {at:?}", goal.text);
+            was = Some(facing);
+            if ambush.as_ref().is_some_and(|ids| !ids.is_empty()) && !ambushed {
+                ambushed = true;
+                let halfway = (figure.along - way_length(&figure.way) / 2.0).abs();
+                assert!(halfway < 1.0, "{}: its ambush stands halfway, {halfway:.1} m off", goal.text);
+            }
             for id in ambush.unwrap_or_default() {
                 room.foes.remove(&id);
             }
@@ -68,6 +86,10 @@ fn every_escorts_and_tails_way_runs_the_paths_inside_its_section_over_walkable_g
             assert!(room.put_player(player, x, y));
         }
         assert!(met(&room, player, key), "{}: arrived in {} s of {length:.0} m", goal.text, ticks / 60);
+        if let Goal::Escort(escort) = &goal.goal {
+            assert_eq!(ambushed, !escort.ambush.is_empty(), "{}: its ambush stood", goal.text);
+            assert!(ticks as f64 / 60.0 < length / FIGURE_PACE / 2.0, "{}: at a gallop, not a walk", goal.text);
+        }
         eprintln!(
             "{}: {} to {}, {length:.0} m along the paths, arrived in {} s",
             goal.text,

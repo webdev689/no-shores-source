@@ -13,8 +13,13 @@ use gear::quests::{Escort, Event, Goal, GoalDef, Place, Tail, speaker_place};
 use movement::Terrain;
 use std::collections::BTreeSet;
 
-/// A figure's walking pace, metres a second: the game's own walk.
+/// A figure's pace on foot (a tail's quarry), metres a second: the game's own walk.
 pub const FIGURE_PACE: f64 = movement::TUNING.walk;
+/// An escort's figure's pace on its horse, metres a second: the player's own gallop.
+pub const FIGURE_RIDE: f64 = movement::TUNING.ride_gallop;
+/// How fast a figure turns to face its way, radians a second: at a gallop a corner is rounded over a few metres, not
+/// in a tick, and the page between the room's words never sees it spin.
+pub const FIGURE_TURN: f64 = core::f64::consts::TAU;
 /// How long a failed step waits before it is tried again, in ticks: a defence the first time (then twice as long each
 /// time, to `RETRY_MOST`), a tail noticed, an unseen step seen.
 pub const RETRY_TICKS: u64 = 600;
@@ -39,6 +44,8 @@ pub const WALKING: u8 = 1;
 pub const NOTICED: u8 = 2;
 pub const ARRIVED: u8 = 3;
 pub const HELD: u8 = 4;
+/// An escort's figure waiting, its player near, for them to get on their horse.
+pub const MOUNTING: u8 = 5;
 
 /// A player's step running in this room: its goal, by its quest, task and place in the task, its failures this task,
 /// and how it stands.
@@ -398,8 +405,14 @@ impl Room {
     fn run_step(&mut self, player: PlayerId, goal: &'static GoalDef) {
         let Some(at) = self.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y]) else { return };
         match &goal.goal {
-            Goal::Escort(escort) => self.walk_figure(player, goal, (escort.near, None, !escort.ambush.is_empty()), at),
-            Goal::Tail(tail) => self.walk_figure(player, goal, (tail.near, Some(tail.far), false), at),
+            Goal::Escort(escort) => {
+                let afoot = !self.players.get(&player).is_some_and(|found| found.mounted);
+                let ambushed = !escort.ambush.is_empty();
+                self.walk_figure(player, goal, (FIGURE_RIDE, escort.near, None, ambushed, afoot), at);
+            }
+            Goal::Tail(tail) => {
+                self.walk_figure(player, goal, (FIGURE_PACE, tail.near, Some(tail.far), false, false), at)
+            }
             Goal::Defend(defend) => self.defend(player, goal, defend, at),
             Goal::Unseen(unseen) => self.keep_unseen(player, goal, unseen, at),
             Goal::Race(race) => self.race(player, goal, race, at),
