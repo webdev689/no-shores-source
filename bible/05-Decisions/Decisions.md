@@ -402,6 +402,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]
 - [[Foe Arrivals as Claude Builds Them]]
 - [[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]
+- [[The Landing's Groups Are Let Go as Territories Are]]
 - [[The Desktop App Opens on a Launcher in the Game's Look]]
 - [[The Desktop App Stays on Electron]]
 - [[The Desktop App Releases With Each Merge That Changes It]]

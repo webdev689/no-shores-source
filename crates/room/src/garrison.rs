@@ -491,7 +491,11 @@ impl Room {
         let foes = &self.foes;
         let fallen = |id: &FighterId| foes.get(id).is_none_or(|foe| foe.fighter.dead());
         self.garrison.retain(|post| !post.arrival || !post.standing.iter().all(fallen));
+        let let_go = self.let_go_posts();
         for post in 0..self.garrison.len() {
+            if let_go.contains(&self.garrison[post].at) {
+                continue;
+            }
             self.make_whole(post);
             let found = &self.garrison[post];
             let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());

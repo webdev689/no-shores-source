@@ -25,14 +25,16 @@ pub(crate) const LIFT_FAR: f64 = 220.0;
 pub(crate) const LIFT_AFTER: u64 = 90 * 60;
 
 /// A foes' site as a patrol's room keeps it: where it is; whether it has stood its group since it was last let go
-/// (or given it up, finding nowhere for it); where that group's post stands; and the last tick a player came within
-/// LIFT_FAR of it.
+/// (or given it up, finding nowhere for it); where that group's post stands; the last tick a player came within
+/// LIFT_FAR of it; and whether it is one of the landing's own posts, laid as the room opened, whose post is kept while
+/// its group is let go (the owner's "Release the landing's groups too").
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Site {
     pub at: [f64; 2],
     pub stood: bool,
     pub post: Option<[f64; 3]>,
     pub near: u64,
+    pub own: bool,
 }
 /// Each site's group is drawn from a stream of its own, by where the site is, so the order sites are named in moves
 /// none.
@@ -65,8 +67,9 @@ pub(super) fn first_post<T>(
 
 impl Room {
     /// A patrol's foes' sites, as its node's file names them, but those its own square holds, whose ground its
-    /// garrison holds already; none stand yet. Any other room's garrison is drawn as one (a mission's or a dungeon's
-    /// gives ground as one encounter), so it takes none.
+    /// garrison holds already; none stand yet. Its landing's own posts, standing, are sites too, let go and standing
+    /// again as the rest are. Any other room's garrison is drawn as one (a mission's or a dungeon's gives ground as one
+    /// encounter), so it takes none.
     pub fn set_foe_sites(&mut self, sites: &[[f64; 2]]) {
         let Some(square) = self.own_square().filter(|_| self.place == Some(gear::gate::Place::Patrol)) else { return };
         self.quests.square = Some(square);
@@ -74,7 +77,17 @@ impl Room {
             (square.min_x..=square.max_x).contains(&x) && (square.min_y..=square.max_y).contains(&y)
         };
         let kept = sites.iter().filter(|site| !held(site));
-        self.foe_sites = kept.map(|&at| Site { at, stood: false, post: None, near: 0 }).collect();
+        self.foe_sites = kept.map(|&at| Site { at, stood: false, post: None, near: 0, own: false }).collect();
+        let clock = self.clock;
+        let own = self.garrison.iter().filter(|post| !post.arrival);
+        let own = own.map(|post| Site {
+            at: [post.at[0], post.at[1]],
+            stood: true,
+            post: Some(post.at),
+            near: clock,
+            own: true,
+        });
+        self.foe_sites.extend(own.collect::<Vec<_>>());
     }
 
     /// The middle and radius of each of the zone's public events' grounds, running or not.
@@ -100,13 +113,19 @@ impl Room {
     pub(super) fn stand_sites(&mut self) {
         let events = self.event_grounds();
         for site in 0..self.foe_sites.len() {
-            let Site { at, stood: tried, .. } = self.foe_sites[site];
+            let Site { at, stood: tried, own, .. } = self.foe_sites[site];
             let within = |reach: f64| {
                 self.players.values().any(|player| apart([player.fighter.body.x, player.fighter.body.y], at) <= reach)
             };
-            let evented = events.iter().any(|&(middle, radius)| apart(at, middle) <= radius + EVENT_CLEAR);
             // One within CLEAR_AROUND would see it stand beside them, as a cleared group waits for none to be.
-            if tried || evented || !within(SITE_NEAR) || within(CLEAR_AROUND) {
+            if tried || !within(SITE_NEAR) || within(CLEAR_AROUND) {
+                continue;
+            }
+            if own {
+                self.stand_own(site);
+                continue;
+            }
+            if events.iter().any(|&(middle, radius)| apart(at, middle) <= radius + EVENT_CLEAR) {
                 continue;
             }
             // Mixed by odd numbers so the stream's fold to 32 bits keeps both halves of each of the two.
@@ -138,7 +157,7 @@ impl Room {
             let Some(mut post) = first_post(&mut tries, &mut draws, |_, _| 0, stood) else { continue };
             let (levels, chance) = (self.quests.levels, self.shield_chance());
             post.girds = (0..post.members.len()).map(|nth| gird_of(seed, nth as u32, levels, chance)).collect();
-            self.foe_sites[site] = Site { at, stood: true, post: Some(post.at), near: self.clock };
+            self.foe_sites[site] = Site { at, stood: true, post: Some(post.at), near: self.clock, own: false };
             self.garrison.push(post);
             self.stand_post(self.garrison.len() - 1);
         }
@@ -183,6 +202,12 @@ impl Room {
             if let Some(first) = self.garrison[post].standing.first() {
                 self.unvisited.remove(first);
             }
+            if self.foe_sites[site].own {
+                // The landing's own post is kept, empty, to stand its group again as it was laid.
+                (self.garrison[post].standing, self.garrison[post].cleared_at) = (Vec::new(), None);
+                self.foe_sites[site].stood = false;
+                continue;
+            }
             (self.foe_sites[site].stood, self.foe_sites[site].post) = (false, None);
             lifted.push(post);
         }
@@ -190,6 +215,24 @@ impl Room {
         for post in lifted.into_iter().rev() {
             self.garrison.remove(post);
         }
+    }
+
+    /// Stands the landing's own post of `site` again, on the ground, its group as it was laid, if the living foes leave
+    /// it room.
+    fn stand_own(&mut self, site: usize) {
+        let Some(at) = self.foe_sites[site].post else { return };
+        let Some(post) = self.garrison.iter().position(|post| post.at == at) else { return };
+        if self.living_foes() + self.garrison[post].members.len() > self.others_most() {
+            return;
+        }
+        (self.foe_sites[site].stood, self.foe_sites[site].near) = (true, self.clock);
+        self.stand_post(post);
+    }
+
+    /// Where the landing's own posts let go stand empty, waiting for a player: none of them is cleared, nor stands
+    /// again by airship.
+    pub(super) fn let_go_posts(&self) -> Vec<[f64; 3]> {
+        self.foe_sites.iter().filter(|site| site.own && !site.stood).filter_map(|site| site.post).collect()
     }
 
     /// Makes a half-fallen patrol group whole once no player has come within CLEAR_AROUND of its post for

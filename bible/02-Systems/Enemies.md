@@ -266,8 +266,11 @@ WebAssembly, so names, factions and weapons are read in one place.
   the open sky once no player is within 40 m. One no player, standing or fallen, has come within 220 m of for 90 s,
   its foes all idle and none arriving, is let go with its post, out of sight, cleared or not, and stands afresh,
   already on the ground, when a player next comes within 150 m: so a zone's territories stand where its players are,
-  within the room's limit (`lift_sites`). A mission's, a dungeon's or a boss's node stands none. A site's group is a
-  band, never one of the smaller groups.
+  within the room's limit (`lift_sites`). A patrol's landing's own groups, its bands and smaller groups, are let go
+  the same way ([[The Landing's Groups Are Let Go as Territories Are]]), their posts kept, and each stands again as it
+  was laid, already on the ground, when a player next comes within 150 m and none within 40 m, its places in the
+  meantime the rest of the zone's (`stand_own`). A mission's, a dungeon's or a boss's node stands none. A site's group
+  is a band, never one of the smaller groups.
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
   post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
