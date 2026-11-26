@@ -8,6 +8,8 @@ code:
   - tools/forge/tools/forgeViewer/pack.py
   - tools/forge_publish.py#publish
   - tools/forge_publish.py#add
+  - tools/forge_publish.py#figures
+  - tools/forge/tools/sprite-forge/quaff.py
   - tools/forge_dyes.mjs
   - content/forge/renders.json
 ---
@@ -23,17 +25,22 @@ The [[Test Ground]] shows them.
   own; every other race is the bare body with its skin coloured as a frame is composed.
 - **Layers**: 660 on the man and 666 on the woman. Clothes, armour sets, helms, hair, worn and held weapons, bows,
   staffs, shields, instruments, tools and the horse a rider sits on.
-- **Moves**: 125 on each adult body. They include walking, running, fighting with each weapon, the owner's blows (an
+- **Moves**: 127 on each adult body. They include walking, running, fighting with each weapon, the owner's blows (an
   overhead, a side cut and a thrust in each of five holds: one hand, a haft, a long hilt, a pair, and a staff in both
   hands a forearm apart), the bow's own hold, walk and sprint, casting, dying, climbing, riding, driving a wagon's
   bench and playing each instrument. Some moves turn the body by CC0 motion: Quaternius's libraries and KayKit's clips.
+  In the walk the free left arm hangs as near the side as the right fist's carry.
+- **The healing drink** (`quaff.py`, [[The Healing Drink Is a Red Flask, Drunk in Both Views, and Heals in Red Light]]):
+  four frames over the drink's second, the weapon put away. The right fist takes a small round flask of glowing red
+  draught from the belt, raises it to the chin, tips it up at the lips with the head thrown back, and lowers it before
+  the chest; the left arm hangs. The flask is a prop layer of its own (`prop_flask`, props3p.py `flask`) drawn in it.
 - **The blows**: each captured whole from Quaternius's sword clips, the body stepping, turning and crouching into it:
   the overhead raised behind the shoulder and brought down across the body, the side cut a low lunge sweeping across
   the front, the thrust a crouched charge with the arm driven straight ahead. Both hands stay on a two-handed weapon;
   a pair's left blade holds at guard while the right strikes.
 - **Actions on the move**: each blow, the bow's shot, a gun's and the braced pistols' shots, the reloads and the cast
   drawn again with the walk's hips and legs under the action's chest, which keeps the action's turn and half its lean
-  (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk` and so on). The sprint's fists close thumb up, the
+  (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk`, `quaffwalk` and so on). The sprint's fists close thumb up, the
   wrist straight.
 - **The dodge roll**: drawn by DFO for No Shores, outside its own studio, on both adult bodies and what they wear, but
   no weapon, held or worn: a weapon is not seen through a roll
@@ -138,16 +145,23 @@ published whenever `artbirds.py`, `weaponart.py`, the item forge's models
 when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
 manifest; a second job uploads them with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]), and a commit then takes the
 manifest into `content/forge/renders.json`.
-A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
-either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
-strip reaches R2 from one. A fresh checkout holds no strips, so every strip of each layer named is drawn.
-It may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
+A run asked for may also draw the first person's dagger and sword blade layers (`firstperson`: runs split by `;`, each
 `weapon|metals`, the weapon `dagger` or `sword`, the metals empty for every make), for the right hand and the left's
-twin, into the studio's `forge/WEAPON02/layers` or `forge/WEAPON04/layers`, with a limit of 90 minutes when no
-figures are asked for (every make of both weapons is reckoned at about 40 on four cores, from one record's time); the hands are not drawn again, and the wear
+twin, into the studio's `forge/WEAPON02/layers` or `forge/WEAPON04/layers`, with a limit of 90 minutes (every make of
+both weapons is reckoned at about 40 on four cores, from one record's time); the hands are not drawn again, and the wear
 maps are not, as the game reads none. `fplayers.py --check` checks, without rendering, that every record is cut from
 the canvas it was rendered on.
 The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without rendering.
+
+The `figures` workflow draws figure strips for both bodies and publishes them, only when a run is asked for (`anims`,
+the moves, and `layers`, empty for every layer): a cloud session holds no Cloudflare key, so this is how a figure strip
+reaches R2 from one. It runs a job for each set of layers (`layers.py --set`: classic, wardrobe, armour), body and move
+in parallel, and one for each body's hair and beasts' layers in every move (`forge_publish.py jobs`), each with up to
+360 minutes and no secret. Each draws from an index begun empty, so its move's cell is reckoned from its own layers. One
+job then lays them all into the published tables (`forge_publish.py figures`, held by `tools/test_forge_figures.py`):
+the classic set's job gives a move its cell, a layer drawn in another cell keeps that cell as its own, and a published
+layer not drawn again keeps the cell its strip was drawn in. It publishes only once every job has drawn, and its log
+ends with the manifest.
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes
 `tools/lattice/render-request.txt`, whose first line names the foes, or by hand on `main`. Its actions are pinned by
