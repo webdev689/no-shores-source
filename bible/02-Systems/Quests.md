@@ -30,7 +30,7 @@ code:
   - client/src/game/journalWords.ts#questCardsOf
   - client/src/game/characterPage.ts#NO_ART_WORDS
   - crates/protocol/src/quest_wire.rs#quests_of
-  - crates/bake/src/lib.rs#places_of
+  - crates/bake/src/sites.rs#places_of
   - client/src/game/quests/questBook.ts#trackedOf
   - client/src/game/quests/questBook.ts#linesBetween
   - client/src/game/quests/questWatch.ts#QuestWatch

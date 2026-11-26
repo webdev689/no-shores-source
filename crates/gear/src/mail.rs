@@ -75,6 +75,13 @@ impl Character {
     /// and the new one among them, and the newest letter kept says so: the new one, or the one before it when the new
     /// one went. Only the new letter's room is made, so a mailbox a later build kept fuller loses no more.
     pub fn post(&mut self, source: Source, posted: Posted) {
+        // A Vestige left lying in a passage zone goes into the dive's haul, not the mail.
+        if let Posted::Vestige(vestige) = &posted
+            && matches!(source, Source::LeftBehind | Source::LeftLying)
+            && self.haul_vestige(vestige)
+        {
+            return;
+        }
         let (vestige, item) = match posted {
             Posted::Vestige(vestige) => (Some(vestige), None),
             Posted::Item(item) => (None, Some(item)),
@@ -91,17 +98,16 @@ impl Character {
         }
     }
 
-    /// Keeps a Vestige a first clear pays: in the carried ten, else in the vault, else posted, so it is never lost.
+    /// Keeps a Vestige a first clear pays: in the carried ten, else in the vault, else posted, so it is never lost; never
+    /// in a dive's haul, which a fall loses, wherever the player stands.
     pub fn keep_paid(&mut self, vestige: Vestige) {
-        if self.pick_up(vestige.clone()) {
+        let vaulted = self.vestiges_held(false) >= VESTIGES_MOST;
+        if vaulted && self.vestiges_held(true) >= VAULT_MOST {
+            self.post(Source::Clear, Posted::Vestige(vestige));
             return;
         }
-        if self.vestiges_held(true) < VAULT_MOST {
-            let id = self.take_id();
-            self.vestiges.insert(id, (Vestige { id, ..vestige }, true));
-        } else {
-            self.post(Source::Clear, Posted::Vestige(vestige));
-        }
+        let id = self.take_id();
+        self.vestiges.insert(id, (Vestige { id, ..vestige }, vaulted));
     }
 
     /// Takes a Vestige into the carried ten, or with them full posts it from `source`; whether it was carried.

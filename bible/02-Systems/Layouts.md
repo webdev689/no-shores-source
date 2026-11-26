@@ -71,7 +71,15 @@ from the sea, fresh water and the claim's edge), then:
    for a dock, a river bank for a mill, a slope for a quarry. Areas keep at least 50 m of open ground between their
    reaches and spread over the claim, so something stands every couple of hundred metres. A patrol area's landing
    comes first on its seaward side, then a gate at its edge toward each instance it leads to (the mission, dungeon
-   and boss nodes nearer it than any other patrol area), then the brief's areas. An outpost site's landing comes first
+   and boss nodes of its own region, `content/world/regions.json`, nearer it than any other patrol area of that
+   region), then the brief's areas. Once the zone is planned, a crossing gate toward each other patrol area of its
+   island stands on its landing (`crossings.rs`), marked as crossing (`crosses`, which `is_crossing` reads and the
+   page's `across`; no other gate is taken for one), 10 m round, 0.7 of the landing's reach out toward that zone, its
+   map joining it to the landing by a way: added last, it moves none of the zone's places, ways or runs (on Saltmere
+   each of its three zones has one toward each of the others). An
+   instance whose region holds no patrol area has no way in from one: it is landed at from the sea. The bake reads
+   the regions into the briefs (`Briefs::regions`), and the settle's `links_of` reads them there.
+   An outpost site's landing comes first
    the same way, then its plot near it. An instance's way in comes first,
    at its edge toward its patrol area, and each later area lies further on, so the way through runs one way.
 2. **The blocks.** A hamlet stands a tavern, houses, a shop and a temple; a farm, a ruin, a keep, a graveyard, a
@@ -108,7 +116,9 @@ from the sea, fresh water and the claim's edge), then:
    more the steeper it climbs, water is bridged at a price, a way already laid costs a third so later ways branch
    off it, and a slow noise bends it as worn tracks wander. It ends on a block's own streets and leaves a village
    between its buildings. No way steps from dry land over a river without setting foot in it, so every crossing is found and
-   bridged. A way too steep for its tier is laid as a footpath, then stepped; an area no way reached is
+   bridged; two ways crossing at one place, the second's deck lying on the first's, cross by the first bridge alone
+   (`pieces_land.rs` `deck_over`). A way too steep for its tier is laid as a footpath, then stepped; an area no way
+   reached is
    joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
    arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers: a timber deck 0.5 m
    thick, so a body walks on it, 0.3 m over the land at its higher end, 3 m past each bank and on out along a lower
@@ -359,10 +369,9 @@ out past its edge.
   it keep off it; every ceiling over a building run's way stands 2.6 m or more over its floor. A body walks every run
   from its mouth to within 3 m of its door, and no further; up each keep's stair to its turret's top; and over each
   undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`). Every patrol zone of every
-  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with two failures
-  known and named with their reasons, so a new one fails CI ([[The Audit's Leftovers Are Fixed as Claude Suggested]]):
-  on the savanna a body walks round a rampart's door across its face, and at highwater-glen a ledge's way meets a
-  face a body would climb. They wait on the owner's call on the
+  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with one failure
+  known and named with its reason, so a new one fails CI ([[The Audit's Leftovers Are Fixed as Claude Suggested]]):
+  on the savanna a body walks round a rampart's door across its face. It waits on the owner's call on the
   runs there; only Saltmere's zones have runs of their own yet.
 
 ## Laid on the land
@@ -504,7 +513,11 @@ line. On continent 1 every space is reached from the first (`crates/room/tests/m
 ## Gates
 
 A gate's basin and an instance's way in are passages ([[Game]]): standing in one, the player is offered "Enter" the
-instance or "Return to" the patrol area (E), and goes through the veil to arrive at the other's way in or gate. A way
+instance or "Return to" the patrol area (E), and goes through the veil to arrive at the other's way in or gate. A
+gate the layout marks as crossing to another patrol area (its `crosses`) offers "Go to" it: E plays the way between
+the two zones over the island, never the veil, framed on the two, while the room of that zone's gate toward the one
+left is joined, then the walk in (`client/src/layout/passage.ts`, `client/src/game/gates.ts`, the flow's `cross`,
+`client/src/game/passages/wayBetween.ts`, as the passages' ways play, [[Passages]]). A way
 into a locked node ([[World Map]], "Seen whole, reached by nodes") is shut: it offers "<name> is locked", and E there
 does nothing.
 
@@ -539,7 +552,7 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 
 ## Limits
 
-- Only Saltmere's three zones have runs; the other 24 zones' briefs name none yet.
+- Only Saltmere's three zones have runs; the other 8 zones' briefs name none yet.
 - Few mesas show their ledges: a second face needs a radius of 49 m, which only a wide basin's rim has room for, so
   most stand in one face under their flat top.
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.

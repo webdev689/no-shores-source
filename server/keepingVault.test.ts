@@ -38,6 +38,7 @@ const keeperOf = (room: RoomDoor, kept: Awaited<ReturnType<typeof world>>['kept'
     kept,
     {
       keptApart: (player) => room.keptApart(player),
+      judgedMoved: (player) => room.judgedMoved(player),
       restoreJoined: (player, body, vault) => room.restoreJoined(player, body, vault),
       own: (player, account) => room.own(player, account),
       shut: (player, body) => room.shut(player, body),

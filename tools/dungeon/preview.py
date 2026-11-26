@@ -189,7 +189,7 @@ def _frame(item, camera, light, piece):
 
 def _label(module):
     landmark = catalog.landmark(module)
-    return landmark['name'] if landmark else catalog.piece_of(module)
+    return landmark['name'] if landmark else catalog.piece_of(module) or module
 
 
 def sheet(style, modules, counts, folder, pictures=None):

@@ -629,6 +629,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   any quest uses it with data alone. It reads what the player does, never a press of its own, so keys and touch tick it
   alike, and it writes the page only when its words change. At the larger step its words stand at 22 and it is 396 px
   wide (264 below).
+- **In a passage zone** ([[Passages]], "Played"): the zone's deal stands in the task tracker, a public event's steps
+  before it; an onward mouth's sign stands high in the view on coming near it; the haul is framed on the right while
+  anything is carried; and the leave held adds "What you carry is lost" under its place. At a run's sealed door the
+  mouths' card is drawn as an entrance's card is.
 - **A sea fight's task**: the fight's task in the tracker says to defeat their crews, counts the ships fighting the
   player still afloat and their men, and says they need not be sunk, as the rules strike a ship whose men are gone
   or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]). At sea DFO's messages are the
@@ -990,14 +994,17 @@ never while a press is held. Each press is an ask the room answers.
     for its card is cut short there and read whole to a screen reader with the rest of its card. With
     none to show (before any room's word, or a word not on the player's own character), it says why, the two banners
     resting over the line.
-  - **The bounties**: a slot for each bounty the board shows the player (the town's six, the pledged faction's three
-    and any other faction's held that day), three to a row under "Bounties", with how many are taken; each taken the
-    board's tile with no press (below, "The bounty board"), a slot not taken an empty frame. The tile pointed at or
-    holding the keys is ringed white just outside its edge and its card floats beside it, as the menu floats every
-    card: its name, cut short where too long, its kind, its words, its count, what it pays, for a faction's whether it
-    counts now, and along its foot its state once done or turned in. Bounties are taken and turned in at the board
-    alone. The column stands at the right wherever it fits beside the quests, as wide as its head; on a phone (under
-    600 px) it stands under them.
+  - **The bounties**: a slot for each bounty the board shows the player (the town's eight, the passages' two among
+    them, the pledged faction's three and any other faction's held that day), three to a row under "Bounties", with
+    how many are taken; each taken the board's tile with no press (below, "The bounty board"), a slot not taken an
+    empty frame. The tile pointed at or holding the keys is ringed white just outside its edge and its card floats
+    beside it, as the menu floats every card: its name, cut short where too long, its kind, its words, its count, what
+    it pays, for a faction's whether it counts now, and along its foot its state once done or turned in. Bounties are
+    taken and turned in at the board alone. The column stands at the right wherever it fits beside the quests, as wide
+    as its head; on a phone (under 600 px) it stands under them. Under the board's, each Atheric bounty held or
+    finished is a card of its own, as Destiny 1's exotic bounties stood apart: Lanternfall's name in the Atheric
+    colour, the cold lantern and its words, and its steps, each done with a tick, the one under way with its gauge and
+    count, those to come dimmed ([[Passages]], "The Journal and the board").
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
     time; This week's, a page of the week and the countdown to the weekly reset; Later's, its name alone. Each row
@@ -1005,15 +1012,17 @@ never while a press is held. Each press is an ask the room answers.
     tier's seas (calm water, a rearing wave, a maelstrom) with this character's tick or padlock, the day's modifier's
     icon on the Elite and the Abyss seas it is on, what it pays (the Vestige glyph and a chest), and each island's
     dungeon with its levels, read down its columns, the band this character's level falls in lit; and the bounties (a
-    sealed notice), the town's six and the faction's three said at the foot.
+    sealed notice), "Posted each day on the board in Overlook’s plaza." said at the foot; and each island's lamp of
+    the day (the passages' lamp, gold once it has paid today, grey until then).
     Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
     burning eye), each its level, its tick or padlock, a "Playlist" mark whose words say it is queued from the
     Playlist beside any port, the Abyss's five revives (a heart) and its wipe (a skull), its
     modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
     Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
     an arc, Exposure's broken heart) and its pay (the Vestige
-    in its rarity, Essence, the boon's star); and the Abyss boon while held, by XP's glyph; and Breaches (a rift),
-    each encounter paying once a week at each tier, launched from the Playlist. The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
+    in its rarity, Essence, the boon's star); the Abyss boon while held, by XP's glyph; Breaches (a rift), each
+    encounter paying once a week at each tier, launched from the Playlist; and each island's four lamps in its
+    passages, each gold once lit this week and grey while cold. The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
     to a screen reader with its row as the focus takes it; the arrows step between the rows. Each countdown is drawn
     afresh each frame. The panel drops from under the hourglass, or with T, on its own ground, edged and ruled in
     brass, the focus going to its Close; Escape, Close, T or the hourglass takes it up, the focus going back to the
@@ -1488,8 +1497,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   - **Beside it**: "When Overlook needs a hand, it posts a bounty here. The factions post their own." with the
     player's Aurem and, pledged, their faction's rank by its emblem, each named by its card; then in a scroll of their
     own, so every row stays in reach on a short screen, "Available bounties" ruled under (a step smaller on a phone);
-    the town's six in a row and the pledged faction's three under them, then any other faction's held that day, or
-    three locked wells with a padlock while pledged to none; and right under the tiles, as the Tracker lays its
+    the town's eight in a row (the passages' two after its six) and the pledged faction's three under them, then any
+    other faction's held that day, or three locked wells with a padlock while pledged to none; and right under the tiles, as the Tracker lays its
     refresh, a sunk well with "New bounties" and the time to the next board.
   - **A tile** has no words. Its face says who posts it (`bountyFaces.ts`), a sign 24 cells square grounded and
     framed as an emblem's: every town bounty a pinned writ under a red wax seal with two ribbons on slate, every
@@ -1500,7 +1509,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
     the keys it is ringed white just outside its edge. A screen reader hears its name, kind, task and state, what it
     pays, for a faction's whether it counts now, and what pressing it does, or why the board is shut.
   - **The card** of the tile pointed at or holding the keys floats beside it (`bountyCardNode`): its name in capitals
-    and its kind ("Land bounty" by the mark of where it counts, or "Lamplighters bounty" by its faction's emblem) on a
+    and its kind ("Land bounty" by the mark of where it counts, two peaks, a wave, an arched door, or for the
+    passages' "Passage bounty" a lamp; or "Lamplighters bounty" by its faction's emblem) on a
     band in its poster's colour; its words; its count once taken, green once done; "Rewards" with what it pays the player now by its tier (`payOf`: XP by its
     letters, and the town's Aurem by its coin or the faction's reputation by its emblem), resting once turned in; for
     a faction's, "Counts while pledged to them and wearing their cape", ticked while it is met (`serves`); and along

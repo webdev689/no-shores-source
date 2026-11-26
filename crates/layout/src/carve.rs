@@ -483,7 +483,7 @@ mod tests {
     }
 
     fn area_at(at: [f64; 2]) -> Area {
-        Area { kind: AreaKind::Wilds, name: String::new(), at, radius: 30.0, leads_to: None }
+        Area { kind: AreaKind::Wilds, name: String::new(), at, radius: 30.0, leads_to: None, crosses: false }
     }
 
     fn way(tier: Tier, points: Vec<[f64; 2]>) -> Path {

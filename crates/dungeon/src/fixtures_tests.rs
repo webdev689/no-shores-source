@@ -1,10 +1,11 @@
 use crate::{
-    BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CELL_M, CRYSTALS_TOP_M, Cell, Dungeon, FUNGUS_TOP_M, Kind,
-    LANTERN_M, Piece, SIDES, STYLES, prop_model,
+    BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CELL_M, CRYSTALS_TOP_M, Cell, Dungeon, EVERY_STYLE, FUNGUS_TOP_M,
+    Kind, LANTERN_M, Piece, SIDES, prop_model,
 };
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
-    (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
+    (0..count)
+        .map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), EVERY_STYLE[seed as usize % EVERY_STYLE.len()]))
 }
 
 fn cell_at(dungeon: &Dungeon, x: f64, y: f64) -> usize {
@@ -81,7 +82,7 @@ fn each_fixture_burns_where_its_kind_does() {
                     assert!(!torch_walls.contains(&(cell, side)), "never on a torch's wall");
                 }
                 Kind::Lantern => {
-                    assert_eq!(look, "mines", "lanterns hang in the mines");
+                    assert!(["mines", "chalk"].contains(&look), "lanterns hang in the mines and the chalk");
                     assert!(fixture.solid.is_none() && (z - LANTERN_M).abs() < 1e-12);
                     let on_post = dungeon.props.iter().any(|prop| {
                         let Some([min_x, min_y, max_x, max_y, _]) = prop.solid else { return false };

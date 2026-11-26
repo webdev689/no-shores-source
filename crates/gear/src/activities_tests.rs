@@ -41,13 +41,13 @@ fn each_island_draws_one_of_its_patrols_dungeons_each_day_the_same_for_everyone(
         drawn,
         [
             ("gullwing-vale", 0),
-            ("highwater-fells", 2),
-            ("elder-thicket", 2),
-            ("sunscorched-barrens", 2),
-            ("thunderhoof-grasslands", 1),
-            ("emerald-tangle", 1),
-            ("greywind-steppe", 2),
-            ("bogmire-sloughs", 2),
+            ("highwater-fells", 0),
+            ("elder-thicket", 0),
+            ("ochre-wastes", 1),
+            ("lion-grasslands", 2),
+            ("emerald-tangle", 0),
+            ("kurgan-plateau", 2),
+            ("bogmire-sloughs", 0),
             ("whitewind-tundra", 0),
         ]
     );
@@ -55,7 +55,7 @@ fn each_island_draws_one_of_its_patrols_dungeons_each_day_the_same_for_everyone(
     assert_eq!(dungeon_of_the_day(20_778, "continent-0"), None);
     for island in &ISLAND_PLACES {
         let seen: BTreeSet<_> = (0..365).map(|day| dungeon_of_the_day(20_000 + day, island.continent)).collect();
-        assert_eq!(seen.len(), 9, "{}: all nine of its dungeons in a year", island.continent);
+        assert_eq!(seen.len(), island.patrols.len() * 3, "{}: all its patrols' dungeons in a year", island.continent);
     }
 }
 

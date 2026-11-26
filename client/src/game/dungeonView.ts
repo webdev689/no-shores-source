@@ -9,7 +9,7 @@ import { standIn } from '../standIns.ts';
 import { MATERIALS } from '../city/pictures.ts';
 import type { CityClimate } from '../city/plan.ts';
 import type { Gpu } from '../gpu.ts';
-import type { ForgedModel } from '../models/model.ts';
+import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { dungeonBook, type SmallBook } from './dungeonBook.ts';
 import { propPlans } from './dungeonCells.ts';
 import { CLUSTER_COUNT, LightClusters, MOST_LISTED } from './dungeonClusters.ts';
@@ -41,8 +41,10 @@ type Drawn = {
   readonly burning: readonly Light[];
   /** The open portal's light, half way up its face and a little out from it. */
   readonly portalLight: Light;
+  /** A passage zone's pieces' lights as they burn now, numbered after the portal's. */
+  pieceLights: readonly Light[];
   /** Picks the lights each frame is lit by. */
-  readonly picker: NearestLights;
+  picker: NearestLights;
   readonly book: SmallBook;
   readonly wood: readonly [number, number];
   readonly painter: CityPainter;
@@ -62,6 +64,9 @@ type Drawn = {
   drowned: string;
   /** The lights the walls were last drawn by, the nearest the eye: the figures are lit by the same. */
   nearest: readonly Light[] | null;
+  /** A passage zone's pieces from their pack, and what they were last laid for. */
+  pieces: Buffers | null;
+  piecesKey: string;
 };
 
 export class DungeonView {
@@ -99,13 +104,15 @@ export class DungeonView {
   }
 
   /** Draws this dungeon from now on, in the island's climate: its exit door in `door`, its cache's wood the
-   *  climate's timber, and each style's pieces and landmarks from its pack in `packs`. */
+   *  climate's timber, and each style's pieces and landmarks from its pack in `packs`; `pieces` lays a passage
+   *  zone's pieces as they first stand, so the pictures they wear are in the dungeon's book (`setPieces`). */
   set(
     layout: DungeonLayout,
     climate: CityClimate,
     door: readonly [number, number],
     props: PropTable,
     packs: ReadonlyMap<StyleKey, ModulePack> = new Map(),
+    pieces?: (mesh: MeshBuilder) => void,
   ): void {
     this.clear();
     const { device } = this.gpu;
@@ -127,7 +134,9 @@ export class DungeonView {
       },
       dressing,
     );
-    const book = dungeonBook(layout, climate, door, model.parts);
+    const laid = meshBuilder();
+    pieces?.(laid);
+    const book = dungeonBook(layout, climate, door, [...model.parts, ...laid.model().parts]);
     const painter = new CityPainter(this.gpu, book, () => undefined);
     const view = device.createBuffer({
       size: VIEW_FLOATS.all * 4,
@@ -185,6 +194,7 @@ export class DungeonView {
       layout,
       burning,
       portalLight,
+      pieceLights: [],
       picker: new NearestLights(burning, portalLight),
       book,
       wood,
@@ -202,7 +212,24 @@ export class DungeonView {
       water: null,
       drowned: '',
       nearest: null,
+      pieces: null,
+      piecesKey: '',
     };
+  }
+
+  /** A passage zone's pieces as `lay` lays them and the lights they burn (`passagePieceLights`), built again only
+   *  when `key` (what they stand as) changes; none without `lay`. */
+  setPieces(lay: ((mesh: MeshBuilder) => void) | null, key: string, lit: readonly Light[] = []): void {
+    const drawn = this.drawn;
+    if (!drawn || (key === drawn.piecesKey && (drawn.pieces !== null) === (lay !== null))) return;
+    drawn.piecesKey = key;
+    const after = drawn.portalLight.number + 1;
+    drawn.pieceLights = lit.map((light, index) => ({ ...light, number: after + index }));
+    drawn.picker = new NearestLights([...drawn.burning, ...drawn.pieceLights], drawn.portalLight);
+    for (const buffer of [drawn.pieces?.vertices, drawn.pieces?.indices]) buffer?.destroy();
+    const mesh = meshBuilder();
+    lay?.(mesh);
+    drawn.pieces = lay ? this.buffersOf(mesh.model(), drawn.book) : null;
   }
 
   /** The cache as the room last said, its chest built again only once it changes. */
@@ -257,9 +284,11 @@ export class DungeonView {
     return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
   }
 
-  /** The torches and the fixtures, and the portal while it stands open, which is while the cache does. */
+  /** The torches, the fixtures and the pieces' lights, and the portal while it stands open, which is while the cache
+   *  does. */
   private lights(drawn: Drawn): readonly Light[] {
-    return drawn.shown?.open ? [...drawn.burning, drawn.portalLight] : drawn.burning;
+    const burning = [...drawn.burning, ...drawn.pieceLights];
+    return drawn.shown?.open ? [...burning, drawn.portalLight] : burning;
   }
 
   /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it: its depth first,
@@ -299,9 +328,10 @@ export class DungeonView {
     this.drawMeshes(pass, drawn);
   }
 
-  /** Draws the floor, the cache's chest, the chests to find and the drowned floors' water with the pipeline set. */
+  /** Draws the floor, the cache's chest, the chests to find, the drowned floors' water and a passage's pieces with the
+   *  pipeline set. */
   private drawMeshes(pass: GPURenderPassEncoder, drawn: Drawn): void {
-    for (const buffers of [drawn.floor, drawn.chest, drawn.finds, drawn.water]) {
+    for (const buffers of [drawn.floor, drawn.chest, drawn.finds, drawn.water, drawn.pieces]) {
       if (!buffers) continue;
       pass.setVertexBuffer(0, buffers.vertices);
       pass.setIndexBuffer(buffers.indices, 'uint32');
@@ -327,6 +357,8 @@ export class DungeonView {
       drawn.finds?.indices,
       drawn.water?.vertices,
       drawn.water?.indices,
+      drawn.pieces?.vertices,
+      drawn.pieces?.indices,
     ])
       buffer?.destroy();
     this.drawn = null;

@@ -496,7 +496,7 @@ fn a_players_gear_carries_its_day_and_board_and_no_bounty_held_from_another_day(
         .collect();
     assert_eq!(tiers, gear::bounties::board(20_778).map(|bounty| bounty.tier).to_vec(), "each bounty's tier crosses");
     let (day, rows, xp, aurem) = read(&room);
-    assert_eq!((day, rows.len()), (20_778, 6));
+    assert_eq!((day, rows.len()), (20_778, 8));
     assert_eq!(rows[2], ("Sink or take 3 ships.".to_owned(), 3, 0, true, false));
     assert_eq!(rows.iter().filter(|row| row.3).count(), 1);
     assert_eq!((xp, aurem), (600, 36));
@@ -555,7 +555,7 @@ fn a_players_gear_carries_each_bountys_pool_and_name() {
     let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
     let bounties = gear.bounties().expect("the board");
     let pools: Vec<u8> = bounties.iter().map(|bounty| bounty.pool()).collect();
-    assert_eq!(pools, [0, 0, 1, 1, 2, 2], "two on land, two at sea, two in dungeons");
+    assert_eq!(pools, [0, 0, 1, 1, 2, 2, 3, 3], "two on land, two at sea, two in dungeons, two in the passages");
     let names: Vec<&str> = gear::bounties::board(20_778).iter().map(|bounty| bounty.name).collect();
     assert_eq!(bounties.iter().map(|bounty| bounty.name().unwrap_or_default()).collect::<Vec<_>>(), names);
 }

@@ -136,10 +136,10 @@ fn with_open(change: impl FnOnce(&mut Landmass) -> Result<(), String>) -> Vec<u8
 
 /// Opens one continent of a layout: `{ "layout": <layout file>, "id": <continent id>, "edits": <edits file or null>,
 /// "keep": bool, "rmb": <the RMB index or null>, "rmbBlocks": [<each RMB block file>], "forged": { "buildings",
-/// "props" }, "briefs": <the briefs> }`, the last three optional. Generates its land with the edits on it and answers
-/// its view, or a header holding only `error`. Only a kept landmass stays open for strokes, its city settled on it
-/// with the RMB index's blocks, or none, and its nodes' layouts with what they are built with; one not kept is a
-/// preview and leaves the open one alone.
+/// "props" }, "briefs": <the briefs>, "regions": <the regions> }`, the last four optional. Generates its land with
+/// the edits on it and answers its view, or a header holding only `error`. Only a kept landmass stays open for
+/// strokes, its city settled on it with the RMB index's blocks, or none, and its nodes' layouts with what they are
+/// built with; one not kept is a preview and leaves the open one alone.
 #[must_use]
 pub fn open_view(request: &[u8]) -> Vec<u8> {
     let opened = read(request).and_then(|request| {

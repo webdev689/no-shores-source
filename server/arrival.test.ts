@@ -10,6 +10,8 @@ import {
   type Reach,
   arrives,
   cameOutOf,
+  crossingAsked,
+  crossingsOf,
   reachOf,
   shipOf,
   toCoast,
@@ -161,6 +163,7 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
       const body = held.get(player);
       return body === undefined ? null : { body, vault: '{}' };
     },
+    judgedMoved: () => false,
     restoreJoined: (player, kept) => held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player) => held.has(player),
@@ -220,6 +223,41 @@ test('a node’s room lets go a character that came by no way leading there, unl
   assert.equal(far.held.get(3), '{"start":1}', 'with her own character');
 });
 
+test('a passage zone takes no one of a company playing there who is not on its dive', async () => {
+  const made = accounts();
+  const tokens: Record<string, string> = {};
+  for (const name of ['Ada', 'Ben']) {
+    tokens[name] = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+    await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, tokens[name]);
+  }
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const [now, here] = [() => made.clock.now, () => true];
+  // Ben begins his dive elsewhere and comes in on it; the zone judges by the dive alone.
+  const before = roomOf();
+  before.held.set(1, '{"passage":1}');
+  const patrol = new Keeper(kept, before, 'node-tidewall', () => undefined);
+  assert.equal(await patrol.signIn(1, tokens['Ben'] ?? '', now, here), true);
+  await patrol.leave(1);
+  const name = 'passage-continent-1-w2900-z4';
+  const zone = roomOf();
+  for (const player of [1, 2]) zone.held.set(player, '{}');
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(kept, zone, name, (player, why) => sent.push([player, why])).judgingArrivals(
+    (_from, body) => body?.includes('passage') === true,
+    true,
+  );
+  assert.equal(await keeper.signIn(1, tokens['Ben'] ?? '', now, here), true, 'on his dive');
+  // Ada, of his company and on no dive, is not let in through him, as she would be into a node's room.
+  assert.equal(await keeper.signIn(2, tokens['Ada'] ?? '', now, here), false);
+  assert.deepEqual(sent, [[2, NO_WAY_HERE]]);
+});
+
 test('a player walks between an outpost site’s wild ground and a guild’s plot on it, and no farther', () => {
   const plot = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
   assert.equal(arrives(plot, 'node-oakfast-landing', null, reach()), true);
@@ -251,4 +289,41 @@ test('a guild dungeon’s run is entered from its guild’s outpost alone, and l
     assert.equal(arrives(run, 'sea', OFF_COAST, reach()), false, 'nor from the sea');
   }
   assert.equal(cameOutOf(plot, plot, 0), false, 'the outpost itself is no run');
+});
+
+test("each of Saltmere's patrol zones is walked into from both others through their gates, at the same seas", () => {
+  const index = [
+    { id: 'saltgrass-downs', kind: 'patrol', continent: 'continent-1', gates: ['gullwing-vale', 'driftwood-moors'] },
+    { id: 'gullwing-vale', kind: 'patrol', continent: 'continent-1', gates: ['saltgrass-downs', 'driftwood-moors'] },
+    { id: 'driftwood-moors', kind: 'patrol', continent: 'continent-1', gates: ['saltgrass-downs', 'gullwing-vale'] },
+  ];
+  const continents = [{ id: 'continent-1', outline: COAST }];
+  const vale = reachOf(index, continents, 'gullwing-vale');
+  assert.deepEqual(vale?.gatedFrom, ['saltgrass-downs', 'driftwood-moors']);
+  assert.equal(arrives('node-gullwing-vale', 'node-saltgrass-downs', null, vale), true);
+  assert.equal(arrives('node-gullwing-vale--elite', 'node-driftwood-moors--elite', null, vale), true);
+  assert.equal(arrives('node-gullwing-vale--elite', 'node-saltgrass-downs', null, vale), false, 'at another tier');
+});
+
+test('a player crossing from a patrol zone joins the next at the gate toward the one left, once it keeps them so', () => {
+  const text = JSON.stringify({
+    id: 'saltgrass-downs',
+    crossings: [{ name: 'gullwing-vale', at: [40, -20], radius: 18 }],
+  });
+  const crossings = crossingsOf(text);
+  assert.deepEqual(crossings, [{ name: 'gullwing-vale', at: [40, -20] }]);
+  assert.deepEqual(crossingsOf('{"id":"tidewall"}'), [], 'a file with none');
+  assert.deepEqual(crossingsOf('not JSON'), []);
+  const asked = (query: string) =>
+    crossingAsked(new Request(`https://rooms/room/node-saltgrass-downs${query}`), crossings);
+  assert.deepEqual(asked('?from=gullwing-vale'), { name: 'gullwing-vale', at: [40, -20] });
+  assert.equal(asked('?from=tidewall'), null, 'no gate leads there');
+  assert.equal(asked(''), null);
+  // Kept as come from that node at the same seas, the player stays at its gate; else the landing stands them.
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale', 'gullwing-vale'), true);
+  assert.equal(cameOutOf('node-saltgrass-downs--elite', 'node-gullwing-vale--elite', 'gullwing-vale'), true);
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--elite', 'gullwing-vale'), false, 'other seas');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'sea', 'gullwing-vale'), false, 'landed from the sea');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-tidewall', 'gullwing-vale'), false, 'from elsewhere');
+  assert.equal(cameOutOf('node-saltgrass-downs', 'node-gullwing-vale--dungeon-0', 'gullwing-vale'), false);
 });

@@ -57,8 +57,9 @@ are in [[Crew]].
   to the fed one's level; the kept one keeps its rarity, nodes, choices and experience, the fed one is gone. Each
   level climbed costs 150 Aurem and 2 of the kept module's first material.
 - **Found** (`ship::found`): each piece of what floats where a ship went down holds one common material (1 to 3), a
-  chance of Heartwood (2% a rank) and of a module (3% and 1% a rank); its chest holds three (2 to 4 each), Heartwood
-  25% and 5% a rank (a chest is rolled at a Miniboss's or a Boss's) and a module one time in two. An island's wreckage
+  chance of Heartwood (2% a rank) and of a module (36% and 12% a rank, so an hour at sea finds about a patrol zone's
+  gear by colour: [[Activities]], "The band"); its chest holds three (2 to 4 each), Heartwood 25% and 5% a rank (a
+  chest is rolled at a Miniboss's or a Boss's) and a module always. An island's wreckage
   holds one (1 to 2), Heartwood 1.5% and a module 3%, so a cove's two or three wrecks together hold less than a Minor
   ship's whole lot; an isle's three (3 to 6) and one in five. A sea Breach's hold always
   holds a module, three materials of 4 to 8 and two Heartwood. Every Heartwood and module chance is raised by the
@@ -115,7 +116,8 @@ are in [[Crew]].
 - **Its hands.** The player's ship carries its hull's men, the Sloop ten ([[Crew]], [[Shipyard]]): balls cut them down as a captain's are, a thinned crew
   reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
-- **What a fight pays.** A captain going down pays as twelve kills of a foe of its rank would, at its level, raised by
+- **What a fight pays.** A captain going down pays as twenty-one kills of a foe of its rank would (so an hour at
+  sea sits in the band beside a patrol zone's: [[Activities]], "The band"), at its level, raised by
   the sea's tier (`reward_sinking`, `SINKING_KILLS`): its XP to the ship, its fitted modules and every officer aboard,
   and its XP and Aurem to the player, their worn Art and their faction, as a kill pays them; nothing to a player whose
   ship is four levels or more below it, as on land. A player fighting on a boarded deck meanwhile is paid on the deck

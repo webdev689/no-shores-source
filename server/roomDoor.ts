@@ -45,6 +45,11 @@ export interface RoomDoor {
    *  crates/room-wasm/src/run_door.rs reads it), and a patrol's dungeon's from its patrol's node file's text, whose lock
    *  it keeps; false for an ask that does not read, a dungeon no rule lays, or a patrol's without its file. */
   openRun(ask: string, patrolText?: string): boolean;
+  /** Opens a passage zone's room from its ask (JSON: its island, the week of its web, its zone, its route and the Unix
+   *  minute it opens, as crates/room-wasm/src/passage_room_door.rs reads it); false for a zone no week's web holds. */
+  openPassage(ask: string): boolean;
+  /** An island's passages' web for a week, as JSON (`web_json`); empty for an island with none. */
+  passageWeb(island: string, week: number): string;
   /** Opens a Breach's run from its ask (JSON: its gate's patrol zone, its tier 0 Normal or 1 Hard and the Unix minute
    *  it opens, as crates/room-wasm/src/breach_door.rs reads it); false for an ask naming no Breach or tier. */
   openBreach(ask: string): boolean;
@@ -154,6 +159,9 @@ export interface RoomDoor {
   /** A player's character as it is kept between sessions (JSON), at sea with their ship's hurts (a new one until the
    *  accounts gave theirs); null in a fleet or for no such player. */
   character(player: number): string | null;
+  /** Whether what a player's arrival in the next room is judged by (their dive and the lamps they lit) moved since this
+   *  was last asked; asking clears it. Never at sea or in a fleet. */
+  judgedMoved(player: number): boolean;
   /** A new character wearing a plain sword and armour (JSON): what scripted players start from. */
   kitted(): string;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
@@ -266,6 +274,8 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_dungeon(address: number, length: number, dungeon: number): number;
   room_open_run(address: number, length: number, patrolAddress: number, patrolLength: number): number;
+  room_open_passage(address: number, length: number): number;
+  room_passage_web(week: number, address: number, length: number): bigint;
   room_open_breach(address: number, length: number): number;
   room_breach_company(player: number, address: number, length: number): number;
   room_breach_inside(address: number, length: number): number;
@@ -303,6 +313,7 @@ interface RoomExports {
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
+  room_judged_moved(player: number): number;
   room_kitted(): bigint;
   room_mail_lying(player: number): void;
   room_shut(player: number, address: number, length: number): bigint;
@@ -399,6 +410,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
         lend(patrol, (patrolAt) => exports.room_open_run(address, length, patrolAt, patrol.length));
       return openWith(opens, ask);
     },
+    openPassage: (ask) => openWith(exports.room_open_passage, ask),
+    passageWeb: (island, week) =>
+      new TextDecoder().decode(
+        take(openWithAnswer((address, length) => exports.room_passage_web(week >>> 0, address, length), island)),
+      ),
     openBreach: (ask) => openWith(exports.room_open_breach, ask),
     breachCompany: (player, word) =>
       openWith((address, length) => exports.room_breach_company(player >>> 0, address, length), word),
@@ -487,6 +503,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
     },
+    judgedMoved: (player) => exports.room_judged_moved(player) === 1,
     kitted: () => new TextDecoder().decode(take(exports.room_kitted())),
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),

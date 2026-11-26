@@ -67,6 +67,18 @@ fn a_first_clears_vestige_is_carried_else_vaulted_else_posted_and_never_lost() {
 }
 
 #[test]
+fn a_vestige_paid_in_a_passage_zone_is_carried_or_vaulted_never_hauled() {
+    let mut character = crate::dive::dive_tests::diving();
+    character.keep_paid(vestige(Rarity::Legendary));
+    assert_eq!(character.vestiges_held(false), 1, "carried");
+    for _ in 0..VESTIGES_MOST {
+        character.keep_paid(vestige(Rarity::Legendary));
+    }
+    assert_eq!(character.vestiges_held(true), 1, "the ten full: vaulted");
+    assert!(character.passage.as_ref().is_some_and(|dive| dive.haul.vestiges.is_empty()), "none in the haul");
+}
+
+#[test]
 fn a_salvaged_module_whose_slot_carries_nine_goes_to_the_mail() {
     let mut character = carrying_nine_hulls();
     let taken = character.take_salvage(Salvage { module: Some(module()), ..Salvage::default() });

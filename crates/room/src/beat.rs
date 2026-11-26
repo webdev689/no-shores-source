@@ -144,6 +144,12 @@ impl Beat {
         self.stops.iter().map(|&stop| self.point_at(stop)).collect()
     }
 
+    /// Its way round, a point every metre.
+    #[cfg(test)]
+    pub(crate) fn way(&self) -> Vec<[f64; 3]> {
+        (0..=self.length().ceil() as u32).map(|metre| self.point_at(f64::from(metre))).collect()
+    }
+
     /// The length of its way round.
     fn length(&self) -> f64 {
         self.along[self.along.len() - 1]
