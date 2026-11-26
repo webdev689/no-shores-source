@@ -1,6 +1,14 @@
 // A patrol's dungeon entrances drawn with the land: each its forged model, lifted and turned where it stands, in the
 // island's climate's pictures, through the city's own pipelines (lit by the sun, in its shadows and casting them).
-import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, originInstance } from '../city/cityGpu.ts';
+import {
+  CITY_BUFFER_USAGE,
+  CITY_VIEW_BYTES,
+  type CityPipelines,
+  cityPipelines,
+  darkPoolMap,
+  originInstance,
+  poolBindings,
+} from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
 import { CityPainter, painting } from '../city/painter.ts';
 import { standIn } from '../standIns.ts';
@@ -17,7 +25,7 @@ import { skyUniformFor } from '../sky/skyUniform.ts';
 import { smallBook, type Wanted } from './dungeonBook.ts';
 import { ENTRANCE_MODELS, type Entrance, layModel, standOf } from './entrances.ts';
 
-const VIEW_BYTES = 96;
+const VIEW_BYTES = CITY_VIEW_BYTES;
 
 /** The entrances' models laid as one, each turned and lifted into the world, from `origin` (x, y). */
 export function entrancesModel(
@@ -54,6 +62,7 @@ type Drawn = {
   readonly view: GPUBuffer;
   readonly buffers: readonly GPUBuffer[];
   readonly tiles: GPUTexture;
+  readonly dark: GPUTexture;
   readonly vertices: GPUBuffer;
   readonly indices: GPUBuffer;
   readonly place: GPUBuffer;
@@ -96,6 +105,8 @@ export class EntranceView implements Drawer {
       usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
     });
     const painter = new CityPainter(this.gpu, book, () => undefined);
+    // the entrances light no pools at night: a dark light map, let go with the tiles
+    const dark = darkPoolMap(device);
     const view = buffer(new ArrayBuffer(VIEW_BYTES), CITY_BUFFER_USAGE.uniform);
     const sizes = new Float32Array(PICTURE_LAYERS * 4).fill(64);
     book.pictures.forEach((picture, layer) => sizes.set([picture.width, picture.height], layer * 4));
@@ -117,6 +128,7 @@ export class EntranceView implements Drawer {
           }),
         },
         { binding: 5, resource: tiles.createView() },
+        ...poolBindings(device, dark),
       ],
     });
     this.drawn = {
@@ -125,6 +137,7 @@ export class EntranceView implements Drawer {
       view,
       buffers,
       tiles,
+      dark,
       // Laid as the city lays its solids: already in place, one instance at the origin, always drawn.
       vertices: buffer(packed.vertices, CITY_BUFFER_USAGE.vertex),
       indices: buffer(packed.indices, CITY_BUFFER_USAGE.index),
@@ -178,6 +191,7 @@ export class EntranceView implements Drawer {
     if (!drawn) return;
     drawn.painter.destroy();
     drawn.tiles.destroy();
+    drawn.dark.destroy();
     for (const buffer of drawn.buffers) buffer.destroy();
     this.drawn = null;
   }

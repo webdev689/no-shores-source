@@ -76,6 +76,7 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     );
     assert_eq!(ruin.name, "Ruins of Mistfall");
     assert!(ruin.ruined && ruin.social.stations.is_empty(), "no one keeps a counter");
+    assert!(ruin.lights.is_empty() && port.lights.is_empty(), "only Overlook is lit at night, and no ruin");
     // The landmark broken to what it keeps over the platform, its light out.
     // Its stone, not the crystal crowning it (`a_ruin_is_overtaken_by_the_lattices_crystal_and_its_plaza_kept_clear`).
     let top = |plan: &Plan| {
