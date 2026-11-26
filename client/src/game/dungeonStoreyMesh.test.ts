@@ -261,3 +261,17 @@ test("a vault or a dome under a storey keeps its top 0.4 m under that storey's f
   const upper = ceilingHeights(domed(0))(0);
   assert.ok(Math.abs(upper(6.4, 6.4) - 5.6 - 2.2) < 1e-9, 'nothing over the top storey keeps it lower');
 });
+
+test('open air over rock beside a hall is walled from the floor under to the top of the air', () => {
+  // The gallery's cell east of the open air turned to open air over rock: the hall's east side there is all wall.
+  const variant = [...cells];
+  [variant[15], variant[21 + 15]] = [AIR, ROCK];
+  const walled = trianglesOf(dungeonMesh({ ...STOREYED, cells: variant }, [56, 2])).filter(
+    (each) =>
+      (each.normal[0] ?? 0) < -0.99 &&
+      each.corners.every((corner) => Math.abs((corner[0] ?? 0) - 3.2) < 1e-4) &&
+      (middleOf(each)[1] ?? 0) > 6.4,
+  );
+  const heights = walled.flatMap((each) => each.corners.map((corner) => corner[2] ?? 0));
+  assert.deepEqual([Math.min(...heights), Math.max(...heights)], [-8, 4]);
+});
