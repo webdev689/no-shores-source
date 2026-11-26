@@ -18,6 +18,7 @@ on:
       - site/worker.ts
       - site/src/art/**
       - client/src/art/**
+      - client/src/cinema/logoPicture.ts
       - .github/workflows/desktop.yml
   push:
     branches: [main]
@@ -29,6 +30,7 @@ on:
       - site/worker.ts
       - site/src/art/**
       - client/src/art/**
+      - client/src/cinema/logoPicture.ts
       - .github/workflows/desktop.yml
   workflow_call:
     inputs:
@@ -122,9 +124,9 @@ jobs:
           HAS_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN != '' }}
           BY_HAND: ${{ github.event_name == 'workflow_dispatch' }}
           # What the installers are built from: the app's folder but its tests, the words it shares with the game, the
-          # icon's art and the pixel kit it is drawn with, and this workflow.
+          # icon's art, the pixel kit it is drawn with and the logo it draws, and this workflow.
           CODE: >-
-            desktop :!desktop/**/*.test.ts client/src/desktop.ts site/src/art client/src/art .github/workflows/desktop.yml
+            desktop :!desktop/**/*.test.ts client/src/desktop.ts site/src/art client/src/art client/src/cinema/logoPicture.ts .github/workflows/desktop.yml
         run: bash .github/deploy-ready.sh desktop "the desktop app"
 
   version:

@@ -46,10 +46,14 @@ Dungeon or a patrol's dungeon, the owner answered:
 >
 > 2. Yes islands elite dungeon"
 
+Asked whether B (Manage) and H (Leave the helm) should keep working in the Oversea view, though the console offers
+them only at sea level, the owner chose "Sea level only".
+
 ## What it settles
 
 - **The sea has two views, Oversea and Sealevel.** The wheel no longer changes the view.
-- **W, A, S and D sail the ship in the Sealevel view alone**, not in the Oversea view.
+- **W, A, S and D sail the ship in the Sealevel view alone**, not in the Oversea view; so do B (Manage) and H (Leave
+  the helm).
 - **The ship's panel is reworked**, more detailed and organised, with a switch between the two views and each view's
   own buttons. It has no speed toggle.
 - **Paces.** A voyage planned in the Oversea view sails at ×200; one set by a click on the sea, at ×60.

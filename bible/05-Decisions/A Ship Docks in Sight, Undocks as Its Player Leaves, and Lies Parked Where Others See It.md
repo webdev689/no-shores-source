@@ -21,6 +21,9 @@ whether "leaving somewhere should undock the ship" means the ship counts as dock
 place, is seen pulling away from its berth as they go back to it, and that leaving the ship mid-trip forgets the trip,
 the owner answered "Yes, that's right".
 
+Asked whether a parked ship should keep the look and plate it had as its player went ashore until they sail again,
+or follow a new ship or dress bought while docked, the owner chose "Fix in #216".
+
 ## What it settles
 
 - **The ship visibly docks** before the scene fades in.
@@ -30,6 +33,7 @@ the owner answered "Yes, that's right".
 - **At a living port a ship moors beside its pier**; at a ruined coast or a sea island it anchors just off the shore
   where it landed.
 - **Parked ships are seen ashore and at sea**: by players walking that island, and by players sailing past.
+- **A parked ship looks as its player's ship does now**: a ship, dress or name bought while docked shows at once.
 - **A ship is docked only while its player is at that place.** Leaving the ship while it sails for a landing said
   yes to forgets the landing.
 

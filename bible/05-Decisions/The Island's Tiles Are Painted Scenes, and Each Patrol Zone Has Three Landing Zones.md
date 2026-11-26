@@ -23,6 +23,10 @@ On the first tiles painted, the owner said:
 
 > "You can do better than this. We gave more detail to the website images"
 
+Asked, once the tiles stood, whether the details with no glyph yet (a port's counters and moorings, a zone's resources
+and foes, an Elite Dungeon's blocks and seals) should wait for a later change, get icons now, or show as short text,
+the owner chose "Add icons now in #216".
+
 ## What it settles
 
 - **Each island tile is a painted vignette** of its place, with very minimal text: its name and its levels, every other
