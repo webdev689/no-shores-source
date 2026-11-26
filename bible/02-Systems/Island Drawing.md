@@ -49,8 +49,9 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   gentle beach, the climate's ground inland (grass, earth, dry grass, sand or snow by climate, `GROUND_LOOKS`) turning
   to its high ground, rock where steep and snow above the tundra's line, lit by the sun and receiving the shadow map.
   Each wears the land's ground tiles painted for the island's climate ([[Procedural Textures]], `groundTiles`), as the
-  land wears them (`TILE_GRAIN_WGSL`, groundwork both import); the game hands the view its tiles (`isleTiles`, its
-  `tilesOf`), and without them, as in the World Editor, the ground is drawn in its plain colours: its colour times its tile's grain, one giving way to the next by their grains.
+  land wears them (`TILE_GRAIN_WGSL`, groundwork both import): its colour times its tile's grain, one giving way to
+  the next by their grains. The game hands the view its tiles (`isleTiles`, its `tilesOf`); a view given none (the
+  World Editor's, the passages' pictures) draws the ground in its plain colours.
   The low ground wears the grass tile and the high ground the dirt; a passage's floor of one ground the tile its colour
   is nearest (grass, dirt, sand or stone), a paved one the paving (`groundTilesOf`); the beach the sand, the snow the
   winter grass, and the steep rock the climate's caverns' layered rock, cast from the three axes so a face is not
@@ -83,10 +84,11 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
 A ruin isle in rainforest (about 1300 modules) drawn close takes one draw for the ground and one a module the island
 wears, some 40, however many it places. A ground pixel reads its tiles 20 times on a sea island (17 on a hollow's one floor, 23
 under a snow line), about as many as the land's terrain; a module's pixel 11, for the rock's picture. On the software
-GPU the pictures are taken on, a frame of three islands from above takes some 2.2 s against 0.9 s with flat colours.
+GPU the pictures are taken on, a frame of three islands from above takes some 2.2 s.
 
 ## Limits
 
 - The parts but the rock wear colours, not the textures layer's pictures.
-- The World Editor's Islands mode draws the ground in its plain colours: it is given no tiles.
+- The World Editor's Islands mode and the passages' pictures draw the ground in its plain colours: they are given no
+  tiles.
 - An island is culled whole or not at all: one whose box reaches the view draws all of its ground and modules.

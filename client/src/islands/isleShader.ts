@@ -1,6 +1,6 @@
 // How the islands are coloured and drawn on the GPU: each part's colour by climate, the shaders for the ground and the
 // instanced modules (drawn, and cast into the sun's shadow map), their vertex layouts and their pipelines. The ground
-// and the rock wear the land's ground tiles (terrain/groundColour.ts) in the island's climate.
+// and the rock wear the land's ground tiles (groundGrain.ts) in the island's climate.
 import type { Gpu } from '../gpu.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';

@@ -210,7 +210,7 @@ export class IslesView {
   private readonly offset = new Float32Array(4);
   /** The roles another drawer draws in this one's place (`GROWTH_ROLES`, the game's plants). */
   private readonly leaves: ReadonlySet<string>;
-  /** Each climate's ground tiles, kept while any island is shown. */
+  /** Each climate's ground tiles, painted once and kept until the view is let go of. */
   private readonly tiles = new Map<string, GroundTiles>();
   private readonly paintTiles: TilesOf;
   private readonly tileSampler: GPUSampler;
