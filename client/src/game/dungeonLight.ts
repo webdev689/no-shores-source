@@ -89,8 +89,9 @@ export const CRYSTAL_GLOW: Colour = [0.36, 0.86, 1];
 export const FUNGUS_GLOW: Colour = [0.75, 1.35, 0.45];
 export const LANTERN_GLOW: Colour = [1, 0.77, 0.43];
 export const EMBER_GLOW: Colour = [0.9, 0.3, 0.08];
-/** Candle wax, lit as a surface is. */
+/** Candle wax, and a vault chest's gold (the heroic chest's, eventPropsShader.ts), each lit as a surface is. */
 export const WAX: Colour = [0.86, 0.8, 0.66];
+export const GOLD: Colour = [0.85, 0.66, 0.27];
 
 /** A light where it burns, its number among the dungeon's (no two flicker in step), and how it burns. */
 export interface Light {
@@ -216,6 +217,7 @@ const FUNGUS_GLOW = ${vector(FUNGUS_GLOW)};
 const LANTERN_GLOW = ${vector(LANTERN_GLOW)};
 const EMBER_GLOW = ${vector(EMBER_GLOW)};
 const WAX = ${vector(WAX)};
+const GOLD = ${vector(GOLD)};
 const PORTAL_LIGHT = ${vector(LIGHT_KINDS.portal.colour)};
 
 struct Light {

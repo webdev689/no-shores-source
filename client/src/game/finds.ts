@@ -94,6 +94,13 @@ export interface ChestDrawn {
   readonly opened: number | null;
 }
 
+/** How many of a dungeon's chests the player has opened of all it stands, as the place's words and the map say it:
+ *  "Chests 2 of 5"; null where none are counted (a patrol, the sea). */
+export function chestsCounted(gear: Pick<GearState, 'chestsOpened' | 'chestsTotal'> | null | undefined): string | null {
+  const total = gear?.chestsTotal ?? 0;
+  return total > 0 ? `Chests ${gear?.chestsOpened ?? 0} of ${total}` : null;
+}
+
 /** The chests a player sees, from each word on their gear: those standing, and each the room says it paid them for
  *  (`opened`), kept open OPENED_KEPT_S where it stood; one that went unpaid moved on, and goes at once. */
 export class ChestsSeen {

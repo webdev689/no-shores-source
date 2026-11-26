@@ -14,9 +14,11 @@ export const PORTAL_FLAG = 256;
 export const WATER_FLAG = 512;
 export const FOUL_FLAG = 1024;
 
-/** The dungeon's own plain layers, below the city's: candle wax, lit as a surface; an ember's, a lantern's glass, a
- *  crystal's and a fungus cap's glow, each drawn as its colour. A dungeon's pictures never reach them. */
+/** The dungeon's own plain layers, below the city's: candle wax and a vault chest's gold, lit as a surface; an
+ *  ember's, a lantern's glass, a crystal's and a fungus cap's glow, each drawn as its colour. A dungeon's pictures
+ *  never reach them. */
 export const DUNGEON_LAYERS = {
+  gold: 246,
   fungus: 247,
   wax: 248,
   ember: 249,
@@ -68,6 +70,7 @@ export function smallBook(climate: CityClimate, wanted: Iterable<Wanted>): Small
     layerOf: (archive, record) => {
       if (archive === COLOUR.glow) return COLOUR_LAYERS.glow;
       if (archive === COLOUR.wax) return DUNGEON_LAYERS.wax;
+      if (archive === COLOUR.gold) return DUNGEON_LAYERS.gold;
       if (archive === COLOUR.ember) return DUNGEON_LAYERS.ember;
       if (archive === COLOUR.lanternGlass) return DUNGEON_LAYERS.lanternGlass;
       if (archive === COLOUR.crystal) return DUNGEON_LAYERS.crystal;

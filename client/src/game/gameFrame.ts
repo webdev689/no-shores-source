@@ -30,6 +30,7 @@ import { contextOf, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withFollow, withMapKey } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
+import { chestsCounted } from './finds.ts';
 import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
 import { binding } from './rebinding.ts';
@@ -349,7 +350,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);
     const run = here.run && runPlaceWords(here.run.plan, here.held.breach, here.run.tier);
-    hud.place(here.node.name, run || placeWords(here.node, here.roomName, here.held.revives, here.held.darkness));
+    const chests = chestsCounted(here.gear?.gear);
+    hud.place(
+      here.node.name,
+      run || placeWords(here.node, here.roomName, here.held.revives, here.held.darkness, chests),
+    );
     // As E's other use, a gate takes no one while a menu or the held map is up, the player is down or in a dungeon.
     const gated = paused || looking || here.fallen || here.mapless;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);

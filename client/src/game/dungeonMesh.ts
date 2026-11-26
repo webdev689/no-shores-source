@@ -16,8 +16,8 @@ export const HEAD_M = 0.3;
 /** The record each face takes in a dungeon set, by its role. */
 export const ROLE = { wall: 0, wallAlt: 1, floor: 2, ceiling: 3, trim: 4 } as const;
 /** Archives that stand for no picture of their own: a flame's glow, drawn as a colour; the portal's face, which wears
- *  the end room's wall; candle wax; an ember's, a lantern's glass a crystal's and a fungus cap's glow; and still water,
- *  dark and catching the lights. */
+ *  the end room's wall; candle wax; an ember's, a lantern's glass a crystal's and a fungus cap's glow; still water,
+ *  dark and catching the lights; and a vault chest's gold. */
 export const COLOUR = {
   glow: -2,
   portal: -3,
@@ -28,6 +28,7 @@ export const COLOUR = {
   fungus: -8,
   water: -9,
   foulWater: -10,
+  gold: -11,
 } as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];

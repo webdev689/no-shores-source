@@ -7,15 +7,20 @@ use room::{PlayerId, Room};
 /// A chest or a container begun to be opened, E held, by its number in `item`; let go of by the gather's stop.
 pub const OPEN_FIND: u8 = 81;
 
-/// The chests standing that a player has not opened: each its number, x, y, z and the way its front faces.
+/// The chests standing that a player has not opened: each its number, x, y, z, the way its front faces, and 1 for a
+/// vault's chest, else 0.
 pub(crate) fn chests_of<'built>(
     builder: &mut FlatBufferBuilder<'built>,
     room: &Room,
     player: PlayerId,
 ) -> WIPOffset<Vector<'built, f64>> {
     let chests = room.chests_for(player).into_iter();
-    let numbers: Vec<f64> =
-        chests.flat_map(|(number, [x, y, z, facing])| [f64::from(number), x, y, z, facing]).collect();
+    let numbers: Vec<f64> = chests
+        .flat_map(|(number, [x, y, z, facing])| {
+            let vault = if room.vault_chest(number) { 1.0 } else { 0.0 };
+            [f64::from(number), x, y, z, facing, vault]
+        })
+        .collect();
     builder.create_vector(&numbers)
 }
 
