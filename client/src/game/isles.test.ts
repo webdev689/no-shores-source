@@ -42,6 +42,15 @@ test(
     await settled();
     assert.equal(isles.byId(1)?.seen.seed, '41');
     assert.equal(isles.byId(1)?.own[0], (isles.byId(1)?.heights[0] ?? 0) - 5000, 'its ground in its own frame too');
+    // A click meets its ground where it has one, and nothing far off it.
+    const [west = 0, north = 0, cell = 0, columns = 0] = isles.byId(1)?.heights ?? [];
+    const first = (isles.byId(1)?.heights.subarray(5) ?? new Float64Array()).findIndex(Number.isFinite);
+    const onIt: [number, number] = [
+      west + ((first % columns) + 0.5) * cell,
+      north + (Math.floor(first / columns) + 0.5) * cell,
+    ];
+    assert.ok(Number.isFinite(isles.groundAt(...onIt)), `ground at ${onIt.join(', ')}`);
+    assert.equal(isles.groundAt(60_000, 60_000), null);
     isles.update([seen(1, '41'), seen(2, '43', [9000, 9000])]);
     assert.deepEqual(
       asked.map((each) => each.seed),

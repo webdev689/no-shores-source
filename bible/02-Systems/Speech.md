@@ -39,7 +39,7 @@ types each line as it is heard, and short barks over a speaker's head, their wor
   stop, a question or a cry inside a line. A syllable sounds every syllable's length while a letter or a digit is being
   typed, never on a space or a mark, and neither a gap nor a slow frame stores up syllables to fire at once after it. With sound asleep
   or silenced, the words still show. A head with no point on the screen is silent, as its words are hidden.
-- **The dialogue box** stands bottom centre, clear of the vitals and over the sea bar, in the Enhanced Plus window
+- **The dialogue box** stands bottom centre, clear of the vitals and over the ship's console, in the Enhanced Plus window
   with the speaker's name in its header band, both at 22 px. Each speaker's name is in their own colour
   ([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]), one with none in the kit's brass: each reads at 4.5 to 1 or better on the box even over a white sky, no
   two speakers share one, and two who speak in one scene are far apart (0.1 in OKLab, about five times the least the

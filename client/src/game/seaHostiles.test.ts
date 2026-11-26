@@ -70,14 +70,14 @@ test('the view marks every sighted hostile ship, never thinned away by a port be
   const viewport = { width: 1600, height: 900 };
   const ships = [hostile(1, 8_000), hostile(2, 40_000)];
   const port: Mark = { id: 'port', kind: 'port', name: 'Sunspire', at: [ship[0] + 8_000, ship[1] + 10, 2], edge: true };
-  const { shown } = seaMarks('sail', [port], [], ship, pose, viewport, null, ships);
+  const { shown } = seaMarks('sail', [port], ship, pose, viewport, null, ships);
   const marked = shown.find((mark) => mark.id === 'hostile-1');
   assert.ok(marked, 'its mark, though a port stands where it does');
   assert.deepEqual([marked.kind, marked.name, marked.note], ['hostile', 'Tithe Sloop', 'Level 23 · 8.0 km']);
   assert.ok(!shown.some((mark) => mark.id === 'hostile-2'), 'out of its sight: no mark');
-  const behind = seaMarks('sail', [], [], ship, pose, viewport, null, [hostile(3, -8_000)]).shown[0];
+  const behind = seaMarks('sail', [], ship, pose, viewport, null, [hostile(3, -8_000)]).shown[0];
   assert.ok(behind && behind.arrowDegrees !== null, 'off the picture, held at its edge with its arrow');
-  assert.equal(seaMarks('other', [], [], ship, pose, viewport, null, ships).shown.length, 0, 'none in a fight');
+  assert.equal(seaMarks('other', [], ship, pose, viewport, null, ships).shown.length, 0, 'none in a fight');
   assert.equal(hostileMarks(ships, ship)[0]?.edge, true);
 });
 

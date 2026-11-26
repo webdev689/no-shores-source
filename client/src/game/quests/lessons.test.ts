@@ -63,7 +63,8 @@ test('each step names its keys as bound now, on the keys or on the pad', () => {
   const [, , steer, trim, map, fire] = goalsOf('learn-the-helm');
   assert.ok(steer && trim && map && fire);
   assert.deepEqual(lessonKeys(steer, 'keys', DEFAULTS), ['A', 'D']);
-  assert.deepEqual(lessonKeys(trim, 'keys', DEFAULTS), ['[', ']']);
+  // No pace dial: sailing on sets a click's ×60 and a voyage planned on the map ×200, so those are the trim's keys.
+  assert.deepEqual(lessonKeys(trim, 'keys', DEFAULTS), ['W', 'N']);
   assert.deepEqual(lessonKeys(map, 'keys', DEFAULTS), ['N']);
   assert.ok(lessonKeys(fire, 'pad', DEFAULTS).length > 0, 'the pad fires on its own trigger');
   const talk = goalsOf('your-ship')[0];

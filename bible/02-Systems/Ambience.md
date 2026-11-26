@@ -66,7 +66,7 @@ every sound a Freesound recording the owner picked
   open steppe's short, dry air. Each room's reverberation is made once a sample rate and kept, so a place coming
   back (a doorway in a Breach's run) costs nothing.
 - **The sea.** The swell rises and falls on three long waves. The wash past its hull grows with its way: none hove
-  to, more at each step of its pace dial. Its timbers, ropes, canvas and blocks are heard fully on its deck and at
+  to, more at each step of its pace. Its timbers, ropes, canvas and blocks are heard fully on its deck and at
   its helm, and a little off from the raised view. Gulls call only within 3 km of a coast.
 - **Saltmere.** From the plaza: the townsfolk's steps where they walk, pigeons and sparrows, the Smith's anvil in
   the arcade, a market crowd and carts and hammers in the city below, and the harbour: water lapping, moored ships
