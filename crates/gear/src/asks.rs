@@ -159,6 +159,10 @@ pub enum Ask {
     Speak {
         keeper: u8,
     },
+    /// Acquires the quest walked from the keeper who offers it, by the number `Speak` sends: at their counter.
+    Acquire {
+        keeper: u8,
+    },
     /// Owns one of an Art's fragments by its place, for a choice a house's road gave: anywhere.
     ChooseFragment {
         art: u8,
@@ -237,6 +241,7 @@ impl Character {
             Ask::BuyCosmetic { cosmetic } => self.buy_cosmetic(cosmetic, here),
             Ask::BuyFromShape { ware, shown } => self.buy_from_shape(ware, shown, here),
             Ask::Speak { keeper } => self.speak(keeper, here),
+            Ask::Acquire { keeper } => self.acquire(keeper, here),
             Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
             Ask::TakeLetter { letter } => self.take_letter(letter, here),
             Ask::TakeAllLetters => self.take_all_letters(here),

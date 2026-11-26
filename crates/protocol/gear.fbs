@@ -271,6 +271,9 @@ table Gear {
   searchables: [double];
   // The number of the last chest or container the room paid them for, 0 for none: their page tells of it once.
   opened: uint;
+  // The keeper who offers the quest they walk while it waits to be acquired from them, by the number ask 64 sends
+  // (0 for none): until it is, nothing of it counts.
+  quest_offered: ubyte;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

@@ -10,7 +10,8 @@ use crate::factions::factions;
 use crate::horses::FIRST_HORSE;
 use crate::kinds::Slot;
 pub use crate::quest_defs::{
-    KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key, quests, speaker_place,
+    KEEPERS, OfferDef, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key,
+    keeper_number, quests, speaker_place,
 };
 pub use crate::quest_goals::{
     Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, InSlot, KILL_PAST, Landing, Plain, PointDef,
@@ -117,6 +118,9 @@ pub struct QuestLog {
     /// The slots the Weaponsmith still gives a starter piece for free, her gift chosen at her counter.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub free: Vec<Slot>,
+    /// The quests acquired from the keeper who offers them, by id, each once.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub acquired: Vec<String>,
     /// Keys this room does not know, from a later room's save, written back as read.
     #[serde(flatten)]
     pub unknown: UnknownKeys,
@@ -215,6 +219,10 @@ impl QuestLog {
         }
         let road = self.roads.entry(def.id.clone()).or_default();
         (road.task, road.counts, road.done, road.fought) = (at.id.clone(), vec![0; at.goals.len()], false, Vec::new());
+        // A place set is a place walked to: the quest is held as acquired, as one walked there was.
+        if !self.acquired.contains(&def.id) {
+            self.acquired.push(def.id.clone());
+        }
     }
 
     /// A quest's place, by the quest's place in the file.
@@ -256,6 +264,18 @@ impl Character {
         Some((quest, task.unwrap_or(0)))
     }
 
+    /// The keeper who offers the quest walked while it waits to be acquired from them, by the number ask 64 sends:
+    /// on the task its offer names, nothing counted there yet (a save from before offers keeps its place), and not
+    /// acquired. None otherwise.
+    #[must_use]
+    pub fn quest_offered(&self) -> Option<u8> {
+        let (quest, task) = self.quest_now()?;
+        let def = &quests().quests[quest];
+        let (from, keeper) = def.offered()?;
+        let begun = self.quest_counts().iter().any(|count| *count > 0);
+        (task == from && !begun && !self.quests.acquired.contains(&def.id)).then_some(keeper)
+    }
+
     /// The counts of the task the player is on, one for each of its goals.
     #[must_use]
     pub fn quest_counts(&self) -> Vec<u16> {
@@ -277,6 +297,10 @@ impl Character {
     /// counts once more, a goal's reward given as it is met; every goal met, the task's reward is given and the next
     /// begins at once, its counts at nothing, or the quest is done. Whether anything counted.
     pub fn tell(&mut self, event: &Event<'_>) -> bool {
+        // A quest waiting to be acquired counts nothing until it is.
+        if self.quest_offered().is_some() {
+            return false;
+        }
         let Some((quest, task)) = self.quest_now() else { return false };
         let def = &quests().quests[quest];
         let Some(goals) = def.tasks.get(task).map(|task| &task.goals) else { return false };
@@ -427,9 +451,24 @@ impl Character {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        if !self.goals_unmet().any(|(_, goal)| matches!(&goal.goal, Goal::Talk(talk) if talk.to == key)) {
+        // A quest waiting to be acquired asks no word yet: Acquire is the word.
+        let asked = self.goals_unmet().any(|(_, goal)| matches!(&goal.goal, Goal::Talk(talk) if talk.to == key));
+        if !asked || self.quest_offered().is_some() {
             return Err(Refusal::NothingToSay);
         }
+        self.tell(&Event::Talk(key));
+        Ok(None)
+    }
+
+    /// Acquires the quest walked from the keeper who offers it, by the number ask 64 sends, at their counter: it is a
+    /// word with them, so a goal of its task asking one is met by it.
+    pub(crate) fn acquire(&mut self, keeper: u8, here: Here) -> Result<Option<Done>, Refusal> {
+        let key = keeper_key(keeper).ok_or(Refusal::NoSuchKeeper)?;
+        if !here.social {
+            return Err(Refusal::NotHere);
+        }
+        let quest = self.quest_now().filter(|_| self.quest_offered() == Some(keeper)).ok_or(Refusal::NothingOffered)?;
+        self.quests.acquired.push(quests().quests[quest.0].id.clone());
         self.tell(&Event::Talk(key));
         Ok(None)
     }

@@ -53,6 +53,12 @@ fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where
     assert_eq!(gear.quest_counts().map(|counts| counts.iter().collect::<Vec<_>>()), Some(vec![0]), "the stranger");
     assert_eq!((list(gear.quests_done()), list(gear.arts_earned())), (Some(vec![0; 4]), Some(vec![0; 3])));
     assert_eq!(gear.quest_at().map(|at| at.len()), Some(0), "no place of the opening's is here");
+    assert_eq!(gear.quest_offered(), 0, "the stranger's task waits on no keeper");
+    let mut welcomed = gear::Character::starting();
+    welcomed.quests.roads.get_mut("house").unwrap().task = "find-your-way".to_owned();
+    let bytes = quest_gear(&welcomed);
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.quest_offered(), 13, "the round waits to be acquired from the Weaponsmith");
     let mut pledged = gear::Character::starting();
     pledged.allegiance.pledge = 1;
     pledged.quests.roads.get_mut("house").unwrap().done = true;

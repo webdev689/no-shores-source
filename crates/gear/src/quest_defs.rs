@@ -80,6 +80,37 @@ pub struct QuestDef {
     pub tasks: Vec<TaskDef>,
     #[serde(default)]
     pub kept: Option<String>,
+    /// The keeper who offers the quest as an item to acquire, if one does (`OfferDef`).
+    #[serde(default)]
+    pub offer: Option<OfferDef>,
+}
+
+/// A quest offered by a keeper: from its task `at` (its first when left out) nothing counts until the player has
+/// acquired it from them at their counter. The card's words (its kind, its rarity's number, its words, the keeper's
+/// quote, and the scene of their longer words, `story`) are the page's alone; the rules hold them to being said.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OfferDef {
+    /// The keeper's key (`keeper_key`): a house's or one of `KEEPERS`, never the stranger, who keeps no counter.
+    pub keeper: String,
+    #[serde(default)]
+    pub at: Option<String>,
+    pub kind: String,
+    pub rarity: u8,
+    pub words: String,
+    pub quote: String,
+    pub story: String,
+}
+
+impl QuestDef {
+    /// The place of the task from which the quest waits to be acquired, and the number ask 64 sends for the keeper
+    /// who offers it; none for a quest no keeper offers.
+    #[must_use]
+    pub fn offered(&self) -> Option<(usize, u8)> {
+        let offer = self.offer.as_ref()?;
+        let at = offer.at.as_ref().map_or(Some(0), |at| self.tasks.iter().position(|task| task.id == *at))?;
+        Some((at, keeper_number(&offer.keeper)?))
+    }
 }
 
 /// Everything in `content/quests/quests.json` the rules read.
@@ -93,6 +124,13 @@ pub struct QuestsDef {
 pub fn keeper_key(keeper: u8) -> Option<&'static str> {
     let house = factions().faction(keeper).map(|faction| faction.key.as_str());
     house.or_else(|| KEEPERS.iter().find(|(number, _)| *number == keeper).map(|(_, key)| *key))
+}
+
+/// The number ask 64 sends for a keeper's key (`keeper_key`), the stranger's among them.
+#[must_use]
+pub fn keeper_number(key: &str) -> Option<u8> {
+    let house = factions().factions.iter().find(|faction| faction.key == key).map(|faction| faction.id);
+    house.or_else(|| KEEPERS.iter().find(|(_, named)| *named == key).map(|(number, _)| *number))
 }
 
 /// Whether ids are each present and none another's.
@@ -122,6 +160,14 @@ impl QuestsDef {
             }
             if quest.kept.as_ref().is_some_and(|kept| !quest.tasks.iter().any(|task| task.id == *kept)) {
                 problems.push(format!("{}: kept names no task of its own", quest.id));
+            }
+            if let Some(offer) = &quest.offer {
+                let said = [&offer.kind, &offer.words, &offer.quote, &offer.story];
+                let said = said.iter().all(|words| !words.trim().is_empty());
+                if quest.offered().is_none_or(|(_, keeper)| keeper == STRANGER) || offer.rarity > 4 || !said {
+                    problems
+                        .push(format!("{}: its offer names no keeper's counter or task, or says nothing", quest.id));
+                }
             }
             if let Some(after) = quest.after.iter().find(|after| !self.quests.iter().any(|it| it.id == **after)) {
                 problems.push(format!("{}: after names {after}, no quest", quest.id));

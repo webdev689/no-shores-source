@@ -102,10 +102,16 @@ fn the_opening_hears_the_stranger_walks_round_the_counters_takes_its_ship_dresse
     assert_eq!(opening.tasks[0].reward.aurem, 0, "the stranger gives no Aurem");
 }
 
+/// The ask that has a word with a keeper: Acquire where they offer the quest walked, as the round's first word is.
+fn word(character: &Character, key: &str) -> Ask {
+    let keeper = keeper(key);
+    if character.quest_offered() == Some(keeper) { Ask::Acquire { keeper } } else { Ask::Speak { keeper } }
+}
+
 /// A new character in Overlook: the stranger heard.
 fn welcomed() -> Character {
     let mut character = Character::starting();
-    assert!(character.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE).is_ok());
+    assert!(character.ask(word(&character, "stranger"), SOCIAL, &DICE).is_ok());
     character
 }
 
@@ -117,7 +123,7 @@ fn the_stranger_is_heard_once_and_gives_no_aurem() {
     let mut character = welcomed();
     assert_eq!(character.materials.aurem, 0);
     // A second hearing finds her task done.
-    let again = character.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE);
+    let again = character.ask(word(&character, "stranger"), SOCIAL, &DICE);
     assert_eq!(again, Err(Refusal::NothingToSay));
     assert_eq!(character.materials.aurem, 0);
     // Kept and read back as a room reads a character that joins, she is heard already.
@@ -135,18 +141,20 @@ fn the_tack_gives_the_bay_worn_on_the_round_once_and_never_a_second_and_the_stra
     let tack = opening.tasks[1].goals.iter().find(|goal| matches!(&goal.goal, Goal::Talk(talk) if talk.to == "tack"));
     assert!(tack.is_some_and(|goal| goal.reward.horse), "the round's Tack gives the horse");
     assert!(!opening.tasks[0].reward.horse, "her task gives none");
-    assert!(character.ask(Ask::Speak { keeper: keeper("tack") }, SOCIAL, &DICE).is_ok());
+    assert!(character.ask(word(&character, "weaponsmith"), SOCIAL, &DICE).is_ok(), "the round acquired");
+    assert!(character.ask(word(&character, "tack"), SOCIAL, &DICE).is_ok());
     assert!(character.may_ride(), "the Bay worn in the Mount slot as she is spoken with");
     assert_eq!(character.coat_worn(), Some(crate::horses::FIRST_HORSE));
     assert_eq!((horses(&character), character.materials.aurem), (1, 0), "given, not sold");
     // Spoken with again, she has nothing more to give.
-    let again = character.ask(Ask::Speak { keeper: keeper("tack") }, SOCIAL, &DICE);
+    let again = character.ask(word(&character, "tack"), SOCIAL, &DICE);
     assert_eq!(again, Err(Refusal::NothingToSay));
     assert_eq!(horses(&character), 1);
     // One who keeps a Bay already (a save that rode one) is given none: one horse of each coat.
     let mut riding = welcomed();
     riding.give_horse(crate::horses::FIRST_HORSE, false);
-    assert!(riding.ask(Ask::Speak { keeper: keeper("tack") }, SOCIAL, &DICE).is_ok());
+    assert!(riding.ask(word(&riding, "weaponsmith"), SOCIAL, &DICE).is_ok());
+    assert!(riding.ask(word(&riding, "tack"), SOCIAL, &DICE).is_ok());
     assert_eq!(horses(&riding), 1, "no second Bay");
 }
 
@@ -243,9 +251,9 @@ fn plain_clothes_worn_meet_no_goal_to_put_armour_on_and_the_gifts_worn_do() {
     assert!(character.ask(Ask::FinishPrologue, SOCIAL, &DICE).is_ok());
     assert!(character.worn(Slot::Torso).is_some_and(|item| item.plain), "dressed in plain clothes");
     assert!(character.worn(Slot::Legs).is_some_and(|item| item.plain));
-    assert!(character.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE).is_ok());
+    assert!(character.ask(word(&character, "stranger"), SOCIAL, &DICE).is_ok());
     for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+        assert!(character.ask(word(&character, key), SOCIAL, &DICE).is_ok(), "{key}");
     }
     let level = character.level();
     for kind in [Kind::SwordAndShield, Kind::Bow] {
@@ -275,7 +283,7 @@ fn plain_clothes_worn_meet_no_goal_to_put_armour_on_and_the_gifts_worn_do() {
 fn pieces_put_on_during_the_round_dress_the_player_as_its_last_keeper_is_heard() {
     let mut character = welcomed();
     for key in ["weaponsmith", "armorsmith"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+        assert!(character.ask(word(&character, key), SOCIAL, &DICE).is_ok(), "{key}");
     }
     let level = character.level();
     for kind in [Kind::Warhammer, Kind::DoublePistolet] {
@@ -287,7 +295,7 @@ fn pieces_put_on_during_the_round_dress_the_player_as_its_last_keeper_is_heard()
         assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
     }
     for key in ["mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+        assert!(character.ask(word(&character, key), SOCIAL, &DICE).is_ok(), "{key}");
     }
     let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
     assert_eq!(task, Some("hear-three-houses"), "dressed by the pieces already worn");

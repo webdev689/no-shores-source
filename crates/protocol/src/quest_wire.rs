@@ -1,4 +1,4 @@
-//! What the gear message carries of the houses' roads: the quest walked, its task and that task's counts, each quest
+//! What the gear message carries of the houses' roads: the quest walked, the keeper offering it while it waits, its task and that task's counts, each quest
 //! done, each Art's earned bits and fragment choices, where the task's first unmet goal with a place stands in the
 //! player's room, and their step there: its clock, each goal's failures, its points, its figure and its ward.
 
@@ -9,6 +9,7 @@ use room::{PlayerId, Room};
 /// The quest fields of the gear message, built.
 pub(crate) struct Quests<'built> {
     pub quest: u8,
+    pub offered: u8,
     pub task: u8,
     pub counts: WIPOffset<Vector<'built, u16>>,
     pub done: WIPOffset<Vector<'built, u8>>,
@@ -39,6 +40,7 @@ pub(crate) fn quests_of<'built>(
     let step = room.step_seen(player);
     Quests {
         quest: now.map_or(0, |(quest, _)| number(quest).saturating_add(1)),
+        offered: character.quest_offered().unwrap_or(0),
         task: now.map_or(0, |(_, task)| number(task)),
         counts: builder.create_vector(&character.quest_counts()),
         done: builder.create_vector(&done),
