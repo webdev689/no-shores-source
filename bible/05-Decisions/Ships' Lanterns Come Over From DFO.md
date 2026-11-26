@@ -28,3 +28,5 @@ Asked which ships carry lanterns, the owner chose "Traffic & moored", "Player sh
 - The Grey Tithe's ships run dark, and a merchant running from an attack puts her lanterns out
   ([[Pirates Are Replaced by the Grey Tithe]]).
 - At night a lit ship is spotted to 650 m and a dark one only to 220 m, by the ships' lookouts and by the player.
+- Night sight, the stern windows and the fight's effects go further in
+  [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]].

@@ -39,6 +39,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]
 - [[Come Sail Away's Sailing Comes Over]]
 - [[Ships' Lanterns Come Over From DFO]]
+- [[Night Sight Reaches Every Sighting at Sea, Stern Windows Burn, and Fight Effects Improve]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]
 - [[The Server Gets Its Own Rules]]
