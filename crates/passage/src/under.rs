@@ -138,8 +138,7 @@ fn lamp_clear(dungeon: &Dungeon, boxes: &[[f64; 5]], at: [f64; 2], arrive: [f64;
     };
     let on_room_floor =
         |point: [f64; 2]| cell_at(point).is_some_and(|cell| matches!(dungeon.cells[cell], Cell::Room(_)));
-    let facing = libm::atan2(arrive[0] - at[0], -(arrive[1] - at[1]));
-    let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], facing);
+    let solids = Kind::Lamp.solids_at([at[0], at[1], dungeon::FLOOR_M], crate::plan::lamp_facing(at, arrive));
     let whole = |&[west, north, east, south, _]: &[f64; 5]| {
         [[west, north], [east, north], [east, south], [west, south]].into_iter().all(on_room_floor)
     };
