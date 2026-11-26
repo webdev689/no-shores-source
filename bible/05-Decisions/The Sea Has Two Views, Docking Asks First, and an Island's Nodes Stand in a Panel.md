@@ -49,8 +49,8 @@ status: in force
   docking there, and so does a click anywhere else on its island.
 - **No Playlist at sea.**
 - **Docked, the island's nodes stand in a panel**, not on the map: detailed, out of the way and slightly
-  transparent, holding what the island has of its port, the Playlist, its patrol zone, its dungeon and its mission.
-  The dungeon leads into a dungeon. (Replaced in part: they stand as even tiles in a grid, [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].)
+  transparent, holding what the island has of its port, the Playlist, its patrol zone, its dungeon (a procedural one,
+  where it has one) and its mission. The owner noted that the dungeon nodes led into no dungeon. (Replaced in part: they stand as even tiles in a grid, [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].)
 - **The rest is Claude's**, on the owner's autonomy, recorded below and open to the owner's change.
 
 It replaces, in part, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]] (the keys in every view),

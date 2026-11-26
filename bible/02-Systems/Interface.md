@@ -373,7 +373,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame
   (`at`), once a screen has put its focus where it wants it, each event on a frame of its own where it says one, and a
   pointer's event may name a node (`on`) in place of a place, heard at the middle of where it was laid; it may take
-  more frames (`frames`) for many pictures to come; the page asks for reduced motion, so a screen stands settled. The
+  more frames (`frames`) for many pictures to come; the page asks for reduced motion, so a screen stands settled, unless the
+  shots ask for `"motion": true`. The
   tool serves on port 5173 where it is free, the only origin R2 answers, so the forge's pictures come.
 - **Read and driven headless.** The interfaces that hear a page's canvas (the game's, the World Editor's, the Test
   Ground's panels) are listed by `__ui()`, on the page or in the game's worker (`ui/seen.ts`): each node shown with an
@@ -1206,15 +1207,16 @@ dot and fading every 2 s, or a padlock while it is shut. Under it its name in ca
 broken before "of"), and its level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10"
 before it), or, shut, why in neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator
 ends or starts a line. The chosen crest's name is lit over a brass rule as wide as the name, its shield drawn 8% larger,
-its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps a crest's shield once
-as it is lit or chosen, in nine steps. The crests rise into place one after another as the screen opens. Each part is a
+its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps an open crest's shield once
+as it is lit or chosen, in nine steps; a shut crest's never. The crests rise into place one after another as the screen opens. Each part is a
 picture drawn once (the sweep once a step) and turned, faded or grown as it moves; under reduced motion nothing moves.
 
 On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
 before its edges, faint stars, two wide rings, and dotted lines from each playlist to the Breach between them and to
 its week's dungeon, and from the Breach's Normal to its Hard), each shield's middle on its spot over a dial of its own:
 an inner ring and an outer one ticked every 5 degrees with a diamond at each quarter, turning 3 degrees a second while
-its entry is open, dim at rest, brighter lit, and brightest chosen, three arcs turning against it; laid under the
+its entry is open, dim at rest, brighter lit, and brightest chosen, three arcs turning against it (a shut entry's
+still and dimmer whatever its look); laid under the
 crests and their words. Each crest's words wrap to 2.2 times a playlist's shield; the chart's picture is drawn again
 only at 64-pixel steps of the screen. The chosen entry's card stands beside it in a column that grows to the footer
 and scrolls. Narrower, the crests stand two by two over the chart's ground (its stars and rings, no dials), each its
@@ -1286,8 +1288,8 @@ Over an island docked at or gone ashore on, no node is marked on the map; the is
 (`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`;
 [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]). They
 are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
-in from each side), centred: each 280 to 340 px wide, as many a row as fit up to five, as tall as three rows fit (176
-to 220 px), 294 by 186 on a 1280 by 720 view, four a row (`gridOf`); more than fit scroll as the Playlist's card does
+in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as many a row
+as fit up to five, as tall as three rows fit (176 to 220 px), 294 by 186 on a 1280 by 720 view, four a row (`gridOf`); more than fit scroll as the Playlist's card does
 (`scrolledNode`). They rise into place one after another as the view opens, each 0.04 s after the one before, over
 0.35 s from 14 px below (none under reduced motion).
 

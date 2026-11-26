@@ -93,8 +93,8 @@ No Playlist is marked at sea or over an island: it stands among the island's til
 ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]; [[Interface]], "The island's
 tiles").
 
-A locked node ([[World Map]], "Seen whole, reached by nodes") stands among the island's tiles with a padlock and
-why ("<name> is locked", or "Opens later" for a social space that opens later); its tile is dim and a click on it does
+A locked node ([[World Map]], "Seen whole, reached by nodes") stands among the island's tiles with a padlock, its
+label reading why ("<name> is locked", or "Opens later" for a social space that opens later); its tile is dim and a click on it does
 nothing, so no landing is ever made there (`islandWords.ts`).
 
 ## The island's side
@@ -117,7 +117,7 @@ the climb reads as one steady zoom.
 - **A click at sea**: `pickAt`, then `clickAtSea`. On the sea in the Oversea view the ship sails there:
   `planSeaRoute`, then `voyageOf`; each frame `shipAt`. On the land or a port's icon it asks to dock or go ashore.
   Near a coast, `nearestIsland`, `sideNodes` and `frameSide` frame the island's side, its nodes chosen from its
-  panel.
+  tiles.
 
 ## Limits
 

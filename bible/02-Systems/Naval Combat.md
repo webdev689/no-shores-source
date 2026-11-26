@@ -316,7 +316,7 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
 - **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where it went, 3 pieces for a
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone as
   a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one of
-  their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
+  their pieces, anywhere along the way it sailed that tick, gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
   floating are theirs again (`Sea::own`), and so is what a fight they fought still owes them (its flotsam, ship XP and
   bounties when a captain goes down), once however often they joined it. A ship drops as one foe of its rank at its
   level does (its water's, raised by the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece

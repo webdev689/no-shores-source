@@ -144,9 +144,9 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
 | On foot | The leave held (M, or the pad's View held, 1.5 s; [[Interface]], "The leave held") | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
-| At sea | A click on a port's icon or its island, or L off a coast, then the confirmation's yes, once the ship lies within reach | Over the island, its panel up |
-| Over the island | An entry of its panel chosen, then chosen again, its press or Enter | The veil, "Landing at" the node, then on foot there; an Elite Dungeon's card; or the Playlist |
-| Over the island | Escape, or the panel's Back to the sea | At sea |
+| At sea | A click on a port's icon or its island, or L off a coast, then the confirmation's yes, once the ship lies within reach | Over the island, its tiles up |
+| Over the island | A tile clicked, or Enter on the tile lit ([[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]) | The veil, "Landing at" the node, then on foot there; an Elite Dungeon's card; or the Playlist |
+| Over the island | Escape, or the island's tile's Back | At sea |
 | On foot in a patrol | E at an entrance's door, offered as "Enter" and the dungeon's name | The veil, "Entering" the dungeon, then on foot at its way in |
 | In a dungeon | E at its exit door, offered as "Leave" | The veil, "Leaving" the dungeon, then before its entrance's door, facing out |
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |

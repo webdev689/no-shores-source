@@ -23,13 +23,15 @@ On the first tiles painted, the owner said:
 
 - **Each island tile is a painted vignette** of its place, with very minimal text: its name and its levels, every other
   detail shown as small glyphs.
-- **Saltmere's patrol zones each have three landing zones.**
+- **Saltmere's patrol zones each have three landing zones** ("salts patrol spaces", read as Saltmere's; the owner has
+  not said whether every zone's are meant).
 - **A patrol zone's tile opens the zone's map as a larger panel**, where the player selects which landing zone to
   land at.
 - **The landing zones are fast travel points** while the player is in that zone.
 
 It replaces, in part, [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]: the
-tiles' look and their text, and what a patrol zone's tile does.
+tiles' look and their text, and what a patrol zone's tile does; and it changes, in part,
+[[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]: three landing zones where a zone had one site.
 
 ## Claude's calls
 
@@ -42,3 +44,6 @@ tiles' look and their text, and what a patrol zone's tile does.
 | Motion | The tiles rise into place one after another as the view opens; a lit tile steps up 2 px with a brass edge | One moment as the island opens; still under reduced motion |
 
 How it works: [[Interface]], "The island's tiles"; [[Game]], "Landings".
+
+Not built yet: the three landing zones, the zone's map to choose one from, and their fast travel. A patrol zone's tile
+lands at the zone's one landing site, as before; its scene paints the three lanterns the decision asks for.
