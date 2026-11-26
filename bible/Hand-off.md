@@ -226,6 +226,16 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The hub's ground and walks, the ship's stern on the water, and music that repeats less** (#227, branch
+  `claude/sleepy-einstein-f6fqvk`, waiting on CI on its head and the owner's yes to merge), on four asks of the owner:
+  grass flickering through stone near the Hall (the walks round the Beacon now paved, `hub/walks.rs` `floors`); the
+  walks' flags not along the walks (`solidMesh.ts` `walkUvs`); a pale square under a ship's stern (the footprint's
+  line kept inside the hull, every ship's footprint in its own hull's line, `hullLines.ts`, `hullMask.ts`); and a
+  detailed music pass, patrol zones first ([[The Music Repeats Less, Patrol Zones First]]). Tested offline, each fix
+  with a test that failed first, pictured headless before and after; not heard, not on a real GPU. Open for the
+  owner: whether a walk's joints (rounds and fillets, still on the world's grain) take one walk's grain instead,
+  whether the music has variety enough. Known and left: the ship's footprint up to 0.37 m inside its hull near the
+  ends; no Frigate under way pictured after the fix.
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
   modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,
