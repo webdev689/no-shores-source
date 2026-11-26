@@ -37,7 +37,7 @@ test("an ember's box is the box round every vertex wearing it, none for a module
   assert.equal(emberBox(packOf('common.camp.fire', [[0, 0, 0]], ['bark']), 'common.camp.fire'), null);
 });
 
-test("a camp fire's coals burn a fire that casts; a lantern's glass a flame lit by its lamp; a cold one nothing", () => {
+test("a camp fire's coals burn a fire that casts; a lantern's glass its lamp, no flame; a cold one nothing", () => {
   const [camp, lamp] = [MODULE_NAMES.indexOf('common.camp.fire'), MODULE_NAMES.indexOf('passage.lamp')];
   const boxes: Record<string, readonly [number, number, number, number, number, number]> = {
     'common.camp.fire': [-0.3, -0.3, 0, 0.3, 0.3, 0.18],
@@ -55,12 +55,11 @@ test("a camp fire's coals burn a fire that casts; a lantern's glass a flame lit 
     ],
     (module) => boxes[module] ?? null,
   );
-  assert.equal(lights.fires.length, 2, 'the camp and the lit lamp; the cold lamp and the mouth none');
-  const [fire, flame] = lights.fires;
+  assert.equal(lights.fires.length, 1, 'the camp; the lit lamp is enclosed, the cold lamp and the mouth none');
+  const [fire] = lights.fires;
   assert.ok(fire?.casts && (fire?.sizeM ?? 0) >= 0.5);
   assert.deepEqual(fire?.at.slice(0, 2), [1010, 2020]);
-  assert.ok(flame && !flame.casts && flame.at[2] > 3.9 && flame.at[2] < 4.21, 'in its glass');
   assert.equal(lights.lamps.length, 1);
-  assert.equal(lights.lamps[0]?.seed, flame?.seed);
+  assert.ok((lights.lamps[0]?.at[2] ?? 0) > 3.9 && (lights.lamps[0]?.at[2] ?? 0) < 4.5, 'at its glass');
   assert.equal(lights.lamps[0]?.motion, 'lantern');
 });

@@ -11,6 +11,7 @@ test('a light mark is a lamp where it stands in the world, reaching its radius, 
   assert.deepEqual(lamps[0]?.at, [102, -47, 4]);
   assert.equal(lamps[0]?.reachM, 26);
   assert.deepEqual(lamps[0]?.light, [0.675, 0.5, 0.3]);
+  assert.equal(lamps[0]?.motion, 'steady', 'its mark already moves: the lamp adds no flicker of its own');
 });
 
 test('its lamps are the same places frame to frame while their number holds, moved and dimmed in place', () => {

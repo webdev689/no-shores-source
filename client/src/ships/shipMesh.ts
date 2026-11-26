@@ -70,7 +70,7 @@ export function shipSails(name: string): SailCorners[] {
   return [...(entry?.sails ?? [])];
 }
 
-/** Where a published ship's lanterns' flames burn in its own frame, metres, as its export found them; none for a ship
+/** Where a published ship's lanterns stand in its own frame, metres, as its export found them; none for a ship
  *  without a lantern. */
 export function shipLanterns(name: string): [number, number, number][] {
   type Lit = { readonly lanterns?: readonly (readonly [number, number, number])[] };

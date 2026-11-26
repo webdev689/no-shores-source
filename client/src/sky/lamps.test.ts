@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CityLamps, carriedLight, flicker, type LampPlace, lampsLit, lampsRound, lanternLights } from './lamps.ts';
+import {
+  CityLamps,
+  carriedLight,
+  type FirePlace,
+  flicker,
+  type LampPlace,
+  lampsLit,
+  lampsRound,
+  lanternLamp,
+  relightFires,
+  seedAt,
+} from './lamps.ts';
 import { AFTERNOON, LAMPS_MOST, PUDDLE_WRAP_M, skyNumbers, WRAP_M } from './skyUniform.ts';
 import { breath, lightMotion, motionCode } from './flicker.ts';
 
@@ -183,6 +194,34 @@ test("a view's fires are kept with its lamps, and a change to any view's fires i
   const third = lamps.firesChanged;
   lamps.set(city, [place(4)]);
   assert.equal(lamps.firesChanged, third, 'lamps alone changed: the fires burn on');
+  lamps.set(isles, [place(5)], [fire(3)]);
+  assert.equal(lamps.firesChanged, third, 'a view built again with the same fires changes none');
+});
+
+test('fires lit again light only the new and put out only the gone', () => {
+  const [lit, out]: [number[], number[]] = [[], []];
+  let next = 0;
+  const flames = { light: () => (lit.push(++next), next), out: (id: number) => out.push(id) };
+  const fire = (x: number): FirePlace => ({ at: [x, 0, 0], sizeM: 1, seed: x, casts: true });
+  const first = relightFires(flames, new Map(), [fire(1), fire(2), fire(2)]);
+  assert.deepEqual([lit, out], [[1, 2, 3], []]);
+  const second = relightFires(flames, first, [fire(2), fire(3)]);
+  assert.deepEqual(
+    [lit, out.sort()],
+    [
+      [1, 2, 3, 4],
+      [1, 2],
+    ],
+    'one of the twins kept, the other and the first out',
+  );
+  assert.deepEqual([...second.values()].flat().sort(), [3, 4]);
+});
+
+test('a steady lamp moves not at all and moves no glow', () => {
+  assert.equal(motionCode('steady', 7), 0);
+  assert.equal(lightMotion(0, 3.3), 1);
+  const [lit] = lampsRound([0, 0, 0], [{ ...place(1, 5), motion: 'steady' }], null, 0, 3.3);
+  assert.deepEqual([lit?.light[0], lit?.motion], [1, 0]);
 });
 
 test("a lamp carries its motion to the uniform, a stone's breathing; one carried carries none", () => {
@@ -197,7 +236,7 @@ test("a lamp carries its motion to the uniform, a stone's breathing; one carried
   assert.equal(numbers[firstLamp + 15], lit?.motion);
 });
 
-test("a lantern's flame burns behind its glass, which keeps its smoke and embers in, and lights no lamp of its own", () => {
-  const { fire } = lanternLights([4, 6, 2], 0.3, 0.4);
-  assert.deepEqual([fire.glassed, fire.casts], [true, false]);
+test('a lantern is an enclosed light: its lamp alone, seeded by where it stands, flickering as a lantern', () => {
+  const lamp = lanternLamp([4, 6, 2], 0.4);
+  assert.deepEqual([lamp.at, lamp.seed, lamp.motion], [[4, 6, 2], seedAt([4, 6, 2]), 'lantern']);
 });

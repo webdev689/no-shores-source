@@ -313,8 +313,8 @@ in the paving stands 5 mm over it. The glow is lit warm and unshaded, brighter a
 ([[Sky]], "Lamps"). Each glowing solid gives light by its shape and size (`cityLights.ts`,
 [[Lights as Claude Builds Them]]): coals (a brazier's, a hoop's, a pyramid's camp fire, a watchtower's) burn the
 game's fire on them, as tall as they are wide and a fifth more, casting its own light; a lantern (narrower than 0.65
-m: a station's, a courtyard's, a mail rack's, a lamp post's at each of its flames) holds a small flame behind its
-glass, its lamp at the glass; the Beacon's 22 m glass burns eight great fires round its foot and lights one great
+m: a station's, a courtyard's, a mail rack's, a lamp post's at each of its glows) shows no flame, its glass glowing
+and flickering with its lamp at the glass ([[An Enclosed Light Hides Its Flame]]); the Beacon's 22 m glass burns eight great fires round its foot and lights one great
 lamp; a lantern room wider than 2 m (a lighthouse's) is its glass alone; a dome (a sunstone) breathes. A city's lights
 are laid once it is whole, its modules' meshes come. Faces are lit as the land is, with a little light thrown back
 onto walls from the ground, the lamps' light at night, and the rain's darkening and sheen. In the game the solids cast

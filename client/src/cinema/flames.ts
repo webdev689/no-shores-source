@@ -165,8 +165,6 @@ export function packFires(
 export class Flames {
   /** The wind the smoke leans with, m/s east and south. */
   wind: Wind = [0, 0];
-  /** How far through what stands nearer its flames still show, metres: a lantern's glass round its flame. */
-  seeThroughM = 0;
   private readonly device: GPUDevice;
   private readonly module: GPUShaderModule;
   private readonly overLayout: GPUBindGroupLayout;
@@ -236,11 +234,10 @@ export class Flames {
 
   /** Lights a fire `sizeM` tall (half a metre to four) with its base at `base` (world metres); gives its id. With
    *  `along`, the run in metres of an edge burning from `base` (a rail, a spar), it burns all along that edge. Without
-   *  `casts`, its light is not among `lamps`: its place lights a lamp of its own, seeded alike. `glassed`, behind a
-   *  lantern's glass, it throws no smoke or embers. */
-  light(base: Point, sizeM: number, seed: number, along?: Point, casts = true, glassed = false): number {
+   *  `casts`, its light is not among `lamps`: its place lights a lamp of its own, seeded alike. */
+  light(base: Point, sizeM: number, seed: number, along?: Point, casts = true): number {
     const id = this.nextId++;
-    const fire = { at: base, sizeM, seed, ...(along ? { along } : {}), ...(glassed ? { glassed } : {}) };
+    const fire = { at: base, sizeM, seed, ...(along ? { along } : {}) };
     this.fires.set(id, fire);
     if (!casts) this.dark.add(fire);
     this.lit = null;
@@ -307,7 +304,7 @@ export class Flames {
     this.device.queue.writeBuffer(
       this.view,
       0,
-      Float32Array.from([...fromEye.subarray(0, 16), ...toEye, time, this.seeThroughM, 0, 0]),
+      Float32Array.from([...fromEye.subarray(0, 16), ...toEye, time, 0, 0, 0]),
     );
   }
 

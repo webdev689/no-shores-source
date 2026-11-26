@@ -35,19 +35,16 @@ const plan = (landmark: Solid[], works: Solid[], social: Solid[]): CityPlan => (
 
 const column = { shape: 'column', sides: 12, top: 1 } as const;
 
-test('a lantern burns a small flame in its glass, its light at the lantern, seeded as the flame', () => {
+test('a lantern shows no flame, its glass glowing, its light at the lantern', () => {
   const { lamps, fires } = glowLights(
     plan([solid('stone', [0, 0, 0], [5, 5, 5])], [], [solid('glow', [5, 6, 2], [0.5, 0.5, 0.6])]),
   );
   assert.equal(lamps.length, 1);
-  assert.equal(fires.length, 1);
-  const [lamp, flame] = [lamps[0], fires[0]];
+  assert.equal(fires.length, 0);
+  const lamp = lamps[0];
   assert.deepEqual(lamp?.at, [5, 6, 2.3]);
   assert.equal(lamp?.motion, 'lantern');
   assert.ok((lamp?.reachM ?? 0) >= 9 && (lamp?.reachM ?? 0) < 12, `a lantern reaches ${lamp?.reachM} m`);
-  assert.equal(flame?.seed, lamp?.seed);
-  assert.equal(flame?.casts, false);
-  assert.ok((flame?.sizeM ?? 0) <= 0.35 && (flame?.at[2] ?? 0) > 2 && (flame?.at[2] ?? 0) < 2.3, 'inside its glass');
 });
 
 test("a brazier's, a hoop's and a camp's coals burn a fire on them that casts its own light", () => {

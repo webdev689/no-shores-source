@@ -151,7 +151,8 @@ export class FightFeel {
     readonly at: number;
   } | null = null;
   /** The ships afire at the last frame, where their light stands (window metres). */
-  private burning: Point[] = [];
+  /** Each burning ship's fire: where it stands and its ship's number, which its light flickers by. */
+  private burning: (readonly [number, number, number, number])[] = [];
 
   constructor(seed: number) {
     this.effects = new Effects(seed);
@@ -171,7 +172,7 @@ export class FightFeel {
     readonly toWindow: Window;
   }): Splash[] {
     const { ships, now, toWindow } = input;
-    const burning: Point[] = [];
+    const burning: (readonly [number, number, number, number])[] = [];
     this.effects.blow(input.windBearing);
     this.effects.trail(
       input.balls.map(([x, y, z]) => toWindow([x, y, z])),
@@ -203,7 +204,7 @@ export class FightFeel {
       else this.bursts.forget(index);
       if (vessel.state !== 'sinking' && vessel.state !== 'sunk') {
         this.effects.burn(anchor, [0, 0, deckOverM(hull)], vessel.fires, halfLength * 0.3, now, input.seconds);
-        if (vessel.fires > 0) burning.push([anchor[0], anchor[1], anchor[2] + deckOverM(hull)]);
+        if (vessel.fires > 0) burning.push([anchor[0], anchor[1], anchor[2] + deckOverM(hull), index]);
       }
       const share = harm?.sunkShare(now) ?? 0;
       if (share > 0.5 || vessel.state === 'sunk') {
@@ -514,8 +515,8 @@ export class FightFeel {
     water: ((x: number, y: number) => number) | null = null,
     eye: readonly [number, number, number] | null = null,
   ): Mark[] {
-    // Each burning ship's light on the hulls round it, flickering.
-    const lights = this.burning.map(([x, y, z], index) => ({
+    // Each burning ship's light on the hulls round it, flickering by its own ship, whatever else burns or flashes.
+    const lights = this.burning.map(([x, y, z, ship]) => ({
       x,
       y,
       z,
@@ -523,7 +524,7 @@ export class FightFeel {
       colour: BURN_LIGHT.colour,
       blend: 'light' as const,
       // A fire's flicker, deeper than a lamp's: its light swells and sinks with its flames.
-      alpha: flicker(index + 1, now, BURN_FLICKER),
+      alpha: flicker(ship + 1, now, BURN_FLICKER),
     }));
     return [...this.effects.marks(now, scale), ...lights, ...this.flotsam.marks(now, scale, water, eye)];
   }

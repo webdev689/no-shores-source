@@ -35,14 +35,16 @@ export function breath(seed: number, seconds: number, depth = 1): number {
   return 1 - depth * 0.2 * (1 - Math.cos(seconds * BREATH_RATE + lightPhase(seed) * 6.2832));
 }
 
-/** How a light on land moves: a fire's flicker, a lantern's shallower one behind its glass, or a stone's breath (crystal,
- *  a sunstone, a ruin's crown). */
-export type LightMotion = 'fire' | 'lantern' | 'stone';
+/** How a light on land moves: a fire's flicker, a lantern's shallower one behind its glass, a stone's breath (crystal,
+ *  a sunstone, a ruin's crown), or none (`steady`: a light whose own brightness already moves, a sea fight's). */
+export type LightMotion = 'fire' | 'lantern' | 'stone' | 'steady';
 const MOTIONS: readonly LightMotion[] = ['fire', 'lantern', 'stone'];
 
 /** A light's motion as one number a glow can take from its lamp in a shader: its kind's place (1 fire, 2 lantern,
- *  3 stone) and its seed's phase as the fraction; 0 is none. Kept off the next whole number, so a float32 keeps it. */
+ *  3 stone) and its seed's phase as the fraction; 0 is none, a steady light's. Kept off the next whole number, so a
+ *  float32 keeps it. */
 export function motionCode(motion: LightMotion, seed: number): number {
+  if (motion === 'steady') return 0;
   return MOTIONS.indexOf(motion) + 1 + Math.min(lightPhase(seed), 0.999);
 }
 
@@ -50,6 +52,7 @@ export function motionCode(motion: LightMotion, seed: number): number {
  *  `light_motion` shades it. */
 export function lightMotion(code: number, seconds: number): number {
   const kind = Math.floor(code);
+  if (kind === 0) return 1;
   const seed = (code - kind) / 0.618034;
   return kind === 3 ? breath(seed, seconds, 0.75) : flicker(seed, seconds, kind === 2 ? 0.35 : 1);
 }

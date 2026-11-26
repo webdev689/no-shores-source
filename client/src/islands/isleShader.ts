@@ -250,7 +250,7 @@ fn module_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
   return vec4f(lit(colour, normal, surface.from_eye), 1.0);
 }
 
-// How a glowing ember moves: with its own lamp where one is lit near it (a lantern's glass with its flame, a camp's
+// How a glowing ember moves: with its own lamp where one is lit near it (a lantern's glass with its light, a camp's
 // coals with its fire), never a stone's (an event's crystal); else by where in its module it glows.
 fn ember_motion(from_eye: vec3f, local: vec3f) -> f32 {
   let own = 1.0 + min(light_phase(dot(floor(local), vec3f(13.0, 7.0, 1.0))), 0.999);

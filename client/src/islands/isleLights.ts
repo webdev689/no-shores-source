@@ -1,7 +1,7 @@
 // The light the islands' modules give where their ember glows, as the land's fires and lamps (../sky/lamps.ts): a camp
 // fire's coals burn a fire that casts its own light; a lantern's glass (a mine adit's, a passage's lamp and a dead lamp
-// lit, in their hollows) holds a small flame, its light at the lantern. An ember stood cold (a lamp unlit) gives none.
-import { coalsFire, type FirePlace, type LampPlace, lanternLights } from '../sky/lamps.ts';
+// lit, in their hollows) glows, no flame seen, its light at the lantern. An ember stood cold (a lamp unlit) gives none.
+import { coalsFire, type FirePlace, type LampPlace, lanternLamp } from '../sky/lamps.ts';
 import { type KitPack, MODULE_NAMES, PARTS, VERTEX_BYTES } from './isleModules.ts';
 import type { IslePlacement, IsleShown } from './islePlan.ts';
 import { placedPoint } from './isleView.ts';
@@ -58,7 +58,7 @@ export function isleLights(isles: readonly IsleShown[], boxOf: (module: string) 
   return lights;
 }
 
-/** One placed ember's fire, or lantern, into `into`, in world metres. */
+/** One placed ember's fire, or lantern's lamp, into `into`, in world metres. */
 function emberLight(isle: IsleShown, placement: IslePlacement, box: EmberBox, into: IsleLights): void {
   const [, , , , , scale, lift] = placement;
   const world = (local: readonly [number, number, number]): [number, number, number] => {
@@ -72,7 +72,5 @@ function emberLight(isle: IsleShown, placement: IslePlacement, box: EmberBox, in
     into.fires.push(coalsFire(world([middleX, middleY, box[5]]), wide, tall));
     return;
   }
-  const { fire, lamp } = lanternLights(world([middleX, middleY, (box[2] + box[5]) / 2]), Math.min(across, deep), wide);
-  into.fires.push(fire);
-  into.lamps.push(lamp);
+  into.lamps.push(lanternLamp(world([middleX, middleY, (box[2] + box[5]) / 2]), wide));
 }

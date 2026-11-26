@@ -1,7 +1,7 @@
 import { sphereAround } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { farPlace, ShadowMap } from '../shadow.ts';
-import { flicker } from '../sky/lamps.ts';
+import { lightMotion, motionCode } from '../sky/flicker.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { PLAYER_LOOK, type ShipLook } from './dress.ts';
@@ -205,8 +205,6 @@ export function releasePictures(device: GPUDevice): void {
 /** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
  *  captains'. */
 export const SHIP_SLOTS = 20;
-/** A lantern's flame flickers this deep, a share of a fire's: its glass shields it, as a carried lantern's does. */
-export const LANTERN_FLICKER = 0.4;
 
 /** Draws a ship's mesh at its place, lit as the land is, into the land's pass so the water sees it, each part in its
  *  picture, its side's paint on its shell, its yards braced with its square sails, and its sails' canvas and its
@@ -243,7 +241,7 @@ export class ShipView {
   private canvasBytes: DataView | undefined;
   /** Its bounding sphere in its own frame, made once (`shipSphere`). */
   private readonly sphere: readonly number[];
-  /** Where its lanterns' flames burn in its own frame, as its manifest says (`shipLanterns`). */
+  /** Where its lanterns stand in its own frame, as its manifest says (`shipLanterns`). */
   readonly lanterns: readonly (readonly [number, number, number])[];
 
   /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
@@ -321,7 +319,8 @@ export class ShipView {
   /** Draws it into a pass the land's pipelines draw into (its formats, samples and reversed depth), in its own
    *  `slot` of the frame, in its side's colours as light as `look` says, and its yards, canvas and flag as `rig` sets
    *  them (none without a rig, its yards square), lit by the sun through `shadow`'s maps (none unless given); its
-   *  lanterns alight, flickering as they are at `seconds`, where it is given (a wreck's are out). */
+   *  lanterns alight, flickering as a lantern's light does at `seconds` by the ship's `seed`, where it is given (a
+   *  wreck's are out). */
   drawInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -331,8 +330,9 @@ export class ShipView {
     rig: SailRig | null = null,
     shadow: ShadowMap = ShadowMap.none(this.gpu),
     seconds: number | null = null,
+    seed = slot + 1,
   ): void {
-    const canvas = this.prepare(place, camera, slot, look, rig, seconds);
+    const canvas = this.prepare(place, camera, slot, look, rig, seconds, seed);
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.pipeline, shadow.receiverGroup(this.kit.pipeline));
   }
 
@@ -368,6 +368,7 @@ export class ShipView {
     look: ShipLook,
     rig: SailRig | null,
     seconds: number | null = null,
+    seed = slot + 1,
   ): number | null {
     const drawn = this.slots[slot];
     if (!drawn) return null;
@@ -380,10 +381,10 @@ export class ShipView {
     for (let index = 0; index < 12; index++) turn[index] = (turn[index] ?? 0) * (place.scale ?? 1);
     values.set(turn, 16);
     values.set([place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2], 0], 32);
-    // Its lanterns' flames: how bright they burn now, each ship's on a beat of its own, and the seconds they sway by
-    // (kept small, so float32 holds them to the frame).
-    const burn = seconds === null ? 0 : flicker(slot + 1, seconds, LANTERN_FLICKER);
-    values.set([look.shade ?? 1, burn, (seconds ?? 0) % 600, 0], 36);
+    // Its lanterns' glass: how bright it glows now, flickering as its lamp does (a lantern's motion, as the sky's
+    // lamps take it), each ship's on a beat of its own.
+    const burn = seconds === null ? 0 : lightMotion(Math.fround(motionCode('lantern', seed)), seconds);
+    values.set([look.shade ?? 1, burn, 0, 0], 36);
     if (seconds !== null)
       this.lanterns.forEach((lantern, index) => values.set([...lantern, 1], LANTERN_FLOATS_AT + index * 4));
     const paint = look.painted ?? sidePainted(look.side);

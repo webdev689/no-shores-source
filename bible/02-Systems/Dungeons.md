@@ -526,15 +526,14 @@ as standing none (`readDungeon`).
   five to eight glowing crystals, a lantern on its chain, a hearth's embers, and six to ten fungi, each a pale stalk
   under a glowing cap. Each is shaped by where it stands, so no two are alike.
 - **Its flames** are fires, the prologue's ([[Cinema]], "Flames"), not the mesh's: one out of each torch's cup, over a
-  brazier's embers, on each candle's wick, behind a lantern's glass and a lit passage lamp's, and along a hearth
-  (`torchFlame`, `fixtureFlames`, `passagePieceLights`), each seeded by its light's number, so a flame and the light
-  it casts flicker together ([[Lights as Claude Builds Them]]). The dungeon's scene draws them over the finished
-  picture (`DUNGEON_FLAMES`), seen through what stands up to 0.24 m nearer, so a lantern's and the passage lamp's
-  show through their glass, which keeps their smoke and embers in (`glassed`); past where its tongues read, a flame
-  is its glow alone.
+  brazier's embers, on each candle's wick, and along a hearth (`torchFlame`, `fixtureFlames`), each seeded by its
+  light's number, so a flame and the light it casts flicker together ([[Lights as Claude Builds Them]]). A caged
+  lantern (the hanging fixture, the passages' lamp and dead lamps) burns no fire: its glass glows and flickers with
+  its light ([[An Enclosed Light Hides Its Flame]]). The dungeon's scene draws the flames over the finished picture (`DUNGEON_FLAMES`), hidden by
+  whatever stands nearer; past where its tongues read, a flame is its glow alone.
 - **Glows and water** (`dungeonShaders.ts`): an ember, a lantern's glass, a kit piece's or a landmark's flame, a
   crystal, a fungus cap and the open portal move with the light nearest them its cluster lists, an ember and glass
-  flickering with their flame, the rest breathing (`nearest_seed`). A crystal's and a lantern's glass glow by each
+  flickering with their light, the rest breathing (`nearest_seed`). A crystal's and a lantern's glass glow by each
   triangle's own facing,
   from 0.55 of their glow edge on to all of it square to the eye, lifted a little toward it by the lights round them,
   so a crystal's faces differ. Their glows peak at 1, so no facet clips. Still water lies over its bed, its cell's

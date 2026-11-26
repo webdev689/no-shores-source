@@ -154,6 +154,8 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
       // Room for the dungeon's pictures to be painted before the next frame.
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
+    // Let go before its device is, so no flames of a destroyed device stay shown (`DUNGEON_FLAMES`).
+    dungeon.clear();
   }
   const picture = await readBack(device, target);
   // A device let go, so the software GPU keeps room for the next picture's.
@@ -346,9 +348,7 @@ async function hollowFrames(
   });
   // The embers' fires, over the picture where the scene's depth lets them show, as the game's scene draws them.
   const [flames, copy] = [new Flames(gpu), new DepthCopy(gpu)];
-  flames.seeThroughM = 0.3;
-  for (const fire of CITY_LAMPS.fires)
-    flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts, fire.glassed);
+  for (const fire of CITY_LAMPS.fires) flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts);
   const flat = device.createTexture({
     size: [width, height],
     format: 'r32float',
