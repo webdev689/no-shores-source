@@ -147,15 +147,18 @@ export async function zoneShot(asked: ZoneAsked): Promise<string> {
       { drawInto: (pass, fromEye, eyed, time) => dungeon.drawInto(pass, fromEye, eyed.eye, time) },
       { drawInto: (pass, fromEye, eyed) => pieces.drawInto(pass, fromEye, eyed) },
     ];
-    for (let frame = 0; frame < 3; frame++) {
-      // Under ground the sky only says so, with no dark to fade into, as the game's dungeon frame has it.
-      scene.draw(shot, view, 0, drawers, { look: { ...runSky(0), darkM: 0 }, lamps: [] });
-      await device.queue.onSubmittedWorkDone();
-      // Room for the dungeon's pictures to be painted before the next frame.
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      for (let frame = 0; frame < 3; frame++) {
+        // Under ground the sky only says so, with no dark to fade into, as the game's dungeon frame has it.
+        scene.draw(shot, view, 0, drawers, { look: { ...runSky(0), darkM: 0 }, lamps: [] });
+        await device.queue.onSubmittedWorkDone();
+        // Room for the dungeon's pictures to be painted before the next frame.
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    } finally {
+      // Let go before its device is, so no flames of a destroyed device stay shown (`DUNGEON_FLAMES`).
+      dungeon.clear();
     }
-    // Let go before its device is, so no flames of a destroyed device stay shown (`DUNGEON_FLAMES`).
-    dungeon.clear();
   }
   const picture = await readBack(device, target);
   // A device let go, so the software GPU keeps room for the next picture's.

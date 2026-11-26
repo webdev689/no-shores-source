@@ -79,6 +79,6 @@ fn light_motion(code: f32, time: f32) -> f32 {
   let kind = floor(code);
   let seed = fract(code) / 0.618034;
   let flame = light_flicker(seed, time, select(1.0, 0.35, kind == 2.0));
-  return select(flame, light_breath(seed, time, 0.75), kind == 3.0);
+  return select(select(flame, light_breath(seed, time, 0.75), kind == 3.0), 1.0, kind == 0.0);
 }
 `;

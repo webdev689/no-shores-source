@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { glowLights } from './cityLights.ts';
+import { moduleHeight, moduleNumber } from './modules.ts';
 import type { CityPlan, Solid, SolidShape } from './plan.ts';
 
 const solid = (
@@ -77,4 +78,21 @@ test("the Beacon's fire burns round the foot of its glass, its light one great l
 
 test('a city with no glowing solid lights nothing', () => {
   assert.deepEqual(glowLights(plan([solid('stone', [0, 0, 0], [5, 5, 5])], [], [])), { lamps: [], fires: [] });
+});
+
+test("a lamp post's lantern shows no flame; a sconce's and a wall brazier's open flames burn the game's fire", () => {
+  const module = (name: string, place: [number, number, number]) =>
+    solid('glow', place, [1, 1, moduleHeight(moduleNumber(name))], {
+      shape: 'module',
+      module: moduleNumber(name),
+      group: 0,
+    });
+  const lights = (name: string) => glowLights(plan([], [module(name, [0, 0, 0])], []));
+  assert.deepEqual(lights('lamp-post').fires, [], 'an enclosed light');
+  for (const name of ['sconce', 'wall-brazier']) {
+    const { fires, lamps } = lights(name);
+    assert.equal(fires.length, 1, name);
+    assert.equal(fires[0]?.seed, lamps[0]?.seed);
+    assert.equal(lamps[0]?.motion, 'fire');
+  }
 });

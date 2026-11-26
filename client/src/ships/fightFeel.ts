@@ -150,7 +150,6 @@ export class FightFeel {
     readonly rig: number;
     readonly at: number;
   } | null = null;
-  /** The ships afire at the last frame, where their light stands (window metres). */
   /** Each burning ship's fire: where it stands and its ship's number, which its light flickers by. */
   private burning: (readonly [number, number, number, number])[] = [];
 
