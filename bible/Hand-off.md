@@ -9,8 +9,10 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
+- **For the owner's yes**: #229 (the deeper dungeons: storeys and stairs, more ways, great rooms and galleries,
+  vaults, richer chests and DFO's 3D map; [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]],
+  its pieces published by the dungeon-modules workflow's run 53) and #159 (the rooms' worker tests wait for what they
+  check; it conflicts with `main` in `roomThread.test.ts`).
 - **Other sessions' work under way**: #227 (the hub's ground and walks, the ship's stern on the water, music that
   repeats less), #221 (hostile ships and islands on the sea map, travel anywhere at sea) and #216 (the sea reworked,
   docking in sight, the island's places as painted tiles, the Playlist's crests).
@@ -104,6 +106,14 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
+  third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
+  a walk through a three-storey dungeon and its vault. Its notes' Limits name what is left: a shoulder at a flight's
+  ends, sight under a flight's slope, seals fitting under a furnished room; and the map's per-frame costs (a sight
+  ray's stair scans, its 46 KB upload while open). Whether passages go deeper than one storey is the owner's call.
+- **The toolkit's barriers** (observations 0040, 0116, 0117, each seen a third time): a worker's run ending before the
+  2-hour kill with its edits committed, its target/ deleted once merged, and no picture run driving another
+  checkout's server.
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
   splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").
