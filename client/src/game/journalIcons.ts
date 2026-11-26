@@ -1,12 +1,15 @@
 // The Journal's icons, drawn pixel by pixel in the gear glyphs' style (`gearGlyphs.ts`): twelve square, a dark outline,
 // lit from the top left. They mark where a bounty counts, and lead the timers: each reset, the dungeons on, the seas
-// of each tier and how a character stands with them, what a run pays, the Abyss's rules, and each modifier.
+// of each tier and how a character stands with them, what a run pays, the Abyss's rules, and each modifier. The
+// island's tiles draw their details with them, and with icons of their own (`islandIconMaps.ts`).
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { ELEMENTS } from '../player/gear.ts';
 import { type Pixels, svgOf } from '../plus/emblems.ts';
 import type { Node } from '../ui/node.ts';
-import { ICONS } from './journalIconMaps.ts';
+import { ISLAND_ICONS } from './islandIconMaps.ts';
+import { ICONS as JOURNAL_ICONS } from './journalIconMaps.ts';
 
+const ICONS = { ...JOURNAL_ICONS, ...ISLAND_ICONS };
 export type IconName = keyof typeof ICONS;
 
 /** The pixels a side of an icon. */

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { BINDS } from '../player/input.ts';
 import { byId, fakeInterface, wordsIn } from '../ui/uiForTests.ts';
 import { sidesOf } from '../ui/layout.ts';
 import type { Activities, Gates } from './activities.ts';
@@ -138,10 +139,12 @@ test('a patrol zone’s snapshot: its levels, its dungeon of the day, resources,
   assert.deepEqual(
     patrol?.glyphs.map((glyph) => [glyph.icon, glyph.says]),
     [
-      ['dungeon', 'Dungeon of the day: its second'],
+      ['dungeon', "Dungeons: Three; today's is second"],
+      ['resources', 'Resources: 3 places: iron, herbs'],
+      ['foes', 'Foes: 2 sites of the Grey Tithe'],
       ['seas-elite', 'Elite seas: Levels 10 to 14'],
       ['seas-abyss', 'Abyss seas: Levels 20 to 24'],
-      ['burn', 'Burn (Shadow)'],
+      ['burn', 'Today: Burn (Shadow)'],
     ],
   );
   assert.equal(patrol?.levels, 'Lv 1–5');
@@ -170,7 +173,7 @@ test('an Elite Dungeon leads into its dungeon from the sea, saying whether it is
 });
 
 test('the grid lays even tiles with room between them, up to five a row, three rows to the view', () => {
-  assert.deepEqual(gridOf(1280, 720), { columns: 4, tile: { width: 294, height: 186 } });
+  assert.deepEqual(gridOf(1280, 720), { columns: 4, tile: { width: 292, height: 184 } });
   assert.deepEqual(gridOf(1920, 1080), { columns: 5, tile: { width: 340, height: 220 } });
   assert.deepEqual(gridOf(700, 720).columns, 2);
   assert.equal(gridOf(1280, 500).tile.height, 176, 'never shorter than its details need; the grid scrolls');
@@ -210,7 +213,7 @@ test('every tile is the same size, and a click on one does what it does, the Pla
       (id) => `${ui.boxOf(id)?.width}x${ui.boxOf(id)?.height}`,
     ),
   );
-  assert.deepEqual([...sizes], ['294x186']);
+  assert.deepEqual([...sizes], ['292x184']);
   const [port, playlist] = [ui.boxOf('island:overlook-social'), ui.boxOf('island:overlook-playlist')];
   assert.ok(port && playlist && playlist.x - (port.x + port.width) === 16, 'room between each');
   const patrolTile = byId(node, 'island:saltgrass-downs');
@@ -342,4 +345,132 @@ test('Enter does the lit tile’s press, the first’s with none lit: a landing 
     'dungeon krakens-grotto',
     'playlist overlook',
   ]);
+});
+
+test('the keys and the pad walk the tiles and press the one they reach, which they light over the pointer’s', () => {
+  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const { ui, step } = fakeInterface(1280, 720);
+  let chosen: string | null = null;
+  const heard: string[] = [];
+  const acts = {
+    choose: (entry: string) => void (chosen = entry),
+    act: (entry: IslandEntry) => void heard.push(`act ${entry.id}`),
+    back: () => void heard.push('back'),
+  };
+  const root = () => islandPanelNode(ui, panel, chosen, null, acts);
+  step(root);
+  step(root, [], 1);
+  // The pointer rests on the Playlist's tile, lighting it.
+  const playlist = ui.boxOf('island:overlook-playlist');
+  assert.ok(playlist);
+  step(root, [{ kind: 'pointer', x: playlist.x + 8, y: playlist.y + 8 }]);
+  step(root);
+  assert.equal(chosen, 'overlook-playlist');
+  for (let press = 0; press < 12 && ui.focusedId !== 'island:krakens-grotto'; press += 1)
+    step(root, [{ kind: 'key', key: 'Tab' }]);
+  step(root);
+  assert.equal(chosen, 'krakens-grotto', 'the tile the keys reached is lit, so Enter presses what is lit');
+  step(root, [{ kind: 'key', key: 'Enter' }]);
+  assert.deepEqual(heard, ['act krakens-grotto']);
+  // The cross walks the grid: down to the second row, then along it.
+  const second = ['island:krakens-grotto', 'island:burned-mill', 'island:maw', 'island:tern-strand'];
+  for (let press = 0; press < 4 && !second.includes(ui.focusedId ?? ''); press += 1)
+    step(root, [{ kind: 'pad', button: 'down' }]);
+  for (let press = 0; press < 4 && ui.focusedId !== 'island:maw'; press += 1)
+    step(root, [{ kind: 'pad', button: 'right' }]);
+  step(root, [{ kind: 'pad', button: 'accept' }]);
+  assert.deepEqual(heard, ['act krakens-grotto', 'act maw'], 'the pad’s cross and A alike');
+});
+
+test('tiles step their size four pixels at a time: each texel of a scene two pixels, and a resize paints few', () => {
+  for (let width = 1280; width <= 1920; width += 1)
+    for (let height = 700; height <= 1080; height += 19) {
+      const { tile } = gridOf(width, height);
+      assert.ok(tile.width % 2 === 0 && tile.height % 2 === 0, `${tile.width}x${tile.height} at ${width}x${height}`);
+    }
+  const keys = new Set<string>();
+  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
+  for (let width = 1280; width < 1344; width += 1) {
+    const { ui, step } = fakeInterface(width, 720 + (width - 1280));
+    step(() => islandPanelNode(ui, panel, null, null, acts));
+    for (const { node } of ui.laid)
+      if (node.picture?.key.startsWith('island scene patrol') === true) keys.add(node.picture.key);
+  }
+  assert.ok(keys.size <= 10, `${keys.size} paintings over 64 pixels of a resize`);
+});
+
+test('each tile’s scene is drawn a little transparent, as its ground was, so the island shows through', () => {
+  const { ui } = clicked('island:island');
+  const scenes = ui.laid.filter((each) => each.node.picture?.key.startsWith('island scene') === true);
+  assert.ok(scenes.length > 0);
+  for (const { node } of scenes) assert.equal(node.picture?.tint, 'rgba(255,255,255,0.74)', node.picture?.key);
+});
+
+test('the tiles scroll with no fade painted over the island, and Back names the pad’s B while it is in use', () => {
+  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const { ui, step } = fakeInterface(1280, 400);
+  const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
+  const root = () => islandPanelNode(ui, panel, null, null, acts);
+  for (let frame = 0; frame < 3; frame += 1) step(root, [], 1);
+  assert.ok(ui.boxOf('island-list-track'), 'more tiles than fit: the list scrolls');
+  assert.equal(ui.boxOf('island-list-fade'), null);
+  assert.equal(byId(root(), 'island:back')?.label, 'Back  Esc');
+  BINDS.device = 'pad';
+  const label = byId(root(), 'island:back')?.label;
+  BINDS.device = 'keys';
+  assert.equal(label, 'Back  B');
+});
+
+test('every detail a tile reads out is also a glyph on it, each glyph saying its words', () => {
+  const entries = entriesOf(islandPanelOf(ISLAND, true, FACTS));
+  for (const entry of entries) {
+    const said = entry.glyphs.map((glyph) => glyph.says);
+    for (const [label, value] of entry.rows) {
+      // The week's dungeon says its week in its own glyph and its modifiers' (`week` below).
+      if (label === 'This week') continue;
+      assert.ok(said.includes(`${label}: ${value}`), `${entry.id}'s ${label} as a glyph: ${said.join(' | ')}`);
+    }
+  }
+  const icons = (id: string) => entries.find((entry) => entry.id === id)?.glyphs.map((glyph) => glyph.icon);
+  assert.deepEqual(icons('overlook-social'), ['counters', 'moorings']);
+  assert.deepEqual(icons('krakens-grotto'), ['blocks', 'seals', 'company', 'cache', 'elite-dungeon', 'brawler']);
+  assert.deepEqual(icons('overlook-playlist'), ['burn', 'elite-dungeon', 'abyss-dungeon', 'cache']);
+  const saltgrass = { ...NODES[1], id: 'gull-rock', kind: 'mission', places: [{ name: 'The Gull Rock' }] } as never;
+  const mission = entriesOf(islandPanelOf({ ...ISLAND, nodes: [saltgrass] }, false, FACTS))[0];
+  assert.deepEqual(
+    mission?.glyphs.map((glyph) => [glyph.icon, glyph.says]),
+    [
+      ['foes', 'Foes: 2 sites'],
+      ['places', 'Places: The Gull Rock'],
+    ],
+  );
+  assert.deepEqual(icons('tern-strand'), ['outpost'], 'an outpost what it is for');
+});
+
+test('a tile’s glyphs stand inside it at the narrowest a tile is laid', () => {
+  // Four columns of the narrowest tiles, 280 pixels.
+  assert.equal(gridOf(1224, 720).tile.width, 280);
+  const panel = islandPanelOf(ISLAND, true, {
+    ...FACTS,
+    gates: { ...OPEN, eliteDungeon: 'Opens after the prologue.' },
+  });
+  const { ui, step } = fakeInterface(1224, 720);
+  const acts = { choose: () => undefined, act: () => undefined, back: () => undefined };
+  step(() => islandPanelNode(ui, panel, null, null, acts));
+  step(() => islandPanelNode(ui, panel, null, null, acts), [], 1);
+  const glyphs = ui.laid.filter((each) => each.node.picture?.key.startsWith('journal icon') === true);
+  assert.ok(glyphs.length > 20, `${glyphs.length} glyphs`);
+  for (const glyph of glyphs) {
+    let tile = glyph.parent;
+    while (tile && !tile.node.id?.startsWith('island:')) tile = tile.parent;
+    assert.ok(tile, glyph.node.picture?.key);
+    const [inner, outer] = [glyph.box, tile.box];
+    const inside =
+      inner.x >= outer.x &&
+      inner.y >= outer.y &&
+      inner.x + inner.width <= outer.x + outer.width &&
+      inner.y + inner.height <= outer.y + outer.height;
+    assert.ok(inside, `${glyph.node.picture?.key} on ${tile.node.id}`);
+  }
 });

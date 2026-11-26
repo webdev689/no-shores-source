@@ -561,7 +561,8 @@ sails out from its berth ("Landings").
   (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
   Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
   Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)
-  ([[The Ship Is Managed and Walked From the Sea's Panel]]). Narrower than 840 pixels the ship stands under the
+  ([[The Ship Is Managed and Walked From the Sea's Panel]]), whose keys act at sea level alone, as the console offers
+  them. Narrower than 840 pixels the ship stands under the
   compass and the voyage, its bars side by side. It goes at the helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination in
   other waters asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
@@ -700,8 +701,9 @@ ship anchors at the roadstead, or 100 m at a time across the way out from it, ei
 and no ship lies within 100 m; none of those, 100 m at a time further out along the way out, clear of them. At a
 coast with no port the berth is just off the shore nearest the point clicked (or the ship, asked with L): straight out
 from the shore, where the water is first 4 m deep and 50 m clear of the room's coast, its offing 600 m on. At a sea
-island it is the island's anchorage, or 100 m at a time out along its way in where another ship lies within 100 m of
-it, from its offing (as far again beyond a berth that passes it). Once the ship lies at rest within 30 m of its berth
+island it is the island's anchorage, or the first place abreast of it, 15 m at a time either side across its way in,
+that no ship lies within 7.5 m of (the fifth still within the 30 m the sea lands a player from), from its offing as far
+across; every place taken, the anchorage. Once the ship lies at rest within 30 m of its berth
 and the view has flown up over the island (the landing kept and tried each frame until it does), the landing is made,
 and the ship lies docked there.
 
@@ -719,9 +721,10 @@ island's own, with its chart and Back to the sea; docked, the port's snapshot an
 patrol zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. A click on a
 tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
 social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
-card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. Enter does what
-the lit tile does (the one under the pointer or the focus, else the first place's). Escape, or Back to the sea, flies
-back down.
+card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. Tab, the arrows
+and the pad's cross walk the tiles, and Enter or the pad's A presses the one they reach; else Enter does what the lit
+tile does (the one under the pointer, else the first place's). Escape, the pad's B, or Back to the sea, flies back
+down.
 
 A sea island's landing docks in sight at once, from wherever the ship lies: it sails for the island's offing, out on
 the bearing it is landed on, planned on water as any route and bent round every island in sight, then in to its
