@@ -49,7 +49,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-6",
         node: "emerald-tangle",
-        bounds: [489_198.0, 2_279_225.0, 490_895.5, 2_280_145.0],
+        bounds: [489_114.5, 2_279_164.5, 490_901.0, 2_280_862.5],
         from: None,
         script: &[
             (600, 1.0, 0.0, 0.0, true, false),

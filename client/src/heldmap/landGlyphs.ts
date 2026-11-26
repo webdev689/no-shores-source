@@ -1,7 +1,8 @@
 // The land map's icon glyphs, in the game's own devices: each keeper's coin in their sign's board colour with the
 // device their sign carries (a star for the Mage, a key for the vaults, an anvil, a helm, open shears, a horseshoe, a
 // ship's wheel, candles: tools/modules/adorn.py), the Postmaster's a sealed letter on the slate of his vest, each
-// faction's with its banner's emblem, and a mark for each kind of site a layout holds. Each is painted about the origin in units, `GLYPH_HALF` either side.
+// faction's with its banner's emblem, a mark for each kind of site a layout holds, and the passages' missions each by
+// its kind on an objective's ringed disc. Each is painted about the origin in units, `GLYPH_HALF` either side.
 import type { Point2 } from '../overworld/ground.ts';
 import { INK } from './mapKey.ts';
 import { LIGHT_INK, type Painter, PARCHMENT, ROUTE } from './mapLetters.ts';
@@ -19,7 +20,8 @@ export type KeeperGlyph =
   | 'stormcallers'
   | 'lamplighters'
   | 'veiled';
-export type SiteGlyph = 'landing' | 'event' | 'gate' | 'door' | 'objective' | 'foes' | 'beacon';
+export type MissionGlyph = 'kindle' | 'hold' | 'hunt' | 'reckoning' | 'gauntlet' | 'ambush' | 'sever';
+export type SiteGlyph = 'landing' | 'event' | 'gate' | 'door' | 'objective' | 'foes' | 'beacon' | MissionGlyph;
 export type ResourceGlyph = 'resource';
 export type LandGlyph = KeeperGlyph | SiteGlyph | ResourceGlyph;
 
@@ -42,6 +44,13 @@ export const GLYPHS: readonly LandGlyph[] = [
   'gate',
   'door',
   'objective',
+  'kindle',
+  'hold',
+  'hunt',
+  'reckoning',
+  'gauntlet',
+  'ambush',
+  'sever',
   'foes',
   'beacon',
   'resource',
@@ -367,6 +376,42 @@ const SITE_DEVICES: Readonly<Record<SiteGlyph, (painter: Painter) => void>> = {
       }
     }
   },
+  kindle: (painter) => mission(painter, () => filled(painter, outline(FLAME, 13, [0, 3.2]))),
+  hold: (painter) => mission(painter, () => ring(painter, [0, 0], 2.8, 1.3)),
+  hunt: (painter) =>
+    mission(painter, () => {
+      for (const [x, y] of [
+        [0, -1],
+        [0, 1],
+        [-1, 0],
+        [1, 0],
+      ] as const)
+        line(painter, 1.3, [x * 1.4, y * 1.4], [x * 4, y * 4]);
+    }),
+  reckoning: (painter) =>
+    mission(painter, () => {
+      for (const x of [-2.2, 0, 2.2]) line(painter, 1.2, [x, -3], [x, 3]);
+    }),
+  gauntlet: (painter) =>
+    mission(painter, () =>
+      filled(painter, [
+        [-3, -3.6],
+        [3, -3.6],
+        [0.4, 0],
+        [3, 3.6],
+        [-3, 3.6],
+        [-0.4, 0],
+      ]),
+    ),
+  ambush: (painter) =>
+    mission(painter, () => {
+      for (const y of [-1.6, 1.6]) line(painter, 1.4, [-3.6, y], [3.6, y]);
+    }),
+  sever: (painter) =>
+    mission(painter, () => {
+      line(painter, 1.6, [-1, -3.8], [-1, -0.6]);
+      line(painter, 1.6, [1, 0.6], [1, 3.8]);
+    }),
   beacon: (painter) => {
     painter.fillStyle = PARCHMENT;
     filled(
@@ -380,6 +425,16 @@ const SITE_DEVICES: Readonly<Record<SiteGlyph, (painter: Painter) => void>> = {
       line(painter, 1, [side * 1.6, -7.4 + Math.abs(side)], [side * 3, -9 + Math.abs(side)]);
   },
 };
+
+/** A mission's mark: an objective's parchment disc ringed in the route's red-brown, its kind's device inside. */
+function mission(painter: Painter, device: () => void): void {
+  painter.fillStyle = PARCHMENT;
+  disc(painter, [0, 0], GLYPH_HALF - 0.5);
+  painter.strokeStyle = ROUTE;
+  painter.fillStyle = ROUTE;
+  ring(painter, [0, 0], 6.2, 1.4);
+  device();
+}
 
 /** A resource node's device on its small ring: a cut stone, its facets in the parchment, whatever the island gives. */
 function resourceDevice(painter: Painter): void {

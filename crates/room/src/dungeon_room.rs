@@ -175,7 +175,7 @@ impl Room {
     /// in each room `band_rooms` names, each foe on a cell nearest its room's middle facing out from it; then girds and
     /// stands them as any garrison, and lays the cache by the end foe. Answers each band's post by its number, with its
     /// room.
-    fn stand_dungeon_garrison(
+    pub(crate) fn stand_dungeon_garrison(
         &mut self,
         dungeon: &Dungeon,
         levels: Option<(u8, u8)>,
@@ -287,8 +287,17 @@ impl Room {
     /// completion: its XP and Aurem, an item as itself coloured as its Miniboss's, and now and then a Vestige.
     fn pay_cache(&mut self, player: PlayerId, cache: &Cache, level: u8) {
         let (dice, difficulty, source) = (self.dice(player), self.difficulty, self.source);
+        let week = gear::clock::week_of(self.minute);
+        let weekly = self.run.as_ref().and_then(|run| match run.pays {
+            crate::run::Pays::Week { weekly, .. } => Some(weekly),
+            _ => None,
+        });
         let Some(found) = self.players.get_mut(&player) else { return };
-        let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, source, &dice);
+        let character = &mut found.character;
+        // Run again, the week's dungeon pays its share once its first clear is taken this week.
+        let share = weekly.map_or(1.0, |weekly| character.week_share(week, weekly));
+        let clear = gear::rewards::Clear::Dungeon;
+        let vestiges = character.reward_clear_share(clear, level, (difficulty, share), source, &dice);
         found.gear_changed = true;
         // Poured out of the cache onto the floor before it, which `cache_by` keeps clear.
         self.pour(player, vestiges, cache.at, Some(cache.vestige));

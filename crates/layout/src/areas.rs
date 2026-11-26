@@ -17,6 +17,10 @@ pub struct Area {
     /// For a gate, the id of the node it leads to.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub leads_to: Option<String>,
+    /// For a gate, whether it crosses to another patrol area of the island (`crossings::add`); written only when it
+    /// does.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub crosses: bool,
 }
 
 /// The least open ground between two areas' reaches, metres.

@@ -4,7 +4,7 @@
 // hostile ship and standing island in the water the player's ship lies in.
 import type { MapMarks } from '../heldmap/landSheet.ts';
 import type { PublicEvent } from '../network/publicMessages.ts';
-import type { IsleMark } from '../heldmap/heldMap.ts';
+import type { IsleMark } from '../heldmap/heldMapScene.ts';
 import type { SeenCharted, SeenIsle, SeenMark } from '../network/seaHarbour.ts';
 import type { OtherPlayers } from '../player/others.ts';
 import { ofCompany } from './companyHud.ts';

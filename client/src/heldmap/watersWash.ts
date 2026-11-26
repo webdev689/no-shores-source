@@ -162,6 +162,36 @@ export function washOf(waters: MapWaters, reach?: HomeReach): WatersWash {
   return { colour, hatch };
 }
 
+/** A locked sea's shade a cell at a time, a byte each: 255 over the sea of each water in `locked` (by continent index)
+ *  and over its island's land, a cell inside one of `lands` (a byte a cell, 1 inside a locked island's outline) or
+ *  whose nearest coast is the island's (`field`), blended over the cells either side so its edge is soft once the map
+ *  samples it between cells. */
+export function shutCells(
+  waters: MapWaters,
+  field: { readonly island: Uint8Array },
+  locked: ReadonlySet<number>,
+  lands: readonly Uint8Array[] = [],
+): Uint8Array {
+  const { columns, rows } = waters;
+  const shut = (index: number) => {
+    const water = waters.water[index] ?? -1;
+    if (water >= 0) return locked.has(water);
+    return locked.has(field.island[index] ?? -1) || lands.some((inside) => inside[index] === 1);
+  };
+  const cells = new Uint8Array(columns * rows);
+  for (let row = 0; row < rows; row++)
+    for (let column = 0; column < columns; column++) {
+      let count = 0;
+      for (let down = -1; down <= 1; down++)
+        for (let across = -1; across <= 1; across++) {
+          const [x, y] = [column + across, row + down];
+          if (x >= 0 && y >= 0 && x < columns && y < rows && shut(y * columns + x)) count++;
+        }
+      cells[row * columns + column] = Math.round((count / 9) * 255);
+    }
+  return cells;
+}
+
 /** Each water's label point by continent index: the middle of its sea cell farthest, counted in cells, from land,
  *  from other waters and from the frame's edge (the first such cell row by row on a tie), metres. */
 export function labelPoints(waters: MapWaters): Map<number, readonly [number, number]> {
@@ -208,10 +238,4 @@ export function labelPoints(waters: MapWaters): Map<number, readonly [number, nu
   for (const [own, { index }] of best)
     points.set(own, [((index % columns) + 0.5) * cellM, (Math.floor(index / columns) + 0.5) * cellM]);
   return points;
-}
-
-/** A water's words on the map: its name and its level band, "The Fen Deeps, 22-26". */
-export function waterWords(water: MapWater): string {
-  const name = water.name ?? water.id;
-  return water.levels ? `${name}, ${water.levels[0]}-${water.levels[1]}` : name;
 }

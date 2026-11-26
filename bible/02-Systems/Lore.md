@@ -37,6 +37,7 @@ what they have read.
     metres from its middle at `bearing` degrees clockwise from north, as a puzzle's point stands.
   - `breach`: as a Breach's encounter is first won or its hidden chest first opened, the Breach's id and the find's
     key ([[Breaches]]).
+  - `lamp`: as the character lights their first lamp in the passages ([[Passages]]).
 
 It holds the houses' three books ([[Each House's Lore Book Tells Its Art's Origin]]), in one category, "The Three
 Houses":
@@ -48,8 +49,13 @@ Houses":
 | Unwritten | The Veiled | dusk purple, the moon | a chapter for each task of "What the Tithe Writes" |
 
 Each house's book's eleven chapters come one as each task of its road is done, in the road's order, the last as the road ends.
-Together they tell where each Art came from. Its words keep to the owner's: no em or en dashes; and every bold and
-italic is closed, a document's every line set in and a break alone, or a check fails.
+Together they tell where each Art came from.
+
+In "The Passages" (the lantern), "Longer Than the Chart" (grey-green, the lantern) holds one chapter, "The First
+Lamp", a Grey Tithe reckoning of the ways under Saltmere, found as the first lamp is lit.
+
+The lore's words keep to the owner's: no em or en dashes; and every bold and italic is closed, a document's every line
+set in and a break alone, or a check fails.
 How they are written, detailed and shown rather than explained:
 [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 
@@ -62,8 +68,9 @@ the Breach and the find).
 - **Kept by id.** A character keeps each chapter found by its book's id and its own (`book/chapter`), in the order
   found, each once; one the file no longer holds is kept as read, so it comes back with its chapter. Never change an
   id once a chapter is played.
-- **The story's and the quests'.** A chapter is the player's as the story ends and as its task is done; and, as every
-  ask ends and as a character is read, every chapter of the story played or of a task done is theirs, so one the file
+- **The story's, the quests' and the lamps'.** A chapter is the player's as the story ends, as its task is done and as
+  their first lamp is lit; and, as every ask ends and as a character is read, every chapter of the story played, of a
+  task done or (once a lamp is lit this week) of the lamps is theirs, so one the file
   gives to the story or a task later reaches those who passed it.
 - **Lying in the world.** A node's room lays each chapter its file places there, at the bearing and distance from its
   place's middle; one at a place the node does not hold lies nowhere. Each player who has not found it is shown it.

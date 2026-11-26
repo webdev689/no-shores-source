@@ -16,6 +16,7 @@ import {
   type Painter,
   PARCHMENT,
   ROUTE,
+  SEA_NAME,
 } from './mapLetters.ts';
 import { levelColour } from './watersWash.ts';
 
@@ -62,17 +63,25 @@ function recorder() {
 
 const LETTERING: Lettering = {
   letters: [
-    { text: 'Overlook', x: 100, y: 50, kind: 'port', chosen: false, side: 'right' },
-    { text: 'Ruins of Fenhallow', x: 300, y: 80, kind: 'ruin', chosen: false, side: 'left' },
-    { text: 'Hollow Barrow', x: 320, y: 90, kind: 'patrol', chosen: false, side: null },
-    { text: 'The Mistwrack, 16-19', x: 200, y: 200, kind: 'water', chosen: false, side: 'centre', colour: '#894314' },
+    { text: 'Overlook', x: 100, y: 50, kind: 'port', chosen: false, side: null },
+    { text: 'Ruins of Fenhallow', x: 300, y: 80, kind: 'ruin', chosen: false, side: null },
+    { text: 'Saltmere', x: 120, y: 120, kind: 'island', chosen: false, side: 'centre', band: '1-4', colour: '#256327' },
+    { text: 'The Mistwrack', x: 200, y: 200, kind: 'water', chosen: false, side: 'centre', spread: 9, px: 18 },
+    { text: '', x: 400, y: 260, kind: 'lock', chosen: false, side: null },
   ],
   ship: { x: 150, y: 150, heading: 0 },
   key: { corner: 'lower-left', box: { x: 14, y: 300, width: 190, height: 92 } },
   scale: 1.5,
 };
 
-test('the words, marks and key are painted on the parchment’s picture, each at the lettering’s scale', () => {
+/** The letters of a sea's name as painted, one call each, in order. */
+const seaLetters = (calls: ReturnType<typeof recorder>['calls']) =>
+  calls
+    .filter((call) => call.name === 'fillText' && call.fillStyle === SEA_NAME)
+    .map((call) => call.args[0])
+    .join('');
+
+test('the marks, names and key are painted on the parchment’s picture, each at the lettering’s scale', () => {
   const { painter, calls } = recorder();
   paintLettering(painter, { width: 800, height: 500 }, { x: 20, y: 18 }, 2, LETTERING);
   assert.deepEqual(calls[0]?.args, [1, 0, 0, 1, 0, 0]);
@@ -82,66 +91,60 @@ test('the words, marks and key are painted on the parchment’s picture, each at
     'cleared first',
   );
   assert.deepEqual(calls[2]?.args, [2, 0, 0, 2, 40, 36], 'at the map’s place, device pixels');
-  const words = calls.filter((call) => call.name === 'fillText').map((call) => call.args[0]);
-  assert.deepEqual(words, [
-    'Overlook',
-    'Ruins of Fenhallow',
-    'The Mistwrack, 16-19',
-    'Held by',
-    'Home',
-    'Grey Tithe',
-    'The Lattice',
-    'Levels',
-    '1',
-    '30',
-  ]);
+  const words = calls
+    .filter((call) => call.name === 'fillText' && call.fillStyle !== SEA_NAME)
+    .map((call) => call.args[0]);
+  assert.deepEqual(words, ['Saltmere, ', '1-4', 'Held by', 'Home', 'Grey Tithe', 'The Lattice', 'Levels', '1', '30']);
+  assert.equal(seaLetters(calls), 'The Mistwrack', 'the sea’s name a letter at a time');
   const scales = calls.filter((call) => call.name === 'scale').map((call) => call.args);
   assert.ok(scales.length >= 5 && scales.every(([x, y]) => x === 1.5 && y === 1.5), 'every mark, word and the key');
-  assert.ok(
-    calls.some((call) => call.name === 'setLineDash'),
-    'a ruin’s mark is dashed',
-  );
 });
 
-test('ports letter strongest, a step larger in the darkest ink; ruins and nodes lighter; every word haloed', () => {
+test('a port is an anchor in the darkest ink and a ruin a faded one, neither named; an island’s band in its colour', () => {
   const { painter, calls } = recorder();
   paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, { ...LETTERING, key: null });
-  const filled = (text: string) => calls.find((call) => call.name === 'fillText' && call.args[0] === text);
-  assert.equal(filled('Overlook')?.font, fontOf('port'));
-  assert.match(fontOf('port'), /15px/);
-  assert.match(fontOf('ruin'), /13px/);
-  assert.equal(filled('Overlook')?.fillStyle, INK);
-  assert.equal(filled('Ruins of Fenhallow')?.fillStyle, LIGHT_INK);
-  assert.equal(filled('Hollow Barrow'), undefined, 'a dropped name keeps only its mark');
+  const said = calls.filter((call) => call.name === 'fillText').map((call) => call.args[0]);
+  assert.ok(!said.includes('Overlook') && !said.includes('Ruins of Fenhallow'), 'a place’s name only on hover');
+  const anchors = calls.filter((call) => call.name === 'arc' && call.args[2] === 1.3);
+  assert.equal(anchors.length, 4, 'each anchor’s ring, haloed then inked, for the port and the ruin');
+  const island = calls.find((call) => call.name === 'fillText' && call.args[0] === 'Saltmere, ');
+  const band = calls.find((call) => call.name === 'fillText' && call.args[0] === '1-4');
+  assert.deepEqual([island?.fillStyle, band?.fillStyle, island?.font], [INK, '#256327', fontOf('island')]);
   const halos = calls.filter((call) => call.name === 'strokeText').map((call) => call.args[0]);
-  assert.deepEqual(halos, ['Overlook', 'Ruins of Fenhallow', 'The Mistwrack, 16-19']);
+  assert.deepEqual(halos, ['Saltmere, ', '1-4'], 'the island haloed, the sea’s name not, so it sinks into the sea');
 });
 
-test('a name stands beside its mark on its side, its middle on the mark’s', () => {
+test('a sea’s name is arched: each letter turned along a circle whose middle stands below it, highest at its middle', () => {
   const { painter, calls } = recorder();
-  paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, { ...LETTERING, key: null });
-  const right = calls.find((call) => call.name === 'fillText' && call.args[0] === 'Overlook');
-  const left = calls.find((call) => call.name === 'fillText' && call.args[0] === 'Ruins of Fenhallow');
-  assert.ok((right?.args[1] as number) > 0 && right?.args[2] === 0);
-  assert.ok((left?.args[1] as number) < 0 && left?.args[2] === 0);
-  assert.equal(right?.textAlign, 'left', 'a name on the right starts beside its mark');
-  assert.equal(left?.textAlign, 'right', 'a name on the left ends beside its mark, clear of it');
-});
-
-test('a water’s name and the ring round it are inked in its difficulty’s colour, the ring filled with parchment', () => {
-  const { painter, calls } = recorder();
-  const water = LETTERING.letters[3]!;
+  const sea = LETTERING.letters[3]!;
   paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, {
-    letters: [water],
+    letters: [sea],
     ship: null,
     key: null,
     scale: 1,
   });
-  const ring = calls.findIndex((call) => call.name === 'arc');
-  const fill = calls.findIndex((call, index) => index > ring && call.name === 'fill');
-  const named = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === water.text);
-  assert.ok(ring >= 0 && fill > ring && named > fill, 'the ring is drawn and filled under the name');
-  assert.equal(calls[named]?.fillStyle, water.colour);
+  const turns = calls.filter((call) => call.name === 'rotate').map((call) => call.args[0] as number);
+  assert.equal(turns.length, 'The Mistwrack'.length);
+  assert.ok(turns[0]! < 0 && turns.at(-1)! > 0, 'turned down at either end');
+  const moves = calls.filter((call) => call.name === 'translate').slice(1);
+  const heights = moves.map((call) => call.args[1] as number);
+  const middle = heights[Math.floor(heights.length / 2)]!;
+  assert.ok(middle < heights[0]! && middle < heights.at(-1)!, 'its middle highest');
+  const across = moves.map((call) => call.args[0] as number);
+  assert.ok(across.at(-1)! - across[0]! > 'The Mistwrack'.length * 6, 'stretched wider than the word itself');
+});
+
+test('a locked sea’s padlock stands out: a disc of the parchment ringed in the ink, the lock in the ink on it', () => {
+  const { painter, calls } = recorder();
+  paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, {
+    letters: [LETTERING.letters[4]!],
+    ship: null,
+    key: null,
+    scale: 1,
+  });
+  const disc = calls.findIndex((call) => call.name === 'fill' && call.fillStyle === PARCHMENT);
+  const body = calls.findIndex((call) => call.name === 'fillRect' && call.fillStyle === INK);
+  assert.ok(disc >= 0 && body > disc, 'the lock drawn over its disc');
 });
 
 /** WCAG's contrast between two colours, `#rrggbb`. */
@@ -157,8 +160,8 @@ function contrast(one: string, other: string): number {
   return ((light ?? 0) + 0.05) / ((dark ?? 0) + 0.05);
 }
 
-test('every word reads at least 4.5 : 1 against the parchment it is haloed and ringed in', () => {
-  // A water's ring is the parchment's colour at nine tenths over the darkest of the map's parchment.
+test('every word reads at least 4.5 : 1 against the parchment it is haloed in', () => {
+  // An island's band is haloed in the parchment, taken at nine tenths over the darkest of the map's parchment.
   const ringFill = '#e8d5b3';
   for (const ink of [INK, LIGHT_INK]) assert.ok(contrast(ink, PARCHMENT) >= 4.5, ink);
   for (let level = 1; level <= 30; level += 0.5)
@@ -201,11 +204,10 @@ test('a found cove is inked a small ring and an isle a wider ring with a tower, 
   assert.equal(towers.length, 4, 'one tower, its body and three merlons, for the one isle');
 });
 
-test('a place the quest names is ringed round its mark', () => {
-  const node = { text: 'Saltgrass Downs', x: 100, y: 100, kind: 'patrol', chosen: false, side: 'right' as const };
-  const arcs = (quest: boolean) => {
+test('a place the quest names is ringed round its mark, and a node the quest names is its ring alone', () => {
+  const arcs = (kind: string, quest: boolean) => {
     const { painter, calls } = recorder();
-    const letters = [{ ...node, quest }];
+    const letters = [{ text: 'Saltgrass Downs', x: 100, y: 100, kind, chosen: false, side: null, quest }];
     paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, {
       letters,
       ship: null,
@@ -214,11 +216,11 @@ test('a place the quest names is ringed round its mark', () => {
     });
     return calls.filter((call) => call.name === 'arc').map((call) => call.args[2] as number);
   };
-  const [mark] = arcs(false);
-  assert.equal(arcs(false).length, 1);
-  assert.ok(mark !== undefined);
-  assert.deepEqual(arcs(true).length, 2, 'its mark and the ring');
-  assert.ok((arcs(true)[1] ?? 0) > mark, 'the ring round the mark');
+  assert.deepEqual(arcs('patrol', false), [], 'no node is marked at sea');
+  assert.equal(arcs('patrol', true).length, 1, 'but for the ring the quest gives it');
+  const anchor = arcs('port', false);
+  assert.equal(arcs('port', true).length, anchor.length + 1, 'its anchor and the ring');
+  assert.ok((arcs('port', true).at(-1) ?? 0) > 4.7, 'the ring round the anchor');
 });
 
 test('at sea each other player’s ship on the sheet is a dot in their nameplate’s colour, over the words, under the arrow', () => {

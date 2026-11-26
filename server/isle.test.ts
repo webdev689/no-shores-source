@@ -27,7 +27,7 @@ test("the page's WebAssembly builds an island's ground to the room's own bits", 
 });
 
 /** crates/room-wasm/src/isle_door_tests.rs pins the same of the room's own plans (PLANS): a cove and a quarry. */
-const PLANS = 'b34441b512d89694';
+const PLANS = 'baa11ec6b5b25530';
 
 test("the page's WebAssembly lays every module, block and post of an island where the room does", () => {
   const door = startRoomDoor(compiled);

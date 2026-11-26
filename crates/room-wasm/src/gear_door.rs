@@ -107,6 +107,17 @@ pub extern "C" fn room_none_kept(player: PlayerId) {
     });
 }
 
+/// Whether what a player's arrival in the next room is judged by (their dive and the lamps they lit) moved since this
+/// was last asked, on land (`Room::take_judged_move`): 1 if it did. Asking clears it. No dive moves at sea.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_judged_moved(player: PlayerId) -> u32 {
+    let moved = with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.take_judged_move(player),
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    });
+    u32::from(moved == Some(true))
+}
+
 /// A player's character as it is kept between sessions, as JSON's bytes, at sea with their ship's hurts in it (a new
 /// one until the accounts gave theirs); empty with no such player, and in a fleet room.
 #[must_use]

@@ -5,7 +5,7 @@ import resources from '../../../content/gear/resources.json' with { type: 'json'
 import { moduleParts } from '../city/modules.ts';
 import type { Solid } from '../city/plan.ts';
 import { insideRing } from '../editor/placeDrawing.ts';
-import { isGlyph, type KeeperGlyph, type LandGlyph } from '../heldmap/landGlyphs.ts';
+import { isGlyph, type KeeperGlyph, type LandGlyph, type MissionGlyph } from '../heldmap/landGlyphs.ts';
 import { boxPrint, type GroundKind, type LandMark, type LandSheet, type Quad, relief } from '../heldmap/landSheet.ts';
 import { layoutBounds, PATH_WIDTH_M } from '../layout/layouts.ts';
 import { chaikin } from '../nature/ground.ts';
@@ -42,7 +42,7 @@ const SHRUBS: ReadonlySet<string> = new Set([
   'understory',
 ]);
 /** What the table calls each site's glyph, and a stall's whose keeper deals with no one. */
-const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph | 'resource'>, string>> = {
+const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph | MissionGlyph | 'resource'>, string>> = {
   landing: 'Landing',
   event: 'Public event',
   gate: 'Gate',

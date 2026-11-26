@@ -24,7 +24,7 @@ pub const ABYSS_SHAPES: u16 = 10;
 impl Weekly {
     /// The colour weights of the Vestige its first clear pays, Normal to Atheric: the Elite's Legendary, the Abyss's
     /// Atheric one time in five.
-    const fn colours(self) -> [u32; 5] {
+    pub(crate) const fn colours(self) -> [u32; 5] {
         match self {
             Weekly::Elite => [0, 0, 0, 1, 0],
             Weekly::Abyss => [0, 0, 0, 4, 1],
@@ -84,6 +84,15 @@ impl Character {
         }
         let (rarity, slot, level) = of_colours(weekly.colours(), weekly.foes_at(), dice);
         Some(Vestige::new(self.take_id(), rarity, slot, level).from(Source::elite_at(weekly.tier())))
+    }
+
+    /// The share of a run of the week's `weekly` dungeon's pay and loot this character is paid in `week`: its share
+    /// run again once its first clear is taken that week, else the whole.
+    #[must_use]
+    pub fn week_share(&self, week: u64, weekly: Weekly) -> f64 {
+        let record = &self.activity.this_week;
+        let cleared = record.week == week && if weekly == Weekly::Elite { record.elite } else { record.abyss };
+        if cleared { weekly.run_again_share() } else { 1.0 }
     }
 
     /// A quarter more of a kill's XP while the Abyss boon is held this week, to the worn Art, the faction pledged, the

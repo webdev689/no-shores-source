@@ -13,8 +13,8 @@ import { type Hint, INK, type Sizes, emblemNode, glyphNode, label, words } from 
 import { type IconName, iconNode } from './journalIcons.ts';
 
 /** Each pool's kind, as a town's card names it under the bounty's name, with its mark. */
-export const BOUNTY_KINDS: readonly string[] = ['Land bounty', 'Sea bounty', 'Dungeon bounty'];
-const KIND_MARKS: readonly IconName[] = ['land', 'sea', 'dungeon'];
+export const BOUNTY_KINDS: readonly string[] = ['Land bounty', 'Sea bounty', 'Dungeon bounty', 'Passage bounty'];
+const KIND_MARKS: readonly IconName[] = ['land', 'sea', 'dungeon', 'lamp'];
 /** A tile's edge, in pixels, around its face. */
 const EDGE = 2;
 /** A tile's edge at rest, taken, and done: the kit's stone, its brass, and green. */
@@ -51,7 +51,13 @@ export interface TileLook {
 }
 
 /** A gauge of a count toward its target, `height` pixels tall, filled in `colour`. */
-function gauge(count: number, target: number, height: number, colour: string, width: Node['width'] = 'grow'): Node {
+export function gauge(
+  count: number,
+  target: number,
+  height: number,
+  colour: string,
+  width: Node['width'] = 'grow',
+): Node {
   const share = Math.round((100 * Math.min(count, target)) / Math.max(1, target));
   return {
     role: 'track',

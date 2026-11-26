@@ -228,7 +228,7 @@ fn over(floor: &Floor, walked: &[Block], bounds: navmesh::Bounds) -> navmesh::Ba
 }
 
 /// The bounds of a ring.
-fn ring_bounds(ring: &[[f64; 2]]) -> navmesh::Bounds {
+pub(crate) fn ring_bounds(ring: &[[f64; 2]]) -> navmesh::Bounds {
     let start = navmesh::Bounds {
         min_x: f64::INFINITY,
         min_y: f64::INFINITY,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Flow } from './flow.ts';
-import { type Fallback, onOtherLand, placeOf, sentOut, tripOrBack } from './tripBack.ts';
+import { type Fallback, onOtherLand, placeOf, sentOut, tripOrBack, wayFailed } from './tripBack.ts';
 
 const FULL = new Error('the room is full');
 const stood: Flow = { mode: 'foot', node: 'saltgrass-downs' };
@@ -137,4 +137,26 @@ test('a hub on another land that cannot be reached puts back the land the player
   assert.deepEqual([land, put], ['continent-5', ['continent-5']]);
   await onOtherLand(lands, () => Promise.resolve());
   assert.equal(land, 'continent-1', "reached, the hub's land stays");
+});
+
+test('a way between places that fails comes down to the veil and goes back where it set out, else to the hub', async () => {
+  const { fallback, went } = fallbackOf(null, null);
+  const failed = wayFailed('a chalk hollow', fallback.back, fallback.hub);
+  assert.equal(failed.words, 'Returning from the way to a chalk hollow');
+  assert.deepEqual(failed.flow, { mode: 'loading', words: failed.words, then: stood }, 'behind the veil, bound back');
+  const instead = await tripOrBack(
+    () => Promise.reject(FULL),
+    failed.fallback,
+    () => undefined,
+  );
+  assert.deepEqual([went, instead?.flow], [['back'], stood]);
+  const nowhere = fallbackOf('none', null);
+  const toHub = wayFailed('a chalk hollow', null, nowhere.fallback.hub);
+  assert.deepEqual(toHub.flow, { mode: 'loading', words: toHub.words, then: atHub }, 'with no way back, the hub');
+  const hubbed = await tripOrBack(
+    () => Promise.reject(FULL),
+    toHub.fallback,
+    () => undefined,
+  );
+  assert.deepEqual([nowhere.went, hubbed?.flow], [['hub'], atHub]);
 });

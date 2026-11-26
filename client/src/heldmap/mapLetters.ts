@@ -1,33 +1,37 @@
-// What the held map letters on its parchment, painted where the layout put it (mapLayout.ts): each place's mark and
-// name, each water's name in its ring, the ship's arrow and the key (mapKey.ts). They are painted onto a picture of the
+// What the held map letters on its parchment, painted where the layout put it (mapLayout.ts): each place's mark (a
+// port's anchor, a ruin's faded), each sea's name arched across it, each island's name with its level band, a locked
+// sea's padlock, the ship's arrow and the key (mapKey.ts). They are painted onto a picture of the
 // parchment that its ink pass lays down with the ink, so the gauntlets holding the map cover them as they cover the
 // parchment.
 import { FACE, INK, paintKey } from './mapKey.ts';
 import { FILLS } from '../plus/tones.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import {
-  LINE,
+  archedLength,
+  archOf,
   type Lettering,
   type MapLetter,
   markHalf,
-  NAME_GAP,
   PORT_PX,
-  RING,
-  waterLines,
+  SEA_PX,
   WORD_PX,
 } from './mapLayout.ts';
 
-/** The map's face, the game's own (face.css): a port's name a step larger than every other word. */
-export const fontOf = (kind: string) => `500 ${kind === 'port' ? PORT_PX : WORD_PX}px ${FACE}`;
-/** The inks besides the key's iron-gall (mapKey.ts): a lighter brown for ruins and nodes, the route's red-brown for
- *  the place chosen and the ring round a place the quest names, and the parchment's own colour, which rings every word
- *  and fills each water's ring so it reads over the coasts' lines and the washes. */
+/** The map's face, the game's own (face.css): a port's and an island's name a step larger than every other word, a
+ *  sea's larger again. */
+export const fontOf = (kind: string) =>
+  kind === 'water'
+    ? `500 ${SEA_PX}px ${FACE}`
+    : `${kind === 'island' ? 600 : 500} ${kind === 'port' || kind === 'island' ? PORT_PX : WORD_PX}px ${FACE}`;
+/** The inks besides the key's iron-gall (mapKey.ts): a lighter brown for ruins, the route's red-brown for the ring
+ *  round a place the quest names, the parchment's own colour, which rings every word so it reads over the coasts'
+ *  lines and the washes, and a sea's name's ink, thinned so it sinks into the sea it is written across. */
 export const LIGHT_INK = '#5c4631';
 export const ROUTE = '#781c14';
 export const PARCHMENT = '#eedebe';
 /** A hostile ship's mark, in the Grey Tithe's dark slate, as its waters are hatched (watersWash.ts `HATCHES`). */
 export const HOSTILE_INK = '#4a5563';
-const RING_FILL = 'rgba(238, 222, 190, 0.9)';
+export const SEA_NAME = 'rgba(58, 40, 22, 0.42)';
 /** The halo of parchment round every word, units wide. */
 const HALO = 3;
 
@@ -52,6 +56,7 @@ export type Painter = Pick<
   | 'save'
   | 'restore'
   | 'translate'
+  | 'rotate'
   | 'scale'
   | 'rect'
   | 'clip'
@@ -135,69 +140,101 @@ export function word(painter: Painter, text: string, x: number, y: number, colou
   painter.fillText(text, x, y);
 }
 
-/** A mark and its name at the origin, units: a port's filled ring, a ruin's dashed diamond, a node's ring, the name
- *  beside it on its side, its middle on the mark's; a water's name centred in its ring. */
+/** A mark or a name at the origin, units: a port's anchor, a ruin's faded, a node only as the quest's ring round it, a
+ *  locked sea's padlock; a sea's name arched across it, an island's name and its level band. */
 function paintLetter(painter: Painter, letter: MapLetter): void {
   painter.font = fontOf(letter.kind);
   if (letter.kind === 'water') {
-    const colour = letter.colour ?? INK;
-    const lines = waterLines(letter.text, letter.lines);
-    const widest = Math.max(...lines.map((line) => painter.measureText(line).width));
-    paintRing(painter, widest / 2 + RING, (lines.length - 1) * LINE, colour);
-    painter.textAlign = 'center';
-    lines.forEach((line, index) => word(painter, line, 0, (index - (lines.length - 1) / 2) * LINE, colour));
-    return;
+    painter.font = `500 ${letter.px ?? SEA_PX}px ${FACE}`;
+    return paintArched(painter, letter.text, letter.spread ?? 0);
   }
-  const ink = letter.kind === 'port' ? INK : LIGHT_INK;
+  if (letter.kind === 'island') return paintIsland(painter, letter.text, letter.band ?? '', letter.colour ?? INK);
+  if (letter.kind === 'lock') return paintLock(painter);
+  if (letter.kind === 'port' || letter.kind === 'ruin') paintAnchor(painter, letter.kind === 'ruin');
+  if (!letter.quest) return;
   painter.lineWidth = 1.5;
-  painter.strokeStyle = ink;
-  painter.fillStyle = ink;
+  painter.strokeStyle = ROUTE;
   painter.beginPath();
-  const half = markHalf(letter.kind);
-  if (letter.kind === 'ruin') {
-    painter.setLineDash([2, 1.5]);
-    painter.moveTo(0, -half);
-    painter.lineTo(half, 0);
-    painter.lineTo(0, half);
-    painter.lineTo(-half, 0);
-    painter.closePath();
-    painter.stroke();
-    painter.setLineDash([]);
-  } else {
-    painter.arc(0, 0, half - 0.75, 0, 2 * Math.PI);
-    if (letter.kind === 'port') painter.fill();
-    else painter.stroke();
-  }
-  if (letter.quest) {
-    painter.strokeStyle = ROUTE;
-    painter.beginPath();
-    painter.arc(0, 0, half + 2.5, 0, 2 * Math.PI);
-    painter.stroke();
-  }
-  if (!letter.side || letter.side === 'centre') return;
-  // A name on the left ends at its offset from the mark; on the right it starts there.
-  painter.textAlign = letter.side === 'left' ? 'right' : 'left';
-  const offset = letter.away ?? half + NAME_GAP;
-  word(painter, letter.text, letter.side === 'right' ? offset : -offset, 0, letter.chosen ? ROUTE : ink);
+  painter.arc(0, 0, markHalf(letter.kind) + 2.5, 0, 2 * Math.PI);
+  painter.stroke();
 }
 
-/** A water's ring round its name, `half` wide either side of its middle and `taller` than one line: rounded at its
- *  ends, filled with the parchment and drawn in its difficulty's colour. */
-function paintRing(painter: Painter, half: number, taller: number, colour: string): void {
-  const radius = LINE / 2 + 1;
-  const straight = Math.max(0, half - radius);
-  const rise = taller / 2;
-  painter.lineWidth = 1.5;
-  painter.strokeStyle = colour;
-  painter.fillStyle = RING_FILL;
+/** A sea's name arched along a circle whose middle stands below it, each letter turned to the arc, `spread` units
+ *  apart, in the thinned ink with no halo, so it sinks into the sea. */
+function paintArched(painter: Painter, text: string, spread: number): void {
+  const letters = [...text];
+  const widths = letters.map((one) => painter.measureText(one).width);
+  const length = archedLength(text, painter.measureText(text).width, spread);
+  const { radius, rise } = archOf(length);
+  painter.textAlign = 'center';
+  painter.fillStyle = SEA_NAME;
+  let along = -length / 2;
+  letters.forEach((one, index) => {
+    const width = widths[index] ?? 0;
+    const turn = (along + width / 2) / radius;
+    painter.save();
+    painter.translate(radius * Math.sin(turn), radius * (1 - Math.cos(turn)) - rise / 2);
+    painter.rotate(turn);
+    painter.fillText(one, 0, 0);
+    painter.restore();
+    along += width + spread;
+  });
+}
+
+/** An island's name centred at the origin, its level band after it in the band's colour on the difficulty ramp. */
+function paintIsland(painter: Painter, name: string, band: string, colour: string): void {
+  const said = band ? `${name}, ` : name;
+  const [nameWidth, bandWidth] = [painter.measureText(said).width, band ? painter.measureText(band).width : 0];
+  const left = -(nameWidth + bandWidth) / 2;
+  painter.textAlign = 'left';
+  word(painter, said, left, 0, INK);
+  if (band) word(painter, band, left + nameWidth, 0, colour);
+}
+
+/** A port's anchor at the origin, units, ringed in the parchment so it reads over the coast: a ring, its shank and
+ *  stock, its arms curving up to their flukes; a ruin's in the lighter ink, thinned. */
+export function paintAnchor(painter: Painter, faded: boolean): void {
+  const strokes = () => {
+    painter.beginPath();
+    painter.arc(0, -4.6, 1.3, 0, 2 * Math.PI);
+    painter.moveTo(0, -3.3);
+    painter.lineTo(0, 4.8);
+    painter.moveTo(-2.6, -1.6);
+    painter.lineTo(2.6, -1.6);
+    painter.moveTo(-4.6, 1.6);
+    painter.arc(0, 0.6, 4.7, Math.PI * 0.94, Math.PI * 0.06, true);
+    painter.stroke();
+  };
+  painter.lineJoin = 'round';
+  painter.lineWidth = 3.2;
+  painter.strokeStyle = PARCHMENT;
+  strokes();
+  painter.lineWidth = 1.4;
+  painter.strokeStyle = faded ? 'rgba(92, 70, 49, 0.6)' : INK;
+  strokes();
+}
+
+/** A locked sea's padlock at the origin, units, standing out: a disc of the parchment ringed in the ink, the lock in
+ *  the ink on it, its keyhole in the parchment. */
+export function paintLock(painter: Painter): void {
   painter.beginPath();
-  painter.arc(-straight, -rise, radius, Math.PI, (3 * Math.PI) / 2);
-  painter.arc(straight, -rise, radius, -Math.PI / 2, 0);
-  painter.arc(straight, rise, radius, 0, Math.PI / 2);
-  painter.arc(-straight, rise, radius, Math.PI / 2, Math.PI);
-  painter.closePath();
+  painter.arc(0, 0, 14, 0, 2 * Math.PI);
+  painter.fillStyle = PARCHMENT;
   painter.fill();
+  painter.lineWidth = 2.2;
+  painter.strokeStyle = INK;
   painter.stroke();
+  painter.beginPath();
+  painter.arc(0, -2.8, 4.2, Math.PI, 2 * Math.PI);
+  painter.lineWidth = 2.4;
+  painter.stroke();
+  painter.fillStyle = INK;
+  painter.fillRect(-6.7, -2.8, 13.4, 10.4);
+  painter.fillStyle = PARCHMENT;
+  painter.beginPath();
+  painter.arc(0, 1.4, 1.7, 0, 2 * Math.PI);
+  painter.fill();
+  painter.fillRect(-0.7, 1.4, 1.4, 3.6);
 }
 
 /** Another player's dot on the map, in their nameplate's square's colour, edged in the ink; its radius, units. */
