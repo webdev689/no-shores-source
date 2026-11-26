@@ -62,21 +62,27 @@ them only at sea level, the owner chose "Sea level only".
 - **No Playlist at sea.**
 - **Docked, the island's nodes stand in a panel**, not on the map: detailed, out of the way and slightly
   transparent, holding what the island has of its port, the Playlist, its patrol zone, its dungeon and its mission.
-  The owner noted that the dungeon nodes led into no dungeon.
+  The owner noted that the dungeon nodes led into no dungeon. (Replaced in part: they stand as even tiles in a grid,
+  [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].)
 - **The island's dungeon is its Elite Dungeon**, gone into from the sea.
-- **A Normal run started at sea is entered only with the ship near its dungeon's island.** (Replaced in part: they stand as even tiles in a grid, [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].)
+- **A Normal run started at sea is entered only with the ship near its dungeon's island.**
 - **The rest is Claude's**, on the owner's autonomy, recorded below and open to the owner's change.
 
-It replaces, in part, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]] (the keys in every view),
-[[The Sea Is Navigated From the Helm With the Held Map]] (the offer to dock and the nodes shown over the island),
-[[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]] (the Playlist on the map), and wholly
-[[The Playlist Shows Over Its Island, Not Only at Sea]].
+It replaces, in part, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]] (the keys in every view, and
+the wheel bringing the ship close), [[The Sea Is Navigated From the Helm With the Held Map]] (the offer to dock and the
+nodes shown over the island), [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]] (the Playlist on
+the map), [[The Playlist's Nodes Are Drawn in More Detail, and Move]] (the map's Playlist mark),
+[[The Playlist and Its Dungeons as Claude Shapes Them]] (the Playlist's mark at sea and over its island),
+[[The Sea as Claude Shapes It]] (the pace dial, and the wheel bringing the view in), [[The World as Claude Shapes It]]
+(how a landing is asked: a click on the port or its island asks first),
+[[The Key Strip Follows the Moment, and K Opens Every Control]] (one strip for sailing: each view has its own), and
+wholly [[The Playlist Shows Over Its Island, Not Only at Sea]].
 
 ## Claude's calls
 
 | Call | Chosen | Why |
 |---|---|---|
-| The Sealevel view | The close view brought down behind the ship, 25 m off, from whatever height the Oversea view stood at; the Oversea view is the raised camera, its wheel zooming within it | The two views the sea already drew, now a switch and no longer a scroll |
+| The Sealevel view | The close view, brought down along the Oversea camera's own look, its bearing and tilt kept, to 25 m from the point 4.5 m over the ship's waterline, from whatever height the Oversea view stood at; the Oversea view is the raised camera, its wheel zooming within it | The two views the sea already drew, now a switch and no longer a scroll |
 | The switch | V on the keys, the pad's left, and the console's two presses; eased over about a second | V was free, and a switch wants one key both ways |
 | The wheel | Zooms only within the Oversea view; at sea level it changes nothing | The owner removed the scroll between views, not the zoom |
 | A click on the sea | Sails at ×60 in the Oversea view only; at sea level it sets no course | W, A, S and D sail there; a click and the keys would fight |
