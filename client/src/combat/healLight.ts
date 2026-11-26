@@ -10,7 +10,7 @@ import { edges, paintBox } from './barDraw.ts';
 import { type Ramp, rampOf } from './markSprites.ts';
 import { EVENT } from './cues.ts';
 import { groundRing, groundWidth } from './spellLines.ts';
-import { BODY, CLEAR, LIGHT, type Sprite, billboard, hashOf, sprite, stepOf } from './spellPixels.ts';
+import { BODY, CLEAR, HOT, LIGHT, type Sprite, billboard, hashOf, sprite, stepOf } from './spellPixels.ts';
 import { type Frame, type Point, apartFrom } from './spellPlaces.ts';
 
 /** The heal's red, dark to white-hot: the health bar's shade, lit and tip (`BAR_TONES.blood`), and a pale hot stop. */
@@ -27,7 +27,7 @@ const MOTES = 6;
 const CROSSES = 3;
 const SWIRL_WAIT = 0.25;
 const SWIRL_FEET_M = 0.1;
-const SWIRL_TOP_M = 2.1;
+const SWIRL_TOP_M = 2.3;
 const SWIRL_TURNS = 1.25;
 const SWIRL_M = 0.5;
 const SWIRL_NARROWS_M = 0.12;
@@ -38,6 +38,7 @@ const SWIRL_GONE = 0.8;
  *  dull band over the ground; at its peak they are half as wide again. */
 const EDGE_STEPS = [0.12, 0.2, 0.2, 0.15, 0.1, 0.05] as const;
 const EDGE_PEAK = 0.2;
+const EDGE_STILL = 0.12;
 const EDGE_BANDS = [
   { css: '#ff6b4f', strength: 2 },
   { css: '#ff8a76', strength: 1.2 },
@@ -46,6 +47,7 @@ const EDGE_BANDS = [
 const EDGE_MOTES = 6;
 const EDGE_BAND_PX = 8;
 const EDGE_MOTE_PX = 10;
+const EDGE_MOTE_CSS = '#ffb3a3';
 /** How far an edge mote sways across as it drifts up (band widths), and how many times. */
 const EDGE_SWAY = 0.8;
 const EDGE_SWAYS = 1.5;
@@ -53,13 +55,13 @@ const EDGE_SWAYS = 1.5;
  *  person's camera stands back along the look, at least `HIDE_FIGURE_M` off, even pulled in against a wall. */
 const OWN_EYES_M = 0.3;
 
-/** A mote, two cells square, and a small cross, in each stop. */
-const MOTE: readonly Sprite[] = [0, 1, 2, 3].map((stop) => sprite(2, 2, () => stop));
-/** A mote near its end: one cell in the light. */
-const DOT: Sprite = sprite(1, 1, () => LIGHT);
-const CROSS: readonly Sprite[] = [0, 1, 2, 3].map((stop) =>
-  sprite(3, 3, (across, up) => (across !== 0 && up !== 0 ? CLEAR : stop)),
-);
+/** A mote (two cells square) and a small cross as they leave the feet in red, then in pale red; near its end either
+ *  is one cell of pale pink. */
+const SWIRLED = [BODY, LIGHT].map((stop) => ({
+  mote: sprite(2, 2, () => stop),
+  cross: sprite(3, 3, (across, up) => (across !== 0 && up !== 0 ? CLEAR : stop)),
+}));
+const DOT: Sprite = sprite(1, 1, () => HOT);
 
 /** The player's own screen through their heal: the edge frame's opacity (0 for none), and how far its motes have
  *  risen, 0 to 1 (null for none). */
@@ -106,7 +108,9 @@ export class HealLights {
       const across = Math.hypot(frame.eye[0] - drinker.feet[0], frame.eye[1] - drinker.feet[1]);
       const up = frame.eye[2] - drinker.feet[2];
       if (id === frame.own && across < OWN_EYES_M && up > 0 && up < 3) {
-        this.screen = { edge: EDGE_STEPS[stepOf(share, EDGE_STEPS.length)] ?? 0, motes: still ? null : share };
+        // Reduced motion holds the edge at one faint light, with no motes.
+        const edge = still ? EDGE_STILL : (EDGE_STEPS[stepOf(share, EDGE_STEPS.length)] ?? 0);
+        this.screen = { edge, motes: still ? null : share };
         continue;
       }
       const { feet } = drinker;
@@ -142,9 +146,9 @@ function healOn(frame: Frame, feet: Point, id: number, share: number, still: boo
     const up = SWIRL_FEET_M + (SWIRL_TOP_M - SWIRL_FEET_M) * flown;
     const place: Point = [feet[0] + Math.sin(turn) * out, feet[1] - Math.cos(turn) * out, feet[2] + up];
     if (flown > SWIRL_GONE + (1 - SWIRL_GONE) * hashOf(id, mote, 3)) continue;
-    const picture =
-      flown < 0.45 ? (mote < MOTES ? MOTE : CROSS)[BODY] : flown < 0.7 ? (mote < MOTES ? MOTE : CROSS)[LIGHT] : DOT;
-    if (picture) billboard(frame.out, picture, HEAL_RAMP, place, eye);
+    const shapes = SWIRLED[flown < 0.45 ? 0 : 1];
+    const picture = flown >= 0.7 || !shapes ? DOT : mote < MOTES ? shapes.mote : shapes.cross;
+    billboard(frame.out, picture, HEAL_RAMP, place, eye);
   }
 }
 
@@ -176,11 +180,14 @@ export function healEdgeNode(screen: HealScreen = edgeShown): Node | null {
           width: box.width - 2 * inset,
           height: box.height - 2 * inset,
         };
+        // A view too small for every band takes those that fit, none crossed over another.
+        if (inner.width < 2 * step || inner.height < 2 * step) return;
         edges({ ui, box, scale, clip, fade: fade * Math.min(1, screen.edge * strength) }, inner, [css], wide);
       });
       if (motes === null) return;
       const size = EDGE_MOTE_PX * scale;
-      const mote = { ui, box, scale, clip, fade: fade * (0.8 - 0.6 * motes) };
+      // As faint as the rim, fading as they rise.
+      const mote = { ui, box, scale, clip, fade: fade * Math.min(1, screen.edge * 3) * (1 - 0.6 * motes) };
       for (let each = 0; each < EDGE_MOTES; each++) {
         const right = each % 2 === 1;
         const rise = Math.min(1, motes * (0.7 + 0.6 * hashOf(each, 1)) + 0.2 * hashOf(each, 2));
@@ -188,7 +195,7 @@ export function healEdgeNode(screen: HealScreen = edgeShown): Node | null {
         const aside = (1.2 + 1.5 * hashOf(each, 3) + sway) * step;
         const x = right ? box.x + box.width - aside - size : box.x + aside;
         const y = box.y + box.height - step - rise * box.height * 0.6;
-        paintBox(mote, { x, y, width: size, height: size }, EDGE_BANDS[1].css);
+        paintBox(mote, { x, y, width: size, height: size }, EDGE_MOTE_CSS);
       }
     },
   };

@@ -299,10 +299,10 @@ A foe never drinks.
   (`combat/healLight.ts`): a faint ring glints at the feet for its first quarter, and six small motes and three small
   crosses swirl up round the figure, each leaving the feet in its own time and turning round it once and a quarter to
   just over the head, before the figure on the near side of the turn and behind it on the far, red, then pale red,
-  then a single cell that goes out, never in the blood's dark. Through the drinker's own eyes the figure's light is
+  then a single cell of pale pink that goes out, never in the blood's dark. Through the drinker's own eyes the figure's light is
   not drawn: a faint red light comes in from the screen's edge in six held steps, warm red at the rim paling inward,
   with motes drifting up its sides in a gentle sway ([[First Person]], [[Interface]]). Reduced motion keeps only the
-  still glint and the edge: nothing circles or rises.
+  still glint and the edge held at one faint light: nothing circles, rises or pulses.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
   their meter toward the next charge by the share it took of the foe's most health and most shield together, times
   half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is

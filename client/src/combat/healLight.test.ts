@@ -76,20 +76,26 @@ test('the motes circle the figure, before and behind it, from the feet to just o
   const lights = new HealLights();
   lights.heard([healed(OTHER)]);
   const dark = HEAL_RAMP[0].join(',');
+  // The light starts at the first frame drawn, at 0; each frame's colours kept to see none is the blood's dark.
+  const seen = new Set<string>();
+  const drawnAt = (clock: number) => {
+    const { out } = frameAt(lights, clock, OTHER, AWAY);
+    for (const colour of coloursIn(out)) seen.add(colour);
+    return pointsOf(out);
+  };
   // Each leaves the feet in its own time within the first quarter.
-  const low = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3].flatMap((clock) => pointsOf(frameAt(lights, clock, OTHER, AWAY).out));
+  const low = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3].flatMap(drawnAt);
   assert.ok(low.length > 0 && Math.min(...low.map(([, , up]) => up)) < 0.5, 'leaving the feet');
   // The eye stands to the south: the figure's card a body's radius (0.35 m) toward it.
-  const middle = pointsOf(frameAt(lights, 0.5, OTHER, AWAY).out);
+  const middle = drawnAt(0.5);
   assert.ok(middle.some(([, south]) => south > 0.4) && middle.some(([, south]) => south < 0.3), 'before and behind');
   for (const [east, south] of middle) assert.ok(Math.hypot(east, south) < 0.75, 'round the figure, close');
-  const high = pointsOf(frameAt(lights, 0.95, OTHER, AWAY).out);
+  drawnAt(0.8);
+  const high = drawnAt(0.95);
   const top = Math.max(...high.map(([, , up]) => up));
-  assert.ok(top > 1.8 && top < 2.4, `just over the head: ${top}`);
-  for (const clock of [0, 0.2, 0.5, 0.8, 0.95]) {
-    const { out } = frameAt(lights, clock, OTHER, AWAY);
-    assert.ok(!coloursIn(out).has(dark), `no dark stop at ${clock}`);
-  }
+  assert.ok(top > 1.9 && top < 2.4, `just over the head: ${top}`);
+  assert.ok(seen.size > 1 && !seen.has(dark), 'red to pale, never dark');
+  assert.ok(seen.has(HEAL_RAMP[3].join(',')), 'pale pink at the last');
 });
 
 test('a heal of nothing shows nothing; another heal heard starts the light again', () => {
@@ -99,7 +105,7 @@ test('a heal of nothing shows nothing; another heal heard starts the light again
   lights.heard([healed(OTHER)]);
   frameAt(lights, 0, OTHER, AWAY);
   lights.heard([healed(OTHER)]);
-  assert.ok(frameAt(lights, 0.9, OTHER, AWAY).ground.length > 0, 'the ring flares anew');
+  assert.ok(frameAt(lights, 0.9, OTHER, AWAY).ground.length > 0, 'the glint anew');
 });
 
 test('with motion reduced only a still glint shows, and nothing circles or rises', () => {
@@ -110,6 +116,14 @@ test('with motion reduced only a still glint shows, and nothing circles or rises
   assert.deepEqual(frameAt(lights, 0.2, OTHER, AWAY, true).ground, first.ground, 'held still');
   for (const clock of [0.1, 0.4, 0.8])
     assert.equal(frameAt(lights, clock, OTHER, AWAY, true).out.length, 0, 'no motes');
+  // Through the drinker's own eyes the edge holds one faint light, no motes.
+  lights.heard([healed(OWN)]);
+  const eye: Point = [0, 0, 1.6];
+  frameAt(lights, 2, OWN, eye, true);
+  const held = lights.screen;
+  assert.ok(held.edge > 0 && held.motes === null);
+  frameAt(lights, 2.6, OWN, eye, true);
+  assert.deepEqual(lights.screen, held, 'held still');
 });
 
 test("the player's own heal through their own eyes takes the screen's edge, not their figure", () => {
@@ -120,8 +134,10 @@ test("the player's own heal through their own eyes takes the screen's edge, not 
   assert.deepEqual([seen.ground.length, seen.out.length], [0, 0]);
   assert.ok(lights.screen.edge > 0);
   assert.ok(lights.screen.motes !== null, 'motes rise round the edge');
-  frameAt(lights, 0.5, OWN, eye);
-  assert.ok(lights.screen.edge > 0 && lights.screen.edge < 0.45, 'fading');
+  frameAt(lights, 0.3, OWN, eye);
+  const peak = lights.screen.edge;
+  frameAt(lights, 0.85, OWN, eye);
+  assert.ok(lights.screen.edge > 0 && lights.screen.edge < peak, 'fading');
   frameAt(lights, HEAL_S + 0.01, OWN, eye);
   assert.deepEqual(lights.screen, QUIET_HEAL);
   // From behind, in third person, the figure's own light shows and the edge is quiet.
@@ -150,7 +166,10 @@ test('the edge glows in warm red light, with motes; none when quiet', () => {
   }
   const still = healEdgeNode({ edge: 0.3, motes: null });
   const plain = still ? coloursDrawn({ width: 'grow', height: 'grow', children: [still] }, 200, 100) : new Set();
-  assert.ok(drawn.size > plain.size, 'the motes in a stop of their own');
+  assert.ok(drawn.size > plain.size, 'the motes in a pale red of their own');
+  // A view too small for every band draws what fits and no band crossed over another.
+  const tiny = healEdgeNode({ edge: 0.2, motes: 0.5 });
+  assert.ok(tiny && coloursDrawn({ width: 'grow', height: 'grow', children: [tiny] }, 30, 20).size > 0);
   showHealEdge({ edge: 0.3, motes: null });
   assert.notEqual(healEdgeNode(), null, 'shown from now on');
   showHealEdge(QUIET_HEAL);
