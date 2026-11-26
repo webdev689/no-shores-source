@@ -23,6 +23,10 @@ code:
   - crates/dungeon/src/torches.rs#Torch
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
   - crates/room/src/dungeon_ground.rs#DungeonGround
+  - crates/dungeon/src/storeys.rs#spans
+  - crates/dungeon/src/hand_made.rs#two_storeys
+  - crates/room/src/dungeon_bake.rs#slabs
+  - client/src/game/dungeonLayout.ts#spansAt
   - crates/room-wasm/src/fighter_door.rs#set_dungeon
   - client/src/rules/dungeonRules.test.ts
   - crates/room/src/dungeon_room.rs#dungeon
@@ -211,20 +215,41 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   rest, so a smaller band's cells are always the first of a larger's.
 - **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; every room of the way in's block
   lies nearer than the end.
-- **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
-  cells of 3.2 m, and as boxes (min x, min y, max x, max y, top) the jambs, then the pillars, then the props' solids,
-  then the fixtures', then the landmarks'.
+- **Storeys** (`storeys`): a dungeon holds one to three (`STOREYS_MOST`), stacked downward `STOREY_M` (8 m) apart from
+  the way in's: storey k's floor is -8k m. `cells` and `ceilings` hold a plane of `columns` by `rows` for each storey,
+  storey by storey, so a one-storey dungeon's cells and their numbers are the whole grid's as before. A cell's number
+  names its storey (`storey_of`, `floor_of`); `centre` stays (x, y), `standing_point` adds its floor. A ceiling is
+  over the cell's own floor. Each room names its storey, and a pillar's top is absolute. The generator lays one
+  storey; `hand_made::two_storeys` lays two by hand for the tests.
+- **Cells**: rock, a room's, a corridor; a flight's (`Stair(s)`), on both its storeys; and a Void, open air on an upper
+  storey over a lower storey's room, where nothing stands and a body falls through.
+- **Flights** (`Stair`): four cells in a straight line, head first, on storey `upper` and the one under it, from a
+  top landing (the cell before the head, on `upper`) to a bottom landing (the cell after the foot, on the storey
+  under). They are walked as their smooth slope (`slope_at`): the upper floor at the head's edge falling 8 m over
+  12.8 m (0.625) to the lower floor at the foot's edge, taken as a share of the way between the edges so it meets
+  each landing's floor exactly, level past either end. Their ceiling is 3.2 m over the slope. The walk crosses a
+  flight from one storey to the other (`walk_from`).
+- **Spans** (`spans`): each column of cells holds open spans, lowest first: a storey's open cell from its floor to its
+  ceiling; a flight's one span from its slope's lowest in the column to 3.2 m over its highest; a Void lifting the
+  span under it to the Void's own ceiling. Rock holds none.
+- **What a body stands on** (`heights`, `boxes`): each storey's plane of open cells (a flight's and a Void's open) and
+  none for rock, in cells of 3.2 m; and as boxes (min x, min y, max x, max y, bottom, top) the jambs, then the
+  pillars, then the props' solids, then the fixtures', then the landmarks'. A box stands on the highest floor at or
+  under its top (`storey_under`), so a solid is laid on a lower storey by its top alone.
 - **For a browser,** the `room-wasm` door's `room_dungeon` answers a dungeon as JSON, from its patrol's id and name and
   its number, from an Elite Dungeon's place (laid by `elite_laid` in four or five blocks, and named as the ask names
   it), or from a seed and a style's key, as the page's `DungeonLayout` reads it: its name, first style and pictures; its
-  looks (each a style and its pictures) and each cell's look (-1 for rock); its cells (-2 rock, -1 corridor, or a room's
-  number), ceilings, rooms (each its rectangle, height, walk, role, name, ceiling form and look), end, way in, arrival,
-  exit door, portal, torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
+  looks (each a style and its pictures) and each cell's look (-1 for rock); its storeys, `storeyM` (8), `floors` (each
+  storey's floor) and `stairs` (each `{ upper, cells, top, bottom }`); its cells (-2 rock, -1 corridor, -3 a flight's,
+  -4 a Void, or a room's number), ceilings and cell looks, storey by storey; rooms (each its rectangle, height, walk,
+  role, name, ceiling form, look and storey), end, way in, arrival, exit door and portal (each with its absolute z),
+  torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
   lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw), boxes, landmarks (each its
   module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
   kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number past the patrol's three or a
   place that is no Elite Dungeon. An Elite Dungeon's answers its encounters too (above, "Encounters"): each seal's
-  kind, room, pieces, pads (min x, min y, max x, max y, top), drowned cells and doorways' middles; the anchors; and
+  kind, room, pieces, pads (min x, min y, max x, max y, top, bottom), drowned cells and doorways' middles (x, y, z);
+  the anchors; and
   how near a piece a player stands on it. The room door's `dungeon` and `layout` ask it. Five dungeons' answers are pinned by
   their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine: four patrols', one of
   five blocks whose last is a style deeper, and one laid by a seed and a style.
@@ -255,8 +280,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **An Elite Dungeon's room** lays its dungeon from its place (`elite_laid`: the seed `elite:<place>` and the style
   `gear::activities` names) in four or five blocks, its Boss alone on the end post. The week's two hold every foe
   at their own level whatever difficulty the host sets after (`at_seas`).
-- **Its world is the dungeon's frame**: x east and y south from the north-west corner, the floor at 0 m. Every point
-  its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
+- **Its world is the dungeon's frame**: x east and y south from the north-west corner, the top storey's floor at 0 m.
+  Every point its snapshots, its cache and its spawn name is in it, its z absolute: the end foe, the bands, the cache
+  and its Vestige, the checkpoints, the chests, the seals' pieces, pads and doorways and the Court's anchors stand on
+  their own room's storey. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins, facing into the room.
 - **Checkpoints** ([[Revives]]): each room whose band stands lays one, and an Elite Dungeon one at each seal's room and
   one at the Court, each at the doorway cell the walk from the way in enters its room by, facing in. One is won as its
@@ -265,26 +292,33 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   before any at the arrival, and every player is told "Checkpoint reached" as it moves on. In a run a band whose fall
   won its room's checkpoint does not stand again while anyone is in the room; in a shared dungeon it stands again as
   any group does, and the checkpoint falls back to the one won before it.
-- **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Its height is the
-  cells' (0 m open, a wall 10 m over the floor for rock), and over a jamb, a pillar or a prop that solid's own top. A move is walled where it crosses rock,
-  or where it ends nearer than a body's half-width (0.35 m) to rock, a jamb, a pillar or a prop and nearer than it
-  began: a body slides along a wall, steps away from one, and never stands in its face. Inside a solid, as a shove
+- **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Under feet at z
+  (`height_under`) it is the highest span floor or flight's slope at or below a step (0.5 m) over them, or a solid's
+  top where the solid's bottom is; with none, a wall 10 m over the feet's storey. So a body walks down a flight and up
+  again without a jump, and walks off a Void's edge and falls to the floor under it. The feet's storey is the one
+  whose floor lies nearest them (`storey_at`). A move is walled where it crosses that storey's rock, where it ends in
+  a column with no span holding the feet (its floor within a step of them and its ceiling over them; under the
+  deepest storey's floor and over the top storey's ceiling nothing bounds a span, as nothing bounded the one floor),
+  or where it ends nearer than a body's half-width (0.35 m) to that storey's rock or a solid standing on it and nearer
+  than it began: a body slides along a wall, steps away from one, and never stands in its face. Inside a solid, as a shove
   might leave it, its nearness is less than nothing by its depth, so it walks out and never deeper. Movement climbs
   blocks, never a ground's walls, so no solid is climbed; an Elite Dungeon's Ascents' pads are its room's blocks, and
   are climbed, their tops kept under the ceiling. Each cell keeps the solids
   within a half-width of it, so a move looks at a few. The browser predicts on the same ground (`fighter_dungeon`).
-- **What a line meets** (`line_walled`): rock at any height, and a jamb, a pillar or a prop where the line passes
-  below its top, as a block meets a line; a line looks only at the solids by the cells it crosses. A foe's eyes, a
+- **What a line meets** (`line_walled`): rock at any height of its storey, rock or a slab between storeys wherever
+  the line leaves the spans of a column it crosses, and a jamb, a pillar or a prop where the line passes between its
+  bottom and its top, as a block meets a line; a line looks only at the solids by the cells it crosses. A foe's eyes, a
   soft lock, a blow, a telegraphed shape, a charge's lane and a shooter's cover are stopped by them and see over a
   low coffin or table. A noise through them carries half as loud and half as far. A kill's drop thrown across a wall
   or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top, unless it would lie so deep
   in it (a lake, a dais, a pool) that no body standing off it reaches it, when it too rests where its foe fell. A
   shot stops where it first
-  enters rock, the grid's edge or a solid below its top (`wall_entry`), however far it flies in a tick, passes over a
-  solid lower than itself, and falls onto the floor alone (`floor_at`).
-- **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with every solid as
-  its colliders, each a body's height at least, since the ground walls a solid however low, and an Ascent's pads with
-  them, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It lays no
+  enters rock, a slab, the grid's edge or a solid (`wall_entry`), however far it flies in a tick, passes over a solid
+  lower than itself, and falls onto the floor or slope under it alone (`floor_under`).
+- **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on each column's lowest span (a flight's slope
+  where it is one, rock a wall 10 m over the top storey) with the rock between each span and the one over it as a
+  block with a bottom (`slabs`), every solid on its own floor as its colliders, each a body's height at least over
+  that floor, since the ground walls a solid however low, and an Ascent's pads with them, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It lays no
   links: no foe paths up a solid's or a pad's side or off its top.
 - **Its garrison** ([[Enemies]]): the end foe (the Reeve, a Miniboss, or an Elite Dungeon's Boss, held back until its
   seals are broken: "Encounters") alone on the end room's cell nearest its middle; a band of
@@ -594,8 +628,13 @@ as standing none (`readDungeon`).
 
 ## Limits
 
-- One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
-  behind.
+- The generator lays one storey; the ground, the bake, the room and the page stand more (`hand_made`).
+- Nothing may stand under a flight: the navmesh bakes a flight's column as its lowest floor, so a column under a
+  flight is rock.
+- The ground walls a body by the storey whose floor lies nearest its feet, and a Void's fall is walled sideways by
+  that storey's rock until the feet pass half way down.
+- Lines across storeys take no corner of rock between two cells, as one storey's do, only the cells they cross.
+- The page's ground and ceiling for marks, shots and the camera are those of the player's own storey.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
 - The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off
   centre would leave their bounds short on one side.

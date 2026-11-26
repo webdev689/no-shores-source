@@ -44,7 +44,7 @@ import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
 import { hearRoom, type InDungeon, roomNameAt, unheard, useOnFoot } from './footTrips.ts';
 import { type Fallen, fallenMarks, fallenOf, reviveHere } from './footRevive.ts';
-import { ceilingAt, openAt } from './dungeonLayout.ts';
+import { ceilingAt, groundAt } from './dungeonLayout.ts';
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, figuresEye, otherCards, ownCard, strikersOf } from './footFigures.ts';
@@ -155,10 +155,10 @@ export class Foot {
     this.module = people.module;
     people.held.entrances.namesFrom(people.module, node);
     const layout = opened.dungeon?.layout;
-    this.groundAt = layout
-      ? (x, y) => (openAt(layout, Math.floor(x / layout.cell), Math.floor(y / layout.cell)) ? 0 : null)
-      : (opened.groundAt ?? context.groundAt);
-    this.roof = layout ? (x, y) => ceilingAt(layout, x, y) : null;
+    // In a dungeon, on the player's own storey.
+    const feet = (): number => context.walker.player.body.z;
+    this.groundAt = layout ? (x, y) => groundAt(layout, x, y, feet()) : (opened.groundAt ?? context.groundAt);
+    this.roof = layout ? (x, y) => ceilingAt(layout, x, y, feet()) : null;
     this.link = parts.link;
     this.fight = parts.fight;
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);

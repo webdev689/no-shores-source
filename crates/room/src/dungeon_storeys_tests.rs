@@ -111,7 +111,8 @@ fn a_foes_path_from_the_top_storey_to_the_lower_goes_by_the_flight() {
         let (first, last) = (path[0], path[path.len() - 1]);
         assert!(first[2].abs() < 0.3 && (last[2] + 8.0).abs() < 0.3, "{path:?}");
         for pair in path.windows(2) {
-            let across = ((pair[1][0] - pair[0][0]).powi(2) + (pair[1][1] - pair[0][1]).powi(2)).sqrt();
+            let (east, south) = (pair[1][0] - pair[0][0], pair[1][1] - pair[0][1]);
+            let across = (east * east + south * south).sqrt();
             let fall = (pair[1][2] - pair[0][2]).abs();
             assert!(fall <= 0.7 * across + 0.3, "no drop through the Void, only the slope: {pair:?}");
         }

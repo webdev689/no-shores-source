@@ -83,7 +83,7 @@ function crystals(mesh: MeshBuilder, [x, y]: Point, bed: Bed): void {
   for (let crystal = 0; crystal < count; crystal++) {
     const half = 0.035 + seeded(x, y, crystal + 20) * 0.035;
     const foot = footIn(bed, half, seeded(x, y, crystal + 2), seeded(y, x, crystal + 2));
-    const tall = 0.3 + seeded(y, x, crystal + 9) * (bed.box[4] - 0.35);
+    const tall = 0.3 + seeded(y, x, crystal + 9) * (bed.box[5] - bed.box[4] - 0.35);
     const lean = 0.05 + seeded(x, y, crystal + 30) * 0.2;
     const aside = (seeded(y, x, crystal + 30) - 0.5) * 0.3;
     const tip = within(
@@ -131,7 +131,7 @@ function fungus(mesh: MeshBuilder, [x, y]: Point, bed: Bed): void {
   for (let cap = 0; cap < count; cap++) {
     const wide = 0.04 + seeded(x, y, cap + 20) * 0.06;
     const [footX, footY] = footIn(bed, wide, seeded(x, y, cap + 2), seeded(y, x, cap + 2));
-    const tall = 0.1 + seeded(y, x, cap + 9) * (bed.box[4] - wide * 0.6 - 0.12);
+    const tall = 0.1 + seeded(y, x, cap + 9) * (bed.box[5] - bed.box[4] - wide * 0.6 - 0.12);
     box(mesh, [COLOUR.wax, 0], [footX - 0.012, footY - 0.012, 0], [footX + 0.012, footY + 0.012, tall]);
     spike(mesh, [COLOUR.fungus, 0], [footX, footY, tall - 0.01], [footX, footY, tall + wide * 0.6], wide);
   }
@@ -140,7 +140,7 @@ function fungus(mesh: MeshBuilder, [x, y]: Point, bed: Bed): void {
 /** Where a cluster of crystals or fungus grows: its solid's box (min x, min y, max x, max y, top), and the way out
  *  from its wall into the room. */
 export interface Bed {
-  readonly box: readonly [number, number, number, number, number];
+  readonly box: readonly [number, number, number, number, number, number];
   readonly out: readonly [number, number];
 }
 
@@ -160,7 +160,10 @@ function footIn({ box: [minX, minY, maxX, maxY] }: Bed, half: number, across: nu
 /** A fixture's bed: the solid among the layout's boxes that holds where its light burns, and the way from it to its
  *  cell's middle, which is out from the wall it stands against; none for a fixture with no solid. */
 export function bedOf(
-  layout: { readonly cell: number; readonly boxes: readonly (readonly [number, number, number, number, number])[] },
+  layout: {
+    readonly cell: number;
+    readonly boxes: readonly (readonly [number, number, number, number, number, number])[];
+  },
   [x = 0, y = 0]: readonly number[],
 ): Bed | null {
   const box = layout.boxes.find(([minX, minY, maxX, maxY]) => x > minX && x < maxX && y > minY && y < maxY);
@@ -177,7 +180,7 @@ export function bedOf(
 export function fixtureMesh(mesh: MeshBuilder, [x, y, z, kind]: readonly number[], given?: Bed | null): void {
   const where: Point = [x ?? 0, y ?? 0, z ?? 0];
   const bed: Bed = given ?? {
-    box: [where[0] - 0.3, where[1] - 0.2, where[0] + 0.3, where[1] + 0.2, kind === FIXTURE.fungus ? 0.5 : 0.9],
+    box: [where[0] - 0.3, where[1] - 0.2, where[0] + 0.3, where[1] + 0.2, 0, kind === FIXTURE.fungus ? 0.5 : 0.9],
     out: [0, 1],
   };
   if (kind === FIXTURE.brazier) brazier(mesh, where);

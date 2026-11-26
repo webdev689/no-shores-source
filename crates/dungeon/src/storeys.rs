@@ -41,7 +41,7 @@ impl Stair {
         } else {
             ((index + 1) as f64 * CELL_M, (index + 1 - FLIGHT_CELLS.min(index + 1)) as f64 * CELL_M)
         };
-        let share = ((coordinate - start) / (end - start)).max(0.0).min(1.0);
+        let share = ((coordinate - start) / (end - start)).clamp(0.0, 1.0);
         let (upper, lower) = (storey_floor(self.upper), storey_floor(self.upper + 1));
         upper + (lower - upper) * share
     }

@@ -22,7 +22,7 @@ const small = {
   columns: 3,
   rows: 1,
   cells: [0, -1, -2],
-  boxes: [[3.2, 0, 3.5, 0.7, 3.2]],
+  boxes: [[3.2, 0, 3.5, 0.7, 0, 3.2]],
 } as unknown as DungeonLayout;
 
 test('the camera and the shots stop on the rock beside the open cells too', () => {

@@ -65,19 +65,12 @@ pub fn dungeon_json(text: &[u8]) -> String {
     layout.to_string()
 }
 
-/// A laid dungeon as JSON. Its storeys stand `storeyM` apart downward, each at its floor in `floors`; `cells`,
-/// `ceilings` and `cellLooks` hold a plane of `columns` by `rows` for each storey, storey by storey. Each flight of
-/// `stairs` runs from its `top` landing on storey `upper` through its four `cells` (plane indices, head first) to its
-/// `bottom` landing on the storey under it. Its return portal stands on the end room's wall as the exit door stands
-/// on the way in's, as wide and as high. Each cell is -2 for rock, -1 for a corridor, -3 for a flight's, -4 for open
-/// air over the storey under it, or its room's number, and wears a look by its number (-1 for rock); sides are 0
-/// east, 1 south, 2 west, 3 north; points are x east, y south, z up from the dungeon's north-west corner at its top
-/// storey's floor, every z absolute; a bearing is radians clockwise
-/// from north. Each prop is its forged model's id, where its origin stands (x, y, z) and its yaw, which turns its +z
-/// as an RMB block's yaw does; each fixture where its light burns and its kind; each landmark its module, its turned
-/// footprint's north-west corner (x, y) and its quarter turns clockwise; each glow x, y, z and its kind. The boxes
-/// are the jambs, the pillars, then the props', the fixtures' and the landmarks' solids (a hanging has none), each
-/// (min x, min y, max x, max y, bottom, top).
+/// A laid dungeon as JSON, as the page's `DungeonLayout` reads it ([[Dungeons]] names each field). Points are x east,
+/// y south, z up from its north-west corner at its top storey's floor, every z absolute; `cells`, `ceilings` and
+/// `cellLooks` hold a plane for each storey, storey by storey. A cell is -2 rock, -1 a corridor, -3 a flight's, -4 open
+/// air over the storey under it, or its room's number; a side is 0 east, 1 south, 2 west, 3 north; a bearing is
+/// radians clockwise from north. A box is (min x, min y, max x, max y, bottom, top): the jambs, the pillars, then the
+/// props', the fixtures' and the landmarks' solids.
 #[must_use]
 pub fn layout_json(laid: &Dungeon, name: &str) -> Value {
     let style = laid.style;

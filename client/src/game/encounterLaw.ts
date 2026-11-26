@@ -10,7 +10,7 @@ import type { Banner, BannerBeat, BannerTone } from '../combat/publicBanner.ts';
 import type { PlaceMark } from '../plus/compass.ts';
 import { type EncounterSeen, RUNE, SEAL_KIND, SEAL_STATE, type SealSeen } from '../network/encounterMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
-import type { DungeonLayout, EncounterLayout, SealLayout } from './dungeonLayout.ts';
+import { type DungeonLayout, type EncounterLayout, floorOf, type SealLayout, storeyAt } from './dungeonLayout.ts';
 import { markBeam } from './footGear.ts';
 import { TICKS_A_SECOND } from './hudLaw.ts';
 import { clockWords } from './tasks.ts';
@@ -233,13 +233,14 @@ export function foulOf(
   return inFoulWater(layout, seen, feet) ? 'wet' : null;
 }
 
-/** Whether `feet` stand in foul water that harms: on a cell of a running Ascent's drowned floor, no higher than the
- *  room's rule takes for standing on it (seals.rs WET_M). */
+/** Whether `feet` stand in foul water that harms: on a cell of a running Ascent's drowned floor, no higher over its
+ *  storey's floor than the room's rule takes for standing on it (seals.rs WET_M). */
 export function inFoulWater(layout: DungeonLayout, seen: EncounterSeen, feet: Point): boolean {
-  if (feet[2] >= WET_M) return false;
+  const storey = storeyAt(layout, feet[2]);
+  if (feet[2] - floorOf(layout, storey) >= WET_M) return false;
   const [column, row] = [Math.floor(feet[0] / layout.cell), Math.floor(feet[1] / layout.cell)];
-  if (column < 0 || row < 0 || column >= layout.columns) return false;
-  const cell = row * layout.columns + column;
+  if (column < 0 || row < 0 || column >= layout.columns || row >= layout.rows) return false;
+  const cell = (storey * layout.rows + row) * layout.columns + column;
   return (layout.encounters?.seals ?? []).some(
     (seal, index) =>
       seal.kind === SEAL_KIND.ascent && seen.seals[index]?.state === SEAL_STATE.running && seal.drowned.includes(cell),

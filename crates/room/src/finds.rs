@@ -173,14 +173,7 @@ fn against_walls(dungeon: &Dungeon, ground: &crate::dungeon_ground::DungeonGroun
     }
     let [middle_x, middle_y] = dungeon.centre(cell);
     let rock = |side| dungeon.beside(cell, side).is_none_or(|next| dungeon.cells[next] == Cell::Rock);
-    let torch_on = |side| {
-        dungeon.torches.iter().any(|torch| {
-            let [x, y, _] = torch.at;
-            torch.wall == side
-                && (x / CELL_M).floor() == (middle_x / CELL_M).floor()
-                && (y / CELL_M).floor() == (middle_y / CELL_M).floor()
-        })
-    };
+    let torch_on = |side| dungeon.torches.iter().any(|torch| torch.wall == side && dungeon.cell_at(torch.at) == cell);
     let out = CELL_M / 2.0 - OFF_WALL_M - CHEST_HALF_DEEP_M;
     SIDES
         .into_iter()

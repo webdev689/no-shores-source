@@ -67,10 +67,12 @@ and their firing spots by it, and climb and drop where its links say.
    kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
    no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
    anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
-   rock stands as walls 10 m tall ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon
-   bakes in cells of 0.4 m, an eighth of its own, so every wall of it lies on a cell's edge and the bake holds a third
-   of the columns 0.25 m would; its jambs, pillars and solids are the bake's colliders, and an Elite Dungeon's Ascents'
-   pads with them, so no foe paths onto a pad.
+   rock stands as walls 10 m tall with flat tops larger than its floor. A dungeon bakes in cells of 0.4 m, an eighth
+   of its own, so every wall of it lies on a cell's edge and the bake holds a third of the columns 0.25 m would. Its
+   terrain is each column's lowest floor, a flight's slope (0.625, under the 0.7 walked) where it is one; the rock
+   between a storey's ceiling and the floor over it stands as a block with a bottom, so the storey under is walked
+   beneath it; its jambs, pillars and solids, each on its own floor, are the bake's colliders, and an Elite
+   Dungeon's Ascents' pads with them, so no foe paths onto a pad. A path between storeys goes by a flight.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
