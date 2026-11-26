@@ -109,9 +109,11 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 - **The deeper dungeons (#229) on a real GPU and by hand**: storeys, flights, galleries and light by storey, the
   third-person camera on a flight, the 3D map's ink and its frame cost, the published stair and balustrade pieces;
-  a walk through a three-storey dungeon and its vault. Its notes' Limits name what is left: a shoulder at a flight's
-  ends, sight under a flight's slope, seals fitting under a furnished room; and the map's per-frame costs (a sight
-  ray's stair scans, its 46 KB upload while open). Whether passages go deeper than one storey is the owner's call.
+  a walk through a three-storey dungeon and its vault. Headless pictures of three (`dungeon-plan.ts`, which now goes in
+  by `&run=` and stands each storey) show every room, flight, gallery and map drawn; seen from its head in a dim
+  flight the treads' edges merge. Its notes' Limits name what is left: a shoulder at a flight's ends, sight under a
+  flight's slope, seals fitting under a furnished room; and the map's per-frame costs (a sight ray's stair scans,
+  its 46 KB upload while open). Whether passages go deeper than one storey is the owner's call.
 - **The toolkit's barriers** (observations 0040, 0116, 0117, each seen a third time): a worker's run ending before the
   2-hour kill with its edits committed, its target/ deleted once merged, and no picture run driving another
   checkout's server.
