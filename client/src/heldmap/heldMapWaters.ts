@@ -1,13 +1,13 @@
-// The waters on the held map: each water's name and level band, lettered at its label point and held inside
-// the map, and the places it names, a city that is no port named as the ruins it is. What is lettered is laid out
+// The waters on the held map: each water's name, arched across its sea from its label point and held inside the map,
+// its label point where a locked sea's padlock stands, and the places it names, a city that is no port named as the ruins it is. What is lettered is laid out
 // (mapLayout.ts) and painted with the parchment's ink (mapLetters.ts).
 import { ruinedName } from '../ruinedName.ts';
 import type { CoastField } from './coastField.ts';
-import type { MapPlace } from './heldMap.ts';
+import type { MapPlace } from './heldMapScene.ts';
 import type { WaterJudge } from './heldMapAsk.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { anyCellUnder } from './mapKey.ts';
-import { difficultyColour, labelPoints, type MapWaters, washOf, type WatersWash, waterWords } from './watersWash.ts';
+import { labelPoints, type MapWaters, washOf, type WatersWash } from './watersWash.ts';
 
 /** The places the map names, a city that is no port named and marked as the ruins it is; before the waters are open,
  *  as they come. */
@@ -42,14 +42,20 @@ export class HeldMapWaters {
   }
 
   /** The waters in view on a map `ink` wide and high (`toWorld` the world point at a point of it, `toInk`
-   *  the reverse): each water's name, its difficulty's colour, and the spots its name may stand at, ink pixels. Its
-   *  label point comes first while it is on the map, then every point of a grid `SPOT_PX` apart over the map that
-   *  lies on its sea, nearest the middle of its sea in view first. */
+   *  the reverse): each water's name, its island's id, its label point while it is on the map (else null), and the
+   *  spots its name may stand at, ink pixels: its label point first while it is on the map, then every point of a grid
+   *  `SPOT_PX` apart over the map that lies on its sea, nearest the middle of its sea in view first. */
   letters(
     ink: { readonly width: number; readonly height: number },
     toInk: (x: number, y: number) => readonly [number, number],
     toWorld: (x: number, y: number) => readonly [number, number],
-  ): { text: string; continent: number; colour: string | undefined; spots: { x: number; y: number }[] }[] {
+  ): {
+    text: string;
+    continent: number;
+    id: string;
+    point: { x: number; y: number } | null;
+    spots: { x: number; y: number }[];
+  }[] {
     const { columns, rows, cellM } = this.waters;
     const seen = new Map<number, { x: number; y: number }[]>();
     for (let y = SPOT_PX / 2; y < ink.height; y += SPOT_PX)
@@ -75,11 +81,11 @@ export class HeldMapWaters {
       );
       const away = (spot: { x: number; y: number }) => Math.hypot(spot.x - middle.x, spot.y - middle.y);
       const spots = [...grid].sort((one, other) => away(one) - away(other));
-      const point = this.points.get(water.continent);
-      const [x, y] = point ? toInk(point[0], point[1]) : [-1, -1];
-      if (x >= 0 && y >= 0 && x <= ink.width && y <= ink.height) spots.unshift({ x, y });
-      const colour = difficultyColour(water.levels) ?? undefined;
-      return [{ text: waterWords(water), continent: water.continent, colour, spots }];
+      const label = this.points.get(water.continent);
+      const [x, y] = label ? toInk(label[0], label[1]) : [-1, -1];
+      const point = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height ? { x, y } : null;
+      if (point) spots.unshift(point);
+      return [{ text: water.name ?? water.id, continent: water.continent, id: water.id, point, spots }];
     });
   }
 }

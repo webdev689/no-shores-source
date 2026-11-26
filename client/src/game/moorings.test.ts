@@ -97,6 +97,8 @@ test("off the island it docked at the player's ship is not drawn; docked at a se
   assert.deepEqual(where(shipsLying(COVE, null, atCove, [])), [[101, 199, FRIGATE]]);
   assert.deepEqual(shipsLying({ ...COVE, id: 'isle-30-00000000000000ff' }, null, atCove, []), []);
   assert.deepEqual(shipsLying(DOWNS, null, atCove, []), []);
+  const zone = { ...DOWNS, id: 'passage-continent-1-w2900-z4' };
+  assert.deepEqual(shipsLying(zone, null, OWN, []), [], 'a passage zone of the island stands apart from its coast');
 });
 
 test("the player's own ship parked here is drawn from the land room's word once, where the page has no docking", () => {

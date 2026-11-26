@@ -4,10 +4,12 @@
  * character that rejoins it, lands from the sea with its ship lying off the node's island, comes through a gate from
  * a node whose gate leads there, or comes out of the node's own dungeon; a dungeon's room or a run takes one from its
  * node's room, and a guild dungeon's run from its guild's outpost alone. A join to one of the company playing in the
- * room is the keeper's to judge (`keeping.ts`).
+ * room is the keeper's to judge (`keeping.ts`). A passage zone's room takes a character on the dive its kept body
+ * holds, by the ways the dive allows (`intoPassage`), and an island's patrol zone one that lit a lamp in the zone it
+ * comes from.
  */
 
-import { nodeRoom, seaRoom, startedAtSea } from './roomNames.ts';
+import { nodeRoom, passageRoom, seaRoom, startedAtSea } from './roomNames.ts';
 
 type Point = readonly [number, number];
 
@@ -74,10 +76,19 @@ const inside = (place: NonNullable<ReturnType<typeof nodeRoom>>) => place.dungeo
 /** Whether a kept character may arrive in `room` by a way that needs no one there: from `from`, the room that held it
  *  before (null for none), its ship lying at `ship` as the sea kept it; `reach` is the node's, null where unknown. A
  *  room that is no node's is not judged here. */
-export function arrives(room: string, from: string | null, ship: Point | null, reach: Reach | null): boolean {
+export function arrives(
+  room: string,
+  from: string | null,
+  ship: Point | null,
+  reach: Reach | null,
+  passages: Passages | null = null,
+): boolean {
+  if (passageRoom(room)) return passages !== null && intoPassage(room, from, passages);
   if (!room.startsWith('node-') || room === from || room === FIRST_ROOM) return true;
   const [to, was] = [nodeOf(room), nodeOf(from)];
   if (!to) return false;
+  const left = passageRoom(from);
+  if (left) return passages !== null && !inside(to) && to.guild === null && litHome(left, to, passages);
   // A run started at sea (from the Playlist, beside any port, or an Elite Dungeon's at Normal) is entered from the
   // sea alone; one at Normal, from its island's tile, with the ship off that island's coast.
   if (startedAtSea(room)) {
@@ -124,12 +135,143 @@ export function toCoast([x, y]: Point, ring: readonly Point[]): number {
 
 /** Whether a character that came from `from` comes out of the dungeon behind entrance `number` of the node's room
  *  `room`: that patrol's dungeon of the number or a run of it, or by its one entrance an Elite Dungeon's run, at the
- *  room's seas; or by the Delve Gate, its guild dungeon's run at any tier. */
-export function cameOutOf(room: string, from: string | null, number: number): boolean {
+ *  room's seas; or by the Delve Gate, its guild dungeon's run at any tier. A crossing gate, named for the node it
+ *  leads to, is come through from that node's own room at the room's seas. */
+export function cameOutOf(room: string, from: string | null, number: number | string): boolean {
   const [to, was] = [nodeOf(room), nodeOf(from)];
+  if (typeof number === 'string')
+    return !!to && !!was && was.id === number && !inside(to) && !inside(was) && was.seas === to.seas && !to.guild;
   if (!to || !was || inside(to) || was.id !== to.id || startedAtSea(from ?? '')) return false;
   // Out of a guild dungeon's run, at any tier, before its outpost's Delve Gate, entrance 0.
   if (to.guild !== null || was.guild !== null) return was.guild === to.guild && was.run !== null && number === 0;
   if (was.seas !== to.seas) return false;
   return was.dungeon === number || (was.dungeon === null && was.run !== null && number === 0);
+}
+
+/** A patrol zone's gate crossing to another, named for the node it leads to, at its middle (`bake::crossings_of`). */
+export interface Crossing {
+  readonly name: string;
+  readonly at: Point;
+}
+
+/** A node file's crossing gates, read leniently: none for a file with none, or no file. */
+export function crossingsOf(text: string | null): readonly Crossing[] {
+  try {
+    const read = (JSON.parse(text ?? 'null') as { crossings?: unknown } | null)?.crossings;
+    const each = (Array.isArray(read) ? read : []) as { name?: unknown; at?: unknown }[];
+    return each.flatMap(({ name, at }) => {
+      const [x, y] = Array.isArray(at) ? (at as unknown[]) : [];
+      return typeof name === 'string' && typeof x === 'number' && typeof y === 'number' ? [{ name, at: [x, y] }] : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** The crossing gate toward the node a join says it crosses from (`?from=<node>`), or null for none of the room's. */
+export function crossingAsked(request: Request, crossings: readonly Crossing[]): Crossing | null {
+  const from = new URL(request.url).searchParams.get('from');
+  return crossings.find((each) => each.name === from) ?? null;
+}
+
+/** What the arrivals read of an island's passages' web for a week (`web_json`): its patrol zone, the zone behind each
+ *  of its mouths, and each zone's number, the zones its ways on lead to and its lamp's number (null for none). */
+export interface PassageWeb {
+  readonly patrol: string;
+  readonly mouths: readonly { readonly zone: number }[];
+  readonly zones: readonly {
+    readonly number: number;
+    readonly onward: readonly number[];
+    readonly lamp: number | null;
+  }[];
+}
+
+/** What a passage's arrivals are judged by: the character's body as the keeper holds it (never what a page says), the
+ *  week it is now, and an island's passages' web for a week, null for none. */
+export interface Passages {
+  readonly body: string | null;
+  readonly week: number;
+  readonly web: (island: string, week: number) => PassageWeb | null;
+}
+
+/** The dive of a kept character's body, as `gear::dive::Dive` keeps it; empty for a body that does not read. */
+interface Diving {
+  readonly passage?: {
+    readonly island?: unknown;
+    readonly week?: unknown;
+    readonly route?: unknown;
+    readonly mouth?: unknown;
+    readonly zone?: unknown;
+    readonly depth?: unknown;
+    readonly began?: unknown;
+    readonly lamp?: unknown;
+    readonly homeward?: unknown;
+    readonly seas?: unknown;
+  } | null;
+}
+
+function divingOf(body: string | null): Diving {
+  try {
+    const read: unknown = JSON.parse(body ?? 'null');
+    return typeof read === 'object' && read !== null ? (read as Diving) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Whether a kept character may come into the passage zone's room `room` from `from`: on a dive of its island, week
+ *  and zone, by its route (a company's route's room for a company's dive, a public room for a public one); from the
+ *  island's patrol zone, at the seas the dive began at, where it begins at the mouth leading to the zone or at the
+ *  zone's lamp; from a passage zone of the same web and route whose ways on lead to it, as the dive went
+ *  on from it once its deal was done there; or from another public copy of its zone. */
+function intoPassage(room: string, from: string | null, passages: Passages): boolean {
+  const to = passageRoom(room);
+  const diving = divingOf(passages.body);
+  const dive = diving.passage;
+  if (!to || !dive || dive.island !== to.island || dive.week !== to.week || dive.zone !== to.zone) return false;
+  // Once the week turns, the web's ways lead elsewhere: no dive goes on into last week's.
+  if ((dive.route === 'company') !== (to.run !== null) || to.week !== passages.week) return false;
+  if (room === from) return true;
+  const web = passages.web(to.island, to.week);
+  const zone = web?.zones.find((each) => each.number === to.zone);
+  if (!web || !zone) return false;
+  const was = passageRoom(from);
+  if (was)
+    return (
+      was.island === to.island &&
+      was.week === to.week &&
+      (was.run === null) === (to.run === null) &&
+      // Another public copy of the dive's own zone, as a full one sends it on, or a zone its ways lead to.
+      ((was.zone === to.zone && to.run === null) ||
+        web.zones.some((each) => each.number === was.zone && each.onward.includes(to.zone)))
+    );
+  const patrol = nodeOf(from);
+  if (!patrol || patrol.id !== web.patrol || inside(patrol) || patrol.guild !== null || patrol.seas !== seasOf(dive))
+    return false;
+  const lamp = typeof dive.lamp === 'number' ? dive.lamp : 0;
+  if (lamp === 0) return typeof dive.mouth === 'number' && web.mouths[dive.mouth]?.zone === to.zone;
+  // Begun at the zone's lamp, still at the depth it began at: the rules begin a dive there only at a lamp lit this
+  // week or one whose zone's foes stand at or under the player's level (`begin_dive`), as only they can judge.
+  return zone.lamp === lamp && typeof dive.began === 'number' && dive.began === dive.depth;
+}
+
+/** Whether a kept character comes home to the patrol zone `to` out of the passage zone `left`, as the rules sent it
+ *  (`go_home`): its dive homeward from that very zone, whose lamp it lit this dive, to its island's patrol zone at the
+ *  seas it began at. The dive is judged, not this week's lamps, which a week turned since may have cleared. */
+function litHome(
+  left: NonNullable<ReturnType<typeof passageRoom>>,
+  to: NonNullable<ReturnType<typeof nodeOf>>,
+  passages: Passages,
+): boolean {
+  const web = passages.web(left.island, left.week);
+  const lamp = web?.zones.find((each) => each.number === left.zone)?.lamp ?? null;
+  const dive = divingOf(passages.body).passage;
+  if (web?.patrol !== to.id || lamp === null || !dive || dive.homeward !== true) return false;
+  const here = dive.island === left.island && dive.week === left.week && dive.zone === left.zone;
+  return here && typeof dive.lamp === 'number' && dive.lamp >= lamp && seasOf(dive) === to.seas;
+}
+
+/** The seas a dive began at, by their number (0 Normal, 1 Elite, 2 Abyss); a dive kept before it kept them, Normal. */
+function seasOf(dive: NonNullable<Diving['passage']>): number {
+  return Math.max(0, ['normal', 'elite', 'abyss'].indexOf(typeof dive.seas === 'string' ? dive.seas : 'normal'));
 }

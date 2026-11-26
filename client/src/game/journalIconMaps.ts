@@ -23,6 +23,24 @@ export const ICONS = {
     ],
     tones: { a: OUTLINE, b: '#9a9079', c: '#c2b79a', d: '#5a5446', e: '#e6dcc0' },
   },
+  /** The passages: the lamp that burns on nothing, gold on its plinth of the grey-green stone. */
+  'lamp': {
+    rows: [
+      '.....aa.....',
+      '....aeea....',
+      '...aecdea...',
+      '...acddca...',
+      '....acca....',
+      '.....aa.....',
+      '...aaaaaa...',
+      '...abbbfa...',
+      '..abbbbbfa..',
+      '..abbbbbfa..',
+      '.abbbbbbbfa.',
+      'aaaaaaaaaaaa',
+    ],
+    tones: { a: OUTLINE, b: '#6f7a6c', c: '#f3cf86', d: '#ffefc2', e: '#c9933d', f: '#4a5248' },
+  },
   /** The sea: a wave curling over the swell. */
   'sea': {
     rows: [

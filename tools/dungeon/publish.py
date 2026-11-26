@@ -2,9 +2,10 @@
 
     python3 -I tools/dungeon/publish.py DIR
 
-DIR is tools/dungeon/build.py's --out, holding a pack for every style in kits.json and modules.blend; a pack missing,
-or not of this repository's format and parts, is refused before anything is uploaded. Each file goes up under its
-hash through tools/r2.py, comes back checked, and the manifest's one line of JSON ends the log for a commit to take.
+DIR is tools/dungeon/build.py's --out, holding a pack for every style in kits.json, the passages' pack and
+modules.blend; a pack missing, or not of this repository's format and parts, is refused before anything is uploaded.
+Each file goes up under its hash through tools/r2.py, comes back checked, and the manifest's one line of JSON ends
+the log for a commit to take.
 """
 import argparse
 import json
@@ -25,7 +26,7 @@ MANIFEST = os.path.join(catalog.CONTENT, 'modules.json')
 def read_build(folder):
     """Each style's pack and the .blend's bytes, refusing a missing file or a pack not of its style and parts."""
     packs = {}
-    for style in catalog.STYLES:
+    for style in catalog.PACKS:
         path = os.path.join(folder, f'{style}.modules')
         if not os.path.isfile(path):
             sys.exit(f'{path} is missing: build every style first (tools/dungeon/build.py --out {folder})')

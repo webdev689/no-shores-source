@@ -315,6 +315,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 // A deck's boarders are its own: none arrives.
                 arrivals: &[],
                 ships: &[],
+                passage: None,
             };
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })

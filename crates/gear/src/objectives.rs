@@ -1,7 +1,7 @@
 //! What the bounties count: an objective is a count of something a room sees happen, and each feat a room sees counts
 //! toward the bounties a character holds today.
 
-use crate::bounties::{board, faction_at, faction_board, faction_places};
+use crate::bounties::{board, faction_at, faction_board, faction_places, town_places};
 use crate::character::Character;
 use crate::world::Difficulty;
 
@@ -14,10 +14,37 @@ pub const MINIBOSS_RANK: u8 = 4;
 /// above. Read from the board's table, never kept with a character.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Objective {
-    Fell { faction: Option<u8>, rank: Option<u8>, island: Option<String> },
-    Gather { resource: Option<u8> },
-    Sink { water: Option<String>, rank: Option<u8> },
-    Clear { island: Option<String>, tier: Option<Difficulty> },
+    Fell {
+        faction: Option<u8>,
+        rank: Option<u8>,
+        island: Option<String>,
+    },
+    Gather {
+        resource: Option<u8>,
+    },
+    Sink {
+        water: Option<String>,
+        rank: Option<u8>,
+    },
+    Clear {
+        island: Option<String>,
+        tier: Option<Difficulty>,
+    },
+    /// A deed in the passages (`Deed`), on any island: a zone reached counts once it is at least as deep as the
+    /// objective's.
+    Passage(Deed),
+}
+
+/// What is done in the passages that the passages' bounties count: a lamp lit, a mission finished, a foe brought
+/// down, a zone reached at its depth, a reliquary opened and a vein gathered (every node of it).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Deed {
+    Lamp,
+    Mission,
+    Felled,
+    Deep(u8),
+    Reliquary,
+    Vein,
 }
 
 /// What a room saw happen: a foe felled, by each player who shares its kill, by its faction, rank and island (a
@@ -29,6 +56,7 @@ pub enum Feat<'a> {
     Gathered { resource: u8 },
     Sunk { water: Option<&'a str>, rank: u8 },
     Cleared { island: Option<&'a str>, tier: Difficulty },
+    Passage(Deed),
 }
 
 /// Whether a place the objective names, if it names one, is the feat's: a feat whose place is unknown matches none.
@@ -56,6 +84,8 @@ impl Objective {
             (Objective::Clear { island, tier }, Feat::Cleared { island: on, tier: at }) => {
                 tier.is_none_or(|tier| at >= tier) && same_place(island.as_ref(), on)
             }
+            (Objective::Passage(Deed::Deep(least)), Feat::Passage(Deed::Deep(reached))) => reached >= *least,
+            (Objective::Passage(wanted), Feat::Passage(done)) => *wanted == done,
             _ => false,
         }
     }
@@ -77,7 +107,7 @@ impl Character {
         let today = &mut self.activity.today;
         for (place, count) in today.bounties.iter_mut().chain(today.faction_bounties.iter_mut()) {
             let bounty = match faction_at(*place) {
-                Some(0) => town.get(usize::from(*place)),
+                Some(0) => town_places().position(|at| at == *place).and_then(|index| town.get(index)),
                 Some(faction) if faction == pledge => {
                     served.as_ref().and_then(|own| own.get(usize::from(*place - first)))
                 }

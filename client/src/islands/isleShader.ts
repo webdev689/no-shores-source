@@ -8,7 +8,8 @@ import { SAMPLES } from '../water/waterView.ts';
 import { GROUND_FLOATS } from './isleGround.ts';
 import { kitOfClimate, PARTS, VERTEX_BYTES } from './isleModules.ts';
 
-/** Floats an instance: where it stands (x, y, z), its scale, its turn's sine and cosine, its lift, and one spare. */
+/** Floats an instance: where it stands (x, y, z), its scale, its turn's sine and cosine, its lift, and whether its
+ *  ember stands cold. */
 export const INSTANCE_FLOATS = 8;
 /** Floats in an island's uniform: its offset from the eye, its ground's two colours and snow line, each part's. */
 export const ISLE_FLOATS = 12 + PARTS.length * 4;
@@ -103,6 +104,7 @@ struct Lit {
   @location(1) normal: vec3f,
   @location(2) local: vec3f,
   @location(3) @interpolate(flat) part: u32,
+  @location(4) @interpolate(flat) cold: f32,
 };
 
 // value_noise is the shared WGSL's.
@@ -115,6 +117,7 @@ fn ground_vertex(@location(0) position: vec3f, @location(1) normal: vec3f) -> Li
   out.normal = normal;
   out.local = position;
   out.part = 0u;
+  out.cold = 0.0;
   return out;
 }
 
@@ -134,6 +137,7 @@ fn module_vertex(
   out.normal = normalize(vec3f(turned, normal.z / max(turn.z, 1e-3)));
   out.local = out.from_eye - isle.offset.xyz;
   out.part = part.x;
+  out.cold = turn.w;
   return out;
 }
 
@@ -158,7 +162,15 @@ fn ground_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
   // The ground's rock is the kit's own stone; its grain a fine noise over patches some 30 m across.
   let rock = isle.parts[${PARTS.indexOf('rock')}].rgb;
   let grain = value_noise(surface.local.xy * 0.35) * 0.45 + value_noise(surface.local.xy * 0.033) * 0.55;
-  let inland = mix(isle.inland.rgb, isle.high.rgb, smoothstep(8.0, 40.0, z + grain * 6.0));
+  // A floor paved (a passage's court) is flagstones: slabs 1.4 by 0.9 m in courses each set half over, each its own
+  // shade, their joints dark.
+  var inland = mix(isle.inland.rgb, isle.high.rgb, smoothstep(8.0, 40.0, z + grain * 6.0));
+  if (isle.inland.w > 0.5) {
+    let slab = vec2f(surface.local.x / 1.4 + 0.5 * floor(surface.local.y / 0.9), surface.local.y / 0.9);
+    let edge = min(fract(slab), 1.0 - fract(slab));
+    let joint = smoothstep(0.02, 0.06, min(edge.x * 1.4, edge.y * 0.9));
+    inland = inland * (0.82 + 0.3 * value_noise(floor(slab) * 3.1)) * mix(0.5, 1.0, joint);
+  }
   let bare = mix(inland, rock * (0.85 + 0.3 * grain), smoothstep(0.55, 0.95, slope));
   let snowy = mix(bare, SNOW, smoothstep(isle.high.w - 2.0, isle.high.w + 2.0, z + grain * 4.0) * (1.0 - smoothstep(0.9, 1.3, slope)));
   let beach = (1.0 - smoothstep(BEACH_M - 0.6, BEACH_M + 0.6 + grain, z)) * (1.0 - smoothstep(0.25, 0.45, slope));
@@ -172,11 +184,13 @@ fn ground_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
 
 @fragment
 fn module_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @location(0) vec4f {
-  let wears = isle.parts[surface.part];
+  // An ember glows by itself; one stood cold (a lamp unlit) is the kit's stone, lit as any.
+  let own = isle.parts[surface.part];
+  let cold = own.w > 0.5 && surface.cold > 0.5;
+  let wears = select(own, vec4f(isle.parts[${PARTS.indexOf('stone')}].rgb, 0.0), cold);
   let normal = select(-1.0, 1.0, front) * normalize(surface.normal);
   let grain = value_noise(surface.local.xy * 1.7 + surface.local.z * 0.9);
   let colour = wears.rgb * (0.9 + 0.2 * grain);
-  // An ember glows by itself.
   return vec4f(select(lit(colour, normal, surface.from_eye), colour, wears.w > 0.5), 1.0);
 }
 `;

@@ -44,11 +44,12 @@ function furled(hull: number): SailRig {
 }
 
 /** Whether `node` is of the island a ship `docked` lies at: that sea island's beach (its room named for its number,
- *  `isleRoomName`), or any node of the landmass but its sea islands'. */
+ *  `isleRoomName`), or any node of the landmass but its sea islands' and its passage zones', which stand apart from
+ *  its coast (`passages/passageReach.ts`, `zonePlace`). */
 function onIsland(node: Pick<NodeInfo, 'id' | 'continent'>, docked: Berthed): boolean {
   const { aim } = docked;
   if (aim.kind === 'isle') return node.id.startsWith(`isle-${aim.id}-`);
-  return node.continent === docked.landmass && !node.id.startsWith('isle-');
+  return node.continent === docked.landmass && !node.id.startsWith('isle-') && !node.id.startsWith('passage-');
 }
 
 /** The ships lying by the island a player walks at `node`: their own where it lies, while it is docked at this island;

@@ -153,6 +153,12 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | On foot in a patrol | E at an entrance's door, offered as "Enter" and the dungeon's name | The veil, "Entering" the dungeon, then on foot at its way in |
 | In a dungeon | E at its exit door, offered as "Leave" | The veil, "Leaving" the dungeon, then before its entrance's door, facing out |
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
+| On foot in a patrol zone with passages | E at a run's sealed door, a route and a start chosen on the mouths' card, and the room's yes | Passing to the zone behind the mouth, or to the lamp begun at ([[Passages]], "Played") |
+| On foot in a passage zone | Through an open onward mouth | Passing: the way between zones in place of the veil ([[Passages]], "The way between zones"), then on foot at the next zone's way in |
+| On foot in a patrol zone | E in the basin of a gate toward another patrol zone, offered as "Go to" and its name | Passing: the way between zones, the dots running from one zone's place to the other's, then on foot at its gate toward the one left ([[Layouts]], "Gates") |
+| On foot at a lit lamp | Home | Passing, the way running back to the patrol zone, then on foot there |
+| Passing | The way played and the place come | On foot there |
+| Passing | The room's gate shuts to the character | The veil, the room's reason and "Returning to your ship", then at sea |
 
 A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at or entered: its mark and its gate
 only say it is locked.
@@ -196,7 +202,8 @@ developer's Test Room launch goes on from that arrival into its test room. A ret
 story played before, goes back where they last left the overworld or a
 social space ([[A Player Logs Back In Where They Left the Overworld or a Social Space]], `relog.ts`): the veil says
 "Returning to your ship" and they are aboard, the ship where the sea room kept it (offline, where the page kept it);
-or "Arriving at" the social space, standing where they left it. Online the accounts say which (`/v1/me`'s `place`),
+or "Arriving at" the social space, standing where they left it; online, a dive's passage zone that held them last
+takes them back on that dive. Online the accounts say which (`/v1/me`'s `place`),
 offline the browser's `noshores.place`; with none, or a social space not open, they arrive at Overlook ([[Accounts]],
 "Where a player logs back in").
 
@@ -222,7 +229,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   and going are seen from each port's plaza and harbour. They are lit as the ships layer lights every ship, by its
   own sun, and cast no shadow.
 - **Ships lying by the island** (`moorings.ts`; [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
-  On every node of the island the player's ship is docked at (for a sea island, its beach alone) the ship is drawn
+  On every node of the island the player's ship is docked at (for a sea island, its beach alone; never its passage
+  zones, which stand apart from its coast) the ship is drawn
   where it lies, and every ship parked there as the land room's snapshot tells (its `ships`, the player's own among
   them, left out where it lies within 5 m of their own as the page draws it, and drawn from the snapshot once the page
   no longer knows it docked, after a reload), each in its own hull, its sails furled, riding the swell, its footprint

@@ -11,9 +11,15 @@ use land::landmass::generate;
 use land::sites::NodeKind;
 use layout::book::Book;
 use layout::brief::Briefs;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use world::layout::Continent;
+
+mod sites;
+use sites::breach_of;
+pub use sites::{
+    OutpostGround, Place, RUN_REACH_M, chests_of, crossings_of, doors_of, foes_of, holders_of, outpost_of, places_of,
+};
 
 /// How far past a section's ring its window reaches, metres: beyond the 60 m where a body dies, so no living body
 /// ever stands where the window stops answering as the whole ground does.
@@ -65,6 +71,13 @@ pub struct NodeFile {
     pub places: Vec<Place>,
     /// Its layout's paths, each its points, that a road's figure walks between places.
     pub paths: Vec<Vec<[f64; 2]>>,
+    /// In a patrol area, each run's name and the place of its sealed door, where an island's passages begin.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub doors: Vec<Place>,
+    /// In a patrol area, its gates crossing to another patrol area, each named for the node it leads to: a player
+    /// crossing from that node arrives here.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub crossings: Vec<Place>,
     /// At an outpost site, the ground its guilds build on and gather at.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub outpost: Option<OutpostGround>,
@@ -72,86 +85,6 @@ pub struct NodeFile {
     /// clockwise.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub breach: Option<([f64; 3], u8)>,
-}
-
-/// Where a layout stood a Breach's gate (`layout::modules`), as its node's room stands it.
-fn breach_of(layout: &layout::Layout) -> Option<([f64; 3], u8)> {
-    let gate = city::modules::number_of("breach-gate")?;
-    let solid = layout
-        .seating
-        .solids
-        .iter()
-        .find(|solid| solid.shape == city::solids::Shape::Module { module: gate, group: 0 })?;
-    let quarters = (solid.turn / std::f64::consts::FRAC_PI_2).round().rem_euclid(4.0) as u8;
-    Some((solid.at, quarters))
-}
-
-/// An outpost site's ground: its plot's middle and level (the ground's height on its platform, as the window reads
-/// it), and the middles of its muster ground and its landing, metres.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct OutpostGround {
-    pub plot: [f64; 2],
-    pub level: f64,
-    pub muster: [f64; 2],
-    pub landing: [f64; 2],
-}
-
-/// An outpost site's ground from its layout, its level read on the node's window; None for a layout with no plot,
-/// muster ground or landing.
-#[must_use]
-pub fn outpost_of(layout: &layout::Layout, window: &Ground) -> Option<OutpostGround> {
-    use layout::brief::AreaKind;
-    let middle = |kind: AreaKind| layout.areas.iter().find(|area| area.kind == kind).map(|area| area.at);
-    let (plot, muster, landing) = (middle(AreaKind::Plot)?, middle(AreaKind::Arena)?, middle(AreaKind::Landing)?);
-    Some(OutpostGround { plot, level: window.height_at(plot[0], plot[1]), muster, landing })
-}
-
-/// A place of a node: its name, middle and reach, metres.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct Place {
-    pub name: String,
-    pub at: [f64; 2],
-    pub radius: f64,
-}
-
-/// How far a run's place reaches round its mouth, metres.
-pub const RUN_REACH_M: f64 = 25.0;
-
-/// A layout's foes' sites a room stands groups at, its territories across the zone: every one it lays, a camp's, a
-/// ruin's, a keep's, a wreck's, an arena's, a coven's and a cave's area and its runs' beats (the room passes over
-/// one by a public event's ground, `stands.rs`).
-#[must_use]
-pub fn foes_of(layout: &layout::Layout) -> Vec<[f64; 2]> {
-    let held = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Foes);
-    held.map(|site| site.at).collect()
-}
-
-/// A patrol's chest places, each x, y and the way it faces, in the layout's order.
-#[must_use]
-pub fn chests_of(layout: &layout::Layout) -> Vec<[f64; 3]> {
-    let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Chest);
-    places.map(|site| [site.at[0], site.at[1], site.facing.unwrap_or_default()]).collect()
-}
-
-/// A patrol's props that hold things, inside its ring: each its box across, its foot, its top and its model.
-#[must_use]
-pub fn holders_of(layout: &layout::Layout) -> Vec<[f64; 7]> {
-    let held = layout.seating.props.iter().filter_map(|prop| {
-        let [west, north, east, south] = prop.footprint;
-        let inside = layout::field::ring_holds(&layout.ring, (west + east) / 2.0, (north + south) / 2.0);
-        inside.then(|| dungeon::models::held_by(prop.model, prop.footprint, prop.at[2])).flatten()
-    });
-    held.collect()
-}
-
-/// A layout's places: its areas, then its runs at their mouths, but a run named as one of its areas is, whose name
-/// names that area alone.
-#[must_use]
-pub fn places_of(layout: &layout::Layout) -> Vec<Place> {
-    let areas = layout.areas.iter().map(|area| Place { name: area.name.clone(), at: area.at, radius: area.radius });
-    let named = |name: &str| layout.areas.iter().any(|area| area.name == name);
-    let runs = layout.runs.iter().filter(|run| !named(&run.name));
-    areas.chain(runs.map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M })).collect()
 }
 
 pub use layout::grounds::{EVENT_ZONES, FISSURE_RADIUS, FissureGround, Grounds, RaidGround, grounds_of};
@@ -278,6 +211,8 @@ pub fn nodes_of(
             foes: Vec::new(),
             places,
             paths,
+            doors: Vec::new(),
+            crossings: Vec::new(),
             outpost: None,
             breach: None,
         }
@@ -304,11 +239,26 @@ pub fn nodes_of(
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
         let grounds = laid.and_then(grounds_of);
+        let (doors, crossings) = (laid.map(doors_of).unwrap_or_default(), laid.map(crossings_of).unwrap_or_default());
         let breach = laid.and_then(breach_of);
         let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
         let outpost =
             laid.filter(|_| node.kind == NodeKind::Outpost).and_then(|layout| outpost_of(layout, &cut.ground));
-        NodeFile { grounds, gates, resources, chests, holders, foes, places, paths, outpost, breach, ..cut }
+        NodeFile {
+            grounds,
+            gates,
+            resources,
+            chests,
+            holders,
+            foes,
+            places,
+            paths,
+            doors,
+            crossings,
+            outpost,
+            breach,
+            ..cut
+        }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -370,6 +320,10 @@ pub fn builders(root: &Path) -> Result<Builders, String> {
     let briefs = root.join("content/world/briefs.json");
     if briefs.is_file() {
         builders.briefs = layout::brief::Briefs::parse(&read_text(&briefs)?)?;
+    }
+    let regions = root.join("content/world/regions.json");
+    if regions.is_file() {
+        builders.briefs.regions(&read_text(&regions)?)?;
     }
     Ok(builders)
 }
@@ -529,6 +483,8 @@ mod tests {
         let node = nodes_of(&layout.continents[0], edits, &Blocks::default(), &builders).unwrap().remove(0);
         let named = |name: &str| node.places.iter().filter(|place| place.name == name).count();
         assert_eq!((named("The Keep"), named("The Cut")), (1, 1), "the area alone, and the run of its own name");
+        let doors: Vec<&str> = node.doors.iter().map(|door| door.name.as_str()).collect();
+        assert_eq!(doors, ["The Keep", "The Cut"], "every run's sealed door, where the passages begin");
     }
 
     #[test]

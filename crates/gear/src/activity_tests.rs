@@ -178,3 +178,25 @@ fn an_islands_nodes_gathered_today_are_kept_while_it_is_among_the_latest_sixteen
     assert_eq!(activity.gathered_on(20_778, 2), [] as [u8; 0], "the least lately touched let go");
     assert_eq!(activity.gathered_on(20_779, 1), [] as [u8; 0], "nothing the next day");
 }
+
+#[test]
+fn the_weeks_abyss_run_again_pays_four_fifths_of_its_kills_and_cache_once_its_first_clear_is_taken() {
+    let mut character = Character::starting();
+    assert_eq!(character.week_share(2_968, Weekly::Abyss), 1.0, "before its first clear, the whole");
+    character.clear_of_the_week(2_968, Weekly::Abyss, &DICE).expect("its first clear");
+    assert_eq!(character.week_share(2_968, Weekly::Abyss), 0.8, "run again");
+    assert_eq!(character.week_share(2_968, Weekly::Elite), 1.0, "the Elite's untouched by the Abyss's");
+    assert_eq!(character.week_share(2_969, Weekly::Abyss), 1.0, "the week turned");
+    character.clear_of_the_week(2_968, Weekly::Elite, &DICE).expect("the Elite's first clear");
+    assert_eq!(character.week_share(2_968, Weekly::Elite), 1.0, "the Elite's run again pays whole");
+    let cache = |share: f64| {
+        let mut character = Character::starting();
+        let clear = crate::rewards::Clear::Dungeon;
+        character.reward_clear_share(clear, 30, (Difficulty::Abyss, share), crate::Source::Abyss, &DICE);
+        (character.xp, u64::from(character.materials.aurem))
+    };
+    let (whole, run_again) = (cache(1.0), cache(0.8));
+    assert!(run_again.0 < whole.0 && run_again.1 < whole.1, "{whole:?} {run_again:?}");
+    let near = |part: u64, of: u64| (part as f64 / of as f64 - 0.8).abs() < 0.01;
+    assert!(near(run_again.0, whole.0) && near(run_again.1, whole.1), "{whole:?} {run_again:?}");
+}

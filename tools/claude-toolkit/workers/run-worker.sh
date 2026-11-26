@@ -4,18 +4,21 @@
 # usage: run-worker.sh <worktree dir> <brief file> [--resume]
 #   brief file: the whole task (common rules + the item). With --resume the brief is sent as a follow-up to the
 #   worker's last conversation in that worktree (claude -c), e.g. a controller update; its context is kept.
-# Log: <worktree>/../reports/<name>.log ; final report path is whatever the brief says.
-# Controller: start it with Bash run_in_background and timeout 7200000 (2 h; the 30 min default killed a worker
-# mid-run with its edits uncommitted). If one is stopped anyway: --resume it with 'commit what you have, then continue'.
+# Log: <worktree>/../reports/<name>.log ; report: <worktree>/../reports/<name>.md, the path the brief names.
+# Controller: start it detached, `setsid nohup bash run-worker.sh <worktree> <brief> >/dev/null 2>&1 </dev/null &`, and
+# wait with `wait-worker.sh <name>` (Bash run_in_background, timeout 7200000, started again at that limit): a worker
+# started as the background task itself is killed with it at 2 h. If one is stopped anyway: --resume it.
 # Late owner changes: append them to <worktree>/../reports/inbox-<name>.md; the worker re-reads it before each commit
 # and before its final report. Stop/--resume only for changes that invalidate work in progress.
-# Stop a worker: TaskStop on its background task, or `bash stop-worker.sh <worktree>` (pid file); never pkill -f.
+# Stop a worker: `bash stop-worker.sh <worktree>` (pid file); never pkill -f.
 KIT_DIR=${KIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}; SHARED_DIR=${SHARED_DIR:-$HOME/toolkit-data}; export KIT_DIR SHARED_DIR
 set -u; WT=$(cd "$1" && pwd); BRIEF=$2; MODE=${3:-}; NAME=$(basename "$WT"); OUT=$(dirname "$WT")/reports; mkdir -p "$OUT"
 cd "$WT"
 # Refuse a brief copied from brief-common-template.md whose <...> lines were never filled in (check-tools expects this).
 left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lines)[^>]*>' "$BRIEF" | head -3 | tr '\n' ' ')
 [ -z "$left" ] || { echo "run-worker.sh: brief $BRIEF still has: $left(fill in the template's <...> lines first)" >&2; exit 2; }
+# Read once, here: a brief missing or empty when the worker starts would start it with no task.
+PROMPT=$(cat "$BRIEF" 2>/dev/null); [ -n "$PROMPT" ] || { echo "run-worker.sh: brief $BRIEF is missing or empty" >&2; exit 2; }
 INBOX="$OUT/inbox-$NAME.md"
 # A fresh run starts an empty inbox: one left by an earlier worker of this name is kept aside, not handed on.
 [ "$MODE" != "--resume" ] && [ -f "$INBOX" ] && mv "$INBOX" "$OUT/inbox-$NAME.$(date +%Y%m%d%H%M%S).md"
@@ -68,6 +71,9 @@ CAVE=$(python3 -c "import re,os;print(re.sub(r'\A---.*?---\s*','',open(os.path.e
 NOTE="CAVEMAN MODE ACTIVE (worker only): your final reply goes to the controller Claude, never to a person. Keep code, comments, commits, docs, ledger and report files in normal prose.
 Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there)."
 export TASK_OBSERVER_ROLE=worker WORKER_INBOX=$INBOX
+# A worker that ends its turn to wait on its own sub-agent (a reviewer) is woken by its result, never stopped after
+# the default 10 minutes with the review lost.
+export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
 work() {   # work <prompt> [-c]: one headless run, its output to the log
   claude "${@:2}" -p "$1" --append-system-prompt "$CAVE
 
@@ -77,10 +83,19 @@ $NOTE" --strict-mcp-config --mcp-config "$CFG" \
   echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
 }
 C=(); [ "$MODE" = "--resume" ] && C=(-c)
-work "$(cat "$BRIEF")" "${C[@]}"
+work "$PROMPT" "${C[@]}"
 # The branch is the deliverable: a run that ends with its edits uncommitted is resumed once to commit them.
 left=$(git status --porcelain | grep -vc 'graphify-out/')
 if [ "$left" -gt 0 ]; then
   echo "WORKER $NAME UNCOMMITTED $left files: resumed once to commit" >> "$OUT/$NAME.log"
   work "Your run ended with $left files changed and not committed. Re-read your inbox, finish what your brief and inbox still ask, run the brief's checks, commit on your branch with the brief's trailer, write your report and give the final reply the brief asks for." -c
 fi
+# A run that ends with its report older than its last commit (an error, or a turn ended while it waited) is resumed
+# once to finish and write it, so the controller never reads the round before's report as this one's.
+REPORT="$OUT/$NAME.md"
+if [ ! -f "$REPORT" ] || [ "$(stat -c %Y "$REPORT")" -lt "$(git log -1 --format=%ct)" ]; then
+  echo "WORKER $NAME REPORT STALE: resumed once to finish and write it" >> "$OUT/$NAME.log"
+  work "Your run ended with your report ($REPORT) older than your last commit. Re-read your inbox, finish what your brief and inbox still ask (a review you started included), run the brief's checks, commit, write this round's report and give the final reply the brief asks for." -c
+fi
+# The last line, after every resume: what wait-worker.sh waits on.
+echo "WORKER $NAME DONE" >> "$OUT/$NAME.log"

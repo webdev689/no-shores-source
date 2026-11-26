@@ -107,8 +107,16 @@ export function dungeonTrips(
    *  the company's run of it or a new one, laid by its week's seed and style; out before the gate at `gate`. */
   enterDelve(key: string, tier: number, gate: Omit<AtEntrance, 'number'>): void;
 } {
-  /** The way out of the dungeon the player is in, kept as they went in; `fell` when their company fell. */
-  let out: ((fell: boolean) => void) | null = null;
+  /** The way out of the dungeon the player is in, kept as they went in with the foot it is of; `fell` when their
+   *  company fell. */
+  let out: { readonly from: TripFoot | null; readonly way: (fell: boolean) => void } | null = null;
+  /** Out of the dungeon stood in by the way it was gone into, once: none from a place it is not the way out of. */
+  const leave = (fell: boolean) => {
+    const foot = game.foot();
+    const way = foot?.dungeon && out?.from === foot ? out.way : null;
+    out = null;
+    way?.(fell);
+  };
   /** A dungeon's room at `seas` from its name before any run: shared at Normal unless it is `always` a run, else the
    *  company's run of it or a new one. */
   const roomOf = (base: string, seas: Difficulty, always: boolean) => async () =>
@@ -157,7 +165,7 @@ export function dungeonTrips(
       const layout = askLayout(await game.module, dungeon.ask);
       await game.intoDungeon(outside, { ...dungeon, room: await room() }, layout, seas);
       await game.drawers.show(layout, outside.node, entrance);
-      out = (fell) => away(layout, fell);
+      out = { from: game.foot(), way: (fell) => away(layout, fell) };
     };
   return {
     props: () => game.drawers.props,
@@ -194,12 +202,8 @@ export function dungeonTrips(
         game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name: words }, work);
       });
     },
-    leave: () => {
-      if (game.foot()?.dungeon) out?.(false);
-    },
-    fell: () => {
-      if (game.foot()?.dungeon) out?.(true);
-    },
+    leave: () => leave(false),
+    fell: () => leave(true),
     // A company joins online only, where a dungeon's room never asks for its node's file.
     join: (node, place) => {
       const where = nodeOfRoom(place);

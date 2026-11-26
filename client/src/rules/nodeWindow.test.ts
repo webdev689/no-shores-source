@@ -53,7 +53,7 @@ const RUNS: readonly {
   {
     continent: 'continent-6',
     node: 'emerald-tangle',
-    bounds: [489_198, 2_279_225, 490_895.5, 2_280_145],
+    bounds: [489_114.5, 2_279_164.5, 490_901, 2_280_862.5],
     script: [
       [600, 1, 0, 0, true, false],
       [600, 1, 0, Math.PI / 2, true, false],
@@ -88,15 +88,16 @@ async function builders(): Promise<{ rmbText: string; buildersText: string }> {
   const index = JSON.parse(rmbText) as { blocks: readonly (readonly [string, string, ...unknown[]])[] };
   const files = [...new Set(index.blocks.map((row) => row[1]))].sort();
   const forged = (name: string) => readFile(new URL(`../../../content/forged/${name}`, import.meta.url), 'utf8');
-  const [blockFiles, buildings, props, parts, briefs] = await Promise.all([
+  const [blockFiles, buildings, props, parts, briefs, regions] = await Promise.all([
     Promise.all(files.map((file) => content(`rmb/${file}`))),
     forged('buildings.json'),
     forged('props.json'),
     forged('parts.json'),
     content('briefs.json'),
+    content('regions.json'),
   ]);
   const tables = `{"buildings":${buildings},"props":${props},"parts":${parts}}`;
-  const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${tables},"briefs":${briefs}`;
+  const buildersText = `"rmbBlocks":[${blockFiles.join(',')}],"forged":${tables},"briefs":${briefs},"regions":${regions}`;
   return { rmbText, buildersText };
 }
 

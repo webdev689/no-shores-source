@@ -3,25 +3,31 @@
 import type { Playing } from './gameFrame.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { landSheetOf } from './landMap.ts';
+import type { LandSheet } from '../heldmap/landSheet.ts';
 
-/** What the controls ask of the game: a mark at sea chosen (`seaLandings.ts`), and the ground under a point. */
+/** What the controls ask of the game: a mark at sea chosen (`seaLandings.ts`), the ground under a point, and the web's
+ *  map where the player stands in a passage zone (none elsewhere). */
 interface HelmGame {
   readonly mark: (id: string) => void;
   readonly groundAt: (x: number, y: number) => number | null;
+  readonly passageMap: () => LandSheet | null;
 }
 
 /** The helm's and the map's controls over `playing`, the pointer `input` locked to walk the deck. */
 export function helmControls(playing: Playing, input: { lock(): void }, game: HelmGame) {
   const { groundAt } = game;
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
-   *  pointer let go to pan it; none in a dungeon, under no land. */
+   *  pointer let go to pan it, or in a passage zone the web's, under ground too; none in a dungeon or a Breach's run,
+   *  under no land. */
   const openMap = () => {
     const { flow, sea, foot } = playing;
     if (flow.mode === 'sea' && sea) playing.helmMap.open(sea);
-    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen && !foot.mapless) {
+    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen) {
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
-      playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
+      const passage = game.passageMap();
+      if (!passage && foot.mapless) return;
+      playing.helmMap.openLand(passage ?? landSheetOf(foot.node, playing.landmass, groundAt));
       document.exitPointerLock();
     }
   };

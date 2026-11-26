@@ -1,12 +1,13 @@
 // An island's plan as the room module hands it to the page (crates/room-wasm/src/isle_door.rs `plan_json`), read and
 // checked whole before anything is drawn from it. Every point is in the island's own frame: metres from its middle,
 // x east, y south, z up.
+import type { GroundLook } from './isleGround.ts';
 
 export type Point2 = readonly [number, number];
 
 /** One module set on the island: its number in the contract (the catalog's name order), where its base's middle
- *  stands, the bearing its front faces (clockwise from north, radians), its size against the module's, and how much
- *  taller again. */
+ *  stands, the bearing its front faces (clockwise from north, radians), its size against the module's, how much
+ *  taller again, and whether its ember stands cold (1: a passage's lamp unlit; none or 0, it glows). */
 export type IslePlacement = readonly [
   module: number,
   x: number,
@@ -15,6 +16,7 @@ export type IslePlacement = readonly [
   turn: number,
   scale: number,
   lift: number,
+  cold?: number,
 ];
 
 /** A solid as the room stands it: west, north, east, south, top. */
@@ -55,6 +57,8 @@ export interface IsleShown {
   readonly climate: string;
   readonly plan: IslePlan;
   readonly heights: Float64Array;
+  /** Its ground's look in place of its climate's (a passage's hollow, by its form). */
+  readonly ground?: GroundLook;
 }
 
 const KINDS: readonly IsleKind[] = ['cove', 'ruin', 'quarry'];

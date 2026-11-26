@@ -135,8 +135,17 @@ export function nodeOfRoom(room: string): {
   };
 }
 
-// A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule.
-export { runInstance, startedAtSea } from '../../../server/roomNames.ts';
+// A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule; a
+// passage zone's room is named, and a full one's refusal said, as the servers name and say them.
+export {
+  PASSAGE_COPIES,
+  PASSAGE_FULL,
+  passageRoom,
+  passageRoomName,
+  runInstance,
+  startedAtSea,
+} from '../../../server/roomNames.ts';
+export { NO_WAY_HERE } from '../../../server/arrival.ts';
 
 /** The copy of a Breach's gate's zone a test run of it is opened from, named by the run's instance; null for a room that
  *  is no Breach's test run. */

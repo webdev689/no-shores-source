@@ -1,6 +1,6 @@
 // What the held map at sea shows: the whole world, from the first time it is raised. Every island's coast, every port
 // at its city and every node, a ship sailing for a node to its island's coast nearest it.
-import type { MapPlace } from '../heldmap/heldMap.ts';
+import type { MapPlace } from '../heldmap/heldMapScene.ts';
 import { coastPoint } from '../overworld/islandView.ts';
 import type { WorldData } from './worldData.ts';
 

@@ -1,13 +1,10 @@
 // Pictures of the interface drawn by the game, headless: starts Vite, opens a module of the client (no page), and
-// draws a node tree through the real renderer (`client/src/ui/shot.ts`) for each shot asked, writing it as a PNG.
-//
-//     node tools/uiShot.mjs <shots.json>
-//
-// shots.json: { "size": [w, h], "scale": 2, "frames": 10, "motion": true, "shots": [{ "module":
-// "/src/game/journalShots.ts", "build": "journalShot", "out": "target/ui/journal.png", "size": [w, h], "events": [...],
-// "at": 3 }] }: `build` answers the tree for the interface it is given; `events`, `at` and `frames` are as
-// `client/src/ui/shot.ts` hears them, a frame 1/60 s; the page asks for reduced motion unless `motion` is true. Errors
-// are printed.
+// draws each shot asked through the real renderer, writing it as a PNG. `node tools/uiShot.mjs <shots.json>`, with
+// { "size": [w, h], "scale": 2, "frames": 10, "motion": true, "shots": [{ "module": "/src/game/journalShots.ts",
+// "build": "journalShot", "out": "target/ui/journal.png", "events": [...], "at": 3 }] }: `build` answers the tree for
+// the interface it is given, as `client/src/ui/shot.ts` hears `events`, `at` and `frames` (a frame 1/60 s); or, with
+// "call": true, awaits `build(...args)` for a PNG's data URL. "before" names an export awaited first, given
+// "beforeArgs". The page asks for reduced motion unless `motion` is true.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createRequire } from 'node:module';
@@ -36,28 +33,42 @@ try {
     failed = true;
     console.log(`page error: ${error.message}`);
   });
+  // A zone drawn whole on the software GPU takes minutes.
+  page.setDefaultTimeout(600_000);
   await page.goto(`${base}/src/ui/shot.ts`);
   for (const one of asked.shots) {
     const [width, height] = one.size ?? asked.size ?? [640, 360];
     const scale = one.scale ?? asked.scale ?? 1;
-    const url = await page.evaluate(
-      async ({ module, build, view, events, frames, at }) => {
-        const { shot } = await import('/src/ui/shot.ts');
-        const made = await import(module);
-        return shot(made[build], view, { events, frames, at });
-      },
-      {
-        module: one.module,
-        build: one.build,
-        view: { width, height, scale },
-        events: one.events ?? [],
-        frames: one.frames ?? asked.frames ?? 4,
-        at: one.at ?? 1,
-      },
-    );
-    mkdirSync(dirname(one.out), { recursive: true });
-    writeFileSync(one.out, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));
-    console.log(`wrote ${one.out} (${width * scale} by ${height * scale})`);
+    // One shot failing is printed and the rest are still drawn.
+    try {
+      const url = await page.evaluate(
+        async ({ module, build, call, before, beforeArgs, args, view, events, frames, at }) => {
+          const made = await import(module);
+          if (before) await made[before](...beforeArgs);
+          if (call) return made[build](...args);
+          const { shot } = await import('/src/ui/shot.ts');
+          return shot(made[build], view, { events, frames, at });
+        },
+        {
+          module: one.module,
+          build: one.build,
+          call: one.call ?? false,
+          before: one.before ?? null,
+          beforeArgs: one.beforeArgs ?? [],
+          args: one.args ?? [],
+          view: { width, height, scale },
+          events: one.events ?? [],
+          frames: one.frames ?? asked.frames ?? 4,
+          at: one.at ?? 1,
+        },
+      );
+      mkdirSync(dirname(one.out), { recursive: true });
+      writeFileSync(one.out, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));
+      console.log(`wrote ${one.out} (${width * scale} by ${height * scale})`);
+    } catch (error) {
+      failed = true;
+      console.log(`FAIL ${one.out}: ${String(error)}`);
+    }
   }
 } catch (error) {
   failed = true;

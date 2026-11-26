@@ -228,6 +228,7 @@ impl Sent {
             reviving: &now.reviving,
             arrivals: &now.arrivals,
             ships: &ships,
+            passage: room.passage_seen(viewer),
         })
     }
 }

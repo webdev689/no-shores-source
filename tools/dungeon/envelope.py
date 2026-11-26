@@ -1,5 +1,6 @@
 """The envelopes a module keeps, so nothing a body could walk into stands unblocked: each kit piece's room in its own
-frame, and a landmark's footprint, height, walk zone and floor. Plain Python, without Blender.
+frame, a landmark's footprint, height, walk zone and floor, and a passage piece's size and walk zone. Plain Python,
+without Blender.
 
 `problems(module, triangles, water)` takes a module's triangles, three (x, y, z) corners each in the dungeon's frame
 (x east, y south, z up, metres), and those of them that are water, and gives every rule it breaks as a readable line;
@@ -428,6 +429,44 @@ def kit_problems(module, piece, triangles):
     return found
 
 
+# A passage piece stands on a room's floor or an island's ground, and its foot may sink this far under it, metres.
+PASSAGE_SINK_M = 0.3
+# A zone stands one lamp, seen from far off across it, and only a few of the rest, each a door's worth at most.
+PASSAGE_TRIANGLES = {'passage.lamp': 9000}
+PASSAGE_TRIANGLES_ELSE = 3000
+
+
+def _over_passage(point, contract):
+    """Whether a point lies over one of a passage piece's solids grown by WALK_GROW_M, seen from above."""
+    x, y = point[0], point[1]
+    grow = WALK_GROW_M + TOUCH_M
+    return (any(x0 - grow <= x <= x1 + grow and y0 - grow <= y <= y1 + grow for x0, y0, x1, y1, _ in contract['boxes'])
+            or any(math.hypot(x - cx, y - cy) <= radius + grow for cx, cy, radius, _ in contract['discs']))
+
+
+def passage_problems(module, contract, triangles):
+    """Every rule a passage piece's triangles break: its size from its middle at its foot (x and y either way of 0, z
+    from PASSAGE_SINK_M under it), its budget, and nothing in the walk zone over no solid, at a corner or a
+    triangle's middle."""
+    width, depth, height = contract['size']
+    found = []
+    budget = PASSAGE_TRIANGLES.get(module, PASSAGE_TRIANGLES_ELSE)
+    if len(triangles) > budget:
+        found.append(f'{module}: {len(triangles)} triangles, over the {budget} a passage piece may have')
+    found += _broken(module, triangles, _within(f'its size is {width:g} × {depth:g} × {height:g}',
+                                                x=(-width / 2, width / 2), y=(-depth / 2, depth / 2),
+                                                z=(-PASSAGE_SINK_M, height)))
+    loose = []
+    for corners in triangles:
+        middle = tuple(sum(corner[axis] for corner in corners) / 3 for axis in range(3))
+        loose += [point for point in (*corners, middle)
+                  if WALK_LOW_M < point[2] < WALK_HIGH_M and not _over_passage(point, contract)]
+    if loose:
+        found.append(f'{module}: {len(loose)} point(s) in the walk zone (z 0.05..2.2) over no solid grown 0.05, '
+                     f'e.g. {_quote(loose[:EXAMPLES])}')
+    return found
+
+
 def problems(module, triangles, water=()):
     """Every rule a module's triangles break, readable, one a line; an empty list passes. `water` is those of its
     triangles that are water."""
@@ -440,8 +479,10 @@ def problems(module, triangles, water=()):
     piece = catalog.piece_of(module)
     if piece is not None:
         return kit_problems(module, piece, triangles)
+    if module in catalog.PASSAGE_MODULES:
+        return passage_problems(module, catalog.PASSAGE_MODULES[module], triangles)
     landmark = catalog.landmark(module)
     if landmark is None:
-        return [f'{module}: neither a kit piece nor a landmark in content/dungeon']
+        return [f'{module}: neither a kit piece, a landmark nor a passage piece in content/dungeon']
     edges = water_edges(triangles, water)
     return landmark_problems(landmark, triangles) + ([_water_problem(module, edges)] if edges else [])

@@ -57,7 +57,7 @@ pub fn open_run(text: &[u8], patrol: &[u8]) -> bool {
         DungeonAsked::Patrol { patrol: id, number } => {
             let file = serde_json::from_slice::<PatrolFile>(patrol).ok();
             let Some(file) = file.filter(|file| file.kind == NodeKind::Patrol && file.id == id) else { return false };
-            (RunOf::Patrol { patrol: id, number }, crate::lock_words(file.locked, &file.name))
+            (RunOf::Patrol { patrol: id, number }, crate::dungeon_door::lock_words(file.locked, &file.name))
         }
         DungeonAsked::Place { place } => match asked.playlist {
             Some(foes_at) => (RunOf::Playlist { place, foes_at }, None),

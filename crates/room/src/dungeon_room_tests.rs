@@ -12,7 +12,7 @@ use combat::{FighterId, Intent};
 use dungeon::{Cell, DOORWAY_HALF_M, SIDES, Side};
 use movement::{Controls, Mode, TUNING};
 
-const PATROLS: [&str; 3] = ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra"];
+const PATROLS: [&str; 3] = ["saltgrass-downs", "lion-grasslands", "whitewind-tundra"];
 const LEVELS: Option<(u8, u8)> = Some((10, 14));
 
 /// The room of a dungeon laid by a seed and a style where no patrol lays it, as a sea island's run lays it.
