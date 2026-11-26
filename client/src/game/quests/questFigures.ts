@@ -1,8 +1,8 @@
 // What a road's varied step stands in the world for the player alone: the figures it walks (an escort, on its horse,
 // and a tail's quarry, on foot), each in its look, going or standing as the room says and facing as it sends, drawn
-// between the room's last two words on it as other players are between snapshots; and the ward a defence keeps, as the figure its goal
-// names or as a mark on the ground (footGear.ts), with a plate over it in the players' green giving its name and its
-// health, held in view as a fought foe's.
+// between the room's last two words on it as other players are between snapshots; and the ward a defence keeps, as
+// the figure its goal names or as a mark on the ground (footGear.ts), with a plate over it in the players' green giving
+// its name and its health, held in view as a fought foe's.
 import type { MarkedFoe } from '../../combat/foePlate.ts';
 import { FIGURE_STATES, type QuestFigure, type QuestState } from '../../network/questMessages.ts';
 import type { Cast } from '../../speech/cast.ts';

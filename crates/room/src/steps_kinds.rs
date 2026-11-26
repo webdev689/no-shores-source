@@ -49,7 +49,7 @@ impl Room {
     /// the player (a tail), waiting at its way's start until `RETRY_TICKS` after; noticing a player nearer than `far`
     /// as it walks; with the player within `near`, waiting while they are `afoot` (an escort rides only with its
     /// player on their horse), else walking, its ambush standing as it passes halfway, and arriving at its way's end;
-    /// else waiting. It turns to face its way at `FIGURE_TURN`, never at once.
+    /// else waiting. It turns to face its way at `FIGURE_TURN`, never at once, but turns about as it notices.
     pub(super) fn walk_figure(
         &mut self,
         player: PlayerId,
@@ -88,7 +88,9 @@ impl Room {
         }
         let ([x, y], bearing) = along_way(&figure.way, figure.along);
         let aim = if figure.state == NOTICED { bearing + PI } else { bearing };
-        let turn = FIGURE_TURN * TICK_SECONDS;
+        // A quarry that notices the player, or walks again once back, turns about at once, never walking backwards.
+        let about = (figure.state == NOTICED) != (before == NOTICED);
+        let turn = if about { PI } else { FIGURE_TURN * TICK_SECONDS };
         let facing = libm::remainder(figure.facing + libm::remainder(aim - figure.facing, TAU).clamp(-turn, turn), TAU);
         let moved = [x, y] != [figure.at[0], figure.at[1]] || figure.state != before || facing != figure.facing;
         figure.at = [x, y, floor.height_at(x, y)];

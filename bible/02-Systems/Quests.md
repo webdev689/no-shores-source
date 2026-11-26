@@ -212,8 +212,8 @@ stall serves; the stranger is heard in a social space alone, never at the stall.
   its figure sits on a horse in its goal's `horse` coat (Tobin a dun, Wren a black), in the player's own horse moves,
   galloping (16 frames a second) while it goes and standing (4) while it waits, is held or has arrived; its hooves
   are heard as another rider's are. A tail's quarry walks on foot. While the figure waits for the player near it to
-  mount, the step says "Get on your horse" under its words, or, with no horse worn, "No horse: the Tack in Overlook
-  gives one".
+  mount, the step says "Get on your horse" under its words, or, with no horse worn, "No horse worn: the Tack in
+  Overlook gives one".
 - **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
   ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with
   "Use" and its name within reach; the tracker shows the running clock (`quest_clock`); and a goal's line is said as

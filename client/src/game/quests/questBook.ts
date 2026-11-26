@@ -122,7 +122,10 @@ const CLOCKED: ReadonlySet<string> = new Set(['race', 'defend', 'tail', 'unseen'
 
 /** What an escort's step says under it while its figure waits for the player, near it, to get on their horse: that,
  *  or, `horsed` false (none worn in the Mount slot), where one is had. */
-const MOUNT_NOTES = { horsed: 'Get on your horse', none: 'No horse: the Tack in Overlook gives one' } as const;
+export const MOUNT_NOTES = {
+  horsed: 'Get on your horse',
+  none: 'No horse worn: the Tack in Overlook gives one',
+} as const;
 
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
  *  count, ticked once met; the clock running beside the first unmet goal that runs it, a ward's health beside its

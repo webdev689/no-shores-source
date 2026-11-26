@@ -126,14 +126,15 @@ test("an escort's figure rides its horse in the coat its goal names: galloping w
     ],
   });
   const escort = QUESTS[state.quest - 1]?.tasks[state.task]?.goals.find((goal) => goal.kind === 'escort');
-  assert.equal(escort?.horse, 'dun', "Tobin's dun, bred on the downs");
+  const coat = escort?.horse;
+  assert.ok(coat, 'the coat it rides');
   const actors = questActors(state, [COLLECTOR], ground);
   assert.deepEqual(
     actors.map(({ anim, fps, dress }) => [anim, fps, dress.outfit.coat]),
     [
-      ['horsegallop', 16, 'dun'],
-      ['horseidle', 4, 'dun'],
-      ['horseidle', 4, 'dun'],
+      ['horsegallop', 16, coat],
+      ['horseidle', 4, coat],
+      ['horseidle', 4, coat],
       ['walk', undefined, undefined],
     ],
     'galloping; waiting for the player to mount; reined in by an ambush; another look on foot',

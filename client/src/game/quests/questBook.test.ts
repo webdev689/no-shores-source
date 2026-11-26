@@ -16,6 +16,7 @@ import {
   failLine,
   goalNodes,
   goalOf,
+  MOUNT_NOTES,
   linesBetween,
   puzzlePoints,
   talkAt,
@@ -188,8 +189,8 @@ test('an escort waiting for its player to mount says so under its step, and wher
   const figure = (state: number) => [{ look: 1, x: 0, y: 0, z: 0, facing: 0, state }];
   const noteOf = (state: number, horsed: boolean) =>
     trackedOf(onTask(LAMP, escort.task, [], { figures: figure(state) }), 0, horsed)?.steps[escort.goal]?.note;
-  assert.equal(noteOf(5, true), 'Get on your horse');
-  assert.equal(noteOf(5, false), 'No horse: the Tack in Overlook gives one');
+  assert.equal(noteOf(5, true), MOUNT_NOTES.horsed);
+  assert.equal(noteOf(5, false), MOUNT_NOTES.none);
   assert.equal(noteOf(1, true), undefined, 'riding: nothing');
   assert.equal(noteOf(0, false), undefined, 'too far off to be waited for: the waypoint leads');
 });

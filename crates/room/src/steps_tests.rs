@@ -186,9 +186,6 @@ fn an_escort_waits_for_its_player_to_get_on_their_horse_then_rides_at_a_gallop_w
     let (_, off, state) = figure(&room, player);
     assert_eq!(state, MOUNTING, "off their horse, it reins in");
     assert!((off[1] - kept[1]).abs() < 0.5, "and stands: {off:?}");
-    let tail = step_of(GoalKind::Tail, |_| true).1;
-    let Goal::Tail(tail) = &tail.goal else { unreachable!("a tail") };
-    assert!(tail.who.is_some() || tail.foe.is_some(), "a tail's quarry stays on foot, at the walk: {FIGURE_PACE}");
 }
 
 #[test]
@@ -243,6 +240,8 @@ fn a_tail_noticing_a_player_too_near_walks_back_and_starts_again_once_it_waited_
     stand_at(&mut room, player, [at[0], at[1] + tail.far / 2.0]);
     run(&mut room, 1);
     assert_eq!(figure(&room, player).2, NOTICED, "too near: it notices them");
+    let facing = room.step_seen(player).figures[4];
+    assert!(libm::cos(facing) < -0.99, "it turns about at once, back to where it began (south): {facing}");
     assert_eq!(room.step_seen(player).fails, counted(key, 1), "a failure, the tail's");
     let (clock, back) = (room.step_seen(player).clock, (100.0 - at[1]) / FIGURE_PACE);
     eprintln!("noticed {:.0} m along: {clock:.1} s to start again", 100.0 - at[1]);

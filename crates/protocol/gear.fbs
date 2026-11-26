@@ -212,7 +212,7 @@ table Gear {
   // in their room, each x, y and 1 lit or 0. Their quest figures in their room (an escort, a tail's quarry), each its
   // look (1 and up a speaker's place in content/story/cast.json's speakers, 101 and up a roster type's number plus
   // 100), x, y, z, facing, and its state (0 waiting, 1 walking, 2 noticed the player, 3 arrived, 4 held by an ambush,
-  // its shout said as it begins). A defended ward in
+  // its shout said as it begins, 5 an escort waiting for its player to get on their horse). A defended ward in
   // their room: x, y, and its health's share (empty with none).
   quest_clock: double = -1;
   quest_fails: [ushort];
