@@ -100,7 +100,8 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 ## Next
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
-  splitting or tightening; held while #216, #218, #221 and #223, which edit all five, are open. The owner's to time.
+  splitting or tightening, once #216, #218, #221 and #223, which edit all five, have merged (the owner's "After they
+  merge").
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
 - **The cloud environment.** A cloud session runs on the `no-shores-source` environment (personal, set up with the
