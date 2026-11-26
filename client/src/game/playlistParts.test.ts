@@ -58,6 +58,10 @@ test('a ring grows from a waiting reward’s dot and fades, again and again; non
   assert.ok(Number(late.width) > Number(early.width), 'it grows');
   assert.ok(alphaOf(late) < alphaOf(early), 'and fades');
   assert.deepEqual(ripple(2.2)?.width, ripple(0.2)?.width, 'and starts again');
+  for (const ring of [early, late])
+    assert.ok((ring.picture?.pixel?.width ?? 0) <= Number(ring.width), 'drawn no finer than shown, so no line is lost');
+  const keys = new Set([0.2, 0.25, 0.3].map((opened) => ripple(opened)?.picture?.key));
+  assert.ok(keys.size < 3, 'its picture kept across a step of its growth');
   assert.ok(withKey(crest(ABYSS, 'rest', { still: true }), 'playlist waiting'), 'the dot stays');
   assert.equal(ripple(0.2, true), undefined);
 });

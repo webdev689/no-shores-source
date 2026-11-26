@@ -27,6 +27,13 @@ const LINKS: readonly (readonly [PlaylistKind, PlaylistKind])[] = [
 /** Where an entry's crest stands on the chart, as shares of its width and height. */
 export const spotShare = (kind: PlaylistKind): readonly [number, number] => SPOTS[kind];
 
+/** The least share of the map's width between two crests side by side in a row, so each crest's words fit it. */
+export const SPOTS_APART = Math.min(
+  ...Object.values(SPOTS).flatMap(([x, y]) =>
+    Object.values(SPOTS).flatMap(([other, down]) => (down === y && other > x ? [other - x] : [])),
+  ),
+);
+
 /** Where an entry's crest stands on a chart `width` by `height` pixels. */
 const spotOf = (kind: PlaylistKind, width: number, height: number): readonly [number, number] => {
   const [across, down] = SPOTS[kind];

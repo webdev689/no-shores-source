@@ -234,6 +234,8 @@ test('no two crests overlap, side by side or stacked', () => {
     [1600, 900],
     [1024, 600],
     [1000, 700],
+    [1000, 900],
+    [1080, 1920],
     [800, 600],
     [390, 844],
   ] as const) {
@@ -272,6 +274,14 @@ test('the chart is drawn again only at 64-pixel steps of the screen, not each pi
     byId(standing(width, height).built(), 'playlist-chart')?.picture?.key;
   assert.equal(keyAt(1600, 900), keyAt(1610, 905));
   assert.notEqual(keyAt(1600, 900), keyAt(1700, 900));
+});
+
+test('the crests, glows and dials are drawn again only every few pixels of a resize', () => {
+  const keys = new Set<string>();
+  for (let height = 700; height <= 764; height += 1)
+    for (const node of nodesOf(standing(1600, height).built()))
+      if (/^playlist (dial|glow|crest) /.test(node.picture?.key ?? '')) keys.add(node.picture?.key ?? '');
+  assert.ok(keys.size <= 3 * 12, `${keys.size} pictures over 64 pixels of height`);
 });
 
 test('a playlist’s weekly shows its three marks and “2 of 3”, and nothing else beside them', () => {

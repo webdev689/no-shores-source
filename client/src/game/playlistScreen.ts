@@ -9,7 +9,7 @@ import type { CardSearch } from './entranceCard.ts';
 import { INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import { iconNode } from './journalIcons.ts';
-import { drawChart, drawGround, spotShare } from './playlistMap.ts';
+import { drawChart, drawGround, SPOTS_APART, spotShare } from './playlistMap.ts';
 import {
   type CrestLook,
   type CrestMotion,
@@ -53,6 +53,8 @@ const SIDE_BY_SIDE = 1000;
 const FOOTER_ONE_LINE = 1100;
 const CARD_MOST = 560;
 const CREST = 104;
+/** The steps a crest's side goes in as the screen is resized. */
+const SIDE_STEP = 4;
 /** The steps a chart's picture is drawn again at as the screen is resized, so a drag draws it a few times, not each
  *  pixel. */
 const CHART_STEP = 64;
@@ -197,9 +199,14 @@ export class PlaylistView {
     this.scroll(ui, besides ? SCROLLS.besides : SCROLLS.stacked);
     const scale = Math.min(1.4, Math.max(0.7, view.height / 900));
     const cardWide = Math.min(CARD_MOST, Math.round(view.width * 0.34));
-    // Stacked, two crests share a row, each its words' width, and the two rows leave the card room below.
-    const most = besides ? Infinity : Math.min((view.width - 40) / 2 / WORDS_WIDE, view.height / 9);
-    const playlistSide = Math.floor(Math.min(CREST * scale, most));
+    // Side by side, each crest's words fit between its spot and the next on the chart; stacked, two crests share a
+    // row, each its words' width, and the two rows leave the card room below. The side goes in steps, so a resize
+    // draws the crests, glows and dials again only every few pixels.
+    const chartWide = view.width - cardWide - 80;
+    const most = besides
+      ? (chartWide * SPOTS_APART) / WORDS_WIDE
+      : Math.min((view.width - 40) / 2 / WORDS_WIDE, view.height / 9);
+    const playlistSide = Math.floor(Math.min(CREST * scale, most) / SIDE_STEP) * SIDE_STEP;
     const [opened, still] = [ui.age('playlist-screen'), motionReduced()];
     const looks = screen.entries.map((_one, place): CrestLook => {
       const id = `${TILE}${place}`;
@@ -243,7 +250,7 @@ export class PlaylistView {
               width: 'grow',
               height: 'grow',
               picture: {
-                key: `playlist chart ${stepped(view.width - cardWide - 80)} ${stepped(view.height - 170)}`,
+                key: `playlist chart ${stepped(chartWide)} ${stepped(view.height - 170)}`,
                 source: { draw: drawChart },
               },
               children: [...dials, ...crests],

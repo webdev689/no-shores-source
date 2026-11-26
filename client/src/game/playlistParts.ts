@@ -45,8 +45,9 @@ const GLOW = { rest: 0.42, lit: 0.67, chosen: 1, chosenLow: 0.8 } as const;
 const BREATH_S = 3;
 /** A waiting reward's ring: seconds between one and the next, and how many dots across it grows to. */
 const RIPPLE = { seconds: 2, reach: 3.2 } as const;
-/** The texels the ring is drawn at, whatever size it stands. */
-const RIPPLE_PX = 48;
+/** The ring is drawn at the size it stands, in steps of this many pixels, so its line is never read between texels
+ *  and a few pictures serve its whole growth. */
+const RIPPLE_STEP = 2;
 /** The crests rise into place as the screen opens: each this many seconds after the one before, over this many,
  *  from this many pixels below. */
 const RISE = { after: 0.05, seconds: 0.3, from: 12 } as const;
@@ -239,7 +240,7 @@ export function crestOf(
       : GLOW.rest;
   const step = Math.floor((motion.swept / SHEEN_S) * SHEEN_STEPS);
   const ripple = (motion.opened % RIPPLE.seconds) / RIPPLE.seconds;
-  const ring = Math.round(dot * (1 + (RIPPLE.reach - 1) * ripple));
+  const ring = Math.ceil((dot * (1 + (RIPPLE.reach - 1) * ripple)) / RIPPLE_STEP) * RIPPLE_STEP;
   const rise = risen(place, motion);
   return {
     id: `${TILE}${place}`,
@@ -299,9 +300,8 @@ export function crestOf(
                   height: ring,
                   through: true,
                   picture: {
-                    key: 'playlist ripple',
+                    key: `playlist ripple ${ring}`,
                     source: { draw: drawRipple },
-                    pixel: { width: RIPPLE_PX, height: RIPPLE_PX },
                     tint: faded(0.9 * (1 - ripple)),
                   },
                   float: { to: 'parent', anchor: [0.5, 0.5], at: [0.86, 0.18], clipped: true },

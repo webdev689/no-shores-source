@@ -535,7 +535,7 @@ export function drawWaiting(context: Context, side: number): void {
 
 /** Draws the ring that spreads from a waiting reward's dot, gold, `side` pixels square; the screen grows and fades it. */
 export function drawRipple(context: Context, side: number): void {
-  const width = side * 0.06;
+  const width = Math.max(1, side * 0.06);
   context.beginPath();
   context.arc(side / 2, side / 2, side / 2 - width, 0, Math.PI * 2);
   context.lineWidth = width;
