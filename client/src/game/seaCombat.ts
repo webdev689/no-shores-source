@@ -479,7 +479,8 @@ export class SeaCombat {
       ship.rig?.step(seconds, wind, time);
       const captain = number === boarded ? undefined : captains.get(number);
       const crew = captain && number > 0 ? { crew: captainInFight(`fight-${number}`, captain) } : {};
-      const look = number === 0 ? this.ownLook : { side: ship.side };
+      // A ship running from the fight puts her lanterns out.
+      const look = number === 0 ? this.ownLook : { side: ship.side, dark: captains.get(number)?.mode === 'flee' };
       return { hull: ship.hull, place, rig: ship.rig, look, ...crew };
     });
   }

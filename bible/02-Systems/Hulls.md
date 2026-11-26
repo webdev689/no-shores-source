@@ -12,6 +12,8 @@ code:
   - tools/ships/build_cabin.py#build_cabin
   - tools/ships/paint_ship.py#main
   - tools/ships/export_ship.py#main
+  - client/src/ships/lanterns.ts#HULL_LANTERNS
+  - client/src/ships/lanternMesh.ts#lanternMesh
 ---
 # Hulls
 
@@ -86,6 +88,16 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
    ([[Model Packs Upload From Any Branch]]), in a job that holds no secret and stages what it makes; a second job
    uploads it with the repository's `CLOUDFLARE_TOKEN` ([[Toolchain]]).
    A square sail is measured by its four corners, each named by its side.
+
+## Lanterns
+
+Every hull carries lanterns where DFO hung them ([[Ships' Lanterns Come Over From DFO]]): two on poles at its quarters'
+rails, one at its taffrail, and one on an arm beside its cabin's door. Each is placed by the hull's own parts, measured
+from its published mesh (`HULL_LANTERNS`): the Schooner, the Brig and the Frigate carry the taffrail lantern
+`ship_details.py` makes, which the game only sleeves in glass; the game draws the rest with the hull, each a six-sided
+glass between an iron foot and a peaked cap (`lanternMesh.ts`). The Sloop has no companionway of its own in its mesh, so
+it carries three: its taffrail's on a pole and its quarters'. The glass is pale horn by day and burns at night while its
+ship shows her lanterns ([[Sailing]], "Lanterns at night").
 
 ## What the code needs
 

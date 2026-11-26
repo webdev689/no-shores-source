@@ -97,6 +97,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         ...(parts.passages.inHollow() ? { city: null, layouts: null, nature: null } : playing.drawers),
         isles: parts.isles,
         shipModels: parts.shipModels,
+        shipLights: parts.shipLights,
         figureView: parts.figureView,
         props: parts.eventProps,
         seaFight: playing.sea?.fight,

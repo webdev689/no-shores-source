@@ -589,7 +589,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ shown, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sailed.waterline },
       ...{ builtShip: sailed.build, closeSource, waterHere, leave, travel, goFoot, isleFrame, groundAt, story, arrive },
       ...{ isles: islesDrawer, eventProps: boot.eventProps, docked: () => landings.docked },
-      ...{ world, music, ambience, dungeons, passages, pieces },
+      ...{ world, music, ambience, dungeons, passages, pieces, shipLights: boot.shipLights },
       heed: (here) => heed(here, shutOut, playing.flow.mode === 'foot'),
     },
     playing,

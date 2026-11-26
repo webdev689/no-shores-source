@@ -64,6 +64,10 @@ export interface ShipLook {
   readonly side: ShipSide;
   readonly shade?: number;
   readonly painted?: Painted;
+  /** Whether she runs dark, her lanterns out: a friendly ship running from an attack. */
+  readonly dark?: boolean;
+  /** How lit her lanterns are now (0 out to 1 burning), as a frame draws her; none for out. */
+  readonly lanterns?: number;
 }
 
 export const PLAYER_LOOK: ShipLook = { side: 'player' };

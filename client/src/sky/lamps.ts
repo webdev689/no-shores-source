@@ -36,6 +36,10 @@ export const CITY_LAMPS = new CityLamps();
 /** What the public events' props light now (their crystal, a chest opened), set each frame they are drawn. */
 export const EVENT_LAMPS: { current: readonly LampPlace[] } = { current: [] };
 
+/** What the ships' lanterns near the eye light now, set each frame the ships are drawn and let go once the sky has
+ *  taken them (`shipLights.ts`). */
+export const SHIP_LAMPS: { current: readonly LampPlace[] } = { current: [] };
+
 /** A fire's light, linear red, green and blue. */
 export const FIRELIGHT = [1.0, 0.62, 0.3] as const;
 

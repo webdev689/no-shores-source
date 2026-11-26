@@ -9,6 +9,7 @@ import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipP
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { flagPictures } from './flagPictures.ts';
+import { GLASS_SHELL } from './lanternMesh.ts';
 import { VERTEX_BYTES } from './shipMesh.ts';
 
 /** Its faces seen from outside reach the screen counter-clockwise, as the land's and the water's do: the export keeps
@@ -47,7 +48,7 @@ struct Place {
   turn: mat4x4f,
   // Its middle from the eye, metres as drawn.
   offset: vec4f,
-  // How light it is drawn: 1 as modelled, less for a darker ship.
+  // How light it is drawn: 1 as modelled, less for a darker ship; then how lit its lanterns are (0 out to 1 burning).
   shade: vec4f,
   // Its side's paint for its hull, its stripe and its canvas, each its colour and 1 where it is laid, 0 where not.
   hull: vec4f,
@@ -122,6 +123,9 @@ export const SHIP_DRAW_SHADER = /* wgsl */ `
 ${PLACE_SHADER}
 ${SHADOW_WGSL}
 const BOUNCE = 0.15;
+// A lantern's glass (its shell byte GLASS_SHELL): pale horn by day, and its flame's light burning through it.
+const GLASS = vec3f(0.78, 0.7, 0.52);
+const FLAME = vec3f(1.6, 1.0, 0.42);
 
 @vertex
 fn vertex_main(
@@ -148,6 +152,10 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   var colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
   let grain = dot(colour, LIGHTNESS);
+  let glass = drawn.shell > ${GLASS_SHELL - 0.5};
+  if (glass) {
+    colour = GLASS;
+  }
   // A side paints the outside of its shell; its deck's fittings and the insides of its bulwarks keep their timber.
   if (drawn.part == HULL_PART && drawn.shell > 0.5) {
     let line = place.band.x + place.band.y * drawn.model.x;
@@ -171,7 +179,8 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
     sun *= sunlit(drawn.from_eye, normal);
   }
   let light = ambient + sky_direct(normal, sun) + sky_lamps(drawn.from_eye, normal);
-  return vec4f(colour * place.shade.x * light, 1.0);
+  let flame = select(vec3f(0.0), FLAME * place.shade.y, glass);
+  return vec4f(colour * place.shade.x * light + flame, 1.0);
 }
 `;
 

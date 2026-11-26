@@ -11,6 +11,9 @@ import { rankMark } from '../rules/roster.ts';
 import type { WaterHolder, WatersRules, WatersTable } from '../rules/watersRules.ts';
 import { rankColour, shipName, sightedWords } from '../ships/shipBars.ts';
 import { distanceText } from '../plus/compass.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
+import { factionSide } from '../ships/dress.ts';
+import { lanternsLit } from '../ships/lanterns.ts';
 
 /** The least distance a hostile ship is sighted from, metres (crates/room/src/sighting.rs), read for a room that sends
  *  none. */
@@ -20,9 +23,14 @@ const HOSTILE_RISE_M = 20;
 /** Its mark's id: `hostile-` and its number in the room. */
 export const HOSTILE_PREFIX = 'hostile-';
 
-/** The distance a ship is sighted from. */
-export function sightOf(hostile: Pick<SeenHostile, 'sight'>): number {
-  return hostile.sight !== undefined && hostile.sight > 0 ? hostile.sight : SIGHT_LEAST_M;
+/** The distance a ship is sighted from: by night only as far as her lanterns show her (`sight`), and a Grey Tithe
+ *  ship sails dark. */
+export function sightOf(
+  hostile: Pick<SeenHostile, 'sight' | 'faction'>,
+  sight: (rangeM: number, lit: boolean) => number = SKY_NOW.current.sight,
+): number {
+  const byDay = hostile.sight !== undefined && hostile.sight > 0 ? hostile.sight : SIGHT_LEAST_M;
+  return sight(byDay, lanternsLit({ side: factionSide(hostile.faction) }));
 }
 
 const apart = (hostile: SeenHostile, ship: Point2) => Math.hypot(hostile.x - ship[0], hostile.y - ship[1]);

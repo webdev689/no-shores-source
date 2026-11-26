@@ -2,6 +2,7 @@
 // events' props (before the nature, as the fissure opens the land under it), its nature, on foot the fight's blood,
 // the ships near (with a sea fight's effects), the figures, and on foot the fight's marks over them.
 import type { CardAt } from '../player/cards.ts';
+import type { ShipLights } from '../ships/shipLights.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { FigureView } from './figureView.ts';
 import type { Drawer } from './scene.ts';
@@ -17,6 +18,8 @@ export interface StandingParts {
   readonly props?: Drawer | null;
   readonly nature: Drawer | null | undefined;
   readonly shipModels: ShipModels;
+  /** The ships' lanterns at night: none where the ships carry none (the World Editor). */
+  readonly shipLights?: ShipLights;
   readonly figureView: FigureView;
   readonly seaFight: SeaCombat | null | undefined;
   /** The sea's islands in sight, and the one the player stands on. */
@@ -30,6 +33,7 @@ export function standingDrawers(
   figures: readonly CardAt[],
   fight?: { under: Drawer; over: Drawer },
 ): Drawer[] {
+  let lit = ships;
   const found: (Drawer | null | undefined)[] = [
     parts.city,
     parts.layouts,
@@ -38,15 +42,23 @@ export function standingDrawers(
     parts.isles,
     fight?.under,
     {
+      // Each ship as its lanterns burn this frame, their light handed to the sky's lamps before it lays them.
+      prepare: (shot) => {
+        lit =
+          parts.shipLights?.light(ships, (hull) => parts.shipModels.model(hull)?.lanterns ?? null, shot.eye) ?? ships;
+      },
       castInto: (pass, fromEye, shot, _time, shadow) =>
         parts.shipModels.castInto(pass, ships, { fromEye, eye: shot.eye }, shadow),
       drawInto: (pass, fromEye, shot, time, shadow) => {
         const camera = { fromEye, eye: shot.eye };
-        parts.shipModels.draw(pass, ships, camera, shadow);
+        parts.shipModels.draw(pass, lit, camera, shadow);
         parts.seaFight?.draw(pass, camera, time, shadow);
       },
       // A sea fight's see-through puffs and its aim after the water, and the puffs' light on the hulls round them.
-      overWater: (encoder, target, fromEye, depth) => parts.seaFight?.overWater(encoder, target, fromEye, depth),
+      overWater: (encoder, target, fromEye, depth) => {
+        parts.seaFight?.overWater(encoder, target, fromEye, depth);
+        parts.shipLights?.overWater(encoder, target, fromEye, depth);
+      },
       lightInto: (pass) => parts.seaFight?.lightInto(pass),
     },
     {

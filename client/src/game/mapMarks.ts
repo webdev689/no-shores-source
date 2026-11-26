@@ -5,6 +5,7 @@ import type { MapMarks } from '../heldmap/landSheet.ts';
 import type { PublicEvent } from '../network/publicMessages.ts';
 import type { SeenCharted } from '../network/seaHarbour.ts';
 import type { OtherPlayers } from '../player/others.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
 import { ofCompany } from './companyHud.ts';
 import { mapEventOf } from './publicLaw.ts';
 
@@ -25,8 +26,18 @@ export function mapMarksOf(
   };
 }
 
-/** Every other player's ship on the sea's `charted`, as the sea's map marks them; the player is `own`. */
-export function chartMarksOf(charted: readonly SeenCharted[], own: number, company = ofCompany()): MapMarks {
-  const others = charted.filter((ship) => ship.player !== own);
+/** Every other player's ship on the sea's `charted`, as the sea's map marks them; the player is `own`, their ship at
+ *  `from`, whose lookout sees as far as the sky lets it (`sight`): by night only ships within sight of her lanterns. */
+export function chartMarksOf(
+  charted: readonly SeenCharted[],
+  own: number,
+  company = ofCompany(),
+  from: readonly [number, number] = [0, 0],
+  sight: (rangeM: number, lit: boolean) => number = SKY_NOW.current.sight,
+): MapMarks {
+  const seenTo = sight(Infinity, true);
+  const others = charted.filter(
+    (ship) => ship.player !== own && Math.hypot(ship.at[0] - from[0], ship.at[1] - from[1]) <= seenTo,
+  );
   return { others: others.map((ship) => ({ at: ship.at, company: company(ship.name) })), events: [] };
 }

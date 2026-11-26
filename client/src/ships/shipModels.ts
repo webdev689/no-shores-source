@@ -8,6 +8,7 @@ import type { ShipLook } from './dress.ts';
 import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
 import type { SailRig } from './sails.ts';
 import type { ShipCrew } from './shipCrew.ts';
+import { HULL_LANTERNS } from './lanterns.ts';
 import { loadShip } from './shipMesh.ts';
 import { standIn } from '../standIns.ts';
 import { type ShipCamera, type ShipPlace, SHIP_SLOTS, ShipView } from './shipView.ts';
@@ -27,7 +28,15 @@ export type OpenHull = (hull: number) => Promise<ShipView>;
 
 /** A hull's model from R2 by its manifest entry, on the device, `slots` ships of it a frame. */
 export function openHull(gpu: Gpu, slots = SHIP_SLOTS): OpenHull {
-  return async (hull) => ShipView.open(gpu, await loadShip(hullName(hull)), hullSails(hull), hullPaint(hull), slots);
+  return async (hull) =>
+    ShipView.open(
+      gpu,
+      await loadShip(hullName(hull)),
+      hullSails(hull),
+      hullPaint(hull),
+      slots,
+      HULL_LANTERNS[hullName(hull)],
+    );
 }
 
 /** A failed fetch is tried again from a frame this long after it failed, milliseconds, doubling each time to the
