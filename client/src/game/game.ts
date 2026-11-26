@@ -51,7 +51,7 @@ import { arrivalFacing, FIRST_NODE } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { inspectAgainst } from './social/social.ts';
 import { rejoinOnGuild } from './footPlace.ts';
-import { listenForControls } from './gameKeys.ts';
+import { clickedOnLine, listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { companyPlaces, nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
 import { notYet } from './companyJoin.ts';
@@ -561,7 +561,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   canvas.addEventListener('click', () => {
     // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open
     // the pointer stays free, though the click comes before the interface has heard where it is.
-    if (ui.takesPointer || gearScreenOpen()) return;
+    if (ui.takesPointer || gearScreenOpen() || clickedOnLine(input.locked)) return;
     if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     const { flow, foot, sea, helmMap } = playing;
     const onFoot = flow.mode === 'foot' && !helmMap.looking && foot?.standing.kind !== 'dead';

@@ -3,7 +3,8 @@
 // pieces and keeps the travel; this draws what they hold, as `Playing` has it this frame.
 import { placingStrip } from './guild/decorPlacing.ts';
 import type { CardAt } from '../player/cards.ts';
-import { IDLE, type InputFrame, axis, handsFree } from '../player/input.ts';
+import { IDLE, type InputFrame, axis, handsFree, pressTakenBy } from '../player/input.ts';
+import { continueDialogue, dialogueWaits } from '../speech/dialogue.ts';
 import type { HelmMap } from './helmMap.ts';
 import { musiciansOf } from './audio/music/band.ts';
 import { type Flow, next, READY_WAIT_S } from './flow.ts';
@@ -212,7 +213,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const { quests } = playing;
     quests.hear(here.gear?.gear);
     playing.lore.hear(here.gear?.gear);
-    quests.frame(seconds, playing.after.past, paused);
+    quests.frame(seconds, playing.after.past, paused, parts.music.fighting);
     // The roads' waypoint on the compass, step by step from where the player stands, and the ward a step defends
     // among the plates, as a companion's.
     const named = new Map(quests.roster.map((type) => [type.type, type.name]));
@@ -370,7 +371,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.shipScale = shown.shipScale;
     // Alone the sea's word on the gear comes only here; online the room's connection hears it too.
     playing.quests.hear(playing.sea?.gear?.gear);
-    playing.quests.frame(seconds, playing.after.past, paused);
+    playing.quests.frame(seconds, playing.after.past, paused, parts.music.fighting);
     playing.lore.hear(playing.sea?.gear?.gear);
     hud.toast(...toldNow(), ...playing.lore.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
@@ -515,8 +516,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
           : covered && 'menu';
     input.window(top || null);
     input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
-    const heard = withoutTaken(input.frame());
+    const read = withoutTaken(input.frame());
     hud.controls.frame(seconds, input.padButtons);
+    // A line of the dialogue box that waits for a press takes Continue's: moved on, it is heard by no other control.
+    const talking = !top && !bound && dialogueWaits();
+    if (talking && read.pressed('continue')) continueDialogue();
+    const heard = talking ? pressTakenBy(read, 'continue') : read;
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
     const size = { width: canvas.width, height: canvas.height };

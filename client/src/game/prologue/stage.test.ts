@@ -267,3 +267,26 @@ test('the stage draws the people aboard each ship it is handed that carries any,
   stage.draw({ shot, ships }, { width: 960, height: 540 }, 0, 0.1);
   assert.equal(carded.length, 4, "the Sloop's master and its three hands");
 });
+
+test("a scene's lines wait for a press by default, move on by themselves under Auto, and always in a fight", async () => {
+  const paced: boolean[] = [];
+  const parts = {
+    scenes: { sighted: [{ who: 'mate', say: 'They mean to take us.' }] },
+    cast: { speakers: {}, voices: {} },
+    overheads: {},
+    dialogue: {
+      play: (_run: unknown, _cast: unknown, options: { auto: boolean }) => {
+        paced.push(options.auto);
+        return Promise.resolve();
+      },
+    },
+  } as unknown as StageParts;
+  const stage = new Stage(parts);
+  await stage.play('sighted');
+  await stage.play('sighted', true);
+  const kept = new Map([['noshores.dialogue', 'auto']]);
+  Object.assign(globalThis, { localStorage: { getItem: (key: string) => kept.get(key) ?? null } });
+  await stage.play('sighted');
+  Object.assign(globalThis, { localStorage: undefined });
+  assert.deepEqual(paced, [false, true, true]);
+});

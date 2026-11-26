@@ -202,7 +202,7 @@ export class Battle implements Beat {
       if (head && headOnView(onScreen(shot, view, head), view)) {
         this.waiting.delete(happening);
         this.cried.set(happening, this.clock);
-        void stage.play(scene);
+        void stage.play(scene, true);
       } else if (this.clock - since > CRY_HELD_S) this.waiting.delete(happening);
     }
   }

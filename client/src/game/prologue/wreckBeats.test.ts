@@ -110,9 +110,9 @@ test('the deep shows the wreck above and the Brig with its own hands, and speaks
     ['male', 'male', 'male', 'male', 'female'],
   );
   beat.frame(tick(16));
-  assert.ok(!calls.includes('stage.play(deep, true)'), 'the voice waits for the flash to fade');
+  assert.ok(!calls.includes('stage.play(deep)'), 'the voice waits for the flash to fade');
   beat.frame(tick(1.2));
-  assert.ok(calls.includes('stage.play(deep, true)'));
+  assert.ok(calls.includes('stage.play(deep)'));
 });
 
 test('the throw overboard and the wake cut short say and sound nothing more', () => {
@@ -150,6 +150,19 @@ test('the deep cut short says nothing more and flashes no more', () => {
   beat.frame(tick(0.1));
   assert.ok(beat.done);
   assert.ok(!calls.some((call) => call.startsWith('stage.play') || call.includes('flash')));
+});
+
+test('the deep ends only once its voice has said its last line, which may wait for a press, and on its own clock once said', async () => {
+  let said: () => void = () => undefined;
+  const voice = new Promise<void>((resolve) => (said = resolve));
+  const { story } = recorded({ 'stage.play': voice });
+  const beat = new Deep(story, layout, scenery);
+  for (let step = 0; step < 30; step++) beat.frame(tick(1));
+  assert.equal(beat.done, false, 'its time run, the voice still waits');
+  said();
+  await voice;
+  beat.frame(tick(0.1));
+  assert.equal(beat.done, true);
 });
 
 test('the deep left while its heart beats stops it, however it was left', () => {

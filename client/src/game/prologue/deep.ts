@@ -60,6 +60,10 @@ export class Deep implements Beat {
   /** How long the heart has beaten, seconds, from the first frame, as its sound begins; and whether it still beats. */
   private heart = 0;
   private beating = false;
+  /** Whether the voice has said its last line, and whether the deep's time has run: it ends once both have, so a line
+   *  waiting for a press is never left behind it. */
+  private voiced = false;
+  private timeUp = false;
   done = false;
 
   constructor(story: Story, layout: WreckLayout, scenery: WreckScenery) {
@@ -84,9 +88,9 @@ export class Deep implements Beat {
         },
       ],
       [FLASH_S, () => this.flash()],
-      [VOICE_S, () => void stage.play('deep', true)],
+      [VOICE_S, () => void stage.play('deep').then(() => (this.voiced = true))],
       [DEEP_S - SCENE.outS, () => screen.fade(1, SCENE.outS)],
-      [DEEP_S, () => (this.done = true)],
+      [DEEP_S, () => (this.timeUp = true)],
     ]);
   }
 
@@ -135,6 +139,7 @@ export class Deep implements Beat {
       this.since += tick.seconds;
       this.heart += tick.seconds;
       this.cues.step(this.since);
+      if (this.timeUp && this.voiced) this.done = true;
     }
     // The fire above flickers through the water.
     const flicker = 0.75 + 0.25 * Math.sin(this.since * 7.3) * Math.sin(this.since * 3.1);

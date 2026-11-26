@@ -66,3 +66,26 @@ test("a line is voiced in its own speaker's voice, and a bark is leant on", () =
 test('an empty conversation is finished at once', () => {
   assert.equal(new Conversation([], CAST, false).finished, true);
 });
+
+test('a line moved on by a press takes the press while it types and stands, and waits only once typed whole', () => {
+  const talk = new Conversation(LINES, CAST, false);
+  assert.equal(talk.takesPresses, true);
+  assert.equal(talk.waits, false, 'still typing');
+  for (let frame = 0; frame < 120; frame += 1) talk.step(1 / 60);
+  assert.equal(talk.waits, true);
+  talk.advance();
+  assert.equal(talk.waits, false, 'the next line types');
+  talk.advance();
+  talk.advance();
+  assert.equal(talk.finished, true);
+  assert.equal(talk.takesPresses, false, 'said, it takes no press');
+});
+
+test('a line that moves on by itself never takes a press nor waits for one', () => {
+  const talk = new Conversation(LINES, CAST, true);
+  for (let frame = 0; frame < 60; frame += 1) {
+    talk.step(1 / 60);
+    assert.equal(talk.takesPresses, false);
+    assert.equal(talk.waits, false);
+  }
+});

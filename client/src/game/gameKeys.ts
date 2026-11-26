@@ -1,7 +1,8 @@
 // What the player's controls do outside the body's own moves (`player.ts`): the menus, the sea's asks, the helm's
 // map, Use, Respawn, as a key or the pad presses them (the leave is held, and heard each frame: `leaveHold.ts`). Each
 // acts only where its control does (`binds.ts`), so a key bound at the helm and on foot alike does each in its place.
-// The story hears its keys itself.
+// The story hears its keys itself. While a line of the dialogue box waits for a press, Continue's key or button is the
+// line's alone: the frame moves it on (`gameFrame.ts`), and nothing here acts on it.
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
 import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
@@ -14,6 +15,7 @@ import type { Hud } from './hud.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { deckKey, fightAsk } from './seaWord.ts';
 import { chatOpen, openChat, socialUp } from './social/social.ts';
+import { continueDialogue, dialogueWaits } from '../speech/dialogue.ts';
 
 /** What the controls reach: the game as it plays, its input, interface and display, the story, and its deeds. */
 export interface Controlled {
@@ -60,6 +62,15 @@ export function withoutTaken(frame: InputFrame): InputFrame {
   if (took.size === 0) return frame;
   taken = new Set();
   return { ...frame, pressed: (action) => !took.has(action) && frame.pressed(action) };
+}
+
+/** A click on the view while a line of the dialogue box waits (`locked`, whether the pointer is the game's): a free
+ *  pointer's moves the line on, where the left button is bound to Continue, and does nothing else; true where the
+ *  click is the line's. A locked pointer's click is heard in the frame, as any button's press is. */
+export function clickedOnLine(locked: boolean): boolean {
+  if (locked || !dialogueWaits()) return false;
+  if (BINDS.now.continue.keys.includes('mouse0')) continueDialogue();
+  return true;
 }
 
 /** Hears the keys and the pad's presses for what `game` does with them. */
@@ -114,25 +125,29 @@ export function listenForControls(game: Controlled): void {
   addEventListener('keydown', (event) => {
     const key = keyNameOf(event);
     if (event.repeat || ui.typing) return;
+    const continues = BINDS.now.continue.keys.includes(key);
+    if (continues && dialogueWaits()) return;
     if (playing.flow.mode === 'story') return void story?.key(key, true);
-    // While the stranger speaks her welcome Space moves her words on, as in the story's cutscenes; no other game key
-    // acts but Escape.
+    // While the stranger speaks her welcome under Auto, Continue moves her words on; no other game key acts but Escape.
     const welcome = playing.after.holding;
-    if (welcome && BINDS.now.jump.keys.includes(key)) return void playing.after.press();
+    if (welcome && continues) return void playing.after.press();
     act((id) => !welcome && BINDS.now[id].keys.includes(key), key === 'escape');
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
-  // Escape at the helm's map, at a landing and while a piece of decoration is placed; in the story, and while she
-  // speaks, A is a tap. Start and View open and
-  // shut the menu and the sheet wherever their keys would.
+  // Escape at the helm's map, at a landing and while a piece of decoration is placed; in the story A is a tap, and
+  // while she speaks Continue moves her words on. Start and View open and shut the menu and the sheet wherever their
+  // keys would.
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
     if (hud.controls.rebinding.slot) return;
+    const waits = dialogueWaits() && pressed.has('continue');
     const welcome = playing.after.holding;
-    if (welcome && (pressed.has('jump') || pressed.has('confirm'))) playing.after.press();
+    if (welcome && !waits && pressed.has('continue')) playing.after.press();
     const covered = gearScreenOpen() || hud.controls.open || socialUp() || chatOpen();
     const escape = buttons.has('B') && (playing.helmMap.busy || playing.flow.mode === 'landing' || !!placingNow());
     if (escape && placingNow()) taken = new Set([...pressed].filter((id) => BINDS.now[id].pad.includes('B')));
+    // A waiting line's press is the line's: the frame moves it on.
+    if (waits) return;
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
     else if (playing.flow.mode !== 'story' && !covered)
       act((id) => !escape && !welcome && pressed.has(id), escape && !welcome);

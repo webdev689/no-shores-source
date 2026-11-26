@@ -62,6 +62,13 @@ export interface InputFrame {
   readonly locked: boolean;
 }
 
+/** `frame` with `id`'s press its alone: no control that shares a key or a button with it is pressed. */
+export function pressTakenBy(frame: InputFrame, id: Action, binds: Binds = BINDS.now): InputFrame {
+  const taken = new Set([...binds[id].keys, ...binds[id].pad]);
+  const shares = (action: Action) => [...binds[action].keys, ...binds[action].pad].some((name) => taken.has(name));
+  return { ...frame, pressed: (action) => !shares(action) && frame.pressed(action) };
+}
+
 /** How far `plus` is pressed against `minus`, -1 to 1: a stick's lean, or a key's whole way. */
 export function axis(input: InputFrame, minus: Action, plus: Action): number {
   const level = (action: Action) => input.amount?.(action) ?? Number(input.held(action));

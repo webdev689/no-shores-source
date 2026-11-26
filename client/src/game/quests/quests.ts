@@ -18,6 +18,8 @@ import { MOUNT_SLOT, worn } from '../../player/gear.ts';
 import type { FoeType } from '../../rules/roster.ts';
 import { type Cast, type Line, castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
+import { continueCap } from '../hudParts.ts';
+import { movesOnByItself } from '../../speech/pace.ts';
 import type { Stack } from '../../ui/stack.ts';
 import type { Shot } from '../camera.ts';
 import type { Use } from '../footGear.ts';
@@ -162,8 +164,9 @@ export class Quests {
   }
 
   /** A frame `seconds` long, `past` whether the story and the welcome are past, `held` while a screen stands over the
-   *  view: what is new is taken, and the next scene waiting is said once none is and nothing holds the view. */
-  frame(seconds: number, past: boolean, held: boolean): void {
+   *  view, `fighting` while the player is in a fight: what is new is taken, and the next scene waiting is said once
+   *  none is and nothing holds the view. */
+  frame(seconds: number, past: boolean, held: boolean, fighting = false): void {
     this.past = past;
     const news = this.watch.look(this.gear, past);
     this.waiting.push(...news.scenes);
@@ -173,19 +176,20 @@ export class Quests {
     // While a screen stands over the view, only a scene its keeper says alone is said, in their screen.
     const head = this.saying === null ? this.waiting[0] : undefined;
     const onScreen = head !== undefined && held ? sayInScreen(this.scenes[head] ?? []) : null;
-    if (head !== undefined && (onScreen || !held)) this.say(this.waiting.shift() ?? head, onScreen);
+    if (head !== undefined && (onScreen || !held)) this.say(this.waiting.shift() ?? head, onScreen, fighting);
     this.spoken?.frame(held ? 0 : seconds);
   }
 
-  /** Says `scene`'s lines (in a keeper's screen where it took them, `onScreen`), the next waiting once they end. */
-  private say(scene: string, onScreen: Promise<void> | null = null): void {
+  /** Says `scene`'s lines (in a keeper's screen where it took them, `onScreen`), the next waiting once they end; in the
+   *  dialogue box each line waits for a press, unless it moves on by itself (in a `fight`, or under Auto). */
+  private say(scene: string, onScreen: Promise<void> | null = null, fight = false): void {
     const lines = this.scenes[scene];
     if (!lines) return console.error(`the roads' scene ${scene} is not in houses.json`);
     this.saying = scene;
     const said = () => void (this.saying = null);
     if (onScreen) return void onScreen.then(said);
     this.spoken ??= this.voice();
-    this.spoken.play(lines, this.cast, { auto: true }).then(said, (error: unknown) => {
+    this.spoken.play(lines, this.cast, { auto: movesOnByItself(fight) }).then(said, (error: unknown) => {
       console.error(`the roads' scene ${scene} could not be played:`, error);
       said();
     });
@@ -293,7 +297,7 @@ export function questsOn(
 ): Quests {
   const read = castOf(cast);
   const parts = { cast: read, scenes: scenesOf(houses, read), kept: localStorage, account, forge };
-  const quests = new Quests(parts, () => new DialogueBox(stack, worldOutput));
+  const quests = new Quests(parts, () => new DialogueBox(stack, worldOutput, continueCap));
   rosterFor(module).then(
     (roster) => (quests.roster = roster),
     (error: unknown) => console.error('the roads have no roster to dress their figures by:', error),
