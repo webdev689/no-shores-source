@@ -133,17 +133,19 @@ export async function startLogin(context: AuthContext, url: URL): Promise<Respon
 export async function finishLogin(context: AuthContext, url: URL, cookies: string | null): Promise<Response> {
   const panel = panelUrl(context.vars);
   if (!panel) return fail('panel-url', 500, {}, 'PANEL_URL is not set.');
+  let held = false;
   const back = (fragment: string, path = panel.pathname) => {
     const target = new URL(path, panel);
     target.hash = fragment;
     const sent = redirect(target.toString());
-    sent.headers.append('Set-Cookie', `${STATE_COOKIE}=; Max-Age=0; ${STATE_COOKIE_AT}`);
+    // Let go only once it was this sign-in's: a stale tab's callback leaves a newer sign-in's state standing.
+    if (held) sent.headers.append('Set-Cookie', `${STATE_COOKIE}=; Max-Age=0; ${STATE_COOKIE_AT}`);
     return sent;
   };
   const state = url.searchParams.get('state') ?? '';
   const code = url.searchParams.get('code') ?? '';
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(state)) return back('error=state');
-  const held = (cookies ?? '').split(/;\s*/).includes(`${STATE_COOKIE}=${state}`);
+  held = (cookies ?? '').split(/;\s*/).includes(`${STATE_COOKIE}=${state}`);
   if (!held) return back('error=state');
   const row = await context.database
     .prepare('DELETE FROM oauth_states WHERE state_hash = ? RETURNING verifier, return_to, created_at')

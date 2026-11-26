@@ -255,7 +255,9 @@ test('sign-in: a callback reached in a browser that did not start it is refused,
   assert.match(started.headers.get('set-cookie') ?? '', new RegExp(`^${STATE_COOKIE}=${state};.*HttpOnly`));
   assert.equal(backOf(await bot.call(callback(state, undefined, null))).hash, '#error=state', 'no cookie');
   const other = stateOf(await bot.call(start()));
-  assert.equal(backOf(await bot.call(callback(state, undefined, other))).hash, '#error=state', "another's");
+  const refused = await bot.call(callback(state, undefined, other));
+  assert.equal(backOf(refused).hash, '#error=state', "another's");
+  assert.equal(refused.headers.get('set-cookie'), null, "a newer sign-in's state is left standing");
   const back = await bot.call(callback(state));
   assert.match(backOf(back).hash, /^#ticket=/, 'its own browser signs in');
   assert.match(back.headers.get('set-cookie') ?? '', new RegExp(`^${STATE_COOKIE}=;.*Max-Age=0`), 'and lets it go');

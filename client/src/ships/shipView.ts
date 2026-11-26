@@ -213,10 +213,20 @@ export class ShipView {
   private readonly vertices: GPUBuffer;
   private readonly indices: GPUBuffer;
   /** Each slot's canvas as last laid: from which rig, as it and its harm had changed then, for which side (its
-   *  flag's), and how many of its indices are drawn. A moored ship's furled rig never changes, so its canvas is laid
-   *  once; a sailing one's once a frame for the shadows' passes and the picture alike. */
+   *  flag's), whether its flag showed, how many of its indices are drawn, and the clock its flag was flown at. A
+   *  settled or furled rig's sails are laid once; its flag, which flies on the clock, is laid again each frame. */
   private readonly laid: (
-    { rig: SailRig; changes: number; harm: ShipHarm; harmed: number; flag: number; indices: number } | undefined
+    | {
+        rig: SailRig;
+        changes: number;
+        harm: ShipHarm;
+        harmed: number;
+        flag: number;
+        shows: boolean;
+        indices: number;
+        flown: number;
+      }
+    | undefined
   )[] = [];
   private readonly slots: {
     readonly uniforms: GPUBuffer;
@@ -387,22 +397,41 @@ export class ShipView {
     if (!rig) return 0;
     const laid = this.laid[slot];
     const { changes, harm } = rig;
+    const flown = flagAt(this.masthead, rig.harm, this.tags.masts, now);
+    const flag = flagGrid(flown.at, this.waterline.lengthM, rig.offDeg, rig.time);
+    const flagLayer = paint.flagLayer;
     if (
       laid?.rig === rig &&
       laid.changes === changes &&
       laid.harm === harm &&
       laid.harmed === harm.changes &&
-      laid.flag === paint.flagLayer
-    )
+      laid.flag === flagLayer &&
+      laid.shows === flown.shows
+    ) {
+      // The sails stand as laid: only the flag, last of the canvas, is laid again, once a frame.
+      if (laid.flown !== now && laid.indices > 0) {
+        const flagBytes = canvasVertices([flag], this.flat, [flagLayer]);
+        const offset = this.sails.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES;
+        this.device.queue.writeBuffer(drawn.canvas, offset, flagBytes.buffer, 0, flagBytes.byteLength);
+      }
+      laid.flown = now;
       return laid.indices;
-    const flown = flagAt(this.masthead, rig.harm, this.tags.masts, now);
-    const flag = flagGrid(flown.at, this.waterline.lengthM, rig.offDeg, rig.time);
-    const flagLayer = paint.flagLayer;
+    }
     const sails = harmedCanvas(rig.canvas(this.tags.pivots), rig.harm, this.tags.masts, this.waterline.beamM / 2, now);
     const grid = canvasIndices(this.sails.length + 1, (sail, cell) =>
       sail < this.sails.length ? cellShows(rig.harm, sail, cell, now) : flown.shows,
     );
-    this.laid[slot] = { rig, changes, harm, harmed: harm.changes, flag: flagLayer, indices: grid.length };
+    const shows = flown.shows;
+    this.laid[slot] = {
+      rig,
+      changes,
+      harm,
+      harmed: harm.changes,
+      flag: flagLayer,
+      shows,
+      indices: grid.length,
+      flown: now,
+    };
     if (grid.length === 0) return 0;
     this.device.queue.writeBuffer(drawn.canvasIndices, 0, grid);
     this.device.queue.writeBuffer(

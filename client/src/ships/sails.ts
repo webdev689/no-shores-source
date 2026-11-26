@@ -178,7 +178,8 @@ export class SailRig {
   /** The wind's way off its bow and the clock at its last step, which its flag streams by. */
   offDeg = 0;
   time = 0;
-  /** How many times it has been stepped or mended: a canvas laid from it holds until this, or its harm's, moves. */
+  /** How many times what its canvas reads has moved, or it was mended: a canvas laid from it holds until this, or its
+   *  harm's, moves. */
   changes = 0;
   /** What a fight has done to its rig and hull, as drawn (`ShipHarm`). */
   harm: ShipHarm;

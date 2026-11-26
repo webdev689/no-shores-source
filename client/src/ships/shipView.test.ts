@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
-import { SAIL_COLUMNS, SAIL_ROWS } from './sails.ts';
+import { SAIL_COLUMNS, SAIL_ROWS, SailRig } from './sails.ts';
 import { VERTEX_BYTES } from './shipMesh.ts';
 import type { SailCorners } from './sails.ts';
-import { canvasVertices, mastheadOf, shipSphere, shipTurn, sphereAt } from './shipView.ts';
+import { flagFlat } from './flag.ts';
+import { canvasVertices, mastheadOf, ShipView, shipSphere, shipTurn, sphereAt } from './shipView.ts';
 
 /** Where the turn takes a vector of its own frame, in the world's (east, south, up). */
 function turned(turn: Float32Array, vector: readonly [number, number, number]): number[] {
@@ -129,4 +130,59 @@ test('its sphere holds its mesh and its sails twice over, and goes where it lies
     assert.ok(away <= radius / 2 + 1e-6, `${point.join(', ')} lies ${away} m out`);
   }
   near([radius], [own[3] * 1.5]);
+});
+
+test('a settled rig lays its sails once, but its flag again each frame, flying on the clock', () => {
+  const gaff: SailCorners = {
+    kind: 'gaff',
+    tack: [-0.059, 0, 1.409],
+    clew: [-2.859, 0, 1.491],
+    throat: [-0.077, 0, 3.509],
+    peak: [-2.377, 0, 4.391],
+  };
+  const writes: { buffer: string; offset: number; bytes: number }[] = [];
+  const named = (buffer: string) => ({ label: buffer });
+  const view = Object.create(ShipView.prototype) as ShipView;
+  Object.assign(view, {
+    slots: [{ uniforms: named('uniforms'), canvas: named('canvas'), canvasIndices: named('indices') }],
+    sails: [gaff],
+    paint: { atM: 0, rise: 0 },
+    tags: { yards: [], pivots: [null], masts: [{ footZ: 0, topZ: 5 }] },
+    masthead: [0, 0, 5],
+    waterline: { lengthM: 10, beamM: 3 },
+    flat: [flagFlat()],
+    laid: [],
+    device: {
+      queue: {
+        writeBuffer: (buffer: { label: string }, offset: number, data: ArrayBufferLike | ArrayBufferView) =>
+          void writes.push({ buffer: buffer.label, offset, bytes: data.byteLength }),
+      },
+    },
+  });
+  const prepare = (rig: SailRig) =>
+    (view as unknown as { prepare(...args: unknown[]): number | null }).prepare(
+      { x: 0, y: 0, z: 0, heading: 0, pitch: 0, roll: 0 },
+      { fromEye: new Float32Array(16), eye: [0, 0, 0] },
+      0,
+      { side: 'player' },
+      rig,
+    );
+  const rig = new SailRig([gaff]);
+  for (let tick = 0; tick < 600; tick++) rig.step(1 / 60, { offDeg: 90, set: true }, tick / 60);
+  assert.ok((prepare(rig) ?? 0) > 0);
+  const flagAt = SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES;
+  const canvasWrites = () => writes.filter((write) => write.buffer === 'canvas');
+  assert.deepEqual(
+    canvasWrites().map((write) => write.offset),
+    [0],
+    'laid whole at first',
+  );
+  writes.length = 0;
+  prepare(rig);
+  assert.deepEqual(canvasWrites(), [], 'the same frame again, a shadow pass: nothing laid');
+  const changes = rig.changes;
+  rig.step(1 / 60, { offDeg: 90, set: true }, 10.1);
+  assert.equal(rig.changes, changes, 'the rig settled');
+  prepare(rig);
+  assert.deepEqual(canvasWrites(), [{ buffer: 'canvas', offset: flagAt, bytes: flagAt }], 'its flag alone, flying on');
 });

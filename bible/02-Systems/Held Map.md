@@ -264,6 +264,8 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
 - A route is planned on every continent's outline.
 - The coast field is a cell's middle every 4.8 km, interpolated: a headland narrower than a few kilometres is drawn
   softened.
+- A name the ship's arrow sailed onto and pushed off the map stays off after the ship sails on, until the map is
+  panned, zoomed or raised again.
 - The route is inked through at most 128 of its points. Each 32 px tile of the map is told which of the route's
   legs pass near it (`routeTiles`), so a pixel measures itself against those alone.
 - On land, the map marks a keeper a quest step names, not the place of a quest's other goals.

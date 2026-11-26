@@ -9,7 +9,7 @@ import type { Rect } from './heldMapLaw.ts';
 import { routeTiles, TILE_PX, TILE_WORDS } from './routeTiles.ts';
 import { HATCHES, WASH_STRENGTH, type WatersWash } from './watersWash.ts';
 
-/** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
+/** The most points of a route the map inks: a pixel measures itself against the legs between them near its tile. */
 export const ROUTE_POINTS = 128;
 /** The most keepers' coins the map rings at once, lit as their marks over them are (a social space's every keeper). */
 export const MOST_PULSES = 16;
@@ -21,7 +21,7 @@ struct Ink {
   // The map's rectangle, screen pixels: left, top, width, height; and the screen's width and height.
   rect: vec4f,
   screen: vec4f,
-  // The view: the world point at the map's top-left, metres, pixels a metre, and how many points the route has.
+  // The view: the world point at the map's top-left, metres, and pixels a metre.
   view: vec4f,
   // The coast field's columns and rows and its cell's side, metres.
   field: vec4f,
@@ -483,7 +483,7 @@ export class HeldMapView {
     new Float32Array(uniforms, 0, 16).set([
       ...[ink.x, ink.y, ink.width, ink.height],
       ...[screen.width, screen.height, 0, 0],
-      ...[view.left, view.top, view.scale, points],
+      ...[view.left, view.top, view.scale, 0],
       ...[this.field.columns, this.field.rows, this.field.cellM, 0],
     ]);
     const legs = this.legsOf(frame.route, points, view, ink);
