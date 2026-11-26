@@ -66,6 +66,7 @@ test('a developer plays the test character in a test run, by their username, and
   assert.equal(await run.signIn(player, 'b'.repeat(64), Date.now, here), true);
   assert.deepEqual(sent, []);
   const joined = readFromRoom(room.joined(player));
+  assert.ok(joined);
   assert.equal(joined.kind, 'joined');
   const plate = joined.kind === 'joined' ? joined.plates.find((each) => each.player === player) : undefined;
   assert.equal(plate?.level, 30, 'the test character, level 30');
