@@ -4,7 +4,7 @@
 
 use super::*;
 use crate::encounters::SealState;
-use crate::encounters::encounters_tests::{elite_room, elite_room_with, hardy, middle_of, put, seal_of, ticks, told};
+use crate::encounters::encounters_tests::{elite_room_with, hardy, middle_of, put, seal_of, ticks, told};
 
 fn plan(room: &Room, seal: usize) -> SealPlan {
     room.encounters.as_ref().expect("encounters").plan.seals[seal].clone()
