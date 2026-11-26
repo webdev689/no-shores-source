@@ -35,3 +35,17 @@ the owner answered "Yes, that's right".
 
 It replaces, in part, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]: what lets
 a landing made for go, which now includes leaving the sea.
+
+## Claude's calls
+
+| Call | Chosen | Why |
+|---|---|---|
+| When it docks | At the confirmation's yes, or on coming within reach of a landing made for: the view goes to the Oversea view and the ship sails at ×60 into its berth, at rest there; then the view flies up over the island to its tiles | The tiles say "Docked at"; the Oversea view keeps the pace set, so the last leg takes under half a minute |
+| The berth | At a living port, a place of its pier's (the city's moorings) no player's ship lies in, the pier's own sloops standing only where no player's ship lies; every place taken, it anchors off the pier clear of the others. At a ruined coast, just off the shore nearest where it was clicked. At a sea island, its anchorage | "Pier at ports, anchor elsewhere" |
+| That place | The island docked at: any of its nodes, and the dungeons and runs gone into from it | A player walking from node to node is still on their island |
+| Leaving the sea otherwise | A run started from the island's tiles keeps the ship docked where it lies; joining a company member elsewhere leaves it undocked where it lay, seen by no one | Docked only while its player is at that place |
+| Off the island | Logged off or gone elsewhere, the ship is docked no more and no one sees it; back on the island, docked and seen again | The owner's "docked only while" |
+| Undocking | Back aboard, once the room has placed the ship, it sails at ×60 out from its berth (a port's roadstead side, 600 m off a coast, a sea island's offing), and is the player's to sail once out | Seen pulling away, as asked |
+| Parked ships at sea | Seen by players within sight as other players' ships are, at rest, in their looks and plates; hostile ships pay them no heed | A ship lying empty is not in play |
+
+How it works: [[Game]], "Landings"; [[Sailing]].
