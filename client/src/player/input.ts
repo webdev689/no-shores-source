@@ -68,13 +68,11 @@ export function pressTakenBy(frame: InputFrame, id: Action, held: boolean, binds
   const taken = new Set([...binds[id].keys, ...binds[id].pad]);
   const shares = (action: Action) => [...binds[action].keys, ...binds[action].pad].some((name) => taken.has(name));
   const free = (action: Action) => !shares(action);
-  if (!held) return { ...frame, pressed: (action) => free(action) && frame.pressed(action) };
-  return {
-    ...frame,
-    pressed: (action) => free(action) && frame.pressed(action),
-    held: (action) => free(action) && frame.held(action),
-    amount: (action) => (free(action) ? (frame.amount?.(action) ?? Number(frame.held(action))) : 0),
+  const heldToo = {
+    held: (action: Action) => free(action) && frame.held(action),
+    amount: (action: Action) => (free(action) ? (frame.amount?.(action) ?? Number(frame.held(action))) : 0),
   };
+  return { ...frame, pressed: (action) => free(action) && frame.pressed(action), ...(held && heldToo) };
 }
 
 /** How far `plus` is pressed against `minus`, -1 to 1: a stick's lean, or a key's whole way. */
