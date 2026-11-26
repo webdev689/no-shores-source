@@ -379,7 +379,7 @@ test('a dress draws a move whole only where every layer it wears at rest is draw
     bodies: {
       male: {
         anims: { idle: cell, quaff: cell },
-        layers: { body: ['idle', 'quaff'], cuirass_iron: ['idle'], prop_flask: ['quaff'] },
+        layers: { body: ['idle', 'quaff'], cuirass_iron: ['idle'], sheath_sword: ['idle'], prop_flask: ['quaff'] },
       },
     },
   };
@@ -394,4 +394,18 @@ test('a dress draws a move whole only where every layer it wears at rest is draw
   assert.equal(forge.drawsWhole(bare, 'quaff'), true, 'the body alone, and the flask carried in it');
   assert.equal(forge.drawsWhole(plated, 'quaff'), false, 'a cuirass the move does not draw');
   assert.equal(forge.drawsWhole(bare, 'roll'), false, 'a move not drawn at all');
+  // A weapon put away for the drink hangs in its sheath, which the quaff must draw too.
+  const sheathed = { ...armed, outfit: { ...armed.outfit, drawn: false } };
+  assert.equal(forge.drawsWhole(sheathed, 'quaff'), false, 'a sheath the move does not draw');
+  const sheathLooks: ForgeLooks = {
+    bodies: {
+      male: {
+        anims: { idle: cell, quaff: cell },
+        layers: { body: ['idle', 'quaff'], sheath_sword: ['idle', 'quaff'] },
+      },
+    },
+  };
+  const skins = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const sheathing = new Cards(maker, store, sheathLooks, skins, { palette: [], clothing: {}, armour: {} });
+  assert.equal(sheathing.drawsWhole(sheathed, 'quaff'), true, 'a sheath the move draws');
 });

@@ -18,7 +18,7 @@ import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { Action as Control, InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
-import { likelyMoves, Loop, type Shown, shownMove, steadyMoves } from './playerMoves.ts';
+import { drinkMoves, likelyMoves, Loop, type Shown, shownMove, steadyMoves } from './playerMoves.ts';
 
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
@@ -402,7 +402,10 @@ export class Walker {
       const likely = () =>
         steady
           ? steadyMoves(inRight, inLeft, draws, walking)
-          : likelyMoves(inRight, inLeft, draws, drawn ? (grip ?? null) : null, walking);
+          : [
+              ...likelyMoves(inRight, inLeft, draws, drawn ? (grip ?? null) : null, walking),
+              ...drinkMoves(inRight, inLeft, draws, walking),
+            ];
       forge.warm(shown, likely, glow, owner);
     };
     warm(dress, outfit.drawn ? this.shownGlow[0] : 0, you.id);

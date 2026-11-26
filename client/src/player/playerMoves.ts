@@ -214,13 +214,13 @@ export function likelyMoves(
     'roll',
     guard,
     ownMove('hurt', right, draws),
-    ...drinkMoves(right, left, draws, walking),
   ];
   return [...new Set([...own, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
 }
 
-/** The drink's moves, standing and on the move where drawn: only for empty hands, as a drink puts the weapon away. */
-function drinkMoves(right: string | null, left: string | null, draws: Draws, walking: Walking): string[] {
+/** The drink's moves, standing and on the move where drawn: only for empty hands, as a drink puts the weapon away.
+ *  Only a player drinks, so a foe's likely moves leave them out. */
+export function drinkMoves(right: string | null, left: string | null, draws: Draws, walking: Walking): string[] {
   if (right || left || !draws('quaff', null)) return [];
   const walked = walking('quaff');
   return walked ? ['quaff', walked] : ['quaff'];

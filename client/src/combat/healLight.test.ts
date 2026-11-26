@@ -108,6 +108,10 @@ test("the player's own heal through their own eyes takes the screen's edge, not 
   lights.heard([healed(OWN)]);
   assert.ok(frameAt(lights, 3, OWN, [0, 0.5, 4]).ground.length > 0);
   assert.deepEqual(lights.screen, QUIET_HEAL);
+  // Nor one pulled in behind their back against a wall, its eye at head height.
+  lights.heard([healed(OWN)]);
+  assert.ok(frameAt(lights, 5, OWN, [0, 0.7, 1.6]).ground.length > 0);
+  assert.deepEqual(lights.screen, QUIET_HEAL);
 });
 
 test("the edge glows in the heal's red, light outside its body, with motes; none when quiet", () => {

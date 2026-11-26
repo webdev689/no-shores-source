@@ -44,9 +44,9 @@ const EDGE_STEPS = [0.3, 0.45, 0.45, 0.32, 0.2, 0.08] as const;
 const EDGE_MOTES = 8;
 const EDGE_BAND_PX = 8;
 const EDGE_MOTE_PX = 6;
-/** An eye this near the drinker's feet is their own: a third person's camera, even looking straight down, stands
- *  farther off. */
-const OWN_EYES_M = 2;
+/** An eye stands over the body's own feet only in first person (within this much across, for the view's sway): a third
+ *  person's camera stands back along the look, at least `HIDE_FIGURE_M` off, even pulled in against a wall. */
+const OWN_EYES_M = 0.3;
 
 /** A hollow oval a little wider than a figure and as tall, its outer band a stop under its inner: the glow that wraps
  *  the drinker, hot as it comes and cooling. */
@@ -102,7 +102,9 @@ export class HealLights {
         if (share >= 1 || share < 0) this.lights.delete(id);
         continue;
       }
-      if (id === frame.own && apartFrom(frame.eye, drinker.feet) < OWN_EYES_M) {
+      const across = Math.hypot(frame.eye[0] - drinker.feet[0], frame.eye[1] - drinker.feet[1]);
+      const up = frame.eye[2] - drinker.feet[2];
+      if (id === frame.own && across < OWN_EYES_M && up > 0 && up < 3) {
         this.screen = { edge: EDGE_STEPS[stepOf(share, EDGE_STEPS.length)] ?? 0, motes: still ? null : share };
         continue;
       }

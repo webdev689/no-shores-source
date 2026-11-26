@@ -9,6 +9,7 @@ import {
   blowFrame,
   blowWay,
   type Doing,
+  drinkMoves,
   FULL_RUN,
   FULL_WALK,
   likelyMoves,
@@ -478,12 +479,10 @@ test('a drink plays the quaff by its progress, on the move its walk where drawn 
 
 test('the drink is composed ahead for empty hands only, where the forge draws it', () => {
   const walking = (action: string) => onTheMove(action);
-  for (const moves of [
-    likelyMoves(null, null, everything, null, walking),
-    steadyMoves(null, null, everything, walking),
-  ])
+  for (const moves of [drinkMoves(null, null, everything, walking), steadyMoves(null, null, everything, walking)])
     assert.ok(moves.includes('quaff') && moves.includes('quaffwalk'));
-  assert.ok(!likelyMoves('sword_iron', null, everything, null, walking).includes('quaff'), 'a weapon drawn drinks not');
+  assert.deepEqual(drinkMoves('sword_iron', null, everything, walking), [], 'a weapon drawn drinks not');
+  assert.ok(!likelyMoves(null, null, everything, null, walking).includes('quaff'), 'a foe never drinks');
   const noQuaff = (anim: string) => !anim.startsWith('quaff');
   assert.ok(!steadyMoves(null, null, noQuaff, walking).includes('quaff'));
 });
