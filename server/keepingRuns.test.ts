@@ -161,7 +161,7 @@ test('a run found for strangers lets in each one found for it, and none of them 
   );
   const idOf = async (name: string) => {
     const claimed = await kept.claim(tokens[name] ?? '', `probe:${name}`);
-    await kept.release(claimed?.account ?? '', `probe:${name}`, null);
+    await kept.release(claimed?.account ?? '', `probe:${name}`, null, null);
     return claimed?.account ?? '';
   };
   const [ada, ben] = [await idOf('Ada'), await idOf('Ben')];
@@ -244,7 +244,7 @@ test('a run is full by its four accounts: a member signing in again is kept, a f
 test('a run sends away a player whose kept body it cannot read, since it keeps no one unkept', async () => {
   const { clock, kept, token } = await world();
   const account = (await kept.claim(token, 'node-a:1'))?.account ?? '';
-  await kept.release(account, 'node-a:1', 'not readable');
+  await kept.release(account, 'node-a:1', 'not readable', '{}');
   const room = roomOf();
   room.held.set(1, '{"starting":true}');
   const sent: [number, string | undefined, boolean | undefined][] = [];

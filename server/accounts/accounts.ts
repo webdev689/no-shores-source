@@ -13,6 +13,7 @@ import type { Developers } from './developers.ts';
 import { INVITE_MS } from './companies.ts';
 import { bindsAsk } from './binds.ts';
 import { lastPlace } from './lastPlace.ts';
+import { slotsAsk } from './slots.ts';
 import { socialAsk, socialRead } from './social.ts';
 import { forgetAnswers, outpostAllowed, plotReadAllowed } from './outpostStores.ts';
 import { USERNAME, refusalOf, skeleton } from './names.ts';
@@ -46,6 +47,7 @@ const LIMITS = {
   social: { most: 60, window: 60 * MINUTE },
   report: { most: 10, window: 24 * 60 * MINUTE },
   binds: { most: 120, window: 60 * MINUTE },
+  slots: { most: 120, window: 60 * MINUTE },
 } as const;
 
 /** An account as its player sees it. */
@@ -304,6 +306,15 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
       if (!account) return refused(401, 'Not signed in.');
       if (!(await within(database, `binds:${account.id}`, LIMITS.binds, now))) return refused(429, 'Too many saves.');
       return bindsAsk(request, database, account, now);
+    }
+    case 'GET /v1/characters':
+    case 'POST /v1/characters/play':
+    case 'POST /v1/characters/delete':
+    case 'PUT /v1/characters/look': {
+      const account = await signedIn(request, database, now);
+      if (!account) return refused(401, 'Not signed in.');
+      if (!(await within(database, `slots:${account.id}`, LIMITS.slots, now))) return refused(429, 'Too many tries.');
+      return slotsAsk(request, database, deps.bot ?? null, account, route, now);
     }
     default:
       return social(request, deps, route, now);

@@ -50,6 +50,7 @@ pub mod rarity;
 mod refusal;
 pub mod rewards;
 pub mod shape;
+pub mod shared;
 pub mod ship;
 pub mod shown;
 pub mod source;
@@ -134,6 +135,8 @@ mod rewards_tests;
 mod set_tests;
 #[cfg(test)]
 mod shape_tests;
+#[cfg(test)]
+mod shared_tests;
 #[cfg(test)]
 mod source_tests;
 #[cfg(test)]

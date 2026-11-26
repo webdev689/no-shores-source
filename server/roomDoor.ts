@@ -155,6 +155,12 @@ export interface RoomDoor {
   kitted(): string;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
   restoreCharacter(player: number, kept: string): boolean;
+  /** A player's character as kept (`character`) with the account's vault and Aurem parted out of it (`gear::shared`),
+   *  each as JSON; null as `character` is. */
+  keptApart(player: number): { body: string; vault: string } | null;
+  /** Gives a player their kept character with the account's vault and Aurem (null for none kept yet) joined into it;
+   *  false if either is not one, or as `restoreCharacter`. */
+  restoreJoined(player: number, body: string, vault: string | null): boolean;
   /** Why the open room's gate shuts to a player's kept character (JSON), or to a new one (null), in its words, with
    *  the story they already hold in the room carried forward, or at sea the sea's tier; empty when it may enter, in a
    *  fleet, or for no character. */
@@ -301,6 +307,8 @@ interface RoomExports {
   room_epoch(unixMs: number): void;
   room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
   room_restore_character(player: number, address: number, length: number): number;
+  room_kept(player: number): bigint;
+  room_restore_joined(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
   room_name(player: number, address: number, length: number): number;
   room_tag(player: number, address: number, length: number): number;
@@ -477,6 +485,17 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     kitted: () => new TextDecoder().decode(take(exports.room_kitted())),
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
+    keptApart: (player) => {
+      const bytes = take(exports.room_kept(player));
+      return bytes.length === 0
+        ? null
+        : (JSON.parse(new TextDecoder().decode(bytes)) as { body: string; vault: string });
+    },
+    restoreJoined: (player, body, vault) =>
+      openWith(
+        (address, length) => exports.room_restore_joined(player, address, length),
+        JSON.stringify({ body, vault }),
+      ),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),
     tag: (player, tag) => openWith((address, length) => exports.room_tag(player, address, length), tag),

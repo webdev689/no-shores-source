@@ -34,7 +34,7 @@ async function world(...names: string[]) {
     const holder = `${room}:${name}`;
     const claimed = await kept.claim(tokens[name] ?? '', holder);
     const shown = { level, emblem: 'overlook', worn: [] };
-    await kept.save(claimed?.account ?? '', holder, JSON.stringify({ shown }));
+    await kept.save(claimed?.account ?? '', holder, JSON.stringify({ shown }), '{}');
   };
   return { ...made, tokens, player, play, kept };
 }
@@ -104,7 +104,7 @@ test('a company lets go of a member away from the game ten minutes', async () =>
   await player('Ada').ask('company/invite', { name: 'Ben' });
   await player('Ben').ask('company/accept', { name: 'Ada' });
   const ben = await kept.claim(tokens['Ben'] ?? '', 'node-overlook-social:Ben');
-  await kept.release(ben?.account ?? '', 'node-overlook-social:Ben', null);
+  await kept.release(ben?.account ?? '', 'node-overlook-social:Ben', null, null);
   clock.now += 9 * 60_000;
   await play('Ada', 'node-overlook-social');
   assert.equal((await player('Ada').roster())?.company?.members.length, 2, 'away nine minutes');
@@ -120,7 +120,7 @@ test('the Roster lists those in the same room beside the company, each with wher
   await play('Cal', 'node-saltgrass--elite');
   const guest = (await ask('POST', '/v1/guest')).body['token'] as string;
   const held = await kept.claim(guest, 'node-overlook-social:guest');
-  await kept.save(held?.account ?? '', 'node-overlook-social:guest', '{}');
+  await kept.save(held?.account ?? '', 'node-overlook-social:guest', '{}', '{}');
   const roster = await player('Ada').roster();
   assert.deepEqual(roster.me, {
     name: 'Ada',
@@ -133,7 +133,7 @@ test('the Roster lists those in the same room beside the company, each with wher
   assert.equal(roster.guests, 1, 'a guest is counted, not named');
   assert.equal(await kept.present(tokens['Cal'] ?? '', 'sea'), true);
   const cal = await kept.claim(tokens['Cal'] ?? '', 'node-saltgrass--elite:Cal');
-  await kept.release(cal?.account ?? '', 'node-saltgrass--elite:Cal', null);
+  await kept.release(cal?.account ?? '', 'node-saltgrass--elite:Cal', null, null);
   await player('Ada').ask('friend/ask', { name: 'Cal' });
   await player('Cal').ask('friend/accept', { name: 'Ada' });
   assert.deepEqual((await player('Ada').roster()).friends[0]?.place, 'sea', 'at sea, as the sea room says');
@@ -267,7 +267,7 @@ test('a player who leaves the sea stays in the company until away ten minutes', 
   await player('Ada').ask('company/invite', { name: 'Ben' });
   await player('Ben').ask('company/accept', { name: 'Ada' });
   const ben = await deps.database.prepare("SELECT id FROM accounts WHERE username = 'Ben'").first<{ id: string }>();
-  await kept.release(ben?.id ?? '', 'node-overlook-social:Ben', null);
+  await kept.release(ben?.id ?? '', 'node-overlook-social:Ben', null, null);
   for (let reported = 0; reported < 40; reported++) {
     clock.now += 30_000;
     await kept.present(tokens['Ben'] ?? '', 'sea');
