@@ -1,5 +1,5 @@
 ---
-id: 255
+id: 281
 title: "Told the owner every arrival puts the weapon away, from reading newPlayer alone; the walker takes drawn from the dress, so it was wrong"
 status: open
 type: internal
