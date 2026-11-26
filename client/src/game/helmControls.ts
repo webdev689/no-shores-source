@@ -1,6 +1,7 @@
 // What the helm's and the map's controls do, from the HUD's presses and the keys: the map raised at the helm or over
 // the land, Manage, the helm left and taken again, the voyage stopped or resumed, and a mark chosen at sea or over an
 // island's side.
+import { DUNGEON_MAP } from './dungeonMap/dungeonMap.ts';
 import type { Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { gearScreenOpen } from './gearWindow.ts';
@@ -24,6 +25,10 @@ export function helmControls(playing: Playing, input: { lock(): void }, { landAt
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
       playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
+      document.exitPointerLock();
+    } else if (flow.mode === 'foot' && !gearScreenOpen() && foot?.dungeon && !foot.fallen) {
+      // In a dungeon the same key opens its own map.
+      DUNGEON_MAP.toggle();
       document.exitPointerLock();
     }
   };

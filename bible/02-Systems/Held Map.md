@@ -178,7 +178,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 The map on land speaks in icon glyphs, with little text, and a table on it says what each glyph is
 ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
-- **Raising.** On foot, N anywhere but in a dungeon, under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
+- **Raising.** On foot, N anywhere but in a dungeon (where it opens the [[Dungeon Map]]), under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
   person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
   pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
   waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,

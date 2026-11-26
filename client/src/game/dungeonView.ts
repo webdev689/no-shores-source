@@ -262,6 +262,11 @@ export class DungeonView {
     return drawn.shown?.open ? [...drawn.burning, drawn.portalLight] : drawn.burning;
   }
 
+  /** The dungeon's mesh as drawn now, which its map inks from the same buffers; null with no dungeon set. */
+  get mesh(): Buffers | null {
+    return this.drawn?.floor ?? null;
+  }
+
   /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it: its depth first,
    *  then lit where its depth is the one laid. */
   drawInto(

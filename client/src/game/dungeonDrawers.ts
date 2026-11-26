@@ -17,6 +17,11 @@ import type { Foot, FootFrame } from './foot.ts';
 import type { CityAssets } from './landDrawers.ts';
 import type { Drawer, Overlay } from './scene.ts';
 import type { NodeInfo } from './worldData.ts';
+import { DUNGEON_MAP, type MapBody } from './dungeonMap/dungeonMap.ts';
+import { MapInk } from './dungeonMap/mapInk.ts';
+import { PAPER, paperNode } from './dungeonMap/mapPaper.ts';
+import { listenToMap } from './dungeonMap/mapPointer.ts';
+import { platedPlayers } from './social/social.ts';
 
 /** The door picture of Daggerfall's dungeon doors, where the props' table has not come. */
 const PLAIN_DOOR = [56, 2] as const;
@@ -26,6 +31,10 @@ export class DungeonDrawers {
   private readonly view: DungeonView;
   private readonly entranceView: EntranceView;
   private readonly figureView: FigureView;
+  private readonly gpu: Gpu;
+  /** The map's ink, made when the map is first opened. */
+  private ink: MapInk | null = null;
+  private readonly canvas: HTMLCanvasElement | null;
   private readonly biomeOf: (continent: string) => string | null;
   private shownEntrances: readonly Entrance[] | null = null;
   /** The city's assets, whose props' table a dungeon waits for so no solid prop goes undrawn. */
@@ -38,8 +47,12 @@ export class DungeonDrawers {
     figureView: FigureView,
     assets: Promise<CityAssets | null>,
     biomeOf: (continent: string) => string | null,
+    canvas: HTMLCanvasElement | null = null,
   ) {
     this.biomeOf = biomeOf;
+    this.gpu = gpu;
+    this.canvas = canvas;
+    if (canvas) listenToMap(canvas);
     this.scene = new DungeonScene(gpu);
     this.view = new DungeonView(gpu);
     this.entranceView = new EntranceView(gpu);
@@ -77,6 +90,9 @@ export class DungeonDrawers {
 
   /** Lets go of the dungeon last drawn and the scene's targets, once the player is somewhere that is no dungeon. */
   forget(): void {
+    DUNGEON_MAP.leave();
+    PAPER.node = null;
+    this.ink?.release();
     this.view.clear();
     this.scene.release();
     this.entranceView.clear();
@@ -85,7 +101,8 @@ export class DungeonDrawers {
 
   /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, and
    *  the figures lit by the torches; `after` may draw over the finished picture, in the light where the eye stands,
-   *  and all of it drains toward grey by `drain`. */
+   *  and all of it drains toward grey by `drain`. The player (`you`, `seconds` since the last frame) is walked on the
+   *  dungeon's map, which covers the picture while it is open. */
   draw(
     foot: Foot,
     shown: FootFrame,
@@ -94,7 +111,10 @@ export class DungeonDrawers {
     fight: { under: Drawer; over: Drawer },
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void,
     drain = 0,
+    you?: MapBody & { readonly seconds: number },
   ): void {
+    const mapped = you ? this.mapFrame(foot, you, size) : null;
+    if (mapped) after = mapped;
     this.view.setCache(foot.held.cache);
     this.view.setFinds(foot.finds.drawn);
     this.view.setEncounter(foot.held.encounter);
@@ -123,6 +143,44 @@ export class DungeonDrawers {
       after && ((encoder, view) => after(encoder, view, over)),
       drain,
     );
+  }
+
+  /** The dungeon's map kept up as the player walks, and while it is open what draws it over the picture. */
+  private mapFrame(
+    foot: Foot,
+    you: MapBody & { readonly seconds: number },
+    size: { width: number; height: number },
+  ): ((encoder: GPUCommandEncoder, view: GPUTextureView) => void) | null {
+    const dungeon = foot.dungeon;
+    if (!dungeon) return null;
+    DUNGEON_MAP.enter(JSON.stringify(dungeon.ask), dungeon.layout);
+    DUNGEON_MAP.tick(you, you.seconds);
+    const paper = { width: this.canvas?.clientWidth || size.width, height: this.canvas?.clientHeight || size.height };
+    // The company is gathered only while the map shows them.
+    const company = (DUNGEON_MAP.open ? platedPlayers(foot.otherPlayers, you.feet) : [])
+      .filter((each) => each.company)
+      .map((each) => ({
+        feet: each.feet,
+        facing: foot.otherPlayers.placed.get(each.id)?.facing ?? 0,
+        name: each.plate.name,
+      }));
+    const shown = DUNGEON_MAP.frame(you.seconds, paper, company);
+    const walked = DUNGEON_MAP.dungeon;
+    PAPER.node = shown && paperNode(shown, dungeon.layout.name, PAPER.chests(), performance.now() / 1000);
+    if (!shown || !walked) return null;
+    const ink = (this.ink ??= new MapInk(this.gpu));
+    ink.setCells(walked.words);
+    const { layout, storeys } = walked;
+    const frame = {
+      view: shown.view,
+      ratio: size.width / paper.width,
+      size,
+      every: shown.every,
+      storey: shown.storey,
+      storeys: { count: storeys.count, storeyM: storeys.storeyM, top: storeys.floors[0] ?? 0 },
+      grid: { cell: layout.cell, columns: layout.columns, rows: layout.rows },
+    };
+    return (encoder, into) => ink.draw(encoder, into, frame, this.view.mesh);
   }
 
   /** One frame in a Breach's run: its spaces and pieces as `props` draws them over the dark, the fight's blood under
