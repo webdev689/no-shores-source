@@ -453,9 +453,9 @@ impl Character {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        // A quest waiting to be acquired asks no word yet: Acquire is the word.
+        // A quest waiting to be acquired has no goal unmet, so asks no word yet: Acquire is the word.
         let asked = self.goals_unmet().any(|(_, goal)| matches!(&goal.goal, Goal::Talk(talk) if talk.to == key));
-        if !asked || self.quest_offered().is_some() {
+        if !asked {
             return Err(Refusal::NothingToSay);
         }
         self.tell(&Event::Talk(key));

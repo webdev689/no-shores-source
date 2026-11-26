@@ -185,7 +185,11 @@ export function noticeNode(
             direction: 'column',
             gap: narrow ? 4 : 8,
             maxWidth: Math.min(760, view.width - (narrow ? 96 : 360)),
-            children: [words(notice.title, size, INK.word), lineNode(notice, size)],
+            // The title bold over a lighter line, as the reference's.
+            children: [
+              { text: { words: [{ words: notice.title, style: 'bold' }], size, colour: INK.word } },
+              lineNode(notice, size),
+            ],
           },
         ],
       },
