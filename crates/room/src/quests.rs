@@ -52,6 +52,8 @@ pub(crate) struct QuestGround {
     pub grounds: Vec<QuestMesh>,
     pub baking: Option<(String, navmesh::Bounds, navmesh::Baking)>,
     pub way_on: BTreeMap<FighterId, usize>,
+    /// Each rider the Tack's lesson watches here (`lessons.rs`).
+    pub ridden: crate::lessons::Riders,
     /// The lore read for what lies in its node (`lore.rs`): the file's, unless a test gives its own.
     pub lore: Option<&'static gear::lore::LoreDef>,
 }
@@ -261,6 +263,8 @@ impl Room {
                     | Goal::Enter(_)
                     | Goal::Buy(_)
                     | Goal::Wear(_)
+                    | Goal::Ride(_)
+                    | Goal::Sail(_)
                     | Goal::Escort(_)
                     | Goal::Tail(_)
                     | Goal::Defend(_)

@@ -89,6 +89,19 @@
           ]
         },
         {
+          "id": "ride-the-bay",
+          "task": "Ride the Bay",
+          "start": "rideBegin",
+          "goals": [
+            { "kind": "ride", "act": "mount", "text": "Get up on your horse" },
+            { "kind": "ride", "act": "walk", "text": "Ride at a walk" },
+            { "kind": "ride", "act": "gallop", "text": "Gallop" },
+            { "kind": "ride", "act": "boost", "text": "Spur it on" },
+            { "kind": "ride", "act": "dismount", "text": "Get down" },
+            { "kind": "ride", "act": "arrive", "to": "harbourmaster", "text": "Ride to the Harbourmaster's stall" }
+          ]
+        },
+        {
           "id": "your-ship",
           "task": "Take your ship from the Harbourmaster",
           "goals": [
@@ -102,6 +115,24 @@
           "reward": {
             "ship": true
           }
+        },
+        {
+          "id": "learn-the-helm",
+          "task": "Learn the helm",
+          "goals": [
+            { "kind": "sail", "act": "board", "text": "Go aboard your Sloop" },
+            { "kind": "sail", "act": "sail", "text": "Set sail" },
+            { "kind": "sail", "act": "steer", "text": "Steer" },
+            { "kind": "sail", "act": "trim", "text": "Trim your sails" },
+            { "kind": "sail", "act": "map", "text": "Raise your chart" },
+            { "kind": "sail", "act": "fire", "text": "Put a ball in the Tithe hulk" }
+          ]
+        },
+        {
+          "id": "bring-it-home",
+          "task": "Bring it home",
+          "end": "sailHome",
+          "goals": [{ "kind": "enter", "node": "overlook-social", "text": "Dock at Overlook" }]
         },
         {
           "id": "wear-them",

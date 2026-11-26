@@ -33,8 +33,15 @@
       { "who": "postmaster", "say": "Whatever you drop and leave behind finds its way to my shelves." }
     ],
     "roundHarbour": [
-      { "who": "harbourmaster", "say": "So the sea gave you back. You'll want a deck under you." },
-      { "who": "harbourmaster", "say": "The Sloop at the end of the quay is yours. Bring it back afloat." }
+      { "who": "harbourmaster", "say": "The sea gave you back, then. The Sloop at the quay is yours." },
+      { "who": "harbourmaster", "say": "There's a Tithe hulk moored offshore. Put a ball in it, then come home." }
+    ],
+    "rideBegin": [
+      { "who": "tack", "say": "Before you go, take the Bay out. Let me see you ride." },
+      { "who": "tack", "say": "Then ride down to the Harbourmaster's stall. She's waiting on you." }
+    ],
+    "sailHome": [
+      { "who": "harbourmaster", "say": "Back afloat, and that hulk the worse for it. You'll do." }
     ],
     "houseBegin": [
       { "who": "stormcaller", "say": "You'll hear all three of us. Start with the loudest. Me." }

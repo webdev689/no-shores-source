@@ -82,9 +82,10 @@ fn the_stranger_gives_no_aurem_and_each_keeper_on_the_round_gives_a_gift_as_spok
     assert_eq!(letter.from, Source::Gift as u8);
     let held = letter.vestige.as_ref().map(|vestige| (vestige.rarity, vestige.slot, vestige.level));
     assert_eq!(held, Some((GIFT_VESTIGE, POSTMASTERS_SLOT, level)));
+    assert_eq!(character.materials.aurem, 0, "every gift given, nothing sold");
+    character.ride_the_lesson();
     speak(&mut character, "harbourmaster");
     assert!(character.has_ship(), "the Sloop, as before");
-    assert_eq!(character.materials.aurem, 0, "every gift given, nothing sold");
     let gifts = [Gift::Weapons, Gift::Armour, Gift::Vestige, Gift::Cloak, Gift::Dye, Gift::Letter];
     assert!(gifts.iter().all(|gift| character.given(*gift)));
 }
@@ -156,9 +157,12 @@ fn the_weaponsmith_sells_every_melee_and_ranged_kind_to_start_and_gives_one_of_e
 #[test]
 fn the_gifts_dress_the_player_and_put_them_on_asks_both_weapons_and_the_armour() {
     let mut character = welcomed();
-    for key in ROUND.into_iter().chain(["harbourmaster"]) {
+    for key in ROUND {
         speak(&mut character, key);
     }
+    character.ride_the_lesson();
+    speak(&mut character, "harbourmaster");
+    character.sail_the_lesson();
     assert_eq!(task(&character), Some("wear-them"), "nothing to buy: the gifts arm the player");
     buy(&mut character, Kind::DoubleSwords).expect("her Melee gift");
     buy(&mut character, Kind::Crossbow).expect("her Ranged gift");

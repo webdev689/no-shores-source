@@ -16,6 +16,7 @@ pub use crate::quest_goals::{
     Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, InSlot, KILL_PAST, Landing, Plain, PointDef,
     Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
 };
+pub use crate::quest_lessons::{Ride, RideAct, Sail, SailAct};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -75,6 +76,13 @@ pub enum Event<'told> {
     Bought(Slot),
     /// A piece worn in a slot.
     Worn(Slot),
+    /// A rider's act, and the keeper's counter (by its key) an arrival is made at.
+    Ride {
+        act: RideAct,
+        at: Option<&'told str>,
+    },
+    /// A captain's act at sea.
+    Sail(SailAct),
     /// A step the room ran met, of a kind, in a node, at its goal's anchor (`GoalDef::anchor`).
     Stepped {
         kind: GoalKind,
@@ -322,6 +330,8 @@ impl Character {
         }
         self.reward(def.faction, def.tasks[task].reward);
         self.find_lore_due(crate::lore::lore());
+        // The next task counts the pieces held as it begins, whatever met this one: a docking as much as an ask.
+        self.tell_held();
         true
     }
 
