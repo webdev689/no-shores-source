@@ -1,8 +1,8 @@
-// What the panel over an island says, docked at its port or gone ashore on its coast, in place of marks on the map:
-// its port (a snapshot of the city, its counters and its moorings), the Playlist beside it, and its patrol zones,
-// Elite Dungeons, missions, world boss and outpost, each with its levels, its state and what choosing it does. The
-// day's and week's draws (`activities.ts`) add what is on there today and this week; before they are read it says
-// what the island holds alone.
+// What the island's tiles say, docked at its port or gone ashore on its coast, in place of marks on the map: its port
+// (a snapshot of the city, its counters and its moorings), the Playlist beside it, and its patrol zones, Elite
+// Dungeons, missions, world boss and outpost, each with its levels, its state and what a click on it does, in words
+// short enough for a tile. The day's and week's draws (`activities.ts`) add what is on there today and this week;
+// before they are read it says what the island holds alone.
 import type { Activities, Gates } from './activities.ts';
 import { levelWords } from './activityWords.ts';
 import { ISLANDS } from './hudLaw.ts';
@@ -98,14 +98,26 @@ function patrolEntry(node: NodeInfo, facts: IslandFacts, shut: string | null): I
     : 'None';
   const harder = (tier: number) => facts.gates?.seas[tier] ?? bandOf(facts, node.continent, tier) ?? '—';
   const rows: [string, string][] = [
-    ['Dungeons', today ? `Three; its ${ordinal(today.number)} is the dungeon of the day` : 'Three, laid by the Forge'],
+    ['Dungeons', today ? `Three; today's is ${ordinal(today.number)}` : 'Three, laid by the Forge'],
     ['Resources', resources],
     ['Foes', node.foes?.length ? `${node.foes.length} sites of the Grey Tithe` : 'The Grey Tithe'],
     ['Elite seas', harder(1)],
     ['Abyss seas', harder(2)],
   ];
-  if (today && facts.activities) rows.push(["Today's modifier", modifierNames(facts, [facts.activities.dayModifier])]);
+  if (today && facts.activities) rows.push(['Today', modifierNames(facts, [facts.activities.dayModifier])]);
   return { ...base(node, 'Patrol zone', facts, shut), rows, act: LAND };
+}
+
+/** A mission's, a world boss's or an outpost's details: its foes' sites and the places its layout names, where it has
+ *  them; an outpost's, what it is for. */
+function placeRows(node: NodeInfo): [string, string][] {
+  const rows: [string, string][] = [];
+  if (node.foes?.length) rows.push(['Foes', `${node.foes.length} sites`]);
+  const named = (node.places ?? []).map((place) => place.name);
+  if (named.length)
+    rows.push(['Places', named.length > 2 ? `${named.slice(0, 2).join(', ')} and more` : named.join(' and ')]);
+  if (node.kind === 'outpost') rows.push(['For', "A guild's outpost"]);
+  return rows;
 }
 
 const ordinal = (number: number): string => ['first', 'second', 'third'][number] ?? `${number + 1}th`;
@@ -118,11 +130,12 @@ function dungeonEntry(node: NodeInfo, facts: IslandFacts, shut: string | null): 
     drawn?.weekElite.place === node.id ? drawn.weekElite : drawn?.weekAbyss.place === node.id ? drawn.weekAbyss : null;
   const which = week && drawn && week === drawn.weekElite ? 'Elite' : 'Abyss';
   const rows: [string, string][] = [
-    ['The run', 'Four or five blocks, two or three seals, and its Boss in a Court of wards'],
-    ['Company', 'Up to four, matched or with your company'],
-    ['Pays', 'Its kills, its cache and its clear'],
+    ['Blocks', 'Four or five, a Court'],
+    ['Seals', 'Two or three, a Boss'],
+    ['Company', 'Up to four, or matched'],
+    ['Pays', 'Kills, cache and clear'],
   ];
-  if (week) rows.push([`${which} of the week`, `Level ${week.level}, ${modifierNames(facts, week.modifiers)}`]);
+  if (week) rows.push(['This week', `${which}, level ${week.level}, ${modifierNames(facts, week.modifiers)}`]);
   const gate = facts.gates?.eliteDungeon ?? null;
   return {
     ...base(node, 'Elite Dungeon', facts, shut ?? gate),
@@ -161,12 +174,11 @@ function portEntry(landmass: Pick<Landmass, 'plan' | 'nodes'>, island: string): 
     id: social.id,
     kind: 'social',
     name: port.name,
-    line: shut ? `Port city · ${shut}` : 'Port city · its social space open',
+    line: shut ? `Port city · ${shut}` : 'Port city · its plaza open',
     rows: [
       ['Island', island],
       ['Counters', counters.length ? counters.join(', ') : 'None yet'],
-      ['Moorings', moorings ? `${moorings} ships moored by its pier` : 'Its roadstead'],
-      ['Playlist', 'Elite and Abyss dungeons, queued from here'],
+      ['Moorings', moorings ? `${moorings} ships by its pier` : 'Its roadstead'],
     ],
     shut,
     act: { words: 'Land in its plaza', does: 'land' },
@@ -179,16 +191,16 @@ function playlistBanner(city: string, facts: IslandFacts): PlaylistBanner {
   const rows: [string, string][] = drawn
     ? [
         ['Today', modifierNames(facts, [drawn.dayModifier])],
-        ['Elite of the week', `${facts.named(drawn.weekElite.place)}, level ${drawn.weekElite.level}`],
-        ['Abyss of the week', `${facts.named(drawn.weekAbyss.place)}, level ${drawn.weekAbyss.level}`],
-        ['Rewards', 'A daily first clear, and a weekly at three clears'],
+        ["Week's Elite", `${facts.named(drawn.weekElite.place)}, level ${drawn.weekElite.level}`],
+        ["Week's Abyss", `${facts.named(drawn.weekAbyss.place)}, level ${drawn.weekAbyss.level}`],
+        ['Rewards', 'Daily, and three a week'],
       ]
-    : [['Rewards', 'A daily first clear, and a weekly at three clears']];
+    : [['Rewards', 'Daily, and three a week']];
   return {
     id: `${city}-playlist`,
     kind: 'playlist',
     name: 'Playlist',
-    line: 'Elite and Abyss dungeons, matchmade from any port',
+    line: 'Elite and Abyss, matchmade',
     rows,
     shut: null,
     act: { words: 'Open the Playlist', does: 'playlist' },
@@ -218,7 +230,7 @@ export function islandPanelOf(
         const shut = shutOf(node);
         if (kind === 'patrol') return patrolEntry(node, facts, shut);
         if (kind === 'dungeon') return dungeonEntry(node, facts, shut);
-        return { ...base(node, line, facts, shut), rows: [], act: LAND };
+        return { ...base(node, line, facts, shut), rows: placeRows(node), act: LAND };
       });
     return entries.length ? [{ title, entries }] : [];
   });

@@ -50,7 +50,7 @@ status: in force
 - **No Playlist at sea.**
 - **Docked, the island's nodes stand in a panel**, not on the map: detailed, out of the way and slightly
   transparent, holding what the island has of its port, the Playlist, its patrol zone, its dungeon and its mission.
-  The dungeon leads into a dungeon.
+  The dungeon leads into a dungeon. (Replaced in part: they stand as even tiles in a grid, [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]].)
 - **The rest is Claude's**, on the owner's autonomy, recorded below and open to the owner's change.
 
 It replaces, in part, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]] (the keys in every view),
@@ -75,14 +75,14 @@ It replaces, in part, [[The Sloop Is Sailed by Its Keys and Seen Close From Any 
 | Yes out of reach | The ship makes for the harbour, or the coast clicked, at ×60 and docks once within 20 km of the harbour (30 km of the coast to go ashore); the console names where it is bound | The landfall's own reach, so the ask works from anywhere at sea |
 | What lets it go | No, a click elsewhere, a fight, the helm, going aboard or a travel put the question by; another course (a click, W, a chase) or a fight lets a landing made for go; a stop keeps it to be resumed | A question never stands over a view that cannot answer it |
 | A coast with no port, a sea island | A ruined city's coast asks "Go ashore on Cairnwatch?"; a click within 400 m of a sea island's reach asks to go ashore on it | "Clicking elsewhere on the island" does the same, wherever there is no port to dock at |
-| The panel's place | Down the left of the view, 104 px down and 24 in, 40% of its width (280 to 400 px), on a ground 74% opaque edged in brass, scrolled | Out of the island's way, which flies to the view's right |
+| The panel's place | Down the left of the view, 104 px down and 24 in, 40% of its width (280 to 400 px), on a ground 74% opaque edged in brass, scrolled | Out of the island's way, which flies to the view's right (replaced: [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]) |
 | The panel's entries | Docked: the port's snapshot, the Playlist's banner, then every patrol zone, Elite Dungeon, mission, world boss and outpost by kind; gone ashore, the places alone | The owner's five, and the boss and outpost kept so no place goes unreachable without its node |
 | The port's snapshot | A chart of the island with its harbour and the ship, its counters, its moorings and the Playlist; its press lands in the plaza | What the port holds, before landing |
 | The Playlist's banner | Today's modifier, the Elite and the Abyss of the week with their levels, the rewards, and the four crests; its press opens the Playlist | The detail the Playlist's own screen leads with |
 | A patrol zone's snapshot | Its levels, its dungeons and which is the dungeon of the day, its resources, its foes, its Elite and Abyss seas' levels, today's modifier; its press lands there | What the zone holds, from the data the island already has |
 | A dungeon's entry | "Go in from the sea" opens the Elite Dungeon's card at Normal; it finds a group or starts a run in a room of its own from the sea, and a run's end brings the ship back to the sea | The owner noted the node led into no dungeon |
 | A mission's entry | Its name, and why it is locked where it is; its press lands at it | The owner's "if applicable" |
-| Enter on the panel | Does the chosen entry's press, the first's while none is chosen; Escape or Back to the sea flies back down | As the island's nodes answered Enter |
+| Enter on the panel | Does the chosen entry's press, the first's while none is chosen; Escape or Back to the sea flies back down | As the island's nodes answered Enter (replaced: [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]) |
 | The ship's console | Header: the ship's name and class, and the switch. Body: a compass with the heading and the wind; the voyage (way, pace, speed, where it is bound, a bar of the way sailed, its line); the ship (hull, canvas, crew, the water). Foot: Oversea: Plan a voyage (N), Stop or Resume (Space); Sealevel: Sail on (W), Heave to (S), Manage (B), Leave the helm (H) | Each view's own buttons, as the owner asked, with every figure the sea already knew |
 | When the console stands | While the ship is the player's to sail: not at the helm, aboard, in a fight or on a travel | Those have screens of their own |
 

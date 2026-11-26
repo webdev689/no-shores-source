@@ -1,5 +1,5 @@
 // Pictures of the sea's own layer, headless (`tools/uiShot.mjs`): the ship's console in each view, the landing's
-// confirmation over it, and the island's panel docked at Overlook, over sample draws. The game never imports it.
+// confirmation over it, and the island's tiles docked at Overlook, over sample draws. The game never imports it.
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { Activities } from './activities.ts';
@@ -134,7 +134,7 @@ const OUTLINE = [
   [-950, 100],
 ] as const;
 
-/** The island's panel docked at Overlook, `chosen` the entry opened. */
+/** The island's tiles docked at Overlook, `chosen` the one lit. */
 const panelShot =
   (chosen: string | null) =>
   (ui: Interface): Node => {

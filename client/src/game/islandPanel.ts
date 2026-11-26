@@ -1,15 +1,14 @@
-// The panel over an island docked at or gone ashore on, in place of marks on the map: down the left of the view and a
-// little transparent, so the island stands beside it. Its port's snapshot with a chart of the island and its harbour,
-// the Playlist's banner with its crests, and the island's places by kind; the one chosen opened to its details and its
-// press, a second click or Enter doing what it does.
+// The island's tiles, over an island docked at or gone ashore on, in place of marks on the map: rectangles of one size
+// in a grid with space between them, a little transparent, so the island shows between and through them. The island's
+// own with its chart and the way back to the sea, its port's snapshot, the Playlist's banner with its crests, and its
+// places by kind, each with its details; a click, or Enter on the one lit, does what its tile does.
 import { CANVAS_FACE } from '../face.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { withKey } from './controls.ts';
 import { DIM } from './hudPieces.ts';
-import { header, hudPress, said } from './hudParts.ts';
+import { hudPress, said } from './hudParts.ts';
 import {
   type IslandEntry,
   type IslandFacts,
@@ -26,14 +25,23 @@ import type { Sea } from './sea.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const BRASS = '#f3cf86';
-/** The panel's ground: a little transparent, so the island shows through it. */
+/** A tile's ground: a little transparent, so the island shows through it; lit, a touch warmer. */
 const GROUND = 'rgba(10,12,16,0.74)';
+const LIT = 'rgba(30,25,18,0.84)';
 const EDGE = 'rgba(192,138,62,0.45)';
-/** Where the panel stands: in from the left, under the place's name, and over the foot of the view. */
-const PLACE = { left: 24, top: 104, foot: 24, most: 400, share: 0.4 } as const;
-/** The chart of the island in the port's snapshot, and a Playlist crest's side. */
-const CHART_TALL = 110;
-const CREST = 44;
+/** Where the grid stands (in from each side, under the place's name, over the view's foot) and how it is laid: tiles
+ *  `least` to `most` wide, up to `columns` a row with `gap` between, as tall as three rows fit (`short` to `tall`). */
+const GRID = { side: 24, top: 104, foot: 24, gap: 16, least: 280, most: 340, columns: 5, rows: 3 } as const;
+const TILE_TALL = { short: 176, tall: 220 } as const;
+/** The scroll bar's room beside the grid (`scrolledNode`). */
+const BAR_ROOM = 8;
+/** A Playlist crest's side on its tile. */
+const CREST = 30;
+/** What a tile is laid at. */
+interface TileSize {
+  readonly width: number;
+  readonly height: number;
+}
 
 /** What the panel shows the island on: its coast, its harbour and where the ship lies. */
 export interface IslandChart {
@@ -43,7 +51,7 @@ export interface IslandChart {
   readonly ship: Point2;
 }
 
-/** What the panel's presses do: choose an entry, do what it does, and go back to the sea. */
+/** What the tiles do: light one for Enter, do what one does, and go back to the sea. */
 export interface IslandActs {
   readonly choose: (id: string) => void;
   readonly act: (entry: IslandEntry) => void;
@@ -109,54 +117,53 @@ const rowsNode = (rows: IslandEntry['rows']): Node => ({
   gap: 3,
   children: rows.map(([label, value]): Node => ({
     width: 'grow',
-    gap: 10,
+    gap: 8,
     children: [
-      { width: 112, children: [said(label, { colour: DIM })] },
+      { width: 90, children: [said(label, { colour: DIM })] },
       { width: 'grow', children: [said(value)] },
     ],
   })),
 });
 
-/** An entry's press, Enter on it: dim, with why, while it is shut. */
-function pressOf(ui: Interface, entry: IslandEntry, acts: IslandActs): Node {
-  return {
-    width: 'grow',
-    direction: 'column',
-    gap: 6,
-    children: [
-      entry.shut !== null && {
-        gap: 6,
-        alignY: 'center',
-        children: [iconNode('locked', 12), said(entry.shut, { colour: DIM })],
-      },
-      hudPress(ui, `island:act:${entry.id}`, withKey(entry.act.words, 'confirm'), () => acts.act(entry), {
-        role: 'primary',
-        disabled: entry.shut !== null,
-        ...(entry.shut !== null && { opacity: 0.45 }),
-      }),
-    ],
-  };
-}
+/** A tile's foot: what a click does, a chevron before it, brass while lit; dim behind a lock while it is shut. */
+const footNode = (entry: IslandEntry, lit: boolean): Node => ({
+  width: 'grow',
+  gap: 6,
+  alignY: 'center',
+  children:
+    entry.shut === null
+      ? [said('›', { colour: lit ? BRASS : DIM }), said(entry.act.words, { colour: lit ? BRASS : TONES.ink })]
+      : [iconNode('locked', 12), said(entry.act.words, { colour: DIM })],
+});
 
-/** One entry: its name and line, pressed to choose it; chosen, opened to its details and its press. */
-function entryNode(ui: Interface, entry: IslandEntry, chosen: boolean, acts: IslandActs, more: Child[] = []): Node {
+/** One entry's tile: its name, its line and its details, `more` under its line; a click does what it does, and the
+ *  pointer or the focus on it lights it for Enter. */
+function entryTile(
+  ui: Interface,
+  [entry, size]: readonly [IslandEntry, TileSize],
+  lit: boolean,
+  acts: IslandActs,
+  more: Child[] = [],
+): Node {
   const id = `island:${entry.id}`;
   if (ui.clicked(id)) {
+    // Let go of the focus, so Enter is the game's and never presses this tile again.
     ui.focusOn(null);
-    if (chosen && entry.shut === null) acts.act(entry);
-    else acts.choose(entry.id);
+    if (entry.shut === null) acts.act(entry);
   }
-  const lit = chosen || ui.hovered(id);
+  if ((ui.hovered(id) || ui.focused(id)) && !lit) acts.choose(entry.id);
   return {
     id,
     press: true,
-    label: `${entry.name}. ${entry.line}`,
-    width: 'grow',
+    label: `${entry.name}. ${entry.line}. ${entry.shut ?? entry.act.words}`,
+    ...size,
     direction: 'column',
     gap: 6,
-    padding: [8, 10],
-    fill: chosen ? 'rgba(192,138,62,0.16)' : lit ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0)',
-    outline: { width: 1, colour: chosen ? EDGE : 'rgba(163,152,128,0.18)' },
+    padding: [10, 12],
+    clip: true,
+    fill: lit ? LIT : GROUND,
+    outline: { width: 1, colour: lit ? TONES.brass : EDGE },
+    ...(entry.shut !== null && { opacity: 0.7 }),
     children: [
       {
         width: 'grow',
@@ -164,50 +171,83 @@ function entryNode(ui: Interface, entry: IslandEntry, chosen: boolean, acts: Isl
         alignY: 'center',
         children: [
           entry.shut !== null && iconNode('locked', 12),
-          { width: 'grow', children: [said(entry.name, { colour: chosen ? BRASS : TONES.ink })] },
+          { width: 'grow', children: [said(entry.name, { colour: BRASS })] },
         ],
       },
       said(entry.line, { colour: DIM }),
       ...more,
-      chosen && entry.rows.length > 0 && rowsNode(entry.rows),
-      chosen && pressOf(ui, entry, acts),
+      entry.rows.length > 0 && rowsNode(entry.rows),
+      { height: 'grow' },
+      footNode(entry, lit),
     ],
   };
 }
 
-/** The Playlist's crests in a row, each over its name, grey while shut. */
+/** The Playlist's crests in a row, grey while shut. */
 function crestsNode(banner: PlaylistBanner): Node {
   return {
     width: 'grow',
-    gap: 4,
+    gap: 10,
     children: banner.crests.map((crest): Node => ({
-      width: 'grow',
-      direction: 'column',
-      alignX: 'center',
-      gap: 2,
-      children: [
-        {
-          width: CREST,
-          height: CREST,
-          picture: {
-            key: `island crest ${crest.kind} ${crest.shut} ${CREST}`,
-            source: { draw: drawCrest(crest.kind, crest.shut, false) },
-          },
-        },
-        said(crest.name, { colour: DIM, wrap: false }),
-      ],
+      width: CREST,
+      height: CREST,
+      label: crest.name,
+      picture: {
+        key: `island crest ${crest.kind} ${crest.shut} ${CREST}`,
+        source: { draw: drawCrest(crest.kind, crest.shut, false) },
+      },
     })),
   };
 }
 
-/** A small heading over a group of entries, in capitals. */
-const heading = (words: string): Node => ({
-  width: 'grow',
-  padding: [6, 0, 0, 0],
-  children: [said(words.toUpperCase(), { colour: DIM, tracking: 3 })],
-});
+/** The island's own tile, first in the grid: its name, where the ship lies, its levels, its chart, and the way back. */
+function islandTile(ui: Interface, panel: IslandPanel, size: TileSize, chart: IslandChart | null, back: () => void) {
+  // The chart takes what the tile leaves under its words and over its press.
+  const chartTall = Math.max(0, size.height - 136);
+  return {
+    id: 'island:island',
+    ...size,
+    direction: 'column',
+    gap: 6,
+    padding: [10, 12],
+    clip: true,
+    fill: GROUND,
+    outline: { width: 1, colour: EDGE },
+    children: [
+      said(panel.title, { size: 2, colour: BRASS }),
+      said(panel.where),
+      panel.band !== null && said(`${panel.band} at Normal`, { colour: DIM }),
+      chart &&
+        chartTall >= 32 && {
+          width: 'grow',
+          height: chartTall,
+          picture: {
+            key: `island chart ${chart.id} ${size.width} ${chartTall} ${chart.harbour !== null} ${Math.round(chart.ship[0] / 500)} ${Math.round(chart.ship[1] / 500)}`,
+            source: { draw: drawChart(chart) },
+          },
+        },
+      { height: 'grow' },
+      hudPress(ui, 'island:back', 'Back to the sea  Esc', back, { padding: [6, 12] }),
+    ],
+  } satisfies Node;
+}
 
-/** The panel over the island, `chosen` the entry chosen (the first while none is), on a view `width` by `height`. */
+/** How the grid is laid on a view `width` by `height`: its columns, and each tile's size. */
+export function gridOf(width: number, height: number): { readonly columns: number; readonly tile: TileSize } {
+  const room = { width: width - 2 * GRID.side - BAR_ROOM, height: height - GRID.top - GRID.foot };
+  const columns = Math.max(1, Math.min(GRID.columns, Math.floor((room.width + GRID.gap) / (GRID.least + GRID.gap))));
+  const across = Math.floor((room.width - (columns - 1) * GRID.gap) / columns);
+  const down = Math.floor((room.height - (GRID.rows - 1) * GRID.gap) / GRID.rows);
+  return {
+    columns,
+    tile: {
+      width: Math.max(1, Math.min(GRID.most, across)),
+      height: Math.min(TILE_TALL.tall, Math.max(TILE_TALL.short, down)),
+    },
+  };
+}
+
+/** The island's tiles over the view, `chosen` the one Enter does (the first place's while none is). */
 export function islandPanelNode(
   ui: Interface,
   panel: IslandPanel,
@@ -216,62 +256,28 @@ export function islandPanelNode(
   acts: IslandActs,
 ): Node {
   const { width, height } = ui.size;
-  const wide = Math.round(Math.min(PLACE.most, Math.max(280, width * PLACE.share)));
-  const first = entriesOf(panel)[0]?.id ?? null;
-  const shown = chosen ?? first;
-  const chartNode: Child = chart && {
-    width: 'grow',
-    height: CHART_TALL,
-    picture: {
-      key: `island chart ${chart.id} ${wide} ${Math.round(chart.ship[0] / 500)} ${Math.round(chart.ship[1] / 500)}`,
-      source: { draw: drawChart(chart) },
-    },
-  };
-  const children: Child[] = [
-    panel.port && entryNode(ui, panel.port, shown === panel.port.id, acts, [chartNode]),
-    panel.playlist && entryNode(ui, panel.playlist, shown === panel.playlist.id, acts, [crestsNode(panel.playlist)]),
-    ...panel.groups.flatMap((group) => [
-      heading(group.title),
-      ...group.entries.map((entry) => entryNode(ui, entry, shown === entry.id, acts)),
-    ]),
+  const { columns, tile } = gridOf(width, height);
+  const shown = chosen ?? entriesOf(panel)[0]?.id ?? null;
+  const tileOf = (entry: IslandEntry, more: Child[] = []) =>
+    entryTile(ui, [entry, tile], shown === entry.id, acts, more);
+  const tiles: Node[] = [
+    islandTile(ui, panel, tile, chart, acts.back),
+    ...(panel.port ? [tileOf(panel.port)] : []),
+    ...(panel.playlist ? [tileOf(panel.playlist, [crestsNode(panel.playlist)])] : []),
+    ...panel.groups.flatMap((group) => group.entries.map((entry) => tileOf(entry))),
   ];
+  const rows: Node[] = [];
+  for (let first = 0; first < tiles.length; first += columns)
+    rows.push({ gap: GRID.gap, children: tiles.slice(first, first + columns) });
   return {
     id: 'island-panel',
-    direction: 'column',
-    width: wide,
-    height: Math.max(200, height - PLACE.top - PLACE.foot),
-    fill: GROUND,
-    outline: { width: 1, colour: EDGE },
+    width: columns * tile.width + (columns - 1) * GRID.gap + BAR_ROOM,
+    height: Math.max(TILE_TALL.short, height - GRID.top - GRID.foot),
     solid: true,
     label: `${panel.title}. ${panel.where}`,
-    float: { to: 'screen', at: [0, 0], anchor: [0, 0], x: PLACE.left, y: PLACE.top },
+    float: { to: 'screen', at: [0.5, 0], anchor: [0.5, 0], y: GRID.top },
     children: [
-      {
-        width: 'grow',
-        gap: 10,
-        padding: [10, 12],
-        ...header(),
-        children: [
-          {
-            width: 'grow',
-            direction: 'column',
-            gap: 2,
-            children: [
-              said(panel.title, { size: 2, colour: BRASS }),
-              said(panel.where),
-              panel.band !== null && said(`${panel.band} at Normal`, { colour: DIM }),
-            ],
-          },
-          hudPress(ui, 'island:back', 'Back to the sea  Esc', acts.back, { padding: [7, 12] }),
-        ],
-      },
-      scrolledNode(
-        ui,
-        'island-list',
-        { width: 'grow', height: 'grow' },
-        { direction: 'column', gap: 6, padding: [10, 6, 12, 12] },
-        children,
-      ),
+      scrolledNode(ui, 'island-list', { width: 'grow', height: 'grow' }, { direction: 'column', gap: GRID.gap }, rows),
     ],
   };
 }
@@ -292,8 +298,8 @@ export interface IslandGame {
   };
 }
 
-/** The island's panel as the game shows it while a landing is chosen, and what Enter does: the chosen entry's press,
- *  the first entry's while none is chosen. */
+/** The island's tiles as the game shows them while a landing is chosen, and what Enter does: the lit tile's press,
+ *  the first place's while none is lit. */
 export function islandScreen(game: IslandGame): {
   readonly node: (ui: Interface) => Node | null;
   readonly act: (id: string | null) => void;
@@ -308,7 +314,8 @@ export function islandScreen(game: IslandGame): {
   const act = (entry: IslandEntry) => {
     if (entry.shut !== null) return;
     const landmass = game.landmass();
-    if (entry.act.does === 'land') return game.does.land(entry.id);
+    // The flow lands only at the node chosen, so a landing chooses its node first.
+    if (entry.act.does === 'land') return (game.choose(entry.id), game.does.land(entry.id));
     if (entry.act.does === 'playlist') return landmass.plan && game.does.playlist(landmass.plan.id);
     const node = landmass.nodes.find((each) => each.id === entry.id);
     if (node) game.does.dungeon(node);
@@ -320,7 +327,7 @@ export function islandScreen(game: IslandGame): {
       const landmass = game.landmass();
       const harbour = landmass.plan && !landmass.plan.ruined ? landmass.plan.harbour : null;
       const chart = { id: landmass.id, outline: landmass.outline, harbour, ship: sea.position };
-      return islandPanelNode(ui, panel, game.chosen(), sea.view.docked ? chart : null, {
+      return islandPanelNode(ui, panel, game.chosen(), chart, {
         choose: game.choose,
         act,
         back: game.back,

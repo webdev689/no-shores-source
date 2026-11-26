@@ -365,8 +365,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/journalShots.ts`' `settingsShot` draws Settings at its first tab, its others pressed by a shot's events.
   `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing in the
   Oversea view, and the pad's buttons), each shot's display kept across its frames. `game/seaShots.ts` draws the ship's
-  console in each view and narrow, the landing's confirmation over it, and the island's panel docked at a port with
-  its port, a patrol zone and an Elite Dungeon open. `game/itemShots.ts` opens the menu
+  console in each view and narrow, the landing's confirmation over it, and the island's tiles docked at a port at
+  three sizes. `game/itemShots.ts` opens the menu
   over sample gear carrying a Legendary sword with its whole grid, an Atheric bow and a Legendary helm, its stats asked
   of the room's rules, so a shot's events open a flyout, hover a card or a node, open a page or press Compare; and
   `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame
@@ -1188,7 +1188,7 @@ gone into, and the card says "The week turned. Try again.".
 
 ## The Playlist
 
-The Playlist's banner in the island's panel, docked at a port city (below, "The island's panel"), opens the Playlist
+The Playlist's banner among the island's tiles, docked at a port city (below, "The island's tiles"), opens the Playlist
 screen ([[Activities]], "The Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`,
 its parts in `playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port
 it was opened beside ("Beside Overlook") over a brass rule; then six crests, the Elite Playlist (three chevrons under a
@@ -1278,31 +1278,37 @@ stands a window 420 px across a little above the middle of the view, clear of th
 at the face's larger size ("Dock at Overlook?"), what yes does under it in dim ink, and Cancel (Esc) and its yes (a
 primary, with Enter's key) on its footer.
 
-## The island's panel
+## The island's tiles
 
-Over an island docked at or gone ashore on, no node is marked on the map; the panel lists them (`islandPanel.ts`,
-`islandWords.ts`). It stands down the left of the view, 104 px down and 24 in, as tall as the view less 128 and 40% of
-its width (280 to 400 px), on a ground a little transparent (74%) edged in brass, so the island stands beside it. Its
-header names the island in brass, where the ship lies ("Docked at Overlook", "Ashore on the coast of Cairnwatch") and
-its levels at Normal, with Back to the sea (Esc). Its list scrolls as the Playlist's card does (`scrolledNode`):
+Over an island docked at or gone ashore on, no node is marked on the map; the island's tiles hold them
+(`islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]). They are rectangles of one size in a grid
+with 16 px between them, across the view under the place's name (104 px down, 24 in from each side), centred: each
+280 to 340 px wide, as many a row as fit up to five, as tall as three rows fit (176 to 220 px), 294 by 186 on a
+1280 by 720 view, four a row (`gridOf`); more than fit scroll as the Playlist's card does (`scrolledNode`). Each is on
+a ground a little transparent (74%) edged in brass, so the island shows between and through them. In order:
 
-- **The port's snapshot**, docked at a living port: the city, whether its social space is open ("Port city · Opens
-  later"), a chart of the island (its coast as land over the sea, the harbour a brass ring, the ship a pale dot, north
-  marked), its island, its counters by their keepers' names, its moorings, and that the Playlist is queued from it.
-  Its press lands in its plaza.
-- **The Playlist's banner**, docked at a living port: the four crests (`playlistCrest.ts`, 44 px), each over its name,
-  the week's grey while shut to the character; today's modifier, the Elite and the Abyss Dungeon of the week with their
-  levels, and its rewards. Its press opens the Playlist ([[Interface]], "The Playlist").
-- **Patrol zones**: each its levels; chosen, its three dungeons and which is the dungeon of the day, its resources
-  and what they hold, its foes' sites, the Elite and Abyss seas' bands (or why they are shut), and today's modifier
-  where its dungeon of the day is.
-- **Elite Dungeons**: each its levels; chosen, its run (four or five blocks, two or three seals, its Boss's Court),
-  its company, what it pays, and whether it is the Elite or the Abyss Dungeon of the week with its level and modifiers.
-  Its press, Go in from the sea, opens its card ([[Activities]], "The Elite Dungeons").
-- **Missions**, the **world boss** and the **outpost**: each its kind and levels; its press lands there.
+- **The island's own**: its name in brass at the larger size, where the ship lies ("Docked at Overlook", "Ashore on the
+  coast of Cairnwatch"), its levels at Normal, a chart of it (its coast as land over the sea, the harbour a brass ring,
+  the ship a pale dot, north marked), and Back to the sea (Esc).
+- **The port's snapshot**, docked at a living port: the city, whether its plaza is open ("Port city · Opens later"),
+  its island, its counters by their keepers' names and its moorings. A click lands in its plaza.
+- **The Playlist's banner**, docked at a living port: its four crests (`playlistCrest.ts`, 30 px), the week's grey
+  while shut to the character; today's modifier, the week's Elite and Abyss Dungeons with their levels, and its
+  rewards. A click opens the Playlist ([[Interface]], "The Playlist").
+- **Patrol zones**: each its levels, its three dungeons and which is today's, its resources and what they hold, its
+  foes' sites, the Elite and Abyss seas' bands (or why they are shut), and today's modifier where its dungeon of the
+  day is. A click lands there.
+- **Elite Dungeons**: each its levels, its blocks and seals, its company, what it pays, and whether it is the Elite or
+  the Abyss Dungeon of the week with its level and modifiers. A click, Go in from the sea, opens its card
+  ([[Activities]], "The Elite Dungeons").
+- **Missions**, the **world boss** and the **outpost**: each its kind and levels, its foes' sites and the places its
+  layout names where it has them, and an outpost what it is for. A click lands there.
 
-An entry is a press: its name (brass while chosen) and its line; the one chosen, the first while none is, is lit and
-opens to its details and its press (with Enter's key). A locked place leads with a padlock and says why, its press dim.
+A tile names its place in brass over its line, its details under them as label and value, and at its foot what a click
+does after a chevron. The tile under the pointer or the focus, else the first place's, is lit (a warmer ground, a
+brass edge): Enter does what it does. A locked place leads with a padlock, its line says why, and it stands dim, its
+foot behind a padlock; a click on it does nothing. A landing chooses its node before it lands, as the flow lands only
+at the node chosen.
 A click on an entry chooses it, a second does what its press does, as Enter does; a desolate city's social space is
 listed nowhere.
 

@@ -402,6 +402,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 - [[The Playlist's Nodes Are Drawn in More Detail, and Move]]
 - [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]
+- [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]
 
 ## Replaced
 

@@ -89,17 +89,17 @@ the sea camera and from the bird's-eye view. On the screen it is held between 20
 stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a pointer picks
 the nearest.
 
-No Playlist is marked at sea or over an island: it stands in the island's panel when docked at a port city
+No Playlist is marked at sea or over an island: it stands among the island's tiles when docked at a port city
 ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]; [[Interface]], "The island's
-panel").
+tiles").
 
-A locked node ([[World Map]], "Seen whole, reached by nodes") is listed in the island's panel with a padlock and
-why ("<name> is locked", or "Opens later" for a social space that opens later); its press is dim, so no landing is
-ever made there (`islandWords.ts`).
+A locked node ([[World Map]], "Seen whole, reached by nodes") stands among the island's tiles with a padlock and
+why ("<name> is locked", or "Opens later" for a social space that opens later); its tile is dim and a click on it does
+nothing, so no landing is ever made there (`islandWords.ts`).
 
 ## The island's side
 
-`islandView.ts` gives the bird's-eye view, where no node is marked: the island's panel lists them ([[Game]],
+`islandView.ts` gives the bird's-eye view, where no node is marked: the island's tiles hold them ([[Game]],
 "Landings"). It is due when the ship is within 30 km of a coast. Its nodes are those
 within 120 km of the ship on the ship's half of the island, seen from the island's middle, or the three nearest when
 none is. The camera looks inland from the ship at their middle, at the sea camera's 52 degrees, from the lowest height

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { byId, fakeInterface, wordsIn } from '../ui/uiForTests.ts';
 import type { Activities } from './activities.ts';
-import { islandPanelNode, islandScreen } from './islandPanel.ts';
+import { gridOf, islandPanelNode, islandScreen } from './islandPanel.ts';
 import { entriesOf, type IslandEntry, islandPanelOf } from './islandWords.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -69,7 +69,7 @@ const FACTS = {
   named: (id: string) => (id === 'coral-halls' ? 'The Coral Halls' : id),
 };
 
-test('docked, the panel holds the port and the Playlist first, then the island’s places by kind, none of them on the map', () => {
+test('docked, the tiles hold the port and the Playlist first, then the island’s places by kind, none of them on the map', () => {
   const panel = islandPanelOf(ISLAND, true, FACTS);
   assert.deepEqual([panel.title, panel.where, panel.band], ['Saltmere', 'Docked at Overlook', 'Levels 1 to 5']);
   assert.deepEqual(
@@ -88,12 +88,12 @@ test('the port’s snapshot names its counters and moorings; the Playlist’s ba
   const panel = islandPanelOf(ISLAND, true, FACTS);
   const rows = Object.fromEntries(panel.port?.rows ?? []);
   assert.equal(rows['Counters'], 'Weaponsmith, Postmaster, the houses');
-  assert.equal(rows['Moorings'], '2 ships moored by its pier');
+  assert.equal(rows['Moorings'], '2 ships by its pier');
   assert.equal(panel.port?.act.words, 'Land in its plaza');
   const banner = Object.fromEntries(panel.playlist?.rows ?? []);
   assert.equal(banner['Today'], 'Burn (Shadow)');
-  assert.equal(banner['Elite of the week'], 'krakens-grotto, level 26');
-  assert.equal(banner['Abyss of the week'], 'The Coral Halls, level 30');
+  assert.equal(banner["Week's Elite"], 'krakens-grotto, level 26');
+  assert.equal(banner["Week's Abyss"], 'The Coral Halls, level 30');
   assert.deepEqual(
     panel.playlist?.crests.map((crest) => crest.kind),
     ['elite', 'abyss', 'week-elite', 'week-abyss'],
@@ -105,18 +105,18 @@ test('a patrol zone’s snapshot: its levels, its dungeon of the day, resources,
   const patrol = entriesOf(islandPanelOf(ISLAND, true, FACTS)).find((entry) => entry.id === 'saltgrass-downs');
   assert.equal(patrol?.line, 'Patrol zone · Levels 1 to 5');
   const rows = Object.fromEntries(patrol?.rows ?? []);
-  assert.equal(rows['Dungeons'], 'Three; its second is the dungeon of the day');
+  assert.equal(rows['Dungeons'], "Three; today's is second");
   assert.equal(rows['Resources'], '3 places: iron, herbs');
   assert.equal(rows['Foes'], '2 sites of the Grey Tithe');
   assert.deepEqual([rows['Elite seas'], rows['Abyss seas']], ['Levels 10 to 14', 'Levels 20 to 24']);
-  assert.equal(rows["Today's modifier"], 'Burn (Shadow)');
+  assert.equal(rows['Today'], 'Burn (Shadow)');
 });
 
 test('an Elite Dungeon leads into its dungeon from the sea, saying whether it is one of the week’s; locked places say why', () => {
   const entries = entriesOf(islandPanelOf(ISLAND, true, FACTS));
   const dungeon = entries.find((entry) => entry.id === 'krakens-grotto');
   assert.deepEqual(dungeon?.act, { words: 'Go in from the sea', does: 'dungeon' });
-  assert.equal(Object.fromEntries(dungeon?.rows ?? [])['Elite of the week'], 'Level 26, Brawler');
+  assert.equal(Object.fromEntries(dungeon?.rows ?? [])['This week'], 'Elite, level 26, Brawler');
   const gated = entriesOf(
     islandPanelOf(ISLAND, true, {
       ...FACTS,
@@ -134,46 +134,66 @@ test('an Elite Dungeon leads into its dungeon from the sea, saying whether it is
   );
 });
 
-test('the panel opens the chosen entry to its details and its press; a click chooses, a second does what it does', () => {
-  const panel = islandPanelOf(ISLAND, true, FACTS);
-  const { ui, step } = fakeInterface(1280, 720);
-  let chosen: string | null = null;
-  const acted: IslandEntry[] = [];
-  const acts = {
-    choose: (id: string) => void (chosen = id),
-    act: (entry: IslandEntry) => void acted.push(entry),
-    back: () => undefined,
-  };
-  const root = () => islandPanelNode(ui, panel, chosen, null, acts);
-  step(root);
-  const shown = root();
-  assert.ok(byId(shown, 'island:act:overlook-social'), 'the first open while none is chosen');
-  assert.equal(byId(shown, 'island:act:saltgrass-downs'), undefined);
-  assert.ok(wordsIn(shown).includes('Weaponsmith, Postmaster, the houses'));
-  const click = (id: string) => {
-    const box = ui.boxOf(id);
-    assert.ok(box, id);
-    const spot = { x: box.x + 4, y: box.y + 4 };
-    step(root, [
-      { kind: 'pointer', ...spot },
-      { kind: 'down', ...spot, button: 0 },
-      { kind: 'up', ...spot, button: 0 },
-    ]);
-  };
-  click('island:saltgrass-downs');
-  assert.equal(chosen, 'saltgrass-downs');
-  step(root);
-  click('island:act:saltgrass-downs');
-  assert.deepEqual(
-    acted.map((entry) => entry.id),
-    ['saltgrass-downs'],
-  );
-  chosen = 'burned-mill';
-  step(root);
-  assert.equal(byId(root(), 'island:act:burned-mill')?.disabled, true, 'a locked place’s press is dim');
+test('the grid lays even tiles with room between them, up to five a row, three rows to the view', () => {
+  assert.deepEqual(gridOf(1280, 720), { columns: 4, tile: { width: 294, height: 186 } });
+  assert.deepEqual(gridOf(1920, 1080), { columns: 5, tile: { width: 340, height: 220 } });
+  assert.deepEqual(gridOf(700, 720).columns, 2);
+  assert.equal(gridOf(1280, 500).tile.height, 176, 'never shorter than its details need; the grid scrolls');
 });
 
-test('Enter does the chosen entry’s press, the first’s with none chosen: a landing, the dungeon’s card, the Playlist', () => {
+/** The tiles laid on a 1280 by 720 view: what a click on `id` did, and what it chose on its way. */
+function clicked(id: string, chosen: string | null = null) {
+  const panel = islandPanelOf(ISLAND, true, FACTS);
+  const { ui, step } = fakeInterface(1280, 720);
+  const heard: string[] = [];
+  const acts = {
+    choose: (entry: string) => void heard.push(`choose ${entry}`),
+    act: (entry: IslandEntry) => void heard.push(`act ${entry.id}`),
+    back: () => void heard.push('back'),
+  };
+  let node = islandPanelNode(ui, panel, chosen, null, acts);
+  const root = () => (node = islandPanelNode(ui, panel, chosen, null, acts));
+  step(root);
+  const box = ui.boxOf(id);
+  assert.ok(box, id);
+  const spot = { x: box.x + 4, y: box.y + 4 };
+  step(root, [
+    { kind: 'pointer', ...spot },
+    { kind: 'down', ...spot, button: 0 },
+    { kind: 'up', ...spot, button: 0 },
+  ]);
+  return { heard, node, ui };
+}
+
+test('every tile is the same size, and a click on one does what it does, the Playlist’s opening the Playlist', () => {
+  const { node, ui, heard } = clicked('island:overlook-playlist');
+  assert.ok(heard.includes('act overlook-playlist'), heard.join());
+  const sizes = new Set(
+    ['island:island', 'island:overlook-social', 'island:saltgrass-downs', 'island:maw', 'island:tern-strand'].map(
+      (id) => `${ui.boxOf(id)?.width}x${ui.boxOf(id)?.height}`,
+    ),
+  );
+  assert.deepEqual([...sizes], ['294x186']);
+  const [port, playlist] = [ui.boxOf('island:overlook-social'), ui.boxOf('island:overlook-playlist')];
+  assert.ok(port && playlist && playlist.x - (port.x + port.width) === 16, 'room between each');
+  assert.ok(wordsIn(node).includes('Weaponsmith, Postmaster, the houses'), 'each tile shows its details whole');
+  assert.ok(byId(node, 'island:back'));
+});
+
+test('a shut tile does nothing; the pointer on a tile lights it for Enter', () => {
+  assert.deepEqual(
+    clicked('island:burned-mill').heard.filter((said) => said.startsWith('act')),
+    [],
+  );
+  assert.deepEqual(clicked('island:maw').heard, ['act maw', 'choose maw'], 'once');
+  assert.deepEqual(
+    clicked('island:maw', 'maw').heard.filter((said) => said.startsWith('choose')),
+    [],
+    'lit already',
+  );
+});
+
+test('Enter does the lit tile’s press, the first’s with none lit: a landing chosen first, the dungeon’s card, the Playlist', () => {
   const done: string[] = [];
   let chosen: string | null = null;
   const screen = islandScreen({
@@ -182,7 +202,10 @@ test('Enter does the chosen entry’s press, the first’s with none chosen: a l
     chosen: () => chosen,
     facts: () => ({ activities: DRAWN, gates: null }),
     named: (id) => id,
-    choose: (id) => void (chosen = id),
+    choose: (id) => {
+      chosen = id;
+      done.push(`choose ${id}`);
+    },
     back: () => undefined,
     does: {
       land: (id) => void done.push(`land ${id}`),
@@ -195,5 +218,11 @@ test('Enter does the chosen entry’s press, the first’s with none chosen: a l
   screen.act('overlook-playlist');
   screen.act('burned-mill');
   screen.act('nowhere');
-  assert.deepEqual(done, ['land overlook-social', 'dungeon krakens-grotto', 'playlist overlook']);
+  // The flow lands only at the node chosen, so a landing chooses its node first.
+  assert.deepEqual(done, [
+    'choose overlook-social',
+    'land overlook-social',
+    'dungeon krakens-grotto',
+    'playlist overlook',
+  ]);
 });

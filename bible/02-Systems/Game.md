@@ -653,14 +653,15 @@ be resumed.
 
 Landing flies the view up over the island the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s, framed on
 the nodes of its side, the city's social space among them when docking; the ship heaves to, its voyage kept to be
-resumed. No node is marked on the map: the island's panel holds them ([[Interface]], "The island's panel",
-`islandPanel.ts`, `islandWords.ts`). Docked, it holds the port's snapshot and the Playlist's banner, then every patrol
-zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. An entry chosen opens
-to its details and its press: a place lands there (the player stands at its first spawn, facing inland from the ship, or
-at a social space out from its landmark over the city, as on arriving); an Elite Dungeon opens its card to go in from
-the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. A second click on the entry chosen,
-or Enter, does what its press does, the first entry's while none is chosen. Escape, or the panel's Back to the sea,
-flies back down.
+resumed. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
+`islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]), even rectangles in a grid with space between them. First the
+island's own, with its chart and Back to the sea; docked, the port's snapshot and the Playlist's banner; then every
+patrol zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. A click on a
+tile does what it does: a place lands there (the player stands at its first spawn, facing inland from the ship, or at a
+social space out from its landmark over the city, as on arriving), choosing its node first; an Elite Dungeon opens its
+card to go in from the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. Enter does what
+the lit tile does (the one under the pointer or the focus, else the first place's). Escape, or Back to the sea, flies
+back down.
 
 A sea island's landing sails round to its anchorage and the player walks ashore on its beach, into its room
 ([[Islands]], "On the page"). A player washed up on a found island walks ashore there.
