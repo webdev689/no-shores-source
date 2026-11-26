@@ -109,7 +109,8 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   saves the character so taken, carrying the errand, and asks the accounts under an id of its own: asked again, the
   accounts answer as they did, so nothing is done or given back twice; it is asked again until they answer. What
   comes back reaches the character once wherever it went meanwhile: the room that next holds it asks again and gives
-  it there. A player has one such ask with the accounts at a time.
+  it there. An account has one such ask with the accounts at a time, its player joining again included; the Horn's
+  answer, never carried, leaves any errand the character carries to its own answer.
 - **The guild boss.** The War Horn, sounded once a week by the founder or an admin (the accounts answer its tier, 0
   when it sounded this week, -1 for one who may not sound it, -2 when none stands at a tier, -3 past the account's
   outpost limit), calls a High Assessor and four Majors to the muster ground beyond the plot, at the level of the

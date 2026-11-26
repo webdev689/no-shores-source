@@ -22,6 +22,8 @@ export type UiEvent =
       readonly still?: boolean;
     }
   | { readonly kind: 'leave' }
+  /** A press the browser took back (a touch or a pen's gesture): let go, but neither a click nor a drop. */
+  | { readonly kind: 'cancel' }
   | {
       readonly kind: 'down' | 'up';
       readonly x: number;

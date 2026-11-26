@@ -25,6 +25,8 @@ export interface DeckSea {
   readonly own: number;
   readonly rejoining: boolean;
   readonly lost: string | null;
+  /** Whether the sea has gone unheard so long that what the page sends waits for its word. */
+  readonly quiet?: boolean;
   readonly gear: Pick<RoomLink, 'trim' | 'arms' | 'arts'>;
   readonly flotsam: readonly SeenFlotsam[];
   hearDeck: ((snapshot: Snapshot) => void) | null;
@@ -43,6 +45,9 @@ export function deckLink(sea: DeckSea, boarder: number): RoomLink {
     },
     get lost() {
       return sea.lost;
+    },
+    get quiet() {
+      return sea.quiet === true;
     },
     send: (bytes) => sea.sendDeck(bytes),
     pump: () => undefined,

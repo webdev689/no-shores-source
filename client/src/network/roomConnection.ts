@@ -44,12 +44,24 @@ export interface RoomLink {
   readonly resend?: number;
   /** Told each input's number as it is sent, for a link that measures its lag (`linkMeasure.ts`). */
   readonly inputSent?: (sequence: number) => void;
+  /** Whether the room has gone unheard so long that a tick's input should wait for it (`UNHEARD_MOST`); none on a
+   *  link that cannot stall. */
+  readonly quiet?: boolean;
 }
+
+/** The most messages a page sends a room it has not heard from since: two seconds of inputs. A stalled network holds
+ *  back what is sent meanwhile and lets it all through at once when it resumes, and past the room's budget a second
+ *  (server/budget.ts) the room would send the player away for good. */
+export const UNHEARD_MOST = 120;
 
 /** Opens a WebSocket to a room's address: the browser's own, or a test's stand-in. */
 export type Connect = (url: string) => WebSocket;
 
-/** Seconds before the next try to rejoin, after `tries` tries since the room last welcomed the player: 1, 2, 4, 8,
+/** How long a join must hold before the waits between tries start over: a room that welcomes the player and soon sends
+ *  them off (its accounts not answering) is tried again ever more slowly, not every second. */
+export const HELD_MS = 60_000;
+
+/** Seconds before the next try to rejoin, after `tries` tries since a join last held: 1, 2, 4, 8,
  *  then 15 at most. */
 export function rejoinWait(tries: number): number {
   return Math.min(15, 2 ** tries);
@@ -123,9 +135,13 @@ export class RoomConnection implements RoomLink {
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
   private tries = 0;
+  /** When the room welcomed the player on the socket open now, by the page's clock; null for a try not welcomed. */
+  private welcomedAt: number | null = Date.now();
   private closed = false;
   private readonly measure = new LinkMeasure();
   private waiting: ReturnType<typeof setTimeout> | null = null;
+  /** Messages sent since the room was last heard. */
+  private unheard = 0;
   /** The last welcome, until a snapshot after it carries its dresses and plates on. */
   private welcomeUnheard: Welcome | null = null;
 
@@ -193,6 +209,9 @@ export class RoomConnection implements RoomLink {
 
   /** Once `socket` closes, unless the page closed it or the room sent the player away, tries again after a wait. */
   private watch(socket: WebSocket): void {
+    socket.addEventListener('message', () => {
+      if (socket === this.socket) this.unheard = 0;
+    });
     socket.addEventListener('close', (event) => {
       if (socket !== this.socket || this.closed) return;
       if (SENT_AWAY.includes(event.code) || event.code === SHUT || event.code === ELSEWHERE) {
@@ -201,6 +220,9 @@ export class RoomConnection implements RoomLink {
         return;
       }
       this.rejoining = true;
+      // Only a socket welcomed and held starts the waits over; a try that failed keeps them growing.
+      if (this.welcomedAt !== null && Date.now() - this.welcomedAt >= HELD_MS) this.tries = 0;
+      this.welcomedAt = null;
       this.waiting = setTimeout(() => this.rejoin(), rejoinWait(this.tries++) * 1000);
     });
   }
@@ -227,7 +249,7 @@ export class RoomConnection implements RoomLink {
     if (this.session !== null) socket.send(this.session);
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     [this.plates, this.welcomeUnheard] = [welcome.plates, welcome];
-    [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
+    [this.joins, this.welcomedAt, this.rejoining] = [this.joins + 1, Date.now(), false];
     this.measure.clear();
   }
 
@@ -247,7 +269,14 @@ export class RoomConnection implements RoomLink {
   /** Sends one tick's input bytes; while the socket is not open, or a rejoin's socket is open but not yet welcomed,
    *  nothing is sent: an input numbered for the last join would be out of order in the new one. */
   send(bytes: Uint8Array<ArrayBuffer>): void {
-    if (!this.rejoining && this.socket.readyState === WebSocket.OPEN) this.socket.send(bytes);
+    if (this.rejoining || this.socket.readyState !== WebSocket.OPEN) return;
+    this.socket.send(bytes);
+    this.unheard += 1;
+  }
+
+  /** Whether the room has gone unheard for `UNHEARD_MOST` messages: what the page sends next waits for its word. */
+  get quiet(): boolean {
+    return this.unheard >= UNHEARD_MOST;
   }
 
   /** The link's lag and loss as the page measures them. */

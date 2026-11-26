@@ -214,6 +214,15 @@ fn used(room: &mut Room, player: PlayerId, point: usize) -> u8 {
 }
 
 #[test]
+fn a_fallen_player_lights_no_puzzle_point() {
+    let (mut room, player, _, puzzle) = puzzle();
+    let order = puzzle.order.clone().expect("an order");
+    room.players.get_mut(&player).expect("in").fighter.action = combat::Action::Dead { elapsed: 0 };
+    assert_eq!(used(&mut room, player, order[0]), OUT_OF_REACH);
+    assert_eq!(room.step_seen(player).points[order[0] * 3 + 2], 0.0, "not lit");
+}
+
+#[test]
 fn a_puzzles_points_are_used_in_order_and_a_wrong_one_puts_them_out_and_stops_uses_2_4_then_8_s() {
     let (mut room, player, key, puzzle) = puzzle();
     let points = room.step_seen(player).points;

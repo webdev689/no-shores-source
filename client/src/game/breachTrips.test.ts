@@ -28,17 +28,20 @@ const RUN = 'node-gullwing-vale--breach-hard--run-k3j4h5g6';
 function tripsOn(foot: { node: NodeInfo; run: InBreach | null }, answer: number | null) {
   const [went, asked, told] = [[] as string[], [] as GearAsk[], [] as string[]];
   let gear = { answered: 3, answer: 0 } as GearState;
+  const gearOf = (state: () => GearState) => ({
+    get gear() {
+      return state();
+    },
+    ask: (ask: GearAsk) => {
+      asked.push(ask);
+      if (answer !== null) gear = { ...gear, answered: gear.answered + 1, answer };
+    },
+  });
+  let standing = { ...foot, gear: gearOf(() => gear) };
+  /** The player moved on to another room, whose word on their gear has answered something else. */
+  const movedOn = () => (standing = { ...foot, gear: gearOf(() => ({ ...gear, answered: 99, answer: 0 })) });
   const trips = breachTrips({
-    foot: () => ({
-      ...foot,
-      gear: {
-        gear,
-        ask: (ask: GearAsk) => {
-          asked.push(ask);
-          if (answer !== null) gear = { ...gear, answered: gear.answered + 1, answer };
-        },
-      },
-    }),
+    foot: () => standing,
     travel: (happening: Happening, work: () => Promise<void>) => {
       went.push(`${happening.kind} ${'name' in happening ? happening.name : ''}`);
       void work();
@@ -51,7 +54,7 @@ function tripsOn(foot: { node: NodeInfo; run: InBreach | null }, answer: number 
     tell: (words) => void told.push(words),
     wait: () => Promise.resolve(),
   });
-  return { trips, went, asked, told };
+  return { trips, went, asked, told, movedOn };
 }
 const settle = () => new Promise((done) => setTimeout(done, 5));
 
@@ -85,6 +88,16 @@ test('a gate shut to the player, too far from it or silent says so, as the serve
   assert.deepEqual(await tried(GATE_SHUT), ['The Sunken Gate has not opened to your company.']);
   assert.deepEqual(await tried(OUT_OF_REACH), ['Too far from the gate.']);
   assert.deepEqual(await tried(null), ['The gate did not answer. Try again.']);
+});
+
+test("a gate's answer is read only where it was asked: moved on meanwhile, another room's word goes unheard", async () => {
+  const { trips, went, told, movedOn } = tripsOn({ node: zone, run: null }, null);
+  trips.toGate(RUN);
+  await settle();
+  trips.enterBreach();
+  movedOn();
+  await settle();
+  assert.deepEqual([went.length, told], [2, []]);
 });
 
 test('out of the run the player goes back to its gate in its company; a member in a run is joined there', async () => {

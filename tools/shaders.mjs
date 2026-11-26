@@ -5,11 +5,10 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { shaderCalls } from './shaderCalls.mjs';
 
 const CLIENT = 'client';
 const OUT = join('target', 'shaders');
-const CALL = /createShaderModule\(\s*\{\s*code:\s*([^,}\n]+?)\s*[,}]/g;
-const NAMED = /^([A-Za-z_]\w*)(\[[^\]]+\])?$/;
 
 const sources = (folder) =>
   readdirSync(folder, { withFileTypes: true }).flatMap((entry) => {
@@ -30,12 +29,13 @@ const problems = [];
 const shaders = new Map();
 for (const file of sources(CLIENT)) {
   const text = readFileSync(file, 'utf8');
-  for (const call of text.matchAll(CALL)) {
-    const line = text.slice(0, call.index).split('\n').length;
-    const [, name] = NAMED.exec(call[1]) ?? [];
+  for (const call of shaderCalls(text)) {
+    const { line, name } = call;
     const exporter = name ? exporterOf(file, text, name) : null;
     if (!name || !exporter) {
-      problems.push(`${file}:${line}: the shader's code (${call[1]}) is not an exported constant this can read`);
+      problems.push(
+        `${file}:${line}: ${call.problem ?? `the shader's code (${call.code}) is not exported where it is made`}`,
+      );
       continue;
     }
     shaders.set(`${relative(CLIENT, exporter)}#${name}`, { exporter, name, at: `${file}:${line}` });

@@ -20,7 +20,7 @@ decision, made in the same change as its entry here.
 | `client/src/canvasSize.ts` | A canvas's drawing buffer in device pixels, from its size on the page and the screen's pixel ratio, for every page's canvas |
 | `client/src/editorPage.ts` | The [[World Editor]]'s entry point: offers the editor a fleet room, through the combat layer, when its address carries `?room=`, and the game's drawing of the captains' plates, then starts it |
 | `client/src/game/` | The game layer: the [[Game]]'s flow from arriving to landing, on foot in a node, at sea in the [[Overworld]] (its close views sizing the ship and easing its pace to its true speed, `seaLaw.ts`), the scene every drawer draws into, and the heads-up display |
-| `client/src/game/audio/music/` | The [[Music]]: the FM voice bank, the song player, the score format with its layer roles, the scores (the sea's six songs and the three boss scores), and the director that plays them as danger nears, with what it hears of the game on foot and at sea |
+| `client/src/game/audio/music/` | The [[Music]]: the FM voice bank, the song player, the score format with its layer roles, the scores (the sea's songs and fights, each climate's, Overlook's, the story's, the boss scores and the Drowned Vale's), the recorded instruments played as voices (`sampled.ts`), and the director that plays them as danger nears, with what it hears of the game on foot and at sea |
 | `client/src/game/audio/ambience/ambience.ts`, `player.ts`, `graph.ts` | The [[Ambience]] the game calls each frame on foot and at sea, one place sounding, and its nodes: rooms, beds' ways out and calls' chains |
 | `client/src/game/audio/ambience/scapes.ts`, `law.ts`, `places.ts`, `recordings.ts` | The eleven ambiences as data, the recording each bed and call plays, and the pure laws: place to ambience, the time of day, breathing and gusts, call gaps, crossfades, and where each call stands |
 | `client/src/game/audio/ambience/dsp.ts` | The seeded die and the filters a place's room is cut from |
@@ -182,7 +182,7 @@ decision, made in the same change as its entry here.
 | `tools/freesound/` | Finds candidate sounds on Freesound's public pages for the cues in `content/audio/freesound.json`, on GitHub's machines (the `freesound` workflow), and publishes the owner's picks to R2 with their credits ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the workflow runs on each push that changes the cue list, `tools/freesound/` or itself, cuts long picks and stages the picks for R2 in a job that holds no key, keeping the game's `sounds.json` in its download for a commit to take in, and uploads them in a second job that holds the repository's `CLOUDFLARE_TOKEN` |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
 | `tools/numbered.json` | The content whose entries cross the wire by their place in its lists, which the protocol's version hashes |
-| `tools/shaders.mjs` | Writes out every shader the client compiles, for the check to validate ([[Checks]]) |
+| `tools/shaders.mjs`, `tools/shaderCalls.mjs` | Writes out every shader the client compiles, for the check to validate, each read from the call that compiles it ([[Checks]]) |
 | `tools/uiShot.mjs` | Pictures of the interface the game draws, headless, through the real renderer ([[Interface]]) |
 | `tools/wireSizes.mjs` | Measures what the rooms send a player, raw and deflated as the WebSocket sends it |
 | `tools/lattice/` | The [[Lattice]] drawn whole in Blender: each foe's body and moves, the death wave, its props, the growth and the armoury, rendered by the `lattice` workflow's jobs and laid into the forge's tables (`tools/test_forge_lattice.py` checks how) |
@@ -190,7 +190,7 @@ decision, made in the same change as its entry here.
 | `tools/meadow/` | Writes the owner's meadow sprites into the client as pixel pictures ([[Meadow]]) |
 | `tools/forgedParts.mjs` | Writes the boxes each forged prop's drawn shape fills into `content/forged/parts.json` ([[Forged Models]]) |
 | `bible/` | This vault |
-| `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `rooms.yml` to deploy the rooms when their code changed and then `pages.yml` to publish the client to GitHub Pages once the rooms deployed or had nothing to, while that commit is still `main`'s head; actions are pinned by commit |
+| `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `rooms.yml` to deploy the accounts and the rooms when their code changed, then `pages.yml` and `site.yml` to publish the client to GitHub Pages and the site, once the rooms deployed or had nothing to, while that commit is still `main`'s head, and `bot.yml` to deploy the Discord bot; actions are pinned by commit |
 
 ## The client's layers
 
@@ -244,8 +244,8 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   alone or predicting its ship in a fleet, reading a node's baked file, an island's word and the layout with
   `combat`, `dungeon`, `foes`, `gear`, `isle`, `land`, `movement`, `naval`, `passage`, `protocol`, `room`, `sailing`,
   `sky`, `world`, `serde` and `serde_json`.
-- **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `layout`, `world`, `serde`
-  and `serde_json`.
+- **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `dungeon`, `land`, `layout`,
+  `world`, `serde` and `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
   `world-wasm`, `land-wasm` and `movement-wasm`, which put the world rules, the land with its city (`city`) and a
   ship sailing and fighting over it, and movement on a window of the land behind WebAssembly doors for the browser;

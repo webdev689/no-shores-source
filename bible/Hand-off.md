@@ -48,8 +48,9 @@ its system note.
 - **The [[Prologue]]**: the intro to Saltmere, the storm, creation, the sea fight, the wreck that opens by teaching the
   player, the deep and the shore, the Brig's crew regrouping ahead ([[The Crew Still Standing Regroup Ahead]]); the
   wreck built and published by its workflow.
-- **[[Music]] and [[Ambience]]**: every sound the owner's Freesound pick but the four synthesised ones kept; recordings
-  load as wanted, held once within 192 MB and kept in the browser's storage.
+- **[[Music]] and [[Ambience]]**: every sound the owner's Freesound pick but the four synthesised ones kept, the steps
+  DFO's own, and four of the horse's cues (in water, and the boost on stone) unpicked, each playing its gait's on the
+  ground (#206); recordings load as wanted, held once within 192 MB and kept in the browser's storage.
 - **The [[Interface]] without HTML**, held by the `html` check; the game in a worker of its own ([[Game]]); the
   network packed and sent as changes; an error in a frame no longer stops the game's loop.
 - **Keys and the pad**: every control rebound and kept with the account, the pad played as Destiny's, the key strip
@@ -225,6 +226,23 @@ The decisions in [[Open Questions]] are not repeated here.
   [[Passages as Claude Builds Them]]; how it works in [[Passages]]. With it, on the owner's "Retune both into band",
   the sea's low bands send fewer Minor ships and the week's Abyss Dungeon run again pays four fifths
   ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]).
+- **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
+  accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
+  issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
+  review of the whole diff, every fix with a test shown failing first but two (the PR says which and why). Among them: a
+  stalled network that resumes no longer gets the player sent away (`UNHEARD_MOST`); a sinking pays a player fighting on
+  a boarded deck for good; the chat never sends a line as though no one blocked its speaker; a company's kick and lead,
+  an outpost's Horn and deposit, a second socket of one account, sea keys let go over the interface, `pointercancel`,
+  the rejoin waits, the Breach gate's answer and the travel's wait; and the repo checks' gaps the last hand-off listed,
+  but `.after(`/`.before(` and a style held under another name. Then, on the owner's "Audit this", four more read-only
+  audits of the PR itself (its rules and checks, server, page and notes), each finding fixed with a test that failed
+  first: the sea fight's presses held, not dropped, while the room is quiet; the older socket's mail posted before its
+  body is taken on; a boarder's pay judged by the ship as it stands now; the story fight's aim let go under the
+  controls sheet; the checks' false refusals of a plain `className` and the verb "issue". Tested offline; CI's full
+  check on the PR's head. Left for the owner, in the PR: three workflow changes (`site.yml` by hand, the Lattice's
+  concurrency group, `forge.yml`'s paths), the foes' fall-back with no way out, a shot loosed inside a cliff, the
+  city's picture cache's budget, and the hold's blind spot: an upload held up while the room's snapshots still come
+  in.
 - **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
   the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
   each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
@@ -344,17 +362,17 @@ The decisions in [[Open Questions]] are not repeated here.
     the same perks at a Forged grade, about half again, and Hard armour is named "(Forged)"; the numbers are Claude's,
     in [[Gear as Claude Shapes It]].
   - **Its sound** ([[The Drowned Vale Has Its Own Music and Ambience From Freesound]]): each space of the run heard as
-    its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key,
-    tempo and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is
-    picked. All 74 of its cues are picked by the owner, on two sound sheets
-    (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ, then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for
-    the cues marked None, those the first search missed, and single held notes for the piano, drone, low choir and
-    timpani on the owner's "Search for single notes"); in #208, merged (CI run 1119 on main passed), published to R2 by freesound runs 171
-    and 175. Each of the 14 pitched music picks has a measured root; the low choir's pick moves, and is rooted at its
-    centre on the owner's "Use it as it is". To change a pick: write its `picked` into
-    `content/audio/freesound.json`, measure a pitched one's root with `tools/freesound/root.py` (and check it against
-    the preview's partials) and write it on its cue, push so the freesound workflow publishes it, and take
-    `sounds.json` from that run's artifact; a search keeps to two common words (Freesound matches every word).
+    its own, every moment its own recording, and scores of its own (a theme in D Phrygian, each encounter's key, tempo
+    and colour, the great foes' phases, three calm pieces), played on the synthesiser until each instrument is picked.
+    All 74 of its cues are picked by the owner, on two sound sheets (https://claude.ai/artifact/C27iZzAUXXrW7efC5NPZJZ,
+    then https://claude.ai/artifact/Fwsh8WxxjWBtWsuJhsw6Kx for the cues marked None, those the first search missed, and
+    single held notes for the piano, drone, low choir and timpani on the owner's "Search for single notes"); in #208,
+    merged (CI run 1119 on main passed), published to R2 by freesound runs 171 and 175. Each of the 14 pitched music
+    picks has a measured root; the low choir's pick moves, and is rooted at its centre on the owner's "Use it as it is".
+    To change a pick: write its `picked` into `content/audio/freesound.json`, measure a pitched one's root with
+    `tools/freesound/root.py` (and check it against the preview's partials) and write it on its cue, push so the
+    freesound workflow publishes it, and take `sounds.json` from that run's artifact; a search keeps to two common words
+    (Freesound matches every word).
   - **Its fidelity**: the run's own underground sky and its pieces' lamps (its floors measured to read, at sRGB 0.12
     and over), the shores drawn only while in play, the dark's fade, stained glass, water, idle bells, chests that
     read as payable, the gate's void; and its pieces made solid where they look it (the court, the rifts' walls, the
@@ -494,7 +512,7 @@ The decisions in [[Open Questions]] are not repeated here.
   answers it; the accounts keep every errand's answer for good, one row an errand; the guild boss is lost if everyone
   leaves its room before it falls; a member can push older ledger lines out with many small deposits, each line naming
   who moved it; the banner cloth takes no sky light, so it reads pale at night.
-- **Every objective has a waypoint on the compass, on land and at sea**, for the owner's yes to merge, on the owner's
+- **Every objective has a waypoint on the compass, on land and at sea** (#193, merged), on the owner's
   "for any and all objectives we need to utilize waypoints utilizing our compass with land and sea, I dont want players
   to feel lost" and their four answers ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]]; Claude's
   calls in [[Waypoints as Claude Builds Them]]). A playtester on "Tail a collector" did not know what to do: the step
@@ -504,7 +522,7 @@ The decisions in [[Open Questions]] are not repeated here.
   "Hold M to return to your ship" or "Sail to" under the step; a goal with no zone of its own at the nearest place to
   do it; one done anywhere says so. The distance stands under the compass's diamond, and the tracker shows the quest
   at sea. No rules change. Tested offline; not seen in the game or played.
-- **A foe's plain swing at seven eighths of its time**, for the owner's yes to merge, on the owner's "We recently
+- **A foe's plain swing at seven eighths of its time** (#190, merged), on the owner's "We recently
   adjusted parry timing and actually made it harder where I wanted to make it slighty easier"
   ([[A Foe's Plain Swing Takes Seven Eighths of Its Time]]). The longer parry window (15 ticks) forgave only an early
   press; the swings made a quarter faster had sped foes' swings too, so a foe's sword blow landed 0.3 s after its
@@ -576,8 +594,8 @@ The decisions in [[Open Questions]] are not repeated here.
   owner: the bake may now read the dungeon crate's families (`crates.rs`'s list for `bake` gains `dungeon`); the
   chest's source in DFO is named `Low_Poly_Chest_Mimic.fbx`, recorded there as the owner's supplied model; and the
   `modules` workflow bakes on this branch with the four Blender chests taken out of the manifest by hand.
-- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, a draft for
-  the owner's yes). The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
+- **Revives, respawns near the fall or at a checkpoint, and logging back in where the player left** (#184, merged).
+  The owner's three asks ([[Fallen Players Are Revived as in Destiny]],
   [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]],
   [[A Player Logs Back In Where They Left the Overworld or a Social Space]]), built on "take autonomy", every call in
   [[Revives, Respawns and Relogs as Claude Shapes Them]] with the Destiny research behind it ([[Revives]], [[Accounts]],
@@ -694,26 +712,25 @@ The decisions in [[Open Questions]] are not repeated here.
   - Tested offline only. Left: ships start and stop at 60 m/s at once (they no longer lie on one point at a
     roadstead: each course has berths of its own, below); some retaining walls near Overlook's plaza may be dropped
     whole (low confidence, the seam audit's).
-- **#163's follow-up, the patrol audit and its leftovers** (#170, a draft for the owner's yes once its checks pass;
-  main merged in up to #177). The owner's solid red patrol screen was the death veils piling up under a frame that
-  threw before it presented; each frame now starts with none. What threw is still unknown: the owner's browser
-  console names it (`FrameGuard` logs each error once). The owner's "Can you do a deep audit on patrols and ensure its
-  clean" found and fixed the landing's leave lost to inert, fallen or stale foes, every foe told every swing, the
-  section's dead still a target, the tithe-taker and the growth killed by foes, a second event chest and entrances on
-  boxes. Then "Fix everything": each call put to the owner and fixed as answered
-  ([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]], with Claude's calls): the landing's officers left be
-  and only chases started there going on; blows at others passing a spared player by; a half-fallen patrol group made
-  whole as Destiny does; foes standing at the caverns' and runs' sites (`stands.rs`, lazily within 150 m and none
-  within 40 m); an escort's ambush dropping nothing again; the server checking a dungeon's way out; a locked patrol
-  refused alone. Every recorded risk is fixed, the layouts' by a worker (every walked line inside its section, the
-  rock beside ramparts out, caverns on quarters, building runs ramped short of their place's middle). Each moved pin
-  is attributed in its commit; the page's bots now lose the raid's stores at its pinned minute, which a 12-minute
-  sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the owner: whether
-  sections may overlap (4.2 m, highwater-fells and
-  wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first stand bakes its
-  navmesh a slice a tick (15 to 19 ms at most natively, #203); room memory with every site stood unmeasured; a
-  cavern over 4 m below the surface unchecked for followers' places; the page's bots fail about 10 of 12 heroic raids
-  either way.
+- **#163's follow-up, the patrol audit and its leftovers** (#170, merged, with main merged in up to #177). The owner's
+  solid red patrol screen was the death veils piling up under a frame that threw before it presented; each frame now
+  starts with none. What threw is still unknown: the owner's browser console names it (`FrameGuard` logs each error
+  once). The owner's "Can you do a deep audit on patrols and ensure its clean" found and fixed the landing's leave lost
+  to inert, fallen or stale foes, every foe told every swing, the section's dead still a target, the tithe-taker and the
+  growth killed by foes, a second event chest and entrances on boxes. Then "Fix everything": each call put to the owner
+  and fixed as answered ([[The Patrol Audit's Leftovers Are Fixed as the Owner Chose]], with Claude's calls): the
+  landing's officers left be and only chases started there going on; blows at others passing a spared player by; a
+  half-fallen patrol group made whole as Destiny does; foes standing at the caverns' and runs' sites (`stands.rs`,
+  lazily within 150 m and none within 40 m); an escort's ambush dropping nothing again; the server checking a dungeon's
+  way out; a locked patrol refused alone. Every recorded risk is fixed, the layouts' by a worker (every walked line
+  inside its section, the rock beside ramparts out, caverns on quarters, building runs ramped short of their place's
+  middle). Each moved pin is attributed in its commit; the page's bots now lose the raid's stores at its pinned minute,
+  which a 12-minute sweep puts down to that one minute. Tested offline; the full check's result is in #170. Left for the
+  owner: whether sections may overlap (0.3 m new on continent 2, greystone-tors and hollow-crypt; 4.2 m before,
+  highwater-fells and wreckwood); none of Saltmere's landings has a boardwalk, why unchecked. Risks: a site's first
+  stand bakes its navmesh a slice a tick (15 to 19 ms at most natively, #203); room memory with every site stood
+  unmeasured; a cavern over 4 m below the surface unchecked for followers' places; the page's bots fail about 10 of 12
+  heroic raids either way.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
@@ -760,11 +777,10 @@ The decisions in [[Open Questions]] are not repeated here.
     [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]: only the garrison's
     own kills share its clear; a failed trip from a beach, played alone, goes back to it; Branches and Merging says
     merge, not rebase and squash, and the `built` notes are `live` (Claude's calls).
-- **#169, the owner's gear calls, built whole**, a draft. The owner: "I dont want to merge until everything is
-  finished. Focus on getting this to 100% and stop depending on me"
-  ([[Claude Finishes the Gear Calls on Its Own Word]]). Every call is built; what is left is the owner's yes to merge
-  and one forge run (below). Tested offline with `cargo xtask check` on each pushed head, green but for the four R2 ship-mesh tests this container cannot
-  fetch; CI green on each head it finished.
+- **#169, the owner's gear calls, built whole**, merged. The owner: "I dont want to merge until everything is finished.
+  Focus on getting this to 100% and stop depending on me" ([[Claude Finishes the Gear Calls on Its Own Word]]). Every
+  call is built; one forge run is left (below). Tested offline with `cargo xtask check` on each pushed head, green but
+  for the four R2 ship-mesh tests this container cannot fetch; CI green on each head it finished.
   - The owner's calls, in their words ([[Everything Carries a Set Name, and Perks Roll by Pool]] and the decisions it
     links), and every perk in the game approved ("All approved": [[Every Perk Stands, the Factions' Nine With Them]];
     the review page the owner marked: https://claude.ai/artifact/Jtfdq4zJyoUsQdsJqWgA4y).
@@ -790,9 +806,9 @@ The decisions in [[Open Questions]] are not repeated here.
     this container cannot fetch, before the repo checks: run `cargo xtask repo` beside it.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
-  with `main` in `roomThread.test.ts`). Drafts:
-  #169 (the owner's gear calls), #178 (the balance and economy pass), #179 (guilds), #93 (the toolkit's first
-  review) and #114 (the gear message carries the pledge once).
+  with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first review) and #114 (the gear message carries
+  the pledge once); and other sessions' work under way: #204 (Passages), #211 (foes by airship and crown, varied
+  patrols), #216 (the Playlist's nodes in more detail, and moving).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
@@ -1017,8 +1033,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The encounters' headless run's WebGPU error** ("Instance range ... requires a larger buffer (28) than the bound
   buffer size (24) ..."): the dungeon entrances' instance, fixed by #155 (f895eb80); the error it hid, the entrances
   drawing with no sky groups bound, is #180's first fix. Neither is yet pictured on a node. The dungeon picture driver
-  (`tools/claude-toolkit/dungeon-plan.ts`) waits for an HTML "Enter" prompt the game now draws in its worker, so it
-  cannot picture a dungeon until it waits on the game's own word.
+  (`tools/claude-toolkit/dungeon-plan.ts`) waits on the game's own drawn "Enter" through `__ui()`; a dungeon has not
+  been pictured with it since.
 - **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
@@ -1098,8 +1114,7 @@ The decisions in [[Open Questions]] are not repeated here.
   reached until they come down.
 - **The houses and looks**: reputation from bounties and activities once they exist; Shape at Sunspire and Rimeholt
   when their social spaces open; a hide and mane mask from the forge for coats (the ride's `_uv` strips are one); the
-  Wraith Mist barding's blank ride strips on R2, a forge re-render ([[Gear]]); the Elite and Abyss tiers' names on the
-  voyage's card (#82).
+  Wraith Mist barding's blank ride strips on R2, a forge re-render ([[Gear]]).
 - **The gear loop**: a signed ticket from the sea room naming the node and the seas a player may join at (the client
   names a voyage's seas now); Breaches, Elite Dungeons and Missions as loot sources; the wardrobe
   ([[Clothing Is Armour, With a Wardrobe Later]]).
@@ -1144,8 +1159,6 @@ The decisions in [[Open Questions]] are not repeated here.
   or more than a fix:
   - A player who opens sockets and never sends fills a room's 16 places (the sea's 64); #122 dismisses unsigned
     ones, but a signed idle player is never let go: whether an idle player is sent away is the owner's call.
-  - A stalled network that resumes sends a second's held inputs at once, past the room's 240 a second, and the room
-    sends the player away for good (`roomConnection.ts`, `budget.ts`).
   - A Guns module's Prestige climbs past Ship Power's caps (the weapon grid's five upgrades), and a ship four levels
     under still burns a captain with heated shot though its balls do nothing: the owner's to say which way each goes.
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
@@ -1157,7 +1170,7 @@ The decisions in [[Open Questions]] are not repeated here.
   - Workflows (#180 adds `content/forged` to `ROOMS_CODE`, which the bake reads); the wreck's and the ships' workflows
     miss inputs they import (`tools/ships`, `shipPictures.ts`); a failed accounts deploy still lets the rooms record
     a deploy and the page publish.
-  - Repo checks that still let things through: `shaders.mjs` reads a shader only when `code:` is its call's first key;
-    the html check misses `.after`/`.before` and `attributeStyleMap`; a Python docstring is found only at a line's
-    start; the assets check misses `.modules` and `.bin`.
+  - Repo checks that still let things through: the html check misses `.after(` and `.before(` (the game has methods
+    of those names, so they need types to tell apart) and an element's style held under another name
+    (`const look = canvas.style;`, where `.style` before `;`, `,` or `)` stands in game code: `hair.style`).
 

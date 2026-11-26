@@ -192,6 +192,8 @@ export class FleetSession {
     const time = this.roomTime(now);
     while (this.owed + 1e-9 >= TICK_SECONDS) {
       this.owed -= TICK_SECONDS;
+      // A room long unheard is sent no orders until it speaks; the presses wait for it.
+      if (this.link.quiet === true) continue;
       const firing = this.fires > 0;
       this.fires = Math.max(0, this.fires - 1);
       const step = Math.sign(this.loadSteps);

@@ -96,6 +96,21 @@ test('a release, a load step, the brace, a burst and the helm go to the rules wi
   assert.deepEqual([asked[1]?.fire, asked[1]?.load, asked[1]?.helm.climb, asked[1]?.boost], [false, null, 0, false]);
 });
 
+test('a room gone quiet is sent no step, and the presses made meanwhile go with the first after it speaks', async () => {
+  const { fights, asked } = source();
+  const hold = { quiet: false };
+  const fighting = await begun({ ...fights, quiet: () => hold.quiet });
+  hold.quiet = true;
+  const look = { bearing: 90, range: 80 };
+  fighting.advance(0.1, { ...IDLE, press: 'w', look, fire: true, loadSteps: 1, boost: true }, 1, failed);
+  await settle();
+  assert.equal(asked.length, 0, 'nothing sent while the room is unheard');
+  hold.quiet = false;
+  fighting.advance(0.1, { ...IDLE, look }, 1.1, failed);
+  await settle();
+  assert.deepEqual([asked[0]?.fire, asked[0]?.load, asked[0]?.helm.climb, asked[0]?.boost], [true, 'grape', 1, true]);
+});
+
 test('one step is with the rules at a time', async () => {
   const { fights, asked } = source();
   const fighting = await begun(fights);
