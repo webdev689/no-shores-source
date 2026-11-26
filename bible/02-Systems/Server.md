@@ -688,7 +688,10 @@ so every decision is Rust and the shell only carries bytes and time.
   judged as each join comes (`refusal`).
 - **Who comes in**: it keeps characters as a node's room does. A public room holds eight accounts (`PASSAGE_MOST`),
   judged as each signs in and again as each is kept, so two signing in together never make nine, and a ninth is
-  closed with 4003 and "This passage is full.", for the page to join the next copy; its sockets are held to sixteen. As in a run, no one plays before the room keeps their character, and it
+  closed with 4003 and "This passage is full.", for the page to join the next copy; nor is one judged full before its
+  character is given to it, so a ninth is never sent it as kept. Its sockets are held to sixteen, and a socket past
+  them is closed with "This passage is full." too (`roomFull`), so the page joins the next copy. A judge of arrivals
+  that throws (the module not laying the web) refuses for now, as accounts that do not answer do. As in a run, no one plays before the room keeps their character, and it
   keeps no one unkept. A route keeps to its company and its four accounts as a run does. A
   company's member taking its route joins the room of a member already in that zone's route, as the page finds it
   among the company's places (`sharedRun`), else the page draws a new instance (`runInstance`).

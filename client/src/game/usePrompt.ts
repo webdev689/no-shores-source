@@ -65,6 +65,7 @@ export class UsePrompt {
   private said: string | null = null;
   private held: number | null = null;
   private idle = false;
+  private under: string | null = null;
 
   /** Whether a deed within reach is shown. */
   get showing(): boolean {
@@ -72,10 +73,12 @@ export class UsePrompt {
   }
 
   /** Shows the deed within reach, or nothing, and how far E has been held for it (0 to 1), or null where it is not
-   *  being held; `idle` words (a refusal, E doing nothing) without a key; a new deed is told aloud, as a status is. */
-  show(deed: string | null, held: number | null = null, idle = false): void {
+   *  being held; `idle` words (a refusal, E doing nothing) without a key; `under` faint words beneath the deed; a new
+   *  deed is told aloud, as a status is. */
+  show(deed: string | null, held: number | null = null, idle = false, under: string | null = null): void {
     this.held = deed === null ? null : held;
     this.idle = idle;
+    this.under = deed === null ? null : under;
     if (deed === this.said) return;
     this.said = deed;
     if (deed !== null) announce(deed);
@@ -87,7 +90,7 @@ export class UsePrompt {
     if (this.said === null) return null;
     const big = view.width >= 1500 && view.height >= 900;
     return {
-      ...promptChip(this.said, this.held, this.idle ? null : boundCap('use')),
+      ...promptChip(this.said, this.held, this.idle ? null : boundCap('use'), this.under),
       id: PROMPT_ID,
       float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: big ? -154 : -110 },
     };

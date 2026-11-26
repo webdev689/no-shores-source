@@ -38,7 +38,10 @@ test('a character last held by its dive’s zone logs back in there, so a reload
   const route = 'passage-continent-1-w2900-z12--run-ab12cd34';
   const company = JSON.stringify({ passage: { ...dive, route: 'company' } });
   assert.deepEqual(lastPlaceOf(company, route, 2900), { kind: 'passage', room: route }, 'a company’s route, its own');
-  assert.deepEqual(lastPlaceOf(body, 'passage-continent-1-w2900-z11', 2900), { kind: 'sea' }, 'its dive went on since');
+  const walking = 'passage-continent-1-w2900-z11';
+  assert.deepEqual(lastPlaceOf(body, walking, 2900), { kind: 'passage', room: zone }, 'reloaded on the way on: there');
+  const routeLeft = `${walking}--run-ab12cd34`;
+  assert.deepEqual(lastPlaceOf(company, routeLeft, 2900), null, 'a route gone on: its company’s next room is unknown');
   const home = JSON.stringify({ passage: { ...dive, homeward: true }, last: { kind: 'sea' } });
   assert.deepEqual(lastPlaceOf(home, zone, 2900), { kind: 'sea' }, 'gone home');
   assert.deepEqual(lastPlaceOf(body, zone, 2901), { kind: 'sea' }, 'the week turned: its kept place');

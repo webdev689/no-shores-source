@@ -224,7 +224,11 @@ at depth 20. The two zones not done are each a foe that climbed a hollow's cliff
 | The map's names | A zone's kind (a lamp by its place) and its foes' levels, beside its mark or not at all; its currents are left to its sign, so a name fits by its mark |
 | The missions' marks | The objective's ringed disc with a device for each kind: a flame for a Kindle, a ring for a Hold, a crosshair for a Hunt, three tallies for a Reckoning, an hourglass for a Gauntlet, two bars for an Ambush, a broken post for a Sever |
 | The missions' bounty | "Finish 3 passage missions: a Kindle, Hold, Hunt, Reckoning, Gauntlet, Ambush or Sever.", so it names what the page shows |
-| The compass | Points at what the deal asks next, as the owner asked of every objective: the nearest foe standing (the Marked, a collector), the next dead lamp, tally post or node, the ring, the reliquary, a Gauntlet's far mouth; once the mouths are open, the lamp until lit, then the nearest way on |
+| The compass | Points at what the deal asks next, as the owner asked of every objective: the nearest foe standing (the Marked, a collector), the next dead lamp, tally post or node, the ring, the reliquary, a Gauntlet's far mouth (though its mouths are open from the start); once the mouths are open, the lamp until lit, then the nearest way on |
+| A hold refused | Said in the room's own words for the refusal, as every passage refusal is; a hold taken says nothing |
+| Sent back to the zone left | Said in the refusing room's own words, "You cannot reach this place from where you were."; should the zone left refuse too, the zone gone on to is joined once more, as the accounts then keep the dive there |
+| A reload on the way on | A public dive comes back into the zone it went on to; a company's route there is a room only its company knows, so it comes back as any other character does |
+| An arrival the room cannot judge | Refused for now, as when the accounts do not answer |
 | The mouths' card | Closes 10 m from its door, past the 4 m it opens within |
 | The haul's panel | Five lines, then "and 4 more" |
 | The cold lantern found | Its name and words stand 6 s low in the view, on a phone's in the haul's place |

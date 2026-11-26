@@ -287,6 +287,12 @@ export function runFull(room: string, accounts: number): string | null {
 /** Why a public passage zone's room sends away a ninth account: the page joins the next copy on it. */
 export const PASSAGE_FULL = 'This passage is full.';
 
+/** Why a room at its most sockets or players turns a socket away: a passage zone's says it is full, so the page tries
+ *  its next copy. */
+export function roomFull(room: string): string {
+  return passageRoom(room) ? PASSAGE_FULL : 'the room is full';
+}
+
 /** The other names a tier answers to in a node's room (`rough` for Elite, `storm` for Abyss), each by its own. */
 const TIER_ALIASES = new Map([
   ['rough', 'elite'],

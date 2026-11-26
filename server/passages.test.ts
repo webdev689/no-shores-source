@@ -17,6 +17,7 @@ import {
   passageRoom,
   passageRoomName,
   privateRun,
+  roomFull,
   runFull,
   socketsMost,
 } from './roomNames.ts';
@@ -93,6 +94,12 @@ test('a public passage zone holds eight accounts and a company’s route its com
   assert.equal(runFull(room(4), PASSAGE_MOST + 1), PASSAGE_FULL);
   assert.equal(runFull(room(4, 'ab12cd34'), RUN_MOST + 1), 'This run is full.');
   assert.equal(runFull('node-tidewall', 99), null);
+  assert.equal(
+    roomFull(room(4, 2)),
+    PASSAGE_FULL,
+    'at its most sockets, a public zone is full, so its next copy is tried',
+  );
+  assert.equal(roomFull('node-tidewall'), 'the room is full');
 });
 
 test('a company’s member taking its route joins a member’s room in that zone’s route, else a new one', () => {
@@ -288,8 +295,17 @@ test('a public zone keeps eight accounts though two sign in together, each erran
     release: () => Promise.resolve(true),
     deposit: () => new Promise<'moved'>((answered) => answers.push(() => answered('moved'))),
   } as unknown as ConstructorParameters<typeof Keeper>[0];
-  const kept = roomOf();
-  for (let player = 1; player <= PASSAGE_MOST + 1; player++) kept.held.set(player, '{}');
+  const stood = roomOf();
+  for (let player = 1; player <= PASSAGE_MOST + 1; player++) stood.held.set(player, '{}');
+  // Who the room was given a body for: the ninth never, so no word of it reaches their page as if kept.
+  const restored: number[] = [];
+  const kept = {
+    ...stood,
+    restoreJoined: (player: number, body: string, vault: string | null) => (
+      restored.push(player),
+      stood.restoreJoined(player, body, vault)
+    ),
+  };
   const sent: [number, string | undefined][] = [];
   const keeper = new Keeper(accounts, kept, room(first), (player, why) => void sent.push([player, why]));
   const [now, here] = [() => 0, () => true];
@@ -305,6 +321,7 @@ test('a public zone keeps eight accounts though two sign in together, each erran
   for (const answer of answers.splice(0)) answer();
   assert.deepEqual(await Promise.all(together), [true, false], 'the eighth kept, the ninth not');
   assert.deepEqual(sent, [[PASSAGE_MOST + 1, PASSAGE_FULL]]);
+  assert.equal(restored.includes(PASSAGE_MOST + 1), false, 'the ninth’s body is never restored');
 });
 
 test('a room that dies between a go-on and its save leaves the dive where it was: the zone left takes it back', async () => {
@@ -338,4 +355,71 @@ test('a room that dies between a go-on and its save leaves the dive where it was
   again.held.set(1, '{}');
   const againKeeper = judging(room(first), new Keeper(kept, again, room(first), () => undefined));
   assert.equal(await againKeeper.signIn(1, token, now, here), true);
+});
+
+test('a zone left still alive releases the move after the next zone refused it: the next zone tried again keeps it', async () => {
+  const { kept, token } = await world();
+  const from = zoneOf(first);
+  const next = from?.onward[0] ?? -1;
+  const body = (zone: number) =>
+    JSON.stringify({ passage: { island: ISLAND, week: WEEK, route: 'public', mouth: 0, zone, lamp: 0 } });
+  const judging = (name: string, keeper: Keeper) =>
+    keeper.judgingArrivals(
+      (came, kept) => arrives(name, came, null, null, passagesOf(door, kept, MINUTE * 60_000)),
+      true,
+    );
+  const [now, here] = [() => 0, () => true];
+  const left = roomOf();
+  left.held.set(1, body(first));
+  const leftKeeper = new Keeper(kept, left, room(first), () => undefined);
+  assert.equal(await leftKeeper.signIn(1, token, now, here), true);
+  assert.equal(await leftKeeper.saveNow(1), true);
+  // The dive goes on; its save is slow, so the next zone's look still finds it in the zone left.
+  left.held.set(1, body(next));
+  const ahead = roomOf();
+  ahead.held.set(1, '{}');
+  const aheadKeeper = judging(room(next), new Keeper(kept, ahead, room(next), () => undefined));
+  assert.equal(await aheadKeeper.signIn(1, token, now, here), false, 'the next zone refuses the look');
+  // The page goes back as the zone left lets the old socket go, saving the move: the zone left refuses it now.
+  await leftKeeper.leave(1);
+  const back = roomOf();
+  back.held.set(2, '{}');
+  const backKeeper = judging(room(first), new Keeper(kept, back, room(first), () => undefined));
+  assert.equal(await backKeeper.signIn(2, token, now, here), false, 'the zone left refuses the dive gone on');
+  // The next zone joined again keeps it (`onwardOrBack`).
+  ahead.held.set(2, '{}');
+  assert.equal(await aheadKeeper.signIn(2, token, now, here), true);
+});
+
+test('a passage zone whose module cannot lay the web sends the arriving player away, not held for good', async () => {
+  const body = JSON.stringify({ passage: { island: ISLAND, week: WEEK, route: 'public', zone: first, lamp: 0 } });
+  const claimed = () => Promise.resolve({ account: 'a', body, vault: '{}', from: PATROL, name: null, tag: null });
+  const accounts = {
+    look: claimed,
+    claim: claimed,
+    release: () => Promise.resolve(true),
+  } as unknown as ConstructorParameters<typeof Keeper>[0];
+  const zone = roomOf();
+  zone.held.set(1, '{}');
+  const sent: (string | undefined)[] = [];
+  const keeper = new Keeper(accounts, zone, room(first), (player, why) => void sent.push(why));
+  const broken = {
+    passageWeb: (): string => {
+      throw new Error('unreachable');
+    },
+  };
+  keeper.judgingArrivals(
+    (came, kept) => arrives(room(first), came, null, null, passagesOf(broken, kept, MINUTE * 60_000)),
+    true,
+  );
+  assert.equal(
+    await keeper.signIn(
+      1,
+      'token',
+      () => 0,
+      () => true,
+    ),
+    false,
+  );
+  assert.equal(sent.length, 1, 'told to go');
 });

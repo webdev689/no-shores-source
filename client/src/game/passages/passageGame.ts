@@ -16,7 +16,7 @@ import type { Interface } from '../../ui/ui.ts';
 import type { DungeonLayout } from '../dungeonLayout.ts';
 import type { Quest } from '../tasks.ts';
 import type { NodeInfo } from '../worldData.ts';
-import { passageRoom, passageRoomName, runInstance, sharedRun } from '../rooms.ts';
+import { NO_WAY_HERE, passageRoom, passageRoomName, runInstance, sharedRun } from '../rooms.ts';
 import type { IsleShown } from '../../islands/islePlan.ts';
 import type { Difficulty } from '../../heldmap/heldMap.ts';
 import type { LandSheet } from '../../heldmap/landSheet.ts';
@@ -145,17 +145,19 @@ export class PassageGame {
       const lit = seen?.lampLit ?? false;
       const cold = lampCold(gearOf(this.host.foot())?.athericBounties, zone.web.island, plan.zone.lamp ?? 0);
       const prompt = lampPrompt(lit, !lit && !(seen?.done ?? false), cold);
-      if (lit) return { words: prompt.deed, run: () => this.home(ask) };
+      if (lit) return { words: prompt.deed, under: prompt.under, run: () => this.home(ask) };
       if (prompt.under === 'Not while its guard stands')
         return { words: prompt.under, run: () => undefined, idle: true };
-      return { words: prompt.deed, run: () => ask({ kind: ASKS.lightLamp }), held: share };
+      const light = () => this.hold({ kind: ASKS.lightLamp }, ask);
+      return { words: prompt.deed, under: prompt.under, run: light, held: share };
     }
-    if (held && 'kindle' in held) {
-      if (((seen?.lit ?? 0) >> held.kindle) & 1) return null;
-      return { words: 'Light the dead lamp', run: () => ask({ kind: ASKS.kindle, column: held.kindle }), held: share };
+    // A dead lamp lit already is used no more: a mouth beside it is.
+    if (held && 'kindle' in held && !(((seen?.lit ?? 0) >> held.kindle) & 1)) {
+      const kindle = { kind: ASKS.kindle, column: held.kindle };
+      return { words: 'Light the dead lamp', run: () => this.hold(kindle, ask), held: share };
     }
     if (held && 'reliquary' in held && !(seen?.done ?? false)) {
-      return { words: 'Open the reliquary', run: () => ask({ kind: ASKS.open }), held: share };
+      return { words: 'Open the reliquary', run: () => this.hold({ kind: ASKS.open }, ask), held: share };
     }
     const mouth = onwardAt(plan, x, y);
     const to = mouth === null ? undefined : zone.web.zones.find((each) => each.number === plan.zone.onward[mouth]);
@@ -168,13 +170,22 @@ export class PassageGame {
     return { words: `On to ${inSentence(to.name)}`, run: () => this.goOn(mouth, ask) };
   }
 
+  /** A hold asked of the room, its refusal said. */
+  private hold(asked: GearAsk, ask: (asked: GearAsk) => void): void {
+    const foot = this.host.foot();
+    if (foot) this.asks.hold(foot, asked, ask);
+    else ask(asked);
+  }
+
   /** The card's choice: a dive begun at its mouth by `route`, at the mouth or at lamp `lamp`. */
   private begin(route: Route, lamp: number | null): void {
     const [foot, mouth] = [this.host.foot(), this.card.mouth];
     this.card.close();
     const web = foot && this.mouthsWeb(foot.node);
     if (!foot || !web || mouth === null) return;
-    const first = lamp === null ? web.mouths[mouth]?.zone : web.zones.find((zone) => zone.lamp === lamp)?.number;
+    // At a lamp, the lamp's zones' one at the mouth's place among the mouths, or the last, as the room begins it.
+    const lamps = web.zones.filter((zone) => zone.lamp === lamp);
+    const first = lamp === null ? web.mouths[mouth]?.zone : lamps[Math.min(mouth, lamps.length - 1)]?.number;
     const plan = this.laidOrTold(web.island, web.week, first);
     if (!plan) return;
     const runs = this.host.land().layouts.find((layout) => layout.id === foot.node.id)?.runs;
@@ -227,7 +238,13 @@ export class PassageGame {
   ): void {
     if (!dive || !this.door) return;
     const web = this.webOf(dive.island, dive.week);
-    const plan = laid.plan.zone.number === dive.zone ? laid.plan : this.door.plan(dive.island, dive.week, dive.zone);
+    let plan: PassagePlan | null = laid.plan;
+    try {
+      if (laid.plan.zone.number !== dive.zone) plan = this.door.plan(dive.island, dive.week, dive.zone);
+    } catch (error) {
+      console.warn(`zone ${dive.zone} of the passages of ${dive.island} in week ${dive.week} does not lay:`, error);
+      plan = null;
+    }
     const zone = web?.zones.find((each) => each.number === dive.zone);
     if (!web || !plan || !zone) return this.host.tell('The passage has shifted.');
     const heights = plan.ground.kind === 'open' ? this.door.heights(dive.island, dive.week, dive.zone) : null;
@@ -254,7 +271,12 @@ export class PassageGame {
       };
       const isle = heights && zoneIsle(plan, heights);
       const warmed = isle && this.host.isles.warm(isle);
-      await onwardOrBack(() => this.standIn({ web, entry, isle, passed }), left && (() => this.standIn(left)));
+      const wentOn = await onwardOrBack(
+        () => this.standIn({ web, entry, isle, passed }),
+        left && (() => this.standIn(left)),
+      );
+      // Back in the zone left, the player is told why in the zone gone to's own words.
+      if (!wentOn) this.host.tell(NO_WAY_HERE);
       await warmed;
     };
     const happening = { kind: 'onward', node: passageRoomName(dive.island, dive.week, dive.zone) } as const;

@@ -20,6 +20,7 @@ import {
   privateRun,
   runAsk,
   seaRoom,
+  roomFull,
   socketsMost,
   TEST_GROUND,
   testRoom,
@@ -181,7 +182,7 @@ export class RoomHost extends DurableObject<Env> {
     // Past its sockets the room still takes one, to say why it closes: a page never reads a refused upgrade's status.
     if (this.players.size >= socketsMost(this.name)) {
       server.accept();
-      server.close(1013, 'the room is full');
+      server.close(1013, roomFull(this.name));
       return new Response(null, { status: 101, webSocket: client });
     }
     const address = addressKey(request.headers.get('CF-Connecting-IP') ?? 'nowhere');
@@ -201,7 +202,7 @@ export class RoomHost extends DurableObject<Env> {
       // A full room, or a locked node's, still takes the socket, to say why it closes.
       const locked = this.guarded(() => this.room.refusal(), null);
       server.accept();
-      server.close(locked === null ? 1013 : SHUT, locked ?? 'the room is full');
+      server.close(locked === null ? 1013 : SHUT, locked ?? roomFull(this.name));
       return new Response(null, { status: 101, webSocket: client });
     }
     server.binaryType = 'arraybuffer';

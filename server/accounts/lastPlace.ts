@@ -15,16 +15,20 @@ export type LastPlace =
   | { readonly kind: 'passage'; readonly room: string }
   | null;
 
-/** The zone a dive kept in `body` stands in, when `room`, the room that held the character last, is a room of it, of
- *  this `week`'s web, and the dive has not turned home: a reload or a closed tab costs no more than a death would. */
+/** The zone a dive kept in `body` stands in, when `room`, the room that held the character last, is a room of its web
+ *  (the zone's own, or for a public dive the zone it went on from), of this `week`, and the dive has not turned home:
+ *  a reload or a closed tab costs no more than a death would. */
 function diveRoom(read: { passage?: unknown }, room: string | null, week: number): LastPlace {
   const zone = passageRoom(room);
   if (zone?.week !== week) return null;
   const dive = read.passage as { island?: unknown; week?: unknown; zone?: unknown; homeward?: unknown } | null;
   if (!zone || !dive || dive.homeward === true) return null;
-  if (dive.island !== zone.island || dive.week !== zone.week || dive.zone !== zone.zone) return null;
-  const base = passageRoomName(zone.island, zone.week, zone.zone);
-  return { kind: 'passage', room: zone.run === null ? base : (room ?? base) };
+  if (dive.island !== zone.island || dive.week !== zone.week || typeof dive.zone !== 'number') return null;
+  const base = passageRoomName(zone.island, zone.week, dive.zone);
+  if (dive.zone === zone.zone) return { kind: 'passage', room: zone.run === null ? base : (room ?? base) };
+  // Gone on from the zone that held it last, before the next kept it (a reload on the way between): a public dive's
+  // zone gone to; a company's route there is a room its company found, which this does not know.
+  return zone.run === null ? { kind: 'passage', room: base } : null;
 }
 
 /** The place a kept body names, read leniently: anything that is not one is none. `room` is the room that held it

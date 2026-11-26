@@ -4,7 +4,7 @@ import type { GearState } from '../../network/gearMessages.ts';
 import type { RoomLink } from '../../network/roomConnection.ts';
 import { NO_WAY_HERE, PASSAGE_FULL } from '../rooms.ts';
 import type { PassagePlan } from '../../rules/passageRules.ts';
-import { hollowBoxes, joinPassage, joiner, onwardOrBack } from './passageEnter.ts';
+import { grounded, hollowBoxes, joinPassage, joiner, onwardOrBack } from './passageEnter.ts';
 
 /** A join that finds the first `full` copies full, recording each name joined and each link closed. */
 function joins(full: number) {
@@ -87,4 +87,56 @@ test('a hollow’s foot boxes hold its dressing (cliffs, boulders, trees) as wel
     ],
   );
   assert.deepEqual(hollowBoxes({ ground: { kind: 'under' }, solids: [] } as unknown as PassagePlan), []);
+});
+
+test('a zone left that has since saved the move refuses the dive back: the zone gone on to is joined again', async () => {
+  const went: string[] = [];
+  let onwards = 0;
+  const onward = () => (went.push('onward'), onwards++ ? Promise.resolve() : Promise.reject(new Error(NO_WAY_HERE)));
+  const back = () => (went.push('back'), Promise.reject(new Error(NO_WAY_HERE)));
+  assert.equal(await onwardOrBack(onward, back), true);
+  assert.deepEqual(went, ['onward', 'back', 'onward']);
+});
+
+test('a public zone that turns the socket away at its most sockets is full: its next copy is joined', async () => {
+  const joined: string[] = [];
+  const join = (name: string) => {
+    joined.push(name);
+    if (joined.length === 1) return Promise.reject(new Error(`the room closed: ${PASSAGE_FULL}`));
+    return Promise.resolve({ link: { shut: null } as unknown as RoomLink, full: false });
+  };
+  await joinPassage('passage-continent-1-w9-z3', join);
+  assert.deepEqual(joined, ['passage-continent-1-w9-z3', 'passage-continent-1-w9-z3--2']);
+});
+
+test('a hollow whose ground does not load leaves the foot made on it whole, not its link alone', async () => {
+  const done: string[] = [];
+  const link = { close: () => void done.push('link') };
+  const foot = { leave: () => void done.push('foot') };
+  await assert.rejects(
+    grounded(
+      link,
+      async () => foot,
+      async () => false,
+    ),
+    /ground did not load/,
+  );
+  assert.deepEqual(done, ['foot']);
+  await assert.rejects(
+    grounded(
+      link,
+      () => Promise.reject(new Error('no deck')),
+      async () => true,
+    ),
+    /no deck/,
+  );
+  assert.deepEqual(done, ['foot', 'link'], 'with no foot made, its link closed');
+  assert.equal(
+    await grounded(
+      link,
+      async () => foot,
+      async () => true,
+    ),
+    foot,
+  );
 });

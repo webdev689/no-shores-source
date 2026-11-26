@@ -5,6 +5,7 @@ import type { LaidRun } from '../../layout/layouts.ts';
 import { HOLDING_LAMP, HOLDING_RELIQUARY } from '../../network/passageMessages.ts';
 import type { PassagePlan, PassageWeb } from '../../rules/passageRules.ts';
 import type { NodeInfo } from '../worldData.ts';
+import resources from '../../../../content/gear/resources.json' with { type: 'json' };
 
 /** How near a mouth's middle, and a dead lamp or the lamp, a player stands to use it, metres. */
 export const MOUTH_REACH_M = 4;
@@ -64,6 +65,10 @@ export function holdAt(
 export function zonePlace(plan: PassagePlan, patrol: NodeInfo, room: string): NodeInfo {
   const [x, y] = plan.sites.arrive;
   const reach = plan.ground.kind === 'open' ? 80 : 160;
+  // A vein's nodes, in the room's order, each holding its island's resource as the room's do.
+  const holds = resources.resources.find((each) => each.continent === patrol.continent)?.id;
+  const nodes = plan.pieces.filter((piece) => piece.kind === 'node');
+  const veined = nodes.map((piece) => ({ at: [piece.at[0], piece.at[1]] as const, ...(holds && { holds }) }));
   return {
     id: room,
     kind: patrol.kind,
@@ -77,6 +82,7 @@ export function zonePlace(plan: PassagePlan, patrol: NodeInfo, room: string): No
       [x + reach, y + reach],
       [x - reach, y + reach],
     ],
+    ...(veined.length > 0 && { resources: veined }),
   };
 }
 
