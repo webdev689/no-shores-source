@@ -39,10 +39,10 @@ const SEE_THROUGH_M = 0.14;
 /** Each flame after a light's first is seeded this much past it, so a cluster's candles burn each their own way. */
 const FLAME_SEED_STEP = 0.37;
 
-/** The light a player carries under ground: where it burns, moved each frame, and how. */
 /** The flames of the dungeon last shown, which its scene draws over the finished picture; none once it is let go. */
 export const DUNGEON_FLAMES: { current: Flames | null } = { current: null };
 
+/** The light a player carries under ground: where it burns, moved each frame, and how. */
 type CarriedLight = {
   readonly at: [number, number, number];
   readonly number: number;
@@ -128,7 +128,7 @@ export class DungeonView {
     const drawn = this.drawn;
     if (!drawn) return;
     const burning = light && LIGHT_KINDS[light];
-    if (drawn.carried?.burning !== burning) {
+    if ((drawn.carried?.burning ?? null) !== burning) {
       drawn.carried = burning ? { at: [0, 0, 0], number: CARRIED_SEED, burning } : null;
       drawn.picker = this.pickerOf(drawn);
     }

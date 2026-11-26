@@ -97,7 +97,7 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
   ];
   const rise = 0.6 + 0.9 * Math.sqrt(size);
   const many = (count: number) => Math.max(1, Math.round(count * shareOf(size)));
-  // Its core tongue stands as tall as its light burns, so the flame drawn and the light it casts flicker together.
+  // Its first core tongue stands as tall as its light burns, so the flame drawn and the light it casts flicker together.
   const burning = (flicker(seed, seconds) - 0.8) / 0.2;
 
   const tongueCount = many(TONGUES * run);
@@ -105,7 +105,7 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
     const core = index % TONGUES === 0;
     const share = fire.along ? (index + 0.5 + (lot(1_000 + index) - 0.5) * 0.8) / tongueCount : 0;
     const out = core && !fire.along ? 0 : size * 0.3 * lot(2_000 + index);
-    const wander = core ? burning : smoothNoise(seed * 13 + index, held * 3.2 + lot(3_000 + index) * 50);
+    const wander = index === 0 ? burning : smoothNoise(seed * 13 + index, held * 3.2 + lot(3_000 + index) * 50);
     const sway = (salt: number) => (smoothNoise(seed * 17 + index * 2 + salt, held * 1.4) - 0.5) * 0.4;
     return {
       position: spot(share, out, lot(4_000 + index) * Math.PI * 2),

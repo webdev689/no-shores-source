@@ -91,8 +91,9 @@ what show the ground there.
 - **One flicker, one breath.** Every light in the game moves by the same two (`client/src/light/flicker.ts`, each with
   its WGSL twin), seeded by its source: a flame's flicker, held through each of the fire's ten frames a second, never
   below 80% at full depth; and a glow's slow breath, about seven seconds a swell, for crystal, fungus, runes and a
-  portal. A flame drawn and the light it casts share its seed, so they move together, on land, at sea and under
-  ground ([[Lights as Claude Builds Them]]).
+  portal. Under ground and for a fire of the game's scene, a flame drawn and the light it casts share its seed, so they
+  move together ([[Lights as Claude Builds Them]]); a city's glowing solids flicker by where they burn and their
+  lamps by their own seeds.
 - **Fires.** The game's scene burns the fires lit in the world (`GameScene.fires`, the prologue's fire of [[Cinema]],
   "Flames"), each casting its light as a lamp reaching eight times its height (at least four metres), seeded as its
   flames are.

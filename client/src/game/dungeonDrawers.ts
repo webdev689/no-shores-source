@@ -130,9 +130,8 @@ export class DungeonDrawers {
 
   /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, the
    *  flames of its torches, fixtures and lamps over all of it (its scene draws them), the figures lit by its lights and
-   *  the one `carried`
-   *  in the player's left hand; `after` may draw over the finished picture, in the light where the eye stands, and all
-   *  of it drains toward grey by `drain`. */
+   *  the one `carried` in the player's left hand; `after` may draw over the finished picture, in the light where the
+   *  eye stands, and all of it drains toward grey by `drain`. */
   draw(
     foot: Foot,
     shown: FootFrame,

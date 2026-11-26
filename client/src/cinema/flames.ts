@@ -243,7 +243,7 @@ export class Flames {
   /** Works out the fires' parts at `time`, measured from the eye of `shot`; they are drawn over the water. */
   drawInto(_pass: GPURenderPassEncoder, fromEye: Float32Array, shot: { readonly eye: Point }, time: number): void {
     this.counts = packFires(this.fires.values(), time, this.wind, shot.eye, this.values);
-    if (this.counts.shown === 0) return;
+    if (this.counts.shown + this.counts.glows === 0) return;
     const used = this.values.subarray(0, (this.counts.shown + this.counts.glows) * PART_FLOATS);
     this.instances ??= this.device.createBuffer({
       size: this.values.byteLength,
@@ -261,7 +261,7 @@ export class Flames {
   /** The smoke, flames and embers over the finished picture `target`, hidden where the scene's `depth` (one float a
    *  pixel, reversed) stands nearer. */
   overWater(encoder: GPUCommandEncoder, target: GPUTextureView, _fromEye: Float32Array, depth: GPUTexture): void {
-    if (!this.instances || this.counts.shown === 0) return;
+    if (!this.instances || this.counts.shown + this.counts.glows === 0) return;
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setBindGroup(0, this.groupFor(depth));
     pass.setVertexBuffer(0, this.instances);
@@ -269,8 +269,10 @@ export class Flames {
       pass.setPipeline(this.glowPipeline);
       pass.draw(6, this.counts.glows, 0, this.counts.shown);
     }
-    pass.setPipeline(this.overPipeline);
-    pass.draw(6, this.counts.shown);
+    if (this.counts.shown > 0) {
+      pass.setPipeline(this.overPipeline);
+      pass.draw(6, this.counts.shown);
+    }
     pass.end();
   }
 

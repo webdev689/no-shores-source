@@ -416,8 +416,8 @@ wall wherever an open cell meets rock or the grid's edge, a trim band at its foo
 wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
 lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit
 door; the return portal, an arch of the end room's trim standing off its wall round a face of its wall darkened, which
-while the portal stands open glows bright, breathing and shimmering, and lights the room as a torch does; and the forged props the
-dungeon lays, each standing and turned as the city stands a prop. Every surface wears a picture the procedural
+while the portal stands open glows bright, breathing and shimmering, and lights the room as a torch does; and the
+forged props the dungeon lays, each standing and turned as the city stands a prop. Every surface wears a picture the procedural
 textures paint: the brackets and the cache's bands the textures' ironwork (archive 93), the cache's wood the island's
 timber; only a flame and the open portal glow in a colour, as the city's braziers do. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
 style's second set and any other its main one, as every corridor does; record 0 for a wall (1 in a room whose number
@@ -429,8 +429,9 @@ procedural textures as the city paints its own ([[Procedural Textures]]). Their 
   reach, a fire's flickering and a glow's breathing, none in step, fading to nothing at their reach, a face turned
   from one catching half: a torch warm to 8 m, a brazier deep orange to 9 m, candles pale to 4.5 m, crystals a
   breathing blue-green to 7 m, a lantern warm to 8 m, a hearth's fire to 9.5 m, the open portal cold, and the torch
-  or lantern in the player's left hand at their hand ([[Every Light Is Redesigned and Animated, and Each Casts Light]]). A faint light lies everywhere in the mood of the style of
-  each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale gold,
+  or lantern in the player's left hand at their hand
+  ([[Every Light Is Redesigned and Animated, and Each Casts Light]]). A faint light lies everywhere in the mood of the
+  style of each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale gold,
   the caverns' teal and the mines' dusty brown, enough that a room past every light still shows its walls. Each
   torch is an iron bracket off its wall, plate, arm and cup, its flame a fire burning out of the cup, flickering with
   its light ([[Dungeons]], "Its flames"); the props and the fixtures are lit by the same light as the walls.
@@ -695,8 +696,8 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 ## Drawing
 
 `GameScene` reads the sky over the eye each frame with the lamps lit round it, a torch or lantern in the player's left
-hand and its own fires' (`fires`) among them ([[Sky]]), then draws the open landmass in rings round the eye, the exact ground round the player or
-the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then
+hand and its own fires' (`fires`) among them ([[Sky]]), then draws the open landmass in rings round the eye, the
+exact ground round the player or the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then
 what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each
 tested by hand against the scene's depth, so the water's sky and its surface near a coast never cover them.
 
