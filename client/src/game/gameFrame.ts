@@ -220,11 +220,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // Others see three dots over a player in a menu.
     here.fight.menuOpen = gearScreenOpen() || socialUp();
     const aspect = size.width / Math.max(1, size.height);
-    // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
+    // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered; a
+    // dungeon's map covers the view and leaves the eyes as they are.
     const looking = helmMap.looking || DUNGEON_MAP.open;
-    if (looking !== (eyesBeforeMap !== null)) {
+    if (helmMap.looking !== (eyesBeforeMap !== null)) {
       const firstPerson = eyesBeforeMap ?? true;
-      eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
+      eyesBeforeMap = helmMap.looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
     // While the stranger speaks her welcome no key moves or acts (Space moves her words on, `gameKeys`), and the view
@@ -356,8 +357,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const gated = paused || looking || here.fallen || here.mapless;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
-    const mapless = paused || here.fallen || here.mapless;
+    // N raises a map on foot unless a menu is up, the player has fallen or is in a Breach's run, as `openMap` has it:
+    // in a dungeon, the dungeon's.
+    const mapless = paused || here.fallen || (here.mapless && !here.dungeon);
     const placing = placingStrip();
     // Fallen in a Breach, the camera follows the company: its key, naming whom, is shown while anyone may be followed.
     const strip = here.followable !== null ? withFollow(shown.hints, here.followable) : shown.hints;

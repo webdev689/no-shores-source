@@ -2,7 +2,7 @@
 // dungeon inked on parchment. It keeps the dungeon's reveal as the player walks, opened or not, and each dungeon's view
 // and reveal in the browser's storage. Its keys turn and tilt it, lay the plan, zoom and pan, and step the storey it is
 // cut over or show them all; a drag pans and a right drag turns, and the wheel zooms at the pointer.
-import type { DungeonLayout } from '../dungeonLayout.ts';
+import { type DungeonLayout, SIDE_STEPS } from '../dungeonLayout.ts';
 import {
   dragTurn,
   eased,
@@ -28,6 +28,8 @@ type Size = { readonly width: number; readonly height: number };
 const PAN_PX = 60;
 const KEEP_EVERY_S = 3;
 const NAME_PX = 14;
+/** How far into its room the portal's mark stands from the wall it is on (m), so it reads as in the room. */
+const PORTAL_IN_M = 1;
 
 /** Someone on the map: where they stand, which way they face (radians clockwise from north) and their name. */
 export interface MapBody {
@@ -55,6 +57,8 @@ export interface MapShown {
   readonly count: number;
   readonly every: boolean;
   readonly marks: readonly PaperMark[];
+  /** The paper's width (CSS px). */
+  readonly paperWidth: number;
 }
 
 /** One dungeon's map, from going in to coming out. */
@@ -286,7 +290,12 @@ export class DungeonMap {
     const wayIn: Point = [layout.arrival.x, layout.arrival.y, floorOf(0)];
     if (seen(wayIn)) place('wayIn', wayIn, 0, 'The way in');
     const endRoom = layout.rooms[layout.end] as { readonly storey?: number } | undefined;
-    const portal: Point = [layout.portal.x, layout.portal.y, floorOf(endRoom?.storey ?? 0)];
+    const [wallEast, wallSouth] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
+    const portal: Point = [
+      layout.portal.x - wallEast * PORTAL_IN_M,
+      layout.portal.y - wallSouth * PORTAL_IN_M,
+      floorOf(endRoom?.storey ?? 0),
+    ];
     if (seen(portal)) place('portal', portal, 0, 'The return portal');
     for (const stair of storeys.stairs) {
       const middle = this.middleOf(stair.upper * storeys.plane + (stair.cells[1] ?? 0));
@@ -307,7 +316,8 @@ export class DungeonMap {
       ...mark,
       name: mark === nearest && away(mark) <= NAME_PX ? mark.name : null,
     }));
-    return { view, storey: this.storey, playerStorey, count: storeys.count, every: this.every, marks: named };
+    const { count } = storeys;
+    return { view, storey: this.storey, playerStorey, count, every: this.every, marks: named, paperWidth: paper.width };
   }
 }
 

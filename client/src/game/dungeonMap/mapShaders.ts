@@ -203,15 +203,17 @@ fn depthAt(at: vec2f) -> f32 { return kindAt(at).z * map.grid.w; }
   let grain = 1.0 - map.pen.z * (noise(position.xy * 0.35) - 0.5);
   var paper = PARCHMENT * grain;
   paper = paper * (1.0 - lineInk) * (1.0 - tone) + INK * lineInk + wash * tone * (1.0 - lineInk);
-  // The compass: a ring turned and squashed with the view, and its needle to the north.
+  // The compass: a ring turned and squashed with the view, its needle from the middle to the north, a dot at its tip.
   let offset = position.xy - map.compass.xy;
   let squash = max(map.compass.w, 0.05);
   let ring = abs(length(vec2f(offset.x, offset.y / squash)) - map.compass.z) * squash;
   let tip = map.north.xy * map.compass.z;
-  let along = clamp(dot(offset, tip) / max(dot(tip, tip), 1e-5), -0.35, 1.0);
+  let along = clamp(dot(offset, tip) / max(dot(tip, tip), 1e-5), 0.0, 1.0);
   let needle = length(offset - tip * along);
-  let compass = max(1.0 - smoothstep(map.north.z * 0.5, map.north.z * 0.5 + 1.0, ring),
-                    1.0 - smoothstep(map.north.z * 0.6, map.north.z * 0.6 + 1.0, needle));
+  let point = length(offset - tip) - map.north.z * 1.8;
+  let compass = max(max(1.0 - smoothstep(map.north.z * 0.5, map.north.z * 0.5 + 1.0, ring),
+                        1.0 - smoothstep(map.north.z * 0.6, map.north.z * 0.6 + 1.0, needle)),
+                    1.0 - smoothstep(0.0, 1.0, point));
   return vec4f(mix(paper, INK, compass * 0.9), 1.0);
 }
 `;

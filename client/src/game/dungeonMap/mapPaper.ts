@@ -3,6 +3,7 @@
 // No key's tip is written on the paper.
 import type { Child, Node } from '../../ui/node.ts';
 import type { MapShown, PaperMark } from './dungeonMap.ts';
+import { INK as INKED } from './mapInk.ts';
 
 /** What the interface lays over the map this frame (null while it is shut), and the dungeon's chests as counted for
  *  the player ("Chests 2 of 5"): the hook the dungeon chests' count is hung on once the gear carries it, none till
@@ -72,6 +73,19 @@ export function paperNode(shown: MapShown, name: string, chests: string | null, 
       },
     ];
   });
+  // North, past the compass needle's tip, where the ink pass draws the compass at the paper's upper right.
+  const { yaw, pitch } = shown.view;
+  const [middle, reach] = [INKED.compassRadius + INKED.compassGap, INKED.compassRadius + 9];
+  const north: Child = {
+    through: true,
+    float: {
+      to: 'screen',
+      anchor: [0.5, 0.5],
+      x: Math.round(shown.paperWidth - middle + Math.sin(yaw) * reach),
+      y: Math.round(middle - Math.cos(yaw) * Math.sin(pitch) * reach),
+    },
+    children: [words('N')],
+  };
   return {
     width: 'grow',
     height: 'grow',
@@ -85,6 +99,7 @@ export function paperNode(shown: MapShown, name: string, chests: string | null, 
         float: { to: 'screen', x: 24, y: 20 },
         children: [words(name, 2), storeyLine ? words(storeyLine) : null, chests ? words(chests) : null],
       },
+      north,
       ...marks,
     ],
   };

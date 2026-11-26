@@ -27,7 +27,8 @@ Only what the player has walked or seen is drawn, never the whole dungeon.
 ## How it works
 
 - **Opening.** In a dungeon the land map's key (N, `landMap`) opens it, where on land it raises the [[Held Map]];
-  N again or Escape shuts it. It covers the whole view at once: the game's own picture is drawn first and the map over
+  N again or Escape shuts it. The key strip offers N for the map in a dungeon as on land. The player's eyes stay as
+  they were: the held map's rise into first person is the held map's alone. It covers the whole view at once: the game's own picture is drawn first and the map over
   it, and the interface shows nothing over the paper but the map's own words and marks and the controls' sheet. The
   player stands still while it is up, as with the held map (the frame takes it as `looking`), and the pointer is let
   go. While it is up every key is the map's, so nothing in the game behind it acts; a key held goes on turning or
@@ -80,7 +81,8 @@ Only what the player has walked or seen is drawn, never the whole dungeon.
   once seen; each flight's steps, named "Stairs down to storey 2" or "Stairs up to storey 1" under the pointer. A mark
   on another storey than the one looked at is drawn faint. Only the mark nearest the pointer, within 14 px, is named.
   The compass (radius 24 px, at the paper's upper right) is inked by the second pass, its ring squashed with the
-  tilt and its needle to the north. The dungeon's name stands at the top left, the storey line and the chests counted
+  tilt, its needle from the middle to a dot at the north, an N past
+  it. The dungeon's name stands at the top left, the storey line and the chests counted
   under it. No key's tip is written on the paper.
 - **The chests counted.** The line under the storey's ("Chests 2 of 5") comes from `PAPER.chests`, the hook the
   dungeon chests' count is hung on; until the gear carries that count it says nothing.

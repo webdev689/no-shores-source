@@ -156,7 +156,8 @@ export class DungeonDrawers {
     DUNGEON_MAP.enter(JSON.stringify(dungeon.ask), dungeon.layout);
     DUNGEON_MAP.tick(you, you.seconds);
     const paper = { width: this.canvas?.clientWidth || size.width, height: this.canvas?.clientHeight || size.height };
-    const company = platedPlayers(foot.otherPlayers, you.feet)
+    // The company is gathered only while the map shows them.
+    const company = (DUNGEON_MAP.open ? platedPlayers(foot.otherPlayers, you.feet) : [])
       .filter((each) => each.company)
       .map((each) => ({
         feet: each.feet,
