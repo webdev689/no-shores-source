@@ -106,6 +106,67 @@ function playlist(sheet: Sheet, random: () => number): void {
   for (const [x, y] of spots) halo(sheet, x, y, Math.round(height * 0.22), ['#1c1430', '#2a1c40', '#3a2a4a']);
 }
 
+/** The square of how far the point (`x`, `y`) lies from the leg from (`fromX`, `fromY`) to (`toX`, `toY`). */
+function offLegSquared(x: number, y: number, fromX: number, fromY: number, toX: number, toY: number): number {
+  const alongX = toX - fromX;
+  const alongY = toY - fromY;
+  const length = alongX * alongX + alongY * alongY;
+  const share = length > 0 ? Math.max(0, Math.min(1, ((x - fromX) * alongX + (y - fromY) * alongY) / length)) : 0;
+  const apartX = x - fromX - share * alongX;
+  const apartY = y - fromY - share * alongY;
+  return apartX * apartX + apartY * apartY;
+}
+
+/** The cells a bucket of the coast's legs spans, so a cell measures only the legs near it. */
+const BUCKET = 8;
+
+/** How far each cell of a `width` by `height` sheet lies from the nearest leg of the closed `coast`: each leg kept in
+ *  the buckets it passes (four numbers a leg), and each cell searching the rings of buckets round its own, until no
+ *  farther ring could hold a nearer leg. The same distance as measuring every leg, a few legs a cell. */
+export function offCoast(coast: readonly Point2[], width: number, height: number): Float64Array {
+  const [columns, rows] = [Math.ceil(width / BUCKET), Math.ceil(height / BUCKET)];
+  const buckets: number[][] = Array.from({ length: columns * rows }, () => []);
+  const bucketOf = (value: number, most: number) => Math.max(0, Math.min(most - 1, Math.floor(value / BUCKET)));
+  coast.forEach((from, place) => {
+    const to = coast[(place + 1) % coast.length] ?? from;
+    const [left, right] = [bucketOf(Math.min(from[0], to[0]), columns), bucketOf(Math.max(from[0], to[0]), columns)];
+    const [top, bottom] = [bucketOf(Math.min(from[1], to[1]), rows), bucketOf(Math.max(from[1], to[1]), rows)];
+    for (let row = top; row <= bottom; row++)
+      for (let column = left; column <= right; column++)
+        buckets[row * columns + column]?.push(from[0], from[1], to[0], to[1]);
+  });
+  const field = new Float64Array(width * height);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const [home, homeRow] = [bucketOf(x, columns), bucketOf(y, rows)];
+      let nearest = Number.POSITIVE_INFINITY;
+      // Kept squared while searching, its root taken once.
+      const measure = (column: number, row: number) => {
+        if (row < 0 || column < 0 || row >= rows || column >= columns) return;
+        const legs = buckets[row * columns + column] ?? [];
+        for (let leg = 0; leg < legs.length; leg += 4)
+          nearest = Math.min(
+            nearest,
+            offLegSquared(x, y, legs[leg] ?? 0, legs[leg + 1] ?? 0, legs[leg + 2] ?? 0, legs[leg + 3] ?? 0),
+          );
+      };
+      // A bucket `ring` rings out lies at least `ring - 1` buckets away: only each ring's edge is measured.
+      const beyond = (ring: number) => ring === 0 || nearest > ((ring - 1) * BUCKET) ** 2;
+      for (let ring = 0; ring <= Math.max(columns, rows) && beyond(ring); ring++) {
+        for (let column = home - ring; column <= home + ring; column++) {
+          measure(column, homeRow - ring);
+          if (ring > 0) measure(column, homeRow + ring);
+        }
+        for (let row = homeRow - ring + 1; row <= homeRow + ring - 1; row++) {
+          measure(home - ring, row);
+          measure(home + ring, row);
+        }
+      }
+      field[y * width + x] = Math.sqrt(nearest);
+    }
+  return field;
+}
+
 /** The island charted at night: its coast filled as land, shoals dithered round it, its crest lit from the north-west,
  *  its harbour's lantern and the ship. */
 function island(sheet: Sheet, random: () => number, chart: Scene['chart']): void {
@@ -130,18 +191,8 @@ function island(sheet: Sheet, random: () => number, chart: Scene['chart']): void
   ];
   const onChart = ([x, y]: Point2): Point2 => [offsetX + (x - left) * scale, offsetY + (y - top) * scale];
   const coast = chart.outline.map(onChart);
-  const off = (x: number, y: number): number => {
-    let nearest = Number.POSITIVE_INFINITY;
-    coast.forEach((from, place) => {
-      const to = coast[(place + 1) % coast.length] ?? from;
-      const [alongX, alongY] = [to[0] - from[0], to[1] - from[1]];
-      const length = alongX * alongX + alongY * alongY;
-      const share =
-        length > 0 ? Math.max(0, Math.min(1, ((x - from[0]) * alongX + (y - from[1]) * alongY) / length)) : 0;
-      nearest = Math.min(nearest, Math.hypot(x - from[0] - share * alongX, y - from[1] - share * alongY));
-    });
-    return nearest;
-  };
+  const field = offCoast(coast, width, height);
+  const off = (x: number, y: number): number => field[y * width + x] ?? Number.POSITIVE_INFINITY;
   for (let row = 0; row < height; row++)
     for (let column = 0; column < width; column++) {
       const away = off(column, row);
