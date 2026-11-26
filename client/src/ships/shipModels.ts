@@ -42,6 +42,9 @@ export const RETRY_MS = { first: 5_000, most: 60_000 } as const;
 
 /** A ship's lantern's light: as far as a carried lantern's reaches, its colour a shielded flame's. */
 export const LANTERN_LIGHT = { reachM: 13, light: [1.0, 0.74, 0.44] } as const;
+/** A ship settled this far into the sea, metres, is sinking: its lanterns are out. A storm's swell heaves a ship
+ *  afloat less. */
+const SINKING_M = 3;
 /** The soft halo round a lantern's glass, metres across it, and how bright it is by day and at night. */
 const HALO = { radiusM: 0.55, day: 0.25, night: 0.7 } as const;
 
@@ -171,11 +174,13 @@ export class ShipModels {
     this.lanternCount = 0;
     this.halos.length = 0;
     this.each(ships, (model, ship, slot) => {
-      // Its lanterns light round them whether or not it is in view: a ship astern lights the water ahead.
-      if (seconds !== null) for (const lantern of model.lanterns) this.light(ship, lantern, slot);
+      // Its lanterns light round them whether or not it is in view: a ship astern lights the water ahead. A ship
+      // sinking has them out.
+      const lit = seconds !== null && ship.place.z > -SINKING_M ? seconds : null;
+      if (lit !== null) for (const lantern of model.lanterns) this.light(ship, lantern, slot);
       const bounds = model.boundsAt(ship.place, camera.eye, ship.rig);
       if (!bounds || sphereSeen(planes, ...bounds))
-        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, seconds);
+        model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow, lit);
       if (!this.halo && model.lanterns.length > 0) this.halo = new PuffView(model.gpu);
     });
     this.halo?.set(this.halos, camera);

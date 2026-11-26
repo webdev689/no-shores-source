@@ -184,7 +184,7 @@ fn river_flow(offset: vec2f) -> vec2f {
 
 // The lamps near (a ship's lanterns, a sea fight's flashes and fires, the shore's lights) on the water at 'at' (from the
 // eye): the little light open water scatters back up and the more its foam does, and each lamp's glitter on the waves
-// toward the eye, reaching farther than the light it sheds, as a light's path across dark water does.
+// toward the eye, fading more slowly than the light it sheds, as a light's path across dark water does.
 fn lamps_on_water(at: vec3f, normal: vec3f, to_eye: vec3f, foam: f32) -> vec3f {
   var light = vec3f(0.0);
   let count = min(u32(sky_state.lamp_count.x), ${LAMPS_MOST}u);

@@ -67,7 +67,7 @@ export function puffFloats(
   for (let nth = first; nth < drawn; nth++)
     putPuff(kept.picture, (nth - first) * PUFF_FLOATS, marks[sorted[nth] ?? 0] as Mark);
   // A `light` mark (a muzzle's flash, a fire's or a blast's reach) is no puff: the sky's lamps cast it on the hulls, the
-  // sea and the people round it (fightLamps.ts); drawn here its 26 m reach was a banded disc over the sky and sea.
+  // sea and the people round it (fightLamps.ts), where a halo of its whole reach would band the sky and sea.
   let [glow, lit] = [0, 0];
   for (const mark of marks) {
     if (mark.blend !== 'glow') continue;

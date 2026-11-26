@@ -23,5 +23,5 @@ of them. How it works is in [[Sky]] ("Lamps"), [[Dungeons]], [[Cities]] and [[Ci
 | How many at once | As the renderers draw them: the nearest sixteen on land and at sea, the nearest thirty-two under ground | A light past them fades as it does today |
 | A lamp post | Its light at its lanterns, not the middle of its post | It lit the post's middle |
 | A ship's lantern | A glass between six iron posts on its taffrail post; its flame drawn through the glass by the ship's shader, a soft halo round it, its light a lamp reaching 13 m, as a carried lantern's | The ship's pieces are one mesh: the flame is drawn on its glass, not as a separate model |
-| A sea fight's lights | Each flash, blast and fire is a lamp for its life at DFO's reach; a fire's light flickers from 0.6 of its full | They were DFO's point lights, never drawn |
-| Lamps on the sea | Open water scatters a little of a lamp's light and its foam more; each lamp glitters on the waves toward the eye, reaching farther than its light | A light's path across dark water is how a lamp at sea reads |
+| A sea fight's lights | Each flash, blast and fire is a lamp for its life at DFO's reach; a fire's light flickers from 0.6 of its full | They are DFO's point lights |
+| Lamps on the sea | Open water scatters a little of a lamp's light and its foam more; each lamp glitters on the waves toward the eye, fading more slowly than its light | A light's path across dark water is how a lamp at sea reads |

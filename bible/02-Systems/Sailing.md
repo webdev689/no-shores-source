@@ -197,9 +197,10 @@ picture's grain, the picture's lightness about its mean kept:
   writes to its manifest (`lanterns`; the Sloop's model has none). The glass is lit from inside as the city's flames
   are, by day as by night and brighter against the dark: a small tongue of flame shows through it on its wick,
   swaying and stretching as it flickers, the glass glowing amber round it, and a soft halo stands round the glass,
-  brighter at night (`ShipModels`). Its flame flickers with the lamps' `flicker`, shielded to 0.4 of a fire's depth,
-  each slot of a hull on its own beat. Its light is a lamp ([[Sky]], "Lamps at sea") on its deck and hull, the sea
-  round it and the people aboard; a wreck's lantern is out
+  brighter at night (`ShipModels`). Its drawn flame flickers with the lamps' `flicker`, shielded to 0.4 of a fire's
+  depth, each slot of a hull on its own beat; its light is a lamp ([[Sky]], "Lamps at sea"), flickering as every lamp
+  does, on its deck and hull, the sea round it and the people aboard. A ship settled more than three metres into the
+  sea, sinking, and a wreck have their lanterns out
   ([[Every Light Is Redesigned and Animated, and Each Casts Light]], [[Lights as Claude Builds Them]]).
 - **Its stripe** is 0.6 m deep along the line through the mouths of its upper tier of guns, rising with its sheer.
 - **Its flag** flies at the head of its tallest mast (the highest point of its spars), a tenth of its waterline's

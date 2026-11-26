@@ -92,7 +92,7 @@ what show the ground there.
   as a carried lantern does, and a sea fight's flashes, blasts and fires are lamps for as long as each lasts
   ([[Sailing]], "Its lanterns"; [[Naval Combat]]); they join the city's lamps through `CITY_LAMPS`, told anew only
   when one comes or goes. The sea's surface takes their light too: a little scattered up from open water and more
-  from its foam, and each lamp's glitter on the waves toward the eye
+  from its foam, and each lamp's glitter on the waves toward the eye, fading more slowly than its light
   ([[Every Light Is Redesigned and Animated, and Each Casts Light]]).
 - **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
   the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and

@@ -161,6 +161,9 @@ test("each ship's lanterns light the sky's lamps, in view or not, with the fight
   models.shine([flash]);
   assert.equal(CITY_LAMPS.current, first, 'the same lamps, moved in place');
   assert.deepEqual(shown()[0]?.at, [0, -30, 4]);
+  models.draw({} as GPURenderPassEncoder, [{ ...ship(-40), place: { ...PLACE, z: -4 } }], CAMERA, undefined, 5);
+  models.shine();
+  assert.equal(shown().length, 0, 'out on a ship sinking');
   models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 5);
   models.shine();
   assert.equal(shown().length, 0, 'gone with the ships');

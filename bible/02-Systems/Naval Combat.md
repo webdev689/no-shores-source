@@ -482,7 +482,7 @@ the light layer, as the land's bright things do. DFO's lights round a flash (26 
 (52 m for 0.6 s) and a burning ship (16 m, three at most, flickering from 0.6 of its full to its full with the
 lamps' `flicker`) are the effects' `light` marks, cast as the sky's lamps for as long as each lasts (`FightLamps`,
 taken up by the ships' lanterns' list a frame later, [[Sky]], "Lamps"): they light the hulls, the sea round them and
-the people on deck, and are never drawn as puffs, which drew their whole reach as a disc over the sky and sea
+the people on deck, and are never drawn as puffs, whose halo of their whole reach would band the sky and sea
 ([[Every Light Is Redesigned and Animated, and Each Casts Light]]). At most 900 puffs
 live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,
 and smoke last.
