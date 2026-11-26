@@ -92,6 +92,9 @@ export const ASKS = {
   chooseFragment: 65,
   /** A puzzle's point used, by its place among its goal's points in `column`. */
   usePoint: 66,
+  /** The quest walked acquired from the keeper who offers it, by their number in `column` as `speakWith`'s: at their
+   *  counter. */
+  acquire: 85,
   /** The prologue played, which the room keeps with the character. */
   finishPrologue: 68,
   /** A bounty of the day's board taken, or one done turned in: its place on the board in `node` and the day of the

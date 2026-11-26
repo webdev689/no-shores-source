@@ -220,6 +220,12 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   `actions/cache`; performance measured on a real GPU with `?perf` before any switch of the desktop app's engine for
   it.
 - **Isles**: how many, how big and how placed ([[World Map]]).
+- **The welcome's gifts, the hordes, the ride and the lessons**
+  ([[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]], #223's description): old saves
+  (on "Put them on" or at a road's first task); the horde's size, its pay after a fall and its 36 m; which Vestiges are
+  "the world's"; a house piece dismantling as Normal; an escort ship's ball at the hulk; a bought Legendary noticed as a
+  find; the notice hint's place; the keeper screen's differences; the duel's boarder at the step; the townsfolk's dyes
+  dealt anew.
 - **The passages** ([[Passages as Claude Builds Them]]), each the owner's to say:
   - Carrying the haul on past a lamp. The proposal the owner approved
     ([[Passages Web Out From the Patrol Zone Across Its Island]]) had a structure let the player bank the haul and go

@@ -6,7 +6,7 @@
 use crate::arts::arts;
 use crate::factions::factions;
 use crate::kinds::Slot;
-use crate::quest_goals::{Defend, Escort, Goal, GoalDef, Puzzle, Race, Slay, Tail};
+use crate::quest_goals::{Defend, Escort, Foes, Goal, GoalDef, HORDE_WAVE_MOST, Puzzle, Race, Slay, Tail};
 use serde::Deserialize;
 use serde::de::{Deserializer, IgnoredAny, MapAccess, Visitor};
 use std::sync::OnceLock;
@@ -35,8 +35,8 @@ const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
 /// What a task gives as it is done, or a goal as it is met: Aurem, its house's Art, a Tenet (1 or 2, 0 none),
-/// fragments to choose, the first horse (`FIRST_HORSE`, the Bay), and the first ship (the Sloop,
-/// `Character::give_first_ship`). A goal gives only Aurem and the horse.
+/// fragments to choose, the first horse (`FIRST_HORSE`, the Bay), the first ship (the Sloop,
+/// `Character::give_first_ship`), and a keeper's gift (`gifts.rs`). A goal gives only Aurem, the horse and a gift.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
@@ -46,6 +46,7 @@ pub struct RewardDef {
     pub fragments: u8,
     pub horse: bool,
     pub ship: bool,
+    pub gift: Option<crate::gifts::Gift>,
 }
 
 /// One task: its id and the ids it had before (a save of one is read as this), the tracker's words, the scenes played
@@ -79,6 +80,37 @@ pub struct QuestDef {
     pub tasks: Vec<TaskDef>,
     #[serde(default)]
     pub kept: Option<String>,
+    /// The keeper who offers the quest as an item to acquire, if one does (`OfferDef`).
+    #[serde(default)]
+    pub offer: Option<OfferDef>,
+}
+
+/// A quest offered by a keeper: from its task `at` (its first when left out) nothing counts until the player has
+/// acquired it from them at their counter. The card's words (its kind, its rarity's number, its words, the keeper's
+/// quote, and the scene of their longer words, `story`) are the page's alone; the rules hold them to being said.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct OfferDef {
+    /// The keeper's key (`keeper_key`): a house's or one of `KEEPERS`, never the stranger, who keeps no counter.
+    pub keeper: String,
+    #[serde(default)]
+    pub at: Option<String>,
+    pub kind: String,
+    pub rarity: u8,
+    pub words: String,
+    pub quote: String,
+    pub story: String,
+}
+
+impl QuestDef {
+    /// The place of the task from which the quest waits to be acquired, and the number ask 64 sends for the keeper
+    /// who offers it; none for a quest no keeper offers.
+    #[must_use]
+    pub fn offered(&self) -> Option<(usize, u8)> {
+        let offer = self.offer.as_ref()?;
+        let at = offer.at.as_ref().map_or(Some(0), |at| self.tasks.iter().position(|task| task.id == *at))?;
+        Some((at, keeper_number(&offer.keeper)?))
+    }
 }
 
 /// Everything in `content/quests/quests.json` the rules read.
@@ -92,6 +124,13 @@ pub struct QuestsDef {
 pub fn keeper_key(keeper: u8) -> Option<&'static str> {
     let house = factions().faction(keeper).map(|faction| faction.key.as_str());
     house.or_else(|| KEEPERS.iter().find(|(number, _)| *number == keeper).map(|(_, key)| *key))
+}
+
+/// The number ask 64 sends for a keeper's key (`keeper_key`), the stranger's among them.
+#[must_use]
+pub fn keeper_number(key: &str) -> Option<u8> {
+    let house = factions().factions.iter().find(|faction| faction.key == key).map(|faction| faction.id);
+    house.or_else(|| KEEPERS.iter().find(|(_, named)| *named == key).map(|(number, _)| *number))
 }
 
 /// Whether ids are each present and none another's.
@@ -121,6 +160,14 @@ impl QuestsDef {
             }
             if quest.kept.as_ref().is_some_and(|kept| !quest.tasks.iter().any(|task| task.id == *kept)) {
                 problems.push(format!("{}: kept names no task of its own", quest.id));
+            }
+            if let Some(offer) = &quest.offer {
+                let said = [&offer.kind, &offer.words, &offer.quote, &offer.story];
+                let said = said.iter().all(|words| !words.trim().is_empty());
+                if quest.offered().is_none_or(|(_, keeper)| keeper == STRANGER) || offer.rarity > 4 || !said {
+                    problems
+                        .push(format!("{}: its offer names no keeper's counter or task, or says nothing", quest.id));
+                }
             }
             if let Some(after) = quest.after.iter().find(|after| !self.quests.iter().any(|it| it.id == **after)) {
                 problems.push(format!("{}: after names {after}, no quest", quest.id));
@@ -253,17 +300,29 @@ impl GoalDef {
             Goal::Puzzle(puzzle) => puzzled(puzzle),
             Goal::Unseen(unseen) => (!(unseen.within > 0.0 && unseen.within <= PLACE_SQUARE)).then_some("within"),
             Goal::Race(race) => raced(race),
+            Goal::Ride(ride) => {
+                // A keeper's counter to ride up to: the stranger keeps none.
+                let keeper = ride.to.as_deref().is_none_or(|to| keeper_number(to).is_some_and(|key| key != STRANGER));
+                (!(ride.fits() && keeper)).then_some("to")
+            }
+            Goal::Sail(_) => None,
+            Goal::Use(done) => (done.to.as_deref() != done.act.counter()).then_some("to"),
         };
         // A piece held is told again on every ask (`tell_held`), so one piece would meet a count above one.
-        let once = self.kind().stepped() || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_));
+        let once = self.kind().stepped()
+            || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_) | Goal::Ride(_) | Goal::Sail(_) | Goal::Use(_));
         if let Some(field) = wrong.or((!ranks).then_some("rank")) {
             Some(format!("{text}: {field} holds a value none of its own"))
         } else if self.count == 0 || once && self.count != 1 {
-            Some(format!("{text}: count must be 1 on a step or a piece bought or worn, and 1 or more on any goal"))
+            Some(format!(
+                "{text}: count must be 1 on a step, a lesson or a piece bought or worn, and 1 or more on any goal"
+            ))
         } else if self.reward.art || self.reward.tenet > 0 || self.reward.fragments > 0 || self.reward.ship {
             // A house's gifts come with its tasks, in their order (`house_problems`), and the Sloop with its task, the
-            // one `give_ship_due` looks for; a goal gives Aurem or the horse.
-            Some(format!("{text}: a goal's reward gives Aurem or the first horse, nothing of a house's nor the ship"))
+            // one `give_ship_due` looks for; a goal gives Aurem, the horse or a keeper's gift.
+            Some(format!(
+                "{text}: a goal's reward gives Aurem, the first horse or a gift, nothing of a house's nor the ship"
+            ))
         } else {
             None
         }
@@ -283,7 +342,13 @@ fn slain(slay: &Slay) -> Option<&'static str> {
 }
 
 fn escorted(escort: &Escort) -> Option<&'static str> {
-    if !speaks(Some(&escort.who)) { Some("who") } else { (escort.near <= 0.0).then_some("near") }
+    if !speaks(Some(&escort.who)) {
+        Some("who")
+    } else if crate::horses::horse(0, &escort.horse).is_none() {
+        Some("horse")
+    } else {
+        (escort.near <= 0.0).then_some("near")
+    }
 }
 
 fn tailed(tail: &Tail) -> Option<&'static str> {
@@ -297,10 +362,13 @@ fn tailed(tail: &Tail) -> Option<&'static str> {
 }
 
 fn defended(defend: &Defend) -> Option<&'static str> {
-    if defend.ward.is_some() == defend.who.is_some() || !speaks(defend.who.as_deref()) {
+    let warded = defend.ward.is_some() || defend.who.is_some();
+    let wave_most = if defend.horde { HORDE_WAVE_MOST } else { usize::MAX };
+    if defend.horde == warded || defend.ward.is_some() && defend.who.is_some() || !speaks(defend.who.as_deref()) {
         Some("ward")
     } else {
-        (defend.waves.is_empty() || defend.waves.iter().any(Vec::is_empty)).then_some("waves")
+        let wrong = |wave: &Foes| wave.is_empty() || wave.len() > wave_most;
+        (defend.waves.is_empty() || defend.waves.iter().any(wrong)).then_some("waves")
     }
 }
 

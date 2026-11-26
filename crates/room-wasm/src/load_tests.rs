@@ -285,6 +285,9 @@ fn load_of_a_roads_steps() {
             let start = room.place_grounds();
             let at = room_place(room, first);
             assert!(room.put_player(player, at[0], at[1] + if follow { 10.0 } else { 0.0 }));
+            let mut mounted = room::Input { seen: room.clock(), ..room::Input::default() };
+            mounted.intent.controls.mounted = true;
+            room.input(player, mounted).unwrap();
             let begun = tick_timed(room);
             let mut ticks: Vec<f64> = (0..600)
                 .map(|_| {
@@ -314,6 +317,10 @@ fn on_road(quest: usize, task: usize) -> gear::Character {
     character.story.prologue = true;
     character.allegiance.pledge = gear::quests::quests().quests[quest].faction;
     character.quests.set_task(quest, task);
+    // An escort rides only with its player on a horse.
+    let id = character.take_id();
+    let horse = gear::horses::horse(id, gear::horses::FIRST_HORSE).unwrap();
+    character.items.insert(id, (horse, gear::character::At::Worn(gear::kinds::Slot::Mount)));
     character
 }
 

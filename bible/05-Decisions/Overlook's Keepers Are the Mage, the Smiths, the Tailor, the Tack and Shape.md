@@ -39,4 +39,7 @@ time left, and the footer's keys.
   chooses ("The Tiers Are Normal, Elite and Abyss", on pull request #82), today Rough and Storm.
 - **One screen for every keeper**, after the references, and every keeper speaks lines of their own, true to the lore,
   under [[Dialogue]].
+
+  Replaced in part by [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]: the one screen now
+  follows Destiny 2's Gunsmith, and the keeper speaks in it.
 - The numbers and the rest left open are Claude's: [[Factions and Vendors as Claude Shapes Them]].

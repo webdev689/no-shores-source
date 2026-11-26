@@ -292,7 +292,7 @@ test("a smith's ware is drawn as the piece it becomes once bought: its set or cl
     if (read?.kind === 'gear') sent.push(read);
     start += 4 + length;
   }
-  assert.equal(sent.length, 19, 'before any is bought, and after each of the ten and the eight');
+  assert.equal(sent.length, 35, 'before any is bought, and after each of the ten and the twenty-four');
   const looks = (piece: GearItem) => {
     const slot = piece.bucket;
     const wearing = state([{ ...piece, at: WORN + slot }]);

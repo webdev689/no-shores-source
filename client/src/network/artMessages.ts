@@ -18,6 +18,9 @@ export interface ArtState {
   readonly anima: number;
   readonly tenets: readonly [number, number];
   readonly earned?: readonly number[];
+  /** Whether a house's horde runs for the player (`quest_horde`), the room holding the worn Art unbounded: every
+   *  ability of it is cast, none locked, beside what its road has earned. */
+  readonly lent?: boolean;
   /** How much longer the room takes to recharge each share (1.5 under a run's Trickle); 1 where unsaid. */
   readonly recharge?: number;
 }
@@ -84,7 +87,9 @@ export function artsOf(gear: Gear): ArtState {
   );
   const [first = 0, second = 0] = Array.from(gear.tenetsArray() ?? []);
   const earned = Array.from(gear.artsEarnedArray() ?? []);
-  return { art: gear.art(), cores, anima: gear.anima(), tenets: [first, second], earned, recharge: gear.recharge() };
+  const lent = (gear.questHordeLength() ?? 0) > 0;
+  const { art, anima, recharge } = { art: gear.art(), anima: gear.anima(), recharge: gear.recharge() };
+  return { art, cores, anima, tenets: [first, second], earned, lent, recharge };
 }
 
 /** Every spell a snapshot holds. */

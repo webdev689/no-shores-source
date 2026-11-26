@@ -9,13 +9,12 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: #225 (this note rewritten, the owner's open points moved to [[Open Questions]], Claude's
-  calls typed `claude-calls`); #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
+- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
   `roomThread.test.ts`).
-- **Other sessions' work under way**: #223 (keepers' gifts, the house Arts' horde, escorts that ride, the horse and
-  ship taught, keepers' screens after Destiny 2's), #221 (hostile ships and islands on the sea map, travel anywhere at
-  sea) and #216 (the sea reworked, the island's places as painted tiles, the Playlist's crests).
-- **Drafts**: #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
+- **Other sessions' work under way**: #227 (the hub's ground and walks, the ship's stern on the water, music that
+  repeats less), #221 (hostile ships and islands on the sea map, travel anywhere at sea) and #216 (the sea reworked,
+  docking in sight, the island's places as painted tiles, the Playlist's crests).
+- **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
 
@@ -36,9 +35,11 @@ when its code changed ([[The Rooms Deploy When Their Code Changes]], [[The Disco
   section at a time, the [[Overworld]] ([[Cities]], [[Reach]], [[Layouts]], [[Modules]], [[Islands]], [[Held Map]]).
 - **The fight**: [[Combat]], [[Foes]], [[Enemies]] (the Grey Tithe and the [[Lattice]], territories and arrivals by
   airship and crown), [[Navmesh]], [[Arts]], [[Factions]], [[Revives]].
-- **Gear**: [[Gear]], Vestiges and [[Item Pictures]], the [[Shipyard]], [[Guilds]] and [[Outposts]].
+- **Gear**: [[Gear]], Vestiges and [[Item Pictures]], house pieces dropping in the world, the keepers' screens after
+  Destiny 2's, the [[Shipyard]], [[Guilds]] and [[Outposts]].
 - **The sea**: [[Sailing]], [[Naval Combat]], [[Hulls]], [[Ship Power]], [[Crew]].
-- **Story and activities**: the [[Prologue]], [[Quests]] with the houses' roads, [[Dungeons]], [[Breaches]] (the
+- **Story and activities**: the [[Prologue]], [[Quests]] with the houses' roads, the welcome's gifts, the hordes,
+  the riding escort and the riding and sailing lessons, [[Dungeons]], [[Breaches]] (the
   Drowned Vale), the [[Passages]], [[Activities]], [[Public Events]], [[Lore]].
 - **Sound**: [[Music]] and [[Ambience]], every recording the owner's Freesound pick but four synthesised ones.
 - **The interface**: [[Interface]], drawn without HTML; the game in a worker of its own ([[Game]]).
@@ -60,7 +61,8 @@ yet played by hand or with other players in a deployed room.
 - **Played by hand**: the prologue in one run; an hour's day; a ranged weapon's fight on foot; the travel's cinematic
   from the helm; a clash of a Tithe ship and a merchant, joined; the welcome's tour with its 400 Aurem and a starter
   piece bought; the key strip, the leave held and a real pad's View held; the hit fixes; the Passages (every deal, a dive's way across zones, a public round, the held
-  map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again).
+  map's public way, the sea's new ranks and salvage, the week's Abyss Dungeon run again); the escort on its horse and
+  the hulk at sea.
 - **Live, once deployed**: a dungeon of each style; the Journal and the board (a bounty taken, counted and turned in,
   a sea bounty at sea); an arrival of each kind; a Vestige left lying and taken from the Postmaster; the accounts'
   migration of each character's room; a lore chapter found; two players reviving; the heroic raid with players; the live flow into a Test
@@ -79,7 +81,8 @@ yet played by hand or with other players in a deployed room.
   first-person frames pair with the published hands; the pistolet's and the thunderlock's first-person pictures (a
   404 at the Test Ground: missing on R2, or slow); whether #70's dead code is cleared; a public event's chest
   (`public/chest.rs`) and a grant (`grants.rs`) still go through `pick_up`, which hauls a Vestige where the player
-  stands in a passage zone; a Vein's nodes under ground, never pictured.
+  stands in a passage zone; a Vein's nodes under ground, never pictured; whether the wreck scene's sunk Sloop still
+  wears the pirates' colours.
 
 ## Waiting on the owner
 
@@ -102,7 +105,7 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 ## Next
 
 - **The five longest system notes**: Interface (1,668 lines), Gear, Server, Game and Naval Combat (850 to 907) want
-  splitting or tightening, once #216, #218, #221 and #223, which edit all five, have merged (the owner's "After they
+  splitting or tightening, once the open pull requests that edit them have merged (the owner's "After they
   merge").
 - **DFO's newest site.** `MckaySea/website.df.source`, a fork pushed after `Lattymoy/website.df.source`, stays unread:
   attaching it was refused as another account's. The second pass followed `Lattymoy/website.df.source` at 375ba209.
@@ -117,11 +120,6 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
   renders leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
   ([[The Forge's Renders Will Use daggerfalljs.dev]]); whether Cloudflare takes the accounts' binding to the bot's
   `Members` before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
-- **The wreck's R2 tools**, whose push publishes to R2: `tools/wreck/wreck_level.py`'s waves still list the
-  Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
-  and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
-  wreck.json by hand), or the next export drops them. The wreck scene's sunk Sloop wears the pirates' colours until
-  `tools/wreck` is rendered again.
 - **The forge**: the Drowned horse renders only by a hand forge run (`figures` =
   `horseidle,horsewalk,horsegallop|horse_drowned`, a write to R2), its first-person frames in no workflow; the
   Scrivener and the Steward wear the Idol's and the Heart's bodies until their own are drawn; the Wraith Mist barding's

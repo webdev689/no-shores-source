@@ -68,9 +68,9 @@ table Input {
 // in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the helm, a step of the player's walk on
 // its deck instead: its controls in the movement crate's order and its number, 1, 2, 3 and so on from the helm left. Or
 // the helm left (1), or taken again at the wheel (2), or a chase (3): the hostile ship it chases by that ship's number,
-// `chase`, 0 for none. Or an ask: its repair by a port city (1), to board a captain who struck (2), or to leave the
-// captain's deck once its crew has fallen (3). A course asked with `travel` takes the ship to other waters by the held
-// map (crates/room/src/sea_travel.rs).
+// `chase`, 0 for none. Or an ask: its repair by a port city (1), to board a captain who struck (2), to leave the
+// captain's deck once its crew has fallen (3), or the held map raised at the helm (4), told to a sailing lesson. A
+// course asked with `travel` takes the ship to other waters by the held map (crates/room/src/sea_travel.rs).
 table Course {
   points: [double];
   pace: ushort;
@@ -362,7 +362,8 @@ table Hostile {
 // its captain's faction, rank and hull, as Hostile numbers them. Then the other captains in the fight, their count and
 // each one's numbers (the number its events name it by, its faction and rank, its ship and its mind; none when
 // there are none), which the view leaves out so a page that knows one captain reads it whole. Last, whether the player
-// may board a captain of it now: the sea would take the boarding they asked (crates/room/src/battle.rs `alongside`).
+// may board a captain of it now: the sea would take the boarding they asked (crates/room/src/battle.rs `alongside`);
+// and whether it is the fight of the Harbourmaster's hulk, the sailing lesson's (crates/room/src/sea_lessons.rs).
 table SeaFight {
   player: uint;
   view: [double];
@@ -371,6 +372,7 @@ table SeaFight {
   others: [double];
   hull: ubyte;
   may_board: bool;
+  lesson: bool;
 }
 
 // One ship in a fleet room: its number; whether a captain sails it; its helm's numbers in the sailing crate's order

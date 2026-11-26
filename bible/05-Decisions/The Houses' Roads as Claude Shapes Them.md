@@ -80,14 +80,14 @@ kinds came, each a goal any later mission may use ([[Quests]]), and each road to
 
 | Kind | What it asks | Where the roads use it |
 |---|---|---|
-| Escort | Meet a figure, who greets the player, and keep within 15 m as it walks; it waits while the player lags and while an ambush stands | The Lamplighters bring Tobin from Shingle Landing to Ewe Fold past the Barrow Field, wreckers springing halfway; the Veiled meet Wren at Vale Mouth and follow her through Orchard Farm into the Hollow Coven (the second Tenet comes there) |
+| Escort (replaced in part: the figure rides at a gallop and the player keeps within 30 m, [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]) | Meet a figure, who greets the player, and keep within 15 m as it walks; it waits while the player lags and while an ambush stands | The Lamplighters bring Tobin from Shingle Landing to Ewe Fold past the Barrow Field, wreckers springing halfway; the Veiled meet Wren at Vale Mouth and follow her through Orchard Farm into the Hollow Coven (the second Tenet comes there) |
 | Tail | Follow a figure between 10 and 40 m; nearer, it notices and the tail starts again | The Veiled follow a Tithe collector from Saltgrass to Chalkpit Ruin, their first step |
 | Defend | Keep a ward standing through two waves; if it falls, try again | The Stormcallers hold the storm-glass on the High Downs (the Art comes as the storm finds it); the Lamplighters hold Gullwing's wounded against the Tithe, mending their own wounds. The second waves differ |
 | Puzzle | Use points round a place in the order a line gives (a wrong one's line says the whole order again), or with no order, each once | In order: the Stormcallers strike the Old Stones' rods (west, north, east, south: Pell's lines); the Lamplighters set Grey Point's lamps (red, white, green, gold: Maren's); the Veiled open the reckoner's chest at Valeguard (tithe, debt, interest, fee: Wren's). In any order: the Stormcallers search the Tithe Barns, the Lamplighters douse the Barrow Field's false lights (the Art comes there), the Veiled lift the tallies in Chalkpit Ruin |
 | Unseen | Come within 8 m of a place's middle with no foe within 60 m of it alert on the player; its watch stands round the middle facing outward, so the player slips between them | The Veiled reach the Chalk Adit past its watch (the Art comes there) |
 | Race | Pass checkpoints in order within a time, run over the ground as the player likes, not along laid paths | The Stormcallers run the river road from Weir Mill by Gullwing to the Water Meadows in 270 s under Arlo's storm |
 
-Each road is now eleven tasks: the puzzle in order comes before its instance. A failed step says its own line (the glass broken,
+Each road is twelve tasks, a horde after its Art's ([[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]): the puzzle in order comes before its instance. A failed step says its own line (the glass broken,
 the riders gone, seen, noticed, a wrong rod, stone or mark) and is tried again: a defence or an escort after 10 s, an
 unseen step once no foe has been on the player for 10 s, a race from its first checkpoint, a puzzle from its first
 point. Every task has an `id`, and the save keeps each road and task by id, so a mission added anywhere keeps every

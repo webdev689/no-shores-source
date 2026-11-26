@@ -384,6 +384,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea and the Abyss Run Again Are Retuned Into the Band]]
 - [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]
+- [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]
+- [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]
+- [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]
 
 ## Claude's calls
 
@@ -429,6 +432,7 @@ are not decisions: each links the owner's decision it builds on, and is typed `c
 - [[Foe Arrivals as Claude Builds Them]]
 - [[Character Slots and the Test Room as Claude Builds Them]]
 - [[Passages as Claude Builds Them]]
+- [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]
 
 ## Replaced
 

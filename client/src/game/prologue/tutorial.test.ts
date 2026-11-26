@@ -1,10 +1,23 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { EVENT } from '../../combat/cues.ts';
+import type { FightEvent } from '../../network/messages.ts';
 import { DEFAULTS, rebind } from '../../player/binds.ts';
 import { BINDS } from '../../player/input.ts';
 import type { Action, FighterView } from '../../rules/fighters.ts';
 import { justMet } from '../tasks.ts';
-import { type Done, DODGE_AT, Freeze, PARRY_AT, reminder, ticksToLand, Tutorial } from './tutorial.ts';
+import {
+  AGAIN_PAUSE_S,
+  type Done,
+  DODGE_AT,
+  DodgeWatch,
+  Freeze,
+  STORM_PAUSE_S,
+  PARRY_AT,
+  reminder,
+  ticksToLand,
+  Tutorial,
+} from './tutorial.ts';
 
 const STILL: Done = {
   seconds: 0.1,
@@ -234,8 +247,12 @@ test('the wisp gives the Storm, and the next fight teaches each of its abilities
   );
   assert.equal(tutorial.spell, 'arcLash', 'Arc Lash first');
   assert.deepEqual(ticked(tutorial, { ...storm, cast: ['quicken'] }), ['Cast Quicken'], 'one cast early counts');
+  assert.equal(tutorial.spell, null, 'and the fight runs on a while after it too');
+  for (let held = 0; held < STORM_PAUSE_S; held += 0.5) tutorial.frame({ ...storm, seconds: 0.5 });
   assert.equal(tutorial.spell, 'arcLash');
   ticked(tutorial, { ...storm, cast: ['arcLash'] });
+  assert.equal(tutorial.spell, null, 'the fight runs on a while first');
+  for (let held = 0; held < STORM_PAUSE_S; held += 0.5) tutorial.frame({ ...storm, seconds: 0.5 });
   assert.equal(tutorial.spell, 'tempest');
   assert.deepEqual(ticked(tutorial, { ...storm, cast: ['tempest'] }).length, 3);
   assert.equal(tutorial.spell, null);
@@ -243,6 +260,36 @@ test('the wisp gives the Storm, and the next fight teaches each of its abilities
   assert.equal(tutorial.frame(storm).task, 'Fight your way through the wreck');
   assert.deepEqual(tutorial.frame(storm).steps, [{ text: 'Foes standing', count: 3 }]);
   assert.deepEqual(tutorial.frame({ ...storm, foes: 0 }).steps, [], 'between waves');
+});
+
+test('after each ability is first cast the fight runs on with foes to try it again before the next is asked', () => {
+  const tutorial = broughtTo('wisp');
+  const worn = { ...STILL, arms: 'worn', bow: 'worn' } as const;
+  tutorial.frame({ ...worn, storm: true });
+  const storm = { ...worn, storm: true, foes: 3, seconds: 0.5 } as const;
+  const fight = (seconds: number, more: Partial<Done> = {}) => {
+    for (let held = 0; held < seconds - 1e-9; held += 0.5) tutorial.frame({ ...storm, ...more });
+  };
+  tutorial.frame(storm);
+  assert.ok(!tutorial.chargeAgain(), 'nothing cast yet');
+  tutorial.frame({ ...storm, cast: ['arcLash'] });
+  assert.ok(tutorial.chargeAgain(), 'the Storm charged again, to try it again');
+  assert.ok(!tutorial.chargeAgain(), 'once');
+  fight(STORM_PAUSE_S - 1);
+  assert.equal(tutorial.spell, null, 'not asked while the fight runs on');
+  fight(30, { foes: 0 });
+  assert.equal(tutorial.spell, null, 'the pause runs only while foes stand to try it on');
+  fight(1);
+  assert.equal(tutorial.spell, 'quicken', 'then the next');
+  tutorial.frame({ ...storm, cast: ['quicken'] });
+  assert.ok(tutorial.chargeAgain());
+  fight(1);
+  tutorial.frame({ ...storm, cast: ['quicken'] });
+  assert.ok(!tutorial.chargeAgain(), 'cast again, it is not charged again');
+  fight(AGAIN_PAUSE_S - 0.5);
+  assert.equal(tutorial.spell, null, 'cast again, its moment plays out');
+  fight(0.5);
+  assert.equal(tutorial.spell, 'tempest', 'and the next is asked sooner');
 });
 
 test('a boarder brought down before both lessons are learned is followed by another', () => {
@@ -316,6 +363,39 @@ test('a blow lands in so many ticks: a swing or a telegraphed blow at the player
   assert.equal(ticksToLand(foe(telegraph(9, { feintAt: 12 })), 1), null);
   assert.equal(ticksToLand(foe(swing(6), 2), 1), null, 'at another');
   assert.equal(ticksToLand(foe({ kind: 'idle' }), 1), null);
+});
+
+test('a dodge counts once it got the player clear of the blow, perfect or not, out of its reach or through it', () => {
+  const dodging = own({ action: { kind: 'dodge', elapsed: 2, toward: [0, 1] } });
+  const word = (kind: number) => [{ kind, defender: 1, striker: 2 }] as unknown as FightEvent[];
+  /** The blow wound up at the player as they stand (`self`), landing, and then `after` the room's words over
+   *  `waitS` seconds: whether any frame counted a dodge. */
+  const watched = (
+    self: FighterView,
+    after: FightEvent[] = [],
+    waitS = 1,
+    boarder: FighterView | null = foe(swing(0)),
+  ) => {
+    const watch = new DodgeWatch();
+    let met = watch.frame(foe(swing(8)), own(), 1, [], 1 / 60);
+    met = watch.frame(foe(swing(4)), self, 1, [], 1 / 60) || met;
+    met = watch.frame(boarder, self, 1, [], 1 / 60) || met;
+    met = watch.frame(null, own(), 1, after, 1 / 60) || met;
+    for (let waited = 0; waited < waitS; waited += 0.1) met = watch.frame(null, own(), 1, [], 0.1) || met;
+    return met;
+  };
+  assert.ok(watched(dodging), 'clear of it, with no word from the room');
+  assert.ok(!watched(own()), 'no dodge, no lesson');
+  assert.ok(!watched(dodging, word(EVENT.hit)), 'the blow found them');
+  assert.ok(!watched(dodging, word(EVENT.blocked)), 'their guard took it');
+  assert.ok(!watched(dodging, [], 0.3), 'not before word of it could come');
+  assert.ok(!watched(dodging, [], 1, null), 'the boarder fell before its blow landed');
+  assert.ok(new DodgeWatch().frame(null, own(), 1, word(EVENT.dodged), 0), 'the room says it passed through');
+  assert.ok(new DodgeWatch().frame(null, own(), 1, word(EVENT.perfect), 0), 'perfectly or not');
+  assert.ok(
+    !new DodgeWatch().frame(null, own(), 1, [{ kind: EVENT.dodged, defender: 3 }] as FightEvent[], 0),
+    'another',
+  );
 });
 
 const NONE = { locked: true, guard: false, dodge: false };

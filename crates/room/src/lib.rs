@@ -48,6 +48,7 @@ mod judged;
 mod judging;
 mod landing;
 mod left;
+mod lessons;
 pub mod lore;
 mod outpost;
 mod outpost_boss;
@@ -507,6 +508,7 @@ impl Room {
         self.keep_cache();
         self.keep_passage();
         self.keep_quests();
+        self.keep_lessons();
         self.give_guilds();
         self.keep_steps();
         self.pick_up_drops();

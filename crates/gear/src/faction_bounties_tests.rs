@@ -113,7 +113,11 @@ fn a_factions_bounty_counts_only_while_its_cape_is_worn_and_pays_xp_and_its_repu
     let (place, target) = felling_place(faction).expect("found");
     let mut character = serving(faction);
     character.ask(Ask::TakeBounty { place, day: DAY }, at_board(DAY), &DICE).expect("taken");
-    let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == Slot::Cloak).map(|(id, _)| *id);
+    let cape = character
+        .items
+        .iter()
+        .find(|(_, (item, at))| item.kind.slot() == Slot::Cloak && *at != crate::character::At::Vault)
+        .map(|(id, _)| *id);
     character.items.remove(&cape.expect("the cape kept"));
     assert_eq!(character.cape_worn(), None);
     assert!(!character.saw(&ELITE_FOE, DAY), "no cape, no count");
