@@ -381,11 +381,11 @@ impl Sea {
             sailing.ship.rate = if self.fights.fighting(*player) {
                 0
             } else {
-                ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
+                way::ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
             };
             // Its way is its pace's by the canvas it keeps, never under half, and its hull's class.
             let way = berth.kept[1].max(0.5) * class.way;
-            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
+            way::sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
             // No ship sails into a locked sea: one about to cross into it stops at its edge.
             if self.chart.locked([sailing.ship.x, sailing.ship.y]) && !self.chart.locked([ship.x, ship.y]) {
                 (sailing.ship, sailing.course) = (Ship { pace: 0, rate: 0, ..ship }, VecDeque::new());
@@ -521,52 +521,6 @@ fn heave_to(
     Some((player, ship_at(sailing.ship.x, sailing.ship.y, sailing.ship.heading, 0), kept, hull))
 }
 
-/// The bearing of each leg a ship sails through within `reach` metres along its course, from where it is.
-fn ways_ahead(sailing: &Sailing, reach: f64) -> Vec<f64> {
-    let (mut at, mut left, mut ways) = ([sailing.ship.x, sailing.ship.y], reach, Vec::new());
-    for &[to_x, to_y] in &sailing.course {
-        let (along_x, along_y) = (to_x - at[0], to_y - at[1]);
-        let length = (along_x * along_x + along_y * along_y).sqrt();
-        if length > 0.0 {
-            ways.push(libm::atan2(along_x, -along_y));
-        }
-        left -= length;
-        if left <= 0.0 {
-            break;
-        }
-        at = [to_x, to_y];
-    }
-    ways
-}
-
-/// Moves a ship `distance` metres along its course.
-fn sail(sailing: &mut Sailing, distance: f64) {
-    let mut left = distance;
-    while left > 0.0 {
-        let Some(&[to_x, to_y]) = sailing.course.front() else {
-            (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-            return;
-        };
-        let (along_x, along_y) = (to_x - sailing.ship.x, to_y - sailing.ship.y);
-        let length = (along_x * along_x + along_y * along_y).sqrt();
-        if length > 0.0 {
-            sailing.ship.heading = libm::atan2(along_x, -along_y);
-        }
-        if length <= left {
-            (sailing.ship.x, sailing.ship.y) = (to_x, to_y);
-            sailing.course.pop_front();
-            left -= length;
-        } else {
-            sailing.ship.x += along_x * (left / length);
-            sailing.ship.y += along_y * (left / length);
-            left = 0.0;
-        }
-    }
-    if sailing.course.is_empty() {
-        (sailing.ship.pace, sailing.ship.rate) = (0, 0);
-    }
-}
-
 #[path = "sea_decks.rs"]
 pub mod decks;
 #[cfg(test)]
@@ -589,6 +543,8 @@ mod ports;
 mod puts_in;
 #[path = "sea_travel.rs"]
 pub mod travel;
+#[path = "sea_way.rs"]
+mod way;
 
 #[cfg(test)]
 #[path = "sea_home_tests.rs"]

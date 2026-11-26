@@ -226,14 +226,12 @@ pub fn refusal() -> Option<String> {
     .flatten()
 }
 
-/// The sea's opening text with its ports: `{ "layout": <layout file>, "ports": [{ "id", "name", "continent",
-/// "centre": [x, y] }], "islands": { <continent id>: <name> } }`, the ports as the waters' door takes them, and the
-/// islands' names (`content/world/islands.json`), the sea of every island not named locked; with none, none is.
+/// The sea's opening text: `{ "layout", "ports": [{ "id", "name", "continent", "centre": [x, y] }], "islands" }`, the
+/// ports as the waters' door takes them, and the islands' names (`world::islands`): an unnamed island's sea locked.
 #[derive(Deserialize)]
 struct SeaRequest {
     layout: world::layout::Layout,
     ports: Vec<world::traffic::Port>,
-    #[serde(default)]
     islands: Option<std::collections::BTreeMap<String, String>>,
 }
 
