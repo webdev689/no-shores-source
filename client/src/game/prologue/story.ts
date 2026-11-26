@@ -11,6 +11,7 @@ import type { MovementRules } from '../../rules/movementRules.ts';
 import type { MarkView } from '../../ships/markView.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
 import type { Brig } from './brig.ts';
+import type { TitleGate } from './intro.ts';
 import type { Look } from './look.ts';
 import type { Sailing } from './sailing.ts';
 import type { Stage } from './stage.ts';
@@ -37,6 +38,8 @@ export interface Story {
   readonly roomModule: Promise<WebAssembly.Module>;
   readonly marks: MarkView;
   readonly link: AccountLink | null;
+  /** The character screen beginning at the title opens, where the page has accounts. */
+  readonly gate?: TitleGate;
   /** The player as they made themselves: their look, and the dress they wear in the story. */
   look: Look;
   dress: Dress;

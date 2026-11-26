@@ -4,7 +4,7 @@
 // says it is not set up.
 {
   "name": "noshores-bot",
-  "main": "worker.ts",
+  "main": "main.ts",
   "compatibility_date": "2026-11-01",
   "send_metrics": false,
   "workers_dev": true,

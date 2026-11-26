@@ -248,7 +248,8 @@ impl Room {
         let living: Vec<PlayerId> =
             self.players.iter().filter(|(_, found)| found.living()).map(|(id, _)| *id).collect();
         breach.lodestone.needed = false;
-        if breach.phases.iter().any(|phase| matches!(phase, super::Phase::Running(_))) {
+        // In a test room it harms but loses nothing: what unwrites a company is what one player cannot hold off.
+        if !self.test && breach.phases.iter().any(|phase| matches!(phase, super::Phase::Running(_))) {
             breach.lost.get_or_insert(self.clock);
         }
         if living.is_empty() {

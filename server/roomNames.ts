@@ -17,6 +17,11 @@ const BREACH = /^breach-(normal|hard)$/;
 const STARTED_AT_SEA = 'sea';
 const SEA_STARTED = /--sea--run-[a-z0-9]{8}$/;
 
+/** A test run's instance, after `--test-` where its real run's is after `--run-`; and the patrol zones whose Breach's
+ *  gate a test copies, each zone copy named by the instance of the test run it opens (`gear::breach::DROWNED_VALE`). */
+const TEST = /^test-([a-z0-9]{8})$/;
+const BREACH_GATES = ['gullwing-vale'];
+
 /** A node's room by the name after `node-`: `<id>` at Normal, `<id>--elite` or `<id>--abyss`; a patrol's dungeon's
  *  room with `--dungeon-<number>` after that; and a run with `--run-<instance>` last. A patrol's dungeon is one shared
  *  room at Normal and only a run at Elite or Abyss. A playlist's run of an Elite Dungeon at Elite or Abyss names its
@@ -33,8 +38,10 @@ export function nodeRoom(name: string): {
   readonly playlist: number | null;
   readonly guild: string | null;
   readonly breach: number | null;
+  readonly test?: true;
 } | null {
   const parts = name.split('--');
+  if (parts.length > 1 && parts.at(-1)?.startsWith('test-') === true) return testNode(parts);
   // A run's and a dungeon's endings only after `--`: a node may itself be called `dungeon-0`.
   const last = parts.length > 1 ? (parts.at(-1) ?? '') : '';
   const guilded = parts[1]?.startsWith('guild-') === true;
@@ -75,6 +82,27 @@ export function nodeRoom(name: string): {
     guild: null,
     breach,
   };
+}
+
+/** A test room's node by its name's parts (`testRoom`): a Breach's gate's zone copy, or a test run named as its real
+ *  run is but for its last part. A run marked `--sea`, a patrol's dungeon's, a guild's and one at Normal have no test. */
+function testNode(parts: string[]): ReturnType<typeof nodeRoom> {
+  const instance = TEST.exec(parts.pop() ?? '')?.[1];
+  const [id = ''] = parts;
+  if (instance === undefined) return null;
+  if (parts.length === 1)
+    return BREACH_GATES.includes(id)
+      ? { id, seas: 0, dungeon: null, run: null, playlist: null, guild: null, breach: null, test: true }
+      : null;
+  const real = parts.at(-1) === STARTED_AT_SEA ? null : nodeRoom([...parts, `run-${instance}`].join('--'));
+  const fits = real && real.dungeon === null && real.guild === null && (real.seas > 0 || real.breach !== null);
+  return fits ? { ...real, test: true } : null;
+}
+
+/** Whether a room is a test room, for developers alone: a test run (`--test-<instance>` where its real run is
+ *  `--run-<instance>`), or the zone copy whose Breach's gate a Breach's test run opens from. */
+export function testRoom(room: string): boolean {
+  return room.startsWith('node-') && nodeRoom(room.slice('node-'.length))?.test === true;
 }
 
 /** Whether a node's run was started at sea from the Playlist: a playlist's run, or the week's marked `--sea`. Such a
@@ -133,10 +161,12 @@ export function breachAsk(room: string, minute: number): string | null {
   return !named || named.breach === null ? null : JSON.stringify({ zone: named.id, tier: named.breach, minute });
 }
 
-/** The Breach's run a name is, by its gate's patrol zone's room and its tier: null for any other name. */
+/** The Breach's run a name is, by its gate's patrol zone's room and its tier: null for any other name. A test run's
+ *  zone is its own copy, named by its instance. */
 export function breachRun(room: string): { readonly zone: string; readonly tier: number } | null {
   const named = room.startsWith('node-') ? nodeRoom(room.slice('node-'.length)) : null;
-  return !named || named.breach === null ? null : { zone: `node-${named.id}`, tier: named.breach };
+  if (!named || named.breach === null) return null;
+  return { zone: named.test ? `node-${named.id}--test-${named.run ?? ''}` : `node-${named.id}`, tier: named.breach };
 }
 
 /** The letters a run's instance is drawn from: 36, so each of its 8 random bytes is taken modulo 36. */
@@ -164,9 +194,9 @@ export function delveWeek(instance: string): number {
   return Number.parseInt(instance.slice(0, DELVE_WEEK_LETTERS), 36);
 }
 
-/** Whether a room is a run, kept to the company that entered it. */
+/** Whether a room is a run, kept to the company that entered it, or a test room, kept to developers. */
 export function privateRun(room: string): boolean {
-  return RUN_ENDING.test(room);
+  return RUN_ENDING.test(room) || testRoom(room);
 }
 
 /** The start of a Test Ground room's name, `test-<name>`: the Test Ground opens by no other. */
@@ -177,9 +207,10 @@ export const TEST_GROUND = 'test-';
 export const RUN_MOST = 4;
 export const BREACH_MOST = 8;
 
-/** The most accounts a run holds: a Breach's eight, any other's four. */
+/** The most accounts a run holds: a Breach's eight (and its test's zone copy's), any other's four. */
 export function runMost(room: string): number {
-  return breachRun(room) === null ? RUN_MOST : BREACH_MOST;
+  const zoneCopy = testRoom(room) && nodeRoom(room.slice('node-'.length))?.run === null;
+  return breachRun(room) === null && !zoneCopy ? RUN_MOST : BREACH_MOST;
 }
 
 /** The most sockets a room holds: a guard against one client opening sockets without end, since every snapshot

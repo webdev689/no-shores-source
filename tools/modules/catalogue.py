@@ -1,5 +1,6 @@
 """Every module the bake builds, by name: its builder and its seed."""
 import adorn
+import airship
 import breach_above
 import breach_below
 import breach_gate
@@ -9,6 +10,7 @@ import cavern
 import chapels
 import citadel
 import court_pieces
+import crown
 import dress
 import fissure
 import market
@@ -120,3 +122,10 @@ BREACH = {'breach-gate': (breach_gate.build, 201), 'breach-descent': (breach_bel
 for name, (build, seed) in BREACH.items():
     BUILDERS[name] = build
     SEEDS[name] = seed
+# What brings foes (`crates/room/src/arrivals.rs`), drawn by the page as it flies or forms: the Grey Tithe's airship
+# and the Lattice's crown. Event props, so their normals are steady; last in the catalogue, so no module's place moves.
+ARRIVALS = {'tithe-airship': (airship.airship, 301), 'lattice-crown': (crown.crown, 302)}
+for name, (build, seed) in ARRIVALS.items():
+    BUILDERS[name] = build
+    SEEDS[name] = seed
+    EVENTS[name] = (build, seed)

@@ -8,12 +8,12 @@ use serde_json::json;
 const KINDS: [NodeKind; 4] = [NodeKind::Patrol, NodeKind::Mission, NodeKind::Dungeon, NodeKind::Boss];
 
 /// Land rising 300 m a kilometre east and south, over 4 km square round the origin.
-pub(super) fn sloped() -> Floor {
+pub(crate) fn sloped() -> Floor {
     land((0..16).map(|cell| f64::from(cell % 4 + cell / 4) * 300.0).collect())
 }
 
 /// Land over 4 km square round the origin, its heights at the corners of a kilometre grid (`rising`, row by row).
-pub(super) fn land(rising: Vec<f64>) -> Floor {
+pub(crate) fn land(rising: Vec<f64>) -> Floor {
     let grid = |data: Vec<f64>| {
         json!({ "width": 4, "height": 4, "left_m": -2000.0, "top_m": -2000.0, "cell_m": 1000.0,
             "first_column": 0, "first_row": 0, "data": data })
@@ -24,7 +24,7 @@ pub(super) fn land(rising: Vec<f64>) -> Floor {
 }
 
 /// A section 400 m square round the origin, its two spawns near its southern edge.
-pub(super) fn section() -> Section {
+pub(crate) fn section() -> Section {
     Section {
         ring: vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]],
         spawns: vec![[0.0, 180.0], [15.0, 185.0]],
@@ -32,7 +32,7 @@ pub(super) fn section() -> Section {
     }
 }
 
-pub(super) fn node(kind: NodeKind, id: &str) -> Room {
+pub(crate) fn node(kind: NodeKind, id: &str) -> Room {
     Room::garrisoned(sloped(), Vec::new(), section(), kind, (id, None))
 }
 
@@ -41,9 +41,13 @@ pub(super) fn levelled(kind: NodeKind, id: &str, levels: (u8, u8)) -> Room {
     Room::garrisoned(sloped(), Vec::new(), section(), kind, (id, Some(levels)))
 }
 
-/// Each group's foes as the seed draws them, in the order they stand.
+/// Each group's foes as the seed draws them, in the order they stand: a patrol's bands, then the smaller groups
+/// beside them.
 fn drawn(kind: NodeKind, id: &str) -> Vec<Vec<(u8, Rank)>> {
-    groups(kind, &mut draws_of(node_seed(id))).into_iter().map(|group| group.members).collect()
+    let bands = groups(kind, &mut draws_of(node_seed(id)));
+    let stood = bands.iter().map(|band| band.members.len()).sum();
+    let smaller = smaller::beside_bands(kind, node_seed(id), stood);
+    bands.into_iter().chain(smaller).map(|group| group.members).collect()
 }
 
 fn feet(foe: &FoeSeen) -> [f64; 2] {
@@ -66,7 +70,14 @@ fn each_kind_stands_its_drawn_groups_idle_on_the_ground_facing_out_and_clear_of_
                 && groups.iter().all(|members| (2..=4).contains(&members.len()) && tithe_land(members, ranks))
         };
         match kind {
-            NodeKind::Patrol => assert!(bands(&groups, &[Minor, Major]), "{groups:?}"),
+            NodeKind::Patrol => {
+                let smaller = |members: &Vec<(u8, Rank)>| smaller::SMALLER.iter().any(|(drawn, _)| drawn == members);
+                let at = groups.iter().position(smaller).expect("smaller groups beside its bands");
+                assert!(bands(&groups[..at], &[Minor, Major]), "{groups:?}");
+                assert!(groups[at..].iter().all(smaller) && (1..=3).contains(&(groups.len() - at)), "{groups:?}");
+                let square = groups.iter().map(Vec::len).sum::<usize>();
+                assert!(square <= smaller::SQUARE_MOST, "its square stands {square}");
+            }
             NodeKind::Mission => {
                 assert_eq!(groups.last().unwrap(), &[(ENFORCER, Elite), (REEVE, Elite)]);
                 assert!(bands(&groups[..groups.len() - 1], &[Minor, Major]), "{groups:?}");
@@ -93,8 +104,11 @@ fn each_kind_stands_its_drawn_groups_idle_on_the_ground_facing_out_and_clear_of_
             assert!(room.nav.nearest_point([x, y, foe.fighter.body.z]).is_some(), "on the navmesh");
         }
         for post in &room.garrison {
-            let holds = post.members[0].1 >= Miniboss;
-            assert_eq!(post.beat.is_none(), holds, "{kind:?}: a Boss's or a Miniboss's group holds its post");
+            // A patrol's sentry and its watch hold their posts too (`smaller.rs`).
+            let drawn: Vec<(u8, Rank)> = post.members.iter().map(|&(number, rank, ..)| (number, rank)).collect();
+            let watch = smaller::SMALLER.iter().any(|(members, holds)| *holds && drawn == *members);
+            let holds = post.members[0].1 >= Miniboss || watch;
+            assert_eq!(post.beat.is_none(), holds, "{kind:?}: a great foe's group, a sentry and a watch hold");
             for (index, &(_, _, place, facing)) in post.members.iter().enumerate() {
                 let toward = match (&post.beat, index) {
                     (None, 0) => {
@@ -219,13 +233,15 @@ fn a_cleared_group_stands_again_two_minutes_after_its_last_fell_once_no_player_i
 #[test]
 fn a_node_s_room_holds_more_foes_than_a_course_s_counting_only_the_living_when_a_group_stands_again() {
     assert_eq!(Room::new(Vec::new(), (0.0, 0.0)).foes_most, FOES_MOST);
+    assert_eq!((node(NodeKind::Mission, "glade").foes_most, FOES_MOST, NODE_FOES_MOST), (NODE_FOES_MOST, 12, 24));
+    // A patrol keeps room besides for its territories' groups.
     let mut room = node(NodeKind::Patrol, "glade");
-    assert_eq!((room.foes_most, FOES_MOST, NODE_FOES_MOST), (NODE_FOES_MOST, 12, 24));
+    assert_eq!((room.foes_most, crate::PATROL_FOES_MOST), (crate::PATROL_FOES_MOST, 32));
     clear(&mut room, 0);
     let group = room.garrison[0].members.len();
     let far = [-150.0, -150.0, room.floor.height_at(-150.0, -150.0)];
     let mut fillers = Vec::new();
-    while room.living_foes() + group <= NODE_FOES_MOST {
+    while room.living_foes() + group <= room.foes_most {
         fillers.push(room.stand_foe(foe_type(RUNNER).unwrap(), Minor, far, 0.0, None));
     }
     run(&mut room, STAND_AGAIN + 1);
@@ -234,7 +250,7 @@ fn a_node_s_room_holds_more_foes_than_a_course_s_counting_only_the_living_when_a
         room.foes.get_mut(&id).unwrap().fighter.action = Action::Dead { elapsed: 0 };
     }
     run(&mut room, 1);
-    assert!(room.foes.len() > NODE_FOES_MOST, "the fallen still lie there, past the limit");
+    assert!(room.foes.len() > room.foes_most, "the fallen still lie there, past the limit");
     assert_eq!(room.garrison[0].cleared_at, None, "but only the living are counted");
 }
 
@@ -378,6 +394,11 @@ fn corvane_s_called_foes_fall_with_him_in_his_node_and_he_calls_them_all_anew_wh
     run(&mut room, GREAT_STAND_AGAIN - STAND_AGAIN);
     let again = room.garrison[0].standing[0];
     assert!(again != corvane && room.garrison[0].cleared_at.is_none(), "his group stood again");
+    // It comes back by airship (`arrivals.rs`): he fights, and calls, once landed.
+    assert!(room.arriving(again), "brought back by airship");
+    while room.arriving(again) {
+        room.tick();
+    }
     into_its_last_phase(&mut room, again);
     assert_eq!(called_by(&room, again).len(), 4);
 }

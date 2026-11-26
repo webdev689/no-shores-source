@@ -1078,8 +1078,9 @@ never while a press is held. Each press is an ask the room answers.
   from its top, its list of resolutions shut, its words at the face's 11 px, and the one last shown is kept while the
   page is open, the credits put away and a binding under way given up each time it is opened. The page keeps room
   for the whole rail, so on a short view the menu's body scrolls to the exits rather than cut them off; under 600 px
-  across, the tabs stand in a row over the panel and the exits under it. At the rail's foot stand Exit to Menu and
-  Exit to Desktop, each held ("Hold to exit to the menu"), in the warn role; the account's mark shows Account, from
+  across, the tabs stand in a row over the panel and the exits under it. At the rail's foot stand Switch character
+  (online alone; "The character screen" below), Exit to Menu and Exit to Desktop, each held ("Hold to exit to the
+  menu"), in the warn role; the account's mark shows Account, from
   Settings too. Exit to Menu loads the page at its title, the tap to start, keeping the rooms asked for in its
   address, the place, the story's start and any fragment taken off (`titleAddress`), and where nothing is taken off,
   loads it again. Exit to Desktop closes the window where the browser lets a page close its own (the
@@ -1231,6 +1232,78 @@ the focus goes to the press that takes the other's place, Close where none does.
 and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player
 is no longer at sea or over an island's side. While it stands the pointer is free and no key of the game's or the
 menu's acts behind it.
+
+## The character screen
+
+Where the page has accounts, beginning at the title opens the character screen over the title's scene
+([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]; `characters/`); offline the title goes
+on as it always has. It stands while the intro holds the title's shot behind it, and the intro ends once a character is
+chosen (`TitleGate` in `intro.ts`). Its parts are drawn after Destiny 1's character select (`characterNodes.ts`):
+
+- **The frame**: the scene held back under a vignette, dimmest at its edges. Along the top, "CHARACTERS" at 22 px in
+  brass, the account's name (its username, or "Guest") with a Discord chip where Discord is linked, and at the right
+  the account's Aurem with its glyph and "Vault and Aurem shared by all four".
+- **The figure**: the chosen slot's character standing large, about 60% of the view's height, on a pool of light,
+  drawn by the forge in its look and the pieces its room kept to show, as Inspect draws another player
+  (`slotFigures.ts`: one picture a slot, drawn one at a time, drawn again only as what it shows changes). Under it a
+  plaque: the level large in brass, Prestige in its pale steel, Defense, the house in its own colour (its dye's lighter
+  tone that reads on the dark; "No house" faint), where it last was ("Overlook", "At sea"), and "The prologue waits"
+  for one not past it. An empty slot shows the first look in shadow on an unlit floor, and "A new character begins with
+  the prologue."
+- **The banners**: the four slots down the right, each its emblem's banner (`emblemNode` 'banner') with the house and
+  place on its left and the level large on its right, Prestige under it; one not chosen sits back under a shade. The
+  chosen one is a step larger (12 px taller, its full width where the others stand 18 px in) with a brass edge; one
+  under the pointer is lit with a brass edge. An empty slot is a dim banner with "+" and "Create character". While the
+  four are asked for, four quiet wells stand in their place and "Asking the accounts for your characters...".
+- **The presses**, under the banners: Play (primary; "Create" on an empty slot), Delete on a filled slot (warn, held two
+  seconds with its charge filling; while held, under it: "Its gear, ships, house and story are lost. The vault and
+  Aurem stay with the account."), and Test Room for a developer. Along the foot, the keys as the player plays: "Up /
+  Down" Choose, Enter Play, Delete "Hold to delete", T Test Room, Esc Title; on a pad the cross, A, X, Y and B.
+
+The four come from the accounts as the screen opens (`AccountLink.characters`), the one in play chosen and focused.
+The keys' up and down and the pad's cross move the focus over the banners, and the banner focused is chosen; a click
+chooses a banner, and a click on the chosen one (or Enter, A) plays it. Delete held, Enter or Space held on Delete, the
+pad's X held or the pointer held on it deletes; once it acts it waits to be let go. T or Y opens the Test Room, Escape
+or B goes back to the title, which rises again with its prompt. A pad button already down as the screen opens is
+stale until let go, so the press that began the title does nothing on it. The focus is marked white; every press and
+banner carries its words for a screen reader ("Slot 2: level 27, Prestige 85, Stormcallers, At sea, chosen"), the
+screen and its answers are read aloud, and it sounds as other windows do (open, close, back, the tick and the press).
+It fades up over 0.35 s, at once with reduced motion. At 1500 by 900 and over its words and banners take the larger
+step; 800 px tall or less, the banners are shorter; under 600 px wide it stands in one column, a smaller figure over
+the plaque, the banners and the presses, scrolling.
+
+Play asks the accounts to put the slot in play (`AccountLink.play`); while the character in play is still held by a
+room (409) it asks again, five times a second apart, then says "Your character is still leaving its last room. Try
+again." The four are asked for once the page has its session, so a new visitor's guest is made first. The accounts
+out of reach say "The accounts did not answer." with Try again, and Play without saving, which goes on as a page
+without accounts does: the story as this browser keeps it, the rooms playing the character unkept. Answered, the
+screen sets this
+browser's state from the slot (`takeSlot`): its look (`noshores.look`, cleared for a new character so the helm starts
+afresh), the prologue (`noshores.prologue`, played or cleared) and where it logs back in, so the story plays from its
+storm for a new character and one past it arrives where it left ([[Game]], "Arriving"). A character in the first slot
+with no look on the accounts, while the browser keeps one, has that look sent once (`PUT /v1/characters/look`), and
+the helm's creation keeps each look it makes with the character too. What the page keeps by account (the lore, the
+quests' begins) is kept by account and character (`keptFor`: the first slot's under the account alone, as before).
+
+**Switch character** stands in Settings above Exit to Menu, online alone, held as it is: it marks the tab
+(`noshores.characters.open`) and loads the page at its title, and the page loaded again opens the character screen at
+once, the title's scene coming up behind it from black.
+
+**The Test Room** ([[Developers Launch Activities From a Test Room, in Max Gear]]; `testRoomNodes.ts`), for a
+developer alone (`developer` in the four's answer), is a screen of its own in the same frame: "TEST ROOM" and Back,
+the test character summarised in a well (Level 30, Prestige 120, Max gear, and "Test runs: ten times the harm, never
+falls, one counts as a company"), and six banners, each its name, its line and Launch: the Elite Playlist and the Abyss
+Playlist ("An Elite Dungeon drawn as it starts · Foes at level 32"), the Elite and the Abyss Dungeon of the week (its
+place and its foes' level), and the Breach at Normal and at Hard ("From the gate in a copy of Gullwing Vale of its
+own"), named from the rules (`testRuns.ts`, from `activities_json` and `room_breach`). Launch waits, saying "A test run
+sets out from your character in play. Play it past the prologue first.", while the character in play is none or has
+not played the prologue, as arriving on foot would mark it past; a screen opened at the Test Room for an account no
+longer a developer's shows the characters. Launch keeps the test room in the tab and goes past the title with no
+character put in play; once the player stands on foot the page goes into it as
+any trip goes in, behind the veil (`testLaunch.ts`: a playlist's or a week's run by `intoRun`, the Breach to its gate
+in its zone copy, `node-<zone>--test-<instance>`, launched as a company is). While in it the tab is marked, so Exit to
+Menu or Switch character opens the Test Room; leaving it any way loads the page again at the Test Room. Back or Escape
+returns to the characters.
 
 ## How recordings load
 

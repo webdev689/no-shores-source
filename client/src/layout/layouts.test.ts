@@ -93,7 +93,7 @@ test("a layout's places are its areas at their reach and its runs at their mouth
   ]);
 });
 
-test("a laid node's foes' sites are its caverns' and its runs' beats, as the bake writes them for its room", () => {
+test("a laid node's foes' sites are every one it lays, its territories, as the bake writes them for its room", () => {
   const foes = (point: readonly [number, number], holds?: string) => ({
     kind: 'foes' as const,
     at: point,
@@ -122,6 +122,7 @@ test("a laid node's foes' sites are its caverns' and its runs' beats, as the bak
   };
   assert.deepEqual(laidNodes([drawn], [laid])[0]?.foes, [
     [10, -20],
+    [50, 50],
     [70, 5],
   ]);
 });

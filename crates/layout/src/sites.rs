@@ -161,16 +161,20 @@ pub fn mark(
             }
             _ => {}
         }
-        if matches!(
+        // Foes hold every area but where players arrive or pass, where folk live, where public events are fought, a
+        // Breach's hollow and a guild's plot: a patrol's territories across its zone, each standing its group as a
+        // player comes near (the owner's "Territories across the zone").
+        let held = !matches!(
             area.kind,
-            AreaKind::Camp
-                | AreaKind::Ruin
-                | AreaKind::Keep
-                | AreaKind::Coven
-                | AreaKind::Cave
-                | AreaKind::Wreck
-                | AreaKind::Arena
-        ) {
+            AreaKind::Landing
+                | AreaKind::Entrance
+                | AreaKind::Gate
+                | AreaKind::Hamlet
+                | AreaKind::Wilds
+                | AreaKind::Breach
+                | AreaKind::Plot
+        );
+        if held {
             sites.push(site(SiteKind::Foes, area.at, area.radius * 0.8, Some(area.name.clone())));
         }
         if matches!(area.kind, AreaKind::Gate | AreaKind::Landing | AreaKind::Entrance | AreaKind::Plot) {

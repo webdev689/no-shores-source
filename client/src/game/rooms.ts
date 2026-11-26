@@ -1,7 +1,7 @@
 import { AccountLink, type Kept, LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import { BREACH_TIERS } from '../../../server/roomNames.ts';
+import { BREACH_TIERS, testRoom } from '../../../server/roomNames.ts';
 
 /**
  * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, the rooms' worker
@@ -86,7 +86,7 @@ const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm:
  *  `node-<id>--guild-<key>` at Normal), the patrol's dungeon it is
  *  (`--dungeon-<number>` after those, never a node's own name), a playlist's run's foes' level (`--playlist-<level>`),
  *  a Breach's run's tier (`--breach-<tier>` after its gate's patrol zone alone, 0 Normal, 1 Hard), and its run's
- *  instance (`--run-<instance>` last); null for any other room. */
+ *  instance (`--run-<instance>` last, or a test room's `--test-<instance>`); null for any other room. */
 export function nodeOfRoom(room: string): {
   readonly id: string;
   readonly seas: Difficulty;
@@ -97,13 +97,15 @@ export function nodeOfRoom(room: string): {
   readonly guild: string | null;
   /** A Breach's run's tier: 0 Normal, 1 Hard. */
   readonly breach: number | null;
+  /** A developer's test room: its instance after `--test-` where a run's is after `--run-`. */
+  readonly test?: true;
 } | null {
   const found =
-    /^node-([a-z0-9]+(?:-[a-z0-9]+)*)(?:--guild-([0-9a-f]{32}))?(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea)|--breach-(normal|hard))?(?:--run-([a-z0-9]{8}))?$/.exec(
+    /^node-([a-z0-9]+(?:-[a-z0-9]+)*)(?:--guild-([0-9a-f]{32}))?(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea)|--breach-(normal|hard))?(?:--(run|test)-([a-z0-9]{8}))?$/.exec(
       room,
     );
   if (!found?.[1]) return null;
-  const [, id, guild, named, number, listed, atSea, tier, run] = found;
+  const [, id, guild, named, number, listed, atSea, tier, kind, run] = found;
   const dungeon = number === undefined ? null : Number(number);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
   const playlist = listed === undefined ? null : Number(listed);
@@ -117,11 +119,30 @@ export function nodeOfRoom(room: string): {
   // A Breach's run names its gate's zone and its tier alone, and is only ever a run (server/roomNames.ts).
   const breach = tier === undefined ? null : BREACH_TIERS.indexOf(tier as (typeof BREACH_TIERS)[number]);
   if (breach !== null && (named !== undefined || dungeon !== null || run === undefined)) return null;
-  return { id, seas, dungeon, run: run ?? null, playlist, guild: guild ?? null, breach };
+  // A test room is one the rooms open (server/roomNames.ts); a Breach's gate's zone copy is no run.
+  if (kind === 'test' && !testRoom(room)) return null;
+  const zoneCopy = kind === 'test' && breach === null && named === undefined;
+  return {
+    id,
+    seas,
+    dungeon,
+    run: zoneCopy ? null : (run ?? null),
+    playlist,
+    guild: guild ?? null,
+    breach,
+    ...(kind === 'test' && { test: true }),
+  };
 }
 
 // A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule.
 export { runInstance, startedAtSea } from '../../../server/roomNames.ts';
+
+/** The copy of a Breach's gate's zone a test run of it is opened from, named by the run's instance; null for a room that
+ *  is no Breach's test run. */
+export function testZoneOf(room: string): string | null {
+  const named = nodeOfRoom(room);
+  return named?.test && named.breach !== null ? `node-${named.id}--test-${named.run ?? ''}` : null;
+}
 
 /** A run's room: the dungeon's room's name, then its instance. */
 export function runOf(base: string, instance: string): string {

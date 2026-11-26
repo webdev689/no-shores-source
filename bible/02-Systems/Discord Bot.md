@@ -80,6 +80,8 @@ code:
   - server/bot/migrations/20261125150000_panel_guilds.sql
   - server/bot/modules/game.ts#gameModule
   - server/bot/modules/gameHouses.ts#houseRoleKeeping
+  - server/bot/modules/gameDevelopers.ts#isDeveloper
+  - server/bot/main.ts#Members
   - server/bot/law/gameShape.ts#GAME_SHAPE
   - server/accounts/linked.ts#linkedCharacter
   - server/accounts/linked.ts#linkedPledges
@@ -220,6 +222,14 @@ every other house role the setting names; an unlinked or unpledged member loses 
 screening, and roles the setting does not name are never touched. A sweep makes at most 50 changes a server; a role
 Discord refuses, or one deleted since the setting named it, is passed over for the rest of the sweep and logged once. While the binding, its `pledges` or the accounts cannot answer, no role
 changes.
+
+**Developer roles** name the roles a developer holds ([[Developers Launch Activities From a Test Room, in Max Gear]]);
+the layout names the Founder and the Developer. The accounts ask through their own binding to the bot's `Members`
+entrypoint (`main.ts`, which Cloudflare runs: the routes and clock of `worker.ts` and this one question), never a web
+address: given a Discord user id, whether it holds one of those roles in the No Shores Discord, a server where the
+module is on whose owner is one of the bot's owners (`BOT_OWNERS`); no other server's roles count, and with no owner
+named no one is a developer. Discord is asked each time, so a role given or taken counts at once; a member Discord
+does not find, or one it does not answer for, is none.
 
 `/link` answers privately how to link: open the game at `https://noshores.online/play/`, then in
 Settings open Account and press Sign in or link with Discord. The link itself is the accounts' own.

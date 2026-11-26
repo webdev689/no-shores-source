@@ -83,6 +83,11 @@ test('layout: a first build makes every role and channel in order, sets the modu
     (game?.config.houses as Settings[]).map((house) => house.faction),
     ['Stormcallers', 'Lamplighters', 'The Veiled'],
   );
+  assert.deepEqual(
+    game?.config.developers,
+    [stood.server.roleNamed('Founder')?.id, stood.server.roleNamed('Developer')?.id],
+    "the Founder and the Developer are the game's developers",
+  );
   assert.ok(stood.forgotten.includes('automod'), "the Gateway is told each module's settings changed");
   // the posts: the guide and the ping buttons in #welcome, the rules, and the ticket button
   assert.equal(embedsOf(stood.server.postsIn('welcome')[0])[0]?.title, 'Welcome to No Shores');
@@ -93,7 +98,7 @@ test('layout: a first build makes every role and channel in order, sets the modu
   // the owner holds Founder, and the checklist asks for Community
   assert.ok(state.members.get(OWNER)?.includes(String(stood.server.roleNamed('Founder')?.id)));
   assert.deepEqual(fieldNames(checklistOf(stood)), ['Turn on Community']);
-  assert.match(done.message, /^Made 8 roles and 22 channels, set 16 modules, posted 4 messages\. 1 thing is left/);
+  assert.match(done.message, /^Made 9 roles and 22 channels, set 16 modules, posted 4 messages\. 1 thing is left/);
 });
 
 test('layout: a second build makes nothing again and updates its posts in place', async () => {
@@ -158,7 +163,7 @@ test("layout: on Discord's own new server, its #general and voice room are adopt
   assert.equal(stood.server.channelNamed('Lounge'), undefined, "Discord's voice room is the lounge");
   assert.equal(stood.server.channelNamed('Text Channels'), undefined, 'its empty categories are removed');
   assert.equal(stood.server.channelNamed('Voice Channels'), undefined);
-  assert.match(done.message, /^Made 7 roles and 20 channels/, 'one role and two channels fewer, as they were adopted');
+  assert.match(done.message, /^Made 8 roles and 20 channels/, 'one role and two channels fewer, as they were adopted');
   const tickets = await readConfig(stood.database, GUILD, 'tickets');
   assert.deepEqual(tickets?.config.staffRoles, ['920000000000000001'], 'the adopted role is the one named');
 });

@@ -78,12 +78,18 @@ its system note.
   the owner: aiming in first person sees 43° (1.6 times from 65°, was 32.5°), and the iron blow's small red mark.
   Impeccable's design hook is on in every session, at v4.10.0 ([[Toolkit]]).
 - **The balance pass halfway back, loot in Destiny 1's order, and a whole-codebase audit** (#141, with the owner's
-  yes): on land a player's blow ×1.5 and a foe's ×0.75; Vestiges by rank, Minor 2 in 100 to a Boss always, each
+  yes): on land a player's blow ×1.5 and a foe's ×0.75; Vestiges by rank, Minor 2 in 100 to a Boss always (since raised, below), each
   colour half or less of the one below; items from Bosses, Minibosses and a dungeon's clear; clears that pay; Shapes
   from the week's Abyss Dungeon alone; eleven bugs the audit found, each with a test that fails without its fix
   ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
   [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Tested offline, the full
   check passing on `main` with it merged (117fa21e); not yet played by hand or in a deployed room.
+- **Kills drop four times as often** (#220, on the owner's "Merge and deploy";
+  [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]), after a streamer found one common in two hours: a
+  kill's Vestige by rank is Minor 8 in 100, Major 16, Elite 40, Miniboss 50, a Boss always (`vestige::CHANCE`); a Normal
+  one still comes as its common. A Miniboss's item stays 35 in 100 and a dungeon's clear its Vestige 35 in 100
+  (`rewards::CLEAR_VESTIGE`). A ship at sea rolls at its rank, so it rises too. Tested offline and by CI's full check;
+  not yet played.
 - The world's lore and its first crystal faction, #77, merged with #124 on the owner's "Merge and deploy". The owner's
   decisions: Raum's lore adapted into one mystery ([[Raum's Lore Is Adapted Into One Mystery]]), shown and hardly told
   ([[The Game Shows the Mystery and Explains Almost None of It]]); an ageless world with quiet nods to DFO and
@@ -232,6 +238,49 @@ The decisions in [[Open Questions]] are not repeated here.
   capture's `__qaSea()` left a fresh offline character on foot (unchecked: likely no ship yet), so the icons and the
   wash are unseen; not played by hand, on a real GPU or in a deployed room. For the owner: with in-water travel, a
   player who keeps travelling still meets no hostile ship (each travel holds the roll 30 s, as the owner chose).
+- **Foe arrivals** (#211, a draft on branch `ccr-9e470c58-pm6nyz`, waiting on the owner's yes to merge), on the
+  owner's "some enemies are already on the ground, while others come in from a dropship or spawn effect", the Grey
+  Tithe's airships ("Large modified vessels retrofitted with combustible thrusters") and the Lattice's "crystallized
+  structure that appears, as the enemies spawn below", with patrol groups varied and "present moreso"
+  ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]). The owner then turned
+  down the timed airships ("Thats a band aid") for territories across each zone
+  ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]): a group at every area but landings,
+  gates, entrances, hamlets, wilds, a Breach's hollow and a plot, standing as a player comes near, let go out of sight,
+  retaken by airship when cleared; on the owner's "2", the landing's own groups are let go the same way, their posts
+  kept and their places the rest of the zone's ([[The Landing's Groups Are Let Go as Territories Are]]). Every call is
+  in [[Foe Arrivals as Claude Builds Them]], how it works in [[Enemies]]
+  ("Arrivals", "Territories and runs"), [[Lattice]] and [[Modules]]. The airship and the crown are Blender modules
+  (`tools/modules/airship.py`, `crown.py`), published to R2 by the modules workflow on the branch's pushes. Three
+  read-only audits' 39 points are fixed, each with a test that fails on the code before it, or answered in the pull
+  request. A last audit (rules; wire and page; models and notes) found 18 more: fixed are a shout reaching a foe
+  still in the airship, two ships to one ground meeting (a further ship now hangs 24 m abeam), the rumble played
+  where no ship is heard, landing dust following its foe, Arc Lash, Dusk Daggers and Volt's chain finding foes still
+  arriving, the airship's plates behind its planking, its lift frames, hatch, lanterns, windows, pipes and coal
+  (17,992 triangles), and stale notes; left as they are: the tests that tell a smaller group by its make-up, a test
+  of the airship's roll's sign, the quest guide pointing at a foe still arriving. Tested offline: every check on
+  `ad938908` (the territories, merged with main at #207 and #215, which move the door's event fingerprints but not
+  the outcomes they pin), and again on `6825fc83` (main at #206 merged in, the only clashes two bible lists, both
+  sides kept); the last audit's fixes by the room's and room-wasm's whole suites, the server's twins, the page's
+  changed tests, tsc, ESLint, clippy and `cargo xtask repo` (the raid's fingerprint moves, its outcome does not); every
+  check again on `e503de28` (main at #217 merged in, the only clashes three notes' lists); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
+  15); the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the
+  raid's first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the
+  deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in the game and which
+  areas hold territories ([[Open Questions]], "Foe arrivals"), and how a cleared territory far from players is
+  retaken; the door test's scripted pair loses the heroic raid's last wave, pinned as it is.
+- **Four character slots, Switch character and the developers' Test Room** (#219, a draft on branch
+  `ccr-4f741534-p0zwai`, waiting on CI on its head and the owner's yes to merge), on the owner's "Implement 4 character
+  slots ... switch character option in the ingame settings menu" and "a test room option to launch activities"
+  ([[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]],
+  [[Developers Launch Activities From a Test Room, in Max Gear]]; every call in
+  [[Character Slots and the Test Room as Claude Builds Them]]). How it works: [[Accounts]] ("Four characters, one in
+  play", "The vault joined in a room"), [[Interface]] ("The character screen"), [[Activities]] ("Test runs"),
+  [[Breaches]], [[Discord Bot]] ("The game module"). Tested offline only (the PR lists each suite); the forge's figures
+  on the screen, a real GPU, the live flow into a test room and the Discord role check against Discord are not seen.
+  Open for the owner, listed in the PR: a Launch passes through the character in play's place first (and waits for one
+  past the prologue); a switch counts the guild's week from the chosen character on; the Developer
+  role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
+  before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
 - **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
   accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
   issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent

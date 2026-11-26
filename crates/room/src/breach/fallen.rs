@@ -58,7 +58,8 @@ impl Room {
     /// Whether a player the section killed (a fall) may ask to stand again: under the Breach's rules once they have
     /// lain as long as a fight's dead lie there (`stands_after`), so never at Hard inside a running encounter.
     pub(crate) fn may_respawn(&self, id: PlayerId) -> bool {
-        if !self.breach_holds(id) {
+        // A tester who fell into the dark has no one to wait on.
+        if self.test || !self.breach_holds(id) {
             return true;
         }
         let lain = self.players.get(&id).map_or(0, |found| match found.standing {

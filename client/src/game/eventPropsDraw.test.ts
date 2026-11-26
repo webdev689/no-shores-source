@@ -5,7 +5,8 @@ import { PROP_MODULES } from '../city/eventProps.ts';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
 import manifest from '../../../content/modules/modules.json' with { type: 'json' };
 import { EVENT_LAMPS } from '../sky/lamps.ts';
-import { EventPropsDraw } from './eventPropsDraw.ts';
+import { EventPropsDraw, propFarPlace } from './eventPropsDraw.ts';
+import { shipPose } from '../combat/airshipFlight.ts';
 import { PROPS_SHADER } from './eventPropsShader.ts';
 import { MATERIALS, packLips } from './eventPropsPack.ts';
 import type { Gpu } from '../gpu.ts';
@@ -93,4 +94,36 @@ test('the drawer makes its pipelines only once it has props to draw, not as the 
   } finally {
     globalThis.fetch = fetched;
   }
+});
+
+test('an airship hanging and bobbing keeps the far shadow map, and one flying in draws it again', () => {
+  const ship = {
+    id: 1,
+    kind: 1,
+    at: [0, 0, 10] as const,
+    heading: 0.4,
+    high: 16,
+    began: 0,
+    hangs: 480,
+    leaves: 900,
+    gone: 1440,
+  };
+  const place = (tick: number) => {
+    const pose = shipPose(ship, tick)!;
+    const prop = {
+      module: 'tithe-airship',
+      at: pose.at,
+      turn: pose.heading + Math.PI,
+      scale: 1,
+      rise: 1,
+      lid: pose.pitch,
+      glow: pose.burn,
+      roll: pose.roll,
+    };
+    return propFarPlace(prop, 21.7, 12.9).join(',');
+  };
+  const hanging = new Set(Array.from({ length: 120 }, (unused, frame) => place(600 + frame)));
+  assert.ok(hanging.size <= 3, `${hanging.size} places as it hangs`);
+  const coming = new Set(Array.from({ length: 120 }, (unused, frame) => place(100 + frame)));
+  assert.ok(coming.size > 20, `${coming.size} places as it flies in`);
 });
