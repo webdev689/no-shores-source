@@ -267,9 +267,12 @@ test("each keeper's gift on the round is announced as it is given, through the o
     giftNotice('dye'),
     giftNotice('horse'),
   ]);
-  // The last keeper heard ends the round: the next task begins with nothing counted.
+  // The last keeper heard ends the round: the next task begins with nothing counted. The ride's steps are announced
+  // as the room ticks them, and the ship as its task is done.
   assert.deepEqual(watch.look(gear(1, round + 1, { counts: [0] }), true).toasts, [giftNotice('letter')]);
-  assert.deepEqual(watch.look(gear(1, round + 2, { counts: [0] }), true).toasts, [giftNotice('ship')]);
+  assert.deepEqual(watch.look(gear(1, round + 1, { counts: [1, 1, 1, 1, 1, 1] }), true).toasts.length, 6);
+  assert.deepEqual(watch.look(gear(1, round + 2, { counts: [0] }), true).toasts, []);
+  assert.deepEqual(watch.look(gear(1, round + 3, { counts: [0] }), true).toasts, [giftNotice('ship')]);
   assert.match(giftNotice('weapons'), /Weaponsmith.*Melee.*Ranged/);
 });
 

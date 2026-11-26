@@ -37,8 +37,7 @@
       { "who": "harbourmaster", "say": "There's a Tithe hulk moored offshore. Put a ball in it, then come home." }
     ],
     "rideBegin": [
-      { "who": "tack", "say": "Before you go, take the Bay out. Let me see you ride." },
-      { "who": "tack", "say": "Then ride down to the Harbourmaster's stall. She's waiting on you." }
+      { "who": "harbourmaster", "say": "When you've a horse under you, ride down to my stall. A ship's waiting." }
     ],
     "sailHome": [
       { "who": "harbourmaster", "say": "Back afloat, and that hulk the worse for it. You'll do." }

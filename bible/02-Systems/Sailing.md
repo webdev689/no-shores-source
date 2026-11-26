@@ -57,7 +57,10 @@ code:
 How a ship sails: the helm from oars to sails, its way and turn, its sails against the wind, its pose on the swell
 and where it takes the ground. It is DFO's port of Come Sail Away ([[Come Sail Away's Sailing Comes Over]]),
 rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop in the [[World Editor]]; the captains
-sail the other hulls ([[Hulls]]) by the same laws.
+sail the other hulls ([[Hulls]]) by the same laws. A new player is taught the helm in the opening, once the
+Harbourmaster hands over the Sloop: aboard, under way, steered, trimmed on the pace dial, the held map raised and a
+ball put in a Tithe hulk moored off Overlook, then home to dock, each step ticked by the sea from what the ship did
+([[Quests]], "The lessons").
 
 ## How it works
 

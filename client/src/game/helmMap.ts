@@ -163,6 +163,8 @@ export class HelmMap {
     if (this.wanted && here.view.atHelm && helm.free) {
       this.wanted = false;
       this.made.open(helm.viewport, here.position, helm.hands, this.context.shut());
+      // The sea hears that it was raised: only the page sees it, and the Harbourmaster's lesson asks it.
+      here.sighted?.ask('chart');
     }
     // The map's scene is gathered only while the map is up.
     const map = this.map;

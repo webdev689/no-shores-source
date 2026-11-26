@@ -124,14 +124,16 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   );
   hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
   // The roads at sea: their waypoint on the compass, from the ship, at the isles and hostile ships in sight or the
-  // landing of the zone a goal is in; in the tracker, a fight's task while one runs, else the quest walked.
+  // landing of the zone a goal is in, or the sea's own mark; in the tracker, a fight's task while one runs, else the
+  // quest walked.
   const isles = (here.isles?.all() ?? []).map(({ seen }) => ({ kind: seen.kind, at: seen.at }));
   const hostiles = sightedHostiles(here.sighted?.hostiles ?? [], shown.focus).map((ship) => ({
     faction: ship.faction,
     at: [ship.x, ship.y] as const,
   }));
   const guided = state.quests.guide({ on: 'sea', at: shown.focus, isles, hostiles }, state.chart, state.past);
-  const task = fight && !deck ? fight.readout(state.clock) : null;
+  // The Harbourmaster's hulk is fought for the lesson: the tracker keeps its step until the ball is in.
+  const task = fight && !deck && !state.quests.firing ? fight.readout(state.clock) : null;
   hud.tasks.show(task ? seaFightQuest('Sea fight', task.left, task.men) : state.quests.tracked);
   hud.marks(shown.marks);
   // The player's plate, its abilities' bar, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),

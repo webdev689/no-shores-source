@@ -7,6 +7,7 @@ import type { QuestState } from '../../network/questMessages.ts';
 import type { LayoutArea } from '../../layout/layouts.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { type Goal, SMITH_OF, openGoals } from './questBook.ts';
+import { doneAnywhere } from './lessons.ts';
 
 type Point = readonly [number, number];
 
@@ -20,7 +21,8 @@ export interface SeenFoe {
 /** Where the player stands as the waypoint reads it: on land, the room's node, their feet, the room's own mark for
  *  the goal it marks, the foes they see, whether they are inside a dungeon (its own ground, in its own frame, its
  *  node's places and landing not where they stand) and, on a sea's island, the wrecks they have searched by their
- *  place in its `wrecks`; at sea, the ship, the isles in sight by kind and the hostile ships by faction. */
+ *  place in its `wrecks`; at sea, the ship, the isles in sight by kind, the hostile ships by faction, and the sea's own
+ *  mark for the goal it marks (the Harbourmaster's hulk). */
 export type Standing =
   | {
       readonly on: 'land';
@@ -36,6 +38,7 @@ export type Standing =
       readonly at: Point;
       readonly isles: readonly { readonly kind: string; readonly at: Point }[];
       readonly hostiles: readonly { readonly faction: number; readonly at: Point }[];
+      readonly marked?: Point | null;
     };
 
 /** The world the waypoint reads: every zone, and the laid zones' gates (a layout's areas leading on). */
@@ -55,8 +58,9 @@ export interface Guide {
 
 /** The goals done anywhere, which nothing points at. */
 const ANYWHERE: ReadonlySet<string> = new Set(['cast', 'wear']);
-/** The goals done at sea, or on an island the sea holds: pointed at the nearest in sight. */
-const AT_SEA: ReadonlySet<string> = new Set(['sea', 'land', 'scavenge']);
+/** The goals done at sea, or on an island the sea holds: pointed at the nearest in sight; a sailing lesson's at the
+ *  sea's own mark. */
+const AT_SEA: ReadonlySet<string> = new Set(['sea', 'land', 'scavenge', 'sail']);
 /** The houses' chapels, any of which a pledge is made at. */
 const HOUSES = ['stormcallers', 'lamplighters', 'veiled'] as const;
 /** A goal's rank by name, as the foes' ranks number them. */
@@ -86,8 +90,15 @@ const nearest = <T>(from: Point, all: readonly T[], spot: (each: T) => Point): T
 /** Where a zone is landed at: its first spawn, or its middle. */
 const landingOf = (node: NodeInfo): Point => node.spawns[0] ?? node.centre;
 
-/** The counters a talk, a pledge or a buy is done at, by their stations' kinds; the stranger, at none: she is heard
- *  anywhere in a social space. */
+/** Whether a goal is done at a keeper's counter: a talk, a pledge, a buy, or riding up to one. */
+const atCounter = (goal: Goal): boolean =>
+  goal.kind === 'talk' ||
+  goal.kind === 'pledge' ||
+  goal.kind === 'buy' ||
+  (goal.kind === 'ride' && goal.to !== undefined);
+
+/** The counters a talk, a pledge, a buy or a ride up to one is done at, by their stations' kinds; the stranger, at
+ *  none: she is heard anywhere in a social space. */
 function countersOf(goal: Goal): readonly string[] {
   if (goal.kind === 'pledge') return HOUSES;
   if (goal.kind === 'buy') return [SMITH_OF[goal.slot ?? ''] ?? ''];
@@ -102,7 +113,7 @@ function zoneOf(goal: Goal, standing: Standing, chart: Chart): NodeInfo | 'sea' 
   if (goal.island !== undefined || AT_SEA.has(goal.kind)) return 'sea';
   if (goal.node !== undefined) return chart.nodes.find((node) => node.id === goal.node) ?? null;
   const open = chart.nodes.filter((node) => !node.locked);
-  if (goal.kind === 'talk' || goal.kind === 'pledge' || goal.kind === 'buy') {
+  if (atCounter(goal)) {
     const counters = countersOf(goal);
     const socials = open.filter((node) => node.kind === 'social');
     const keeping = socials.filter(
@@ -136,7 +147,7 @@ function within(goal: Goal, zone: NodeInfo, standing: Extract<Standing, { on: 'l
   if (named !== undefined && standing.marked) return standing.marked;
   const place = named === undefined ? undefined : zone.places?.find((each) => each.name === named);
   if (place) return place.at;
-  if (goal.kind === 'talk' || goal.kind === 'pledge' || goal.kind === 'buy') {
+  if (atCounter(goal)) {
     const counters = countersOf(goal);
     const stations = (zone.stations ?? []).filter((station) => counters.includes(station.kind));
     return nearest(standing.at, stations, (station) => station.counter)?.counter ?? null;
@@ -169,6 +180,7 @@ function onIsle(goal: Goal, standing: Extract<Standing, { on: 'land' }>, kind: s
 
 /** A goal done at sea or on its islands, at sea: the nearest isle of its kind, the nearest of its side's ships. */
 function atSea(goal: Goal, standing: Extract<Standing, { on: 'sea' }>): Point | null {
+  if (goal.kind === 'sail') return standing.marked ?? null;
   if (goal.kind === 'sea') {
     const side = SIDES[goal.side ?? ''];
     const ships = standing.hostiles.filter((ship) => side === undefined || ship.faction === side);
@@ -203,7 +215,8 @@ function legOf(goal: Goal, standing: Standing, chart: Chart): Leg | null {
       return kind === undefined ? { at: null, note: LEGS.ship } : onIsle(goal, standing, kind);
     }
     const found = atSea(goal, standing);
-    return { at: found, note: found ? null : LEGS.search };
+    // The hulk lies where the sea marks it: nothing is searched for.
+    return { at: found, note: found || goal.kind === 'sail' ? null : LEGS.search, here: goal.kind === 'sail' };
   }
   if (zone === null) return null;
   if (standing.on === 'land' && standing.node.id === zone.id) {
@@ -231,7 +244,7 @@ export function guideOf(state: QuestState | null | undefined, standing: Standing
   let point: Point | null = null;
   let led: Goal | null = null;
   for (const { goal, index } of open) {
-    if (ANYWHERE.has(goal.kind)) {
+    if (ANYWHERE.has(goal.kind) || doneAnywhere(goal, standing.on === 'sea')) {
       notes[index] = LEGS.anywhere;
       continue;
     }

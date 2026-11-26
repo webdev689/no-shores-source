@@ -23,7 +23,9 @@ import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
-import { COUNTERS, buyAt, goalNodes, talkAt, trackedOf } from './questBook.ts';
+import { BINDS } from '../../player/input.ts';
+import { COUNTERS, buyAt, goalNodes, openGoals, talkAt, trackedOf, walked } from './questBook.ts';
+import { lessonKeys } from './lessons.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { type Chart, type Guide, type Standing, guideOf } from './waypoint.ts';
 import { QuestWatch } from './questWatch.ts';
@@ -161,21 +163,32 @@ export class Quests {
    *  lines and toasts wait for land), `past` says whether they are. */
   guide(standing: Standing, chart: Chart, past = this.past): Guide {
     this.past = past;
-    const marked = this.goalAt;
-    const where = standing.on === 'land' ? { ...standing, marked } : standing;
+    const where = { ...standing, marked: this.goalAt };
     this.guided = this.past ? guideOf(this.gear?.quest, where, chart) : { at: null, notes: [] };
     return this.guided;
   }
 
-  /** What the tracker shows: the quest walked, once the story and the welcome are past, each step with its way. */
+  /** What the tracker shows: the quest walked, once the story and the welcome are past, each step with its way, and
+   *  a lesson's step its keys as bound now on the keys or the pad played last. */
   get tracked(): Quest | null {
     const tracked = this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000) : null;
     if (!tracked) return null;
     const { notes } = this.guided;
+    const goals = walked(this.gear?.quest)?.task.goals ?? [];
     return {
       ...tracked,
-      steps: tracked.steps.map((step, index) => ({ ...step, ...(notes[index] ? { note: notes[index] } : {}) })),
+      steps: tracked.steps.map((step, index) => {
+        const goal = goals[index];
+        const keys = goal && !step.done ? lessonKeys(goal, BINDS.device, BINDS.now) : [];
+        return { ...step, ...(notes[index] ? { note: notes[index] } : {}), ...(keys.length > 0 ? { keys } : {}) };
+      }),
     };
+  }
+
+  /** Whether the task walked still asks a ball in the Harbourmaster's hulk: its fight then shows the lesson in the
+   *  tracker, not the fight's own task. */
+  get firing(): boolean {
+    return this.past && openGoals(this.gear?.quest).some(({ goal }) => goal.kind === 'sail' && goal.act === 'fire');
   }
 
   /** The nodes the task's goals name, for the held map. */
