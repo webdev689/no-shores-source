@@ -327,9 +327,10 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   left out. Over 2,000 m2 of it is walked, across some 75 m by 55 m.
 - **Built in CI.** The wreck workflow builds and lights the wreck whenever its tools change, in a job that holds no
   secret, and publishes the mesh, the light and the model to R2 from a second job that only uploads them
-  ([[Toolchain]]). It keeps the layout it wrote (artifact `wreck-level`), which a commit takes once the run has published:
-  a build on another machine can lay the ground a hair differently, and the game walks the ground the mesh was built
-  with. The file's mast (`masts`) and its rank 2 boarders are not written by the tools, so a commit keeps them.
+  ([[Toolchain]]). It keeps the layout it wrote (artifact `wreck-level`), which a commit takes whole once the run has
+  published: a build on another machine can lay the ground a hair differently, and the game walks the ground the mesh
+  was built with. The layout holds the Brig's mainmast stump (`masts`, from `BRIG_MAINMAST_X` as her stern half lies)
+  and each boarder's rank as `wreck_level.py`'s zones give it.
 - **The layout** is `content/prologue/wreck.json`, written by the export: the mesh's and the light's keys on R2, the
   ground's blocks, each heap's block, the fires, where the sea is not drawn (`dry`), where the player wakes, the
   path, the zones with their waves and the Brig's crew, the arena and Thule's place. Figures stand at the middle of
