@@ -337,7 +337,7 @@ test("the house pledged to gives its own piece once, its leader's line said unle
   const piece = (house: number) => item({ id: 90 + house, named: torsos[house - 1] ?? '', rarity: 1 });
   const given = (news: News) => news.notices.filter((notice) => notice.line.includes('Hauberk'));
   const watch = heard(gear(1, 1));
-  // A first pledge: the piece given, and the road's begin, which tells of it, said in place of its own line.
+  // A first pledge: the piece given, and the road's begin said in place of its own line.
   const storm = watch.look(gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0], items: [piece(1)] }), true);
   assert.deepEqual(given(storm), [houseGiftNotice(1)]);
   assert.deepEqual(storm.scenes, said(QUESTS[STORM - 1]?.begin, starting(STORM, 0)));
@@ -357,4 +357,15 @@ test("the house pledged to gives its own piece once, its leader's line said unle
   assert.deepEqual(given(veil), []);
   assert.match(`${houseGiftNotice(1).title} ${houseGiftNotice(1).line}`, /Arlo Kestrel.*Stormcaller Hauberk/);
   assert.equal(houseGiftNotice(3).key, 'character', 'the key to wear it');
+});
+
+test("the house's piece posted, the bag and the vault full, is told as given as one carried is", () => {
+  const piece = item({ id: 91, named: 'stormcallers_hauberk', rarity: 1 });
+  const watch = heard(gear(1, 1));
+  const posted = { id: 1, from: 6, crowded: true, vestige: null, item: piece };
+  const pledged = watch.look({ ...gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0] }), mail: [posted] }, true);
+  assert.deepEqual(
+    pledged.notices.filter((notice) => notice.line.includes('Hauberk')),
+    [houseGiftNotice(1)],
+  );
 });

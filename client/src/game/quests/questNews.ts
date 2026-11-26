@@ -47,10 +47,12 @@ export function keptOf(gear: GearState | null): Kept | null {
     earned: gear.arts?.earned ?? [],
     choices,
     offered: quest.offered ?? 0,
-    // shortcut: a piece posted with the bag and the vault full is not seen, so its notice is not shown; the letter is.
+    // Carried, vaulted, or posted for want of room.
     houseGifts: factions.factions.reduce(
       (bits, house) =>
-        gear.items.some((held) => held.named === houseTorso(house.id)?.id && held.rarity === MAGIC)
+        [...gear.items, ...(gear.mail ?? []).flatMap((letter) => letter.item ?? [])].some(
+          (held) => held.named === houseTorso(house.id)?.id && held.rarity === MAGIC,
+        )
           ? bits | (1 << (house.id - 1))
           : bits,
       0,
