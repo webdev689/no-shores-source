@@ -62,7 +62,7 @@ test('yes to dock out of reach makes for the harbour, and docks once the sea off
   landings.answer(true);
   assert.deepEqual(asked, [`sail ${HARBOUR.join(',')}`]);
   landings.frame();
-  assert.deepEqual(landed, [], 'not yet in reach');
+  assert.equal(landed.length, 0, 'not yet in reach');
   sea.landfall = { kind: 'dock', port: 'Overlook' };
   landings.frame();
   assert.deepEqual(
