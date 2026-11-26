@@ -160,12 +160,13 @@ impl Dungeon {
         self.cells.get(cell).is_some_and(|&kind| kind != Cell::Rock)
     }
 
-    /// The cells a walk steps to from a cell: those beside it on its storey that are open, and a flight's twin.
+    /// The cells a walk steps to from a cell: those beside it on its storey that are open but open air, which is a
+    /// way down alone, and a flight's twin.
     pub fn walk_from(&self, cell: usize) -> impl Iterator<Item = usize> + '_ {
         SIDES
             .into_iter()
             .filter_map(move |side| self.beside(cell, side))
-            .filter(|&next| self.open(next))
+            .filter(|&next| self.open(next) && self.cells[next] != Cell::Void)
             .chain(self.stair_twin(cell))
     }
 }

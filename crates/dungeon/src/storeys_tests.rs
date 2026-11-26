@@ -2,9 +2,10 @@ use crate::hand_made::{ROOM_HEIGHT_M, VOID_AT, two_storeys};
 use crate::{CELL_M, Cell, Dungeon, FLIGHT_CEILING_M, FLOOR_M, STYLES, Span, storey_floor};
 
 #[test]
-fn a_forged_dungeon_is_one_storey_with_its_floor_at_nought() {
+fn a_dungeon_asked_for_one_storey_is_one_storey_with_its_floor_at_nought() {
     for seed in 0..40_u32 {
-        let dungeon = Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]);
+        let style = STYLES[seed as usize % STYLES.len()];
+        let dungeon = Dungeon::forge_storeys(seed.wrapping_mul(2_654_435_761), style, crate::BLOCKS, 1);
         assert_eq!(dungeon.storeys, 1);
         assert!(dungeon.stairs.is_empty());
         assert_eq!(dungeon.cells.len(), dungeon.plane());

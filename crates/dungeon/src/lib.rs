@@ -2,14 +2,16 @@
 //! carved by a seeded split and joined through the rock by the cheapest ways, the blocks grown from the way in's and
 //! joined at their shared edges, in six styles. Each room has a purpose that furnishes and lights it, and one or two
 //! rooms a landmark. Storeys stand STOREY_M apart downward from the way in's at 0 m, joined by flights of stairs
-//! (`storeys`); the generator lays one. Rooms and corridors stand on their storey's floor, under ceilings of their own
+//! (`storeys`), each block one to three storeys deep. Rooms and corridors stand on their storey's floor, under ceilings of their own
 //! heights. The same seed lays the same dungeon on every machine: the maths is + - * / and comparisons, and every
 //! draw is made on a lane of its own (`lane`).
 
 mod banks;
 mod block;
+mod descent;
 mod dungeon;
 mod fixtures;
+mod forge;
 mod furnish;
 pub mod hand_made;
 mod landmarks;
@@ -21,8 +23,9 @@ mod shapes;
 mod storeys;
 mod styles;
 mod torches;
+mod ways;
 
-pub use block::{BLOCK_CELLS, Ends, Opening};
+pub use block::{BLOCK_CELLS, Opening};
 pub use dungeon::{
     BLOCKS, DOORWAY_HALF_M, Dungeon, ELITE_BLOCKS, EXIT_HEIGHT_M, EXIT_WIDTH_M, FLOOR_M, Frame, JAMB_DEPTH_M, LINTEL_M,
     PILLAR_HALF_M, Room, WallDoor,
@@ -30,6 +33,7 @@ pub use dungeon::{
 pub use fixtures::{
     BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CRYSTALS_TOP_M, FUNGUS_TOP_M, Fixture, Kind, LANTERN_M,
 };
+pub use forge::{BALUSTRADE_DEEP_M, BALUSTRADE_M};
 pub use landmarks::{LANDMARKS, Landmark, Placed, turned, turned_box};
 pub use models::{Piece, PropModel, prop_model};
 pub use props::{HUNG_M, POSTS_A_ROOM, Prop, posts_for};
@@ -153,6 +157,8 @@ pub fn name(style: &Style, patrol_name: &str) -> String {
 
 #[cfg(test)]
 mod block_tests;
+#[cfg(test)]
+mod descent_tests;
 #[cfg(test)]
 mod dungeon_tests;
 #[cfg(test)]

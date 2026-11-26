@@ -46,14 +46,15 @@ const fn form(shape: Shape, weight: usize, along: (usize, usize), across: (usize
 const MOUNDS: &[u16] = &[43601, 43602];
 const CAVE_MOUTHS: &[u16] = &[43603, 43604];
 
-/// The six styles. A great room, four cells or more each way, may take a shape a small one cannot.
+/// The six styles, their forms' sides grown by about half for the deeper dungeons. A room four cells or more each
+/// way may take a shape a small one cannot.
 pub const STYLES: [Style; 6] = [
     Style {
         key: "crypt",
         noun: "Crypt",
         rooms: (3, 5),
         forms: &[
-            form(Shape::Rectangle, 3, (2, 4), (2, 4)),
+            form(Shape::Rectangle, 3, (2, 6), (2, 6)),
             form(Shape::Octagon, 2, (4, 5), (4, 5)),
             form(Shape::Alcoves, 3, (3, 5), (3, 4)),
         ],
@@ -69,9 +70,9 @@ pub const STYLES: [Style; 6] = [
         noun: "Halls",
         rooms: (2, 4),
         forms: &[
-            form(Shape::Rectangle, 4, (3, 7), (3, 7)),
-            form(Shape::Ell, 3, (4, 7), (4, 7)),
-            form(Shape::Cross, 3, (6, 7), (4, 7)),
+            form(Shape::Rectangle, 4, (3, 10), (3, 10)),
+            form(Shape::Ell, 3, (4, 10), (4, 10)),
+            form(Shape::Cross, 3, (6, 10), (4, 10)),
         ],
         heights: (4.0, 5.6),
         roof: Roof::Arched,
@@ -97,10 +98,10 @@ pub const STYLES: [Style; 6] = [
         noun: "Sanctum",
         rooms: (2, 4),
         forms: &[
-            form(Shape::Rectangle, 3, (3, 6), (3, 6)),
-            form(Shape::Ell, 2, (4, 6), (4, 6)),
-            form(Shape::Cross, 2, (6, 6), (4, 6)),
-            form(Shape::Octagon, 3, (4, 6), (4, 6)),
+            form(Shape::Rectangle, 3, (3, 10), (3, 10)),
+            form(Shape::Ell, 2, (4, 10), (4, 10)),
+            form(Shape::Cross, 2, (6, 10), (4, 10)),
+            form(Shape::Octagon, 3, (4, 10), (4, 10)),
         ],
         heights: (4.4, 5.6),
         roof: Roof::Arched,
@@ -113,7 +114,7 @@ pub const STYLES: [Style; 6] = [
         key: "caverns",
         noun: "Caverns",
         rooms: (2, 4),
-        forms: &[form(Shape::Rectangle, 1, (3, 6), (3, 6)), form(Shape::Cave, 5, (3, 6), (3, 6))],
+        forms: &[form(Shape::Rectangle, 1, (3, 6), (3, 6)), form(Shape::Cave, 5, (3, 8), (3, 8))],
         heights: (4.4, 5.6),
         roof: Roof::Rough,
         pictures: [120, 119],
@@ -127,9 +128,9 @@ pub const STYLES: [Style; 6] = [
         rooms: (2, 4),
         // Its galleries are long and two cells wide, its stopes caves.
         forms: &[
-            form(Shape::Rectangle, 3, (5, 8), (2, 2)),
+            form(Shape::Rectangle, 3, (5, 12), (2, 2)),
             form(Shape::Rectangle, 1, (2, 5), (2, 5)),
-            form(Shape::Cave, 3, (3, 5), (3, 5)),
+            form(Shape::Cave, 3, (3, 8), (3, 8)),
         ],
         heights: (3.2, 4.4),
         roof: Roof::Flat,

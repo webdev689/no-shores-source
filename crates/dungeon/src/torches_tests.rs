@@ -7,7 +7,7 @@ fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
 }
 
 fn cell_of(dungeon: &Dungeon, torch: &Torch) -> usize {
-    (torch.at[0] / CELL_M) as usize + (torch.at[1] / CELL_M) as usize * dungeon.columns
+    dungeon.cell_at(torch.at)
 }
 
 #[test]

@@ -45,37 +45,57 @@ impl Dungeon {
         !paired
     }
 
+    /// The block square a cell lies in.
+    fn square_of(&self, cell: usize) -> (usize, usize) {
+        let at = cell % self.plane();
+        ((at % self.columns) / BLOCK_CELLS, (at / self.columns) / BLOCK_CELLS)
+    }
+
     /// A torch's flame over the middle of a cell's wall, in from it.
     fn wall_middle(&self, cell: usize, wall: Side) -> [f64; 3] {
         let [x, y] = self.centre(cell);
         let [dx, dy] = wall.unit();
         let off = CELL_M / 2.0 - TORCH_INSET_M;
-        [x + dx * off, y + dy * off, TORCH_M]
+        [x + dx * off, y + dy * off, self.floor_of(cell) + TORCH_M]
     }
 
-    /// A block's torches: on a wall of each room, one for every sixteen of its rectangle's cells, its quiet cells on
-    /// every third diagonal first and any of its cells if none will do; and on every fourth corridor cell, row by row.
-    pub(crate) fn light(&mut self, square: (usize, usize), block: &BlockLayout) {
+    /// A block storey's torches: on a wall of each room, one for every sixteen of its rectangle's cells, its quiet
+    /// cells on every third diagonal first and any of its cells if none will do; at each landing, so each flight is lit
+    /// from both ends; and on every fourth corridor cell, row by row.
+    pub(crate) fn light(&mut self, square: (usize, usize), storey: usize, block: &BlockLayout) {
         for (number, room) in block.rooms.iter().enumerate() {
             let want = ((room.width * room.depth + 8) / 16).max(1);
             let mut lit = 0;
             for (x, y) in block.quiet_cells(number) {
-                if lit < want && (x + y) % 3 == 0 && self.torch_on(self.cell_of(square, x, y)) {
+                if lit < want && (x + y) % 3 == 0 && self.torch_on(self.cell_of(square, storey, x, y)) {
                     lit += 1;
                 }
             }
             for (x, y) in block.room_cells(number) {
-                if lit == 0 && self.torch_on(self.cell_of(square, x, y)) {
+                if lit == 0 && self.torch_on(self.cell_of(square, storey, x, y)) {
                     lit += 1;
                 }
             }
+        }
+        let plane = self.plane();
+        let landings: Vec<usize> = self
+            .stairs
+            .iter()
+            .flat_map(|stair| [(stair.upper, stair.top), (stair.upper + 1, stair.bottom)])
+            .filter(|&(on, _)| on == storey)
+            .map(|(on, at)| on * plane + at)
+            .filter(|&cell| self.square_of(cell) == square)
+            .collect();
+        for landing in landings {
+            self.torch_on(landing);
         }
         let mut corridors = 0;
         for y in 0..BLOCK_CELLS {
             for x in 0..BLOCK_CELLS {
                 if block.cells[y * BLOCK_CELLS + x] == Cell::Corridor {
-                    if corridors % 4 == 0 {
-                        self.torch_on(self.cell_of(square, x, y));
+                    let cell = self.cell_of(square, storey, x, y);
+                    if corridors % 4 == 0 && !self.torches.iter().any(|torch| self.cell_at(torch.at) == cell) {
+                        self.torch_on(cell);
                     }
                     corridors += 1;
                 }
