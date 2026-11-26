@@ -71,6 +71,21 @@ fn stand_anchors(room: &mut Room, player: PlayerId) {
 }
 
 #[test]
+fn an_anchor_is_stood_on_in_the_court_alone_never_from_the_storey_over_it() {
+    let (mut room, player, boss) = court();
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    room.tick();
+    for [x, y, z] in anchors(&room) {
+        for _ in 0..ANCHOR_TICKS {
+            put(&mut room, player, [x, y, z + dungeon::STOREY_M]);
+            room.tick();
+        }
+    }
+    assert_eq!(room.encounter_seen().expect("seen").wards_broken, 0, "the ward stands");
+}
+
+#[test]
 fn the_boss_is_warded_at_two_thirds_and_one_third_until_each_anchor_is_stood_on_three_seconds() {
     let (mut room, player, boss) = court();
     let most = room.foes[&boss].fighter.health_max;
@@ -291,9 +306,16 @@ fn the_warded_boss_slams_round_it_every_eight_seconds_shown_two_seconds_first() 
     let mut shown = Vec::new();
     room.take_events();
     let mut before = 0.0;
+    // A cell of the Court beside the Boss's, within the slam's reach.
+    let post = room.foes[&boss].fighter.body;
+    let cells = room.encounters.as_ref().expect("encounters").court_cells.clone();
+    let beside = cells.into_iter().map(|cell| crate::encounters::encounters_tests::middle_of(&room, cell)).find(|at| {
+        let apart = libm::hypot(at[0] - post.x, at[1] - post.y);
+        apart > 1.0 && apart < SLAM_M - 0.3
+    });
+    let beside = beside.expect("a cell of the Court beside the Boss");
     while room.clock < raised + SLAM_EVERY {
-        let at = room.foes[&boss].fighter.body;
-        put(&mut room, player, [at.x + SLAM_M - 0.5, at.y, at.z]);
+        put(&mut room, player, beside);
         before = room.players[&player].fighter.health;
         room.tick();
         shown.push(room.encounter_seen().expect("seen").slam_ticks);

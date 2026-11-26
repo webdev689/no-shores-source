@@ -136,16 +136,16 @@ impl Room {
             self.stand_seal_wave(encounters, None, &anchors, living);
         }
         self.slam(encounters.court.ward_at, boss);
-        let standing: Vec<[f64; 2]> = self
+        let standing: Vec<[f64; 3]> = self
             .players
             .values()
             .filter(|found| found.living())
-            .map(|found| [found.fighter.body.x, found.fighter.body.y])
+            .map(|found| [found.fighter.body.x, found.fighter.body.y, found.fighter.body.z])
             .collect();
         let court = &mut encounters.court;
         // All three filled break the ward this tick, so an anchor never empties while the other two are filled.
         for ((held, left), anchor) in court.anchors.iter_mut().zip(&mut court.anchors_left).zip(&anchors) {
-            let stood = standing.iter().any(|at| libm::hypot(at[0] - anchor[0], at[1] - anchor[1]) <= ANCHOR_REACH_M);
+            let stood = standing.iter().any(|&at| super::seals::near(at, *anchor) <= ANCHOR_REACH_M);
             if stood {
                 (*held, *left) = ((*held + 1).min(ANCHOR_TICKS), clock);
             } else if living >= ANCHORS_EMPTY_FROM && *held > 0 && clock - *left > ANCHOR_EMPTIES_TICKS {
@@ -171,12 +171,18 @@ impl Room {
         if since == 0 || !since.is_multiple_of(SLAM_EVERY) {
             return;
         }
-        let Some(at) = self.foes.get(&boss).map(|foe| [foe.fighter.body.x, foe.fighter.body.y]) else { return };
+        let Some(at) = self.foes.get(&boss).map(|foe| [foe.fighter.body.x, foe.fighter.body.y, foe.fighter.body.z])
+        else {
+            return;
+        };
         let struck: Vec<crate::PlayerId> = self
             .players
             .iter()
             .filter(|(_, found)| found.living())
-            .filter(|(_, found)| libm::hypot(found.fighter.body.x - at[0], found.fighter.body.y - at[1]) <= SLAM_M)
+            .filter(|(_, found)| {
+                let body = found.fighter.body;
+                super::seals::near([body.x, body.y, body.z], at) <= SLAM_M
+            })
             .map(|(id, _)| *id)
             .collect();
         for &player in &struck {

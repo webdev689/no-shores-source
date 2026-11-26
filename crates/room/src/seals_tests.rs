@@ -415,6 +415,47 @@ fn an_ascents_drowned_floor_harms_while_its_seal_holds_and_its_stone_held_two_se
 }
 
 #[test]
+fn two_points_a_storey_apart_are_never_near_however_close_across_the_floor() {
+    assert!((near([1.0, 1.0, -8.0], [4.0, 5.0, -6.0]) - 5.0).abs() < 1e-12, "on a pad over its floor");
+    assert!(near([1.0, 1.0, 0.0], [1.0, 1.0, -dungeon::STOREY_M]).is_infinite(), "the storey under");
+}
+
+#[test]
+fn an_ascent_under_the_top_storey_drowns_its_own_floor_and_never_its_pads() {
+    let mut room = gear::activities::elite_dungeons()
+        .map(|elite| crate::encounters::encounters_tests::elite_room(elite.id))
+        .find(|room| {
+            let seals = &room.encounters.as_ref().expect("encounters").plan.seals;
+            seals.iter().any(|seal| seal.kind == SealKind::Ascent && seal.pads[0].bottom < dungeon::FLOOR_M)
+        })
+        .expect("an Elite Dungeon with an Ascent under its top storey");
+    let player = room.join().expect("in");
+    let seal = seal_of(&room, SealKind::Ascent);
+    let laid = plan(&room, seal);
+    let whole = room.players[&player].fighter.health_max;
+    // A pad short of the stone's, so the seal holds.
+    let pad = laid.pads[1];
+    let on_pad = [(pad.min_x + pad.max_x) / 2.0, (pad.min_y + pad.max_y) / 2.0, pad.top];
+    for _ in 0..DROWNED_EVERY * 2 {
+        put(&mut room, player, on_pad);
+        room.tick();
+    }
+    assert_eq!(room.players[&player].fighter.health, whole, "dry on its pads");
+    let wet = laid.drowned.iter().copied().find(|&cell| {
+        let [x, y, _] = middle_of(&room, cell);
+        laid.pads
+            .iter()
+            .all(|pad| x < pad.min_x - 0.5 || x > pad.max_x + 0.5 || y < pad.min_y - 0.5 || y > pad.max_y + 0.5)
+    });
+    let floor = middle_of(&room, wet.expect("a wet cell"));
+    for _ in 0..DROWNED_EVERY * 2 {
+        put(&mut room, player, floor);
+        room.tick();
+    }
+    assert!(room.players[&player].fighter.health < whole, "harmed on its floor");
+}
+
+#[test]
 fn a_holdfast_is_held_in_its_ring_and_a_relic_drained_by_foes_halves_the_hold() {
     let mut room = elite_room_with(SealKind::Holdfast);
     let player = hardy(&mut room);

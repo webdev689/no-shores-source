@@ -58,8 +58,11 @@ pub(crate) const fn plates_for(living: usize) -> usize {
     if living >= ALL_PLATES_FROM { 3 } else { 2 }
 }
 
-/// How near two points stand on the floor, metres.
-fn near(a: [f64; 3], b: [f64; 3]) -> f64 {
+/// How near two points stand on the floor, metres; never near on different storeys, as rock stands between them.
+pub(crate) fn near(a: [f64; 3], b: [f64; 3]) -> f64 {
+    if (a[2] - b[2]).abs() >= dungeon::STOREY_M / 2.0 {
+        return f64::INFINITY;
+    }
     libm::hypot(a[0] - b[0], a[1] - b[1])
 }
 
@@ -206,7 +209,7 @@ impl Room {
             .foes
             .values()
             .filter(|foe| !foe.fighter.dead() && !foe.fighter.side.is_players())
-            .filter(|foe| near([foe.fighter.body.x, foe.fighter.body.y, 0.0], relic) <= ring)
+            .filter(|foe| near([foe.fighter.body.x, foe.fighter.body.y, foe.fighter.body.z], relic) <= ring)
             .count();
         let found = &mut encounters.seals[seal];
         found.on = vec![held];
@@ -249,10 +252,12 @@ impl Room {
         if !self.clock.is_multiple_of(DROWNED_EVERY) {
             return;
         }
+        // The drowned floor is the room's, the one its pads stand on.
+        let floor = plan.pads.first().map_or(dungeon::FLOOR_M, |pad| pad.bottom);
         let wet: Vec<PlayerId> = self
             .players_in(plan_of, &plan.drowned)
             .into_iter()
-            .filter(|&(_, at, grounded)| grounded && at[2] < WET_M)
+            .filter(|&(_, at, grounded)| grounded && at[2] < floor + WET_M)
             .map(|(id, _, _)| id)
             .collect();
         for player in wet {

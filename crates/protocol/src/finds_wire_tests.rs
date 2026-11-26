@@ -75,5 +75,9 @@ fn a_dungeons_gear_carries_its_vaults_chest_and_how_many_of_its_chests_the_playe
     let chests = floats(gear.chests());
     assert_eq!(usize::from(gear.chests_total()), chests.len() / 6, "every chest standing, none opened");
     assert_eq!(gear.chests_opened(), 0);
-    assert!(chests.chunks(6).all(|chest| chest[5] == 0.0), "no vault laid in this dungeon");
+    let vaults = chests.chunks(6).filter(|chest| chest[5] == 1.0).count();
+    assert!(
+        vaults >= 1 && chests.chunks(6).all(|chest| chest[5] == 0.0 || chest[5] == 1.0),
+        "its vaults' chests named"
+    );
 }
