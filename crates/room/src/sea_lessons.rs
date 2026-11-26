@@ -14,6 +14,7 @@ use gear::quests::{Event, Goal, Sail, SailAct};
 use naval::damage::State;
 use naval::fight::{CAPTAIN, End, Event as FightEvent, Sailor};
 use naval::ranks::{Commission, GREY_TITHE, Rank};
+use naval::shots::ShotEvent;
 use std::cell::OnceCell;
 use std::collections::BTreeMap;
 
@@ -180,19 +181,27 @@ impl Sea {
         }
     }
 
-    /// The hulks' fights: each ball that struck a hulk this tick is its captain's act, and a hulk whose captain lies
-    /// past `HULK_LEFT_M` of it leaves their fight, or past `HULK_NEAR_M` once the ball is in, so the fight is over
-    /// before they reach Overlook's roadstead and may dock.
+    /// The hulks' fights: each ball of its captain's own that struck a hulk this tick is their act, and a hulk whose
+    /// captain lies past `HULK_LEFT_M` of it leaves their fight, or past `HULK_NEAR_M` once the ball is in, so the
+    /// fight is over before they reach Overlook's roadstead and may dock.
     fn keep_hulks(&mut self) -> Vec<(PlayerId, SailAct)> {
         let mut struck = Vec::new();
         for fought in &mut self.fights.list {
             let Some(player) = hulk_in(fought) else { continue };
-            if fought.events.iter().any(|event| matches!(event, FightEvent::Hit { ship, .. } if *ship == CAPTAIN)) {
+            // A strike names only the ship struck: the ball's own word names whose it was.
+            let own_ship = fought.crews.get(&player).map(|crew| crew.ship);
+            let theirs = |event: &FightEvent| match event {
+                FightEvent::Shot(ShotEvent::Hit { shooter, target, .. }) => {
+                    *target == CAPTAIN && Some(*shooter) == own_ship
+                }
+                _ => false,
+            };
+            if fought.events.iter().any(theirs) {
                 struck.push((player, SailAct::Fire));
             }
             let fired = self.harbour.characters.get(&player).is_none_or(|it| !asked(it).contains(&SailAct::Fire));
             let left = if fired { HULK_NEAR_M } else { HULK_LEFT_M };
-            let own = fought.crews.get(&player).and_then(|crew| fought.fight.vessel(crew.ship)).map(|it| it.ship);
+            let own = own_ship.and_then(|ship| fought.fight.vessel(ship)).map(|it| it.ship);
             let Some(vessel) = fought.fight.ships.get_mut(&CAPTAIN) else { continue };
             let off = own.is_some_and(|own| libm::hypot(own.x - vessel.ship.x, own.y - vessel.ship.y) > left);
             if let Sailor::Captain(command) = &mut vessel.sailor

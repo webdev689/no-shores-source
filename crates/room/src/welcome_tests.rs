@@ -5,7 +5,7 @@
 
 use crate::Room;
 use crate::asks::{Asked, Counter, CounterKind, answer_code};
-use crate::quests::quests_tests::{joined, node_room, stand_at};
+use crate::quests::quests_tests::{joined, node_room, now, on_road, run, stand_at};
 use gear::Ask;
 use gear::Character;
 use gear::asks::Refusal;
@@ -171,4 +171,43 @@ fn the_harbourmasters_asks_are_answered_at_the_harbourmasters_counter_alone() {
     room.answer(player, buy("kelp"));
     assert_eq!(room.player(player).expect("in").answer, answer_code(Err(Refusal::NotHere)), "away from it");
     assert_eq!(room.player(player).expect("in").character.materials.aurem, 4_000, "paid once");
+}
+
+#[test]
+fn a_house_road_not_yet_acquired_begins_no_step_marks_nothing_and_counts_nothing_until_its_leader_is_asked() {
+    for faction in [1, 3] {
+        let quest = quests().quests.iter().position(|quest| quest.faction == faction).expect("its road");
+        let mut character = on_road(quest, 0);
+        character.quests.acquired.retain(|id| *id != quests().quests[quest].id);
+        let goal = &quests().quests[quest].tasks[0].goals[0];
+        let (node, place) = match &goal.goal {
+            gear::quests::Goal::Tail(tail) => (tail.node.as_str(), tail.from.as_str()),
+            gear::quests::Goal::Reach(reach) => (reach.node.as_str(), reach.place.as_str()),
+            other => panic!("{faction}: a first step the test lays no place for: {other:?}"),
+        };
+        let mut room = node_room(node, &[(place, [0.0, 0.0], 40.0), ("Chalkpit Ruin", [0.0, -150.0], 40.0)]);
+        let leader = Counter { kind: CounterKind::Faction(faction), at: [60.0, 0.0] };
+        room.counters = Some(vec![leader]);
+        let player = joined(&mut room, &character, [0.0, 10.0]);
+        assert_eq!(room.player(player).expect("in").character.quest_offered(), Some(faction), "{faction}: offered");
+        run(&mut room, 3);
+        assert!(!room.quests.steps.contains_key(&player), "{faction}: no step begun");
+        assert_eq!(room.quest_at(player), None, "{faction}: nothing marked");
+        assert_eq!(
+            now(&room, player),
+            (Some((quest, 0)), vec![0]),
+            "{faction}: nothing counted, standing on its place"
+        );
+        stand_at(&mut room, player, [60.0, 1.0]);
+        room.answer(player, Asked::Gear(Ask::Acquire { keeper: faction }));
+        assert_eq!(room.player(player).expect("in").answer, 0, "{faction}: acquired at the leader's counter");
+        assert!(room.quest_at(player).is_some(), "{faction}: its goal marked once acquired");
+        stand_at(&mut room, player, [0.0, 10.0]);
+        run(&mut room, 3);
+        if goal.kind().stepped() {
+            assert!(room.quests.steps.contains_key(&player), "{faction}: its step begun once acquired");
+        } else {
+            assert_ne!(now(&room, player).0, Some((quest, 0)), "{faction}: its place reached once acquired");
+        }
+    }
 }
