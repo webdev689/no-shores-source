@@ -16,11 +16,13 @@ export const ASHORE_EVERY_MS = 15_000;
 /** How far apart the numbers of the ships of each sea after the first are set, so two seas' ships never share one. */
 const SEA_APART = 2 ** 30;
 
-/** Where a room stands ashore: the sea rooms it names its players to, and its island as its word names it, none for a
- *  run started at sea. */
+/** Where a room stands ashore: the sea rooms it names its players to, its island as its word names it (none for a run
+ *  started at sea), and whether its page draws the ships parked there: an island's own ground does, a dungeon, a run
+ *  or a passage zone does not, so it is handed none to send. */
 export interface Place {
   readonly seas: readonly string[];
   readonly island: { readonly continent: string } | { readonly island: number; readonly seed: string } | null;
+  readonly draws: boolean;
 }
 
 /** Every sea, by its tier: a player may come ashore anywhere from any of them (a social space's or an outpost's node
@@ -35,13 +37,14 @@ export function placeOf(
   reach: Reach | null,
   isle: { readonly id: number; readonly seed: string } | null,
 ): Place | null {
-  if (isle) return { seas: SEAS, island: { island: isle.id, seed: isle.seed } };
+  if (isle) return { seas: SEAS, island: { island: isle.id, seed: isle.seed }, draws: name.startsWith('isle-') };
   const passage = passageRoom(name);
-  if (passage) return { seas: SEAS, island: { continent: passage.island } };
+  if (passage) return { seas: SEAS, island: { continent: passage.island }, draws: false };
   const node = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
   if (!node) return null;
-  if (startedAtSea(name)) return { seas: SEAS, island: null };
-  return reach ? { seas: SEAS, island: { continent: reach.continent } } : null;
+  if (startedAtSea(name)) return { seas: SEAS, island: null, draws: false };
+  const draws = node.dungeon === null && node.run === null;
+  return reach ? { seas: SEAS, island: { continent: reach.continent }, draws } : null;
 }
 
 /** A room's naming of its players ashore: where it stands (none for a room on no island, which names no one), each
@@ -99,7 +102,7 @@ export class Ashore {
             sea,
             ships.map((ship) => ({ ...ship, number: ship.number + index * SEA_APART })),
           );
-          this.give(JSON.stringify([...this.answers.values()].flat()));
+          if (place.draws) this.give(JSON.stringify([...this.answers.values()].flat()));
         })
         .catch(() => undefined);
     });

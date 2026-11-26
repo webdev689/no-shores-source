@@ -11,10 +11,12 @@ test('every room on land names its players to all three seas, at its island', ()
   assert.deepEqual(placeOf('node-overlook-social', reach(true), null), {
     seas: SEAS,
     island: { continent: 'continent-1' },
+    draws: true,
   });
   assert.deepEqual(placeOf('node-gullwing-vale--elite', reach(false), null), {
     seas: SEAS,
     island: { continent: 'continent-1' },
+    draws: true,
   });
   // An Elite Dungeon's run is entered from its node at any tier, so its players' ships may lie in any sea.
   assert.deepEqual(placeOf('node-gullwing-vale--elite--dungeon-1--run-a1b2c3d4', reach(false), null)?.seas, SEAS);
@@ -22,16 +24,23 @@ test('every room on land names its players to all three seas, at its island', ()
   assert.deepEqual(placeOf('node-krakens-grotto--sea--run-k3j4h5g6', null, null), {
     seas: SEAS,
     island: null,
+    draws: false,
   });
   assert.deepEqual(placeOf('isle-7-00000000000000ff--elite', null, { id: 7, seed: '255' }), {
     seas: SEAS,
     island: { island: 7, seed: '255' },
+    draws: true,
   });
   // A passage zone under its island is entered from a patrol at any tier, so its divers' ships may lie in any sea.
   assert.deepEqual(placeOf('passage-continent-1-w12-z3--run-a1b2c3d4', null, null), {
     seas: SEAS,
     island: { continent: 'continent-1' },
+    draws: false,
   });
+  // Only an island's own ground draws the ships parked off it: a dungeon, a run or a passage zone names its players,
+  // keeping their ships seen at sea, but is sent none.
+  assert.equal(placeOf('node-gullwing-vale--dungeon-1', reach(false), null)?.draws, false);
+  assert.equal(placeOf('sea-dungeon-continent-1-crypt-0000002a', null, { id: 7, seed: '42' })?.draws, false);
   assert.equal(placeOf('node-gullwing-vale', null, null), null, 'a node whose island is unknown');
   assert.equal(placeOf('fleet-trial', null, null), null, 'a room on no island');
 });
@@ -44,7 +53,7 @@ test('the seas are told as an account is known and every 15 s, and their answers
     'sea--abyss': '',
   };
   let given = '';
-  const place = { seas: ['sea', 'sea--elite', 'sea--abyss'], island: { continent: 'continent-1' } };
+  const place = { seas: SEAS, island: { continent: 'continent-1' }, draws: true };
   const sea = (name: string) => ({
     ashoreWord: (word: string) => {
       words.push([name, word]);
@@ -77,4 +86,21 @@ test('the seas are told as an account is known and every 15 s, and their answers
   const again = `{"accounts":[],"continent":"continent-1","seconds":${Math.floor(later / 1000)}}`;
   assert.deepEqual(words.at(0), ['sea', again], 'one gone is named no more');
   assert.equal((JSON.parse(given) as unknown[]).length, 2, 'a sea that did not answer keeps its last answer');
+});
+
+test('a room whose page draws no parked ships names its players to the seas but is handed none', async () => {
+  const words: string[] = [];
+  const sea = () => ({
+    ashoreWord: (word: string) => {
+      words.push(word);
+      return Promise.resolve('[{"account":"ann","number":3}]');
+    },
+  });
+  let given: string | null = null;
+  const ashore = new Ashore(sea, (ships) => (given = ships));
+  ashore.stand({ seas: SEAS, island: { continent: 'continent-1' }, draws: false });
+  ashore.own(4, 'ann');
+  await new Promise((settled) => setImmediate(settled));
+  assert.equal(words.length, 3, 'named to every sea, so its ship stays seen at sea');
+  assert.equal(given, null);
 });
