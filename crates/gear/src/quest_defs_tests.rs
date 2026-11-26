@@ -1,8 +1,9 @@
 //! The quests' file read and checked: every scene, node, place and spell it names is one; a goal's field missing, left
 //! over or of the wrong kind named as it is read; a value none of its own; quests chained one after another, a house
-//! with several; old task ids read as the task they became; and its spells and rewards in their order.
+//! with several; old task ids read as the task they became; its spells and rewards in their order; and each house's
+//! horde after its Art.
 
-use crate::quests::{GoalDef, QuestsDef, quests};
+use crate::quests::{Defend, Goal, GoalDef, QuestsDef, quests};
 
 /// Reads a content file as JSON.
 fn content(text: &str) -> serde_json::Value {
@@ -11,7 +12,6 @@ fn content(text: &str) -> serde_json::Value {
 
 /// Every place of a node a goal names.
 fn places_of(goal: &GoalDef) -> Vec<&str> {
-    use crate::quests::Goal;
     match &goal.goal {
         Goal::Escort(escort) => vec![escort.from.as_str(), escort.to.as_str()],
         Goal::Tail(tail) => vec![tail.from.as_str(), tail.to.as_str()],
@@ -30,7 +30,10 @@ fn places_of(goal: &GoalDef) -> Vec<&str> {
         | Goal::Scavenge(_)
         | Goal::Enter(_)
         | Goal::Buy(_)
-        | Goal::Wear(_) => goal.goal.place().into_iter().collect(),
+        | Goal::Wear(_)
+        | Goal::Ride(_)
+        | Goal::Sail(_)
+        | Goal::Use(_) => goal.goal.place().into_iter().collect(),
     }
 }
 
@@ -40,8 +43,16 @@ fn the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_tha
     let scenes = content(include_str!("../../../content/story/houses.json"));
     let continent = content(include_str!("../../../content/world/land/continent-1.json"));
     let briefs = content(include_str!("../../../content/world/briefs.json"));
-    let nodes: Vec<&str> =
-        continent["nodes"].as_array().unwrap().iter().filter_map(|node| node["id"].as_str()).collect();
+    let social = content(include_str!("../../../content/world/social.json"));
+    let socials: Vec<String> = social["open"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|city| Some(format!("{}-social", city.as_str()?)))
+        .collect();
+    let drawn = continent["nodes"].as_array().unwrap().iter().filter_map(|node| node["id"].as_str());
+    // A goal may name an open city's social space as a node: a player docking there enters it.
+    let nodes: Vec<&str> = drawn.chain(socials.iter().map(String::as_str)).collect();
     let named = |node: &str, place: &str| {
         let brief = &briefs[node];
         ["areas", "runs"].iter().any(|list| {
@@ -55,7 +66,7 @@ fn the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_tha
             for goal in &task.goals {
                 said.extend(goal.scene.as_deref().into_iter().chain(goal.goal.lines()));
                 if let Some(node) = goal.goal.node() {
-                    assert!(nodes.contains(&node), "{node} is a node of continent-1");
+                    assert!(nodes.contains(&node), "{node} is a node of continent-1 or an open social space");
                     for place in places_of(goal) {
                         assert!(named(node, place), "{place} is a place of {node}");
                     }
@@ -76,8 +87,8 @@ fn goal(text: &str) -> Result<GoalDef, String> {
 #[test]
 fn a_figures_greeting_and_every_line_a_step_says_are_scenes_the_file_checks() {
     let lines = |text: &str| goal(text).expect(text).goal.lines().into_iter().map(str::to_owned).collect::<Vec<_>>();
-    let escort = r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "near": 15, "greet": "hello", "shout": "ambush", "text": "t" }"#;
-    assert_eq!(lines(escort), ["hello", "ambush"]);
+    let escort = r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "horse": "dun", "near": 30, "greet": "hello", "shout": "ambush", "mount": "up", "text": "t" }"#;
+    assert_eq!(lines(escort), ["hello", "ambush", "up"]);
     let tail = r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "foe": "Runner", "far": 10, "near": 40, "greet": "hello", "noticed": "seen", "text": "t" }"#;
     assert_eq!(lines(tail), ["hello", "seen"]);
     let scene =
@@ -114,8 +125,12 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         (r#"{ "kind": "sea", "side": "hostiles", "text": "t" }"#, "side"),
         (r#"{ "kind": "land", "island": "rock", "text": "t" }"#, "island"),
         (
-            r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "nobody", "near": 15, "text": "t" }"#,
+            r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "nobody", "horse": "dun", "near": 30, "text": "t" }"#,
             "who",
+        ),
+        (
+            r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "horse": "zebra", "near": 30, "text": "t" }"#,
+            "horse",
         ),
         (
             r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "who": "wren", "foe": "Runner", "far": 10, "near": 40, "text": "t" }"#,
@@ -130,6 +145,14 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         (
             r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Huge"]]], "ward": "w", "text": "t" }"#,
             "rank",
+        ),
+        (
+            r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"]]], "ward": "w", "horde": true, "text": "t" }"#,
+            "ward",
+        ),
+        (
+            r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"]]], "horde": true, "text": "t" }"#,
+            "waves",
         ),
         (
             r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "order": [1], "text": "t" }"#,
@@ -151,12 +174,49 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         // A piece held is told again on every ask, so one piece would meet a count above one.
         (r#"{ "kind": "wear", "slot": "head", "count": 2, "text": "t" }"#, "count"),
         (r#"{ "kind": "buy", "slot": "melee", "count": 3, "text": "t" }"#, "count"),
+        // A lesson's step is done once; an arrival names a keeper's counter, and no other act names one.
+        (r#"{ "kind": "ride", "act": "walk", "count": 2, "text": "t" }"#, "count"),
+        (r#"{ "kind": "sail", "act": "steer", "count": 2, "text": "t" }"#, "count"),
+        (r#"{ "kind": "ride", "act": "arrive", "text": "t" }"#, "to"),
+        (r#"{ "kind": "ride", "act": "arrive", "to": "nobody", "text": "t" }"#, "to"),
+        // The stranger keeps no counter to ride up to.
+        (r#"{ "kind": "ride", "act": "arrive", "to": "stranger", "text": "t" }"#, "to"),
+        (r#"{ "kind": "ride", "act": "mount", "to": "tack", "text": "t" }"#, "to"),
+        // A gift's step names the counter its act is done at, and a dye, worn anywhere, none; each done once.
+        (r#"{ "kind": "use", "act": "identify", "text": "t" }"#, "to"),
+        (r#"{ "kind": "use", "act": "letter", "to": "vault", "text": "t" }"#, "to"),
+        (r#"{ "kind": "use", "act": "dye", "to": "tailor", "text": "t" }"#, "to"),
+        (r#"{ "kind": "use", "act": "withdraw", "to": "vault", "count": 2, "text": "t" }"#, "count"),
     ] {
         let problem = goal(text).expect(text).problem();
         assert!(problem.as_deref().is_some_and(|said| said.contains(field)), "{text}: {problem:?}");
     }
     let fine = r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 45, "at": 49 }], "text": "t" }"#;
     assert_eq!(goal(fine).expect(fine).problem(), None, "a point within its place's square, in any order");
+    let horde = r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"]]], "horde": true, "text": "t" }"#;
+    assert_eq!(goal(horde).expect(horde).problem(), None, "a horde has no ward");
+}
+
+#[test]
+fn each_houses_art_is_given_by_a_task_followed_at_once_by_a_horde_at_its_roads_node() {
+    for quest in quests().quests.iter().filter(|quest| quest.faction > 0) {
+        let art = quest.tasks.iter().position(|task| task.reward.art).expect("its Art's task");
+        let next = quest.tasks.get(art + 1).expect("a task after it");
+        let hordes: Vec<&Defend> = quest
+            .tasks
+            .iter()
+            .flat_map(|task| &task.goals)
+            .filter_map(|goal| match &goal.goal {
+                Goal::Defend(defend) if defend.horde => Some(defend),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(hordes.len(), 1, "{}: one horde", quest.id);
+        let first = next.goals.first().map(|goal| &goal.goal);
+        assert!(matches!(first, Some(Goal::Defend(defend)) if defend.horde), "{}: the horde after its Art", quest.id);
+        let foes: usize = hordes[0].waves.iter().map(Vec::len).sum();
+        assert!((20..=40).contains(&foes), "{}: a horde of {foes}", quest.id);
+    }
 }
 
 /// A small file of quests: the opening, and each house one quest giving its Art, its first Tenet and its second.
@@ -250,6 +310,7 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("house", "your-ship"),
     ("house", "arm-yourself"),
     ("house", "wear-them"),
+    ("house", "use-your-gifts"),
     ("house", "hear-three-houses"),
     ("house", "choose-house"),
     ("stormcallers", "climb-old-beacon"),
@@ -265,6 +326,7 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("stormcallers", "bring-storm-home"),
     ("stormcallers", "run-down-moor-camp"),
     ("stormcallers", "race-river-road"),
+    ("stormcallers", "break-tithe-downs"),
     ("lamplighters", "walk-strand"),
     ("lamplighters", "put-out-false"),
     ("lamplighters", "bring-tobin-moorend"),
@@ -282,6 +344,10 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("lamplighters", "hold-gullwing"),
     ("lamplighters", "find-lens-buyer"),
     ("lamplighters", "set-grey-point"),
+    ("lamplighters", "burn-barrow-wreckers"),
+    ("house", "ride-the-bay"),
+    ("house", "learn-the-helm"),
+    ("house", "bring-it-home"),
     ("veiled", "meet-wren-follow"),
     ("veiled", "lift-collectors-tallies"),
     ("veiled", "wait-under-valeguard"),
@@ -298,6 +364,7 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("veiled", "follow-reckoner"),
     ("veiled", "empty-moorhold"),
     ("veiled", "follow-wren-coven"),
+    ("veiled", "loose-dark-adit"),
 ];
 
 #[test]

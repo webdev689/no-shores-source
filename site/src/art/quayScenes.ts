@@ -1,8 +1,8 @@
 // The pictures on Overlook's quay and under its roofs: the three Arts as three flames, gear under a lantern, and a
 // ship's bell on its post, the panel's picture.
 import { seeded } from '../../../client/src/seeded.ts';
-import { lantern, LIGHTS, moon, range, sea, sky, stars } from './light.ts';
-import { ship } from './ships.ts';
+import { lantern, LIGHTS, moon, range, sea, sky, stars } from '../../../client/src/art/light.ts';
+import { ship } from '../../../client/src/art/ships.ts';
 import {
   box,
   disc,
@@ -17,7 +17,7 @@ import {
   shape,
   type Ink,
   type Sheet,
-} from './sheet.ts';
+} from '../../../client/src/art/sheet.ts';
 
 const WIDE = 320;
 const TALL = 180;

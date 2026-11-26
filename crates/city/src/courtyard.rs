@@ -31,8 +31,10 @@ const PORTICO_M: [f64; 4] = [52.0, 16.0, 1.2, 11.0];
 pub(crate) const ARCADE_M: [f64; 5] = [32.0, 118.0, 10.0, 6.0, 7.2];
 /// The obelisk's height, over its two steps, metres.
 pub const OBELISK_M: f64 = 18.0;
-/// How thick a band laid in the paving is, metres: too low to step over, and clear of the paving's face.
+/// How thick a band laid in the paving is, metres: too low to step over, and clear of the paving's face; and how much
+/// one laid across another stands over it, so the two never lie level and show in turn.
 const INLAY_M: f64 = 0.02;
+const INLAY_OVER_M: f64 = 0.005;
 
 impl Frame {
     pub(crate) fn across(&self) -> [f64; 2] {
@@ -367,12 +369,12 @@ fn inlays(frame: &Frame) -> Vec<Solid> {
     let from = edge + PORTICO_M[1] + 2.0;
     let to = frame.depth / 2.0 - 0.4;
     let way = frame.block((from + to) / 2.0, 0.0, 0.0, [6.0, to - from, INLAY_M], Material::Stone);
-    let border = frame.block(to - 0.75, 0.0, 0.0, [frame.length - 0.8, 1.5, INLAY_M], Material::Stone);
+    let border = frame.block(to - 0.75, 0.0, 0.0, [frame.length - 0.8, 1.5, INLAY_M + INLAY_OVER_M], Material::Stone);
     let ends = [-1.0, 1.0].map(|side| {
         let across = side * (frame.length / 2.0 - 1.15);
         frame.block((from + to) / 2.0, across, 0.0, [1.5, to - from, INLAY_M], Material::Stone)
     });
-    let ring = frame.round(0.0, 0.0, 0.0, [26.0, INLAY_M, 1.0], Material::Stone);
+    let ring = frame.round(0.0, 0.0, 0.0, [26.0, INLAY_M + INLAY_OVER_M, 1.0], Material::Stone);
     vec![way, border, ends[0], ends[1], ring]
 }
 
@@ -383,6 +385,18 @@ mod tests {
 
     const FRAME: Frame =
         Frame { middle: [1000.0, 2000.0], seaward: [0.0, -1.0], depth: 120.0, length: 260.0, level: 80.0 };
+
+    #[test]
+    fn bands_laid_in_the_paving_never_lie_level_where_they_cross() {
+        let laid = inlays(&FRAME);
+        for (k, one) in laid.iter().enumerate() {
+            for two in &laid[k + 1..] {
+                let [a, b] = [one.bounds(), two.bounds()];
+                let crossing = a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+                assert!(!crossing || (a[5] - b[5]).abs() > 0.001, "{one:?} and {two:?} lie level");
+            }
+        }
+    }
 
     #[test]
     fn every_visitor_spot_stands_clear_on_the_plaza() {

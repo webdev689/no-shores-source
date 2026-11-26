@@ -198,6 +198,10 @@ pub struct Character {
     /// Where the sea last kept their ship, to the whole metre; none before it first put to sea.
     #[serde(default)]
     pub ship_at: Option<[i64; 2]>,
+    /// The way the ship lay turned there, in thousandths of a radian clockwise from north; none where no heading was
+    /// kept (a save from before, or a ship left mid-fight, which lies at a port).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ship_heading: Option<i64>,
     /// The experience the ship has earned in sea fights, which raises it to level 20 (`ship.rs`).
     #[serde(default)]
     pub ship_xp: u64,
@@ -336,6 +340,7 @@ impl Character {
             story: crate::story::Story::default(),
             ship: whole_ship(),
             ship_at: None,
+            ship_heading: None,
             ship_xp: 0,
             ship_fitted: false,
             fleet: crate::ship::fleet::Fleet::none(),

@@ -13,7 +13,7 @@ import { PERF, perfOn, PerfMeter } from '../perfMeter.ts';
 import { autoChosen, heardFrame } from './renderScale.ts';
 import type { Foot } from './foot.ts';
 import { type Fallen, ReviveNotices } from './footRevive.ts';
-import { contextOf, withoutTaken } from './gameKeys.ts';
+import { contextOf, interfaceKeys, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withFollow, withMapKey } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
@@ -24,7 +24,7 @@ import { leaveOffered } from './leaveHold.ts';
 import { gearTakesKeys } from './gearScreen.ts';
 import { creationOpen } from './prologue/creation.ts';
 import { charactersOpen } from './characters/characterScreen.ts';
-import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
+import { greyed, ISLANDS, placeWords, REGION, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
 import { arrivalFacing, FIRST_NODE } from './nodes.ts';
@@ -41,16 +41,13 @@ import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { TOLD_MS } from './tripBack.ts';
 import { type GateWay, gateWay } from './gates.ts';
-import { mooredShips } from './moorings.ts';
+import { mooredShips, shipsLying } from './moorings.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
 import { chatAtSea, chatInRun, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
 import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts';
-
-/** The region every island lies in. */
-const REGION = 'The Pale Expanse';
 
 /** What the frames read and change as the game goes: the flow, the mode's own pieces, the open landmass and its
  *  drawers, whether the place behind the veil is ready and how long it has waited, whether the map is wanted, and the
@@ -162,7 +159,15 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const eye = playing.after.seen?.eye ?? null;
     parts.passages.frame(heard.held('use'));
     const [walk, freeHands] = [parts.passages.ways.walk(), handsFree(heard, paused)];
-    const own = here.frame(heard, seconds, clock, { paused, looking, hands: freeHands, aspect, eye, walk });
+    const own = here.frame(heard, seconds, clock, {
+      paused,
+      looking,
+      hands: freeHands,
+      aspect,
+      eye,
+      walk,
+      riders: playing.quests.riders,
+    });
     const shown = { ...own, shot: parts.passages.ways.shot(playing.after.shot(own.shot, seconds)) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
@@ -265,8 +270,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       ask: (asked) => here.gear?.ask(asked),
     });
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
-    const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
-    const moored = mooredShips(moorings, clock, water);
+    const ownShip = { docked: parts.docked(), lies: playing.sea?.passage.ship, hull: parts.builtShip()?.hull };
+    // A dungeon and a Breach's run draw no sea, so no ship lies by them.
+    const lying =
+      here.dungeon || here.run ? [] : shipsLying(here.node, playing.landmass.plan, ownShip, here.held.ships);
+    const moored = mooredShips(lying, clock, water);
     const more = {
       after: hands,
       hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS),
@@ -318,7 +326,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.leaveWarning = parts.passages.leaveWarning();
     const nameOf = (id: number) => (here.fight.others.has(id) ? (here.otherPlayers.plateOf(id)?.name ?? '') : null);
     reviveNotices.hear(shown.fight.events, here.fight.player, nameOf, performance.now());
-    hud.toast(...toldNow(), ...reviveNotices.lines(performance.now()), ...quests.toasts, ...playing.lore.toasts);
+    hud.toast(...toldNow(), ...reviveNotices.lines(performance.now()), ...playing.lore.toasts);
     heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -364,7 +372,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.quests.hear(playing.sea?.gear?.gear);
     playing.quests.frame(seconds, playing.after.past, paused);
     playing.lore.hear(playing.sea?.gear?.gear);
-    hud.toast(...toldNow(), ...playing.quests.toasts, ...playing.lore.toasts);
+    hud.toast(...toldNow(), ...playing.lore.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);
@@ -497,7 +505,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The sheet takes the keys and the pad but while it waits for one to bind, as a window does; while a control waits
     // to be bound, from the sheet or Settings, the interface hears nothing that would press behind it.
     const bound = binding();
-    const tookWheel = ui.hear(seconds, !input.locked && !bound, (windowUp && !bound) || hud.controls.takesKeys);
+    const over = { window: windowUp, binding: bound, sheet: hud.controls.takesKeys };
+    const tookWheel = ui.hear(seconds, !input.locked && !bound, interfaceKeys(playing.flow.mode, over));
     const top = hud.controls.open
       ? 'sheet'
       : gearTakesKeys()

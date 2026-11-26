@@ -11,6 +11,7 @@ import type { CaptainAt, FightCaptain, FightEvent, FightVessel, FightView, ShipS
 import type { Swell } from '../../rules/landRules.ts';
 import { CITY_LAMPS, type LampPlace } from '../../sky/lamps.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
+import { HULL_LINES, type HullLines } from '../../ships/hullLines.ts';
 import { HULL_NAMES } from '../../ships/hulls.ts';
 import type { ShipBar } from '../../ships/shipBars.ts';
 import { captainInFight, type ShipCrew } from '../../ships/shipCrew.ts';
@@ -132,6 +133,8 @@ export class StoryFight {
   private readonly heard: FightEvent[];
   private readonly answered: { latest: FightView };
   private readonly sloopSails: readonly SailCorners[];
+  /** Each hull's own line for its footprint on the water. */
+  private readonly lines: Pick<HullLines, 'line'>;
   private readonly ownRig: SailRig;
   private readonly captainRigs: SailRig[];
   private readonly waterlines: Readonly<Record<'own' | 'captain', Waterline>> = {
@@ -144,14 +147,15 @@ export class StoryFight {
     land: LandWorker,
     combat: SeaCombat,
     rules: { heard: FightEvent[]; answered: { latest: FightView } },
-    sloopSails: readonly SailCorners[],
+    drawn: { sails: readonly SailCorners[]; lines: Pick<HullLines, 'line'> },
     rigs: Rigs,
   ) {
     this.land = land;
     this.combat = combat;
     this.heard = rules.heard;
     this.answered = rules.answered;
-    this.sloopSails = sloopSails;
+    this.sloopSails = drawn.sails;
+    this.lines = drawn.lines;
     this.ownRig = rigs.own ?? new SailRig(shipSails(OWN_HULL));
     this.captainRigs = [...rigs.captains];
   }
@@ -164,7 +168,7 @@ export class StoryFight {
     land: LandWorker,
     ship: { x: number; y: number; heading: number; way?: number },
     ambushers: readonly Ambusher[],
-    hull: { sails: readonly SailCorners[]; marks: MarkDrawer },
+    hull: { sails: readonly SailCorners[]; marks: MarkDrawer; lines?: Pick<HullLines, 'line'> },
     now: number,
     wind: () => readonly [number, number],
     rigs: Rigs = { captains: [] },
@@ -189,7 +193,13 @@ export class StoryFight {
       fightEnd: () => land.fightEnd(),
     };
     const combat = new SeaCombat({ source, own: 'Brig', hull: HULL_NAMES.indexOf(OWN_HULL) }, first, hull.marks, now);
-    return new StoryFight(land, combat, { heard, answered }, hull.sails, rigs);
+    return new StoryFight(
+      land,
+      combat,
+      { heard, answered },
+      { sails: hull.sails, lines: hull.lines ?? HULL_LINES },
+      rigs,
+    );
   }
 
   /** The fight's events this frame and its ships as they lie, as the sea's sounds hear them. */
@@ -286,7 +296,8 @@ export class StoryFight {
       const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
       const way = Math.hypot(ahead, abeam) > 0.5 ? UNDER_WAY : 0;
       const { lengthM, beamM } = this.waterlines[kind];
-      return [{ id, x, y, heading, halfLength: (lengthM / 2) * scale, halfBeam: (beamM / 2) * scale, way }];
+      const line = this.lines.line(HULL_NAMES.indexOf(kind === 'own' ? OWN_HULL : CAPTAIN_HULL));
+      return [{ id, x, y, heading, halfLength: (lengthM / 2) * scale, halfBeam: (beamM / 2) * scale, way, line }];
     };
     const ships = captains.flatMap((captain) => hull(captain, 'captain', `captain ${captain.id}`));
     return [...hull(player, 'own', 'own'), ...ships];

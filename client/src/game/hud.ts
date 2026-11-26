@@ -35,13 +35,10 @@ import {
   noticesNode,
   offerNode,
   placeNode,
-  type SeaBarState,
-  seaBarNode,
   shipPanelNode,
   statusNode,
   warningNode,
 } from './hudPieces.ts';
-import { type Landfall, landfallWords } from './seaLaw.ts';
 import { SeaSight, type Sight } from './seaSight.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { gearScreenOpen } from './gearScreen.ts';
@@ -72,7 +69,7 @@ const atMost = (rows: readonly StripRow[], most: number): readonly StripRow[] =>
   rows.length > most ? [...rows.slice(0, most - 1), ...rows.slice(-1)] : rows;
 /** What stands at the view's foot that the key strip stands over where it would cover it, by id: the prompt in the
  *  middle only on a view narrow enough for the two to meet. */
-const UNDER_STRIP = ['fight-arms', 'sea:bar', 'sea:landfall', 'hud:wheel', 'hud:passage', PROMPT_ID];
+const UNDER_STRIP = ['fight-arms', 'sea:bar', 'sea:ask', 'hud:wheel', 'hud:passage', PROMPT_ID];
 
 /** The screen's edge darkened toward black, as a radial gradient over the whole view clear to 35% of the way out: drawn
  *  small and stretched, its steps too fine to see. */
@@ -95,7 +92,7 @@ const VIGNETTE: Picture = {
 
 /** The game's heads-up display, drawn by the game as a layer of its interface (`node`): the place's name, the edge's
  *  warning and death, the key strip, the quests, the toasts, the status line, the notices, the compass, the marks and
- *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, the leave held, the
+ *  the ships' plates at sea, the sea fight's readout, Manage's panel, the leave held, the
  *  veil while a place loads, and the sheet of every control. The game tells it what to show each frame through its
  *  methods and hears its presses through the `on` callbacks. */
 export class Hud {
@@ -141,7 +138,6 @@ export class Hud {
   private seaPlayersShown: readonly PlatedPlayer[] = [];
   private seaPlatesAt = now();
   private marksShown: readonly ScreenMark[] = [];
-  private sea: (SeaBarState & { readonly landfall: Landfall }) | null = null;
   private panel: ShipPanel | null = null;
   private passage: string | null = null;
   /** While a cutscene holds the view: the use prompt, the toasts and a gate's offer stand aside. */
@@ -150,12 +146,7 @@ export class Hud {
   private besides: () => Besides = () => ({ fight: false, bossed: false, speaking: false, map: false });
   private respawnWanted: () => void = () => undefined;
   private markChosen: (id: string) => void = () => undefined;
-  private paceWanted: (direction: number) => void = () => undefined;
-  private voyageWanted: () => void = () => undefined;
-  private mapWanted: () => void = () => undefined;
-  private landfallWanted: () => void = () => undefined;
   private manageWanted: () => void = () => undefined;
-  private leaveWanted: () => void = () => undefined;
   private wheelWanted: () => void = () => undefined;
   private passageWanted: () => void = () => undefined;
 
@@ -267,38 +258,6 @@ export class Hud {
     this.markChosen = chosen;
   }
 
-  /** The navigation panel at sea: the map, stopping or resuming the voyage and the pace dial; over it, the offer to
-   *  dock or go ashore while one is open. Null hides both. */
-  seaBar(
-    state: {
-      readonly pace: number;
-      readonly sailing: boolean;
-      readonly resumable: boolean;
-      readonly landfall: Landfall;
-      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and it may be managed (out of
-       *  a fight). */
-      readonly canLeave: boolean;
-      readonly canManage: boolean;
-    } | null,
-  ): void {
-    this.sea = state;
-  }
-
-  /** What the pace buttons do: -1 slower, +1 faster. */
-  onPace(step: (direction: number) => void): void {
-    this.paceWanted = step;
-  }
-
-  /** What Map does. */
-  onMap(open: () => void): void {
-    this.mapWanted = open;
-  }
-
-  /** What Stop and Resume voyage do. */
-  onVoyage(toggle: () => void): void {
-    this.voyageWanted = toggle;
-  }
-
   /** Manage's panel over its deck: its name, and each part of it; null hides it. */
   shipPanel(panel: ShipPanel | null): void {
     this.panel = panel;
@@ -324,19 +283,9 @@ export class Hud {
     this.manageWanted = toggle;
   }
 
-  /** What Leave the helm does. */
-  onLeaveHelm(leave: () => void): void {
-    this.leaveWanted = leave;
-  }
-
   /** What the offer of the helm at its wheel does. */
   onTakeHelm(take: () => void): void {
     this.wheelWanted = take;
-  }
-
-  /** What the offer to dock or go ashore does. */
-  onLandfall(take: () => void): void {
-    this.landfallWanted = take;
   }
 
   /** How the display reads what else holds the screen, each frame. */
@@ -369,7 +318,6 @@ export class Hud {
       seaFight: this.fightModel !== null,
     };
     const shade = this.shade.value(clock);
-    const sea = this.sea;
     const standing = this.standing;
     const children: Child[] = [
       shade > 0 && {
@@ -415,18 +363,6 @@ export class Hud {
         },
       },
       statusNode(view, this.status),
-      sea &&
-        seaBarNode(ui, sea, {
-          map: () => this.mapWanted(),
-          voyage: () => this.voyageWanted(),
-          pace: (direction) => this.paceWanted(direction),
-          manage: () => this.manageWanted(),
-          leave: () => this.leaveWanted(),
-        }),
-      sea?.landfall &&
-        offerNode(ui, 'sea:landfall', `${landfallWords(sea.landfall)}  ${boundWord('confirm')}`, () =>
-          this.landfallWanted(),
-        ),
       this.wheel && offerNode(ui, 'hud:wheel', `Take the helm  ${boundWord('use')}`, () => this.wheelWanted()),
       !this.quiet && this.passage !== null && offerNode(ui, 'hud:passage', this.passage, () => this.passageWanted()),
       this.panel && shipPanelNode(ui, this.panel, () => this.manageWanted()),
@@ -454,7 +390,7 @@ export class Hud {
   }
 
   /** The key strip at the bottom right, over what stood at the view's foot under it last frame: the fight's Arts and
-   *  weapons, the sea bar, the ship's bar in a sea fight and the offers; gone while someone speaks. */
+   *  weapons, the ship's console, the ship's bar in a sea fight and the offers; gone while someone speaks. */
   private stripNode(ui: Interface, view: HudView): Node | null {
     const strip = this.stripShown;
     if (!strip || view.speaking) return null;

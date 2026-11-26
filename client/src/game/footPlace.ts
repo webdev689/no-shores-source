@@ -7,7 +7,7 @@ import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { FoeAsk, Reviving } from '../network/messages.ts';
+import type { FoeAsk, Reviving, SeenShip } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { newPlayer } from '../player/player.ts';
@@ -32,6 +32,7 @@ import { GUILD_CHANGED } from './gearScreen.ts';
 import { nodeRoom, testZoneOf } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { MapMarks } from '../heldmap/landSheet.ts';
+import type { WorldFrame } from '../combat/worldSounds.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -177,6 +178,8 @@ export interface Held {
   passage: PassageSeenState | null;
   /** A Breach as its run or its gate's patrol zone last said; null in any other room. */
   breach: BreachSeen | null;
+  /** The other players' ships lying parked by the island the room stands on, as it last said. */
+  ships: readonly SeenShip[];
 }
 
 /** What a join into a node's room asks of it besides: to stand before an entrance's door, coming out of its dungeon,
@@ -204,6 +207,8 @@ export interface FootAsk {
   readonly hands: boolean;
   readonly aspect: number;
   readonly eye?: readonly [number, number, number] | null;
+  /** The road's escort on its horse as last drawn, heard as a rider is (quests.ts `riders`). */
+  readonly riders?: NonNullable<WorldFrame['riders']>;
   /** A walk the body is stepped by while play is paused, the way between places walking it (`wayBetween.ts`). */
   readonly walk?: InputFrame | null;
 }

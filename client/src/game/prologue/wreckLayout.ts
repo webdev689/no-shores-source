@@ -172,6 +172,20 @@ export function topAt(blocks: readonly CourseBlock[], x: number, y: number): num
   return top;
 }
 
+/** The floor a heap over `area` is piled on: the middle height of the ground across it, sampled every 0.3 m (the
+ *  ground's square), the sea under it left out, so a rail or a spar across it, or a break beside it, is not taken
+ *  for its deck; 0 where none of it is over ground. */
+export function floorUnder(blocks: readonly CourseBlock[], [minX, minY, maxX, maxY]: Area): number {
+  const tops: number[] = [];
+  for (let x = minX + 0.15; x < maxX; x += 0.3)
+    for (let y = minY + 0.15; y < maxY; y += 0.3) {
+      const top = topAt(blocks, x, y);
+      if (top > 0) tops.push(top);
+    }
+  tops.sort((a, b) => a - b);
+  return tops[Math.floor(tops.length / 2)] ?? 0;
+}
+
 /** Whether (x, y) lies in an area. */
 export function inArea([minX, minY, maxX, maxY]: Area, x: number, y: number): boolean {
   return x >= minX && x <= maxX && y >= minY && y <= maxY;

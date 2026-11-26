@@ -98,8 +98,8 @@ export const CONTROLS = {
   sailOn: control(['w'], ['LS up'], HELM),
   heaveTo: control(['s'], ['LS down'], HELM),
   voyage: control([' '], ['X'], HELM),
-  slower: control(['['], ['Left'], HELM),
-  faster: control([']'], ['Right'], HELM),
+  // Between the Oversea view and the Sealevel view; the wheel never changes it.
+  seaView: control(['v'], ['Left'], HELM),
   map: control(['n'], ['Up'], HELM),
   // The held map of the land on foot; the pad's D-pad up mounts there, so it has no pad button until one is bound.
   landMap: control(['n'], [], FOOT),
@@ -139,7 +139,7 @@ export const DEFAULTS: Binds = Object.fromEntries(
  *  mouse button. */
 const KEYS_ONLY: ReadonlySet<BindId> = new Set<BindId>([
   ...(['use', 'leave', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
-  ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'compare', 'controls', 'chat'] as const),
+  ...(['ashore', 'seaView', 'character', 'inventory', 'details', 'compare', 'controls', 'chat'] as const),
   ...(['steerLeft', 'steerRight', 'sailOn', 'heaveTo'] as const),
 ]);
 /** Whether a mouse button bound to `id` is heard. */

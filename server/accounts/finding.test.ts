@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { runAsk, runInstance } from '../roomNames.ts';
+import { runAsk, runInstance, startedAtSea } from '../roomNames.ts';
 import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
 import { FOUND_KEPT_MS, companionsOf, companyRunOf, launchedFor } from './companies.ts';
@@ -144,6 +144,7 @@ test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’
   assert.equal(asked('/v1/find/node-krakens-grotto'), 'node-krakens-grotto');
   assert.equal(asked('/v1/find/node-forsaken-cistern--elite'), 'node-forsaken-cistern--elite');
   assert.equal(asked('/v1/find/node-forsaken-cistern--elite--sea'), 'node-forsaken-cistern--elite--sea');
+  assert.equal(asked('/v1/find/node-krakens-grotto--sea'), 'node-krakens-grotto--sea', 'at Normal, from the sea');
   for (const path of [
     '/v1/find/node-saltworm-warrens--abyss',
     '/v1/find/node-saltgrass-downs--dungeon-1',
@@ -153,9 +154,11 @@ test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’
     `/v1/find/node-${'a'.repeat(46)}`,
     '/v1/find/node-krakens-grotto/',
     '/v1/find/playlist-normal',
-    '/v1/find/node-forsaken-cistern--sea',
     '/v1/find/node-forsaken-cistern--abyss--sea',
     '/v1/find/node-forsaken-cistern--elite--sea--sea',
+    '/v1/find/node-forsaken-cistern--sea--sea',
+    '/v1/find/node-forsaken-cistern--sea--elite',
+    '/v1/find/node-saltgrass-downs--dungeon-1--sea',
     '/v1/find/playlist-elite--run-k3j4h5g6',
   ])
     assert.equal(asked(path), null, path);
@@ -164,7 +167,7 @@ test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’
   assert.equal(asked('/v1/find/playlist-abyss'), 'playlist-abyss', 'the Abyss Playlist is matched');
 });
 
-test('a run found for each Elite Dungeon, and for each at Elite, is named as its room reads a run', () => {
+test('a run found for each Elite Dungeon, at Normal from its door or the sea and at Elite, is named as its room reads a run', () => {
   const ids = Array.from({ length: 9 }, (_unused, index) => {
     const text = readFileSync(new URL(`../../content/world/land/continent-${index + 1}.json`, import.meta.url), 'utf8');
     const nodes = (JSON.parse(text) as { nodes: { id: string; kind: string }[] }).nodes;
@@ -174,10 +177,12 @@ test('a run found for each Elite Dungeon, and for each at Elite, is named as its
   for (const id of ids)
     for (const [base, tier] of [
       [`node-${id}`, 0],
+      [`node-${id}--sea`, 0],
       [`node-${id}--elite`, 1],
     ] as const) {
       const run = `${base}--run-k3j4h5g6`;
       assert.ok(run.length <= 64 && asked(`/v1/find/${base}`) === base, run);
+      assert.equal(startedAtSea(run), base.endsWith('--sea'), run);
       assert.deepEqual(JSON.parse(runAsk(run, 29_919_420) ?? 'null'), {
         dungeon: { place: id },
         tier,
@@ -213,6 +218,24 @@ test('a seeker under the week’s Elite Dungeon’s level finds no company for i
   const finder = at24('node-forsaken-cistern--elite');
   await seeking(finder, older['Cal'] ?? '');
   assert.equal(finder.waiting, 1, 'at its level, in the queue');
+});
+
+test('an Elite Dungeon at Normal from the sea is found as from its door: any level, banded by tens', async () => {
+  const names = ['Ada', 'Ben', 'Cal', 'Dee'];
+  const { tokens, finderOf } = await world(names, 5);
+  const finder = finderOf('node-krakens-grotto--sea');
+  const all = [];
+  for (const name of names) all.push(await seeking(finder, tokens[name] ?? ''));
+  assert.equal(finder.waiting, 4, 'under the week’s level, in the queue');
+  await finder.tick();
+  for (const socket of all) assert.deepEqual(socket.sent, ['{"run":"node-krakens-grotto--sea--run-k3j4h5g6"}']);
+  const apart = await world(names, 5);
+  const body = JSON.stringify({ shown: { level: 24 }, story: { prologue: true } });
+  await apart.kept.save(apart.ids['Dee'] ?? '', 'room:Dee', body, '{}');
+  const banded = apart.finderOf('node-krakens-grotto--sea');
+  for (const name of names) await seeking(banded, apart.tokens[name] ?? '');
+  await banded.tick();
+  assert.equal(banded.waiting, 4, 'Dee is two bands up: no four of a band yet');
 });
 
 test('one who has not played the prologue finds no company, as no run a finder starts lets them in', async () => {

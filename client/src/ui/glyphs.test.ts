@@ -17,7 +17,7 @@ const coveredBy = (char: string) => {
 };
 
 test('a glyph read at its cells’ centres from the face’s outline is the drawing it was made from', () => {
-  for (const char of ['B', '(', '-', '▲', '☠', '☰', '”']) {
+  for (const char of ['B', '(', '-', '▲', '☠', '”']) {
     const drawing = DRAWINGS[char];
     assert.ok(drawing, char);
     assert.deepEqual(glyphRead(coveredBy(char), 0), { ...glyphDrawn(drawing), advance: 0 }, char);

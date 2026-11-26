@@ -129,7 +129,7 @@ function pressOf(context: MenuContext, offer: HullOffer, size: number): Child {
     };
   }
   const colour = offer.state === 'sailing' ? INK.gain : offer.state === 'short' ? INK.loss : INK.faint;
-  return words(why(offer), size, colour);
+  return { width: 'grow', text: { words: why(offer), size, colour, align: 'end' } };
 }
 
 /** One hull's panel, `width` wide. */

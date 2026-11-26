@@ -12,6 +12,7 @@ pub struct Layer {
 pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "sky", may_import: &[] },
+    Layer { name: "art", may_import: &[] },
     Layer { name: "network", may_import: &["rules", "sky"] },
     Layer {
         name: "editor",
@@ -27,6 +28,7 @@ pub const LAYERS: &[Layer] = &[
             "terrain",
             "editor",
             "overworld",
+            "art",
             "models",
             "textures",
             "city",

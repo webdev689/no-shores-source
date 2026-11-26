@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { PICTURES, pictureOf } from './art/pictures.ts';
-import { pngOf } from './art/sheet.ts';
+import { pngOf } from './art/png.ts';
 import { fillKeys, makePage, siteFoot, siteTop } from './page.ts';
 import { DOWNLOADS, OUTSIDE, SITE_PAGES, pageOfPath, siteHref, type SitePage } from './siteMap.ts';
 import { LATEST_NAMES } from '../worker.ts';

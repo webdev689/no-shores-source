@@ -413,6 +413,24 @@ fn the_sea_shuts_to_a_character_who_keeps_no_ship_and_keeps_none() {
 }
 
 #[test]
+fn a_ship_put_back_as_its_player_rejoins_comes_back_turned_as_it_lay() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course_anywhere(player, &[[40_000.0, 40_000.0]], 10).unwrap();
+    assert!(sea.restore_character(player, &sailor().to_json()));
+    ticks(&mut sea, usize::try_from(crate::sea::COURSE_EVERY_TICKS).unwrap());
+    sea.face(player, 2.5).unwrap();
+    let character = kept(&sea, player);
+    assert_eq!(character.ship_heading, Some(2_500), "in thousandths of a radian");
+    let mut back = super::tests::sea();
+    let again = back.join();
+    assert!(back.restore_character(again, &character.to_json()));
+    let ship = back.ships().find(|(each, _)| *each == again).unwrap().1;
+    assert_eq!((ship.x, ship.y, ship.heading), (40_000.0, 40_000.0, 2.5));
+    assert_eq!(told(&back, again, crate::harbour::MOORED).map(|numbers| numbers[4]), Some(2.5), "the page told so");
+}
+
+#[test]
 fn the_sea_keeps_a_dive_to_be_judged_where_it_lands_marked_as_come_by_sea() {
     let mut sea = sea();
     let player = sea.join();
@@ -430,4 +448,37 @@ fn the_sea_keeps_a_dive_to_be_judged_where_it_lands_marked_as_come_by_sea() {
     character.begin_dive(&start).expect("begun");
     assert!(sea.restore_character(player, &character.to_json()));
     assert_eq!(kept(&sea, player).passage.map(|dive| dive.sailed), Some(true));
+}
+
+#[test]
+fn a_kept_heading_turns_the_ship_only_where_it_lies_where_it_was_kept() {
+    let mut sea = sea();
+    sea.harbour.harbours.ports.push(("overlook".into(), [10_000.0, 10_000.0]));
+    let restored = |sea: &mut Sea, at: Option<[i64; 2]>, heading: Option<i64>| {
+        let player = sea.join();
+        let mut character = sailor();
+        (character.ship_at, character.ship_heading) = (at, heading);
+        assert!(sea.restore_character(player, &character.to_json()));
+        sea.ships().find(|(each, _)| *each == player).unwrap().1
+    };
+    let kept = restored(&mut sea, Some([40_000, 40_000]), Some(2_500));
+    assert_eq!((kept.x, kept.y, kept.heading), (40_000.0, 40_000.0, 2.5));
+    let off_frame = restored(&mut sea, Some([-5, -5]), Some(2_500));
+    assert_eq!(
+        (off_frame.x, off_frame.y, off_frame.heading),
+        (10_000.0, 10_000.0, 0.0),
+        "at the starting port instead"
+    );
+    let old_save = restored(&mut sea, Some([40_000, 40_000]), None);
+    assert_eq!(old_save.heading, 0.0, "a save from before headings were kept faces as a new ship does");
+}
+
+#[test]
+fn a_ship_left_mid_fight_is_kept_turned_no_way_at_the_port_it_washes_up_at() {
+    let (mut sea, player) = met(700.0, Rank::Major);
+    let mut character = sailor();
+    character.ship_heading = Some(2_500);
+    sea.harbour.characters.insert(player, character);
+    let character = kept(&sea, player);
+    assert_eq!((character.ship_at, character.ship_heading), (Some([60_000, 50_000]), None));
 }

@@ -20,11 +20,11 @@ code:
   - site/src/panel/preview.ts#previewNode
   - site/src/art/pictures.ts#PICTURES
   - site/src/art/scenes.ts#SCENES
-  - site/src/art/sheet.ts#pngOf
-  - site/src/art/sheet.ts#halo
-  - site/src/art/light.ts#LIGHTS
-  - site/src/art/ships.ts#ship
-  - site/src/art/places.ts#town
+  - site/src/art/png.ts#pngOf
+  - client/src/art/sheet.ts#halo
+  - client/src/art/light.ts#LIGHTS
+  - client/src/art/ships.ts#ship
+  - client/src/art/places.ts#town
   - site/src/art/heroScene.ts#heroLayers
   - site/src/art/logo.ts#iconSheet
   - site/src/art/logo.ts#serverIconSheet
@@ -67,7 +67,9 @@ DFO Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Websi
   at every build, and written as a small paletted PNG into the build, never into git
   ([[Generated Files Stay Out of Git]]). They are drawn the way DFO's are: skies dithered band into band through an
   8 by 8 pattern, land in ranges that pale with distance, light in rings round a moon, a lantern or a fire, and every
-  scene in one light of its own (`light.ts`): Overlook's night, fire at dusk, the Tithe's mist, the crystal's purple,
+  scene in one light of its own (`light.ts`; the sheet and the scenes' parts are in `client/src/art/`, which the
+  game's island tiles draw with too, [[Interface]], "The island's tiles"; the PNG writer is the site's `png.ts`):
+  Overlook's night, fire at dusk, the Tithe's mist, the crystal's purple,
   the first grey of morning. Ships (`ships.ts`) have a sprung hull with its wale and gunports, a stern castle, sails
   that belly, jibs, a spanker and their rigging, a wake and a double on the water, the small parts dropping away on a
   far ship; places (`places.ts`) are rock that rises to a hill, a town stepping up it in terraces with a switchback

@@ -28,7 +28,8 @@ export interface SeaInput {
   readonly paused: boolean;
 }
 
-/** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
+/** What one frame at sea shows: the shot, the ships, the marks, the status line's note, and what the place line and
+ *  the sounds read of the voyage. */
 export interface SeaFrame {
   readonly shot: Shot;
   readonly ships: readonly SeaShip[];
@@ -44,9 +45,8 @@ export interface SeaFrame {
   readonly note: string;
   /** What the ship is offered off the island's coast: to dock, to go ashore, or nothing. */
   readonly landfall: Landfall;
-  /** Under way on a voyage; or stopped short of one, which can be resumed. */
+  /** Under way on a voyage, and the pace it was set at. */
   readonly sailing: boolean;
-  readonly resumable: boolean;
   readonly pace: Pace;
   /** Everyone aboard the player's Sloop once the view is down there, and whether the player sees through their own
    *  eyes on its deck. */

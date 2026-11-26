@@ -67,26 +67,6 @@ function clickOn(ui: Interface, hud: Hud, laid: Laid[], id: string): Laid[] {
   ]);
 }
 
-const SEA = { pace: 2, sailing: true, resumable: true, landfall: null, canLeave: true, canManage: false };
-
-test('the sea bar’s presses run what the game set, a disabled one nothing, and none keeps focus for Space', () => {
-  const [ui, hud] = [new Interface(renderer()), new Hud()];
-  hud.veil(null);
-  const heard: string[] = [];
-  hud.onMap(() => heard.push('map'));
-  hud.onPace((step) => heard.push(`pace ${step}`));
-  hud.onManage(() => heard.push('manage'));
-  hud.seaBar(SEA);
-  let laid = frame(ui, hud);
-  assert.ok(words(laid).includes('×2'));
-  assert.ok(words(laid).includes('Stop Space'), 'the page ran its spaces together');
-  laid = clickOn(ui, hud, laid, 'sea:map');
-  laid = clickOn(ui, hud, laid, 'sea:faster');
-  clickOn(ui, hud, laid, 'sea:manage');
-  assert.deepEqual(heard, ['map', 'pace 1']);
-  assert.equal(ui.focused('sea:faster'), false);
-});
-
 test('the warning counts down, death offers Respawn only once it may, and the vignette lets clicks reach the world', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);
@@ -242,34 +222,6 @@ test('the key strip is a panel at the bottom right, the moment named over its ro
   hud.onBesides(() => ({ fight: false, bossed: false, speaking: true, map: false }));
   frame(ui, hud);
   assert.equal(hud.hintsBox(ui), null);
-});
-
-test('the key strip keeps its corner over the sea bar where it is clear, and stands over it where they would meet', () => {
-  const [ui, hud] = [new Interface(renderer()), new Hud()];
-  hud.veil(null);
-  hud.strip(stripOf('sea'));
-  hud.seaBar({ ...SEA, landfall: { kind: 'dock', port: 'Saltmere' } });
-  const seen = new Set<boolean>();
-  for (const [width, height] of [
-    [1280, 720],
-    [1920, 1080],
-    [900, 700],
-    [600, 800],
-  ] as const) {
-    laidAt(ui, hud, width, height);
-    const laid = laidAt(ui, hud, width, height);
-    const [strip, bar, offer] = [boxOf(laid, 'hud:hints'), boxOf(laid, 'sea:bar'), boxOf(laid, 'sea:landfall')];
-    assert.ok(strip && bar && offer, `${width}: all shown`);
-    for (const under of [bar, offer])
-      assert.ok(
-        strip.x > under.x + under.width || strip.y + strip.height <= under.y,
-        `${width}: ${JSON.stringify([strip, under])}`,
-      );
-    const meets = strip.x <= bar.x + bar.width + 8;
-    assert.equal(strip.y + strip.height === height - 22, !meets, `${width}: in its corner unless it would meet`);
-    seen.add(meets);
-  }
-  assert.equal(seen.size, 2, 'kept in its corner on a wide view, lifted on a narrow one');
 });
 
 /** On foot at rest, the mouse free, Shadow worn. */
@@ -485,13 +437,6 @@ test('a mark growing as the ship nears it reuses its picture across a few pixels
   };
   assert.equal(keyAt(21), keyAt(23));
   assert.notEqual(keyAt(23), keyAt(40));
-});
-
-test('an isle offers its own landfall over the sea bar', () => {
-  const [ui, hud] = [new Interface(renderer()), new Hud()];
-  hud.veil(null);
-  hud.seaBar({ ...SEA, landfall: { kind: 'isle', id: 4, words: 'the cove' } });
-  assert.ok(words(frame(ui, hud)).includes('Go ashore on the cove Enter'));
 });
 
 test('the notices stand at the top right, 28 px in and 64 down, newest last, sliding in from the right', () => {

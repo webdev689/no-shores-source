@@ -3,7 +3,8 @@
 import { createHash } from 'node:crypto';
 import { iconSheet, logoSheet, serverIconSheet } from './logo.ts';
 import { SCENES } from './scenes.ts';
-import { pngOf, type Sheet } from './sheet.ts';
+import type { Sheet } from '../../../client/src/art/sheet.ts';
+import { pngOf } from './png.ts';
 
 /** The folder of the built site that holds the pictures (`/art/overlook.png`). */
 export const ART_DIR = 'art';

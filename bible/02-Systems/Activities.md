@@ -117,7 +117,12 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 - **Its encounters**: two or three seals in rooms along its walk (the Litany, the Weighing, the Ascent, the Holdfast),
   its Boss standing only once every seal is broken, and a Court of wards, anchors, the Reckoning and Fury round it
   ([[Dungeons]], "Encounters").
-- **Its node** keeps its open-air approach and gains the entrance.
+- **Its node** keeps its open-air approach and gains the entrance. A run at Normal may also be started at sea, from
+  the island's tiles ([[Interface]], "The island's tiles"): a click on its tile opens the entrance's card from the sea
+  (`ActivityScreens.seaCard`), whose Enter goes into the company's run of it started at sea where one plays it, else a
+  new one (`dungeonTrips` `fromSea`), and whose Find a Company searches `node-<id>--sea`. Named `--sea` ([[Server]],
+  "Runs"), it is gone into from the sea alone and left back to it, never by the entrance ([[Server]], "Where a character
+  comes from"). The card closes once the player leaves the sea.
 - **For four players**, matched together ([[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]).
 
 ## Runs and companies
@@ -134,7 +139,8 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
   room keeps their character, a player's inputs are taken in their order and stand still (`Room::hold`). It is forgotten
   a minute after its last player leaves.
 - **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band (tens of
-  levels, from the level their room last kept), from the entrance's card, and for each playlist by its own bands
+  levels, from the level their room last kept), from the entrance's card (one at Normal also from the sea, its run
+  marked `--sea`), and for each playlist by its own bands
   from the Playlist ("The Playlist"). A run starts with four, or with fewer after
   a minute's wait, never with two where one blocks the other, and those found go into it together ([[Accounts]],
   "Find a Company"). A group found is no company: it shares that one run alone.
@@ -146,10 +152,11 @@ player cannot tell is on, or cannot tell why it is shut; Destiny's own words on 
 The owner's decision is [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]]; how it is shaped is
 Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
 
-- **Where.** A Playlist mark stands beside the harbour of each port city, Overlook, Sunspire and Rimeholt, at sea and
-  over its island's side however the island is reached, open whether or not the city's social space is ([[Overworld]],
-  "Marks"). Choosing it opens the Playlist screen for that port ([[Interface]], "The Playlist") rather than sailing
-  or landing. The screen and its queues are the same from every port.
+- **Where.** The Playlist's banner stands among the island's tiles docked at each port city, Overlook, Sunspire and
+  Rimeholt, open whether or not the city's social space is
+  ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]], [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]; [[Interface]], "The
+  island's tiles"); it is marked nowhere at sea or on the map. A click on it opens the Playlist screen for that port ([[Interface]],
+  "The Playlist"). The screen and its queues are the same from every port.
 - **What it holds.** The Elite Playlist and the Abyss Playlist, then the Elite Dungeon of the week and the Abyss
   Dungeon of the week. The Journal's lines for the week's two say they are queued from the Playlist beside any port.
 - **A playlist's run** (`gear::playlist`, `room::playlist_run`) is one of the 18 Elite Dungeons, laid as its run at

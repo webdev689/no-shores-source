@@ -1,17 +1,16 @@
-// The bounty board's stage, where a keeper's screen stands its keeper: its gold mark and title above, and the board
-// itself drawn in the game's pixels on a floor lit in its gold, as the city builds it (`board.rs`): two posts, a
-// planked face under a shingled gable with its lamp, and its notices in two rows of three, the town's under their red
-// seals above and the factions' under their own colours below, as the screen's two rows of tiles are.
+// The bounty board where a keeper's screen stands its keeper (npc/keeperFrame.ts), and its mark in the crest's diamond:
+// the board itself drawn in the game's pixels, as the city builds it (`board.rs`): two posts, a planked face under a
+// shingled gable with its lamp, and its notices in two rows of three, the town's under their red seals above and the
+// factions' under their own colours below, as the screen's two rows of tiles are.
 import { OUTLINE } from '../combat/dropPictures.ts';
 import { type Pixels, svgOf } from '../plus/emblems.ts';
 import type { Node } from '../ui/node.ts';
-import { INK, svgNode, words } from './gearNodes.ts';
+import { svgNode } from './gearNodes.ts';
 import { pixelNode } from './journalIcons.ts';
 import { keeperMarkSvg } from './npc/npcMarks.ts';
-import { litGround } from './npc/npcScreen.ts';
 
-/** The board's gold, as its mark over it in the world is drawn. */
-const GOLD = '#e0a526';
+/** The board's gold, as its mark over it in the world is drawn: the ground its screen is lit in. */
+export const GOLD = '#e0a526';
 
 /** The board, 44 cells by 42. */
 const BOARD: Pixels = {
@@ -91,45 +90,22 @@ const BOARD: Pixels = {
 };
 const BOARD_CELLS = [44, 42] as const;
 const BOARD_SVG = svgOf(BOARD);
-/** A stage narrower than this, in pixels, sets its title a step smaller, so it keeps clear of the board. */
-const NARROW_TITLE = 320;
-/** What the stage keeps clear around the board: its title above, the floor's margin below. */
-const AROUND = [44, 120] as const;
+/** What the board keeps clear across its side and under it, where the name stands. */
+const AROUND = [88, 0.4] as const;
 
-/** The board's stage `width` by `height`: its mark and title at its top left, the board on its lit floor, drawn at
- *  the largest whole step of its cells that fits, from one to twelve; its title a step smaller on a stage too narrow
- *  for it. */
-export function boardStage(title: string, width: number, height: number, wide: boolean): Node {
+/** The board on a keeper's side `width` by `height`: drawn at the largest whole step of its cells that fits clear of
+ *  the name at the foot, from one to twelve. */
+export function boardFigure(width: number, height: number): Node {
   const step = Math.max(
     1,
-    Math.min(12, Math.floor((width - AROUND[0]) / BOARD_CELLS[0]), Math.floor((height - AROUND[1]) / BOARD_CELLS[1])),
+    Math.min(
+      12,
+      Math.floor((width - AROUND[0]) / BOARD_CELLS[0]),
+      Math.floor((height * (1 - AROUND[1])) / BOARD_CELLS[1]),
+    ),
   );
-  const mark = wide ? 63 : 42;
-  return {
-    id: 'board-stage',
-    width,
-    height,
-    clip: true,
-    direction: 'column',
-    alignX: 'center',
-    alignY: 'end',
-    picture: litGround(GOLD, height),
-    children: [
-      {
-        gap: 11,
-        alignY: 'center',
-        float: { to: 'parent', x: 22, y: 22 },
-        children: [
-          svgNode('keeper mark board', keeperMarkSvg('board'), mark),
-          words(title.toUpperCase(), wide ? 3 : width < NARROW_TITLE ? 1 : 2, INK.word, { tracking: 2 }),
-        ],
-      },
-      {
-        padding: [0, 0, 22, 0],
-        children: [
-          pixelNode('bounty board picture', BOARD_SVG, BOARD_CELLS, BOARD_CELLS[0] * step, BOARD_CELLS[1] * step),
-        ],
-      },
-    ],
-  };
+  return pixelNode('bounty board picture', BOARD_SVG, BOARD_CELLS, BOARD_CELLS[0] * step, BOARD_CELLS[1] * step);
 }
+
+/** The board's mark, `size` pixels a side, in the crest's diamond. */
+export const boardMark = (size: number): Node => svgNode('keeper mark board', keeperMarkSvg('board'), size);

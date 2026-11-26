@@ -1,15 +1,16 @@
-// The sea's six songs. Three are the band's (seaBand.ts): the storm (D Aeolian, the low strings driving in eighths under
+// The sea's nine songs. Three are the band's (seaBand.ts): the storm (D Aeolian, the low strings driving in eighths under
 // stabs in open fifths: tense, never a villain's), landfall (3/4, D Mixolydian, broad: the fiddle over held strings
 // and horn) and the sea fight (D minor, a snare's march, a swashbuckler's turns on the minor four and the falling
 // i-VII-VI-V). Landfall is played once through; the storm and the fight are written as takes (seaFights.ts). The
-// still sea, the open sea and the sea at night are calm pieces (seaPieces.ts), played once through out of danger.
+// still sea, the open sea and the sea at night have two calm pieces each (seaPieces.ts), played once through out
+// of danger.
 
 import { type BandSong, HARMONY, TUNES, bandSpec, floored, stack, voicing } from './seaBand.ts';
 import { seaFight, seaStorm } from './seaFights.ts';
 import { seaPieces } from './seaPieces.ts';
 import { type Song, lay, makeSong } from './score.ts';
 
-export type SeaSong = 'calm' | 'open' | 'night' | BandSong;
+export type SeaSong = 'calm' | 'open' | 'night' | 'swell' | 'glass' | 'lantern' | BandSong;
 
 /** Landfall, the coast sighted and home: broad, in D with its flat seventh. The fiddle's tune over held strings, cello
  *  and horn, the harp rolling each chord up, the bodhran soft on the bar; the whistle's tune over the fiddle's; the
@@ -43,7 +44,7 @@ const landfall = () =>
     w.note('bells', 0, 0, 6, 'A3', 62);
   });
 
-/** The six songs: the band's three, and the three calm pieces. */
+/** The nine songs: the band's three, and the six calm pieces. */
 export const seaSongs = (): Readonly<Record<SeaSong, Song>> => ({
   ...seaPieces(),
   storm: seaStorm(),

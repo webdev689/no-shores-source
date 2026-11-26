@@ -35,3 +35,5 @@ status: in force
   piece shaded the same whatever else is worn, in first person too.
 - What the gear is, its ranks, its prices and its colours are Claude's, the owner's to change:
   [[Factions and Vendors as Claude Shapes Them]] ("Faction gear"). How it works: [[Factions]].
+
+Replaced in part by [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]: house pieces also drop in the world, at Magic and Rare.

@@ -1,49 +1,58 @@
-// The one screen every keeper of a social space opens, after Destiny 1's vendors: the keeper large at the left over a
-// ground lit in their colour, their mark and title above them; at the right their words, the currencies they deal in
-// (and a faction's rank and its meter), the band they speak in, their wares in rows under engraved headings (the
-// vault keeper's two sides of the vault in their place, the Postmaster's letters in theirs), and at the foot the time
-// to the next stock, or to Shape's leaving. The menu (gearWindow.ts) frames it with its header and footer.
-import type { GearAsk, GearState } from '../../network/gearMessages.ts';
+// The one screen every keeper of a social space opens, after Destiny 2's vendor screen (keeperFrame.ts): the keeper
+// large at the left, cut off below the waist, their role, name and a line about them at its foot; at the top right
+// their crest (a faction's emblem and the player's reputation with it, or the keeper's own mark) and the currencies
+// they deal in; under it the line they are saying, the quest they offer as an item (quests/questCard.ts) with Acquire,
+// their wares in rows under engraved headings (the vault keeper's two sides of the vault in their place, the
+// Postmaster's letters in theirs), and at the foot the time to the next stock, or to Shape's leaving. Speaking with
+// them happens here: a word a quest asks of them is asked as the screen opens, and its lines said in it. The menu
+// (gearWindow.ts) frames it with its header and footer.
+import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import { ELEMENTS } from '../../player/gear.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import { emblemOf, emblemPixels } from '../../plus/emblemArt.ts';
 import { cardFrame, nameCard } from '../gearCard.ts';
-import { type Hint, INK, glyphNode, rgba, svgNode, words } from '../gearNodes.ts';
+import { type Hint, INK, focusRing, glyphNode, svgNode, words } from '../gearNodes.ts';
 import type { View } from '../gearScreen.ts';
-import { KEEPERS, KEEPER_KINDS, type KeeperKind } from '../keepers.ts';
+import { KEEPER_KINDS, type KeeperKind, keeperOf } from '../keepers.ts';
 import type { MenuContext } from '../menuPage.ts';
+import { COUNTERS, offeredAt, talkAt, trackedOf } from '../quests/questBook.ts';
+import { questCardNode, questStoryNode, questTileNode, storyLines } from '../quests/questCard.ts';
 import { vaultPage } from '../stationPages.ts';
 import { clockWords, countdownsAt } from './npcClock.ts';
 import { factionOf, rankRewards, reputationOf } from './factionRows.ts';
-import { keeperFigure } from './npcFigure.ts';
+import { FIGURE_KEPT, bodyWidth, crestNode, figureHeight, keeperFrame, stageOf } from './keeperFrame.ts';
+import { type FigureKind, keeperFigure } from './npcFigure.ts';
 import { letterPresses, mailOpened, mailPage } from './mailPage.ts';
 import { keeperMarkSvg } from './npcMarks.ts';
-import { type Asked, answeredWith } from './npcLines.ts';
-import { hush, keeperSays, speechBand } from './npcSpeech.ts';
-import { type KeeperLook, coinGlyph, meter, rowsNode } from './npcTiles.ts';
+import { type Asked, answeredWith, nameOf } from './npcLines.ts';
+import { hush, keeperSays, sayInScreen, screenOpened, speechBand } from './npcSpeech.ts';
+import { type KeeperLook, coinGlyph, rowsNode } from './npcTiles.ts';
 import { type Ware, purseOf, rowsOf } from './npcWares.ts';
 
 /** The keepers whose wares change at each daily reset. */
 const DAILY: readonly KeeperKind[] = ['armorsmith', 'weaponsmith', 'tailor', 'tack'];
 /** The menu's brass, the ground of a keeper who serves no Art. */
 const BRASS = '#c08a3e';
-/** What the footer says the screen's keys do, as the references' footer does: the Mage's holds open a Vestige, and
- *  Escape steps back out of the Art's choice of fragments before it dismisses the screen. */
+/** Whether the keeper whose screen is open offers a quest waiting to be acquired, so the footer offers Acquire. */
+let offerWaiting = false;
+/** What the footer says the screen's keys do, as the references' footer does: a quest waiting is acquired by a click,
+ *  the Mage's holds open a Vestige, and Escape steps back out of the Art's choice of fragments before it dismisses
+ *  the screen. */
 export const npcHints = (view: View): readonly Hint[] => [
+  ...(offerWaiting ? ([['Click', 'Acquire']] as const) : []),
   ['Hold', view === 'mage' ? 'Open' : 'Buy'],
   ['character', 'Open Character'],
   ['Esc', choosing ? 'Back' : 'Dismiss'],
 ];
 /** Whether the screen shows the Art's choice of fragments, a step the footer steps back out of. */
 export const npcChoosing = (): boolean => choosing;
-/** The figure's height beside what the screen's body leaves it, and the least it is drawn at. */
-const FIGURE_AROUND = 120;
-const FIGURE_LEAST = 200;
-/** A room narrower than this, in pixels, stands the keeper over the rest. */
-const NARROW = 600;
-/** The rows' own id, which scrolls where a screen is too short for them all. */
+/** The rows' own id, which scrolls where a screen is too short for them all; and Acquire's. */
 const ROWS = 'npc-rows';
+const ACQUIRE = 'npc-acquire';
+/** The acquired quest's tile, and whether a tap or a press has opened its card in the rows. */
+const QUEST_TILE = 'npc-quest';
+let questOpen = false;
 
 /** Whether a view of the menu is a keeper's screen: every counter's, the vault's among them. */
 export const isKeeperView = (view: View): view is KeeperKind => (KEEPER_KINDS as readonly string[]).includes(view);
@@ -59,13 +68,27 @@ let focusWaited = 0;
 let pending: Asked | null = null;
 /** The wares' presses, row by row, as last drawn, so the focus on one gone goes to the one beside it. */
 let pressesShown: readonly (readonly string[])[] = [];
+/** Whether the screen open has greeted the player, and how many frames a quest waiting to be acquired has shown:
+ *  Acquire takes the focus on its second, once it has been laid. */
+let greeted = false;
+let offerShown = 0;
 
-/** The screen opens at `view`: a keeper's greets the player; any other view hushes the last. */
+/** The screen opens at `view`: a keeper's (the Harbourmaster's among them) is spoken in, and greets the player on its
+ *  first frame (`greet`); any other view hushes the last. */
 export function npcOpened(view: View): void {
-  [choosing, pending, focusNext, pressesShown] = [false, null, null, []];
+  [choosing, pending, focusNext, pressesShown, greeted, offerWaiting, offerShown, questOpen] = [
+    false,
+    null,
+    null,
+    [],
+    false,
+    false,
+    0,
+    false,
+  ];
   mailOpened();
-  if (isKeeperView(view)) keeperSays(view, 'Hello');
-  else hush();
+  hush();
+  if (keeperOf(view)) screenOpened(view);
 }
 
 /** Escape's step on the screen: out of the Art's choice of fragments, the focus back on its Rise; false with none. */
@@ -87,19 +110,16 @@ export function keyBeside(rows: readonly (readonly string[])[], gone: string): s
 }
 
 /** The keeper's colour: a faction's in its Art's element, else the menu's brass. */
-function glowOf(kind: KeeperKind): string {
-  const faction = KEEPERS[kind].faction;
+function glowOf(kind: FigureKind): string {
+  const faction = keeperOf(kind)?.faction;
   const element = faction === undefined ? 0 : (factionOf(faction)?.art.element ?? 0);
   return ELEMENTS[element]?.colour ?? BRASS;
 }
 
-/** `css` ("#rrggbb") as channels "r,g,b". */
-const channels = (css: string) => [1, 3, 5].map((start) => parseInt(css.slice(start, start + 2), 16)).join(',');
-
-/** The diamond by the keeper's title: a faction's emblem cut to the diamond its keepers' marks are drawn in and edged
+/** The diamond of the keeper's crest: a faction's emblem cut to the diamond its keepers' marks are drawn in and edged
  *  in their colour, else the keeper's own mark. */
-function markOf(kind: KeeperKind, size: number, glow: string): Node {
-  const faction = KEEPERS[kind].faction;
+function markOf(kind: FigureKind, size: number, glow: string): Node {
+  const faction = keeperOf(kind)?.faction;
   const emblem = faction === undefined ? null : factionOf(faction)?.faction.emblem;
   if (!emblem) return svgNode(`keeper mark ${kind}`, keeperMarkSvg(kind), size);
   const shown = emblemOf(emblem);
@@ -137,20 +157,23 @@ function markOf(kind: KeeperKind, size: number, glow: string): Node {
   };
 }
 
-/** The currencies at the top right, and for a faction the rank, its meter and the reputation's details. */
-function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): Node {
-  const { sizes } = context;
-  const purse: Node = {
-    gap: 22,
+/** The currencies the keeper deals in, each its glyph and the player's count, named by a card on hover or focus. */
+function coinsNode(context: MenuContext, kind: FigureKind, text: number): Node {
+  const { sizes, gear } = context;
+  const coins =
+    kind === 'harbourmaster' ? [{ glyph: 'aurem', amount: gear.aurem, name: 'Aurem' } as const] : purseOf(kind, gear);
+  return {
+    gap: text > 1 ? 28 : 18,
     wrap: true,
-    children: purseOf(kind, context.gear).map((coin, place): Node => {
+    alignX: 'end',
+    children: coins.map((coin, place): Node => {
       const id = `npc-coin-${place}`;
       // Its glyph alone does not name the currency: a card does on hover or focus.
       context.card(id, () => nameCard(sizes, coin.name));
       return {
         id,
         focusable: true,
-        gap: 6,
+        gap: 8,
         alignY: 'center',
         // The glyph says nothing to a screen reader, so the currency's name is read with its number.
         label: `${coin.amount.toLocaleString('en')} ${coin.name}`,
@@ -161,9 +184,20 @@ function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): No
       };
     }),
   };
-  const faction = KEEPERS[kind].faction;
-  if (faction === undefined) return purse;
-  const standing = reputationOf(faction, context.gear.standing);
+}
+
+/** The crest at the top right: a faction's emblem in its diamond, the player's rank and reputation with it as the bar
+ *  running from it (its details in a card on the emblem's hover or focus); a keeper of no faction their own mark and a
+ *  plain rule, as the room keeps no standing with them; the currencies under it. */
+function crestOf(context: MenuContext, kind: FigureKind, glow: string, width: number): Node {
+  const { sizes, gear } = context;
+  const text = sizes.label;
+  const size = text > 1 ? 76 : 56;
+  const coins = coinsNode(context, kind, text);
+  const faction = keeperOf(kind)?.faction;
+  if (faction === undefined)
+    return crestNode(markOf(kind, size, glow), { share: null, named: '' }, coins, glow, width, text);
+  const standing = reputationOf(faction, gear.standing);
   const id = 'npc-details';
   context.card(id, () =>
     cardFrame(
@@ -176,31 +210,14 @@ function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): No
       })),
     ),
   );
-  return {
-    direction: 'column',
-    gap: 11,
-    children: [
-      purse,
-      {
-        width: 'grow',
-        maxWidth: look.wide ? 880 : 572,
-        gap: 11,
-        alignY: 'center',
-        children: [
-          words(`Rank ${standing.rank}`, look.text, INK.word),
-          { width: 'grow', children: [meter(standing.toNext, standing.words, look.glow, look)] },
-          {
-            id,
-            press: true,
-            role: 'button',
-            label: 'Reputation details',
-            padding: [4, 13],
-            children: [words('Reputation details', look.text)],
-          },
-        ],
-      },
-    ],
+  const emblem: Node = {
+    id,
+    focusable: true,
+    label: `Rank ${standing.rank}, ${standing.words}. Reputation details`,
+    children: [markOf(kind, size, glow)],
   };
+  const bar = { share: standing.toNext, named: `Reputation  Rank ${standing.rank}`, said: standing.words };
+  return crestNode(emblem, bar, coins, glow, width, text);
 }
 
 /** The foot's countdown, to the second: to the daily reset, or to Shape's leaving, by the rules' clock. */
@@ -221,79 +238,185 @@ function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: nu
   };
 }
 
-/** The ground a screen's figure stands on, `height` pixels tall: dark, lit in `glow` behind the figure and on the
- *  floor it stands on. The keepers' and the bounty board's. */
-export function litGround(glow: string, height: number): NonNullable<Node['picture']> {
-  const rgb = channels(glow);
+/** What the keeper says as their screen first shows the player's gear: for a quest they offer waiting to be acquired,
+ *  its story (but a quest's begin, which the roads say as it begins); for a word a quest asks of them, the ask, its
+ *  lines said here as the room meets it; else their greeting. */
+function greet(context: MenuContext, kind: FigureKind): void {
+  greeted = true;
+  const state = context.gear.quest;
+  const offered = offeredAt(state, kind);
+  const speaker = keeperOf(kind)?.speaker ?? '';
+  if (offered && !offered.acquired) {
+    const story = offered.offer.story;
+    if (story !== offered.quest.begin) sayInScreen(storyLines(offered.offer).map((say) => ({ who: speaker, say })));
+    return;
+  }
+  const column = COUNTERS[kind];
+  if (column !== undefined && talkAt(state, kind)) return context.ask({ kind: ASKS.speakWith, column });
+  keeperSays(kind, 'Hello');
+}
+
+/** The quest the keeper offers, `width` wide: its card with its objectives (Acquire at its foot while it waits), its
+ *  tile framed in gold, and its story; none while they offer none now. Acquire asks the room (ask 85). */
+function offerNode(
+  context: MenuContext,
+  kind: FigureKind,
+  width: number,
+  narrow: boolean,
+  ask: MenuContext['ask'],
+  body: readonly Child[],
+): { readonly rows: readonly Child[]; readonly tile: Node | null } {
+  const { ui, gear, sizes } = context;
+  const text = sizes.label;
+  const offered = offeredAt(gear.quest, kind);
+  offerWaiting = offered !== null && !offered.acquired;
+  // A card opened by the tile shuts with its quest, so the next one acquired here shows as a tile.
+  if (!offered?.acquired) questOpen = false;
+  if (!offered || !gear.quest) return { rows: body, tile: null };
+  const column = COUNTERS[kind];
+  // Asked once until the room answers, as a ware is bought once.
+  if (offerWaiting && column !== undefined && ui.clicked(ACQUIRE) && !pending) ask({ kind: ASKS.acquire, column });
+  // Acquire takes the focus once it has been laid, so the keys and the pad reach it first.
+  if (offerWaiting && ++offerShown === 2) ui.focusOn(ACQUIRE);
+  const steps = trackedOf({ ...gear.quest, offered: 0 })?.steps ?? [];
+  const keeper = nameOf(keeperOf(kind)?.speaker ?? '');
+  const cardWidth = narrow ? width : Math.min(text > 1 ? 600 : 440, Math.floor(width * 0.55));
+  const card = questCardNode({ ...offered, steps, keeper }, cardWidth, text, ACQUIRE, ui);
+  if (offered.acquired) {
+    // The tile's press turns its card first, so the card follows on the frame it was pressed.
+    const tile = acquiredTile(context, offered, card);
+    return { rows: [questOpen && { id: `${QUEST_TILE}-card`, width: 'grow', children: [card] }, ...body], tile };
+  }
+  const tile = questTileNode(offered.quest, offered.offer, text > 1 ? 104 : 76);
+  const gap = text > 1 ? 28 : 18;
+  // Pages laid for the column's whole width (the vault's, the mail's, the Harbourmaster's) stand under the card.
+  if (narrow || kind === 'vault' || kind === 'mail' || kind === 'harbourmaster')
+    return {
+      tile: null,
+      rows: [
+        {
+          width: 'grow',
+          direction: 'column',
+          gap,
+          children: [
+            card,
+            { gap, children: [tile, questStoryNode(offered.quest, offered.offer, width - 76 - gap, 1)] },
+          ],
+        },
+        ...body,
+      ],
+    };
+  // The card leads; the story, its tile and then the wares stand beside it, so the wares show while it is offered.
   return {
-    key: `keeper ground ${rgb}`,
-    source: {
-      draw: (drawing, across, down) => {
-        const ground = drawing.createLinearGradient(0, 0, 0, down);
-        ground.addColorStop(0, '#08090c');
-        ground.addColorStop(0.7, '#0e1013');
-        ground.addColorStop(1, '#050608');
-        drawing.fillStyle = ground;
-        drawing.fillRect(0, 0, across, down);
-        const light = (x: number, y: number, wide: number, tall: number, alpha: number, reach: number) => {
-          drawing.save();
-          drawing.translate(x, y);
-          drawing.scale(1, tall / wide);
-          const lit = drawing.createRadialGradient(0, 0, 0, 0, 0, wide);
-          lit.addColorStop(0, rgba(rgb, alpha));
-          lit.addColorStop(reach, rgba(rgb, 0));
-          drawing.fillStyle = lit;
-          drawing.fillRect(-wide, -wide, 2 * wide, 2 * wide);
-          drawing.restore();
-        };
-        // The light behind the figure, and the floor it stands on.
-        light(across / 2, down * 0.58, across * 0.6, down * 0.55, 0.34, 0.72);
-        light(
-          across / 2,
-          down - 11 * (down / height) - 22 * (down / height),
-          across * 0.4,
-          22 * (down / height),
-          0.45,
-          0.7,
-        );
+    tile: null,
+    rows: [
+      {
+        width: 'grow',
+        gap,
+        children: [
+          card,
+          {
+            width: 'grow',
+            direction: 'column',
+            gap,
+            children: [questStoryNode(offered.quest, offered.offer, width - cardWidth - gap, text), tile, ...body],
+          },
+        ],
       },
-    },
+    ],
   };
 }
 
-/** The keeper `width` by `height`: their mark and title above them, the figure on a floor lit in their colour. */
-function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, width: number, height: number): Node {
-  const { forge, sizes } = context;
+/** The quest acquired, stepped aside so the wares lead: its small tile framed in gold with its name and "Acquired",
+ *  as Destiny's vendor keeps a quest it gave. Its card floats beside it where the pointer or the keys rest on it; a
+ *  tap or a press opens it in the rows instead, as a phone has no pointer, and a second closes it. */
+function acquiredTile(context: MenuContext, offered: NonNullable<ReturnType<typeof offeredAt>>, card: Node): Node {
+  const { ui, sizes } = context;
+  const text = sizes.label;
+  const size = text > 1 ? 64 : 48;
+  if (ui.clicked(QUEST_TILE)) questOpen = !questOpen;
+  if (!questOpen) context.card(QUEST_TILE, () => card);
+  const lit = ui.hovered(QUEST_TILE) || (ui.focused(QUEST_TILE) && ui.keyFocused);
+  return {
+    id: QUEST_TILE,
+    press: true,
+    label: `${offered.quest.name}, acquired. ${questOpen ? 'Close' : 'Open'} its card`,
+    gap: text > 1 ? 14 : 10,
+    alignY: 'center',
+    children: [
+      {
+        children: [
+          questTileNode(offered.quest, offered.offer, size),
+          ui.focused(QUEST_TILE) && ui.keyFocused && focusRing(size, size),
+        ],
+      },
+      {
+        direction: 'column',
+        gap: 4,
+        children: [
+          words(offered.quest.name.toUpperCase(), text, lit ? INK.word : 'rgba(239,232,214,0.86)', { tracking: 2 }),
+          words('Acquired', text, INK.faint),
+        ],
+      },
+    ],
+  };
+}
+
+/** A keeper's screen in the frame (keeperFrame.ts): their figure, name and crest, then the line they say, the quest
+ *  they offer, and `body` in a scroll of its own, `foot` under it. The Harbourmaster's counter stands in it too.
+ *  Acquire asks through `ask`, so a page that waits on the room's answer hears it as it does a ware's. */
+export function keeperScreen(
+  context: MenuContext,
+  kind: FigureKind,
+  body: readonly Child[],
+  foot: Child = null,
+  ask: MenuContext['ask'] = context.ask,
+): Node {
+  const { room, sizes, forge } = context;
+  if (!greeted) greet(context, kind);
+  const keeper = keeperOf(kind);
+  const text = sizes.label;
+  const glow = glowOf(kind);
+  const stage = stageOf(room);
+  const width = bodyWidth(room, text);
   const figure = keeperFigure(
     kind,
     forge,
-    Math.max(Math.min(FIGURE_LEAST, height - 44), height - FIGURE_AROUND),
+    figureHeight(room),
     sizes.ratio,
     performance.now(),
     motionReduced(),
+    FIGURE_KEPT,
   );
-  const mark = look.wide ? 63 : 42;
-  return {
-    width,
-    height,
-    clip: true,
-    direction: 'column',
-    alignX: 'center',
-    alignY: 'end',
-    picture: litGround(look.glow, height),
-    children: [
+  const offer = offerNode(context, kind, width, stage.narrow, ask, body);
+  // An acquired quest's tile shares the top row only while the crest beside it keeps its least width (its emblem, a
+  // bar and the purse); else it stands under the crest, as on a phone.
+  const [crestMost, crestLeast, tileRoom] = text > 1 ? [760, 280, 420] : [520, 200, 300];
+  const beside = offer.tile !== null && !stage.narrow && width - tileRoom >= crestLeast;
+  return keeperFrame(room, text, {
+    glow,
+    figure,
+    role: keeper?.role ?? '',
+    name: nameOf(keeper?.speaker ?? ''),
+    about: keeper?.words ?? '',
+    speech: speechBand(kind, glow, stage.narrow ? 1 : text, stage.width - (stage.narrow ? 32 : text > 1 ? 96 : 64)),
+    // Narrower beside an acquired quest's tile, so the two share the row.
+    crest: crestOf(context, kind, glow, Math.min(width - (beside ? tileRoom : 0), crestMost)),
+    quest: offer.tile,
+    questUnder: !beside,
+    body: [
       {
-        gap: 11,
-        alignY: 'center',
-        float: { to: 'parent', x: 22, y: 22 },
-        children: [
-          markOf(kind, mark, look.glow),
-          words(KEEPERS[kind].title.toUpperCase(), look.wide ? 3 : 2, INK.word, { tracking: 2 }),
-        ],
+        id: ROWS,
+        width: 'grow',
+        height: 'grow',
+        scroll: true,
+        direction: 'column',
+        gap: text > 1 ? 22 : 14,
+        children: offer.rows,
       },
-      { padding: [0, 0, 22, 0], children: [figure] },
+      foot,
     ],
-  };
+  });
 }
 
 /** A keeper's screen, drawn each frame from the gear the room last sent; `more` stands under the wares (a faction's
@@ -308,7 +431,6 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     if (answer === 'Thanks' && choosing) [choosing, focusNext, focusWaited] = [false, 'npc-art', 0];
     if (answer) keeperSays(kind, answer);
   }
-  const keeper = KEEPERS[kind];
   const look: KeeperLook = { glow: glowOf(kind), wide: sizes.name > 1 && sizes.label > 1, text: sizes.label };
   const waitFor = () =>
     (pending = pending ? { ...pending, asked: pending.asked + 1 } : { from: gear.answered, asked: 1 });
@@ -321,10 +443,7 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     choosing = !choosing;
     [focusNext, focusWaited] = [choosing ? 'first-rise' : 'npc-rise', 0];
   };
-  // In a room as narrow as a phone's the keeper stands over the rest, so neither side is too narrow to read.
-  const narrow = room.width < NARROW;
-  const stageWidth = narrow ? room.width : Math.floor((room.width * 2) / 5);
-  const sideWidth = narrow ? room.width : room.width - stageWidth;
+  const width = bodyWidth(room, sizes.label);
   // The vault keeper thanks the player for each thing put in or taken out, and the Postmaster for each letter taken,
   // as a keeper does for a ware.
   const thanked = { ...context, ask: (asked: GearAsk) => (waitFor(), context.ask(asked)) };
@@ -333,10 +452,16 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     kind === 'vault'
       ? [vaultPage(thanked, look.text)]
       : kind === 'mail'
-        ? [mailPage(thanked, look, sideWidth - 44)]
+        ? [mailPage(thanked, look, width)]
         : rowsNode(context, rows, look, act, open);
-  // The focus on a ware or a letter gone (bought, taken, or its row closed) goes to the one beside it.
-  const presses = kind === 'mail' ? letterPresses(gear) : rows.map((row) => row.wares.map((ware) => `npc-${ware.key}`));
+  // The focus on a ware or a letter gone (bought, taken, or its row closed) goes to the one beside it; on Acquire,
+  // a row of its own over them while a quest waits, to the first under it once acquired.
+  const offered = offeredAt(gear.quest, kind);
+  const presses = [
+    // Acquire over the wares while a quest waits; once acquired its tile, so a focus on it is not lost when it is done.
+    ...(offered ? [[offered.acquired ? QUEST_TILE : ACQUIRE]] : []),
+    ...(kind === 'mail' ? letterPresses(gear) : rows.map((row) => row.wares.map((ware) => `npc-${ware.key}`))),
+  ];
   const focused = ui.focusedId;
   if (focused && !presses.flat().includes(focused) && pressesShown.flat().includes(focused)) {
     const beside = keyBeside(pressesShown, focused);
@@ -349,45 +474,5 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     if (wanted && presses.flat().includes(wanted)) [focusNext] = [null, ui.focusOn(wanted)];
     else if (++focusWaited > 1) focusNext = null;
   }
-  const most = Math.min(look.wide ? 880 : 572, sideWidth - 44);
-  const foot = footNode(kind, gear, look, most);
-  return {
-    width: room.width,
-    height: room.height,
-    direction: narrow ? 'column' : 'row',
-    children: [
-      stageNode(context, kind, look, stageWidth, narrow ? Math.floor(room.height / 3) : room.height),
-      {
-        width: sideWidth,
-        height: 'grow',
-        direction: 'column',
-        gap: 11,
-        padding: [11, 22],
-        children: [
-          // The keeper's words and what the player holds share a line, so the rows of wares have the most room.
-          {
-            width: 'grow',
-            gap: 22,
-            alignY: 'center',
-            children: [
-              { width: 'grow', text: { words: keeper.words, size: look.text, colour: INK.faint, wrap: true } },
-              purseNode(context, kind, look),
-            ],
-          },
-          speechBand(kind, look.glow, look.text, most),
-          {
-            id: ROWS,
-            width: 'grow',
-            height: 'grow',
-            scroll: true,
-            direction: 'column',
-            gap: 11,
-            children: wares,
-          },
-          ...more,
-          foot,
-        ],
-      },
-    ],
-  };
+  return keeperScreen(context, kind, [...wares, ...more], footNode(kind, gear, look, width), thanked.ask);
 }

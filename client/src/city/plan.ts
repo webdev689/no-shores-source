@@ -2,6 +2,7 @@
 // in. The land worker hands the plan over as JSON; this layer only reads it.
 import type { RockShape } from '../rules/rockMesh.ts';
 import type { Climate, Season } from '../textures/picture.ts';
+import type { Grain } from './walkGrain.ts';
 
 /** A cell's side in metres: one RMB block. */
 export const CELL_M = 102.4;
@@ -133,6 +134,8 @@ export type CityPlan = {
     readonly solids: readonly Solid[];
     /** The trees and bushes its beds, pots and planters stand, drawn as the land's own plants. */
     readonly plants?: readonly CityPlant[];
+    /** The grain of each walk piece among `solids`; every other piece of ground takes the world's. */
+    readonly grains?: readonly Grain[];
   };
   readonly pads: readonly Pad[];
   /** The ramps and switchbacks joining each avenue's terraces and climbing to the platform: their pads are among

@@ -114,13 +114,15 @@ fn struck(vessel: &naval::fight::Vessel) -> bool {
 }
 
 /// A fighting player's fight as their browser is sent it: the naval crate's numbers, its first captain's commission,
-/// and whether a boarding they asked now would be taken (`Fights::alongside`).
+/// whether a boarding they asked now would be taken (`Fights::alongside`), and whether it is the Harbourmaster's
+/// hulk's, whose fight the page shows as the sailing lesson's step.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FightSeen {
     pub player: PlayerId,
     pub numbers: Vec<f64>,
     pub captain: Commission,
     pub may_board: bool,
+    pub lesson: bool,
 }
 
 /// The shares of hull, canvas and men a ship's hurts leave it.
@@ -280,8 +282,13 @@ impl Fights {
             .ships
             .iter()
             .filter(|(_, vessel)| vessel.damage.state == State::Struck && vessel.command().is_some())
-            // A captain whose deck would hold no crew is not boarded: its hold would open at once.
-            .filter(|(id, _)| fought.hostiles.get(id).is_some_and(crewed))
+            // A captain whose deck would hold no crew is not boarded, its hold opening at once; nor a lesson's hulk.
+            .filter(|(id, _)| {
+                fought
+                    .hostiles
+                    .get(id)
+                    .is_some_and(|hostile| crewed(hostile) && crate::sea::lessons::hulks_captain(hostile.id).is_none())
+            })
             .map(|(id, vessel)| (*id, apart([own.x, own.y], [vessel.ship.x, vessel.ship.y]), way(&vessel.ship)))
             .filter(|(_, apart, its_way)| *apart <= BOARD_REACH_M && *its_way < BOARD_WAY_M_S)
             .min_by(|one, other| one.1.total_cmp(&other.1));

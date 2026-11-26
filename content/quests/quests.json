@@ -1,11 +1,12 @@
 {
-  "about": "The quests the rules keep and the page shows: the opening, which ends in a pledge, and each house's line, which gives its Art, its Tenets one at a time and three fragments of the player's choosing. A task's goals are all met before the next task begins; its reward is given as it ends, and a goal's own (Aurem or the first horse) as it is met. Its scenes are in content/story/houses.json. bible/02-Systems/Quests.md says how each goal is judged.",
+  "about": "The quests the rules keep and the page shows: the opening, which ends in a pledge, and each house's line, which gives its Art, its Tenets one at a time and three fragments of the player's choosing. A task's goals are all met before the next task begins; its reward is given as it ends, and a goal's own (Aurem, the first horse or a keeper's gift) as it is met. Its scenes are in content/story/houses.json. bible/02-Systems/Quests.md says how each goal is judged.",
   "quests": [
     {
       "id": "house",
       "name": "A House of Your Own",
       "faction": 0,
       "begin": "roundBegin",
+      "offer": {"keeper": "weaponsmith", "at": "find-your-way", "kind": "A welcome to Overlook", "rarity": 2, "words": "Hear each keeper round Overlook and take their gifts. Learn to ride the Tack's horse, then take your ship from the Harbourmaster and learn its helm. Put on what you were given, and choose a house.", "quote": "Everyone here has something for you. Go and hear them all.", "story": "roundOffer"},
       "kept": "hear-three-houses",
       "tasks": [
         {
@@ -17,10 +18,7 @@
               "to": "stranger",
               "text": "The stranger who found you"
             }
-          ],
-          "reward": {
-            "aurem": 400
-          }
+          ]
         },
         {
           "id": "find-your-way",
@@ -30,31 +28,46 @@
               "kind": "talk",
               "to": "weaponsmith",
               "scene": "roundWeaponsmith",
-              "text": "The Weaponsmith"
+              "text": "The Weaponsmith",
+              "reward": {
+                "gift": "weapons"
+              }
             },
             {
               "kind": "talk",
               "to": "armorsmith",
               "scene": "roundArmorsmith",
-              "text": "The Armorsmith"
+              "text": "The Armorsmith",
+              "reward": {
+                "gift": "armour"
+              }
             },
             {
               "kind": "talk",
               "to": "mage",
               "scene": "roundMage",
-              "text": "The Mage"
+              "text": "The Mage",
+              "reward": {
+                "gift": "vestige"
+              }
             },
             {
               "kind": "talk",
               "to": "vault",
               "scene": "roundVault",
-              "text": "The Vault Keeper"
+              "text": "The Vault Keeper",
+              "reward": {
+                "gift": "cloak"
+              }
             },
             {
               "kind": "talk",
               "to": "tailor",
               "scene": "roundTailor",
-              "text": "The Tailor"
+              "text": "The Tailor",
+              "reward": {
+                "gift": "dye"
+              }
             },
             {
               "kind": "talk",
@@ -69,8 +82,24 @@
               "kind": "talk",
               "to": "mail",
               "scene": "roundMail",
-              "text": "The Postmaster"
+              "text": "The Postmaster",
+              "reward": {
+                "gift": "letter"
+              }
             }
+          ]
+        },
+        {
+          "id": "ride-the-bay",
+          "task": "Ride the Bay",
+          "start": "rideBegin",
+          "goals": [
+            { "kind": "ride", "act": "mount", "text": "Get up on your horse" },
+            { "kind": "ride", "act": "walk", "text": "Ride at a walk" },
+            { "kind": "ride", "act": "gallop", "text": "Gallop" },
+            { "kind": "ride", "act": "boost", "text": "Spur it on" },
+            { "kind": "ride", "act": "dismount", "text": "Get down" },
+            { "kind": "ride", "act": "arrive", "to": "harbourmaster", "text": "Ride to the Harbourmaster's stall" }
           ]
         },
         {
@@ -89,39 +118,29 @@
           }
         },
         {
-          "id": "arm-yourself",
-          "task": "Arm yourself",
+          "id": "learn-the-helm",
+          "task": "Learn the helm",
           "goals": [
-            {
-              "kind": "buy",
-              "slot": "melee",
-              "text": "A Melee weapon from the Weaponsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "head",
-              "text": "Head armour from the Armorsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "torso",
-              "text": "Torso armour from the Armorsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "arms",
-              "text": "Arm armour from the Armorsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "legs",
-              "text": "Leg armour from the Armorsmith"
-            }
+            { "kind": "sail", "act": "board", "text": "Go aboard your Sloop" },
+            { "kind": "sail", "act": "sail", "text": "Set sail" },
+            { "kind": "sail", "act": "steer", "text": "Steer" },
+            { "kind": "sail", "act": "trim", "text": "Trim your sails" },
+            { "kind": "sail", "act": "map", "text": "Open the held map" },
+            { "kind": "sail", "act": "fire", "text": "Put a ball in the hulk" }
           ]
+        },
+        {
+          "id": "bring-it-home",
+          "task": "Bring it home",
+          "end": "sailHome",
+          "goals": [{ "kind": "enter", "node": "overlook-social", "text": "Dock at Overlook" }]
         },
         {
           "id": "wear-them",
           "task": "Put them on",
+          "was": [
+            "arm-yourself"
+          ],
           "goals": [
             {
               "kind": "wear",
@@ -147,6 +166,40 @@
               "kind": "wear",
               "slot": "legs",
               "text": "Your leg armour"
+            },
+            {
+              "kind": "wear",
+              "slot": "ranged",
+              "text": "Your Ranged weapon"
+            }
+          ]
+        },
+        {
+          "id": "use-your-gifts",
+          "task": "Use your gifts",
+          "goals": [
+            {
+              "kind": "use",
+              "act": "identify",
+              "to": "mage",
+              "text": "Have the Mage open a Vestige"
+            },
+            {
+              "kind": "use",
+              "act": "withdraw",
+              "to": "vault",
+              "text": "Take your cloak from the vault"
+            },
+            {
+              "kind": "use",
+              "act": "dye",
+              "text": "Wear a dye"
+            },
+            {
+              "kind": "use",
+              "act": "letter",
+              "to": "mail",
+              "text": "Take your letter from the mail"
             }
           ]
         },
@@ -192,6 +245,7 @@
       "name": "The Stolen Storm",
       "faction": 1,
       "begin": "stormBegin",
+      "offer": {"keeper": "stormcallers", "kind": "The Stormcallers' road", "rarity": 4, "words": "Climb to the Old Beacon on the Saltgrass Downs, and take back the storm-glass the Tithe carried off.", "quote": "The Storm keeps nobody waiting. Neither do I.", "story": "stormBegin"},
       "tasks": [
         {
           "id": "climb-old-beacon",
@@ -324,6 +378,148 @@
             "art": true
           },
           "end": "stormCalled"
+        },
+        {
+          "id": "break-tithe-downs",
+          "task": "Break the Tithe on the High Downs",
+          "start": "stormHorde",
+          "goals": [
+            {
+              "kind": "defend",
+              "node": "saltgrass-downs",
+              "place": "The High Downs",
+              "horde": true,
+              "waves": [
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ]
+              ],
+              "lost": "stormOverrun",
+              "text": "The Tithe's horde"
+            }
+          ],
+          "end": "stormSpent"
         },
         {
           "id": "pell-trail",
@@ -576,6 +772,7 @@
       "name": "The Keeper's Lamp",
       "faction": 2,
       "begin": "lampBegin",
+      "offer": {"keeper": "lamplighters", "kind": "The Lamplighters' road", "rarity": 4, "words": "Walk the shingle where a ship broke, find who took the Beacon's lens, and set the lamps true.", "quote": "Keep the lamps lit, child. Someone out on the water is counting on them.", "story": "lampBegin"},
       "tasks": [
         {
           "id": "walk-strand",
@@ -604,7 +801,8 @@
               "from": "Shingle Landing",
               "to": "Ewe Fold",
               "who": "tobin",
-              "near": 15,
+              "horse": "dun",
+              "near": 30,
               "greet": "lampWalk",
               "ambush": [
                 [
@@ -621,7 +819,8 @@
                 ]
               ],
               "shout": "lampAmbush",
-              "text": "Keep Tobin close as he walks"
+              "mount": "lampMount",
+              "text": "Ride with Tobin, and keep him close"
             },
             {
               "kind": "reach",
@@ -701,6 +900,148 @@
           "reward": {
             "art": true
           },
+          "end": "lampDark"
+        },
+        {
+          "id": "burn-barrow-wreckers",
+          "task": "Burn the wreckers off the Barrow Field",
+          "start": "lampHorde",
+          "goals": [
+            {
+              "kind": "defend",
+              "node": "saltgrass-downs",
+              "place": "The Barrow Field",
+              "horde": true,
+              "waves": [
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ]
+              ],
+              "lost": "lampOverrun",
+              "text": "The wreckers' horde"
+            }
+          ],
           "end": "lampSunwell"
         },
         {
@@ -959,6 +1300,7 @@
       "name": "What the Tithe Writes",
       "faction": 3,
       "begin": "veilBegin",
+      "offer": {"keeper": "veiled", "kind": "The Veiled's road", "rarity": 4, "words": "Follow a Tithe collector through Saltgrass, and find the page of their book that holds your name.", "quote": "Read everything. Trust what the Tithe writes least of all.", "story": "veilBegin"},
       "tasks": [
         {
           "id": "tail-collector",
@@ -1045,6 +1387,148 @@
           "reward": {
             "art": true
           },
+          "end": "veilUnseen"
+        },
+        {
+          "id": "loose-dark-adit",
+          "task": "Let the dark out at the Chalk Adit",
+          "start": "veilHorde",
+          "goals": [
+            {
+              "kind": "defend",
+              "node": "saltgrass-downs",
+              "place": "The Chalk Adit",
+              "horde": true,
+              "waves": [
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ],
+                [
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Runner",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Collector",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Crossbowman",
+                    "Minor"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ],
+                  [
+                    "Enforcer",
+                    "Major"
+                  ]
+                ]
+              ],
+              "lost": "veilOverrun",
+              "text": "The adit's horde"
+            }
+          ],
           "end": "veilRaven"
         },
         {
@@ -1163,9 +1647,11 @@
               "from": "Vale Mouth",
               "to": "Hollow Coven",
               "who": "wren",
-              "near": 15,
+              "horse": "black",
+              "near": 30,
               "greet": "veilWren",
-              "text": "Keep up with Wren"
+              "mount": "veilMount",
+              "text": "Ride with Wren, and keep up"
             },
             {
               "kind": "reach",

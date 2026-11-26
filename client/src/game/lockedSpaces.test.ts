@@ -1,10 +1,26 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { poseOf } from '../overworld/overworldCamera.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
 import { LOCKED_WORDS, OPEN_SOCIAL_SPACES, socialLocked } from './nodes.ts';
-import { islandMarksOf, landable, landingChoice, seaMarks } from './seaMarks.ts';
+import { entriesOf, islandPanelOf } from './islandWords.ts';
+import { islandMarksOf, landable } from './seaMarks.ts';
 import { type WorldData, arrivalAt } from './worldData.ts';
+
+/** No draws read yet: the panel says what the island holds alone. */
+const NO_FACTS = { activities: null, gates: null, named: (id: string) => id };
+
+/** A port city's island, its city `id` and `name`, `ruined` or living, with its social space and one patrol. */
+const cityIsland = (id: string, name: string, ruined: boolean) => {
+  const where = { continent: 'continent-4', ring: [], spawns: [], centre: [0, 0] as const };
+  return {
+    id: 'continent-4',
+    plan: { id, name, harbour: [0, 0], ruined, social: { moorings: [] } },
+    nodes: [
+      { ...where, id: `${id}-social`, kind: 'social', name },
+      { ...where, id: `${id}-patrol`, kind: 'patrol', name: 'Dunes' },
+    ],
+  } as unknown as Parameters<typeof islandPanelOf>[0];
+};
 
 test('only the listed cities’ social spaces open: Overlook’s; the rest of every island is open', () => {
   assert.deepEqual([...OPEN_SOCIAL_SPACES], ['overlook']);
@@ -13,17 +29,14 @@ test('only the listed cities’ social spaces open: Overlook’s; the rest of ev
   assert.equal(socialLocked('cairnwatch-patrol-1'), false, 'the rest of a locked city’s island is open');
 });
 
-test('a locked social space shows "Opens later" over the island’s side and cannot be landed at', () => {
+test('a locked social space says "Opens later" in the island’s panel and cannot be landed at', () => {
   const side: Mark[] = [
     { id: 'sunspire-social', kind: 'social', name: 'Sunspire', at: [0, -100, 5], edge: true, locked: true },
     { id: 'sunspire-patrol', kind: 'patrol', name: 'Dunes', at: [40, -100, 5], edge: true },
   ];
-  const forward = [0, -100 / Math.hypot(100, 50), -50 / Math.hypot(100, 50)] as const;
-  const pose = poseOf({ eye: [0, 0, 50], forward });
-  const { shown } = seaMarks('landing', [], side, [0, 0], pose, { width: 800, height: 600 }, null);
-  const note = (id: string) => shown.find((mark) => mark.id === id)?.note;
-  assert.equal(note('sunspire-social'), LOCKED_WORDS);
-  assert.match(note('sunspire-patrol') ?? '', /m$/, 'the rest show how far');
+  const panel = islandPanelOf(cityIsland('sunspire', 'Sunspire', false), true, NO_FACTS);
+  assert.deepEqual([panel.port?.shut, panel.port?.line], [LOCKED_WORDS, `Port city · ${LOCKED_WORDS}`]);
+  assert.equal(panel.groups[0]?.entries[0]?.shut, null, 'the rest of its island open');
   assert.equal(landable(side, 'sunspire-social'), null);
   assert.equal(landable(side, 'sunspire-patrol')?.name, 'Dunes');
 });
@@ -56,26 +69,20 @@ test('a page asked to start in a locked patrol, played alone, is refused it as t
   assert.equal(arrivalAt(world, 'saltgrass-downs')?.node, 'saltgrass-downs', 'an open one');
 });
 
-test('of the locked social spaces only the two other ports’ say "Opens later"; a desolate city’s shows no mark', () => {
-  const side: Mark[] = [
-    { id: 'rimeholt-social', kind: 'social', name: 'Rimeholt', at: [0, -100, 5], edge: true, locked: true },
+test('of the locked social spaces only the two other ports’ say "Opens later"; a desolate city’s is listed nowhere', () => {
+  const rimeholt = islandPanelOf(cityIsland('rimeholt', 'Rimeholt', false), true, NO_FACTS);
+  assert.equal(rimeholt.port?.shut, LOCKED_WORDS);
+  const cairnwatch = islandPanelOf(cityIsland('cairnwatch', 'Cairnwatch', true), true, NO_FACTS);
+  assert.equal(cairnwatch.port, null, 'a ruin has no port to dock at');
+  assert.equal(cairnwatch.playlist, null);
+  assert.ok(!entriesOf(cairnwatch).some((entry) => entry.id === 'cairnwatch-social'), 'its plaza is no landing');
+  const desolate: Mark[] = [
     { id: 'cairnwatch-social', kind: 'social', name: 'Cairnwatch', at: [20, -100, 5], edge: true, locked: true },
   ];
-  const forward = [0, -100 / Math.hypot(100, 50), -50 / Math.hypot(100, 50)] as const;
-  const pose = poseOf({ eye: [0, 0, 50], forward });
-  const { shown, placed } = seaMarks('landing', [], side, [0, 0], pose, { width: 800, height: 600 }, null);
-  assert.deepEqual(
-    shown.map((mark) => [mark.id, mark.note]),
-    [['rimeholt-social', LOCKED_WORDS]],
-  );
-  assert.deepEqual(
-    placed.map((mark) => mark.id),
-    ['rimeholt-social'],
-  );
-  assert.equal(landable(side, 'cairnwatch-social'), null);
+  assert.equal(landable(desolate, 'cairnwatch-social'), null);
 });
 
-test('a social space still locked is a locked mark, which says it opens later when chosen', () => {
+test('a social space still locked is a locked mark, never landed at', () => {
   const where = { continent: 'continent-4', ring: [], spawns: [], centre: [0, 0] as const };
   const nodes = [
     { id: 'sunspire-social', kind: 'social', name: 'Sunspire', ...where },
@@ -86,6 +93,5 @@ test('a social space still locked is a locked mark, which says it opens later wh
     marks.map((mark) => mark.locked),
     [true, false],
   );
-  assert.deepEqual(landingChoice(marks, null, 'sunspire-social'), { kind: 'locked', words: 'Sunspire opens later' });
   assert.equal(landable(marks, 'sunspire-social'), null);
 });

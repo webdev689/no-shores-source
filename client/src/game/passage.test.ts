@@ -7,6 +7,7 @@ import type { SeenShip } from '../network/messages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { maskFromOutlines } from '../overworld/seaRoute.ts';
+import { CLICK_PACE, PLANNED_PACE } from '../overworld/voyage.ts';
 import { Passage } from './passage.ts';
 import { AHEAD, HELM_TURN } from './seaHelm.ts';
 import type { SeaRoom } from './seaRoom.ts';
@@ -162,15 +163,19 @@ test('the sea room turns it at rest to the heading the helm faces it, and holds 
   );
 });
 
-test("watched close it eases down the ladder to the world's own time a step each 0.15 s, and back up to the dial", () => {
+test("watched close it eases down the ladder to the world's own time a step each 0.15 s, and back up to its pace", () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked, word } = fakeRoom();
   passage.room = room;
   passage.straightOn();
   const paces = () => asked.map((said) => Number(said.split('×')[1]));
   for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
-  assert.deepEqual(paces(), [60, 40, 30, 20, 10, 5, 1], "the dial's x60, then down each step to the world's own time");
-  assert.equal(passage.pace, 60, 'the dial itself is not changed');
+  assert.deepEqual(
+    paces(),
+    [60, 40, 30, 20, 10, 5, 1],
+    "straight on's ×60, then down each step to the world's own time",
+  );
+  assert.equal(passage.pace, 60, 'the pace it was set at is not changed');
   assert.equal(passage.note, 'Sailing straight on', 'said only once the room has it');
   const before = passage.ship.y;
   passage.advance(1, true);
@@ -190,22 +195,38 @@ test("watched close it eases down the ladder to the world's own time a step each
   word.settledShip = null;
   asked.length = 0;
   for (let frame = 0; frame < 60; frame++) passage.advance(0.05, false);
-  assert.deepEqual(paces(), [5, 10, 20, 30, 40, 60], 'the view risen, back up the ladder to the dial');
+  assert.deepEqual(paces(), [5, 10, 20, 30, 40, 60], 'the view risen, back up the ladder to the pace it was set at');
   assert.equal(passage.note, 'Sailing straight on');
 });
 
-test('the dial stepped while the view is close is kept for when it rises; stepped at the dial, it sails at it', () => {
+test('a voyage sails at the pace it was set at: ×200 planned, ×60 clicked; eased to ×1 while watched, then back', () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked } = fakeRoom();
   passage.room = room;
-  passage.straightOn();
-  passage.stepPace(1);
-  assert.match(asked.at(-1) ?? '', /×100$/, 'at the dial, a step up sails at once');
+  passage.sailTo(place(0, -9_000), PLANNED_PACE);
+  for (let frame = 0; frame < 20; frame++) passage.advance(0.05, false);
+  assert.equal(passage.pace, PLANNED_PACE);
+  assert.match(asked.at(-1) ?? '', /×200$/, 'planned on the map, it eases up to ×200');
   for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
-  passage.stepPace(-1);
-  assert.match(asked.at(-1) ?? '', /×1$/, "watched close, still the world's own time");
+  assert.match(asked.at(-1) ?? '', /×1$/, "watched close, the world's own time");
+  passage.sailTo(place(0, -9_000));
   for (let frame = 0; frame < 60; frame++) passage.advance(0.05, false);
-  assert.match(asked.at(-1) ?? '', /×60$/, 'back up to the dial as it is now');
+  assert.equal(passage.pace, CLICK_PACE);
+  assert.match(asked.at(-1) ?? '', /×60$/, 'set by a click, back up to ×60 once not watched');
+  passage.sailTo(place(0, -9_000), PLANNED_PACE);
+  passage.stop();
+  passage.resume();
+  assert.equal(passage.pace, PLANNED_PACE, 'resumed at the pace it was set at');
+});
+
+test('stopped short it stays bound where it was, to be resumed; a voyage let go keeps nothing to resume', () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  passage.sailTo(place(0, -9_000));
+  passage.stop();
+  assert.deepEqual([passage.bound, passage.stoppedShort], [place(0, -9_000), true]);
+  passage.letGo();
+  passage.resume();
+  assert.deepEqual([passage.bound, passage.stoppedShort, passage.course], [null, false, []]);
 });
 
 test('a pace step the room refused is asked again once its word comes, until the two agree', () => {

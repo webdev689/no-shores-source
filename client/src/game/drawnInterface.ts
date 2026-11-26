@@ -40,6 +40,11 @@ export class DrawnInterface {
     return Boolean(this.ui?.typing);
   }
 
+  /** What has the focus, if anything: a press the keys or the pad press themselves. */
+  get focused(): string | null {
+    return this.ui?.focusedId ?? null;
+  }
+
   /** Whether the pointer is over it now, so a click is not the world's: where the page last heard the pointer, as the
    *  click is heard before the interface's next frame takes it. */
   get takesPointer(): boolean {
