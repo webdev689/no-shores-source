@@ -232,7 +232,8 @@ The decisions in [[Open Questions]] are not repeated here.
   (`tools/modules/airship.py`, `crown.py`), published to R2 by the modules workflow on the branch's pushes. Three
   read-only audits' 39 points are fixed, each with a test that fails on the code before it, or answered in the pull
   request. Tested offline: every check on `ad938908` (the territories, merged with main at #207 and #215, which move
-  the door's event fingerprints but not the outcomes they pin); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
+  the door's event fingerprints but not the outcomes they pin), and again on `6825fc83` (main at #206 merged in, the
+  only clashes two bible lists, both sides kept); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
   15); the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the
   raid's first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the
   deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in the game and which
