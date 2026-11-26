@@ -1,6 +1,7 @@
 import { sphereAround } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { farPlace, ShadowMap } from '../shadow.ts';
+import { flicker } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { PLAYER_LOOK, type ShipLook } from './dress.ts';
@@ -10,11 +11,13 @@ import type { HullPaint } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 import type { ShipHarm } from './shipHarm.ts';
-import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
+import { type ShipMesh, shipLanterns, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 import { cellShows, flagAt, harmedCanvas, mastFalls } from './harmDrawn.ts';
 import {
   bufferOf,
+  LANTERN_FLOATS_AT,
   MAST_FLOATS_AT,
+  MOST_LANTERNS,
   MOST_MASTS,
   MOST_YARDS,
   PLACE_FLOATS,
@@ -202,12 +205,14 @@ export function releasePictures(device: GPUDevice): void {
 /** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
  *  captains'. */
 export const SHIP_SLOTS = 20;
+/** A lantern's flame flickers this deep, a share of a fire's: its glass shields it, as a carried lantern's does. */
+export const LANTERN_FLICKER = 0.4;
 
 /** Draws a ship's mesh at its place, lit as the land is, into the land's pass so the water sees it, each part in its
  *  picture, its side's paint on its shell, its yards braced with its square sails, and its sails' canvas and its
  *  flag as its rig sets them: one model, up to `slots` ships of it a frame, each with its own place and canvas. */
 export class ShipView {
-  private readonly gpu: Gpu;
+  readonly gpu: Gpu;
   private readonly device: GPUDevice;
   private readonly kit: ShipKit;
   private readonly vertices: GPUBuffer;
@@ -238,6 +243,8 @@ export class ShipView {
   private canvasBytes: DataView | undefined;
   /** Its bounding sphere in its own frame, made once (`shipSphere`). */
   private readonly sphere: readonly number[];
+  /** Where its lanterns' flames burn in its own frame, as its manifest says (`shipLanterns`). */
+  readonly lanterns: readonly (readonly [number, number, number])[];
 
   /** Opens a hull's view on the device, its mesh tagged (`tagShip`) and the device's kit made if it is not yet. */
   static async open(gpu: Gpu, mesh: ShipMesh, sails: readonly SailCorners[], paint: HullPaint, slots = SHIP_SLOTS) {
@@ -261,6 +268,7 @@ export class ShipView {
     this.paint = paint;
     this.tags = tagShip(mesh, sails);
     this.sphere = shipSphere(mesh, sails);
+    this.lanterns = shipLanterns(mesh.name).slice(0, MOST_LANTERNS);
     if (this.tags.yards.length > MOST_YARDS) throw new Error(`a ship of ${this.tags.yards.length} yards is too many`);
     if (this.tags.masts.length > MOST_MASTS) throw new Error(`a ship of ${this.tags.masts.length} masts is too many`);
     this.flat = [flagFlat()];
@@ -312,7 +320,8 @@ export class ShipView {
 
   /** Draws it into a pass the land's pipelines draw into (its formats, samples and reversed depth), in its own
    *  `slot` of the frame, in its side's colours as light as `look` says, and its yards, canvas and flag as `rig` sets
-   *  them (none without a rig, its yards square), lit by the sun through `shadow`'s maps (none unless given). */
+   *  them (none without a rig, its yards square), lit by the sun through `shadow`'s maps (none unless given); its
+   *  lanterns alight, flickering as they are at `seconds`, where it is given (a wreck's are out). */
   drawInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -321,8 +330,9 @@ export class ShipView {
     look: ShipLook = PLAYER_LOOK,
     rig: SailRig | null = null,
     shadow: ShadowMap = ShadowMap.none(this.gpu),
+    seconds: number | null = null,
   ): void {
-    const canvas = this.prepare(place, camera, slot, look, rig);
+    const canvas = this.prepare(place, camera, slot, look, rig, seconds);
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.pipeline, shadow.receiverGroup(this.kit.pipeline));
   }
 
@@ -357,6 +367,7 @@ export class ShipView {
     slot: number,
     look: ShipLook,
     rig: SailRig | null,
+    seconds: number | null = null,
   ): number | null {
     const drawn = this.slots[slot];
     if (!drawn) return null;
@@ -369,7 +380,12 @@ export class ShipView {
     for (let index = 0; index < 12; index++) turn[index] = (turn[index] ?? 0) * (place.scale ?? 1);
     values.set(turn, 16);
     values.set([place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2], 0], 32);
-    values.set([look.shade ?? 1, 0, 0, 0], 36);
+    // Its lanterns' flames: how bright they burn now, each ship's on a beat of its own, and the seconds they sway by
+    // (kept small, so float32 holds them to the frame).
+    const burn = seconds === null ? 0 : flicker(slot + 1, seconds, LANTERN_FLICKER);
+    values.set([look.shade ?? 1, burn, (seconds ?? 0) % 600, 0], 36);
+    if (seconds !== null)
+      this.lanterns.forEach((lantern, index) => values.set([...lantern, 1], LANTERN_FLOATS_AT + index * 4));
     const paint = look.painted ?? sidePainted(look.side);
     [paint.hull, paint.stripe, paint.canvas].forEach((colour, index) =>
       values.set(colour ? [...colour, 1] : [0, 0, 0, 0], 40 + index * 4),

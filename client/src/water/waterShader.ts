@@ -1,4 +1,5 @@
 import { SHADOW_WGSL } from '../shadow.ts';
+import { LAMPS_MOST } from '../sky/skyUniform.ts';
 import { HULL_WGSL } from './hullMask.ts';
 import { SHELTER_WGSL } from './seaWeather.ts';
 import { SKY_DOME_WGSL } from './skyDome.ts';
@@ -181,6 +182,28 @@ fn river_flow(offset: vec2f) -> vec2f {
   return -fall / steep * clamp(steep * 600.0, 0.15, 2.5);
 }
 
+// The lamps near (a ship's lanterns, a sea fight's flashes and fires, the shore's lights) on the water at 'at' (from the
+// eye): the little light open water scatters back up and the more its foam does, and each lamp's glitter on the waves
+// toward the eye, reaching farther than the light it sheds, as a light's path across dark water does.
+fn lamps_on_water(at: vec3f, normal: vec3f, to_eye: vec3f, foam: f32) -> vec3f {
+  var light = vec3f(0.0);
+  let count = min(u32(sky_state.lamp_count.x), ${LAMPS_MOST}u);
+  for (var lamp = 0u; lamp < count; lamp++) {
+    let place = sky_state.lamps[lamp * 2u];
+    let toward = place.xyz - at;
+    let apart = dot(toward, toward);
+    let near = clamp(1.0 - apart / (place.w * place.w), 0.0, 1.0);
+    if (near <= 0.0) {
+      continue;
+    }
+    let toward_lamp = toward * inverseSqrt(max(apart, 1e-4));
+    let scattered = max(dot(normal, toward_lamp), 0.0) * (0.08 + 0.6 * foam) * near * near;
+    let glitter = pow(max(dot(normal, normalize(toward_lamp + to_eye)), 0.0), 80.0) * 2.0 * (1.0 - foam) * near;
+    light += sky_state.lamps[lamp * 2u + 1u].rgb * (scattered + glitter);
+  }
+  return light;
+}
+
 @fragment
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   let pixel = surface.clip.xy;
@@ -326,6 +349,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
 
   let foam_light = FOAM * (0.62 * sky_level() + 0.38 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w * sun) + sky_state.zenith.rgb * 0.06;
   colour = mix(colour, foam_light, foam);
+  colour += lamps_on_water(surface.drawn, normal, to_eye, foam);
   // Past its edge the water gives way to what the backdrop drew there; open water hides it wholly.
   let water = aerial(colour, -to_eye, distance_to);
   if (cover >= 1.0) { return vec4f(water, 1.0); }

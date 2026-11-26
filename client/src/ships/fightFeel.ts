@@ -15,6 +15,7 @@ import { type SailRig, windOff } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 import { magazineOf, NEAR_MISS_M, NEAR_SPLASH_M } from './fightMoments.ts';
 import { KICKS } from './shake.ts';
+import { flicker } from '../sky/lamps.ts';
 
 /** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on the ship it struck in its
  *  own frame and what it struck (from the room's `Hit` told with it), and the room's own. */
@@ -83,6 +84,8 @@ export const SMOKE_FROM = 0.6;
 const SMOKE_SPAN = 0.6;
 /** Its last volley's tally is shown this long once its last ball is down, seconds. */
 export const TALLY_S = 4;
+/** How deep a burning ship's light flickers, a share of a lamp's (`flicker`): from 0.6 of its full to its full. */
+const BURN_FLICKER = 2.5;
 /** A volley is down this long after its last shot at the most, seconds: longer than any ball's flight. */
 const VOLLEY_S = 4;
 /** A ball last frame is the same ball this frame within this, metres. */
@@ -519,7 +522,8 @@ export class FightFeel {
       radius: BURN_LIGHT.reachM * scale,
       colour: BURN_LIGHT.colour,
       blend: 'light' as const,
-      alpha: 0.8 + 0.2 * Math.sin(now * 13 + index * 2.3),
+      // A fire's flicker, deeper than a lamp's: its light swells and sinks with its flames.
+      alpha: flicker(index + 1, now, BURN_FLICKER),
     }));
     return [...this.effects.marks(now, scale), ...lights, ...this.flotsam.marks(now, scale, water, eye)];
   }

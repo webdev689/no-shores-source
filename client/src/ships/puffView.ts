@@ -66,9 +66,8 @@ export function puffFloats(
   const first = Math.max(0, drawn - MOST_PUFFS);
   for (let nth = first; nth < drawn; nth++)
     putPuff(kept.picture, (nth - first) * PUFF_FLOATS, marks[sorted[nth] ?? 0] as Mark);
-  // shortcut: a `light` mark (a muzzle's or a fire's reach, DFO's point light on the hulls near) is not drawn: the light
-  // layer halos the screen round what glows, so a 26 m reach became a banded disc over the sky and sea. Upgrade when
-  // the ships' shader takes point lights.
+  // A `light` mark (a muzzle's flash, a fire's or a blast's reach) is no puff: the sky's lamps cast it on the hulls, the
+  // sea and the people round it (fightLamps.ts); drawn here its 26 m reach was a banded disc over the sky and sea.
   let [glow, lit] = [0, 0];
   for (const mark of marks) {
     if (mark.blend !== 'glow') continue;
