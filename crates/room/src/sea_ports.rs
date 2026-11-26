@@ -502,3 +502,7 @@ mod boarding_tests;
 #[cfg(test)]
 #[path = "sea_leaving_tests.rs"]
 mod leaving_tests;
+
+#[cfg(test)]
+#[path = "sea_berths_tests.rs"]
+mod berths_tests;
