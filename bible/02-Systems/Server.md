@@ -844,9 +844,8 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   city's where any reach in, never its whole section; a foe that chases a player off it walks straight. A node's room
   opens in 0.15 to 0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned
   nodes (tested offline, on an idle machine); Saltmere's three zones, baking their public events' grounds too, in
-  0.71 to 1.0 s ([[Public Events]]). Their caverns' and runs' foes' sites stand nothing as a room opens: with them
-  the three open in 0.62 to 0.95 s of WebAssembly and 0.57 to 0.78 s natively, as they do without (tested offline, on
-  a machine shared with other builds); a site's group stands once a player first comes within 150 m of it and its
+  0.71 to 1.0 s ([[Public Events]]). Their foes' sites, its territories and its runs' beats, stand nothing as a room
+  opens; a site's group stands once a player first comes within 150 m of it and its
   navmesh is baked, a slice a tick over some 45 ticks, each 15 ms at most natively ([[Navmesh]], [[Enemies]],
   "Territories and runs").
 - A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms

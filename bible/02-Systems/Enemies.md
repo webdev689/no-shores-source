@@ -358,7 +358,8 @@ companions, and a foe a page asks for. The rest arrive (`arrivals.rs`):
   ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]). A ship carries six at most; it comes in toward the nearest living player (swung up to 0.6 rad off
   that line), its flight 8 s; it hangs 16 m over the middle of its foes' places, lets the first down 1 s after it hangs
   and each next 0.5 s after, each built over 1 s; it lingers 1.2 s after the last stands and flies on for 9 s. A ship
-  to ground another's is over (within 40 m) sets out 1.5 s later and hangs 8 m higher.
+  to ground another's is over (within 40 m) sets out 1.5 s later and hangs 24 m abeam of the first, either
+  side in turn, clear of its outriggers.
 - **Under a crown**, the Lattice's: the Fissure's waves and its Warden, the Sunken Gate's Waking and the Bulwarks it
   sends to claim a mooring, and the Drowned Vale's waves, a crown over each mouth or perch they come out of. It forms over 1.2 s; each foe begins forming 0.25 s
   after the one before and forms over 1.3 s; it holds 0.6 s after the last and breaks over 0.8 s.

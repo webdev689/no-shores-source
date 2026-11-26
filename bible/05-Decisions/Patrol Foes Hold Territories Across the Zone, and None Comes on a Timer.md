@@ -15,7 +15,7 @@ status: in force
 
 ## What it settles
 
-- **No foe comes on a timer.** The airships that brought a group to a roaming player every 45 to 75 s are gone.
+- **No foe comes on a timer.**
 - **A patrol's foes hold territories across the zone**: a group stands at each of the areas its layout lays foes in,
   on ground baked round it as a player comes near, as the caverns' and runs' sites already did.
 - **A cleared territory is retaken later**, its group brought back by airship while no player is near.

@@ -97,6 +97,10 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   - Which areas hold territories ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]):
     Claude's call is every area but a landing, a gate, an entrance, a hamlet, a wilds, a Breach's hollow and a guild's
     plot, so farms, mills, docks, lighthouses and towers hold Tithe groups too.
+  - How a cleared territory is retaken ([[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]
+    says "its group brought back by airship while no player is near"): Claude's call brings it by airship when players
+    stay within 220 m but none within 40 m for 120 s; once none has come within 220 m for 90 s, it is let go and stands
+    afresh already on the ground when one comes back, with no airship.
   - Whether a site's group may be one of the smaller groups too: a smaller group up a run's ledge, facing away, is
     not met by a player walking the run (`sites_held`), so sites stand bands.
   - The arrivals' sounds are recordings already picked for other things (a hull's creak, the thunder's roll, the
