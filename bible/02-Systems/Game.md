@@ -551,22 +551,12 @@ sails out from its berth ("Landings").
   - Shift gives no burst at sea: only a fight's helm has one ([[Naval Combat]], "How it works").
   - Straight on, the voyage's line says "Sailing straight on"; resumed, the ship sails on straight along its heading.
 - **The ship's console** (`shipConsole.ts`, `seaScreen.ts`; [[The Sea Is Navigated From the Helm With the Held Map]],
-  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]), a window of the [[Interface]] at the foot of the screen while the ship is the player's
-  to sail. Its head names the ship (its own name, else its class) beside its class, over the switch between the
-  Oversea and the Sealevel views (V). Under it: a compass, north up, its brass needle the ship's heading and a pale
-  arrow the way the wind blows, with the heading in degrees and the wind ("Wind 6 m/s from the ENE", or "Calm");
-  the voyage (under way, hove to or at anchor; its pace, and while eased "×1 (×200 set) · true speed while watched",
-  or held near a hostile ship the room's; its speed in m/s at it; where it is bound when it makes for a landing; a bar
-  of the way sailed; its line); and the ship
-  (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
-  Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
-  Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)
-  ([[The Ship Is Managed and Walked From the Sea's Panel]]), whose keys act at sea level alone, as the console offers
-  them. Narrower than 840 pixels the ship stands under the
-  compass and the voyage, its bars side by side. It goes at the helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming
-  plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination in
-  other waters asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
-  sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]): a window at the foot of the
+  screen while the ship is the player's to sail, laid out as [[Interface]], "The ship's console", says. It goes at the
+  helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming plans the way there again
+  from wherever the ship lies, after going ashore and coming back too. A destination in other waters asks whether to
+  travel there, and yes sails the ship away to them in a cinematic: the flow stays at sea throughout, its keys held
+  until the ship has arrived ([[Sailing]], "Travel by the held map").
 - **Manage** pans the view down over 1.4 s to the ship at its true size, from its starboard quarter 39 m off,
   looking 0.5 radians down at its middle; a drag turns the view round it, the wheel brings it from 18 m to 78 m. The player
   stands at its wheel, its stand-in hands go about its deck, and a panel of the [[Interface]] shows it: its hull

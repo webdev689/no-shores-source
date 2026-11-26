@@ -167,7 +167,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   (`paintCard`), over the point, or under it where over would leave the map, whole inside the map, and stood anew by the pointer once the map is panned, zoomed or raised
   again; with the pointer off the map, none is lit. Its land lit, no water is; off it, the water under the pointer is
   lit again. A click on a region's land (no place's mark within 16 px) chooses its anchorage, named for the region:
-  the way there is planned and inked as any course is, and sailed at the sea's own pace, the course judged by the
+  the way there is planned and inked as any course is, and sailed at ×200, as any course set on the held map, the course judged by the
   waters' rules as any other ([[Sailing]]). Another island's land lights nothing.
 - **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
   pointer, when it is not the one the ship is in, is lit (the pad's cursor stands only in the interface's windows, so the pad lights none): its sea brightened a little with the

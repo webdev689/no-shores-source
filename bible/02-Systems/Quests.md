@@ -201,7 +201,7 @@ Harbourmaster's mark, through the quest's news (`lessonsBetween`: "Riding", "Gal
   them once it asks none. The compass and the screen's mark point at the Harbourmaster's counter; the other steps
   read "Anywhere".
 - **Learn the helm**, at sea: Go aboard your Sloop (M held, its step reading "Hold M to return to your ship" ashore),
-  Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Open the held map (N), and Put a ball in the
+  Set sail (W), Steer (A, D), Trim your sails (W sails on at ×60, N plans a voyage at ×200), Open the held map (N), and Put a ball in the
   hulk (the right button laid and let go, the pad's RT). The sea watches each captain on it each tick
   (`Sea::keep_lessons`), keeping their heading and pace as last seen and how far they have turned under way. The page
   asks the sea (ask 4) each time the held map is raised at the helm (`Sea::charted`); the sea takes it only for a
@@ -269,8 +269,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   saying only what is earned, so the road's news never takes the loan for Tenets earned. The tracker shows the foes left of all of them beside
   the goal ("17/29", as a puzzle's points lit of all), and the wait after a fall as a defence's; a notice under the
   Art's emblem says "Storm unbounded", "Every ability ready" (the worn Art's name) as it begins, and "Storm bound
-  again", "Its abilities cost as before" as it ends. The ability bar shows every ability ready and none locked, each glowing in the Art's colour under an infinity
-  mark while the horde runs (`hordeRunning`; [[Arts]], "The ability bar"), all from the room's word.
+  again", "Its abilities cost as before" as it ends. The ability bar shows the Art unbounded while the horde runs
+  ([[Arts]], "The ability bar"), all from the room's word.
 
 ## Offered by a keeper
 
