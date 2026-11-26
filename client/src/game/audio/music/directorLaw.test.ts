@@ -220,6 +220,34 @@ test("an island plays its family's calm pieces now and then; danger ends one, an
   assert.ok(after === -1 || after >= RESTS.island.least - TENSION_HOLD_S, 'no calm piece soon after');
 });
 
+test('an island never begins the piece it began last, though a death, the story or a voyage came between', () => {
+  // The die always rolls the same piece, so only the island's own memory keeps it from coming twice running.
+  const sailing: Hearing = { ...calm, place: { kind: 'sea' }, sea: quietSea };
+  const silence: Hearing = { ...calm, story: { kind: 'silence', cut: false } };
+  for (const between of [{ ...calm, dead: true }, silence, sailing]) {
+    const { cues } = heard(
+      900,
+      (second) => (second >= 300 && second < 310 + (between === sailing ? 300 : 0) ? between : calm),
+      {
+        ...QUIET,
+        where: 'wet',
+        restUntil: RESTS.island.least,
+      },
+    );
+    const begun = cues
+      .filter((cue, second) => cue !== cues[second - 1])
+      .map((cue) => JSON.parse(cue))
+      .filter((cue) => cue.kind === 'roam')
+      .map((cue) => cue.piece);
+    assert.equal(begun.length, 2, `two island pieces around ${JSON.stringify(between.place)}`);
+    assert.notEqual(
+      begun[1],
+      begun[0],
+      `not the same piece again after ${between.dead ? 'a death' : between.place.kind}`,
+    );
+  }
+});
+
 test('no calm piece in rain, a storm or fog, nor where none is written', () => {
   const rain = { ...SOCIAL, sky: { falling: 0.4, storm: 0, fog: 0, windMS: 5, night: false } };
   assert.ok(heard(300, () => rain).cues.every((cue) => cue === none));

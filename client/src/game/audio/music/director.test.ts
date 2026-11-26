@@ -158,7 +158,7 @@ test('a family score leads into the fight: its tension quietly, its fight on the
   assert.ok(starts.filter((when) => when > clock() - 3).length === 0 && starts.length === quiet, 'and silence after');
 });
 
-test("each family's two cadences come in its own turn, whatever another family's fights end on", () => {
+test("each family's two cadences and two victories come in their own turns, whatever else ends between", () => {
   /** A bar of piano on one pitch: a fight's song, or an ending told apart by its pitch. */
   const piano = (name: string, pitch: string): Song =>
     makeSong(
@@ -175,6 +175,8 @@ test("each family's two cadences come in its own turn, whatever another family's
     song: piano(`${name}-fight`, `C${octave + 2}`),
     cadence: piano(`${name}-cadence`, `E${octave}`),
     secondCadence: piano(`${name}-cadence-2`, `G${octave}`),
+    victory: piano(`${name}-victory`, `A${octave}`),
+    secondVictory: piano(`${name}-victory-2`, `B${octave}`),
   });
   const made: Scores = {
     ...scores,
@@ -182,18 +184,22 @@ test("each family's two cadences come in its own turn, whatever another family's
   };
   const { frames, sounded, made: count } = directed(() => made);
   const desert: Hearing = { ...island, place: { kind: 'island', climate: 'desert', node: 'patrol' } };
-  const ending = (place: Hearing) => {
+  /** A fight in `place`, won with a kill or only parted; which of the endings told apart by pitch sounded after it. */
+  const ending = (place: Hearing, won: boolean) => {
     const from = count();
-    frames({ ...place, foes: [brute({ engaged: true })], struck: true }, 4);
+    frames({ ...place, foes: [brute({ engaged: true })], struck: true, kills: won ? 1 : 0 }, 4);
     frames(place, 16);
-    return from;
+    return ['E', 'G', 'A', 'B']
+      .flatMap((name) => [1, 2].map((octave) => `${name}${octave}`))
+      .filter((pitch) => sounded(pitch, from));
   };
-  const green1 = ending(island);
-  assert.ok(sounded('E1', green1) && !sounded('G1', green1), "green's first cadence");
-  const dry1 = ending(desert);
-  assert.ok(sounded('E2', dry1) && !sounded('G2', dry1), "dry's own first cadence");
-  const green2 = ending(island);
-  assert.ok(sounded('G1', green2) && !sounded('E1', green2), "then green's second, a dry fight between");
+  // Each ending's turn is its family's and its kind's: a cadence never moves a victory's turn, nor dry's green's.
+  assert.deepEqual(ending(island, false), ['E1'], "green's first cadence");
+  assert.deepEqual(ending(island, true), ['A1'], "green's first victory, after a cadence");
+  assert.deepEqual(ending(desert, false), ['E2'], "dry's own first cadence");
+  assert.deepEqual(ending(island, false), ['G1'], "green's second cadence, a dry fight between");
+  assert.deepEqual(ending(desert, true), ['A2'], "dry's own first victory");
+  assert.deepEqual(ending(island, true), ['B1'], "green's second victory");
 });
 
 test("a piece of the social space's plays a while after arriving there, the ambience a little under it", () => {
