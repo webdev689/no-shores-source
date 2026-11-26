@@ -565,10 +565,10 @@ pub(crate) mod fight_measure_tests;
 mod guilds;
 #[path = "sea_islands.rs"]
 pub mod islands;
-#[path = "sea_parked.rs"]
-pub mod parked;
 #[path = "sea_lessons.rs"]
 pub mod lessons;
+#[path = "sea_parked.rs"]
+pub mod parked;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;
