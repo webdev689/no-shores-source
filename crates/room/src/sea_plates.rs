@@ -42,19 +42,11 @@ impl Sea {
         Some(Plate { name, level, menu: false, tag })
     }
 
-    /// The ship a player sails as others see it: as their character keeps it, the Sloop as built and unnamed for one
-    /// the sea holds none of; none for a player not at sea.
+    /// The ship a player sails as others see it (`ShipLook::of` their character, the one the sea holds); none for a
+    /// player not at sea.
     #[must_use]
     pub fn look(&self, player: PlayerId) -> Option<ShipLook> {
-        if !self.berths.contains_key(&player) {
-            return None;
-        }
-        let held = self.harbour.characters.get(&player);
-        let ship = held.and_then(|character| character.fleet.sailing());
-        let built = || gear::ship::fleet::KeptShip::new(gear::ship::fleet::SLOOP);
-        let ship = ship.cloned().unwrap_or_else(built);
-        let emblem = held.and_then(|character| gear::emblems::number_of(&character.emblem)).unwrap_or_default();
-        Some(ShipLook { hull: ship.hull, dress: ship.dress.numbers(), name: ship.name_numbers(), emblem })
+        self.berths.contains_key(&player).then(|| ShipLook::of(self.harbour.characters.get(&player)))
     }
 }
 
@@ -66,4 +58,17 @@ pub struct ShipLook {
     pub dress: [u16; 4],
     pub name: [u8; 2],
     pub emblem: u16,
+}
+
+impl ShipLook {
+    /// The ship a character sails as others see it: as it keeps it, the Sloop as built and unnamed for none. The sea
+    /// shows its players' ships so, and a room on land tells it so of a ship lying parked (`Sea::refit`).
+    #[must_use]
+    pub fn of(character: Option<&gear::Character>) -> ShipLook {
+        let ship = character.and_then(|character| character.fleet.sailing());
+        let built = || gear::ship::fleet::KeptShip::new(gear::ship::fleet::SLOOP);
+        let ship = ship.cloned().unwrap_or_else(built);
+        let emblem = character.and_then(|character| gear::emblems::number_of(&character.emblem)).unwrap_or_default();
+        ShipLook { hull: ship.hull, dress: ship.dress.numbers(), name: ship.name_numbers(), emblem }
+    }
 }

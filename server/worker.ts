@@ -127,6 +127,7 @@ export class RoomHost extends DurableObject<Env> {
   private readonly shore = new Ashore(
     (sea) => this.env.ROOMS.getByName(sea),
     (ships) => this.guarded(() => this.room.parked(ships), false),
+    (player) => this.guarded(() => this.room.named(player), ''),
   );
   /** At a guild's outpost, what stands its plot and runs its players' errands with the accounts. */
   private outpost: OutpostHost | null = null;

@@ -7,6 +7,9 @@ const reach = (social: boolean): Reach => ({ social, continent: 'continent-1', c
 
 const SEAS = ['sea', 'sea--elite', 'sea--abyss'];
 
+/** A room's word on a player for the seas, as `room_named` gives it: only player 4's account, Ann's, is known. */
+const named = (player: number) => (player === 4 ? '{"account":"ann","hull":2,"level":9}' : '');
+
 test('every room on land names its players to all three seas, at its island', () => {
   assert.deepEqual(placeOf('node-overlook-social', reach(true), null), {
     seas: SEAS,
@@ -61,14 +64,18 @@ test('the seas are told as an account is known and every 15 s, and their answers
       return answer === undefined ? Promise.reject(new Error('gone')) : Promise.resolve(answer);
     },
   });
-  const ashore = new Ashore(sea, (ships) => (given = ships));
+  const ashore = new Ashore(sea, (ships) => (given = ships), named);
   ashore.own(4, 'ann');
   assert.equal(words.length, 0, 'a room on no island names no one');
   ashore.stand(place);
   ashore.own(4, 'ann');
+  ashore.own(5, 'bea');
   await new Promise((settled) => setImmediate(settled));
   const { seconds, ...first } = JSON.parse(words.at(0)?.[1] ?? '{}') as { seconds: number };
-  assert.deepEqual([words.at(0)?.[0], first], ['sea', { accounts: ['ann'], continent: 'continent-1' }]);
+  const ann = { account: 'ann', hull: 2, level: 9 };
+  assert.deepEqual([words.at(0)?.[0], first], ['sea', { named: [ann], continent: 'continent-1' }]);
+  const last = JSON.parse(words.at(-1)?.[1] ?? '{}') as { named: unknown[] };
+  assert.deepEqual(last.named, [ann], 'each as the room has their character now, none it holds no account of');
   assert.ok(Math.abs(seconds * 1000 - Date.now()) < 2000, "each word carries the host's time, by which namings lapse");
   assert.deepEqual(
     (JSON.parse(given) as { number: number }[]).map((ship) => ship.number),
@@ -83,7 +90,8 @@ test('the seas are told as an account is known and every 15 s, and their answers
   const later = Date.now() + ASHORE_EVERY_MS;
   ashore.due(later);
   await new Promise((settled) => setImmediate(settled));
-  const again = `{"accounts":[],"continent":"continent-1","seconds":${Math.floor(later / 1000)}}`;
+  ashore.left(5);
+  const again = `{"named":[],"continent":"continent-1","seconds":${Math.floor(later / 1000)}}`;
   assert.deepEqual(words.at(0), ['sea', again], 'one gone is named no more');
   assert.equal((JSON.parse(given) as unknown[]).length, 2, 'a sea that did not answer keeps its last answer');
 });
@@ -97,7 +105,7 @@ test('a room whose page draws no parked ships names its players to the seas but 
     },
   });
   let given: string | null = null;
-  const ashore = new Ashore(sea, (ships) => (given = ships));
+  const ashore = new Ashore(sea, (ships) => (given = ships), named);
   ashore.stand({ seas: SEAS, island: { continent: 'continent-1' }, draws: false });
   ashore.own(4, 'ann');
   await new Promise((settled) => setImmediate(settled));
@@ -112,7 +120,7 @@ test('a sea’s last answer is handed on no longer than 45 s once it stops answe
       answering ? Promise.resolve('[{"account":"ann","number":3}]') : Promise.reject(new Error('gone')),
   });
   let given = '';
-  const ashore = new Ashore(sea, (ships) => (given = ships));
+  const ashore = new Ashore(sea, (ships) => (given = ships), named);
   ashore.stand({ seas: ['sea'], island: { continent: 'continent-1' }, draws: true });
   const start = Date.now();
   ashore.own(4, 'ann');
@@ -137,7 +145,7 @@ test('a sea that learns a player’s account tells the other two to let go of th
       return Promise.resolve('[]');
     },
   });
-  const ashore = new Ashore(sea, () => undefined);
+  const ashore = new Ashore(sea, () => undefined, named);
   ashore.own(4, 'ann', 1);
   const told = words.map(([name, word]) => [name, (JSON.parse(word) as { afloat: unknown }).afloat]);
   assert.deepEqual(told, [

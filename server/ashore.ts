@@ -51,18 +51,25 @@ export function placeOf(
 }
 
 /** A room's naming of its players ashore: where it stands (none for a room on no island, which names no one), each
- *  player's account as the room learns it, and each sea's last answer with the time of the naming it answered. */
+ *  player whose account the room has learnt, and each sea's last answer with the time of the naming it answered. */
 export class Ashore {
   private place: Place | null = null;
-  private readonly accounts = new Map<number, string>();
+  private readonly players = new Set<number>();
   private readonly answers = new Map<string, { readonly at: number; readonly ships: readonly { number: number }[] }>();
   private told = 0;
   private readonly sea: (name: string) => { ashoreWord(word: string): Promise<string> };
   private readonly give: (ships: string) => void;
+  private readonly named: (player: number) => string;
 
-  /** `sea` reaches a sea's room by its name; `give` hands the room the ships parked at its island, as JSON. */
-  constructor(sea: (name: string) => { ashoreWord(word: string): Promise<string> }, give: (ships: string) => void) {
-    [this.sea, this.give] = [sea, give];
+  /** `sea` reaches a sea's room by its name; `give` hands the room the ships parked at its island, as JSON; `named` is
+   *  the room's word on a player for the seas, their account and their ship and level as their character has them now
+   *  (`room_named`), empty for one it holds no account of. */
+  constructor(
+    sea: (name: string) => { ashoreWord(word: string): Promise<string> },
+    give: (ships: string) => void,
+    named: (player: number) => string,
+  ) {
+    [this.sea, this.give, this.named] = [sea, give, named];
   }
 
   /** Where the room stands, once it has opened (`placeOf`). */
@@ -74,19 +81,19 @@ export class Ashore {
    *  the other two are told to let go of the player's ship parked there, as they sail it here now. */
   own(player: number, account: string, seas: number | null = null): void {
     if (seas !== null) {
-      const word = JSON.stringify({ accounts: [], afloat: [account], seconds: Math.floor(Date.now() / 1000) });
+      const word = JSON.stringify({ named: [], afloat: [account], seconds: Math.floor(Date.now() / 1000) });
       for (const sea of SEAS.filter((name) => name !== seaRoomName(seas)))
         void this.sea(sea)
           .ashoreWord(word)
           .catch(() => undefined);
       return;
     }
-    this.accounts.set(player, account);
+    this.players.add(player);
     this.name(Date.now());
   }
 
   left(player: number): void {
-    this.accounts.delete(player);
+    this.players.delete(player);
   }
 
   /** Names the players again once `ASHORE_EVERY_MS` has passed since the last. */
@@ -103,8 +110,9 @@ export class Ashore {
     const lapsed = [...this.answers].filter(([, answer]) => now - answer.at > ANSWER_KEPT_MS);
     lapsed.forEach(([sea]) => this.answers.delete(sea));
     if (lapsed.length > 0) this.hand(place);
+    const named = [...this.players].map(this.named).filter((each) => each !== '');
     const word = JSON.stringify({
-      accounts: [...this.accounts.values()],
+      named: named.map((each) => JSON.parse(each) as unknown),
       ...place.island,
       seconds: Math.floor(now / 1000),
     });

@@ -2,7 +2,7 @@
 //! island, and as each room sends them: the sea to players within sight, the island's room to everyone, the ship's own
 //! player too. server/parked.test.ts runs the same through the WebAssembly and pins the same answer.
 
-use super::{land_parked, sea_ashore};
+use super::{land_named, land_parked, sea_ashore};
 use crate::{TAKEN, gear_door, input, isle_door, open_sea, room_join, room_leave, room_tick, snapshot_door};
 use protocol::wire::overlook::wire as messages;
 use room::PlayerId;
@@ -40,9 +40,13 @@ fn ann_left() -> (PlayerId, PlayerId) {
     (ann, near)
 }
 
-/// A room on the square's continent naming `accounts` (each quoted) to the sea at the host's `seconds`.
-fn word(accounts: &str, seconds: u64) -> Vec<u8> {
-    format!(r#"{{"accounts":[{accounts}],"continent":"continent-2","seconds":{seconds}}}"#).into_bytes()
+/// Ann as a room names her while her character sails the Sloop as built, unnamed, at level 1: as her ship lies parked.
+const ANN: &str = r#"{"account":"ann","hull":0,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":1}"#;
+
+/// A room on the square's continent naming its players (`named`, each as a room names them) to the sea at the host's
+/// `seconds`.
+fn word(named: &str, seconds: u64) -> Vec<u8> {
+    format!(r#"{{"named":[{named}],"continent":"continent-2","seconds":{seconds}}}"#).into_bytes()
 }
 
 /// The ships a snapshot carries, each its number and pace; and the numbers its plates are over.
@@ -59,20 +63,21 @@ fn a_ship_left_at_rest_is_told_to_its_islands_room_and_seen_at_sea_within_sight_
     let (ann, near) = ann_left();
     let far = at_rest(None, [10_000.0, 30_000.0]);
     room_tick();
-    assert_eq!(sea_ashore(&word(r#""ann""#, NOW)), ANSWER);
+    assert_eq!(sea_ashore(&word(ANN, NOW)), ANSWER);
     snapshot_door::prepare();
     let (ships, plates, _) = ships_in(&snapshot_door::snapshot_for(near));
     assert_eq!(ships, [(near, 0), (ann, 0)], "within sight, at rest");
     assert!(plates.contains(&ann), "with its plate");
     assert_eq!(ships_in(&snapshot_door::snapshot_for(far)).0, [(far, 0)], "past sight");
-    assert_eq!(sea_ashore(br#"{"accounts":["ann"],"continent":"continent-2"}"#), "", "a word without the host's time");
+    let timeless = format!(r#"{{"named":[{ANN}],"continent":"continent-2"}}"#);
+    assert_eq!(sea_ashore(timeless.as_bytes()), "", "a word without the host's time");
     assert_eq!(sea_ashore(b"not a word"), "", "a word that does not read is answered with nothing");
 }
 
 #[test]
 fn a_naming_lapses_after_45_seconds_of_the_hosts_time_though_the_sea_never_ticks_and_at_sea_after_45_of_ticks() {
     let (ann, near) = ann_left();
-    assert_eq!(sea_ashore(&word(r#""ann""#, NOW)), ANSWER);
+    assert_eq!(sea_ashore(&word(ANN, NOW)), ANSWER);
     assert_eq!(sea_ashore(&word("", NOW + 45)), ANSWER, "named 45 s ago");
     assert_eq!(sea_ashore(&word("", NOW + 46)), "[]", "lapsed, though the sea has not ticked since");
     let in_sight = || {
@@ -80,7 +85,7 @@ fn a_naming_lapses_after_45_seconds_of_the_hosts_time_though_the_sea_never_ticks
         ships_in(&snapshot_door::snapshot_for(near)).0
     };
     assert_eq!(in_sight(), [(near, 0)], "nor seen at sea");
-    let run = format!(r#"{{"accounts":["ann"],"seconds":{}}}"#, NOW + 46);
+    let run = format!(r#"{{"named":[{ANN}],"seconds":{}}}"#, NOW + 46);
     assert_eq!(sea_ashore(run.as_bytes()), "[]", "a run at sea lies at no island, and is told of no ship");
     assert_eq!(in_sight(), [(near, 0), (ann, 0)], "yet keeps its players' ships seen wherever they lie");
     for _ in 0..45 * 60 {
@@ -142,9 +147,39 @@ fn room_tick_now() -> u64 {
 #[test]
 fn a_ship_whose_player_sails_another_tiers_sea_is_let_go_here_as_that_sea_says() {
     let (_, near) = ann_left();
-    let afloat = format!(r#"{{"accounts":[],"afloat":["ann"],"seconds":{NOW}}}"#);
+    let afloat = format!(r#"{{"named":[],"afloat":["ann"],"seconds":{NOW}}}"#);
     assert_eq!(sea_ashore(afloat.as_bytes()), "[]");
-    assert_eq!(sea_ashore(&word(r#""ann""#, NOW)), "[]", "let go: named again, it is seen no more");
+    assert_eq!(sea_ashore(&word(ANN, NOW)), "[]", "let go: named again, it is seen no more");
     snapshot_door::prepare();
     assert_eq!(ships_in(&snapshot_door::snapshot_for(near)).0, [(near, 0)]);
+}
+
+/// Ann as an island's room names her once her character sails the Brig at a higher level, pinned: the WebAssembly
+/// names her the same (server/parked.test.ts).
+pub const REFIT: &str = r#"{"account":"ann","hull":2,"dress":[0,10,18,30],"name":[255,255],"emblem":0,"level":9}"#;
+
+#[test]
+fn a_parked_ships_looks_and_level_follow_its_players_character_as_a_room_names_them() {
+    assert_eq!(land_named(1), "", "no room on land open");
+    let island = r#"{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}"#;
+    assert!(isle_door::open_island(island.as_bytes()));
+    let (ashore, guest) = (room_join(), room_join());
+    assert!(gear_door::own(ashore, b"ann"));
+    let mut character = gear::Character::starting();
+    assert!(character.give_first_ship());
+    character.fleet.ships.push(gear::ship::fleet::KeptShip::new(2));
+    (character.fleet.sailed, character.xp) = (2, 40_000);
+    assert!(gear_door::restore_character(ashore, character.to_json().as_bytes()));
+    assert_eq!(land_named(ashore), REFIT, "as her character has it now");
+    assert_eq!(land_named(guest), "", "a player of no account is named by none");
+    let (ann, near) = ann_left();
+    assert_eq!(sea_ashore(&word(ANN, NOW)), ANSWER, "parked as the Sloop");
+    let answer = sea_ashore(&word(REFIT, NOW));
+    assert!(answer.contains(r#""hull":2"#), "the room told of it as she has it now: {answer}");
+    snapshot_door::prepare();
+    let snapshot = snapshot_door::snapshot_for(near);
+    let snapshot = messages::root_as_from_room(&snapshot).unwrap().snapshot().unwrap();
+    let hull = snapshot.ships().unwrap().iter().find(|ship| ship.player() == ann).map(|ship| ship.hull());
+    let level = snapshot.plates().unwrap().iter().find(|plate| plate.player() == ann).map(|plate| plate.level());
+    assert_eq!((hull, level), (Some(2), Some(character.level())), "seen at sea as she has it now");
 }

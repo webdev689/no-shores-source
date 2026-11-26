@@ -104,6 +104,15 @@ impl Sea {
         self.parked.by_account.remove(account);
     }
 
+    /// A parked ship as its player's character has it now, as a place's room names them: the ship it sails as others
+    /// see it (one bought, dressed or renamed ashore) and their level on its plate. Nothing for an account with no
+    /// ship parked.
+    pub fn refit(&mut self, account: &str, look: ShipLook, level: u8) {
+        if let Some(parked) = self.parked.by_account.get_mut(account) {
+            (parked.look, parked.plate.level) = (look, level);
+        }
+    }
+
     /// The host's time as a place's room tells it with its naming, seconds since the Unix epoch: the sea's namings
     /// are timed by it, as the sea stops ticking while nobody sails it. A time before one already told changes nothing.
     pub fn tell_seconds(&mut self, seconds: u64) {
