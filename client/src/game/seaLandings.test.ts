@@ -139,7 +139,7 @@ test('the island a click is judged against: its living port, its name, and a sea
   assert.equal(aimOf({ kind: 'isle', id: 3, words: 'the cove' }, here, [0, 0])?.kind, 'isle');
 });
 
-test('the confirmation asks in brass and answers yes with its yes’s press and no with Cancel’s', () => {
+test('the confirmation asks in brass; its yes’s press answers yes, and Cancel’s no', () => {
   const { ui, step } = fakeInterface(1280, 720);
   const answers: boolean[] = [];
   const asking = { aim: { kind: 'dock', port: 'Overlook', harbour: HARBOUR } as const, near: false };

@@ -14,7 +14,6 @@ import type { Mark } from '../overworld/overworldMarks.ts';
 import { type Deck, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
 import { CloseZoom } from './seaClose.ts';
-import { landingChoice } from './seaMarks.ts';
 import { HELM, helmEye } from './seaLaw.ts';
 import { landable } from './seaMarks.ts';
 
@@ -59,12 +58,11 @@ export class SeaView {
   helmShare = 0;
   /** How far the view has come down to sea level from the Oversea view. */
   private readonly close = new CloseZoom();
-  /** The landings marked over the island's side in view, the rig over it, and the landing chosen there. */
+  /** The landings over the island's side in view and the rig over it; and the mark chosen at sea, a hostile ship's
+   *  while it is chased. */
   private side: readonly Mark[] = [];
   private sideRig: Rig | null = null;
   chosen: string | null = null;
-  /** What the view over an island's side says of the mark last clicked: that its node is locked. */
-  said = '';
   /** Whether the view over the island was flown to docking at its port, rather than going ashore on its coast. */
   docked = false;
 
@@ -120,11 +118,6 @@ export class SeaView {
     return this.close.closest(sea, lying, this.camera.yaw, this.camera.tilt);
   }
 
-  /** The landings marked over the island's side in view. */
-  get sideMarks(): readonly Mark[] {
-    return this.side;
-  }
-
   /** The id and name of a landing on the side in view, or null; a social space still locked is none. */
   landingOf(id: string): { readonly id: string; readonly name: string } | null {
     const mark = landable(this.side, id);
@@ -155,18 +148,9 @@ export class SeaView {
 
   /** Flies the view up from over the ship to `rig`, over an island, its landings `side`, `docked` at its port or not. */
   flyToSide(side: readonly Mark[], rig: Rig, docked = false): void {
-    [this.side, this.sideRig, this.chosen, this.said, this.docked] = [side, rig, null, '', docked];
+    [this.side, this.sideRig, this.chosen, this.docked] = [side, rig, null, docked];
     this.close.set(false);
     this.where = { kind: 'fly', from: this.seaRig, to: rig, t: 0, seconds: SIDE.flySeconds, then: 'landing' };
-  }
-
-  /** A click on a mark over the side in view, `chosen` the landing chosen before (`landingChoice`): its landing is
-   *  chosen, or landed at once it was; a locked node is neither, and the view says so. */
-  choose(id: string, chosen: string | null): 'choose' | 'land' | null {
-    const choice = landingChoice(this.side, chosen, id);
-    this.said = choice?.kind === 'locked' ? choice.words : '';
-    if (choice?.kind === 'choose') this.chosen = id;
-    return choice?.kind === 'locked' ? null : (choice?.kind ?? null);
   }
 
   /** Flies the view back down to the ship. */

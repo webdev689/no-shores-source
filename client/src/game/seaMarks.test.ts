@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
 import { eyeFor, poseOf, TILT } from '../overworld/overworldCamera.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
-import { islandMarksOf, landfallMarks, landingChoice, seaMarks } from './seaMarks.ts';
+import { islandMarksOf, landfallMarks, seaMarks } from './seaMarks.ts';
 import type { NodeKind } from './worldData.ts';
 
 const viewport = { width: 1600, height: 900 };
@@ -29,18 +29,6 @@ test("an island's locked node is marked locked, and over the island no node is m
   const pose = poseOf(eyeFor([ship[0], ship[1], 0], 0, TILT.initial, 260));
   assert.deepEqual(seaMarks('landing', marks, ship, pose, viewport, null), { placed: [], shown: [] });
   assert.deepEqual(seaMarks('sail', marks, ship, pose, viewport, null).shown, [], 'nor at sea');
-});
-
-test('a click over the side chooses an open landing and a second lands there; a locked one only says it is locked', () => {
-  const side: Mark[] = [
-    { id: 'downs', kind: 'patrol', name: 'The Downs', at: [0, 0, 0] },
-    { id: 'mill', kind: 'mission', name: 'The Burned Mill', at: [0, 0, 0], locked: true },
-  ];
-  assert.deepEqual(landingChoice(side, null, 'downs'), { kind: 'choose' });
-  assert.deepEqual(landingChoice(side, 'downs', 'downs'), { kind: 'land' });
-  assert.deepEqual(landingChoice(side, 'downs', 'mill'), { kind: 'locked', words: 'The Burned Mill is locked' });
-  assert.deepEqual(landingChoice(side, null, 'mill'), { kind: 'locked', words: 'The Burned Mill is locked' });
-  assert.equal(landingChoice(side, null, 'elsewhere'), null, 'a mark not on the side');
 });
 
 test('at sea a port city shows its port alone, with no Playlist beside it; a ruined city shows none', () => {

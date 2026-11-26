@@ -1,23 +1,18 @@
 // What the helm's and the map's controls do, from the HUD's presses and the keys: the map raised at the helm or over
-// the land, Manage, the helm left and taken again, the voyage stopped or resumed, and a mark chosen at sea or over an
-// island's side.
-import type { Happening } from './flow.ts';
+// the land, Manage, the helm left and taken again, the voyage stopped or resumed, and a mark chosen at sea.
 import type { Playing } from './gameFrame.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { landSheetOf } from './landMap.ts';
 
-/** What the controls ask of the game: a landing made, a mark at sea chosen (`seaLandings.ts`), the flow moved on, and
- *  the ground under a point. */
+/** What the controls ask of the game: a mark at sea chosen (`seaLandings.ts`), and the ground under a point. */
 interface HelmGame {
-  readonly landAt: (id: string) => void;
   readonly mark: (id: string) => void;
-  readonly change: (happening: Happening) => void;
   readonly groundAt: (x: number, y: number) => number | null;
 }
 
 /** The helm's and the map's controls over `playing`, the pointer `input` locked to walk the deck. */
 export function helmControls(playing: Playing, input: { lock(): void }, game: HelmGame) {
-  const { landAt, change, groundAt } = game;
+  const { groundAt } = game;
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
    *  pointer let go to pan it; none in a dungeon, under no land. */
   const openMap = () => {
@@ -53,12 +48,9 @@ export function helmControls(playing: Playing, input: { lock(): void }, game: He
     else playing.sea.stop();
   };
 
+  /** A mark clicked on the HUD: at sea, a port's or a hostile ship's; the island's tiles hold the landings. */
   const choose = (id: string) => {
     if (playing.flow.mode === 'sea') game.mark(id);
-    if (playing.flow.mode !== 'landing' || !playing.sea) return;
-    const choice = playing.sea.view.choose(id, playing.flow.chosen);
-    if (choice === 'land') landAt(id);
-    else if (choice === 'choose') change({ kind: 'choose', node: id });
   };
 
   return { openMap, manage, leaveHelm, takeHelm, stopOrResume, choose };

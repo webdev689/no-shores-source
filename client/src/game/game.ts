@@ -479,8 +479,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   const { openMap, manage, leaveHelm, takeHelm, stopOrResume, choose } = helmControls(playing, input, {
-    ...{ landAt, mark: (id: string) => landings.click({ kind: 'mark', id }) },
-    change,
+    mark: (id: string) => landings.click({ kind: 'mark', id }),
     groundAt,
   });
 

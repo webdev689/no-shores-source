@@ -388,7 +388,7 @@ export class Hud {
   }
 
   /** The key strip at the bottom right, over what stood at the view's foot under it last frame: the fight's Arts and
-   *  weapons, the sea bar, the ship's bar in a sea fight and the offers; gone while someone speaks. */
+   *  weapons, the ship's console, the ship's bar in a sea fight and the offers; gone while someone speaks. */
   private stripNode(ui: Interface, view: HudView): Node | null {
     const strip = this.stripShown;
     if (!strip || view.speaking) return null;

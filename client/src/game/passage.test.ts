@@ -163,15 +163,19 @@ test('the sea room turns it at rest to the heading the helm faces it, and holds 
   );
 });
 
-test("watched close it eases down the ladder to the world's own time a step each 0.15 s, and back up to the dial", () => {
+test("watched close it eases down the ladder to the world's own time a step each 0.15 s, and back up to its pace", () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked, word } = fakeRoom();
   passage.room = room;
   passage.straightOn();
   const paces = () => asked.map((said) => Number(said.split('×')[1]));
   for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
-  assert.deepEqual(paces(), [60, 40, 30, 20, 10, 5, 1], "the dial's x60, then down each step to the world's own time");
-  assert.equal(passage.pace, 60, 'the dial itself is not changed');
+  assert.deepEqual(
+    paces(),
+    [60, 40, 30, 20, 10, 5, 1],
+    "straight on's ×60, then down each step to the world's own time",
+  );
+  assert.equal(passage.pace, 60, 'the pace it was set at is not changed');
   assert.equal(passage.note, 'Sailing straight on', 'said only once the room has it');
   const before = passage.ship.y;
   passage.advance(1, true);
@@ -191,7 +195,7 @@ test("watched close it eases down the ladder to the world's own time a step each
   word.settledShip = null;
   asked.length = 0;
   for (let frame = 0; frame < 60; frame++) passage.advance(0.05, false);
-  assert.deepEqual(paces(), [5, 10, 20, 30, 40, 60], 'the view risen, back up the ladder to the dial');
+  assert.deepEqual(paces(), [5, 10, 20, 30, 40, 60], 'the view risen, back up the ladder to the pace it was set at');
   assert.equal(passage.note, 'Sailing straight on');
 });
 

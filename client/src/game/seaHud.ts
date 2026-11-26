@@ -139,7 +139,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // before the ships' plates, which keep under its card.
   hud.seaFight(deck ? null : (here.fight?.display(state.clock) ?? null));
   const { eye, yaw, pitch, fov } = shown.shot;
-  // Aboard it the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
+  // Aboard it the ships' plates give the view to the fight on foot's display, as on land.
   hud.shipBars(deck ? [] : shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   // Over other players' ships, the marks they wear on land, gone with the ships' plates aboard a struck ship, and at
   // the helm, where the held map covers the view.

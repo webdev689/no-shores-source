@@ -28,7 +28,8 @@ export interface SeaInput {
   readonly paused: boolean;
 }
 
-/** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
+/** What one frame at sea shows: the shot, the ships, the marks, the status line's note, and what the place line and
+ *  the sounds read of the voyage. */
 export interface SeaFrame {
   readonly shot: Shot;
   readonly ships: readonly SeaShip[];

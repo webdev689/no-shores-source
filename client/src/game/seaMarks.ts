@@ -11,9 +11,8 @@ import type { ScreenMark } from './hud.ts';
 import { distanceText } from '../plus/compass.ts';
 import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHostiles.ts';
 import type { Landmass } from './landmass.ts';
-import { portOf, socialLater, socialLocked } from './nodes.ts';
+import { portOf, socialLocked } from './nodes.ts';
 import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
-import { lockedWords } from './worldData.ts';
 
 /** How far in from the picture's top and foot a held mark stands, clear of the place's name and the ship's console. */
 const MARK_EDGES = { top: 96, foot: 260 } as const;
@@ -21,20 +20,6 @@ const MARK_EDGES = { top: 96, foot: 260 } as const;
 const MARK_GAP_PX = 30;
 /** A mark stands this far over the ground it marks, metres. */
 const MARK_RISE_M = 2;
-
-/** What a click on a mark over an island's side does, `chosen` the landing chosen before: chooses its landing, or lands
- *  there once chosen; a locked node is never chosen, and only says it is locked. Null for a mark not on the side. */
-export function landingChoice(
-  side: readonly Mark[],
-  chosen: string | null,
-  id: string,
-): { readonly kind: 'choose' | 'land' } | { readonly kind: 'locked'; readonly words: string } | null {
-  const mark = side.find((each) => each.id === id);
-  if (!mark) return null;
-  if (mark.locked)
-    return { kind: 'locked', words: socialLater(mark.id) ? `${mark.name} opens later` : lockedWords(mark.name) };
-  return { kind: chosen === id ? 'land' : 'choose' };
-}
 
 /** A landmass's marks: each node over its ground (its social space on the city's level), a locked node marked so (a
  *  patrol area or mission until a pass is done on it, or a social space still locked), and its port over its
