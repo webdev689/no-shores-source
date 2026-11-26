@@ -6,6 +6,7 @@
 import type { MeshBuilder } from '../models/model.ts';
 import { type DungeonLayout, floorOf, type Stair } from './dungeonLayout.ts';
 import { BASE_M, box, face, lookAt, ROLE } from './dungeonMesh.ts';
+import { TILE_M } from './dungeonUv.ts';
 
 type Point = readonly [number, number, number];
 
@@ -15,6 +16,9 @@ export const FLIGHT_CEILING_M = 3.2;
 /** The arch at each end of a flight, metres: each post's width, the lintel's depth, and how far both stand onto the
  *  landing. */
 export const FLIGHT_ARCH = { post: 0.3, lintel: 0.3, proud: 0.18 } as const;
+/** A tread's nosing in the trim (m), and how far each tread's picture is shifted from the last's (pictures). */
+const NOSING_M = 0.06;
+const TREAD_SHIFT = 0.37;
 
 /** A flight's frame: its head edge's middle, the way down it and across it (x east, y south), its length, and its
  *  two floors. A point `along` metres down from the head edge and `across` from its middle line. */
@@ -100,16 +104,32 @@ export function flightsMesh(
         above,
       );
       if (index === TREADS) break;
+      // Its nosing in the trim, and the tread's picture started afresh on each, so the steps read from above, where
+      // the risers face away.
+      const nosed = from + NOSING_M;
       quad(
-        [look.set, ROLE.floor],
+        [look.set, ROLE.trim],
         [
           flightPoint(frame, from, -half, top),
-          flightPoint(frame, to, -half, top),
-          flightPoint(frame, to, half, top),
+          flightPoint(frame, nosed, -half, top),
+          flightPoint(frame, nosed, half, top),
           flightPoint(frame, from, half, top),
         ],
         [0, 0, 1],
         top,
+      );
+      const tread = [
+        flightPoint(frame, nosed, -half, top),
+        flightPoint(frame, to, -half, top),
+        flightPoint(frame, to, half, top),
+        flightPoint(frame, nosed, half, top),
+      ];
+      const shift = index * TREAD_SHIFT;
+      mesh.quad(
+        [look.set, ROLE.floor],
+        tread,
+        [0, 0, 1],
+        tread.map(([x, y]) => [x / TILE_M + shift, y / TILE_M + shift]),
       );
       // Each side wall over the tread, facing into the flight, its foot in the trim unless a kit's course runs there.
       for (const side of [-1, 1]) {

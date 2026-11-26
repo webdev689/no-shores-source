@@ -26,15 +26,16 @@ code:
 # Dungeon Modules
 
 The pieces each dungeon style is dressed and marked by, built by script in Blender
-([[Each Dungeon Style Has Its Own Pieces, Built in Blender]]). Each style has a **kit**, eighteen pieces that dress
-the rooms the rules lay, and three **landmarks**, set pieces a dungeon is remembered by. The rules place the
-landmarks and the page places the kits ([[Dungeons]]). The calls are Claude's ([[Dungeons as Claude Builds Them]]).
+([[Each Dungeon Style Has Its Own Pieces, Built in Blender]]). Each style has a **kit**, twenty-one pieces that dress
+the rooms, flights and galleries the rules lay, and three **landmarks**, set pieces a dungeon is remembered by. The
+rules place the landmarks and the page places the kits ([[Dungeons]]). The calls are Claude's
+([[Dungeons as Claude Builds Them]]).
 
 ## The contracts
 
 Two files in `content/dungeon/` say what every style builds, and the rules, the page and the build all read them:
 
-- **`kits.json`** names the nineteen parts a piece may wear, the eighteen kit pieces, and how each style places them:
+- **`kits.json`** names the nineteen parts a piece may wear, the twenty-one kit pieces, and how each style places them:
   how often a wall set stands, where, what its ceilings and floors carry, how many features a room takes, and its
   least ceiling.
 - **`landmarks.json`** gives each landmark its footprint in cells, whether it stands against a wall, its solids
@@ -53,26 +54,38 @@ Two files in `content/dungeon/` say what every style builds, and the rules, the 
 | `floor.a`, `floor.b` | slabs, runners, drains, circles, scree, rails | 0.05 m high at most |
 | `sconce` | each torch's bracket, holding the code's flame | within 0.2 m of its torch along the wall |
 | `portal`, `exit` | the arches round the return portal and the exit door | within 1.3 m of the middle along the wall; clear of the door's face |
+| `stair.head` | an arch over a flight's head and foot, on the landing at its edge with the flight | 0.3 m deep on the landing's side, nothing over the flight; 3.2 m high; clear below 2.9 m within 1.25 m of the middle |
+| `stair.side` | a string course along each side wall of a flight's cells, sheared by the page along the slope | 0.15 m off the wall, 0.3 m under to 0.45 m over the slope; the cell's whole wall, so the next ones meet it |
+| `balustrade` | a gallery's rail on each edge that opens over the hall below | the rules' solid: 0.25 m deep, 1 m high; the cell's whole edge, so the next ones meet it |
 
-A shaft is a unit high and is stretched between its base and its cap, so its detail runs only up it. Each kind of
-piece keeps a triangle budget, the most repeated the least: a wall shaft or a sconce 150, a floor piece 300, a
-ceiling piece 600, a door 1,500, a portal 2,500. A landmark keeps 12,000.
+A shaft is a unit high and is stretched between its base and its cap, so its detail runs only up it. Each kind of piece
+keeps a triangle budget, the most repeated the least: a wall shaft or a sconce 150, a floor piece 300, a ceiling piece
+600, a door 1,500, a portal 2,500; a stair side 150, a balustrade 600, a stair head 1,500. A stair side and a balustrade
+repeat every 1.6 m and end on the same section, so a run of them reads as one. A landmark keeps 12,000.
 
 ## The styles
 
 - **Crypt**: round arches of chunky voussoirs with carved skulls, squat drum pillars on cushion capitals, ossuaries
-  behind bars, rosette, skull and knot bosses, tomb slabs. The Charnel Pit, the Founder's Tomb, the Broken Vault.
+  behind bars, rosette, skull and knot bosses, tomb slabs; a flat arch of wedged voussoirs under a skull keystone over a
+  flight, a chamfered string course down it, squat balusters between half piers on a gallery. The Charnel Pit, the
+  Founder's Tomb, the Broken Vault.
 - **Halls**: studded round arches and a timber lintel on carved corbels, fluted columns under acanthus, heraldry and
-  torn banners, an iron chandelier ring, a runner rug. The High Seat, the Fallen Chandelier, the Great Hearth.
+  torn banners, an iron chandelier ring, a runner rug; a moulded architrave on rusticated posts over a flight, a studded
+  cyma string course, a panelled parapet. The High Seat, the Fallen Chandelier, the Great Hearth.
 - **Cells**: iron-banded frames with a portcullis slot, iron-clad piers, manacles, a barred window, beams with hooks,
-  drains and trapdoors. The Oubliette, the Gibbets, the Rack.
+  drains and trapdoors; a riveted timber lintel on iron-banded posts over a flight, a kerb under an iron handrail, a
+  railing of square bars on a stone kerb. The Oubliette, the Gibbets, the Rack.
 - **Sanctum**: pointed and trefoil arches on dark clustered colonnettes, rune bands, the brass crescent of the faith,
-  ribbed bosses, a rune circle. The Altar of the Deep, the Ritual Circle, the Reflecting Pool.
-- **Caverns**: natural rock arches, some crystal-studded, flowstone columns, curtains whose folds are pale
-  calcite (the caverns' floor picture) banded by the rock in their grooves, glowing fungus and crystals, stalactite
-  clusters, scree and puddles. The Still Lake, the Crystal Heart, the Stone Teeth.
-- **Mines**: timber door sets and adits, posts with knee braces, cap beams with lagging, tool racks, rails. The Lift
-  Shaft, the Ore Cart, the Collapse.
+  ribbed bosses, a rune circle; clustered colonnettes under a rune lintel and a shallow pointed hood over a flight, a
+  dark band with runes under a roll, lobed balusters under a gilt handrail. The Altar of the Deep, the Ritual Circle,
+  the Reflecting Pool.
+- **Caverns**: natural rock arches, some crystal-studded, flowstone columns, curtains whose folds are pale calcite (the
+  caverns' floor picture) banded by the rock in their grooves, glowing fungus and crystals, stalactite clusters, scree
+  and puddles; a rock arch with shelf fungus over a flight, a worn ledge down it, a gallery's rock lip with boulders and
+  a slung rope. The Still Lake, the Crystal Heart, the Stone Teeth.
+- **Mines**: timber door sets and adits, posts with knee braces, cap beams with lagging, tool racks, rails; a timber set
+  over a flight, a plank stringer under a pole handrail, a post-and-rail fence. The Lift Shaft, the Ore Cart, the
+  Collapse.
 
 ## How they are built
 
@@ -120,7 +133,12 @@ every 0.4 m, so a skull or a strand is its own size. A stretched or fitted corne
 (`uvPerZ`) of the triangles that share it, so a post's grain or a shaft's stones keep their scale and a corner keeps
 one UV. Its normal turns as the stretch or the fit turns the surface. Each part wears the cell's look's pictures,
 the climate's timber, the iron, the dressing set or a glow (`partPicture`, [[Procedural Textures]]), and still water
-its look's floor as its bed, wet rock's included. Where and when they are laid is in [[Dungeons]] ("In the Game").
+its look's floor as its bed, wet rock's included. A `stair.side` is sheared as it is laid (`Place.slope`): each corner
+rises by the slope times its x, and its normal leans back against the shear, so a course modelled level follows its
+flight. Where and when they are laid is in [[Dungeons]] ("In the Game"): a `stair.head` at each end of a flight on its
+landing's side, a `stair.side` on each side wall of each of its cells at the slope's height at the cell's middle, a
+`balustrade` on each gallery edge over open air (`dungeonStoreyKits.ts`). A pack that holds none of them, as one
+published before them, leaves the page drawing its own arch, trim band and rail in their place.
 
 ## Contact sheets
 

@@ -496,6 +496,31 @@ as standing none (`readDungeon`).
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
   layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Each cell
   wears its look (`cellLooks`): the style of its floor of the dungeon, with that style's two sets of pictures by role.
+- **Its storeys** (`dungeonStoreyPlanes.ts`): each storey is cut out as a one-storey dungeon of its own, z from its
+  floor: its plane of cells, and the torches, fixtures, glows, props, pillars, doorways and their jambs, solids,
+  landmarks (by their first solid's bottom) and seals standing on it, each by the storey whose floor lies at or
+  under its height (`storeyUnder`). The mesh, the kits, the props, the fixtures and the encounters' pieces draw each
+  storey as they draw a one-storey dungeon, into the one mesh raised to its floor, so every storey stands at its own
+  floor and the map inks them all from the same buffers. A wall stands where a cell meets rock on its own storey only,
+  so nothing is drawn where two storeys' rock meets; a flight's cell is rock from every cell but its landing.
+- **Its flights** (`dungeonFlights.ts`): 40 treads in the floor's picture, each 0.32 m deep, its top on the slope the
+  rules walk at its middle (so a body's feet stand at most 0.1 m off a step), and their risers in the trim, half a
+  riser at the head and the foot; the flight's side walls over each tread, a trim band 0.4 m high at their foot
+  following the steps; its ceiling 3.2 m over the slope, sloped with it, a cell at a time; and at its head and its
+  foot an arch on the landing's side, as a doorway is framed: posts 0.3 m wide at the walls and a lintel from 2.9 m to
+  3.2 m, 0.18 m proud. Each style's `stair.head` stands for the arch and its `stair.side` (a course along each side
+  wall of each of the flight's cells, sheared to the slope) for the trim band, where its pack has them
+  (`dungeonStoreyKits.ts`).
+- **Open air and galleries** (`dungeonJoins.ts`): a hall under open air keeps its floor but no ceiling; the open
+  air's own ceiling stands over it at its storey. The hall's walls go on up past the storey over it to that ceiling
+  where rock stands beside it on both storeys, up to the gallery's floor where a gallery stands over the rock, and
+  from the next room's ceiling up to the gallery's floor (the floor's edge) or to the open air's ceiling where a room
+  stands beside it below and rock above. A gallery's edge over the open air takes a balustrade on the gallery's floor,
+  1 m high and 0.25 m deep (`BALUSTRADE`): a plinth, seven balusters and a rail in its trim, or its style's
+  `balustrade` where the pack has it. Where the gallery's ceiling is lower than the open air's, a wall closes the step.
+- **Kits on a storey.** A storey's kits are laid as a one-storey dungeon's, its props' plans its own; none stands in
+  a flight, in open air, or on the walls or under the ceiling of a hall under open air, whose ceiling is far over it
+  (its floor pieces stay); a storey without the exit door or the portal lays neither arch.
   Where a pillar's, a torch's or the portal's kit pieces are laid (`kitsOf`), the mesh leaves out its own pillar,
   bracket or arch, and draws its own wherever they are not; the jambs, the flames, the portal's face and the exit
   door stay the mesh's.
@@ -530,7 +555,8 @@ as standing none (`readDungeon`).
   boxes. Its glows burn as lights beside the torches and the fixtures (`burningOf`).
 - **Its ceilings** (`dungeonCeilings.ts`): a room's ceiling is flat, a barrel vault across its narrower side, a dome
   over its middle, or rough rock over a cave. A vault rises up to 1.6 m and a dome up to 2.2 m, each at most 0.6 of
-  its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m
+  its half span; under a storey (a room on any storey but the top) at most to 0.4 m under that storey's floor, so a
+  room 5.6 m high rises 2.0 m at most. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m
   (`dungeonCaveWall.ts`). Behind what stands against a rock wall the rock is drawn flat, from the floor up to its
   top and along its span and 0.15 m past either end, easing back to its bulge over a further 0.3 m: each kit piece,
   and the portal's and the exit door's arches (±1.3 m of the wall's middle, 3.1 m high, the most an arch spans and
@@ -545,6 +571,18 @@ as standing none (`readDungeon`).
   the figures sum the same light (`lightAt`). Each channel of the sum
   stays as it is up to 0.8 and past that eases toward 1.4 (`shoulder`), so a room lit by many lights at once keeps
   its walls' colour and pictures rather than clipping to flat.
+- **Light by storey** (`dungeonSpaces.ts`): a light lights only its own space, never through a slab. A space is a
+  mask: storey k's bit, and its joined bit where the cell is joined, a flight's cell on both its storeys, its two
+  landings, open air, the hall's cells under it, every cell of a room under open air or beside it on its storey (the
+  hall and the gallery) and a corridor's cell beside it. A light (`Light.space`) reaches its storey and, from a joined
+  cell, the joined cells of its storey and of the storeys over and under it; a surface's space is its cell's on the
+  storey its height lies on (`cell_at`, `space_at` in the shader, from each cell's word: `CELL_JOINED`, and the
+  grid's storey height); a figure's the same (`lightAt`). The shader skips a light whose mask shares no bit with the
+  surface's, still water's gleams too. The 32 lights are picked by distance among those that reach a space the eye
+  may see (`seenFrom`): its own storey's, and every storey from a joined cell. The clusters are unchanged, so the
+  cost is too: a mask test a listed light.
+- **The camera on a flight** keeps under its sloped ceiling: the ceiling over a point of a flight is its slope there
+  and 3.2 m (`ceilingAt`).
 - **What its light costs.** Each frame the page cuts the view into clusters (`LightClusters`): 16 tiles across the
   screen by 9 up it by 24 slices of depth, each slice the same factor deeper than the last from 0.25 m to 256 m
   (nearer is the first slice, farther the last). Each cluster lists the lights whose reach, taken 1 cm wider, touches
@@ -635,12 +673,16 @@ as standing none (`readDungeon`).
 ## Limits
 
 - The generator lays one storey; the ground, the bake, the room and the page stand more (`hand_made`).
+- A light in a joined cell lights every joined cell of the storeys beside its own within its reach, so a hall's torch
+  lights a gallery's whole room, past the open air, through its floor where the room runs on over the hall; a gallery
+  room or a hall under open air is lit by both storeys' joined lights.
+- A landmark's storey is its first solid's (the wire gives a landmark no height of its own).
 - Nothing may stand under a flight: the navmesh bakes a flight's column as its lowest floor, so a column under a
   flight is rock.
 - A span holds a body whose crouched head (1 m) fits under its ceiling: a standing body's head may reach 0.8 m
   into a slab, since the ground knows the feet alone.
 - Lines across storeys take no corner of rock between two cells, as one storey's do, only the cells they cross.
-- The page's ground and ceiling for marks, shots and the camera are those of the player's own storey.
+- The page's ground and ceiling for marks and shots are those of the player's own storey.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
 - The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off
   centre would leave their bounds short on one side.

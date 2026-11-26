@@ -38,7 +38,10 @@
     "floor.b",
     "sconce",
     "portal",
-    "exit"
+    "exit",
+    "stair.head",
+    "stair.side",
+    "balustrade"
   ],
   "styles": {
     "crypt": {
