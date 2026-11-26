@@ -291,18 +291,18 @@ need to keep all our content within this band", [[Passages Web Out From the Patr
   (`PAY_BAND`, `LOOT_BAND`), the owner's order asking harder content to drop more. A test fails for any activity
   outside it, and another if the passages drop the most loot at any level or pay the most XP at every level. Every
   activity stands inside it, as the owner chose ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]): the
-  sea's low bands send fewer Minor ships and more Elites ([[Naval Combat]]), which lifts the sea at level 5 from 0.65
-  to 0.78 of the patrol zone's XP; and the week's dungeon run again by a player who has taken its first clear that
-  week pays a share of its kills' and its cache's XP, Aurem and chances (`Weekly::run_again_share`): the Abyss's four
-  fifths, the Elite's whole, which brings the Abyss's at level 30 from 2.15 of the XP to 1.72. Since kills drop four
-  times as often ([[Kills Drop Four Times as Often, and a Miniboss Half the Time]]), lifting a patrol zone's loot, a
-  ship's piece holds a module three times as often as it did (`ship::found::holds`), which keeps the sea's loot at 0.88
-  to 1.31 of the patrol zone's. The passages stand at 0.79 to 1.55 of its XP, 0.73 to 1.43 of its Aurem and 0.79 to
-  1.61 of its loot.
+  sea's low bands send few Minor ships and more Elites ([[Naval Combat]]), so the sea at level 5 pays 0.78 of the patrol
+  zone's XP; and the week's dungeon run again by a player who has taken its first clear that week pays a share of its
+  kills' and its cache's XP, Aurem and chances (`Weekly::run_again_share`): the Abyss's four fifths, the Elite's whole,
+  so the Abyss's at level 30 pays 1.72 of the XP. Beside a patrol zone's kills
+  ([[Kills Drop Four Times as Often, and a Miniboss Half the Time]]), a ship's piece holds a module often enough
+  (`ship::found::holds`) that the sea's loot stands at 0.88 to 1.31 of the patrol zone's. The passages stand at 0.79
+  to 1.55 of its XP, 0.73 to 1.43 of its Aurem and 0.79 to 1.61 of its loot.
 - **Not counted**: bounties and the Abyss boon, which pay alike whatever is played, and the cold lantern, a bounty's.
   Shapes come from the week's Abyss alone and are not loot here.
 
-As the measuring printed it (`cargo test -p gear --release measure_the_band -- --ignored --nocapture`):
+Rows of what the measuring prints (`cargo test -p gear --release measure_the_band -- --ignored --nocapture`), which
+holds every level from 5 to 30 in fives and every depth measured:
 
 | Level | Activity | XP | Aurem | Vestiges, Normal to Atheric | Items, Normal to Atheric | Materials | Essence | XP, Aurem, loot against the patrol zone |
 |---|---|---|---|---|---|---|---|---|
