@@ -129,11 +129,11 @@ fn a_ball_in_the_hulk_is_the_act_and_it_leaves_as_the_captain_sails_off() {
     let mooring = sea.mooring().expect("open water off Overlook");
     sail(&mut sea, player, &[[mooring[0], mooring[1] + 600.0]], 10);
     ticks(&mut sea, 1_200);
-    assert!(!met(&sea, player).contains(&"Put a ball in the Tithe hulk"));
+    assert!(!met(&sea, player).contains(&"Put a ball in the hulk"));
     let (fought, _) = sea.fights.of_mut(player).expect("the hulk's fight");
     fought.pending.push(FightEvent::Hit { ship: CAPTAIN, at: [0.0; 3], part: naval::fight::Part::Hull });
     sea.tick();
-    assert!(met(&sea, player).contains(&"Put a ball in the Tithe hulk"), "{:?}", met(&sea, player));
+    assert!(met(&sea, player).contains(&"Put a ball in the hulk"), "{:?}", met(&sea, player));
     assert_eq!(sea.lesson_mark(player), None, "nothing more to mark");
     let (fought, crew) = sea.fights.of_mut(player).expect("still fighting");
     let own = fought.fight.ships.get_mut(&crew.ship).expect("their ship");

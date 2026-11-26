@@ -76,11 +76,11 @@ test('each step the room ticks is announced once, through the quest’s news', (
   assert.deepEqual(lessonsBetween(kept('ride-the-bay', [1]), kept('ride-the-bay', [1])), [], 'nothing new');
   // The last step met ends the task: the steps left are announced with it.
   assert.deepEqual(lessonsBetween(kept('learn-the-helm', [1, 1, 1, 1, 1]), kept('bring-it-home')), [
-    'Sailing: Put a ball in the Tithe hulk',
+    'Sailing: Put a ball in the hulk',
   ]);
   const fire = goalsOf('learn-the-helm')[5];
   assert.ok(fire);
-  assert.equal(lessonNotice(fire), 'Sailing: Put a ball in the Tithe hulk');
+  assert.equal(lessonNotice(fire), 'Sailing: Put a ball in the hulk');
 });
 
 const OVERLOOK: NodeInfo = {

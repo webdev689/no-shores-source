@@ -169,7 +169,7 @@ on the keys below; and the page announces each step as the room ticks it, in a t
   read "Anywhere".
 - **Learn the helm**, at sea: Go aboard your Sloop (M held, its step reading "Hold M to return to your ship" ashore),
   Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Raise your chart (N), and Put a ball in the
-  Tithe hulk (the right button laid and let go, the pad's RT). The sea watches each captain on it each tick
+  hulk (the right button laid and let go, the pad's RT). The sea watches each captain on it each tick
   (`Sea::keep_lessons`), keeping their heading and pace as last seen and how far they have turned under way. The page
   asks the sea (ask 4) each time the held map is raised at the helm (`Sea::charted`); the sea takes it only for a
   captain whose task asks it.
