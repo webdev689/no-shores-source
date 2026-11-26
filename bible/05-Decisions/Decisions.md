@@ -394,7 +394,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]
 - [[Every Light Is Redesigned and Animated, and Each Casts Light]]
 - [[The Cinema May Import the Sky Layer]]
-- [[A Caged Lantern Hides Its Flame]]
+- [[An Enclosed Light Hides Its Flame]]
 - [[The Passages' New Interface Says Less and Reads Better]]
 - [[The Islands and the Passages' Hollows Wear the Procedural Textures]]
 
