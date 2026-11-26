@@ -31,6 +31,20 @@ export type Dressing = Kitted & { readonly lay: (mesh: MeshBuilder, plane?: Stor
 /** The props' plans a storey's kits keep clear of: one list for every storey, or each storey's own. */
 export type PropPlans = readonly Rect[] | ((plane: StoreyPlane) => readonly Rect[]);
 
+/** Each storey's kit pieces, as the dressing lays them: on its plane, clear of its props' plans, none on a flight's
+ *  cell, open air's or a cell opened to them; and the mesh's own pieces they stand in place of. */
+export function planeKits(layout: DungeonLayout, packs: ReadonlyMap<StyleKey, ModulePack>, props: PropPlans) {
+  const joined = joinedOn(layout);
+  return storeyPlanes(layout).map((plane) => {
+    const { opened } = joined(plane.storey);
+    const busy = plane.layout.cells.flatMap((kind, cell) =>
+      kind === STAIR || kind === VOID || opened.has(cell) ? [cell] : [],
+    );
+    const plans = typeof props === 'function' ? props(plane) : props;
+    return { plane, ...kitsOf(plane.layout, packs, plans, { exit: plane.exit, portal: plane.portal, busy }) };
+  });
+}
+
 /** A dungeon's dressing from its styles' packs, on an island of `climate`, its kits clear of its props' plans. */
 export function dressingOf(
   layout: DungeonLayout,
@@ -38,23 +52,15 @@ export function dressingOf(
   climate: Climate,
   props: PropPlans,
 ): Dressing {
-  const planes = storeyPlanes(layout);
-  const joined = joinedOn(layout);
   const cells = layout.columns * layout.rows;
-  const storeys = planes.map((plane) => {
-    const { opened } = joined(plane.storey);
-    const local = plane.layout;
-    const busy = local.cells.flatMap((kind, cell) =>
-      kind === STAIR || kind === VOID || opened.has(cell) ? [cell] : [],
-    );
-    const plans = typeof props === 'function' ? props(plane) : props;
-    const { placed, fitted } = kitsOf(local, packs, plans, { exit: plane.exit, portal: plane.portal, busy });
-    const landmarks = placedLandmarks(local).map((landmark) => ({
+  const storeys = planeKits(layout, packs, props).map(({ plane, placed, fitted }) => {
+    const landmarks = placedLandmarks(plane.layout).map((landmark) => ({
       ...landmark,
       piece: packs.get(landmark.style)?.modules.get(landmark.module) ?? null,
     }));
     return { plane, placed, fitted, landmarks };
   });
+  const planes = storeys.map((storey) => storey.plane);
   const joins = storeyKits(layout, packs);
   const pictured = (within: DungeonLayout, cell: number) => {
     const look = lookAt(within, cell);

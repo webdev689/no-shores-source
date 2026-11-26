@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import kits from '../../../content/dungeon/kits.json' with { type: 'json' };
 import { ceilingHeights, isCave } from './dungeonCeilings.ts';
 import { centreOf } from './dungeonCells.ts';
+import { planeKits } from './dungeonDressing.ts';
 import { HEAD_M, kitHash, type KitPlacement, kitPlacements } from './dungeonKits.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import {
@@ -27,13 +28,15 @@ const wasm = (() => {
   }
 })();
 const module = await WebAssembly.compile(new Uint8Array(wasm));
-/** Real dungeons of every style, from the room module's own rules. */
-const LAYOUTS: readonly DungeonLayout[] = Array.from({ length: 40 }, (_unused, patrol) =>
+/** Real dungeons of every style, from the room module's own rules, storey by storey as the page lays their kits. */
+const PLANES = Array.from({ length: 40 }, (_unused, patrol) =>
   [0, 1, 2].map((number) => askDungeon(module, `patrol-${patrol}`, 'The Patrol', number)),
-).flat();
-const PLACED = new Map(
-  LAYOUTS.map((layout) => [layout, kitPlacements(layout, FULL_PACKS, propPlansOf(layout))] as const),
-);
+)
+  .flat()
+  .flatMap((layout) => planeKits(layout, FULL_PACKS, (plane) => propPlansOf(plane.layout)));
+const LAYOUTS: readonly DungeonLayout[] = PLANES.map(({ plane }) => plane.layout);
+const PLACED = new Map(PLANES.map(({ plane, placed }) => [plane.layout, placed] as const));
+const PLANE_OF = new Map(PLANES.map(({ plane }) => [plane.layout, plane] as const));
 const EPS = 1e-6;
 
 type Rect = readonly [number, number, number, number];
@@ -462,13 +465,15 @@ test('a sconce at every torch holds its flame, and the arches stand on the porta
       );
       assert.equal(sconce.place.origin[2], z);
     });
+    const here = PLANE_OF.get(layout);
     const arches = [kind(placed, /^portal$/), kind(placed, /^exit$/)];
     const sides = [layout.portal.side, layout.wayIn.side];
-    arches.forEach(([arch], index) => {
-      assert.ok(arch);
-      assert.equal(wallSide(arch), sides[index]);
+    [here?.portal, here?.exit].forEach((stands, index) => {
+      const [arch] = arches[index] ?? [];
+      assert.equal(Boolean(arch), Boolean(stands), 'an arch on the storey that holds its doorway, and there alone');
+      if (arch) assert.equal(wallSide(arch), sides[index]);
     });
-    assert.equal(arches[1]?.[0]?.cell, layout.wayIn.cell);
+    if (here?.exit) assert.equal(arches[1]?.[0]?.cell, layout.wayIn.cell);
   });
 });
 

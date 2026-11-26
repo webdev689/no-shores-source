@@ -8,7 +8,8 @@ import { propTable } from '../models/fixtures.test.ts';
 import { caveBulge } from './dungeonCaveWall.ts';
 import { isCave } from './dungeonCeilings.ts';
 import { cellAt, type Rect } from './dungeonCells.ts';
-import { HEAD_M, type KitPlacement, kitsOf } from './dungeonKits.ts';
+import { planeKits } from './dungeonDressing.ts';
+import { HEAD_M, type KitPlacement } from './dungeonKits.ts';
 import { askDungeon, type DungeonLayout, openAt, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dungeonMesh, lookAt } from './dungeonMesh.ts';
 import {
@@ -35,8 +36,8 @@ function patrolDungeon(id: string, number: number): DungeonLayout {
   return askDungeon(module, id, node.name, number);
 }
 /** Real dungeons of every style, and the ones the game was seen in with a pilaster through a picture or a piece and
- *  an arch in a cave's rock. */
-const LAYOUTS: readonly DungeonLayout[] = [
+ *  an arch in a cave's rock; each storey of them as the page lays its kits, as a dungeon of one storey. */
+const DUNGEONS: readonly DungeonLayout[] = [
   patrolDungeon('saltgrass-downs', 1),
   patrolDungeon('gullwing-vale', 1),
   patrolDungeon('gullwing-vale', 0),
@@ -79,8 +80,10 @@ function drawnPlans(layout: DungeonLayout): Rect[] {
     return [[Math.min(...eastings), Math.min(...southings), Math.max(...eastings), Math.max(...southings)] as const];
   });
 }
+const PLANES = DUNGEONS.flatMap((layout) => planeKits(layout, PACKS, (plane) => drawnPlans(plane.layout)));
+const LAYOUTS: readonly DungeonLayout[] = PLANES.map(({ plane }) => plane.layout);
 const PROPS = new Map(LAYOUTS.map((layout) => [layout, drawnPlans(layout)] as const));
-const KITS = new Map(LAYOUTS.map((layout) => [layout, kitsOf(layout, PACKS, PROPS.get(layout) ?? [])] as const));
+const KITS = new Map(PLANES.map((kits) => [kits.plane.layout, kits] as const));
 const PLACED = new Map(LAYOUTS.map((layout) => [layout, KITS.get(layout)?.placed ?? []] as const));
 /** A dungeon's mesh as its kits leave it: the rock flat behind the pieces on its caves' walls. */
 const meshOf = (layout: DungeonLayout) =>
@@ -216,13 +219,14 @@ const wallSide = ({ place }: KitPlacement) => {
   return SIDE_STEPS.findIndex(([east, south]) => east === -Math.round(x) && south === -Math.round(y));
 };
 
-/** The cell and the side the portal and the exit door each stand on. */
+/** The cell and the side the portal and the exit door each stand on, those of them the storey holds. */
 function openingsOf(layout: DungeonLayout): (readonly [number, number])[] {
   const [east = 0, south = 0] = SIDE_STEPS[layout.portal.side] ?? [];
   const portal = cellAt(layout, layout.portal.x - east * 0.5, layout.portal.y - south * 0.5);
+  const plane = KITS.get(layout)?.plane;
   return [
-    [portal, layout.portal.side],
-    [layout.wayIn.cell, layout.wayIn.side],
+    ...(plane?.portal ? [[portal, layout.portal.side] as const] : []),
+    ...(plane?.exit ? [[layout.wayIn.cell, layout.wayIn.side] as const] : []),
   ];
 }
 

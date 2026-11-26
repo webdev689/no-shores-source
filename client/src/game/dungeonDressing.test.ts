@@ -9,15 +9,19 @@ import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
 import { COLOUR, dungeonMesh, lookAt, ROLE } from './dungeonMesh.ts';
 import type { ModulePack } from './dungeonModules.ts';
+import { storeyPlanes } from './dungeonStoreyPlanes.ts';
 import { FULL_PACKS, propPlansOf } from './dungeonPacks.test.ts';
 
 const module = await WebAssembly.compile(new Uint8Array(readFileSync('client/public/room.wasm')));
-/** Real dungeons that stand landmarks, of every style. */
-const LAYOUTS: readonly DungeonLayout[] = Array.from({ length: 12 }, (_unused, patrol) =>
+/** Real dungeons of every style, each storey that stands landmarks as the dressing draws it: a dungeon of one storey. */
+const PLANES = Array.from({ length: 12 }, (_unused, patrol) =>
   [0, 1, 2].map((number) => askDungeon(module, `patrol-${patrol}`, 'The Patrol', number)),
 )
   .flat()
-  .filter((layout) => layout.landmarks.length > 0);
+  .flatMap((layout) => storeyPlanes(layout))
+  .filter((plane) => plane.layout.landmarks.length > 0);
+const LAYOUTS: readonly DungeonLayout[] = PLANES.map((plane) => plane.layout);
+const PORTAL_ON = new Set(PLANES.flatMap((plane) => (plane.portal ? [plane.layout] : [])));
 const DOOR = [56, 2] as const;
 const EPS = 1e-5;
 
@@ -168,7 +172,7 @@ test('the mesh leaves out only the pillars, brackets and portal arch whose kit p
   assert.ok(pillared.length > 2);
   for (const layout of pillared) {
     const full = dressingOf(layout, FULL_PACKS, 'temperate', propPlansOf(layout));
-    assert.ok(full.pillars.size > 0 && full.torches.size > 0 && full.portal);
+    assert.ok(full.pillars.size > 0 && full.torches.size > 0 && full.portal === PORTAL_ON.has(layout));
     const bare = dungeonMesh(layout, DOOR, undefined, full);
     layout.pillars.forEach((pillar, index) =>
       assert.equal(pillarAt(bare, pillar, layout.pillarHalf), !full.pillars.has(index), `pillar ${index}`),
