@@ -1039,7 +1039,8 @@ The decisions in [[Open Questions]] are not repeated here.
   flyout at 960x540 (measured by the screens' layout harness; the offline page has no gear).
 - **A cloud session runs on the `no-shores-source` environment** (personal, set up with the owner's approval): its
   network allows R2's public bucket (`ships.base`), which `client/src/ships/shipTags.test.ts` fetches meshes from, and
-  it has no setup script yet, so run `npm ci` first. Run the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`:
+  its setup script runs `npm ci` (saved with the owner's approval, unproven until a fresh session starts on it). Run
+  the check there as `NODE_USE_ENV_PROXY=1 cargo xtask check`:
   Node's `fetch` ignores `HTTPS_PROXY` without it. On the Default environment those four tests fail with "fetch failed" and xtask
   stops before the build, the bundle and the repo checks. The Context7 and SkillsMP keys are on neither environment.
 - **The encounters' headless run's WebGPU error** ("Instance range ... requires a larger buffer (28) than the bound
