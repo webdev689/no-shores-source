@@ -63,13 +63,28 @@ export interface Task {
   readonly goals: readonly Goal[];
 }
 
-/** A quest: its name, its house (0 the opening), the scene said as it begins, and its tasks in order. */
+/** A quest offered as an item by a keeper (their counter's kind, `keeper`), from its task `at` (its first when left
+ *  out): its card's kind, its rarity's number, its words and the keeper's quote, and the scene of the keeper's longer
+ *  words (`story`). The rules hold it unwalked until it is acquired. */
+export interface Offer {
+  readonly keeper: string;
+  readonly at?: string;
+  readonly kind: string;
+  readonly rarity: number;
+  readonly words: string;
+  readonly quote: string;
+  readonly story: string;
+}
+
+/** A quest: its name, its house (0 the opening), the scene said as it begins, its tasks in order, and the keeper who
+ *  offers it, if one does. */
 export interface QuestLine {
   readonly id: string;
   readonly name: string;
   readonly faction: number;
   readonly begin: string;
   readonly tasks: readonly Task[];
+  readonly offer?: Offer;
 }
 
 /** The quests in the file's order, the opening first: the gear message counts them from 1. */
@@ -104,13 +119,27 @@ export const SMITH_OF: Readonly<Record<string, string>> = {
 /** How many a goal asks for. */
 const most = (goal: Goal): number => goal.count ?? 1;
 
-/** The quest walked and its task now, with that task's goals' counts; none for no quest or one the file lacks, and
- *  none from a word not on the player's own character (a room's starting character, before theirs is given). */
+/** The counter's kind of a keeper by the number ask 64 names them by. */
+export const counterOf = (number: number): string | null =>
+  Object.entries(COUNTERS).find(([, each]) => each === number)?.[0] ?? null;
+
+/** The task the quest walked stands at while it waits to be acquired: one goal, a word with the keeper who offers it,
+ *  which Acquire at their counter is. */
+function waiting(quest: QuestLine, keeper: string): Task {
+  const named = quest.tasks.flatMap((task) => task.goals).find((goal) => goal.to === keeper)?.text;
+  return { id: 'acquire', task: 'Acquire it', goals: [{ kind: 'talk', to: keeper, text: named ?? keeper }] };
+}
+
+/** The quest walked and its task now, with that task's goals' counts; while it waits to be acquired, a word with its
+ *  keeper in its task's place (`waiting`), so the tracker, the marks and the keeper's pulse lead there. None for no
+ *  quest or one the file lacks, and none from a word not on the player's own character (a room's starting character,
+ *  before theirs is given). */
 function walked(state: QuestState | null | undefined): { quest: QuestLine; task: Task; counts: number[] } | null {
   const quest = state && state.claimed !== false ? QUESTS[state.quest - 1] : undefined;
-  const task = quest?.tasks[state?.task ?? 0];
+  const offered = state?.offered ? counterOf(state.offered) : null;
+  const task = quest && offered ? waiting(quest, offered) : quest?.tasks[state?.task ?? 0];
   if (!state || !quest || !task) return null;
-  return { quest, task, counts: task.goals.map((_goal, index) => state.counts[index] ?? 0) };
+  return { quest, task, counts: task.goals.map((_goal, index) => (offered ? 0 : (state.counts[index] ?? 0))) };
 }
 
 /** Whether the goal at `index` of the task now is met. */
@@ -181,6 +210,21 @@ export function puzzlePoints(state: QuestState | null | undefined): PuzzlePoint[
 /** The line a goal says as it fails: a ward lost, a race late, seen, noticed, a wrong point. */
 export const failLine = (goal: Goal): string | undefined =>
   goal.lost ?? goal.late ?? goal.seen ?? goal.noticed ?? goal.wrong;
+
+/** The quest the keeper at `counter` (a station's kind) offers, as their screen shows it: the quest walked, from the
+ *  task its offer names, and whether it is acquired yet; its objectives are the tracker's. None while they offer none
+ *  now. */
+export function offeredAt(
+  state: QuestState | null | undefined,
+  counter: string,
+): { readonly quest: QuestLine; readonly offer: Offer; readonly acquired: boolean } | null {
+  const quest = state && state.claimed !== false ? QUESTS[state.quest - 1] : undefined;
+  const offer = quest?.offer;
+  if (!state || !quest || !offer || offer.keeper !== counter) return null;
+  const from = offer.at === undefined ? 0 : quest.tasks.findIndex((task) => task.id === offer.at);
+  if (from < 0 || state.task < from) return null;
+  return { quest, offer, acquired: state.offered !== COUNTERS[counter] };
+}
 
 /** The unmet `talk` goal of the task now that the counter `counter` (a station's kind) answers, if one does. */
 export function talkAt(state: QuestState | null | undefined, counter: string): Goal | null {

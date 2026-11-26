@@ -122,7 +122,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     session,
     trips: onFoot,
     usePrompt: hud.usePrompt,
-    speak: (counter, ask) => quests.speak(counter, ask),
+    speak: (counter) => quests.speak(counter),
   };
   // The fight's display keeps clear of the HUD's hints, where the interface last laid them.
   const footView = new FootView(gpu, stack, forge, (drawn) => [hud.hintsBox(drawn)].filter((box) => box !== null));

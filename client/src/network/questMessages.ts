@@ -20,6 +20,9 @@ export interface QuestState {
   readonly points?: readonly QuestPoint[];
   readonly figures?: readonly QuestFigure[];
   readonly ward?: QuestWard | null;
+  /** The keeper who offers the quest walked while it waits to be acquired from them, by the number ask 64 names them
+   *  by (0 or left out for none): until it is, nothing of it counts. */
+  readonly offered?: number;
   /** Whether the word is on the player's own character: a room holds a starting character until the account's is
    *  given, and the page shows nothing of it. Left out, as a test's own word leaves it, it is. */
   readonly claimed?: boolean;
@@ -82,6 +85,7 @@ export function questOf(gear: Gear): QuestState {
       }),
     ),
     ward: wardOf(Array.from(gear.questWardArray() ?? [])),
+    offered: gear.questOffered(),
     claimed: gear.claimed(),
   };
 }

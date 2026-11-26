@@ -17,6 +17,7 @@ import {
   goalNodes,
   goalOf,
   linesBetween,
+  offeredAt,
   puzzlePoints,
   talkAt,
   trackedOf,
@@ -270,4 +271,27 @@ test('every scene a road names is in its lines: begins, starts, ends, goals met,
       ),
     ])
       if (named !== undefined) assert.ok(scenes[named], `${quest.id} names ${named}`);
+});
+
+test('a quest offered by a keeper shows its offer at their counter, and the tracker leads there to acquire it', () => {
+  const opening = questOf('house');
+  const round = taskOf(opening, 'find-your-way');
+  assert.equal(offeredAt(onTask(opening, 0), 'weaponsmith'), null, "not on the stranger's task");
+  const waiting = onTask(opening, round, [], { offered: COUNTERS.weaponsmith });
+  const offered = offeredAt(waiting, 'weaponsmith');
+  assert.equal(offered?.quest.name, 'A House of Your Own');
+  assert.equal(offered?.acquired, false);
+  assert.equal(offeredAt(waiting, 'armorsmith'), null, 'another keeper offers it not');
+  assert.deepEqual(trackedOf(waiting), {
+    name: 'A House of Your Own',
+    task: 'Acquire it',
+    steps: [{ text: 'The Weaponsmith', done: false }],
+  });
+  assert.equal(talkAt(waiting, 'weaponsmith')?.text, 'The Weaponsmith', 'her keeper lit, the mark led there');
+  assert.equal(talkAt(waiting, 'armorsmith'), null, 'no other word counts before');
+  const acquired = onTask(opening, round, [1]);
+  assert.equal(offeredAt(acquired, 'weaponsmith')?.acquired, true, 'shown acquired while it is walked');
+  assert.equal(trackedOf(acquired)?.steps[0]?.done, true);
+  const road = onTask(STORM, 0, [], { offered: COUNTERS.stormcallers });
+  assert.equal(offeredAt(road, 'stormcallers')?.offer.story, 'stormBegin', 'a road from its leader, in their words');
 });

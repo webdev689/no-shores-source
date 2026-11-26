@@ -5,9 +5,12 @@ import factions from '../../../content/gear/factions.json' with { type: 'json' }
 import type { Dress, Race } from '../player/dressing.ts';
 import type { Outfit } from '../forge/outfit.ts';
 
-/** A counter's keeper, or Shape. `faction` is the faction a faction's counter serves, by its number. */
+/** A counter's keeper, or Shape. `title` names their counter on its prompt and in the menu's header; `role` is what
+ *  they are, in small capitals over their name on their screen. `faction` is the faction a faction's counter serves,
+ *  by its number. */
 export interface Keeper {
   readonly title: string;
+  readonly role: string;
   readonly words: string;
   readonly speaker: string;
   readonly dress: Dress;
@@ -50,12 +53,13 @@ export const dressed = (
 function factionKeeper(faction: number, speaker: string, dress: Dress): Keeper {
   const found = factions.factions.find((each) => each.id === faction);
   if (!found) throw new Error(`no faction ${faction}`);
-  return { title: found.name, words: found.words, speaker, faction, dress };
+  return { title: found.name, role: `Leader of the ${found.name}`, words: found.words, speaker, faction, dress };
 }
 
 export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   mage: {
     title: 'The Mage',
+    role: 'Reader of Vestiges',
     words: 'Reads what the sea gives up. Bring your Vestiges here to see what they hold.',
     speaker: 'mage',
     dress: dressed('female', 'anole', 0.35, { style: 'long', colour: 'black' }, ['plain_robes_hooded', 'shoes'], {
@@ -65,6 +69,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   vault: {
     title: 'Vault',
+    role: 'Keeper of the vault',
     words: 'What you keep in Overlook stays in Overlook.',
     speaker: 'vaultkeeper',
     dress: dressed(
@@ -78,6 +83,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   armorsmith: {
     title: 'The Armorsmith',
+    role: 'Smith of armour',
     words: 'Armour forged and fitted in Overlook. New pieces every day.',
     speaker: 'armorsmith',
     dress: dressed(
@@ -92,6 +98,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   weaponsmith: {
     title: 'The Weaponsmith',
+    role: 'Smith of arms',
     words: 'Blades, bows, guns and their shot. New every day.',
     speaker: 'weaponsmith',
     dress: dressed(
@@ -106,6 +113,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   tailor: {
     title: 'The Tailor',
+    role: 'Dyes and emblems',
     words: 'Dyes for your armour and emblems to carry your name. New ones every day.',
     speaker: 'tailor',
     dress: dressed(
@@ -119,6 +127,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   tack: {
     title: 'The Tack',
+    role: 'Horses and barding',
     words: 'Horses, and barding for them. New ones every day.',
     speaker: 'tack',
     dress: dressed(
@@ -163,6 +172,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   ),
   mail: {
     title: 'The Postmaster',
+    role: 'Letters kept',
     words: 'What you leave behind, or have no room for, is kept here for you.',
     speaker: 'postmaster',
     dress: dressed(
@@ -176,6 +186,7 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
   shape: {
     title: 'Shape',
+    role: 'Trader in Shapes',
     words: 'Here from Friday until Sunday evening. Trades in Shapes, and nothing else.',
     speaker: 'shape',
     dress: dressed('male', 'anole', 0.9, { style: 'crop', colour: 'black' }, ['plain_robes_hooded', 'sandals'], {
@@ -187,7 +198,25 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
 /** The Harbourmaster's screen's name: the counter of the Shipwright's modules, whose keeper is none of these. */
 export const HARBOURMASTER = 'The Harbourmaster';
 
-/** The keeper of a station's kind, or none for a station whose keeper deals with no one. */
+/** The Harbourmaster, who keeps the counter of ships (harbour/harbourPage.ts), dressed as the figure at it. */
+export const HARBOUR_KEEPER: Keeper = {
+  title: HARBOURMASTER,
+  role: 'Ships and their dress',
+  words: "Ships bought, dressed and named here, and the Shipwright's modules of the day.",
+  speaker: 'harbourmaster',
+  dress: dressed(
+    'male',
+    'human',
+    0.55,
+    { style: 'crop', colour: 'grey' },
+    ['shirt_long_v', 'formal_tunic', 'formal_eodoric', 'breeches', 'tall_boots', 'formal_cloak'],
+    { formal_tunic: 'Blue', formal_eodoric: 'Blue', formal_cloak: 'Blue' },
+  ),
+};
+
+/** The keeper of a station's kind, the Harbourmaster's among them, or none for a station whose keeper deals with no
+ *  one. */
 export function keeperOf(kind: string): Keeper | null {
+  if (kind === 'harbourmaster') return HARBOUR_KEEPER;
   return (KEEPER_KINDS as readonly string[]).includes(kind) ? KEEPERS[kind as KeeperKind] : null;
 }

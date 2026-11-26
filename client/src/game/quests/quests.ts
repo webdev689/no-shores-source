@@ -1,12 +1,13 @@
 // The houses' roads in the browser: once the story and the stranger's welcome are past, the tracker shows the
-// quest walked; its lines are said in the dialogue box one scene after another (questWatch.ts); a counter that a talk
-// goal of the task names offers to speak with its keeper; the HUD marks where the task's next goal stands and the
+// quest walked; its lines are said one scene after another (questWatch.ts), in the keeper's own screen where it is
+// open and the keeper says the scene alone, else in the dialogue box; a counter that a talk goal of the task names (or
+// whose keeper offers the quest) offers to speak with its keeper, whose screen it opens; the HUD marks where the task's next goal stands and the
 // held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what
 // a road gives is toasted. Each is the room's word read, never a judgement of the page's own.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
 import type { MarkedFoe } from '../../combat/foePlate.ts';
-import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { placeMarks } from '../../overworld/overworldMarks.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
@@ -18,12 +19,14 @@ import type { Shot } from '../camera.ts';
 import type { Use } from '../footGear.ts';
 import type { ScreenMark } from '../hudMarks.ts';
 import { distanceText } from '../../plus/compass.ts';
-import { HARBOURMASTER, keeperOf } from '../keepers.ts';
+import { type Station, openGearWindow } from '../gearScreen.ts';
+import { keeperOf } from '../keepers.ts';
+import { sayInScreen } from '../npc/npcSpeech.ts';
 import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
-import { COUNTERS, buyAt, goalNodes, talkAt, trackedOf } from './questBook.ts';
+import { buyAt, goalNodes, talkAt, trackedOf } from './questBook.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { type Chart, type Guide, type Standing, guideOf } from './waypoint.ts';
 import { QuestWatch } from './questWatch.ts';
@@ -133,18 +136,21 @@ export class Quests {
       ...this.toasted.filter((toast) => toast.until > now),
       ...news.toasts.map((text) => ({ text, until: now + TOAST_MS })),
     ];
-    const next = !held && this.saying === null ? this.waiting.shift() : undefined;
-    if (next !== undefined) this.say(next);
+    // While a screen stands over the view, only a scene its keeper says alone is said, in their screen.
+    const head = this.saying === null ? this.waiting[0] : undefined;
+    const onScreen = head !== undefined && held ? sayInScreen(this.scenes[head] ?? []) : null;
+    if (head !== undefined && (onScreen || !held)) this.say(this.waiting.shift() ?? head, onScreen);
     this.spoken?.frame(held ? 0 : seconds);
   }
 
-  /** Says `scene`'s lines, the next waiting once they end. */
-  private say(scene: string): void {
+  /** Says `scene`'s lines (in a keeper's screen where it took them, `onScreen`), the next waiting once they end. */
+  private say(scene: string, onScreen: Promise<void> | null = null): void {
     const lines = this.scenes[scene];
     if (!lines) return console.error(`the roads' scene ${scene} is not in houses.json`);
-    this.spoken ??= this.voice();
     this.saying = scene;
     const said = () => void (this.saying = null);
+    if (onScreen) return void onScreen.then(said);
+    this.spoken ??= this.voice();
     this.spoken.play(lines, this.cast, { auto: true }).then(said, (error: unknown) => {
       console.error(`the roads' scene ${scene} could not be played:`, error);
       said();
@@ -190,23 +196,22 @@ export class Quests {
   }
 
   /** Whether the keeper at the counter `counter` (a station's kind) has something for the player, once the story
-   *  and the welcome are past: a step of the quest walked asks to speak with them, as `speak` answers, or to buy one
-   *  of their wares. */
+   *  and the welcome are past: a step of the quest walked asks to speak with them (or to acquire it from them), as
+   *  `speak` answers, or to buy one of their wares. */
   wants(counter: string): boolean {
-    return this.speak(counter, () => undefined) !== null || (this.past && buyAt(this.gear?.quest, counter));
+    return this.speak(counter) !== null || (this.past && buyAt(this.gear?.quest, counter));
   }
 
   /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names
-   *  it: speaks with its keeper, asking the room (ask 64); the goal's scene is said as the room meets it. Null
-   *  otherwise, so the counter opens as before. */
-  speak(counter: string, ask: (asked: GearAsk) => void): Use | null {
-    const state = this.gear?.quest;
-    const goal = this.past ? talkAt(state, counter) : null;
-    const column = COUNTERS[counter];
-    if (!state || !goal || column === undefined) return null;
+   *  it, or its keeper offers the quest walked: "Speak with" its keeper, opening their screen, where the word is asked
+   *  of the room and its lines said (npc/npcScreen.ts). Null otherwise, so the counter opens as before. */
+  speak(counter: string): Use | null {
+    const goal = this.past ? talkAt(this.gear?.quest, counter) : null;
     const keeper = keeperOf(counter);
-    const name = (keeper && this.cast.speakers[keeper.speaker]?.name) ?? HARBOURMASTER;
-    return { words: `Speak with ${name}`, run: () => ask({ kind: ASKS.speakWith, column }) };
+    if (!goal || !keeper) return null;
+    const name = this.cast.speakers[keeper.speaker]?.name ?? keeper.title;
+    // A counter with a keeper is a station's.
+    return { words: `Speak with ${name}`, run: () => openGearWindow({ view: counter as Station }) };
   }
 
   /** The quest's mark on the screen through `shot` on a picture `viewport` CSS pixels, standing on `groundAt`'s
