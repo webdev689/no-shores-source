@@ -141,3 +141,4 @@ once a week (`GuildWeek.horn`).
 
 - A guild's name and tag are kept as founded; a rename is the owner's, by hand ([[Names]]).
 - A claim made at sea is not answered: the sea counts and gives, but claims are a land room's.
+- The banner's cloth takes no sky light, so it reads pale at night.

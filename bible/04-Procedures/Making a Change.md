@@ -13,12 +13,10 @@ type: procedure
    in the code or the bible. A change a player would notice carries `## Patch notes: <title>`, a list in plain words,
    which the desktop app's launcher shows once it merges ([[Desktop App]], "The launcher").
 7. **Ask the owner**, then merge with a merge commit once CI is green on the branch's latest commit, and delete the
-   branch ([[Branches and Merging]]). Every
-   merge into `main` and every deploy waits for the owner's yes ([[Ask Before Deploying]]); a merge deploys the page,
-   the website and, when their code changed, the rooms, the Discord bot and the desktop app's release, so its yes
-   covers them
-   ([[The Rooms Deploy When Their Code Changes]], [[The Discord Bot Deploys on Each Merge]],
-   [[The Desktop App Releases With Each Merge That Changes It]]).
+   branch ([[Branches and Merging]]). Every merge into `main` and every deploy waits for the owner's yes
+   ([[Ask Before Deploying]]); a merge deploys the page, the website and, when their code changed, the rooms, the
+   Discord bot and the desktop app's release, so its yes covers them ([[The Rooms Deploy When Their Code Changes]],
+   [[The Discord Bot Deploys on Each Merge]], [[The Desktop App Releases With Each Merge That Changes It]]).
 
 ## Done means
 

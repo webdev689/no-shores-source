@@ -147,3 +147,5 @@ outpost there plays it in a room of its own, `node-<site>--guild-<key>`, apart f
   until a room that holds it is answered; that player's outpost asks wait on it until then ([[Server]], "An outpost's
   room").
 - A member can push older ledger lines out with many small deposits; each line names who moved it.
+- The players on an outpost when it is abandoned stand on bare ground until they leave.
+- The accounts keep every errand's answer for good, one row an errand.
