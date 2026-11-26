@@ -9,8 +9,9 @@ import { markCharacters, takeTestRun } from './characterMark.ts';
 
 /** How often the page looks, ms. */
 const LOOK_EVERY_MS = 1_000;
-/** How often a refused way in is asked again, ms. */
+/** How often a refused way in is asked again, ms, and how many times before the page goes back to the Test Room. */
 const ASK_EVERY_MS = 3_000;
+const ASKS_MOST = 10;
 
 /** What the page holds of where the player stands: the rooms they play in on foot, none at sea, or null while
  *  under way. */
@@ -41,7 +42,7 @@ export function enterTestRun(
   const named = room === null ? null : nodeOfRoom(room);
   const node = named && nodes.find((each) => each.id === named.id);
   if (room === null || !named?.test || !node) return;
-  let [inside, askedAt] = [false, -Infinity];
+  let [inside, askedAt, asked] = [false, -Infinity, 0];
   const stop = clock.every(() => {
     const rooms = standing();
     if (rooms === null) return;
@@ -56,6 +57,11 @@ export function enterTestRun(
       return;
     }
     if (inside || clock.now() - askedAt < ASK_EVERY_MS) return;
+    if (asked++ >= ASKS_MOST) {
+      stop();
+      leave();
+      return;
+    }
     askedAt = clock.now();
     if (named.breach !== null) ways.toBreach(room);
     else ways.intoRun(node, room);

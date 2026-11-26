@@ -3,7 +3,7 @@
 // deletes one held for two seconds, and opens a developer's Test Room, whose Launch keeps the test room for the arrival.
 // Choosing sets this browser's state from the slot, and the title goes on: into the story for a new character, past it
 // for one that has played it; Escape goes back to the title.
-import type { AccountLink, Kept } from '../../network/accounts.ts';
+import { type AccountLink, type Kept, OUT_OF_REACH } from '../../network/accounts.ts';
 import type { Characters, Held } from '../../network/characters.ts';
 import { BINDS } from '../../player/input.ts';
 import { motionReduced } from '../../plus/kit.ts';
@@ -108,7 +108,7 @@ export function openCharacters(
   const ask = () => {
     [answer, said] = [null, null];
     void link.characters().then((heard) => {
-      answer = heard === 'The accounts could not be reached.' ? NOT_ANSWERED : heard;
+      answer = heard === OUT_OF_REACH ? NOT_ANSWERED : heard;
       if (typeof heard === 'object') {
         chosen = heard.playing;
         focusFirst = true;
@@ -164,6 +164,7 @@ export function openCharacters(
       busy = null;
       if (!heard) return;
       answer = heard;
+      focusFirst = true;
       announce(`Slot ${slot + 1} is empty.`);
     };
     const toTest = () => {
@@ -175,6 +176,8 @@ export function openCharacters(
     };
     const launch = (entry: TestEntry) => {
       keepTestRun(reach.tab, entry.room(reach.instance()));
+      // The arrival before the test room is the character in play's, as the browser then keeps it.
+      if (typeof answer === 'object' && answer) takeSlot(reach.browser, answer.slots[answer.playing] ?? null, link);
       finish('onward');
     };
     const stopKeys = reach.keys((key, down) => {
@@ -188,7 +191,8 @@ export function openCharacters(
     /** Delete charges while it is held by any of its ways, and acts once at its full time. */
     const holdDelete = (ui: Interface) => {
       const keyed = ui.focused(DELETE) && (keysDown.has('enter') || keysDown.has(' '));
-      const held = deleteKey || keyed || padHeld(PAD_X) || (ui.pressing(DELETE) && ui.hovered(DELETE));
+      // The pad is read first, so its stale mark clears even while a key holds.
+      const held = padHeld(PAD_X) || deleteKey || keyed || (ui.pressing(DELETE) && ui.hovered(DELETE));
       const able = view === 'characters' && busy === null && typeof answer === 'object' && !!answer?.slots[chosen];
       if (!held || !able) {
         [heldSince, spent] = [null, spent && held];

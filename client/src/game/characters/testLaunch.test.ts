@@ -37,7 +37,7 @@ function watching(room: string | null) {
   const tick = (where: StandingIn) => {
     standing = where;
     now += 1000;
-    look();
+    if (!stopped) look();
   };
   return { tab, asked, tick, left: () => left, stopped: () => stopped };
 }
@@ -77,4 +77,12 @@ test('a Breach test goes to its gate, its zone copy counting as the test; nothin
   const real = watching('node-pearl-tomb--elite--run-ab12cd34');
   real.tick([]);
   assert.deepEqual(real.asked, [], 'only a test room is launched so');
+});
+
+test('a test room refused ten times over goes back to the Test Room', () => {
+  const watch = watching('node-pearl-tomb--elite--playlist-32--test-ab12cd34');
+  for (let look = 0; look < 40; look++) watch.tick([null, null, null]);
+  assert.equal(watch.asked.length, 10);
+  assert.equal(watch.left(), 1);
+  assert.ok(watch.stopped());
 });

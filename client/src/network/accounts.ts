@@ -4,7 +4,7 @@ import { type Characters, type Held, charactersOf, keptFor } from './characters.
 /** Where the deployed accounts are (`server/accounts`). */
 export const LIVE_ACCOUNTS = 'https://overlook-accounts.mackcothran.workers.dev';
 /** What an ask says when the accounts cannot be reached. */
-const OUT_OF_REACH = 'The accounts could not be reached.';
+export const OUT_OF_REACH = 'The accounts could not be reached.';
 
 /** An account as its player sees it: a guest until it has a username or Discord. */
 export interface Account {

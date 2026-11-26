@@ -304,6 +304,7 @@ test("the Test Room is a developer's alone: T or its press opens it, Launch keep
   assert.equal(developer.ended(), 'onward');
   assert.equal(developer.tab.kept['noshores.characters.testRun'], 'node-pearl-tomb--elite--playlist-32--test-ab12cd34');
   assert.deepEqual(developer.asked, ['list'], 'no character is put in play');
+  assert.equal(developer.browser.kept[PROLOGUE_KEY], 'played', 'the browser set from the character in play');
 });
 
 test('Escape goes back to the title; from the Test Room, back to the characters', async () => {
