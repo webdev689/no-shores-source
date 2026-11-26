@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
+import { BINDS } from '../player/input.ts';
 import { byId, fakeInterface } from '../ui/uiForTests.ts';
 import type { IsleAt } from './isleLaw.ts';
 import type { IsleHeld, Isles } from './isles.ts';
@@ -48,15 +49,19 @@ function seaOf() {
     busy: false,
     view: { kind: 'sail' },
     sighted: { others: [] as { x: number; y: number }[], settledShip: null as { x: number; y: number } | null },
-    passage: { sailAlong: (points: Point2[]) => void asked.push(`out ${points.join(' ')}`) },
+    passage: {
+      sailAlong: (points: Point2[]) => void asked.push(`out ${points.join(' ')}`),
+      letGo: () => void asked.push('voyage let go'),
+    },
     switchLevel: (level: string) => void asked.push(`view ${level}`),
     sailTo: (point: Point2) => {
       asked.push(`sail ${point.join(',')}`);
       sea.bound = point;
     },
-    sailIn: (offing: Point2, anchorage: Point2) => {
+    sailIn: (offing: Point2, inward: Point2[]) => {
+      const anchorage = inward.at(-1) ?? offing;
       asked.push(`in ${anchorage.join(',')}`);
-      [sea.bound, sea.course] = [anchorage, [sea.position, offing, anchorage]];
+      [sea.bound, sea.course] = [anchorage, [sea.position, offing, ...inward]];
       return true;
     },
     sailToMark: (id: string) => void asked.push(`chase ${id}`),
@@ -65,19 +70,20 @@ function seaOf() {
 }
 
 /** The landings over `seaOf`'s sea, off a port city's island (a ruined one's), among `isles`; `hold` says whether
- *  something else holds the player, and the game lands only while nothing does. */
+ *  something else holds the player, and the game lands only while nothing does, nor `refuse` refuses it. */
 function landingsOf(ruined = false, isles = NO_ISLES) {
   const { sea, asked } = seaOf();
   const landed: LandingAim[] = [];
-  const held = { now: false };
+  const held = { now: false, refused: false };
   const landings = new SeaLandings({
     sea: () => sea as unknown as Sea,
     landmass: () => ({ id: 'continent-1', plan: { ...PLAN, ruined }, outline: COAST, heightAt: () => -50 }) as never,
     isles,
     free: () => !held.now,
-    land: (aim) => void (!held.now && landed.push(aim)),
+    land: (aim) => !held.now && !held.refused && landed.push(aim) > 0,
   });
-  return { landings, sea, asked, landed, hold: (holding: boolean) => (held.now = holding) };
+  const hold = (holding: boolean) => (held.now = holding);
+  return { landings, sea, asked, landed, hold, refuse: (refused: boolean) => (held.refused = refused) };
 }
 
 test('a click on the sea sails at once; on the island it asks first, and no answer leaves the ship as it was', () => {
@@ -100,7 +106,7 @@ test('yes to dock out of reach makes for the harbour; in reach it sails in to it
   assert.equal(landed.length, 0, 'not yet in reach');
   sea.landfall = { kind: 'dock', port: 'Overlook' };
   landings.frame();
-  assert.deepEqual(asked.slice(1), ['view oversea', 'in 1000,-2050'], 'seen from the Oversea view, in to its pier');
+  assert.deepEqual(asked.slice(1), ['in 1000,-2050', 'view oversea'], 'seen from the Oversea view, in to its pier');
   assert.deepEqual([landed.length, landings.making?.kind], [0, 'dock'], 'not docked till it lies there');
   [sea.position, sea.course] = [[1_000, -2_050], []];
   landings.frame();
@@ -123,7 +129,7 @@ test("a port's berth is the place of its pier no player's ship lies in, as the s
   sea.sighted.others = [{ x: 1_002, y: -2_049 }];
   landings.click({ kind: 'land', point: [400, 900, 20] });
   landings.answer(true);
-  assert.deepEqual(asked, ['view oversea', 'in 1020,-2060']);
+  assert.deepEqual(asked, ['in 1020,-2060', 'view oversea']);
 });
 
 test('another course given while making for a landing lets it go; a fight puts the question by', () => {
@@ -187,6 +193,14 @@ test('the confirmation asks in brass; its yes’s press answers yes, and Cancel�
   press('sea:ask-yes');
   press('sea:ask-no');
   assert.deepEqual(answers, [true, false]);
+  assert.equal(byId(card, 'sea:ask-no')?.label, 'Cancel  Esc');
+  BINDS.device = 'pad';
+  const onPad = byId(
+    landingAskNode(ui, asking, () => undefined),
+    'sea:ask-no',
+  )?.label;
+  BINDS.device = 'keys';
+  assert.equal(onPad, 'Cancel  B', 'the pad’s B while the pad is in use');
 });
 
 test('a question still standing is put by once the player is no longer at sea', () => {
@@ -222,7 +236,7 @@ test('yes to go ashore on a coast clicked far inland makes for the coast nearest
   assert.equal(landings.making?.kind, 'ashore', 'made for');
   sea.landfall = { kind: 'ashore' };
   landings.frame();
-  assert.deepEqual(asked.slice(1), ['view oversea', 'in 50000,-50'], 'in reach, in to just off the shore');
+  assert.deepEqual(asked.slice(1), ['in 50000,-50', 'view oversea'], 'in reach, in to just off the shore');
 });
 
 test('yes within reach while something else holds the player keeps the landing, made once nothing does', () => {
@@ -252,7 +266,7 @@ test('yes to a sea island makes for its anchorage, named as made for, and lands 
   landings.click({ kind: 'sea', point: [0, -50_500, 0] });
   assert.equal(landings.asking?.aim.kind, 'isle');
   landings.answer(true);
-  assert.deepEqual(asked, ['view oversea', 'in 0,-50150']);
+  assert.deepEqual(asked, ['in 0,-50150', 'view oversea']);
   assert.deepEqual(landings.making, { kind: 'isle', id: 3, words: 'a cove' });
   landings.frame();
   assert.equal(landings.anchored(), null, 'under way to it');
@@ -299,10 +313,87 @@ test('back aboard after docking, the ship sails out from its berth once the room
   landings.frame();
   assert.equal(landed.length, 1, 'docked at its pier');
   landings.frame(false);
-  landings.cameAboard();
   landings.frame();
   assert.deepEqual(asked, ['view oversea'], 'not before the room has placed it');
   sea.sighted.settledShip = { x: 1_000, y: -2_050 };
   landings.frame();
   assert.deepEqual(asked, ['view oversea', 'out 1000,-2600'], 'out to the roadstead');
+});
+
+test('a landing come to its berth is kept while the view cannot land it, and made once it can', () => {
+  const { landings, sea, landed, refuse } = landingsOf();
+  [sea.landfall, sea.position] = [{ kind: 'dock', port: 'Overlook' }, [1_000, -2_050]];
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  refuse(true);
+  landings.frame();
+  assert.deepEqual([landed.length, landings.making?.kind, landings.docked], [0, 'dock', null], 'kept, not docked');
+  refuse(false);
+  landings.frame();
+  assert.deepEqual([landed.length, landings.docked?.aim.kind], [1, 'dock']);
+});
+
+test('while the view is not over the ship nothing docks or lands: a landing come due waits for it', () => {
+  const { landings, sea, asked, landed } = landingsOf();
+  landings.click({ kind: 'mark', id: 'overlook-port' });
+  landings.answer(true);
+  sea.landfall = { kind: 'dock', port: 'Overlook' };
+  sea.view.kind = 'helm';
+  landings.frame();
+  assert.deepEqual([asked.slice(1), landings.making?.kind], [[], 'dock'], 'rising from the helm: not yet');
+  sea.view.kind = 'sail';
+  landings.frame();
+  assert.deepEqual(asked.slice(1), ['in 1000,-2050', 'view oversea'], 'the switch to the Oversea view with it');
+  [sea.position, sea.course, sea.view.kind] = [[1_000, -2_050], [], 'helm'];
+  landings.frame();
+  assert.equal(landed.length, 0);
+  sea.view.kind = 'sail';
+  landings.frame();
+  assert.equal(landed.length, 1);
+});
+
+test('leaving the ship while it sails for a landing lets its voyage go too; leaving it otherwise keeps the voyage', () => {
+  const { landings, sea, asked } = landingsOf();
+  landings.click({ kind: 'mark', id: 'overlook-port' });
+  landings.answer(true);
+  landings.frame(false);
+  assert.deepEqual(asked.slice(1), ['voyage let go']);
+  sea.landfall = { kind: 'dock', port: 'Overlook' };
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  landings.frame(false);
+  assert.deepEqual(asked.slice(-3), ['in 1000,-2050', 'view oversea', 'voyage let go'], 'docking in sight too');
+  landings.frame();
+  landings.click({ kind: 'sea', point: [5, 6, 0] });
+  landings.frame(false);
+  assert.equal(asked.at(-1), 'sail 5,6', 'a voyage of the player’s own is kept');
+});
+
+test('back aboard, the ship sails out only once its player has the helm and nothing else holds them', () => {
+  const { landings, sea, asked, hold } = landingsOf();
+  [sea.landfall, sea.position] = [{ kind: 'dock', port: 'Overlook' }, [1_000, -2_050]];
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  landings.frame();
+  landings.frame(false);
+  sea.sighted.settledShip = { x: 1_000, y: -2_050 };
+  hold(true);
+  landings.frame();
+  assert.deepEqual(asked, ['view oversea'], 'walking its deck or under the map: it waits');
+  hold(false);
+  landings.frame();
+  assert.deepEqual(asked, ['view oversea', 'out 1000,-2600']);
+});
+
+test('back to the sea from the island’s tiles, the ship docked there sails out through its offing', () => {
+  const { landings, sea, asked } = landingsOf();
+  [sea.landfall, sea.position] = [{ kind: 'dock', port: 'Overlook' }, [1_000, -2_050]];
+  sea.sighted.settledShip = { x: 1_000, y: -2_050 };
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  landings.frame();
+  // The tiles stand while the flow is a landing's, not the sea's; back to the sea, the player never left the ship.
+  landings.frame(false);
+  landings.frame();
+  assert.deepEqual(asked, ['view oversea', 'out 1000,-2600']);
 });

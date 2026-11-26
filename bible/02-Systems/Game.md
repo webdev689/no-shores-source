@@ -233,8 +233,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   zones, which stand apart from its coast) the ship is drawn
   where it lies, and every ship parked there as the land room's snapshot tells (its `ships`, the player's own among
   them, left out where it lies within 5 m of their own as the page draws it, and drawn from the snapshot once the page
-  no longer knows it docked, after a reload), each in its own hull, its sails furled, riding the swell, its footprint
-  still on the water. At a
+  no longer knows it docked, after a reload; none in a passage zone), each in its own hull, its sails furled, riding
+  the swell, its footprint still on the water. A dungeon and a Breach's run draw no ship lying by them. At a
   social space the city's sloops lie at its pier, in the places of its plan's moorings no player's ship lies within
   15 m of.
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
@@ -683,26 +683,34 @@ player (another landmass opening); out of reach the ship makes for the harbour (
 at ×60 and docks in sight once it is within reach, which the console names ("Bound for Overlook's harbour, to dock").
 Another course
 given meanwhile (a click, W, a chase), a fight, or the player leaving the sea (to join a company member elsewhere, say)
-lets the landing go ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]); a
-stop keeps it with the voyage, to be resumed.
+lets the landing go ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]);
+leaving the sea lets its voyage go with it, so nothing sails on to the berth once the player is back aboard. A stop
+keeps the landing with the voyage, to be resumed: a docking resumed sails on through its offing to its berth, as it
+set out.
 
-Docking in sight (`docking.ts`, `berths.ts`) switches to the Oversea view, and the ship sails at ×60 to its berth
-(`Sea.sailIn`): planned on water to the berth's offing, on to the offing itself where the plan ends at the water
-nearest it, then straight in. At a living port the berth is the first place of its pier (the city's moorings) with no
-player's ship within 15 m of it, as the sea shows the ships; its offing is the port's roadstead (out from the city's
-middle through its harbour to water 4 m deep, then 600 m on). Every place taken, or at a port with no pier (Sunspire's
-and Rimeholt's plans have none), the ship anchors at the roadstead, or 100 m at a time across the way out from it,
-either side, where the water is 4 m deep and no ship lies within 100 m. At a coast with no port the berth is just off
-the shore nearest the point clicked (or the ship, asked with L): straight out from the shore, where the water is first
-4 m deep and 50 m clear of the room's coast, its offing 600 m on. At a sea island it is the island's anchorage, from
-its offing. Once the ship lies at rest within 30 m of its berth the landing is made, and the ship lies docked there.
+Docking in sight (`docking.ts`, `berths.ts`) is made only from the view over the ship, while nothing else holds the
+player: the ship sails at ×60 to its berth (`Sea.sailIn`), planned on water to the berth's offing, on to the offing
+itself where the plan ends at the water nearest it, then straight in; lying on that way in already, it sails straight
+on in from where it lies. Once it has set sail the view switches to the Oversea view; with no way in it says why on
+the voyage's line, and the view stays. At a living port the berth is the first place of its pier (the city's
+moorings) with no player's ship within 15 m of it, as the sea shows the ships, come to along the pier from 40 m out
+along its bearing; its offing is the port's roadstead (out from the city's middle through its harbour to water 4 m
+deep, then 600 m on). Every place taken, or at a port with no pier (Sunspire's and Rimeholt's plans have none), the
+ship anchors at the roadstead, or 100 m at a time across the way out from it, either side, where the water is 4 m deep
+and no ship lies within 100 m; none of those, 100 m at a time further out along the way out, clear of them. At a
+coast with no port the berth is just off the shore nearest the point clicked (or the ship, asked with L): straight out
+from the shore, where the water is first 4 m deep and 50 m clear of the room's coast, its offing 600 m on. At a sea
+island it is the island's anchorage, or 100 m at a time out along its way in where another ship lies within 100 m of
+it, from its offing (as far again beyond a berth that passes it). Once the ship lies at rest within 30 m of its berth
+and the view has flown up over the island (the landing kept and tried each frame until it does), the landing is made,
+and the ship lies docked there.
 
-Leaving undocks it. Back aboard (`goSea`), once the room has placed the ship (its settled word on the ship lying
-within 2 m of where the page has it, after any `MOORED` word has been taken), a ship lying within 30 m of its berth
-sails out at ×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen
-pulling away, and is the player's to sail from there. A course the player sets first, or the room placing the ship
-away from its berth, leaves it as it is; either way it is docked no more, as it is once it sails off its berth with
-the player never gone from it (back to the sea from the island's tiles).
+Leaving undocks it. Back at sea (back aboard, or back to the sea from the island's tiles), once the room has placed
+the ship (its settled word on the ship lying within 2 m of where the page has it, after any `MOORED` word has been
+taken) and the player has the helm with nothing else holding them, a ship lying within 30 m of its berth sails out at
+×60 straight to the berth's offing (a port's roadstead, 600 m off a coast, a sea island's offing), seen pulling away,
+and is the player's to sail from there. A course the player sets first, or the room placing the ship away from its
+berth, leaves it as it is; either way it is docked no more.
 
 Landing flies the view up over the island the ship lies docked off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s,
 framed on the nodes of its side, the city's social space among them when docking. No node is marked on the map: the island's tiles hold them ([[Interface]], "The island's tiles",
