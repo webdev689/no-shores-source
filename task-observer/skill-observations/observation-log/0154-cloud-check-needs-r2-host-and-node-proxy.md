@@ -33,3 +33,7 @@ does, printing a FAIL naming the host when it is refused, so the session learns 
 try that host first, so a refused host is reported as a refused host rather than as a failing test.
 
 **Instance (2026-11-24, #169):** the session reported "full check green but for the four R2 tests" a dozen times. The repo checks run after the TypeScript tests, so none of those runs ran them. A merge of `main` took `crates/combat/src/step.rs` to 601 lines and the head was pushed. A separate `cargo xtask repo` caught it only afterwards. Until the network is fixed, a session here has to run `cargo xtask repo` beside every full check.
+
+2026-11-26, the Playlist nodes audit (PR #216): the proxy refused pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev (403), so a
+development build never loaded far enough for __qaSea and the page closed after about four minutes; the live look was
+left undone and said so.
