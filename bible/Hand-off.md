@@ -219,7 +219,7 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The passages and the regions** (#PRNUM on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
+- **The passages and the regions** (#218 on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
   autonomy ("this is where I give you autonomy and make this your baby") and audited on "I want to do a comprehensive
   audit and detailed design pass on this entire arc": not merged until the owner's yes. Every call is in
   [[Passages as Claude Builds Them]]; how it works in [[Passages]]. Its check is red only on the band's test, which
@@ -922,7 +922,7 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The passages, to finish** (#PRNUM): the hand-off's four steps are done (the design round, the band set once, the
+- **The passages, to finish** (#218): the hand-off's four steps are done (the design round, the band set once, the
   rules round reviewed, the check and the pictures). Left: the owner's answer on the band's two outside it, then that
   answer made true (a retune of `main`'s sea or Abyss rerun in `crates/gear`, new bounds in `gear::band`, or the test
   held to the passages), [[Activities]]' "The band" and [[Passages]] rewritten to match, the check green in CI on the
