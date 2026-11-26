@@ -24,3 +24,5 @@ pull_request run at all, so nothing says it is unchecked.
 read the PR's mergeable_state and merge main first. After merging main, run `npm run -s schema` before `cargo check`
 and `npm run types` (the generated protocol code is ignored and goes stale). Protection in play: none yet; needs the
 owner's agreement as a rule.
+
+**Instance (2026-11-26, #225, the bible's review):** #218 merged while #225 waited; its subscription event's first check found no check runs at all. `git merge-tree --write-tree HEAD origin/main` showed conflicts in `Hand-off.md` and `Open Questions.md`, and git's clean merge of `Decisions.md` silently put #218's new owner decisions under #225's new "Claude's calls" heading (both sides appended just above "## Replaced"). Caught only by a script checking each listed note's type against its section.
