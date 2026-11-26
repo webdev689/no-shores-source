@@ -9,14 +9,13 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **Merging on the owner's yes once CI passes on its head**: #216 (the sea reworked, docking in sight, the island's
-  places as painted tiles, the Playlist's crests; audited three times, the full check passing offline). A merge
-  deploys the page, the site, the rooms and the bot, and releases the desktop app.
-- **For the owner's yes**: #159 (the rooms' worker tests wait for what they check; it conflicts with `main` in
-  `roomThread.test.ts`).
-- **Other sessions' work under way**: #227 (the hub's ground and walks, the ship's stern on the water, music that
-  repeats less) and #221 (hostile ships and islands on the sea map, travel anywhere at sea; it shares the sea's files
-  with #216, so whichever merges second takes `main` in again).
+- **For the owner's yes**: #227 (branch `claude/sleepy-einstein-f6fqvk`: the hub's ground and walks, the ship's
+  stern on the water, music that repeats less, then the owner's "Do a comprehensive audit and deep detail pass": five
+  read-only audits, every finding fixed with a test that failed first; CI's full check passed on its head before #216
+  merged; its description says what and how it was tested); #159 (the rooms' worker tests wait for what they check; it
+  conflicts with `main` in `roomThread.test.ts`).
+- **Other sessions' work under way**: #221 (hostile ships and islands on the sea map, travel anywhere at sea; it
+  shares the sea's files with #216, merged, so it takes `main` in again).
 - **Drafts**: #224 (the walk's left arm, the healing drink's move and swirl, the Thunderlock's hold drawn), #93 (the toolkit's first review) and #114 (the gear message carries the pledge once).
 
 ## Built
@@ -58,6 +57,8 @@ yet played by hand or with other players in a deployed room.
 - **Timed on a real GPU**: the game in and out of its worker; the hub with some 125 figures; the wreck with every
   fire; the light layer of the attack visuals; ships and marks under the lamps; the meadow (some 180,000 tufts on open
   grass); the curved wake; the loading screen; everything the performance pass changed ([[Game]], "Limits").
+- **#227's**: the hub's walks and their joints, the paving's seams and the ship's stern on a real GPU (pictured
+  headless before the audit; no Frigate under way after the stern's fix); its music heard (checked by its notes).
 - **Heard**: the music, the ambience, the world's, sea's and menu's sounds and their levels; the prologue's music and
   voices; the seams between a long recording's chunks; whether a browser drops an MP3's 25 to 40 ms of padding, as
   ffmpeg does, so each hoofbeat plays to its cut.

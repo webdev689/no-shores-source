@@ -10,6 +10,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## In force
 
+- [[The Music Repeats Less, Patrol Zones First]]
 - [[TypeScript and Rust]]
 - [[Server-Authoritative Multiplayer]]
 - [[WebGPU Only]]
