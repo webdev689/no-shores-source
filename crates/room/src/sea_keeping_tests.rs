@@ -411,3 +411,21 @@ fn the_sea_shuts_to_a_character_who_keeps_no_ship_and_keeps_none() {
     assert!(!sea.harbour.characters.contains_key(&player), "nor held");
     assert!(sea.restore_character(player, &sailor().to_json()), "handed the Sloop, it sails");
 }
+
+#[test]
+fn a_ship_put_back_as_its_player_rejoins_comes_back_turned_as_it_lay() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course_anywhere(player, &[[40_000.0, 40_000.0]], 10).unwrap();
+    assert!(sea.restore_character(player, &sailor().to_json()));
+    ticks(&mut sea, usize::try_from(crate::sea::COURSE_EVERY_TICKS).unwrap());
+    sea.face(player, 2.5).unwrap();
+    let character = kept(&sea, player);
+    assert_eq!(character.ship_heading, Some(2_500), "in thousandths of a radian");
+    let mut back = super::tests::sea();
+    let again = back.join();
+    assert!(back.restore_character(again, &character.to_json()));
+    let ship = back.ships().find(|(each, _)| *each == again).unwrap().1;
+    assert_eq!((ship.x, ship.y, ship.heading), (40_000.0, 40_000.0, 2.5));
+    assert_eq!(told(&back, again, crate::harbour::MOORED).map(|numbers| numbers[4]), Some(2.5), "the page told so");
+}

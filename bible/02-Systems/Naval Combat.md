@@ -394,7 +394,8 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
 - **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
   their character (`ship`, in ten-thousandths), across sessions, until repaired; it starts every fight with them, and
   its voyage sails at its pace times the canvas it keeps (never under half), in the room and the page alike. Where
-  the sea last kept it is kept too (`ship_at`, to the metre): back at sea it lies there, whatever the page first
+  the sea last kept it is kept too (`ship_at`, to the metre, and `ship_heading`, in thousandths of a radian; none for
+  a ship left mid-fight, which lies at a port): back at sea it lies there, turned as it lay, whatever the page first
   said, and the page is told (`MOORED`). The sea sails no course of the ship's before the accounts have answered for the player's
   character: a course asked meanwhile waits, and sails once they answer with none kept (or the page sends an input
   before its token); given back later, even mid-fight, the ship is moored where it was kept, that fight over for it. A fight's waters run past the world's

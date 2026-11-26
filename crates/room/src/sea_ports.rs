@@ -286,8 +286,8 @@ impl Sea {
         &self.harbour.flotsam.pieces
     }
 
-    /// A player's character as it is kept between sessions, their ship's hurts in it: a new one, with its hurts, until
-    /// the accounts gave theirs; none for no player at sea.
+    /// A player's character as it is kept between sessions, their ship's hurts, where it lies and its heading in it: a
+    /// new one, with its hurts, until the accounts gave theirs; none for no player at sea.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
         let berth = self.berths.get(&player)?;
@@ -299,8 +299,8 @@ impl Sea {
         };
         let mut character = held.unwrap_or_else(gear::Character::starting);
         // In a fight, the ship is kept as the fight has it, and lies at the port city it would wash up at, as one who
-        // lost does: a player who leaves mid-fight comes back there.
-        let (kept, at) = match self.fights.hurts_of(player) {
+        // lost does: a player who leaves mid-fight comes back there, turned no way kept.
+        let (kept, at, heading) = match self.fights.hurts_of(player) {
             // Leaving a fight under a third of its hull counts as sunk: never more than it had. Its hands who fell on
             // a deck it stands on are lost as they are stepping off.
             Some((mut kept, at)) => {
@@ -309,10 +309,12 @@ impl Sea {
                 (
                     if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
                     in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
+                    None,
                 )
             }
             None => {
-                (berth.kept, berth.sailing.as_ref().map_or([f64::NAN; 2], |sailing| [sailing.ship.x, sailing.ship.y]))
+                let ship = berth.sailing.as_ref().map(|sailing| sailing.ship);
+                (berth.kept, ship.map_or([f64::NAN; 2], |ship| [ship.x, ship.y]), ship.map(|ship| ship.heading))
             }
         };
         let whole = f64::from(gear::character::SHIP_WHOLE);
@@ -322,6 +324,7 @@ impl Sea {
         // A ship at sea is where its player logs back in (`gear::last`).
         if kept_at.is_some() {
             character.last = Some(gear::last::Last::Sea);
+            character.ship_heading = heading.map(|radians| (radians * 1000.0).round() as i64);
         }
         Some(character.to_json())
     }
@@ -383,10 +386,10 @@ impl Sea {
 
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
     /// the text is not a character, or the sea's gate shuts to it (`shut`). Their ship lies where the room last kept
-    /// it, wherever the page first put it to sea: a fight they met from the page's spawn is over for them. With nowhere
-    /// kept (a new character) it puts to sea by the starting port alone (`Harbours::starting`): where the page put it,
-    /// or the course held for them, within reach of its roadstead, else at that roadstead. In a sea with no port cities
-    /// the course held for them sails.
+    /// it, turned as it lay there, wherever the page first put it to sea: a fight they met from the page's spawn is
+    /// over for them. With nowhere kept (a new character) it puts to sea by the starting port alone
+    /// (`Harbours::starting`): where the page put it, or the course held for them, within reach of its roadstead, else
+    /// at that roadstead. In a sea with no port cities the course held for them sails.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
@@ -403,7 +406,9 @@ impl Sea {
             self.fights.leave(player);
         }
         if let (Some([x, y]), Some(berth)) = (at, self.berths.get_mut(&player)) {
-            let heading = berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading);
+            let kept =
+                character.ship_heading.filter(|_| character.ship_at.is_some()).map(|turned| turned as f64 / 1000.0);
+            let heading = kept.unwrap_or_else(|| berth.sailing.as_ref().map_or(0.0, |sailing| sailing.ship.heading));
             berth.sailing =
                 Some(super::Sailing { ship: Ship { x, y, heading, pace: 0, rate: 0 }, course: Default::default() });
             self.harbour.told.push((player, vec![MOORED, self.clock as f64, x, y, heading]));
