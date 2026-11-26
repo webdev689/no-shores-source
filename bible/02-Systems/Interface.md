@@ -342,6 +342,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   page's pointer and keys.
 - **The held map's** names, the ship's arrow and the card to set sail are a layer over the parchment the GPU draws,
   rising and falling with it; the card's presses take the pointer, so a click on them never picks a place.
+- **The dungeon's map** ([[Dungeon Map]]): its words (the dungeon's name, the storey looked at, the chests counted) and
+  its marks are nodes over the paper the GPU inks, laid where the map's view puts them, each letting the pointer
+  through to the map's own drag and wheel; while it is up they and the controls' sheet are all the display shows.
 - **The Test Ground's panels** are drawn too: the page is one canvas, its two panels laid either side of the view as
   its grid laid them, each a scrolled column of the Test Ground's own dark surfaces, flat presses and dim hints, with
   the shared toggle, slider and choice (`panels`, `Panel`, `GearPanel`). The view between them is drawn into a
