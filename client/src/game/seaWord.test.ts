@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { portCities } from './worldData.ts';
 import { SeaWord, linesOf, washedUpWords } from './seaWord.ts';
 
-const FACTS = { engageM: 750, holdReachM: 1_642.8, repairReachM: 3_000, shipNames: [] };
+const FACTS = { engageM: 750, holdReachM: 1_642.8, repairReachM: 3_000, homeReachM: 10_000, shipNames: [] };
 
 test('the sea’s word becomes the player’s lines: washing up, a piece that gave nothing, a ship joining, its colours struck', () => {
   const kinds = new Map([[8, 'chest']]);

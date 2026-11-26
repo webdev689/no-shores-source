@@ -144,6 +144,12 @@ pub fn sea_snapshot_bytes(
         })
         .collect();
     let charted = (!each.is_empty()).then(|| builder.create_vector(&each));
+    let each: Vec<_> = harbour
+        .chart_marks
+        .iter()
+        .map(|&([x, y], kind)| messages::ChartMark::create(&mut builder, &messages::ChartMarkArgs { x, y, kind }))
+        .collect();
+    let chart_marks = (!each.is_empty()).then(|| builder.create_vector(&each));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -159,6 +165,7 @@ pub fn sea_snapshot_bytes(
         friendlies,
         plates,
         charted,
+        chart_marks,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
@@ -169,7 +176,7 @@ pub fn sea_snapshot_bytes(
 /// its repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
 /// theirs on its deck, its hull, and its deck room's snapshot), the islands the player sees or has found, each traffic
 /// id the room has taken off its route, the friendly ships it keeps at sea, the plate over each other player's ship
-/// the player is sent, and the sea's chart when it is sent (`charted`).
+/// the player is sent, and the sea's chart when it is sent (`charted`, and `chart_marks` for the player's water).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
@@ -185,6 +192,9 @@ pub struct SeaHarbour {
     /// Every ship in the room, the player's own among them, with its captain's name, for the held map: sent about once
     /// a second, empty between.
     pub charted: Vec<(PlayerId, [f64; 2], String)>,
+    /// With the chart, every hostile ship and standing island in the water the player's ship lies in: where it lies,
+    /// and 0 for a hostile ship or its island's kind's number and 1.
+    pub chart_marks: Vec<([f64; 2], u8)>,
 }
 
 /// A sea island as a player is told of it: its number and seed, where its middle is, its kind's number, its water's

@@ -88,12 +88,13 @@ fn a_travel_waits_the_players_next_roll_its_first_wait_and_never_brings_it_soone
 }
 
 #[test]
-fn a_travel_within_the_ships_own_water_is_refused() {
+fn a_travel_within_the_ships_own_water_is_taken() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
-    assert_eq!(sea.travel(player, &[[260_000.0, 150_000.0]], 10), Err(TravelRefused::OwnWater));
-    assert_eq!(told(&sea, player), Some(TravelRefused::OwnWater.number()));
-    assert_eq!([ship(&sea, player).x, ship(&sea, player).y], [250_000.0, 150_000.0], "the ship stays");
+    assert_eq!(sea.travel(player, &[[250_000.0, 300_000.0]], 10), Ok(()));
+    assert_eq!(told(&sea, player), Some(0.0));
+    assert_eq!([ship(&sea, player).x, ship(&sea, player).y], [250_000.0, 299_600.0], "400 m short of its end");
+    assert_eq!(sea.hostiles.wait_of(player), Some(FIRST_ROLL_S), "its next roll waits as after any travel");
 }
 
 #[test]
@@ -142,14 +143,16 @@ fn a_travel_is_refused_as_any_course_is() {
 
 #[test]
 fn a_travel_whose_last_leg_meets_an_island_never_told_is_refused_and_leaves_the_ship_as_it_was() {
-    // Home waters to the west, where the traveller lies; a desert's to the east, where another player's ship has
-    // islands rolled round it, out of the traveller's sight.
+    // Home waters to the west, where the traveller lies within their reach; a desert's to the east, where another
+    // player's ship has islands rolled round it, out of the traveller's sight.
     let text = r#"{ "continents": [
         { "id": "continent-1", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
         { "id": "continent-5", "climate": "desert", "outline": [[600000, 100000], [700000, 100000], [700000, 200000], [600000, 200000]] }
     ], "isles": [] }"#;
     let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
-    let traveller = at_sea(&mut sea);
+    let traveller = sea.join();
+    sea.course_anywhere(traveller, &[[205_000.0, 150_000.0]], 10).unwrap();
+    ticks(&mut sea, COURSE_EVERY_TICKS);
     let other = sea.join();
     sea.course_anywhere(other, &[[550_000.0, 40_000.0]], 10).unwrap();
     while sea.islands().standing().next().is_none() {
@@ -157,7 +160,7 @@ fn a_travel_whose_last_leg_meets_an_island_never_told_is_refused_and_leaves_the_
         sea.tick();
     }
     let [x, y] = sea.islands().standing().next().unwrap().at;
-    assert_eq!(sea.islands().told(traveller, [250_000.0, 150_000.0]).count(), 0, "never told to the traveller");
+    assert_eq!(sea.islands().told(traveller, [205_000.0, 150_000.0]).count(), 0, "never told to the traveller");
     ticks(&mut sea, COURSE_EVERY_TICKS);
     let before = ship(&sea, traveller);
     let across = sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10);
@@ -188,7 +191,8 @@ fn a_travel_refused_over_an_island_spends_no_course_turn() {
 fn a_travel_refused_where_it_goes_waits_a_courses_wait_before_the_waters_are_searched_again() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
-    assert_eq!(sea.travel(player, &[[260_000.0, 150_000.0]], 10), Err(TravelRefused::OwnWater));
+    let across = [[50_000.0, 150_000.0]];
+    assert_eq!(sea.travel(player, &across, 10), Err(TravelRefused::Course(CourseRefused::CrossesLand)));
     sea.tick();
     let far = [[-1.0e9, 0.0]];
     assert_eq!(sea.travel(player, &far, 10), Err(TravelRefused::Course(CourseRefused::TooSoon)), "nothing searched");

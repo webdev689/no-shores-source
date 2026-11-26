@@ -690,15 +690,15 @@ fn a_fight_with_a_chased_wary_ship_who_will_not_engage_ends_once_it_is_out_of_re
     assert!(lasted.is_some(), "it broke off within its give-up time and the fight ended for the player too");
 }
 
-/// Overlook's island west and the Grey Tithe's east, home waters giving way to theirs about 300 km east: a point 200 m
-/// inside their edge, and one 400 m outside it.
+/// Overlook's island west and the Grey Tithe's east, home waters giving way to the Tithe's 10 km off Overlook's coast: a
+/// point 200 m inside their edge, and one 400 m outside it.
 fn by_home_waters() -> (Sea, [f64; 2], [f64; 2]) {
     let text = r#"{ "continents": [
         { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
         { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
     ], "isles": [] }"#;
     let sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
-    let edge = (250_000..350_000)
+    let edge = (200_000..350_000)
         .step_by(100)
         .map(f64::from)
         .find(|&x| sea.chart.home([x, 150_000.0]) && !sea.chart.home([x + 100.0, 150_000.0]));

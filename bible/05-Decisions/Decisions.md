@@ -407,6 +407,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Drawing Click Swings, and the Player's Own Hits Show at Once]]
 - [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
+- [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]
 
 ## Replaced
 

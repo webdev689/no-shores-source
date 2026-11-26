@@ -91,7 +91,8 @@ export interface HeldMapScene {
   readonly course: readonly Point2[];
   readonly quest?: readonly string[];
   readonly lit?: (glyph: string) => boolean;
-  /** On land, what moves on it: the other players and the public event running (`MapMarks`), in the world. */
+  /** What moves on it (`MapMarks`), in the world: on land, the other players and the public event running; at sea,
+   *  the other players' ships and the hostile ships in the water the ship lies in. */
   readonly moving?: MapMarks;
 }
 
@@ -174,18 +175,19 @@ export class HeldMap {
     this.painter = painter;
   }
 
-  /** The waters, opened once a page: the map tints, letters and keys them from now on, and marks the ruins; the
-   *  water a point lies in is judged by their rules, the room's. */
+  /** The waters, opened once a page: the map tints (home waters' open sea the Grey Tithe's), letters and keys them
+   *  from now on, and marks the ruins; the water a point lies in is judged by their rules, the room's. */
   setWaters(open: {
     readonly map: MapWaters;
     readonly rules: { waterAt(point: Point2): { readonly continent: number } | null };
+    readonly table: { readonly sea: { readonly homeReachM: number } };
   }): void {
     this.waters = new HeldMapWaters(open.map, (point) => open.rules.waterAt(point)?.continent ?? null);
     this.chartings++;
-    this.view.setWash(this.waters.wash());
+    this.view.setWash(this.waters.wash({ distance: this.field.distance, reachM: open.table.sea.homeReachM }));
   }
 
-  /** The found islands the map marks from now on, each where it lies. */
+  /** The islands the map marks from now on, each where it lies: those found, and those standing in the ship's water. */
   setIsles(marks: readonly IsleMark[]): void {
     this.isles = marks;
   }
@@ -456,14 +458,16 @@ export class HeldMap {
     }
     const lettering = this.laidOut.made(reads, () => this.layout(scene, sprite));
     const isles = this.isleInks(lettering.scale);
-    const others = dotInks(scene.moving?.others ?? [], (x, y) => toInk(this.mapView, x, y), this.ink);
+    const inkOf = (x: number, y: number) => toInk(this.mapView, x, y);
+    const others = dotInks(scene.moving?.others ?? [], inkOf, this.ink);
+    const hostiles = dotInks(scene.moving?.hostiles ?? [], inkOf, this.ink);
     const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
-    const sea = [this.measuredFonts, lettering, isles, others, said, asked];
+    const sea = [this.measuredFonts, lettering, isles, others, hostiles, said, asked];
     const shape = JSON.stringify([width, height, inkAt, dpr, sea]);
     if (shape === this.letteredShape) return false;
     this.letteredShape = shape;
     this.landLettering.forget();
-    paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles, others);
+    paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles, others, hostiles);
     // While the prompt asks, it says what the pointer's words would.
     if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
     if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);

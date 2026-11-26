@@ -4,7 +4,7 @@
 // parchment.
 import { FACE, INK, paintKey } from './mapKey.ts';
 import { FILLS } from '../plus/tones.ts';
-import type { MapMarks } from './landSheet.ts';
+import type { Point2 } from '../overworld/ground.ts';
 import {
   LINE,
   type Lettering,
@@ -25,6 +25,8 @@ export const fontOf = (kind: string) => `500 ${kind === 'port' ? PORT_PX : WORD_
 export const LIGHT_INK = '#5c4631';
 export const ROUTE = '#781c14';
 export const PARCHMENT = '#eedebe';
+/** A hostile ship's mark, in the Grey Tithe's dark slate, as its waters are hatched (watersWash.ts `HATCHES`). */
+export const HOSTILE_INK = '#4a5563';
 const RING_FILL = 'rgba(238, 222, 190, 0.9)';
 /** The halo of parchment round every word, units wide. */
 const HALO = 3;
@@ -101,6 +103,7 @@ export function paintLettering(
   lettering: Lettering,
   isles: readonly IsleInk[] = [],
   others: readonly DotInk[] = [],
+  hostiles: readonly DotInk[] = [],
 ): void {
   painter.setTransform(1, 0, 0, 1, 0, 0);
   painter.clearRect(0, 0, picture.width, picture.height);
@@ -117,6 +120,7 @@ export function paintLettering(
   for (const mark of isles) local(mark.x, mark.y, () => paintIsle(painter, mark.isle));
   for (const letter of lettering.letters) local(letter.x, letter.y, () => paintLetter(painter, letter));
   for (const other of others) local(other.x, other.y, () => paintDot(painter, other.company));
+  for (const hostile of hostiles) local(hostile.x, hostile.y, () => paintHostile(painter));
   const { ship } = lettering;
   if (ship) local(ship.x, ship.y, () => paintArrow(painter, ship.heading));
   if (lettering.key) paintKey(painter, lettering.key, lettering.scale);
@@ -210,6 +214,25 @@ export function paintDot(painter: Painter, company: boolean): void {
   painter.stroke();
 }
 
+/** A hostile ship's mark at the origin: a hull under a sail, in its dark slate, edged in the parchment. */
+export function paintHostile(painter: Painter): void {
+  painter.beginPath();
+  painter.moveTo(-6, 1);
+  painter.lineTo(6, 1);
+  painter.lineTo(4, 4.5);
+  painter.lineTo(-4, 4.5);
+  painter.closePath();
+  painter.moveTo(-0.5, 0);
+  painter.lineTo(-0.5, -7);
+  painter.lineTo(5, -1);
+  painter.closePath();
+  painter.lineWidth = 2.5;
+  painter.strokeStyle = PARCHMENT;
+  painter.stroke();
+  painter.fillStyle = HOSTILE_INK;
+  painter.fill();
+}
+
 /** Another player's ship on the sea's sheet, ink pixels, and whether they are of the viewer's company. */
 export interface DotInk {
   readonly x: number;
@@ -218,13 +241,13 @@ export interface DotInk {
 }
 
 /** Other players' ships at sea (world metres) as their dots on the sheet `ink` (`inkOf`), those on it alone, to the
- *  quarter pixel. */
+ *  quarter pixel; marks of no company (hostile ships) as of none. */
 export function dotInks(
-  others: MapMarks['others'],
+  others: readonly { readonly at: Point2; readonly company?: boolean }[],
   inkOf: (x: number, y: number) => readonly [number, number],
   ink: { readonly width: number; readonly height: number },
 ): DotInk[] {
-  return others.flatMap(({ at, company }) => {
+  return others.flatMap(({ at, company = false }) => {
     const [x, y] = inkOf(at[0], at[1]);
     const onSheet = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
     return onSheet ? [{ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, company }] : [];

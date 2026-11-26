@@ -1,6 +1,7 @@
 //! The sea's nine waters. A point of sea belongs to the island whose coast is nearest, by straight-line distance in
-//! metres; each island's continent id names its water and its holder. Only + - * / and sqrt on f64, so every machine
-//! gives the same answer.
+//! metres; each island's continent id names its water and its holder. Home waters reach `HOME_REACH_M` from their
+//! coast; past it the Grey Tithe holds the open sea. Only + - * / and sqrt on f64, so every machine gives the same
+//! answer.
 
 use crate::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use crate::layout::Layout;
@@ -9,7 +10,7 @@ use std::collections::BTreeSet;
 /// Who holds a water, or none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Holder {
-    /// Home waters: no hostile ship.
+    /// Home waters, within `HOME_REACH_M` of their coast: no hostile ship.
     Home,
     /// Sunspire's and Rimeholt's waters.
     GreyTithe,
@@ -41,6 +42,9 @@ pub const WATERS: [(&str, Holder, &str); 9] = [
     ("continent-8", Holder::Lattice, "The Fen Deeps"),
     ("continent-9", Holder::GreyTithe, "The Rimeholt Deep"),
 ];
+
+/// How far out from its coast a home water stays home, metres; past it the Grey Tithe holds the open sea.
+pub const HOME_REACH_M: f64 = 10_000.0;
 
 /// The grid cell `borders` judges on.
 pub const BORDER_CELL_M: f64 = 10_000.0;
@@ -330,17 +334,22 @@ impl Waters {
     }
 
     /// The water at a point; none on land (a continent or an isle), for a layout with no continent, or for a point that
-    /// is not a finite number. An isle's sea belongs to the island whose coast is nearest.
+    /// is not a finite number. An isle's sea belongs to the island whose coast is nearest. A home water's sea past
+    /// `HOME_REACH_M` from its coast is the Grey Tithe's.
     #[must_use]
     pub fn water_at(&self, point: [f64; 2]) -> Option<Water> {
         let nearest = self.nearest(point)?;
         if nearest.land || self.nearest_isle(point) == 0.0 {
             return None;
         }
-        Some(Water { continent: nearest.continent, holder: self.holders[nearest.continent] })
+        let holder = match self.holders[nearest.continent] {
+            Holder::Home if nearest.distance_squared > HOME_REACH_M * HOME_REACH_M => Holder::GreyTithe,
+            holder => holder,
+        };
+        Some(Water { continent: nearest.continent, holder })
     }
 
-    /// A continent's water's holder; home waters for a continent the table does not name.
+    /// A continent's water's holder near its coast; home waters for a continent the table does not name.
     #[must_use]
     pub fn holder(&self, continent: usize) -> Holder {
         self.holders[continent]

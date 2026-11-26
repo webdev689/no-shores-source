@@ -5,7 +5,7 @@
 //! each player is sent only the ships near them: the hostile ships their ship keeps at sea (within `KEEP_SHARE` times
 //! its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in their fight; and
 //! only those walking the decks of the ships they are sent; and about once a second, every ship in the sea on its
-//! chart, for the held map.
+//! chart, and every hostile ship and standing island in the water their own ship lies in, for the held map.
 
 use crate::{Opened, with_open};
 use combat::shots::Line;
@@ -40,6 +40,9 @@ pub fn forget() {
     CHARTED.set(None);
 }
 
+/// A mark on the held map: where it lies, and what it is (`protocol::SeaHarbour::chart_marks`).
+type ChartMark = ([f64; 2], u8);
+
 struct SeaParts {
     tick: u64,
     ships: Vec<(PlayerId, room::sea::Ship)>,
@@ -56,6 +59,8 @@ struct SeaParts {
     islands: Vec<(protocol::IsleSeen, Vec<PlayerId>)>,
     /// How much farther each player's Lookout sights ships, 1 for none.
     lookouts: Vec<(PlayerId, f64)>,
+    /// With the chart, each player's marks: every hostile ship and standing island in their ship's water.
+    chart_marks: Vec<(PlayerId, Vec<ChartMark>)>,
 }
 
 impl SeaParts {
@@ -177,6 +182,7 @@ pub fn prepare() {
             let name = |player| plates.iter().find(|(each, _)| *each == player).map(|(_, plate)| plate.name.clone());
             let charted = sea.ships().filter(|_| chart);
             let charted = charted.map(|(player, ship)| (player, [ship.x, ship.y], name(player).unwrap_or_default()));
+            let chart_marks = if chart { marks_by_water(sea) } else { Vec::new() };
             Prepared::Sea(Box::new(SeaParts {
                 tick: sea.clock(),
                 ships: sea.ships().collect(),
@@ -193,12 +199,14 @@ pub fn prepare() {
                     taken: sea.taken(),
                     friendlies: sea.friendlies(),
                     charted: charted.collect(),
+                    chart_marks: Vec::new(),
                     plates,
                     looks: sea.ships().filter_map(|(player, _)| Some((player, sea.look(player)?))).collect(),
                 },
                 deck_views,
                 islands,
                 lookouts: sea.ships().map(|(player, _)| (player, sea.lookout(player))).collect(),
+                chart_marks,
             }))
         }
         Opened::Fleet(fleet) => {
@@ -246,12 +254,34 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                 plates: all.plates.iter().filter(|(other, _)| sent(other)).cloned().collect(),
                 looks: all.looks.clone(),
                 charted: all.charted.clone(),
+                chart_marks: parts
+                    .chart_marks
+                    .iter()
+                    .find(|(each, _)| *each == player)
+                    .map(|(_, marks)| marks.clone())
+                    .unwrap_or_default(),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();
             parts.bytes((&ships, &hostiles), &fights, &harbour)
         }
     })
+}
+
+/// Each ship's marks for the held map: every hostile ship (0) and standing island (its kind's number and 1) in the
+/// water the ship lies in.
+fn marks_by_water(sea: &room::sea::Sea) -> Vec<(PlayerId, Vec<ChartMark>)> {
+    let hostiles =
+        sea.hostiles().into_iter().map(|hostile| (sea.water_index([hostile.x, hostile.y]), [hostile.x, hostile.y], 0));
+    let islands = sea.islands().standing().map(|island| (Some(island.continent), island.at, island.kind.number() + 1));
+    let marks: Vec<_> = hostiles.chain(islands).collect();
+    sea.ships()
+        .map(|(player, ship)| {
+            let water = sea.water_index([ship.x, ship.y]);
+            let own = marks.iter().filter(|(there, ..)| water.is_some() && *there == water);
+            (player, own.map(|&(_, at, kind)| (at, kind)).collect())
+        })
+        .collect()
 }
 
 /// The snapshot after the room's last tick as `player` is sent it (`prepare`, then `snapshot_for`). Empty with no

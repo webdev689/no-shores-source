@@ -67,7 +67,7 @@ test('the map’s ask lights the water under the pointer once, and lets it go of
   assert.equal(ask.hover(waters, exact, view, ink, EAST).said, null);
 });
 
-test('the map’s ask asks for a course into another water; no lets it go, a new choice asks again', () => {
+test('the map’s ask asks for a course anywhere at sea, in another water or its own; no lets it go, a new choice asks again', () => {
   const ask = new MapAsk();
   ask.choose(waters, exact, { ok: true, points: [WEST, EAST] }, WEST);
   assert.equal(ask.asking?.name, 'The Elmwater');
@@ -75,7 +75,7 @@ test('the map’s ask asks for a course into another water; no lets it go, a new
   assert.equal(ask.asking, null);
   assert.equal(ask.answerNo(), false, 'and not again');
   ask.choose(waters, exact, { ok: true, points: [WEST, [500, 2_500]] }, WEST);
-  assert.equal(ask.asking, null, 'within the ship’s own water');
+  assert.equal(ask.asking?.name, 'The Lantern Sea', 'within the ship’s own water');
   ask.choose(waters, exact, { ok: false, why: 'No water leads there.' }, WEST);
   assert.equal(ask.asking, null, 'a course refused');
   ask.choose(waters, exact, { ok: true, points: [WEST, LAND] }, WEST);
@@ -89,7 +89,7 @@ test('the prompt is judged by the exact rule, not the grid: a coast’s sea the 
   ask.choose(waters, exact, { ok: true, points: [WEST, coastSea] }, WEST);
   assert.equal(ask.asking?.name, 'The Elmwater');
   ask.choose(waters, exact, { ok: true, points: [EAST, [3_500, 500]] }, [1_700, 1_500]);
-  assert.equal(ask.asking, null, 'a ship whose cell the grid misreads is in its own water');
+  assert.equal(ask.asking?.name, 'The Elmwater', 'a ship whose cell the grid misreads asks for its own water');
 });
 
 test('the pointer’s words stand to its right, drawn back where they would run off the map', () => {

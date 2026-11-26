@@ -303,9 +303,9 @@ A body walks its deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 ## Travel by the held map
 
-The [[Held Map]] takes the ship to other waters, seen sailing away
-([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). A course chosen into another water asks whether to
-travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar goes
+The [[Held Map]] takes the ship anywhere at sea, in its own water or another, seen sailing away
+([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]],
+[[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). A course chosen asks whether to travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar goes
 while it runs, Stop and the pace dial do nothing however they are asked, the menu does not open, and nothing takes the
 player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
 
@@ -334,7 +334,7 @@ late answer is no answer) and the view pans down to the fight as ever; if the ro
 where the room put the ship. A voyage stopped before the fade asks nothing and is refused at once ("The voyage was
 stopped."). A refused travel fades back in where the ship is over 1.5 s: it heaves to, its voyage kept to be resumed,
 and its line says why ("No travel while fighting.", "No travel off the helm.", "No travel with a hostile ship giving
-chase.", "That lies in these waters.", "The way there crosses land.", else "The sea would not take that course."). The
+chase.", "The way there crosses land.", else "The sea would not take that course."). The
 room judges a player's travel against the waters and the islands at most once a course's wait (half a second); one asked
 sooner is answered too soon and asked again by the page, and a refused one keeps no course of theirs waiting. A course
 set at another tier on the map begins the cinematic at once and enters that tier's sea room as setting sail does, the

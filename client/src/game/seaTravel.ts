@@ -22,7 +22,6 @@ export function travelRefusal(refused: number): string {
     1: 'No travel while fighting.',
     2: 'No travel off the helm.',
     3: 'No travel with a hostile ship giving chase.',
-    4: 'That lies in these waters.',
     5: 'The way there crosses land.',
   };
   return words[refused] ?? 'The sea would not take that course.';

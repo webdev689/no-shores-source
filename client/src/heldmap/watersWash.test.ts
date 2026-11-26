@@ -62,6 +62,19 @@ test('each holder washes its water in its own colour; the Lattice and the Tithe 
   }
 });
 
+test('home waters past their reach of the coast wash and hatch as the Grey Tithe’s', () => {
+  const grid = gridOf(Array.from({ length: 3 }, () => [0, 0, 0, 0, 0, 0, 0]));
+  // Each column 5 km further from the coast: the first three within 10 km, the rest past it.
+  const distance = Float32Array.from({ length: 21 }, (unused, index) => (index % 7) * 5_000);
+  const wash = washOf(grid, { distance, reachM: 10_000 });
+  // The middle row's cells whose neighbours all lie on one side of the reach.
+  const [near, far] = [7 + 1, 7 + 5];
+  assert.deepEqual([...wash.colour.subarray(near * 4, near * 4 + 4)], rgba(HOLDER_COLOURS.home, 255));
+  assert.deepEqual([...wash.colour.subarray(far * 4, far * 4 + 4)], rgba(HOLDER_COLOURS['grey-tithe'], 255));
+  assert.deepEqual([wash.hatch[near * 2 + 1], wash.hatch[far * 2 + 1]], [0, 255], 'hatched as the Tithe’s past it');
+  assert.equal(washOf(grid).hatch[far * 2 + 1], 0, 'with no reach given, home throughout');
+});
+
 test('the wash lies on the sea, and blends across a border rather than stepping', () => {
   const grid = gridOf([
     [0, 0, 2, 2],

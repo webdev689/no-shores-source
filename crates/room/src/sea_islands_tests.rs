@@ -55,15 +55,20 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
         assert!(island.anchorage != island.at);
     }
     let near = islands.iter().filter(|island| apart(island.at, [50_000.0, 50_000.0]) <= NEAR_M).count();
-    assert!(near <= 2, "{near} near the ship: more than it wants");
+    assert!(near <= super::WANTED_NEAR, "{near} near the ship: more than it wants");
 }
 
 #[test]
-fn no_island_is_rolled_in_home_waters() {
+fn no_island_is_rolled_in_home_waters_and_past_their_reach_they_are() {
     let mut sea = sea_round("continent-1", "temperate-coast");
-    at_rest(&mut sea);
+    let player = sea.join();
+    sea.course(player, &[[99_000.0, 150_000.0]], 10).expect("1 km off the coast: every roll 3 to 7 km off lies home");
     ticks(&mut sea, 60 * 60 * 5);
     assert!(sea.islands().standing.is_empty());
+    at_rest(&mut sea);
+    ticks(&mut sea, 60 * 60 * 5);
+    assert!(sea.islands().standing.iter().all(|island| island.guards == Some(::foes::factions::GREY_TITHE)));
+    assert!(!sea.islands().standing.is_empty(), "50 km off, the Lantern Sea's open sea");
 }
 
 #[test]

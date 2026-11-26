@@ -67,6 +67,8 @@ test('a city stands on land and the sea off it is its island water', async () =>
   assert.ok(overlook);
   assert.equal(rules.waterAt(overlook.centre), null);
   assert.deepEqual(rules.waterAt(table.ports[0]?.roadstead ?? [0, 0]), { continent: 0, holder: 'home' });
+  const open = rules.waterAt([2_400_000, 1_100_000]);
+  assert.deepEqual(open, { continent: 0, holder: 'grey-tithe' }, 'the Lantern Sea past home’s reach');
 });
 
 test('the held map grid has its cells, and agrees with the water at each cell middle', async () => {
@@ -85,7 +87,7 @@ test('the held map grid has its cells, and agrees with the water at each cell mi
 
 test('the table gives the sea’s facts as its rules have them: its reaches and every ship’s name', async () => {
   const { table } = await opened();
-  assert.deepEqual([table.sea.engageM, table.sea.repairReachM], [750, 3_000]);
+  assert.deepEqual([table.sea.engageM, table.sea.repairReachM, table.sea.homeReachM], [750, 3_000, 10_000]);
   assert.ok(table.sea.holdReachM > table.sea.engageM, `the hold reaches past its sight: ${table.sea.holdReachM}`);
   assert.deepEqual(table.sea.shipNames[1], ['Tithe Sloop', 'Tithe Schooner', 'Tithe Brig', 'Tithe Frigate']);
   assert.deepEqual(table.sea.shipNames[0], [

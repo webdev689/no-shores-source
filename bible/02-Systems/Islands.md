@@ -68,12 +68,15 @@ arctangents. Its frame is its own: metres from its middle, x east, y south.
 
 The sea room holds its islands (`sea_islands.rs`):
 
-- **Rolled** every ten seconds round each ship at sea that has fewer than two islands within 8 km, three times in ten:
-  3 to 7 km from it, in hostile water (never in home waters), 3 km clear of every coast and every other island, 1.2 km
-  clear of every ship and hostile ship, and clear of every ship's course by its reach and 300 m. At most 96 stand.
-  An island in a climate the contract does not dress is not rolled.
+- **Rolled** every ten seconds round each ship at sea that has fewer than three islands within 8 km, 0.45 of the
+  time: 3 to 7 km from it, in hostile water (never in home waters, within 10 km of Overlook's coast; the Lantern Sea
+  past them is hostile), 3 km clear of every coast and every other island, 1.2 km clear of every ship and hostile ship,
+  and clear of every ship's course by its reach and 300 m. At most 144 stand
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). An island in a climate the contract does not dress is not rolled; the Lantern Sea's
+  temperate coast is dressed as woodland's.
 - **Seen and found.** Each player is told of the islands within 20 km of their ship and of those they have found;
-  a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand.
+  a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand, and with the sea's
+  chart every one standing in the water the ship lies in.
 - **Held and faded.** A ship within 8 km holds an island; so does its room while players stand ashore, telling the
   sea each minute. One held by nothing for ten minutes fades, and is forgotten by those who found it.
 - **Land.** A standing island's coast, 34 m out past it (its shallows' 14 m and 20 m more), is land to the player told

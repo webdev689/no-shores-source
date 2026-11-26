@@ -135,3 +135,39 @@ fn the_seas_chart_goes_once_a_second_of_ticks() {
     let ticks = u32::try_from(snapshot_door::CHART_EVERY_TICKS).unwrap();
     assert!((f64::from(ticks) * movement::TICK_SECONDS - 1.0).abs() < 1e-12);
 }
+
+/// The marks in the prepared snapshot `player` is sent for the held map: where each lies and what it is.
+fn marks_at_sea(player: PlayerId) -> Vec<([f64; 2], u8)> {
+    let bytes = snapshot_door::snapshot_for(player);
+    let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+    let read = |mark: messages::ChartMark<'_>| ([mark.x(), mark.y()], mark.kind());
+    snapshot.chart_marks().map_or(Vec::new(), |marks| marks.iter().map(read).collect())
+}
+
+#[test]
+fn with_the_chart_each_player_is_sent_the_islands_and_hostile_ships_in_their_own_water_alone() {
+    // Two squares 400 km apart: the sea west of the line halfway between them is the fourth island's water, east of
+    // it the fifth's; both hostile, so islands are rolled round each ship.
+    let layout = r#"{ "continents": [
+        { "id": "continent-4", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+        { "id": "continent-5", "climate": "desert", "outline": [[600000, 100000], [700000, 100000], [700000, 200000], [600000, 200000]] }
+    ], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let (west, east) = (room_join(), room_join());
+    for (player, at) in [(west, [250_000.0, 150_000.0]), (east, [550_000.0, 150_000.0])] {
+        assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
+    }
+    let island = |marks: &[([f64; 2], u8)]| marks.iter().any(|(_, kind)| (1..=3).contains(kind));
+    let mut seen = [Vec::new(), Vec::new()];
+    for _ in 0..10 * 60 * 60 {
+        room_tick();
+        snapshot_door::prepare();
+        seen = [marks_at_sea(west), marks_at_sea(east)];
+        if seen.iter().all(|marks| island(marks)) {
+            break;
+        }
+    }
+    assert!(seen.iter().all(|marks| island(marks)), "an island in each water within ten minutes: {seen:?}");
+    assert!(seen[0].iter().all(|([x, _], kind)| *x < 400_000.0 && *kind <= 3), "the west's own: {:?}", seen[0]);
+    assert!(seen[1].iter().all(|([x, _], kind)| *x > 400_000.0 && *kind <= 3), "the east's own: {:?}", seen[1]);
+}

@@ -15,6 +15,8 @@ export type Segment = readonly [Point2, Point2];
 export interface MapMarks {
   readonly others: readonly { readonly at: Point2; readonly company: boolean }[];
   readonly events: readonly { readonly at: Point2; readonly name: string; readonly clock: string }[];
+  /** At sea, the hostile ships in the water the ship lies in. */
+  readonly hostiles?: readonly { readonly at: Point2 }[];
 }
 
 export interface LandMark {

@@ -1,5 +1,6 @@
-// What the held map says of another water at sea: the water under the pointer, lit over its own cells and named by the
-// pointer, and the prompt a course into it raises, asking whether to travel there.
+// What the held map says of the waters at sea: another water under the pointer, lit over its own cells and named by
+// the pointer, and the prompt a course anywhere at sea raises, in another water or the ship's own, asking whether to
+// travel there.
 // Which water the ship and a course's end lie in
 // is the world crate's exact rule, the room's (`WaterJudge`); the page's grid of the waters, judged once a 4.8 km cell
 // (`MapWaters`), only lights the water under the pointer. What is said is painted in the map's own letters.
@@ -163,8 +164,8 @@ export class MapAsk {
     return { cells, said: this.said };
   }
 
-  /** A course chosen (`course`, from the ship at `ship`): it asks to travel when its end lies in another water than
-   *  the ship, each by the exact rule; nothing when either is unknown. */
+  /** A course chosen (`course`, from the ship at `ship`): it asks to travel to the water its end lies in, the ship's
+   *  own or another, each by the exact rule; nothing when either is unknown. */
   choose(
     waters: MapWaters,
     judge: WaterJudge,
@@ -173,8 +174,8 @@ export class MapAsk {
   ): void {
     const end = course.ok ? course.points.at(-1) : undefined;
     const [there, own] = [end ? judge(end) : null, judge(ship)];
-    const other = there !== null && own !== null && there !== own;
-    this.asking = other ? (waters.waters.find((water) => water.continent === there) ?? null) : null;
+    const known = there !== null && own !== null;
+    this.asking = known ? (waters.waters.find((water) => water.continent === there) ?? null) : null;
   }
 
   /** No: the ask is let go, its course kept; answers whether one was asked. */

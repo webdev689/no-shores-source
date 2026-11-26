@@ -1,7 +1,6 @@
-//! Travel by the held map: a course into another
-//! water, asked with the travel flag, takes the ship most of the way at once. The room judges it as any course, and
-//! refuses it besides while the ship fights, has a hostile ship on its heels, or its player is off the helm, and for a
-//! course that ends in the water the ship is in. Taken, the ship lies on the course's last leg short of its end,
+//! Travel by the held map: a course anywhere at sea, in the ship's own water or another, asked with the travel flag,
+//! takes the ship most of the way at once. The room judges it as any course, and refuses it besides while the ship
+//! fights, has a hostile ship on its heels, or its player is off the helm. Taken, the ship lies on the course's last leg short of its end,
 //! heading along it, and sails the rest; the player's next roll for a hostile ship waits its first wait again.
 
 use super::{COURSE_EVERY_TICKS, Coast, CourseRefused, Sea, leg_meets_land, on_land};
@@ -21,22 +20,19 @@ pub enum TravelRefused {
     OffTheHelm,
     /// A hostile ship has the player for its quarry.
     Chased,
-    /// The course ends in the water the ship is in.
-    OwnWater,
     /// Refused as any course would be.
     Course(CourseRefused),
 }
 
 impl TravelRefused {
-    /// The number the page is told: 1 fighting, 2 off the helm, 3 chased, 4 its own water, 5 across land, 6 too soon,
-    /// 7 any other course refused.
+    /// The number the page is told: 1 fighting, 2 off the helm, 3 chased, 5 across land, 6 too soon, 7 any other
+    /// course refused (4, its own water, is no longer refused).
     #[must_use]
     pub fn number(self) -> f64 {
         match self {
             TravelRefused::Fighting | TravelRefused::Course(CourseRefused::Fighting) => 1.0,
             TravelRefused::OffTheHelm | TravelRefused::Course(CourseRefused::OffTheHelm) => 2.0,
             TravelRefused::Chased => 3.0,
-            TravelRefused::OwnWater => 4.0,
             TravelRefused::Course(CourseRefused::CrossesLand) => 5.0,
             TravelRefused::Course(CourseRefused::TooSoon) => 6.0,
             TravelRefused::Course(_) => 7.0,
@@ -93,13 +89,9 @@ impl Sea {
 }
 
 impl Sea {
-    /// Why a travel by `points` from `ship` is refused where it goes: its end in the ship's own water, or its last leg,
-    /// in waters the player was never told of, across a standing island or ending the ship on one.
+    /// Why a travel by `points` from `ship` is refused where it goes: its last leg, in waters the player was never told
+    /// of, across a standing island or ending the ship on one.
     fn refused_where(&self, points: &[[f64; 2]], ship: super::Ship) -> Option<TravelRefused> {
-        let Some(&asked) = points.last() else { return Some(TravelRefused::Course(CourseRefused::BadCourse)) };
-        if self.chart.water_id(asked) == self.chart.water_id([ship.x, ship.y]) {
-            return Some(TravelRefused::OwnWater);
-        }
         let [start, end] = last_leg(points, [ship.x, ship.y])?;
         let (placed, _) = placed_on(start, end);
         let islands: Vec<&Coast> = self.islands.coasts().collect();

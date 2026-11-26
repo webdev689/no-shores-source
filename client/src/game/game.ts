@@ -35,6 +35,7 @@ import { GROWTH_ROLES, IslesView } from '../islands/isleView.ts';
 import { IslesNature } from './isleNature.ts';
 import type { Drawer } from './scene.ts';
 import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
+import { isleMarksOf } from './mapMarks.ts';
 import { FootView } from './footView.ts';
 import { bootGame, SEA_SHIPS } from './gameBoot.ts';
 import { AfterStory } from './welcome/afterStory.ts';
@@ -455,10 +456,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (!sea || playing.flow.mode !== 'sea') return;
     // An island new in sight bends the voyage ahead round it.
     if (isles.update(sea.sighted?.islands ?? [])) sea.bendRound();
-    const found = isles.all().filter((each) => each.seen.found);
-    playing.helmMap.held?.setIsles(
-      found.map(({ seen }) => ({ at: seen.at, kind: seen.kind, isle: seen.kind !== 'cove' })),
-    );
+    const found = isles.all().flatMap(({ seen }) => (seen.found ? [seen] : []));
+    playing.helmMap.held?.setIsles(isleMarksOf(found, sea.sighted?.chartMarks ?? []));
     // Ashore only once nothing else is under way: the map put away, the deck left, the fight's view panned home.
     if (!free() || sea.fight) return;
     const washed = playing.seaWord?.washedIsle ?? null;

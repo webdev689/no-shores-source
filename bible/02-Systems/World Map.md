@@ -108,10 +108,13 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
   finite number has no water.
 - Each water's holder and name come from the table `WATERS`, by continent id. Claude named the waters; the owner can
   change any name.
+- Home waters reach `HOME_REACH_M`, 10 km, from their island's coast; past it the Grey Tithe holds the open sea of
+  the Lantern Sea, at its band ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). `water_at` gives the point's holder; the table gives each
+  water's, as near its coast.
 
 | Continent | Holder | Name |
 |---|---|---|
-| continent-1 | Home: no hostile ship | The Lantern Sea |
+| continent-1 | Home within 10 km of its coast, no hostile ship; the Grey Tithe past it | The Lantern Sea |
 | continent-2 | The Lattice | The Cairn Straits |
 | continent-3 | The Lattice | The Elmwater |
 | continent-4 | Grey Tithe | The Sunscorch Coves |

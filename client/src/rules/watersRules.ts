@@ -57,16 +57,22 @@ export interface WatersTable {
 }
 
 /** The sea's rules the page reads beside its waters: the reach a hostile ship meets a player within and the furthest
- *  one may hold a voyage, metres; the reach of a port city's repairs, metres; and each ship's name by its faction's
- *  number and then its hull's (crates/naval/src/ranks.rs `ship_name`). */
+ *  one may hold a voyage, metres; the reach of a port city's repairs, metres; how far from its coast a home water stays
+ *  home, metres (crates/world/src/waters.rs `HOME_REACH_M`); and each ship's name by its faction's number and then its
+ *  hull's (crates/naval/src/ranks.rs `ship_name`). */
 export interface SeaFacts {
   readonly engageM: number;
   readonly holdReachM: number;
   readonly repairReachM: number;
+  readonly homeReachM: number;
   readonly shipNames: readonly (readonly string[])[];
 }
 
-/** The water at a point of sea: its continent's index and its holder. */
+/** Who holds the sea at a point, by the room's number (crates/room-wasm/src/waters_door.rs `holder_byte`). */
+const HOLDERS: readonly WaterHolder[] = ['home', 'grey-tithe', 'lattice'];
+
+/** The water at a point of sea: its continent's index and who holds it there (a home water's open sea past its reach
+ *  is the Grey Tithe's). */
 export interface WaterAtPoint {
   readonly continent: number;
   readonly holder: WaterHolder;
@@ -138,6 +144,7 @@ interface WatersExports {
   release(address: number, length: number): void;
   waters_open(address: number, length: number): bigint;
   waters_at(x: number, y: number): number;
+  waters_holder(x: number, y: number): number;
   waters_grid(cellM: number): bigint;
   waters_ships(x: number, y: number, radiusM: number, timeS: number): bigint;
   waters_ship(id: bigint, timeS: number): bigint;
@@ -166,7 +173,13 @@ interface TableAnswer {
   readonly ports: TrafficPort[];
   readonly routes: { from_port: number; to_port: number; length_m: number; path: [number, number][] }[];
   readonly friendly_speed_m_s: number;
-  readonly sea: { engage_m: number; hold_reach_m: number; repair_reach_m: number; ship_names: string[][] };
+  readonly sea: {
+    engage_m: number;
+    hold_reach_m: number;
+    repair_reach_m: number;
+    home_reach_m: number;
+    ship_names: string[][];
+  };
 }
 
 /** Copies an answer's bytes out of the module's memory and gives the memory back. */
@@ -236,6 +249,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
           engageM: answer.sea.engage_m,
           holdReachM: answer.sea.hold_reach_m,
           repairReachM: answer.sea.repair_reach_m,
+          homeReachM: answer.sea.home_reach_m,
           shipNames: answer.sea.ship_names,
         },
       };
@@ -244,7 +258,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
       const byte = exports.waters_at(x, y);
       if (byte === NOT_OPEN) throw new Error('the waters are not open');
       if (byte === LAND_CELL) return null;
-      return { continent: byte, holder: holders[byte] ?? 'home' };
+      return { continent: byte, holder: HOLDERS[exports.waters_holder(x, y)] ?? holders[byte] ?? 'home' };
     },
     grid: (cellM) => {
       opened();

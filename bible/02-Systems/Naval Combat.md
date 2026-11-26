@@ -573,14 +573,16 @@ as hostile to the player, so the task does not count it among the ships left to 
 The sea room ([[Server]]) sails hostile ships among the players' on the [[Overworld]]: DFO's director, trimmed to
 the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
 
-- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
+- **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 30 to 70 s
+  ([[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]); a roll that
   falls due while they fight comes as the fight ends. A travel to other waters waits the next roll at least half a
   minute, never sooner than it would have come, so travelling on brings no more ships than sailing. While fewer than three hostile ships sail within their sight of
   them, a roll brings a hostile ship by the band of the water the player is in, so their water sets how many come
   (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a band to 0.36 in the last (26
   to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the time in every water.)
   The water at the player's ship decides who comes ([[The Waters Come From the Islands]], [[World Map]], "Waters"):
-  none in Overlook's home waters (the roll is spent), a Tithe ship in every other, the Lattice's waters too
+  none in Overlook's home waters, within 10 km of its coast (the roll is spent), a Tithe ship in every other, the
+  Lantern Sea past them and the Lattice's waters too
   ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Its rank comes by the lowest level of its water's band:
 
   | Band starts at | Minor | Major | Elite | Miniboss |

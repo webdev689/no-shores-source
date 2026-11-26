@@ -7,7 +7,15 @@ import type { MapPlace } from './heldMap.ts';
 import type { WaterJudge } from './heldMapAsk.ts';
 import type { Rect } from './heldMapLaw.ts';
 import { anyCellUnder } from './mapKey.ts';
-import { difficultyColour, labelPoints, type MapWaters, washOf, type WatersWash, waterWords } from './watersWash.ts';
+import {
+  difficultyColour,
+  type HomeReach,
+  labelPoints,
+  type MapWaters,
+  washOf,
+  type WatersWash,
+  waterWords,
+} from './watersWash.ts';
 
 /** The places the map names, a city that is no port named and marked as the ruins it is; before the waters are open,
  *  as they come. */
@@ -36,9 +44,9 @@ export class HeldMapWaters {
     this.points = labelPoints(waters);
   }
 
-  /** The wash over every water. */
-  wash(): WatersWash {
-    return washOf(this.waters);
+  /** The wash over every water, home waters' open sea past their `reach` the Grey Tithe's. */
+  wash(reach?: HomeReach): WatersWash {
+    return washOf(this.waters, reach);
   }
 
   /** The waters in view on a map `ink` wide and high (`toWorld` the world point at a point of it, `toInk`

@@ -1,5 +1,5 @@
 //! Hostile ships at sea, the Grey Tithe's, from DFO's director trimmed to them alone. Each player at sea rolls for a
-//! ship half a minute after reaching the water and then every minute to two and a half; the water at their ship
+//! ship half a minute after reaching the water and then every half a minute to 70 s; the water at their ship
 //! decides whether a roll sends one, at which rank and level (`sighting`). It comes near its sight's distance ahead,
 //! clear of every player, nearest a lane and heading along it, else nearest a coast. Its commission is drawn as it
 //! comes and kept; its rank picks its hull and its way. It sails on the clock of the player it sails by (real time
@@ -28,7 +28,7 @@ use std::f64::consts::TAU;
 /// A player's first roll waits this long after their ship reaches the water, then each the next between these
 /// (seconds).
 pub const FIRST_ROLL_S: f64 = 30.0;
-pub const ROLL_EVERY_S: [f64; 2] = [60.0, 140.0];
+pub const ROLL_EVERY_S: [f64; 2] = [30.0, 70.0];
 /// No roll launches while this many hostile ships sail within their sight of the player.
 pub const DENSITY: usize = 3;
 /// A hostile ship stands no nearer than this to any player (metres).

@@ -1,4 +1,4 @@
-"""The temperate kit (woodland, highland): granite with weed lines, oak, birch, pine and a lightning-struck snag,
+"""The temperate kit (woodland, highland, and Overlook's temperate-coast): granite with weed lines, oak, birch, pine and a lightning-struck snag,
 gorse, fern and tussock grass, and a bleached driftwood log."""
 from kits import growth, rocks, trees
 
