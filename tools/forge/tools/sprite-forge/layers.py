@@ -52,6 +52,7 @@ import gunplay  # noqa: E402
 import guns3p  # noqa: E402
 import torch3p  # noqa: E402
 import casting  # noqa: E402
+import quaff  # noqa: E402
 import playing  # noqa: E402
 import riding  # noqa: E402
 import driving  # noqa: E402
@@ -158,7 +159,7 @@ def class_records(archive):
 STAFF_ANIMS = {'walk_staff': 4, 'attack_staff': 6, 'hurt_staff': 1, 'idle_staff': 1, 'spell': 4}
 ANIMS = {'walk': 4, 'attack_axe': 6, 'attack_sword': 6, 'hurt': 1, 'idle': 1, 'bow': 4, **STAFF_ANIMS, **poses.OWN,
          **blows.BLOWS, **playing.PLAY, **onehand.ONEHAND, **riding.RIDE, **driving.DRIVE, **people.PEOPLE, **gunplay.GUNPLAY,
-         **agility.MOVES, **casting.CAST, **bowhold.ANIMS, **agility.ELSEWHERE, **onthemove.MOVES}
+         **agility.MOVES, **casting.CAST, **quaff.QUAFF, **bowhold.ANIMS, **agility.ELSEWHERE, **onthemove.MOVES}
 # the bow at rest in the left fist (poses.py `AT_REST`): each animation a carried weapon shows in, the right hand empty
 BOW_REST = {anim: ANIMS[base] for anim, base in poses.AT_REST.items()}
 ANIMS.update(BOW_REST)
@@ -266,6 +267,7 @@ def held_anims(weapon):
             and a not in driving.DRIVE   # and a driver's
             and a not in agility.BARE   # a climber's hands are on the wall
             and a not in casting.CAST   # a player casts with the weapon put away
+            and a not in quaff.QUAFF   # and drinks with it put away
             and a not in agility.ELSEWHERE   # drawn for outside the game, the hands empty
             and a not in onthemove.WALKS   # on the move as its action is (`weapon_anims`)
             and (a not in blows.BLOWS or a in blows.blows_of(weapon))]   # each its own holds' blows
