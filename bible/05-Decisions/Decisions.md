@@ -174,6 +174,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Dungeons as Claude Builds Them]]
 - [[The Dungeons Are Perfect and Insanely Varied]]
 - [[Each Dungeon Style Has Its Own Pieces, Built in Blender]]
+- [[Dungeons Go Deeper, With Storeys, Stairs, More Ways and DFO's 3D Map]]
 - [[Foes Show Their Level, Patrol in Groups and Climb]]
 - [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]]
 - [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]
