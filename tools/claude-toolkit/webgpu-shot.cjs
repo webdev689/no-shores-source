@@ -163,9 +163,12 @@ const OWN_TEXTURE = () => {
 async function main() {
   const plan = JSON.parse(readFileSync(process.argv[2], 'utf8'));
   if (plan.noGpu && plan.steps.some((step) => step.shot || step.views)) throw new Error('noGpu draws nothing to picture');
+  // Behind a proxy (a cloud session's HTTPS_PROXY), the browser and its routes' own fetches go through it.
+  const proxy = process.env.HTTPS_PROXY ? { proxy: { server: process.env.HTTPS_PROXY } } : {};
   const browser = await chromium.launch({
     channel: 'chromium',
     args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
+    ...proxy,
   });
   const [width, height] = plan.size ?? [1280, 800];
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
