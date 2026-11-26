@@ -1,10 +1,10 @@
 /**
  * Who stands ashore, told to the sea. Every room on an island (a node's room, its dungeons' and runs', a sea island's
  * room and its dungeon's) names the accounts of the players it holds to the sea rooms they land from (every tier's
- * for a social space, its own tier's otherwise) as each one's account is known and every 15 seconds after. The sea
- * keeps each named account's parked ship seen while it lies at that island (a run started at sea keeps it seen
- * wherever it lies), holds a sea island named, and answers with every ship parked at the island, which the room sends
- * in its snapshots (crates/room/src/sea_parked.rs).
+ * for a social space, its own tier's otherwise) as each one's account is known and every 15 seconds after, with the
+ * host's time, as a sea room stops ticking while nobody sails it. The sea keeps each named account's parked ship seen
+ * while it lies at that island (a run started at sea keeps it seen wherever it lies), holds a sea island named, and
+ * answers with every ship parked at the island, which the room sends in its snapshots (crates/room/src/sea_parked.rs).
  */
 
 import type { Reach } from './arrival.ts';
@@ -81,7 +81,11 @@ export class Ashore {
     const place = this.place;
     if (!place) return;
     this.told = now;
-    const word = JSON.stringify({ accounts: [...this.accounts.values()], ...place.island });
+    const word = JSON.stringify({
+      accounts: [...this.accounts.values()],
+      ...place.island,
+      seconds: Math.floor(now / 1000),
+    });
     place.seas.forEach((sea, index) => {
       void this.sea(sea)
         .ashoreWord(word)

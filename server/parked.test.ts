@@ -29,7 +29,7 @@ const SQUARE_SEA = JSON.stringify({
 
 /** crates/room-wasm/src/parked_door_tests.rs pins the same answer natively (`ANSWER`). */
 const ANSWER =
-  '[{"account":"ann","number":1,"x":80000.0,"y":150000.0,"heading":0.0,"hull":0,"dress":[0,10,18,30],' +
+  '[{"account":"ann","number":1,"x":98000.0,"y":150000.0,"heading":0.0,"hull":0,"dress":[0,10,18,30],' +
   '"name":[255,255],"emblem":0}]';
 
 const shipsOf = (bytes: Uint8Array) => {
@@ -40,21 +40,31 @@ const shipsOf = (bytes: Uint8Array) => {
 test('the sea answers an island’s room with the ships parked at it as it does natively, and shows them in sight', () => {
   const door = startRoomDoor(compiled);
   assert.equal(door.openSea(SQUARE_SEA, 66), true);
+  // As the host does each time the sea starts ticking; each naming then carries its time.
+  const minute = 29_000_000;
+  assert.equal(door.minute(minute), true);
   const ann = door.join();
   assert.equal(door.own(ann, 'ann'), true);
-  assert.equal(door.input(ann, courseBytes([[80_000, 150_000]], 10)), 'taken');
+  assert.equal(door.input(ann, courseBytes([[98_000, 150_000]], 10)), 'taken');
   door.tick();
   door.leave(ann);
   const near = door.join();
   assert.equal(door.input(near, courseBytes([[90_000, 150_000]], 10)), 'taken');
   door.tick();
-  assert.equal(door.seaAshore('{"accounts":["ann"],"continent":"continent-2"}'), ANSWER);
+  const word = (seconds: number) => JSON.stringify({ accounts: ['ann'], continent: 'continent-2', seconds });
+  assert.equal(door.seaAshore(word(minute * 60)), ANSWER);
   assert.deepEqual(
     shipsOf(door.snapshot(near)).map((ship) => [ship.player, ship.pace]),
     [
       [near, 0],
       [ann, 0],
     ],
+  );
+  assert.equal(door.seaAshore(JSON.stringify({ accounts: [], seconds: minute * 60 + 46 })), '[]');
+  assert.deepEqual(
+    shipsOf(door.snapshot(near)).map((ship) => ship.player),
+    [near],
+    'its naming lapsed by the host’s time, though the sea never ticked',
   );
 });
 

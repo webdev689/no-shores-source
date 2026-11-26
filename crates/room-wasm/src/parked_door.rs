@@ -7,11 +7,13 @@ use room::sea::ShipLook;
 use room::sea::parked::Ashore;
 use serde::{Deserialize, Serialize};
 
-/// A place's room's word to the sea: the accounts of the players it holds, and its island, a continent's id or a sea
-/// island's number and seed (a decimal, as JSON's numbers cannot hold 64 bits); neither for a run started at sea.
+/// A place's room's word to the sea: the accounts of the players it holds, its island, a continent's id or a sea
+/// island's number and seed (a decimal, as JSON's numbers cannot hold 64 bits), neither for a run started at sea, and
+/// the host's time, seconds since the Unix epoch (`Sea::tell_seconds`).
 #[derive(Deserialize)]
 struct Named {
     accounts: Vec<String>,
+    seconds: u64,
     #[serde(default)]
     continent: Option<String>,
     #[serde(default)]
@@ -48,7 +50,10 @@ pub fn sea_ashore(text: &[u8]) -> String {
     };
     let accounts: Vec<&str> = named.accounts.iter().map(String::as_str).collect();
     let answer = with_open(|opened| match opened {
-        Opened::Sea(sea) => Some(sea.ashore(place, &accounts)),
+        Opened::Sea(sea) => {
+            sea.tell_seconds(named.seconds);
+            Some(sea.ashore(place, &accounts))
+        }
         _ => None,
     });
     let Some(answer) = answer.flatten() else { return String::new() };

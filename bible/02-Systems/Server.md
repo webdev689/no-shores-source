@@ -380,20 +380,25 @@ will take it, by the room's own tick.
   players are in it, lets go of an account the sea has not landed there (one the sea did not answer for, or not within
   20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then
   is shown as any other.
-- **Parked ships** (`sea_parked.rs`, `ashore.ts`). A player who leaves the sea with their ship at rest, out of a fight,
-  leaves it lying parked where it is, kept by their account. It is never one of the sea's ships: no hostile ship,
-  fight or island heeds it. Every room on an island (a node's room, its dungeons' and runs', a sea island's room and
-  its dungeon's) names the accounts of the players it holds to the sea rooms they land from (every tier's for a social
-  space and a run started at sea, its own tier's otherwise) as each account is known and every 15 seconds after (`ashoreWord`,
-  `room_sea_ashore`), with its island: its node's continent, a sea island's number and seed, or none for a run
-  started at sea. A named account's parked ship lying within 32 km of that island's coast (a run's wherever it lies)
-  is seen for 45 seconds more; one no room has named for 45 seconds lies unseen, seen again once a room names it (its
-  player back on the island), and is let go after a day unnamed (`KEPT_TICKS`) or as its player comes back to the sea,
-  the ship theirs again. The sea sends each ship seen to the players within 60 km of it, at rest, with
-  its looks and its plate, under the number its player had as they left, and answers each naming with every ship seen
-  at that island, which the room sends in its snapshots to every player, the ship's own too, so a page reloaded ashore
-  still draws its own (`room_parked`; a social space's ships from the Elite and Abyss seas numbered 2^30 and 2^31 past
-  their own).
+- **Parked ships** (`sea_parked.rs`, `ashore.ts`). A player who leaves the sea with their ship at rest within 5 km
+  of a continent's coast or a standing sea island's (`PARKED_REACH_M`: where a docked ship lies), out of a fight and
+  their account no guest's (`unkept:`), leaves it lying parked where it is, kept by their account. It is never one of
+  the sea's ships: no hostile ship, fight or island heeds it. Every room on an island (a node's room, its dungeons'
+  and runs', a sea island's room and its dungeon's) names the accounts of the players it holds to the sea rooms they
+  land from (every tier's for a social space, an outpost and a run started at sea, `reach.social`; its own tier's
+  otherwise) as each account is known and every 15 seconds after (`ashoreWord`, `room_sea_ashore`), with its island
+  (its node's continent, a sea island's number and seed, or none for a run started at sea) and the host's time in
+  seconds. Every naming is timed by that time, which the sea keeps, carries on by its own ticks between words, and
+  never puts before the minute the host sets as it starts ticking, since a sea room stops ticking while nobody sails
+  it. A named account's parked ship lying within 5 km of that island's coast (a run's wherever it lies) is seen for
+  45 seconds more; one no room has named for 45 seconds lies unseen, seen again once a room names it (its player
+  back on the island), and is let go after a day unnamed (`KEPT_S`) or as its player comes back to the sea, the ship
+  theirs again. The sea keeps 1,024 parked ships at most, letting go of the one parked longest ago first. The sea
+  sends each ship seen to the players within 60 km of it, at rest, with its looks and its plate, under the number its
+  player had as they left, and answers each naming with every ship seen at that island, which the room sends in its
+  snapshots to every player, the ship's own too, so a page reloaded ashore still draws its own (`room_parked`; a
+  social space's ships from the Elite and Abyss seas numbered 2^30 and 2^31 past their own). Parked ships live only
+  in the sea room's memory: they are lost as it restarts, on a deploy or once the host evicts it idle.
 
 ## A fleet
 

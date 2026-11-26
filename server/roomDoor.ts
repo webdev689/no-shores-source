@@ -80,8 +80,9 @@ export interface RoomDoor {
    *  `seaIsland` gives it: empty if no island the sea holds has that door. */
   seaDungeon(room: string): string;
   /** The open sea's answer to a place's room naming its players ashore (crates/room-wasm/src/parked_door.rs): the word
-   *  is JSON of their `accounts` and the place's `continent` id, or a sea island's `island` number and `seed` (which it
-   *  holds), or neither for a run started at sea; the answer is JSON of the ships parked at that island, each its
+   *  is JSON of their `accounts`, the place's `continent` id, or a sea island's `island` number and `seed` (which it
+   *  holds), or neither for a run started at sea, and the host's time (`seconds` since the Unix epoch), by which the
+   *  sea times its namings; the answer is JSON of the ships parked at that island, each its
    *  `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`. Empty with no sea open. */
   seaAshore(word: string): string;
   /** Gives the open room on land the ships parked at its island, as its seas answered (`seaAshore`, each `number` as

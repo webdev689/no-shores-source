@@ -52,7 +52,9 @@ test('the seas are told as an account is known and every 15 s, and their answers
   ashore.stand(place);
   ashore.own(4, 'ann');
   await new Promise((settled) => setImmediate(settled));
-  assert.deepEqual(words.at(0), ['sea', '{"accounts":["ann"],"continent":"continent-1"}']);
+  const { seconds, ...first } = JSON.parse(words.at(0)?.[1] ?? '{}') as { seconds: number };
+  assert.deepEqual([words.at(0)?.[0], first], ['sea', { accounts: ['ann'], continent: 'continent-1' }]);
+  assert.ok(Math.abs(seconds * 1000 - Date.now()) < 2000, "each word carries the host's time, by which namings lapse");
   assert.deepEqual(
     (JSON.parse(given) as { number: number }[]).map((ship) => ship.number),
     [3, 3 + 2 ** 30],
@@ -63,8 +65,10 @@ test('the seas are told as an account is known and every 15 s, and their answers
   assert.equal(words.length, 0, 'not again so soon');
   delete answers['sea--elite'];
   ashore.left(4);
-  ashore.due(Date.now() + ASHORE_EVERY_MS);
+  const later = Date.now() + ASHORE_EVERY_MS;
+  ashore.due(later);
   await new Promise((settled) => setImmediate(settled));
-  assert.deepEqual(words.at(0), ['sea', '{"accounts":[],"continent":"continent-1"}'], 'one gone is named no more');
+  const again = `{"accounts":[],"continent":"continent-1","seconds":${Math.floor(later / 1000)}}`;
+  assert.deepEqual(words.at(0), ['sea', again], 'one gone is named no more');
   assert.equal((JSON.parse(given) as unknown[]).length, 2, 'a sea that did not answer keeps its last answer');
 });
