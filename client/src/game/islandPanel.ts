@@ -1,11 +1,12 @@
 // The island's tiles, over an island docked at or gone ashore on, in place of marks on the map: rectangles of one size
-// in a grid with space between them, a little transparent, so the island shows between and through them. The island's
-// own with its chart and the way back to the sea, its port's snapshot, the Playlist's banner with its crests, and its
-// places by kind, each with its details; a click, or Enter on the one lit, does what its tile does.
-import { CANVAS_FACE } from '../face.ts';
+// in a grid with space between them, each a painted scene of its place (`islandArt.ts`) with its name and levels at its
+// foot and its details as glyphs at its head, the island seen between them. The island's own with its chart and the
+// way back to the sea, its port, the Playlist, and its places by kind; they rise into place as the view opens, and a
+// click, or Enter on the one lit, does what a tile does.
 import type { Point2 } from '../overworld/ground.ts';
+import { motionReduced } from '../plus/kit.ts';
 import { TONES } from '../plus/tones.ts';
-import type { Child, Node } from '../ui/node.ts';
+import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { DIM } from './hudPieces.ts';
 import { hudPress, said } from './hudParts.ts';
@@ -18,6 +19,8 @@ import {
   islandPanelOf,
 } from './islandWords.ts';
 import { iconNode } from './journalIcons.ts';
+import { CREST_SPOTS, type Scene, sceneSheet, TEXEL } from './islandArt.ts';
+import { rgbaOf } from '../art/sheet.ts';
 import { drawCrest } from './playlistCrest.ts';
 import { scrolledNode } from './playlistParts.ts';
 import type { Landmass } from './landmass.ts';
@@ -25,9 +28,8 @@ import type { Sea } from './sea.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const BRASS = '#f3cf86';
-/** A tile's ground: a little transparent, so the island shows through it; lit, a touch warmer. */
+/** A tile's ground under its scene while the scene is drawn, and its edge at rest. */
 const GROUND = 'rgba(10,12,16,0.74)';
-const LIT = 'rgba(30,25,18,0.84)';
 const EDGE = 'rgba(192,138,62,0.45)';
 /** Where the grid stands (in from each side, under the place's name, over the view's foot) and how it is laid: tiles
  *  `least` to `most` wide, up to `columns` a row with `gap` between, as tall as three rows fit (`short` to `tall`). */
@@ -35,8 +37,6 @@ const GRID = { side: 24, top: 104, foot: 24, gap: 16, least: 280, most: 340, col
 const TILE_TALL = { short: 176, tall: 220 } as const;
 /** The scroll bar's room beside the grid (`scrolledNode`). */
 const BAR_ROOM = 8;
-/** A Playlist crest's side on its tile. */
-const CREST = 30;
 /** What a tile is laid at. */
 interface TileSize {
   readonly width: number;
@@ -58,92 +58,86 @@ export interface IslandActs {
   readonly back: () => void;
 }
 
-/** Draws the island's chart `width` by `height` pixels: its coast filled as land over the sea, the harbour as a brass
- *  ring and the ship as a pale dot. */
-function drawChart(chart: IslandChart) {
-  return (context: OffscreenCanvasRenderingContext2D, width: number, height: number): void => {
-    const eastings = chart.outline.map((point) => point[0]);
-    const southings = chart.outline.map((point) => point[1]);
-    const [left, top, right, bottom] = [
-      Math.min(...eastings),
-      Math.min(...southings),
-      Math.max(...eastings),
-      Math.max(...southings),
-    ];
-    const margin = 8 * (width / 360);
-    const scale = Math.min(
-      (width - 2 * margin) / Math.max(1, right - left),
-      (height - 2 * margin) / Math.max(1, bottom - top),
-    );
-    const [offsetX, offsetY] = [(width - (right - left) * scale) / 2, (height - (bottom - top) * scale) / 2];
-    const onChart = ([x, y]: Point2): Point2 => [offsetX + (x - left) * scale, offsetY + (y - top) * scale];
-    context.fillStyle = 'rgba(28,52,74,0.9)';
-    context.fillRect(0, 0, width, height);
-    context.beginPath();
-    chart.outline.forEach((point, place) => {
-      const [x, y] = onChart(point);
-      if (place === 0) context.moveTo(x, y);
-      else context.lineTo(x, y);
-    });
-    context.closePath();
-    context.fillStyle = 'rgba(74,86,62,0.95)';
-    context.fill();
-    context.lineWidth = Math.max(1, width / 360);
-    context.strokeStyle = TONES.brass;
-    context.stroke();
-    const dot = (point: Point2, radius: number, fill: string, ring: boolean) => {
-      const [x, y] = onChart(point);
-      context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
-      context.fillStyle = fill;
-      context.fill();
-      if (!ring) return;
-      context.lineWidth = Math.max(1, width / 240);
-      context.strokeStyle = '#050608';
-      context.stroke();
-    };
-    if (chart.harbour) dot(chart.harbour, 5 * (width / 360), BRASS, true);
-    dot(chart.ship, 3.5 * (width / 360), '#efe8d6', true);
-    context.font = `${11 * (width / 360)}px ${CANVAS_FACE}`;
-    context.fillStyle = 'rgba(239,232,214,0.8)';
-    context.fillText('N', width - margin * 2, margin * 2.4);
+/** The tiles rise into place as the island's view opens: each this many seconds after the one before, over this
+ *  many, from this many pixels below. */
+const RISE = { after: 0.04, seconds: 0.35, from: 14 } as const;
+/** The scene each kind of place is painted as. */
+const SCENES: Readonly<Record<IslandEntry['kind'], Scene['kind']>> = {
+  social: 'port',
+  playlist: 'playlist',
+  patrol: 'patrol',
+  dungeon: 'dungeon',
+  mission: 'mission',
+  boss: 'boss',
+  outpost: 'outpost',
+};
+
+/** How far tile `place` has risen into place `opened` seconds after the view opened, 0 to 1, eased to a stop. */
+export function risenTile(place: number, opened: number, still: boolean): number {
+  if (still) return 1;
+  const share = Math.min(1, Math.max(0, (opened - place * RISE.after) / RISE.seconds));
+  return 1 - (1 - share) ** 3;
+}
+
+/** A tile's motion and light: how far it has risen, and whether it is lit. */
+interface TileState {
+  readonly rise: number;
+  readonly lit: boolean;
+}
+
+/** What a tile stands with as it rises and is lit: faded and lowered as it rises, a step up and a brass edge lit. */
+const standing = ({ rise, lit }: TileState): Partial<Node> => ({
+  outline: { width: lit ? 2 : 1, colour: lit ? TONES.brass : EDGE },
+  ...(rise < 1 && { opacity: rise }),
+  ...((rise < 1 || lit) && { offset: [0, Math.round((1 - rise) * RISE.from) - (lit ? 2 : 0)] as const }),
+});
+
+/** A tile's scene in pixels, `TEXEL` of the screen's to each, painted once at its size. */
+function sceneOf(scene: Scene, size: TileSize, look: string): Node['picture'] {
+  const [width, height] = [Math.max(1, Math.round(size.width / TEXEL)), Math.max(1, Math.round(size.height / TEXEL))];
+  return {
+    key: `island scene ${scene.kind} ${scene.id} ${width}x${height} ${look}`,
+    source: { pixels: () => rgbaOf(sceneSheet(scene, width, height)) },
+    pixel: { width, height },
   };
 }
 
-/** An entry's details: each label and its value, a line each. */
-const rowsNode = (rows: IslandEntry['rows']): Node => ({
+/** The Playlist's crests set over its night where its constellation's lines meet, grey where shut. */
+const crestsOver = (banner: PlaylistBanner, size: TileSize): Node[] => {
+  const side = Math.round(Math.min(size.width * 0.17, size.height * 0.3));
+  return banner.crests.map((crest, place): Node => {
+    const [x, y] = CREST_SPOTS[place] ?? [0.5, 0.5];
+    return {
+      width: side,
+      height: side,
+      through: true,
+      float: { to: 'parent', at: [x, y], anchor: [0.5, 0.5], clipped: true },
+      picture: {
+        key: `island crest ${crest.kind} ${crest.shut} ${side}`,
+        source: { draw: drawCrest(crest.kind, crest.shut, false) },
+      },
+    };
+  });
+};
+
+/** Its glyphs in a row at the tile's head, a padlock first while it is shut. */
+const glyphsNode = (entry: IslandEntry): Node => ({
   width: 'grow',
-  direction: 'column',
-  gap: 3,
-  children: rows.map(([label, value]): Node => ({
-    width: 'grow',
-    gap: 8,
-    children: [
-      { width: 90, children: [said(label, { colour: DIM })] },
-      { width: 'grow', children: [said(value)] },
-    ],
-  })),
+  gap: 4,
+  alignX: 'end',
+  children: [
+    entry.shut !== null && iconNode('locked', 24),
+    ...entry.glyphs.map((glyph) => ({ ...iconNode(glyph.icon, 24, glyph.tones), ...(glyph.dim && { opacity: 0.4 }) })),
+  ],
 });
 
-/** A tile's foot: what a click does, a chevron before it, brass while lit; dim behind a lock while it is shut. */
-const footNode = (entry: IslandEntry, lit: boolean): Node => ({
-  width: 'grow',
-  gap: 6,
-  alignY: 'center',
-  children:
-    entry.shut === null
-      ? [said('›', { colour: lit ? BRASS : DIM }), said(entry.act.words, { colour: lit ? BRASS : TONES.ink })]
-      : [iconNode('locked', 12), said(entry.act.words, { colour: DIM })],
-});
-
-/** One entry's tile: its name, its line and its details, `more` under its line; a click does what it does, and the
- *  pointer or the focus on it lights it for Enter. */
+/** One entry's tile: its scene, its glyphs, and at its foot its name over its levels; a click does what it does, and
+ *  the pointer or the focus on it lights it for Enter. */
 function entryTile(
   ui: Interface,
   [entry, size]: readonly [IslandEntry, TileSize],
-  lit: boolean,
+  state: TileState,
   acts: IslandActs,
-  more: Child[] = [],
 ): Node {
   const id = `island:${entry.id}`;
   if (ui.clicked(id)) {
@@ -151,85 +145,86 @@ function entryTile(
     ui.focusOn(null);
     if (entry.shut === null) acts.act(entry);
   }
-  if ((ui.hovered(id) || ui.focused(id)) && !lit) acts.choose(entry.id);
+  if ((ui.hovered(id) || ui.focused(id)) && !state.lit) acts.choose(entry.id);
+  const banner = 'crests' in entry ? (entry as PlaylistBanner) : null;
+  const scene: Scene = { kind: SCENES[entry.kind], id: entry.id, abyss: entry.abyss ?? false };
+  const look = `${entry.abyss === true}`;
+  const details = [
+    ...entry.glyphs.map((glyph) => glyph.says),
+    ...entry.rows.map(([label, value]) => `${label}: ${value}`),
+  ];
   return {
     id,
     press: true,
-    label: `${entry.name}. ${entry.line}. ${entry.shut ?? entry.act.words}`,
+    label: [entry.name, entry.line, ...details, entry.shut ?? entry.act.words].join('. '),
     ...size,
     direction: 'column',
-    gap: 6,
     padding: [10, 12],
     clip: true,
-    fill: lit ? LIT : GROUND,
-    outline: { width: 1, colour: lit ? TONES.brass : EDGE },
-    ...(entry.shut !== null && { opacity: 0.7 }),
+    fill: GROUND,
+    picture: sceneOf(scene, size, look),
+    ...standing(state),
     children: [
+      ...(banner ? crestsOver(banner, size) : []),
+      glyphsNode(entry),
+      { height: 'grow' },
+      {
+        width: 'grow',
+        gap: 8,
+        alignY: 'end',
+        children: [
+          {
+            width: 'grow',
+            direction: 'column',
+            gap: 3,
+            children: [
+              said(entry.name, { size: 2, colour: entry.shut === null ? BRASS : DIM }),
+              entry.levels !== null && said(entry.levels, { colour: DIM }),
+            ],
+          },
+          entry.shut === null && { ...iconNode('next', 24), opacity: state.lit ? 1 : 0.45 },
+        ],
+      },
+    ],
+  };
+}
+
+/** The island's own tile, first in the grid: its chart painted, its name, where the ship lies, and the way back. */
+function islandTile(
+  ui: Interface,
+  [panel, size]: readonly [IslandPanel, TileSize],
+  chart: IslandChart | null,
+  state: TileState,
+  back: () => void,
+): Node {
+  const scene: Scene = { kind: 'island', id: chart?.id ?? panel.title, ...(chart && { chart }) };
+  const look = chart
+    ? `${chart.harbour !== null} ${Math.round(chart.ship[0] / 500)} ${Math.round(chart.ship[1] / 500)}`
+    : '';
+  return {
+    id: 'island:island',
+    ...size,
+    direction: 'column',
+    gap: 4,
+    padding: [10, 12],
+    clip: true,
+    fill: GROUND,
+    picture: sceneOf(scene, size, look),
+    ...standing({ ...state, lit: false }),
+    children: [
+      { height: 'grow' },
+      said(panel.title, { size: 2, colour: BRASS }),
       {
         width: 'grow',
         gap: 8,
         alignY: 'center',
         children: [
-          entry.shut !== null && iconNode('locked', 12),
-          { width: 'grow', children: [said(entry.name, { colour: BRASS })] },
+          { width: 'grow', children: [said(panel.where, { colour: DIM })] },
+          hudPress(ui, 'island:back', 'Back  Esc', back, { padding: [5, 10] }),
         ],
       },
-      said(entry.line, { colour: DIM }),
-      ...more,
-      entry.rows.length > 0 && rowsNode(entry.rows),
-      { height: 'grow' },
-      footNode(entry, lit),
     ],
   };
-}
-
-/** The Playlist's crests in a row, grey while shut. */
-function crestsNode(banner: PlaylistBanner): Node {
-  return {
-    width: 'grow',
-    gap: 10,
-    children: banner.crests.map((crest): Node => ({
-      width: CREST,
-      height: CREST,
-      label: crest.name,
-      picture: {
-        key: `island crest ${crest.kind} ${crest.shut} ${CREST}`,
-        source: { draw: drawCrest(crest.kind, crest.shut, false) },
-      },
-    })),
-  };
-}
-
-/** The island's own tile, first in the grid: its name, where the ship lies, its levels, its chart, and the way back. */
-function islandTile(ui: Interface, panel: IslandPanel, size: TileSize, chart: IslandChart | null, back: () => void) {
-  // The chart takes what the tile leaves under its words and over its press.
-  const chartTall = Math.max(0, size.height - 136);
-  return {
-    id: 'island:island',
-    ...size,
-    direction: 'column',
-    gap: 6,
-    padding: [10, 12],
-    clip: true,
-    fill: GROUND,
-    outline: { width: 1, colour: EDGE },
-    children: [
-      said(panel.title, { size: 2, colour: BRASS }),
-      said(panel.where),
-      panel.band !== null && said(`${panel.band} at Normal`, { colour: DIM }),
-      chart &&
-        chartTall >= 32 && {
-          width: 'grow',
-          height: chartTall,
-          picture: {
-            key: `island chart ${chart.id} ${size.width} ${chartTall} ${chart.harbour !== null} ${Math.round(chart.ship[0] / 500)} ${Math.round(chart.ship[1] / 500)}`,
-            source: { draw: drawChart(chart) },
-          },
-        },
-      { height: 'grow' },
-      hudPress(ui, 'island:back', 'Back to the sea  Esc', back, { padding: [6, 12] }),
-    ],
-  } satisfies Node;
 }
 
 /** How the grid is laid on a view `width` by `height`: its columns, and each tile's size. */
@@ -258,13 +253,12 @@ export function islandPanelNode(
   const { width, height } = ui.size;
   const { columns, tile } = gridOf(width, height);
   const shown = chosen ?? entriesOf(panel)[0]?.id ?? null;
-  const tileOf = (entry: IslandEntry, more: Child[] = []) =>
-    entryTile(ui, [entry, tile], shown === entry.id, acts, more);
+  const [opened, still] = [ui.age('island-panel'), motionReduced()];
   const tiles: Node[] = [
-    islandTile(ui, panel, tile, chart, acts.back),
-    ...(panel.port ? [tileOf(panel.port)] : []),
-    ...(panel.playlist ? [tileOf(panel.playlist, [crestsNode(panel.playlist)])] : []),
-    ...panel.groups.flatMap((group) => group.entries.map((entry) => tileOf(entry))),
+    islandTile(ui, [panel, tile], chart, { rise: risenTile(0, opened, still), lit: false }, acts.back),
+    ...entriesOf(panel).map((entry, place) =>
+      entryTile(ui, [entry, tile], { rise: risenTile(place + 1, opened, still), lit: shown === entry.id }, acts),
+    ),
   ];
   const rows: Node[] = [];
   for (let first = 0; first < tiles.length; first += columns)

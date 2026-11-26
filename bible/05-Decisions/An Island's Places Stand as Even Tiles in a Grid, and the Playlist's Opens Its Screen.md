@@ -16,6 +16,8 @@ status: in force
   between each.
 - **The Playlist's, clicked, opens the Playlist's screen as it is.**
 
+Its tiles' look and text, and what a patrol zone's tile does, are replaced by [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]].
+
 It replaces, in part, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]: the
 island's nodes stand as these rectangles, not as one panel down the left of the view.
 

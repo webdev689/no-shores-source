@@ -110,6 +110,16 @@ test('a patrol zone’s snapshot: its levels, its dungeon of the day, resources,
   assert.equal(rows['Foes'], '2 sites of the Grey Tithe');
   assert.deepEqual([rows['Elite seas'], rows['Abyss seas']], ['Levels 10 to 14', 'Levels 20 to 24']);
   assert.equal(rows['Today'], 'Burn (Shadow)');
+  assert.deepEqual(
+    patrol?.glyphs.map((glyph) => [glyph.icon, glyph.says]),
+    [
+      ['dungeon', 'Dungeon of the day: its second'],
+      ['seas-elite', 'Elite seas: Levels 10 to 14'],
+      ['seas-abyss', 'Abyss seas: Levels 20 to 24'],
+      ['burn', 'Burn (Shadow)'],
+    ],
+  );
+  assert.equal(patrol?.levels, 'Lv 1–5');
 });
 
 test('an Elite Dungeon leads into its dungeon from the sea, saying whether it is one of the week’s; locked places say why', () => {
@@ -176,7 +186,9 @@ test('every tile is the same size, and a click on one does what it does, the Pla
   assert.deepEqual([...sizes], ['294x186']);
   const [port, playlist] = [ui.boxOf('island:overlook-social'), ui.boxOf('island:overlook-playlist')];
   assert.ok(port && playlist && playlist.x - (port.x + port.width) === 16, 'room between each');
-  assert.ok(wordsIn(node).includes('Weaponsmith, Postmaster, the houses'), 'each tile shows its details whole');
+  const patrolTile = byId(node, 'island:saltgrass-downs');
+  assert.deepEqual(wordsIn(patrolTile ?? node), ['The Saltgrass Downs', 'Lv 1–5'], 'its name and levels alone');
+  assert.match(patrolTile?.label ?? '', /Dungeons: Three; today's is second/, 'its details read out');
   assert.ok(byId(node, 'island:back'));
 });
 

@@ -4,6 +4,7 @@
 // short enough for a tile. The day's and week's draws (`activities.ts`) add what is on there today and this week;
 // before they are read it says what the island holds alone.
 import type { Activities, Gates } from './activities.ts';
+import { type IconName, modifierIcon } from './journalIcons.ts';
 import { levelWords } from './activityWords.ts';
 import { ISLANDS } from './hudLaw.ts';
 import type { Landmass } from './landmass.ts';
@@ -15,16 +16,29 @@ import { lockedWords, type NodeKind, type NodeInfo } from './worldData.ts';
  *  Playlist beside the port. */
 export type IslandDoes = 'land' | 'dungeon' | 'playlist';
 
+/** A detail a tile shows as a small icon in place of words: its icon, its colours where the icon takes others, what
+ *  it says (read out, and the tile's label), and whether it stands dim. */
+export interface IslandGlyph {
+  readonly icon: IconName;
+  readonly tones?: Readonly<Record<string, string>>;
+  readonly says: string;
+  readonly dim?: boolean;
+}
+
 /** One entry of the panel: its id (a node's, or the Playlist's `<city>-playlist`), its kind, its name and the line
- *  under it, its details as label and value, why it cannot be chosen if it cannot, and its press. */
+ *  under it, its levels in short ("Lv 1–5"), its details as label and value and as glyphs, why it cannot be chosen if
+ *  it cannot, and its press. An Elite Dungeon that is the week's Abyss is `abyss`. */
 export interface IslandEntry {
   readonly id: string;
   readonly kind: NodeKind | 'playlist';
   readonly name: string;
   readonly line: string;
+  readonly levels: string | null;
   readonly rows: readonly (readonly [string, string])[];
+  readonly glyphs: readonly IslandGlyph[];
   readonly shut: string | null;
   readonly act: { readonly words: string; readonly does: IslandDoes };
+  readonly abyss?: boolean;
 }
 
 /** The Playlist's banner: its entry, and its four crests, shut or open. */
@@ -84,6 +98,18 @@ const bandOf = (facts: IslandFacts, continent: string, tier: number): string | n
   return band ? levelWords(band) : null;
 };
 
+/** A band in short, as a tile shows it: "Lv 1–5", "Lv 26". */
+const shortBand = ([low, high]: readonly [number, number]): string =>
+  low === high ? `Lv ${low}` : `Lv ${low}–${high}`;
+
+/** The modifiers' icons, each saying its name. */
+const modifierGlyphs = (facts: IslandFacts, keys: readonly string[]): IslandGlyph[] =>
+  keys.flatMap((key) => {
+    const icon = modifierIcon(key);
+    const says = facts.activities?.modifiers[key]?.name ?? key;
+    return icon ? [{ icon: icon.name, ...(icon.tones && { tones: icon.tones }), says }] : [];
+  });
+
 /** The modifiers' names by their keys, as the draws name them. */
 const modifierNames = (facts: IslandFacts, keys: readonly string[]): string =>
   keys.map((key) => facts.activities?.modifiers[key]?.name ?? key).join(', ');
@@ -105,7 +131,13 @@ function patrolEntry(node: NodeInfo, facts: IslandFacts, shut: string | null): I
     ['Abyss seas', harder(2)],
   ];
   if (today && facts.activities) rows.push(['Today', modifierNames(facts, [facts.activities.dayModifier])]);
-  return { ...base(node, 'Patrol zone', facts, shut), rows, act: LAND };
+  const glyphs: IslandGlyph[] = [
+    ...(today ? [{ icon: 'dungeon' as const, says: `Dungeon of the day: its ${ordinal(today.number)}` }] : []),
+    { icon: 'seas-elite', says: `Elite seas: ${harder(1)}`, dim: (facts.gates?.seas[1] ?? null) !== null },
+    { icon: 'seas-abyss', says: `Abyss seas: ${harder(2)}`, dim: (facts.gates?.seas[2] ?? null) !== null },
+    ...(today && facts.activities ? modifierGlyphs(facts, [facts.activities.dayModifier]) : []),
+  ];
+  return { ...base(node, 'Patrol zone', facts, shut), rows, glyphs, act: LAND };
 }
 
 /** A mission's, a world boss's or an outpost's details: its foes' sites and the places its layout names, where it has
@@ -137,10 +169,21 @@ function dungeonEntry(node: NodeInfo, facts: IslandFacts, shut: string | null): 
   ];
   if (week) rows.push(['This week', `${which}, level ${week.level}, ${modifierNames(facts, week.modifiers)}`]);
   const gate = facts.gates?.eliteDungeon ?? null;
+  const glyphs: IslandGlyph[] = week
+    ? [
+        {
+          icon: which === 'Elite' ? 'elite-dungeon' : 'abyss-dungeon',
+          says: `${which} of the week, level ${week.level}`,
+        },
+        ...modifierGlyphs(facts, week.modifiers),
+      ]
+    : [];
   return {
     ...base(node, 'Elite Dungeon', facts, shut ?? gate),
     rows,
+    glyphs,
     act: { words: 'Go in from the sea', does: 'dungeon' },
+    abyss: week !== null && which === 'Abyss',
   };
 }
 
@@ -148,8 +191,9 @@ function dungeonEntry(node: NodeInfo, facts: IslandFacts, shut: string | null): 
  *  and why it is shut. */
 function base(node: NodeInfo, kind: string, facts: IslandFacts, shut: string | null) {
   const band = bandOf(facts, node.continent, 0);
+  const levels = facts.activities?.bands[node.continent]?.[0];
   const line = shut ?? (band ? `${kind} · ${band}` : kind);
-  return { id: node.id, kind: node.kind, name: node.name, line, shut };
+  return { id: node.id, kind: node.kind, name: node.name, line, levels: levels ? shortBand(levels) : null, shut };
 }
 
 /** Why a node cannot be landed at: a patrol zone or mission no one may enter yet, or a social space still locked. */
@@ -175,11 +219,13 @@ function portEntry(landmass: Pick<Landmass, 'plan' | 'nodes'>, island: string): 
     kind: 'social',
     name: port.name,
     line: shut ? `Port city · ${shut}` : 'Port city · its plaza open',
+    levels: null,
     rows: [
       ['Island', island],
       ['Counters', counters.length ? counters.join(', ') : 'None yet'],
       ['Moorings', moorings ? `${moorings} ships by its pier` : 'Its roadstead'],
     ],
+    glyphs: [],
     shut,
     act: { words: 'Land in its plaza', does: 'land' },
   };
@@ -201,7 +247,9 @@ function playlistBanner(city: string, facts: IslandFacts): PlaylistBanner {
     kind: 'playlist',
     name: 'Playlist',
     line: 'Elite and Abyss, matchmade',
+    levels: null,
     rows,
+    glyphs: drawn ? modifierGlyphs(facts, [drawn.dayModifier]) : [],
     shut: null,
     act: { words: 'Open the Playlist', does: 'playlist' },
     crests: [
@@ -230,7 +278,7 @@ export function islandPanelOf(
         const shut = shutOf(node);
         if (kind === 'patrol') return patrolEntry(node, facts, shut);
         if (kind === 'dungeon') return dungeonEntry(node, facts, shut);
-        return { ...base(node, line, facts, shut), rows: placeRows(node), act: LAND };
+        return { ...base(node, line, facts, shut), rows: placeRows(node), glyphs: [], act: LAND };
       });
     return entries.length ? [{ title, entries }] : [];
   });

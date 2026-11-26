@@ -1282,36 +1282,48 @@ primary, with Enter's key) on its footer.
 ## The island's tiles
 
 Over an island docked at or gone ashore on, no node is marked on the map; the island's tiles hold them
-(`islandPanel.ts`, `islandWords.ts`; [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]). They are rectangles of one size in a grid
-with 16 px between them, across the view under the place's name (104 px down, 24 in from each side), centred: each
-280 to 340 px wide, as many a row as fit up to five, as tall as three rows fit (176 to 220 px), 294 by 186 on a
-1280 by 720 view, four a row (`gridOf`); more than fit scroll as the Playlist's card does (`scrolledNode`). Each is on
-a ground a little transparent (74%) edged in brass, so the island shows between and through them. In order:
+(`islandPanel.ts`, `islandWords.ts`, `islandArt.ts`, `islandScenes.ts`;
+[[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]). They
+are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
+in from each side), centred: each 280 to 340 px wide, as many a row as fit up to five, as tall as three rows fit (176
+to 220 px), 294 by 186 on a 1280 by 720 view, four a row (`gridOf`); more than fit scroll as the Playlist's card does
+(`scrolledNode`). They rise into place one after another as the view opens, each 0.04 s after the one before, over
+0.35 s from 14 px below (none under reduced motion).
 
-- **The island's own**: its name in brass at the larger size, where the ship lies ("Docked at Overlook", "Ashore on the
-  coast of Cairnwatch"), its levels at Normal, a chart of it (its coast as land over the sea, the harbour a brass ring,
-  the ship a pale dot, north marked), and Back to the sea (Esc).
-- **The port's snapshot**, docked at a living port: the city, whether its plaza is open ("Port city · Opens later"),
-  its island, its counters by their keepers' names and its moorings. A click lands in its plaza.
-- **The Playlist's banner**, docked at a living port: its four crests (`playlistCrest.ts`, 30 px), the week's grey
-  while shut to the character; today's modifier, the week's Elite and Abyss Dungeons with their levels, and its
-  rewards. A click opens the Playlist ([[Interface]], "The Playlist").
-- **Patrol zones**: each its levels, its three dungeons and which is today's, its resources and what they hold, its
-  foes' sites, the Elite and Abyss seas' bands (or why they are shut), and today's modifier where its dungeon of the
-  day is. A click lands there.
-- **Elite Dungeons**: each its levels, its blocks and seals, its company, what it pays, and whether it is the Elite or
-  the Abyss Dungeon of the week with its level and modifiers. A click, Go in from the sea, opens its card
+Each is a pixel scene painted as the website's pictures are (`client/src/art/`, [[Website]]), on a sheet half the
+tile's size, each texel two pixels across, dithered in one of the sheet's lights and seeded by its place, so no two
+are alike; its foot darkens, dithered, where its words stand:
+
+- **The island's own**: the island charted on the night sea, its land rising inland in bands with contours, its rock
+  at the coast and shoals dithered round it, the harbour's lantern and the ship; its name in brass at the larger size,
+  where the ship lies ("Docked at Overlook"), and Back (Esc).
+- **The port**, docked at a living port: Overlook by night, its town stepping up the rock to its beacon, the quay's
+  lanterns streaking the water, a ship at anchor, the moon. A click lands in its plaza.
+- **The Playlist**, docked at a living port: a crystal night thick with stars and a pale nebula, its four crests
+  (`playlistCrest.ts`) set over it as a constellation joined by dotted brass, the week's grey while shut. A click opens
+  the Playlist ([[Interface]], "The Playlist").
+- **A patrol zone**: under dawn, a clear night or the Tithe's mist, its hills fading into the distance, its landmark
+  on the highest (a windmill, its sails whole or broken, a watchtower, or standing stones), a hamlet's windows, trees
+  and a fence on the near downs, the path winding up, and its three landing zones, each a lantern on a post with a
+  brass pennant. A click lands there.
+- **An Elite Dungeon**: a stone gate in a hillside, braziers either side, steps down into the dark and its light within
+  (blue, green or amber; violet for the week's Abyss), trees on its hill. A click opens its card to go in from the sea
   ([[Activities]], "The Elite Dungeons").
-- **Missions**, the **world boss** and the **outpost**: each its kind and levels, its foes' sites and the places its
-  layout names where it has them, and an outpost what it is for. A click lands there.
+- **A mission**: broken walls with their windows lit under a red banner, a shrine with its lantern between two pines,
+  or a windmill with its sails broken, in mist, at first light or at a fiery dusk; a lantern on a post. A click lands
+  there.
+- **The world boss**: a horned shadow rising from an ember sea, its edges facing the fire lit, its eyes and its maw
+  burning, tentacles breaking the water and a ship burning beside it. **The outpost**: its palisade and watchtower on a
+  strand at dawn, a ship off it.
 
-A tile names its place in brass over its line, its details under them as label and value, and at its foot what a click
-does after a chevron. The tile under the pointer or the focus, else the first place's, is lit (a warmer ground, a
-brass edge): Enter does what it does. A locked place leads with a padlock, its line says why, and it stands dim, its
-foot behind a padlock; a click on it does nothing. A landing chooses its node before it lands, as the flow lands only
-at the node chosen.
-A click on an entry chooses it, a second does what its press does, as Enter does; a desolate city's social space is
-listed nowhere.
+A tile's words are its name in brass at the larger size and its levels in short ("Lv 1–5"); everything else is a glyph
+at its head, the Journal's icons (`journalIcons.ts`): a patrol zone's dungeon of the day, its Elite and Abyss seas
+(dim while shut) and today's modifier; an Elite Dungeon's week, the Elite's or the Abyss's, and its modifiers; the
+Playlist's today; a padlock on a place that is shut. Its label reads all of it out: its name, its line, every glyph's
+meaning and its details. The tile under the pointer or the focus, else the first place's, is lit: a brass edge two
+pixels wide, raised 2 px, its chevron bright; Enter does what it does. A shut tile's name is dim and a click on it does
+nothing. A landing chooses its node before it lands, as the flow lands only at the node chosen. A desolate city's
+social space is listed nowhere.
 
 ## How recordings load
 
