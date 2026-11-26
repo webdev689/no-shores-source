@@ -1,5 +1,5 @@
 ---
-id: 282
+id: 284
 title: "Offered the owner drop-rate options without checking them against the owner's standing rank order; the chosen one put Elite above Miniboss and needed a second question"
 status: open
 type: internal
