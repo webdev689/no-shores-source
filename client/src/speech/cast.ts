@@ -15,10 +15,14 @@ export interface Line {
 }
 
 export interface Cast {
-  /** Each speaker by key: the name shown over their words ("" for a voice from nowhere) and their voice's key. */
-  readonly speakers: Record<string, { name: string; voice: string }>;
+  /** Each speaker by key: the name shown over their words ("" for a voice from nowhere), their voice's key, and the
+   *  colour their name is shown in (`#rrggbb`; null for one with none, whose name is the kit's brass). */
+  readonly speakers: Record<string, { name: string; voice: string; colour: string | null }>;
   readonly voices: Record<string, VoiceProfile>;
 }
+
+/** A name's colour as the cast writes it. */
+const COLOUR = /^#[0-9a-f]{6}$/i;
 
 const VOICE_NUMBERS = ['pitchHz', 'spreadHz', 'muffleHz', 'volume', 'syllableS'] as const;
 /** Numbers a voice cannot be heard without, so they must be above zero; the spread alone may be nothing. */
@@ -63,14 +67,15 @@ export function castOf(json: unknown): Cast {
   const listed = entriesOf(file.speakers, "the cast's speakers");
   const voices: Record<string, VoiceProfile> = {};
   for (const [key, voice] of entriesOf(file.voices, "the cast's voices")) voices[key] = voiceOf(voice, key);
-  const speakers: Record<string, { name: string; voice: string }> = {};
+  const speakers: Record<string, { name: string; voice: string; colour: string | null }> = {};
   for (const [key, value] of listed) {
     const speaker = record(value, `speaker "${key}"`);
     if (typeof speaker.name !== 'string') throw new Error(`speaker "${key}" has no name`);
     if (typeof speaker.voice !== 'string' || !Object.hasOwn(voices, speaker.voice)) {
       throw new Error(`speaker "${key}" has no voice: "${String(speaker.voice)}" is not in the cast's voices`);
     }
-    speakers[key] = { name: speaker.name, voice: speaker.voice };
+    const colour = typeof speaker.colour === 'string' && COLOUR.test(speaker.colour) ? speaker.colour : null;
+    speakers[key] = { name: speaker.name, voice: speaker.voice, colour };
   }
   return { speakers, voices };
 }

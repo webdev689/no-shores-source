@@ -627,7 +627,10 @@ fn the_bytes_for_the_clients_test_are_written() {
     // The first ship a dressed and named Brig, the second as built: none the room knows the look of.
     let look = room::sea::ShipLook { hull: 2, dress: [1, 11, 21, 31], name: [255, 3], emblem: 4 };
     let looks = vec![(SHIPS[0].0, look)];
-    let harbour = SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], looks, ..SeaHarbour::default() };
+    // The sea's chart: a named captain's ship, and a guest's, whose name is none.
+    let charted = vec![(4, [4_000_000.5, 90_000.25], "Wren".to_owned()), (9, [-5.0, 7.0], String::new())];
+    let harbour =
+        SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], looks, charted, ..SeaHarbour::default() };
     let sea = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &harbour);
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }
@@ -750,7 +753,8 @@ fn a_sea_snapshot_carries_the_traffic_ids_the_room_took_and_the_friendly_ships_i
     );
     let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &SeaHarbour::default());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
-    assert!(sea.taken().is_none() && sea.friendlies().is_none(), "none when there are none: the bytes as before");
+    let none = sea.taken().is_none() && sea.friendlies().is_none() && sea.charted().is_none();
+    assert!(none, "none when there are none: the bytes as before");
 }
 
 #[test]

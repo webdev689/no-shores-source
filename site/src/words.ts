@@ -46,6 +46,7 @@ const SHELL = {
   'shell.navHome': 'Home',
   'shell.navWorld': 'The World',
   'shell.navGame': 'The Game',
+  'shell.navApp': 'Download',
   'shell.navPanel': 'Discord bot',
   'shell.navPlay': 'Play',
   'shell.navDiscord': 'Discord',
@@ -120,7 +121,9 @@ const HOME = {
   'home.storyLead': 'Read the story',
   'home.startHead': 'Start playing',
   'home.stepPlayHead': 'Press Play',
-  'home.stepPlayText': 'No Shores runs in your browser. There is nothing to download or install.',
+  'home.stepPlayText':
+    'No Shores runs in your browser, with nothing to install, or in its own app for Windows, macOS and Linux.',
+  'home.download': 'Download the app',
   'home.stepKeepHead': 'Keep your captain',
   'home.stepKeepText':
     'You start as a guest straight away. Add a username, or link your Discord account, to play the same captain on any device.',
@@ -212,7 +215,8 @@ const GAME = {
   'game.doGuilds':
     'Found or join a guild of up to a hundred players, with its own name, tag and banner, guild levels, bounties and outposts.',
   'game.playHead': 'How you play',
-  'game.playBrowser': 'No Shores runs in your browser on WebGPU, with nothing to install.',
+  'game.playBrowser':
+    'No Shores runs in your browser on WebGPU, with nothing to install, or in its own app for Windows, macOS and Linux.',
   'game.playControls': 'Play on keyboard and mouse or a gamepad, and rebind every control.',
   'game.playAccount':
     'Start as a guest at once. Add a username, or link your Discord account, to keep your captain on any device.',
@@ -220,6 +224,29 @@ const GAME = {
 
 // The page for an address with no page of its own.
 const LOST = {
+  'app.title': 'Download',
+  'app.description':
+    'Download No Shores for Windows, macOS and Linux. The app plays the same game as your browser and updates itself.',
+  'app.lede':
+    'Play No Shores in its own window. The app plays the same game as your browser, on the same servers, and updates itself when you close it.',
+  'app.windows': 'Windows',
+  'app.macArm': 'Mac with Apple silicon',
+  'app.macIntel': 'Mac with Intel',
+  'app.linuxAppImage': 'Linux AppImage',
+  'app.linuxDeb': 'Ubuntu and Debian',
+  'app.needs': 'For 64-bit Windows, macOS and 64-bit Linux, with a graphics card that runs WebGPU.',
+  'app.firstHead': 'Opening it the first time',
+  'app.firstIntro': 'The app is not signed yet, so your system asks you before it opens it the first time.',
+  'app.firstWindowsHead': 'Windows',
+  'app.firstWindows': 'When Windows says it protected your PC, choose More info, then Run anyway.',
+  'app.firstMacHead': 'macOS',
+  'app.firstMac':
+    'Drag No Shores into Applications and open it. When macOS stops it, open System Settings, then Privacy & Security, and choose Open Anyway.',
+  'app.firstLinuxHead': 'Linux',
+  'app.firstLinux':
+    'Let the AppImage run as a program in its properties, then open it. On Ubuntu 23.10 or later, take the Ubuntu and Debian package.',
+  'app.browserHead': 'Or play in your browser',
+  'app.browserText': 'No Shores runs in your browser too, with nothing to install.',
   'lost.title': 'Page not found',
   'lost.description': 'There is no page at this address.',
   'lost.text': 'There is no page at this address. The link may be wrong, or the page may have moved.',

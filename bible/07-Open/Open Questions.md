@@ -5,6 +5,11 @@ type: index
 
 Decisions waiting on the owner. None is in force until the owner decides it and it moves to [[Decisions]].
 
+- **A camp's gap.** The brief set it a cell and a metre (9 m) either side of the way out along its chord; it is built
+  9 m along the path grid's rows or columns, whichever lie more across it, since along the chord a few turns still
+  sealed it from every way (18 m wide square to the grid, up to 25.5 m at 45 degrees). The owner's to confirm
+  ([[Layouts]]).
+
 - **Enemy factions.** Whether presence shifts over time, what sets one faction apart, and where each is present
   ([[Enemy Factions Start With the Grey Tithe]]).
 - **Being the pirate.** Whether a player may attack merchantmen for their cargo, and what notoriety it brings
@@ -85,5 +90,3 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   only from Privacy & Security, and cannot update itself. Signing takes the owner's accounts and keys: Apple's
   Developer Program for a Mac (a Developer ID and notarizing), and for Windows a code-signing certificate or Azure's
   Artifact Signing ([[Desktop App]], "Releases and downloads").
-- **The desktop app on the website.** Whether the site offers its downloads, and in what words ([[Desktop App]];
-  [[The Website's Words and the Bot's Month Are Approved]]).

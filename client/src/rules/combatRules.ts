@@ -11,6 +11,17 @@ export const fetchRoomWasm = (base: string): Promise<Response> => fetch(roomWasm
 
 /** A fired shot's numbers after a predicted fighter's: its weapon, where it left, its velocity. */
 const FIRED_FLOATS = 7;
+/** Each hit's numbers after a predicted fighter's and their count: who, the damage, the stroke, and 1 for a crit. */
+const HIT_FLOATS = 4;
+
+/** A fighter the player's swing hits on a predicted tick, as the room would judge it among those the player sees: its
+ *  number, the blow's damage before the gear's power, the stroke (1 to 6) and whether its statuses make it a crit. */
+export interface ForeseenHit {
+  readonly defender: number;
+  readonly damage: number;
+  readonly stroke: number;
+  readonly crit: boolean;
+}
 
 /** How many numbers a fighter, an intent and a glance are, as the combat crate lays them out. */
 export interface CombatSizes {
@@ -59,14 +70,14 @@ export interface CombatRules {
    *  (`Floor::Sea`), made from these blocks by the rules; false if they are not blocks. */
   setRim(blocks: readonly Block[]): boolean;
   /** The player's fighter one tick on under an intent, taking up `arms` as the room does, among the fighters they
-   *  see, and the shot it let go. */
+   *  see, the shot it let go, and those its swing's blow hits. */
   predict(
     fighter: Float64Array,
     intent: Float64Array,
     id: number,
     arms: number,
     view: readonly Glanced[],
-  ): { readonly fighter: Float64Array; readonly fired: Fired | null };
+  ): { readonly fighter: Float64Array; readonly fired: Fired | null; readonly hits: readonly ForeseenHit[] };
   /** What hands holding these forge layers fight with, as combat's arms code. */
   armsCode(right: string | null, left: string | null, drawn: boolean): number;
   /** The farthest a stroke (1 to 6) of the melee weapon in this arms code reaches, feet to a body's middle, in a
@@ -174,18 +185,25 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
       });
       const bytes = take(lend(floatBytes(floats), (address) => exports.fighter_predict(address, floats.byteLength)));
       const length = bytes.length / 8;
-      if (length !== sizes.fighter && length !== sizes.fighter + FIRED_FLOATS) return { fighter, fired: null };
       const numbers = new Float64Array(bytes.buffer, bytes.byteOffset, length).slice();
       const after = (index: number) => numbers[sizes.fighter + index] ?? 0;
+      const extra = length - sizes.fighter;
+      const counted = 1 + after(0) * HIT_FLOATS;
+      if (extra !== 0 && extra !== FIRED_FLOATS && extra !== counted) return { fighter, fired: null, hits: [] };
       const fired =
-        length === sizes.fighter
-          ? null
-          : {
+        extra === FIRED_FLOATS
+          ? {
               ranged: after(0),
               at: [after(1), after(2), after(3)] as const,
               velocity: [after(4), after(5), after(6)] as const,
-            };
-      return { fighter: numbers.subarray(0, sizes.fighter), fired };
+            }
+          : null;
+      const hits = Array.from({ length: extra === counted ? after(0) : 0 }, (_unused, index): ForeseenHit => {
+        const first = 1 + index * HIT_FLOATS;
+        const [defender, damage, stroke, crit] = [after(first), after(first + 1), after(first + 2), after(first + 3)];
+        return { defender, damage, stroke, crit: crit === 1 };
+      });
+      return { fighter: numbers.subarray(0, sizes.fighter), fired, hits };
     },
     armsCode: (right, left, drawn) => {
       const text = new TextEncoder().encode(`${right ?? ''}\n${left ?? ''}\n${drawn ? 'drawn' : 'worn'}`);

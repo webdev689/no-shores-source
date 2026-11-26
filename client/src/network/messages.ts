@@ -219,6 +219,8 @@ export interface FightEvent {
   /** The fighter an Atheric's chain blow came from (the foe a leap or burst came from, the player a bite came from),
    *  on every event of that blow; 0 or left out for none. */
   readonly from?: number;
+  /** The room's word on a hit of the player's own the page foresaw: its flash, sound and hold played as it landed. */
+  readonly felt?: boolean;
 }
 
 /** A shot in flight, or a gun's ball in the tick it stopped: `age` is the ticks it has flown. A stopped ball's last

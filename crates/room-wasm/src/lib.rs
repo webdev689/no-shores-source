@@ -139,6 +139,7 @@ pub(crate) fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
 }
 
 fn keep(opened: Opened) {
+    snapshot_door::forget();
     OPEN.with(|open| *open.borrow_mut() = Some(opened));
 }
 

@@ -3,7 +3,7 @@ import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { test } from 'node:test';
 import { ASKS } from '../../network/gearMessages.ts';
 import { priceWord, purseOf, rowsOf } from './npcWares.ts';
-import { item, state } from '../../network/gearForTests.ts';
+import { item, standing, state } from '../../network/gearForTests.ts';
 
 const headings = (rows: ReturnType<typeof rowsOf>) => rows.map((row) => row.heading);
 
@@ -91,6 +91,18 @@ test('the Tack sells the day’s horses and bardings', () => {
       ['barding', true],
     ],
   );
+});
+
+test('the Tack gives the Bay free to one who pledged before her round, and sells it to everyone else', () => {
+  const bay = 16;
+  const ware = (fields: Parameters<typeof state>[0]) =>
+    rowsOf('tack', state({ cosmeticsSold: [bay], ...fields }))[0]?.wares[0];
+  const pledged = ware({ standing: standing({ pledge: 1 }) });
+  assert.deepEqual(
+    [pledged?.price, pledged?.note, pledged?.ask],
+    [null, 'Free', { kind: ASKS.buyCosmetic, item: bay }],
+  );
+  assert.equal(ware({})?.price?.amount, 1_500, 'on the round, her goal gives it; at the counter it is sold');
 });
 
 test('Shape sells his week’s wares for Shapes while here, each asked for by the number the room sent with it', () => {

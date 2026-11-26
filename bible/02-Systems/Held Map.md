@@ -99,6 +99,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   open every city is drawn as a port. The ship is a red-brown arrow along its heading, ringed in the parchment. The
   voyage under way is inked as a dashed red-brown line. Found islands (`setIsles`) are marked in the lighter ink under
   the words: a cove a small ring, an isle a wider ring with a tower in it (`paintIsle`, [[Island Drawing]]).
+- **Other ships** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]).
+  Every other player's ship in the sea's room, however far off, is a dot as on land (below), in their nameplate's
+  square's colour, over the words and under the ship's arrow (`chartMarksOf`, `dotInks`). The room sends the sea's
+  chart about once a second ([[Server]]); the map shows the last.
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
@@ -215,6 +219,13 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
     a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
+  - **What moves on it** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]): every other player in the room the player stands in, a patrol zone's or a social
+    space's, wherever they are in it, a dot in their nameplate's square's colour, the company's green or the players'
+    blue, edged in the ink, under the player's arrow (`mapMarks.ts`); and the zone's public event while it runs, ringed
+    at its ground in the route's red-brown, its name and the time it has left beside it; a player off the map is
+    neither dotted nor named in the table. They are gathered ten times a second, to the whole pixel, and painted, with
+    the player's arrow, over a copy of the land's sheet (`LandLettering`), which is painted again only when the view or
+    the table's rows change; none of them covers the table.
   - **A lit coin.** A keeper's coin is lit as their mark over them is ([[Game]], "Over what a player can use";
     [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a quest step asks to speak with them, or
     letters wait at the Postmaster. It is ringed in the route's red-brown, a quarter wider than the coin, and a second
@@ -222,8 +233,9 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     rings are inked by the map's own pass each frame (`pulse_at`, at most 16 coins), so the parchment's picture is
     never painted again for them, and the gauntlets cover them as they cover the coin.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
-    (keeping its corner while it can), the names then laid again clear of it: the land's name at its head; then each glyph the land holds, once, beside what
-    it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar
+    (keeping its corner while it can), the names then laid again clear of it: the land's name at its head; then each
+    glyph the land holds, once, beside what it is ("The Mage", "Public event"), in columns of at most seven, and the
+    player's arrow, "You", then "Your company" and "Other players" while the map shows one; under them a bar
     of the ground's length at the map's zoom ("25 m").
   - **Other land** (an island's): its ground, edge and landing.
 

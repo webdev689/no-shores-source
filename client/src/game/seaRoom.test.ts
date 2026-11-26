@@ -4,6 +4,7 @@ import { courseBytes, helmBytes } from '../network/courseMessages.ts';
 import type { SeenShip } from '../network/messages.ts';
 import type { PlayerPlate } from '../network/plateMessages.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
+import type { SeenCharted } from '../network/seaHarbour.ts';
 import { SeaRoom } from './seaRoom.ts';
 
 /** A sea room's link in the test: what the page sends, and its snapshots handed on by tick, with the ships at sea. */
@@ -32,6 +33,7 @@ async function joined() {
     ships: readonly SeenShip[] = [],
     told: readonly number[][] = [],
     plates: readonly PlayerPlate[] = [],
+    charted: readonly SeenCharted[] = [],
   ) =>
     hand({
       tick: BigInt(tick),
@@ -46,6 +48,7 @@ async function joined() {
       islands: [],
       taken: [],
       friendlies: [],
+      charted,
       plates,
     } as unknown as Snapshot);
   return { room, sent, atTick, link };
@@ -170,4 +173,20 @@ test('the plate over each other ship in sight is the one its last snapshot sent,
   assert.equal(room.plates.get(2)?.name, 'Wooden_Osprey');
   atTick(2, [], [], [plate(3, '')]);
   assert.deepEqual([...room.plates.keys()], [3], 'sailed out of sight');
+});
+
+test('the sea’s chart is the last the room sent, kept through the snapshots between, and gone while the link rejoins', async () => {
+  const { room, atTick, link } = await joined();
+  const charted = [
+    { player: 1, at: [50_000, 150_000] as const, name: 'Own_Ship' },
+    { player: 2, at: [900_000, 20_000] as const, name: 'Far_Away' },
+  ];
+  atTick(60, [], [], [], charted);
+  atTick(61);
+  assert.deepEqual(room.charted, charted, 'a snapshot with no chart leaves the last');
+  atTick(120, [], [], [], charted.slice(0, 1));
+  assert.deepEqual(room.charted, charted.slice(0, 1), 'a player gone from the sea is gone from its chart');
+  link.rejoining = true;
+  room.pump(0);
+  assert.deepEqual(room.charted, []);
 });

@@ -7,6 +7,7 @@ use crate::brief::AreaKind;
 use crate::field::{Field, distance};
 use crate::paths::Path;
 use crate::seat::Seating;
+use city::solids::Shape;
 use land::exact::rand01;
 use serde::Serialize;
 
@@ -100,14 +101,24 @@ pub fn node_stands(
     crate::field::ring_holds(ring, x, y) && dry && !blocked && !planted
 }
 
-/// Whether a point is clear to stand a site on: walkable land not under a building or within a metre of one.
+/// How far a site keeps from a building's footprint and from a module's foot, metres.
+const SITE_CLEAR_M: f64 = 1.0;
+
+/// Whether a point is clear to stand a site on: walkable land not within a metre of a building or a module's foot.
+/// A module's floors level the land under its foot once the sites are marked (`city::modules::pads`), so what a site
+/// lays there would hang over the levelled ground or sink into it.
 fn clear(field: &Field, seating: &Seating, at: [f64; 2]) -> bool {
     let open_land = field.cell_of(at[0], at[1]).is_some_and(|(column, row)| field.walkable(field.index(column, row)));
-    open_land
-        && seating.buildings.iter().all(|building| {
-            let [west, north, east, south] = building.footprint;
-            at[0] < west - 1.0 || at[0] > east + 1.0 || at[1] < north - 1.0 || at[1] > south + 1.0
-        })
+    let off = |[west, north, east, south]: [f64; 4]| {
+        let keep = SITE_CLEAR_M;
+        at[0] < west - keep || at[0] > east + keep || at[1] < north - keep || at[1] > south + keep
+    };
+    let feet =
+        seating.solids.iter().filter(|solid| matches!(solid.shape, Shape::Module { group: 0, .. })).map(|solid| {
+            let [west, north, east, south, ..] = solid.bounds();
+            [west, north, east, south]
+        });
+    open_land && seating.buildings.iter().map(|building| building.footprint).chain(feet).all(off)
 }
 
 /// How far a beacon or a resource keeps from every way's edge, metres: it stands beside the ways, never on one.
@@ -217,4 +228,33 @@ pub fn mark(
         }
     }
     sites
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::paths::Tier;
+    use city::solids::Solid;
+
+    #[test]
+    fn no_beacon_or_resource_stands_on_a_modules_foot() {
+        // A track 500 m long across level land, a point every 20 m, so resources are marked beside it.
+        let field = Field::level(-300.0, -300.0, 75, 75);
+        let points = (0..=25).map(|step| [-250.0 + f64::from(step) * 20.0, 0.0]).collect();
+        let paths = [Path { tier: Tier::Track, points, crossings: Vec::new(), heights: Vec::new() }];
+        let resource = |sites: &[Site]| sites.iter().find(|site| site.kind == SiteKind::Resource).map(|site| site.at);
+        let bare = mark(&field, &[], &paths, &Seating::default(), 7, Some("salt"));
+        let Some(at) = resource(&bare) else { panic!("a resource is marked beside the track: {bare:?}") };
+        // A keep stood over that resource, as a heights zone's keep stands its module.
+        let keep = city::modules::number_of("keep-citadel").expect("the keep's module is in the manifest");
+        let solids = city::modules::solids(keep, [at[0], at[1], 5.0], 0.0);
+        let foot = solids.iter().find(|solid| matches!(solid.shape, Shape::Module { group: 0, .. })).map(Solid::bounds);
+        let Some([west, north, east, south, ..]) = foot else { panic!("the keep stands a first group") };
+        let seating = Seating { solids, ..Seating::default() };
+        for site in mark(&field, &[], &paths, &seating, 7, Some("salt")) {
+            let [x, y] = site.at;
+            let on_foot = x > west - 1.0 && x < east + 1.0 && y > north - 1.0 && y < south + 1.0;
+            assert!(!on_foot, "a {:?} at {:?} stands on the keep's foot", site.kind, site.at);
+        }
+    }
 }

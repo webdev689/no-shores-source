@@ -903,13 +903,13 @@
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.social.hum": {
-      "key": "sounds/e05d9d93561b041aea0e7b7b4f4b1f2da54c79d1cd69a05850386d1cf9890fe6.mp3",
-      "freesound": 450676,
-      "name": "city skyline distant mosque call to prayer +traffic, kids, and sheep on roof nearby Dakar, Senegal, Africa.flac",
-      "author": "kyles",
+      "key": "sounds/5f2ddc4937531a4b8f8a7522f1f903b3e9002fc6adce82186a9e977484957f9f.mp3",
+      "freesound": 824369,
+      "name": "AMBTown Alley in the Old Town, few people and air conditioning, Stockholm, Sweden",
+      "author": "vhio",
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-      "page": "https://freesound.org/people/kyles/sounds/450676/",
+      "page": "https://freesound.org/people/vhio/sounds/824369/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.social.pigeon": {
@@ -1652,6 +1652,176 @@
       "page": "https://freesound.org/people/bassimat/sounds/858795/",
       "changes": "Unchanged."
     },
+    "foe.lattice.alert": {
+      "key": "sounds/334748ca85312976984445748ce4f16f38b512290505fe3b31837b3e94039cd2.mp3",
+      "freesound": 499607,
+      "name": "Sliding sound1.mp3",
+      "author": "Hope-Sounds",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Hope-Sounds/sounds/499607/",
+      "changes": "Unchanged."
+    },
+    "foe.lattice.attack": {
+      "key": "sounds/914fbbf58d3e6a0d5158c323d1eab13bfa37353ea9293acd28546eef241939ee.mp3",
+      "freesound": 560589,
+      "name": "Z-Jump 02a.wav",
+      "author": "angelkunev",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/angelkunev/sounds/560589/",
+      "changes": "Unchanged."
+    },
+    "foe.lattice.death": {
+      "key": "sounds/0c976da7367fc338d73849e47d8e78aeb0a04851b5f87835dfc325eccce5f370.mp3",
+      "freesound": 535320,
+      "name": "Cave Monster Die Sound.wav",
+      "author": "FiveBrosStopMosYT",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/FiveBrosStopMosYT/sounds/535320/",
+      "changes": "Unchanged."
+    },
+    "foe.lattice.hurt": {
+      "key": "sounds/975022dfe9047dac8bf2284f5b9683fb41f201a854fc5a2a1f2ef7c0ac3054a9.mp3",
+      "freesound": 177454,
+      "name": "S_Pain_Slith_14.wav",
+      "author": "Andromadax24",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Andromadax24/sounds/177454/",
+      "changes": "Unchanged."
+    },
+    "foe.tithe.alert": {
+      "keys": [
+        "sounds/96ba889fb3cb725dbe8dbae920e526dfef4169faf99395eb85df72dd3a0acd20.mp3",
+        "sounds/e56c44380dfccc45de0ea38bb173c90cec5cccaa287d1b6934691e75992a313f.mp3",
+        "sounds/e3fe847c1b1bf38b6d3f2fdcfd970ea561ac1116754e8754b9da1674804b3402.mp3",
+        "sounds/e57d11922e1de8bb6a2580c3bd6289e50e03c693acb857d9eb6d9113e58a9760.mp3"
+      ],
+      "credits": [
+        {
+          "freesound": 695384,
+          "name": "Male Death Cry 1.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695384/"
+        },
+        {
+          "freesound": 695389,
+          "name": "Male Death Cry 6.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695389/"
+        },
+        {
+          "freesound": 695388,
+          "name": "Male Death Cry 5.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695388/"
+        },
+        {
+          "freesound": 695386,
+          "name": "Male Death Cry 3.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695386/"
+        }
+      ],
+      "changes": "Unchanged."
+    },
+    "foe.tithe.attack": {
+      "keys": [
+        "sounds/488a4964036e0a80339da02149fd2ad2e3afd1a15c6768f55f30c5b90c6d172d.mp3",
+        "sounds/69212f716c48ebccd1582d8ac1f8b64f2484f6322c18d03d22b0d7f3574cf05e.mp3",
+        "sounds/aadc142a56a10426193041f2ed91a6b54851dd30cde40e4d3c5a57737563ec43.mp3",
+        "sounds/6f3d34945b619b291c64126a510e1dbda6b80e7a50629aa776d025bbf5afd349.mp3"
+      ],
+      "credits": [
+        {
+          "freesound": 695379,
+          "name": "Male Attack Grunt 2.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695379/"
+        },
+        {
+          "freesound": 695378,
+          "name": "Male Attack Grunt 1.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695378/"
+        },
+        {
+          "freesound": 695383,
+          "name": "Male Attack Grunt 8.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695383/"
+        },
+        {
+          "freesound": 695382,
+          "name": "Male Attack Grunt 7.wav",
+          "author": "F.M.Audio",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+          "page": "https://freesound.org/people/F.M.Audio/sounds/695382/"
+        }
+      ],
+      "changes": "Unchanged."
+    },
+    "foe.tithe.death": {
+      "key": "sounds/0aeee713079cd7e3b2578a0748cf4b63d20ac0c8fd302027b5850a8a8d1b7e83.mp3",
+      "freesound": 547209,
+      "name": "Voice_AdultMale_PainGrunts_09.wav",
+      "author": "MrFossy",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/MrFossy/sounds/547209/",
+      "changes": "Unchanged."
+    },
+    "foe.tithe.hurt": {
+      "keys": [
+        "sounds/0aeee713079cd7e3b2578a0748cf4b63d20ac0c8fd302027b5850a8a8d1b7e83.mp3",
+        "sounds/ad2727f3bc69029b479e657b3daf4add0f2448a045d1664343ed056c88eb5b68.mp3",
+        "sounds/aa9d286ff3a49315a7732a96648fdbf9e54af53cc9891c87e2fa08556454f932.mp3"
+      ],
+      "credits": [
+        {
+          "freesound": 547209,
+          "name": "Voice_AdultMale_PainGrunts_09.wav",
+          "author": "MrFossy",
+          "licence": "CC0",
+          "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "page": "https://freesound.org/people/MrFossy/sounds/547209/"
+        },
+        {
+          "freesound": 464486,
+          "name": "Male Grunting In Pain",
+          "author": "elynch0901",
+          "licence": "CC0",
+          "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+          "page": "https://freesound.org/people/elynch0901/sounds/464486/"
+        },
+        {
+          "freesound": 129346,
+          "name": "male_grunt.aif",
+          "author": "snaginneb",
+          "licence": "CC-BY",
+          "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+          "page": "https://freesound.org/people/snaginneb/sounds/129346/"
+        }
+      ],
+      "changes": "Unchanged."
+    },
     "guard.break": {
       "key": "sounds/48d47fdb27a4aa86f7bf66d42f0017dce59a20cde20e88072876314cd4e995fb.mp3",
       "freesound": 693582,
@@ -1720,6 +1890,106 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/TommasoMotteran/sounds/875968/",
+      "changes": "Unchanged."
+    },
+    "horse.boost": {
+      "key": "sounds/a49c36035f94313f579b4ecc415a511932fb4e95a1633d54be939d5042be3254.mp3",
+      "freesound": 322450,
+      "name": "Horse Neigh 2.wav",
+      "author": "GoodListener",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/GoodListener/sounds/322450/",
+      "changes": "Unchanged."
+    },
+    "horse.boost.ground": {
+      "key": "sounds/c82bf07fdc3e423738e33399b31527d334cc7db799492f1505b40b6f9314b8eb.mp3",
+      "freesound": 490751,
+      "name": "Horse Galloping.wav",
+      "author": "Jordishaw",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Jordishaw/sounds/490751/",
+      "changes": "Cut to 0.55 s from 1.1 s in, made mono, its ends faded."
+    },
+    "horse.dismount": {
+      "key": "sounds/800df2d5a0ee4c367eec4fa7adcb727cfbddb43ad9d2ed6895d26df8a51e42a7.mp3",
+      "freesound": 321981,
+      "name": "Leather_saddle_Twisting 01.wav",
+      "author": "n_audioman",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/n_audioman/sounds/321981/",
+      "changes": "Unchanged."
+    },
+    "horse.gallop.ground": {
+      "key": "sounds/e85682610e4a836b3b408f84fc34a6235233b3b9af84fb65afa926efa94d8f32.mp3",
+      "freesound": 403026,
+      "name": "Horse galloping (coconut shells) version 2",
+      "author": "alanmcki",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/alanmcki/sounds/403026/",
+      "changes": "Cut to 0.6 s from 3.64 s in, made mono, its ends faded."
+    },
+    "horse.gallop.stone": {
+      "key": "sounds/2e01bcab7baa2bb8eb87a8c4979842382e15cd4e74b3287657f276401973d3dc.mp3",
+      "freesound": 631829,
+      "name": "old horse drawn carriage drives past",
+      "author": "Garuda1982",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Garuda1982/sounds/631829/",
+      "changes": "Cut to 0.71 s from 12.27 s in, made mono, its ends faded."
+    },
+    "horse.mount": {
+      "key": "sounds/49ba0d36d3072ee7695e6068656b8d651b48f5e3df2f20ca3c40e4d7bdc6a68a.mp3",
+      "freesound": 642555,
+      "name": "Horse In Harness",
+      "author": "Thimblerig",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Thimblerig/sounds/642555/",
+      "changes": "Unchanged."
+    },
+    "horse.snort": {
+      "key": "sounds/f5781dc848f39f72ac1d1c33c8d35a09823ace881a57beb4af1058c461d4520d.mp3",
+      "freesound": 116267,
+      "name": "20110306_horse.snort.wav",
+      "author": "dobroide",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/dobroide/sounds/116267/",
+      "changes": "Unchanged."
+    },
+    "horse.walk.ground": {
+      "key": "sounds/964055df58074d9697776ed148de8760b10238123b6765041279d614d836a4c9.mp3",
+      "freesound": 166099,
+      "name": "hippodrome.horses back to stables.wav",
+      "author": "Zabuhailo",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Zabuhailo/sounds/166099/",
+      "changes": "Cut to 0.63 s from 7 s in, made mono, its ends faded."
+    },
+    "horse.walk.stone": {
+      "key": "sounds/b9532a7669d6b8c13e71ad40506eb9718269cf6819939e63975f2f0c8de35c7c.mp3",
+      "freesound": 187610,
+      "name": "Horse_Hooves_Hard_Floor_Interior.wav",
+      "author": "bewagne",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/bewagne/sounds/187610/",
+      "changes": "Cut to 0.97 s from 1.1 s in, made mono, its ends faded."
+    },
+    "horse.whinny": {
+      "key": "sounds/aaf6c4e737518e92a325e091968dd3beb484f04eee8afd1134c5af32c3935adb.mp3",
+      "freesound": 439670,
+      "name": "Horse Small Whinny",
+      "author": "DrinkingWindGames",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/DrinkingWindGames/sounds/439670/",
       "changes": "Unchanged."
     },
     "jump": {

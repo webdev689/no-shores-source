@@ -51,7 +51,7 @@ use crate::areas::{Area, place, radius_of};
 use crate::book::Book;
 use crate::brief::{AreaKind, Brief};
 use crate::field::{CELL_M, Field, distance};
-use crate::paths::{Blocked, Path, Tier};
+use crate::paths::{Blocked, KEEP_OFF_M, Path, Tier};
 use crate::seat::{Seating, hub};
 use land::exact::seed_of;
 use land::ground::Ground;
@@ -386,7 +386,7 @@ pub fn plan(
         })
         .collect();
     let fallen = kit.into.solids.len();
-    // Fallen rock lies in no stone built before it, a run's or any other, nor on a run's climb.
+    // Fallen rock lies in no stone built before it, a run's or any other, nor on a run's climb or its way.
     let built: Vec<city::solids::Solid> =
         kit.into.solids.iter().filter(|solid| !rocks::loose(solid)).copied().collect();
     let stone = rocks::kept_clear(&built, &runs);
@@ -541,8 +541,8 @@ fn unit(to: [f64; 2], from: [f64; 2], otherwise: [f64; 2]) -> [f64; 2] {
     }
 }
 
-/// The cells a path may not cross: under a building, a set piece's solid or a large prop, or within a metre of it,
-/// each at least a cell wide.
+/// The cells a path may not cross: under a building, a set piece's solid or a large prop, or within `KEEP_OFF_M` of
+/// it, each at least a cell wide.
 fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
     let mut blocked = vec![false; field.columns * field.rows];
     let solids = seating.solids.iter().map(|solid| {
@@ -562,23 +562,23 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
     });
     let closed = seating.buildings.iter().filter(|building| !building.open).map(|building| building.footprint);
     let prints: Vec<[f64; 4]> = rooms.chain(closed).chain(solids).chain(large_props).collect();
-    // A cell is blocked where its middle stands under something, or a metre from it; a print thinner than a cell is
-    // taken as a cell wide, so a thin wall never slips between the cells' middles.
+    // A cell is blocked where its middle stands under something, or `KEEP_OFF_M` from it; a print thinner than a cell
+    // is taken as a cell wide, so a thin wall never slips between the cells' middles.
     for [west, north, east, south] in prints {
         let widen = |low: f64, high: f64| {
             let short = ((CELL_M - (high - low)) / 2.0).max(0.0);
-            (low - short, high + short)
+            (low - short - KEEP_OFF_M, high + short + KEEP_OFF_M)
         };
         let ((west, east), (north, south)) = (widen(west, east), widen(north, south));
         let column_of = |x: f64| ((x - field.west) / CELL_M - 0.5).ceil().max(0.0) as usize;
         let row_of = |y: f64| ((y - field.north) / CELL_M - 0.5).ceil().max(0.0) as usize;
-        for row in row_of(north - 1.0)..=row_of(south + 1.0).min(field.rows) {
-            for column in column_of(west - 1.0)..=column_of(east + 1.0).min(field.columns) {
+        for row in row_of(north)..=row_of(south).min(field.rows) {
+            for column in column_of(west)..=column_of(east).min(field.columns) {
                 if row >= field.rows || column >= field.columns {
                     continue;
                 }
                 let [x, y] = field.centre(column, row);
-                if x >= west - 1.0 && x <= east + 1.0 && y >= north - 1.0 && y <= south + 1.0 {
+                if x >= west && x <= east && y >= north && y <= south {
                     blocked[field.index(column, row)] = true;
                 }
             }

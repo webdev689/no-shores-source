@@ -426,8 +426,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
-  way while they show; so does a public event's banner at a phone's width (600 px or less), but for the next event's
-  line. On foot the vitals hold the top left, so the place's name and the status line under it stand at the top
+  way while they show; so does a public event's banner at a phone's width (600 px or less), but for the one line an
+  Elite Dungeon or a Breach shows between its encounters. On foot the vitals hold the top left, so the place's name and the status line under it stand at the top
   right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
   and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
   vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the
@@ -1137,12 +1137,20 @@ plays any but the one it played last. The Duskraven plays its raven with a fire 
 - **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
   Ground's crate, and the prologue's wreck, timber throughout), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
   rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
-- **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a cue a
-  stride (1.7 m at a walk, 3.4 m at a gallop, 4.6 m boosted), at a walk, a gallop (over 8 m/s) or boosted (while the
+- **Foes' voices** ([[The Grey Tithe and the Lattice Each Have Their Own Voice]]). A foe of the Grey Tithe or the
+  Lattice, by its faction, is heard in its faction's voice as it spots the player (the shared `foe.alert` until its
+  own is picked), as its blow swings, as it is struck, and as it falls; a killing blow is its death alone
+  (`voiceCue`, `combat/worldCues.ts`). Never a din: at most two foe voices begin within 0.75 s besides a death, which
+  is never kept back, and one foe's swing or hurt is heard at most once in 2 s; only a foe's voice that began counts
+  (`WorldSounds.playHeard`). A cue picked as several recordings plays
+  them as variations, each credited.
+- **Horses** ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], `combat/horseSounds.ts`). A rider's hooves instead of their steps, a
+  stride heard as the last one's recording ends while the horse moves, at a walk, a gallop (over 8 m/s) or boosted (while the
   rider's boost runs: another player's as the room last stepped their body) on the ground, stone or water, a
   footstep's wood (only the wreck's) heard as stone (`horse.<gait>.<ground>`, nine cues); mounting (`horse.mount`, and the horse's `horse.whinny`) and getting down (`horse.dismount`); a snort
   each 9 s a ridden horse stands (`horse.snort`); and the boost's start (`horse.boost`). The player's and every other
-  player's horse, another's riding read from its moves. Each is silent until it has its pick on the sound sheet.
+  player's horse, another's riding read from its moves. Each is silent until it has its pick on the sound sheet, but a
+  hoofbeat on stone or in water, which plays its gait's on the ground until then.
 - **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
   Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
   they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).

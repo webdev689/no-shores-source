@@ -41,3 +41,19 @@ test("the land's map up as a room's gate shuts on the player is put away at sea,
   map.frame(here, 1 / 60, frame as unknown as Parameters<HelmMap['frame']>[2], {} as Parameters<HelmMap['frame']>[3]);
   assert.ok(!raised.shown && !map.busy, 'and the player is free');
 });
+
+test("while the land's map is up, what moves on it is gathered again ten times a second, and not once it is down", () => {
+  const { map } = helm();
+  map.openLand(SHEET);
+  const raised = { shown: true, frame: () => null, drop: () => undefined, close: () => undefined };
+  Object.assign(map, { map: raised });
+  let gathered = 0;
+  const marks = () => (gathered++, { others: [], events: [] });
+  const foot = { free: true, viewport: { width: 1, height: 1 }, dpr: 1, hands: null, eyes: false, at: [0, 0] as const };
+  const frame = () => map.footFrame(0.03, { ...foot, heading: 0, map: marks });
+  for (let step = 0; step < 10; step++) frame();
+  assert.equal(gathered, 3, 'at 0, 0.12 and 0.24 s of 0.27');
+  raised.shown = false;
+  for (let step = 0; step < 10; step++) frame();
+  assert.equal(gathered, 3);
+});

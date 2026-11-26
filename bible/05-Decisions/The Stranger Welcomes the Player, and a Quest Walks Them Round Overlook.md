@@ -24,7 +24,8 @@ status: in force
 - **The stranger who found the player on the shore speaks to them as they arrive in Overlook**: a little of the
   world's history and the places to visit there, the camera going to each place she names and back to the player;
   then she wishes them well, gives them some Aurem to start with, and says farewell.
-- **The player arrives with nothing**: no armour, no weapon, no mount.
+- **The player arrives with nothing**: no armour, no weapon, no mount. Replaced in part by
+  [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]: they arrive in plain clothes with no stats, and the Tack gives the first horse.
 - **The quest then guides them to each vendor**, says what each is for, has them buy simple starting gear, and ends by
   introducing each faction. The pledge follows as before ([[Quests]]).
 

@@ -237,7 +237,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "b83a9706368fa925";
+pub const SEA_CLASH_HASH: &str = "0462cf65304bcb00";
 
 /// A new player handed the Sloop, as the Harbourmaster hands it over in the welcome: one the sea lets in.
 fn sailor() -> gear::Character {
@@ -667,3 +667,44 @@ pub const TRAFFIC_SEA: &str = r#"{ "layout": { "continents": [
 
 #[path = "sea_keeping_door_tests.rs"]
 mod sea_keeping;
+
+#[test]
+fn a_browser_foresees_whom_its_swing_hits_as_the_room_judges_them() {
+    assert!(set_course(&bytes_of(&[])));
+    let sword = combat::arms_of("sword_iron", "", true);
+    let player = combat::fighter::player(standing(0.0, 0.0), sword);
+    let foe_at = |y: f64, action: combat::Action| Fighter {
+        side: combat::fighter::Side::Faction(1),
+        action,
+        ..combat::fighter::player(standing(0.0, y), combat::arms::BARE_HANDS)
+    };
+    let swing = combat::Intent {
+        combat: combat::CombatInput { attack: Some(combat::Stroke::Down), ..combat::CombatInput::default() },
+        ..combat::Intent::default()
+    };
+    // The swing stepped to the tick before its blow, as the room would step it.
+    let mut fighter = combat::player_tick(1, &player, &swing, &[], &[], &Flat).0;
+    while let combat::Action::Attack(attack) = fighter.action {
+        if attack.elapsed + 1 >= attack.strike {
+            break;
+        }
+        fighter = combat::player_tick(1, &fighter, &combat::Intent::default(), &[], &[], &Flat).0;
+    }
+    let foreseen = |foe: Fighter| {
+        let mut numbers: Vec<f64> = fighter.to_floats().to_vec();
+        numbers.extend(combat::Intent::default().to_floats());
+        numbers.extend([1.0, f64::from(sword.code()), 2.0]);
+        numbers.extend(foe.glance());
+        let after = floats_of(&predict(&bytes_of(&numbers)));
+        after[combat::floats::FIGHTER_FLOATS..].to_vec()
+    };
+    // Facing north (aim 0) the foe stands 1 m ahead.
+    let hit = foreseen(foe_at(-1.0, combat::Action::Idle));
+    assert_eq!(hit.len(), 5, "one foe hit: {hit:?}");
+    assert_eq!((hit[0], hit[1], hit[3], hit[4]), (1.0, 2.0, f64::from(combat::Stroke::Down as u8), 0.0));
+    assert!(hit[2] > 0.0, "with the blow's damage");
+    let guarding = combat::Action::Guard { elapsed: 30, window: 0 };
+    let facing_back = Fighter { aim: core::f64::consts::PI, ..foe_at(-1.0, guarding) };
+    assert!(foreseen(facing_back).is_empty(), "a guard facing the blow blocks it: no hit foreseen");
+    assert!(foreseen(foe_at(-6.0, combat::Action::Idle)).is_empty(), "out of reach");
+}

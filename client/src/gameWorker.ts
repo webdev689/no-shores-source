@@ -2,6 +2,7 @@
 // the page's canvas handed over to it. The page keeps the player's input, the pointer's lock, the pad, typing, sound
 // and storage (`thread/pageHost.ts`); here they have stand-ins (`thread/pageAway.ts`, `thread/audioAway.ts`), put in
 // place before the game's own code is first loaded, so it runs as it would on the page.
+import { isLauncherPage } from './desktop.ts';
 import { soundAway } from './thread/audioAway.ts';
 import { pageAway } from './thread/pageAway.ts';
 import type { Start, ToGame, ToPage } from './thread/pageOps.ts';
@@ -25,14 +26,18 @@ async function begin(start: Start): Promise<void> {
   hear = (message) => (message.kind === 'audio' ? answered(message.reply) : away.heard(message));
   for (const message of waiting.splice(0)) hear(message);
   try {
-    const [{ GpuUnavailable, startGpu, stopWhenLost }, { startGame }] = await Promise.all([
+    // The desktop app's launcher window draws the launcher alone, and loads nothing of the game's world.
+    const launcher = isLauncherPage(start.href, start.desktop !== null);
+    const [{ GpuUnavailable, startGpu, stopWhenLost }, starting] = await Promise.all([
       import('./gpu.ts'),
-      import('./game/game.ts'),
+      launcher
+        ? import('./game/launcher/launcherApp.ts').then((app) => app.startLauncherApp)
+        : import('./game/game.ts').then((game) => game.startGame),
     ]);
     try {
       const gpu = await startGpu(away.canvas);
       stopWhenLost(gpu.device, (message) => send({ kind: 'stopped', message }));
-      await startGame(gpu, away.canvas);
+      await starting(gpu, away.canvas);
       send({ kind: 'started' });
     } catch (error) {
       const why =

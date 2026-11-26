@@ -84,6 +84,9 @@ const EDGE_KEEP_M: f64 = 14.0;
 #[derive(Debug, Clone)]
 pub struct Blocked(pub Vec<bool>);
 
+/// How far round what stands a cell is still blocked, metres: a way keeps a metre off a wall, a stake or a large prop.
+pub const KEEP_OFF_M: f64 = 1.0;
+
 /// Finds the least-cost way from one point to another over the field, as cell indices; None where none is open.
 #[must_use]
 pub fn find(

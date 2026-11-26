@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Rect } from './heldMapLaw.ts';
-import { paintLand, type LandPainting } from './landLetters.ts';
+import { LandLettering, paintLand, type LandPainting } from './landLetters.ts';
+import { DOT, ROUTE } from './mapLetters.ts';
 import type { LandSheet } from './landSheet.ts';
 import { recorder } from './painterForTests.ts';
 
@@ -61,6 +62,35 @@ const paint = (more: Partial<LandPainting> = {}) => {
   return { ...recorded, table };
 };
 
+/** The land's map lettered as the held map letters it: its sheet onto a picture of its own (`sheet`'s calls), and
+ *  that copied onto the parchment's with what moves on it painted over (`calls`). */
+const lettered = () => {
+  const [parchment, sheet] = [recorder(), recorder()];
+  const lettering = new LandLettering({
+    width: 1,
+    height: 1,
+    getContext: () => sheet.painter,
+  } as unknown as OffscreenCanvas);
+  const painting = (more: Partial<LandPainting> = {}): LandPainting => ({
+    sheet: SHEET,
+    view: { left: 0, top: 0, scale: 2 },
+    ink: { width: 800, height: 500 },
+    scale: 1,
+    covers: [],
+    table: null,
+    player: null,
+    ...more,
+  });
+  const letter = (more: Partial<LandPainting> = {}, reads = 'still') =>
+    lettering.paint(
+      parchment.painter,
+      { width: 1000, height: 700 },
+      { inkAt: { x: 20, y: 30 }, dpr: 1, reads },
+      painting(more),
+    );
+  return { letter, calls: parchment.calls, sheet: sheet.calls, depth: parchment.depth };
+};
+
 test('the plan says no keeper by name: each is a glyph, and the table says what each glyph is, once', () => {
   const words = paint().texts();
   assert.equal(words.filter((word) => word === 'Vault').length, 1, 'the table names the vaults once');
@@ -115,7 +145,8 @@ test('nothing is painted outside the map, and every save is restored', () => {
 });
 
 test("the player's arrow stands where they do on the sheet", () => {
-  const { calls } = paint({ view: { left: 50, top: 0, scale: 2 }, player: { at: [150, 40], heading: 0 } });
+  const { letter, calls } = lettered();
+  letter({ view: { left: 50, top: 0, scale: 2 }, player: { at: [150, 40], heading: 0 } });
   const moves = calls.filter((call) => call.name === 'translate').map((call) => call.args);
   assert.ok(
     moves.some(([x, y]) => x === 200 && y === 80),
@@ -124,7 +155,8 @@ test("the player's arrow stands where they do on the sheet", () => {
 });
 
 test("the player's arrow points the way they look: east, a quarter turn from north", () => {
-  const { calls } = paint({ player: { at: [150, 60], heading: Math.PI / 2 } });
+  const { letter, calls } = lettered();
+  letter({ player: { at: [150, 60], heading: Math.PI / 2 } });
   const placed = calls.findIndex((call) => call.name === 'translate' && call.args[0] === 300 && call.args[1] === 120);
   const tip = calls.slice(placed).find((call) => call.name === 'moveTo')?.args as number[];
   assert.ok(Math.abs((tip[0] ?? 0) - 9) < 1e-9 && Math.abs(tip[1] ?? 0) < 1e-9, `${tip}`);
@@ -218,4 +250,55 @@ test("a name kept by its mark stands only where it is nearer its own mark than a
   const crowded = placed(near([113.1, 109]));
   assert.ok(crowded, 'lettered elsewhere by its own mark');
   assert.notDeepEqual(crowded, [200, 218], 'not under it, nearer the Hold’s mark than its own');
+});
+
+/** Other players and the event in the world: the sheet's origin is (1000, 2000), and the view 2 pixels a metre. */
+const moving = (others: readonly { at: readonly [number, number]; company: boolean }[], clock = '2:59') => ({
+  moving: { others, events: [{ at: [1150, 2100] as const, name: 'The Grey Tithe Raid', clock }] },
+});
+
+test('what moves is painted over a copy of the sheet, which is painted again only when the map or its table changes', () => {
+  const { letter, calls, sheet } = lettered();
+  const sheetPaintings = () => sheet.filter((call) => call.name === 'clearRect').length;
+  assert.equal(letter(moving([{ at: [1100, 2050], company: false }])), true);
+  assert.equal(sheetPaintings(), 1);
+  assert.equal(letter(moving([{ at: [1100.1, 2050.1], company: false }])), false, 'moved within a pixel: nothing');
+  assert.equal(letter(moving([{ at: [1103, 2050], company: false }])), true, 'moved 6 pixels: the marks again');
+  assert.equal(letter(moving([{ at: [1103, 2050], company: false }], '2:58')), true, 'the clock on: the marks again');
+  assert.equal(sheetPaintings(), 1, 'the sheet itself only once');
+  assert.equal(letter(moving([{ at: [1103, 2050], company: false }], '2:58'), 'panned'), true);
+  assert.equal(sheetPaintings(), 2, 'the map panned: the sheet again');
+  assert.equal(letter(moving([{ at: [1103, 2050], company: true }], '2:58'), 'panned'), true);
+  assert.equal(sheetPaintings(), 3, 'a company dot now, so a row more in the table: the sheet again');
+  assert.ok(calls.filter((call) => call.name === 'drawImage').length >= 4, 'each painting copies the sheet in');
+});
+
+test('each other player on the map is a dot in their colour, one off it neither dotted nor in the table', () => {
+  const { letter, calls, sheet } = lettered();
+  letter(
+    moving([
+      { at: [1100, 2050], company: false },
+      { at: [9000, 2050], company: true },
+    ]),
+  );
+  const dots = calls.flatMap((call, index) => (call.name === 'arc' && call.args[2] === 3.2 ? [index] : []));
+  const filled = dots.map((index) => calls.slice(index).find((call) => call.name === 'fill')?.fillStyle);
+  assert.deepEqual(filled, [DOT.player], 'only the one on the map');
+  const words = sheet.filter((call) => call.name === 'fillText').map((call) => call.args[0]);
+  assert.ok(words.includes('Other players') && !words.includes('Your company'), JSON.stringify(words));
+});
+
+test('the event running is ringed at its ground with its name and time left, and nothing moving covers the table', () => {
+  const { letter, calls, depth } = lettered();
+  letter({ ...moving([{ at: [1100, 2050], company: true }]), player: { at: [150, 40], heading: 0 } });
+  const placed = calls.find((call) => call.name === 'translate' && call.args[0] === 300 && call.args[1] === 200);
+  assert.ok(placed, 'at its ground, (150, 100) on the sheet, 2 pixels a metre');
+  const said = calls.find((call) => call.name === 'fillText' && call.args[0] === 'The Grey Tithe Raid 2:59');
+  assert.equal(said?.fillStyle, ROUTE);
+  const clip = calls.findIndex((call) => call.name === 'clip');
+  assert.deepEqual(calls[clip]?.args, ['evenodd']);
+  const rects = calls.slice(0, clip).filter((call) => call.name === 'rect');
+  assert.equal(rects.length, 2, 'the map, then the table cut out of it');
+  assert.ok(clip < calls.findIndex((call) => call.name === 'arc'), 'clipped before anything moving is painted');
+  assert.equal(depth(), 0);
 });

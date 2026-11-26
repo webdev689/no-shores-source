@@ -190,6 +190,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       at: [body.x, body.y],
       heading: walker.player.yaw,
       lit: (glyph) => keeperLit(here.gear?.gear ?? null, glyph, (counter) => playing.quests.wants(counter)),
+      map: own.map,
     });
     // The held map, or the player's own hands in first person, over the finished picture; while she speaks the view
     // is the tour's, never through the player's eyes.

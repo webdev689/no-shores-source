@@ -262,7 +262,8 @@ number is one of [[Gear as Claude Shapes It]].
 ## In the rooms
 
 - **A new character** arrives with no weapon and no armour, only their ship's first modules
-  ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]); the Test Ground's player, and the
+  ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]), dressed by the prologue's end in
+  plain clothes (below); the Test Ground's player, and the
   scripted players that try the public events, wear a level 1 Normal sword and level 1 Normal armour
   (`Character::kitted`). A character kept before keeps its gear.
 - **Each player's gear** is held by the room they are in ([[Server]]), a new character's as they join, and sent to
@@ -649,8 +650,9 @@ is a horse's hide, kept as its horse ("Horses").
 ## Horses
 
 [[Horses Are Items Worn in a Mount Slot]] (`gear::horses`; Claude's calls in
-[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; the stranger's Bay in
-[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]]).
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; the free Bay in
+[[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]], given by
+the Tack in [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]).
 
 - **A horse is an item** of its own kind (28), worn in the Mount slot (11), one to each coat: the Bay Horse, the
   Chestnut Horse and so on, its name its coat's place among the coats (`content/gear/rolled.json` names them in that
@@ -661,11 +663,11 @@ is a horse's hide, kept as its horse ("Horses").
 - **The Tack** sells horses as it sells bardings, at its coat's price; one bought goes to the pack, one of each coat,
   refused while the Mount slot carries nine. Beside its day's four it sells the Bay Horse every day, first on its
   screen, at the cheapest coat's price (1,500 Aurem, from level 1).
-- **A new character starts with no horse, and the stranger gives the Bay** (`horses::FIRST_HORSE`): her task's reward
-  (`"horse": true` in `content/quests/quests.json`) is her 400 Aurem and the Bay Horse, paid together as the room
-  pays the task, so a page that asks for her gift late, after a reload, has both from it then. It is worn in the Mount
-  slot, or carried where one is worn already, and never a second: one who keeps a Bay already is given only the
-  Aurem. A character already past her task is given nothing new. A character kept while coats were cosmetics is given, as it is read, a horse in
+- **A new character starts with no horse, and the Tack gives the Bay** (`horses::FIRST_HORSE`): the opening's round
+  of the counters asks the player to speak with her, and that goal's own reward (`"horse": true` in
+  `content/quests/quests.json`) is the Bay Horse, given by the room as she is spoken with at her counter, for
+  nothing. It is worn in the Mount slot, or carried where one is worn already, and never a second: one who keeps a
+  Bay already is given none. A character already past that goal is given nothing new. A character kept while coats were cosmetics is given, as it is read, a horse in
   the pack for each coat it kept and the one it wore worn in the Mount slot; one kept before cosmetics wore the Bay,
   so it is given the Bay Horse worn. The coats leave its cosmetics, and a room with horses marks every character's
   cosmetics (`horses`), so this is done once: a coat found beside the mark is what a room from before horses wrote
@@ -674,6 +676,21 @@ is a horse's hide, kept as its horse ("Horses").
   worn). A room rolled back past the welcome to Overlook resets an opening task it does not know to its own first, so a
   new character rolled back and forward reads on "Hear the three houses": the stranger's 400 Aurem and the round of the
   counters are lost to it.
+
+## Plain clothes
+
+[[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]] (`gear::story::plain_item`).
+
+- **The prologue's end dresses the player in plain clothes**: where their torso and legs are bare as it takes back
+  the story's steel, the room gives a Plain Shirt (Torso) and Plain Breeches (Legs), worn. They are Normal pieces
+  marked plain (`Item::plain`, on the wire as `plain`): no Defense, Prestige, nodes, perks or XP, and no level or power
+  shown on their cards, as a horse's. A slot worn with a piece of the player's own is given nothing.
+- **Drawn as the shore's clothes**: the shirt in white, the breeches and boots in dark brown (`PLAIN_CLOTHES`,
+  `player/dressing.ts`), the same the shore and the deep draw the player in, so the figure that comes ashore is the
+  one that arrives.
+- **Replaced, they go to the pack**, as any piece does; dismantled, they give nothing back. A goal to put armour on
+  is not met by them (`tell_held`), so the opening's "Put them on" asks for the pieces bought.
+- **Others see them** as the page sends them: garments are never held back by the room.
 
 ## Elements and shields
 

@@ -23,6 +23,10 @@
     "arms": "Gauntlets",
     "legs": "Greaves"
   },
+  "plain": {
+    "torso": { "name": "Plain Shirt", "words": "A shirt to stand up in. It turns no blade." },
+    "legs": { "name": "Plain Breeches", "words": "Breeches and boots to walk in. They turn no blade." }
+  },
   "names": {
     "guns": { "normal": ["Guns"], "magic": ["Tempered Guns", "Sound Guns", "Brass Guns"], "rare": ["Harbour Battery", "Salt-Cast Guns", "Gullroar Battery"] },
     "hull": { "normal": ["Hull"], "magic": ["Tarred Hull", "Sound Hull", "Caulked Hull"], "rare": ["Breakwater Hull", "Reefwalker Hull", "Saltoak Hull"] },

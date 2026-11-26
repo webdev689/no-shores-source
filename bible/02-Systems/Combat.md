@@ -119,12 +119,13 @@ as its lone weapon. Holding the button swings again as each blow ends. A swing c
   poise stagger can begin, blows do not fill the meter; an overreached foe staggers at the first blow whatever.
 - **Presses kept.** A press of the attack, the guard, the dodge or the drink is kept 8 ticks: one made while the fighter
   is busy (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as soon as it
-  can be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press wins over a
-  button only held: a click of the attack swings out of a held guard, and a riposte is struck through one. A click that
-  cannot swing yet, for want of stamina, riding off the ground or in a swap, holds no guard down: the guard rises and
-  stays up until the swing can start. A swing, a guard, a draw or a shot starts only with the hands free, on foot or
-  in the air, never hanging from a lip, climbing a wall or going over one ([[Movement]]). The guard, held or
-  pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
+  can be, and a click in a weapon swap is kept until the swap ends ("The swap", below). A click with the weapon put away
+  draws it and swings it on the same tick ([[The Drawing Click Swings, and the Player's Own Hits Show at Once]]). The
+  newest press wins over a button only held: a click of the attack swings out of a held guard, and a riposte is struck
+  through one. A click that cannot swing yet, for want of stamina, riding off the ground or in a swap, holds no guard
+  down: the guard rises and stays up until the swing can start. A swing, a guard, a draw or a shot starts only with the
+  hands free, on foot or in the air, never hanging from a lip, climbing a wall or going over one ([[Movement]]). The
+  guard, held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks

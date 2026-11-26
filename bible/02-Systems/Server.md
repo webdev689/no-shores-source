@@ -349,8 +349,11 @@ will take it, by the room's own tick.
   once a tick (`room_snapshot_prepare`) and sends each socket its own cut (`room_snapshot_for`): what floats, kept
   hurts, what is told and a deck's own snapshot reach only the players they are for, and each player is sent only the
   ships near them: the hostile ships within 1.1 times the distance each is sighted from (the share that keeps it at
-  sea), the other players' within 60 km (the page's farthest view at sea), and every player in their fight. A boarding
-  is refused when its deck would hold no crew.
+  sea), the other players' within 60 km (the page's farthest view at sea), and every player in their fight. Once in
+  each second of the sea's clock, however many ticks the host stepped at once, every player is also sent the sea's
+  chart (`charted`): every ship in the room, their own among them, where it lies and its captain's name, for the
+  [[Held Map]]; the snapshots between carry none. Every snapshot of that tick carries it, however many times it is
+  prepared, and a sea opened again charts its first. A boarding is refused when its deck would hold no crew.
 - **Measured** (`room-wasm/src/load_tests.rs`, by hand in release): the tick and every player's snapshot, players 60 km
   apart with three wary ships each: 432, 568 and 590 bytes a player a tick at 1, 8 and 16 players (tested offline).
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind its wheel on its

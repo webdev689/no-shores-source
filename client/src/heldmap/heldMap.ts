@@ -31,13 +31,13 @@ import { heldCardNode } from './heldMapCard.ts';
 import { Kept, layoutKey } from './heldMapKept.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 import { GLYPH_HALF } from './landGlyphs.ts';
-import { paintLand } from './landLetters.ts';
-import type { LandSheet } from './landSheet.ts';
+import { LandLettering } from './landLetters.ts';
+import type { LandSheet, MapMarks } from './landSheet.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { MapRegions, paintRegion } from './mapRegions.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
-import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
+import { dotInks, fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
 import type { MapWater, MapWaters } from './watersWash.ts';
 import { motionReduced } from '../plus/kit.ts';
 import type { Child } from '../ui/node.ts';
@@ -92,6 +92,8 @@ export interface HeldMapScene {
   readonly course: readonly Point2[];
   readonly quest?: readonly string[];
   readonly lit?: (glyph: string) => boolean;
+  /** On land, what moves on it: the other players and the public event running (`MapMarks`), in the world. */
+  readonly moving?: MapMarks;
 }
 
 type Phase =
@@ -122,8 +124,8 @@ export class HeldMap {
   private readonly painter: OffscreenCanvasRenderingContext2D;
   private readonly field: CoastField;
   private key: KeyPlace | null = null;
-  /** Where the land's table stood when last painted, so it keeps its corner while it can. */
-  private table: KeyPlace | null = null;
+  /** The land's sheet, painted onto a picture of its own and copied onto the parchment's with what moves on it. */
+  private readonly landLettering = new LandLettering(new OffscreenCanvas(1, 1));
   /** The words' widths and the key's size as last measured, and the face's loading they were measured in. */
   private readonly widths = new Map<string, number>();
   private keySize: { width: number; height: number } | null = null;
@@ -227,7 +229,7 @@ export class HeldMap {
   ): void {
     if (this.phase.kind !== 'closed') return;
     [this.land, this.extent] = [sheet, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }];
-    this.table = null;
+    this.landLettering.forget();
     this.raise(viewport, gauntlets, (ink) => viewOn(standing, ink, this.extent, sheet.span ?? LAND_SPAN_M));
   }
 
@@ -449,28 +451,31 @@ export class HeldMap {
   ): boolean {
     const { width, height, inkAt, dpr } = size;
     const land = this.land;
-    const lettering = land ? null : this.laidOut.made(reads, () => this.layout(scene, sprite));
-    const isles = lettering ? this.isleInks(lettering.scale) : [];
-    const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
-    const sea = [this.measuredFonts, lettering, isles, said, asked];
-    const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : sea]);
-    if (shape === this.letteredShape) return false;
-    this.letteredShape = shape;
-    if (lettering) {
-      paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
-      // While the prompt asks, it says what the pointer's words would.
-      if (said?.region && !asked) paintRegion(this.painter, said.line, [said.x, said.y], this.ink, lettering.scale);
-      else if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
-      if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
-    } else if (land) {
+    if (land) {
+      // The sea's lettering is painted afresh once the land's has been.
+      this.letteredShape = '';
       const player = {
         at: [scene.ship[0] - land.origin[0], scene.ship[1] - land.origin[1]] as const,
         heading: scene.heading,
       };
-      const [scale, covers] = [letterScale(this.ink), handsCover(sprite, this.ink)];
-      const painting = { sheet: land, view: this.mapView, ink: this.ink, scale, covers, table: this.table, player };
-      this.table = paintLand(this.painter, this.lettering, inkAt, dpr, painting);
+      const [scale, covers, moving] = [letterScale(this.ink), handsCover(sprite, this.ink), scene.moving];
+      const painting = { sheet: land, view: this.mapView, ink: this.ink, scale, covers, table: null, player, moving };
+      return this.landLettering.paint(this.painter, this.lettering, { inkAt, dpr, reads }, painting);
     }
+    const lettering = this.laidOut.made(reads, () => this.layout(scene, sprite));
+    const isles = this.isleInks(lettering.scale);
+    const others = dotInks(scene.moving?.others ?? [], (x, y) => toInk(this.mapView, x, y), this.ink);
+    const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
+    const sea = [this.measuredFonts, lettering, isles, others, said, asked];
+    const shape = JSON.stringify([width, height, inkAt, dpr, sea]);
+    if (shape === this.letteredShape) return false;
+    this.letteredShape = shape;
+    this.landLettering.forget();
+    paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles, others);
+    // While the prompt asks, it says what the pointer's words would.
+    if (said?.region && !asked) paintRegion(this.painter, said.line, [said.x, said.y], this.ink, lettering.scale);
+    else if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
+    if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
     return true;
   }
 
