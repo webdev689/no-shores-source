@@ -118,8 +118,10 @@ bytes are kept by the browser for a year (`site/_headers`). `www.noshores.online
 `noshores-www` (`site/www/`), that sends every address to the same one on the bare domain, so the game's saves and the
 panel's sign-in live at one origin. A merge into `main` deploys it
 (`site.yml`) on the page's terms: once the same commit has passed the check and the rooms have deployed or had nothing
-to, so no game is served on a protocol no room speaks. Run by hand from the Actions tab it deploys again, but only a
-commit whose own CI check passed. Before it deploys, every CORS rule of the game's R2 bucket
+to, so no game is served on a protocol no room speaks. It deploys while that commit is still `main`'s head, or when its
+own run deployed the rooms: a merge landing between the two would otherwise leave the rooms on the new protocol and
+the page on the old, every join refused, until the newer merge's deploy. Run by hand from the Actions tab it deploys
+again, but only a commit whose own CI check passed. Before it deploys, every CORS rule of the game's R2 bucket
 (`overlook-forge`) that lets the published page read it is widened to the domain's two origins, and the accounts send
 a Discord sign-in back to the game there. Each deploy also writes `play/patch-notes.json` from the merged pull
 requests' "Patch notes" sections, which the [[Desktop App]]'s launcher shows (`site/patchNotes.ts`). The game is still
