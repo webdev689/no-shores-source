@@ -48,6 +48,8 @@ export type StoryAsk =
       readonly hunt?: boolean;
     }
   | { readonly ask: 'post'; readonly crew: number; readonly x: number; readonly y: number; readonly facing: number }
+  /** The boarder met one on one, `foe`, sent at the player again: once they rise, it has no one to fight. */
+  | { readonly ask: 'hunt'; readonly foe: number }
   | { readonly ask: 'spawn' | 'put'; readonly x: number; readonly y: number }
   | { readonly ask: 'block'; readonly block: CourseBlock; readonly stands: boolean };
 
@@ -60,6 +62,8 @@ export function storyOn(room: LocalRoom, story: StoryAsk): number {
       if (id !== 0 && story.hunt) room.storyHunt(id);
       return id;
     }
+    case 'hunt':
+      return done(room.storyHunt(story.foe));
     case 'post':
       return done(room.storyPost(story.crew, story.x, story.y, story.facing));
     case 'take':

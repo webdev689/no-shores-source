@@ -8,6 +8,8 @@ import { FRONT_FACE, holdPictures, releasePictures } from '../../ships/shipView.
 import { SKY_WGSL, skyUniformFor } from '../../sky/skyUniform.ts';
 import { SHIP_PICTURE_TEXELS } from '../../textures/shipPictures.ts';
 import { SAMPLES } from '../../water/waterView.ts';
+import type { CourseBlock } from '../../../../server/roomDoor.ts';
+import { floorUnder, readWreck } from './wreckLayout.ts';
 
 /** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), the picture's UV (2 × float32, metres),
  *  its part and piece (4 × uint8), and the light's UV (2 × unorm16). */
@@ -55,16 +57,54 @@ export function readWreckMesh(bytes: ArrayBuffer): WreckMesh {
   return { vertices: bytes.slice(start, end), indices, pieces, full: header.light };
 }
 
-/** The wreck's mesh and its baked light, fetched from R2 under the keys the layout names. */
+/** A heap whose lowest point stands this far or more over the floor under its box floats, metres. */
+const FLOATS_M = 0.5;
+
+/** `mesh` with every heap that floats over the floor under its box (`floorUnder` of `ground`, by `gates`, each
+ *  closing the zone one below its piece) set down until its lowest point stands on that floor; the rest as it is.
+ *  shortcut: the heap closing the Brig's waist was piled on a spar over its deck by tools/wreck before its fix; once
+ *  the wreck's workflow has published a mesh built since, no heap floats and this lowers nothing. */
+export function settleHeaps(
+  mesh: WreckMesh,
+  ground: readonly CourseBlock[],
+  gates: readonly (CourseBlock | null)[],
+): WreckMesh {
+  const vertices = mesh.vertices.slice(0);
+  const view = new DataView(vertices);
+  const count = vertices.byteLength / WRECK_VERTEX_BYTES;
+  const heightOf = (vertex: number) => view.getFloat32(vertex * WRECK_VERTEX_BYTES + 8, true);
+  const pieceOf = (vertex: number) => view.getUint8(vertex * WRECK_VERTEX_BYTES + 25);
+  gates.forEach((gate, zone) => {
+    if (!gate || zone + 1 > 255) return;
+    let lowest = Infinity;
+    for (let vertex = 0; vertex < count; vertex++)
+      if (pieceOf(vertex) === zone + 1) lowest = Math.min(lowest, heightOf(vertex));
+    const floor = floorUnder(ground, [gate.minX, gate.minY, gate.maxX, gate.maxY]);
+    if (!Number.isFinite(lowest) || floor <= 0 || lowest - floor < FLOATS_M) return;
+    for (let vertex = 0; vertex < count; vertex++)
+      if (pieceOf(vertex) === zone + 1)
+        view.setFloat32(vertex * WRECK_VERTEX_BYTES + 8, heightOf(vertex) - (lowest - floor), true);
+  });
+  return { ...mesh, vertices };
+}
+
+/** The wreck's mesh and its baked light, fetched from R2 under the keys the layout names, every heap of it standing
+ *  on the deck under it (`settleHeaps`). */
 export async function loadWreck(
   base: string,
   keys: { readonly mesh: string; readonly light: string },
 ): Promise<{ readonly mesh: WreckMesh; readonly light: ImageBitmap }> {
   const [mesh, light] = await Promise.all([contentBytes(base + keys.mesh), contentBytes(base + keys.light)]);
+  // In the wreck's own frame, as the mesh is.
+  const layout = readWreck();
   // The picture's alpha is the sky's light, not a coverage: kept apart from its colour, and its numbers as they are.
   const options: ImageBitmapOptions = { premultiplyAlpha: 'none', colorSpaceConversion: 'none' };
   return {
-    mesh: readWreckMesh(mesh.bytes),
+    mesh: settleHeaps(
+      readWreckMesh(mesh.bytes),
+      layout.course,
+      layout.zones.map((zone) => zone.gate),
+    ),
     light: await createImageBitmap(new Blob([light.bytes]), options),
   };
 }

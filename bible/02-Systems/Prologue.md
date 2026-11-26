@@ -26,6 +26,7 @@ code:
   - client/src/game/prologue/waking.ts#blurAt
   - client/src/game/prologue/tutorial.ts#Tutorial
   - client/src/game/prologue/tutorial.ts#Freeze
+  - client/src/game/prologue/tutorial.ts#DodgeWatch
   - client/src/game/prologue/wreckTeaching.ts#LyingArms
   - client/src/game/prologue/storyArms.ts#StoryArms
   - client/src/game/prologue/wispCourse.ts#wispCourse
@@ -59,10 +60,13 @@ code:
   - crates/room/src/story.rs#story_wreck
   - client/src/game/prologue/wreckLayout.ts#readWreck
   - client/src/game/prologue/wreckView.ts#WreckView
+  - client/src/game/prologue/wreckView.ts#settleHeaps
+  - client/src/game/prologue/wreckLayout.ts#floorUnder
   - tools/wreck/build_wreck.py
   - tools/wreck/light_wreck.py
   - tools/wreck/export_wreck.py
   - tools/wreck/wreck_level.py
+  - tools/wreck/wreck_dress.py
   - client/src/game/prologue/wreckProgress.ts#WreckProgress
   - client/src/game/prologue/wreckRun.ts#WreckRun
   - client/src/game/prologue/wreckCamera.ts#cameraCourse
@@ -139,7 +143,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `battle` | The sea's own fight against the three, every ship taken up under the sail and way it was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as its own, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting the player still afloat and "No need to sink them", until every one is beaten, sunk or struck; the fight's readout, its keys and DFO's messages as toasts | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them (whichever shoulder leaves it the more room from the foremast and its shrouds), then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
-| `wake` | First person on the deck ([[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]): the view darkening and lightening as the eyes blink slowly open, pulsing darker with each beat of the heart until they are open, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes (a run that opens later is eased to from wherever the camera then is), their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]) | shown |
+| `wake` | First person on the deck ([[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]): the view darkening and lightening as the eyes blink slowly open, pulsing darker with each beat of the heart until they are open, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes (a run that opens later is eased to from wherever the camera then is), their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]); skipped at any moment, or left however it is left, its eyes are open and the view neither dark nor blurred, the frame the director draws after its skip too | shown |
 | `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one, its bow taken up and taught; a wisp out of the storm that engulfs the player and gives them the Storm; the next fight teaching each of its abilities; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck, turned from the rail most of the way toward the camera; skipped, the screen is black at once, so the deep comes in from black | shown |
 | `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface, the sea taking the story's steel and arms: from here on the player is drawn in the plain clothes a player with nothing wears in Overlook, nothing in hand or at the hip (`seaTakenDress`); the view darkening as the eyes close; a flash; a voice; black | shown |
@@ -382,7 +386,13 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   its wave, walks there by the room's routes (`Room::story_post`) and joins its fight. None comes into the arena:
   Thule's fight is one on one.
 - **Heaps across the way.** Each zone but the first and the arena has a heap of wreckage across the way on from it,
-  piled 2.9 m over the deck or the ramp it stands on and out over the bulwarks, standing from the start. It is
+  piled 2.9 m over the deck or the ramp it stands on and out over the bulwarks, standing from the start. A heap in
+  the wreck's own frame is piled on the floor most of its box stands on: the middle height of the faces looking up
+  under it, sampled every 0.3 m (`floor_under`), so a spar or a rail across it is not taken for its deck; one on a ship's
+  frame, on the deck or ramp under its box's middle. The page sets a heap whose lowest point stands 0.5 m or more over
+  the floor under its box (`floorUnder`, the middle height of the ground there) down onto it as the mesh is read
+  (`settleHeaps`), and its block in the layout tops it where it is drawn, so the room's wall and the drawn heap
+  agree. It is
   cleared once its zone's wave has stood whole and fallen. The steps up to the Frigate's quarterdeck at its front's
   corners are closed for good by heaps on cores of stacked crates, higher than its rails, so the arena's only way in
   is up from the wreckage off its port quarter. A player found past a heap still standing is brought back to their
@@ -485,9 +495,16 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     Once a parry is made, the next blow freezes at most 10 ticks before it lands (the player on their feet with stamina
     left, facing any way), "Press V to dodge", until V or the side button. A blow answered never freezes again, and one
     no press could answer passes; a lesson the answer did not meet (a parry spoiled by a press left unused) is asked
-    again of the next. Once both are made, whichever came last, "F parries a blow as it lands; V dodges it" shows for 6
-    s and the fight runs as any. A boarder brought down before both are made is followed by another. Steps: Parry a blow
-    (F), Dodge a blow (V), Bring the boarder down.
+    again of the next. A dodge is made by any dodge that gets the player clear of the blow, perfect or not
+    (`DodgeWatch`): the room's word that a blow passed through it, or the player seen dodging while the boarder's blow
+    wound up at them and no word of it finding them (a hit, a block, a broken guard or a parry) 0.6 s after it landed,
+    as when the hop carried them out of its reach, of which the room says nothing. Once both are made, whichever came
+    last, "F parries a blow as it lands; V dodges it" shows for 6 s and the fight runs as any. A boarder brought down
+    before both are made is followed by another. A boarder standing while the duel lasts that is not fighting the
+    player, as once they fall to it and rise at the checkpoint, is sent at them again (`Room::story_hunt`, the story's
+    `hunt` ask), at most once a second. No foe climbs from the Brig's waist up onto its quarterdeck, so a boarder in
+    the waist waits at the foot of the step for a player standing up there. Steps: Parry a blow (F), Dodge a blow (V),
+    Bring the boarder down.
   - "Arm yourself with the bow": the boarder brought down once both lessons are made drops a bow where it fell, the
     story's own Normal Bow of level 1, lying as the sword and shield lay (`LyingArms`: popped up, bouncing, hovering,
     its line of light), drawn half again its true size so the thin bow reads where it fell until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
@@ -535,7 +552,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     pressed, and again at the next chance a second on should the press cast nothing, until it is cast: "Press G to cast Arc Lash" once a foe stands in its cone and reach (7 m), then "Press Q to cast
     Quicken" and "Press R to release Tempest" once a foe stands within 12 m, each with its charge full. Each step is
     ticked once cast, read from its charge spent: Cast Arc Lash (G), Cast Quicken (Q), Release Tempest (R); then the
-    fight runs as any.
+    fight runs as any. Each ability's first cast, asked or not, is paced so it can be felt: the room charges the Storm
+    full again (`Room::story_storm` once more), so it can be cast again, and the next is not asked until the fight has
+    run 12 s more (`STORM_PAUSE_S`, Quicken's Haste twice over), or 6 s after it is cast again (`AGAIN_PAUSE_S`, its
+    moment played out), the seconds counted only while a hostile foe stands. The foes are the zones' own waves: a wave
+    down before the lesson ends leaves the rest to the next zone's.
   - "Fight your way through the wreck", counting the hostile foes standing while any do. Until the Storm is given,
     the zones' waves wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).
   - The boss fight's task is "Face Captain Brannoc Thule", whatever stands before. The tracker hides while a cutscene

@@ -325,6 +325,23 @@ test('the wake cut short leaves the eyes open, though the director frames it onc
   assert.match(dark ?? '', /^stage\.parts\.screen\.darken\(0\)/, `${dark}`);
 });
 
+test('the wake cut short or left at any moment leaves the view sharp, though the director frames it once more', () => {
+  const lastBlur = (calls: string[]) => calls.filter((call) => call.startsWith('stage.parts.screen.blur(')).at(-1);
+  for (const into of [0, 0.4, 2, 6, 12]) {
+    const skipped = recorded();
+    const beat = new Wake(skipped.story, layout, scenery, new Promise(() => undefined));
+    if (into > 0) beat.frame(tick(into));
+    beat.skip();
+    beat.frame(tick(0.016));
+    assert.equal(lastBlur(skipped.calls), 'stage.parts.screen.blur(0)', `skipped ${into} s in`);
+    const left = recorded();
+    const leaving = new Wake(left.story, layout, scenery, new Promise(() => undefined));
+    if (into > 0) leaving.frame(tick(into));
+    leaving.leave();
+    assert.equal(lastBlur(left.calls), 'stage.parts.screen.blur(0)', `left ${into} s in`);
+  }
+});
+
 test('the beats from black wait for the wreck, and the wake and the shore fade in by their own darkening', () => {
   const coming = { ...scenery, coming: true } as unknown as WreckScenery;
   const { story } = recorded();
@@ -613,8 +630,10 @@ function taughtRun(state: {
   stood: number[];
   waves: boolean[];
   dropped: (readonly number[])[];
+  hunts: number[];
 } {
   const [frames, stood, waves] = [[] as { frozen?: boolean; paused: boolean }[], [] as number[], [] as boolean[]];
+  const hunts: number[] = [];
   const dropped: (readonly number[])[] = [];
   /** A forge that draws the iron sword and shield and no armour, as gear dresses a figure. */
   const sets = { helm: [], pauldrons: [], cuirass: [], gauntlets: [], greaves: [], boots: [] };
@@ -673,8 +692,10 @@ function taughtRun(state: {
       state.boarder = 'standing';
     },
     holdWaves: (held: boolean) => waves.push(held),
+    boarderId: 7,
+    openRoom: { story: (ask: { ask: string; foe?: number }) => Promise.resolve(ask.foe && hunts.push(ask.foe)) },
   } as unknown as WreckRun;
-  return { run, frames, stood, waves, dropped };
+  return { run, frames, stood, waves, dropped, hunts };
 }
 
 test('the teaching on the wreck: bare hands until the arms are worn, a boarder once ready, its blows frozen to teach', async () => {
@@ -694,7 +715,7 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
     action: 'idle',
     events: [] as FightEvent[],
   };
-  const { run, frames, stood, waves, dropped } = taughtRun(state);
+  const { run, frames, stood, waves, dropped, hunts } = taughtRun(state);
   const fight = new WreckFight(story, layout, scenery, Promise.resolve(run), {} as Nameplate);
   await Promise.resolve();
   const step = (seconds = 0.1, controls: Partial<InputFrame> = {}) =>
@@ -753,6 +774,11 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   step();
   step();
   assert.ok(calls.includes(`stage.parts.hud.toast(${reminder()})`), 'then the reminder');
+  assert.deepEqual(hunts, [], 'a boarder fighting the player is left to it');
+  state.view = { ...blow(30), target: null } as FighterView;
+  for (let nth = 0; nth < 12; nth++) step();
+  assert.deepEqual(hunts, [7, 7], 'one that has stopped, as the player rose, is sent at them again, once a second');
+  state.view = null;
   state.boarder = 'fallen';
   onFor(2);
   assert.deepEqual(dropped, [[1, 2, 3]], 'the boarder down, its bow drops where it fell, once');

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HULLS, hullEdge } from '../../water/hullMask.ts';
 import wreck from '../../../../content/prologue/wreck.json' with { type: 'json' };
-import { courseOf, inArea, layoutAt, readWreck, topAt } from './wreckLayout.ts';
+import { courseOf, floorUnder, inArea, layoutAt, readWreck, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
 const course = courseOf(layout);
@@ -97,6 +97,22 @@ function walked(): { x: number; y: number; top: number }[] {
   }
   return points;
 }
+
+test('every heap stands on the deck under its box, its block no higher over that floor than a heap is piled', () => {
+  // A heap is piled 2.9 m over its floor (tools/wreck/wreck_dress.py HEAP_M), a plank or crate topping it a little.
+  const PILED_M = [2.4, 3.6];
+  for (const zone of layout.zones) {
+    if (!zone.gate) continue;
+    const { minX, minY, maxX, maxY, top } = zone.gate;
+    const floor = floorUnder(LAID, [minX, minY, maxX, maxY]);
+    assert.ok(floor >= LOWEST_GROUND_M, `${zone.name}: over ground, at ${floor}`);
+    const over = top - floor;
+    assert.ok(
+      over >= PILED_M[0] && over <= PILED_M[1],
+      `${zone.name}: ${over.toFixed(2)} m over its floor at ${floor}`,
+    );
+  }
+});
 
 test('the path, every gate open, runs from waking to the arena with no hole, nor a rise a step or jump cannot take', () => {
   const [first] = layout.path;
