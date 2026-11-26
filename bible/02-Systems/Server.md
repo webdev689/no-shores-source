@@ -645,7 +645,8 @@ so every decision is Rust and the shell only carries bytes and time.
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
   from its node at any seas. A run started at sea (`startedAtSea`: a playlist's, or an Elite Dungeon's marked `--sea`,
   the week's or one at Normal) takes one from the sea alone, as the Playlist beside a port or the island's tile
-  starts it, and never leads out to its node or by its door,
+  starts it (one at Normal only with the ship within 32 km of its island's coast, where its tile stands), and never
+  leads out to its node or by its door,
   so no run carries a player across the sea onto an island. A character that came by none of these ways may still join one of its company who plays
   in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is

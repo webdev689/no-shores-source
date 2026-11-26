@@ -78,8 +78,12 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   const [to, was] = [nodeOf(room), nodeOf(from)];
   if (!to) return false;
   // A run started at sea (from the Playlist, beside any port, or an Elite Dungeon's at Normal) is entered from the
-  // sea alone.
-  if (startedAtSea(room)) return from !== null && seaRoom(from) !== null;
+  // sea alone; one at Normal, from its island's tile, with the ship off that island's coast.
+  if (startedAtSea(room)) {
+    if (from === null || seaRoom(from) === null) return false;
+    const offIsland = !!ship && !!reach && toCoast(ship, reach.coast) <= LANDFALL_M;
+    return to.seas > 0 || to.playlist !== null || offIsland;
+  }
   // A guild dungeon's run is entered from its guild's outpost alone and left back to it, at whatever tier it runs.
   if ((to.guild !== null && inside(to)) || (was !== null && was.guild !== null && inside(was)))
     return was?.id === to.id && was.guild === to.guild && inside(was) !== inside(to);

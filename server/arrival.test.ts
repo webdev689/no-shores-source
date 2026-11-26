@@ -115,9 +115,12 @@ test('a playlist’s run is launched from the sea, from beside any port, and lef
   assert.equal(arrives('node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6', 'sea', null, null), false);
 });
 
-test('an Elite Dungeon’s run at Normal started at sea is entered from the sea alone and left back to it', () => {
+test('an Elite Dungeon’s run at Normal started at sea is entered from the sea off its island alone, and left back to it', () => {
   const run = 'node-krakens-grotto--sea--run-k3j4h5g6';
-  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(run, sea, null, null), true, sea);
+  for (const sea of ['sea', 'sea--elite', 'sea--abyss']) assert.equal(arrives(run, sea, OFF_COAST, reach()), true, sea);
+  assert.equal(arrives(run, 'sea', FAR_OFF, reach()), false, 'never from a ship far from its island');
+  assert.equal(arrives(run, 'sea', null, reach()), false, 'nor from one the sea kept nowhere');
+  assert.equal(arrives(run, 'sea', OFF_COAST, null), false, 'nor where its island is unknown');
   assert.equal(arrives(run, 'node-krakens-grotto', null, null), false, 'never through the dungeon’s door');
   assert.equal(arrives(run, 'node-overlook-social', null, null), false);
   assert.equal(arrives(run, null, null, null), false);
