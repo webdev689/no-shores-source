@@ -1,4 +1,4 @@
-// The Playlist as the game wires it: a Playlist's mark beside a port opens its screen, built from the rules
+// The Playlist as the game wires it: its tile over a living port's island opens its screen, built from the rules
 // (`playlistWords.ts`) and the last word of the character a room sent; Launch starts a fresh run, alone or for the
 // company to join, and Find a Company searches the playlist's one queue, each run then gone into from the sea. The
 // screen closes, its search stopped, once the player is no longer at sea or over an island's side.

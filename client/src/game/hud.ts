@@ -92,7 +92,7 @@ const VIGNETTE: Picture = {
 
 /** The game's heads-up display, drawn by the game as a layer of its interface (`node`): the place's name, the edge's
  *  warning and death, the key strip, the quests, the toasts, the status line, the notices, the compass, the marks and
- *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, the leave held, the
+ *  the ships' plates at sea, the sea fight's readout, Manage's panel, the leave held, the
  *  veil while a place loads, and the sheet of every control. The game tells it what to show each frame through its
  *  methods and hears its presses through the `on` callbacks. */
 export class Hud {

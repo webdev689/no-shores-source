@@ -1,4 +1,4 @@
-// The Playlist screen a Playlist's mark beside a port opens, after the owner's reference, Destiny's Vanguard screen:
+// The Playlist screen its tile over a living port's island opens, after the owner's reference, Destiny's Vanguard screen:
 // its entries as crests on a dark chart (`playlistMap.ts`), the chosen one's card beside them or under them
 // (`playlistParts.ts`), and a footer bar with Find a Company or Stop finding, Launch and Close.
 import { motionReduced } from '../plus/kit.ts';
@@ -20,6 +20,7 @@ import {
   crestOf,
   dialOf,
   scrolledNode,
+  sweepOf,
 } from './playlistParts.ts';
 import type { PlaylistEntry, PlaylistKind, PlaylistScreenState } from './playlistWords.ts';
 import { play } from './uiSounds.ts';
@@ -207,7 +208,7 @@ export class PlaylistView {
     const crests = screen.entries.map((one, place) => {
       const weekly = one.kind === 'week-elite' || one.kind === 'week-abyss';
       const side = Math.floor(playlistSide * (weekly ? 0.8 : 1));
-      const motion: CrestMotion = { opened, swept: ui.age(`${TILE}${place}-sweep`), still };
+      const motion: CrestMotion = { opened, swept: ui.age(sweepOf(place, looks[place] ?? 'rest')), still };
       // Side by side a crest's words wrap a little over twice its side; stacked, each has its half of a row.
       const wide = besides ? Math.floor(playlistSide * WORDS_WIDE) : Math.floor((view.width - 40) / 2) - 8;
       return crestOf(

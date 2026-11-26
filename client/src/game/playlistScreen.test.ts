@@ -88,6 +88,17 @@ test('the pointer over a crest only lights it; a click, or Enter on it, chooses 
   assert.equal(screen.view.entry?.kind, 'abyss', 'Enter on the focused crest chooses it');
 });
 
+test('a crest lit long under the pointer is swept again as a click chooses it', () => {
+  const screen = standing();
+  screen.over('playlist-tile-1');
+  screen.frame([], 1);
+  screen.click('playlist-tile-1');
+  screen.frame();
+  assert.equal(screen.view.entry?.kind, 'abyss');
+  const sheens = screen.ui.laid.filter((each) => each.node.picture?.key.startsWith('playlist sheen') === true);
+  assert.equal(sheens.length, 1, 'the light sweeps it as it is chosen');
+});
+
 test('the pad: its cross moves the focus over the crests and the card follows; B closes', () => {
   const screen = standing();
   assert.equal(screen.ui.focusedId, 'playlist-tile-0');

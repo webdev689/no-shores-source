@@ -50,6 +50,9 @@ const RIPPLE_PX = 48;
 /** The crests rise into place as the screen opens: each this many seconds after the one before, over this many,
  *  from this many pixels below. */
 const RISE = { after: 0.05, seconds: 0.3, from: 12 } as const;
+/** The node a crest's sweep stands on while it is lit or chosen, one for each, so a choice sweeps it again however
+ *  long it was lit. */
+export const sweepOf = (place: number, look: CrestLook): string => `${TILE}${place}-sweep-${look}`;
 /** How fast the dials turn, degrees a second: every open entry's, and the chosen one's arcs against it. */
 const TURN = { dial: 3, arcs: -10 } as const;
 /** How bright a dial stands at rest, lit and chosen; a shut entry's at rest. */
@@ -271,7 +274,7 @@ export function crestOf(
             children: [
               // Stands while the crest is lit or chosen, so its age says how far the light has swept.
               look !== 'rest' && {
-                id: `${TILE}${place}-sweep`,
+                id: sweepOf(place, look),
                 width: box,
                 height: box,
                 through: true,

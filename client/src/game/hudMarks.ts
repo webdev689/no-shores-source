@@ -1,4 +1,4 @@
-// The marks on the screen (`ScreenMark`): at sea each node or port a ring in its kind's colour round its glyph, a
+// The marks on the screen (`ScreenMark`): at sea each port a ring in its kind's colour round its glyph, a
 // hostile ship's in its rank's colour round its faction's emblem, a Miniboss's mark over it; on foot the houses' roads'
 // next goal (quests/quests.ts); its name under it and its kind and distance under that, gold with a glow when chosen,
 // grey with a lock when locked, and an arrow on its ring's edge pointing the way while it is held at the picture's

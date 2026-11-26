@@ -54,7 +54,7 @@ const inksOf = (kind: PlaylistKind, shut: boolean): CrestInks =>
 
 /** The shield every crest is cut as, `side` pixels square: a flat top, its sides curving to a point; `inset` below 1
  *  draws it that much smaller about the square's middle. */
-export function shield(context: Context, side: number, inset = 1): void {
+function shield(context: Context, side: number, inset = 1): void {
   const scaled = (share: number) => side * (0.5 + (share - 0.5) * inset);
   context.beginPath();
   context.moveTo(scaled(0.16), scaled(0.1));

@@ -105,12 +105,6 @@ export type Landfall =
   | { readonly kind: 'isle'; readonly id: number; readonly words: string }
   | null;
 
-/** A landfall's offer in words, as its button and the menu say it. */
-export function landfallWords(landfall: NonNullable<Landfall>): string {
-  if (landfall.kind === 'dock') return `Dock at ${landfall.port}`;
-  return landfall.kind === 'isle' ? `Go ashore on ${landfall.words}` : 'Go ashore';
-}
-
 /** The landfall offered a ship that lies off an island's coast (`offCoast`), whose port, if it has one, has its harbour
  *  at `harbour`. */
 export function landfallOf(

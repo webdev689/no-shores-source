@@ -318,7 +318,7 @@ export class Sea {
 
   /** Docks or goes ashore as the landfall offers: flies the view up over the island the ship lies off, framed on the
    *  nodes of its side (the city's social space among them when docking), every node of it to be chosen from its
-   *  panel; false with nothing offered. The ship heaves to while its captain looks, and its voyage can be resumed. */
+   *  tiles; false with nothing offered. The ship heaves to while its captain looks, and its voyage can be resumed. */
   goAshore(): boolean {
     const landfall = this.landfall;
     if (!landfall) return false;

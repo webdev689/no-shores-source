@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Node } from '../ui/node.ts';
 import { byId, nodesOf } from '../ui/uiForTests.ts';
 import { SHEEN_STEPS, drawSheen } from './playlistCrest.ts';
-import { type CrestLook, type CrestMotion, TILE, crestOf, dialOf } from './playlistParts.ts';
+import { type CrestLook, type CrestMotion, TILE, crestOf, dialOf, sweepOf } from './playlistParts.ts';
 import { SAMPLE_SCREEN } from './playlistShots.ts';
 import type { PlaylistEntry } from './playlistWords.ts';
 
@@ -40,7 +40,7 @@ test('a chosen crest’s glow breathes, brighter than a lit one’s, brighter th
 
 test('the light sweeps a crest once as it is lit or chosen, never at rest, shut or under reduced motion', () => {
   const sweep = (entry: PlaylistEntry, look: CrestLook, motion: Partial<CrestMotion> = {}) =>
-    byId(crest(entry, look, motion), `${TILE}0-sweep`);
+    byId(crest(entry, look, motion), sweepOf(0, look));
   assert.match(sweep(ELITE, 'lit', { swept: 0.1 })?.picture?.key ?? '', /^playlist sheen/);
   assert.match(sweep(ELITE, 'chosen', { swept: 0.1 })?.picture?.key ?? '', /^playlist sheen/);
   assert.notEqual(sweep(ELITE, 'lit', { swept: 0.1 })?.picture?.key, sweep(ELITE, 'lit', { swept: 0.3 })?.picture?.key);
