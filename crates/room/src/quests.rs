@@ -54,6 +54,8 @@ pub(crate) struct QuestGround {
     pub way_on: BTreeMap<FighterId, usize>,
     /// Each rider the Tack's lesson watches here (`lessons.rs`).
     pub ridden: crate::lessons::Riders,
+    /// Where another room marks the task's next goal, written in this one (the sea's, `Sea::lesson_mark`).
+    pub mark: Option<[f64; 3]>,
     /// The lore read for what lies in its node (`lore.rs`): the file's, unless a test gives its own.
     pub lore: Option<&'static gear::lore::LoreDef>,
 }
@@ -185,6 +187,11 @@ impl Room {
     #[must_use]
     pub fn place_grounds(&self) -> usize {
         self.quests.grounds.len()
+    }
+
+    /// Sets where the task's next goal is marked for the player this room writes gear for at sea.
+    pub fn mark_quest(&mut self, mark: Option<[f64; 3]>) {
+        self.quests.mark = mark;
     }
 
     /// Tells a player's quest log of something they did here.
@@ -367,9 +374,13 @@ impl Room {
     }
 
     /// Where the first goal not yet met of a player's task with a place in this room stands: its middle and its
-    /// reach, or a step's own spot (`step_spot`); none when no such goal is here.
+    /// reach, or a step's own spot (`step_spot`); none when no such goal is here. A mark set from another room
+    /// (`mark_quest`) stands for it.
     #[must_use]
     pub fn quest_at(&self, player: PlayerId) -> Option<[f64; 3]> {
+        if self.quests.mark.is_some() {
+            return self.quests.mark;
+        }
         let node = self.quests.node.as_deref()?;
         let found = self.players.get(&player)?;
         found.character.goals_unmet().find_map(|(at, goal)| {

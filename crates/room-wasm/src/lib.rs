@@ -352,6 +352,10 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
+                Ok(SeaInput::Chart) => {
+                    sea.charted(player);
+                    return TAKEN;
+                }
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =
                         if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };

@@ -586,6 +586,14 @@ fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
     assert!(read_sea_input(builder.finished_data()).is_err(), "the helm is left or taken, or a chase, nothing else");
     assert_eq!(read_sea_input(&chase_bytes(7)), Ok(SeaInput::Chase(Some(7))), "a chase of ship 7");
     assert_eq!(read_sea_input(&chase_bytes(0)), Ok(SeaInput::Chase(None)), "the chase let go");
+    let asked = |ask: u8| {
+        let mut builder = flatbuffers::FlatBufferBuilder::new();
+        let course = messages::Course::create(&mut builder, &messages::CourseArgs { ask, ..Default::default() });
+        builder.finish(course, None);
+        read_sea_input(builder.finished_data())
+    };
+    assert_eq!(asked(4), Ok(SeaInput::Chart), "the held map raised at the helm");
+    assert!(asked(5).is_err(), "no ask past the chart's");
 }
 
 #[test]

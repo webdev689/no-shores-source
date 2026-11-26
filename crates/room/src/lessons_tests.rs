@@ -116,3 +116,11 @@ fn the_whole_lesson_takes_the_rider_on_to_the_harbourmaster() {
     assert_eq!(task, Some("your-ship"), "{:?}", met(&room, player));
     assert!(room.quests.ridden.is_empty(), "a rider whose task asks no riding is forgotten");
 }
+
+#[test]
+fn a_mark_set_from_the_sea_is_where_the_gear_marks_the_next_goal() {
+    let (mut room, player) = market();
+    assert_eq!(room.quest_at(player), None, "the riding task marks no place of its own");
+    room.mark_quest(Some([50_000.0, 48_800.0, 60.0]));
+    assert_eq!(room.quest_at(player), Some([50_000.0, 48_800.0, 60.0]));
+}
