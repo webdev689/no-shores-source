@@ -15,7 +15,7 @@ use crate::{
 /// The share of dungeons whose last block is laid in the style below.
 const DEEPER_SHARE: f64 = 0.5;
 /// A gallery's balustrade: how far it reaches into the gallery from the open air's edge, and how high it stands (m).
-pub const BALUSTRADE_DEEP_M: f64 = 0.3;
+pub const BALUSTRADE_DEEP_M: f64 = 0.25;
 pub const BALUSTRADE_M: f64 = 1.0;
 /// The vaults a dungeon of up to VAULT_BLOCKS blocks holds, and one more past them.
 const VAULT_BLOCKS: usize = 3;

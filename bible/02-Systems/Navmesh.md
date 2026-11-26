@@ -72,7 +72,10 @@ and their firing spots by it, and climb and drop where its links say.
    terrain is each column's lowest floor, a flight's slope (0.625, under the 0.7 walked) where it is one; the rock
    between a storey's ceiling and the floor over it stands as a block with a bottom, so the storey under is walked
    beneath it; its jambs, pillars and solids, each on its own floor, are the bake's colliders, and an Elite
-   Dungeon's Ascents' pads with them, so no foe paths onto a pad. A path between storeys goes by a flight.
+   Dungeon's Ascents' pads and a gallery's balustrades with them, so no foe paths onto a pad or over a balustrade. A
+   path between storeys goes by a flight. A dungeon's agent walks to drops (`walks_to_drops`): its ground's slope is
+   taken up to the higher cell beside alone, never down, so a storey's way over a room of the storey under it (whose
+   column's lowest floor is that room's) and the edge of a flight's landing stay floor where they meet the drop.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so

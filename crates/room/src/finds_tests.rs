@@ -36,10 +36,16 @@ fn run(room: &mut Room, ticks: u64) {
 
 /// Stands a player at a point, on the floor.
 fn stand(room: &mut Room, player: PlayerId, [x, y]: [f64; 2]) {
+    let z = room.floor.height_at(x, y);
+    stand_at(room, player, [x, y, z]);
+}
+
+/// Stands a player at a point, on the floor at or under its height.
+fn stand_at(room: &mut Room, player: PlayerId, [x, y, z]: [f64; 3]) {
     let mut there = *room.fighter(player).expect("in");
     there.body.x = x;
     there.body.y = y;
-    there.body.z = room.floor.height_at(x, y);
+    there.body.z = room.floor.height_under(x, y, z + 0.1);
     room.set_fighter(player, there);
 }
 
@@ -275,21 +281,25 @@ fn every_dungeon_stands_a_chest_in_a_room_of_each_block_against_a_wall_clear_of_
             let player = room.join().expect("space");
             room.tick();
             let chests = room.chests_for(player);
-            assert_eq!(chests.len(), laid.squares.len(), "{patrol} {number}: a chest for each block");
-            blocks += laid.squares.len();
+            // A vault whose room has no place against a wall stands no chest.
+            let vaults = laid.vaults.iter().filter(|vault| room.finds.groups.contains(vault)).count();
+            let want = dungeon_chests(&laid) + vaults;
+            assert_eq!(chests.len(), want, "{patrol} {number}: a chest for each storey of each block and each vault");
+            blocks += want;
             stood += chests.len();
             let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
             for (_, [x, y, z, facing]) in &chests {
-                let cell = (*y / CELL_M) as usize * laid.columns + (*x / CELL_M) as usize;
+                let cell = laid.cell_at([*x, *y, *z]);
                 let held = laid.room_at(cell).expect("in a room");
+                let floor = laid.floor_of(cell);
                 assert!(
                     held != laid.way_in.room && held != laid.end(),
                     "{patrol} {number}: not the way in's or the end"
                 );
-                assert!(z.abs() < 1e-9, "on the floor");
+                assert!((z - floor).abs() < 1e-9, "on its floor");
                 // Its back is against rock: a step behind it is no room's floor.
                 let behind = [x - libm::sin(*facing) * 0.8, y + libm::cos(*facing) * 0.8];
-                let back = (behind[1] / CELL_M) as usize * laid.columns + (behind[0] / CELL_M) as usize;
+                let back = laid.cell_at([behind[0], behind[1], *z]);
                 assert_eq!(laid.cells[back], dungeon::Cell::Rock, "{patrol} {number}: its back to the wall");
                 let along = [libm::cos(*facing) * 0.2, libm::sin(*facing) * 0.2];
                 assert!(
@@ -297,7 +307,7 @@ fn every_dungeon_stands_a_chest_in_a_room_of_each_block_against_a_wall_clear_of_
                         [x - along[0], y - along[1]],
                         [x + along[0], y + along[1]],
                         CHEST_HALF_DEEP_M,
-                        0
+                        laid.storey_of(cell)
                     ),
                     "{patrol} {number}: clear of rock and every solid"
                 );
@@ -307,7 +317,7 @@ fn every_dungeon_stands_a_chest_in_a_room_of_each_block_against_a_wall_clear_of_
             assert_eq!(searchable, holders.div_ceil(4).min(SEARCHABLE_MOST), "{patrol} {number}: a share");
         }
     }
-    assert_eq!(stood, blocks, "every one of these fifteen dungeons stands a chest a block");
+    assert_eq!(stood, blocks, "every one of these fifteen dungeons stands a chest a block storey and a vault's");
 }
 
 #[test]
@@ -322,15 +332,15 @@ fn every_elite_dungeons_chests_keep_out_of_its_seals_rooms() {
         let plan = crate::encounter_plan::plan_encounters(&dungeon);
         let seals: Vec<usize> = plan.seals.iter().map(|seal| seal.room).collect();
         assert!(!room.finds.chests.is_empty(), "{}: chests", elite.id);
-        for &[west, north, east, south, ..] in &room.finds.holders {
+        for &[west, north, east, south, bottom, ..] in &room.finds.holders {
             let [x, y] = [f64::midpoint(west, east), f64::midpoint(north, south)];
-            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
+            let cell = dungeon.cell_at([x, y, bottom]);
             let held = dungeon.room_at(cell);
             assert!(held.is_none_or(|room| !seals.contains(&room)), "{}: a container in a seal's room", elite.id);
         }
         for chest in &room.finds.chests {
-            let [x, y, ..] = room.finds.places[chest.place];
-            let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
+            let [x, y, z, _] = room.finds.places[chest.place];
+            let cell = dungeon.cell_at([x, y, z]);
             assert!(!seals.contains(&dungeon.room_at(cell).expect("a room")), "{}: a chest in a seal's room", elite.id);
         }
         laid += 1;
@@ -379,8 +389,7 @@ fn a_container_no_body_can_stand_beside_as_one_inside_a_tent_is_never_searchable
 /// fallen so none breaks an opening; its room, the vault's room and a player.
 fn vaulted() -> (Room, usize, PlayerId) {
     let mut room = Room::dungeon("saltgrass-downs", 0, Some((5, 9))).expect("a dungeon");
-    let vault = *room.finds.groups.last().expect("a room with a place against a wall");
-    room.finds.stand_vault(vault);
+    let vault = *room.finds.vaults.first().expect("a vault its generator laid");
     let player = room.join().expect("space");
     room.tick();
     for found in room.foes.values_mut() {
@@ -393,8 +402,8 @@ fn vaulted() -> (Room, usize, PlayerId) {
 
 /// Opens a chest standing at its place, E held its time; the Aurem it paid.
 fn open(room: &mut Room, player: PlayerId, number: u32) -> u32 {
-    let [x, y, ..] = room.chests_for(player).iter().find(|(each, _)| *each == number).expect("standing").1;
-    stand(room, player, [x, y]);
+    let [x, y, z, _] = room.chests_for(player).iter().find(|(each, _)| *each == number).expect("standing").1;
+    stand_at(room, player, [x, y, z]);
     let before = aurem(room, player);
     assert_eq!(hold(room, player, number, OPEN_TICKS + 1), 0);
     aurem(room, player) - before
@@ -406,13 +415,16 @@ fn a_vaults_chest_stands_in_its_room_beside_a_chest_for_each_block_and_pays_the_
     let (seed, style) = dungeon::of_patrol("saltgrass-downs", 0);
     let laid = Dungeon::forge(seed, style);
     let chests = room.chests_for(player);
-    assert_eq!(chests.len(), dungeon_chests(&laid) + 1, "a chest for each block, and the vault's");
+    let vaults = laid.vaults.len();
+    assert_eq!(chests.len(), dungeon_chests(&laid) + vaults, "a chest for each storey of each block, and the vaults'");
     let vaults: Vec<u32> =
         chests.iter().map(|&(number, _)| number).filter(|&number| room.vault_chest(number)).collect();
-    let [vaults_chest] = vaults[..] else { panic!("one vault's chest: {vaults:?}") };
+    let vaults_chest = *vaults.first().expect("a vault's chest");
     for chest in &room.finds.chests {
-        assert_eq!(room.finds.groups[chest.place] == vault, chest.vault, "only the vault's chest in its room");
+        let in_vault = room.finds.vaults.contains(&room.finds.groups[chest.place]);
+        assert_eq!(in_vault, chest.vault, "only the vaults' chests in their rooms");
     }
+    assert!(room.finds.vaults.contains(&vault));
     let plain = chests.iter().map(|&(number, _)| number).find(|&number| number != vaults_chest).expect("a plain one");
     let (plain_paid, vault_paid) = (open(&mut room, player, plain), open(&mut room, player, vaults_chest));
     assert!(plain_paid > gear::finds::CHEST.aurem, "a dungeon's chest pays more than a patrol's: {plain_paid}");

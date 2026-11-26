@@ -48,7 +48,7 @@ fn a_dungeon_lays_a_checkpoint_in_the_doorway_each_band_s_room_is_entered_by_fac
     assert!(bands > 0, "bands stand");
     assert_eq!(room.respawning.checkpoints.len(), bands, "one for each band's room");
     for checkpoint in &room.respawning.checkpoints {
-        let cell = |[x, y, _]: [f64; 3]| (y / dungeon::CELL_M) as usize * laid.columns + (x / dungeon::CELL_M) as usize;
+        let cell = |at: [f64; 3]| laid.cell_at(at);
         let inside = laid.room_at(cell(checkpoint.at)).expect("on a room's cell");
         assert!(laid.frames.iter().any(|frame| frame.cell == cell(checkpoint.at)), "a doorway's cell");
         let ahead = [
@@ -149,7 +149,7 @@ fn with_no_seal_to_break_the_court_s_is_won_only_once_a_living_player_has_stood_
     assert_ne!(room.checkpoint(), court, "its Boss awake from the first, but no one has come near it");
     let door = room.respawning.checkpoints[court.expect("laid")].at;
     let body = &mut room.players.get_mut(&player).expect("in").fighter.body;
-    (body.x, body.y) = (door[0], door[1]);
+    (body.x, body.y, body.z) = (door[0], door[1], door[2]);
     room.tick();
     assert_eq!(room.checkpoint(), court, "reached");
 }
@@ -202,12 +202,19 @@ fn an_abyss_wipe_stands_every_band_again_so_its_fallen_begin_again_at_the_way_in
 
 #[test]
 fn in_a_shared_dungeon_a_band_stands_again_as_any_group_does_and_its_checkpoint_falls_back() {
-    let mut room = Room::dungeon(PATROL, 0, LEVELS).expect("a patrol's shared dungeon");
+    // A band beyond the 40 m a group waits for no one to be within, in the first of the patrol's dungeons with one.
+    let far = |room: &Room, post: usize| {
+        let feet = room.spawn_points[0];
+        apart([room.garrison[post].at[0], room.garrison[post].at[1]], [feet.0, feet.1]) > 45.0
+    };
+    let (mut room, post) = (0..dungeon::PER_PATROL)
+        .find_map(|number| {
+            let room = Room::dungeon(PATROL, number, LEVELS).expect("a patrol's shared dungeon");
+            let post = (1..room.garrison.len()).find(|&post| far(&room, post))?;
+            Some((room, post))
+        })
+        .expect("a band far off");
     let player = room.join().expect("in");
-    let feet = room.players[&player].fighter.body;
-    // A band beyond the 40 m a group waits for no one to be within.
-    let far = |post: &usize| apart([room.garrison[*post].at[0], room.garrison[*post].at[1]], [feet.x, feet.y]) > 45.0;
-    let post = (1..room.garrison.len()).find(far).expect("a band far off");
     clear(&mut room, post);
     room.tick();
     assert!(room.checkpoint().is_some(), "won");

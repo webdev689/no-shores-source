@@ -57,7 +57,8 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
         max_x: fold(f64::max, f64::NEG_INFINITY, 0),
         max_y: fold(f64::max, f64::NEG_INFINITY, 1),
     };
-    let agent = navmesh::Agent { cell_size: NAV_CELL_M, ..navmesh::AGENT };
+    // A storey's way runs to the edge of a flight or over a room of the storey under it, as its floor does.
+    let agent = navmesh::Agent { cell_size: NAV_CELL_M, walks_to_drops: true, ..navmesh::AGENT };
     let anchor = [first.0, first.1, floor.height_at(first.0, first.1)];
     match floor {
         // On the lowest floors, the slabs over them and the solids its colliders: a solid read as ground would make the
@@ -90,23 +91,51 @@ fn band_size(cells: usize) -> usize {
     dungeon::posts_for(cells)
 }
 
-/// The rooms that stand a band, by walk from the way in: every room past the way in's but the end; when their bands
-/// and the Reeve would pass `most`, the most of them that fit, spread evenly along the walk.
+/// A gallery's balustrades as blocks, which a body climbs and drops from, as its pads are.
+#[must_use]
+pub fn balustrade_blocks(dungeon: &Dungeon) -> Vec<Block> {
+    let block =
+        |&[min_x, min_y, max_x, max_y, bottom, top]: &[f64; 6]| Block { min_x, min_y, max_x, max_y, top, bottom };
+    dungeon.balustrades.iter().map(block).collect()
+}
+
+/// The most of `rooms` (in walk order) whose bands come under `most`, spread evenly along them: the middle of each of
+/// as many equal stretches.
+fn spread(dungeon: &Dungeon, rooms: &[usize], most: usize) -> Vec<usize> {
+    let size = |room: &usize| band_size(dungeon.rooms[*room].cells.len());
+    for count in (0..=rooms.len()).rev() {
+        let spread: Vec<usize> = (0..count).map(|nth| rooms[(2 * nth + 1) * rooms.len() / (2 * count)]).collect();
+        if spread.iter().map(size).sum::<usize>() < most {
+            return spread;
+        }
+    }
+    Vec::new()
+}
+
+/// The rooms that stand a band, by walk from the way in: every room past the way in's but the end. When their bands
+/// and the Reeve would pass `most`, the rooms of the main way first, the most that fit spread evenly along it; then
+/// each vault while foes remain, so its room is guarded; then the others, spread evenly along the walk.
 fn band_rooms(dungeon: &Dungeon, most: usize) -> Vec<usize> {
     let end = dungeon.end();
     let mut rooms: Vec<usize> =
         (0..dungeon.rooms.len()).filter(|&room| room != end && room != dungeon.way_in.room).collect();
     rooms.sort_by_key(|&room| (dungeon.rooms[room].walk, room));
     let size = |room: &usize| band_size(dungeon.rooms[*room].cells.len());
-    for count in (0..=rooms.len()).rev() {
-        // The middle of each of `count` equal stretches of the walk.
-        let spread: Vec<usize> = (0..count).map(|nth| rooms[(2 * nth + 1) * rooms.len() / (2 * count)]).collect();
-        // The Reeve stands too: the bands take what is left of the room's most.
-        if spread.iter().map(size).sum::<usize>() < most {
-            return spread;
+    let on_way = |room: &usize| dungeon.rooms[*room].cells.iter().any(|cell| dungeon.main_way.contains(cell));
+    let (way, rest): (Vec<usize>, Vec<usize>) = rooms.iter().partition(|room| on_way(room));
+    let (vaults, others): (Vec<usize>, Vec<usize>) = rest.iter().partition(|room| dungeon.vaults.contains(room));
+    // The Reeve stands too: the bands take what is left of the room's most.
+    let mut chosen = spread(dungeon, &way, most);
+    let mut left = most - chosen.iter().map(size).sum::<usize>();
+    for vault in vaults {
+        if size(&vault) < left {
+            left -= size(&vault);
+            chosen.push(vault);
         }
     }
-    Vec::new()
+    chosen.extend(spread(dungeon, &others, left));
+    chosen.sort_by_key(|&room| (dungeon.rooms[room].walk, room));
+    chosen
 }
 
 impl Room {
@@ -141,11 +170,13 @@ impl Room {
         let floor = Floor::of_dungeon(dungeon)?;
         // An Elite Dungeon, whose end is its Boss, lays its encounters: an Ascent's pads are the blocks a body climbs.
         let plan = (end.1 == Rank::Boss).then(|| crate::encounter_plan::plan_encounters(dungeon));
-        let pads = plan.as_ref().map(crate::encounter_plan::EncounterPlan::pads).unwrap_or_default();
+        let mut pads = plan.as_ref().map(crate::encounter_plan::EncounterPlan::pads).unwrap_or_default();
+        pads.extend(balustrade_blocks(dungeon));
         let (width, depth) = (dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M);
         let ([x, y], [toward_x, toward_y]) = dungeon.arrival();
         let ring = vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]];
-        // Its jambs and pillars are its ground's own walls, not blocks a body could climb; its pads are blocks.
+        // Its jambs and pillars are its ground's own walls, not blocks a body could climb; its pads and balustrades
+        // are blocks.
         let mut room = Self::node(floor, pads, Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
         room.ways_out = Some((dungeon.exit_door(), dungeon.portal_door()));

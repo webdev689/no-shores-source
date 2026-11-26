@@ -49,9 +49,10 @@ pub(crate) struct Chest {
     pub vault: bool,
 }
 
-/// How many plain chests a dungeon stands: one for each block. Its vaults' chests stand besides (`Finds::vaults`).
+/// How many plain chests a dungeon stands: one for each storey of each block. Its vaults' chests stand besides
+/// (`Finds::vaults`).
 pub(crate) fn dungeon_chests(dungeon: &Dungeon) -> usize {
-    dungeon.squares.len()
+    dungeon.block_storeys.iter().sum()
 }
 
 /// A room's chests and containers: where its chests may stand, each with its group (a dungeon's room, one apiece in a
@@ -66,6 +67,8 @@ pub(crate) struct Finds {
     /// rooms a dungeon's vaults' chests stand in, one each.
     pub count: usize,
     pub vaults: Vec<usize>,
+    /// The rooms a dungeon's plain chests stand in first: its dead ends that hold nothing else.
+    pub firsts: Vec<usize>,
     pub chests: Vec<Chest>,
     /// The containers searchable now, each by its place among the holders with its number; and until when (a
     /// patrol's).
@@ -92,8 +95,9 @@ impl Finds {
         Finds { groups: (0..places.len()).collect(), places, holders, patrol: true, count, ..Finds::default() }
     }
 
-    /// A dungeon's: a chest in a room of each block (as many as have room for one), against a wall of a room past the
-    /// way in's but the end, never in a room of `kept` (a seal's); and its props that hold things, but in those rooms.
+    /// A dungeon's: a chest for each storey of each block (as many as have room for one), against a wall of a room past
+    /// the way in's but the end, never in a room of `kept` (a seal's), its dead ends first; a vault's chest in each of
+    /// its vaults; and its props that hold things, but in those rooms.
     pub(crate) fn of_dungeon(dungeon: &Dungeon, ground: &crate::dungeon_ground::DungeonGround, kept: &[usize]) -> Self {
         let mut places = Vec::new();
         let mut groups = Vec::new();
@@ -128,12 +132,16 @@ impl Finds {
             })
             .collect();
         let count = dungeon_chests(dungeon).min(places.len());
-        Finds { places, groups, holders, patrol: false, count, ..Finds::default() }
+        let firsts = dungeon.chest_rooms.iter().copied().filter(|room| groups.contains(room)).collect();
+        let mut finds = Finds { places, groups, holders, patrol: false, count, firsts, ..Finds::default() };
+        for &vault in dungeon.vaults.iter().filter(|vault| !kept.contains(vault)) {
+            finds.stand_vault(vault);
+        }
+        finds
     }
 
     /// Stands a vault's chest in a dungeon's room, against one of its walls, drawn with the rest; a room it has no
     /// place against a wall in stands none.
-    #[cfg_attr(not(test), expect(dead_code, reason = "the storey generator stands each vault it lays by this"))]
     pub(crate) fn stand_vault(&mut self, room: usize) {
         if !self.vaults.contains(&room) {
             self.vaults.push(room);
@@ -311,7 +319,7 @@ impl Room {
     }
 
     /// Draws a dungeon's chests: each vault's in its room, then each plain one in a room of its own but the vaults'
-    /// while rooms last, then a second in a room, SECOND_APART_M from every other.
+    /// while rooms last, its dead ends first, then a second in a room, SECOND_APART_M from every other.
     fn draw_dungeon_chests(&mut self) {
         let dice = self.finds_dice();
         let in_room = |finds: &Finds, room: usize| -> Vec<usize> {
@@ -343,7 +351,8 @@ impl Room {
                 let Some(&place) = free.get(dice.pick(Purpose::Find, 20 + nth, free.len())) else { break };
                 place
             } else {
-                let room = rooms.swap_remove(dice.pick(Purpose::Find, 10 + nth, rooms.len()));
+                let first = self.finds.firsts.iter().find_map(|room| rooms.iter().position(|found| found == room));
+                let room = rooms.swap_remove(first.unwrap_or_else(|| dice.pick(Purpose::Find, 10 + nth, rooms.len())));
                 let places = in_room(&self.finds, room);
                 places[dice.pick(Purpose::Find, 20 + nth, places.len())]
             };
