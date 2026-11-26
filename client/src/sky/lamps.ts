@@ -1,6 +1,6 @@
 // The night's lamps: the places that give light (a city's glowing solids), the light a player carries, and the ones
 // nearest the eye each frame, as the sky's uniform lays them out. A lamp is lit only as the daylight fades.
-import { flicker } from '../light/flicker.ts';
+import { flicker } from './flicker.ts';
 import { Nearest } from '../nearest.ts';
 import { LAMPS_MOST, type Lamp } from './skyUniform.ts';
 
@@ -70,7 +70,7 @@ export function lampsLit(daylight: number): number {
   return share * share * (3 - 2 * share);
 }
 
-/** A flame's flicker, the one every light in the game flickers by (../light/flicker.ts). */
+/** A flame's flicker, the one every light in the game flickers by (../sky/flicker.ts). */
 export { flicker };
 
 /** The seed a carried light flickers by, on land and under ground: no place's. */

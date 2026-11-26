@@ -5,7 +5,7 @@
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { contentBytes } from '../../contentCache.ts';
 import { FRONT_FACE, holdPictures, releasePictures } from '../../ships/shipView.ts';
-import { LIGHT_MOTION_WGSL } from '../../light/flicker.ts';
+import { LIGHT_MOTION_WGSL } from '../../sky/flicker.ts';
 import { SKY_WGSL, skyUniformFor } from '../../sky/skyUniform.ts';
 import { SHIP_PICTURE_TEXELS } from '../../textures/shipPictures.ts';
 import { SAMPLES } from '../../water/waterView.ts';

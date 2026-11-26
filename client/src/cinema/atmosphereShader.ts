@@ -4,7 +4,7 @@
 // the eye, a bolt and the flash. Its blend keeps `alpha` of what is there and adds `rgb`, so one draw both dims the
 // sun's light and adds the weather's own, with no copy of the picture.
 
-import { LIGHT_MOTION_WGSL } from '../light/flicker.ts';
+import { LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
 
 /** Each row of `Frame`, as atmosphere.ts packs it. */
 export const ATMOSPHERE_WGSL = /* wgsl */ `

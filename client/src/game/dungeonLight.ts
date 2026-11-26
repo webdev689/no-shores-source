@@ -1,7 +1,7 @@
 // A dungeon's light: no sky and no sun. Each light burns in its kind's colour and fades to nothing at its reach,
 // flickering as its kind does; a faint light lies everywhere, in the mood of the style of the cell, so a wall past
 // every light still reads. The page lights the figures by the same sums the shader lights the walls by (`LIGHT_WGSL`).
-import { breath, flicker, LIGHT_MOTION_WGSL } from '../light/flicker.ts';
+import { breath, flicker, LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
 import { fixtureFlames } from './dungeonFixtures.ts';
 import { type DungeonLayout, openAt, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { torchFlame } from './dungeonMesh.ts';
@@ -10,7 +10,7 @@ type Colour = readonly [number, number, number];
 type Point = readonly [number, number, number];
 
 /** How a kind of light burns: its colour at its foot, how far it reaches (m), how deep a flame's flicker it burns
- *  with (0 none), how deep a glow's slow breath (none: it holds; `breath` in ../light/flicker.ts), and whether still
+ *  with (0 none), how deep a glow's slow breath (none: it holds; `breath` in ../sky/flicker.ts), and whether still
  *  water shows its gleam (unless false). */
 export interface Burning {
   readonly colour: Colour;

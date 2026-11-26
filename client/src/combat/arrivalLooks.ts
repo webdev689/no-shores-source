@@ -4,7 +4,7 @@
 // its hatch to the ground, a ring of light where the foe is built; dust thrown up where a foe lands. A crown's crystal
 // drawn in out of the air to its heart as it forms, a thread of its light down to each foe forming under it, and a
 // ring of crystal round each one's feet.
-import { flicker } from '../light/flicker.ts';
+import { flicker } from '../sky/flicker.ts';
 import { type Ramp, POWDER, SMOKE, rampOf } from './markSprites.ts';
 import { DUST, layFlat, layLine, layUpright, ringSprite, scorchSprite, starSprite } from './impactPixels.ts';
 import { CRYSTAL } from './latticeLooks.ts';

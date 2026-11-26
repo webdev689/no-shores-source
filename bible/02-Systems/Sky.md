@@ -88,7 +88,7 @@ what show the ground there.
   a fire's warm light from the solid's middle, reaching some ten metres from a lantern and up to sixty from a great
   fire. They flicker, each on its own beat, and are lit only as the daylight fades, coming up through the dusk. The
   glowing surfaces themselves burn brighter at night than by day.
-- **One flicker, one breath.** Every light in the game moves by the same two (`client/src/light/flicker.ts`, each with
+- **One flicker, one breath.** Every light in the game moves by the same two (`client/src/sky/flicker.ts`, each with
   its WGSL twin), seeded by its source: a flame's flicker, held through each of the fire's ten frames a second, never
   below 80% at full depth; and a glow's slow breath, about seven seconds a swell, for crystal, fungus, runes and a
   portal. Under ground and for a fire of the game's scene, a flame drawn and the light it casts share its seed, so they

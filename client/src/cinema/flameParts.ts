@@ -1,6 +1,6 @@
 // A fire's parts at one moment, worked out from its seed and the clock alone, so a fire looks the same every time it
 // is drawn. The clock is held in steps, as a sprite's frames are, so a fire flickers in frames rather than smoothly.
-import { FLAME_FRAMES_PER_SECOND, flameFrame, flicker } from '../light/flicker.ts';
+import { FLAME_FRAMES_PER_SECOND, flameFrame, flicker } from '../sky/flicker.ts';
 import { hashUnit, smoothNoise } from './seeded.ts';
 
 export type Point = readonly [number, number, number];

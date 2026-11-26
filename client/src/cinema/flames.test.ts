@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { FIRE_FRAMES_PER_SECOND, type Fire, fireFrame, fireParts, GLOW_REACH, inSmoke } from './flameParts.ts';
 import { farFire, fireLit, MOST_PARTS, packFires } from './flames.ts';
-import { flicker } from '../light/flicker.ts';
+import { flicker } from '../sky/flicker.ts';
 import { PART, PART_KINDS } from './flamesShader.ts';
 
 const FIRE: Fire = { at: [10, 20, 3], sizeM: 1, seed: 4 };

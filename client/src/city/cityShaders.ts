@@ -1,7 +1,7 @@
 // The city's WGSL: the forged models instanced in the near cells and the solids, the masses and hulls stood up from
 // one shape each, and the ground plates dressed in their tiles. All share one view, one cell table and one array of
 // pictures, are lit as the land is, and dither between tiers by the same thresholds the CPU's tiers test.
-import { LIGHT_MOTION_WGSL } from '../light/flicker.ts';
+import { LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { CRYSTAL_WGSL } from './crystal.ts';
