@@ -1,7 +1,7 @@
 // Pictures of a house's horde on the HUD, headless (`tools/uiShot.mjs`), over a plain dusk in place of the world: the
-// Stormcallers' horde running, its foes counted down in the tracker, the Art toasted unbounded and the ability bar
-// whole and full; and as it falls, the Art bound again and the bar as the road has earned it. The game never imports
-// it.
+// Stormcallers' horde running, its foes left of all counted down in the tracker, the Art toasted unbounded and the
+// ability bar whole, full and glowing unbounded; and as it falls, the Art bound again and the bar as the road has
+// earned it. The game never imports it.
 import { AbilityBar, type AbilityState } from '../combat/abilityBar.ts';
 import type { QuestState } from '../network/questMessages.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';
@@ -65,7 +65,7 @@ function hordeOver(ui: Interface, name: string, quest: QuestState, toast: string
 /** The horde running: 17 of its 29 foes left, the Storm unbounded, every ability lit and full. */
 export function hordeRunningShot(ui: Interface): Node {
   const quest = onTask(HORDE_TASK, { horde: { left: 17, all: 29 } });
-  const state = { art: STORM_ART, animaShare: 1, tenets: [1, 1] as const, earned: 0b111 };
+  const state = { art: STORM_ART, animaShare: 1, tenets: [1, 1] as const, earned: 0b111, unbounded: true };
   return hordeOver(ui, 'running', quest, unboundedWords('Storm'), state);
 }
 

@@ -59,6 +59,7 @@ import { hearing, placingFolk, roomNote, rulesOf } from './footRoom.ts';
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
 import { mapMarksOf } from './mapMarks.ts';
+import { hordeRunning } from './quests/questBook.ts';
 
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
@@ -525,7 +526,7 @@ export class Foot {
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
       parryWindow: fight.parryWindow,
-      abilities: fight.abilities,
+      abilities: fight.abilities && { ...fight.abilities, unbounded: hordeRunning(gear?.gear?.quest) },
       rider: walker.player.mounted ? walker.player.body : null,
       // The shots left stand beside the crosshair, wherever it shows; the Lodestone's bearer holds no weapon.
       ammo: sights && !bearer ? (ownView?.ammo ?? null) : null,

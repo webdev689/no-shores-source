@@ -145,10 +145,11 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
 - **What it pays**: its foes drop nothing (no Vestige, no item), so the horde pays as a defence's waves tried again
   do: each kill's XP and Aurem, and the task's clear ([[Gear]], "A clear").
 - **On the wire**: the gear message's `quest_horde`, its foes left and all of them while it runs (empty else); and
-  while it runs `arts_earned` holds every bit of the worn Art. The tracker shows the foes left beside the goal, and
-  the wait after a fall as a defence's; a toast says "Storm unbounded: every ability ready" (the worn Art's name) as
-  long as it runs, and "Storm bound again" for 4 s as it ends. The ability bar shows every ability ready and none
-  locked, from the room's word.
+  while it runs `arts_earned` holds every bit of the worn Art. The tracker shows the foes left of all of them beside
+  the goal ("17/29", as a puzzle's points lit of all), and the wait after a fall as a defence's; a toast says "Storm
+  unbounded: every ability ready" (the worn Art's name) as long as it runs, and "Storm bound again" for 4 s as it
+  ends. The ability bar shows every ability ready and none locked, each glowing in the Art's colour under an infinity
+  mark while the horde runs (`hordeRunning`; [[Arts]], "The ability bar"), all from the room's word.
 
 ## In the rules
 

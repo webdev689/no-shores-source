@@ -137,8 +137,14 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   under its icon, and a screen reader hears it after the ability's name: the key bound now (R, Q and G at first), or
   while the pad was played last its button, drawn on the cap as the ship's bar draws one (`hudKeys`, `capFace`). A
   spell just cast flashes its frame white for 0.5 s; while the player cannot cast (staggered, down, drinking or dead),
-  every icon greys under a hatch. At the display's larger step (1500 by 900 and up) the diamond is 102 px and a ring
-  66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
+  every icon greys under a hatch. While a house's horde runs for the player (the room's `quest_horde`; [[Quests]], "A
+  house's horde"), the Art is unbounded and the bar shows it: each ability glows in the Art's colour, stronger than a
+  ready one and swelling slowly from 2 to 4 px over 4 s (still at 3 px with less motion asked for), under an infinity
+  mark, 11 by 5 cells, standing above it to say it costs nothing; a screen reader hears "unbounded, ready". The glow
+  and the marks go the frame the room's word no longer holds the horde, and while the player cannot cast; an ability
+  not earned keeps its padlock alone. At the display's larger step (1500 by 900 and up) the diamond is 102 px and a
+  ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and each Tenet's recharge, as
+  shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
   ship's bar in a sea fight is built of the same rings and keycaps (`combat/ringSlot.ts`; [[Interface]], "The sea
   fight's readout").
 

@@ -120,8 +120,9 @@ const CLOCKED: ReadonlySet<string> = new Set(['race', 'defend', 'tail', 'unseen'
 
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
  *  count, ticked once met; the clock running beside the first unmet goal that runs it, a ward's health beside its
- *  defence while it stands, a horde's foes left beside it while it runs, and a puzzle's points lit of all of them. None while no quest is walked. The clock runs
- *  down `ran` seconds from the room's last word on it, never below none. */
+ *  defence while it stands, a horde's foes left of all of them beside it while it runs, and a puzzle's points lit of
+ *  all of them. None while no quest is walked. The clock runs down `ran` seconds from the room's last word on it, never
+ *  below none. */
 export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracked | null {
   const now = walked(state);
   if (!state || !now) return null;
@@ -136,13 +137,18 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracke
     if (index === clocked && clock !== undefined && clock !== null)
       return { ...shown, clock: Math.max(0, clock - ran) };
     if (goal.kind === 'defend' && ward) return { ...shown, share: ward.health };
-    if (goal.kind === 'defend' && goal.horde && horde) return { ...shown, count: horde.left };
+    if (goal.kind === 'defend' && goal.horde && horde) return { ...shown, count: `${horde.left}/${horde.all}` };
     if (goal.kind === 'puzzle' && points.length > 0)
       return { ...shown, count: `${points.filter((point) => point.lit).length}/${points.length}` };
     return most(goal) > 1 ? { ...shown, count: left } : shown;
   });
   return { name: now.quest.name, task: now.task.task, steps };
 }
+
+/** Whether the room's word `state` holds a house's horde running for the player's own character, its worn Art
+ *  unbounded the while. */
+export const hordeRunning = (state: QuestState | null | undefined): boolean =>
+  !!state?.horde && state.claimed !== false;
 
 /** The task's first goal of `kind`, if it has one. */
 export function goalOf(state: QuestState | null | undefined, kind: string): Goal | null {
