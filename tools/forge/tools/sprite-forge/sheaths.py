@@ -339,11 +339,11 @@ STEP = 0.005    # how finely the push out is found, metres
 
 
 # The frames above are those a worn weapon is laid clear in. It is drawn, rigid where it was laid, in more: the
-# weapon sheathed while the body is struck, casts, falls, lies, rides, crouches, jumps and climbs; its sheath empty in
-# every move the blade is in the hand, a foe's own moves too, the shield's, the twin blades', the crouch and the jump;
-# and through the bow's own holds (bowhold.py), the bow in both hands
-STRUCK = ('hurt', 'spell', 'cast', 'death', 'fallen', *riding.RIDE, *driving.DRIVE, *agility.MOVES, *gunplay.RUNS,
-          *bowhold.ANIMS)
+# weapon sheathed while the body is struck, casts, drinks, falls, lies, rides, crouches, jumps and climbs; its sheath
+# empty in every move the blade is in the hand, a foe's own moves too, the shield's, the twin blades', the crouch and
+# the jump; and through the bow's own holds (bowhold.py), the bow in both hands
+STRUCK = ('hurt', 'spell', 'cast', 'quaff', 'death', 'fallen', *riding.RIDE, *driving.DRIVE, *agility.MOVES,
+          *gunplay.RUNS, *bowhold.ANIMS)
 OWN_MOVES = ('parry', 'warcry', 'breathe', 'thrust', 'chop', 'swing2h', *blows.BLOWS)
 # a crossbow's moves as a player plays them: the shot and the crossbow at rest
 SHOT = ('bow', 'idle_bow', 'walk_bow', 'hurt_bow')
@@ -361,12 +361,12 @@ TORCH_SHEATHS = ('sheath_sword', 'sheath_greatsword', 'sheath_dagger_')   # the 
 def anims_of(layer):
     """The animations a worn weapon's layer is drawn in."""
     if layer.endswith('_l'):
-        return list(dict.fromkeys(LEFT + ('spell', 'cast', 'death', 'fallen', *OWN_MOVES, *agility.MOVES)
+        return list(dict.fromkeys(LEFT + ('spell', 'cast', 'quaff', 'death', 'fallen', *OWN_MOVES, *agility.MOVES)
                                   + ((*riding.RIDE, *driving.DRIVE, *SHOT) if layer.startswith('sheath_') else ())))
     if layer == 'scabbard_pistolet':
         return list(EMPTY_HOLSTER + ('death', 'fallen'))
     if layer == 'quiver':
-        return list(dict.fromkeys(NOCKED + ('spell', 'cast', *riding.RIDE, *driving.DRIVE, *agility.MOVES,
+        return list(dict.fromkeys(NOCKED + ('spell', 'cast', 'quaff', *riding.RIDE, *driving.DRIVE, *agility.MOVES,
                                             *gunplay.RUNS, *bowhold.ANIMS)))
     if layer.startswith('sheath_crossbow_'):   # put away, or beside the other hand's weapon out; over a shield: away
         return list(dict.fromkeys(SHEATHED + STRUCK + (() if layer.rsplit('_', 1)[1] in shields3p.KINDS else BESIDE)))
