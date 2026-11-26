@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       rooms_deployed:
-        description: "Whether the run calling it deployed the rooms: its page then follows them, newest or not"
+        description: 'Whether the run calling it deployed the rooms: its page then follows them, newest or not'
         type: boolean
         default: false
 
