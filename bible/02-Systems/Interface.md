@@ -1226,11 +1226,13 @@ its week's dungeon, and from the Breach's Normal to its Hard), each shield's mid
 an inner ring and an outer one ticked every 5 degrees with a diamond at each quarter, turning 3 degrees a second while
 its entry is open, dim at rest, brighter lit, and brightest chosen, three arcs turning against it (a shut entry's
 still and dimmer whatever its look); laid under the
-crests and their words. Each crest's words wrap to 2.2 times a playlist's shield; the chart's picture is drawn again
-only at 64-pixel steps of the screen. The chosen entry's card stands beside it in a column that grows to the footer
-and scrolls. Narrower, the crests stand two by two over the chart's ground (its stars and rings, no dials), each its
+crests and their words. Each crest's words wrap to 2.2 times a playlist's shield; the chart stands in the middle of its
+room, its box the room's size in 64-pixel steps down, so its picture is drawn again only at those steps of a resize.
+The chosen entry's card stands beside it in a column that grows to the footer and scrolls. Narrower, the crests stand
+two by two over the chart's ground (its stars and rings, no dials; its box their room's in the same steps), each its
 half of a row, and the card under them, the two scrolling together. A list taller than its room (`scrolledNode`) fades
-its foot into the card's ground while more lies below, so a line cut there fades out, and keeps a thin brass bar in a
+its foot into the card's ground while more lies below (the island's tiles' does not, standing over the island), so a
+line cut there fades out, and keeps a thin brass bar in a
 gutter at its right whose thumb stands where the list does; the wheel over it, Page Up and Page Down, and the pad's
 right stick scroll it (`Interface.scrollBy`, `Interface.stickScroll`).
 
@@ -1290,7 +1292,7 @@ ship, whose three bars then stand side by side so the console stays low. Its nod
 A click that asks to land (a port's icon, its island, a coast with no port, a sea island's water; [[Game]], "Landings")
 stands a window 420 px across a little above the middle of the view, clear of the console under it (`landingAskNode`): its question in brass
 at the face's larger size ("Dock at Overlook?"), what yes does under it in dim ink, and Cancel (Esc) and its yes (a
-primary, with Enter's key) on its footer.
+primary, with Enter's key) on its footer; Cancel names the pad's B while the pad is in use.
 
 ## The island's tiles
 
@@ -1299,17 +1301,19 @@ Over an island docked at or gone ashore on, no node is marked on the map; the is
 [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]], [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]). They
 are rectangles of one size in a grid with 16 px between them, across the view under the place's name (104 px down, 24
 in from each side), centred: each 280 to 340 px wide (narrower only on a view too narrow for one of 280), as many a row
-as fit up to five, as tall as three rows fit (176 to 220 px), 294 by 186 on a 1280 by 720 view, four a row (`gridOf`); more than fit scroll as the Playlist's card does
-(`scrolledNode`). They rise into place one after another as the view opens, each 0.04 s after the one before, over
+as fit up to five, as tall as three rows fit (176 to 220 px), their sides in 4-pixel steps so each is even and a
+resize paints a few sizes, 292 by 184 on a 1280 by 720 view, four a row (`gridOf`); more than fit scroll as the
+Playlist's card does (`scrolledNode`), with no fade over the island at their foot. They rise into place one after another as the view opens, each 0.04 s after the one before, over
 0.35 s from 14 px below (none under reduced motion).
 
 Each is a pixel scene painted as the website's pictures are (`client/src/art/`, [[Website]]), on a sheet half the
 tile's size, each texel two pixels across, dithered in one of the sheet's lights and seeded by its place, so no two
-are alike; its foot darkens, dithered, where its words stand:
+are alike, drawn a little transparent (74%) so the island shows through; its foot darkens, dithered, where its words
+stand:
 
 - **The island's own**: the island charted on the night sea, its land rising inland in bands with contours, its rock
   at the coast and shoals dithered round it, the harbour's lantern and the ship; its name in brass at the larger size,
-  where the ship lies ("Docked at Overlook"), and Back (Esc).
+  where the ship lies ("Docked at Overlook"), and Back (Esc, or the pad's B while the pad is in use).
 - **The port**, docked at a living port: Overlook by night, its town stepping up the rock to its beacon, the quay's
   lanterns streaking the water, a ship at anchor, the moon. A click lands in its plaza.
 - **The Playlist**, docked at a living port: a crystal night thick with stars and a pale nebula, its four crests
@@ -1329,13 +1333,20 @@ are alike; its foot darkens, dithered, where its words stand:
   burning, tentacles breaking the water and a ship burning beside it. **The outpost**: its palisade and watchtower on a
   strand at dawn, a ship off it.
 
-A tile's words are its name in brass at the larger size and its levels in short ("Lv 1–5"); everything else is a glyph
-at its head, the Journal's icons (`journalIcons.ts`): a patrol zone's dungeon of the day, its Elite and Abyss seas
-(dim while shut) and today's modifier; an Elite Dungeon's week, the Elite's or the Abyss's, and its modifiers; the
-Playlist's today; a padlock on a place that is shut. Its label reads all of it out: its name, its line, every glyph's
-meaning and its details. The tile under the pointer, or the last it was on, else the first place's, is lit: a brass
-edge two pixels wide, raised 2 px, its chevron bright; Enter does what it does. A tile still rising takes no click. A
-shut tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
+A tile's words are its name in brass at the larger size and its levels in short ("Lv 1–5"); every other detail is a
+glyph at its head, each saying its words in the tile's label, in the Journal's icons (`journalIcons.ts`) and the
+tiles' own in their style (`islandIconMaps.ts`): the port's counters (a stall under its awning) and its moorings (an
+anchor); a patrol zone's dungeons (its door), its resources (a rock veined with ore), its foes (two blades crossed),
+its Elite and Abyss seas (dim while shut) and today's modifier; an Elite Dungeon's blocks (courses of stone), seals (a
+wax seal), company (two of it), pay (the cache's chest), its week, the Elite's or the Abyss's, and its modifiers; the
+Playlist's today, its week's two and its rewards; a mission's, a world boss's and an outpost's foes and named places (a
+pin), an outpost's what it is for (a palisade); a padlock on a place that is shut. Nine fit a tile at its narrowest;
+more wrap onto a second row. Its label reads all of it out: its name, its line, every glyph's meaning and its
+details. The tile the keys or the pad have focused is lit, else the one under the pointer, else the first place's: a
+brass edge two pixels wide, raised 2 px, its chevron bright. Over the tiles the interface takes the keys and the pad:
+Tab, the arrows and the pad's cross walk them, and Enter or A presses the one focused, the game's own Enter then
+yielding to it; with none focused, Enter does what the lit tile does. A tile still rising takes no click. A shut
+tile's name is dim and a click on it does nothing. A landing chooses its node before it lands, as the flow lands
 only at the node chosen. A desolate city's social space is listed nowhere.
 
 ## The character screen

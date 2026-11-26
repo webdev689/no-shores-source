@@ -43,18 +43,22 @@ function furled(hull: number): SailRig {
   return rig;
 }
 
-/** Whether `node` is of the island a ship `docked` lies at: that sea island's beach (its room named for its number,
- *  `isleRoomName`), or any node of the landmass but its sea islands' and its passage zones', which stand apart from
- *  its coast (`passages/passageReach.ts`, `zonePlace`). */
+/** Whether `node` stands by its island's coast, where ships lying off it are seen: any but a passage zone, which
+ *  stands apart from it (`passages/passageReach.ts`, `zonePlace`). */
+const byTheCoast = (node: Pick<NodeInfo, 'id'>): boolean => !node.id.startsWith('passage-');
+
+/** Whether `node` is of the island a ship `docked` lies at, by its coast: that sea island's beach (its room named for
+ *  its number, `isleRoomName`), or any node of the landmass but its sea islands'. */
 function onIsland(node: Pick<NodeInfo, 'id' | 'continent'>, docked: Berthed): boolean {
   const { aim } = docked;
   if (aim.kind === 'isle') return node.id.startsWith(`isle-${aim.id}-`);
-  return node.continent === docked.landmass && !node.id.startsWith('isle-') && !node.id.startsWith('passage-');
+  return node.continent === docked.landmass && !node.id.startsWith('isle-') && byTheCoast(node);
 }
 
 /** The ships lying by the island a player walks at `node`: their own where it lies, while it is docked at this island;
- *  every ship parked here (`parked`, the land room's word), but the one lying where the page draws their own; and at a
- *  social space its city's pier's sloops (`plan`), in the places of it no player's ship lies in. */
+ *  every ship parked here (`parked`, the land room's word), but the one lying where the page draws their own, and none
+ *  in a passage zone; and at a social space its city's pier's sloops (`plan`), in the places of it no player's ship
+ *  lies in. */
 export function shipsLying(
   node: Pick<NodeInfo, 'id' | 'continent' | 'kind'>,
   plan: Pick<CityPlan, 'social'> | null,
@@ -64,8 +68,8 @@ export function shipsLying(
   const { docked, lies } = own;
   const ownLying = docked && lies && onIsland(node, docked) ? [{ ...lies, hull: own.hull ?? SLOOP_HULL }] : [];
   // The room's word on the player's own ship lies where the page draws it: it is drawn once, as the page has it.
-  const others = parked.filter((ship) =>
-    ownLying.every((each) => Math.hypot(each.x - ship.x, each.y - ship.y) > SAME_M),
+  const others = parked.filter(
+    (ship) => byTheCoast(node) && ownLying.every((each) => Math.hypot(each.x - ship.x, each.y - ship.y) > SAME_M),
   );
   const players = [...ownLying, ...others.map(({ x, y, heading, hull }) => ({ x, y, heading, hull }))];
   const pier = node.kind === 'social' ? (plan?.social.moorings ?? []) : [];

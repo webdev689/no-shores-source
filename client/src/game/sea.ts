@@ -273,10 +273,10 @@ export class Sea {
     if (ahead && !heaveTo) this.passage.straightOn();
   }
 
-  /** Sails for a berth's `offing`, planned on water as `sailTo` plans, then in to it (`anchorage`): whether it did. */
-  sailIn(offing: Point2, anchorage: Point2): boolean {
+  /** Sails for a berth's `offing`, planned on water as `sailTo` plans, then on in through `inward`: whether it did. */
+  sailIn(offing: Point2, inward: readonly Point2[]): boolean {
     this.chase.stop();
-    return this.passage.sailVia(offing, [anchorage]);
+    return this.passage.sailVia(offing, inward);
   }
 
   /** Plans a voyage from the ship to a point and sets sail at `pace` (a click's, or the map's when planned there); a

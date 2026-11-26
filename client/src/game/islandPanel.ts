@@ -8,6 +8,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
+import { noKey } from './controls.ts';
 import { DIM } from './hudPieces.ts';
 import { hudPress, said } from './hudParts.ts';
 import {
@@ -28,12 +29,13 @@ import type { Sea } from './sea.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const BRASS = '#f3cf86';
-/** A tile's ground under its scene while the scene is drawn, and its edge at rest. */
-const GROUND = 'rgba(10,12,16,0.74)';
+/** A tile's scene drawn a little transparent (74%), so the island shows through it; and its edge at rest. */
+const SEEN = 'rgba(255,255,255,0.74)';
 const EDGE = 'rgba(192,138,62,0.45)';
 /** Where the grid stands (in from each side, under the place's name, over the view's foot) and how it is laid: tiles
- *  `least` to `most` wide, up to `columns` a row with `gap` between, as tall as three rows fit (`short` to `tall`). */
-const GRID = { side: 24, top: 104, foot: 24, gap: 16, least: 280, most: 340, columns: 5, rows: 3 } as const;
+ *  `least` to `most` wide, up to `columns` a row with `gap` between, as tall as three rows fit (`short` to `tall`),
+ *  their sides in steps of `step`, even so each texel of a scene is two pixels, and a resize paints a few sizes. */
+const GRID = { side: 24, top: 104, foot: 24, gap: 16, least: 280, most: 340, columns: 5, rows: 3, step: 4 } as const;
 const TILE_TALL = { short: 176, tall: 220 } as const;
 /** The scroll bar's room beside the grid (`scrolledNode`). */
 const BAR_ROOM = 8;
@@ -81,11 +83,12 @@ export function risenTile(place: number, opened: number, still: boolean): number
   return 1 - (1 - share) ** 3;
 }
 
-/** A tile's motion and light: how far it has risen, whether it is lit, and whether the pointer is on any tile. */
+/** A tile's motion and light: how far it has risen, whether it is lit, and whether the keys or the pad have focused
+ *  any tile. */
 interface TileState {
   readonly rise: number;
   readonly lit: boolean;
-  readonly pointed?: boolean;
+  readonly keyed?: boolean;
 }
 
 /** What a tile stands with as it rises and is lit: faded and lowered as it rises, the pointer passing through it
@@ -103,16 +106,16 @@ function sceneOf(scene: Scene, size: TileSize, look: string): Node['picture'] {
     key: `island scene ${scene.kind} ${scene.id} ${width}x${height} ${look}`,
     source: { pixels: () => rgbaOf(sceneSheet(scene, width, height)) },
     pixel: { width, height },
+    tint: SEEN,
   };
 }
 
-/** A tile's box: its scene over the whole of it, its ground under the scene, its words kept in from its edges by
- *  `WITHIN`, so the scene is drawn at the size it was painted. */
+/** A tile's box: its scene over the whole of it, its words kept in from its edges by `WITHIN`, so the scene is drawn
+ *  at the size it was painted. */
 const tileOf = (scene: Scene, size: TileSize, look: string): Partial<Node> => ({
   ...size,
   direction: 'column',
   clip: true,
-  fill: GROUND,
   picture: sceneOf(scene, size, look),
 });
 const WITHIN: Node = { width: 'grow', height: 'grow', direction: 'column', padding: [10, 12] };
@@ -135,11 +138,13 @@ const crestsOver = (banner: PlaylistBanner, size: TileSize): Node[] => {
   });
 };
 
-/** Its glyphs in a row at the tile's head, a padlock first while it is shut. */
+/** Its glyphs in a row at the tile's head, a padlock first while it is shut. Nine fit a tile at its narrowest; more
+ *  wrap onto a second row under the first, never past the tile's edge. */
 const glyphsNode = (entry: IslandEntry): Node => ({
   width: 'grow',
   gap: 4,
   alignX: 'end',
+  wrap: true,
   children: [
     entry.shut !== null && iconNode('locked', 24),
     ...entry.glyphs.map((glyph) => ({ ...iconNode(glyph.icon, 24, glyph.tones), ...(glyph.dim && { opacity: 0.4 }) })),
@@ -155,14 +160,13 @@ function entryTile(
   acts: IslandActs,
 ): Node {
   const id = `island:${entry.id}`;
-  if (ui.clicked(id)) {
-    // Let go of the focus, so Enter is the game's and never presses this tile again.
-    ui.focusOn(null);
-    if (entry.shut === null) acts.act(entry);
-  }
-  // The pointer lights the tile under it; a focus left on another (by a press dragged off it) lights it only while the
-  // pointer is on no tile, so the two never take turns.
-  if ((ui.hovered(id) || (ui.focused(id) && !state.pointed)) && !state.lit) acts.choose(entry.id);
+  // A click lets go of the focus, so Enter is the game's and never presses this tile again; so does a press dragged
+  // off it, so only the keys and the pad leave a tile focused.
+  if (ui.clicked(id) || (ui.focused(id) && !ui.keyFocused)) ui.focusOn(null);
+  if (ui.clicked(id) && entry.shut === null) acts.act(entry);
+  // The tile the keys or the pad focused is lit, as it is what Enter and A press; else the one under the pointer.
+  const lights = state.keyed ? ui.focused(id) : ui.hovered(id);
+  if (lights && !state.lit) acts.choose(entry.id);
   const banner = 'crests' in entry ? (entry as PlaylistBanner) : null;
   const scene: Scene = { kind: SCENES[entry.kind], id: entry.id, abyss: entry.abyss ?? false };
   const look = `${entry.abyss === true}`;
@@ -237,7 +241,7 @@ function islandTile(
             alignY: 'center',
             children: [
               { width: 'grow', children: [said(panel.where, { colour: DIM })] },
-              hudPress(ui, 'island:back', 'Back  Esc', back, { padding: [5, 10] }),
+              hudPress(ui, 'island:back', `Back  ${noKey()}`, back, { padding: [5, 10] }),
             ],
           },
         ],
@@ -250,13 +254,14 @@ function islandTile(
 export function gridOf(width: number, height: number): { readonly columns: number; readonly tile: TileSize } {
   const room = { width: width - 2 * GRID.side - BAR_ROOM, height: height - GRID.top - GRID.foot };
   const columns = Math.max(1, Math.min(GRID.columns, Math.floor((room.width + GRID.gap) / (GRID.least + GRID.gap))));
-  const across = Math.floor((room.width - (columns - 1) * GRID.gap) / columns);
-  const down = Math.floor((room.height - (GRID.rows - 1) * GRID.gap) / GRID.rows);
+  const stepped = (pixels: number) => Math.max(GRID.step, Math.floor(pixels / GRID.step) * GRID.step);
+  const across = (room.width - (columns - 1) * GRID.gap) / columns;
+  const down = (room.height - (GRID.rows - 1) * GRID.gap) / GRID.rows;
   return {
     columns,
     tile: {
-      width: Math.max(1, Math.min(GRID.most, across)),
-      height: Math.min(TILE_TALL.tall, Math.max(TILE_TALL.short, down)),
+      width: stepped(Math.min(GRID.most, across)),
+      height: stepped(Math.min(TILE_TALL.tall, Math.max(TILE_TALL.short, down))),
     },
   };
 }
@@ -274,11 +279,11 @@ export function islandPanelNode(
   const entries = entriesOf(panel);
   const shown = chosen ?? entries[0]?.id ?? null;
   const [opened, still] = [ui.age('island-panel'), motionReduced()];
-  const pointed = entries.some((entry) => ui.hovered(`island:${entry.id}`));
+  const keyed = ui.keyFocused && entries.some((entry) => ui.focused(`island:${entry.id}`));
   const tiles: Node[] = [
     islandTile(ui, [panel, tile], chart, { rise: risenTile(0, opened, still), lit: false }, acts.back),
     ...entries.map((entry, place) => {
-      const state = { rise: risenTile(place + 1, opened, still), lit: shown === entry.id, pointed };
+      const state = { rise: risenTile(place + 1, opened, still), lit: shown === entry.id, keyed };
       return entryTile(ui, [entry, tile], state, acts);
     }),
   ];
@@ -293,13 +298,15 @@ export function islandPanelNode(
     label: `${panel.title}. ${panel.where}`,
     float: { to: 'screen', at: [0.5, 0], anchor: [0.5, 0], y: GRID.top },
     children: [
-      // Room above the first row for a lit tile's step up, so the list never cuts its edge.
+      // Room above the first row for a lit tile's step up, so the list never cuts its edge; no fade at its foot, which
+      // would paint a card's ground over the island between the tiles.
       scrolledNode(
         ui,
         'island-list',
         { width: 'grow', height: 'grow' },
         { direction: 'column', gap: GRID.gap, padding: [LIT_STEP, 0, 0, 0] },
         rows,
+        false,
       ),
     ],
   };

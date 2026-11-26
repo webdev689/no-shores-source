@@ -189,6 +189,9 @@ export function boundWord(id: BindId, device: Device = BINDS.device, binds: Bind
   return device === 'keys' ? keyName(first) : first;
 }
 
+/** The key that says no, steps back or shuts, as a press names it: Esc, or the pad's B while the pad is in use. */
+export const noKey = (device: Device = BINDS.device): string => (device === 'pad' ? 'B' : 'Esc');
+
 /** `words` with a control's first key or button after them, as a press says it ("Map  N"); alone where it has none. */
 export function withKey(words: string, id: BindId): string {
   const key = boundWord(id);

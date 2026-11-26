@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
-import { ANCHORED_APART_M, berthOf, coastBerth, freePlaces, portBerth, TAKEN_M } from './berths.ts';
-import { approach, type IsleAt } from './isleLaw.ts';
+import { ABREAST_M, ANCHORED_APART_M, berthOf, coastBerth, freePlaces, LEAD_M, portBerth, TAKEN_M } from './berths.ts';
+import { ANCHORED_M, approach, type IsleAt } from './isleLaw.ts';
 import { OFFSHORE, offshore, offshoreStretch } from './seaLaw.ts';
 
 /** Land west of x = 1000, the sea shelving away east of it: 1 m down a metre. */
@@ -39,10 +39,13 @@ const PORT = {
 const ROADSTEAD = offshore((east) => shore(east), [0, 500], HARBOUR);
 const ship = (x: number, y: number) => ({ x, y });
 
-test("a port's berth is the first place of its pier no ship lies in, sailed in to from its roadstead", () => {
-  assert.deepEqual(portBerth(PORT, []), { at: [1_050, 490], offing: ROADSTEAD });
+/** The way in to a place of the pier, its last stretch along the pier from `LEAD_M` out along its bearing (east). */
+const along = (x: number, y: number) => ({ at: [x, y], offing: ROADSTEAD, lead: [x + LEAD_M, y] });
+
+test("a port's berth is the first place of its pier no ship lies in, come to from its roadstead along the pier", () => {
+  assert.deepEqual(portBerth(PORT, []), along(1_050, 490));
   const first = ship(1_050 + TAKEN_M / 2, 490);
-  assert.deepEqual(portBerth(PORT, [first]), { at: [1_080, 510], offing: ROADSTEAD }, 'the first taken');
+  assert.deepEqual(portBerth(PORT, [first]), along(1_080, 510), 'the first taken');
   assert.deepEqual(
     freePlaces(PLACES, [first, ship(5_000, 5_000)]).map(([x]) => x),
     [1_080],
@@ -61,6 +64,19 @@ test('every place of the pier taken, the ship anchors off it at the roadstead, c
   assert.deepEqual(offing, ROADSTEAD);
   const noPier = { ...(PORT as object), plan: { centre: [0, 500], harbour: HARBOUR, social: {} } } as never;
   assert.deepEqual(portBerth(noPier, []), { at: ROADSTEAD, offing: ROADSTEAD }, 'a port with no pier, its roadstead');
+});
+
+test('a port whose water is deep only out along its way finds its anchorage further out, never on another ship', () => {
+  // Deep water only in a channel 100 m wide straight out from the harbour: no place across the way out is deep.
+  const channel = {
+    ...(PORT as object),
+    heightAt: (east: number, south: number) => (Math.abs(south - 500) < 50 ? shore(east) : 10),
+  };
+  const pier = [ship(1_050, 490), ship(1_080, 510)];
+  const anchored = ship(ROADSTEAD[0], ROADSTEAD[1]);
+  const { at } = portBerth(channel as never, [...pier, anchored]) ?? { at: ROADSTEAD };
+  assert.ok(apart(at, [anchored.x, anchored.y]) >= ANCHORED_APART_M, JSON.stringify(at));
+  assert.ok(at[0] > ROADSTEAD[0] && at[1] === ROADSTEAD[1], 'further out along the way out');
 });
 
 /** A landmass whose coast, as the room charts it, is a square 10 km a side; its ground under the sea everywhere. */
@@ -92,4 +108,17 @@ test('a sea island is berthed at its anchorage, from its offing', () => {
   assert.equal(berthOf({ ...aim, id: 4 }, LAND, [cove], []), null, 'an island not told of');
   const ashore = { kind: 'ashore', coast: 'Saltmere', toward: [300, 6_000] } as const;
   assert.deepEqual(berthOf(ashore, LAND, [], []), coastBerth(LAND, [300, 6_000]));
+  // Another ship anchored there already: this one anchors abreast of her, near enough for the sea to land its player.
+  const other = ship(0, -50_150);
+  const clear = berthOf(aim, LAND, [cove], [other]);
+  assert.ok(clear, 'berthed');
+  assert.ok(apart(clear.at, [other.x, other.y]) >= ABREAST_M, JSON.stringify(clear));
+  assert.ok(apart(clear.at, [0, -50_150]) <= ANCHORED_M, 'within the anchorage the page anchors at');
+  assert.deepEqual([clear.offing[0], clear.offing[1] - clear.at[1]], [clear.at[0], (way?.offing[1] ?? 0) + 50_150]);
+  const crowded = [-30, -15, 0, 15, 30].map((x) => ship(x, -50_150));
+  assert.deepEqual(
+    berthOf(aim, LAND, [cove], crowded),
+    { at: way?.anchorage, offing: way?.offing },
+    'every place taken',
+  );
 });

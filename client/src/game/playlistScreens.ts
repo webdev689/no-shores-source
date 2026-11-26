@@ -160,7 +160,7 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
     layer: view.layer,
     open: (city) => {
       // A city's social space is named for it; the Playlist is one for the whole game, opened beside any port.
-      build(`Beside ${placeName(`${city}-social`)}`);
+      if (!build(`Beside ${placeName(`${city}-social`)}`)) return false;
       // Launch goes with the company where there is one: the Roster says, a moment after the screen opens.
       const asked = (opens += 1);
       void deps.link

@@ -209,6 +209,11 @@ function drawn(screens: ActivityScreens) {
 
 test('the Playlist opens beside the port docked at; Launch goes into the run the server draws for it', async () => {
   const { screens, window, sockets, into, root } = await atSea(17);
+  const unread = startActivityScreens(new Promise(() => undefined), places, () => null, {} as never, null, {
+    now: () => NOW,
+    every: () => undefined,
+  } as never);
+  assert.equal(unread.playlist('overlook'), false, 'not opened while the room module is unread');
   assert.equal(screens.playlist('overlook'), true);
   for (const words of ['PLAYLIST', 'Beside Overlook', 'ELITE PLAYLIST', 'Elite · Levels 15 to 19 · Foes at level 17'])
     assert.ok(root.find(words), words);

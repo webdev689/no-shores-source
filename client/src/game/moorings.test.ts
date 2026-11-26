@@ -83,7 +83,7 @@ test("ashore, the player's ship lies where it docked and others' where they park
     [101, 199, FRIGATE],
     [131, 211, 2],
   ]);
-  assert.deepEqual(where(shipsLying(DOWNS, PLAN, OWN, [PARKED])), where(shipsLying(SOCIAL, PLAN, OWN, [PARKED])));
+  assert.deepEqual(where(shipsLying(DOWNS, PLAN, OWN, [])), [[101, 199, FRIGATE]], 'no pier off a social space');
   assert.deepEqual(where(shipsLying(SOCIAL, PLAN, { ...OWN, docked: null }, [])), [
     [100, 200, SLOOP_HULL],
     [130, 210, SLOOP_HULL],
@@ -99,6 +99,7 @@ test("off the island it docked at the player's ship is not drawn; docked at a se
   assert.deepEqual(shipsLying(DOWNS, null, atCove, []), []);
   const zone = { ...DOWNS, id: 'passage-continent-1-w2900-z4' };
   assert.deepEqual(shipsLying(zone, null, OWN, []), [], 'a passage zone of the island stands apart from its coast');
+  assert.deepEqual(shipsLying(zone, null, OWN, [PARKED]), [], 'and so do the ships parked there');
 });
 
 test("the player's own ship parked here is drawn from the land room's word once, where the page has no docking", () => {

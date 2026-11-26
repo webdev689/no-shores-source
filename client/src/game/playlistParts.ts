@@ -388,14 +388,15 @@ function drawFade(context: OffscreenCanvasRenderingContext2D, width: number, hei
 }
 
 /** `children`, laid as `laying` says, in a list `id` that scrolls when taller than its room (`frame` sizes it), read
- *  from `ui`'s last frame:
- *  a fade over its foot while more lies below, and a thin bar at its right whose thumb stands where the list does. */
+ *  from `ui`'s last frame: a fade over its foot while more lies below (unless `faded` is false, for a list over the
+ *  world), and a thin bar at its right whose thumb stands where the list does. */
 export function scrolledNode(
   ui: Interface,
   id: string,
   frame: Pick<Node, 'width' | 'height'>,
   laying: Partial<Node>,
   children: readonly Child[],
+  faded = true,
 ): Node {
   const [room, held] = [ui.boxOf(id), ui.boxOf(`${id}-held`)];
   const most = room && held ? held.height - room.height : 0;
@@ -413,7 +414,8 @@ export function scrolledNode(
         padding: [0, BAR_ROOM, 0, 0],
         children: [{ width: 'grow', ...laying, id: `${id}-held`, children }],
       },
-      most > 1 &&
+      faded &&
+        most > 1 &&
         share < 0.999 && {
           id: `${id}-fade`,
           width: '100%',

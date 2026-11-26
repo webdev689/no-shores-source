@@ -262,7 +262,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     // The held map's coasts are worked out behind the veil, not on its first raising.
     void playing.helmMap.made;
     await enterSea(playing.helmMap.difficulty ?? 'normal');
-    landings.cameAboard(); // a ship docked sails out from its berth once the room has placed it
     dungeons.forget(); // once aboard, as `goInto` once arrived: a failed return's way back finds the dungeon drawn
   };
 
@@ -406,7 +405,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const landings = new SeaLandings({
     ...{ sea: () => playing.sea, landmass: () => playing.landmass, isles, free },
     land: () =>
-      void (playing.flow.mode === 'sea' && free() && playing.sea?.goAshore() && change({ kind: 'view-landings' })),
+      playing.flow.mode === 'sea' && free() && !!playing.sea?.goAshore() && (change({ kind: 'view-landings' }), true),
   });
 
   /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
