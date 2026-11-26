@@ -122,3 +122,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   - A sea is locked while its island has no name in `ISLANDS`, so naming an island unlocks its sea.
   - A locked sea is still sailed and travelled to as before: the lock is drawn, not enforced.
   - A sea's name falls back to a plain word's size where its arch fits nowhere.
+- **Docking with no way in.** Yes to a landing within reach sails the ship in to its berth, but where no way in to
+  the berth can be planned the ship stays at sea, the voyage's line saying why, and no landing is made. What it
+  should do then is the owner's to say
+  ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).

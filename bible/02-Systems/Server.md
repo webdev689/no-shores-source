@@ -386,9 +386,11 @@ will take it, by the room's own tick.
   players are in it, lets go of an account the sea has not landed there (one the sea did not answer for, or not within
   20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then
   is shown as any other.
-- **Parked ships** (`sea_parked.rs`, `ashore.ts`). A player who leaves the sea with their ship at rest within 5 km of
-  a continent's coast or a standing sea island's (`PARKED_REACH_M`: where a docked ship lies), out of a fight and
-  their account no guest's (`unkept:`), leaves it lying parked where it is, kept by their account. It lies at the one
+- **Parked ships** (`sea_parked.rs`, `ashore.ts`;
+  [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]). A player who leaves
+  the sea with their ship at rest within 5 km of a continent's coast or a standing sea island's (`PARKED_REACH_M`:
+  where a docked ship lies), out of a fight and their account no guest's (`unkept:`), leaves it lying parked where it
+  is, kept by their account. It lies at the one
   coast nearest it of those within 5 km, a continent's or a standing sea island's, as a sea island may stand 3 km off
   a coast or another island. It is never one of the sea's ships: no hostile ship or fight heeds it, and a sea island
   is rolled 1.2 km clear of it. Every room on an island (a node's room, its dungeons' and runs', a passage zone's
