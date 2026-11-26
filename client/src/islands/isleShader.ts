@@ -3,6 +3,7 @@
 // and the rock wear the land's ground tiles (groundGrain.ts) in the island's climate.
 import type { Gpu } from '../gpu.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
+import { LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -73,7 +74,8 @@ export function partColours(climate: string): Colour[] {
 }
 
 const COMMON = /* wgsl */ `
-struct Frame { from_eye: mat4x4f };
+// time.x: the scene's seconds, which a glowing ember flickers by.
+struct Frame { from_eye: mat4x4f, time: vec4f };
 struct Isle {
   offset: vec4f,
   inland: vec4f,
@@ -98,6 +100,7 @@ ${COMMON}
 @group(0) @binding(2) var ground_tiles: texture_2d_array<f32>;
 @group(0) @binding(3) var tile_sampler: sampler;
 ${TILE_GRAIN_WGSL}
+${LIGHT_MOTION_WGSL}
 const SAND = vec3f(0.84, 0.76, 0.56);
 const WET = 0.72;
 const SEABED = vec3f(0.5, 0.52, 0.4);
@@ -241,7 +244,18 @@ fn module_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
   let rock_grain = isle_rock(surface.local, normal);
   let rocky = surface.part == ${PARTS.indexOf('rock')}u || surface.part == ${PARTS.indexOf('rockAlt')}u;
   let colour = wears.rgb * (0.9 + 0.2 * grain) * select(vec3f(1.0), rock_grain, rocky);
-  return vec4f(select(lit(colour, normal, surface.from_eye), colour, wears.w > 0.5), 1.0);
+  if wears.w > 0.5 {
+    return vec4f(colour * ember_motion(surface.from_eye, surface.local), 1.0);
+  }
+  return vec4f(lit(colour, normal, surface.from_eye), 1.0);
+}
+
+// How a glowing ember moves: with its own lamp where one is lit near it (a lantern's glass with its flame, a camp's
+// coals with its fire); else by where in its module it glows.
+fn ember_motion(from_eye: vec3f, local: vec3f) -> f32 {
+  let own = 1.0 + min(light_phase(dot(floor(local), vec3f(13.0, 7.0, 1.0))), 0.999);
+  let near = sky_lamp_motion(from_eye);
+  return light_motion(select(own, near, near > 0.0), frame.time.x);
 }
 `;
 

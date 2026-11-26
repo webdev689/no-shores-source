@@ -35,7 +35,27 @@ export function breath(seed: number, seconds: number, depth = 1): number {
   return 1 - depth * 0.2 * (1 - Math.cos(seconds * BREATH_RATE + lightPhase(seed) * 6.2832));
 }
 
-/** The same in WGSL: `light_flicker(seed, time, depth)` and `light_breath(seed, time, depth)`. */
+/** How a light on land moves: a fire's flicker, a lantern's shallower one behind its glass, or a stone's breath (crystal,
+ *  a sunstone, a ruin's crown). */
+export type LightMotion = 'fire' | 'lantern' | 'stone';
+const MOTIONS: readonly LightMotion[] = ['fire', 'lantern', 'stone'];
+
+/** A light's motion as one number a glow can take from its lamp in a shader: its kind's place (1 fire, 2 lantern,
+ *  3 stone) and its seed's phase as the fraction; 0 is none. Kept off the next whole number, so a float32 keeps it. */
+export function motionCode(motion: LightMotion, seed: number): number {
+  return MOTIONS.indexOf(motion) + 1 + Math.min(lightPhase(seed), 0.999);
+}
+
+/** How lit a light of motion `code` is at `seconds`: as `flicker` or `breath` by its kind and its seed's phase. As
+ *  `light_motion` shades it. */
+export function lightMotion(code: number, seconds: number): number {
+  const kind = Math.floor(code);
+  const seed = (code - kind) / 0.618034;
+  return kind === 3 ? breath(seed, seconds, 0.75) : flicker(seed, seconds, kind === 2 ? 0.35 : 1);
+}
+
+/** The same in WGSL: `light_flicker(seed, time, depth)`, `light_breath(seed, time, depth)` and `light_motion(code,
+ *  time)`. */
 export const LIGHT_MOTION_WGSL = /* wgsl */ `
 fn light_phase(seed: f32) -> f32 {
   return fract(seed * 0.618034);
@@ -50,5 +70,12 @@ fn light_flicker(seed: f32, time: f32, depth: f32) -> f32 {
 
 fn light_breath(seed: f32, time: f32, depth: f32) -> f32 {
   return 1.0 - depth * 0.2 * (1.0 - cos(time * ${BREATH_RATE.toFixed(3)} + light_phase(seed) * 6.2832));
+}
+
+fn light_motion(code: f32, time: f32) -> f32 {
+  let kind = floor(code);
+  let seed = fract(code) / 0.618034;
+  let flame = light_flicker(seed, time, select(1.0, 0.35, kind == 2.0));
+  return select(flame, light_breath(seed, time, 0.75), kind == 3.0);
 }
 `;

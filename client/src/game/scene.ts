@@ -68,6 +68,9 @@ interface CloseUp {
 const MIDDLE_SAMPLES = 513;
 const MIDDLE_STEP_M = 16;
 const MIDDLE_REFRESH_M = 1500;
+/** How far through what stands nearer a fire's flames still show, metres: a lantern's glass round its flame, which
+ *  on land is drawn solid and some 0.25 m from its flame at its nearest. */
+const LANTERN_GLASS_M = 0.3;
 
 /** What an overlay drawn over the finished picture is drawn in: the picture's size and the light at the eye. */
 export interface Overlay {
@@ -127,9 +130,12 @@ export class GameScene {
   readonly sky: SkyDriver;
   /** Lamps a story lays besides the city's while it shows them: the wreck's fires. */
   lamps: readonly LampPlace[] = [];
-  /** Fires burning in the world (a camp's, a brazier's, a beacon's), lit by whatever shows them: drawn over the
-   *  water with the drawers, each casting its light as a lamp that flickers with its flames. */
+  /** Fires burning in the world (a camp's, a brazier's, a beacon's, a lantern's flame), the land's lit as its views
+   *  burn them (`CITY_LAMPS.fires`): drawn over the water with the drawers, each casting its light as a lamp that
+   *  flickers with its flames, or flickering with its place's lamp. */
   readonly fires: Flames;
+  /** The land's fires as last lit into `fires`: which change of them, and their ids. */
+  private landFires: { changed: number; ids: number[] } = { changed: 0, ids: [] };
   /** The city's, the events' and the scene's own lamps together, written afresh each frame into one list. */
   private readonly joined: LampPlace[] = [];
   private readonly fall: FallView;
@@ -166,6 +172,7 @@ export class GameScene {
     this.blur = new BlurView(gpu);
     this.upscale = new Upscale(gpu);
     this.fires = new Flames(gpu);
+    this.fires.seeThroughM = LANTERN_GLASS_M;
   }
 
   /** Draws this landmass from now on, wearing its biome's ground tiles. */
@@ -315,6 +322,7 @@ export class GameScene {
   ): void {
     const terrain = this.terrain;
     if (!terrain) return;
+    this.burnLandFires();
     const drawers: readonly Drawer[] = this.fires.count > 0 ? [...handed, this.fires] : handed;
     const { view, drawn } = terrain;
     if (painting(terrain.tiles)) standIn('ground pictures');
@@ -458,6 +466,19 @@ export class GameScene {
     this.blur.encode(encoder, canvas, more.blur ?? 0);
     this.drain.encode(encoder, canvas, more.drain ?? 0, more.dark ?? 0);
     this.gpu.device.queue.submit([encoder.finish()]);
+  }
+
+  /** Lights the land's fires again as its views have changed them, putting out those they burned before; their smoke
+   *  leans with the wind the sky last showed. */
+  private burnLandFires(): void {
+    const wind = SKY_NOW.current.look.wind;
+    this.fires.wind = [wind[0], wind[1]];
+    if (this.landFires.changed === CITY_LAMPS.firesChanged) return;
+    for (const id of this.landFires.ids) this.fires.out(id);
+    const ids = CITY_LAMPS.fires.map((fire) =>
+      this.fires.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts),
+    );
+    this.landFires = { changed: CITY_LAMPS.firesChanged, ids };
   }
 
   /** The city's, the events' and the scene's own lamps and its fires', in that order, in the list kept for them. */

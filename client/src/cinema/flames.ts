@@ -141,6 +141,8 @@ export class Flames {
   private readonly view: GPUBuffer;
   private bound: { depth: GPUTexture; group: GPUBindGroup } | null = null;
   private readonly fires = new Map<number, Fire>();
+  /** The fires whose light is a lamp of their place's, not their own. */
+  private readonly dark = new Set<Fire>();
   private nextId = 1;
   private instances: GPUBuffer | null = null;
   private readonly values = new Float32Array(MOST_PARTS * PART_FLOATS);
@@ -199,17 +201,30 @@ export class Flames {
   }
 
   /** Lights a fire `sizeM` tall (half a metre to four) with its base at `base` (world metres); gives its id. With
-   *  `along`, the run in metres of an edge burning from `base` (a rail, a spar), it burns all along that edge. */
-  light(base: Point, sizeM: number, seed: number, along?: Point): number {
+   *  `along`, the run in metres of an edge burning from `base` (a rail, a spar), it burns all along that edge. Without
+   *  `casts`, its light is not among `lamps`: its place lights a lamp of its own, seeded alike. */
+  light(base: Point, sizeM: number, seed: number, along?: Point, casts = true): number {
     const id = this.nextId++;
-    this.fires.set(id, along ? { at: base, sizeM, seed, along } : { at: base, sizeM, seed });
+    const fire = along ? { at: base, sizeM, seed, along } : { at: base, sizeM, seed };
+    this.fires.set(id, fire);
+    if (!casts) this.dark.add(fire);
     this.lit = null;
     return id;
+  }
+
+  /** Puts the fire `id` out. */
+  out(id: number): void {
+    const fire = this.fires.get(id);
+    if (!fire) return;
+    this.fires.delete(id);
+    this.dark.delete(fire);
+    this.lit = null;
   }
 
   /** Puts every fire out. */
   clear(): void {
     this.fires.clear();
+    this.dark.clear();
     this.lit = null;
   }
 
@@ -221,18 +236,21 @@ export class Flames {
   /** The light each fire casts, as the sky's lamps take it: at its glow, reaching with its size, in fire's colour,
    *  seeded as its flames are so it flickers with them. */
   get lamps(): readonly LampPlace[] {
-    this.lit ??= [...this.fires.values()].map((fire) => ({
-      at: fireGlows(fire, 0)[0]?.position ?? fire.at,
-      reachM: Math.max(LAMP_REACH_M.least, LAMP_REACH_M.perSize * fire.sizeM),
-      light: FIRELIGHT,
-      seed: fire.seed,
-    }));
+    this.lit ??= [...this.fires.values()]
+      .filter((fire) => !this.dark.has(fire))
+      .map((fire) => ({
+        at: fireGlows(fire, 0)[0]?.position ?? fire.at,
+        reachM: Math.max(LAMP_REACH_M.least, LAMP_REACH_M.perSize * fire.sizeM),
+        light: FIRELIGHT,
+        seed: fire.seed,
+      }));
     return this.lit;
   }
 
   /** Lets go of the fires' buffers on the GPU; with no fire left, nothing is drawn again. */
   destroy(): void {
     this.fires.clear();
+    this.dark.clear();
     this.lit = null;
     this.view.destroy();
     this.instances?.destroy();
