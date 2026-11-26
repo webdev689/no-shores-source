@@ -226,7 +226,7 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The sea reworked, the island's places as painted tiles, and the Playlist's crests in more detail** (#216, open,
+- **The sea reworked, the island's places as painted tiles, docking in sight, and the Playlist's crests in more detail** (#216, open,
   waiting on CI on its head and the owner's yes to merge; a merge deploys the page, the site, the rooms and the bot,
   and releases the desktop app, whose icon's code it changes). Four asks, each with its decision and Claude's calls in
   its table:
@@ -252,9 +252,19 @@ The decisions in [[Open Questions]] are not repeated here.
     sailing straight across land, not stopping a chase, and outliving a fight; a landing clicked far inland dropped;
     the console reading ×60 while the room held the ship to ×5; dead code from the sea bar and the marks over an
     island; some 30 notes that said otherwise than the code.
-  - Tested offline: `cargo xtask check` on `c087e1be` (the merge) and on `b06d383b` (the fixes: 5,421 TypeScript
-    and 3,173 Rust tests, the build and the repo checks); `main` at #222 merged in after it, the only clash this
-    note. Not seen in a running game, on a real GPU or in a deployed room.
+  - Then the owner's answer to docking ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]],
+    Claude's calls in its table): the ship sails at ×60 into its berth (a free pier place at a living port, else just
+    off the shore, a sea island's anchorage) before the tiles (`docking.ts`, `berths.ts`); back aboard it sails out
+    from its berth; leaving the sea mid-way forgets the landing. The sea keeps a ship left at rest within 5 km of a
+    coast parked (`sea_parked.rs`, at most 1,024, never a guest's), seen at sea and sent by the island's rooms
+    (`server/ashore.ts`, every 15 s, every tier's sea for a social space, an outpost or a run started at sea) while a
+    room names its player there, by the host's clock; unseen once no room does, let go after a day or as its player
+    sails again; kept in memory alone, so a deploy loses them. A ship comes back turned as it lay
+    (`Character.ship_heading`). A read-only review's four bugs are fixed with tests that failed first.
+  - Tested offline: `cargo xtask check` on `c087e1be` (the merge), `b06d383b` (the audit's fixes) and `63d7990b`
+    (docking: 5,442 TypeScript and 3,184 Rust tests); the review's fixes on `479cf45b` by the room, protocol,
+    room-wasm and gear crates' tests, clippy, rustfmt, the repo checks, the server's tests and the page's touched
+    ones. Not seen in a running game, on a real GPU or in a deployed room.
   - The owner's answers: a Normal run started at sea is entered only with the ship within 32 km of its island's coast
     (`arrival.ts`; a company member still joins by the company's rule); the island's dungeon is its Elite Dungeon;
     the three landing zones are Saltmere's, the other zones' deferred; `client/src/art` added to `desktop.yml`'s paths
@@ -263,7 +273,12 @@ The decisions in [[Open Questions]] are not repeated here.
     in neither list either (not asked). Left as they are: the island's Elite Dungeon scene and the website's gate are
     alike but not shared (one picture or the other would change); the port's tile paints Overlook wherever it is
     docked (only Overlook's social space is open); the key strip lifting over the docking question on views under
-    about 950 px wide (unmeasured).
+    about 950 px wide (unmeasured). Docking's own, left: a parked ship's look and plate are as its player left them
+    (a change at the Harbourmaster shows once they sail); ships ashore are drawn in friendly colours, not their dress,
+    and lie bow in, not turned to the pier; a ship parked in one tier's sea may show again if its player boards from
+    another tier and docks there; a ship ashore vanishes up to 15 s after it sails; going back aboard after a reload
+    ashore does not sail out from the berth; the pier's test checks the course from the sea's roadstead, the page's
+    own offing checked only by a script once.
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
   modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,
