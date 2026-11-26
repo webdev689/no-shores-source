@@ -5,7 +5,7 @@ import type { Child, Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { PRESTIGE_INK } from '../characterPage.ts';
 import { INK, type Hint, focusRing, hintsNode, words } from '../gearNodes.ts';
-import { CHARACTERS_Z, fitOf } from './characterNodes.ts';
+import { CHARACTERS_Z, VIGNETTE, fitOf } from './characterNodes.ts';
 import { TEST_CHARACTER, TEST_RULES, type TestEntry } from './testRuns.ts';
 
 export const TEST_ROOM_SCREEN = 'test-room';
@@ -99,7 +99,7 @@ export function testRoomNode(ui: Interface, shown: TestRoomShown): Child {
     height: view.height,
     solid: true,
     modal: true,
-    fill: 'rgba(4,5,8,0.78)',
+    picture: VIGNETTE,
     alignX: 'center',
     float: { to: 'screen', z: CHARACTERS_Z },
     opacity: shown.shown,

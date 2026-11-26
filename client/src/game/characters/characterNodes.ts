@@ -66,7 +66,7 @@ const SHADOW = { edge: 'shadow' as const, edgeColour: '#000' };
 const slotsOf = (answer: CharactersShown['answer']) => (typeof answer === 'object' && answer ? answer.slots : null);
 
 /** The title's scene held back: dimmed, and darkened toward its edges. */
-const VIGNETTE: Node['picture'] = {
+export const VIGNETTE: Node['picture'] = {
   key: 'characters vignette',
   source: {
     draw: (context, width, height) => {
@@ -96,7 +96,7 @@ function topNode(shown: CharactersShown, fit: Fit): Node {
   return {
     width: 'grow',
     gap: 18,
-    wrap: true,
+    wrap: fit.narrow,
     alignY: 'center',
     padding: fit.narrow ? [10, 14] : [16, 28],
     children: [
@@ -123,7 +123,7 @@ function topNode(shown: CharactersShown, fit: Fit): Node {
             direction: 'column',
             children: [
               words('AUREM', 1, INK.faint, { tracking: 2 }),
-              words('Vault and Aurem shared by all four', 1, INK.faint),
+              words('Vault and Aurem shared by all four', step, INK.faint),
             ],
           },
         ],
@@ -143,7 +143,7 @@ const stat = (name: string, value: string, colour: string, size: number): Node =
 /** The plaque under the figure: the level large in brass, Prestige in its blue, Defense, the house in its colour,
  *  where it last was, and whether its story waits; an empty slot's one line. */
 function plaqueNode(said: SlotWords | null, fit: Fit): Node {
-  const large = fit.large ? 6 : 5;
+  const large = fit.large ? 6 : fit.narrow ? 4 : 5;
   if (!said || said.level === null)
     return {
       role: 'well',
@@ -189,12 +189,12 @@ function figureNode(shown: CharactersShown, fit: Fit, height: number): Node {
   const slots = slotsOf(shown.answer);
   const kept = slots?.[shown.chosen] ?? null;
   const figure = slots ? shown.figure(shown.chosen, kept) : null;
-  const box = Math.round(height * (fit.narrow ? 0.34 : 0.6));
+  const box = Math.round(height * (fit.narrow ? 0.2 : 0.6));
   return {
     width: 'grow',
     direction: 'column',
     alignX: 'center',
-    gap: fit.short ? 6 : 12,
+    gap: fit.short || fit.narrow ? 6 : 12,
     children: [
       {
         width: 'grow',
@@ -233,7 +233,7 @@ function bannerNode(ui: Interface, shown: CharactersShown, slot: number, width: 
   const chosen = slot === shown.chosen;
   const lit = ui.hovered(id);
   const keyed = ui.focused(id) && ui.keyFocused;
-  const base = fit.large ? 84 : fit.short ? 60 : 72;
+  const base = bannerHeight(fit);
   const height = chosen ? base + 12 : base;
   const across = chosen ? width : width - 18;
   const said = slotWords(kept, shown.placeName);
@@ -254,13 +254,13 @@ function bannerNode(ui: Interface, shown: CharactersShown, slot: number, width: 
             width: 'grow',
             direction: 'column',
             gap: 2,
-            children: [words(said.house, words1, said.houseColour, SHADOW), words(said.place, 1, INK.word, SHADOW)],
+            children: [words(said.house, words1, INK.word, SHADOW), words(said.place, 1, '#e2dccd', SHADOW)],
           },
           {
             direction: 'column',
             alignX: 'end',
             children: [
-              words(String(said.level), fit.large ? 5 : 4, INK.brassLit, SHADOW),
+              words(String(said.level), fit.large ? 4 : 3, INK.brassLit, SHADOW),
               words(`Prestige ${said.prestige ?? 0}`, 1, PRESTIGE_INK, SHADOW),
             ],
           },
@@ -305,6 +305,9 @@ function bannerNode(ui: Interface, shown: CharactersShown, slot: number, width: 
   };
 }
 
+/** A banner's height, the chosen one's a step more. */
+const bannerHeight = (fit: Fit): number => (fit.large ? 84 : fit.short || fit.narrow ? 58 : 72);
+
 /** Four quiet banners while the four are asked for. */
 const waitingNodes = (width: number, fit: Fit): Node[] =>
   [0, 1, 2, 3].map((slot) => ({
@@ -313,7 +316,7 @@ const waitingNodes = (width: number, fit: Fit): Node[] =>
     children: [
       {
         width: width - 18,
-        height: fit.large ? 84 : fit.short ? 60 : 72,
+        height: bannerHeight(fit),
         role: 'well',
         opacity: 0.55,
         label: slot === 0 ? 'Asking the accounts for your characters' : undefined,
@@ -323,6 +326,7 @@ const waitingNodes = (width: number, fit: Fit): Node[] =>
 
 /** A press in the kit's look, its words in capitals, `fill` its hold's charge. */
 function press(
+  ui: Interface,
   id: string,
   said: string,
   role: 'primary' | 'button' | 'warn',
@@ -330,6 +334,7 @@ function press(
   label = said,
   fill: Child = null,
 ): Node {
+  const box = ui.boxOf(id);
   return {
     id,
     press: true,
@@ -342,13 +347,14 @@ function press(
     children: [
       words(said.toUpperCase(), fit.large ? 2 : 1, role === 'primary' ? INK.brassLit : INK.word, { tracking: 3 }),
       fill,
+      ui.focused(id) && ui.keyFocused && box && focusRing(box.width, box.height),
     ],
   };
 }
 
 /** Under the banners: what is under way or was refused, Play (Create on an empty slot), Delete held on a filled slot
  *  (what it loses said while held), the Test Room for a developer, and Try again where the accounts did not answer. */
-function pressesNode(shown: CharactersShown, fit: Fit): Node {
+function pressesNode(ui: Interface, shown: CharactersShown, fit: Fit): Node {
   const { answer } = shown;
   const slots = slotsOf(answer);
   const kept = slots?.[shown.chosen] ?? null;
@@ -358,25 +364,30 @@ function pressesNode(shown: CharactersShown, fit: Fit): Node {
     direction: 'column',
     gap: 8,
     children: [
+      answer === null && words('Asking the accounts for your characters...', 1, INK.faint, SHADOW),
       shown.busy !== null && words(shown.busy, 1, INK.faint, SHADOW),
       (shown.said ?? (failed ? answer : null)) !== null && {
         width: 'grow',
         text: { words: shown.said ?? String(answer), colour: INK.loss, ...SHADOW },
         label: shown.said ?? String(answer),
       },
-      failed && press(RETRY, 'Try again', 'button', fit),
+      failed && press(ui, RETRY, 'Try again', 'button', fit),
       slots &&
-        press(PLAY, kept ? 'Play' : 'Create', 'primary', fit, kept ? 'Play this character' : 'Create a character'),
+        press(ui, PLAY, kept ? 'Play' : 'Create', 'primary', fit, kept ? 'Play this character' : 'Create a character'),
       slots &&
         kept && {
           width: 'grow',
           gap: 8,
           children: [
-            press(DELETE, 'Delete', 'warn', fit, 'Hold to delete this character', fillNode(shown.deleting, true)),
-            typeof answer === 'object' && answer?.developer && press(TEST_ROOM, 'Test Room', 'button', fit),
+            press(ui, DELETE, 'Delete', 'warn', fit, 'Hold to delete this character', fillNode(shown.deleting, true)),
+            typeof answer === 'object' && answer?.developer && press(ui, TEST_ROOM, 'Test Room', 'button', fit),
           ],
         },
-      slots && !kept && typeof answer === 'object' && answer?.developer && press(TEST_ROOM, 'Test Room', 'button', fit),
+      slots &&
+        !kept &&
+        typeof answer === 'object' &&
+        answer?.developer &&
+        press(ui, TEST_ROOM, 'Test Room', 'button', fit),
       shown.deleting > 0 && { width: 'grow', text: { words: DELETE_WARNING, colour: INK.loss, ...SHADOW } },
     ],
   };
@@ -394,15 +405,15 @@ export function charactersNode(ui: Interface, shown: CharactersShown): Child {
   const right: Node = {
     width: fit.narrow ? 'grow' : column,
     direction: 'column',
-    gap: fit.short ? 6 : 10,
+    gap: fit.short || fit.narrow ? 6 : 10,
     alignY: 'center',
-    children: [...banners, { height: fit.short ? 4 : 10 }, pressesNode(shown, fit)],
+    children: [...banners, { height: fit.short ? 4 : 10 }, pressesNode(ui, shown, fit)],
   };
   const body: Node = fit.narrow
     ? {
         width: 'grow',
         direction: 'column',
-        gap: 12,
+        gap: 6,
         padding: [0, 14],
         children: [figureNode(shown, fit, view.height), right],
       }
@@ -431,7 +442,7 @@ export function charactersNode(ui: Interface, shown: CharactersShown): Child {
       body,
       {
         width: 'grow',
-        padding: fit.narrow ? [10, 14] : [12, 28],
+        padding: fit.narrow ? [6, 14] : [12, 28],
         children: [hintsNode(shown.hints, fit.large ? 2 : 1)],
       },
     ],

@@ -59,8 +59,10 @@ let standing = 0;
 export const charactersOpen = (): boolean => standing > 0;
 
 /** The keys along the foot, as the player plays: the pad's buttons on a pad, else the keyboard's. */
-function hintsOf(view: ScreenMarked, developer: boolean, kept: boolean): Hint[] {
+function hintsOf(view: ScreenMarked, developer: boolean, kept: boolean | null): Hint[] {
   const pad = BINDS.device === 'pad';
+  // Until the four are read, only the way back.
+  if (view === 'characters' && kept === null) return [[pad ? 'B' : 'Esc', 'Title']];
   if (view === 'test')
     return pad
       ? [
@@ -72,7 +74,7 @@ function hintsOf(view: ScreenMarked, developer: boolean, kept: boolean): Hint[] 
           ['Esc', 'Back'],
         ];
   return [
-    [pad ? 'D-Pad' : '↑ / ↓', 'Choose'],
+    [pad ? 'D-Pad' : 'Up / Down', 'Choose'],
     [pad ? 'A' : 'Enter', kept ? 'Play' : 'Create'],
     ...(kept ? [[pad ? 'X' : 'Delete', 'Hold to delete'] as const] : []),
     ...(developer ? [[pad ? 'Y' : 'T', 'Test Room'] as const] : []),
@@ -233,7 +235,7 @@ export function openCharacters(
         account: { name: link.account?.username ?? 'Guest', discord: !!link.account?.discord },
         placeName: reach.placeName,
         figure: (slot, kept) => reach.figures.figureOf(slot, kept),
-        hints: hintsOf('characters', !!four?.developer, kept),
+        hints: hintsOf('characters', !!four?.developer, four ? kept : null),
       });
     };
 

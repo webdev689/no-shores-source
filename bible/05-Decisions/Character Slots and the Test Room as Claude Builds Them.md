@@ -31,3 +31,18 @@ change any of them.
 | A test run | Its own room, named `--test-<instance>` where a run is `--run-<instance>`, for developers alone; a Playlist's at its top band's foes | Kept apart from every real run, its company and its gates |
 | The Breach's test | Begins at the Sunken Gate in a copy of the Gullwing Vale of its own, so the Waking is tested too, then into the run | One player counts as the whole company there as inside |
 | Leaving a test run | Back to the Test Room on the character screen | Where it was launched from |
+
+## The screens
+
+| Call | Claude's choice | Why |
+|---|---|---|
+| When the screen opens | On Begin at the title, over the title's scene, which holds behind it; Escape goes back to the title | The scene is the backdrop the owner's layout stands on, and nothing is lost by looking |
+| Choosing | The banner the keys or the pad move to is chosen; a click chooses, a click on the chosen one plays | As Destiny 1's select moves its chosen character with the stick |
+| Delete's ways | The Delete key, the pad's X, Enter or Space on it, or the pointer, held two seconds; it waits to be let go before it can act again | What cannot be undone is held ([[Interface]]), by every way the screen is played |
+| A character still in a room | Asked again five times, a second apart, then "Your character is still leaving its last room. Try again." | Long enough for a page just left; short enough that the player is told |
+| A look sent once | Only for the first slot, which holds the character made before an account had four | Another slot's character was made with the slots, so its look is already kept with it |
+| What the page keeps by account | Kept by account and character; the first slot's under the account's id alone, as before | Nothing kept before the four is lost |
+| The banners' words | White over the emblem; the house's own colour on the plaque under the figure | The house's colour did not read over every emblem |
+| A Launch | Passes the title with no character put in play, arrives where the character in play last was, then goes into the test room behind its own veil once on foot | Uses the game's own ways into a run and to a gate, which start from where a player stands |
+| Leaving a test run | Any way out of the test rooms loads the page again at the Test Room; while in one, Exit to Menu and Switch character open the Test Room too | Where it was launched from, whichever way the developer leaves |
+| A narrow screen | Under 600 px wide, one column that scrolls: a smaller figure, its plaque, the banners, the presses | The four banners and Play stay large enough to press |
