@@ -263,7 +263,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     });
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const ownShip = { docked: parts.docked(), lies: playing.sea?.passage.ship, hull: parts.builtShip()?.hull };
-    const moored = mooredShips(shipsLying(here.node, playing.landmass.plan, ownShip, here.held.ships), clock, water);
+    // A dungeon and a Breach's run draw no sea, so no ship lies by them.
+    const lying =
+      here.dungeon || here.run ? [] : shipsLying(here.node, playing.landmass.plan, ownShip, here.held.ships);
+    const moored = mooredShips(lying, clock, water);
     const more = {
       after: hands,
       hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS),
