@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
 import {
+  testZoneOf,
   accountOf,
   accountsFrom,
   dungeonRoom,
@@ -289,4 +290,32 @@ test("a Breach's run reads as its gate's patrol zone and its tier, as the rooms 
     'node-gullwing-vale--breach-easy--run-k3j4h5g6',
   ])
     assert.equal(nodeOfRoom(name)?.breach ?? null, null, name);
+});
+
+test('a test room reads as the run it stands for, marked a test; a Breach test opens from its zone copy', () => {
+  assert.deepEqual(nodeOfRoom('node-pearl-tomb--abyss--playlist-32--test-ab12cd34'), {
+    id: 'pearl-tomb',
+    seas: 'abyss',
+    dungeon: null,
+    run: 'ab12cd34',
+    playlist: 32,
+    guild: null,
+    breach: null,
+    test: true,
+  });
+  assert.equal(nodeOfRoom('node-cinder-deep--elite--test-ab12cd34')?.test, true);
+  assert.equal(nodeOfRoom('node-cinder-deep--elite--run-ab12cd34')?.test, undefined, 'a run is no test');
+  const breach = 'node-gullwing-vale--breach-hard--test-ab12cd34';
+  assert.equal(nodeOfRoom(breach)?.breach, 1);
+  assert.equal(testZoneOf(breach), 'node-gullwing-vale--test-ab12cd34');
+  assert.equal(testZoneOf('node-gullwing-vale--breach-hard--run-ab12cd34'), null, 'a real run opens from the zone');
+  // As the rooms read them: the zone copy is no run, and what they open no test of is no room.
+  assert.equal(nodeOfRoom('node-gullwing-vale--test-ab12cd34')?.run, null, 'the zone copy');
+  for (const none of [
+    'node-krakens-grotto--test-ab12cd34',
+    'node-saltmere-wilds--elite--dungeon-1--test-ab12cd34',
+    'node-cinder-deep--elite--sea--test-ab12cd34',
+    'node-overlook-social--test-ab12cd34',
+  ])
+    assert.equal(nodeOfRoom(none), null, none);
 });

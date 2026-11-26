@@ -575,6 +575,14 @@ so every decision is Rust and the shell only carries bytes and time.
   that never sign in are not without end in their five seconds. An emptied run's room stays as its company left it
   for `RUN_LINGER_MS`, a minute, through a dropped connection, and is then forgotten: the next to come opens a fresh
   run.
+- **Test rooms** (`testRoom`, [[Activities]], "Test runs"): a name as a run's with `--test-<instance>` for
+  `--run-<instance>`, or a Breach's gate's zone copy, `node-gullwing-vale--test-<instance>`. A test run opens from its
+  real run's ask and the zone copy as its node does; the host then makes it a test room (`makeTest`) before anyone
+  joins. Its sockets are a run's (`privateRun`; the zone copy holds a Breach's eight). Its keeper keeps nothing: the
+  host's `TestRun` asks the accounts only `developer(token)` as each token comes, lets a developer play as their
+  account, by their username, and sends anyone else away with 4003 and "Test runs are for developers.". Its Breach's
+  word asks the accounts nothing: the zone copy holds a developer in the company of the test run they joined for at
+  once.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.

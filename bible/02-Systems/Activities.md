@@ -29,6 +29,10 @@ code:
   - server/accounts/playlists.ts#playlistRun
   - client/src/game/playlistWords.ts#playlistScreenOf
   - client/src/game/playlistScreens.ts#startPlaylists
+  - server/roomNames.ts#testRoom
+  - server/testRuns.ts#TestRun
+  - crates/gear/src/max_test.rs#max_test
+  - crates/room/src/test_room.rs#make_test
 ---
 # Activities
 
@@ -380,6 +384,34 @@ keep their engine ([[The Journal Holds the Quests, the Bounties at Its Side and 
   dungeon carries the day's modifier at Elite and Abyss seas while it is its island's dungeon of the day. An Elite
   Dungeon's card is its week's run where `eliteRun` picks it, else its run at Normal, and offers Find a Company
   while it is open.
+
+## Test runs
+
+The owner's decision is [[Developers Launch Activities From a Test Room, in Max Gear]]; the calls are in
+[[Character Slots and the Test Room as Claude Builds Them]].
+
+- **The names.** A test run is named as its real run is, with `--test-<instance>` where the run has `--run-<instance>`
+  (eight lowercase letters or digits, as `runInstance` draws them; `testRoom` in `roomNames.ts`):
+  - a playlist's: `node-<Elite Dungeon>--elite--playlist-<foes' level>--test-<instance>`, or `--abyss--`, the foes'
+    level one of the playlist's bands' (`Playlist::foes_at`, as the activities' playlists give it);
+  - the week's Elite or Abyss Dungeon: `node-<Elite Dungeon>--elite--test-<instance>`, or `--abyss--`;
+  - the Breach's: `node-gullwing-vale--breach-normal--test-<instance>`, or `--breach-hard--`, with its gate in a copy
+    of the zone of its own, `node-gullwing-vale--test-<instance>`, the same instance. The page joins the zone copy with
+    `?breach=` and the run's whole name, as a launched company joins the zone ([[Breaches]], "The Breach's test").
+  Any other spelling is no room: no test of a patrol's dungeon, of a run at Normal, of a guild's, or of one marked
+  `--sea`, and no zone copy of a zone with no Breach's gate. A test room is never a real run's room or a real zone's.
+- **Who may join**: developers alone ([[Accounts]], "How it works"). Each socket's token is asked of the accounts as it
+  comes, and nothing else is (`TestRun`): no character is claimed or saved, and no presence, found run, company or
+  arrival is asked. A player who is no developer is sent away with 4003 and "Test runs are for developers."; one the
+  accounts do not answer for with 1013, to join again. A developer's second socket sends their first away.
+- **The test character**: everyone who joins a test room plays `Character::max_test`, made as they join and kept
+  nowhere: level 30 by XP for 20 and Prestige 120 from the four Hard Breach armour pieces with every node bought, a
+  Forged weapon at 300 Attack in Melee and Ranged with its perks, every Art mastered, ammunition full, the prologue
+  played and the Breach won at Normal, the first ship given. Their plate carries their username.
+- **What differs, in test rooms alone** (`room::test_room`): a tester's blow on a foe weighs ten times
+  (`TEST_HARM`); their health never falls below 1, so they never fall, and a fall into the dark lets them stand again
+  at once; the gate lets them in whatever it would ask (Hard without Normal won, any band); one player is the whole
+  company in the Breach ("The Breach's test"). Everything else plays as in the real run.
 
 ## How it is built
 

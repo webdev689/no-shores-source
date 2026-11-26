@@ -73,6 +73,7 @@ mod statuses;
 mod stepping;
 mod steps;
 mod story;
+mod test_room;
 pub mod threat;
 mod told;
 pub mod winds;
@@ -144,6 +145,8 @@ pub struct Room {
     arts: bool,
     /// Whether it plays the prologue's wreck (`story.rs`).
     story: bool,
+    /// Whether it is a developer's test room (`test_room.rs`).
+    pub(crate) test: bool,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     /// How many players have joined: the next stands at the spawn this many turns on.
@@ -277,6 +280,7 @@ impl Room {
             takes_foe_asks: section.is_none(),
             arts: true,
             story: false,
+            test: false,
             section,
             clock: 0,
             next_fighter: 1,
@@ -388,12 +392,23 @@ impl Room {
     /// A new player standing as `body` stands, with nothing drawn; in the prologue's wreck room, armed for the story.
     pub(crate) fn join_standing(&mut self, body: Body) -> PlayerId {
         let id = self.next_id();
-        let mut joined = Player::new(player(body, BARE_HANDS), self.clock, self.is_test_ground());
+        let character = if self.test {
+            gear::Character::max_test()
+        } else if self.is_test_ground() {
+            gear::Character::test_grounds()
+        } else {
+            gear::Character::starting()
+        };
+        let mut joined = Player::new(player(body, BARE_HANDS), self.clock, character);
         if self.story {
             story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
         self.arrived(id);
+        // The test character comes in its gear, its perks' trims and its weapon taken at once.
+        if self.test {
+            self.retrim(id);
+        }
         id
     }
 

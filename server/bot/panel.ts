@@ -19,7 +19,7 @@ import { type BotModule, BOT_MODULES, moduleOf } from './law/modules.ts';
 import { type RoleUse, everyoneSpots, referencedIds, roleSpots, validate } from './law/settings.ts';
 import { type PanelUser, logout, sessionOf } from './auth.ts';
 import { type HeaderSet, bearer, fail, json, readJson } from './http.ts';
-import type { BotContext, Vars } from './kit.ts';
+import { type BotContext, type Vars, ownersOf } from './kit.ts';
 import { type Bucket, mediaRoute } from './media.ts';
 import type { Actor } from './modules/module.ts';
 import { EMOJI_REFUSAL, emojiOutside, messagePreview, testMessage } from './panelMessages.ts';
@@ -59,13 +59,6 @@ export interface PanelContext {
 }
 
 const members = new Map<string, { roles: string[] | null; at: number }>();
-
-/** The user ids the deploy names as the bot's owners. */
-export const ownersOf = (vars: Vars): string[] =>
-  String(vars.BOT_OWNERS ?? '')
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => /^\d{5,25}$/.test(entry));
 
 /** A member's roles in a server, null when they are not in it, or 'down' while Discord is away. */
 async function memberRoles(

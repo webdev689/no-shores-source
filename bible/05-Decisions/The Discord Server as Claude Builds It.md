@@ -21,7 +21,7 @@ built by the bot's server layout ([[Discord Bot]], "The server layout"). The own
 | Voice | Lounge, and Make a room for a room of one's own (`{name}'s crew`) | One place to hang out, and rooms that come and go |
 | Staff | #staff, #mod-log, #server-log, #ticket-transcripts, hidden from members; the logs read-only to moderators | What staff do apart from what the bot records |
 | Left out | #off-topic, #memes, an arrivals channel, a bot-commands channel, a member gate role, more staff ranks | Each is added when the server needs it; the bot's commands answer privately |
-| Roles, top to bottom | Founder, Moderator, the three houses, Announcement Pings, Patch Note Pings, Event Pings | Staff first; houses shown apart in the member list; pings carry no colour |
+| Roles, top to bottom | Founder, Moderator, Developer, the three houses, Announcement Pings, Patch Note Pings, Event Pings | Staff first; houses shown apart in the member list; pings carry no colour |
 | House roles | Given and taken by the bot from each linked member's pledge, in each house's gear colour, never picked by a button | A house is what a player pledged in the game |
 | Ping roles | Picked with buttons in #welcome, pinged only by the bot and the owner | Members choose what they hear about, and nobody else can spam them |
 | Moderators | Delete messages, manage threads, time out, kick, ban, mute and move in voice, read the audit log | What moderating needs, and no say over the server's settings |

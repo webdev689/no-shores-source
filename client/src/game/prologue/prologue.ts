@@ -110,7 +110,7 @@ export class Prologue {
     if (name !== 'intro') void this.wreckContext.drawn().catch(() => undefined);
     switch (name) {
       case 'intro':
-        return new Intro(story.stage, story.sailing);
+        return new Intro(story.stage, story.sailing, story.gate ?? null);
       case 'storm':
         return new StormDive(story, shot());
       case 'creation':
@@ -201,7 +201,7 @@ export class Prologue {
     if (ended instanceof Battle || ended instanceof Calm) this.carried.wrecks = ended.wrecks;
     if (ended instanceof Ram) this.carried.meeting = ended.meeting;
     if (ended instanceof Ram) void this.openRun();
-    if (ended instanceof Intro && this.played) {
+    if (ended instanceof Intro && (ended.onward ?? this.played)) {
       this.end = 'begun';
       return;
     }
