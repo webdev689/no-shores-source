@@ -4,9 +4,9 @@
 import { type BrowserWindow, type IpcMainEvent, type WebFrameMain, app, ipcMain, session, shell } from 'electron';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { type DesktopAsk, RELOCK_HOOK } from '../../client/src/desktop.ts';
+import { type DesktopAsk, LAUNCHER_FLAG, RELOCK_HOOK } from '../../client/src/desktop.ts';
 import { CHANNELS, askOf, infoOf } from './bridge.ts';
-import { Config } from './config.ts';
+import { Config, type WindowPlace } from './config.ts';
 import { goneLine, logLine, logWith } from './crashes.ts';
 import { fenceOf, gamePlace, isGamePage, opensInBrowser, permits } from './fences.ts';
 import { GAME_URL_VARIABLE, gameAddress } from './gameAddress.ts';
@@ -88,7 +88,14 @@ const transport = transportOf({
   signed: ownPackage.noShores?.signed === true || ownPackage.noShores?.signed === 'true',
 });
 
+/** The game's window, and the launcher's, which stands from the app's start until Play. */
 let window: BrowserWindow | null = null;
+let launcherWindow: BrowserWindow | null = null;
+/** The app's windows standing, the launcher's before the game's. */
+const standing = () =>
+  [launcherWindow, window].filter((each): each is BrowserWindow => each !== null && !each.isDestroyed());
+/** The window a box goes over: the game's, else the launcher's. */
+const front = () => standing().at(-1) ?? null;
 const restartArgs = () => process.argv.slice(1).filter((arg) => !arg.startsWith(BACKEND_ARGUMENT));
 /** Starts the app again once this one has gone: from its AppImage where it runs from one, as the folder it runs in
  *  is the AppImage's, and goes with it. */
@@ -105,8 +112,8 @@ const watch = watchGraphics(launch, desk, chromium, {
   seen: () => config.get().seen,
   keepSeen: (seen) => void config.set({ seen }),
   gpuKey,
-  tell: (box) => boxOver(window, box),
-  ask: (box, stop) => boxOver(window, box, stop),
+  tell: (box) => boxOver(front(), box),
+  ask: (box, stop) => boxOver(front(), box, stop),
   restart: (args) => {
     // With its failure kept, a downloaded update installs and opens the app again on its own; else it waits, as an
     // install as the app goes would take the place the app is opened again from.
@@ -134,17 +141,16 @@ const info = () =>
     report: watch.reported(),
     update: updater.update(),
   });
-/** Tells the game what changed: its own pages alone, never one the window passes through to sign in. */
+/** Tells the game what changed: its own pages alone, never one a window passes through to sign in. */
 const tell = () => {
-  if (window && !window.isDestroyed() && isGamePage(window.webContents.getURL(), game))
-    window.webContents.send(CHANNELS.changed, info());
+  for (const each of standing())
+    if (isGamePage(each.webContents.getURL(), game)) each.webContents.send(CHANNELS.changed, info());
 };
 const updater = startUpdater(transport, config.get().updateChecks, tell, log);
 
-/** Only the game's own window, from its top page on the game's own pages, is heard. */
+/** Only the app's own windows, from their top page on the game's own pages, are heard. */
 const fromGame = (event: IpcMainEvent) =>
-  window !== null &&
-  event.sender === window.webContents &&
+  standing().some((each) => event.sender === each.webContents) &&
   event.senderFrame !== null &&
   event.senderFrame === event.sender.mainFrame &&
   isGamePage(event.senderFrame.url, game);
@@ -189,6 +195,9 @@ function answer(ask: DesktopAsk, frame: WebFrameMain): void {
     case 'download':
       updater.download();
       return;
+    case 'play':
+      openGame();
+      return;
     case 'relock':
       // Run as a press, which the page's own hook needs; the hook takes the lock only if the game still wants it.
       // On the page that asked, never one loaded since, as a call waits for its page to load.
@@ -198,12 +207,36 @@ function answer(ask: DesktopAsk, frame: WebFrameMain): void {
   }
 }
 
+/** What every window of the app opens with: the game's address, its place kept, its process's end logged. */
+const windowSetup = (opened: string) => ({
+  address: opened,
+  origin: game.origin,
+  kept: config.get().window,
+  keep: (place: WindowPlace) => void config.set({ window: place }),
+  gone: (reason: string, exitCode: number) =>
+    log(goneLine('renderer', { reason, exitCode }, watch.reported()?.description ?? '')),
+  quit: () => app.quit(),
+});
+
+/** Opens the game's window, on the title, and closes the launcher's once the game's is ready to show. */
+function openGame(): void {
+  if (window && !window.isDestroyed()) return;
+  const opened = openGameWindow(windowSetup(address));
+  opened.webContents.on('did-finish-load', tell);
+  opened.once('ready-to-show', () => {
+    launcherWindow?.close();
+    launcherWindow = null;
+  });
+  window = opened;
+}
+
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => {
-    if (!window || window.isDestroyed()) return;
-    if (window.isMinimized()) window.restore();
-    window.focus();
+    const shown = front();
+    if (!shown) return;
+    if (shown.isMinimized()) shown.restore();
+    shown.focus();
   });
   ipcMain.on(CHANNELS.info, (event) => {
     event.returnValue = fromGame(event) ? info() : null;
@@ -250,14 +283,15 @@ else {
     const card = await gpuKey();
     config.set({ failures: reviewFailures(config.get().failures, card, chromium) });
     log(`launch: ${launch.backend} (chosen ${launch.chosen}), ${address}, updates by ${transport}`);
-    window = openGameWindow({
-      address,
-      origin: game.origin,
-      kept: config.get().window,
-      keep: (place) => void config.set({ window: place }),
-      gone: (reason, exitCode) => log(goneLine('renderer', { reason, exitCode }, watch.reported()?.description ?? '')),
-      quit: () => app.quit(),
+    // The launcher stands first, in a window of its own; its Play opens the game's window.
+    const flagged = new URL(address);
+    flagged.searchParams.set(LAUNCHER_FLAG, '');
+    launcherWindow = openGameWindow({
+      ...windowSetup(flagged.href),
+      kept: null,
+      keep: () => undefined,
+      launcher: true,
     });
-    window.webContents.on('did-finish-load', tell);
+    launcherWindow.webContents.on('did-finish-load', tell);
   });
 }

@@ -63,3 +63,19 @@ export function openingPlace(kept: WindowPlace | null, screens: readonly Area[])
     height: Math.max(LEAST_HEIGHT, Math.min(tallest, kept.height)),
   };
 }
+
+/** The launcher window's size: its own, whatever the game's window was left at. */
+const LAUNCHER_SIZE: readonly [number, number] = [1200, 760];
+
+/** The launcher's window on `main`: centred at its own size, never larger than the screen. */
+export function launcherPlace(main: Area): WindowPlace {
+  const [width, height] = [Math.min(LAUNCHER_SIZE[0], main.width), Math.min(LAUNCHER_SIZE[1], main.height)];
+  return {
+    x: Math.round(main.x + (main.width - width) / 2),
+    y: Math.round(main.y + (main.height - height) / 2),
+    width,
+    height,
+    maximized: false,
+    fullScreen: false,
+  };
+}

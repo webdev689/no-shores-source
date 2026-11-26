@@ -170,7 +170,7 @@ jobs:
         if: steps.zone.outputs.served == 'yes'
         run: |
           set -euo pipefail
-          for path in / /world/ /game/ /panel/ /play/; do
+          for path in / /world/ /game/ /app/ /panel/ /play/; do
             for attempt in $(seq 24); do
               if curl -fsS -o /dev/null --max-time 15 "https://$ZONE$path"; then continue 2; fi
               sleep 10

@@ -47,3 +47,21 @@ test("the player's own arrow stops in a living foe, and flies on past a dead one
   assert.deepEqual(struckIn(fightWith('foes', 'dead')), []);
   assert.deepEqual(struckIn(fightWith('players', 'idle')), []);
 });
+
+test("the player's own hit foreseen flashes its foe as it lands, and the room's word on it flashes nothing more", () => {
+  const hit = { tick: 1n, kind: 1, how: 1, striker: 1, defender: 7, amount: 10, stroke: 3 };
+  const heard: { foreseen: unknown[]; told: unknown[] } = { foreseen: [hit], told: [] };
+  const fight = {
+    ...fightWith('foes', 'idle'),
+    takeEvents: () => heard.told.splice(0),
+    takeForeseen: () => heard.foreseen.splice(0),
+  } as unknown as Fighting;
+  const effects = new FightEffects();
+  effects.events(fight, TICK);
+  assert.ok(effects.flashes.flashOf(7), 'flashed as the blow landed');
+  for (let frame = 0; frame < 20; frame += 1) effects.events(fight, TICK);
+  assert.equal(effects.flashes.flashOf(7), undefined, 'its flash over');
+  heard.told.push({ ...hit, felt: true });
+  effects.events(fight, TICK);
+  assert.equal(effects.flashes.flashOf(7), undefined, "no flash again on the room's word");
+});

@@ -46,7 +46,14 @@ export const EVENT = {
   checkpoint: 36,
   fellBack: 37,
 } as const;
-export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
+export const HOW = { swing: 1, riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
+
+/** The events a hit is felt by, its flash, sound and hold: the player's own hits `foreseen` as they landed, and every
+ *  event the room `told` but its word on one of those, felt already. */
+export const feltNow = (foreseen: readonly FightEvent[], told: readonly FightEvent[]): FightEvent[] => [
+  ...foreseen,
+  ...told.filter((event) => !event.felt),
+];
 
 /** Whether a blow lands as a spell's does, no weapon's swing behind it: a spell, or an Atheric's leap or burst. */
 export const landsAsSpell = (event: FightEvent): boolean =>

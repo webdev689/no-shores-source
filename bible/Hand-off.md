@@ -49,8 +49,8 @@ its system note.
   player, the deep and the shore, the Brig's crew regrouping ahead ([[The Crew Still Standing Regroup Ahead]]); the
   wreck built and published by its workflow.
 - **[[Music]] and [[Ambience]]**: every sound the owner's Freesound pick but the four synthesised ones kept, the steps
-  DFO's own, and the horse's 14 cues silent until picked; recordings load as wanted, held once within 192 MB and kept
-  in the browser's storage.
+  DFO's own, and four of the horse's cues (in water, and the boost on stone) unpicked, each playing its gait's on the
+  ground (#206); recordings load as wanted, held once within 192 MB and kept in the browser's storage.
 - **The [[Interface]] without HTML**, held by the `html` check; the game in a worker of its own ([[Game]]); the
   network packed and sent as changes; an error in a frame no longer stops the game's loop.
 - **Keys and the pad**: every control rebound and kept with the account, the pad played as Destiny's, the key strip
@@ -220,14 +220,14 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the rooms
-  and the accounts), on the owner's "take autonomy and do a comprehensive codebase audit and fix any issues, make any
-  improvements and be as detailed as possible". Eight read-only audits by area and an independent review of the whole
-  diff, every fix with a test shown failing first but two (the PR says which and why). Among them: a stalled network
-  that resumes no longer gets the player sent away (`UNHEARD_MOST`); a sinking pays a player fighting on a boarded
-  deck for good; the chat never sends a line as though no one blocked its speaker; a company's kick and lead, an
-  outpost's Horn and deposit, a second socket of one account, sea keys let go over the interface, `pointercancel`, the
-  rejoin waits, the Breach gate's answer and the travel's wait; and the repo checks' gaps the last hand-off listed,
+- **A second codebase audit** (#217, waiting on the owner's yes to merge, which deploys the page, the site, the
+  accounts, the rooms and the bot), on the owner's "take autonomy and do a comprehensive codebase audit and fix any
+  issues, make any improvements and be as detailed as possible". Eight read-only audits by area and an independent
+  review of the whole diff, every fix with a test shown failing first but two (the PR says which and why). Among them: a
+  stalled network that resumes no longer gets the player sent away (`UNHEARD_MOST`); a sinking pays a player fighting on
+  a boarded deck for good; the chat never sends a line as though no one blocked its speaker; a company's kick and lead,
+  an outpost's Horn and deposit, a second socket of one account, sea keys let go over the interface, `pointercancel`,
+  the rejoin waits, the Breach gate's answer and the travel's wait; and the repo checks' gaps the last hand-off listed,
   but `.after(`/`.before(` and a style held under another name. Tested offline; CI's full check on the PR's head. Left
   for the owner, in the PR: three workflow changes (`site.yml` by hand, the Lattice's concurrency group, `forge.yml`'s
   paths), the foes' fall-back with no way out, a shot loosed inside a cliff, and the city's picture cache's budget.
@@ -309,22 +309,20 @@ The decisions in [[Open Questions]] are not repeated here.
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
   ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
-- **The desktop app** (#210, merged; CI run 1100 on main passed; its next work, a launcher window of its own and
-  releases, is #212, a draft), on the owner's "develop the new install version along with implementing proper Vulcan
-  support, electron" with DFO as the reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call
-  in [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
-  `noshores.online/play/?room=live` in a sandboxed window; WebGPU on Direct3D 12 then 11 on Windows, Metal on a Mac,
-  Vulkan three ways on Linux, watched from the game's own adapter report. It opens on a launcher in the game's look
-  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's "Patch
-  notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play. Updates
-  through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases by hand
-  from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their tests; the
-  PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on SwiftShader
-  with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank window, a Windows or
-  Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on Ubuntu 23.10 or later. After
-  a merge: the owner says when to cut the first release; the site's links to the downloads and signing keys are open
-  questions; performance is to be measured on a real GPU with `?perf`, in Chrome and in the app, before any switch for
-  it (an uncapped frame rate was proposed, not built).
+- **The desktop app** (#210 and #212, merged on the owner's "Merge and deploy" and "merge and deploy"), kept on Electron
+  ([[The Desktop App Stays on Electron]]); every call in [[The Desktop App as Claude Builds It]], how it works in
+  [[Desktop App]]. It plays the game at `noshores.online/play/?room=live`. Its launcher stands in a window of its own
+  ([[The Launcher Stands in a Window of Its Own]]), with the deployed patch notes, both servers timed on an open
+  connection, and the graphics as Settings has them. Its first release (2026.1125.1836) went out by hand; a merge that
+  changes the app now releases it once the commit passes CI
+  ([[The Desktop App Releases With Each Merge That Changes It]]), and the website's Download page offers it
+  ([[The Website Offers the Desktop App's Downloads]]). On the owner's note that hits did not register at once: the
+  wreck's cutscenes leave no inputs waiting, the click that draws a weapon swings it, and the player's own hits flash,
+  sound and hold as they land ([[The Drawing Click Swings, and the Player's Own Hits Show at Once]]). Not seen: any real
+  GPU, a Windows or Mac installer run, an update installed, the hit fixes played by hand, a Discord sign-in in the
+  window, and the AppImage on Ubuntu 23.10 or later. Open: signing keys; performance to be measured on a real GPU with
+  `?perf` before any switch for it; `shipTags.test.ts` fetches meshes from R2's rate-limited public host on every CI
+  run, and keeping them between runs with `actions/cache` was proposed.
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and
@@ -767,11 +765,10 @@ The decisions in [[Open Questions]] are not repeated here.
     [[Only the Garrison's Own Kills Share Its Clear, and a Failed Trip Goes Back to the Beach]]: only the garrison's
     own kills share its clear; a failed trip from a beach, played alone, goes back to it; Branches and Merging says
     merge, not rebase and squash, and the `built` notes are `live` (Claude's calls).
-- **#169, the owner's gear calls, built whole**, merged. The owner: "I dont want to merge until everything is
-  finished. Focus on getting this to 100% and stop depending on me"
-  ([[Claude Finishes the Gear Calls on Its Own Word]]). Every call is built; what is left is the owner's yes to merge
-  and one forge run (below). Tested offline with `cargo xtask check` on each pushed head, green but for the four R2 ship-mesh tests this container cannot
-  fetch; CI green on each head it finished.
+- **#169, the owner's gear calls, built whole**, merged. The owner: "I dont want to merge until everything is finished.
+  Focus on getting this to 100% and stop depending on me" ([[Claude Finishes the Gear Calls on Its Own Word]]). Every
+  call is built; one forge run is left (below). Tested offline with `cargo xtask check` on each pushed head, green but
+  for the four R2 ship-mesh tests this container cannot fetch; CI green on each head it finished.
   - The owner's calls, in their words ([[Everything Carries a Set Name, and Perks Roll by Pool]] and the decisions it
     links), and every perk in the game approved ("All approved": [[Every Perk Stands, the Factions' Nine With Them]];
     the review page the owner marked: https://claude.ai/artifact/Jtfdq4zJyoUsQdsJqWgA4y).
@@ -798,8 +795,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Open pull requests**, for the owner's yes once their checks pass: #162 (the game's words out to Type and back; it
   conflicts with `main` in `Decisions.md`) and #159 (the rooms' worker tests wait for what they check; it conflicts
   with `main` in `roomThread.test.ts`). Drafts: #93 (the toolkit's first review) and #114 (the gear message carries
-  the pledge once); and other sessions' work under way: #204 (Passages), #206 (plain clothes, the Tack's Bay, new
-  sounds), #211 (foes by airship and crown, varied patrols), #212 (the desktop app's launcher window and releases).
+  the pledge once); and other sessions' work under way: #204 (Passages), #211 (foes by airship and crown, varied
+  patrols), #216 (the Playlist's nodes in more detail, and moving).
 - **Open points from merged work**, each the owner's to say:
   - #158 (the prologue's waking, scenes and arena, one loading screen, foes that give up only when far, feet on the
     city's ground; [[One Loading Screen Covers Every Trip Until the Place Is Ready]] and the decisions it names): the
@@ -1158,5 +1155,5 @@ The decisions in [[Open Questions]] are not repeated here.
     a deploy and the page publish.
   - Repo checks that still let things through: the html check misses `.after(` and `.before(` (the game has methods
     of those names, so they need types to tell apart) and an element's style held under another name
-    (`const look = canvas.style;`, where `.style;` is everywhere in game code).
+    (`const look = canvas.style;`, where `.style` before `;`, `,` or `)` stands in game code: `hair.style`).
 

@@ -399,6 +399,12 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Meadow's Green Stands a Shade Darker]]
 - [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
 - [[The Desktop App as Claude Builds It]]
+- [[The Desktop App Opens on a Launcher in the Game's Look]]
+- [[The Desktop App Stays on Electron]]
+- [[The Desktop App Releases With Each Merge That Changes It]]
+- [[The Website Offers the Desktop App's Downloads]]
+- [[The Launcher Stands in a Window of Its Own]]
+- [[The Drawing Click Swings, and the Player's Own Hits Show at Once]]
 - [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 

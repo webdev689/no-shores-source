@@ -37,15 +37,15 @@ code:
 ---
 # Website
 
-The game's website at `noshores.online`: Home, The World, The Game and the Discord bot's panel, made after DFO
-Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]).
+The game's website at `noshores.online`: Home, The World, The Game, Download and the Discord bot's panel, made after
+DFO Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]).
 
 ## How it works
 
-- **Pages.** Home (`/`), The World (`/world/`), The Game (`/game/`) and the Discord bot (`/panel/`), one folder each
-  under `site/` with its `index.html`. The site map lists them; a new page is one entry there, its folder and its
-  words. `npm run site` serves them on port 5174; `npm run site:build` builds them into `target/site/`, and
-  `cargo xtask check` builds them too ([[Checks]]).
+- **Pages.** Home (`/`), The World (`/world/`), The Game (`/game/`), Download (`/app/`) and the Discord bot
+  (`/panel/`), one folder each under `site/` with its `index.html`. The site map lists them; a new page is one entry
+  there, its folder and its words. `npm run site` serves them on port 5174; `npm run site:build` builds them into
+  `target/site/`, and `cargo xtask check` builds them too ([[Checks]]).
 - **Words by name.** A page never spells a sentence. It names its words (`data-t="world.title"`, or
   `data-t-alt` for a picture's alt text) and the build fills them in from one table. The premise is the owner's
   ([[No Shores]]), split into passages and never reworded; Home and The World say it. Every other line tells a
@@ -57,12 +57,12 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   Play, the game at `noshores.online/play/`, and the Discord, the No Shores server's invite. A place with no address
   has its links left out of the page, and a section that needs it (`data-needs`) left out whole; the tests check both
   against a stand-in list of places.
-- **The frame.** Every page gets the same bar (the logo, The World, The Game, the Discord, Play), a skip link, and a
-  foot in columns: the logo, the line "A pirate sandbox in a shared world." (Claude's, from the owner's own words for the game in
-  [[No Shores]]) and "© Vestige Studios" ([[Copyright Held by Vestige Studios]]); the pages by name, the Discord bot's
-  among them; then Play and the Discord. A tab reads "The World | No Shores"; Home's, its own line. Each page's head
-  carries the tags a shared link unfolds into on Discord and elsewhere: its title and description, its address, and
-  the share picture, Home's scene twice its size with the logo over its sky.
+- **The frame.** Every page gets the same bar (the logo, The World, The Game, Download, the Discord, Play), a skip link,
+  and a foot in columns: the logo, the line "A pirate sandbox in a shared world." (Claude's, from the owner's own words
+  for the game in [[No Shores]]) and "© Vestige Studios" ([[Copyright Held by Vestige Studios]]); the pages by name, the
+  Discord bot's among them; then Play and the Discord. A tab reads "The World | No Shores"; Home's, its own line. Each
+  page's head carries the tags a shared link unfolds into on Discord and elsewhere: its title and description, its
+  address, and the share picture, Home's scene twice its size with the logo over its sky.
 - **Pictures drawn by code.** Every picture is drawn at build time in Node, each from a fixed seed, so it is the same
   at every build, and written as a small paletted PNG into the build, never into git
   ([[Generated Files Stay Out of Git]]). They are drawn the way DFO's are: skies dithered band into band through an
@@ -89,6 +89,10 @@ Online's ([[The Website Is at noshores.online, After DFO's]], [[Pick - Website]]
   and guilds), in turn left and right; a band of numbers, each from the premise or a decision (nine continents, three
   port cities remain, three Arts, six dungeon styles); the story's opening in the owner's words; three steps to start
   playing; a call to the Discord; and the premise's last lines with Play.
+- **Download** offers the [[Desktop App]]'s installers for Windows, Mac (Apple silicon and Intel), Linux's AppImage and
+  Ubuntu and Debian, each by its name that never moves (`siteMap.ts` `DOWNLOADS`), what opening an unsigned one asks
+  on each system, and Play in the browser ([[The Website Offers the Desktop App's Downloads]]). Home's hero offers it
+  beside Play.
 - **The Game** tells what there is to do, a section each with its picture: Overlook, the sea, combat, the Arts and the
   factions, gear, things to do, and how you play (in the browser, on keyboard and mouse or a pad, as a guest or with
   an account).
@@ -122,7 +126,7 @@ published on GitHub Pages as well
 
 The [[Desktop App]]'s downloads are the one address a script answers (`site/worker.ts`, run for `/download/` alone):
 its installers and update feeds, read from R2 under `desktop/`, and the names that never move (`/download/windows`,
-`mac-arm64`, `mac-x64`, `linux-appimage`, `linux-deb`) sent to the newest of each. The site links to none of them yet.
+`mac-arm64`, `mac-x64`, `linux-appimage`, `linux-deb`) sent to the newest of each, which the Download page offers.
 
 ## The Discord bot's panel
 

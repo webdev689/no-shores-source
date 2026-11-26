@@ -82,6 +82,8 @@ export type DesktopAsk =
   | { readonly ask: 'restart' }
   /** Opens the download of an update this copy cannot install itself. */
   | { readonly ask: 'download' }
+  /** The launcher's Play: the shell opens the game's window, on the title, and closes the launcher's. */
+  | { readonly ask: 'play' }
   /** Takes the pointer's lock back where the page may not ask without a press, as after Escape. */
   | { readonly ask: 'relock' };
 
@@ -91,6 +93,12 @@ export interface DesktopBridge {
   readonly onInfo: (listener: (info: DesktopInfo) => void) => void;
   readonly ask: (ask: DesktopAsk) => void;
 }
+
+/** The flag the shell puts on the launcher window's address: that page draws the launcher alone. */
+export const LAUNCHER_FLAG = 'launcher';
+/** Whether `address` is the launcher window's page: in the app, flagged by the shell. */
+export const isLauncherPage = (address: string, inApp: boolean): boolean =>
+  inApp && new URL(address).searchParams.has(LAUNCHER_FLAG);
 
 /** The bridge's name on the page's `window`. */
 export const BRIDGE_NAME = 'noShoresDesktop';
