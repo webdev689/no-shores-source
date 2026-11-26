@@ -131,13 +131,13 @@ fn a_doorway_narrows_to_its_frame_and_its_jambs_stand_in_the_corridor() {
             assert!(dungeon.room_at(frame.cell).is_some());
             assert_eq!(dungeon.cells[dungeon.beside(frame.cell, frame.side).unwrap()], Cell::Corridor);
             let [dx, _] = frame.side.unit();
-            let across = |jamb: &[f64; 5]| if dx == 0.0 { (jamb[0], jamb[2]) } else { (jamb[1], jamb[3]) };
-            let deep = |jamb: &[f64; 5]| if dx == 0.0 { jamb[3] - jamb[1] } else { jamb[2] - jamb[0] };
+            let across = |jamb: &[f64; 6]| if dx == 0.0 { (jamb[0], jamb[2]) } else { (jamb[1], jamb[3]) };
+            let deep = |jamb: &[f64; 6]| if dx == 0.0 { jamb[3] - jamb[1] } else { jamb[2] - jamb[0] };
             let (first, second) = (across(&pair[0]), across(&pair[1]));
             let gap = second.0.max(first.0) - second.1.min(first.1);
             assert!((gap - 2.0 * DOORWAY_HALF_M).abs() < 1e-9, "the way between the jambs is {gap}");
             assert!((deep(&pair[0]) - JAMB_DEPTH_M).abs() < 1e-9 && (deep(&pair[1]) - JAMB_DEPTH_M).abs() < 1e-9);
-            assert!(pair.iter().all(|jamb| jamb[4] == frame.height));
+            assert!(pair.iter().all(|jamb| jamb[4] == 0.0 && jamb[5] == frame.height));
             let corridor = dungeon.beside(frame.cell, frame.side).unwrap();
             let [middle_x, middle_y] = dungeon.centre(corridor);
             let half = CELL_M / 2.0;
@@ -198,6 +198,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         shape: Shape::Rectangle,
         walk: 0,
         look: 0,
+        storey: 0,
         purpose: &STYLES[0].purposes.way_in,
         role: STYLES[0].purposes.way_in.role,
         name: String::new(),
@@ -210,6 +211,8 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         block_looks: vec![0],
         columns: 6,
         rows: 2,
+        storeys: 1,
+        stairs: Vec::new(),
         cells: vec![
             Cell::Room(0),
             corridor,
@@ -435,7 +438,7 @@ fn a_dungeon_is_a_run_with_few_loops_not_a_maze() {
         let node = |cell: usize| match dungeon.cells[cell] {
             Cell::Rock => None,
             Cell::Room(number) => Some(usize::from(number)),
-            Cell::Corridor => Some(dungeon.rooms.len() + cell),
+            Cell::Corridor | Cell::Stair(_) | Cell::Void => Some(dungeon.rooms.len() + cell),
         };
         let mut joined = std::collections::BTreeSet::new();
         for cell in 0..dungeon.cells.len() {

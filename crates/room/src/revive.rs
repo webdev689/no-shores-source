@@ -63,7 +63,7 @@ impl Room {
             // One the section killed too stands again only by its own respawn, which ends that death as well.
             .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
             .filter(|(_, found)| unasked || found.respawn_asked)
-            .filter(|(_, found)| !self.dark_at(found.fighter.body.x, found.fighter.body.y))
+            .filter(|(_, found)| !self.dark_at([found.fighter.body.x, found.fighter.body.y, found.fighter.body.z]))
             .filter(|(id, _)| !self.breach_holds(**id))
             .map(|(id, found)| (*id, found.fighter.body))
             .chain(self.breach_stands_now())
@@ -96,14 +96,16 @@ impl Room {
     /// Whether the darkness holds a player where they are now (`dark_at`): none for one not in the room.
     #[must_use]
     pub fn darkness_for(&self, player: PlayerId) -> bool {
-        self.players.get(&player).is_some_and(|found| self.dark_at(found.fighter.body.x, found.fighter.body.y))
+        self.players
+            .get(&player)
+            .is_some_and(|found| self.dark_at([found.fighter.body.x, found.fighter.body.y, found.fighter.body.z]))
     }
 
-    /// Whether a body at (x, y) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
+    /// Whether a body at (x, y, z) lies in a darkness zone: anywhere in an Abyss run with no revive left, or on a cell of an
     /// Elite Dungeon's Court while its Boss stands, so one come back down at the way in may still respawn.
-    fn dark_at(&self, x: f64, y: f64) -> bool {
+    fn dark_at(&self, at: [f64; 3]) -> bool {
         let in_court = self.encounters.as_ref().is_some_and(|encounters| {
-            encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.court_cells.contains(&cell))
+            encounters.plan.cell_at(at).is_some_and(|cell| encounters.court_cells.contains(&cell))
         });
         self.revives() == Some(0) || (in_court && self.boss().is_some())
     }

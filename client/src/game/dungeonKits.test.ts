@@ -504,8 +504,9 @@ test('a landmark’s cells and solids, turned as the rules turn them, are the la
     assert.equal(landmarks.length, layout.landmarks.length);
     const solids = landmarks.flatMap((landmark) => landmark.solids);
     const tail = layout.boxes.slice(layout.boxes.length - solids.length);
+    // A box carries its bottom before its top.
     solids.forEach((solid, index) =>
-      solid.forEach((value, axis) => assert.ok(Math.abs(value - (tail[index]?.[axis] ?? NaN)) < 1e-9)),
+      solid.forEach((value, axis) => assert.ok(Math.abs(value - (tail[index]?.[axis === 4 ? 5 : axis] ?? NaN)) < 1e-9)),
     );
     for (const landmark of landmarks)
       for (const cell of landmark.cells)

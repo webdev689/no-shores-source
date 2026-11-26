@@ -27,7 +27,7 @@ pub const JAMB_DEPTH_M: f64 = 0.3;
 pub const LINTEL_M: f64 = 2.8;
 /// A pillar's half width, and the room that stands them: at least this many cells each way.
 pub const PILLAR_HALF_M: f64 = 0.35;
-/// The one floor every open cell stands at, metres up.
+/// The way in's storey's floor, metres up: storey 0's.
 pub const FLOOR_M: f64 = 0.0;
 const PILLAR_ROOM_CELLS: usize = 4;
 /// The exit door's width and height, how far off its wall it stands, and how far past its cell's middle, away from it,
@@ -55,6 +55,8 @@ pub struct Room {
     pub shape: Shape,
     pub walk: u32,
     pub look: usize,
+    /// The storey it stands on, 0 the way in's.
+    pub storey: usize,
     pub purpose: &'static Purpose,
     pub role: &'static str,
     pub name: String,
@@ -77,7 +79,8 @@ pub struct Frame {
     pub height: f64,
 }
 
-/// A dungeon as the Forge lays it, in its own frame: x east and y south from its north-west corner, its floor at 0 m.
+/// A dungeon as the Forge lays it, in its own frame: x east and y south from its north-west corner, its top storey's
+/// floor at 0 m.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dungeon {
     /// The first block's style, which names the dungeon.
@@ -89,9 +92,13 @@ pub struct Dungeon {
     pub block_looks: Vec<usize>,
     pub columns: usize,
     pub rows: usize,
+    /// Its storeys, at least 1; `cells` and `ceilings` hold a plane of `columns` by `rows` for each, storey by storey.
+    pub storeys: usize,
     pub cells: Vec<Cell>,
-    /// Each open cell's ceiling, 0 for rock.
+    /// Each open cell's ceiling over its own floor, 0 for rock.
     pub ceilings: Vec<f64>,
+    /// The flights of stairs between storeys.
+    pub stairs: Vec<crate::Stair>,
     pub rooms: Vec<Room>,
     pub way_in: WallDoor,
     /// The end room: the last the way reaches in the last block.
@@ -100,7 +107,7 @@ pub struct Dungeon {
     pub portal: WallDoor,
     pub torches: Vec<Torch>,
     pub frames: Vec<Frame>,
-    /// Each pillar's middle, (x, y), and its top.
+    /// Each pillar's middle, (x, y), and its top, absolute.
     pub pillars: Vec<[f64; 3]>,
     /// The props its rooms are furnished with, and the lights that are not torches (`furnish`, `fixtures`).
     pub props: Vec<crate::Prop>,
@@ -176,8 +183,10 @@ impl Dungeon {
             block_looks: block_looks.clone(),
             columns,
             rows,
+            storeys: 1,
             cells: vec![Cell::Rock; columns * rows],
             ceilings: vec![0.0; columns * rows],
+            stairs: Vec::new(),
             rooms: Vec::new(),
             way_in: WallDoor { cell: 0, side: Side::North, room: 0 },
             end: 0,
@@ -233,7 +242,8 @@ impl Dungeon {
         if self.cells.get(cell).is_none_or(|&kind| kind == Cell::Rock) {
             return None;
         }
-        let square = ((cell % self.columns) / BLOCK_CELLS, (cell / self.columns) / BLOCK_CELLS);
+        let at = cell % self.plane();
+        let square = ((at % self.columns) / BLOCK_CELLS, (at / self.columns) / BLOCK_CELLS);
         let block = self.squares.iter().position(|&found| found == square)?;
         self.block_looks.get(block).copied()
     }
@@ -252,13 +262,14 @@ impl Dungeon {
         }
     }
 
-    /// The cell beside a cell, if it is in the grid.
+    /// The cell beside a cell on its storey, if it is in the grid.
     #[must_use]
     pub fn beside(&self, cell: usize, side: Side) -> Option<usize> {
         let (dx, dy) = side.step();
-        let x = (cell % self.columns).checked_add_signed(dx)?;
-        let y = (cell / self.columns).checked_add_signed(dy)?;
-        (x < self.columns && y < self.rows).then_some(y * self.columns + x)
+        let (storey, at) = (cell / self.plane(), cell % self.plane());
+        let x = (at % self.columns).checked_add_signed(dx)?;
+        let y = (at / self.columns).checked_add_signed(dy)?;
+        (x < self.columns && y < self.rows).then_some(storey * self.plane() + y * self.columns + x)
     }
 
     /// Whether the cell beside on `side` is rock, or past the grid.
@@ -266,10 +277,18 @@ impl Dungeon {
         self.beside(cell, side).is_none_or(|next| self.cells[next] == Cell::Rock)
     }
 
-    /// A cell's middle, (x, y) in metres.
+    /// A cell's middle, (x, y) in metres, whatever its storey.
     #[must_use]
     pub fn centre(&self, cell: usize) -> [f64; 2] {
-        [((cell % self.columns) as f64 + 0.5) * CELL_M, ((cell / self.columns) as f64 + 0.5) * CELL_M]
+        let at = cell % self.plane();
+        [((at % self.columns) as f64 + 0.5) * CELL_M, ((at / self.columns) as f64 + 0.5) * CELL_M]
+    }
+
+    /// A cell's middle on its floor, (x, y, z) in metres.
+    #[must_use]
+    pub fn standing_point(&self, cell: usize) -> [f64; 3] {
+        let [x, y] = self.centre(cell);
+        [x, y, self.floor_of(cell)]
     }
 
     /// Copies a block's cells, ceilings and rooms into the grid, its rooms numbered after those laid before and
@@ -307,6 +326,7 @@ impl Dungeon {
                 shape: room.shape,
                 walk: 0,
                 look,
+                storey: 0,
                 // Each room's own purpose and name are given once the walk is known (`name_rooms`).
                 purpose: &style.purposes.way_in,
                 role: style.purposes.way_in.role,
@@ -323,12 +343,14 @@ impl Dungeon {
         if room.width < PILLAR_ROOM_CELLS || room.depth < PILLAR_ROOM_CELLS || room.shape == Shape::Cave {
             return Vec::new();
         }
-        let own = |x: usize, y: usize| self.room_at(y * self.columns + x) == Some(number);
+        let first = room.storey * self.plane();
+        let own = |x: usize, y: usize| self.room_at(first + y * self.columns + x) == Some(number);
+        let top = crate::storey_floor(room.storey) + room.height;
         let mut corners = Vec::new();
         for y in (room.y + 2..room.y + room.depth - 1).step_by(2) {
             for x in (room.x + 2..room.x + room.width - 1).step_by(2) {
                 if own(x, y) && own(x - 1, y) && own(x, y - 1) && own(x - 1, y - 1) {
-                    corners.push([x as f64 * CELL_M, y as f64 * CELL_M, room.height]);
+                    corners.push([x as f64 * CELL_M, y as f64 * CELL_M, top]);
                 }
             }
         }
@@ -336,7 +358,7 @@ impl Dungeon {
     }
 
     /// Frames every doorway: a room's cell beside a corridor, up to the lower of their ceilings.
-    fn frame(&mut self) {
+    pub(crate) fn frame(&mut self) {
         for cell in 0..self.cells.len() {
             if self.room_at(cell).is_none() {
                 continue;
@@ -365,9 +387,8 @@ impl Dungeon {
         let mut todo = std::collections::VecDeque::from([self.way_in.cell]);
         steps[self.way_in.cell] = 0;
         while let Some(cell) = todo.pop_front() {
-            for side in SIDES {
-                let Some(next) = self.beside(cell, side) else { continue };
-                if self.cells[next] != Cell::Rock && steps[next] == u32::MAX {
+            for next in self.walk_from(cell) {
+                if steps[next] == u32::MAX {
                     steps[next] = steps[cell] + 1;
                     todo.push_back(next);
                 }
@@ -453,18 +474,20 @@ impl Dungeon {
         [x + dx * off, y + dy * off]
     }
 
-    /// The floor as movement stands bodies on it: each cell's height, 0 m for an open cell and none for rock, row by
-    /// row from the north-west, in cells of CELL_M.
+    /// A storey's plane as movement walls bodies in it: each cell's floor where it is open (a flight's and a Void's
+    /// as well) and none for rock, row by row from the north-west, in cells of CELL_M.
     #[must_use]
-    pub fn heights(&self) -> Vec<Option<f64>> {
-        self.cells.iter().map(|&cell| (cell != Cell::Rock).then_some(FLOOR_M)).collect()
+    pub fn heights(&self, storey: usize) -> Vec<Option<f64>> {
+        let floor = crate::storey_floor(storey);
+        let plane = &self.cells[storey * self.plane()..(storey + 1) * self.plane()];
+        plane.iter().map(|&cell| (cell != Cell::Rock).then_some(floor)).collect()
     }
 
-    /// What a body runs into beside the rock, each (min x, min y, max x, max y, top): every doorway's two jambs, up
-    /// to its ceiling, then every pillar, then every prop's solid (a hanging has none), then every fixture's, then
-    /// every landmark's.
+    /// What a body runs into beside the rock, each (min x, min y, max x, max y, bottom, top), absolute: every
+    /// doorway's two jambs, up to its ceiling, then every pillar, then every prop's solid (a hanging has none), then
+    /// every fixture's, then every landmark's. Each stands on the floor of the storey its top is over.
     #[must_use]
-    pub fn boxes(&self) -> Vec<[f64; 5]> {
+    pub fn boxes(&self) -> Vec<[f64; 6]> {
         let half = CELL_M / 2.0;
         let mut boxes = Vec::with_capacity(self.frames.len() * 2 + self.pillars.len());
         for frame in &self.frames {
@@ -483,15 +506,27 @@ impl Dungeon {
                 let (min_y, max_y) = corners
                     .iter()
                     .fold((f64::MAX, f64::MIN), |(low, high), point| (low.min(point.1), high.max(point.1)));
-                boxes.push([min_x, min_y, max_x, max_y, frame.height]);
+                let floor = self.floor_of(frame.cell);
+                boxes.push([min_x, min_y, max_x, max_y, floor, floor + frame.height]);
             }
         }
-        for &[x, y, top] in &self.pillars {
-            boxes.push([x - PILLAR_HALF_M, y - PILLAR_HALF_M, x + PILLAR_HALF_M, y + PILLAR_HALF_M, top]);
-        }
-        boxes.extend(self.props.iter().filter_map(|prop| prop.solid));
-        boxes.extend(self.fixtures.iter().filter_map(|fixture| fixture.solid));
-        boxes.extend(self.landmarks.iter().flat_map(|placed| placed.solids.iter().copied()));
+        let mut solids: Vec<[f64; 5]> = self
+            .pillars
+            .iter()
+            .map(|&[x, y, top]| [x - PILLAR_HALF_M, y - PILLAR_HALF_M, x + PILLAR_HALF_M, y + PILLAR_HALF_M, top])
+            .collect();
+        solids.extend(self.props.iter().filter_map(|prop| prop.solid));
+        solids.extend(self.fixtures.iter().filter_map(|fixture| fixture.solid));
+        solids.extend(self.landmarks.iter().flat_map(|placed| placed.solids.iter().copied()));
+        boxes.extend(solids.into_iter().map(|[min_x, min_y, max_x, max_y, top]| {
+            [min_x, min_y, max_x, max_y, crate::storey_floor(self.storey_under(top)), top]
+        }));
         boxes
+    }
+
+    /// The storey a point at a height is in, or a solid with that top stands on: the highest floor at or under it.
+    #[must_use]
+    pub fn storey_under(&self, z: f64) -> usize {
+        crate::storey_under(self.storeys, z)
     }
 }

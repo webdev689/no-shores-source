@@ -92,9 +92,10 @@ impl PropModel {
 }
 
 impl Dungeon {
-    /// The cell a point stands in.
-    pub(crate) fn cell_at(&self, at: [f64; 2]) -> usize {
-        (at[1] / CELL_M) as usize * self.columns + (at[0] / CELL_M) as usize
+    /// The cell a point (x, y, z) stands in, on the storey of the highest floor at or under it.
+    #[must_use]
+    pub fn cell_at(&self, at: [f64; 3]) -> usize {
+        self.storey_under(at[2]) * self.plane() + (at[1] / CELL_M) as usize * self.columns + (at[0] / CELL_M) as usize
     }
 
     /// Whether a cell holds a solid: a prop's or a fixture's, each of which stands inside its own cell, or a
@@ -109,8 +110,9 @@ impl Dungeon {
             .iter()
             .filter_map(|prop| prop.solid)
             .chain(self.fixtures.iter().filter_map(|fixture| fixture.solid));
-        solids
-            .any(|[min_x, min_y, max_x, max_y, _]| self.cell_at([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0]) == cell)
+        solids.any(|[min_x, min_y, max_x, max_y, top]| {
+            self.cell_at([(min_x + max_x) / 2.0, (min_y + max_y) / 2.0, top]) == cell
+        })
     }
 
     /// A room's `count` free cells nearest its middle, those that hold no solid: its quiet cells first and then the

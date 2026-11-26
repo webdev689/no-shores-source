@@ -331,7 +331,7 @@ impl Dungeon {
         let open: Vec<usize> =
             found.quiet.iter().copied().filter(|cell| !kept.contains(cell) && !under.contains(cell)).collect();
         let mut walls = vec![(self.way_in.cell, self.way_in.side), (self.portal.cell, self.portal.side)];
-        walls.extend(self.torches.iter().map(|torch| (self.cell_at([torch.at[0], torch.at[1]]), torch.wall)));
+        walls.extend(self.torches.iter().map(|torch| (self.cell_at(torch.at), torch.wall)));
         let flames = self.torches.iter().map(|torch| [torch.at[0], torch.at[1]]).collect();
         let entry = found.cells.iter().copied().min_by_key(|&cell| (steps[cell], cell)).unwrap_or(0);
         let anchor = if room == self.end {

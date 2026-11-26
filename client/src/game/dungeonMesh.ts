@@ -159,12 +159,12 @@ function pillar(
 function doorFrame(
   mesh: MeshBuilder,
   look: { set: number; wall: number },
-  jambs: readonly (readonly [number, number, number, number, number])[],
+  jambs: readonly (readonly [number, number, number, number, number, number])[],
   lintel: number,
   height: number,
 ): void {
-  for (const [minX, minY, maxX, maxY, top] of jambs)
-    box(mesh, [look.set, look.wall], [minX, minY, 0], [maxX, maxY, top], false);
+  for (const [minX, minY, maxX, maxY, bottom, top] of jambs)
+    box(mesh, [look.set, look.wall], [minX, minY, bottom], [maxX, maxY, top], false);
   const [first, second] = jambs;
   if (!first || !second || !(height > lintel + 1e-4)) return;
   const acrossX = Math.abs(first[0] - second[0]) > Math.abs(first[1] - second[1]);

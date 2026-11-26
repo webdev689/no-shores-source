@@ -32,9 +32,9 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
                 assert_ne!(seal.room, other.room, "{place}: a room each");
             }
             for piece in &seal.pieces {
-                let cell = plan.cell_at([piece[0], piece[1]]).expect("a piece in the dungeon");
+                let cell = plan.cell_at(*piece).expect("a piece in the dungeon");
                 assert_eq!(laid.room_at(cell), Some(seal.room), "{place}: its pieces in its room");
-                let clear = laid.boxes().iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+                let clear = laid.boxes().iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
                     let (east, south) =
                         ((min_x - piece[0]).max(piece[0] - max_x), (min_y - piece[1]).max(piece[1] - max_y));
                     libm::hypot(east.max(0.0), south.max(0.0)) >= SPOT_CLEAR_M - 1e-9
@@ -59,7 +59,7 @@ fn every_elite_dungeon_holds_its_seals_each_in_a_room_of_its_own_and_never_two_a
         assert!(walks.windows(2).all(|pair| pair[0] <= pair[1]), "{place}: seals along the walk");
         assert_eq!(plan.anchors.len(), ANCHORS, "{place}: three anchors");
         for anchor in &plan.anchors {
-            let cell = plan.cell_at([anchor[0], anchor[1]]).expect("an anchor in the dungeon");
+            let cell = plan.cell_at(*anchor).expect("an anchor in the dungeon");
             assert_eq!(laid.room_at(cell), Some(laid.end()), "{place}: anchors in the end room");
         }
     }
@@ -131,12 +131,12 @@ fn every_plate_of_a_weighing_is_in_plain_view_ahead_of_the_doorway_its_room_is_e
                     let [x, y] = [door[0] + (plate[0] - door[0]) * share, door[1] + (plate[1] - door[1]) * share];
                     laid.boxes()
                         .iter()
-                        .all(|&[min_x, min_y, max_x, max_y, _]| x < min_x || x > max_x || y < min_y || y > max_y)
+                        .all(|&[min_x, min_y, max_x, max_y, _, _]| x < min_x || x > max_x || y < min_y || y > max_y)
                 });
                 assert!(seen, "{place}: a plate at {plate:?} hidden from the doorway at {door:?}");
                 // And ahead of a body coming in by the doorway from the open cell before it, within about 70 degrees
                 // either side (cosine 0.35), none behind or beside it.
-                let cell = plan.cell_at([door[0], door[1]]).expect("the doorway's cell");
+                let cell = plan.cell_at([door[0], door[1], 0.0]).expect("the doorway's cell");
                 let before = dungeon::SIDES
                     .into_iter()
                     .filter_map(|side| laid.beside(cell, side))
@@ -177,14 +177,14 @@ fn an_ascents_pads_rise_under_the_ceiling_clear_of_every_solid_and_doorway() {
                 let room = if at + 1 == seal.pads.len() { HEAD_ROOM_M } else { JUMP_ROOM_M };
                 assert!(pad.top + TUNING.height + room <= lowest + 1e-9, "{place}: under the ceiling");
                 for corner in [[pad.min_x, pad.min_y], [pad.max_x, pad.max_y]] {
-                    let cell = plan.cell_at(corner).expect("a pad in the dungeon");
+                    let cell = plan.cell_at([corner[0], corner[1], pad.bottom]).expect("a pad in the dungeon");
                     assert_eq!(laid.cells[cell], Cell::Room(u16::try_from(seal.room).unwrap()), "{place}: no rock");
                 }
                 let middle = [(pad.min_x + pad.max_x) / 2.0, (pad.min_y + pad.max_y) / 2.0];
-                let cell = plan.cell_at(middle).expect("its cell");
+                let cell = plan.cell_at([middle[0], middle[1], pad.bottom]).expect("its cell");
                 assert!(!laid.frames.iter().any(|frame| frame.cell == cell), "{place}: no doorway");
                 assert!(cell != laid.way_in.cell && cell != laid.portal.cell);
-                let clear = boxes.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+                let clear = boxes.iter().all(|&[min_x, min_y, max_x, max_y, _, _]| {
                     max_x <= pad.min_x || min_x >= pad.max_x || max_y <= pad.min_y || min_y >= pad.max_y
                 });
                 assert!(clear, "{place}: a pad meets no solid");
@@ -247,7 +247,7 @@ fn climbed(laid: &Dungeon, plan: &EncounterPlan, seal: &SealPlan) -> bool {
                 continue;
             }
         }
-        let wet = plan.cell_at([body.x, body.y]).is_some_and(|cell| seal.drowned.contains(&cell));
+        let wet = plan.cell_at([body.x, body.y, body.z]).is_some_and(|cell| seal.drowned.contains(&cell));
         if wet && body.z < 0.05 {
             return false;
         }

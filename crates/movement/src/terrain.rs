@@ -37,6 +37,24 @@ pub trait Terrain {
     fn climbs(&self) -> bool {
         true
     }
+
+    /// The ground under feet at `z`: where floors stand over one another, the highest at or below a step over the
+    /// feet. Ground of one floor answers its height.
+    fn height_under(&self, x: f64, y: f64, _z: f64) -> f64 {
+        self.height_at(x, y)
+    }
+
+    /// Whether a wall stands across a move with the feet at `z`: where floors stand over one another, the walls of
+    /// the floor the feet are on. Ground of one floor answers `walled`.
+    fn walled_at(&self, from: (f64, f64), to: (f64, f64), _z: f64) -> bool {
+        self.walled(from, to)
+    }
+
+    /// The ground a shot at `z` falls onto at (x, y): where floors stand over one another, the floor under it.
+    /// Ground of one floor answers `floor_at`.
+    fn floor_under(&self, x: f64, y: f64, _z: f64) -> f64 {
+        self.floor_at(x, y)
+    }
 }
 
 /// Open ground, level at 0 m everywhere.
@@ -55,8 +73,8 @@ impl Terrain for Flat {
 /// stops it. The rise is the terrain's own, from the terrain under the body, so a block sunk into a slope is walked
 /// onto and off again.
 pub(crate) fn too_steep(terrain: &dyn Terrain, z: f64, from: (f64, f64), to: (f64, f64), run: f64) -> bool {
-    let ahead = terrain.height_at(to.0, to.1);
-    terrain.walled(from, to)
+    let ahead = terrain.height_under(to.0, to.1, z);
+    terrain.walled_at(from, to, z)
         || ahead > z + TUNING.step
-        || (ahead > z && ahead - terrain.height_at(from.0, from.1) > TUNING.slope * run)
+        || (ahead > z && ahead - terrain.height_under(from.0, from.1, z) > TUNING.slope * run)
 }

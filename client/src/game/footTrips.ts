@@ -10,7 +10,7 @@ import type { Reviving } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { BreachSeen } from '../network/breachMessages.ts';
 import { TIERS } from './activityWords.ts';
-import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
+import { askDungeon, type DungeonAsk, type DungeonLayout, storeyAt } from './dungeonLayout.ts';
 import { cacheOf } from './dungeonChest.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -50,11 +50,15 @@ export interface Trips {
   tell?(words: string): void;
 }
 
-/** The name of the room a point stands in, or null in a corridor or past the grid: "the Ossuary". */
-export function roomNameAt(layout: DungeonLayout, { x, y }: { readonly x: number; readonly y: number }): string | null {
+/** The name of the room a point stands in, on the storey nearest its height (the top one without one), or null in a
+ *  corridor or past the grid: "the Ossuary". */
+export function roomNameAt(
+  layout: DungeonLayout,
+  { x, y, z = 0 }: { readonly x: number; readonly y: number; readonly z?: number },
+): string | null {
   const [column, row] = [Math.floor(x / layout.cell), Math.floor(y / layout.cell)];
   if (column < 0 || row < 0 || column >= layout.columns || row >= layout.rows) return null;
-  const room = layout.cells[row * layout.columns + column] ?? -1;
+  const room = layout.cells[(storeyAt(layout, z) * layout.rows + row) * layout.columns + column] ?? -1;
   return room >= 0 ? (layout.rooms[room]?.name ?? null) : null;
 }
 

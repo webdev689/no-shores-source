@@ -118,6 +118,11 @@ fn solids_of(dungeon: &Dungeon) -> Vec<[f64; 5]> {
     props.chain(dungeon.fixtures.iter().filter_map(|fixture| fixture.solid)).collect()
 }
 
+/// A dungeon's solids as its ground holds them, without their bottoms: each stands on the top storey's floor.
+fn tops_of(ground: &DungeonGround) -> Vec<[f64; 5]> {
+    ground.solids().iter().map(|&[min_x, min_y, max_x, max_y, _, top]| [min_x, min_y, max_x, max_y, top]).collect()
+}
+
 /// A solid's cell, and the side of it toward a neighbouring cell of its room that holds no solid, if one does.
 fn way_out(dungeon: &Dungeon, solid: &[f64; 5]) -> Option<(usize, Side)> {
     let solids = solids_of(dungeon);
@@ -203,7 +208,7 @@ fn a_body_shoved_inside_a_prop_walks_out_of_it_toward_the_room() {
 fn a_line_is_walled_by_the_rock_and_every_solid_but_crosses_bare_floor() {
     for seed in 0..40 {
         let (dungeon, ground) = forged(seed);
-        let solids = dungeon.boxes();
+        let solids = tops_of(&ground);
         for &[min_x, min_y, max_x, max_y, _] in &solids {
             let middle_y = (min_y + max_y) / 2.0;
             let low = [min_x - 0.1, middle_y, 0.1];
@@ -243,8 +248,8 @@ fn uncovered(solids: &[[f64; 5]], solid: &[f64; 5]) -> bool {
 fn a_line_passes_over_a_solid_lower_than_itself_and_meets_one_where_it_is_lower_than_the_top() {
     let mut low_props = 0;
     for seed in 0..40 {
-        let (dungeon, ground) = forged(seed);
-        let solids = dungeon.boxes();
+        let (_, ground) = forged(seed);
+        let solids = tops_of(&ground);
         for &[min_x, min_y, max_x, max_y, top] in solids.iter().filter(|solid| uncovered(&solids, solid)) {
             // Inside the solid's own sides, so no other solid or rock is crossed.
             let (middle_y, inset) = ((min_y + max_y) / 2.0, (max_x - min_x) / 4.0);
@@ -263,7 +268,7 @@ fn a_line_passes_over_a_solid_lower_than_itself_and_meets_one_where_it_is_lower_
 fn a_shot_enters_rock_at_its_cell_side_and_a_solid_by_its_face_below_its_top_and_passes_over_it() {
     for seed in 0..30 {
         let (dungeon, ground) = forged(seed);
-        let solids = dungeon.boxes();
+        let solids = tops_of(&ground);
         for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != dungeon::Cell::Rock).step_by(5) {
             let [x, y] = dungeon.centre(cell);
             for side in SIDES {
@@ -315,7 +320,7 @@ fn a_bolt_stops_at_the_face_of_rock_or_a_tall_solid_and_strikes_a_foe_pressed_to
                 // Loosed 0.6 m back from the cell's middle, with no solid between it and the rock's face.
                 let back = [x - dx * 0.6, y - dy * 0.6, 1.3];
                 let face = [x + dx * (CELL_M / 2.0 - 0.01), y + dy * (CELL_M / 2.0 - 0.01), 1.3];
-                if ground.line_walled(back, face) || ground.clearance(back[0], back[1]) <= 0.0 {
+                if ground.line_walled(back, face) || ground.clearance(back[0], back[1], 0) <= 0.0 {
                     continue;
                 }
                 let (at, _) = bolt(&ground, back, side.bearing(), &[]);
@@ -325,15 +330,13 @@ fn a_bolt_stops_at_the_face_of_rock_or_a_tall_solid_and_strikes_a_foe_pressed_to
                 assert_eq!(bolt(&ground, back, side.bearing(), &[(4, foe)]).1, Some(4), "seed {seed}: the foe");
             }
         }
-        for &[min_x, min_y, _, max_y, top] in ground.solids().iter().filter(|solid| solid[4] > 1.6) {
+        for &[min_x, min_y, _, max_y, top] in tops_of(&ground).iter().filter(|solid| solid[4] > 1.6) {
             let middle_y = (min_y + max_y) / 2.0;
             let from = [min_x - 1.0, middle_y, 1.3];
             // Loosed from open floor clear of every solid, with nothing between it and the solid's face.
-            let open = ground
-                .cell_at(from[0], from[1])
-                .is_some_and(|(column, row)| ground.open[row * ground.columns + column]);
+            let open = ground.column_at(from[0], from[1]).is_some_and(|column| ground.open[column]);
             if !open
-                || ground.clearance(from[0], from[1]) <= 0.0
+                || ground.clearance(from[0], from[1], 0) <= 0.0
                 || ground.line_walled(from, [min_x - 0.01, middle_y, 1.3])
             {
                 continue;

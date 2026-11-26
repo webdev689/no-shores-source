@@ -244,7 +244,10 @@ fn a_company_all_down_in_the_court_falls_back_to_its_checkpoint_as_the_court_sta
     assert_eq!(told(&events, EventKind::Wiped).len(), 0, "below Abyss no wipe ends the run");
     for player in players {
         let fighter = room.players[&player].fighter;
-        assert!(!fighter.dead() && [fighter.body.x, fighter.body.y] == door, "whole at the Court's door");
+        assert!(
+            !fighter.dead() && [fighter.body.x, fighter.body.y, fighter.body.z] == door,
+            "whole at the Court's door"
+        );
     }
     let boss = room.boss().expect("awake again");
     let fighter = room.foes[&boss].fighter;
@@ -320,7 +323,10 @@ fn the_courts_darkness_holds_those_lying_in_it_and_one_down_at_the_way_in_may_re
     inside.send(&mut room, false, true);
     room.tick();
     let stood = room.players[&outside.player].fighter;
-    assert!(!stood.dead() && [stood.body.x, stood.body.y] == door, "come back down at the way in: to the Court's door");
+    assert!(
+        !stood.dead() && [stood.body.x, stood.body.y, stood.body.z] == door,
+        "come back down at the way in: to the Court's door"
+    );
     assert!(room.players[&inside.player].fighter.dead(), "fallen in the Court: only an ally raises them");
 }
 

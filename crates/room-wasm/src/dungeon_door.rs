@@ -48,14 +48,7 @@ pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style, (usize, usize))
     Some((seed, style, BLOCKS))
 }
 
-/// The dungeon asked for as JSON, or null for an ask that does not read. Its return portal stands on the end room's
-/// wall as the exit door stands on the way in's, as wide and as high. Each cell is -2 for rock, -1 for a corridor
-/// or its room's number, and wears a look by its number (-1 for rock); sides are 0 east, 1 south, 2 west, 3 north;
-/// points are x east, y south, z up from the dungeon's north-west corner at its floor; a bearing is radians clockwise
-/// from north. Each prop is its forged model's id, where its origin stands (x, y, z) and its yaw, which turns its +z
-/// as an RMB block's yaw does; each fixture where its light burns and its kind; each landmark its module, its turned
-/// footprint's north-west corner (x, y) and its quarter turns clockwise; each glow x, y, z and its kind. The boxes
-/// are the jambs, the pillars, then the props', the fixtures' and the landmarks' solids (a hanging has none).
+/// The dungeon asked for as JSON, or null for an ask that does not read (`layout_json`).
 #[must_use]
 pub fn dungeon_json(text: &[u8]) -> String {
     let (Ok(found), Some((seed, style, blocks))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
@@ -64,6 +57,23 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let laid = Dungeon::forge_within(seed, style, blocks);
     // An Elite Dungeon has a name of its own; any other is named for its style and its place.
     let name = if found.place.is_some() { found.name } else { dungeon::name(&style, &found.name) };
+    let mut layout = layout_json(&laid, &name);
+    // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
+    if found.place.is_some() {
+        layout["encounters"] = encounters_json(&room::encounter_plan::plan_encounters(&laid));
+    }
+    layout.to_string()
+}
+
+/// A laid dungeon as JSON, as the page's `DungeonLayout` reads it ([[Dungeons]] names each field). Points are x east,
+/// y south, z up from its north-west corner at its top storey's floor, every z absolute; `cells`, `ceilings` and
+/// `cellLooks` hold a plane for each storey, storey by storey. A cell is -2 rock, -1 a corridor, -3 a flight's, -4 open
+/// air over the storey under it, or its room's number; a side is 0 east, 1 south, 2 west, 3 north; a bearing is
+/// radians clockwise from north. A box is (min x, min y, max x, max y, bottom, top): the jambs, the pillars, then the
+/// props', the fixtures' and the landmarks' solids.
+#[must_use]
+pub fn layout_json(laid: &Dungeon, name: &str) -> Value {
+    let style = laid.style;
     let cells: Vec<i32> = laid
         .cells
         .iter()
@@ -71,6 +81,8 @@ pub fn dungeon_json(text: &[u8]) -> String {
             Cell::Rock => -2,
             Cell::Corridor => -1,
             Cell::Room(number) => i32::from(number),
+            Cell::Stair(_) => -3,
+            Cell::Void => -4,
         })
         .collect();
     let rooms: Vec<Value> = laid
@@ -88,6 +100,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
                 "name": room.name,
                 "ceiling": room.ceiling.key(),
                 "look": room.look,
+                "storey": room.storey,
             })
         })
         .collect();
@@ -117,9 +130,16 @@ pub fn dungeon_json(text: &[u8]) -> String {
         .map(|placed| json!([placed.landmark.module, placed.origin[0], placed.origin[1], placed.turns]))
         .collect();
     let glows: Vec<[f64; 4]> = laid.landmarks.iter().flat_map(|placed| placed.glows.iter().copied()).collect();
+    let stairs: Vec<Value> = laid
+        .stairs
+        .iter()
+        .map(|stair| json!({ "upper": stair.upper, "cells": stair.cells, "top": stair.top, "bottom": stair.bottom }))
+        .collect();
+    let floors: Vec<f64> = (0..laid.storeys).map(dungeon::storey_floor).collect();
+    let (way_in_floor, portal_floor) = (laid.floor_of(laid.way_in.cell), laid.floor_of(laid.portal.cell));
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
-    let layout = json!({
+    json!({
         "name": name,
         "style": style.key,
         "pictures": style.pictures,
@@ -128,16 +148,27 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "cell": dungeon::CELL_M,
         "columns": laid.columns,
         "rows": laid.rows,
+        "storeys": laid.storeys,
+        "storeyM": dungeon::STOREY_M,
+        "floors": floors,
+        "stairs": stairs,
         "cells": cells,
         "ceilings": laid.ceilings,
         "rooms": rooms,
         "end": laid.end(),
         "wayIn": { "cell": laid.way_in.cell, "side": side_number(laid.way_in.side), "room": laid.way_in.room },
-        "arrival": { "x": arrive_x, "y": arrive_y, "bearing": laid.way_in.side.opposite().bearing() },
-        "exitDoor": { "x": door_x, "y": door_y, "width": dungeon::EXIT_WIDTH_M, "height": dungeon::EXIT_HEIGHT_M },
+        "arrival": { "x": arrive_x, "y": arrive_y, "z": way_in_floor, "bearing": laid.way_in.side.opposite().bearing() },
+        "exitDoor": {
+            "x": door_x,
+            "y": door_y,
+            "z": way_in_floor,
+            "width": dungeon::EXIT_WIDTH_M,
+            "height": dungeon::EXIT_HEIGHT_M,
+        },
         "portal": {
             "x": portal_x,
             "y": portal_y,
+            "z": portal_floor,
             "side": side_number(laid.portal.side),
             "width": dungeon::EXIT_WIDTH_M,
             "height": dungeon::EXIT_HEIGHT_M,
@@ -153,18 +184,12 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "props": props,
         "landmarks": landmarks,
         "glows": glows,
-    });
-    // An Elite Dungeon's encounters, laid by the room's own rules from the same dungeon.
-    let mut layout = layout;
-    if found.place.is_some() {
-        layout["encounters"] = encounters_json(&room::encounter_plan::plan_encounters(&laid));
-    }
-    layout.to_string()
+    })
 }
 
 /// An Elite Dungeon's encounters as JSON: each seal's kind (1 the Litany, 2 the Weighing, 3 the Ascent, 4 the
 /// Holdfast), its room, its pieces (x, y, z: runes in the order they light, plates, the seal stone or the relic), its
-/// pads (min x, min y, max x, max y, top), the cells its drowned floor covers and its doorways' middles; the Court's
+/// pads (min x, min y, max x, max y, top, bottom), the cells its drowned floor covers and its doorways' middles; the Court's
 /// anchors (x, y, z); and how near a piece's middle a player stands on it, and how far round the warded Boss its slam
 /// reaches (m), as the room judges it.
 fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
@@ -172,8 +197,8 @@ fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
         .seals
         .iter()
         .map(|seal| {
-            let pads: Vec<[f64; 5]> =
-                seal.pads.iter().map(|pad| [pad.min_x, pad.min_y, pad.max_x, pad.max_y, pad.top]).collect();
+            let pads: Vec<[f64; 6]> =
+                seal.pads.iter().map(|pad| [pad.min_x, pad.min_y, pad.max_x, pad.max_y, pad.top, pad.bottom]).collect();
             json!({
                 "kind": seal.kind as u8,
                 "room": seal.room,
@@ -304,7 +329,7 @@ mod tests {
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x77bb_f751_6bd7_1735;
+    const AGREED_HASH: u64 = 0x93ac_57ba_fe36_cb1d;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
@@ -382,6 +407,7 @@ mod tests {
                     "end",
                     "exitDoor",
                     "fixtures",
+                    "floors",
                     "frames",
                     "glows",
                     "landmarks",
@@ -394,6 +420,9 @@ mod tests {
                     "props",
                     "rooms",
                     "rows",
+                    "stairs",
+                    "storeyM",
+                    "storeys",
                     "style",
                     "torchReach",
                     "torches",
@@ -418,7 +447,8 @@ mod tests {
                     assert!(look < looks.len() as i64);
                 }
                 for (number, room) in laid["rooms"].as_array().unwrap().iter().enumerate() {
-                    let room_keys = ["ceiling", "depth", "height", "look", "name", "role", "walk", "width", "x", "y"];
+                    let room_keys =
+                        ["ceiling", "depth", "height", "look", "name", "role", "storey", "walk", "width", "x", "y"];
                     assert_eq!(keys(room), room_keys);
                     assert!(["flat", "vault", "dome", "cave"].contains(&room["ceiling"].as_str().unwrap()));
                     assert!(room["name"].as_str().unwrap().starts_with("the "));
@@ -449,6 +479,29 @@ mod tests {
         }
         assert!(deeper > 30 && deeper < 150, "{deeper} of 180 break into the style below");
         assert!(placing > 170, "{placing} of 180 place a landmark");
+    }
+
+    #[test]
+    fn a_storeyed_dungeon_answers_its_storeys_their_floors_and_its_flights() {
+        let laid = dungeon::hand_made::two_storeys();
+        let layout = super::layout_json(&laid, "Two Storeys");
+        let plane = laid.plane();
+        assert_eq!((layout["storeys"].as_u64(), layout["storeyM"].as_f64()), (Some(2), Some(8.0)));
+        assert_eq!(layout["floors"], serde_json::json!([0.0, -8.0]));
+        let stair = laid.stairs[0];
+        let want = serde_json::json!([{ "upper": 0, "cells": stair.cells, "top": stair.top, "bottom": stair.bottom }]);
+        assert_eq!(layout["stairs"], want);
+        let cells = layout["cells"].as_array().unwrap();
+        assert_eq!(cells.len(), 2 * plane);
+        assert!(stair.cells.iter().all(|&cell| cells[cell] == -3 && cells[plane + cell] == -3), "a flight's cells");
+        let (void_x, void_y) = dungeon::hand_made::VOID_AT;
+        assert_eq!(cells[void_y * laid.columns + void_x], -4, "the Void");
+        assert_eq!(layout["cellLooks"].as_array().unwrap().len(), 2 * plane);
+        assert_eq!(layout["rooms"][2]["storey"], 1);
+        assert_eq!((layout["arrival"]["z"].as_f64(), layout["portal"]["z"].as_f64()), (Some(0.0), Some(-8.0)));
+        let boxes = layout["boxes"].as_array().unwrap();
+        assert!(boxes.iter().all(|solid| solid.as_array().unwrap().len() == 6));
+        assert!(boxes.iter().any(|solid| solid[4] == -8.0 && solid[5] == -4.0), "the pillar on the lower storey");
     }
 
     #[test]

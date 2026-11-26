@@ -35,7 +35,7 @@ impl Dungeon {
         let room = self.room_at(cell);
         let paired = room.is_some()
             && self.torches.iter().any(|torch| {
-                let other = self.cell_at([torch.at[0], torch.at[1]]);
+                let other = self.cell_at(torch.at);
                 let [dx, dy] = [torch.at[0] - at[0], torch.at[1] - at[1]];
                 self.room_at(other) == room && dx * dx + dy * dy < TORCH_APART_M * TORCH_APART_M
             });

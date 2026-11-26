@@ -133,7 +133,8 @@ impl<'mesh> MeshRoutes<'mesh> {
             return near;
         }
         // A goal high on a block whose top no step reaches has no floor near its level: the ground beneath it does.
-        let beneath = || self.mesh.nearest_point([goal[0], goal[1], self.floor.height_at(goal[0], goal[1])]);
+        let beneath =
+            || self.mesh.nearest_point([goal[0], goal[1], self.floor.height_under(goal[0], goal[1], goal[2])]);
         let near = self.mesh.nearest_point(goal).or_else(beneath);
         placed.push((goal, near));
         near
