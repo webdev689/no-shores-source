@@ -76,8 +76,8 @@ export function bearingWords(heading: number, wind: ConsoleState['wind']): { hea
   return { heading: `${degreesOf(heading)}° ${windOf(heading)}`, wind: from };
 }
 
-/** Draws the compass's card, `side` pixels square: a dark face, a brass rim ticked every 10 degrees and longer every
- *  45, and the four winds' letters. */
+/** Draws the compass's card, `side` pixels square: a dark face, a brass rim ticked every 10 degrees, longer every
+ *  30 and longest at the four winds, and their letters. */
 function drawCard(context: OffscreenCanvasRenderingContext2D, side: number): void {
   const middle = side / 2;
   const unit = side / COMPASS;

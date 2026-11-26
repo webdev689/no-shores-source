@@ -1255,11 +1255,11 @@ menu's acts behind it.
 At sea, while the ship is the player's to sail (over it, out of a fight, not aboard, at the helm or on a travel), the
 sea's own layer (`seaScreen.ts`, over the display and under the game's windows) stands the ship's console at the foot of
 the screen, 760 px across (`shipConsole.ts`; [[Game]], "At sea"; [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). Its header names the
-ship in brass (its own name from the Harbourmaster, else "The Sloop") beside its class, and holds the switch between the
+ship in brass (its own name from the Harbourmaster, else "The" and its class) beside its class, and holds the switch between the
 Oversea and the Sealevel views: two presses, the view shown a primary, and the key V beside them. Its body has three
 columns, the last behind a rail:
 
-- **The compass**: a card 92 px across, north up, its rim ticked every 10 degrees and longer every 45, N in red; the
+- **The compass**: a card 92 px across, north up, its rim ticked every 10 degrees, longer every 30 and longest at N, E, S and W, N in red; the
   ship's brass needle and the wind's pale arrow are pictures drawn once and turned to their bearings each frame. Under
   it the heading ("274° W", of the sixteen winds) and the wind ("Wind 6 m/s from the ENE", or "Calm" under 0.5 m/s).
 - **The voyage**: under way, hove to or at anchor in brass, with its speed in m/s while it sails; its pace ("Pace ×200", eased "×1 (×200
