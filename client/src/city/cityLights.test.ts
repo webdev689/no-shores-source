@@ -64,7 +64,7 @@ test("a brazier's, a hoop's and a camp's coals burn a fire on them that casts it
 test("the Beacon's fire burns round the foot of its glass, its light one great lamp; a sunstone breathes", () => {
   const beacon = solid('glow', [100, 200, 40], [22, 22, 24], column);
   const sunstone = solid('glow', [0, 0, 0], [0.4, 0.34, 0.3], { shape: 'dome', sides: 6 });
-  const lighthouse = solid('glow', [50, 0, 20], [3, 3, 2.6]);
+  const lighthouse = solid('glow', [50, 0, 20], [3, 3, 2.6], column);
   const { lamps, fires } = glowLights(plan([beacon], [sunstone, lighthouse], []));
   assert.equal(fires.length, 8);
   assert.ok(fires.every((fire) => fire.along && !fire.casts && fire.at[2] === 40));

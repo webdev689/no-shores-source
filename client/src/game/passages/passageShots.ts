@@ -175,7 +175,7 @@ export interface IsleAsked {
 }
 
 /** An island drawn as the game draws one, built by the room module as the page builds it, framed on a module of it
- *  (a camp's fire, a mine's adit) from out toward its coast, as a PNG's data URL. */
+ *  (a camp's fire, a mine's adit) from in front of its face, as a PNG's data URL. */
 export async function isleShot(asked: IsleAsked): Promise<string> {
   const view = asked.view ?? { width: 1280, height: 720 };
   const planner = islePlanner(await WebAssembly.compileStreaming(fetch('/room.wasm')));
@@ -186,10 +186,9 @@ export async function isleShot(asked: IsleAsked): Promise<string> {
     if (!built || !plan || !placed) continue;
     const shown: IsleShown = { id: seed, at: [0, 0], climate: asked.climate, plan, heights: built.heights };
     const floor = (x: number, y: number) => groundHeight(gridOf(built.heights), x, y);
-    // From out toward the coast, looking back in at it.
+    // In front of its face (its own -y, as a door's), looking back at it.
     const [x, y, back, up] = [placed[1], placed[2], asked.back ?? 6, asked.up ?? 2];
-    const away = Math.hypot(x, y) || 1;
-    const [eyeX, eyeY] = [x + (x / away) * back, y + (y / away) * back];
+    const [eyeX, eyeY] = [x + Math.sin(placed[4]) * back, y - Math.cos(placed[4]) * back];
     const eye: [number, number, number] = [eyeX, eyeY, (floor(eyeX, eyeY) ?? placed[3]) + up];
     const shot: Shot = {
       eye,
@@ -402,6 +401,7 @@ async function hollowFrames(
   // Its lamps and fires let go, so the next picture of the page lights only its own.
   isles.destroy();
   flames.destroy();
+  flat.destroy();
 }
 
 /** The passages' door this module opened, for the interface's pictures, which build without waiting; and the moment

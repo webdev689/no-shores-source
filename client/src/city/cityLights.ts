@@ -83,10 +83,9 @@ function lightOf(solid: Solid, into: CityLights, modules: Set<string>): void {
   }
   if (solid.shape === 'dome') into.lamps.push(glowLamp(middle, largest, seedAt(middle), 'stone'));
   else if (solid.shape === 'column' && wide >= BEACON_LEAST_M) beacon(solid, into, middle, largest);
-  else if (solid.shape === 'pyramid' || (solid.shape === 'column' && wide >= COALS_LEAST_M))
-    into.fires.push(coalsFire([solid.at[0], solid.at[1], solid.at[2] + height], wide, height));
-  else if (wide >= LANTERN_MOST_M) into.lamps.push(glowLamp(middle, largest, seedAt(middle), 'lantern'));
-  else if (wide >= COALS_LEAST_M)
+  else if (wide >= LANTERN_MOST_M && solid.shape !== 'pyramid')
+    into.lamps.push(glowLamp(middle, largest, seedAt(middle), 'lantern'));
+  else if (solid.shape === 'pyramid' || wide >= COALS_LEAST_M)
     into.fires.push(coalsFire([solid.at[0], solid.at[1], solid.at[2] + height], wide, height));
   else lantern(into, middle, narrowest, largest);
 }
