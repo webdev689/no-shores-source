@@ -48,7 +48,7 @@ code:
   - client/src/game/aboard.ts#Aboard
   - client/src/game/deckWalk.ts#DeckWalk
   - client/src/game/crew.ts#Crew
-  - client/src/cinema/sailAway.ts#SailAway
+  - client/src/cinema/travelFade.ts#TravelFade
   - client/src/game/seaTravel.ts#SeaTravel
   - client/src/game/charting.ts#Charting
 ---
@@ -307,7 +307,8 @@ The [[Held Map]] takes the ship anywhere at sea, in its own water or another, th
 ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]],
 [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]],
 [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]). A course chosen asks
-whether to travel there; yes runs the travel (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar
+whether to travel there; yes runs the travel (`TravelFade`, `SeaTravel`; with no sea room to ask, as when its link
+is lost, yes sails the course as Set sail does), which no key, press or wheel breaks: the sea bar
 goes while it runs, Stop and the pace dial do nothing however they are asked, the menu does not open, and nothing takes
 the player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
 
@@ -318,13 +319,14 @@ the player elsewhere (the company's Go to them waits); a travel left behind any 
    course is, and no other course sent in its place until the room answers. Too soon after a course, it is asked
    again; a room joined since, or the same link joined again (which drops what it was sent), is asked again, once it
    has the ship at sea (a tier's room just joined puts it there when its keeper has answered); one that gives no
-   answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
+   answer within 13 s of the yes, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
    sails the course as Set sail does.
 2. Black for at least 0.5 s, and longer until the room has answered, no continent near the ship's new place is
    still to open (`Charting.waiting`), and frames drawn since the answer have shown the new waters whole (nothing
    standing in, [[Game]]), the plants scattering at the veil's pace meanwhile; all waited on 15 s at most; the sea,
-   its islands and the sky come with the room's word and the land. Taken, the ship is laid where the room put it,
-   400 m short of the course's end on its last leg, with no easing across the jump, and sails on to the end of the
+   its islands and the sky come with the room's word and the land. Taken, the ship is laid where the room put it
+   once the picture is black (an answer that comes during the fade waits for it), 400 m short of the course's end on
+   its last leg, with no easing across the jump, and sails on to the end of the
    course the room was sent; the old waters' islands, flotsam and marks go with the room's next word.
 3. The picture fades in over 1 s on the usual view over the ship, and the player has the ship again, sailing on to
    the course's end. The view changes from the helm's only at black.

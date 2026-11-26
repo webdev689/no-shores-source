@@ -105,7 +105,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Other ships** ([[Walk-in Windows Are Seen Through and Larger, Public Events Show on the Map, and So Does Every Player]]).
   Every other player's ship in the sea's room, however far off, is a dot as on land (below), in their nameplate's
   square's colour, over the words and under the ship's arrow (`chartMarksOf`, `dotInks`). Every hostile ship in the
-  water the ship lies in, sailing or in a player's fight, is a hull under a sail in the Grey Tithe's dark slate `#4a5563`, edged in the parchment, beside
+  water the ship lies in, sailing or still in a player's fight, is a hull under a sail in the Grey Tithe's dark slate `#4a5563`, edged in the parchment, beside
   them (`paintHostile`; [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]]). The room sends the sea's chart, and with it each
   player's hostile ships and standing islands in their water (`chart_marks`), about once a second ([[Server]]); the
   map shows the last. A hostile ship's mark is drawn only whole on the map, never across its edge.

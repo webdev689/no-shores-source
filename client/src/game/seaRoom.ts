@@ -289,7 +289,7 @@ export class SeaRoom {
     this.sendCourse();
   }
 
-  /** Asks to travel a course to the other waters it ends in: sent as a course is, in its turn, and no course sent
+  /** Asks to travel a course to where it ends: sent as a course is, in its turn, and no course sent
    *  in its place until the room answers. */
   travel(points: readonly Point2[], pace: SailedPace): void {
     [this.waitingCourse, this.waitingFacing, this.travelAsked] = [courseBytes(points, pace, true), false, true];

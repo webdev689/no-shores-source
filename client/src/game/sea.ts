@@ -253,7 +253,7 @@ export class Sea {
 
   /** Stops the ship where it is; the voyage's destination is kept, to be resumed. */
   stop(): void {
-    // A travel under way is the cinematic's to end: no press stops it.
+    // A travel under way is the fade's to end: no press stops it.
     if (this.travelling) return;
     this.chase.stop();
     this.passage.stop();
@@ -287,11 +287,11 @@ export class Sea {
     this.passage.sailTo(point);
   }
 
-  /** Travels to `point` in the water named `water`, seen sailing away: under way for it from the helm, the room asked
-   *  as the picture fades; `ready` says when the waters round the ship have loaded. Answers whether it set off: not
-   *  in a fight, nor on a travel already. */
+  /** Travels to `point` in the water named `water`, the picture fading out and in: under way for it from the helm, the
+   *  room asked as the picture fades; `ready` says when the waters round the ship have loaded. Answers whether it set
+   *  off: not in a fight, nor on a travel already, nor with no sea room to ask. */
   travelTo(point: Point2, water: string, ready: () => boolean): boolean {
-    if (this.combat || this.travelling) return false;
+    if (this.combat || this.travelling || !this.room) return false;
     this.sailTo(point);
     this.travelling = new SeaTravel(water, point, this.passage, ready);
     this.view.travel();
@@ -339,7 +339,7 @@ export class Sea {
     return true;
   }
 
-  /** Whether the ship holds the player: down aboard it, or sailing away to other waters. Nothing takes them elsewhere
+  /** Whether the ship holds the player: down aboard it, or travelling. Nothing takes them elsewhere
    *  meanwhile. */
   get busy(): boolean {
     return this.aboard.active || this.travelling !== null;
@@ -402,7 +402,7 @@ export class Sea {
     const watched = view.closeShare > 0 || view.helmView || this.aboard.active || this.travelling !== null;
     if (!this.combat) this.passage.advance(dt, watched);
     this.travelling?.step(dt, this.room);
-    if (this.travelling?.away.control) this.endTravel();
+    if (this.travelling?.fade.control) this.endTravel();
     view.step(dt);
     if (view.kind === 'sail' && !this.aboard.active) view.turn(input.turn, input.tilt, dt);
     const { ship } = this.passage;
@@ -433,7 +433,7 @@ export class Sea {
     const boarded = this.boarding.frame(this.room, combat?.view ?? null, input);
     if (boarded) combat?.letGo();
     const helmShot = view.helmShot(trueLying, seaShot.far);
-    const travelled = this.travelling?.away;
+    const travelled = this.travelling?.fade;
     const down =
       combat && fought
         ? { near: boarded?.shot ?? fought, share: combat.share }
@@ -510,7 +510,7 @@ export class Sea {
           ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, view.helmShare > 0.5)
           : [],
       firstPerson: boarded ? boarded.firstPerson : !combat && this.aboard.firstPerson,
-      dark: boarded?.dark ?? this.travelling?.away.dark ?? 0,
+      dark: boarded?.dark ?? this.travelling?.fade.dark ?? 0,
       feet: combat ? null : this.aboard.feetOn(lying),
       stirs: combat ? combat.stirs() : own.underWay ? this.wake.stirs(lying, this.hull.waterline, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
@@ -582,7 +582,7 @@ export class Sea {
     return this.chase.words ?? this.passage.note;
   }
 
-  /** What the watch says now, a notice: a hostile ship just sighted, or other waters entered; none else. */
+  /** What the watch says now, a notice: a hostile ship just sighted, or another hold of the sea entered; none else. */
   get watchWords(): string | null {
     return this.watch.words;
   }

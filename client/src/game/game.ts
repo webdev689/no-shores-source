@@ -371,7 +371,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** Whether the player may be taken elsewhere: on foot or on deck with nothing else under way, never under the map,
-   *  on the way to the helm, walking the deck, sailing away to other waters, landing, or while another landmass opens. */
+   *  on the way to the helm, walking the deck, travelling by the held map, landing, or while another landmass opens. */
   const free = () =>
     (playing.flow.mode === 'foot' || playing.flow.mode === 'sea') &&
     !playing.helmMap.busy &&
@@ -478,7 +478,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** A destination set on the map: the ship sails for it or travels there, in its difficulty's sea room (mid-fight the
-   *  one it fights in), one switch at a time; a travel's cinematic asks whichever room holds the ship by its fade. */
+   *  one it fights in), one switch at a time; a travel asks whichever room holds the ship as it fades. */
   const sailFor = (sail: Point2, seas: Difficulty, travel: MapWater | null) => {
     const sea = playing.sea;
     if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));

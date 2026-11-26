@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { SAIL_AWAY } from '../cinema/sailAway.ts';
+import { TRAVEL_FADE } from '../cinema/travelFade.ts';
 import type { Passage } from './passage.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Sea } from './sea.ts';
-import { sailOrTravel, SeaTravel } from './seaTravel.ts';
+import { deckHeard, sailOrTravel, SeaTravel } from './seaTravel.ts';
 import { frameDrawn, WHOLE_FRAMES } from '../standIns.ts';
 
 /** A travel for a point east, its passage and room standing in: what the passage was asked, and the room's answer
@@ -46,29 +46,33 @@ test('the travel is asked as the fade begins, at once; taken, the ship is laid w
   assert.deepEqual(asked, ['travel']);
   answer(0);
   travel.step(0.1, room);
+  assert.deepEqual(asked, ['travel'], 'nothing moved while the picture is still fading');
+  travel.step(TRAVEL_FADE.fadeS, room);
+  assert.equal(travel.fade.step, 'black');
+  travel.step(0.1, room);
   assert.deepEqual(asked, ['travel', 'placed 549600,150000', 'along 549000,151000'], 'along the course the room holds');
-  assert.equal(travel.away.refused, null);
+  assert.equal(travel.fade.refused, null);
 });
 
 test('taken late, the black holds until frames drawn since the answer show the new waters whole', () => {
   const { travel, room, toFade, answer } = travelling();
   toFade();
-  travel.step(SAIL_AWAY.fadeS + SAIL_AWAY.blackLeastS + 1, room);
-  assert.equal(travel.away.step, 'black', 'waiting on the room');
+  travel.step(TRAVEL_FADE.fadeS + TRAVEL_FADE.blackLeastS + 1, room);
+  assert.equal(travel.fade.step, 'black', 'waiting on the room');
   // The old waters were drawn whole; the frames that count are those after the answer.
   for (let frame = 0; frame < WHOLE_FRAMES; frame++) frameDrawn(true);
   answer(0);
   for (let frame = 0; frame <= WHOLE_FRAMES; frame++) {
     travel.step(0.1, room);
     frameDrawn(true);
-    assert.equal(travel.away.step, 'black', `frame ${frame} after the answer`);
+    assert.equal(travel.fade.step, 'black', `frame ${frame} after the answer`);
   }
   frameDrawn(false);
   travel.step(0.1, room);
-  assert.equal(travel.away.step, 'black', 'something of the new waters stands in');
+  assert.equal(travel.fade.step, 'black', 'something of the new waters stands in');
   for (let frame = 0; frame < WHOLE_FRAMES; frame++) frameDrawn(true);
-  travel.step(SAIL_AWAY.blackLeastS, room);
-  assert.equal(travel.away.step, 'lift');
+  travel.step(TRAVEL_FADE.blackLeastS, room);
+  assert.equal(travel.fade.step, 'lift');
   frameDrawn(false);
 });
 
@@ -81,13 +85,15 @@ test('refused, the ship heaves to and its line says why; too soon, the travel is
   answer(3);
   travel.step(0.1, room);
   assert.deepEqual(asked.slice(2), ['forget', 'stop', 'say No travel with a hostile ship giving chase.']);
-  assert.equal(travel.away.refused, 'No travel with a hostile ship giving chase.');
+  assert.equal(travel.fade.refused, 'No travel with a hostile ship giving chase.');
 });
 
-test('a travel the room never answers is given up', () => {
+test('a travel the room never answers is waited on 13 s from the yes, room for a tier’s room to be joined, then given up', () => {
   const { travel, asked, room, toFade } = travelling();
   toFade();
   for (let second = 0; second < 12; second++) travel.step(1, room);
+  assert.deepEqual(asked.slice(1), [], 'still waited on at 12 s');
+  travel.step(2, room);
   assert.deepEqual(asked.slice(1), ['forget', 'stop', 'say The sea did not answer.']);
 });
 
@@ -103,7 +109,7 @@ test('no answer is taken before the travel is asked', () => {
   answer(0);
   travel.step(1, room);
   assert.deepEqual(asked, ['travel'], 'asked in its first step');
-  assert.equal(travel.away.answered, false, 'an answer standing before it is not taken in the same step');
+  assert.equal(travel.fade.answered, false, 'an answer standing before it is not taken in the same step');
 });
 
 test('yes travels to the prompt’s own water, named as it named it, though no water lies at the place sailed for', () => {
@@ -134,7 +140,7 @@ test('a voyage stopped before the fade asks no travel and is answered at once, n
     [],
     'nothing sent',
   );
-  assert.equal(travel.away.refused, 'The voyage was stopped.');
+  assert.equal(travel.fade.refused, 'The voyage was stopped.');
 });
 
 test('a fight met ends the travel at any time: the room forgets it, and the picture is open with control back', () => {
@@ -143,11 +149,11 @@ test('a fight met ends the travel at any time: the room forgets it, and the pict
     if (when !== 'before the ask') toFade();
     if (when === 'after it was taken') {
       answer(0);
-      travel.step(SAIL_AWAY.fadeS + SAIL_AWAY.blackLeastS + 0.5, room);
+      travel.step(TRAVEL_FADE.fadeS + TRAVEL_FADE.blackLeastS + 0.5, room);
     }
     travel.cut(room);
     assert.equal(asked.includes('forget'), true, `${when}: the room forgets it`);
-    assert.deepEqual([travel.away.dark, travel.away.control], [0, true], `${when}: open, control back`);
+    assert.deepEqual([travel.fade.dark, travel.fade.control], [0, true], `${when}: open, control back`);
     const sent = asked.length;
     travel.step(5, room);
     assert.equal(asked.length, sent, `${when}: nothing more is asked`);
@@ -183,7 +189,7 @@ test('a travel under way holds the player at sea, and coming back aboard ends an
     room: null,
     travelling: { cut: () => done.push('cut') },
   });
-  assert.equal(sea.busy, true, 'held while it sails away');
+  assert.equal(sea.busy, true, 'held while it travels');
   sea.cameAboard();
   assert.deepEqual([sea.travelling, sea.busy], [null, false]);
   assert.ok(done.includes('cut'), 'the travel is cut, its room told to forget it');
@@ -216,7 +222,42 @@ test('a travel whose room never shows the ship is given up, never left black for
   const { travel, asked, room, toFade } = travelling();
   Object.assign(room, { ownShip: null });
   toFade();
-  for (let second = 0; second < 12; second++) travel.step(1, room);
-  assert.equal(travel.away.refused, 'The sea did not answer.');
+  for (let second = 0; second < 14; second++) travel.step(1, room);
+  assert.equal(travel.fade.refused, 'The sea did not answer.');
   assert.deepEqual(asked, ['forget', 'stop', 'say The sea did not answer.']);
+});
+
+test('with no sea room a travel is not begun, and the course is sailed as Set sail sails it', async () => {
+  const { Sea } = await import('./sea.ts');
+  const done: string[] = [];
+  const sea = Object.create(Sea.prototype) as InstanceType<typeof Sea>;
+  Object.assign(sea, { combat: null, travelling: null, room: null, sailTo: () => done.push('sail') });
+  const water = {
+    continent: 2,
+    id: 'continent-3',
+    name: 'The Elmwater',
+    holder: 'grey-tithe',
+    levels: [8, 14],
+  } as const;
+  sailOrTravel(sea, [600_000, 150_000], water, () => true);
+  assert.deepEqual([done, sea.travelling], [['sail'], null]);
+});
+
+test('the deck is heard close at the helm, aboard, and while a travel holds the helm’s view', () => {
+  const sea = (helmView: boolean, active: boolean, helmShare: number | null) =>
+    ({
+      view: { helmView },
+      aboard: { active },
+      travelling: helmShare === null ? null : { fade: { helmShare } },
+    }) as const;
+  assert.deepEqual(
+    [
+      sea(true, false, null),
+      sea(false, true, null),
+      sea(false, false, 1),
+      sea(false, false, 0),
+      sea(false, false, null),
+    ].map(deckHeard),
+    [true, true, true, false, false],
+  );
 });

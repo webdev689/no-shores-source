@@ -5,7 +5,7 @@ import { smooth } from './rail.ts';
 
 /** Each step's seconds: the fade out, the least the black waits and the most it waits on the waters, the fade in, and
  *  the last of the fade out the veil's words stand in (the veil's own fade, hud.ts `VEIL_S`). */
-export const SAIL_AWAY = {
+export const TRAVEL_FADE = {
   fadeS: 1,
   blackLeastS: 0.5,
   blackMostS: 15,
@@ -13,12 +13,17 @@ export const SAIL_AWAY = {
   wordsS: 0.7,
 } as const;
 
-export type SailAwayStep = 'fade' | 'black' | 'lift' | 'done';
+export type TravelFadeStep = 'fade' | 'black' | 'lift' | 'done';
 
-const NEXT: Readonly<Record<SailAwayStep, SailAwayStep>> = { fade: 'black', black: 'lift', lift: 'done', done: 'done' };
+const NEXT: Readonly<Record<TravelFadeStep, TravelFadeStep>> = {
+  fade: 'black',
+  black: 'lift',
+  lift: 'done',
+  done: 'done',
+};
 
-export class SailAway {
-  step: SailAwayStep = 'fade';
+export class TravelFade {
+  step: TravelFadeStep = 'fade';
   /** Seconds into the step. */
   private time = 0;
   private asked = false;
@@ -62,22 +67,23 @@ export class SailAway {
 
   /** The step's length; the black's until the room has answered and the waters are ready. */
   private length(ready: boolean): number {
-    const loaded = ready || this.refused !== null || this.time >= SAIL_AWAY.blackMostS;
-    if (this.step === 'black') return this.answered && loaded ? SAIL_AWAY.blackLeastS : Infinity;
-    if (this.step === 'fade') return SAIL_AWAY.fadeS;
-    return this.step === 'lift' ? SAIL_AWAY.liftS : Infinity;
+    const loaded = ready || this.refused !== null || this.time >= TRAVEL_FADE.blackMostS;
+    if (this.step === 'black') return this.answered && loaded ? TRAVEL_FADE.blackLeastS : Infinity;
+    if (this.step === 'fade') return TRAVEL_FADE.fadeS;
+    return this.step === 'lift' ? TRAVEL_FADE.liftS : Infinity;
   }
 
   /** How dark the picture is: 0 open, 1 black. */
   get dark(): number {
-    if (this.step === 'fade') return smooth(this.time / SAIL_AWAY.fadeS);
+    if (this.step === 'fade') return smooth(this.time / TRAVEL_FADE.fadeS);
     if (this.step === 'black') return 1;
-    return this.step === 'lift' ? 1 - smooth(this.time / SAIL_AWAY.liftS) : 0;
+    return this.step === 'lift' ? 1 - smooth(this.time / TRAVEL_FADE.liftS) : 0;
   }
 
   /** The veil's words while the picture is black or nearly: where the ship sails for. */
   get veil(): string | null {
-    const black = this.step === 'black' || (this.step === 'fade' && this.time >= SAIL_AWAY.fadeS - SAIL_AWAY.wordsS);
+    const black =
+      this.step === 'black' || (this.step === 'fade' && this.time >= TRAVEL_FADE.fadeS - TRAVEL_FADE.wordsS);
     return black ? this.words : null;
   }
 

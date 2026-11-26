@@ -73,8 +73,8 @@ fn a_travel_waits_the_players_next_roll_its_first_wait_and_never_brings_it_soone
     assert!(before < FIRST_ROLL_S, "the roll's wait ran down: {before}");
     sea.travel(player, &[[550_000.0, 150_000.0]], 10).unwrap();
     assert_eq!(sea.hostiles.wait_of(player), Some(FIRST_ROLL_S), "a wait run down waits its first again");
-    // Once the roll has come, the next waits half a minute or more, and a travel's wait brings it no sooner (the roll's ship
-    // may chase the player, which refuses a travel, so the wait the travel sets is asked of the hostiles alone).
+    // Once the roll has come, the next waits half a minute or more, and a travel's wait brings it no sooner (the roll's
+    // ship may chase the player, which refuses a travel, so the wait the travel sets is asked of the hostiles alone).
     for _ in 0..120 {
         if sea.hostiles.wait_of(player).unwrap() > FIRST_ROLL_S {
             break;

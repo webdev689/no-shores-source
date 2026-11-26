@@ -97,6 +97,10 @@ export function seaPlace(
   return ['At sea', shown.landfall && island ? `Off ${island}` : water];
 }
 
+/** The displays a travel's veil stands on: a travel ended at once, as a fight met ends it, leaves its veil to be lifted
+ *  by the next frame. */
+const travelVeiled = new WeakSet<Hud>();
+
 /** Shows one frame at sea, `shown`, on the display. */
 export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudState): void {
   const { onSea } = state;
@@ -105,8 +109,11 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // On a struck ship's deck, the display says where its fight stands and lists the keys on foot.
   const deck = here.boarding.words;
   hud.place(...seaPlace(here, shown, state));
-  // Sailing away to other waters, the veil says where to while the picture is black.
-  if (here.travelling) hud.veil(here.travelling.away.veil);
+  // Travelling, the veil says where to while the picture is black.
+  const veil = here.travelling?.fade.veil ?? null;
+  if (here.travelling) hud.veil(veil);
+  else if (travelVeiled.delete(hud)) hud.veil(null);
+  if (veil) travelVeiled.add(hud);
   const { fight } = here;
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
@@ -155,7 +162,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
           quest: guided.at,
         },
   );
-  // In a fight, and sailing away to other waters, the sea bar goes: its map, pace, Manage and Leave wait, as its keys do.
+  // In a fight, and travelling, the sea bar goes: its map, pace, Manage and Leave wait, as its keys do.
   const ship = { canLeave: here.sighted !== null, canManage: true };
   const barred = atHelm || aboard.active || deck || here.fight || here.travelling;
   hud.seaBar(onSea && !barred ? { ...shown, ...ship } : null);

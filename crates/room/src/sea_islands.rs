@@ -280,7 +280,7 @@ impl Islands {
                         .zip(course)
                         .all(|(&from, &to)| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M)
                 })
-                && charted.lanes.iter().all(|&[from, to]| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M);
+                && charted.sailed.iter().all(|&[from, to]| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M);
             if open && let Some(island) = self.island(seed, place, (water.continent, water.holder, levels)) {
                 return Some(island);
             }

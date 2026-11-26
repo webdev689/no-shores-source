@@ -291,7 +291,7 @@ will take it, by the room's own tick.
   is off the helm, or is any hostile ship's quarry, and as any course is refused; its last leg and the place it would lie are judged besides against every standing island, told
   to the player or not, and judged before anything is set, so a refusal there leaves the ship, its course and its turn as they were. Taken, the ship lies on the course's last leg 400 m short of its end (at the leg's start where the
   leg is shorter), heading along it, its course the end alone at the pace asked, and the player's next roll for a
-  hostile ship waits its first 30 s again; the hostile ships no player keeps go as ever. Either way the player is told
+  hostile ship waits its first 30 s again; the hostile ships no player past home waters keeps go as ever. Either way the player is told
   (code 24: taken, or the reason's number), and a refused travel leaves the ship as it was.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - The Grey Tithe's ships sail among the players', each with its rank, and a bold one that meets a player fights them
@@ -345,7 +345,7 @@ will take it, by the room's own tick.
   sea), the other players' within 60 km (the page's farthest view at sea), and every player in their fight. Once in
   each second of the sea's clock, however many ticks the host stepped at once, every player is also sent the sea's
   chart (`charted`): every ship in the room, their own among them, where it lies and its captain's name, and with it
-  every hostile ship, sailing or in a player's fight, and standing island in the water their own ship lies in
+  every hostile ship, sailing or still in a player's fight, and standing island in the water their own ship lies in
   (`chart_marks`), for the [[Held Map]];
   the snapshots between carry none. Every snapshot of that tick carries it, however many times it is
   prepared, and a sea opened again charts its first. A boarding is refused when its deck would hold no crew.

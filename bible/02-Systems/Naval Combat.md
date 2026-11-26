@@ -637,7 +637,8 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of it
   begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary
   one runs as captains run. The room lets go of the chase once it has left the sea.
-- **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it: their
+- **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it past
+  home waters, who keeps it at sea (a player inside them sets neither its clock nor its sight): their
   voyage's pace as it is held (144 m/s at ×60), the world's own while they lie at rest, and real time where another
   player sails within 1.2 km of that one, a shared sea.
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a hostile ship comes near along its way: its
@@ -661,7 +662,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   friendly ship afloat (at once, one that strikes) sails on for its route's far port at the traffic's 5 m/s by what
   is left of its route (back to its leg first, then corner by corner), round any coast in its way, home waters or not, kept while a player is within 1.1 times its sight and gone at its port or once none is. Two that
   parted meet again only once they have been 750 m apart. None meets a friendly ship lying in Overlook's home waters,
-  which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
+  which hold no hostile ship. A fight with no ship a player past home waters keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
 - **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
   it, joins it: their ship heaves to there and is put into it with the hurts it keeps, beside the friendly ship, and

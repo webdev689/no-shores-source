@@ -95,7 +95,7 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
 }
 
 #[test]
-fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rather_than_swinging_at_it() {
+fn a_bold_ship_held_off_home_waters_follows_their_edge_round_rather_than_swinging_at_it() {
     use crate::hostiles::{Hostile, Hostiles, Voyager};
     let (layout, ports) = crate::measure_tests::world();
     let charted = Charted::new(&layout, &ports);
@@ -116,6 +116,8 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
         heading: 0.0,
         pace: 0,
         fighting: false,
+        // Flagged as past them, so the ship keeps coming and only the chart holds it off; the room flags a player
+        // there home, and no ship comes for them at all.
         home: false,
         clock: 1.0,
         hull: 1.0,
@@ -172,4 +174,25 @@ fn a_ship_left_inside_home_waters_never_comes_nearer_their_coast() {
         let ship = hostiles.sailing.iter().find(|ship| ship.id == 1).expect("kept at sea");
         assert!(ship.x >= 208_000.0 - 1e-6, "it came nearer the coast, to {}", ship.x);
     }
+}
+
+#[test]
+fn every_leg_the_traffic_sails_is_kept_its_ways_from_berth_to_berth_too() {
+    let (layout, ports) = crate::measure_tests::world();
+    let charted = Charted::new(&layout, &ports);
+    let traffic = charted.traffic.as_ref().expect("the traffic between the port cities");
+    let corner = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
+    for route in &traffic.routes {
+        for way in &route.ways {
+            for leg in way.path.windows(2) {
+                let [from, to] = [corner(&leg[0]), corner(&leg[1])];
+                assert!(charted.sailed.contains(&[from, to]), "the leg {from:?} to {to:?} of a way, kept");
+            }
+        }
+    }
+    let berthed = traffic.routes.iter().flat_map(|route| route.ways.iter()).any(|way| {
+        let start = corner(&way.path[0]);
+        !charted.lanes.iter().any(|[from, to]| *from == start || *to == start)
+    });
+    assert!(berthed, "a way begins at a berth off its lane, which the lanes alone would miss");
 }

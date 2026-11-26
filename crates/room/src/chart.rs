@@ -8,13 +8,15 @@ use world::layout::Layout;
 use world::traffic::{Port, Traffic};
 use world::waters::{Holder, Waters};
 
-/// The sea's waters, each continent's id and band, the lanes' legs, end to end, and the traffic that sails them.
+/// The sea's waters, each continent's id and band, the lanes' legs, end to end, every leg the traffic sails (its
+/// lanes', and its ways' from berth to berth), and the traffic that sails them.
 #[derive(Debug)]
 pub struct Charted {
     waters: Waters,
     ids: Vec<String>,
     bands: Vec<Option<(u8, u8)>>,
-    pub(crate) lanes: Vec<[[f64; 2]; 2]>,
+    lanes: Vec<[[f64; 2]; 2]>,
+    pub(crate) sailed: Vec<[[f64; 2]; 2]>,
     pub traffic: Option<Traffic>,
 }
 
@@ -27,9 +29,12 @@ impl Charted {
         let bands = ids.iter().map(|id| gear::world::island_levels(id)).collect();
         let traffic = (!ports.is_empty()).then(|| Traffic::new(layout, &waters, ports));
         let corner = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
-        let legs = traffic.iter().flat_map(|traffic| traffic.routes.iter()).flat_map(|route| route.path.windows(2));
-        let lanes = legs.map(|leg| [corner(&leg[0]), corner(&leg[1])]).collect();
-        Charted { waters, ids, bands, lanes, traffic }
+        let routes = || traffic.iter().flat_map(|traffic| traffic.routes.iter());
+        let leg = |leg: &[world::geometry::Point]| [corner(&leg[0]), corner(&leg[1])];
+        let lanes: Vec<_> = routes().flat_map(|route| route.path.windows(2)).map(leg).collect();
+        let ways = routes().flat_map(|route| route.ways.iter()).flat_map(|way| way.path.windows(2)).map(leg);
+        let sailed = lanes.iter().copied().chain(ways).collect();
+        Charted { waters, ids, bands, lanes, sailed, traffic }
     }
 
     /// How far a point of sea lies from the nearest coast, metres; 0 on land.

@@ -39,7 +39,7 @@ type Where =
   | { readonly kind: 'landing' }
   /** Coming down to the helm, there, or going back up: `at` how far down, 0 the sea's view, 1 the helm. */
   | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' }
-  /** Sailing away to other waters on the cinematic's rails (`SailAway`), which no press, key or wheel moves. */
+  /** Travelling by the held map (`TravelFade`), which no press, key or wheel moves. */
   | { readonly kind: 'travel' };
 
 /**
@@ -117,7 +117,7 @@ export class SeaView {
     this.where = { kind: 'sail' };
   }
 
-  /** The view is given to the cinematic of a travel to other waters, until `sail` gives it back. */
+  /** The view is given to a travel by the held map, until `sail` gives it back. */
   travel(): void {
     this.where = { kind: 'travel' };
   }

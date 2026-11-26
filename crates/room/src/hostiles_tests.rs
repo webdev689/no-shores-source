@@ -355,9 +355,12 @@ fn a_bold_ship_by_the_edge_of_home_waters_meets_no_player_inside_them() {
     let home = OneWater { holder: Holder::Home, open: |_, _| false, ..HOSTILE_WATER };
     let mut hostiles = Hostiles { sailing: vec![standing(1, [700.0, 0.0], 0.0, true)], ..Hostiles::default() };
     let inside = Voyager { home: true, ..voyager(5, [0.0, 0.0], 0, false) };
-    assert!(hostiles.tick(1.0, &[inside], &home).is_empty(), "home waters hold no hostile");
+    // A player past home waters, 4.5 km off, keeps the ship at sea and is too far to be met.
+    let keeper = voyager(6, [700.0, 4_500.0], 0, false);
+    assert!(hostiles.tick(1.0, &[inside, keeper], &home).is_empty(), "home waters hold no hostile");
     hostiles.chase(5, Some(1));
-    assert!(hostiles.tick(1.0, &[inside], &home).is_empty(), "nor one it chases");
+    assert!(hostiles.tick(1.0, &[inside, keeper], &home).is_empty(), "nor one it chases");
+    assert_eq!(hostiles.sailing.len(), 1, "still at sea, 700 m from the player inside");
 }
 
 #[test]
@@ -377,4 +380,24 @@ fn a_player_inside_home_waters_is_no_ships_quarry_and_keeps_none_at_sea() {
     assert_eq!(quarries, [Some(2)], "it comes for the player past home waters, never the one inside them");
     hostiles.tick(1.0, &[home], &HOSTILE_WATER);
     assert!(hostiles.sailing.is_empty(), "a player inside home waters keeps no ship at sea");
+}
+
+#[test]
+fn a_player_inside_home_waters_sets_no_ships_clock_or_sight() {
+    let home = Voyager { home: true, ..voyager(1, [5_000.0, 0.0], 100, false) };
+    let out = voyager(2, [0.0, 3_000.0], 0, false);
+    let mut hostiles = Hostiles { sailing: vec![standing(1, [4_000.0, 0.0], 0.0, true)], ..Hostiles::default() };
+    hostiles.tick(1.0, &[home, out], &HOSTILE_WATER);
+    let ship = hostiles.sailing[0];
+    let sailed = apart([ship.x, ship.y], [4_000.0, 0.0]);
+    assert!(sailed <= way_of(ship.commission.rank) + 1e-9, "it sails at the clock of the player past them: {sailed} m");
+    assert_eq!(ship.sight_m, SIGHT_LEAST_M, "its sight from that player's pace, not the sheltered one's");
+}
+
+#[test]
+fn a_player_under_way_meets_nearly_twice_the_ships_rolls_every_60_to_140_s_brought() {
+    // Under way at x20 ships fall astern and go, so the cap of three in sight seldom holds a roll back: 340 ships over
+    // these five seas of four hours, where rolls every 60 to 140 s brought 177.
+    let ships = brought(&HOSTILE_WATER, 5, 4, [500_000.0, 500_000.0], 20);
+    assert!(ships.len() > 300, "{} ships", ships.len());
 }

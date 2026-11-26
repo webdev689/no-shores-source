@@ -122,13 +122,13 @@ impl Default for Hostiles {
     }
 }
 
-/// The rate a ship sails at: the clock of the player nearest it that keeps it at sea, but real time where another
-/// player sails within `SHARE_M` of that one, or none is near.
+/// The rate a ship sails at: the clock of the player nearest it that keeps it at sea (none inside home waters), but
+/// real time where another player sails within `SHARE_M` of that one, or none is near.
 fn clock_at(hostile: &Hostile, ships: &[Voyager]) -> f64 {
     let at = [hostile.x, hostile.y];
     let nearest = ships
         .iter()
-        .filter(|ship| hostile.kept_by(ship.at))
+        .filter(|ship| !ship.home && hostile.kept_by(ship.at))
         .min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
     let Some(nearest) = nearest else { return 1.0 };
     let shared = ships.iter().any(|other| other.player != nearest.player && apart(other.at, nearest.at) <= SHARE_M);
@@ -215,15 +215,16 @@ impl Hostiles {
     }
 
     /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
-    /// nearest it if it is farther than the ship's, sails on and goes once no player past home waters keeps it; then each player's roll
-    /// comes due. Answers each bold ship that came within `ENGAGE_RANGE` of a player this tick, with that player, for
-    /// their fight; it leaves the sea.
+    /// past home waters nearest it if it is farther than the ship's, sails on and goes once no player past home waters
+    /// keeps it; then each player's roll comes due. Answers each bold ship that came within `ENGAGE_RANGE` of a player
+    /// this tick, with that player, for their fight; it leaves the sea.
     pub fn tick(&mut self, seconds: f64, ships: &[Voyager], chart: &impl Chart) -> Vec<(PlayerId, Hostile)> {
         let nearest = |at: [f64; 2]| ships.iter().map(|ship| apart(at, ship.at)).fold(f64::INFINITY, f64::min);
         for index in 0..self.sailing.len() {
             let hostile = self.sailing[index];
             let at = [hostile.x, hostile.y];
-            let closest = ships.iter().min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
+            let past_home = ships.iter().filter(|ship| !ship.home);
+            let closest = past_home.min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
             let sight = closest.map_or(hostile.sight_m, |ship| {
                 sight_for(f64::from(ship.pace), class_of(ship.hull_kind).way).max(hostile.sight_m)
             });

@@ -75,7 +75,7 @@ export function listenForControls(game: Controlled): void {
     const { flow, sea } = playing;
     const sailing = flow.mode === 'sea';
     const retry = game.retry();
-    // No key breaks a travel's cinematic: the player has the ship again once it has arrived.
+    // No key breaks a travel's fade: the player has the ship again once it has arrived.
     if (sea?.travelling) return;
     if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;

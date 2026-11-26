@@ -389,8 +389,10 @@ impl Sea {
         self.after_fights(outcomes, &sank);
         self.tick_decks();
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
+        // A clash, as a hostile ship, stays at sea for no player inside home waters.
+        let past_home: Vec<[f64; 2]> = players.iter().copied().filter(|&at| !self.chart.home(at)).collect();
         let at_sea = (&mut self.hostiles, &mut self.friendlies);
-        step_clashes(&mut self.clashes, at_sea, &players, (&self.coasts, time));
+        step_clashes(&mut self.clashes, at_sea, &past_home, (&self.coasts, time));
         // Each player's waters run at the pace they sail, the world's own time at rest.
         let ships: Vec<Voyager> = self
             .ships()
@@ -448,15 +450,11 @@ impl Sea {
         self.hostiles.sailing.iter().copied().chain(clashing).collect()
     }
 
-    /// Where every hostile ship lies, as the held map marks them: each `hostiles` gives, and each captain in a
+    /// Where every hostile ship lies, as the held map marks them: each `hostiles` gives, and each captain still in a
     /// player's fight, where its fight has it.
     #[must_use]
     pub fn hostiles_marked(&self) -> Vec<[f64; 2]> {
-        let fought = self.fights.list.iter().flat_map(|fought| {
-            let vessels = fought.hostiles.keys().filter_map(|id| fought.fight.vessel(*id));
-            vessels.map(|vessel| [vessel.ship.x, vessel.ship.y])
-        });
-        self.hostiles().iter().map(|hostile| [hostile.x, hostile.y]).chain(fought).collect()
+        self.hostiles().iter().map(|hostile| [hostile.x, hostile.y]).chain(self.fights.captains_at()).collect()
     }
 
     /// The friendly ships the room keeps at sea: each sailing on for its port, then each in a clash, where its fight

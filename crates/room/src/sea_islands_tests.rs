@@ -4,8 +4,8 @@ use crate::PlayerId;
 use crate::harbour::{Harbours, SUNK_KEPT, WASHED_UP};
 
 /// A square continent 100 km a side, its north-west corner 100 km from the frame's. Of `id` and `climate`: the
-/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters within 10 km of
-/// its coast and the Grey Tithe's past them.
+/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters within 10 km
+/// of its coast and the Grey Tithe's past them.
 fn sea_round(id: &str, climate: &str) -> Sea {
     let text = format!(
         r#"{{ "continents": [{{ "id": "{id}", "climate": "{climate}", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }}], "isles": [] }}"#
@@ -63,7 +63,7 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
 fn islands_keep_clear_of_the_friendly_ships_lanes() {
     // A lane along y = 50 km, ships 4 km north of it: islands rolled round them fall on both sides of it.
     let mut sea = sea_round("continent-4", "desert");
-    sea.chart.lanes = vec![[[0.0, 50_000.0], [600_000.0, 50_000.0]]];
+    sea.chart.sailed = vec![[[0.0, 50_000.0], [600_000.0, 50_000.0]]];
     for step in 0..10_u32 {
         let player = sea.join();
         sea.course(player, &[[230_000.0 + f64::from(step) * 20_000.0, 54_000.0]], 10).expect("open sea");

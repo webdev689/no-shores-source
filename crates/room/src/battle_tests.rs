@@ -151,3 +151,17 @@ fn a_player_who_leaves_and_comes_back_keeps_a_spent_last_stand_and_no_ship_numbe
     fights.fit(&characters);
     assert!(fights.list[0].fight.fitting(back).is_some_and(|fitted| fitted.stood), "its stand spent this fight");
 }
+
+#[test]
+fn only_captains_still_in_a_fight_with_players_are_where_its_captains_lie() {
+    let mut fights = begun();
+    let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    assert!(fights.join_hostile(&at_sea(12, minor, 500.0, false), &[], 0.0));
+    assert_eq!(fights.captains_at().count(), 2, "the captain it began with and the one who joined");
+    for (id, end) in [(CAPTAIN, End::Sunk), (CAPTAIN + 1, End::Gone)] {
+        let vessel = fights.list[0].fight.ships.get_mut(&id).unwrap();
+        let naval::fight::Sailor::Captain(command) = &mut vessel.sailor else { panic!("a captain") };
+        command.gone = Some(end);
+        assert_eq!(fights.captains_at().count(), usize::from(id == CAPTAIN), "none sunk or sailed off");
+    }
+}

@@ -226,7 +226,7 @@ test("on land the sea's own pieces go: the ships' plates, the sight, the readout
   assert.equal(said['sight']?.[0], false, 'no sight on land');
 });
 
-test('while the ship sails away to other waters the sea bar goes, so nothing on it stops or turns the travel', () => {
+test('while the ship travels the sea bar goes, so nothing on it stops or turns the travel', () => {
   const bars: unknown[] = [];
   const hud = new Proxy(
     {},
@@ -250,10 +250,39 @@ test('while the ship sails away to other waters the sea bar goes, so nothing on 
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
   const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
-  for (const travelling of [null, { away: { veil: null } }])
+  for (const travelling of [null, { fade: { veil: null } }])
     showSeaHud(hud as unknown as Hud, sea(travelling), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.notEqual(bars[0], null, 'at sea the bar stands');
-  assert.equal(bars[1], null, 'sailing away it is hidden');
+  assert.equal(bars[1], null, 'travelling it is hidden');
+});
+
+test('a travel the room ends at once, as a fight met does, lifts its veil the next frame and leaves it alone after', () => {
+  const veils: unknown[] = [];
+  const hud = new Proxy(
+    {},
+    {
+      get: (_target, key) =>
+        key === 'tasks'
+          ? { show: () => undefined }
+          : key === 'veil'
+            ? (text: unknown) => veils.push(text)
+            : () => undefined,
+    },
+  );
+  const sea = (travelling: unknown) =>
+    ({
+      view: { helmView: false },
+      aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
+      boarding: { words: null },
+      fight: null,
+      sighted: null,
+      travelling,
+    }) as unknown as Sea;
+  const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
+  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
+  for (const travelling of [{ fade: { veil: 'Sailing for The Elmwater' } }, null, null])
+    showSeaHud(hud as unknown as Hud, sea(travelling), shown as unknown as SeaFrame, state as unknown as SeaHudState);
+  assert.deepEqual(veils, ['Sailing for The Elmwater', null]);
 });
 
 test('a friendly ship the room keeps at sea keeps its friendly mark on the compass', () => {

@@ -199,7 +199,7 @@ source of each.
 
 | Door | TypeScript | What it answers |
 |---|---|---|
-| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; the port cities' ids; each port city's id, name and roadstead; each route's ports, length and path |
+| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; the port cities' ids; each port city's id, name and roadstead; each route's ports, length and path; the sea's facts (the reach a hostile meets within, the furthest one holds a voyage, a port's repair reach, home waters' reach, how far short a travel lays the ship, the ships' names) |
 | `waters_at` | `waterAt(point)` | The water at a point as one grid byte; null on land |
 | `waters_holder` | `waterAt(point)` | Who holds the sea at a point as one byte (0 home, 1 the Grey Tithe, 2 the Lattice, 255 none): the Lantern Sea past 10 km the Grey Tithe's |
 | `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m, or not a finite number, are refused |

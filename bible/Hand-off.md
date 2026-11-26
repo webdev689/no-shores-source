@@ -215,7 +215,7 @@ its system note.
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
     Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
-  - #155's, played by hand: the travel's cinematic from the helm to the arrival, the hover and the prompt on the pad;
+  - #155's, played by hand: the travel's fade out and in (#221 replaced its cinematic), the hover and the prompt on the pad;
     a clash of a Tithe ship and a merchant, joined; a ruin up close (its buildings' veins and sheets) and its wrecks
     from the sea at the sea's size.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's

@@ -95,8 +95,8 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
 
 /// What the page reads of the sea's rules beside its waters: the reach a hostile ship meets a player within, the
 /// furthest one may hold a voyage, metres; the reach of a port city's repairs; how far from its coast a home water
-/// stays home; how far short of its course's end a travel lays the ship; and each ship's name, by its faction's number (0 a friendly ship's, 1 the Grey Tithe's) and then its
-/// hull's.
+/// stays home; how far short of its course's end a travel lays the ship; and each ship's name, by its faction's
+/// number (0 a friendly ship's, 1 the Grey Tithe's) and then its hull's.
 fn sea_facts() -> Value {
     let factions = [naval::ranks::PLAYERS, naval::ranks::GREY_TITHE].into_iter();
     let names: Vec<Vec<&str>> = factions

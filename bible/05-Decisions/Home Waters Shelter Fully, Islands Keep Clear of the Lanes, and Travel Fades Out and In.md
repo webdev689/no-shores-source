@@ -32,13 +32,14 @@ usual mix, Elites included, as the 10 km answer chose."
 
 ## What it settles
 
-- No hostile ship takes a player inside home waters for its quarry, and none stays at sea for one: travel from home
-  waters is never refused as chased ([[Naval Combat]], "At sea").
+- No hostile ship takes a player inside home waters for its quarry, and none stays at sea for one; travel from
+  Overlook is never refused as chased ([[Naval Combat]], "At sea").
 - Every travel still holds the next hostile roll back to at least 30 s.
 - A travel by the held map is a screen fade out and fade in, with no cinematic: the picture fades to black, waits
   while the room moves the ship and the new waters load, and fades in ([[Sailing]], "Travel by the held map"). This
   replaces in part [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]], where the camera showed the ship
-  sailing away and arriving.
+  sailing away and arriving, and Claude's cinematic in
+  [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]].
 - Islands are rolled clear of every friendly lane by their reach and a margin, as of players' courses ([[Islands]]).
 - The Lantern Sea's open sea keeps levels 1 to 4 and the usual mix of ranks, Elites included.
 
@@ -49,3 +50,8 @@ usual mix, Elites included, as the 10 km answer chose."
 | The fade's times | Out over 1 s, black at least 0.5 s and until the waters are ready, in over 1 s | A plain fade, short; the black still waits on the waters as every trip's does |
 | Where it fades out and in | Out from the helm's view, in on the usual view over the ship | The view changes only at black |
 | The lanes' margin | 300 m past an island's reach, as of a player's course | The same keeping as a course |
+| Which legs are lanes | Every leg the traffic sails: its routes', and its ways' from berth to berth | Ships sail the ways, set off the routes at a roadstead |
+| What else shelters | A player inside home waters sets no hostile ship's clock or sight, and keeps no clash at sea | "None stays at sea for one", whatever it is doing |
+| When the ship is laid at its new place | Once the picture is black; an answer during the fade waits | The view changes only at black |
+| A travel's wait for the room | 13 s from the yes | Room for a tier's room to be joined and the ship put to sea |
+| A travel with no sea room | Not begun; the course is sailed as Set sail sails it | Nothing would answer it |

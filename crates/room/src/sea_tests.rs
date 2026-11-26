@@ -725,9 +725,13 @@ fn nothing_meets_a_ship_in_home_waters_neither_a_wary_ship_that_would_take_it_no
     let player = sea.join();
     sea.course(player, &[at], 10).unwrap();
     sea.berths.get_mut(&player).unwrap().kept = [0.3, 1.0, 1.0];
+    // A player past home waters, 3 km out in a whole Sloop the Minor would not take, keeps it at sea.
+    let keeper = sea.join();
+    sea.course(keeper, &[[off[0] + 3_000.0, off[1]]], 10).unwrap();
     let minor = Commission { faction: naval::ranks::GREY_TITHE, rank: Rank::Minor };
     sea.hostiles.sailing.push(Hostile::standing(1, 7, minor, off, 0.0, false));
     ticks(&mut sea, 2);
+    assert!(sea.hostiles.sailing.iter().any(|hostile| hostile.id == 1), "kept at sea");
     assert!(!sea.fights.fighting(player), "a wary Minor that would take a holed Sloop");
     // Another player met just outside, their fight within sight of the one inside.
     let other = sea.join();
@@ -771,4 +775,19 @@ fn a_ships_water_is_named_once_it_puts_to_sea() {
     assert_eq!(sea.water_name(player), None, "no water before its first course");
     sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10).unwrap();
     assert_eq!(sea.water_name(player), Some("The Sunscorch Coves"), "the fourth island's water");
+}
+
+#[test]
+fn a_clash_by_home_waters_stays_at_sea_for_no_player_inside_them() {
+    use crate::clash::tests::{at_sea, friend_at, still};
+    let (mut sea, inside, outside) = by_home_waters();
+    let player = sea.join();
+    sea.course(player, &[inside], 10).unwrap();
+    let minor = naval::ranks::Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Minor };
+    let [x, y] = [outside[0] + 1_000.0, outside[1]];
+    let tithe = crate::hostiles::Hostile { y, ..at_sea(3, minor, x, true) };
+    let friend = crate::friendlies::Friendly { y, ..friend_at(9, sailing::HullKind::Sloop, x + 400.0) };
+    sea.clashes.push(crate::clash::Clash::begin((tithe, friend), still(), &[], 0.0));
+    sea.tick();
+    assert!(sea.clashes().is_empty(), "none stays at sea for a player inside home waters");
 }

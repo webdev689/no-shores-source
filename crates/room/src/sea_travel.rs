@@ -10,7 +10,7 @@ use crate::PlayerId;
 /// What the sea tells a player of their travel: the code, the tick, and its outcome (0 taken, else
 /// `TravelRefused::number`).
 pub const TRAVELLED: f64 = 24.0;
-/// How far short of its course's end a travel puts the ship, metres: the arrival is seen sailing in.
+/// How far short of its course's end a travel puts the ship, metres: it sails the rest in once the picture opens.
 pub const SHORT_OF_END_M: f64 = 400.0;
 
 /// Why a travel was refused.

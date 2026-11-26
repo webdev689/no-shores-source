@@ -1,7 +1,7 @@
 // The hostile ships the sea's view tells of, and the water the ship is in: a mark for each hostile ship within its own
 // sight of the player's ship, by its faction's emblem, its rank's colour, its name as its plate gives it, its level and
-// its distance; the words on the voyage's line when one is first sighted or the ship sails into other waters; and
-// the water's name, band and holder for the sea's status line.
+// its distance; the words on the voyage's line when one is first sighted or the ship sails into another's hold of the
+// sea; and the water's name, band and holder for the sea's status line.
 import type { SeenHostile } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
@@ -78,12 +78,20 @@ export interface WaterNamed {
   readonly levels: readonly [number, number] | null;
 }
 
-/** The water at a point, named, from the opened waters' rules and their table; null on land. */
+/** The water at a point, named, from the opened waters' rules and their table; null on land. Who holds the sea there
+ *  is a second search of the coasts, made only when read: the place's line reads the name alone every frame. */
 export function waterNamer(rules: WatersRules, table: WatersTable): (point: Point2) => WaterNamed | null {
   return (point) => {
     const here = rules.waterAt(point);
     const water = here && table.waters[here.continent];
-    return water ? { name: water.name, holder: here.holder, levels: water.levels } : null;
+    if (!here || !water) return null;
+    return {
+      name: water.name,
+      levels: water.levels,
+      get holder(): WaterHolder {
+        return here.holder;
+      },
+    };
   };
 }
 
