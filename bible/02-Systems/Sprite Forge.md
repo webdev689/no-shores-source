@@ -180,4 +180,6 @@ one still waiting. Each installs only the exact wheels its requirements name by 
 wheels, SciPy among them, and nothing more), and its checkout keeps no git credential.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
-doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here.
+doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here. The wardrobe's garments
+follow DFO's own tables (each clothing item's slot and garments, the armour pieces, the skirts to the ankles), saved
+from its modules into `specs/game-tables.json` (`gametables.py`), so they draw here.
