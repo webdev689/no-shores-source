@@ -14,6 +14,9 @@ import { ShadowMap } from '../../shadow.ts';
 import { startSkyLaw } from '../../sky/skyLaw.ts';
 import { SkyDriver } from '../../sky/skyDriver.ts';
 import { skyUniformFor } from '../../sky/skyUniform.ts';
+import { CITY_LAMPS, lampsRound } from '../../sky/lamps.ts';
+import { Flames } from '../../cinema/flames.ts';
+import { DepthCopy } from '../depthCopy.ts';
 import { DAY_S } from '../../sky/worldClock.ts';
 import { type PassagePiece, type PassagePlan, type PassageZone, startPassageDoor } from '../../rules/passageRules.ts';
 import type { Node } from '../../ui/node.ts';
@@ -252,8 +255,8 @@ function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | nu
 }
 
 /** A hollow drawn as the game draws one: the islands' ground and modules and the land's own plants, lit and shadowed
- *  by the sky of its own climate over where it lies in the world (`at`) at the world's `hour`, under no sea; `pieces`
- *  answers what draws over it each frame. */
+ *  by the sky of its own climate over where it lies in the world (`at`) at the world's `hour`, under no sea, its
+ *  embers' fires burning over it and their lamps lit (`CITY_LAMPS`); `pieces` answers what draws over it each frame. */
 async function hollowFrames(
   gpu: Gpu,
   shown: IsleShown,
@@ -280,14 +283,27 @@ async function hollowFrames(
   const depth = device.createTexture({
     size: [width, height],
     format: REVERSED_DEPTH.format,
-    usage,
+    usage: usage | TEXTURE_USAGE.textureBinding,
     sampleCount: SAMPLES,
   });
+  // The embers' fires, over the picture where the scene's depth lets them show, as the game's scene draws them.
+  const [flames, copy] = [new Flames(gpu), new DepthCopy(gpu)];
+  flames.seeThroughM = 0.3;
+  for (const fire of CITY_LAMPS.fires) flames.light(fire.at, fire.sizeM, fire.seed, fire.along, fire.casts);
+  const flat = device.createTexture({
+    size: [width, height],
+    format: 'r32float',
+    usage: usage | TEXTURE_USAGE.textureBinding,
+  });
   const ground = isles.groundAt(shot.eye[0], shot.eye[1]) ?? 0;
+  let daylight = 1;
   for (let frame = 0; frame < 6; frame++) {
     // A matrix of each frame's own, as the game's: the plants keep their tiles once a frame, known by it.
     const fromEye = fromEyeMatrix(shot, width / height);
-    const { look } = sky.frame([shot.eye[0] + at[0], shot.eye[1] + at[1], shot.eye[2]], shown.climate, [], ground);
+    const seconds = 1 + frame * 0.1;
+    const lamps = lampsRound(shot.eye, [...CITY_LAMPS.current, ...flames.lamps], null, daylight, seconds);
+    const { look } = sky.frame([shot.eye[0] + at[0], shot.eye[1] + at[1], shot.eye[2]], shown.climate, lamps, ground);
+    daylight = look.daylight;
     isles.show([shown]);
     const encoder = device.createCommandEncoder();
     shadow.update(shot.eye, shot.yaw, Math.max(1, shot.eye[2] - ground), look.key);
@@ -312,15 +328,21 @@ async function hollowFrames(
         depthStoreOp: 'store',
       },
     });
-    isles.drawInto(pass, fromEye, shot, 0, shadow);
+    isles.drawInto(pass, fromEye, shot, seconds, shadow);
     nature.drawInto(pass, fromEye, shot, 0, shadow);
     pieces(isles).drawInto(pass, fromEye, shot);
+    flames.drawInto(pass, fromEye, shot, seconds);
     pass.end();
+    copy.encode(encoder, depth, flat);
+    flames.overWater(encoder, gpu.context.getCurrentTexture().createView(), fromEye, flat);
     device.queue.submit([encoder.finish()]);
     await device.queue.onSubmittedWorkDone();
     // Room for the kits' packs and the plants' forms to come before the next frame.
     await new Promise((resolve) => setTimeout(resolve, 1500));
   }
+  // Its lamps and fires let go, so the next picture of the page lights only its own.
+  isles.destroy();
+  flames.destroy();
 }
 
 /** The passages' door this module opened, for the interface's pictures, which build without waiting; and the moment

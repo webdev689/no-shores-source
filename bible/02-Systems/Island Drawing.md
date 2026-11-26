@@ -68,6 +68,11 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   whole ground and every module placed on it at the contract's size, however turned. Its offset from the eye is
   written to the GPU once the eye moves, not once a pass. `groundAt(x, y)` is the nearest shown island's height
   there, null off every island.
+- **The lights.** A module's `ember` glows by itself, moving with its own lamp ([[Sky]], "Lamps"). Each shown
+  island's embers give light (`isleLights.ts`, [[Lights as Claude Builds Them]]), laid again as an island is shown or
+  gone and as a pack comes: an ember 0.5 m wide or more is coals (a camp fire's), the game's fire burning on them and
+  casting its light; a narrower one is a lantern's glass (a mine adit's, a passage's lamp and a dead lamp lit), a small
+  flame inside, its lamp at the glass. An ember stood cold casts nothing, nor does an open mouth's way on.
 - **The plants.** In the game an island's trees, shrubs and grass are not its modules but the land's own plants
   ([[Nature]]): `game/isleNature.ts` plants each where the island placed it, on its own foot, turned and scaled as
   placed, a tree as one of its climate's cast's trees and a shrub or grass as one of its low plants, each kind as often
