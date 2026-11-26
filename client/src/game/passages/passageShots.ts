@@ -170,27 +170,30 @@ export interface ZoneAsked {
   readonly eye?: { readonly back: number; readonly up: number; readonly pitch: number };
   readonly above?: boolean;
   readonly aim?: { readonly kind: PassagePiece['kind']; readonly distance: number; readonly up: number };
-  /** Above ground, the game's own camera behind a body standing at the arrival, or beside the placement nearest it
-   *  whose module begins `near` (a strand's wreck), facing it. */
-  readonly own?: { readonly near?: string };
+  /** The game's own camera behind a body standing at the arrival (under ground, where no `eye` is asked, always), or
+   *  above ground `back` metres (3 unless said) short of the placement nearest it whose module begins `near` (a
+   *  strand's wreck), facing it. */
+  readonly own?: { readonly near?: string; readonly back?: number };
   readonly hour?: number;
 }
 
-/** The game's own third-person camera (`cameraOrbit`, as the foot's view stands at its start) behind a body in an
- *  open zone at the arrival, or 3 m short of the placement nearest it whose module begins `near`, facing it: its boom
- *  kept off the hollow's ground and its dressing's and pieces' blocks as the foot's is. */
-function ownEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, near?: string): Shot {
-  if (plan.ground.kind !== 'open') throw new Error('the own camera is pictured above ground');
+/** The game's own third-person camera (`cameraOrbit`, as the foot's view stands at its start) behind a body at the
+ *  arrival, or above ground `back` m short of the placement nearest it whose module begins `near`, facing it: its boom
+ *  kept off the hollow's ground and its dressing's and the pieces' blocks (under ground, the way in's leaf) as the
+ *  foot's is. */
+function ownEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, near?: string, back = 3): Shot {
+  const ground = plan.ground.kind === 'open' ? plan.ground : null;
+  if (near && !ground) throw new Error('a placement is pictured above ground');
   let [[x, y], yaw] = [plan.sites.arrive, plan.sites.facing];
-  const placed = near ? plan.ground.placements.filter((one) => MODULE_NAMES[one[0]]?.startsWith(near)) : [];
+  const placed = near ? (ground?.placements ?? []).filter((one) => MODULE_NAMES[one[0]]?.startsWith(near)) : [];
   const nearest = placed.sort((one, two) => Math.hypot(one[1] - x, one[2] - y) - Math.hypot(two[1] - x, two[2] - y))[0];
   if (near && !nearest) throw new Error(`zone ${plan.zone.number} holds no ${near}`);
   if (nearest) {
     const away = Math.hypot(x - nearest[1], y - nearest[2]) || 1;
-    [x, y] = [nearest[1] + ((x - nearest[1]) / away) * 3, nearest[2] + ((y - nearest[2]) / away) * 3];
+    [x, y] = [nearest[1] + ((x - nearest[1]) / away) * back, nearest[2] + ((y - nearest[2]) / away) * back];
     yaw = Math.atan2(nearest[1] - x, -(nearest[2] - y));
   }
-  const blocks = [...plan.ground.blocks, ...plan.solids].map(([minX, minY, maxX, maxY, top]) => ({
+  const blocks = [...(ground?.blocks ?? []), ...plan.solids].map(([minX, minY, maxX, maxY, top]) => ({
     ...{ minX, minY, maxX, maxY, top },
     bottom: -1_000,
   }));
@@ -216,17 +219,21 @@ const START_PITCH = 0.1;
 
 /** The eye a zone's picture is drawn from, as `asked` stands it. */
 function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, asked: ZoneAsked): Shot {
-  if (asked.own) return ownEye(plan, floor, asked.own.near);
+  if (asked.own) return ownEye(plan, floor, asked.own.near, asked.own.back);
   const lens = { fov: 1.1, near: 0.1, far: 2_000 };
   const piece = asked.aim && plan.pieces.find((each) => each.kind === asked.aim?.kind);
   if (asked.aim && !piece) throw new Error(`zone ${plan.zone.number} has no ${asked.aim.kind}`);
   if (piece && asked.aim) {
-    // In front of the piece, along its facing, looking back at it.
-    const [east, south] = [Math.sin(piece.facing), -Math.cos(piece.facing)];
+    // In front of the piece looking back at it: a lamp from the arrival's side, as a body comes to it between two of
+    // its stones; any other along its facing.
+    const [arriveX, arriveY] = plan.sites.arrive;
+    const toArrival = Math.atan2(arriveX - piece.at[0], -(arriveY - piece.at[1]));
+    const facing = piece.kind === 'lamp' ? toArrival : piece.facing;
+    const [east, south] = [Math.sin(facing), -Math.cos(facing)];
     const [x, y] = [piece.at[0] + east * asked.aim.distance, piece.at[1] + south * asked.aim.distance];
     const eye: [number, number, number] = [x, y, (floor(x, y) ?? piece.at[2]) + asked.aim.up];
     const pitch = Math.atan2(eye[2] - piece.at[2] - 1.2, asked.aim.distance);
-    return { eye, yaw: piece.facing + Math.PI, pitch, ...lens };
+    return { eye, yaw: facing + Math.PI, pitch, ...lens };
   }
   const yaw = plan.sites.facing;
   if (asked.above) {
@@ -235,6 +242,8 @@ function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | nu
     const [x, y] = [-Math.sin(yaw) * back, Math.cos(yaw) * back];
     return { eye: [x, y, (floor(0, 0) ?? 0) + reach * 1.3], yaw, pitch: 0.95, ...lens };
   }
+  // Under ground the arrival stands by the way in's wall: the game's own camera, kept off its leaf, stands there.
+  if (!asked.eye && plan.ground.kind !== 'open') return ownEye(plan, floor);
   const { back, up, pitch } = asked.eye ?? { back: 2, up: 1.8, pitch: 0.05 };
   const [x, y] = plan.sites.arrive;
   const [east, south] = [Math.sin(yaw), -Math.cos(yaw)];

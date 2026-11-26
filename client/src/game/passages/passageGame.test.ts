@@ -436,7 +436,7 @@ test('at the lamp, the use carries the prompt’s second line', () => {
   inside.door = { web: () => web, plan: () => null };
   const use = passages.uses()?.(4, 5, () => undefined);
   assert.equal(use?.words, 'Light the lamp');
-  assert.equal(use?.under, 'What you carry is kept once it burns');
+  assert.equal(use?.under, 'Keeps what you carry');
 });
 
 test('a begin at a lamp lays the lamp’s zone the room begins it at: the mouth’s place among the mouths', () => {

@@ -94,7 +94,6 @@ export const DRAWINGS: Readonly<Record<string, Drawing>> = {
     advance: 964,
   },
   '\u0304': { rows: ['##'], base: 6, left: -1, advance: 0 },
-  '\u201D': { rows: ['#.#.', '.#.#'], base: 5, advance: 472 },
   '½': { rows: ['##...#..', '.#..##..', '.#..#...', '.###.#.#', '..#..###', '.#...#.#', '.#...###'], advance: 820 },
   '∕': { rows: ['...#', '...#', '..##', '.##.', '.##.', '#...', '#...'], advance: 535 },
   ð: { rows: ['....#', '.####', '#..##', '....#', '.####', '#...#', '#...#', '.###.'], advance: 605 },
@@ -108,8 +107,12 @@ export const DRAWINGS: Readonly<Record<string, Drawing>> = {
   '*': { rows: ['.#.', '###', '#.#'], base: 4 },
   '^': { rows: ['.#.', '#.#'], base: 5 },
   ';': { rows: ['#.', '..', '#.', '.#'], advance: 276 },
-  '"': { rows: ['#.#.', '.#.#'], base: 5, advance: 472 },
-  "'": { rows: ['#.', '.#'], base: 5, advance: 276 },
+  // Pixelify's quotes and apostrophes are a block over a tail stepped half a cell right: read at the centres, the tail
+  // falls a whole cell right and the mark reads as a backtick, so each is drawn as an upright tick in its first column.
+  '"': { rows: ['#.#', '#.#'], base: 5, advance: 472 },
+  '”': { rows: ['#.#', '#.#'], base: 5, advance: 472 },
+  "'": { rows: ['#', '#'], base: 5, advance: 276 },
+  '’': { rows: ['#', '#'], base: 5, advance: 276 },
 };
 
 /** A drawing as an outline: each row's runs of cells a rectangle, drawn clockwise. */
