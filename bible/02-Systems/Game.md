@@ -659,7 +659,9 @@ Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf
 to dock there; anywhere else, to go ashore. Yes within reach lands at once, or once nothing else holds the player
 (another landmass opening); out of reach the ship makes for the harbour (or the coast nearest the point clicked) at ×60
 and lands once it is within reach, which the console names ("Bound for Overlook's harbour, to dock"). Another course
-given meanwhile (a click, W, a chase) or a fight lets the landing go; a stop keeps it with the voyage, to be resumed.
+given meanwhile (a click, W, a chase), a fight, or the player leaving the sea (to join a company member elsewhere, say)
+lets the landing go ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]); a
+stop keeps it with the voyage, to be resumed.
 
 Landing flies the view up over the island the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s, framed on
 the nodes of its side, the city's social space among them when docking; the ship heaves to, its voyage kept to be
@@ -675,7 +677,7 @@ back down.
 
 A sea island's landing sails for its offing, out on the bearing it is landed on, planned on water as any route and bent
 round every island in sight, then in to its anchorage, which the console names ("Bound for a cove, to go ashore"); the
-same courses and a fight let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]],
+same courses, a fight and leaving the sea let it go. Anchored there, the player walks ashore on its beach, into its room ([[Islands]],
 "On the page"). A player washed up on a found island walks ashore there.
 
 ## Rooms

@@ -1,8 +1,9 @@
 // The sea's clicks and the landings they ask after: a click on the sea sails (in the Oversea view), on a hostile
 // ship's mark chases it, and on a port's icon, its island, a coast with no port or one of the sea's islands asks the
 // player to confirm the landing. Yes lands at once where the ship lies within reach and nothing else holds the player,
-// else sets it making for it (a sea island's anchorage always) and lands once it can; a fight or another course lets a
-// landing made for go, on the coast and on a sea island alike. And the confirmation's card, in the middle of the view.
+// else sets it making for it (a sea island's anchorage always) and lands once it can; a fight, another course or the
+// player leaving the sea lets a landing made for go, on the coast and on a sea island alike. And the confirmation's
+// card, in the middle of the view.
 import type { Point2 } from '../overworld/ground.ts';
 import { coastPoint } from '../overworld/islandView.ts';
 import type { Pick as Picked } from '../overworld/overworldPick.ts';
@@ -144,11 +145,14 @@ export class SeaLandings {
   }
 
   /** Each frame: the question put by once the player is not `atSea` or the ship's view is not theirs to answer it
-   *  from, a landing made for let go in a fight, and one on the coast made once the ship lies within reach of it and
-   *  nothing else holds the player. */
+   *  from, a landing made for let go in a fight or once the player has left the ship, and one on the coast made once
+   *  the ship lies within reach of it and nothing else holds the player. */
   frame(atSea = true): void {
     const sea = this.game.sea();
-    if (!atSea) this.asking = null;
+    if (!atSea) {
+      this.asking = null;
+      this.letGo();
+    }
     if (!sea || !atSea) return;
     if (sea.fight) this.letGo();
     if (sea.fight || sea.view.kind !== 'sail' || sea.busy) this.asking = null;

@@ -171,6 +171,23 @@ test('a question still standing is put by once the player is no longer at sea', 
   assert.equal(landings.asking, null, 'walked ashore on an island, or taken elsewhere');
 });
 
+test('leaving the sea while the ship sails for a landing said yes to forgets the landing, on a coast or an island', () => {
+  const { landings, sea, landed } = landingsOf(false, WITH_COVE);
+  landings.click({ kind: 'land', point: [400, 900, 20] });
+  landings.answer(true);
+  assert.equal(landings.making?.kind, 'dock');
+  landings.frame(false);
+  assert.equal(landings.making, null, 'taken elsewhere, the landing is forgotten');
+  sea.landfall = { kind: 'dock', port: 'Overlook' };
+  landings.frame();
+  assert.deepEqual(landed, [], 'back at sea, the ship never docks of itself');
+  landings.click({ kind: 'sea', point: [0, -50_500, 0] });
+  landings.answer(true);
+  landings.frame(false);
+  [sea.position, sea.course] = [[0, -50_150], []];
+  assert.equal(landings.anchored(), null, 'nor walks ashore on the island');
+});
+
 test('yes to go ashore on a coast clicked far inland makes for the coast nearest it, not the point clicked', () => {
   const { landings, asked } = landingsOf(true);
   landings.click({ kind: 'land', point: [50_000, 30_000, 200] });
