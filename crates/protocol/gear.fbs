@@ -272,7 +272,8 @@ table Gear {
   // The number of the last chest or container the room paid them for, 0 for none: their page tells of it once.
   opened: uint;
   // Their house's horde while it runs in their room: its foes left and all of them (empty while none runs). While it
-  // runs the worn Art is theirs unbounded: its Anima and Tenets kept full, and arts_earned lends it whole.
+  // runs the worn Art is theirs unbounded: its Anima and Tenets kept full, every ability cast; the page lends it whole
+  // to its bar and keys, arts_earned saying only what is earned.
   quest_horde: [ushort];
   // The keeper who offers the quest they walk while it waits to be acquired from them, by the number ask 64 sends
   // (0 for none): until it is, nothing of it counts.

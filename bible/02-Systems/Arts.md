@@ -174,7 +174,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   unworn ([[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]).
 - **A house's horde.** While a house's horde runs for a player, the room holds their worn Art unbounded
   (`Room::unbounded`): its Anima and both Tenets are full every tick, a cast spending its share for that tick alone,
-  and all three abilities cast, earned or not; the gear message lends the worn Art every earned bit meanwhile. It
+  and all three abilities cast, earned or not; the page lends the worn Art whole to its bar and keys while the gear
+  message's `quest_horde` says it runs (`ArtState.lent`), `arts_earned` saying only what is earned. It
   holds for that player alone, and ends with the horde, by its fall, the player's or a leave ([[Quests]], "A house's
   horde").
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.

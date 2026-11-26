@@ -49,6 +49,12 @@ const framed = (casting: CastKeys, arts: ArtState, controls = keys(), mark: [num
     floorAt,
   });
 
+test('a horde’s loan unlocks every ability on the bar and the keys; its road’s own bits otherwise', () => {
+  const earned = { ...state(1), earned: [0b001, 0, 0] };
+  assert.equal(abilitiesAt(earned, 0, 0)?.earned, 0b001);
+  assert.equal(abilitiesAt({ ...earned, lent: true }, 0, 0)?.earned, 0b111);
+});
+
 test('the bar runs each share on by its recharge from the room’s word, and holds it at full', () => {
   const taken = state(1, 0, [0.2, 0.9]);
   const after = abilitiesAt(taken, 100, 100 + 60 * 50);

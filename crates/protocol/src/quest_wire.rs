@@ -36,9 +36,9 @@ pub(crate) fn quests_of<'built>(
     let number = |at: usize| u8::try_from(at).unwrap_or(u8::MAX);
     let arts = &gear::arts::arts().arts;
     let done: Vec<u8> = character.quests_done().into_iter().map(u8::from).collect();
-    // A horde lends its player the worn Art whole while it runs, so the page shows and casts every ability of it.
-    let lent = |art: u8| if room.unbounded(player) && character.arts.worn == art { gear::arts::ALL_EARNED } else { 0 };
-    let earned: Vec<u8> = arts.iter().map(|art| character.earned(art.id) | lent(art.id)).collect();
+    // What is earned alone: a horde's loan the page reads from `quest_horde`, so the road's news never takes it for
+    // Tenets earned.
+    let earned: Vec<u8> = arts.iter().map(|art| character.earned(art.id)).collect();
     let choices: Vec<u8> = arts.iter().map(|art| character.fragment_choices(art.id)).collect();
     let at = room.quest_at(player).map_or_else(Vec::new, |at| at.to_vec());
     let step = room.step_seen(player);

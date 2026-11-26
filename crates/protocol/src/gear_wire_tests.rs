@@ -714,7 +714,7 @@ fn the_gear_message_carries_a_steps_figure_points_ward_clock_and_failures() {
 }
 
 #[test]
-fn the_gear_message_carries_a_hordes_foes_left_and_lends_the_worn_art_whole_while_it_runs() {
+fn the_gear_message_carries_a_hordes_foes_left_and_the_worn_art_as_earned_while_it_runs() {
     use gear::quests::Goal;
     let (quest, task, goal) = gear::quests::quests()
         .quests
@@ -731,7 +731,7 @@ fn the_gear_message_carries_a_hordes_foes_left_and_lends_the_worn_art_whole_whil
     assert_eq!(left, [all, all], "its foes left and all of them");
     let art = usize::from(gear.art()) - 1;
     let earned: Vec<u8> = gear.arts_earned().map(|it| it.iter().collect()).unwrap_or_default();
-    assert_eq!(earned[art], gear::arts::ALL_EARNED, "the worn Art lent whole");
+    assert_eq!(earned[art], gear::arts::EARNED_ART, "the Art as earned: the page lends it whole from quest_horde");
     assert_eq!((gear.anima(), gear.tenets().map(|it| it.iter().collect::<Vec<_>>())), (1.0, Some(vec![1.0, 1.0])));
     let away = step_gear(&horde.node, &[(horde.place.as_str(), [0.0, 0.0], 60.0)], quest, task, [0.0, 150.0]);
     let gear = flatbuffers::root::<messages::FromRoom>(&away).expect("a message").gear().expect("the gear");
