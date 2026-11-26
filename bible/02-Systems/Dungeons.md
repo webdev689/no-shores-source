@@ -311,9 +311,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   second, two cells from every other; a vault's chest in each room its generator names a vault (`stand_vault`), at a
   place against its wall, and no plain chest there. A dungeon's chest pays more than a patrol's, a vault's the most
   ([[Gear]], "A find"). Each player's gear counts the chests they have opened of all it stands, and the screen names
-  them under the place's name ("Chests 2 of 5"); and one of its props of the holding families in four searchable, 16 at most, none in a seal's room nor one
-  that rock and solids leave no body room to stand beside. All are drawn again as the
-  cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
+  them under the place's name ("Chests 2 of 5"). It makes one of its props of the holding families in four
+  searchable, 16 at most, none in a seal's room nor one that rock and solids leave no body room to stand beside. All
+  are drawn again as the cache shuts, when the end foe stands again, never at an Abyss wipe. Each player opens each once, as a patrol's
   ([[Server]], "Chests and containers").
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
@@ -538,8 +538,8 @@ as standing none (`readDungeon`).
   `Snapshot.cache`, fitted to 0.9 by 0.5 m, its lid shut or open.
 - **The chests to find** (`chestsMesh`, `finds.ts`): the cache's chest at each the room stands for the player, centred
   where it stands, built in one mesh, lit by the torches, a vault's with its hinge and latch in the heroic chest's
-  gold (`COLOUR.gold`, lit as a surface) where a plain one's are iron; one the player opens swings its lid over 0.6 s to the
-  model's 77 degrees, short of upright, coming no nearer the wall behind it than 0.36 m, clear of the kits there,
+  gold (`COLOUR.gold`, lit as a surface) where a plain one's are iron; one the player opens swings its lid over 0.6 s
+  to the model's 77 degrees, short of upright, coming no nearer the wall behind it than 0.36 m, clear of the kits there,
   none more than 0.3 m proud (`foundChest`), and stands open 4 seconds before it goes.
 - **The props** (`layout.props`): each forged prop laid by `layModel` as the city lays one, lit by the torches; the
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.

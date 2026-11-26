@@ -398,7 +398,8 @@ fn open(room: &mut Room, player: PlayerId, number: u32) -> u32 {
 #[test]
 fn a_vaults_chest_stands_in_its_room_beside_a_chest_for_each_block_and_pays_the_most() {
     let (mut room, vault, player) = vaulted();
-    let laid = Dungeon::forge(dungeon::of_patrol("saltgrass-downs", 0).0, dungeon::of_patrol("saltgrass-downs", 0).1);
+    let (seed, style) = dungeon::of_patrol("saltgrass-downs", 0);
+    let laid = Dungeon::forge(seed, style);
     let chests = room.chests_for(player);
     assert_eq!(chests.len(), dungeon_chests(&laid) + 1, "a chest for each block, and the vault's");
     let vaults: Vec<u32> =
@@ -425,6 +426,8 @@ fn a_dungeon_counts_the_chests_each_player_has_opened_of_all_it_stands_and_a_pat
     let other = room.join().expect("space");
     room.tick();
     assert_eq!(room.chests_counted(other), (0, total), "each player their own");
+    room.draw_finds();
+    assert_eq!(room.chests_counted(player), (0, total), "drawn again, counted afresh");
     let (patrol, player) = patrol();
     assert_eq!(patrol.chests_counted(player), (0, 0), "a patrol's chests move on, uncounted");
 }

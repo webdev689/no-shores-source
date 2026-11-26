@@ -290,6 +290,8 @@ impl Room {
         self.finds.by_player.get(&player).map_or(&[], Vec::as_slice)
     }
 
+    /// Draws every find anew: in a patrol each chest at a place of its own, staggered so one moves on every
+    /// CHEST_TURN_TICKS over their count; in a dungeon by `draw_dungeon_chests`; and the searchable containers.
     pub(crate) fn draw_finds(&mut self) {
         self.finds.drawn = true;
         self.finds.chests.clear();
@@ -415,7 +417,7 @@ impl Room {
     /// Whether the chest of this number is a vault's, the finer chest in gold.
     #[must_use]
     pub fn vault_chest(&self, number: u32) -> bool {
-        self.finds.chests.iter().any(|chest| chest.number == number && chest.vault)
+        self.finds.chest_find(number) == Find::VaultChest
     }
 
     /// A dungeon's chests a player has opened and how many it stands, vaults' among them; none of none in a patrol,

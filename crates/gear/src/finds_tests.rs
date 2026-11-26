@@ -152,3 +152,15 @@ fn a_vault_stays_under_a_bosss_drop_and_no_chest_holds_essence() {
         assert_eq!(essence(&character), before, "{find:?} holds no Essence");
     }
 }
+
+#[test]
+fn an_abyss_vault_lays_two_vestiges_as_its_reward_doubles_a_sure_one() {
+    for tick in 0..50 {
+        let mut character = Character::starting();
+        let before = character.items.len();
+        let dice = Dice { tick, ..DICE };
+        let found = character.find(Find::VaultChest, (10, Difficulty::Abyss), None, Source::Dungeon, &dice);
+        // A Normal Vestige comes as its item, so the Vestiges and the items kept count together, the item's own on top.
+        assert!(found.vestiges.len() + character.items.len() - before >= 2, "tick {tick}");
+    }
+}
