@@ -1,5 +1,5 @@
 ---
-type: decision
+type: claude-calls
 date: 2026-11-17
 status: in force
 ---
