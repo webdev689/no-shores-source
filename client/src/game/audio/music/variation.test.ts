@@ -136,13 +136,11 @@ test("a family's fight plays ten minutes before any pairing of its takes comes a
   for (const family of Object.values(scores.families)) {
     const song = family?.song;
     if (!song) continue;
-    const takes = song.form?.takes ?? [];
     for (const seed of SEEDS) {
       const played = takesPlayed(song, new Arranger(die(seed)), 600);
       const pairs = played.slice(1).map((take, index) => `${played[index]}-${take}`);
       const again = pairs.findIndex((pair, index) => pairs.indexOf(pair) !== index);
-      const seconds = played.slice(0, again + 1).reduce((sum, take) => sum + (takes[take]?.bars ?? 0), 0);
-      assert.ok(again < 0 || seconds * barSeconds(song) >= 600, `${song.name}, seed ${seed}: again at ${seconds} bars`);
+      assert.equal(again, -1, `${song.name}, seed ${seed}: pairing ${pairs[again]} again`);
     }
   }
 });

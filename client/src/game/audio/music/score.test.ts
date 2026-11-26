@@ -25,7 +25,13 @@ const reckoning = reckoningScore();
 const boarding = boardingScore();
 const families = { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() };
 const familySongs = Object.values(families).map((score) => score.song);
-const stings = Object.values(families).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
+const stings = Object.values(families).flatMap(({ cadence, victory, defeat, secondCadence, secondVictory }) => [
+  cadence,
+  victory,
+  defeat,
+  secondCadence,
+  secondVictory,
+]);
 const vale = valeFights();
 const valeSongs = Object.values(vale).map((score) => score.song);
 const valeStings = Object.values(vale).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);

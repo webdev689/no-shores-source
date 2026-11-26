@@ -434,7 +434,7 @@ const defeat = (): Song =>
 const secondCadence = (): Song =>
   makeSong({ ...SONG, name: 'wet-cadence-2', bars: 3, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('Bm | C# | F#m'), 0.85);
-    lay(w, 'reed', 0, tune('B4:1.5 A4:.5 F#4:2 | G#4:1 F4:1 C#4:2 | F#4:4'), 90, { octave: -1, legato: 0.97 });
+    lay(w, 'reed', 0, tune('B4:1.5 A4:.5 F#4:2 | G#4:1 F4:1 C#4:2 | F#4:4'), 90, { legato: 0.97 });
     lay(w, 'clarinet', 0, tune('D4:4 | C#4:4 | C#4:4'), 72, { legato: 0.98 });
     w.hit('deep', 2, 0, 80);
     w.hit('heart', 1, 0, 64);

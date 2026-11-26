@@ -403,8 +403,9 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
 - The takes are written, not made up as the game plays: the arranger only recombines them. A test plays every fight
   song for ten minutes on six seeded dice and finds no sixteen bars heard twice in its first four minutes, in the
   tension's layers, the fight's or the peak's, and every take heard, no two alike in the tension's layers. A family's
-  fight hears no pairing of takes again for ten minutes (green's from 10, dry's from 12, wet's and cold's not in
-  twenty), a boss's phase from 10 to 16, the sea's fights from 12; past that a long fight hears its pairings again.
+  fight hears no pairing of takes again for ten minutes on those six dice; on fifty, the first pairing heard again
+  comes after 8½ minutes or more in green's, 10½ in dry's, 20 in wet's and cold's, 9½ in a boss's phase and 12 in the
+  sea's fights; past that a long fight hears its pairings again.
 - The new pieces, takes and endings are checked by their notes (their lengths, metres, ranges, the ceiling, the
   leitmotif), not yet heard by the owner.
 - The arranger's memory lasts while the game runs; a new session's first fight may open as the last session's did.
