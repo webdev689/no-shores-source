@@ -247,7 +247,11 @@ test('a press dragged off one tile onto another lights the one under the pointer
     { x: from.x + 8, y: from.y + 8 },
     { x: to.x + 8, y: to.y + 8 },
   ];
-  step(root, [{ kind: 'pointer', ...a }, { kind: 'down', ...a, button: 0 }, { kind: 'pointer', ...b }]);
+  step(root, [
+    { kind: 'pointer', ...a },
+    { kind: 'down', ...a, button: 0 },
+    { kind: 'pointer', ...b },
+  ]);
   step(root, [{ kind: 'up', ...b, button: 0 }]);
   chose.length = 0;
   for (let frame = 0; frame < 4; frame += 1) step(root);
