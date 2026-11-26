@@ -159,8 +159,7 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
 
   const emberCount = fire.glassed ? 0 : Math.min(MOST_EMBERS, many((EMBERS + EMBERS_A_METRE * size) * run));
   const embers = Array.from({ length: emberCount }, (_slot, index) => {
-    // A small fire's embers burn out sooner, so they climb no further for its size than a half-metre fire's.
-    const life = (1.1 + 0.9 * lot(8_000 + index)) * shareOf(size);
+    const life = 1.1 + 0.9 * lot(8_000 + index);
     const lived = held / life + index / emberCount + lot(9_000 + index);
     const age = lived % 1;
     const from = hashUnit(seed * 15_485 + index * 613 + Math.floor(lived));
@@ -172,7 +171,8 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
       position: [
         base[0] + wind[0] * aloft * 0.6,
         base[1] + wind[1] * aloft * 0.6,
-        base[2] + size * 0.3 + aloft * (rise + 0.4),
+        // A small fire's embers climb slower, so they rise no further for its size than a half-metre fire's.
+        base[2] + size * 0.3 + aloft * (rise + 0.4) * shareOf(size),
       ] as Point,
       brightness: (1 - age) ** 1.2 * (0.7 + 0.3 * smoothNoise(seed + index, held * 9)),
       texels: lot(12_000 + index) < 0.3 ? 2 : 1,

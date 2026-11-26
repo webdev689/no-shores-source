@@ -467,8 +467,11 @@ fn under_ground_the_lamp_and_the_deals_pieces_stand_clear_of_the_forges_solids_a
             let back = |metres: f64| {
                 [door.at[0] - metres * libm::sin(door.facing), door.at[1] + metres * libm::cos(door.facing)]
             };
-            // Its piece, back to its rough back, stands in its own cell, in front of its wall's face.
-            if cell_of(&dungeon, back(crate::under::MOUTH_BACK_M)) != cell_of(&dungeon, door.at) {
+            // Its piece, back to its rough back, stands in its own room's cell, in front of its wall's face.
+            let own = cell_of(&dungeon, door.at);
+            if !matches!(dungeon.cells[own], dungeon::Cell::Room(_))
+                || cell_of(&dungeon, back(crate::under::MOUTH_BACK_M + 0.01)) != own
+            {
                 behind_wall.push(format!("{what}: mouth at {:?}", door.at));
             }
             // The cell behind the mouth's wall, half a cell past it.

@@ -26,11 +26,11 @@ of them. How it works is in [[Sky]] ("Lamps"), [[Dungeons]], [[Cities]], [[Layou
 | The flicker's shape | Held through the fire's ten frames a second, a few slow waves a second, never below 80% at full depth; a kind burns deeper or shallower (a brazier's 1.2, a lantern's 0.35) | A flame drawn in held frames and a light flickering smoothly would not move together |
 | The breath's pace | One slow swell in about seven seconds, never below 60% at full depth; a crystal, fungus and the portal at three quarters of it, water at a quarter | Slow enough to read as alive and not as a flame |
 | A small flame | A fire under half a metre (a torch's, a candle's) takes fewer smoke puffs, tongues and embers, by its height, at least one of each | A dungeon burns dozens of them at once |
-| A small flame's embers | Burn out sooner by the same share, so they climb no further for its height than a half-metre fire's | Otherwise a torch's embers float two and a half metres up, over its room |
+| A small flame's embers | Climb slower by the same share, so they rise no further for its height than a half-metre fire's | Otherwise a torch's embers float two and a half metres up, over its room |
 | Where tongues stop reading | 120 times the fire's height, never nearer than 12 m | A torch's tongues are a few pixels wide past some 30 m |
 | A fire's light on land | Eight times its height, at least four metres | Its light reaches past its own glow, which is three times its height |
 | A lantern's glass | Its flame shows through what stands up to 0.24 m nearer, its glass still glowing and flickering with it | Glass is drawn solid in the dungeon's mesh; the passages' lamp's panes stand 0.16 m from its flame, 0.23 m seen across a corner |
-| A flame behind glass (a lantern's, the passages' lamp's, a dead lamp's, on land and under ground) | Throws no smoke or embers: its glass keeps them in | Otherwise its smoke and embers rise out of its hood |
+| A flame behind glass (a lantern's, the passages' lamp's, a dead lamp's, under ground) | Throws no smoke or embers: its glass keeps them in | Otherwise its smoke and embers rise out of its hood |
 | A glow drawn in the mesh (an ember, a lantern's glass, a kit piece's or a landmark's flame, crystal, fungus, the portal) | Moves with the light nearest it, by that light's seed | One source's flame and light then move together without the mesh knowing which light it belongs to |
 | A cluster of candles | Each candle its own small fire, the centre one seeded as the cluster's light | One light, several flames: they should not burn in step |
 | A kit piece's or a landmark's flame | Stays the piece's own glowing part, flickering with its light, not a fire | Where in the piece its flame burns is not known to the game |
