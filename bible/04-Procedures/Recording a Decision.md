@@ -13,3 +13,7 @@ When the owner decides something, it gets a note in `05-Decisions`, made from th
 
 A decision that changes is not edited away: mark it replaced, link its successor, and record the new one. Only the
 owner makes decisions; Claude records them and never writes one the owner did not make.
+
+Where the owner hands a system over ("take some autonomy"), Claude's choices in building it go in one note named for
+it ("Foe Arrivals as Claude Builds Them"), typed `claude-calls`, linking the owner's decision it builds on and listed
+under "Claude's calls" in [[Decisions]]. Each choice is the owner's to change.
