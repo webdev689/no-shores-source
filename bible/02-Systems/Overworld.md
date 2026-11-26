@@ -16,10 +16,10 @@ code:
 
 DFO's raised, tilted travel camera over the real world ([[Pick - Overworld]]), for two things
 ([[Every Island Is Seen Whole and Reached by Nodes]]): sailing the sea, the player's ship seen from above, faster than
-real speed ([[The World Map]]); and the bird's-eye view of the side of an island, its nodes marked by kind, where the
-player picks one to land at. Its core is pure, in the `overworld` layer, with no page or drawing; the [[Game]] wires
-and draws it. The sea's waters with owners, its ships sighted on the horizon and sailing at the helm are the
-[[Game]]'s ("At sea"; [[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]],
+real speed ([[The World Map]]); and the bird's-eye view of the side of an island, where the player picks one of its
+nodes to land at from the island's tiles. Its core is pure, in the `overworld` layer, with no page or drawing; the
+[[Game]] wires and draws it. The sea's waters with owners, its ships sighted on the horizon and sailing at the helm are
+the [[Game]]'s ("At sea"; [[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]],
 [[The Sea as Claude Shapes It]]).
 
 ## The frame
@@ -80,11 +80,11 @@ through a corner.
 
 ## Marks
 
-`overworldMarks.ts` lays the nodes on the picture: social spaces, patrol areas, missions, dungeons, world bosses,
-outpost sites (a small flag on a pole, '⚑' drawn in the game's face, in teal; a site where the player's guild holds an
-outpost in its banner's cloth round its device's colour) and ports. At sea only ports and hostile ships are marked. A
-mark is 24 m tall with the eye 260 m over it and grows with the eye's height from there, so it reads at one size from
-the sea camera and from the bird's-eye view. On the screen it is held between 20 and 96 px. A mark that asks to be held
+`overworldMarks.ts` lays marks on the picture. At sea only ports and hostile ships are marked (`seaMarks.ts`): a
+port's icon over its harbour within 60 km of the ship, and a mark for each hostile ship in sight; no node is marked,
+at sea or over an island, where the island's tiles stand in their place ([[Interface]], "The island's tiles"). A
+mark is 24 m tall with the eye 260 m over it and grows with the eye's height from there, so it reads at one size
+however high the eye stands. On the screen it is held between 20 and 96 px. A mark that asks to be held
 stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a pointer picks
 the nearest.
 

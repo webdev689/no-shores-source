@@ -1,6 +1,6 @@
 // The sea's own layer of the interface, over the display and under the game's windows: the ship's console while the
-// ship is the player's to sail, the confirmation of a landing asked after, and over an island docked at, the panel of
-// what it holds (`islandPanel.ts`).
+// ship is the player's to sail, the confirmation of a landing asked after, and over an island docked at, the island's
+// tiles of what it holds (`islandPanel.ts`).
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import { SKY_NOW } from '../sky/skyDriver.ts';
 import type { Child } from '../ui/node.ts';

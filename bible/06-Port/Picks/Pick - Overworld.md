@@ -21,12 +21,12 @@ DFO's Overworld (its Travel View): a raised, tilted camera over the real world f
 ## What comes over
 
 - The camera, its clearance over ridges, the pick and the marks that grow with the camera's height
-  ([[Every Island Is Seen Whole and Reached by Nodes]]: "Utilize our proprietary overworld from DFO"). Its pace dial
-  came over and is gone: a voyage's pace is set by how it is planned
-  ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
+  ([[Every Island Is Seen Whole and Reached by Nodes]]: "Utilize our proprietary overworld from DFO").
 
 ## What stays behind
 
+- Its pace dial: a voyage's pace is set by how it is planned
+  ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - The Travel Options port and its autopilot and steering, which are other authors' work.
 - The view's rise out of a player's own camera and its fall back: at sea the [[Game]]'s view is this camera from the
   start, and it flies to an island's side, comes in close or goes down to the helm by blends of its own.

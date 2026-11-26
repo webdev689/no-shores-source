@@ -1,7 +1,7 @@
 // The marks the sea's view shows: a port's icon over its harbour once the ship is near, and a mark for each hostile
 // ship within its sight. Laid on the picture, a crowd of ports thinned to the nearest (a hostile ship's mark is never
-// thinned away), and each named where its name fits. Over an island docked at no node is marked on the map: its panel
-// holds them (`islandPanel.ts`), and a click there chooses a landing by its id.
+// thinned away), and each named where its name fits. Over an island docked at no node is marked on the map: the
+// island's tiles hold them (`islandPanel.ts`), and a click on one chooses a landing by its id.
 import type { SeenHostile } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';

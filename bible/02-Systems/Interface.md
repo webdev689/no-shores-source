@@ -366,8 +366,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/journalShots.ts`' `settingsShot` draws Settings at its first tab, its others pressed by a shot's events.
   `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing in the
   Oversea view, and the pad's buttons), each shot's display kept across its frames. `game/seaShots.ts` draws the ship's
-  console in each view and narrow, the landing's confirmation over it, and the island's tiles docked at a port at
-  three sizes. `game/itemShots.ts` opens the menu
+  console in the Oversea view, under way for Overlook's harbour at ×200, and at sea level; the landing's confirmation
+  over it at anchor; and the island's tiles docked at Overlook, none lit, a patrol zone lit and an Elite Dungeon lit,
+  each at the size its shot asks. `game/itemShots.ts` opens the menu
   over sample gear carrying a Legendary sword with its whole grid, an Atheric bow and a Legendary helm, its stats asked
   of the room's rules, so a shot's events open a flyout, hover a card or a node, open a page or press Compare; and
   `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame
@@ -665,8 +666,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   too little room it gives up its head first, then its rows, those just before All controls first, never All
   controls. A last row that is not All controls is drawn as the others are. The moment's names: on foot, On
   foot, Melee, Ranged, Aiming, Dusk Daggers, Ledge, Climbing, Riding, Fallen and Map (the land's held map); at sea,
-  Sailing, Manage, On deck, Sea fight, Guns laid, Chart (the helm's map) and Landing; on a boarded deck, the stance's,
-  its keys less the leave held.
+  Oversea, Sea level, Manage, On deck, Sea fight, Guns laid, Chart (the helm's map) and Landing; on a boarded deck,
+  the stance's, its keys less the leave held.
   On foot: with the weapon put away, draw, run, jump, crouch and the leave held; a melee weapon drawn, the swing, the
   guard or parry, the dodge, the drink and the Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink
   and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
@@ -679,13 +680,13 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   leaves it out. At sea: in the Oversea view the click to sail there, the map and the switch to sea level; at sea level
   the helm's controls and the switch back (the console names its own presses' keys); in
   Manage, the drag, the wheel and Manage's key back; on the deck, the click to look round as on foot, run, jump and
-  Use to take the helm; at the map and choosing a landing, their clicks, Set sail and Escape; with the land's held map
-  raised, the drag, the wheel and its key or Escape to close it (the pad's B); in a fight, the helm, the sails, the
-  burst, the aim and the brace, and while aiming, letting go to fire (the pad's RT), holding fire, the shot and the
-  drag. Eight entries at most, counted as shown on the keys or the pad: past eight, those just before All controls
-  give way, the last first, so the leave's goes, then the map's, then the Arts'
-  ([[The Key Strip Follows the Moment, and K Opens Every Control]]). It stands 28 px in and 22 up, over whatever stood
-  at the view's foot beneath it ("Nothing covers another").
+  Use to take the helm; at the map, the drag, the wheel, its click, Set sail and Escape; choosing a landing, the
+  click, Enter for the lit tile and Escape; with the land's held map raised, the drag, the wheel and its key or Escape
+  to close it (the pad's B); in a fight, the helm, the sails, the burst, the aim and the brace, and while aiming,
+  letting go to fire (the pad's RT), holding fire, the shot and the drag. Eight entries at most, counted as shown on the
+  keys or the pad: past eight, those just before All controls give way, the last first, so the leave's goes, then the
+  map's, then the Arts' ([[The Key Strip Follows the Moment, and K Opens Every Control]]). It stands 28 px in and 22
+  up, over whatever stood at the view's foot beneath it ("Nothing covers another").
 - **The leave held** (`leaveHold.ts`, [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]):
   on foot, wherever the player stands (a social space, a patrol area, a dungeon, an island's beach), holding the leave
   key (M, or the pad's View held) for 1.5 s returns them to their ship, as Destiny's Ghost does. While it is held the
@@ -742,14 +743,15 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   changes the view, Start opens the menu at Character, View the sheet and View held leaves ("The leave held"); dead, A
   respawns.
   While the pad was played last and no menu is up, its presses fight on foot whether or not the pointer is locked
-  (`handsFree`), as a pad cannot lock it; a click on a free pointer only locks it. At the helm the left stick steers,
-  sails on and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed,
-  its up opens the map and its down repairs (walking the ship's own deck too), Y manages the ship, B leaves the helm,
-  and at the map or a landing B steps back. In a sea fight the left stick steers and sets the sails, its click bursts,
-  LT aims, RT fires, LT let go unfired holds fire, the cross's left and right change the shot, B braces as it goes down
-  and while it is held, X boards, and the right stick turns the view; a tap presses and lets go in one frame. A button
-  with a hold bound where the player is (on foot, B's crouch) waits to be told a tap from a hold, and one of two bound
-  together waits 0.12 s for the other, so one press never does both. In a window (the menu, the sheet,
+  (`handsFree`), as a pad cannot lock it; a click on a free pointer only locks it. At the helm A sets sail,
+  lands or docks, X stops or resumes, the cross's left switches between the Oversea and Sealevel views, its up opens
+  the map and its down repairs (walking the ship's own deck too); at sea level the left stick steers, sails on and
+  heaves to, Y manages the ship and B leaves the helm; and at the map or a landing B steps back. In a sea fight the
+  left stick steers and sets the sails, its click bursts, LT aims, RT fires, LT let go unfired holds fire, the cross's
+  left and right change the shot, B braces as it goes down and while it is held, X boards, and the right stick turns
+  the view; a tap presses and lets go in one frame. A button with a hold bound where the player is (on foot, B's
+  crouch) waits to be told a tap from a hold, and one of two bound together waits 0.12 s for the other, so one press
+  never does both. In a window (the menu, the sheet,
   the story's creation) the pad's buttons are the window's: the cross steps the focus, the left stick moves the pad's
   cursor, A presses (at the cursor while it is out), B steps back, Y and X press at the cursor, the right stick scrolls,
   LB and RB turn the menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press
