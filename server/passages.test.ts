@@ -280,7 +280,8 @@ test('a public zone keeps eight accounts though two sign in together, each erran
   // test answers once both are judged.
   const answers: (() => void)[] = [];
   const body = '{"errand":{"rid":"node-x:1","what":{"deposit":5}}}';
-  const claimed = (token: string) => Promise.resolve({ account: token, body, from: null, name: null, tag: null });
+  const claimed = (token: string) =>
+    Promise.resolve({ account: token, body, vault: '{}', from: null, name: null, tag: null });
   const accounts = {
     look: claimed,
     claim: claimed,

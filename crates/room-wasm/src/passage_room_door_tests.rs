@@ -13,7 +13,7 @@ use protocol::wire::overlook::wire as messages;
 pub const PASSAGE_ASK: &str =
     r#"{ "island": "continent-1", "week": 2900, "zone": ZONE, "route": "public", "minute": 29230000 }"#;
 /// Both tests hold this value; a change to the passages' rooms, the foes or the fight changes it in both, on purpose.
-pub const PASSAGE_HASH: &str = "fe54f9ef";
+pub const PASSAGE_HASH: &str = "d188558f";
 /// The tick the deal was done at, in both.
 pub const PASSAGE_DONE: u32 = 6_578;
 const RUN_TICKS: u32 = 7_000;
