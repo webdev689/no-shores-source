@@ -181,18 +181,25 @@ function storeyViews() {
     both(lower, centreOf(lower.layout, stair.bottom), centreOf(lower.layout, head), -0.35, `flight ${flight} from its foot`);
   });
   const cells = layout.columns * layout.rows;
-  const air = layout.cells.findIndex((kind) => kind === VOID);
-  const [over, under] = [planes[Math.floor(air / cells)], planes[Math.floor(air / cells) + 1]];
-  if (air < 0 || !over || !under) return;
-  const middle = centreOf(over.layout, air % cells);
-  const edge = over.layout.cells.findIndex(
-    (kind, cell) => kind !== VOID && clear(over, centreOf(over.layout, cell)) && distance(centreOf(over.layout, cell), middle) < layout.cell * 1.5,
-  );
-  if (edge >= 0) both(over, centreOf(over.layout, edge), middle, 0.7, 'the gallery over its hall');
-  const hall = under.layout.cells[air % cells] ?? CORRIDOR;
+  const first = layout.cells.findIndex((kind) => kind === VOID);
+  const [over, under] = [planes[Math.floor(first / cells)], planes[Math.floor(first / cells) + 1]];
+  if (first < 0 || !over || !under) return;
+  // The open air's middle, and the gallery's cell beside the air nearest it, looking across the air and down into it.
+  const air = over.layout.cells.flatMap((kind, cell) => (kind === VOID ? [cell] : []));
+  const middle = [0, 1].map((axis) => air.reduce((sum, cell) => sum + (centreOf(over.layout, cell)[axis] ?? 0), 0) / air.length);
+  const besideAir = (cell: number) =>
+    [1, -1, layout.columns, -layout.columns].some((step) => over.layout.cells[cell + step] === VOID);
+  const gallery = over.layout.cells
+    .flatMap((kind, cell) => (kind !== VOID && besideAir(cell) && clear(over, centreOf(over.layout, cell)) ? [cell] : []))
+    .sort((one, other) => distance(centreOf(over.layout, one), middle) - distance(centreOf(over.layout, other), middle))[0];
+  if (gallery !== undefined) both(over, centreOf(over.layout, gallery), middle, 0.45, 'the gallery over its hall');
+  // From the hall's floor farthest from the air, looking up at the gallery's floor over its middle.
+  const hall = under.layout.cells[air[0] ?? 0] ?? CORRIDOR;
   const floor = cellsOf(under, hall).filter((cell) => clear(under, centreOf(under.layout, cell)));
-  const far = floor.sort((one, other) => distance(centreOf(under.layout, other), middle) - distance(centreOf(under.layout, one), middle))[0];
-  if (far !== undefined) both(under, centreOf(under.layout, far), middle, -0.6, 'the hall up at its gallery');
+  const away = (cell: number) => distance(centreOf(under.layout, cell), middle);
+  const far = floor.sort((one, other) => away(other) - away(one))[0];
+  const rise = over.floor + 1 - (under.floor + EYE_M);
+  if (far !== undefined) both(under, centreOf(under.layout, far), middle, -Math.atan2(rise, away(far)), 'the hall up at its gallery');
 }
 
 /** The map from the way in: at rest on the top storey, each storey under it, then all of them. */
