@@ -355,8 +355,9 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         let (hostiles, sailing_count) = (self.hostiles(), self.hostiles.sailing.len());
-        let set_out: BTreeMap<PlayerId, [f64; 2]> =
-            self.ships().map(|(player, ship)| (player, [ship.x, ship.y])).collect();
+        // Where each ship lay, then each turn of its course it passes this tick: the way flotsam is gathered along.
+        let mut sailed: BTreeMap<PlayerId, Vec<[f64; 2]>> =
+            self.ships().map(|(player, ship)| (player, vec![[ship.x, ship.y]])).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
@@ -381,9 +382,10 @@ impl Sea {
             };
             // Its way is its pace's by the canvas it keeps, never under half, and its hull's class.
             let way = berth.kept[1].max(0.5) * class.way;
-            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
+            let turns = sailed.entry(*player).or_default();
+            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way, turns);
         }
-        self.tick_harbour(&set_out);
+        self.tick_harbour(&sailed);
         self.give_guilds();
         self.tick_islands();
         self.fights.fit(&self.harbour.characters);
@@ -520,7 +522,8 @@ fn ways_ahead(sailing: &Sailing, reach: f64) -> Vec<f64> {
 }
 
 /// Moves a ship `distance` metres along its course.
-fn sail(sailing: &mut Sailing, distance: f64) {
+/// Sails `sailing` `distance` metres along its course, each turn of it reached added to `turns`.
+fn sail(sailing: &mut Sailing, distance: f64, turns: &mut Vec<[f64; 2]>) {
     let mut left = distance;
     while left > 0.0 {
         let Some(&[to_x, to_y]) = sailing.course.front() else {
@@ -534,6 +537,7 @@ fn sail(sailing: &mut Sailing, distance: f64) {
         }
         if length <= left {
             (sailing.ship.x, sailing.ship.y) = (to_x, to_y);
+            turns.push([to_x, to_y]);
             sailing.course.pop_front();
             left -= length;
         } else {
