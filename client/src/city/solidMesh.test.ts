@@ -4,6 +4,7 @@ import { cross, dot, emptyMesh, type MeshData, minus } from './mesh.ts';
 import type { Solid, SolidShape } from './plan.ts';
 import { rockMesh } from '../rules/rockMesh.ts';
 import { meshSolid, SOLID_TEXELS_PER_METRE, solidTurn, stretchedNormal } from './solidMesh.ts';
+import type { Grain } from './walkGrain.ts';
 
 const SURFACE = { layer: 7, width: 64, height: 128 };
 
@@ -141,10 +142,11 @@ test('a stretched module keeps its normals square to its stretched surface', () 
   assert.deepEqual(stretchedNormal([1, 0, 0], 0.75), [1, 0, 0]);
 });
 
-/** Each top corner's place (from the origin) and its UV, of a ground solid meshed on a 64-texel picture. */
-function groundTops(solid: Solid): { at: [number, number]; uv: [number, number] }[] {
+/** Each top corner's place (from the origin) and its UV, of a ground solid meshed on a 64-texel picture, in a walk's
+ *  `grain` if it is given one. */
+function groundTops(solid: Solid, grain?: Grain): { at: [number, number]; uv: [number, number] }[] {
   const mesh = emptyMesh();
-  meshSolid(solid, [1000, 2000], { layer: 3, width: 64, height: 64, grounded: true }, mesh);
+  meshSolid(solid, [1000, 2000], { layer: 3, width: 64, height: 64, grounded: true, grain }, mesh);
   const tops = [];
   for (let k = 0; k < mesh.positions.length / 3; k++)
     if ((mesh.normals[k * 3 + 2] ?? 0) > 0.95)
@@ -176,10 +178,14 @@ test("a lawn's top takes its pattern from the world, so its pieces join as one s
 
 test("a walk's flagstones are laid along it, edge to edge across it, and its pieces join along its way", () => {
   for (const turn of [0, 0.7, 2.1]) {
-    // Two pieces of one walk 3.2 m wide, end to end along its way.
+    // Two pieces of one walk 3.2 m wide, end to end along its way, the second laid the other way along it.
     const along = [-Math.sin(turn), Math.cos(turn)];
+    const grain: Grain = { solid: 0, turn, middle: [1004, 2003], width: 3.2 };
     const pieces = [0, 3].map((step) =>
-      groundTops(groundPiece('path', [1004 + along[0] * step, 2003 + along[1] * step], [3.2, 3], turn)),
+      groundTops(
+        groundPiece('path', [1004 + along[0] * step, 2003 + along[1] * step], [3.2, 3], turn + step * (Math.PI / 3)),
+        grain,
+      ),
     );
     for (const tops of pieces) {
       // Whole pictures across the walk, from one edge to the other: one, as the picture is 2.7 m.
@@ -193,6 +199,38 @@ test("a walk's flagstones are laid along it, edge to edge across it, and its pie
         if (Math.hypot(one.at[0] - two.at[0], one.at[1] - two.at[1]) < 1e-6)
           assert.ok(Math.hypot(one.uv[0] - two.uv[0], one.uv[1] - two.uv[1]) < 1e-9, `${turn}: they join`);
   }
+});
+
+test("a joint's round in its walk's grain carries the walk's flags on, and a piece with no grain takes the world's", () => {
+  const turn = 0.7;
+  const grain: Grain = { solid: 0, turn, middle: [1004, 2003], width: 3.2 };
+  const strip = groundTops(groundPiece('path', [1004, 2003], [3.2, 3], turn), grain);
+  // The strip's UVs are a plane over the ground: read it at any place from three of its corners.
+  const [first, second, third] = strip;
+  const sides = [0, 1].map((axis) => [second.at[axis] - first.at[axis], third.at[axis] - first.at[axis]]);
+  const area = sides[0][0] * sides[1][1] - sides[1][0] * sides[0][1];
+  const uvAt = ([east, south]: [number, number], part: 0 | 1) => {
+    const [eastOfFirst, southOfFirst] = [east - first.at[0], south - first.at[1]];
+    const towardSecond = (eastOfFirst * sides[1][1] - southOfFirst * sides[0][1]) / area;
+    const towardThird = (sides[0][0] * southOfFirst - sides[1][0] * eastOfFirst) / area;
+    return (
+      first.uv[part] +
+      towardSecond * (second.uv[part] - first.uv[part]) +
+      towardThird * (third.uv[part] - first.uv[part])
+    );
+  };
+  const round: Solid = {
+    ...groundPiece('path', [1004 + 1.5, 2003 - 0.4], [3.2, 3.2], 0),
+    shape: 'column',
+    sides: 40,
+    top: 1,
+  };
+  for (const { at, uv } of groundTops(round, grain)) {
+    assert.ok(Math.abs(uv[0] - uvAt(at, 0)) < 1e-9 && Math.abs(uv[1] - uvAt(at, 1)) < 1e-9, `the round at ${at}`);
+  }
+  const scale = SOLID_TEXELS_PER_METRE / 64;
+  for (const { at, uv } of groundTops(groundPiece('path', [1004, 2003], [0.4, 2], 1.1)))
+    assert.ok(Math.abs(uv[0] - at[0] * scale) < 1e-9 && Math.abs(uv[1] - at[1] * scale) < 1e-9, 'the world grain');
 });
 
 test("the crystal's six-sided columns are cut in flat facets, each lit as one; a stone column stays round", () => {

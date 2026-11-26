@@ -50,6 +50,19 @@ pub struct Social {
     /// Its places by name, as the held map names them (`hub`): a court, a walk, a yard.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub areas: Vec<NamedPlace>,
+    /// The grain of each piece of a walk among `solids` (`hub::ground`); every other piece of ground takes the world's.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub grains: Vec<Grain>,
+}
+
+/// The way a walk's flags run over one of `solids`: that solid's place in the list, the walk's turn (within a half
+/// turn, so a walk laid either way along one line runs one grain), a point on its middle line and its width, metres.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+pub struct Grain {
+    pub solid: usize,
+    pub turn: f64,
+    pub middle: [f64; 2],
+    pub width: f64,
 }
 
 /// A place in a social space by name: what it is called and its middle, metres east and south.
@@ -153,5 +166,6 @@ pub fn plaza(
         moorings: Vec::new(),
         plants: Vec::new(),
         areas: Vec::new(),
+        grains: Vec::new(),
     }
 }

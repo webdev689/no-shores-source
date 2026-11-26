@@ -6,7 +6,7 @@ use crate::stations::StationKind;
 use std::sync::OnceLock;
 
 /// Continent 1's ground with its city settled, and the city's plan, once for every test.
-fn planned() -> &'static (land::ground::Ground, Plan) {
+pub(super) fn planned() -> &'static (land::ground::Ground, Plan) {
     static PLANNED: OnceLock<(land::ground::Ground, Plan)> = OnceLock::new();
     PLANNED.get_or_init(|| {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -31,7 +31,7 @@ impl movement::Terrain for Ground<'_> {
     }
 }
 
-fn ring_bounds(ring: &[[f64; 2]]) -> [f64; 4] {
+pub(super) fn ring_bounds(ring: &[[f64; 2]]) -> [f64; 4] {
     ring.iter().fold([f64::MAX, f64::MAX, f64::MIN, f64::MIN], |[west, north, east, south], &[x, y]| {
         [west.min(x), north.min(y), east.max(x), south.max(y)]
     })
@@ -524,54 +524,5 @@ fn the_platform_round_the_plaza_is_floored_as_the_plaza_is_never_left_to_the_lan
         "{} points of the platform floored by the plate alone, e.g. {:?}",
         bare.len(),
         &bare[..bare.len().min(4)]
-    );
-}
-
-#[test]
-fn where_a_walk_overlaps_another_piece_of_flagstones_one_of_another_grain_lies_under_it() {
-    // A walk's strip wears its flags along it, every other piece of flagstones the world's grain (`solidMesh.ts`):
-    // two of a different grain level with each other would show both in turn.
-    use crate::solids::{Material, Shape};
-    let (_, plan) = planned();
-    let social = &plan.social;
-    let flags: Vec<_> = social.solids.iter().filter(|solid| solid.material == Material::Path).collect();
-    // A strip's grain (a block a picture wide or more, 64 texels at 24 a metre): its way and the line it runs along;
-    // every other piece's the world's.
-    let grain = |solid: &crate::solids::Solid| {
-        let (sine, cosine) = libm::sincos(solid.turn);
-        let strip = matches!(solid.shape, Shape::Block) && solid.size[0] >= 64.0 / 24.0;
-        strip.then(|| {
-            ((solid.turn * 1e3).round() as i64, ((solid.at[0] * cosine + solid.at[1] * sine) * 1e2).round() as i64)
-        })
-    };
-    let covers = |solid: &crate::solids::Solid, [x, y]: [f64; 2]| {
-        let ([dx, dy], (sine, cosine)) = ([x - solid.at[0], y - solid.at[1]], libm::sincos(solid.turn));
-        let (across, along) = (dx * cosine + dy * sine, -dx * sine + dy * cosine);
-        match solid.shape {
-            Shape::Column { .. } => libm::hypot(across, along) < solid.size[0] / 2.0 - 0.01,
-            _ => across.abs() < solid.size[0] / 2.0 - 0.01 && along.abs() < solid.size[1] / 2.0 - 0.01,
-        }
-    };
-    let [west, north, east, south] = ring_bounds(&social.ring);
-    let mut level = Vec::new();
-    let mut y = north;
-    while y < south {
-        let mut x = west;
-        while x < east {
-            let over: Vec<_> = flags.iter().filter(|solid| covers(solid, [x, y])).collect();
-            let top = over.iter().map(|solid| solid.at[2] + solid.size[2]).fold(f64::MIN, f64::max);
-            let topmost: Vec<_> = over.iter().filter(|solid| solid.at[2] + solid.size[2] > top - 0.001).collect();
-            if topmost.iter().any(|solid| grain(solid) != grain(topmost[0])) {
-                level.push([x, y]);
-            }
-            x += 0.5;
-        }
-        y += 0.5;
-    }
-    assert!(
-        level.is_empty(),
-        "{} points where two grains lie level, e.g. {:?}",
-        level.len(),
-        &level[..level.len().min(4)]
     );
 }

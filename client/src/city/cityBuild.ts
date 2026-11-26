@@ -292,6 +292,7 @@ export function* cityBuildSteps(
     ...heaps,
   ];
   const onRamp = rampWall(plan);
+  const grains = new Map((plan.social.grains ?? []).map((grain) => [plan.social.solids[grain.solid], grain]));
   for (const [solid, meshes] of [
     ...solids.map((solid) => [solid, chunkMeshes] as const),
     ...detail.map((solid) => [solid, detailMeshes] as const),
@@ -303,7 +304,8 @@ export function* cityBuildSteps(
     const layer = retaining(solid) || onRamp(solid) ? book.terrace : book.materials[solid.material];
     const picture = book.pictures[layer] ?? { width: 64, height: 64 };
     const grounded = GROUNDS.has(solid.material);
-    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height, grounded }, meshes[chunk]);
+    const surface = { layer, width: picture.width, height: picture.height, grounded, grain: grains.get(solid) };
+    meshSolid(solid, origin, surface, meshes[chunk]);
     const reach = solidReach(solid);
     const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
     const box = solidBoxes[chunk];

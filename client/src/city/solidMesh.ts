@@ -4,6 +4,7 @@
 import { addPolygon, cross, dot, type MeshData, minus, normalised, type Vector } from './mesh.ts';
 import { moduleHeight, moduleMesh } from './modules.ts';
 import type { Solid } from './plan.ts';
+import { type Grain, grainUvs } from './walkGrain.ts';
 import { rockMesh } from '../rules/rockMesh.ts';
 
 /** Texels a metre a solid's picture is laid at: coarser than the forged models' forty, so a landmark's or a wall's
@@ -11,12 +12,13 @@ import { rockMesh } from '../rules/rockMesh.ts';
 export const SOLID_TEXELS_PER_METRE = 24;
 
 /** A solid's picture: its layer and size. A ground's (`grounded`) top takes its pattern from the world, not from the
- *  solid, so its pieces join as one surface where they meet or overlap; a walk's along its way (`walkUvs`). */
+ *  solid, so its pieces join as one surface where they meet or overlap; a walk piece's from its walk's `grain`. */
 export type Surface = {
   readonly layer: number;
   readonly width: number;
   readonly height: number;
   readonly grounded?: boolean;
+  readonly grain?: Grain;
 };
 
 type Uv = readonly [number, number];
@@ -567,12 +569,12 @@ export function meshSolid(solid: Solid, origin: readonly [number, number], surfa
     });
     const facing = solidTurn(solid, face.facing);
     const laid = surface.grounded && facing[2] > 0.95 * Math.hypot(...facing);
-    const walk = laid && solid.shape === 'block' && solid.material === 'path' && solid.size[0] >= pictureM(surface);
-    const uvs = walk
-      ? walkUvs(corners, solid, place, surface)
-      : laid
-        ? planarUvs(corners, [0, 0, 1], surface)
-        : face.uvs;
+    const uvs =
+      laid && surface.grain
+        ? grainUvs(corners, surface.grain, origin, surface.width / SOLID_TEXELS_PER_METRE)
+        : laid
+          ? planarUvs(corners, [0, 0, 1], surface)
+          : face.uvs;
     addPolygon(
       into,
       corners,
@@ -582,18 +584,4 @@ export function meshSolid(solid: Solid, origin: readonly [number, number], surfa
       facing,
     );
   }
-}
-
-/** How many metres a picture spans across. */
-const pictureM = (surface: Surface): number => surface.width / SOLID_TEXELS_PER_METRE;
-
-/** A walk's top laid along its way (its own y) and across it (its own x) in whole pictures from edge to edge, as near
- *  the picture's own size as fit, measured along from the city's origin so the pieces of one walk join. */
-function walkUvs(corners: readonly Vector[], solid: Solid, place: Vector, surface: Surface): Uv[] {
-  const [across, along] = [solidTurn(solid, [1, 0, 0]), solidTurn(solid, [0, 1, 0])];
-  const pictures = Math.max(1, Math.round(solid.size[0] / pictureM(surface)));
-  return corners.map((corner) => [
-    (dot(minus(corner, place), across) / solid.size[0] + 0.5) * pictures,
-    (dot(corner, along) * pictures) / solid.size[0],
-  ]);
 }

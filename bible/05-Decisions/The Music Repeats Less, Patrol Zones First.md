@@ -25,6 +25,7 @@ status: in force
 | The fights' endings | A second cadence and a second victory to each family, heard in turn with the first; one defeat still | No longer the same close to every fight |
 | The social space | A fourth piece, the Ropewalk (C Dorian, 80, oboe) | Three pieces came round within a quarter hour |
 | The sea | A second piece to each sky, heard in turn with the first: the Long Swell (open), Glass (still), the Lantern (night) | One piece a sky played every four to eight minutes |
+| How much is enough | As above, no more takes: a fight family's pairing comes again only after 8½ minutes or more of its music, longer than a fight lasts, and more takes would leave one unheard in ten minutes. The owner left the call to Claude: "Make the best decisions and fix any issues" | The measure |
 | Left as they were | The Breach's music (three calm pieces, twelve takes a fight, a pairing again only after 17 minutes or more), the bosses' (eleven or twelve takes a phase, a pairing again after 10 to 16 minutes, within one fight's length) and the story's | The measure found no real repeat |
 
 Links: [[Music]], [[The Fight Music Varies, Recombined From Takes]],

@@ -297,8 +297,12 @@ ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) we
 dirt. A lawn and earth take their pattern on top from the world, not the piece, so their pieces join as one surface
 where they meet or overlap (`solidMesh.ts`, `grounded`); a walk's flags are laid along it, whole pictures across it
 from edge to edge, and measured along it from the city's origin, so its pieces join along its way while a diagonal
-walk's courses still run with it (`walkUvs`; its rounds, fillets and the narrow pieces keep the world's pattern, and
-lie a few millimetres under its strips, so two grains never lie level). The glow is lit warm and unshaded, brighter
+walk's courses still run with it. The plan names each walk piece's grain (`grains`: the walk's turn within a half turn,
+so a walk laid either way along one line runs one, a point on its middle line and its width; `walkGrain.ts`). The
+round and fillets where walks meet are laid in the grain of the walk on top there, so it runs on unbroken and the
+others meet it at its edge; every other piece of flagstones (a round's border) keeps the world's pattern. Pieces of a
+different grain never lie level: a joint's pieces stand 2 mm over the world's flagstones and over every other joint's
+they reach, and the walks' strips over every joint and over each other walk leaving the same joint. The glow is lit warm and unshaded, brighter
 at night, each flame flickering on its own, and each glowing solid is a lamp ([[Sky]]). Faces are lit as the land is,
 with a little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and
 sheen. In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one,
