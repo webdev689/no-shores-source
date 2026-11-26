@@ -34,6 +34,7 @@ mod gear_door;
 mod guild_door;
 mod isle_door;
 mod outpost_door;
+mod parked_door;
 mod passage_door;
 mod passage_room_door;
 mod plate_door;
@@ -245,9 +246,7 @@ pub fn open_sea(text: &[u8], seed: u32) -> bool {
     };
     let Some((layout, ports, islands)) = opened else { return false };
     let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports);
-    if let Some(names) = islands {
-        sea.lock_unnamed(|id| names.contains_key(id));
-    }
+    sea.lock_unnamed(|id| islands.as_ref().is_none_or(|names| names.contains_key(id)));
     sea.set_hull_decks(deck_door::hull_decks().to_vec());
     sea.set_world_start(EPOCH_MS.get() / 1000.0);
     keep(Opened::Sea(Box::new(sea)));

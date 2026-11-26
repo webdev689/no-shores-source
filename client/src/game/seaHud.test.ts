@@ -64,47 +64,6 @@ test('in a fight a captain with a battery run out at the player’s ship is lit 
   assert.equal(seaShipMarks([running(200, 'port')], null)[0]?.kind, 'hostile', 'with no ship of the player’s, none');
 });
 
-test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing there', () => {
-  const bars: unknown[] = [];
-  const hud = new Proxy(
-    {},
-    {
-      get: (_target, key) =>
-        key === 'tasks'
-          ? { show: () => undefined }
-          : key === 'seaBar'
-            ? (bar: unknown) => bars.push(bar)
-            : () => undefined,
-    },
-  );
-  const sea = (fight: unknown) =>
-    ({
-      view: { helmView: false },
-      aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
-      boarding: { words: null },
-      waterWords: null,
-      fight,
-      sighted: null,
-    }) as unknown as Sea;
-  const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
-  const show = (fight: unknown) =>
-    showSeaHud(hud as unknown as Hud, sea(fight), shown as unknown as SeaFrame, state as unknown as SeaHudState);
-  show(null);
-  const fight = {
-    messages: () => [],
-    readout: () => ({ left: 1, men: 0 }),
-    captains: [],
-    vessel: { ship: [0, 0, 0] },
-    aimingNow: false,
-    view: { lay: null, captain: { name: 'Tithe Brig' } },
-    display: () => null,
-  };
-  show(fight);
-  assert.notEqual(bars[0], null, 'out of a fight the bar stands');
-  assert.equal(bars[1], null, 'in one it is hidden');
-});
-
 test('the place line names the water the ship is in as the helm does, managing it too', () => {
   const waterWords = 'The Lantern Sea, Overlook’s home waters';
   const here = (helmView: boolean, managing: boolean) =>
@@ -204,7 +163,7 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   assert.deepEqual(tasks, [seaFightQuest('Sea fight', 2, 9)]);
 });
 
-test("on land the sea's own pieces go: the ships' plates, the sight, the readout, the sea bar, Manage's panel and the wheel", () => {
+test("on land the sea's own pieces go: the ships' plates, the sight, the readout, Manage's panel and the wheel", () => {
   const said: Record<string, unknown[]> = {};
   const hud = new Proxy(
     {},
@@ -220,40 +179,9 @@ test("on land the sea's own pieces go: the ships' plates, the sight, the readout
   assert.deepEqual(said['shipBars']?.[0], [], "no ship's plate stands over the land");
   assert.deepEqual(said['seaPlayers']?.[0], [], "no other player's ship's mark either");
   assert.equal(said['seaFight']?.[0], null);
-  assert.equal(said['seaBar']?.[0], null);
   assert.equal(said['shipPanel']?.[0], null);
   assert.equal(said['wheelOffer']?.[0], false);
   assert.equal(said['sight']?.[0], false, 'no sight on land');
-});
-
-test('while the ship travels the sea bar goes, so nothing on it stops or turns the travel', () => {
-  const bars: unknown[] = [];
-  const hud = new Proxy(
-    {},
-    {
-      get: (_target, key) =>
-        key === 'tasks'
-          ? { show: () => undefined }
-          : key === 'seaBar'
-            ? (bar: unknown) => bars.push(bar)
-            : () => undefined,
-    },
-  );
-  const sea = (travelling: unknown) =>
-    ({
-      view: { helmView: false },
-      aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
-      boarding: { words: null },
-      fight: null,
-      sighted: null,
-      travelling,
-    }) as unknown as Sea;
-  const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { ...ROADS, landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
-  for (const travelling of [null, { fade: { veil: null } }])
-    showSeaHud(hud as unknown as Hud, sea(travelling), shown as unknown as SeaFrame, state as unknown as SeaHudState);
-  assert.notEqual(bars[0], null, 'at sea the bar stands');
-  assert.equal(bars[1], null, 'travelling it is hidden');
 });
 
 test('a travel the room ends at once, as a fight met does, lifts its veil the next frame and leaves it alone after', () => {

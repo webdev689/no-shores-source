@@ -316,7 +316,7 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
 - **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where it went, 3 pieces for a
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone as
   a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one of
-  their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
+  their pieces, anywhere along the way it sailed that tick, gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
   floating are theirs again (`Sea::own`), and so is what a fight they fought still owes them (its flotsam, ship XP and
   bounties when a captain goes down), once however often they joined it. A ship drops as one foe of its rank at its
   level does (its water's, raised by the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece
@@ -394,7 +394,8 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
 - **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
   their character (`ship`, in ten-thousandths), across sessions, until repaired; it starts every fight with them, and
   its voyage sails at its pace times the canvas it keeps (never under half), in the room and the page alike. Where
-  the sea last kept it is kept too (`ship_at`, to the metre): back at sea it lies there, whatever the page first
+  the sea last kept it is kept too (`ship_at`, to the metre, and `ship_heading`, in thousandths of a radian; none for
+  a ship left mid-fight, which lies at a port): back at sea it lies there, turned as it lay, whatever the page first
   said, and the page is told (`MOORED`). The sea sails no course of the ship's before the accounts have answered for the player's
   character: a course asked meanwhile waits, and sails once they answer with none kept (or the page sends an input
   before its token); given back later, even mid-fight, the ship is moored where it was kept, that fight over for it. A fight's waters run past the world's
@@ -571,7 +572,8 @@ as hostile to the player, so the task does not count it among the ships left to 
 ## At sea
 
 The sea room ([[Server]]) sails hostile ships among the players' on the [[Overworld]]: DFO's director, trimmed to
-the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
+the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]). A ship lying parked while its player is
+ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chases or meets it.
 
 - **The Harbourmaster's hulk** (`sea_lessons.rs`): a captain on the opening's gunnery lesson who sails within 900 m of
   the struck Tithe Sloop moored off Overlook is put into a fight of their own with it, as one met at sea is: it lies
@@ -617,9 +619,9 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the game's worker's from its
   own), so each sea sends its ships in an order of its own, as DFO draws its rolls.
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
-  rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100, so one met head-on stays in
-  sight half a minute and more. Each keeps the largest sight it has been given, from the pace of the player nearest
-  it, and goes once no player past home waters is within 1.1 times it.
+  rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100 and 86.4 km at ×200, so one
+  met head-on stays in sight half a minute and more. Each keeps the largest sight it has been given, from the pace of
+  the player nearest it, and goes once no player past home waters is within 1.1 times it.
 - **Where.** Between 0.9 and 1 of its sight out from the player, within 60 degrees of their heading while under way and
   anywhere at rest; a bold ship, under way above ×10, within its meeting cone off their course shrunk to 0.8 of it
   (`meeting_arc`), no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
@@ -689,7 +691,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, C to
-  brace, and Shift to burst; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
+  brace, and Shift to burst; the sea's own wait for its end, and the ship's console is hidden. Where the editor's panel lists its lines,
   the game's HUD shows the fight's readout, its task in the tracker and DFO's messages as notices ([[Interface]]).
   Every captain in it is drawn with their name over a bar of their hull, their plate as far over their highest sail as the
   Sloop's stands over its own (`plateOverM`). Then the view pans back up. Hostile ships at sea

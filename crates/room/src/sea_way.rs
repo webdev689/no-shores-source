@@ -20,8 +20,8 @@ pub(super) fn ways_ahead(sailing: &Sailing, reach: f64) -> Vec<f64> {
     ways
 }
 
-/// Moves a ship `distance` metres along its course.
-pub(super) fn sail(sailing: &mut Sailing, distance: f64) {
+/// Sails `sailing` `distance` metres along its course, each turn of it reached added to `turns`.
+pub(super) fn sail(sailing: &mut Sailing, distance: f64, turns: &mut Vec<[f64; 2]>) {
     let mut left = distance;
     while left > 0.0 {
         let Some(&[to_x, to_y]) = sailing.course.front() else {
@@ -35,6 +35,7 @@ pub(super) fn sail(sailing: &mut Sailing, distance: f64) {
         }
         if length <= left {
             (sailing.ship.x, sailing.ship.y) = (to_x, to_y);
+            turns.push([to_x, to_y]);
             sailing.course.pop_front();
             left -= length;
         } else {

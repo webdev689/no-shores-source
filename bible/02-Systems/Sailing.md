@@ -58,7 +58,7 @@ How a ship sails: the helm from oars to sails, its way and turn, its sails again
 and where it takes the ground. It is DFO's port of Come Sail Away ([[Come Sail Away's Sailing Comes Over]]),
 rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop in the [[World Editor]]; the captains
 sail the other hulls ([[Hulls]]) by the same laws. A new player is taught the helm in the opening, once the
-Harbourmaster hands over the Sloop: aboard, under way, steered, trimmed on the pace dial, the held map raised and a
+Harbourmaster hands over the Sloop: aboard, under way, steered, trimmed (its pace changed, sailing on at ×60 or a voyage planned at ×200), the held map raised and a
 ball put in a Tithe hulk moored off Overlook, then home to dock, each step ticked by the sea from what the ship did
 ([[Quests]], "The lessons"; [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]).
 
@@ -278,6 +278,10 @@ side's colours, its pose, its heel and its footprint on the water taken from its
   spray, at its drawn size ([[Water]], "A ship on it"); the player's ship also stirs the water's ripples at its bow
   and quarters each frame, as the editor's does.
 - **Its deck** and everyone on it lie with it: its heading, pitch, roll and drawn size (`deckToWorld`).
+- **Lying parked** ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]). A
+  ship whose player is ashore lies at rest where they left it, at the coast nearest it within 5 km: the sea room sends
+  it to players within sight at sea, and the rooms on that island's own ground (a node's, or a sea island's) to the
+  players there, its own player among them ([[Server]], "Parked ships").
 
 ## Its deck
 
@@ -311,8 +315,8 @@ The [[Held Map]] takes the ship anywhere at sea, in its own water or another, th
 [[Hostile Ships and Islands Show on the Sea Map, Travel Goes Anywhere at Sea, and Home Waters End 10 km Out]],
 [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]). A course chosen asks
 whether to travel there; yes runs the travel (`TravelFade`, `SeaTravel`; with no sea room to ask, as when its link
-is lost, yes sails the course as Set sail does), which no key, press or wheel breaks: the sea bar
-goes while it runs, Stop and the pace dial do nothing however they are asked, the menu does not open, and nothing takes
+is lost, yes sails the course as Set sail does), which no key, press or wheel breaks: the ship's console goes
+while it runs, Stop and the view switch do nothing however they are asked, the menu does not open, and nothing takes
 the player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
 
 1. The map lowers and the picture fades to black from the helm's view over 1 s, the ship getting under way on the

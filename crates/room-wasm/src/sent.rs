@@ -1,8 +1,8 @@
 //! What a room on land's snapshots held, kept a short while: each tick's players and foes as the others see them, the
 //! zone's events, and what happened (the fight's events, dresses and plates changed, balls stopped) with the tick it
 //! happened. A player's snapshot then holds only the players and foes that changed since the one their screen last
-//! showed, the events only when they stand otherwise than that one's counted on, and what happened since; so a
-//! snapshot lost on the way costs nothing the next does not carry again.
+//! showed, the events and the ships parked at its island only when they stand otherwise than that one's, and what
+//! happened since; so a snapshot lost on the way costs nothing the next does not carry again.
 
 use combat::fighter::FighterId;
 use combat::shots::Line;
@@ -12,6 +12,7 @@ use protocol::{Snapshot, UNTRIMMED_FLOATS, snapshot_bytes, standing_parts};
 use room::public::PublicSeen;
 use room::{Event, FoeSeen, Plate, PlayerId, Reviving, Room, Seen, SpellSeen};
 use std::collections::{BTreeMap, VecDeque};
+use std::rc::Rc;
 
 /// How many ticks of snapshots are kept to build on: two seconds; a screen further behind is sent everything.
 const KEPT_TICKS: usize = 120;
@@ -26,6 +27,7 @@ struct Held {
     foes: BTreeMap<FighterId, Vec<u64>>,
     own: BTreeMap<PlayerId, Vec<f64>>,
     public: Option<PublicSeen>,
+    parked: Rc<[Parked]>,
 }
 
 /// The tick being sent: everyone and everything as the room stands after it.
@@ -56,7 +58,12 @@ pub struct Sent {
     dresses: VecDeque<(u64, PlayerId, String)>,
     plates: VecDeque<(u64, PlayerId, Plate)>,
     lines: VecDeque<(u64, Line)>,
+    /// The ships parked at the room's island, each with its player's account (`parked_door`).
+    parked: Rc<[Parked]>,
 }
+
+/// A ship parked at the room's island: its player's account, the number it is sent under, and the ship and its looks.
+pub type Parked = (String, PlayerId, room::sea::Ship, room::sea::ShipLook);
 
 /// What a player's figure shows and where they stand, as bytes to tell whether it changed.
 fn look_bytes(seen: &Seen) -> Vec<u8> {
@@ -74,6 +81,11 @@ impl Sent {
     #[must_use]
     pub fn around(middle: [f64; 2]) -> Self {
         Self { middle, ..Self::default() }
+    }
+
+    /// The ships parked at the room's island from now on.
+    pub fn park(&mut self, ships: Vec<Parked>) {
+        self.parked = ships.into();
     }
 
     /// The room's tick taken in, once whatever asks first: what happened since is kept, and how everyone stands.
@@ -112,7 +124,8 @@ impl Sent {
         let looks = now.players.iter().map(|seen| (seen.player, look_bytes(seen))).collect();
         let foes = now.foes.iter().map(|foe| (foe.foe, quantized(&foe_numbers(foe), middle))).collect();
         let public = now.public.clone();
-        self.held.push_back(Held { tick, players, looks, foes, own, public });
+        let parked = Rc::clone(&self.parked);
+        self.held.push_back(Held { tick, players, looks, foes, own, public, parked });
         while self.held.len() > KEPT_TICKS {
             self.held.pop_front();
         }
@@ -131,8 +144,16 @@ impl Sent {
         let middle = self.middle;
         let (Some(now), Some(latest)) = (self.now.as_ref(), self.held.back()) else { return Vec::new() };
         let (shown, joined) = room.heard(viewer).map_or((0, now.tick), |(_, shown, joined)| (shown, joined));
+        // The ships parked here, every one to everyone: a page that lost its own docking (reloaded) draws its own.
+        let sent = |parked: &[Parked]| -> Vec<(PlayerId, room::sea::Ship, room::sea::ShipLook)> {
+            parked.iter().map(|&(_, number, ship, look)| (number, ship, look)).collect()
+        };
+        let ships = sent(&latest.parked);
         // Tick 0 is a screen that showed nothing yet, never a base, even where a snapshot was taken before the first tick.
+        // Parked ships left out stand as the base's, so a snapshot that has none where its base had some is sent whole.
         let base = self.held.iter().find(|held| held.tick == shown && shown > 0 && shown < now.tick);
+        let base = base.filter(|held| !ships.is_empty() || held.parked.is_empty());
+        let ships = if base.is_some_and(|held| sent(&held.parked) == ships) { Vec::new() } else { ships };
         let changed = |was: Option<&Vec<u64>>, is: Option<&Vec<u64>>| base.is_none() || was != is;
         let looked = |id: &PlayerId| base.is_none_or(|held| held.looks.get(id) != latest.looks.get(id));
         let players: Vec<Seen> = now
@@ -206,6 +227,7 @@ impl Sent {
             darkness: room.darkness_for(viewer),
             reviving: &now.reviving,
             arrivals: &now.arrivals,
+            ships: &ships,
             passage: room.passage_seen(viewer),
         })
     }

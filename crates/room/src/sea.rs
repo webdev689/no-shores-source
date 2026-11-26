@@ -28,8 +28,9 @@ use world::traffic::Port;
 
 /// A ship's speed at a pace of 1, metres a second.
 pub const SHIP_SPEED_M_S: f64 = 12.0;
-/// The paces a player may set a ship to, as multiples of its speed: DFO's steps.
-pub const PACES: [u16; 7] = [5, 10, 20, 30, 40, 60, 100];
+/// The paces a player may set a ship to, as multiples of its speed: DFO's steps, and 200, the pace a voyage planned on
+/// the held map sails at.
+pub const PACES: [u16; 8] = [5, 10, 20, 30, 40, 60, 100, 200];
 /// The world's own time, a pace of 1: the page sails its ship at it while the view is close on it, so it is seen
 /// at its true speed.
 pub const WORLD_PACE: u16 = 1;
@@ -133,6 +134,7 @@ pub struct Sea {
     harbour: crate::harbour::Harbour,
     decks: decks::Decks,
     islands: islands::Islands,
+    parked: parked::ParkedShips,
     lessons: lessons::Lessons,
     /// The minute it is, counted from the Unix epoch, as the host sets it.
     pub minute: u64,
@@ -170,6 +172,7 @@ impl Sea {
             },
             decks: decks::Decks::default(),
             islands: islands::Islands::new(seed, layout.continents.iter().map(islands::climate_and_resource).collect()),
+            parked: parked::ParkedShips::new(layout),
             lessons: lessons::Lessons::default(),
             minute: 0,
         }
@@ -185,6 +188,7 @@ impl Sea {
     }
 
     pub fn leave(&mut self, player: PlayerId) {
+        self.park(player);
         self.remember_left(player);
         self.stop_repair(player);
         self.leave_decks(player);
@@ -361,6 +365,9 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         let (hostiles, sailing_count) = (self.hostiles(), self.hostiles.sailing.len());
+        // Where each ship lay, then each turn of its course it passes this tick: the way flotsam is gathered along.
+        let mut sailed: BTreeMap<PlayerId, Vec<[f64; 2]>> =
+            self.ships().map(|(player, ship)| (player, vec![[ship.x, ship.y]])).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
@@ -385,13 +392,16 @@ impl Sea {
             };
             // Its way is its pace's by the canvas it keeps, never under half, and its hull's class.
             let way = berth.kept[1].max(0.5) * class.way;
-            way::sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
+            let turns = sailed.entry(*player).or_default();
+            let reached = turns.len();
+            way::sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way, turns);
             // No ship sails into a locked sea: one about to cross into it stops at its edge.
             if self.chart.locked([sailing.ship.x, sailing.ship.y]) && !self.chart.locked([ship.x, ship.y]) {
                 (sailing.ship, sailing.course) = (Ship { pace: 0, rate: 0, ..ship }, VecDeque::new());
+                turns.truncate(reached);
             }
         }
-        self.tick_harbour();
+        self.tick_harbour(&sailed);
         self.give_guilds();
         self.tick_islands();
         self.fights.fit(&self.harbour.characters);
@@ -532,6 +542,8 @@ mod guilds;
 pub mod islands;
 #[path = "sea_lessons.rs"]
 pub mod lessons;
+#[path = "sea_parked.rs"]
+pub mod parked;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;

@@ -183,9 +183,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   1.5×, ours caps them); ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss
   shown once; a mark for a Major; the display scaled with the screen; one look for both kinds of death in the Game.
 - **The interface**: whether Graphics gains settings of its own (it holds the resolution alone), a grass setting among
-  them; whether the key strip's 11 px reads well on the owner's screen; on docking, the city's mark and the Playlist
-  beside it framed at the picture's foot under the sea's bar, which stays up over the island view (the frame could keep
-  the nodes above it); the pad has no button for the chat, and reporting a line; a smith's purchase moves the number on,
+  them; whether the key strip's 11 px reads well on the owner's screen; the pad has no button for the chat, and reporting a line; a smith's purchase moves the number on,
   so the other wares still shown may redraw; creation's turn keys turning the figure on the spot; emptying a Core
   slot and resting the ability bar with the vitals (#69).
 - **The held map on land** has no fog of war, so a whole land shows the first time; whether to fog it.
@@ -247,3 +245,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   - A click on an island the map marks but the room has not told of still asks to travel, and the room refuses it
     ("The way there crosses land.").
   - A gunnery lesson's hulk off Overlook is a captain in a player's fight, so every map in the Lantern Sea marks it.
+- **Docking with no way in.** Yes to a landing within reach sails the ship in to its berth, but where no way in to
+  the berth can be planned the ship stays at sea, the voyage's line saying why, and no landing is made. What it
+  should do then is the owner's to say
+  ([[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
+- **A parked ship's plate.** It follows its player's level while they are ashore, but not a username or guild tag
+  changed meanwhile, which come from the accounts and not the character: whether those should follow too.

@@ -160,23 +160,24 @@ test('a fight met ends the travel at any time: the room forgets it, and the pict
   }
 });
 
-test('while a travel is under way Stop and the pace dial do nothing, whoever presses them', async () => {
+test('while a travel is under way Stop and the view switch do nothing, whoever presses them', async () => {
   const { Sea } = await import('./sea.ts');
   const done: string[] = [];
   const sea = Object.create(Sea.prototype) as InstanceType<typeof Sea>;
   Object.assign(sea, {
-    passage: { stop: () => done.push('stop'), stepPace: () => done.push('pace') },
+    passage: { stop: () => done.push('stop') },
     chase: { stop: () => undefined },
-    aboard: { walking: false },
+    aboard: { walking: false, active: false },
+    view: { switchLevel: () => done.push('view') },
     travelling: {},
   });
   sea.stop();
-  sea.stepPace(1);
+  sea.switchLevel();
   assert.deepEqual(done, []);
   sea.travelling = null;
   sea.stop();
-  sea.stepPace(1);
-  assert.deepEqual(done, ['stop', 'pace'], 'and they act once it is over');
+  sea.switchLevel();
+  assert.deepEqual(done, ['stop', 'view'], 'and they act once it is over');
 });
 
 test('a travel under way holds the player at sea, and coming back aboard ends any travel left from before', async () => {
@@ -269,4 +270,25 @@ test('the room’s refusals of a travel are said in plain words, a locked sea’
     'That sea is locked.',
     'The sea would not take that course.',
   ]);
+});
+
+test('the helm’s keys sail the ship at sea level alone, never in the Oversea view', async () => {
+  const { Sea } = await import('./sea.ts');
+  const done: string[] = [];
+  const sea = Object.create(Sea.prototype) as InstanceType<typeof Sea>;
+  const view = { kind: 'sail', level: 'oversea' };
+  Object.assign(sea, {
+    passage: { stop: () => done.push('stop'), steer: () => done.push('steer'), straightOn: () => done.push('on') },
+    chase: { stop: () => undefined },
+    aboard: { active: false },
+    combat: null,
+    view,
+  });
+  sea.helm(1, true, false, 0.1);
+  sea.helm(0, false, true, 0.1);
+  assert.deepEqual(done, [], 'nothing from the Oversea view');
+  view.level = 'sealevel';
+  sea.helm(1, true, false, 0.1);
+  sea.helm(0, false, true, 0.1);
+  assert.deepEqual(done, ['steer', 'on', 'stop']);
 });

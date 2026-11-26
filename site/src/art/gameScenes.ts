@@ -1,7 +1,7 @@
 // The pictures The Game's sections and Home's rows show of play itself: Overlook's court with the keepers at their
 // counters in its arcades, a duel by firelight on a hamlet's path, and a dungeon's gate in a hillside.
 import { seeded } from '../../../client/src/seeded.ts';
-import { clouds, lantern, LIGHTS, range, sky, stars } from './light.ts';
+import { clouds, lantern, LIGHTS, range, sky, stars } from '../../../client/src/art/light.ts';
 import {
   box,
   disc,
@@ -16,7 +16,7 @@ import {
   shape,
   type Ink,
   type Sheet,
-} from './sheet.ts';
+} from '../../../client/src/art/sheet.ts';
 
 const WIDE = 320;
 const TALL = 180;

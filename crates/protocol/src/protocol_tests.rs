@@ -316,6 +316,7 @@ pub(crate) fn snapshot<'snapshot>(
         darkness: false,
         reviving: &[],
         arrivals: &[],
+        ships: &[],
         passage: None,
     }
 }

@@ -1,12 +1,14 @@
 import type { Point2 } from './ground.ts';
 
-/** The pace dial's ladder: how many times its base speed a ship sails in the Overworld. The whole ladder is open at
- *  sea; there is no road to earn the top step on. */
-export const PACE_STEPS = [5, 10, 20, 30, 40, 60, 100] as const;
+/** The paces a voyage may sail at in the Overworld, as many times its base speed: the sea room's ladder
+ *  (`crates/room/src/sea.rs` `PACES`), which the voyage's pace eases along while it is watched close. */
+export const PACE_STEPS = [5, 10, 20, 30, 40, 60, 100, 200] as const;
 export type Pace = (typeof PACE_STEPS)[number];
 
-/** The dial a voyage starts on. */
-export const PACE_DEFAULT: Pace = 60;
+/** A voyage set by a click on the sea or the land in the Oversea view sails at this pace; one planned on the held
+ *  map, at the faster. */
+export const CLICK_PACE: Pace = 60;
+export const PLANNED_PACE: Pace = 200;
 
 /** A ship's base speed, metres a second: a tuning value, about 23 knots, which the pace multiplies. */
 export const SHIP_SPEED = 12;
@@ -20,13 +22,6 @@ export function clampPace(pace: number): Pace {
   let held: Pace = PACE_STEPS[0];
   for (const step of PACE_STEPS) if (step <= pace) held = step;
   return held;
-}
-
-/** One step along the ladder: `direction` positive faster, negative slower, stopping at either end. */
-export function stepPace(pace: number, direction: number): Pace {
-  const rung = PACE_STEPS.indexOf(clampPace(pace));
-  const next = Math.max(0, Math.min(PACE_STEPS.length - 1, rung + Math.sign(direction)));
-  return PACE_STEPS[next];
 }
 
 /** How fast a ship sails at a pace, metres a second. */

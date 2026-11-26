@@ -278,8 +278,9 @@ Find a Company ([[Activities]]) matches players for an Elite Dungeon at Normal, 
 each playlist, never the Abyss Dungeon of the week, whose company forms it.
 
 - **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
-  reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
-  week's from its door and `node-<id>--elite--sea` from the Playlist (its run named `--sea`, gone into from the sea),
+  reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal from its door and
+  `node-<id>--sea` from the sea, `node-<id>--elite` for the week's from its door and `node-<id>--elite--sea` from the
+  Playlist (each `--sea` base's run named `--sea`, gone into from the sea),
   `playlist-elite` and `playlist-abyss` for the playlists, one queue each for the whole game, whichever
   port the Playlist was opened beside, and `node-gullwing-vale--breach-normal` and `--breach-hard` for the Drowned
   Vale, the one zone a Breach's gate stands in (`BREACH_ZONES`). A socket's first message is its session's token; one that is no session, or that sends none within five
