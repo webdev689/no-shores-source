@@ -271,6 +271,9 @@ table Gear {
   searchables: [double];
   // The number of the last chest or container the room paid them for, 0 for none: their page tells of it once.
   opened: uint;
+  // Their house's horde while it runs in their room: its foes left and all of them (empty while none runs). While it
+  // runs the worn Art is theirs unbounded: its Anima and Tenets kept full, and arts_earned lends it whole.
+  quest_horde: [ushort];
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

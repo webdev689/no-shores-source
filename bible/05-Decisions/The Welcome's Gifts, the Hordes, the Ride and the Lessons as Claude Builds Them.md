@@ -28,6 +28,24 @@ your baby". Each is the owner's to change.
 
 | Call | Chosen | Why |
 |---|---|---|
+| Where the horde sits | A task of its own right after the task that gives the Art, so the Art is worn: Break the Tithe on the High Downs, Burn the wreckers off the Barrow Field, Let the dark out at the Chalk Adit | The Art is given as its task ends, so only a later task can be fought with it; the next task still teaches each ability one at a time |
+| What it is in the file | A `defend` goal with `horde: true` and no ward, not a new kind | It is a defence's waves with the player in the ward's place; one flag keeps every other goal's code and the client's kinds untouched |
+| Where on its node | The Art task's own place on the Saltgrass Downs (the High Downs, the Barrow Field, the Chalk Adit), its mesh baked as a defence's is | The road's place, where the Art was just won |
+| How many foes | Four waves, 6, 7, 8 and 8, 29 in all; the next wave stands once two or fewer are left | A crowd at once and never a lull, fought in two or three minutes with the Art unbounded; at most 8 a wave, so a wave fits the node's cap beside its garrison |
+| Which foes | The Tithe's own roster the roads already field there: Runners, Collectors, Crossbowmen, and one or two Enforcers (Major) from the second wave, at the node's levels | The road's own enemies; no new type or rank |
+| Where a wave stands | 18 m from the place's middle, nearer where a walk from the middle reaches no further | Close enough to be on the player at once; the Chalk Adit's floor lies under its rim, where a wave 18 m out stood on ground it could not come down from |
+| Its foes keep coming | A horde foe that loses the player is set on them again | A horde always knows its player: none stands idle at its post out of sight |
+| Unbounded | For that player alone, while the horde runs: the worn Art's Anima and both Tenets full every tick, and all three abilities cast, a Tenet the road has not yet given included | The owner's "abilities are infinite and fully powered": a Tenet locked would leave the power fantasy a third of the Art |
+| How the page knows | The room sends the horde's foes left and all (`quest_horde`) and lends the worn Art every earned bit while it runs | The room decides; the bar's lit rings and the cast keys follow its word with no page judgement |
+| A cast while unbounded | Spends its share for one tick, filled the next with the word sent at once | The page lets a press through again once the room's word shows it spent; a share never spent would hold the key for 2 s |
+| How it ends | The last wave fallen meets the goal; the Art is bound again with its shares as they stand, full but for a cast in its last tick | The power ends where the player sees it, and the next task, which asks the Anima cast, finds it ready |
+| A death | The waves leave, a failure counts, its line is said, and it starts again from the first wave whole 10 s on, once the player is back within reach; no longer each time | It is a power fantasy, not a trial: a fall is a short reset, never a growing wait |
+| A leave | The waves leave with the player; back, it starts again from the first | As a defence's step ends with its task's node |
+| What it pays | Its foes drop nothing; their kills pay XP and Aurem as any kill, and the task pays its clear | 29 foes dropping as a defence's first try would be a fortune; this is what a defence's waves pay when tried again |
+| What the page shows | The tracker counts the foes left; a toast "Storm unbounded: every ability ready" (the worn Art's name) while it runs, and "Storm bound again" for 4 s as it ends; the ability bar lit and unlocked from the room's word | The owner's "shows off the arts", told plainly, and its end seen |
+| The lines | Each house's speaker calls the horde in (one line) and says the power is spent as it falls (one or two); the Art task's end scene gave its second line to the horde's end so no speaker says more than two lines across a seam | The dialogue check's two lines a turn across a quest's seams |
+| The lore | A chapter for each horde task in its house's book: The Spilling, The First Night, The Dark Let Out | Every road task has its chapter, in order |
+| Saves | New task ids; no `was` | A save on the Art task walks into the horde next; one past it never meets it, as with any task added behind a player |
 
 ## The wreck's teaching
 

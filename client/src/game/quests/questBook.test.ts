@@ -183,6 +183,19 @@ test('the tracker runs a clock as m:ss for a race, a defence, a tail and an unse
   assert.equal(trackedOf(onTask(LAMP, escort.task, [], { clock: 7 }))?.steps[escort.goal]?.clock, undefined);
 });
 
+test("a house's horde shows its foes left while it runs, its wait after a fall, and its words alone before", () => {
+  for (const quest of [STORM, LAMP, VEIL]) {
+    const task = QUESTS[quest - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.horde)) ?? -1;
+    const goal = goalsOf(quest, task).findIndex((each) => each.horde);
+    assert.ok(task >= 0 && goal >= 0, `a horde on road ${quest}`);
+    const horde = { left: 17, all: 29 };
+    assert.equal(trackedOf(onTask(quest, task, [], { horde }))?.steps[goal]?.count, 17, 'its foes left');
+    const waiting = trackedOf(onTask(quest, task, [], { clock: 6 }))?.steps[goal];
+    assert.deepEqual([waiting?.clock, waiting?.count], [6, undefined], 'the wait to start again');
+    assert.equal(trackedOf(onTask(quest, task))?.steps[goal]?.count, undefined, 'none running here');
+  }
+});
+
 test("a defence shows its ward's health; a puzzle its points lit of all", () => {
   const defend = stepOf(STORM, 'defend');
   const ward = { x: 0, y: 0, health: 0.64 };

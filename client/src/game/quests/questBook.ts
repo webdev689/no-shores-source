@@ -9,7 +9,7 @@ import type { Quest as Tracked, Step } from '../tasks.ts';
 /** A goal as the file writes it: its tracker words, its count (1 when left out), its kind, and what its kind names:
  *  the counter a `talk` goal speaks at (`to`), the scene said as it is met, the node and place a goal stands at, the
  *  places an `escort` or a `tail` walks between (`from`, `to`) and its figure (`who` a speaker, `foe` a roster type)
- *  with the line said as it first walks (`greet`), a `defend` goal's ward, a `puzzle`'s points and their `order`, a
+ *  with the line said as it first walks (`greet`), a `defend` goal's ward or its `horde`, a `puzzle`'s points and their `order`, a
  *  `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`) and an escort's
  *  `shout` as an ambush springs, and the slot a `buy` or a `wear` goal names. The rest the rules read alone. */
 export interface Goal {
@@ -24,6 +24,7 @@ export interface Goal {
   readonly who?: string;
   readonly foe?: string;
   readonly ward?: string;
+  readonly horde?: boolean;
   readonly points?: readonly { readonly name: string }[];
   readonly checkpoints?: readonly string[];
   readonly lost?: string;
@@ -119,7 +120,7 @@ const CLOCKED: ReadonlySet<string> = new Set(['race', 'defend', 'tail', 'unseen'
 
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
  *  count, ticked once met; the clock running beside the first unmet goal that runs it, a ward's health beside its
- *  defence while it stands, and a puzzle's points lit of all of them. None while no quest is walked. The clock runs
+ *  defence while it stands, a horde's foes left beside it while it runs, and a puzzle's points lit of all of them. None while no quest is walked. The clock runs
  *  down `ran` seconds from the room's last word on it, never below none. */
 export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracked | null {
   const now = walked(state);
@@ -127,7 +128,7 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracke
   const clocked = now.task.goals.findIndex(
     (goal, index) => CLOCKED.has(goal.kind) && !met(goal, now.counts[index] ?? 0),
   );
-  const { points = [], clock, ward } = state;
+  const { points = [], clock, ward, horde } = state;
   const steps = now.task.goals.map((goal, index): Step => {
     const left = Math.max(0, most(goal) - (now.counts[index] ?? 0));
     const shown = { text: goal.text, done: left === 0 };
@@ -135,6 +136,7 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracke
     if (index === clocked && clock !== undefined && clock !== null)
       return { ...shown, clock: Math.max(0, clock - ran) };
     if (goal.kind === 'defend' && ward) return { ...shown, share: ward.health };
+    if (goal.kind === 'defend' && goal.horde && horde) return { ...shown, count: horde.left };
     if (goal.kind === 'puzzle' && points.length > 0)
       return { ...shown, count: `${points.filter((point) => point.lit).length}/${points.length}` };
     return most(goal) > 1 ? { ...shown, count: left } : shown;

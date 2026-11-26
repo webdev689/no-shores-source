@@ -70,8 +70,17 @@
       { "who": "stormcaller", "say": "They knocked it down. Plant it again, and this time hold it." }
     ],
     "stormCalled": [
-      { "who": "stormcaller", "say": "Hold it up. Stand still. Let the storm decide." },
-      { "who": "stormcaller", "say": "There. It's in you now, and it'll answer whenever you call." }
+      { "who": "stormcaller", "say": "Hold it up. Stand still. Let the storm decide." }
+    ],
+    "stormHorde": [
+      { "who": "stormcaller", "say": "There. It's in you, and here comes the Tithe. Call it, and keep calling." }
+    ],
+    "stormOverrun": [
+      { "who": "stormcaller", "say": "Up. The storm's still yours. Get back to the Downs and call it." }
+    ],
+    "stormSpent": [
+      { "who": "stormcaller", "say": "That was the storm with nothing holding it. It won't run that free again." },
+      { "who": "stormcaller", "say": "But it's yours now, and it'll answer whenever you call." }
     ],
     "stormTrail": [
       { "who": "pell", "say": "Arlo? It's done. Don't come looking for me." },
@@ -153,8 +162,17 @@
       { "who": "tobin", "say": "They were waiting for us to break. I heard them laughing." },
       { "who": "maren", "say": "He's safe now. Go back up, and put out every false light." }
     ],
+    "lampDark": [
+      { "who": "maren", "say": "Dark again. Their purses hold Tithe silver, paid out at Gullwing in the Vale." }
+    ],
+    "lampHorde": [
+      { "who": "maren", "say": "Here come the rest. The light's in you now. Burn them all." }
+    ],
+    "lampOverrun": [
+      { "who": "maren", "say": "They dragged you down. Get up, and bring the light back to the barrows." }
+    ],
     "lampSunwell": [
-      { "who": "maren", "say": "Dark again. Their purses hold Tithe silver, paid out at Gullwing in the Vale." },
+      { "who": "maren", "say": "Enough. It won't pour out of you like that again." },
       { "who": "maren", "say": "Now hang a sun where you stand. All beneath it heal. That's the Sunwell." }
     ],
     "lampMend": [
@@ -226,9 +244,18 @@
     "veilSeen": [
       { "who": "veiled", "say": "They saw you. Get clear, and try again." }
     ],
+    "veilUnseen": [
+      { "who": "veiled", "say": "You came unseen. Good. The reckoner has gone to Moorhold, on the Moors." }
+    ],
+    "veilHorde": [
+      { "who": "veiled", "say": "They found the adit empty, and they're coming. Give them all of the dark." }
+    ],
+    "veilOverrun": [
+      { "who": "veiled", "say": "They had you. Get back to the adit, and let the dark out again." }
+    ],
     "veilRaven": [
-      { "who": "veiled", "say": "You came unseen. Good. The reckoner has gone to Moorhold, on the Moors." },
-      { "who": "veiled", "say": "Take the dark with you. Its raven wounds them, and heals you." }
+      { "who": "veiled", "say": "Enough. The dark won't come that freely again." },
+      { "who": "veiled", "say": "Take it with you. Its raven wounds them, and heals you." }
     ],
     "veilDaggers": [
       { "who": "veiled", "say": "His guards hold Moorhold, too many to walk past. So do not walk." },

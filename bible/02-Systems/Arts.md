@@ -24,6 +24,7 @@ code:
   - crates/gear/src/arts.rs#ArtRefusal
   - client/src/game/artLevels.ts#levelOf
   - crates/room/src/arts.rs#Casting
+  - crates/room/src/steps_horde.rs#unbounded
   - crates/room/src/arts.rs#spell_power
   - crates/room/src/spells.rs#SpellSeen
   - crates/protocol/src/gear_wire.rs#WEAR_ART
@@ -165,6 +166,11 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   Arc Lash) earned and charged full, so its bar shows and each is cast as anywhere ([[Prologue]], "The teaching"). The
   prologue's end (`Ask::FinishPrologue`) takes it back from a character that had not finished it, unearned and
   unworn ([[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]).
+- **A house's horde.** While a house's horde runs for a player, the room holds their worn Art unbounded
+  (`Room::unbounded`): its Anima and both Tenets are full every tick, a cast spending its share for that tick alone,
+  and all three abilities cast, earned or not; the gear message lends the worn Art every earned bit meanwhile. It
+  holds for that player alone, and ends with the horde, by its fall, the player's or a leave ([[Quests]], "A house's
+  horde").
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), one set
   already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.

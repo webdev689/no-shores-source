@@ -53,6 +53,16 @@
           }
         },
         {
+          "id": "spilling",
+          "title": "The Spilling",
+          "text": "Every roll that tells of a new caller tells of the first day after, and every one of them tells it the same way, which is rare enough in the rolls that the keeper underlines it.\n\nFor one day the Storm does not wait to be called. It has only just come down out of the sky, and it has not yet learned the size of the person it came into. It pours. A caller on her first day can throw lightning the way a child throws stones, one after another, as fast as her arm will go, and the sky behind her never runs dry. The old word for it is *the Spilling*. The Kestrels say it is the Storm looking round its new house, opening every door at once.\n\nBy nightfall it has found the walls. It settles, it gathers, and from then on it comes when it is called and not before, and it must gather again between one calling and the next. No caller has ever had the Spilling twice. Some of the rolls say that is a mercy, and some say nothing at all.\n\nThe keeper's note in the margin says only this: *a caller should spend her first day on something worth spending it on.*\n\n~\n\nThe Tithe came back up the High Downs for their glass and found you holding the Storm instead. That was your Spilling. It will not come again. The rest is gathering.",
+          "found": {
+            "kind": "quest",
+            "quest": "stormcallers",
+            "task": "break-tithe-downs"
+          }
+        },
+        {
           "id": "quick-feet",
           "title": "Quick Feet",
           "text": "The rolls say that on the night the Storm came to the first caller, ships were seen off Shingle Landing with no lights showing. Whichever of her it was, she knew what dark ships meant. She ran.\n\nFrom the Old Beacon to the Landing is most of a day's walk for a shepherd. The rolls say she got there ahead of the storm that followed her down off the Downs, and that storm was walking fast. She went through every village on the way, and at every door she knocked, whoever came out found their own feet quick under them, and ran with her. By the time the dark ships put their boats in, there was no one on the shingle to take and nothing in the houses worth carrying. The boats rowed back with their holds empty, and somebody up on the cliff laughed loud enough to be heard on the water.\n\nWe call it **Quicken**. Our grandmothers called it *the Running*. It is the Storm let into the legs instead of the hand, and it does not care whose legs they are. Call it with friends beside you and they feel it too. A caller who keeps it for themselves alone has misunderstood it.\n\nThe old callers used Grey Point Light, out on the Driftwood Moors, to carry word along the coast. A caller on the point would set the lamp-glass burning with lightning, a white so hard it hurt to look at, and the callers on the Downs would see it and run. That is how the Stormcallers held this coast before there was a town here worth holding.\n\nSo when Grey Point burns with lightning, a Stormcaller lit it. Nobody else can. When it burns and none of us lit it, one of us has been bought.\n\n~\n\nPell's voice came on the wind tonight, the old way we speak across the Downs. He said *it's done*, and that I shouldn't come looking for him. Pell never could tell me no to my face. He knows I am already looking.\n\nLet the storm into your legs. His tracks are going cold, and you will need to be quick.",
@@ -174,6 +184,16 @@
           }
         },
         {
+          "id": "first-night",
+          "title": "The First Night",
+          "text": "Aud's lamp, the tellings say, burned too bright the first night it was hers. She had held it up over the drowned on the shingle and the light had come out of it, and then it would not go back in. It poured out of her hands all that night, sun after sun, over the surf and over the shingle and over the wreckers who came down the beach with their hooks to take what the sea had left.\n\nThe wreckers did not take anything that night. The Hours do not say what became of them. They say only that in the morning the shingle was clean, and Aud was asleep against the lamp-post with the lamp gone cold in her lap, and that when she woke she could not light it again until noon.\n\nEvery keeper has her first night. The light comes into her and does not yet know how much of her there is, and it spends itself without counting. After that night it counts. It burns on her keeping it lit, and she must keep it, and it is never so free again.\n\n~\n\nThe wreckers came back to the Barrow Field with their hooks, and you were standing in the light on its first night. The barrows are quiet now. Keep the light lit.",
+          "found": {
+            "kind": "quest",
+            "quest": "lamplighters",
+            "task": "burn-barrow-wreckers"
+          }
+        },
+        {
           "id": "burned-hands",
           "title": "Burned Hands",
           "text": "*Seventh hour of the night. Wind north, cold. Clear.*\n\nWhen Aud carried her lamp up from the shingle, the Hours say, the glass of it was hot enough to burn, though there was nothing in it burning. She would not put it down. By the time she reached the first cottage her hands were blistered to the wrist.\n\nShe set the lamp on a table and, without thinking, the way you would hold your hands to a fire, held them in its light. The blisters closed. The skin came back. The Hours say it came back from the inside out, as if the light remembered the shape her hands ought to be and simply put them back that way.\n\nEvery keeper is taught to say it the same way. *The light remembers you whole.* Some keepers say it remembers better than we do. They do not say it loudly.\n\nWe call it **Mend**. It is the Divine turned inward, on the keeper and not on the ones she keeps, and it comes quick. There are keepers who think it selfish and never use it. The Hours think otherwise. A keeper who will not mend herself will be dead by her third winter, and then who keeps the lamps?\n\nAud had a word for when the light spills over, when a keeper mends herself and those standing near her mend a little too. She called it **Mercy**. It is one of the six graces, and you will find it, or it will find you.\n\n~\n\nThe Tithe beat the people of Gullwing for seeing the wreckers paid there. They beat the miller's son with a cart-whip in front of his mother, and told the village that the next time it saw anything, it would see nothing ever again. The Vale folk are frightened, and they are angry, and they have sent word that the Tithe are coming back.\n\nThey will be back. Hold Gullwing, and keep the wounded alive while you do it, and the light will keep you alive while you keep them.",
@@ -292,6 +312,16 @@
             "kind": "quest",
             "quest": "veiled",
             "task": "adit-unseen"
+          }
+        },
+        {
+          "id": "dark-let-out",
+          "title": "The Dark Let Out",
+          "text": "The margins say the dark is hungry when it is first let out, and that a Veiled on her first night should not be anywhere she minds being remembered.\n\nIt is not the raven's fault, nor the daggers'. The dark has been folded up inside the book a long time, the margins say, and it comes out of you all at once, birds and blades and the gap between the stars, as fast as you can think of them, until whatever it was let out to meet is gone. No one who has seen it has written down how it looks from outside. The margins say only that those who stood against it do not remember the night, which is the dark's courtesy, and that the Veiled who let it out does not forget it, which is its price.\n\nAfter the first night it is quiet. It comes when it is called, and goes back into the fold between callings, and it takes its time. No Veiled has ever let the whole of it out twice.\n\n~\n\nThe reckoner's men found the Chalk Adit empty and came looking for whoever had emptied it. They found you, and the dark found them. They will not remember. You will.",
+          "found": {
+            "kind": "quest",
+            "quest": "veiled",
+            "task": "loose-dark-adit"
           }
         },
         {

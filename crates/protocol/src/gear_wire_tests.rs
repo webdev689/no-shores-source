@@ -636,6 +636,15 @@ fn step_gear(node: &str, places: &[(&str, [f64; 2], f64)], quest: usize, task: u
     let mut character = gear::Character::starting();
     character.allegiance.pledge = gear::quests::quests().quests[quest].faction;
     character.quests.set_task(quest, task);
+    // Past its road's Art, it wears the Art, its Tenets not yet earned, as the road leaves it.
+    let road = &gear::quests::quests().quests[quest];
+    if road.tasks.iter().position(|it| it.reward.art).is_some_and(|art| art < task) {
+        let art = gear::factions::factions().faction(road.faction).expect("its house").art;
+        let earned = character.arts.earned.get_or_insert_with(Vec::new);
+        earned.resize(3, 0);
+        earned[usize::from(art) - 1] = gear::arts::EARNED_ART;
+        character.arts.worn = art;
+    }
     let player = room.join().expect("a room with space");
     assert!(room.restore_character(player, &character.to_json()));
     assert!(room.put_player(player, at[0], at[1]));
@@ -668,6 +677,34 @@ fn the_gear_message_carries_a_steps_figure_points_ward_clock_and_failures() {
     let defence = step_gear(&held.node, &[(held.place.as_str(), [0.0, 0.0], 60.0)], quest, task, [0.0, 10.0]);
     let gear = flatbuffers::root::<messages::FromRoom>(&defence).expect("a message").gear().expect("the gear");
     assert_eq!(gear.quest_ward().map(|it| it.iter().collect::<Vec<_>>()), Some(vec![0.0, 0.0, 1.0]), "its ward whole");
+    assert_eq!(gear.quest_horde().map(|it| it.len()), Some(0), "no horde runs");
+}
+
+#[test]
+fn the_gear_message_carries_a_hordes_foes_left_and_lends_the_worn_art_whole_while_it_runs() {
+    use gear::quests::Goal;
+    let (quest, task, goal) = gear::quests::quests()
+        .quests
+        .iter()
+        .enumerate()
+        .flat_map(|(quest, def)| def.tasks.iter().enumerate().map(move |(task, at)| (quest, task, &at.goals[0])))
+        .find(|(_, _, goal)| matches!(&goal.goal, Goal::Defend(defend) if defend.horde))
+        .expect("a road takes one");
+    let Goal::Defend(horde) = &goal.goal else { unreachable!("a horde") };
+    let all = u16::try_from(horde.waves.iter().map(Vec::len).sum::<usize>()).unwrap_or(0);
+    let running = step_gear(&horde.node, &[(horde.place.as_str(), [0.0, 0.0], 60.0)], quest, task, [0.0, 10.0]);
+    let gear = flatbuffers::root::<messages::FromRoom>(&running).expect("a message").gear().expect("the gear");
+    let left: Vec<u16> = gear.quest_horde().map(|it| it.iter().collect()).unwrap_or_default();
+    assert_eq!(left, [all, all], "its foes left and all of them");
+    let art = usize::from(gear.art()) - 1;
+    let earned: Vec<u8> = gear.arts_earned().map(|it| it.iter().collect()).unwrap_or_default();
+    assert_eq!(earned[art], gear::arts::ALL_EARNED, "the worn Art lent whole");
+    assert_eq!((gear.anima(), gear.tenets().map(|it| it.iter().collect::<Vec<_>>())), (1.0, Some(vec![1.0, 1.0])));
+    let away = step_gear(&horde.node, &[(horde.place.as_str(), [0.0, 0.0], 60.0)], quest, task, [0.0, 150.0]);
+    let gear = flatbuffers::root::<messages::FromRoom>(&away).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.quest_horde().map(|it| it.len()), Some(0), "none runs before the player comes");
+    let earned: Vec<u8> = gear.arts_earned().map(|it| it.iter().collect()).unwrap_or_default();
+    assert_eq!(earned[art], gear::arts::EARNED_ART, "the Art alone, as earned");
 }
 
 #[test]

@@ -1,8 +1,9 @@
 //! The quests' file read and checked: every scene, node, place and spell it names is one; a goal's field missing, left
 //! over or of the wrong kind named as it is read; a value none of its own; quests chained one after another, a house
-//! with several; old task ids read as the task they became; and its spells and rewards in their order.
+//! with several; old task ids read as the task they became; its spells and rewards in their order; and each house's
+//! horde after its Art.
 
-use crate::quests::{GoalDef, QuestsDef, quests};
+use crate::quests::{Defend, Goal, GoalDef, QuestsDef, quests};
 
 /// Reads a content file as JSON.
 fn content(text: &str) -> serde_json::Value {
@@ -11,7 +12,6 @@ fn content(text: &str) -> serde_json::Value {
 
 /// Every place of a node a goal names.
 fn places_of(goal: &GoalDef) -> Vec<&str> {
-    use crate::quests::Goal;
     match &goal.goal {
         Goal::Escort(escort) => vec![escort.from.as_str(), escort.to.as_str()],
         Goal::Tail(tail) => vec![tail.from.as_str(), tail.to.as_str()],
@@ -132,6 +132,14 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
             "rank",
         ),
         (
+            r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"]]], "ward": "w", "horde": true, "text": "t" }"#,
+            "ward",
+        ),
+        (
+            r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"], ["Runner", "Minor"]]], "horde": true, "text": "t" }"#,
+            "waves",
+        ),
+        (
             r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "order": [1], "text": "t" }"#,
             "order",
         ),
@@ -157,6 +165,30 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
     }
     let fine = r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 45, "at": 49 }], "text": "t" }"#;
     assert_eq!(goal(fine).expect(fine).problem(), None, "a point within its place's square, in any order");
+    let horde = r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"]]], "horde": true, "text": "t" }"#;
+    assert_eq!(goal(horde).expect(horde).problem(), None, "a horde has no ward");
+}
+
+#[test]
+fn each_houses_art_is_given_by_a_task_followed_at_once_by_a_horde_at_its_roads_node() {
+    for quest in quests().quests.iter().filter(|quest| quest.faction > 0) {
+        let art = quest.tasks.iter().position(|task| task.reward.art).expect("its Art's task");
+        let next = quest.tasks.get(art + 1).expect("a task after it");
+        let hordes: Vec<&Defend> = quest
+            .tasks
+            .iter()
+            .flat_map(|task| &task.goals)
+            .filter_map(|goal| match &goal.goal {
+                Goal::Defend(defend) if defend.horde => Some(defend),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(hordes.len(), 1, "{}: one horde", quest.id);
+        let first = next.goals.first().map(|goal| &goal.goal);
+        assert!(matches!(first, Some(Goal::Defend(defend)) if defend.horde), "{}: the horde after its Art", quest.id);
+        let foes: usize = hordes[0].waves.iter().map(Vec::len).sum();
+        assert!((20..=40).contains(&foes), "{}: a horde of {foes}", quest.id);
+    }
 }
 
 /// A small file of quests: the opening, and each house one quest giving its Art, its first Tenet and its second.
@@ -265,6 +297,7 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("stormcallers", "bring-storm-home"),
     ("stormcallers", "run-down-moor-camp"),
     ("stormcallers", "race-river-road"),
+    ("stormcallers", "break-tithe-downs"),
     ("lamplighters", "walk-strand"),
     ("lamplighters", "put-out-false"),
     ("lamplighters", "bring-tobin-moorend"),
@@ -282,6 +315,7 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("lamplighters", "hold-gullwing"),
     ("lamplighters", "find-lens-buyer"),
     ("lamplighters", "set-grey-point"),
+    ("lamplighters", "burn-barrow-wreckers"),
     ("veiled", "meet-wren-follow"),
     ("veiled", "lift-collectors-tallies"),
     ("veiled", "wait-under-valeguard"),
@@ -298,6 +332,7 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("veiled", "follow-reckoner"),
     ("veiled", "empty-moorhold"),
     ("veiled", "follow-wren-coven"),
+    ("veiled", "loose-dark-adit"),
 ];
 
 #[test]

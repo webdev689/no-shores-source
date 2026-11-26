@@ -164,7 +164,9 @@ pub struct Tail {
     pub noticed: Option<String>,
 }
 
-/// A ward held at a place through its waves: named, or a speaker's figure, and the line said as it falls.
+/// A ward held at a place through its waves: named, or a speaker's figure, and the line said as it falls. A horde
+/// has no ward: its waves come at the player, who fights them with their Art unbounded, and the line is said as the
+/// player falls.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Defend {
@@ -174,7 +176,12 @@ pub struct Defend {
     pub who: Option<String>,
     pub waves: Vec<Foes>,
     pub lost: Option<String>,
+    #[serde(default)]
+    pub horde: bool,
 }
+
+/// The most foes a horde's wave holds, so one always fits the room's cap on foes beside its garrison.
+pub const HORDE_WAVE_MOST: usize = 8;
 
 /// One of a puzzle's points: its name, and where it stands from the place's middle: a bearing in degrees from north
 /// and metres out.

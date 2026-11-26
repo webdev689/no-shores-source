@@ -16,6 +16,8 @@ code:
   - crates/gear/src/quest_defs.rs#speaker_place
   - crates/room/src/steps.rs#Step
   - crates/room/src/steps.rs#way_between
+  - crates/room/src/steps_horde.rs#unbounded
+  - crates/room/src/steps_horde.rs#HORDE_NEXT_AT
   - crates/room/src/steps_kinds.rs#step_seen
   - crates/room/src/steps_kinds.rs#use_point
   - client/src/network/questMessages.ts#questOf
@@ -69,7 +71,7 @@ out) and its kind:
 | `enter` | Arriving in a node | `node` |
 | `escort` | A figure met at a place walking to another while the player keeps up; it waits while they lag and while an ambush stands | `node`, `from`, `to` (places), `who` (a speaker of the cast), `near` (metres), `ambush` (`[type, rank]`s stood halfway), `shout` (its bark as they come), `greet` (said as its figure first walks) |
 | `tail` | Following a figure from place to place at a distance: never nearer than `far`, never past `near`; nearer, it notices and walks back to start again | `node`, `from`, `to`, `who` or `foe` (a roster type's look), `far`, `near`, `noticed` (its line), `greet` (said as its figure first walks) |
-| `defend` | A ward standing at a place through its waves of foes, one after another; if it falls, the waves leave and it is tried again after a wait | `node`, `place`, `ward` (its name) or `who`, `waves` (lists of `[type, rank]`), `lost` (its line) |
+| `defend` | A ward standing at a place through its waves of foes, one after another; if it falls, the waves leave and it is tried again after a wait. With `horde`, no ward: the waves come at the player (below, "A house's horde") | `node`, `place`, `ward` (its name) or `who`, or `horde: true` and neither, `waves` (lists of `[type, rank]`; a horde's 8 foes at most a wave), `lost` (its line, a horde's said as the player falls) |
 | `puzzle` | Points round a place used in the right order, or in any order when it gives none (a point lit already does nothing); a wrong one puts them all out and stops uses for 2 s, then 4, then 8 (ask 66 answers 103 meanwhile) | `node`, `place`, `points` (each a `name`, a `bearing` in degrees from north and `at` metres out), `order` (any order when left out), `wrong` (its line) |
 | `unseen` | Standing within `within` m of a place's middle with no foe turned alert on the player; seen, it waits until no foe has been on them for 10 s. Its watch stands idle on a ring `within` m round the middle as the step begins, each facing outward; only a foe within 60 m of the middle counts as seeing | `node`, `place`, `seen` (its line), `spawn` (`[type, rank]`s), `within` (metres, 8 when left out, at most 35) |
 | `buy` | A smith's ware bought, of the day's or the starter stock: the character keeps each slot a smith has sold it a piece for (`bought`), so one bought before its task counts as the task begins; a piece looted or given never does; the slots are let go once a task with a buy goal is met, so a later one counts only its own purchases | `slot`: `melee`, `ranged`, `head`, `torso`, `arms` or `legs` |
@@ -113,6 +115,39 @@ task begins with Arlo's word to hear all three. A character whose log stood at t
 its task's id, and one kept with no place in the opening reads at "Hear the three houses" (its `kept`): neither is
 walked round again, nor owed the gift. The Test Ground's player reads as one kept before, on the houses, which its
 stall serves; the stranger is heard in a social space alone, never at the stall.
+
+## A house's horde
+
+Each house's road gives its Art and at once sends the player to fight a horde with it
+([[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]; Claude's
+calls in [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]): the Stormcallers'
+**Break the Tithe on the High Downs**, after the glass is held; the Lamplighters' **Burn the wreckers off the Barrow
+Field**, after the false lights are doused; the Veiled's **Let the dark out at the Chalk Adit**, after the adit is
+reached unseen. Each is a `defend` goal with `horde`, at the Art task's own place on the Saltgrass Downs, of four
+waves of the Tithe's roster, 29 foes in all: 6, then 7, 8 and 8, Runners, Collectors, Crossbowmen and Enforcers
+(Major), at the node's levels. The house's speaker calls the horde in as it begins (its `start`) and says the power is
+spent as it falls (its `end`); the next task teaches the Art's abilities one at a time, as before.
+
+- **How it runs** (`steps_horde.rs`): as the player comes within the place's reach, alive, the first wave stands 18
+  m from the place's middle (nearer where a walk from the middle reaches no further, so none stands up a bank it
+  cannot come down), on the place's baked mesh, every foe hunting the player; one that loses them is set on them
+  again. Once two or fewer of the foes standing are left, the next wave stands, so the horde keeps coming. A wave the
+  room's cap on foes has no room for waits a tick; one that stands nobody counts as fallen. The last wave fallen meets
+  the goal.
+- **Unbounded**: while the horde runs, the player's worn Art is theirs whole, for them alone: the room keeps its
+  Anima and both Tenets full (a cast spends its share as ever, and the next tick fills it, its word sent at once),
+  and casts any of its three abilities, a Tenet the road has not yet given included. As it ends, by its fall, the
+  player's or a leave, the Art is bound again: what is earned, and the shares as they stand.
+- **A fall**: the player dead, the waves leave, a failure counts, and it starts again from the first wave whole 10
+  s on, once the player is back within reach; its `lost` line is said. **A leave**: the waves leave with the player;
+  back, it starts again from the first.
+- **What it pays**: its foes drop nothing (no Vestige, no item), so the horde pays as a defence's waves tried again
+  do: each kill's XP and Aurem, and the task's clear ([[Gear]], "A clear").
+- **On the wire**: the gear message's `quest_horde`, its foes left and all of them while it runs (empty else); and
+  while it runs `arts_earned` holds every bit of the worn Art. The tracker shows the foes left beside the goal, and
+  the wait after a fall as a defence's; a toast says "Storm unbounded: every ability ready" (the worn Art's name) as
+  long as it runs, and "Storm bound again" for 4 s as it ends. The ability bar shows every ability ready and none
+  locked, from the room's word.
 
 ## In the rules
 
