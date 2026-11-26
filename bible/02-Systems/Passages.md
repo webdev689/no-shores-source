@@ -140,8 +140,8 @@ passages' own pieces standing in it with their solids.
   laid, so a zone's plan, its heights and its local room are laid once.
 - **The pieces**: the way in, the onward mouths, the lamp (a plinth 1.6 m square in a ring of five standing stones
   3.5 m out), and what the deal stands on the spots farthest from the way in: three dead lamps for a Kindle, three
-  tally posts for a Sever, six nodes for a vein, a reliquary, a Hold's ring (no solid, its 6 m drawn on the floor in
-  low stones while the pack has no `passage.ring` module).
+  tally posts for a Sever, six nodes for a vein, a reliquary, a Hold's ring (`passage.ring`, no solid: 32 worn flat stones of the grey-green
+  stone laid end to end in the floor on its 6 m, none 5 cm over it, so a body walks over it).
 
 ## A dive
 
