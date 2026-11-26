@@ -352,3 +352,33 @@ fn a_weeks_public_way_is_one_zone_a_depth_each_reached_from_the_last() {
         assert!(way.windows(2).all(|pair| pair[0].onward.contains(&pair[1].number)), "week {week}: a way");
     }
 }
+
+#[test]
+fn a_holds_ring_lies_whole_on_its_zones_floor_under_ground_and_above() {
+    let mut off = Vec::new();
+    let mut rings = 0;
+    for week in 2_900..2_916 {
+        let web = Web::of(saltmere(), week);
+        for zone in web.zones.iter().filter(|zone| zone.deal == Deal::Mission(Mission::Hold)) {
+            let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            let ring = plan.pieces.iter().find(|piece| piece.kind == Kind::Ring).expect("a ring");
+            let middle = [ring.at[0], ring.at[1]];
+            let share = match &plan.ground {
+                Laid::Under(dungeon) => crate::under::ring_on_floor(dungeon, middle),
+                Laid::Open(hollow) => {
+                    let round = (0..36).map(|step| f64::from(step) * std::f64::consts::TAU / 36.0);
+                    let edge = round.map(|turn| {
+                        [middle[0] + plan::RING_M * libm::sin(turn), middle[1] - plan::RING_M * libm::cos(turn)]
+                    });
+                    edge.filter(|at| within(&hollow.ring, *at)).count() as f64 / 36.0
+                }
+            };
+            rings += 1;
+            if share < 1.0 {
+                off.push((week, zone.number, share));
+            }
+        }
+    }
+    assert!(rings > 30, "{rings} rings");
+    assert!(off.is_empty(), "{} of {rings} rings off the floor: {off:?}", off.len());
+}

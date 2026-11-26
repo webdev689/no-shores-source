@@ -35,6 +35,8 @@ import { haulNode, lampNode, MouthsCardView, signNode, wayDotsNode } from './pas
 import { boxedPieces, pieceMesh, type PieceState, UNTOUCHED } from './passagePieces.ts';
 import { PieceView } from './pieceView.ts';
 import { RISE_S, DRAW_S, wayAt, wayOf } from './passageWay.ts';
+import { AIM, cameraOrbit } from '../../player/playerCamera.ts';
+import { MODULE_NAMES } from '../../islands/isleModules.ts';
 import { floorOf, withPieces, zoneIsle, zoneLayout } from './passageZone.ts';
 import { haulView, lampPrompt, mouthsChoice, onwardSign } from './passageWords.ts';
 
@@ -168,11 +170,53 @@ export interface ZoneAsked {
   readonly eye?: { readonly back: number; readonly up: number; readonly pitch: number };
   readonly above?: boolean;
   readonly aim?: { readonly kind: PassagePiece['kind']; readonly distance: number; readonly up: number };
+  /** Above ground, the game's own camera behind a body standing at the arrival, or beside the placement nearest it
+   *  whose module begins `near` (a strand's wreck), facing it. */
+  readonly own?: { readonly near?: string };
   readonly hour?: number;
 }
 
+/** The game's own third-person camera (`cameraOrbit`, as the foot's view stands at its start) behind a body in an
+ *  open zone at the arrival, or 3 m short of the placement nearest it whose module begins `near`, facing it: its boom
+ *  kept off the hollow's ground and its dressing's and pieces' blocks as the foot's is. */
+function ownEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, near?: string): Shot {
+  if (plan.ground.kind !== 'open') throw new Error('the own camera is pictured above ground');
+  let [[x, y], yaw] = [plan.sites.arrive, plan.sites.facing];
+  const placed = near ? plan.ground.placements.filter((one) => MODULE_NAMES[one[0]]?.startsWith(near)) : [];
+  const nearest = placed.sort((one, two) => Math.hypot(one[1] - x, one[2] - y) - Math.hypot(two[1] - x, two[2] - y))[0];
+  if (near && !nearest) throw new Error(`zone ${plan.zone.number} holds no ${near}`);
+  if (nearest) {
+    const away = Math.hypot(x - nearest[1], y - nearest[2]) || 1;
+    [x, y] = [nearest[1] + ((x - nearest[1]) / away) * 3, nearest[2] + ((y - nearest[2]) / away) * 3];
+    yaw = Math.atan2(nearest[1] - x, -(nearest[2] - y));
+  }
+  const blocks = [...plan.ground.blocks, ...plan.solids].map(([minX, minY, maxX, maxY, top]) => ({
+    ...{ minX, minY, maxX, maxY, top },
+    bottom: -1_000,
+  }));
+  const head = [x, y, (floor(x, y) ?? 0) + STANDING_EYE_M] as const;
+  const view = { firstPerson: false, distance: 4.5, shown: 4.5 };
+  const orbit = cameraOrbit(head, yaw, START_PITCH, view, blocks, 0, AIM, floor);
+  const forward = [
+    Math.cos(orbit.pitch) * Math.sin(yaw),
+    -Math.cos(orbit.pitch) * Math.cos(yaw),
+    -Math.sin(orbit.pitch),
+  ];
+  const eye: [number, number, number] = [
+    orbit.targetX - (forward[0] ?? 0),
+    orbit.targetY - (forward[1] ?? 0),
+    orbit.targetZ - (forward[2] ?? 0),
+  ];
+  return { eye, yaw, pitch: orbit.pitch, fov: 1.1, near: 0.1, far: 2_000 };
+}
+
+/** A standing body's eye over its feet (crates/movement `TUNING.eye`), and the foot's view's pitch as it starts. */
+const STANDING_EYE_M = 1.7;
+const START_PITCH = 0.1;
+
 /** The eye a zone's picture is drawn from, as `asked` stands it. */
 function zoneEye(plan: PassagePlan, floor: (x: number, y: number) => number | null, asked: ZoneAsked): Shot {
+  if (asked.own) return ownEye(plan, floor, asked.own.near);
   const lens = { fov: 1.1, near: 0.1, far: 2_000 };
   const piece = asked.aim && plan.pieces.find((each) => each.kind === asked.aim?.kind);
   if (asked.aim && !piece) throw new Error(`zone ${plan.zone.number} has no ${asked.aim.kind}`);
@@ -331,9 +375,14 @@ export function panelsShot(ui: Interface): Node {
     width: 'grow',
     height: 'grow',
     children: [
-      signNode(onwardSign(zone, true), ui.size),
+      // A Gauntlet's far mouth, its zone beyond on the public way.
+      signNode(onwardSign({ ...zone, public: true }, true, null, [], true), ui.size),
       haulNode(haul, ui.size),
-      { ...lampNode(lampPrompt(false, false), 0.5), float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: -110 } },
+      // The fourth lamp, cold for one on Lanternfall's last step.
+      {
+        ...lampNode(lampPrompt(false, false, true), 0.5),
+        float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: -110 },
+      },
     ],
   };
 }

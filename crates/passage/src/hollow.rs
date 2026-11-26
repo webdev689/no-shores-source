@@ -7,7 +7,7 @@
 //! south.
 
 use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of};
-use crate::zone::{Form, Zone};
+use crate::zone::{Deal, Form, Mission, Zone};
 use core::f64::consts::{FRAC_PI_2, PI, TAU};
 use isle::Placement;
 use isle::catalog::{Role, catalog};
@@ -43,6 +43,8 @@ const MOUTH_IN_M: f64 = 1.0;
 /// How far inside the edge a spot or a post keeps, and the lattice they are drawn from, metres.
 const SPOT_IN_M: f64 = 3.5;
 const LATTICE_M: f64 = 3.0;
+/// How far inside the floor's ring a Hold's ring's edge lies at least.
+const RING_CLEAR_M: f64 = 0.25;
 /// How far a piece of dressing's footprint keeps from the arrival, from a mouth's middle or a spot (a body's reach of
 /// it), from the lamp's middle (past its ring of stones) and past a band's spread round its post (a body's room),
 /// metres.
@@ -264,10 +266,10 @@ impl Laying {
 }
 
 /// The sites of a hollow: its way in at one end, its onward mouths round the far end, its lamp toward the far end,
-/// and its posts (as many as `posts_wanted`) and spots on its floor.
+/// and its posts (as many as `posts_wanted`) and spots on its floor, a Hold's `ring` first where it lies whole.
 fn sites(
     outline: &Outline,
-    (onward_count, lamp, wanted, posts_wanted): (usize, bool, usize, usize),
+    (onward_count, lamp, ring, wanted, posts_wanted): (usize, bool, bool, usize, usize),
     draws: &mut Draws,
 ) -> Sites {
     let (way_in_at, ends): ([f64; 2], Vec<[f64; 2]>) = if outline.form == Form::Ravine {
@@ -323,6 +325,24 @@ fn sites(
         floor.iter().copied().filter(|at| apart(*at, arrive) >= POST_OFF_WAY_IN_M).collect();
     let posts = posts_of(&off_way_in, arrive, posts_wanted);
     floor.reverse();
+    // A Hold's ring, the first spot's, stands the farthest from the way in where it lies whole on the floor, else
+    // where most of it does.
+    if ring {
+        // How far inside the floor's ring the ring's edge lies at its shallowest, sampled every 10 degrees.
+        let shallowest = |middle: [f64; 2]| {
+            let radius = crate::plan::RING_M;
+            let edge = (0..36_u32).map(|step| f64::from(step) * TAU / 36.0);
+            let edge = edge.map(|turn| [middle[0] + radius * libm::sin(turn), middle[1] - radius * libm::cos(turn)]);
+            edge.map(|at| outline.inside(at) - RING_IN_M).fold(f64::INFINITY, f64::min)
+        };
+        let whole = floor.iter().position(|at| shallowest(*at) >= RING_CLEAR_M);
+        let deepest =
+            (0..floor.len()).max_by(|one, other| shallowest(floor[*one]).total_cmp(&shallowest(floor[*other])));
+        if let Some(best) = whole.or(deepest) {
+            let middle = floor.remove(best);
+            floor.insert(0, middle);
+        }
+    }
     let spots = spots_of(&floor, wanted);
     Sites { arrive, facing: toward, way_in, onward, lamp, posts, spots }
 }
@@ -485,7 +505,9 @@ pub(crate) fn layings(
         shelf_turn: draws.between(0.0, TAU),
     };
     let wanted = crate::plan::spots_wanted(zone.deal);
-    let sites = sites(&laying.outline, (onward_count, zone.has_lamp(), wanted, zone.size.posts()), &mut draws);
+    let ring = zone.deal == Deal::Mission(Mission::Hold);
+    let asked = (onward_count, zone.has_lamp(), ring, wanted, zone.size.posts());
+    let sites = sites(&laying.outline, asked, &mut draws);
     let kit = catalog().climates.get(climate).map_or("temperate", |dressing| dressing.kit.as_str()).to_owned();
     let ((ground, bounds), ring, seed) = (laying.ground(), laying.outline.ring(), zone.seed);
     (0..).map(move |attempt: u64| {

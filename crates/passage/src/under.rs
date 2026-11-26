@@ -4,7 +4,7 @@
 
 use crate::LAMP_CEILING_M;
 use crate::sites::{Door, POST_OFF_WAY_IN_M, SPOT_APART_M, Sites, apart, spots_of, spread};
-use crate::zone::Zone;
+use crate::zone::{Deal, Mission, Zone};
 use dungeon::{CELL_M, Cell, Dungeon, SIDES, Side};
 
 /// The onward mouths' passes: how far from the way in each keeps, how far from one another (metres), and whether each
@@ -110,8 +110,8 @@ fn lamp(dungeon: &Dungeon) -> Option<[f64; 2]> {
 }
 
 /// The zone's layings under ground in its style, each from the next seed, the first first; a lamp's zone only where
-/// a room is tall enough to stand the lamp in, its seeds tried once in turn, else its first seed's alone. None for a
-/// style the Forge does not know.
+/// a room is tall enough to stand the lamp in, and a Hold's where a room holds its ring whole, its seeds tried once in
+/// turn, else its first seed's alone. None for a style the Forge does not know.
 pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<impl Iterator<Item = (Dungeon, Sites)>> {
     let style = dungeon::style_of(style)?;
     let blocks = zone.size.blocks();
@@ -119,15 +119,26 @@ pub(crate) fn layings(zone: &Zone, style: &str, onward_count: usize) -> Option<i
     let forged = move |step: u32| Dungeon::forge_within(first.wrapping_add(step), style, (blocks, blocks));
     let tall_enough = |dungeon: &Dungeon| dungeon.rooms.iter().any(|room| room.height >= LAMP_CEILING_M);
     let lamp = zone.has_lamp();
-    let tall = (0..LAMP_TRIES * 2).map(forged).filter(move |dungeon| !lamp || tall_enough(dungeon));
+    let hold = zone.deal == Deal::Mission(Mission::Hold);
+    let laid_out = {
+        let zone = zone.clone();
+        move |dungeon: Dungeon| {
+            let sites = sites_of(&zone, &dungeon, onward_count);
+            (dungeon, sites)
+        }
+    };
+    // A Hold's ring, at its first spot, lies whole on the floor.
+    let ring_whole =
+        |(dungeon, sites): &(Dungeon, Sites)| sites.spots.first().is_some_and(|&at| ring_on_floor(dungeon, at) >= 1.0);
+    let tall = (0..LAMP_TRIES * 2)
+        .map(forged)
+        .filter(move |dungeon| !lamp || tall_enough(dungeon))
+        .map(laid_out.clone())
+        .filter(move |laid| !hold || ring_whole(laid));
     let mut tall = tall.peekable();
-    let laid: Box<dyn Iterator<Item = Dungeon>> =
-        if tall.peek().is_some() { Box::new(tall) } else { Box::new(std::iter::once(forged(0))) };
-    let zone = zone.clone();
-    Some(laid.map(move |dungeon| {
-        let sites = sites_of(&zone, &dungeon, onward_count);
-        (dungeon, sites)
-    }))
+    let laid: Box<dyn Iterator<Item = (Dungeon, Sites)>> =
+        if tall.peek().is_some() { Box::new(tall) } else { Box::new(std::iter::once(laid_out(forged(0)))) };
+    Some(laid)
 }
 
 /// The sites of a zone laid in a dungeon: its arrival and way in, its onward mouths, its lamp, posts and spots.
@@ -166,6 +177,28 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
         .filter(|at| clear(*at))
         .collect();
     floor.sort_by(|one, other| apart(*other, arrive).total_cmp(&apart(*one, arrive)).then(one[0].total_cmp(&other[0])));
+    // A Hold's ring, the first spot's, stands where most of it lies on the floor, the farthest such from the way in.
+    if zone.deal == Deal::Mission(Mission::Hold)
+        && let Some(best) = (0..floor.len()).max_by(|one, other| {
+            ring_on_floor(dungeon, floor[*one]).total_cmp(&ring_on_floor(dungeon, floor[*other])).then(other.cmp(one))
+        })
+    {
+        let ring = floor.remove(best);
+        floor.insert(0, ring);
+    }
     let spots = spots_of(&floor, crate::plan::spots_wanted(zone.deal));
     Sites { arrive, facing, way_in, onward, lamp, posts, spots }
+}
+
+/// The share of a Hold's ring round `middle`, sampled every 10 degrees, that lies on a cell of the dungeon's floor.
+pub(crate) fn ring_on_floor(dungeon: &Dungeon, middle: [f64; 2]) -> f64 {
+    let cell_of = |at: [f64; 2]| ((at[0] / CELL_M).floor() as i64, (at[1] / CELL_M).floor() as i64);
+    let floor: std::collections::BTreeSet<(i64, i64)> =
+        dungeon.rooms.iter().flat_map(|room| room.cells.iter()).map(|&cell| cell_of(dungeon.centre(cell))).collect();
+    let on = (0..36_u32).filter(|step| {
+        let turn = f64::from(*step) * std::f64::consts::TAU / 36.0;
+        let radius = crate::plan::RING_M;
+        floor.contains(&cell_of([middle[0] + radius * libm::sin(turn), middle[1] - radius * libm::cos(turn)]))
+    });
+    on.count() as f64 / 36.0
 }

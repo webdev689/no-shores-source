@@ -118,7 +118,8 @@ passages' own pieces standing in it with their solids.
   rooms farthest along the way, each in a room of its own where there are enough, 9 m apart and 16 m from the way in,
   clear of torches, props, fixtures and landmarks; where a small dungeon cannot hold them so, they keep 6 m apart and
   12 m from the way in, then 4 m and 9 m, so every way on has its mouth. Its lamp stands in its greatest room, three
-  cells or more each way; a lamp's zone is forged only from a seed with a room tall enough. A band's post is the
+  cells or more each way; a lamp's zone is forged only from a seed with a room tall enough, and a Hold's from one where its ring
+  lies whole on the floor at its spot, the spot where most of the ring does. A band's post is the
   middle of a room's cells that no prop, fixture or landmark fills.
 - **Above ground**: a hollow 38, 55 or 75 m across, its floor's outline of its form (round, a winding ravine with
   rounded ends, terraced shelves, a squared court, a long strand, a grove) on a grid of heights 2 m apart, rolling a
@@ -131,7 +132,8 @@ passages' own pieces standing in it with their solids.
   islands' kit of its climate: cliffs along its walls, each 3 m out along its own wall's normal, facing in, boulders at
   their feet, trees, shrubs and grass by its form, a court's ruins, a strand's wrecks, each keeping its footprint 5 m
   from the arrival, 2.5 m from a mouth, 4.5 m from the lamp and 1 m past each band's 2.5 m spread, tried at up to
-  eight places. Its mouths stand a metre inside its edge, its floor's ring (`Hollow::ring`, where the page grows its
+  eight places. A Hold's ring stands the farthest from the way in where it lies whole inside the floor's ring.
+  Its mouths stand a metre inside its edge, its floor's ring (`Hollow::ring`, where the page grows its
   meadow) half a metre inside it.
 - **Laid where a body walks** (`Walk`): a zone is laid until a body, kept 0.5 m off every wall and solid and walking
   no steeper than 0.7, walks from the arrival to within 2.5 m of every onward mouth, the lamp and every spot, and
