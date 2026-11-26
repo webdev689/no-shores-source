@@ -1,19 +1,10 @@
 // The player's ship's passage at sea: where it lies and heads, the voyage it sails (one planned round the land to a
-// point, or the helm's straight on along its heading), the pace dial, and each course sent to the sea room, which sails
-// it by its own law while the page draws it toward where the room has it.
+// point, or the helm's straight on along its heading), the pace it was set at, and each course sent to the sea room,
+// which sails it by its own law while the page draws it toward where the room has it.
 import { WORLD_FRAME } from '../overworld/worldFrame.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from '../overworld/seaRoute.ts';
-import {
-  PACE_DEFAULT,
-  type Pace,
-  SHIP_SPEED,
-  secondsLeft,
-  shipAt,
-  stepPace,
-  type Voyage,
-  voyageOf,
-} from '../overworld/voyage.ts';
+import { CLICK_PACE, type Pace, SHIP_SPEED, secondsLeft, shipAt, type Voyage, voyageOf } from '../overworld/voyage.ts';
 import type { Lies } from '../ships/swellPose.ts';
 import { distanceText } from '../plus/compass.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
@@ -58,11 +49,12 @@ export class Passage {
   private destination: Point2 | null = null;
   private straight = false;
   private travelled = 0;
-  private dial: Pace = PACE_DEFAULT;
+  /** The pace the voyage was set at: a click's, or the held map's. */
+  private set: Pace = CLICK_PACE;
   /** The furthest a hostile ship may hold it, as the sea's rules give it (`Sea.facts`); none known, none held. */
   holdReachM = 0;
   /** The pace it is sailed at, eased toward the view's a step at a time, and the seconds toward its next step. */
-  private sailed: SailedPace = PACE_DEFAULT;
+  private sailed: SailedPace = CLICK_PACE;
   private easing = 0;
   private said = '';
   /** The sea room it sails in, once joined. */
@@ -122,9 +114,19 @@ export class Passage {
     return !this.voyage && this.destination !== null;
   }
 
-  /** Its pace dial's step. */
+  /** The pace its voyage was set at. */
   get pace(): Pace {
-    return this.dial;
+    return this.set;
+  }
+
+  /** The pace it sails at now: the voyage's, eased down to the world's own time while it is watched close. */
+  get paceNow(): SailedPace {
+    return this.sailed;
+  }
+
+  /** How far along a voyage to a point it has sailed, a share; none straight on or at rest. */
+  get share(): number | null {
+    return this.voyage && !this.straight ? Math.min(1, this.travelled / Math.max(1, this.voyage.lengthM)) : null;
   }
 
   /** The voyage's course still ahead, from the ship; none at rest. */
@@ -151,8 +153,9 @@ export class Passage {
     return { ok: true, points: detour(route.points, this.keepClear()) };
   }
 
-  /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
-  sailTo(point: Point2): void {
+  /** Plans a voyage from the ship to a point and sets sail at `pace`, a click's unless said; a voyage that cannot be
+   *  planned says why. */
+  sailTo(point: Point2, pace: Pace = CLICK_PACE): void {
     const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
     if (!route.ok) {
       this.said = REFUSED[route.reason];
@@ -160,7 +163,7 @@ export class Passage {
     }
     this.said = '';
     this.voyage = voyageOf(detour(route.points, this.keepClear()));
-    [this.destination, this.travelled, this.straight] = [point, 0, false];
+    [this.destination, this.travelled, this.straight, this.set] = [point, 0, false, pace];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
@@ -172,13 +175,14 @@ export class Passage {
     return ahead;
   }
 
-  /** Sets sail through a course's points in turn, from where the ship lies, as planned: to anchor off an island. */
-  sailAlong(points: readonly Point2[]): void {
+  /** Sets sail through a course's points in turn, from where the ship lies, as planned, at `pace`: to anchor off an
+   *  island, or on from where a travel to other waters laid it. */
+  sailAlong(points: readonly Point2[], pace: Pace = CLICK_PACE): void {
     const end = points.at(-1);
     if (!end) return;
     this.said = '';
     this.voyage = voyageOf([this.position, ...points.filter((point) => point !== this.position)]);
-    [this.destination, this.travelled, this.straight] = [end, 0, false];
+    [this.destination, this.travelled, this.straight, this.set] = [end, 0, false, pace];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
@@ -205,7 +209,7 @@ export class Passage {
   resume(): void {
     if (!this.destination) return;
     if (this.straight) this.straightOn();
-    else this.sailTo(this.destination);
+    else this.sailTo(this.destination, this.set);
   }
 
   /** The helm turned `steer` (-1 to port, 1 to starboard) for `seconds`: under way onto a course straight on, at rest
@@ -231,21 +235,13 @@ export class Passage {
     }
     this.said = '';
     this.voyage = voyageOf([this.position, point]);
-    [this.destination, this.travelled, this.straight] = [point, 0, true];
+    [this.destination, this.travelled, this.straight, this.set] = [point, 0, true, CLICK_PACE];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
-  }
-
-  /** One step of the pace dial: -1 slower, +1 faster. */
-  stepPace(direction: number): void {
-    const atDial = this.sailed === this.dial;
-    this.dial = stepPace(this.dial, direction);
-    if (atDial) this.sailed = this.dial;
-    this.sendVoyage();
   }
 
   /** Sails it `seconds` on: at the room's pace and drawn to where the room has it once it has taken its course; the helm's
    *  course straight on set again as it nears its end, while the way beyond lies clear. The pace it is sailed at
-   *  eases to the world's own time while the view is close on it (`watched`), and back to the dial's once not. */
+   *  eases to the world's own time while the view is close on it (`watched`), and back to the voyage's once not. */
   advance(seconds: number, watched = false): void {
     this.easePace(seconds, watched);
     if (!this.voyage) return;
@@ -283,7 +279,7 @@ export class Passage {
     this.easing += Math.max(0, seconds);
     while (this.easing >= PACE_EASE_S) {
       this.easing -= PACE_EASE_S;
-      const next = easedPace(this.sailed, this.dial, watched);
+      const next = easedPace(this.sailed, this.set, watched);
       if (next === this.sailed) {
         this.easing = 0;
         return;
@@ -315,11 +311,11 @@ export class Passage {
     if (this.voyage) {
       const settled = this.room?.settledShip ?? null;
       // The eased pace is said only once the room sails it at it.
-      const eased = settled?.pace === this.sailed ? easedNote(this.sailed, this.dial) : '';
+      const eased = settled?.pace === this.sailed ? easedNote(this.sailed, this.set) : '';
       const held = heldNote(this.sailed, settled) + eased;
       if (this.straight) return `Sailing straight on${held}`;
       const remaining = this.voyage.lengthM - this.travelled;
-      const left = timeText(secondsLeft(this.voyage, this.travelled, this.dial) / this.way);
+      const left = timeText(secondsLeft(this.voyage, this.travelled, this.set) / this.way);
       return `Sailing · ${distanceText(remaining)} to go · ${left}${held}`;
     }
     return this.said || (this.destination ? 'Hove to' : 'At anchor');

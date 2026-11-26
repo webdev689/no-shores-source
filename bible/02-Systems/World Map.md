@@ -175,7 +175,7 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
 - **Schedule.** On each course a ship leaves each end every 3,000 s of world time, departure n at its course's start
   plus n × 3,000 s, the nine courses' starts a ninth of that apart, so two courses that share a stretch out of a port
   (each of Sunspire's and Rimeholt's ways out carries a course to each of the other two ports) never send ships out
-  together; each sails at 60 m/s, the pace dial's slowest step, to the other end. There it lies at its berth 600 s
+  together; each sails at 60 m/s, the slowest pace of the sea's ladder, to the other end. There it lies at its berth 600 s
   (`DWELL_S`), heading as it came in, and is then gone. About five ships are within 60 km of Overlook's roadstead at
   any moment, counting those lying there (5.2 on a day's mean). World time is seconds since the Unix epoch, passed in,
   so every machine computes the same ships for the same time. The waters' table the door returns carries the pace

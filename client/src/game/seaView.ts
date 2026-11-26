@@ -42,9 +42,13 @@ type Where =
   /** Sailing away to other waters on the cinematic's rails (`SailAway`), which no press, key or wheel moves. */
   | { readonly kind: 'travel' };
 
+/** The sea's two views over the player's ship: Oversea, DFO's raised camera, and Sealevel, close on the ship. */
+export type SeaLevel = 'oversea' | 'sealevel';
+
 /**
- * The view over the player's ship at sea: DFO's raised camera, turned and zoomed, brought in close past its lowest;
- * the flight up over an island's side to choose a landing and back down; and the way down to the helm and up again.
+ * The view over the player's ship at sea: the Oversea view, DFO's raised camera turned and zoomed, or the Sealevel view
+ * close on it, switched between and never by the wheel; the flight up over an island's side to choose a landing and
+ * back down; and the way down to the helm and up again.
  */
 export class SeaView {
   private camera: OverworldCamera;
@@ -53,7 +57,7 @@ export class SeaView {
   private where: Where = { kind: 'sail' };
   /** How far the view has come down to the helm, eased: 0 the sea's view, 1 at the helm. */
   helmShare = 0;
-  /** How far the wheel has brought the view in over it, past the Overworld's lowest. */
+  /** How far the view has come down to sea level from the Oversea view. */
   private readonly close = new CloseZoom();
   /** The landings marked over the island's side in view, the rig over it, and the landing chosen there. */
   private side: readonly Mark[] = [];
@@ -61,6 +65,8 @@ export class SeaView {
   chosen: string | null = null;
   /** What the view over an island's side says of the mark last clicked: that its node is locked. */
   said = '';
+  /** Whether the view over the island was flown to docking at its port, rather than going ashore on its coast. */
+  docked = false;
 
   /** The deck of the hull the player sails, whose wheel the helm's view stands behind. */
   private readonly deckOf: () => Deck;
@@ -86,17 +92,30 @@ export class SeaView {
     return this.where.kind === 'helm' && this.where.going === 'down' && this.where.at >= 1;
   }
 
-  /** How far the view is brought in close over it, eased: 0 not at all, 1 as close as it goes. */
+  /** How far the view has come down to sea level, eased: 0 the Oversea view, 1 the Sealevel view. */
   get closeShare(): number {
     return this.close.eased;
   }
 
-  /** The sea's shot `sea` brought in over it as it `lying` lies, as far as the wheel has brought it. */
+  /** The view switched to: Oversea or Sealevel, eased there or not. */
+  get level(): SeaLevel {
+    return this.close.down ? 'sealevel' : 'oversea';
+  }
+
+  /** Switches to `level`, or to the other view; the view eases there. Over the ship alone: no switch flies up over an
+   *  island, goes down to the helm or sails away. Answers whether it switched. */
+  switchLevel(level: SeaLevel = this.level === 'oversea' ? 'sealevel' : 'oversea'): boolean {
+    if (this.where.kind !== 'sail') return false;
+    this.close.set(level === 'sealevel');
+    return true;
+  }
+
+  /** The sea's shot `sea` brought down over it as it `lying` lies, as far as the switch to sea level has eased it. */
   closeShot(sea: Shot, lying: Lying): Shot {
     return this.close.shot(sea, lying, this.camera.yaw, this.camera.tilt);
   }
 
-  /** The sea's shot `sea` brought in over it as close as it goes. */
+  /** The sea's shot `sea` brought down over it to sea level. */
   closest(sea: Shot, lying: Lying): Shot {
     return this.close.closest(sea, lying, this.camera.yaw, this.camera.tilt);
   }
@@ -134,10 +153,10 @@ export class SeaView {
     if (this.where.kind === 'helm') this.where = { ...this.where, going: 'up' };
   }
 
-  /** Flies the view up from over the ship to `rig`, over an island's side, its landings `side` marked. */
-  flyToSide(side: readonly Mark[], rig: Rig): void {
-    [this.side, this.sideRig, this.chosen, this.said] = [side, rig, null, ''];
-    this.close.release();
+  /** Flies the view up from over the ship to `rig`, over an island, its landings `side`, `docked` at its port or not. */
+  flyToSide(side: readonly Mark[], rig: Rig, docked = false): void {
+    [this.side, this.sideRig, this.chosen, this.said, this.docked] = [side, rig, null, '', docked];
+    this.close.set(false);
     this.where = { kind: 'fly', from: this.seaRig, to: rig, t: 0, seconds: SIDE.flySeconds, then: 'landing' };
   }
 
@@ -167,13 +186,13 @@ export class SeaView {
     this.camera = keyTurn(this.camera, turn, tilt, seconds);
   }
 
-  /** The wheel's notches, positive in, zoom the camera under `ceiling`, and past its lowest bring the view in close. */
-  zoom(notches: number, ceiling: number, lowest: number): void {
-    const atLowest = this.camera.heightTarget <= lowest + 1e-6;
-    this.camera = zoomCamera(this.camera, this.close.zoom(notches, atLowest), ceiling);
+  /** The wheel's notches, positive in, zoom the Oversea camera under `ceiling`; at sea level they do nothing, as the
+   *  wheel never changes the view. */
+  zoom(notches: number, ceiling: number): void {
+    if (this.level === 'oversea') this.camera = zoomCamera(this.camera, notches, ceiling);
   }
 
-  /** `seconds` on: the close view's ease, and the view coming down to the helm, there, or going back up. */
+  /** `seconds` on: the ease between the two views, and the view coming down to the helm, there, or going back up. */
   step(seconds: number): void {
     this.close.step(seconds);
     if (this.where.kind !== 'helm') {

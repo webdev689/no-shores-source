@@ -40,7 +40,7 @@ import type { DrawnInterface } from './drawnInterface.ts';
 import { creationOpen } from './prologue/creation.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Hud } from './hud.ts';
-import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
+import { greyed, ISLANDS, placeWords, REGION, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
 import { arrivalFacing, FIRST_NODE } from './nodes.ts';
@@ -68,7 +68,6 @@ import { uiScale } from '../ui/uiRenderer.ts';
 import { drawnWhole, frameDrawn, setBehindVeil, standIns } from '../standIns.ts';
 
 /** The region every island lies in. */
-const REGION = 'The Pale Expanse';
 /** The veil stays down until everything round the player is ready, or this long; and once it is, for this many frames
  *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen. */
 const READY_WAIT_S = 20;

@@ -359,7 +359,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Balance and Economy Pass as Claude Shapes It]]
 - [[The Bulwark Blocks, Supers Are Powerful, the Sea's Gaps Close and Level 30 Takes Breach Gear]]
 - [[Pairs Swing Faster, Foes' Guns Strike Two Thirds and Faction Gear Has No Weekly Limit]]
-- [[The Playlist Shows Over Its Island, Not Only at Sea]]
 - [[Fallen Players Are Revived as in Destiny]]
 - [[Activities Keep Checkpoints, and Patrol Zones Respawn the Player Near Where They Fell]]
 - [[A Player Logs Back In Where They Left the Overworld or a Social Space]]
@@ -402,6 +401,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
 - [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 - [[The Playlist's Nodes Are Drawn in More Detail, and Move]]
+- [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]
 
 ## Replaced
 
@@ -423,3 +423,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]], by
   [[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]
 - [[The Asset Workflows Publish to R2 With a Token for R2 Alone]], by [[The Asset Workflows Publish to R2 With the Cloudflare Token]]
+- [[The Playlist Shows Over Its Island, Not Only at Sea]], by [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]

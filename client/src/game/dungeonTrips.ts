@@ -100,6 +100,9 @@ export function dungeonTrips(
   /** Into a run of the Elite Dungeon `node` by its room's name, from the sea, as the Playlist launches or finds one;
    *  out of it back onto the sea. */
   intoRun(node: NodeInfo, run: string): void;
+  /** Into the Elite Dungeon `node` at Normal from the sea, from the island's panel: the company's run of it started at
+   *  sea where one plays it, else a new one (`node-<id>--sea--run-<instance>`); out of it back onto the sea. */
+  fromSea(node: NodeInfo): void;
   /** Into the guild dungeon behind an outpost's Delve Gate, for the guild of `key`, at `tier` (0 Normal to 2 Abyss):
    *  the company's run of it or a new one, laid by its week's seed and style; out before the gate at `gate`. */
   enterDelve(key: string, tier: number, gate: Omit<AtEntrance, 'number'>): void;
@@ -229,6 +232,17 @@ export function dungeonTrips(
       void game.module.then((module) => {
         const { name } = askLayout(module, ask);
         const work = into({ node, text: '' }, { number: 0, ask }, where.seas, async () => run, toSea);
+        game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name }, work);
+      });
+    },
+    fromSea: (node) => {
+      if (node.kind !== 'dungeon') return;
+      const base = `${nodeRoom(node, 'normal')}--sea`;
+      const ask = { place: node.id, name: node.name };
+      void game.module.then((module) => {
+        const { name } = askLayout(module, ask);
+        const room = async () => sharedRun(base, await game.companyPlaces()) ?? runOf(base, chance.instance());
+        const work = into({ node, text: '' }, { number: 0, ask }, 'normal', room, toSea);
         game.travel({ kind: 'enter', node: `${node.id}--dungeon`, name }, work);
       });
     },

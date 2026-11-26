@@ -1,6 +1,6 @@
 // What the heads-up display shows at sea each frame: where the player is, the keys for what they are doing, the marks,
-// the compass and the ships on it; in a fight each captain's bar, the fight's readout, its task and DFO's notices; the
-// sea's bar, Manage's panel, the offer at the ship's wheel, and the voyage's line.
+// the compass and the ships on it; in a fight each captain's bar, the fight's readout, its task and DFO's notices;
+// Manage's panel, the offer at the ship's wheel, and the voyage's line. The ship's console is `seaScreen.ts`.
 import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
@@ -114,6 +114,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
     deck
       ? deck.hints
       : seaStrip({
+          level: here.level,
           fighting: fight !== null,
           aiming: fight?.aimingNow ?? false,
           landing: state.landing,
@@ -155,10 +156,6 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
           quest: guided.at,
         },
   );
-  // In a fight, and sailing away to other waters, the sea bar goes: its map, pace, Manage and Leave wait, as its keys do.
-  const ship = { canLeave: here.sighted !== null, canManage: true };
-  const barred = atHelm || aboard.active || deck || here.fight || here.travelling;
-  hud.seaBar(onSea && !barred ? { ...shown, ...ship } : null);
   showSight(hud, here, deck !== null);
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
@@ -167,14 +164,13 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
 }
 
 /** Takes down what the sea alone shows, once the player is on land: the ships' plates, the marks over other players'
- *  ships and the sight, the fight's
- *  readout, the sea bar, Manage's panel and the wheel's offer. The tracker is the land's own to show. */
+ *  ships and the sight, the fight's readout, Manage's panel and the wheel's offer. The ship's console is the sea's own
+ *  layer (`seaScreen.ts`). The tracker is the land's own to show. */
 export function hideSeaHud(hud: Hud): void {
   // With no plate to place, the pose is never read.
   hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: forwardOf(0, 0) }, 1));
   hud.seaPlayers([]);
   hud.seaFight(null);
-  hud.seaBar(null);
   hud.shipPanel(null);
   hud.wheelOffer(false);
   hud.sight(false, null);

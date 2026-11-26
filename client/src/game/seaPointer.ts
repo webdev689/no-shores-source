@@ -1,4 +1,5 @@
 import type { HeldMap } from '../heldmap/heldMap.ts';
+import type { Pick } from '../overworld/overworldPick.ts';
 import { wheelNotches } from '../overworld/overworldInput.ts';
 import type { Sea } from './sea.ts';
 import { BINDS, keyNameOf, keyUpNameOf } from '../player/input.ts';
@@ -13,6 +14,8 @@ export interface SeaPointing {
   readonly overInterface: () => boolean;
   readonly sea: () => Sea | null;
   readonly map: () => HeldMap | null;
+  /** What a click at sea met: what it does is the landings' (`seaLandings.ts`). */
+  readonly clicked: (pick: Pick) => void;
 }
 
 /**
@@ -47,7 +50,10 @@ export function seaPointer(
   };
   canvas.addEventListener('pointerup', (event) => {
     if (mapUp()) map()?.pointerUp(event.offsetX, event.offsetY);
-    else if (atSea()) sea()?.pointerUp(event.offsetX, event.offsetY);
+    else if (atSea()) {
+      const pick = sea()?.pointerUp(event.offsetX, event.offsetY);
+      if (pick) pointing.clicked(pick);
+    }
     forgetPresses();
   });
   canvas.addEventListener('pointercancel', forgetPresses);

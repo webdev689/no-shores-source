@@ -676,7 +676,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, C to
-  brace, and Shift to burst; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
+  brace, and Shift to burst; the sea's own wait for its end, and the ship's console is hidden. Where the editor's panel lists its lines,
   the game's HUD shows the fight's readout, its task in the tracker and DFO's messages as notices ([[Interface]]).
   Every captain in it is drawn with their name over a bar of their hull, their plate as far over their highest sail as the
   Sloop's stands over its own (`plateOverM`). Then the view pans back up. Hostile ships at sea

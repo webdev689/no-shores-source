@@ -9,8 +9,8 @@ const ship: Vec3 = [3_800_000, 2_400_000, 0];
 const seaPose = poseOf(eyeFor(ship, 0, TILT.initial, 260));
 const mark = (id: string, place: Vec3, edge = false): Mark => ({ id, kind: 'mission', name: id, at: place, edge });
 
-test('the nodes are marked by kind: social spaces, patrol areas, missions, dungeons, world bosses, ports and the Playlist', () => {
-  assert.deepEqual([...MARK_KINDS], ['social', 'patrol', 'mission', 'dungeon', 'boss', 'outpost', 'port', 'playlist']);
+test('the nodes are marked by kind: social spaces, patrol areas, missions, dungeons, world bosses, outposts and ports', () => {
+  assert.deepEqual([...MARK_KINDS], ['social', 'patrol', 'mission', 'dungeon', 'boss', 'outpost', 'port']);
 });
 
 test('a mark grows with the eye height over it from its own size at 260 m', () => {

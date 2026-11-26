@@ -5,7 +5,7 @@
 import type { Layer } from '../ui/stack.ts';
 import { enterAskedRun } from './runAsked.ts';
 import { roomNow } from '../sky/worldClock.ts';
-import { activitiesAt, gatesAt } from './activities.ts';
+import { type Activities, activitiesAt, type Gates, gatesAt } from './activities.ts';
 import {
   type AtEntrance,
   type EntranceCard,
@@ -58,8 +58,13 @@ export interface ActivityScreens {
   /** Why each tier's seas are shut to the player by their level, by tier (null where open); none before a room's
    *  word. */
   seasShut(): readonly (string | null)[];
-  /** A press on mark `id`: true, its Playlist screen opened, where it is a Playlist's mark. */
-  playlist(id: string): boolean;
+  /** Opens the Playlist beside port city `city` (its id, as `overlook`), from the island's panel docked there. */
+  playlist(city: string): boolean;
+  /** Opens the card of Elite Dungeon `node` at Normal from the sea (the island's panel): Enter and Find a Company go in
+   *  from the sea, as the Playlist's runs do, and out back to it. */
+  seaCard(node: NodeInfo): void;
+  /** The day's and week's draws and the character's gates now, for the island's panel; null before the room module. */
+  facts(): { readonly activities: Activities; readonly gates: Gates | null } | null;
   /** The entrance's card or the Playlist as the interface draws it, while one stands. */
   readonly layer: Layer;
 }
@@ -77,6 +82,7 @@ export function startActivityScreens(
   trips: {
     enter(number: number, name: string, run?: string): void;
     intoRun?(node: NodeInfo, run: string): void;
+    fromSea?(node: NodeInfo): void;
     toBreach?(run: string): void;
   },
   link: (Pick<AccountLink, 'token' | 'finderAt'> & Partial<Pick<AccountLink, 'roster'>>) | null,
@@ -90,10 +96,18 @@ export function startActivityScreens(
    *  between them. */
   let kept: GearState | null = null;
   let built: { readonly minute: number; readonly gear: GearState | null; readonly board: ThisWeek } | null = null;
+  /** The draws and gates last read for the island's panel, again only when the minute or the gear changes. */
+  let drawnNow: {
+    readonly minute: number;
+    readonly gear: GearState | null;
+    readonly facts: { readonly activities: Activities; readonly gates: Gates | null };
+  } | null = null;
   const placeName = (id: string) => nodes.find((node) => node.id === id)?.name ?? id;
-  /** The card standing: where it was opened, what it says, and the minute and gear it was built for. */
+  /** The card standing: where it was opened (`atSea`: from the island's panel, its run started at sea), what it says,
+   *  and the minute and gear it was built for. */
   let opened: {
     readonly entrance: AtEntrance;
+    readonly atSea: boolean;
     readonly card: EntranceCard;
     readonly minute: number;
     readonly gear: GearState | null;
@@ -120,7 +134,7 @@ export function startActivityScreens(
   const find = () => {
     const [finds, token] = [opened?.card.finds ?? null, link?.token ?? null];
     if (!opened || !link || finds === null || token === null || search) return;
-    const { number, name } = opened.entrance;
+    const { number, name, node } = opened.entrance;
     said = null;
     const heard = {
       found: (run: string) => {
@@ -132,8 +146,10 @@ export function startActivityScreens(
           said = WEEK_TURNED;
           return render();
         }
+        const atSea = opened?.atSea ?? false;
         close();
-        trips.enter(number, name, run);
+        if (atSea) trips.intoRun?.(node, run);
+        else trips.enter(number, name, run);
       },
       ended: (why: string) => {
         [search, said] = [null, why];
@@ -145,9 +161,10 @@ export function startActivityScreens(
   };
   const view = new EntranceCardView({
     enter: () => {
-      const entrance = opened?.entrance;
+      const [entrance, atSea] = [opened?.entrance, opened?.atSea ?? false];
       close();
-      if (entrance) trips.enter(entrance.number, entrance.name);
+      if (entrance && atSea) trips.fromSea?.(entrance.node);
+      else if (entrance) trips.enter(entrance.number, entrance.name);
     },
     close,
     find,
@@ -157,11 +174,13 @@ export function startActivityScreens(
     },
   });
   /** Builds the card again for where it was opened. */
-  const showCard = (laying: WebAssembly.Module, entrance: AtEntrance) => {
+  const showCard = (laying: WebAssembly.Module, entrance: AtEntrance, atSea = opened?.atSea ?? false) => {
     const minute = Math.floor(clock.now() / 60_000);
     const gates = kept ? gatesAt(laying, kept.level, kept.prologueDone ?? true) : null;
     const card = entranceCardOf(entrance, activitiesAt(laying, minute), gates, kept?.activity ?? null);
-    opened = { entrance, card, minute, gear: kept };
+    // From the sea, its company is found for the run started at sea (`node-<id>--sea`).
+    const finds = atSea && card.finds !== null ? `${card.finds}--sea` : card.finds;
+    opened = { entrance, atSea, card: { ...card, finds }, minute, gear: kept };
     // A search for a run the card no longer opens ends: the week turned, or a gate shut.
     if (search && search.base !== card.finds) stopSearch();
     render();
@@ -182,7 +201,8 @@ export function startActivityScreens(
     kept = here?.gear?.gear ?? atSea() ?? kept;
     playlists.look();
     if (!opened || !compiled) return;
-    if (!here || here.fallen || here.dungeon || here.node !== opened.entrance.node) return close();
+    if (opened.atSea ? !onSea() : !here || here.fallen || here.dungeon || here.node !== opened.entrance.node)
+      return close();
     if (opened.minute !== Math.floor(clock.now() / 60_000) || opened.gear !== kept) showCard(compiled, opened.entrance);
     else if (search) render();
     // A menu opened and shut over the card gives the keys back to the game; the card takes them again.
@@ -191,7 +211,21 @@ export function startActivityScreens(
   clock.every(look);
   return {
     layer: (ui) => view.layer(ui) ?? playlists.layer(ui),
-    playlist: (id) => playlists.open(id),
+    playlist: (city) => playlists.open(city),
+    seaCard: (node) => {
+      if (node.kind !== 'dungeon') return;
+      if (!compiled) return trips.fromSea?.(node);
+      kept = atSea() ?? kept;
+      showCard(compiled, { node, seas: 'normal', number: 0, name: node.name }, true);
+    },
+    facts: () => {
+      if (!compiled) return null;
+      const minute = Math.floor(clock.now() / 60_000);
+      if (drawnNow?.minute === minute && drawnNow.gear === kept) return drawnNow.facts;
+      const gates = kept ? gatesAt(compiled, kept.level, kept.prologueDone ?? true) : null;
+      drawnNow = { minute, gear: kept, facts: { activities: activitiesAt(compiled, minute), gates } };
+      return drawnNow.facts;
+    },
     week: () => {
       const laying = compiled;
       if (!laying) return null;
@@ -215,7 +249,7 @@ export function startActivityScreens(
       if (!here || here.dungeon || here.fallen) return;
       if (!compiled) return trips.enter(number, name);
       kept = here.gear?.gear ?? kept;
-      showCard(compiled, { node: here.node, seas: here.seas, number, name });
+      showCard(compiled, { node: here.node, seas: here.seas, number, name }, false);
     },
   };
 }

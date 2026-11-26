@@ -3,15 +3,15 @@ import { test } from 'node:test';
 import type { Point2 } from './ground.ts';
 import {
   alongNear,
+  CLICK_PACE,
   clampPace,
-  PACE_DEFAULT,
   PACE_STEPS,
+  PLANNED_PACE,
   pointAlong,
   sailSpeed,
   secondsLeft,
   SHIP_SPEED,
   shipAt,
-  stepPace,
   TURN_CHORD_M,
   voyageOf,
 } from './voyage.ts';
@@ -23,26 +23,17 @@ const origin: Point2 = [4_000_000, 2_000_000];
 /** 10 km north, then 5 km east. */
 const route: Point2[] = [origin, [origin[0], origin[1] - 10_000], [origin[0] + 5_000, origin[1] - 10_000]];
 
-test('the pace dial is DFO ladder, 5 to 100 times a 12 m/s ship, starting at 60', () => {
-  assert.deepEqual([...PACE_STEPS], [5, 10, 20, 30, 40, 60, 100]);
+test('a voyage sails at ×60 set by a click and ×200 planned on the map, on the sea room’s ladder of a 12 m/s ship', () => {
+  assert.deepEqual([...PACE_STEPS], [5, 10, 20, 30, 40, 60, 100, 200]);
   assert.equal(SHIP_SPEED, 12);
-  assert.equal(PACE_DEFAULT, 60);
-  assert.equal(sailSpeed(60), 720);
-  assert.equal(sailSpeed(100), 1_200);
+  assert.deepEqual([CLICK_PACE, PLANNED_PACE], [60, 200]);
+  assert.equal(sailSpeed(CLICK_PACE), 720);
+  assert.equal(sailSpeed(PLANNED_PACE), 2_400);
   assert.equal(clampPace(55), 40, 'rounded down onto the ladder');
-  assert.equal(clampPace(1_000), 100);
+  assert.equal(clampPace(1_000), 200);
   assert.equal(clampPace(1), 5, 'never under the bottom step');
   assert.equal(clampPace(Number.NaN), 5);
   assert.equal(sailSpeed(55), 480);
-});
-
-test('the dial steps one rung at a time and stops at either end', () => {
-  assert.equal(stepPace(60, 1), 100);
-  assert.equal(stepPace(100, 1), 100);
-  assert.equal(stepPace(60, -1), 40);
-  assert.equal(stepPace(5, -1), 5);
-  assert.equal(stepPace(55, 1), 60, 'from where the dial stands on the ladder');
-  assert.equal(stepPace(30, 0), 30);
 });
 
 test('a voyage measures its route, and a point along it is held to its ends', () => {

@@ -207,10 +207,9 @@ function drawn(screens: ActivityScreens) {
   };
 }
 
-test('a Playlist’s mark opens its screen beside its port; Launch goes into the run the server draws for it', async () => {
+test('the Playlist opens beside the port docked at; Launch goes into the run the server draws for it', async () => {
   const { screens, window, sockets, into, root } = await atSea(17);
-  assert.equal(screens.playlist('overlook-port'), false, 'a port’s own mark is no Playlist');
-  assert.equal(screens.playlist('overlook-playlist'), true);
+  assert.equal(screens.playlist('overlook'), true);
   for (const words of ['PLAYLIST', 'Beside Overlook', 'ELITE PLAYLIST', 'Elite · Levels 15 to 19 · Foes at level 17'])
     assert.ok(root.find(words), words);
   assert.ok(root.find('Shadow spells deal double damage. Wearing Shadow, you take double.'), 'a modifier’s words');
@@ -223,7 +222,7 @@ test('a Playlist’s mark opens its screen beside its port; Launch goes into the
   sockets[0]?.fire('message', { data: '{"run":"node-coral-halls--elite--playlist-17--run-m9n8b7v6"}' });
   assert.deepEqual(into, ['coral-halls node-coral-halls--elite--playlist-17--run-m9n8b7v6']);
   assert.equal(gearScreenOpen(), false, 'closed as the run is gone into');
-  screens.playlist('sunspire-playlist');
+  screens.playlist('sunspire');
   window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
   assert.ok(!root.click('playlist-find'), 'the Abyss Playlist is shut at 17: no search');
   window.dispatchEvent(new FakeEvent('keydown', { key: 'e' }));
@@ -234,7 +233,7 @@ test('a Playlist’s mark opens its screen beside its port; Launch goes into the
 
 test('Find a Company on a playlist searches its one queue and goes into the run found for it', async () => {
   const { screens, sockets, into, root } = await atSea(17);
-  screens.playlist('rimeholt-playlist');
+  screens.playlist('rimeholt');
   assert.ok(root.click('playlist-find'));
   assert.equal(sockets[0]?.address, 'ws://finder.test/v1/find/playlist-elite');
   sockets[0]?.fire('open');
@@ -246,7 +245,7 @@ test('Find a Company on a playlist searches its one queue and goes into the run 
 
 test('playing alone, Launch goes into a run of an Elite Dungeon the page draws, as nothing is kept', async () => {
   const { screens, sockets, into, root } = await atSea(17, false);
-  screens.playlist('overlook-playlist');
+  screens.playlist('overlook');
   assert.ok(root.click('playlist-launch'));
   assert.equal(sockets.length, 0, 'no server to ask');
   assert.match(into[0] ?? '', /^([a-z-]+) node-\1--elite--playlist-17--run-[a-z0-9]{8}$/);
@@ -254,7 +253,7 @@ test('playing alone, Launch goes into a run of an Elite Dungeon the page draws, 
 
 test('the screen counts down each second it stands, and closes, its search stopped, once the player leaves the sea', async () => {
   const { screens, sockets, root, world, look } = await atSea(17);
-  screens.playlist('overlook-playlist');
+  screens.playlist('overlook');
   assert.ok(root.find('Resets in 1d 00h'));
   world.now = NOW + 1_000;
   look();
@@ -268,7 +267,7 @@ test('the screen counts down each second it stands, and closes, its search stopp
 
 test('while Launch asks the server the screen says Launching…; an unanswered ask says the accounts did not answer', async () => {
   const { screens, sockets, root } = await atSea(17);
-  screens.playlist('overlook-playlist');
+  screens.playlist('overlook');
   assert.ok(root.click('playlist-launch'));
   assert.ok(root.find('Launching…'));
   assert.ok(!root.find('Finding a company · 0:00'));
@@ -278,11 +277,11 @@ test('while Launch asks the server the screen says Launching…; an unanswered a
 
 test('Launch reads Go with your company once the Roster shows one, else Go alone', async () => {
   const alone = await atSea(17, true, 1);
-  alone.screens.playlist('overlook-playlist');
+  alone.screens.playlist('overlook');
   await new Promise((done) => setTimeout(done, 0));
   assert.ok(alone.root.find('Go alone'));
   const together = await atSea(17, true, 3);
-  together.screens.playlist('overlook-playlist');
+  together.screens.playlist('overlook');
   await new Promise((done) => setTimeout(done, 0));
   assert.ok(together.root.find('Go with your company'));
 });
@@ -291,9 +290,9 @@ test('a Roster answer to an earlier opening is not taken for the screen opened a
   const answers: ((roster: unknown) => void)[] = [];
   const asked = () => new Promise<unknown>((answer) => answers.push(answer));
   const { screens, root, window } = await atSea(17, true, 1, asked);
-  screens.playlist('overlook-playlist');
+  screens.playlist('overlook');
   window.dispatchEvent(new FakeEvent('keydown', { key: 'Escape' }));
-  screens.playlist('sunspire-playlist');
+  screens.playlist('sunspire');
   // This opening's answer comes first; the earlier one's, late, must not overturn it.
   answers[1]?.({ company: null });
   await new Promise((done) => setTimeout(done, 0));
@@ -339,7 +338,7 @@ test("the Breach stands on the Playlist at Normal and Hard, shut below each tier
 
 test("Launch on the Breach asks the server for its run, and goes to its gate's zone with it", async () => {
   const { screens, window, sockets, into, root } = await atSea(26);
-  screens.playlist('overlook-playlist');
+  screens.playlist('overlook');
   for (let step = 0; step < 4; step += 1) window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
   assert.ok(root.find('THE DROWNED VALE'));
   assert.ok(root.click('playlist-launch'));
@@ -355,7 +354,7 @@ test('playing alone, the Breach launches nothing and says it is played online; s
     ['signed out', 'Sign in to launch a Breach.'],
   ] as const) {
     const { screens, window, into, root } = await atSea(26, signedIn);
-    screens.playlist('overlook-playlist');
+    screens.playlist('overlook');
     for (let step = 0; step < 4; step += 1) window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
     assert.ok(root.click('playlist-launch'));
     assert.ok(root.find(words), words);

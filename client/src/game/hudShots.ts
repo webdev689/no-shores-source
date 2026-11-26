@@ -49,19 +49,9 @@ export function stripMeleeShot(ui: Interface): Node {
   return hudOver(ui, 'melee', (hud) => hud.strip(withMapKey(footStrip({ ...REST, drawn: true, free: true }))));
 }
 
-/** Sailing, over the sea bar and its offer to dock. */
+/** Sailing in the Oversea view. */
 export function stripSeaShot(ui: Interface): Node {
-  return hudOver(ui, 'sea', (hud) => {
-    hud.strip(stripOf('sea'));
-    hud.seaBar({
-      pace: 2,
-      sailing: true,
-      resumable: false,
-      landfall: { kind: 'dock', port: 'Saltmere' },
-      canLeave: true,
-      canManage: true,
-    });
-  });
+  return hudOver(ui, 'sea', (hud) => hud.strip(stripOf('oversea')));
 }
 
 /** At rest on foot as the pad shows it. */

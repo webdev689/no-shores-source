@@ -248,10 +248,10 @@ const EASED_LADDER: readonly SailedPace[] = [WORLD_PACE, ...PACE_STEPS];
 export const PACE_EASE_S = 0.15;
 
 /** The next step of the sailed pace eased toward the view's: down the ladder to the world's own time while the view is
- *  close on it (`watched`), back up to the dial's step while it is not. */
-export function easedPace(sailed: SailedPace, dial: Pace, watched: boolean): SailedPace {
-  const [from, to] = [EASED_LADDER.indexOf(sailed), EASED_LADDER.indexOf(watched ? WORLD_PACE : dial)];
-  return EASED_LADDER[from + Math.sign(to - from)] ?? dial;
+ *  close on it (`watched`), back up to the pace the voyage was `set` at while it is not. */
+export function easedPace(sailed: SailedPace, set: Pace, watched: boolean): SailedPace {
+  const [from, to] = [EASED_LADDER.indexOf(sailed), EASED_LADDER.indexOf(watched ? WORLD_PACE : set)];
+  return EASED_LADDER[from + Math.sign(to - from)] ?? set;
 }
 
 /** Whether the room's word on its pace (`room`) disagrees with the pace it is sailed at, so the page asks it again:
@@ -269,9 +269,9 @@ export function paceToAskAgain(
   return room.pace > sailed || !near;
 }
 
-/** What the voyage's line adds while the pace is eased under the dial's for the view. */
-export const easedNote = (sailed: SailedPace, dial: Pace): string =>
-  sailed < dial ? ' · Sailing at true speed while you watch close.' : '';
+/** What the voyage's line adds while the pace is eased under the voyage's for the view. */
+export const easedNote = (sailed: SailedPace, set: Pace): string =>
+  sailed < set ? ' · Sailing at true speed while you watch close.' : '';
 
 /** What the sea's note says of its room: only a link lost, or a room being joined again; nothing while all is well. */
 export function roomWords(room: { readonly rejoining: boolean } | null, lost: boolean): string {

@@ -55,6 +55,7 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
     hud: {},
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: nothing,
   } as unknown as Controlled);
   const repair = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'r', code: 'KeyR' }));
@@ -87,6 +88,7 @@ test("the pad's Start opens the Character page in the story as the key does, for
     hud: { controls: { open: false, rebinding: { slot: null } } },
     story: { press: nothing },
     retry: () => null,
+    landings: { asking: null },
     change: nothing,
   } as unknown as Controlled);
   pad(new Set(['character']), new Set(['Start']));
@@ -115,6 +117,7 @@ test('while the stranger speaks her welcome Escape opens Settings; no other game
     hud: { controls: { rebinding: {}, open: false, toggle: () => changes.push('sheet') }, keysOffered: true },
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: (asked: unknown) => changes.push(asked),
     openMap: () => changes.push('map'),
     respawn: () => changes.push('respawn'),
@@ -165,6 +168,7 @@ test('Escape opens Settings with nothing else over the game, and steps back from
     hud: { controls: { rebinding: {}, open: false } },
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: (asked: unknown) => changes.push(asked),
   } as unknown as Controlled);
   window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as CustomEvent).detail));
@@ -213,6 +217,7 @@ test('Escape or B while a piece of decoration is placed lets it go first and ope
     hud: { controls: { rebinding: {}, open: false } },
     story: null,
     retry: () => null,
+    landings: { asking: null },
     change: () => undefined,
   } as unknown as Controlled);
   startPlacing('gull-cove-outpost', 'bench');
@@ -237,4 +242,35 @@ test('Escape or B while a piece of decoration is placed lets it go first and ope
     ['[', ']'],
     'the turn as its two keys',
   );
+});
+
+test('at sea a landing’s confirmation takes Enter as yes and Escape as no; V switches the view; over an island Enter lands', () => {
+  const { window } = fakeWindow();
+  const done: string[] = [];
+  const sea = { ...afloat(), switchLevel: () => done.push('switch') };
+  const playing = {
+    ...{ flow: { mode: 'sea' } as { mode: string; chosen?: string | null }, sea, foot: null },
+    ...{ helmMap: { key: () => false, busy: false }, through: null, after: {} },
+  };
+  const landings = { asking: null as object | null, answer: (yes: boolean) => done.push(`answer ${yes}`) };
+  listenForControls({
+    playing,
+    input: { onPad: () => undefined },
+    ui: { typing: false },
+    hud: {},
+    story: null,
+    retry: () => null,
+    landings,
+    change: () => undefined,
+    landAt: (id: string | null) => done.push(`land ${id}`),
+  } as unknown as Controlled);
+  const key = (name: string) => window.dispatchEvent(new FakeEvent('keydown', { key: name }));
+  landings.asking = {};
+  key('Enter');
+  key('Escape');
+  landings.asking = null;
+  key('v');
+  playing.flow = { mode: 'landing', chosen: null };
+  key('Enter');
+  assert.deepEqual(done, ['answer true', 'answer false', 'switch', 'land null']);
 });

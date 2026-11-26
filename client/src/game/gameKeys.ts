@@ -11,6 +11,7 @@ import { openGearWindow } from './gearScreen.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { letGo, placingNow } from './guild/decorPlacing.ts';
 import type { Hud } from './hud.ts';
+import type { SeaLandings } from './seaLandings.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { deckKey, fightAsk } from './seaWord.ts';
 import { chatOpen, openChat, socialUp } from './social/social.ts';
@@ -26,14 +27,16 @@ export interface Controlled {
   readonly retry: () => (() => void) | null;
   readonly change: (happening: Happening) => void;
   readonly respawn: () => void;
-  readonly goAshore: () => void;
+  /** The sea's landings: the confirmation answered, and the landing the sea offers asked after. */
+  readonly landings: SeaLandings;
   readonly stopOrResume: () => void;
   readonly openMap: () => void;
   readonly manage: () => void;
   readonly leaveHelm: () => void;
   readonly takeHelm: () => void;
   readonly goThrough: () => void;
-  readonly landAt: (id: string) => void;
+  /** Does what the island's panel's chosen entry does (`islandPanel.ts`), its first's with none chosen. */
+  readonly landAt: (id: string | null) => void;
 }
 
 /** Where the player's controls act now: in a window, dead (past the edge, or fallen in a fight), at the helm, in a fight
@@ -79,6 +82,8 @@ export function listenForControls(game: Controlled): void {
     if (sea?.travelling) return;
     if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
+    // A landing's confirmation standing at sea is answered first: Enter yes, Escape no.
+    if (sailing && game.landings.asking && (escape || acts('confirm'))) return game.landings.answer(!escape);
     // A piece of decoration being placed is let go first, and nothing opens.
     if (escape && placingNow() && !overGame()) return letGo();
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
@@ -90,7 +95,7 @@ export function listenForControls(game: Controlled): void {
     } else if (escape && (flow.mode === 'foot' || flow.mode === 'sea') && !playing.helmMap.busy && !overGame())
       openGearWindow({ view: 'settings' });
     else if (acts('confirm') && sailing && sea?.chaseChosen()) return;
-    else if (acts('ashore') || (acts('confirm') && sailing)) game.goAshore();
+    else if (acts('ashore')) game.landings.askHere();
     else if (acts('voyage') && flow.mode === 'sea') game.stopOrResume();
     else if (acts('map') || acts('landMap')) game.openMap();
     else if (acts('manage')) game.manage();
@@ -107,9 +112,9 @@ export function listenForControls(game: Controlled): void {
     else if (acts('use') && sea?.aboard.walking) game.takeHelm();
     else if (acts('use') && flow.mode === 'foot' && playing.through) game.goThrough();
     else if (acts('use') && flow.mode === 'foot') playing.foot?.use();
-    else if (acts('confirm') && flow.mode === 'landing' && flow.chosen) game.landAt(flow.chosen);
+    else if (acts('confirm') && flow.mode === 'landing') game.landAt(flow.chosen);
     else if (acts('respawn') && flow.mode === 'foot') game.respawn();
-    else if ((acts('slower') || acts('faster')) && flow.mode === 'sea') sea?.stepPace(acts('faster') ? 1 : -1);
+    else if (acts('seaView') && flow.mode === 'sea') sea?.switchLevel();
   };
   addEventListener('keydown', (event) => {
     const key = keyNameOf(event);

@@ -5,6 +5,10 @@ code:
   - client/src/ui/paint.ts#PaintedRole
   - client/src/game/playlistScreen.ts#PlaylistView
   - client/src/game/playlistCrest.ts#drawCrest
+  - client/src/game/shipConsole.ts#shipConsoleNode
+  - client/src/game/seaScreen.ts#seaLayer
+  - client/src/game/seaLandings.ts#landingAskNode
+  - client/src/game/islandPanel.ts#islandPanelNode
   - client/src/game/playlistParts.ts#crestOf
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
@@ -53,7 +57,6 @@ code:
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
   - client/src/game/hud.ts#Hud
-  - client/src/game/hudPieces.ts#seaBarNode
   - client/src/game/hudMarks.ts#markNodes
   - client/src/game/hudParts.ts#keycap
   - client/src/game/keyIcons.ts#iconNode
@@ -307,8 +310,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,
   death's words and Respawn (for a fall in a fight, the seconds to Respawn, who revives the player or why no Respawn
   comes, `fallenNode`; [[Revives]], "On the page"), the key strip's panel, the task tracker, the
-  toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
-  and its offers, Manage's panel, the prompt for E and the leave held in its place, the veil (the loading screen, `loadingNode`, with the
+  toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the offers
+  at the foot of the screen, Manage's panel, the prompt for E and the leave held in its place, the veil (the loading screen, `loadingNode`, with the
   trip's words; [[One Loading Screen Covers Every Trip Until the Place Is Ready]]) and the sheet of every control. Each stands where the page's sheet stood
   it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
   let a click through to the world; the marks, presses and panels take it. A mark's glyph is
@@ -360,8 +363,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card.
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut.
   `game/journalShots.ts`' `settingsShot` draws Settings at its first tab, its others pressed by a shot's events.
-  `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing over the
-  sea bar, and the pad's buttons), each shot's display kept across its frames. `game/itemShots.ts` opens the menu
+  `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing in the
+  Oversea view, and the pad's buttons), each shot's display kept across its frames. `game/itemShots.ts` opens the menu
   over sample gear carrying a Legendary sword with its whole grid, an Atheric bow and a Legendary helm, its stats asked
   of the room's rules, so a shot's events open a flyout, hover a card or a node, open a page or press Compare; and
   `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame
@@ -405,12 +408,12 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   cover a bar already placed is lifted just above it. The order changes only when a figure comes 6% nearer, a lifted bar
   comes down only once it is 10 px further clear, and a bar eases to a new height, so the bars hold still from frame to
   frame.
-- **Where it is worn.** The sea bar is a window, its groups
-  (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
+- **Where it is worn.** The ship's console is a window, its columns parted by a rail and its view's first press a
+  primary; the landing's confirmation is a window, its yes a primary; Take the helm and Respawn are primaries;
   the status line is a chip; the key strip is a panel of dark glass edged in brass at its left. At sea, every surface
   wears its role:
-  - sailing: the sea bar (window, rails), the status line (chip), the place line and the hints (the on-foot words,
-    outlined), the dock or landing offer and Take the helm (primary); a sighting's hostile marks wear its rank's colour
+  - sailing: the ship's console (window, rail), the status line (chip), the place line and the hints (the on-foot
+    words, outlined), the landing's confirmation (window) and Take the helm (primary); a sighting's hostile marks wear its rank's colour
     and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a ship
     sighted, other waters entered, who joins, colours struck, boarders away, what floats gathered, washing up) stands
     as notices, DFO's toasts;
@@ -421,7 +424,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
     as the chip's, its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
   - the ship's deck: the place line (the ship's hold's take on its second line) and the hints, as on foot;
   - washing up: its notice, then the veil's own words; on land the sea's own pieces go (`seaHud.ts` `hideSeaHud`):
-    the ships' plates and the sight, the readout, the sea bar, Manage's panel and the wheel's offer;
+    the ships' plates and the sight, the readout, Manage's panel and the wheel's offer, and the sea's own layer with
+    its console;
   - Manage's panel: a window under a header, each part's heading ruled, Back to the sea a button on its footer;
   - what floats: the Acquired feed's rows and the gold marks over the water;
   - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
@@ -433,8 +437,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
   vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the
   dialogue box's foot, 8 px over whatever stood under it at the view's foot the frame before (the Arts and weapons,
-  the sea bar, the offers to dock or go ashore, take the helm or go through a gate, the ship's bar in a sea fight, the
-  prompt for E or the leave held),
+  the ship's console, the landing's confirmation, the offers to take the helm or go through a gate, the ship's bar in a
+  sea fight, the prompt for E or the leave held),
   which on a wide view is nothing. The task tracker stands
   at the right under the place's name, above the Acquired feed, and under the compass's column in a view 900 px wide
   or less, and gives way to a public event's banner in a view under 1024 px wide; the toasts in the middle over the
@@ -664,7 +668,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told and
   the room would take it, and nothing while the fall plays out; fallen in a fight, Respawn once it may be pressed,
   and nothing before it or in a darkness zone; Follow first in a Breach while a company member stands. The prompt for Use says what it does, with Use's key or button, so the strip
-  leaves it out. At sea: sailing, the click to sail there and the helm's controls (the sea bar names its own keys); in
+  leaves it out. At sea: in the Oversea view the click to sail there, the map and the switch to sea level; at sea level
+  the helm's controls and the switch back (the console names its own presses' keys); in
   Manage, the drag, the wheel and Manage's key back; on the deck, the click to look round as on foot, run, jump and
   Use to take the helm; at the map and choosing a landing, their clicks, Set sail and Escape; with the land's held map
   raised, the drag, the wheel and its key or Escape to close it (the pad's B); in a fight, the helm, the sails, the
@@ -1181,26 +1186,25 @@ gone into, and the card says "The week turned. Try again.".
 
 ## The Playlist
 
-A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
-Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`, its parts in
-`playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port it was opened
-beside ("Beside Overlook") over a brass rule; then six crests, the Elite Playlist (three chevrons under a pip) and the
-Abyss Playlist (an eye of the deep, rays over it) above, the Elite Dungeon of the week (two swords crossed under a
-star) and the Abyss Dungeon of the week (a jewelled crown over the deep) below their playlists, a fifth smaller; and
-the Breach, the Drowned Vale at Normal and at Hard (an arch of laid stones under a crystal spire, ringed and violet at
-Hard), between them in the middle, up and down choosing its tier (`playlistBreach.ts`, [[Breaches]]). A Breach is
+The Playlist's banner in the island's panel, docked at a port city (below, "The island's panel"), opens the Playlist
+screen ([[Activities]], "The Playlist"), drawn after the owner's reference, Destiny's Vanguard screen (`PlaylistView`,
+its parts in `playlistParts.ts`, in the entrance card's layer, over a dark scrim): "PLAYLIST" at its head and the port
+it was opened beside ("Beside Overlook") over a brass rule; then six crests, the Elite Playlist (three chevrons under a
+pip) and the Abyss Playlist (an eye of the deep, rays over it) above, the Elite Dungeon of the week (two swords crossed
+under a star) and the Abyss Dungeon of the week (a jewelled crown over the deep) below their playlists, a fifth smaller;
+and the Breach, the Drowned Vale at Normal and at Hard (an arch of laid stones under a crystal spire, ringed and violet
+at Hard), between them in the middle, up and down choosing its tier (`playlistBreach.ts`, [[Breaches]]). A Breach is
 launched for the company, never searched for. A crest (`playlistCrest.ts`,
 [[The Playlist's Nodes Are Drawn in More Detail, and Move]]) is a shield of worked metal, brass for Elite, violet for
 Abyss, grey while its entry is shut: its rim lit from the top left with five studs and a gem at its head, its device
-raised over a field lit toward its head; at its shoulder a gold dot while a reward of it waits, a ring growing from
-the dot and fading every 2 s, or a padlock while it is shut. Under it its name in capitals (a week's dungeon's on two
-lines, broken before "of"), and its level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From
-level 10" before it), or, shut, why in neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no
-separator ends or starts a line. The chosen crest's name is lit over a brass rule as wide as the name, its shield drawn
-8% larger, its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps a
-crest's shield once as it is lit or chosen, in nine steps. The crests rise into place one after another as the screen
-opens. Each part is a picture drawn once (the sweep once a step) and turned, faded or grown as it moves; under reduced
-motion nothing moves.
+raised over a field lit toward its head; at its shoulder a gold dot while a reward of it waits, a ring growing from the
+dot and fading every 2 s, or a padlock while it is shut. Under it its name in capitals (a week's dungeon's on two lines,
+broken before "of"), and its level a part a line past its tier ("Levels 15 to 19", "Foes at level 17"; "From level 10"
+before it), or, shut, why in neutral ink ("Opens at level 24", "You are 15", from its gate's words), so no separator
+ends or starts a line. The chosen crest's name is lit over a brass rule as wide as the name, its shield drawn 8% larger,
+its glow breathing over 3 s; a crest under the pointer or the focus glows a little. A light sweeps a crest's shield once
+as it is lit or chosen, in nine steps. The crests rise into place one after another as the screen opens. Each part is a
+picture drawn once (the sweep once a step) and turned, faded or grown as it moves; under reduced motion nothing moves.
 
 On a screen 1000 pixels wide or more the crests stand on a chart (`playlistMap.ts`: a lit middle fading to nothing
 before its edges, faint stars, two wide rings, and dotted lines from each playlist to the Breach between them and to
@@ -1239,6 +1243,65 @@ the focus goes to the press that takes the other's place, Close where none does.
 and go into the run from the sea; so does leaving the sea, the screen closing and its search stopped once the player
 is no longer at sea or over an island's side. While it stands the pointer is free and no key of the game's or the
 menu's acts behind it.
+
+## The ship's console
+
+At sea, while the ship is the player's to sail (over it, out of a fight, not aboard, at the helm or on a travel), the
+sea's own layer (`seaScreen.ts`, over the display and under the game's windows) stands the ship's console at the foot of
+the screen, 760 px across (`shipConsole.ts`; [[Game]], "At sea"; [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). Its header names the
+ship in brass (its own name from the Harbourmaster, else "The Sloop") beside its class, and holds the switch between the
+Oversea and the Sealevel views: two presses, the view shown a primary, and the key V beside them. Its body has three
+columns, the last behind a rail:
+
+- **The compass**: a card 92 px across, north up, its rim ticked every 10 degrees and longer every 45, N in red; the
+  ship's brass needle and the wind's pale arrow are pictures drawn once and turned to their bearings each frame. Under
+  it the heading ("274° W", of the sixteen winds) and the wind ("Wind 6 m/s from the ENE", or "Calm" under 0.5 m/s).
+- **The voyage**: under way, hove to or at anchor in brass with its speed in m/s; its pace ("Pace ×200", eased "×1 (×200
+  set) · true speed while watched"), or at rest how a voyage is set ("Click the sea to sail at ×60; plan on the map for
+  ×200."); where it is bound while it makes for a landing; a bar of the way sailed on a voyage to a point; its line.
+- **The ship**: hull, canvas and crew as bars of whole, green over 60%, amber over 30%, red under, with their shares; and
+  the water it is in.
+
+Its footer holds how this view sails ("Click the sea to sail · ×60", or the steering keys) and the view's own presses,
+the first a primary: Plan a voyage and Stop or Resume voyage in the Oversea view; Sail on, Heave to (dim at rest),
+Manage and Leave the helm (dim out of a room) at sea level. A press lets go of the focus, so Space never presses it
+again. Narrower than 840 px the console is the view's width less 40, the compass and the voyage side by side over the
+ship. Its node is `sea:bar`, which the key strip stands clear of.
+
+## The landing's confirmation
+
+A click that asks to land (a port's icon, its island, a coast with no port, a sea island's water; [[Game]], "Landings")
+stands a window 420 px across over the foot of the screen, over the console (`landingAskNode`): its question in brass
+at the face's larger size ("Dock at Overlook?"), what yes does under it in dim ink, and Cancel (Esc) and its yes (a
+primary, with Enter's key) on its footer.
+
+## The island's panel
+
+Over an island docked at or gone ashore on, no node is marked on the map; the panel lists them (`islandPanel.ts`,
+`islandWords.ts`). It stands down the left of the view, 104 px down and 24 in, as tall as the view less 128 and 40% of
+its width (280 to 400 px), on a ground a little transparent (74%) edged in brass, so the island stands beside it. Its
+header names the island in brass, where the ship lies ("Docked at Overlook", "Ashore on the coast of Cairnwatch") and
+its levels at Normal, with Back to the sea (Esc). Its list scrolls as the Playlist's card does (`scrolledNode`):
+
+- **The port's snapshot**, docked at a living port: the city, whether its social space is open ("Port city · Opens
+  later"), a chart of the island (its coast as land over the sea, the harbour a brass ring, the ship a pale dot, north
+  marked), its island, its counters by their keepers' names, its moorings, and that the Playlist is queued from it.
+  Its press lands in its plaza.
+- **The Playlist's banner**, docked at a living port: the four crests (`playlistCrest.ts`, 44 px), each over its name,
+  the week's grey while shut to the character; today's modifier, the Elite and the Abyss Dungeon of the week with their
+  levels, and its rewards. Its press opens the Playlist ([[Interface]], "The Playlist").
+- **Patrol zones**: each its levels; chosen, its three dungeons and which is the dungeon of the day, its resources
+  and what they hold, its foes' sites, the Elite and Abyss seas' bands (or why they are shut), and today's modifier
+  where its dungeon of the day is.
+- **Elite Dungeons**: each its levels; chosen, its run (four or five blocks, two or three seals, its Boss's Court),
+  its company, what it pays, and whether it is the Elite or the Abyss Dungeon of the week with its level and modifiers.
+  Its press, Go in from the sea, opens its card ([[Activities]], "The Elite Dungeons").
+- **Missions**, the **world boss** and the **outpost**: each its kind and levels; its press lands there.
+
+An entry is a press: its name (brass while chosen) and its line; the one chosen, the first while none is, is lit and
+opens to its details and its press (with Enter's key). A locked place leads with a padlock and says why, its press dim.
+A click on an entry chooses it, a second does what its press does, as Enter does; a desolate city's social space is
+listed nowhere.
 
 ## How recordings load
 
@@ -1595,9 +1658,9 @@ button's corner and screen, and the Tailor's wares.
 - No touch layer yet, and so none of DFO's narrow-screen places for the compass. The pad has no way to the land's
   held map until a button is bound to it (the cross's up mounts there), to the menu's Details or a hold to dismantle,
   nor to a press the pointer alone reaches (the sea's marks, the map's places).
-- At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
-  under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
-  bar would stand, and at 960 px the bar is as wide as the screen between the place's name and its right edge.
+- At sea the ship's console stays at the screen's foot. DFO stands its helm bar under the compass and the target's
+  card under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where
+  the bar would stand.
 - The compass marks ships, the public events and the quest's waypoint, a brass diamond on the strip's top edge with
   its distance under it in brass, on foot and at sea ([[Quests]], "Marks"). DFO's marks for the player's own boats, a
   party, the way out, a profession's nodes and Detect spells wait on their like here ([[Pick - Enhanced Plus UI]]).

@@ -15,6 +15,7 @@ import { startGearWindow } from './gearWindow.ts';
 import { Hud } from './hud.ts';
 import { FakeEvent, fakeWindow } from './pageForTests.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import { type ConsoleState, shipConsoleNode } from './shipConsole.ts';
 import { readFile } from 'node:fs/promises';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { setItemRules } from './itemStats.ts';
@@ -518,7 +519,14 @@ test("a keeper's coin and the account's mark are named in a card on hover, and o
   assert.ok(card().includes('Offline'), `the account is named on a key's focus (${JSON.stringify(card())})`);
 });
 
-test('with the menu open, Tab never reaches the sea bar under it, and Enter presses nothing there', () => {
+/** The ship's console at sea level, under way, its helm to be left. */
+const SEA_LEVEL: ConsoleState = {
+  ...{ level: 'sealevel', name: 'The Sloop', hull: 'Sloop', heading: 0, wind: null, sailing: true, resumable: false },
+  ...{ pace: 60, paceNow: 1, speed: 12, bound: null, share: 0.4, line: 'Sailing', water: 'The Lantern Sea' },
+  ...{ kept: { hull: 1, sail: 1, crew: 1 }, canLeave: true, canManage: true },
+};
+
+test('with the menu open, Tab never reaches the ship’s console under it, and Enter presses nothing there', () => {
   const { window } = fakeWindow();
   Object.assign(globalThis, { devicePixelRatio: 1, innerWidth: VIEW.width, innerHeight: VIEW.height });
   Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });
@@ -526,10 +534,11 @@ test('with the menu open, Tab never reaches the sea bar under it, and Enter pres
   const hud = new Hud();
   hud.veil(null);
   let left = 0;
-  hud.onLeaveHelm(() => left++);
-  hud.seaBar({ pace: 2, sailing: true, resumable: false, landfall: null, canLeave: true, canManage: true });
   const stack = new Stack();
   stack.add((ui) => hud.node(ui));
+  const nothing = () => undefined;
+  const acts = { level: nothing, map: nothing, voyage: nothing, sailOn: nothing, heaveTo: nothing, manage: nothing };
+  stack.add((ui) => shipConsoleNode(ui, SEA_LEVEL, { ...acts, leave: () => left++ }, ui.size.width));
   const here = () => ({ gear, ask: () => undefined, forge: null, dress: null });
   stack.add(
     startGearWindow(
@@ -549,7 +558,7 @@ test('with the menu open, Tab never reaches the sea bar under it, and Enter pres
   window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view: 'ship' } }));
   frame();
   frame();
-  assert.ok(ui.boxOf('gear-screen') && ui.boxOf('sea:leave'), 'the menu open over the sea bar');
+  assert.ok(ui.boxOf('gear-screen') && ui.boxOf('sea:leave'), 'the menu open over the console');
   const seen = new Set<string | null>();
   for (let step = 0; step < 60; step++) {
     frame([{ kind: 'key', key: 'Tab' }]);

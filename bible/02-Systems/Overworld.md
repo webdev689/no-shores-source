@@ -7,9 +7,7 @@ code:
   - client/src/overworld/overworldPick.ts#pickAt
   - client/src/overworld/overworldMarks.ts#placeMarks
   - client/src/game/seaMarks.ts#landingChoice
-  - client/src/game/seaMarks.ts#playlistPort
   - client/src/game/seaMarks.ts#landfallMarks
-  - client/src/game/playlistMark.ts#drawPlaylistEmblem
   - client/src/overworld/seaRoute.ts#planSeaRoute
   - client/src/overworld/voyage.ts#shipAt
   - client/src/overworld/islandView.ts#frameSide
@@ -44,7 +42,9 @@ looks more steeply instead. The focus eases onto the ship and trails it by at mo
 2 km in one frame has jumped and is taken whole. The height eases toward the player's zoom, which a low deck holds
 down without losing.
 
-The wheel scales the height by 1.18 a notch, a drag orbits and tilts, and the look keys orbit and tilt at fixed rates.
+The wheel scales the height by 1.18 a notch in the Oversea view alone, a drag orbits and tilts, and the look keys orbit
+and tilt at fixed rates. The Sealevel view brings the eye down close on the ship, switched to and from, never by the
+wheel ([[Game]], "At sea").
 A press that moves under 6 px is a click (`overworldInput.ts`).
 
 Each frame gives a pose: the eye, its forward, right and up, and a 65-degree vertical field of view. From the air the
@@ -72,39 +72,35 @@ land is handled the same way. A route is also refused off the mask, or when no w
 
 ## Voyages
 
-`voyage.ts` sails a ship along its route. DFO's pace dial, 5, 10, 20, 30, 40, 60 and 100, multiplies a base speed of
-12 m/s; a voyage starts at 60 (720 m/s), and the whole dial is open at sea. A ship's place, heading and arrival
-follow from how far it has sailed. Its heading is the route's direction over 300 m about it, so it swings through a
-corner.
+`voyage.ts` sails a ship along its route. Its pace, one of the sea room's ladder, 5, 10, 20, 30, 40, 60, 100 and 200,
+multiplies a base speed of 12 m/s: a voyage set by a click sails at ×60 (720 m/s), one planned on the held map at ×200
+(2,400 m/s), with no dial to change it
+([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). A ship's place, heading and
+arrival follow from how far it has sailed. Its heading is the route's direction over 300 m about it, so it swings
+through a corner.
 
 ## Marks
 
 `overworldMarks.ts` lays the nodes on the picture: social spaces, patrol areas, missions, dungeons, world bosses,
-outpost sites (a small flag on a pole, '⚑' drawn in the game's face, in teal; a site where the player's guild holds
-an outpost in its banner's cloth round its device's colour), ports and the Playlist. A mark is 24 m tall with the eye 260 m over it and grows with the eye's height from there, so it reads at one
-size from the sea camera and from the bird's-eye view. On the screen it is held between 20 and 96 px. A mark that asks
-to be held stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a
-pointer picks the nearest.
+outpost sites (a small flag on a pole, '⚑' drawn in the game's face, in teal; a site where the player's guild holds an
+outpost in its banner's cloth round its device's colour) and ports. At sea only ports and hostile ships are marked. A
+mark is 24 m tall with the eye 260 m over it and grows with the eye's height from there, so it reads at one size from
+the sea camera and from the bird's-eye view. On the screen it is held between 20 and 96 px. A mark that asks to be held
+stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a pointer picks
+the nearest.
 
-Each port city's harbour has a Playlist mark (`<city>-playlist`): the Playlist screen's shield in small, bearing a
-list's three lines, in an amber ring ticked as a dial, its ticks turning 8 degrees a second and brighter under the
-pointer or chosen, an amber ring spreading from it every 2.4 s under every mark's ring, all still under reduced motion
-(`playlistMark.ts`, [[The Playlist's Nodes Are Drawn in More Detail, and Move]]). It stands at sea within the port's
-sight and over its island's side however the island is reached, docking or going ashore
-([[The Playlist Shows Over Its Island, Not Only at Sea]]), open whether or not the city's social space is. It is laid
-beside its city's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left: at
-sea its port's, never thinned away by it and shown while it is; over the side its social space's, or on its harbour
-where that is not shown. Over the side the view is framed on the nodes alone (`landfallMarks`), so going ashore far from
-the harbour never stretches the view to show it: the Playlist waits at the picture's edge. Choosing it opens the
-Playlist screen ([[Interface]], "The Playlist") rather than sailing there or landing.
+No Playlist is marked at sea or over an island: it stands in the island's panel when docked at a port city
+([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]; [[Interface]], "The island's
+panel").
 
-A locked node's mark ([[World Map]], "Seen whole, reached by nodes") is grey, with a lock for its glyph and "Locked"
-for its distance. A click on it chooses nothing and the view's line says "<name> is locked" (`landingChoice`), so no
-landing is ever made there.
+A locked node ([[World Map]], "Seen whole, reached by nodes") is listed in the island's panel with a padlock and
+why ("<name> is locked", or "Opens later" for a social space that opens later); its press is dim, so no landing is
+ever made there (`islandWords.ts`).
 
 ## The island's side
 
-`islandView.ts` gives the bird's-eye view. It is due when the ship is within 30 km of a coast. Its nodes are those
+`islandView.ts` gives the bird's-eye view, where no node is marked: the island's panel lists them ([[Game]],
+"Landings"). It is due when the ship is within 30 km of a coast. Its nodes are those
 within 120 km of the ship on the ship's half of the island, seen from the island's middle, or the three nearest when
 none is. The camera looks inland from the ship at their middle, at the sea camera's 52 degrees, from the lowest height
 that holds every node within 80% of the picture: 1.5 to 600 km. Mountains under it lift it, or steepen it and it is
@@ -117,10 +113,11 @@ the climb reads as one steady zoom.
   the loaded land) into `stepCamera`; `flyRig` for the island's fly-in; `horizonOf` for the lens's planes. The shot
   goes to the renderer; its pose from `poseOf` goes to `pickAt` and to `placeMarks`, which lays the marks' layer.
 - **Input**: presses through `pressAt` and `pressMove` (a drag orbits by `dragCamera`), the wheel through
-  `wheelNotches` into `zoomCamera`, the look keys into `keyTurn`.
-- **A click at sea**: `pickAt`. On the sea, the land or a mark, the ship sails there: `planSeaRoute`, then `voyageOf`;
-  each frame `shipAt`. Near a coast, `nearestIsland`, `sideNodes` and `frameSide` frame the island's side, where a
-  node's mark is chosen and then clicked again, or Enter pressed, to land there.
+  `wheelNotches` into `zoomCamera` in the Oversea view, the look keys into `keyTurn`.
+- **A click at sea**: `pickAt`, then `clickAtSea`. On the sea in the Oversea view the ship sails there:
+  `planSeaRoute`, then `voyageOf`; each frame `shipAt`. On the land or a port's icon it asks to dock or go ashore.
+  Near a coast, `nearestIsland`, `sideNodes` and `frameSide` frame the island's side, its nodes chosen from its
+  panel.
 
 ## Limits
 

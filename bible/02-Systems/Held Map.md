@@ -42,7 +42,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
 ## How it works
 
-- **Opening.** At sea, Map on the navigation panel, or N, takes the view down from the [[Overworld]]'s raised camera
+- **Opening.** At sea, Plan a voyage on the ship's console in the Oversea view, or N, takes the view down from the [[Overworld]]'s raised camera
   to the helm behind the Sloop's wheel on its quarterdeck in first person, over 1.1 s, the eye riding the swell with it.
   On the way down every ship shrinks from the Overworld's scale to its own, so at the wheel the Sloop is its true size
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). There the
@@ -170,8 +170,9 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   Set sail takes that one, so no voyage sails for a sea room whose gate would turn the player away.
 - **Turning back.** Escape on the way down to the helm turns the view back before the map is raised.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
-  destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation
-  panel.
+  destination set, the ship sets sail for it as it does, at ×200, a planned voyage's pace
+  ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). The voyage can be stopped
+  and resumed from the ship's console.
 
 ## On land
 

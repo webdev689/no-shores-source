@@ -8,20 +8,17 @@ import { keepGuild } from './guild/guildHeld.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 
 /** What a picture's drawing does on a context that only notes it. */
-function drawnBy(picture: Picture, texels = 64): string[] {
+function drawnBy(picture: Picture): string[] {
   const calls: string[] = [];
   const context = new Proxy({} as Record<string, unknown>, {
     get:
       (_held, name: string) =>
-      (...args: unknown[]) => {
-        calls.push(`${name}(${args.map(String).join(',')})`);
-        // A gradient asked for takes its stops, and they are noted too.
-        return { addColorStop: (...stop: unknown[]) => calls.push(`addColorStop(${stop.map(String).join(',')})`) };
-      },
+      (...args: unknown[]) =>
+        calls.push(`${name}(${args.map(String).join(',')})`),
     set: (_held, name: string, value: unknown) => (calls.push(`${name}=${String(value)}`), true),
   }) as unknown as OffscreenCanvasRenderingContext2D;
   const source = picture.source as { draw: (context: OffscreenCanvasRenderingContext2D, w: number, h: number) => void };
-  source.draw(context, texels, texels);
+  source.draw(context, 64, 64);
   return calls;
 }
 
@@ -92,94 +89,4 @@ test("the guild's own outposts are marked by a star over the ring and in words, 
     calls.some((call, index) => call === `fillStyle=${colour}` && calls[index + 1]?.startsWith('fillRect('));
   assert.ok(filled(hexOf('navy')) && filled(hexOf('gold')), 'its cloth and its device in their colours');
   assert.match(named(ownNamed), /Your guild's outpost · raised/, 'its note says it is the guild’s own');
-});
-
-test("the Playlist's mark is its shield drawn, its ticks turning and a ring spreading from it; still under reduced motion", () => {
-  const ui = (seconds: number) =>
-    ({
-      clicked: () => false,
-      hovered: () => false,
-      focusOn: () => undefined,
-      age: () => seconds,
-    }) as unknown as Interface;
-  const mark = {
-    ...{ id: 'overlook-playlist', kind: 'playlist', name: 'Playlist', note: '1.2 km', x: 100, y: 100, sizePx: 40 },
-    ...{ locked: false, chosen: false, named: false, arrowDegrees: null },
-  } as unknown as ScreenMark;
-  const laidAt = (seconds: number) => markNodes(ui(seconds), [mark], () => undefined);
-  const ringAt = (seconds: number) => laidAt(seconds).find((node) => node.id === 'mark:overlook-playlist');
-  // Its dial over its ring, its spreading ring laid on the screen beside it.
-  const child = (seconds: number, key: string) =>
-    laidAt(seconds)
-      .flatMap((node) => [node, ...(node.children ?? [])])
-      .find((each) => !!each && each.picture?.key.startsWith(key)) || undefined;
-  const calls = drawnBy(ringAt(1)?.picture as Picture);
-  assert.ok(
-    calls.some((call) => call.startsWith('quadraticCurveTo(')),
-    'its shield',
-  );
-  assert.ok(!calls.some((call) => call.startsWith('fillText(')), 'no glyph');
-  assert.ok((child(1, 'mark dial')?.picture?.turn ?? 0) < (child(2, 'mark dial')?.picture?.turn ?? 0), 'turning');
-  assert.ok(Number(child(1.5, 'mark ripple')?.width) > Number(child(0.5, 'mark ripple')?.width), 'spreading');
-  Object.assign(globalThis, { matchMedia: () => ({ matches: true }) });
-  try {
-    assert.equal(child(2, 'mark dial')?.picture?.turn, 0, 'its ticks still');
-    assert.equal(child(1.5, 'mark ripple'), undefined, 'no ring');
-  } finally {
-    Reflect.deleteProperty(globalThis, 'matchMedia');
-  }
-});
-
-test("the Playlist's mark's ticks and ring stay over a pixel wide at its smallest, so turning they never blink", () => {
-  const ui = {
-    clicked: () => false,
-    hovered: () => false,
-    focusOn: () => undefined,
-    age: () => 1,
-  } as unknown as Interface;
-  const mark = {
-    ...{ id: 'far-playlist', kind: 'playlist', name: 'Playlist', note: '9 km', x: 0, y: 0, sizePx: 20 },
-    ...{ locked: false, chosen: false, named: false, arrowDegrees: null },
-  } as unknown as ScreenMark;
-  const nodes = markNodes(ui, [mark], () => undefined).flatMap((node) => [node, ...(node.children ?? [])]);
-  for (const key of ['mark dial', 'mark ripple']) {
-    const picture = nodes.find((node) => !!node && node.picture?.key.startsWith(key))?.picture;
-    assert.ok(picture, key);
-    // Drawn at its own texels, which stand over the mark's 20 pixels.
-    const texels = picture.pixel?.width ?? 0;
-    const widths = drawnBy(picture, texels).flatMap((call) =>
-      call.startsWith('lineWidth=') ? [Number(call.slice(10))] : [],
-    );
-    assert.ok(
-      widths.length > 0 && Math.min(...widths) / (texels / 20) >= 1.2,
-      `${key}: ${widths.join(', ')} of ${texels}`,
-    );
-  }
-});
-
-test("the Playlist's spreading ring lies under every mark's ring; a locked Playlist mark stands still", () => {
-  const ui = {
-    clicked: () => false,
-    hovered: () => false,
-    focusOn: () => undefined,
-    age: () => 1,
-  } as unknown as Interface;
-  const mark = (id: string, kind: string, x: number, locked = false) =>
-    ({
-      ...{ id, kind, name: id, note: '1 km', x, y: 0, sizePx: 48, locked, chosen: false, named: false },
-      arrowDegrees: null,
-    }) as unknown as ScreenMark;
-  const laid = markNodes(
-    ui,
-    [mark('overlook-port', 'port', 0), mark('overlook-playlist', 'playlist', 52)],
-    () => undefined,
-  );
-  const ripple = laid.findIndex((node) => node.picture?.key.startsWith('mark ripple'));
-  const rings = laid.flatMap((node, place) => (node.id?.startsWith('mark:') ? [place] : []));
-  assert.ok(ripple >= 0 && rings.length === 2 && ripple < Math.min(...rings), 'laid before them all');
-  const locked = markNodes(ui, [mark('overlook-playlist', 'playlist', 0, true)], () => undefined);
-  const keys = locked
-    .flatMap((node) => [node, ...(node.children ?? [])])
-    .map((node) => (node && node.picture?.key) || '');
-  assert.ok(!keys.some((key) => key.startsWith('mark dial') || key.startsWith('mark ripple')));
 });

@@ -1,7 +1,7 @@
 ---
 type: decision
 date: 2026-11-24
-status: in force
+status: replaced by [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]
 ---
 # The Playlist Shows Over Its Island, Not Only at Sea
 

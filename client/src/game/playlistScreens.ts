@@ -9,7 +9,6 @@ import type { AccountLink } from '../network/accounts.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { LAUNCHING, PlaylistView } from './playlistScreen.ts';
 import { type PlaylistEntry, type PlaylistScreenState, launchRoom, playlistScreenOf } from './playlistWords.ts';
-import { playlistPort } from './seaMarks.ts';
 import { nodeOfRoom, runInstance } from './rooms.ts';
 import { breachPlanOf } from './breachPlan.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -33,8 +32,9 @@ export interface PlaylistDeps {
 }
 
 export interface Playlists {
-  /** A press on mark `id`: true, and its screen open, where it is a Playlist's mark. */
-  open(id: string): boolean;
+  /** Opens the screen beside port city `city` (its id, as `overlook`), from the island's panel docked there: true once
+   *  it stands. */
+  open(city: string): boolean;
   /** Looks again: the screen built anew as the second (its countdowns) or the character's word changes, and closed
    *  once the player has left the sea. */
   look(): void;
@@ -158,9 +158,7 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
   });
   return {
     layer: view.layer,
-    open: (id) => {
-      const city = playlistPort(id);
-      if (city === null) return false;
+    open: (city) => {
       // A city's social space is named for it; the Playlist is one for the whole game, opened beside any port.
       build(`Beside ${placeName(`${city}-social`)}`);
       // Launch goes with the company where there is one: the Roster says, a moment after the screen opens.

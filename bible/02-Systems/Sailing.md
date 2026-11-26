@@ -305,8 +305,8 @@ A body walks its deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 The [[Held Map]] takes the ship to other waters, seen sailing away
 ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). A course chosen into another water asks whether to
-travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar goes
-while it runs, Stop and the pace dial do nothing however they are asked, the menu does not open, and nothing takes the
+travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the ship's
+console goes while it runs, Stop and the view switch do nothing however they are asked, the menu does not open, and nothing takes the
 player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
 
 1. The map lowers and the camera leaves the helm on an eased rail out to the ship's aft starboard quarter, 70 m off and

@@ -67,6 +67,11 @@ code:
   - client/src/game/passage.ts#Passage
   - client/src/game/seaHelm.ts#clearAhead
   - client/src/game/seaClose.ts#CloseZoom
+  - client/src/game/landingAsk.ts#clickAtSea
+  - client/src/game/seaLandings.ts#SeaLandings
+  - client/src/game/shipConsole.ts#shipConsoleNode
+  - client/src/game/islandWords.ts#islandPanelOf
+  - client/src/game/islandPanel.ts#islandScreen
   - client/src/game/aboard.ts#Aboard
   - client/src/game/crew.ts#Crew
   - client/src/game/shipPeople.ts#ShipPeople
@@ -139,9 +144,9 @@ activities' word (`startActivities`: a gate that shut, a company that fell); eac
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
 | On foot | The leave held (M, or the pad's View held, 1.5 s; [[Interface]], "The leave held") | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]), and no yes while the room joins again or has not sent the gear (a room lost for good is played on alone, and the page goes); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
-| At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
-| Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
-| Over the side | Escape | At sea |
+| At sea | A click on a port's icon or its island, or L off a coast, then the confirmation's yes, once the ship lies within reach | Over the island, its panel up |
+| Over the island | An entry of its panel chosen, then chosen again, its press or Enter | The veil, "Landing at" the node, then on foot there; an Elite Dungeon's card; or the Playlist |
+| Over the island | Escape, or the panel's Back to the sea | At sea |
 | On foot in a patrol | E at an entrance's door, offered as "Enter" and the dungeon's name | The veil, "Entering" the dungeon, then on foot at its way in |
 | In a dungeon | E at its exit door, offered as "Leave" | The veil, "Leaving" the dungeon, then before its entrance's door, facing out |
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
@@ -475,27 +480,30 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   as the sea's view did. A view near the ship that shows it smaller at its true size (Manage with its wheel taken out) is
   eased down to instead. On each view near the ship every ship is its true size, its pose on the swell, its footprint on the
   water and everyone aboard with it.
-- **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
-  to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
-- **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
-  lowest the wheel keeps coming in, a fifth of the way a notch. The eye comes down along the camera's own look to
-  25 m from the point 4.5 m over its waterline that the World Editor looks at, every ship drawn as its size coming in
-  has it. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
-  on the picture as shown.
-- **The pace follows the view** (`easedPace`). From the raised view a voyage sails at the dial's pace. Once the eye
-  comes in past the camera's lowest, and at the helm, in Manage and walking the deck, the pace the ship is sailed at eases
-  down DFO's ladder, the dial's step, then 60, 40, 30, 20, 10 and 5, to 1, the world's own time, a step each 0.15 s, so
-  it sails at its true speed, 12 m/s, while watched close; as the view rises it eases back up to the dial the same way.
-  The dial itself is not changed, and the voyage's time left is read at it. Each step goes to the sea room with the ship's
+- **Two views** ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]). The Oversea view is DFO's raised camera over the ship (`stepCamera`):
+  drag to orbit, the wheel to zoom it between its lowest and highest, the arrow keys to turn. The ship first lies
+  facing the island, and the view looks 30 degrees down, so the island stands in it. The Sealevel view
+  (`seaClose.ts`) brings the eye down along the camera's own look to 25 m from the point 4.5 m over its waterline that
+  the World Editor looks at, every ship drawn as its size coming in has it, from whatever height the Oversea view
+  stood at. V (the pad's left) or the console's switch moves between them, eased over about a second; the wheel never
+  does, and at sea level it changes nothing. Going ashore, the view eases back up as it flies off. Clicks and marks
+  are taken on the picture as shown.
+- **The pace follows the view** (`easedPace`). In the Oversea view a voyage sails at the pace it was set at: ×200
+  planned on the held map, ×60 set by a click (`PLANNED_PACE`, `CLICK_PACE`). Once the view comes down to sea level,
+  and at the helm, in Manage and walking the deck, the pace the ship is sailed at eases down the sea room's ladder, 200,
+  100, 60, 40, 30, 20, 10 and 5, to 1, the world's own time, a step each 0.15 s, so it sails at its true speed, 12 m/s,
+  while watched close; as the view rises it eases back up to the voyage's pace the same way. The voyage's pace itself is
+  not changed, and its time left is read at it. Each step goes to the sea room with the ship's
   course; the room takes one course each half second, so it sails the ship at the latest step it has, and the game sails
   the ship at the room's pace until it takes the next. Once the room's word on the ship comes and its pace is not the one the ship is
   sailed at, a step it refused, the game asks it again with the ship's course, until the two agree (`paceToAskAgain`); a
   slower word with a hostile ship within 2.75 km is the room holding the ship, not a refusal. While the pace is eased, and
   the room sails the ship at it, the voyage's line adds "Sailing at true speed while you watch close."
-- **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
-  2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
-  `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
-  planned says why.
+- **Sailing.** In the Oversea view a click on the sea plans a route round the land (`planSeaRoute`): on the open
+  landmass's 2 km mask when both ends lie in its window, else on the whole frame's, and sails it at ×60. A destination
+  set on the held map sails at ×200. There is no pace to choose. At sea level a click on the sea sets no course: the
+  helm's keys sail there. A click on the land, a port's icon or a sea island asks first ("Landings", below). A
+  route that cannot be planned says why; resumed, a voyage sails at the pace it was set at.
 - **The chase** (`seaChase.ts`). A click on a sighted hostile ship's mark, or Enter while its mark is chosen, sets
   the course to intercept it: where the ship meets the hostile ship at their ways (its rank's way and a ship's 12 m/s, both on
   the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
@@ -503,20 +511,28 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   Resume, going ashore). Its way is the one the room sends with it (`Hostile.way`). The room is told whom the ship
   chases: within 750 m of the hostile ship the fight begins, whatever its temper. Evading is turning away from a bold ship, sighted
   ahead on the ship's course where the bold ship can meet it: held, the course meets the bold ship; turned away, the ship outruns it.
-- **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the sea's own view, close in or not:
+- **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the Sealevel view alone; in the Oversea view they
+  do nothing, the click sailing there:
   - A and D turn the ship at the helm's 10 degrees a second. Under way it takes a course straight on along its new
     heading; at rest it turns where it lies, and the room turns it too ([[Server]], "The sea").
-  - W sets the ship sailing straight on. That course reaches up to 20 km, stops 500 m short of the first coast that way, and
+  - W sets the ship sailing straight on, at ×60 eased down to its true speed while watched. That course reaches up to 20 km, stops 500 m short of the first coast that way, and
     is set again once under 5 km of it is left. Where a coast stops it short, or less than 200 m lies clear, the ship comes
     to rest facing the coast, and the voyage's line says "Land lies ahead."
   - S heaves the ship to, as Stop does.
   - Shift gives no burst at sea: only a fight's helm has one ([[Naval Combat]], "How it works").
   - Straight on, the voyage's line says "Sailing straight on"; resumed, the ship sails on straight along its heading.
-- **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]), a window of the [[Interface]]
-  at the foot of the screen in three groups, Navigation, Pace and Ship, holds Map (N), which takes the
-  view down to the helm and raises the [[Held Map]], where a destination is set; Stop while under way and Resume
-  voyage once stopped short (both Space); the pace dial; and Manage (B) and Leave the helm (H)
-  ([[The Ship Is Managed and Walked From the Sea's Panel]]). A stopped voyage keeps its destination: resuming
+- **The ship's console** (`shipConsole.ts`, `seaScreen.ts`; [[The Sea Is Navigated From the Helm With the Held Map]],
+  [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]), a window of the [[Interface]] at the foot of the screen while the ship is the player's
+  to sail. Its head names the ship (its own name, else its class) beside its class, over the switch between the
+  Oversea and the Sealevel views (V). Under it: a compass, north up, its brass needle the ship's heading and a pale
+  arrow the way the wind blows, with the heading in degrees and the wind ("Wind 6 m/s from the ENE", or "Calm");
+  the voyage (under way, hove to or at anchor; its pace, and while eased "×1 (×200 set) · true speed while watched";
+  its speed in m/s; where it is bound when it makes for a landing; a bar of the way sailed; its line); and the ship
+  (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
+  Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
+  Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)
+  ([[The Ship Is Managed and Walked From the Sea's Panel]]). Narrower than 840 pixels its columns stand under each
+  other. It goes at the helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination in
   other waters asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
   sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
@@ -556,8 +572,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   stand 4 pixels tall or more on the picture (`figureReach`): about 250 m off on a 720-pixel picture through the sea's
   field, as many times farther as its ship is drawn larger. The nearest are drawn first, 40 at most a frame across
   every other ship. In a fight they follow the fight ([[Naval Combat]], "How it looks").
-- **No nodes are marked at sea.** A port has an icon, over its harbour, with its name and distance, once the ship is
-  within 60 km of it; only a port city's harbour is a port, so a ruin's has none (`portOf`). Every hostile ship within
+- **No nodes are marked at sea**, nor the Playlist. A port has an icon, over its harbour, with its name and distance,
+  once the ship is within 60 km of it, which a click asks to dock at ("Landings"); only a port city's harbour is a port,
+  so a ruin's has none (`portOf`). Every hostile ship within
   its own sight of the ship has a mark (`seaHostiles.ts`): its faction's emblem in a ring of its rank's colour, its name
   as its plate gives it (Tithe Brig, Tithe Schooner, ...), its level and its distance, a Miniboss's mark over it. Each
   is held at the picture's edge when off it, its arrow pointing the way; ports too near each other on the picture are
@@ -620,19 +637,33 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 ## Landings
 
-Within 30 km of the open landmass's coast the ship is offered a landfall (`landfallOf`): within 20 km of its port's
-harbour, to dock there ("Dock at Overlook"); anywhere else, to go ashore. A ruined city's harbour is no port
-(`portOf`): off it the ship is offered only to go ashore, and its social space, locked for good, shows no mark among
-the side's nodes. Either one, by Enter, L or the offer's own
-button, flies the view up over the island's side the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s;
-the ship heaves to, its voyage kept to be resumed. The side's nodes are marked by kind with names and distances from
-the ship; docking keeps the city's social space among them. A click chooses one; a second click on it, or
-Enter, lands there: the player stands at its first spawn, facing inland from the ship, or at a social space out from
-its landmark over the city, as on arriving. Escape flies back down.
+Landing asks first ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]];
+`landingAsk.ts`, `seaLandings.ts`). A click on a port's icon, or anywhere on its island's land, asks "Dock at
+Overlook?"; on a coast with no living port (a ruined city's harbour is no port, `portOf`), "Go ashore on Cairnwatch?";
+on the water by one of the sea's islands, within 400 m of its reach, "Go ashore on the cove?". The key L asks after what
+the sea offers where the ship lies. The confirmation stands over the foot of the screen, its question in brass and what
+yes does under it; Enter or its press says yes, Escape or Cancel no, and a click elsewhere puts it by, as does a fight,
+the helm, going aboard or a travel.
 
-Off one of the sea's islands the ship is offered to go ashore on it instead: it sails round to its anchorage and the
-player walks ashore on its beach, into its room ([[Islands]], "On the page"). A player washed up on a found island
-walks ashore there.
+Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,
+to dock there; anywhere else, to go ashore. Yes within reach lands at once; out of reach the ship makes for the harbour
+(or the coast clicked) at ×60 and lands once it is within reach, which the console names ("Bound for Overlook's harbour,
+to dock"). Another course given meanwhile (a click, W, a chase) lets the landing go; a stop keeps it with the voyage, to
+be resumed.
+
+Landing flies the view up over the island the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s, framed on
+the nodes of its side, the city's social space among them when docking; the ship heaves to, its voyage kept to be
+resumed. No node is marked on the map: the island's panel holds them ([[Interface]], "The island's panel",
+`islandPanel.ts`, `islandWords.ts`). Docked, it holds the port's snapshot and the Playlist's banner, then every patrol
+zone, Elite Dungeon, mission, world boss and outpost of the island; gone ashore, the places alone. An entry chosen opens
+to its details and its press: a place lands there (the player stands at its first spawn, facing inland from the ship, or
+at a social space out from its landmark over the city, as on arriving); an Elite Dungeon opens its card to go in from
+the sea ([[Activities]], "The Elite Dungeons"); the Playlist's opens the Playlist. A second click on the entry chosen,
+or Enter, does what its press does, the first entry's while none is chosen. Escape, or the panel's Back to the sea,
+flies back down.
+
+A sea island's landing sails round to its anchorage and the player walks ashore on its beach, into its room
+([[Islands]], "On the page"). A player washed up on a found island walks ashore there.
 
 ## Rooms
 
