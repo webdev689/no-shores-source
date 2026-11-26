@@ -243,8 +243,10 @@ The decisions in [[Open Questions]] are not repeated here.
     nothing, shows no currency row; the notice's key at the far right is not dim (dimmed, it read under 4.5:1); a keeper
     with no faction shows a plain rule beside their crest, not a reputation bar.
   - In the wreck's duel the boarder waits at the foot of the quarterdeck's step for a player up there: no foe climbs it.
-  Left after merge: the wreck workflow republishes the wreck's mesh (`tools/wreck`'s heap fix), until which the page
-  sets the floating heap down and its baked light sits where it floated. Not yet seen: the escort on its horse and the
+  Left: the wreck's mesh with the heap on its deck is published already, by the wreck workflow's run 45741964515 on
+  this branch (its keys hashed, so nothing live changed); the game takes it once a commit takes that run's
+  `wreck-level` artifact's `content/prologue/wreck.json` whole (this session's network could not fetch it). Until then
+  the page sets the floating heap down and its baked light sits where it floated. Not yet seen: the escort on its horse and the
   hulk at sea (the offline room cannot load a character on those steps), anything in a deployed room or on a real GPU,
   or played by hand.
 
