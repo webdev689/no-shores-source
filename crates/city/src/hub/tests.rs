@@ -6,7 +6,7 @@ use crate::stations::StationKind;
 use std::sync::OnceLock;
 
 /// Continent 1's ground with its city settled, and the city's plan, once for every test.
-fn planned() -> &'static (land::ground::Ground, Plan) {
+pub(crate) fn planned() -> &'static (land::ground::Ground, Plan) {
     static PLANNED: OnceLock<(land::ground::Ground, Plan)> = OnceLock::new();
     PLANNED.get_or_init(|| {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");

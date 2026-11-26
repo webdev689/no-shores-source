@@ -9,8 +9,10 @@ import { FAR_BAND_M, FAR_M, MIDDLE_BAND_M, MIDDLE_M, NEAR_BAND_M, NEAR_M } from 
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
 import { PAVED_TILE } from './cityGround.ts';
-import { MASS_RUIN } from './cityMasses.ts';
+import { MASS_BUILDING, MASS_RUIN } from './cityMasses.ts';
 import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
+import { LAYER_BITS, PIECE_SHIFT } from './cityModels.ts';
+import { CITY_NIGHT_WGSL } from './cityNightShader.ts';
 
 /** How much nearer in depth (not on screen) the city is drawn than it stands: a few centimetres, and a share of the
  *  distance, so its terraces win over the land's coarser rings and its pads' own ground. */
@@ -50,6 +52,10 @@ struct View {
   eye: vec4f,
   // the ground's tiles: the grid's north-west corner from the city's middle, and the tiles a row; and 1 in a ruin
   grid: vec4f,
+  // the world's hour (0 to 24), and 1 where the city is lit at night
+  night: vec4f,
+  // the light map's north-west corner from the city's middle, and the metres it covers east and south
+  pools: vec4f,
 };
 @group(0) @binding(0) var<uniform> view: View;
 @group(0) @binding(1) var<storage, read> cell_table: array<vec4f>;
@@ -91,6 +97,7 @@ const TIER_CRYSTAL = 8u;
 const BAYER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 
 ${PULL_WGSL}
+${CITY_NIGHT_WGSL}
 fn clip_of(point: vec3f) -> vec4f {
   return view.from_eye * vec4f(pulled(point - view.eye.xyz, point.z), 1.0);
 }
@@ -216,7 +223,7 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   // here would not be in uniform control flow.
   let ripple = sky_ripple(from_eye) * puddle * (1.0 - smoothstep(4.0, 12.0, length(from_eye)));
   let mirror = normalize(facing + vec3f(ripple, 0.0));
-  return surface * (light + sky_lamps(from_eye, facing)) + sky_sheen(mirror, from_eye, wet);
+  return surface * (light + sky_lamps(from_eye, facing) + city_pool(from_eye, facing)) + sky_sheen(mirror, from_eye, wet);
 }
 
 struct Surface {
@@ -229,6 +236,12 @@ struct Surface {
   @location(5) from_eye: vec3f,
   // in a ruin, the height over the building's origin and the height it is broken off at; (0, 0) standing whole
   @location(6) ruin: vec2f,
+  // its windows at night: a window's draw whether it is lit, its cell's district, what holds windows (0 nothing,
+  // 1 a forged model's panes, 2 a far mass's wall) and its draw when it goes dark; a mass's first number is its own
+  @location(7) @interpolate(flat) lights: vec4f,
+  // on a mass's wall, metres along it and up from its foot; and the wall's length and height
+  @location(8) wall: vec2f,
+  @location(9) @interpolate(flat) span: vec2f,
 };
 
 // A broken wall's edge: how far under the break it has fallen at a point, 0 to 1, the same over each 1.5 m square.
@@ -244,6 +257,8 @@ fn jagged(point: vec3f) -> f32 {
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   // all a ruin's crystal is the Lattice's overtaking: its crown, its crust and its formations
   crystal_glow = select(CITY_CRYSTAL_GLOW, RUIN_CRYSTAL_GLOW, view.grid.w > 0.5);
+  // a far wall's metres a pixel, taken before any discard
+  let wall_px = fwidth(surface.wall);
   let clear = (surface.layer & CLEAR_GLASS) != 0u;
   let layer = surface.layer & ~CLEAR_GLASS;
   let picture = textureSample(pictures, picture_sampler, surface.uv, min(layer, LAST_PICTURE));
@@ -269,7 +284,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     discard;
   }
   let scorch = select(0.0, ${SCORCH} * pow(clamp(surface.ruin.x / max(surface.ruin.y, 1e-3), 0.0, 1.0), 1.5), broken);
-  return vec4f(lit(layer, albedo * (1.0 - scorch), normal, surface.from_eye), 1.0);
+  let shown = lit(layer, albedo * (1.0 - scorch), normal, surface.from_eye);
+  return vec4f(shown + window_light(surface, picture.a, clear, wall_px), 1.0);
 }
 `;
 
@@ -333,8 +349,14 @@ fn model_vertex(vertex: Vertex) -> Surface {
   surface.from_eye = point - view.eye.xyz;
   surface.normal = select(turned(vertex.normal, vertex.place.w), vertex.normal, solid);
   surface.uv = vertex.uv;
-  surface.layer = vertex.layer;
+  surface.layer = vertex.layer & ${LAYER_BITS}u;
   surface.tier = vertex.about.y;
+  // a forged model's windows, placed by instance in a cell, each piece of it drawn whether it is lit
+  let piece = vertex.layer >> ${PIECE_SHIFT}u;
+  let own = vec2i(vec2f(floor(vertex.place.x * 4.0), floor(vertex.place.y * 4.0))) + vec2i(i32(piece) * 7919, 0);
+  let windowed = vertex.about.y == TIER_WHOLE && piece > 0u;
+  let district = cell_table[vertex.about.x].w - 1.0;
+  surface.lights = select(vec4f(0.0), vec4f(texel_hash(own), district, f32(PANES), texel_hash(own + vec2i(31, 977))), windowed);
   let crystal = vertex.about.y == TIER_CRYSTAL;
   surface.fades = select(fades_of(vertex.about.x), crystal_fade(vertex), solid || crystal);
   surface.ruin = select(vec2f(0.0), vec2f(vertex.position.y, vertex.cut), vertex.cut > 0.0);
@@ -426,6 +448,14 @@ fn mass_vertex(@builtin(vertex_index) index: u32, mass: Mass) -> Surface {
   surface.normal = vec3f(normal.x * cosine - normal.y * sine, normal.x * sine + normal.y * cosine, normal.z);
   surface.tier = mass.about.w & 6u;
   surface.fades = fades_of(mass.about.z);
+  // a wall's windows: along it from its end and up from its foot
+  let half = select(mass.size.x, mass.size.y, sideways);
+  surface.wall = vec2f(along + half, here.z);
+  surface.span = vec2f(half * 2.0, mass.size.z);
+  let own = vec2i(i32(floor(mass.place.x * 4.0)), i32(floor(mass.place.y * 4.0)));
+  let walled = face < 4u && (mass.about.w & ${MASS_BUILDING}u) != 0u;
+  let district = cell_table[mass.about.z].w - 1.0;
+  surface.lights = select(vec4f(0.0), vec4f(texel_hash(own), district, f32(WALL_WINDOWS), f32(face)), walled);
   // a ruin's mass is cut already: its walls scorched up to their top, which is its break, and its top left open
   let ruined = (mass.about.w & ${MASS_RUIN}u) != 0u;
   let open_top = select(vec2f(here.z, mass.size.z + 0.01), vec2f(1.0, 0.5), roofed || face >= 6u);
@@ -507,7 +537,7 @@ struct Cast {
 
 @vertex
 fn model_clear_cast(vertex: Vertex) -> Cast {
-  return Cast(shadow.from_eye * vec4f(placed_broken(vertex) - view.eye.xyz, 1.0), vertex.uv, vertex.layer);
+  return Cast(shadow.from_eye * vec4f(placed_broken(vertex) - view.eye.xyz, 1.0), vertex.uv, vertex.layer & ${LAYER_BITS}u);
 }
 
 @fragment

@@ -166,4 +166,4 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
 }
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

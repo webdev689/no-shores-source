@@ -34,6 +34,11 @@ code:
   - crates/city/src/overtaken.rs#crown
   - crates/city/src/overtaken.rs#crusted
   - crates/city/src/overtaken.rs#spire
+  - crates/city/src/lights.rs#lights
+  - client/src/city/streetLamps.ts#streetLamps
+  - client/src/city/nightLights.ts#poolMapSteps
+  - client/src/city/windowLights.ts#windowGlow
+  - client/src/sky/glowPoints.ts#GlowPoints
   - crates/land/src/pads.rs#Pads
   - crates/land/src/sites.rs#City
   - client/src/city/cityView.ts#CityView
@@ -170,6 +175,15 @@ generated and shaped, before any city stands on it:
    a fall of 6 m or more kills ([[Reach]]).
 10. **Ramps** (`ramps`): every avenue's terraces are joined by a ramp the road's width, and a switchback climbs at
    each avenue's head; Overlook's harbour way is laid down them to the quay, sealed at its head.
+11. **Lights** (`lights`), Overlook's alone and never a ruin's ([[Overlook's City Below Is Lit at Night, in Detail]]):
+   a lamp post every four ground tiles (25.6 m) along each edge of an avenue's road, 0.8 m in from the paving's edge,
+   standing on the pad over it, so on a ramp at the ramp's height; a lantern every 20 m along the quay's seaward edge
+   and every 24 m down both edges of each pier, a pair at its head; and on the heads of the two piers nearest the
+   harbour, the harbour mouth's light, the tallest. Each keeps 0.5 m clear of every solid that rises over its foot,
+   off the plaza and the landmark's base, and 6 m from every other. The page adds the blocks' own streets' lamps, which
+   only it can place, holding their ground tiles (`streetLamps.ts`): just in from a dirt tile's edge where the street
+   ends beside it within its block, 2 m clear of every building's box (so of its doorways too) and 0.6 m of every
+   prop's, and 22 m from every other light, by one rule in the plan's order, the same on every machine.
 
 **Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and the page;
 [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
@@ -313,6 +327,35 @@ their pictures (`MODEL_CLEAR_CAST_SHADER`), every other model through one that r
 
 Winter takes each picture's snowed turn where its set has one, unlightened.
 
+**At night**, Overlook's city below the hub is lit ([[Overlook's City Below Is Lit at Night, in Detail]], [[Sky]]),
+everything coming up through the dusk as the lamps do (`lampsLit`):
+
+- **Windows.** A forged model's window panes (its glass picture's glass texels) glow warm, each window lit or dark as
+  one: a model's pieces, its triangles joined by their corners, are numbered in its vertices (`pieceNumbers`). Far
+  off, each mass's and hull's walls are laid with windows as the forged buildings lay them (one a storey, 3.2 m,
+  apart, 2 m wide over a 0.9 m sill, the run's ends 0.5 m clear), drawn 1.8 m tall, and evened out to the share lit
+  where a window is narrower than a pixel, so far walls read warm without shimmering. Each window draws, from its
+  building's place and its own number, whether it is lit tonight and when it goes dark, by its cell's district
+  (`windowLights.ts`):
+
+  | District | Lit at dusk | Going dark |
+  |---|---|---|
+  | Markets | 62 % | 21:30 to 05:00 |
+  | Harbour | 58 % | 22:00 to the dawn |
+  | Houses | 45 % | 21:00 to 02:30 |
+  | Guilds | 42 % | 21:00 to 01:00 |
+  | Noble quarter | 50 % | 20:30 to 23:30 |
+  | Temples | 32 % | burning till the dawn |
+
+- **Lamps and lanterns.** Each light's post is a forged model of its kind, drawn by instance in the near cells: an
+  iron post, its lantern burning in the glow's colour and an iron cap. Its flame is a glowing point (`glowPoints.ts`)
+  drawn over the finished picture after the water, never less than 2.2 pixels across, so the lit city reads from
+  the sea; a lantern's and the mouth's lay a column of their light on the water under them, rippling. The pools of
+  light round them are a light map of the city, 3.2 m a texel, written once as the city is built: each lamp's pool
+  falls off as the square of the way out to its reach (a lamp's 9 m, a lantern's 8, the mouth's 14), pools adding
+  where they meet. The ground, the solids and the buildings read it at night, up to a few metres over their cell's
+  level, so a wall by a lamp is lit at its foot. None of them is one of the sky's sixteen lamps.
+
 **What it costs.** Cells are grouped by 4 x 4 into chunks, culled against the view; consecutive chunks are one draw
 call. Overlook's build is about 0.8 to 1 s of work in Node, some 118,000 steps: about 500 frames at 2 ms, 40 at
 24 ms. Most steps take microseconds; a model's forging is one step, the largest about 10 ms in Node. Its 157
@@ -364,8 +407,7 @@ be, so its land, its nodes and its plaza's floor stand as they would. Then what 
   shader and drawn from both faces, an open shell, its level faces over a quarter of the break's height (its upper
   floors and ceilings) left out too; its shadow is cast as if every corner above the break stood at it, lidded there.
   Its masses and hull end at the break, open at the top and drawn from both faces, so a ruin reads as one at every
-  distance, from the sea and the Overworld too. A ruin's windows are as dark as a port city's: lit windows are not
-  drawn.
+  distance, from the sea and the Overworld too. A ruin's windows stay dark at night and its streets unlit.
 
 Every heap is a frustum of rubble, its top 0.3 of its base, dressed in the climate's terrace rubble. At sea a ruin
 shows no port icon over its harbour and offers no docking there; its island's other landings stay ([[Game]],
@@ -463,7 +505,12 @@ building's place to the centimetre in the page, the same on every machine.
 - A leaning or rolled solid's box is square round all of it, so a body meets it a little early.
 - The parapet hides the city just below it from back on the plaza: from a spawn, 4 m in, the city shows from about
   250 m out, and all of it only from the parapet itself.
-- Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.
+- Props are drawn only near; flats (trees, people, lamps) are not drawn: a lit city's street lamps stand by its own
+  rule instead.
+- Only Overlook is lit at night. A far mass's windows stand where the forged building's would on a plain wall: a
+  door's place or a lower wing's gable is not left out. An open building's panes stay clear at night, its room unlit.
+- The city's lamps light its ground and walls through its light map only: a figure, a ship or the land under it
+  takes none of their light, and the light map's pools ignore what stands between a lamp and a wall.
 - The depth pull lets the city show through land within its share of the distance in front of it.
 - A ruin's building's break is ragged by squares, not broken stone; inside its open shell the forged model's own
   faces show, lit from the side seen. At sea a wreck is drawn as large as the ships, and so larger than the city

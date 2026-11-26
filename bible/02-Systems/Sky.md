@@ -11,6 +11,7 @@ code:
   - client/src/overworld/overworldCamera.ts#cloudBaseOf
   - client/src/sky/bolts.ts#underWeatherM
   - client/src/sky/lamps.ts#lampsRound
+  - client/src/sky/glowPoints.ts#GlowPoints
   - client/src/nearest.ts#Nearest
   - client/src/sky/skyUniform.ts#SKY_WGSL
   - client/src/sky/skyDriver.ts#SkyDriver
@@ -88,6 +89,13 @@ what show the ground there.
   a fire's warm light from the solid's middle, reaching some ten metres from a lantern and up to sixty from a great
   fire. They flicker gently, each on its own beat, and are lit only as the daylight fades, coming up through the dusk.
   The glowing surfaces themselves burn brighter at night than by day.
+- **A lit city.** Overlook's city below the hub is lit in detail at night
+  ([[Overlook's City Below Is Lit at Night, in Detail]], [[Cities]], "At night"): its windows glow warm, a share of
+  each district's lit and going dark through the night each at its own hour; lamp posts along its avenues and
+  streets lay pools of light on the paving and the walls; lanterns along the quay and the piers, and the harbour
+  mouth's two lights, lay columns of their light on the water. They come up through the dusk as the lamps do. Their
+  thousands are none of the sixteen: the pools are a light map written once, the flames glowing points drawn over the
+  picture (`GlowPoints`, which any list of glowing points may use), the windows the city's own shaders'.
 - **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
   the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
   flickers, a lantern's thirteen and is steadier.
@@ -119,6 +127,7 @@ what show the ground there.
 - There are no seasons: the year stands in its summer.
 - The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
   sails fill, in the weather's wind.
-- Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
+- Lamps cast no shadows. Only Overlook's city lights its windows, lamps and lanterns at night, and those light no
+  figure and no ship.
 - Standing at the Sloop's helm, the player's torch or lantern lights nothing; only walking its deck does it.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.
