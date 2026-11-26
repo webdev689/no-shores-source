@@ -321,6 +321,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[One Loading Screen Covers Every Trip Until the Place Is Ready]]
 - [[The Healing Drink Is a Red Flask, Drunk in Both Views, and Heals in Red Light]]
 - [[The Heal Is a Subtle Swirl]]
+- [[Heavy Renders Run on the Owner's PC, Not on Actions]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -173,8 +173,9 @@ job then lays them all into the published tables (`forge_publish.py figures`, he
 the classic set's job gives a move its cell, a layer drawn in another cell keeps that cell as its own, and a published
 layer not drawn again keeps the cell its strip was drawn in. It publishes only once every job has drawn, and its log
 ends with the manifest. `tools/forge_figures_local.py --run <id>` does the same on one machine of the owner's,
-costing no Actions minutes: it takes the jobs a run finished from its artifacts (`gh`), draws the rest side by side, and
-publishes them with the first person's flask.
+costing no Actions minutes, as a heavy render does ([[Heavy Renders Run on the Owner's PC, Not on Actions]]): it
+takes the jobs a run finished from its artifacts (`gh`), draws the rest side by side, and publishes them with the
+first person's flask.
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes
 `tools/lattice/render-request.txt`, whose first line names the foes, or by hand on `main`. Its actions are pinned by
