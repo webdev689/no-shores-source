@@ -473,9 +473,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **Its size coming in** (`shownScale`). Every view near the ship (close in, the helm's, Manage's, the walk's and a fight's)
   is laid on it at its true size, and the view eases down to it from the sea's. On the way the ship's share of the picture
   eases from the size the sea's view shows it to its true size on the view near it, by the same ratio each step of
-  the way, and every ship is drawn at the scale that gives, never under its true size. So as the eye comes in it grows
-  a steady step each notch and never shrinks or jumps: with the camera at its lowest, looking 30 degrees down, the Sloop
-  grows from 141 to 157, 201, 270, 346 and 383 pixels long on a 720-pixel picture over the five notches in. Every hull
+  the way, and every ship is drawn at the scale that gives, never under its true size. So as the eye comes down to sea
+  level it grows steadily and never shrinks or jumps: with the camera at its lowest, looking 30 degrees down, the Sloop
+  grows from 141 to 383 pixels long on a 720-pixel picture. Every hull
   grows so, whatever size the sea's view draws it at, while its true size at the closest shows it at least as large
   as the sea's view did. A view near the ship that shows it smaller at its true size (Manage with its wheel taken out) is
   eased down to instead. On each view near the ship every ship is its true size, its pose on the swell, its footprint on the
@@ -531,8 +531,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   (hull, canvas and crew as bars of whole, and the water it is in). Its foot holds the view's own presses: in the
   Oversea view Plan a voyage (Map, N), which takes the view down to the helm and raises the [[Held Map]], and Stop or
   Resume voyage (Space); at sea level Sail on (W), Heave to (S), Manage (B) and Leave the helm (H)
-  ([[The Ship Is Managed and Walked From the Sea's Panel]]). Narrower than 840 pixels its columns stand under each
-  other. It goes at the helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming
+  ([[The Ship Is Managed and Walked From the Sea's Panel]]). Narrower than 840 pixels the ship stands under the
+  compass and the voyage, its bars side by side. It goes at the helm, aboard, in a fight and on a travel. A stopped voyage keeps its destination: resuming
   plans the way there again from wherever the ship lies, after going ashore and coming back too. A destination in
   other waters asks whether to travel there, and yes sails the ship away to them in a cinematic: the flow stays at
   sea throughout, its keys held until the ship has arrived ([[Sailing]], "Travel by the held map").
@@ -641,8 +641,8 @@ Landing asks first ([[The Sea Has Two Views, Docking Asks First, and an Island's
 `landingAsk.ts`, `seaLandings.ts`). A click on a port's icon, or anywhere on its island's land, asks "Dock at
 Overlook?"; on a coast with no living port (a ruined city's harbour is no port, `portOf`), "Go ashore on Cairnwatch?";
 on the water by one of the sea's islands, within 400 m of its reach, "Go ashore on the cove?". The key L asks after what
-the sea offers where the ship lies. The confirmation stands over the foot of the screen, its question in brass and what
-yes does under it; Enter or its press says yes, Escape or Cancel no, and a click elsewhere puts it by, as does a fight,
+the sea offers where the ship lies. The confirmation stands a little above the middle of the view, clear of the console,
+its question in brass and what yes does under it; Enter or its press says yes, Escape or Cancel no, and a click elsewhere puts it by, as does a fight,
 the helm, going aboard or a travel.
 
 Within 30 km of the open landmass's coast the sea offers a landfall (`landfallOf`): within 20 km of its port's harbour,

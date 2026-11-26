@@ -217,7 +217,7 @@ function voyageNode(state: ConsoleState): Node {
         alignY: 'center',
         children: [
           said(doing, { size: 2, colour: BRASS, wrap: false }),
-          said(`${Math.round(state.speed)} m/s`, { colour: DIM }),
+          state.sailing && said(`${Math.round(state.speed)} m/s`, { colour: DIM }),
         ],
       },
       said(
@@ -234,7 +234,8 @@ function voyageNode(state: ConsoleState): Node {
         outline: { width: 1, colour: 'rgba(163,152,128,0.35)' },
         children: [{ width: `${Math.round(state.share * 1000) / 10}%`, height: 'grow', fill: TONES.brass }],
       },
-      state.line !== '' && said(state.line, { colour: DIM }),
+      // Its line, where it says more than what it is doing.
+      state.line !== '' && state.line !== doing && said(state.line, { colour: DIM }),
     ],
   };
 }
@@ -284,6 +285,11 @@ const sailsBy = (level: SeaLevel): string =>
 export function shipConsoleNode(ui: Interface, state: ConsoleState, act: ConsoleActions, width: number): Node {
   const narrow = width < WIDE + 80;
   const words = bearingWords(state.heading, state.wind);
+  const bars = [
+    shareBar('Hull', state.kept.hull),
+    shareBar('Canvas', state.kept.sail),
+    shareBar('Crew', state.kept.crew),
+  ];
   const ship: Node = {
     width: narrow ? 'grow' : 220,
     direction: 'column',
@@ -292,9 +298,8 @@ export function shipConsoleNode(ui: Interface, state: ConsoleState, act: Console
     draw: narrow ? undefined : rail(),
     children: [
       heading('SHIP'),
-      shareBar('Hull', state.kept.hull),
-      shareBar('Canvas', state.kept.sail),
-      shareBar('Crew', state.kept.crew),
+      // Narrow, the three bars stand side by side under the rest, so the console stays low.
+      ...(narrow ? [{ width: 'grow', gap: 12, children: bars } satisfies Node] : bars),
       said(state.water, { colour: DIM }),
     ],
   };
@@ -350,13 +355,11 @@ export function shipConsoleNode(ui: Interface, state: ConsoleState, act: Console
         width: 'grow',
         gap: 10,
         alignY: 'center',
-        wrap: true,
         padding: [8, 14, 10, 16],
         ...footer(),
         children: [
-          said(sailsBy(state.level), { colour: DIM, wrap: false }),
-          { width: 'grow' },
-          ...pressesOf(ui, state, act),
+          { width: 'grow', children: [said(sailsBy(state.level), { colour: DIM })] },
+          { gap: 10, alignY: 'center', children: pressesOf(ui, state, act) },
         ],
       },
     ],

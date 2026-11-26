@@ -1,7 +1,7 @@
 // The sea's clicks and the landings they ask after: a click on the sea sails (in the Oversea view), on a hostile
 // ship's mark chases it, and on a port's icon, its island, a coast with no port or one of the sea's islands asks the
 // player to confirm the landing. Yes lands at once where the ship lies within reach, else sets it making for it and lands
-// once it is; and the confirmation's card, over the foot of the screen.
+// once it is; and the confirmation's card, in the middle of the view.
 import type { Point2 } from '../overworld/ground.ts';
 import type { Pick as Picked } from '../overworld/overworldPick.ts';
 import type { Node } from '../ui/node.ts';
@@ -134,8 +134,8 @@ export class SeaLandings {
   }
 }
 
-/** The confirmation over the foot of the screen, where the offer to dock once stood: its question in brass, what yes
- *  does, and its two presses, yes with Enter and no with Escape. */
+/** The confirmation a little above the middle of the view, clear of the ship's console under it: its question in brass,
+ *  what yes does, and its two presses, yes with Enter and no with Escape. */
 export function landingAskNode(ui: Interface, asking: Asking, answer: (yes: boolean) => void): Node {
   const words = askWords(asking.aim, asking.near);
   return {
@@ -146,7 +146,7 @@ export function landingAskNode(ui: Interface, asking: Asking, answer: (yes: bool
     padding: 2,
     solid: true,
     label: `${words.title} ${words.line}`,
-    float: { to: 'screen', at: [0.5, 1], anchor: [0.5, 1], y: -232 },
+    float: { to: 'screen', at: [0.5, 0.42], anchor: [0.5, 0.5] },
     children: [
       {
         width: 'grow',

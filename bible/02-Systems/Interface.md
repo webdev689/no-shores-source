@@ -364,7 +364,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut.
   `game/journalShots.ts`' `settingsShot` draws Settings at its first tab, its others pressed by a shot's events.
   `game/hudShots.ts` draws the key strip over dusk (on foot with the leave held, a melee weapon drawn, sailing in the
-  Oversea view, and the pad's buttons), each shot's display kept across its frames. `game/itemShots.ts` opens the menu
+  Oversea view, and the pad's buttons), each shot's display kept across its frames. `game/seaShots.ts` draws the ship's
+  console in each view and narrow, the landing's confirmation over it, and the island's panel docked at a port with
+  its port, a patrol zone and an Elite Dungeon open. `game/itemShots.ts` opens the menu
   over sample gear carrying a Legendary sword with its whole grid, an Atheric bow and a Legendary helm, its stats asked
   of the room's rules, so a shot's events open a flyout, hover a card or a node, open a page or press Compare; and
   `inspectCompare` draws Inspect with each piece set against that gear. A shot may hear its events on a later frame
@@ -1256,9 +1258,10 @@ columns, the last behind a rail:
 - **The compass**: a card 92 px across, north up, its rim ticked every 10 degrees and longer every 45, N in red; the
   ship's brass needle and the wind's pale arrow are pictures drawn once and turned to their bearings each frame. Under
   it the heading ("274° W", of the sixteen winds) and the wind ("Wind 6 m/s from the ENE", or "Calm" under 0.5 m/s).
-- **The voyage**: under way, hove to or at anchor in brass with its speed in m/s; its pace ("Pace ×200", eased "×1 (×200
+- **The voyage**: under way, hove to or at anchor in brass, with its speed in m/s while it sails; its pace ("Pace ×200", eased "×1 (×200
   set) · true speed while watched"), or at rest how a voyage is set ("Click the sea to sail at ×60; plan on the map for
-  ×200."); where it is bound while it makes for a landing; a bar of the way sailed on a voyage to a point; its line.
+  ×200."); where it is bound while it makes for a landing; a bar of the way sailed on a voyage to a point; its line,
+  where it says more than the words over it.
 - **The ship**: hull, canvas and crew as bars of whole, green over 60%, amber over 30%, red under, with their shares; and
   the water it is in.
 
@@ -1266,12 +1269,12 @@ Its footer holds how this view sails ("Click the sea to sail · ×60", or the st
 the first a primary: Plan a voyage and Stop or Resume voyage in the Oversea view; Sail on, Heave to (dim at rest),
 Manage and Leave the helm (dim out of a room) at sea level. A press lets go of the focus, so Space never presses it
 again. Narrower than 840 px the console is the view's width less 40, the compass and the voyage side by side over the
-ship. Its node is `sea:bar`, which the key strip stands clear of.
+ship, whose three bars then stand side by side so the console stays low. Its node is `sea:bar`, which the key strip stands clear of.
 
 ## The landing's confirmation
 
 A click that asks to land (a port's icon, its island, a coast with no port, a sea island's water; [[Game]], "Landings")
-stands a window 420 px across over the foot of the screen, over the console (`landingAskNode`): its question in brass
+stands a window 420 px across a little above the middle of the view, clear of the console under it (`landingAskNode`): its question in brass
 at the face's larger size ("Dock at Overlook?"), what yes does under it in dim ink, and Cancel (Esc) and its yes (a
 primary, with Enter's key) on its footer.
 

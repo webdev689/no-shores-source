@@ -13,7 +13,8 @@ detail should add, among richer art, more information on the node and motion, th
 
 ## What it settles
 
-- **Both the map's Playlist mark and the Playlist screen's crests are redrawn** in more detail.
+- **Both the map's Playlist mark and the Playlist screen's crests are redrawn** in more detail (replaced for the map:
+  the Playlist is no longer marked at sea, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]).
 - **The detail is richer art and motion.**
 
 ## Claude's calls
@@ -28,9 +29,9 @@ detail should add, among richer art, more information on the node and motion, th
 | The chosen crest's glow | Breathes over 3 s, between four fifths and full | The choice reads at a glance |
 | The sweep | A light sweeps a crest's shield once from its top left, over 0.55 s, as it is lit or chosen | The crest answers the pointer, the focus and the choice |
 | A reward waiting | A gold ring grows from the dot to three times its size and fades, every 2 s | Draws the eye to what is still to earn, as the dot already marks it |
-| The map's mark | The Playlist's shield in small, worked as the crests are, bearing a list's three lines each led by a square point, in its amber ring, in place of the ☰ | One shield for the Playlist on the map and on its screen; its list keeps it read as a playlist |
-| The map's mark moving | Its ring ticked as a dial, turning 8 degrees a second, brighter under the pointer or chosen; an amber ring spreading from it to nearly twice its size every 2.4 s, under every mark's ring | A beacon over the sea, told apart from the port beside it |
+| The map's mark | The Playlist's shield in small, worked as the crests are, bearing a list's three lines each led by a square point, in its amber ring, in place of the ☰ | One shield for the Playlist on the map and on its screen; its list keeps it read as a playlist (replaced: no mark at sea, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]) |
+| The map's mark moving | Its ring ticked as a dial, turning 8 degrees a second, brighter under the pointer or chosen; an amber ring spreading from it to nearly twice its size every 2.4 s, under every mark's ring | A beacon over the sea, told apart from the port beside it (replaced: no mark at sea, [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]) |
 | Reduced motion | Nothing moves: the crests stand in place, the dials and the ticks still, the glow full, no sweep and no spreading ring | The player's ask, as everywhere in the interface |
 | Drawn once | Each part is a picture drawn once (the sweep once for each of its nine steps), turned, faded or grown as it moves, never drawn again a frame | Motion costs no drawing a frame |
 
-How it works: [[Interface]], "The Playlist"; [[Overworld]], "Marks".
+How it works: [[Interface]], "The Playlist".
