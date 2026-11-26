@@ -145,9 +145,9 @@ export const CORRIDOR = -1;
 export const STAIR = -3;
 export const VOID = -4;
 /** How far each storey stands under the one over it, where a layout names none (m). */
-const STOREY_M = 8;
+export const STOREY_M = 8;
 /** A flight's ceiling over its slope, and the step a body walks up (movement's TUNING.step) (m). */
-const FLIGHT_CEILING_M = 3.2;
+export const FLIGHT_CEILING_M = 3.2;
 const STEP_M = 0.5;
 /** Each side's step, x east and y south, by the side's number. */
 export const SIDE_STEPS: readonly (readonly [number, number])[] = [

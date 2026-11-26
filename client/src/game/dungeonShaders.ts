@@ -6,8 +6,8 @@ import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, FOUL_FLAG, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
 import { CLUSTER_WGSL } from './dungeonClusters.ts';
-import { CELL_JOINED, CELL_ROCK, type Light, LIGHT_WGSL } from './dungeonLight.ts';
-import { EVERY_SPACE, JOINED_SHIFT } from './dungeonSpaces.ts';
+import { CELL_ROCK, JOINS_SHIFT, type Light, LIGHT_WGSL } from './dungeonLight.ts';
+import { EVERY_SPACE, STOREY_BITS } from './dungeonSpaces.ts';
 
 /** The most lights lighting one frame: the nearest to the eye. */
 export const MOST_LIGHTS = 32;
@@ -34,7 +34,8 @@ export function lightFloats({ at, number, burning, space }: Light, into: Float32
   into[start + 8] = burning.flicker;
   into[start + 9] = burning.pulse ?? 0;
   into[start + 10] = burning.gleams === false ? 0 : 1;
-  into[start + 11] = space ?? 0;
+  // The spaces' bits as they are: past 2^24 a float would round them.
+  new Uint32Array(into.buffer, into.byteOffset + (start + 11) * 4, 1)[0] = space ?? 0;
   return into;
 }
 
@@ -54,15 +55,15 @@ struct View {
 @group(0) @binding(1) var<storage, read> lights: array<Light, ${MOST_LIGHTS}>;
 @group(0) @binding(2) var pictures: texture_2d_array<f32>;
 @group(0) @binding(3) var picture_sampler: sampler;
-// Each cell's look, by its number among the looks, CELL_ROCK on rock and CELL_JOINED where its space joins the next
-// storey's, storey by storey.
+// Each cell's look, by its number among the looks, CELL_ROCK on rock and from JOINS_SHIFT its joins' bits, storey by
+// storey.
 @group(0) @binding(4) var<storage, read> cell_looks: array<u32>;
 // Each cluster's word, then the lists of the lights that reach each.
 @group(0) @binding(5) var<storage, read> clusters: array<u32>;
 const CELL_ROCK = ${CELL_ROCK}u;
-const CELL_JOINED = ${CELL_JOINED}u;
-// Where a space's joined bits start (dungeonSpaces.ts), and every space: a point off the grid.
-const JOINED_SHIFT = ${JOINED_SHIFT}u;
+const JOINS_SHIFT = ${JOINS_SHIFT}u;
+// Where a space's join bits start (dungeonSpaces.ts), and every space: a point off the grid.
+const STOREY_BITS = ${STOREY_BITS}u;
 const EVERY_SPACE = ${EVERY_SPACE}u;
 // The first cell of the storey still water lies on, for its walk to a flame.
 var<private> walk_storey: u32 = 0u;
@@ -155,17 +156,17 @@ fn mood_at(point: vec3f, normal: vec3f) -> vec3f {
   return view.moods[min(look, ${MOST_LOOKS - 1}u)].rgb;
 }
 
-// The space a surface lies in (dungeonSpaces.ts spaceAt): its storey, and its joined bit where its cell is joined.
+// The space a surface lies in (dungeonSpaces.ts spaceAt): its storey, and the joins its cell lies in.
 fn space_at(point: vec3f, normal: vec3f) -> u32 {
   let cell = cell_at(point, normal);
   if cell < 0 { return EVERY_SPACE; }
   let storey = storey_at(point.z + normal.z * 0.05);
-  return (1u << storey) | select(0u, 1u << (JOINED_SHIFT + storey), (cell_looks[cell] & CELL_JOINED) != 0u);
+  return (1u << storey) | ((cell_looks[cell] >> JOINS_SHIFT) << STOREY_BITS);
 }
 
 // Whether a light lights a space: a light that names none lights every one.
 fn reaches(lamp: Light, space: u32) -> bool {
-  let reach = u32(lamp.shape.w);
+  let reach = bitcast<u32>(lamp.shape.w);
   return reach == 0u || (reach & space) != 0u;
 }
 

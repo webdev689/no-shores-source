@@ -571,16 +571,17 @@ as standing none (`readDungeon`).
   the figures sum the same light (`lightAt`). Each channel of the sum
   stays as it is up to 0.8 and past that eases toward 1.4 (`shoulder`), so a room lit by many lights at once keeps
   its walls' colour and pictures rather than clipping to flat.
-- **Light by storey** (`dungeonSpaces.ts`): a light lights only its own space, never through a slab. A space is a
-  mask: storey k's bit, and its joined bit where the cell is joined, a flight's cell on both its storeys, its two
-  landings, open air, the hall's cells under it, every cell of a room under open air or beside it on its storey (the
-  hall and the gallery) and a corridor's cell beside it. A light (`Light.space`) reaches its storey and, from a joined
-  cell, the joined cells of its storey and of the storeys over and under it; a surface's space is its cell's on the
-  storey its height lies on (`cell_at`, `space_at` in the shader, from each cell's word: `CELL_JOINED`, and the
-  grid's storey height); a figure's the same (`lightAt`). The shader skips a light whose mask shares no bit with the
-  surface's, still water's gleams too. The 32 lights are picked by distance among those that reach a space the eye
-  may see (`seenFrom`): its own storey's, and every storey from a joined cell. The clusters are unchanged, so the
-  cost is too: a mask test a listed light.
+- **Light by storey** (`dungeonSpaces.ts`): a light lights its own storey, and the storey beside it only inside
+  what joins the two, never through a slab. A join is a flight (its cells on both storeys and its two landings) or a
+  run of open air side by side (its cells and the hall's cells under them), each with a bit of its own (23 bits, reused
+  past the 23rd). A space is a mask: its storey's bit and its joins' bits. A surface's space is its storey's (the one
+  its height lies on, as `storeyUnder` gives it) and the joins its cell lies in (`space_at` in the shader, from each
+  cell's word: its look, `CELL_ROCK`, and its joins' bits from `JOINS_SHIFT`); a figure's the same (`lightAt`). A
+  light (`Light.space`, its bits passed as they are) reaches its storey and each join of its storey with a cell
+  within its reach. The shader skips a light whose mask shares no bit with the surface's, still water's gleams too.
+  The 32 lights are picked by distance among those that reach a space the eye may see (`seenFrom`): its storey's, and
+  within 16 m of a join the join's and the storey beside it. The clusters are unchanged, so the cost is too: a mask
+  test a listed light.
 - **The camera on a flight** keeps under its sloped ceiling: the ceiling over a point of a flight is its slope there
   and 3.2 m (`ceilingAt`).
 - **What its light costs.** Each frame the page cuts the view into clusters (`LightClusters`): 16 tiles across the
@@ -673,9 +674,10 @@ as standing none (`readDungeon`).
 ## Limits
 
 - The generator lays one storey; the ground, the bake, the room and the page stand more (`hand_made`).
-- A light in a joined cell lights every joined cell of the storeys beside its own within its reach, so a hall's torch
-  lights a gallery's whole room, past the open air, through its floor where the room runs on over the hall; a gallery
-  room or a hall under open air is lit by both storeys' joined lights.
+- Light crosses storeys inside a join alone: a hall's torch lights the open air's column up to its ceiling, and the
+  gallery's balustrade on its face over the air, but not the gallery's floor beyond, and a gallery's torch lights the
+  hall's floor under the open air but not beyond it. Within a storey, as on one, a light reaches through walls up to
+  its reach.
 - A landmark's storey is its first solid's (the wire gives a landmark no height of its own).
 - Nothing may stand under a flight: the navmesh bakes a flight's column as its lowest floor, so a column under a
   flight is rock.

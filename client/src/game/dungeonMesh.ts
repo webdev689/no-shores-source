@@ -2,9 +2,9 @@
 // ceiling; a wall with a trim band at its foot and head wherever it meets rock or the grid's edge; a wall from a lower
 // ceiling up to its own; each doorway's frame, a square pillar at each of a great room's corners, a bracket and a
 // flame at each torch, the exit door and the return portal. Points are the dungeon's own: x east, y south, z up from
-// the top storey's floor, each storey drawn from its own (`dungeonStoreyPlanes.ts`) and joined by `dungeonJoins.ts`. Each
-// face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
-// metres, one picture to 3.2 m, so faces side by side meet without a seam.
+// the top storey's floor, each storey drawn from its own (`dungeonStoreyPlanes.ts`) and joined by `dungeonJoins.ts`.
+// Each face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in
+// world metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { ARCH_M, caveWall, type FlatSpan } from './dungeonCaveWall.ts';
 import { besideOf, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';

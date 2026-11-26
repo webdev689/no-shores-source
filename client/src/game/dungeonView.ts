@@ -15,8 +15,8 @@ import { propPlans } from './dungeonCells.ts';
 import { CLUSTER_COUNT, LightClusters, MOST_LISTED } from './dungeonClusters.ts';
 import { type Cache, chestMesh, chestsMesh, foundChest } from './dungeonChest.ts';
 import type { ChestDrawn } from './finds.ts';
-import { type DungeonLayout, SIDE_STEPS, storeysOf, storeyUnder, type StyleKey } from './dungeonLayout.ts';
-import { joinedCells, reachOf, seenFrom, spaceAt } from './dungeonSpaces.ts';
+import { type DungeonLayout, SIDE_STEPS, STOREY_M, storeysOf, storeyUnder, type StyleKey } from './dungeonLayout.ts';
+import { reachOf, seenFrom, type Spaces, spaceAt, spacesOf } from './dungeonSpaces.ts';
 import { dressingOf } from './dungeonDressing.ts';
 import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS, NearestLights } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
@@ -33,8 +33,6 @@ import { LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from 
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
-/** How far each storey stands under the one over it, for a layout that names none (m). */
-const STOREY_FALLBACK_M = 8;
 
 type Buffers = { vertices: GPUBuffer; indices: GPUBuffer; count: number };
 
@@ -47,8 +45,8 @@ type Drawn = {
   readonly portalLight: Light;
   /** Picks the lights each frame is lit by. */
   readonly picker: NearestLights;
-  /** The cells whose space joins the storey's next (`dungeonSpaces.ts`). */
-  readonly joined: ReadonlySet<number>;
+  /** What joins its storeys, for the spaces each light and surface lies in (`dungeonSpaces.ts`). */
+  readonly spaces: Spaces;
   readonly book: SmallBook;
   readonly wood: readonly [number, number];
   readonly painter: CityPainter;
@@ -158,7 +156,7 @@ export class DungeonView {
     });
     // The grid and the looks' moods hold for the dungeon; a frame writes the view's parts before them.
     const fixed = new Float32Array(VIEW_FLOATS.all - VIEW_FLOATS.grid);
-    fixed.set([layout.cell, layout.columns, layout.rows, layout.storeyM ?? STOREY_FALLBACK_M]);
+    fixed.set([layout.cell, layout.columns, layout.rows, layout.storeyM ?? STOREY_M]);
     layout.looks
       .slice(0, MOST_LOOKS)
       .forEach((look, index) => fixed.set([...MOODS[look.style], 0], VIEW_FLOATS.moods - VIEW_FLOATS.grid + index * 4));
@@ -184,13 +182,13 @@ export class DungeonView {
     const burning = burningOf(layout);
     const [east, south] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
     const { x, y, height } = layout.portal;
-    const joined = joinedCells(layout);
+    const spaces = spacesOf(layout);
     const portalAt = [x - east * PORTAL_OUT_M, y - south * PORTAL_OUT_M, (layout.portal.z ?? 0) + height / 2] as const;
     const portalLight: Light = {
       at: portalAt,
       number: burning.length,
       burning: LIGHT_KINDS.portal,
-      ...(storeysOf(layout) > 1 ? { space: reachOf(layout, joined, portalAt) } : {}),
+      ...(storeysOf(layout) > 1 ? { space: reachOf(layout, spaces, portalAt, LIGHT_KINDS.portal.reach) } : {}),
     };
     const floor = this.buffersOf(model, book);
     this.drawn = {
@@ -198,7 +196,7 @@ export class DungeonView {
       burning,
       portalLight,
       picker: new NearestLights(burning, portalLight),
-      joined,
+      spaces,
       book,
       wood,
       painter,
@@ -268,7 +266,7 @@ export class DungeonView {
     const inside = column >= 0 && row >= 0 && column < layout.columns && row < layout.rows;
     const cell = (storeyUnder(layout, point[2]) * layout.rows + row) * layout.columns + column;
     const look = layout.looks[Math.max(0, inside ? (layout.cellLooks[cell] ?? 0) : 0)];
-    const space = spaceAt(layout, drawn.joined, point);
+    const space = spaceAt(layout, drawn.spaces, point);
     return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style], space);
   }
 
@@ -296,7 +294,7 @@ export class DungeonView {
     const { device } = this.gpu;
     const { frame, burningFloats, clusters } = this;
     const open = drawn.shown?.open === true;
-    const nearest = drawn.picker.nearest(eye, open, MOST_LIGHTS, seenFrom(drawn.layout, drawn.joined, eye));
+    const nearest = drawn.picker.nearest(eye, open, MOST_LIGHTS, seenFrom(drawn.layout, drawn.spaces, eye));
     drawn.nearest = nearest;
     for (let index = 0; index < nearest.length; index++)
       lightFloats(nearest[index], burningFloats, index * LIGHT_FLOATS);

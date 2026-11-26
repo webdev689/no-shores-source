@@ -48,9 +48,11 @@ export function joinsMesh(mesh: MeshBuilder, layout: DungeonLayout, kitted: Kitt
   flightsMesh(mesh, layout, kitted.arches, kitted.courses);
   const plane = layout.columns * layout.rows;
   const heightOf = ceilingHeights(layout);
+  const joined = joinedOn(layout);
   const { columns, rows, cell } = layout;
   for (let storey = 1; storey < storeysOf(layout); storey++) {
     const [base, up] = [floorOf(layout, storey), floorOf(layout, storey - 1)];
+    const { landings } = joined(storey);
     for (let row = 0; row < rows; row++)
       for (let column = 0; column < columns; column++) {
         const index = row * columns + column;
@@ -73,8 +75,9 @@ export function joinsMesh(mesh: MeshBuilder, layout: DungeonLayout, kitted: Kitt
           const next = nextRow * columns + nextColumn;
           const kindOf = (level: number) => (inside ? (layout.cells[level * plane + next] ?? ROCK) : ROCK);
           const [lower, upper] = [kindOf(storey), kindOf(storey - 1)];
-          const lowerOpen = lower !== ROCK && lower !== STAIR;
-          const upperOpen = upper !== ROCK && upper !== STAIR;
+          // A flight is open to its landing alone, and open air over rock opens nothing.
+          const lowerOpen = lower !== ROCK && (lower !== STAIR || landings.has(index * 4 + side));
+          const upperOpen = upper !== ROCK && upper !== STAIR && (upper !== VOID || lowerOpen);
           if (upper === VOID && lowerOpen) return;
           const where = { column, row, side, cell };
           const half = cell / 2;

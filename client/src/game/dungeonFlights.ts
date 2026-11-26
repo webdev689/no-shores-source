@@ -4,20 +4,19 @@
 // slope, sloped with it; and an arch, two posts and a lintel, framing its head and its foot on their landings' side,
 // as a doorway is framed, unless a kit's arch stands there.
 import type { MeshBuilder } from '../models/model.ts';
-import { type DungeonLayout, floorOf, type Stair } from './dungeonLayout.ts';
+import { type DungeonLayout, FLIGHT_CEILING_M, floorOf, type Stair } from './dungeonLayout.ts';
 import { BASE_M, box, face, lookAt, ROLE } from './dungeonMesh.ts';
 import { TILE_M } from './dungeonUv.ts';
 
 type Point = readonly [number, number, number];
 
-/** How many treads a flight has, and its ceiling over its slope (m). */
+/** How many treads a flight has. */
 export const TREADS = 40;
-export const FLIGHT_CEILING_M = 3.2;
 /** The arch at each end of a flight, metres: each post's width, the lintel's depth, and how far both stand onto the
  *  landing. */
 export const FLIGHT_ARCH = { post: 0.3, lintel: 0.3, proud: 0.18 } as const;
 /** A tread's nosing in the trim (m), and how far each tread's picture is shifted from the last's (pictures). */
-const NOSING_M = 0.06;
+const NOSING_M = 0.1;
 const TREAD_SHIFT = 0.37;
 
 /** A flight's frame: its head edge's middle, the way down it and across it (x east, y south), its length, and its

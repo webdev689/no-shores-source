@@ -4,7 +4,7 @@
 // differ along their edge, the higher one's side is closed up to it. Every shape is drawn from where it stands, so
 // every machine draws the same.
 import type { MeshBuilder } from '../models/model.ts';
-import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
+import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS, STOREY_M } from './dungeonLayout.ts';
 import { TILE_M, uvOf } from './dungeonUv.ts';
 
 type Point = readonly [number, number, number];
@@ -16,9 +16,7 @@ const CUTS = 4;
 /** The highest a vault or a dome rises over its walls, and how much of its half span it rises at most. */
 const RISE_M = { vault: 1.6, dome: 2.2 };
 const RISE_SHARE = 0.6;
-/** How far a storey stands under the one over it, where a layout names none, and the rock a room's vault or dome
- *  keeps under the floor over it (m). */
-const STOREY_M = 8;
+/** The rock a room's vault or dome keeps under the floor over it (m). */
 const SLAB_M = 0.4;
 /** A cave's ceiling rises this far over its walls at least and at most; its walls bulge this far either way. */
 const CAVE_RISE_M = [0.25, 1.1] as const;
