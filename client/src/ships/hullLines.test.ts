@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { FAIR_LINE, HULL_FIT, lineAt, STATIONS } from '../water/hullMask.ts';
-import { HullLines, waterlineOf } from './hullLines.ts';
+import { countingGpu } from '../gpuForTests.ts';
+import { HULL_LINES, HullLines, waterlineOf } from './hullLines.ts';
+import { openHull } from './shipModels.ts';
 import { type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 
 /** A diamond hull 20 m long and 4 m wide at its waterline, 1 m deep and 1 m high: its widest amidships, pointed at
@@ -118,4 +120,14 @@ test('a hull whose mesh has not come keeps the fair line, and takes its own once
   assert.deepEqual([...lines.line(2)], [...waterlineOf(diamond())]);
   assert.equal(lines.line(0), FAIR_LINE, 'another hull keeps the fair line');
   assert.ok(lineAt(FAIR_LINE, 1) < 0.05 && lineAt(FAIR_LINE, 0) > 0.95, 'the fair line is pointed at its bow');
+});
+
+test("opening a hull's model gives every footprint of that hull its own line", async () => {
+  const hull = 3;
+  assert.equal(HULL_LINES.line(hull), FAIR_LINE, 'the fair line before');
+  // Its view may not open on a GPU that draws nothing; its mesh has come all the same.
+  openHull(countingGpu().gpu, 1, () => Promise.resolve(diamond()))(hull).catch(() => undefined);
+  await new Promise((settled) => setTimeout(settled, 0));
+  assert.notEqual(HULL_LINES.line(hull), FAIR_LINE, 'its own after');
+  assert.deepEqual([...HULL_LINES.line(hull)], [...waterlineOf(diamond())]);
 });

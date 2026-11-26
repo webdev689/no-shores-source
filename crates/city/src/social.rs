@@ -50,13 +50,15 @@ pub struct Social {
     /// Its places by name, as the held map names them (`hub`): a court, a walk, a yard.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub areas: Vec<NamedPlace>,
-    /// The grain of each piece of a walk among `solids` (`hub::ground`); every other piece of ground takes the world's.
+    /// The grain of each walk piece among `solids` (`hub::ground`), and of the hub's paving (`hub::courts`): every other
+    /// piece of ground takes the world's pattern, and every other solid its own.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub grains: Vec<Grain>,
 }
 
-/// The way a walk's flags run over one of `solids`: that solid's place in the list, the walk's turn (within a half
-/// turn, so a walk laid either way along one line runs one grain), a point on its middle line and its width, metres.
+/// The way a pattern runs over the top of one of `solids`: that solid's place in the list, its turn (within a half
+/// turn, so a walk laid either way along one line runs one grain), a point on its middle line and its width, metres:
+/// whole pictures fit across that width, from its edge.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct Grain {
     pub solid: usize,

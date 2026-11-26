@@ -28,9 +28,9 @@ export type OpenHull = (hull: number) => Promise<ShipView>;
 
 /** A hull's model from R2 by its manifest entry, on the device, `slots` ships of it a frame; its mesh gives the water
  *  its hull's line too (`HULL_LINES`). */
-export function openHull(gpu: Gpu, slots = SHIP_SLOTS): OpenHull {
+export function openHull(gpu: Gpu, slots = SHIP_SLOTS, load = loadShip): OpenHull {
   return async (hull) => {
-    const mesh = await loadShip(hullName(hull));
+    const mesh = await load(hullName(hull));
     HULL_LINES.take(hull, mesh);
     return ShipView.open(gpu, mesh, hullSails(hull), hullPaint(hull), slots);
   };

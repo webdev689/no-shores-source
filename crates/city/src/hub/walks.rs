@@ -3,7 +3,7 @@
 //! plaza's ends; the Stair Yard on round the base's east side, where the Tack keeps a stable by the head of the
 //! harbour way; and the sealed gates where the platform runs on round the base and at the harbour way's head.
 
-use super::courts::{HALF_LENGTH_M, PLATFORM_FROM_M, brazier};
+use super::courts::{HALF_LENGTH_M, PLATFORM_FROM_M, brazier, paving_grain};
 use super::{Laid, parapet, stand_against, stand_at};
 use crate::courtyard::Frame;
 use crate::landmarks::turn_toward;
@@ -44,7 +44,10 @@ pub(crate) const DOOR_M: [f64; 2] = [12.0, 9.5];
 pub fn beacon_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
     let across = [-frame.seaward[1], frame.seaward[0]];
     laid.solids.extend(portico(frame));
-    laid.solids.extend(floors(frame));
+    for floor in floors(frame) {
+        laid.grains.push(paving_grain(frame, laid.solids.len()));
+        laid.solids.push(floor);
+    }
     for side in [-1.0, 1.0] {
         laid.solids.extend(brazier(frame, BASE_FACE_M + 22.0, side * 36.0));
         let edge = side * PLATFORM_EDGE_M;

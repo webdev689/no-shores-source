@@ -21,6 +21,7 @@ code:
   - crates/city/src/courtyard.rs#courtyard
   - crates/city/src/hub/mod.rs#overlook
   - crates/city/src/hub/ground.rs#walks
+  - crates/city/src/hub/walks.rs#floors
   - crates/city/src/hub/dress.rs#dress
   - crates/city/src/hub/plants.rs#plants
   - crates/city/src/hub/harbour.rs#harbour
@@ -45,6 +46,7 @@ code:
   - client/src/city/tiers.ts#tierFades
   - client/src/city/cityMasses.ts#hullOf
   - client/src/city/solidMesh.ts#meshSolid
+  - client/src/city/walkGrain.ts#grainUvs
   - crates/city/src/rock.rs#mesh
   - crates/city/src/rock.rs#boxes
   - client/src/rules/rockMesh.ts#rockMesh
@@ -295,14 +297,18 @@ picture is lighter or darker in patches some metres wide, so its repeats do not 
 wear their own picture over the paving's, the flags in courses, lighter and warmer, so a way reads apart from the
 ground; a garden's lawn (`lawn`) and a working yard's trodden earth (`earth`) wear their climate's own grass and
 dirt. A lawn and earth take their pattern on top from the world, not the piece, so their pieces join as one surface
-where they meet or overlap (`solidMesh.ts`, `grounded`); a walk's flags are laid along it, whole pictures across it
-from edge to edge, and measured along it from the city's origin, so its pieces join along its way while a diagonal
-walk's courses still run with it. The plan names each walk piece's grain (`grains`: the walk's turn within a half turn,
-so a walk laid either way along one line runs one, a point on its middle line and its width; `walkGrain.ts`). The
-round and fillets where walks meet are laid in the grain of the walk on top there, so it runs on unbroken and the
-others meet it at its edge; every other piece of flagstones (a round's border) keeps the world's pattern. Pieces of a
-different grain never lie level: a joint's pieces stand 2 mm over the world's flagstones and over every other joint's
-they reach, and the walks' strips over every joint and over each other walk leaving the same joint. The glow is lit warm and unshaded, brighter
+where they meet or overlap (`solidMesh.ts`, `grounded`). The plan names a grain for each walk piece and for the hub's
+paving (`grains`: a turn within a half turn, so a walk laid either way along one line runs one, a point on its middle
+line, and the width whole pictures fit across; `walkGrain.ts`), and a top with a grain takes its pattern from it. A
+walk's flags run along it, whole pictures across it from edge to edge and measured along it from the city's origin,
+so its pieces join along its way while a diagonal walk's courses still run with it. Where walks meet, the round and
+fillets take the grain of the walk on top there, so it runs on unbroken and the others meet it at its edge: a walk
+running straight through the joint, capped there where another stands over it, else the one standing highest. The
+plaza's paving and the walks' floors beside it share one grain, so the pattern carries across their seams. Every other
+piece of flagstones (a round's border) keeps the world's pattern. Pieces of a different grain never lie level: a
+joint's pieces stand 2 mm over the world's flagstones and over every other joint's they reach, the walks' strips over
+every joint and over each other walk leaving the same joint, and a cap over them all; a stone band laid across another
+in the paving stands 5 mm over it. The glow is lit warm and unshaded, brighter
 at night, each flame flickering on its own, and each glowing solid is a lamp ([[Sky]]). Faces are lit as the land is,
 with a little light thrown back onto walls from the ground, the lamps' light at night, and the rain's darkening and
 sheen. In the game the solids cast into the sun's near and far shadow maps, the near cells' models into the near one,

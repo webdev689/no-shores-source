@@ -12,7 +12,8 @@ import { rockMesh } from '../rules/rockMesh.ts';
 export const SOLID_TEXELS_PER_METRE = 24;
 
 /** A solid's picture: its layer and size. A ground's (`grounded`) top takes its pattern from the world, not from the
- *  solid, so its pieces join as one surface where they meet or overlap; a walk piece's from its walk's `grain`. */
+ *  solid, so its pieces join as one surface where they meet or overlap; a top with a `grain` (a walk's piece, the
+ *  hub's paving) from that grain. */
 export type Surface = {
   readonly layer: number;
   readonly width: number;
@@ -568,7 +569,7 @@ export function meshSolid(solid: Solid, origin: readonly [number, number], surfa
       return [turned[0] + place[0], turned[1] + place[1], turned[2] + place[2]] as Vector;
     });
     const facing = solidTurn(solid, face.facing);
-    const laid = surface.grounded && facing[2] > 0.95 * Math.hypot(...facing);
+    const laid = (surface.grounded || surface.grain !== undefined) && facing[2] > 0.95 * Math.hypot(...facing);
     const uvs =
       laid && surface.grain
         ? grainUvs(corners, surface.grain, origin, surface.width / SOLID_TEXELS_PER_METRE)

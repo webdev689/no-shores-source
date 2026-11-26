@@ -31,6 +31,9 @@ const FILLET_PIECES: usize = 8;
 type Way = ([f64; 2], [f64; 2], usize);
 /// A joint: where it is, the way of the walk laid on top there, and its round and fillets.
 type Joint = ([f64; 2], [f64; 2], Vec<Solid>);
+/// A walk running straight through a joint under another standing over it is capped there: the cap's length along
+/// it, and the level of the strips it must stand over.
+type Cap = Option<(f64, usize)>;
 
 /// Lays the platform's ways as walks of dressed flagstones over its cobbles and lawns: a strip along each link in short
 /// pieces, a round the walk's width at each end, and each inner corner where walks meet filled round, so every corner
@@ -68,13 +71,13 @@ pub(crate) fn walks(frame: &Frame, laid: &mut Laid) {
     }
     // The round and the corners at a joint run in the grain of the walk laid on top there, so it runs on unbroken and
     // the others meet it at its edge; each joint's a step over every earlier one's its pieces reach.
-    let joints: Vec<Joint> = ends
+    let (joints, caps): (Vec<Joint>, Vec<Cap>) = ends
         .into_iter()
         .map(|(joint, ways)| {
-            let top = ways.iter().max_by_key(|way| way.2).map_or([0.0, 1.0], |way| way.1);
-            (joint, top, joint_pieces(frame, joint, ways))
+            let (top, cap) = top_of(&ways);
+            ((joint, top, joint_pieces(frame, joint, ways)), cap)
         })
-        .collect();
+        .unzip();
     let steps = joint_steps(&joints);
     let over = steps.iter().max().map_or(1, |most| most + 2);
     for (one, two, level) in walked {
@@ -90,13 +93,48 @@ pub(crate) fn walks(frame: &Frame, laid: &mut Laid) {
             laid.solids.push(strip.turned(turn_toward(along)));
         }
     }
-    for ((joint, top, pieces), step) in joints.into_iter().zip(steps) {
+    for (((joint, top, pieces), step), cap) in joints.into_iter().zip(steps).zip(caps) {
         for mut piece in pieces {
             piece.size[2] = WALK_HIGH_M + WALK_RISE_M * (1 + step) as f64;
             laid.grains.push(grain(laid.solids.len(), top, joint));
             laid.solids.push(piece);
         }
+        if let Some((long, level)) = cap {
+            let high = WALK_HIGH_M + WALK_RISE_M * (over + level + 1) as f64;
+            let piece = Solid::upright(
+                Shape::Block,
+                [joint[0], joint[1], frame.level],
+                [WALK_WIDE_M, long, high],
+                Material::Path,
+            );
+            laid.grains.push(grain(laid.solids.len(), top, joint));
+            laid.solids.push(piece.turned(turn_toward(top)));
+        }
     }
+}
+
+/// The way the walk on top at a joint runs, and its cap: a walk running straight through it (of two, the one standing
+/// higher), capped where another walk stands over it, as long as that walk's strip crosses its width; else the walk
+/// standing highest, needing none.
+fn top_of(ways: &[Way]) -> ([f64; 2], Cap) {
+    let pairs = ways.iter().enumerate().flat_map(|(k, one)| ways[k + 1..].iter().map(move |two| (one, two)));
+    let straight = pairs
+        .filter(|(one, two)| one.0[0] * two.0[0] + one.0[1] * two.0[1] < -0.99999)
+        .max_by_key(|(one, two)| one.2.min(two.2));
+    let Some((one, two)) = straight else {
+        return (ways.iter().max_by_key(|way| way.2).map_or([0.0, 1.0], |way| way.1), None);
+    };
+    let half = WALK_WIDE_M / 2.0;
+    let over: Vec<&Way> =
+        ways.iter().filter(|way| way.2 > one.2.min(two.2) && way.2 != one.2 && way.2 != two.2).collect();
+    let reach = |way: &&Way| {
+        let sine = (one.0[0] * way.0[1] - one.0[1] * way.0[0]).abs().max(0.2);
+        let cosine = (one.0[0] * way.0[0] + one.0[1] * way.0[1]).abs();
+        half * (cosine + 1.0) / sine
+    };
+    let long = over.iter().map(reach).fold(0.0, f64::max) * 2.0;
+    let level = over.iter().map(|way| way.2).max();
+    (one.1, level.map(|level| (long.min(4.0 * WALK_WIDE_M), level)))
 }
 
 /// A joint's round and the fillets of its inner corners, `ways` the ways the walks leave it.

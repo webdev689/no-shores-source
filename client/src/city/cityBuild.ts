@@ -27,6 +27,7 @@ import { meshSolid } from './solidMesh.ts';
 import { finished } from './steps.ts';
 import { type Reach, reachesWhole, reachFrom } from './tiers.ts';
 import { cutAtWindows } from './windowCuts.ts';
+import { grainsOf } from './walkGrain.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
 export const CHUNK_CELLS = 4;
@@ -292,7 +293,7 @@ export function* cityBuildSteps(
     ...heaps,
   ];
   const onRamp = rampWall(plan);
-  const grains = new Map((plan.social.grains ?? []).map((grain) => [plan.social.solids[grain.solid], grain]));
+  const grains = grainsOf(plan.social);
   for (const [solid, meshes] of [
     ...solids.map((solid) => [solid, chunkMeshes] as const),
     ...detail.map((solid) => [solid, detailMeshes] as const),
