@@ -272,10 +272,10 @@ The decisions in [[Open Questions]] are not repeated here.
   past the prologue); a switch counts the guild's week from the chosen character on; the Developer
   role appears once the layout is built again; whether Cloudflare takes the accounts' binding to the bot's `Members`
   before the bot deploys it (if not, the accounts' deploy is tried again after the bot's).
-- **The passages and the regions** (#218 on `ccr-1c146825-lrjepv`, superseding #204), built on the owner's
-  autonomy ("this is where I give you autonomy and make this your baby"), audited on "I want to do a comprehensive
-  audit and detailed design pass on this entire arc" and again on "This is yours now, do a comprehensive audit on
-  it": not merged until the owner's yes, which deploys the page, the rooms and the accounts. Every call is in
+- **The passages and the regions** (#218, superseding #204), built on the owner's autonomy ("this is where I give
+  you autonomy and make this your baby"), audited on "I want to do a comprehensive audit and detailed design pass on
+  this entire arc" and again on "This is yours now, do a comprehensive audit on it": merged on the owner's "Merge and
+  deploy" and deployed (CI's run 1202 on `main`: the check, the rooms, the accounts, the page and the site). Every call is in
   [[Passages as Claude Builds Them]]; how it works in [[Passages]]; with it the band's retune
   ([[The Sea and the Abyss Run Again Are Retuned Into the Band]]) and the held map at sea's redesign
   ([[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]). Main is merged in to
@@ -1055,7 +1055,7 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The passages, to finish** (#218): CI's check green on the head, then the owner's yes to merge. Not yet played
+- **The passages, played** (#218, deployed): not yet played
   live: every deal, a dive's way across zones, a public round, the held map's public way and its redesign on a real
   GPU, the sea's new ranks and salvage, a run of the week's Abyss Dungeon again; tested offline, and pictured
   headless (`tools/passageShots.json`, `target/passages/`); a Vein's nodes under ground not yet pictured. Unchecked
