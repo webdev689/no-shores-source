@@ -59,7 +59,8 @@ import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { TOLD_MS } from './tripBack.ts';
 import { type GateWay, gateWay } from './gates.ts';
-import { mooredShips } from './moorings.ts';
+import { mooredShips, shipsLying } from './moorings.ts';
+import type { Berthed } from './docking.ts';
 import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { keeperLit } from './overheadMarks.ts';
@@ -129,6 +130,8 @@ export interface FrameParts {
   /** The waterline and the build of the hull the player sails. */
   readonly waterline: () => Parameters<typeof showSeaHud>[3]['waterline'];
   readonly builtShip: () => HullBuild | null;
+  /** Where the player's ship lies docked, if it does (`docking.ts`), drawn there while they are on that island. */
+  readonly docked: () => Berthed | null;
   readonly closeSource: Parameters<GameScene['keepClose']>[1];
   readonly waterHere: () => FriendlyWater;
   /** The leave held through: back to the ship on the room's yes, or told why not. */
@@ -321,8 +324,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       ask: (asked) => here.gear?.ask(asked),
     });
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
-    const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
-    const moored = mooredShips(moorings, clock, water);
+    const ownShip = { docked: parts.docked(), lies: playing.sea?.passage.ship, hull: parts.builtShip()?.hull };
+    const moored = mooredShips(shipsLying(here.node, playing.landmass.plan, ownShip, here.held.ships), clock, water);
     const more = {
       after: hands,
       hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS),

@@ -15,7 +15,7 @@ import { DIM } from './hudPieces.ts';
 import { footer, header, hudPress, said } from './hudParts.ts';
 import { ISLANDS } from './hudLaw.ts';
 import { berthOf } from './berths.ts';
-import { Docking } from './docking.ts';
+import { type Berthed, Docking } from './docking.ts';
 import { isleWords } from './isleLaw.ts';
 import type { IsleHeld, Isles } from './isles.ts';
 import { askWords, type ClickContext, clickAtSea, inReach, LandingCourse, type LandingAim } from './landingAsk.ts';
@@ -125,9 +125,9 @@ export class SeaLandings {
 
   /** Docks in sight: the ship sails in to the landing's berth, among the ships the sea shows, from the Oversea view. */
   private dock(sea: Sea, aim: LandingAim): void {
-    const ships = sea.sighted?.others ?? [];
-    const berth = berthOf(aim, this.game.landmass(), this.game.isles.all(), ships);
-    if (berth) this.docking.begin(sea, aim, berth);
+    const [landmass, ships] = [this.game.landmass(), sea.sighted?.others ?? []];
+    const berth = berthOf(aim, landmass, this.game.isles.all(), ships);
+    if (berth) this.docking.begin(sea, { aim, berth, landmass: landmass.id });
   }
 
   /** The landing being made for, if any, as the ship's panel names where it is bound. */
@@ -139,6 +139,11 @@ export class SeaLandings {
   letGo(): void {
     this.course.cancel();
     this.docking.cancel();
+  }
+
+  /** Where the ship lies docked, if it does, until it sails out again. */
+  get docked(): Berthed | null {
+    return this.docking.docked;
   }
 
   /** The player is back aboard: a ship docked sails out from its berth once the room has placed it. */

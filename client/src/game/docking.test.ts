@@ -73,7 +73,7 @@ function overWater(course: readonly Point2[]): boolean {
 test('a landing on a sea island sails for its offing on water, round the land between, then in to its anchorage', async () => {
   const { sea } = await seaAt(place(0, 0));
   const landing = new Docking();
-  assert.equal(landing.begin(sea, ISLE, berth(ISLE)), true);
+  assert.equal(landing.begin(sea, { aim: ISLE, berth: berth(ISLE), landmass: 'continent-9' }), true);
   assert.deepEqual(sea.course.at(-1), COVE.built?.anchorage);
   assert.ok(overWater(sea.course), JSON.stringify(sea.course));
   const offing = sea.course.at(-2) ?? [0, 0];
@@ -82,7 +82,7 @@ test('a landing on a sea island sails for its offing on water, round the land be
 
 test('from the far side of a sea island its landing goes round it, never over it', async () => {
   const { sea } = await seaAt(place(62_000, 0));
-  new Docking().begin(sea, ISLE, berth(ISLE));
+  new Docking().begin(sea, { aim: ISLE, berth: berth(ISLE), landmass: 'continent-9' });
   const middle = COVE.seen.at;
   const past = sea.course.slice(0, -1).every(([x, y]) => Math.hypot(x - middle[0], y - middle[1]) > 250);
   assert.ok(past, JSON.stringify(sea.course));
@@ -93,7 +93,7 @@ test('a landing on a sea island ends a chase, as any other course does', async (
   const { sea } = await seaAt(place(0, 0));
   assert.equal(sea.sailToMark('hostile-7'), true);
   assert.match(sea.voyageNote, /^Chasing/);
-  new Docking().begin(sea, ISLE, berth(ISLE));
+  new Docking().begin(sea, { aim: ISLE, berth: berth(ISLE), landmass: 'continent-9' });
   assert.doesNotMatch(sea.voyageNote, /^Chasing/);
   assert.deepEqual(sea.bound, COVE.built?.anchorage);
 });
@@ -102,7 +102,7 @@ test('docking is seen from the Oversea view, the ship sailing at ×60 through it
   const { sea } = await seaAt(place(0, 0));
   sea.switchLevel('sealevel');
   const { at, offing } = berth(ASHORE);
-  assert.equal(new Docking().begin(sea, ASHORE, { at, offing }), true);
+  assert.equal(new Docking().begin(sea, { aim: ASHORE, berth: { at, offing }, landmass: 'continent-9' }), true);
   assert.equal(sea.level, 'oversea');
   assert.equal(sea.pace, CLICK_PACE);
   assert.deepEqual(sea.course.slice(-2), [offing, at], 'its offing, then straight in');
@@ -119,13 +119,13 @@ test('the landing is made only once the ship lies at rest at its berth, once; tu
     sailIn: (from: Point2, to: Point2) => ([sea.course, sea.bound] = [[sea.position, from, to], to]),
   };
   const docking = new Docking();
-  docking.begin(sea as never, ASHORE, { at, offing });
+  docking.begin(sea as never, { aim: ASHORE, berth: { at, offing }, landmass: 'continent-9' });
   assert.equal(docking.making, ASHORE);
   assert.equal(docking.arrived(sea as never), null, 'under way');
   [sea.position, sea.course] = [[at[0] + 3, at[1]], []];
   assert.equal(docking.arrived(sea as never), ASHORE, 'at rest there');
   assert.equal(docking.arrived(sea as never), null, 'taken once');
-  docking.begin(sea as never, ASHORE, { at: place(0, 0), offing });
+  docking.begin(sea as never, { aim: ASHORE, berth: { at: place(0, 0), offing }, landmass: 'continent-9' });
   sea.bound = place(5_000, 0);
   assert.equal(docking.arrived(sea as never), null);
   assert.equal(docking.making, null, 'sent elsewhere');
@@ -136,7 +136,7 @@ async function backAboard(lying: Point2) {
   const { at, offing } = berth(ASHORE);
   const { sea, hand } = await seaAt(lying);
   const docking = new Docking();
-  docking.begin(sea, ASHORE, { at: lying, offing });
+  docking.begin(sea, { aim: ASHORE, berth: { at: lying, offing }, landmass: 'continent-9' });
   assert.equal(docking.arrived(sea), ASHORE, 'docked');
   docking.cameAboard();
   return { sea, hand, docking, at, offing };
@@ -163,7 +163,7 @@ test('placed away from its berth, or set on a course of the player’s first, th
   const { at } = berth(ASHORE);
   const away: Point2 = [at[0] - 500, at[1]];
   const placedAway = await backAboard(away);
-  placedAway.docking.docked = { aim: ASHORE, berth: berth(ASHORE) };
+  placedAway.docking.docked = { aim: ASHORE, berth: berth(ASHORE), landmass: 'continent-9' };
   placedAway.hand(50, away);
   placedAway.hand(120, away);
   placedAway.docking.undock(placedAway.sea);

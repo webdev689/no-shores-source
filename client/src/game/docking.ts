@@ -8,10 +8,11 @@ import { ANCHORED_M } from './isleLaw.ts';
 import type { LandingAim } from './landingAsk.ts';
 import type { Sea } from './sea.ts';
 
-/** A landing and the berth the ship lies at for it. */
+/** A landing, the berth the ship lies at for it, and the landmass it lies off (its sea islands' too). */
 export interface Berthed {
   readonly aim: LandingAim;
   readonly berth: Berth;
+  readonly landmass: string;
 }
 
 /** How near where the page has the ship the room's word on it lies once the room has placed it, metres: the room keeps
@@ -28,14 +29,15 @@ export class Docking {
   /** Whether the player has come back aboard, the ship to sail out once the room has placed it. */
   private aboard = false;
 
-  /** Sets the ship sailing in to `berth` for `aim`, seen from the Oversea view, at a click's pace (×60): planned on water
-   *  to its offing, then straight in, unless it lies there already. Whether it is made for: with no way there the
-   *  voyage's line says why, and nothing is. */
-  begin(sea: Pick<Sea, 'position' | 'course' | 'sailIn' | 'switchLevel'>, aim: LandingAim, berth: Berth): boolean {
+  /** Sets the ship sailing in to the berth for its landing (off `landmass`), seen from the Oversea view, at a click's
+   *  pace (×60): planned on water to its offing, then straight in, unless it lies there already. Whether it is made
+   *  for: with no way there the voyage's line says why, and nothing is. */
+  begin(sea: Pick<Sea, 'position' | 'course' | 'sailIn' | 'switchLevel'>, berthed: Berthed): boolean {
+    const { at, offing } = berthed.berth;
     sea.switchLevel('oversea');
-    const under = apart(sea.position, berth.at) > ANCHORED_M || sea.course.length > 0;
-    if (under && !sea.sailIn(berth.offing, berth.at)) return false;
-    this.pending = { aim, berth };
+    const under = apart(sea.position, at) > ANCHORED_M || sea.course.length > 0;
+    if (under && !sea.sailIn(offing, at)) return false;
+    this.pending = berthed;
     return true;
   }
 

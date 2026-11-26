@@ -6,7 +6,7 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
-import type { Reviving } from '../network/messages.ts';
+import type { Reviving, SeenShip } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { BreachSeen } from '../network/breachMessages.ts';
 import { TIERS } from './activityWords.ts';
@@ -113,6 +113,7 @@ export function hearRoom(
       held.cache = cacheOf(snapshot.cache);
       heardRun(held, snapshot, own());
       held.plots = snapshot.outpost;
+      held.ships = snapshot.ships;
     },
     gear: (sent) => {
       if (online) held.gear = sent;
@@ -251,4 +252,5 @@ export const unheard = () => ({
   encounter: null as EncounterSeen | null,
   plots: 0,
   breach: null as BreachSeen | null,
+  ships: [] as readonly SeenShip[],
 });

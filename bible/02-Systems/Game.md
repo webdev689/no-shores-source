@@ -218,6 +218,12 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   true size, sails set and filled, posed on the swell, its footprint on the water, as at sea (below); so ships coming
   and going are seen from each port's plaza and harbour. They are lit as the ships layer lights every ship, by its
   own sun, and cast no shadow.
+- **Ships lying by the island** (`moorings.ts`; [[A Ship Docks in Sight, Undocks as Its Player Leaves, and Lies Parked Where Others See It]]).
+  On every node of the island the player's ship is docked at (for a sea island, its beach alone) the ship is drawn
+  where it lies, and every other player's parked there as the land room's snapshot tells (its `ships`, never the
+  player's own), each in its own hull, its sails furled, riding the swell, its footprint still on the water. At a
+  social space the city's sloops lie at its pier, in the places of its plan's moorings no player's ship lies within
+  15 m of.
 - **The ground.** The node's window of the land, over its ring's bounds and 100 m past them, and its city's boxes
   there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
   as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
@@ -472,7 +478,8 @@ sails out from its berth ("Landings").
   Its sails are set while it is under way and furled at rest, filled by the weather's wind ([[World Map]], [[Weather]]).
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times its length), so one reads from the raised
   view, and every hull the same four times its own, so a Frigate reads larger than a Sloop. Every other player's ship
-  is drawn in its own hull and dress, as the sea's snapshot says. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
+  is drawn in its own hull and dress, as the sea's snapshot says; one lying parked while its player is ashore (its pace
+  0) lies at rest as any ship still does, its sails furled and no way on its footprint. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
   Sloop until the wire carries one ([[Sailing]], "Its look"); in a fight and in a fleet room too, each read through
   `hullOfCaptain` (at sea and in a fleet its `hull`, in a fight's view its `hull_kind`). Every hull's model and its
   shell tags are made ready behind the sea's veil (`SeaHull.warm`), so the first of each seen holds no frame. At the
@@ -910,8 +917,9 @@ blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, op
   as long after each that did not help, up to 160 s. A browser may round its timestamps: Chrome rounds them to
   0.1 ms unless its WebGPU developer features are on, so a short pass reads 0 or 0.1 ms and only the means hold.
 - The people seen aboard another ship are drawn, not the room's: another player's ship shows plain people, not that
-  player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships moored by a
-  social space's pier carry no one. A captain's ship met at sea is known by its sea number and in its fight by its
+  player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships lying by an
+  island ashore, the pier's sloops and the players' docked and parked ships, carry no one and are drawn in friendly
+  colours, not in their players' dress. A captain's ship met at sea is known by its sea number and in its fight by its
   fight's, which the fight's view does not tie together: its hands are laid out afresh as its fight begins and ends,
   each starting from a spot of its own.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
