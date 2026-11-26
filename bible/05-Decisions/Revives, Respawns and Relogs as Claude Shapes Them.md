@@ -91,3 +91,9 @@ Researched for [[Fallen Players Are Revived as in Destiny]] from search results:
   revives." (destinypedia.com/Nightfall); Destiny 1's Nightfall sent a wiped team to orbit.
 - **Unpublished**: the revive's range and hold time, whether a blow breaks it, health after it, and how a patrol's
   respawn point is chosen.
+
+The owner's answers on it:
+
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
+- [[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]
+- [[What the Owner Kept, Walking the Open Questions]]

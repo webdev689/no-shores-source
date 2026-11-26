@@ -240,3 +240,7 @@ and Dye; the horse and its barding are chosen in the Mount slot.
 | Others' view | The room is the word on the cosmetics others see: it relays each dress with the dye, coat and barding the character wears, none for a start piece; a change reaches others on the dress's own turn |
 | Others' colours | Of the colours a dress lays by layer, the room keeps a faction's only on the layers of that faction's pieces worn (the pieces' sets as the page names them), a faction's dye only on its cape worn, and a dye the player keeps on any layer |
 
+The owner's answers on it:
+
+- [[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]
+- [[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]

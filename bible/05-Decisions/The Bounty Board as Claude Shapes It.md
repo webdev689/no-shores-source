@@ -43,3 +43,8 @@ can change any. These replace the calls on the tiles, their states, the card, th
 | The timers' bounty row | "Posted each day on the board in Overlook’s plaza." | True for every player, pledged or not, and short |
 
 Links: [[Activities]], [[Interface]], [[Factions]], [[Gear]].
+
+The owner's answers on it:
+
+- [[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]
+- [[What the Owner Kept, Walking the Open Questions]]

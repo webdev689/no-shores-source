@@ -105,6 +105,35 @@ The owner's decisions are in [[Open Questions]]. These are the owner's to do:
 
 ## Next
 
+- **The owner's answers to the Open Questions**, walked through one at a time, each to build as its decision says:
+  - The prologue's chart that disagrees with the coast, and the lore's Tithe sails marked
+    ([[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]).
+  - At sea ([[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]): friendly ships
+    for the three houses; the seas' Elite and Abyss tiers removed; travel aboard a company member's ship; a Sloop
+    able to flee a Boss; travel keeping the hostile clock, and its three small faults; the week's run only from a
+    port docked at; a parked ship's plate following its player's username and guild tag. The locked seas are #221's.
+  - The lore and the factions
+    ([[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]): the Axis
+    in the lore, the Pearl Tomb's brief to cliffs, Captain Tamsin Rook and The Quiet One (Ysolde) in the game, and a
+    line of its tale on each bounty's card.
+  - Foes ([[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]): Minibosses and Bosses drawn
+    larger; the Court dark at Elite; places in a patrol zone holding only civilians and guards (which, Claude's
+    call); the arrivals' sound sheet; shields that regrow, carried by dungeon and Breach foes too; other players'
+    damage numbers seen from far away; one look for both deaths.
+  - The Drowned Vale ([[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]):
+    the run following the company; a checkpoint at each encounter's start, reset from the Playlist; the gate kept
+    over a deploy; the Ways waiting on every living player; Forged weapons climbing to Hard's Prestige.
+  - Fighting and gear
+    ([[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]): Volt's boost
+    lighting the character; Exposure halving the drink; a lip hung as caught; old saves given the Ranged weapon;
+    house pieces dropping in the dungeons and the Breaches.
+  - The page
+    ([[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]): the
+    story's mark with the character; the room deciding the garments; Graphics' own settings; the pad's chat and
+    report buttons; a join to any landmass; online by default.
+  - The repo ([[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]): a
+    sign-in rate limit at Cloudflare; the workflows' and that audit's seven points; the 158 comments; three new
+    checks; the ship meshes cached in CI; the dungeon crate in the bake.
 - **The ships' footprints** (#227's audit): a friendly ship's footprint is laid a moment before its model has come,
   on a hull's first load, as an empty cut in the water (`friendlyShips.ts`; the sea draws such a ship as the Sloop
   stands in, `ShipModels.shown`); a footprint sits up to 0.37 m inside its hull near the ends, hidden by its sides.

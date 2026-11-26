@@ -12,3 +12,7 @@ its own tool and more than a hundred commits.
 
 **Checked by.** The comments check, on every `.ts`, `.js`, `.rs` and `.py` file. Lines inside a doc comment's code example do not
 count toward the eight.
+
+The owner's answers on it:
+
+- [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]

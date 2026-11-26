@@ -24,3 +24,7 @@ status: in force
   building it are in [[Foe Arrivals as Claude Builds Them]].
 
 Links: [[Enemies]], [[Layouts]], [[Foe Arrivals as Claude Builds Them]].
+
+The owner's answers on it:
+
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]

@@ -173,3 +173,8 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The held map's public event marks on Saltmere's three zones | Where the Fissure opens (its wilds) and where the raid comes (its hamlet), and on no other wilds or arena there | The map marked every wilds and arena, not the raid's hamlet; elsewhere it still marks them, the grounds to come |
 | The forge's index on this branch | `main`'s whole; the Lattice's figures to be laid in by the Lattice's workflow from its earlier renders | Neither index holds both, and only a workflow run can publish one that does |
 | The scripted pair's raid under `main`'s harm | The door test keeps two players at level 6 and Rare gear, and takes the result the rules give: the heroic task met and the clock run out | Under `main`'s ×1.5 and ×0.75 the pair no longer holds it in time (×2 and ×0.5 restored, they do); how hard the raid is for two is the owner's to set, not the test's |
+
+The owner's answers on it:
+
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
+- [[What the Owner Kept, Walking the Open Questions]]

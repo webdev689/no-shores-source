@@ -392,6 +392,15 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]
 - [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]
 - [[Magic and Rare House Pieces Drop in the World, for the Pledged House]]
+- [[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]
+- [[Friendly Ships Fly the Three Houses' Colours, and Travel Keeps the Hostile Clock]]
+- [[The Mystery Is Called the Axis, the Keepers Are Named, and Each Bounty Carries a Line of Its Tale]]
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
+- [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]
+- [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]
+- [[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]
+- [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]
+- [[What the Owner Kept, Walking the Open Questions]]
 
 ## Claude's calls
 

@@ -156,3 +156,7 @@ change to the fight moves either way, and the owner keeps it so for now.
 - **The smiths' prices, the Art's rises, the cosmetics, the ammunition**: in line with what a level earns; the
   Ammo crate's 250 is Destiny 1's synthesis.
 - **Item XP, Fruit of Dagon, the vault and the carried counts**: Destiny 1's shape already.
+
+The owner's answers on it:
+
+- [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]

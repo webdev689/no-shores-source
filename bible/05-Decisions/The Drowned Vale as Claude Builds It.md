@@ -153,3 +153,8 @@ fidelity of this insanely impressive" asked. The owner can change any of them.
 | The Choir's fallen beams | Laid square on the floor, each a part, the first clear of the nave's middle | Cover in the nave that never stands between the door and the font |
 | The gate's ledges | A faced rock's outer row kept inside its box | The rock stands no further out than the ledge's solid face, but for its buttresses |
 | Stained glass | A material of its own, `glass`, in the Choir's rose and the shore's lancets | The windows read as glass, not lamps |
+
+The owner's answers on it:
+
+- [[A Breach Run Follows Its Company From Checkpoint to Checkpoint, and Forged Weapons Climb]]
+- [[What the Owner Kept, Walking the Open Questions]]

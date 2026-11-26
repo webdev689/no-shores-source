@@ -41,3 +41,8 @@ The owner can change any of them. How it works is in [[Enemies]] ("Arrivals"), [
 | On the wire | Each foe's packed numbers four more (what brings it, its number, the tick it is let down and the tick it lands, 0 once landed); every airship and crown whole in each snapshot while it lasts (`Arrival`) | The page draws a ship's whole flight from its ticks alone |
 
 Links: [[Enemies]], [[Lattice]], [[Modules]], [[Public Events]], [[Breaches]], [[Quests]].
+
+The owner's answers on it:
+
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]
+- [[What the Owner Kept, Walking the Open Questions]]

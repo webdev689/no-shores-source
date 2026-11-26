@@ -28,3 +28,7 @@ or only the ship's island's: "Only the ship's island".
 - **The other seas**, whose islands have no name, are darkened, each with a lock glyph at its middle that stands out.
 
 Replaces, for the waters' names, [[The Held Map Colours Each Water's Name by Its Difficulty]].
+
+The owner's answers on it:
+
+- [[What the Owner Kept, Walking the Open Questions]]

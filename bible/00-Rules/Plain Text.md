@@ -12,3 +12,7 @@ showing an item's growth as a square filling round its locked nodes and a gauge 
 [[A Hover Card's Perks Are Their Icon and a Short Line, and Plain Text's Growth Is a Square]].
 
 **Checked by.** Review.
+
+The owner's answers on it:
+
+- [[Sign-In Is Rate-Limited, Three Checks Join the Repo, and Comments Stop Saying Who Chose]]

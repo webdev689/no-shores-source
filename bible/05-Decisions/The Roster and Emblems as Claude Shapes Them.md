@@ -48,3 +48,7 @@ Links: [[Accounts]], [[Interface]], [[Gear]], [[Gear as Claude Shapes It]].
 
 Replaced in part by [[Guilds Gain Banners, Levels, Bounties and Outposts]]: the Guild tab is built, and founds a guild
 as well as the Roster ([[Guilds and Outposts as Claude Shapes Them]]).
+
+The owner's answers on it:
+
+- [[The Story's Mark Stays With the Character, the Page Plays Online, and a Join Reaches Any Landmass]]

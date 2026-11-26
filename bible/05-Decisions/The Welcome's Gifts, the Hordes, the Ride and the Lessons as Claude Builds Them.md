@@ -168,3 +168,8 @@ your baby". Each is the owner's to change.
 | The dice | A purpose of its own (`HouseDrop`, 3,000), one roll for whether and one for which | No roll any other purpose makes moves, so every other drop, and native and WebAssembly, stay as they were |
 | Which piece | Evenly among the house's four armour pieces and its two weapons, whatever slot the Vestige held | The owner's "its four armour pieces and its weapons"; each its own kind, so the slot follows the piece |
 | One way for both | `vestige::house_piece`: the entry's kind, look and name on a piece rolled at the rarity given, its content the factions' | The leader's Magic gift and the drops at Magic and Rare are the same piece; the catalogue, the wares and the Legendary pieces stay as they were |
+
+The owner's answers on it:
+
+- [[Volt's Boost Lights the Character, House Pieces Drop in Dungeons, and a Lip Hangs as Caught]]
+- [[What the Owner Kept, Walking the Open Questions]]

@@ -29,3 +29,7 @@ Asked later whether each pair should have its own value, the owner kept one half
 [[The Face Is Mended Whole, and the Gauge Counts Upgrades]] records.
 
 Links: [[Gear]], [[Combat]], [[Gear and Power Follow Destiny 1 Vanilla]].
+
+The owner's answers on it:
+
+- [[Bosses Stand Larger, Shields Regrow on More Foes, and Land Hides Plates]]

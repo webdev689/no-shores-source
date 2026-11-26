@@ -37,3 +37,7 @@ status: in force
   ([[The Enemies as Claude Builds Them]]).
 
 Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: there are no pirates for the Tithe to hunt.
+
+The owner's answers on it:
+
+- [[The Prologue Shows the Chart That Disagrees, and the Grey Tithe Sail Under Their Colours]]

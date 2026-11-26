@@ -106,7 +106,8 @@ from the sea, fresh water and the claim's edge), then:
    is entered: a landing's boardwalk, lanterns, stores and a beached boat; a gate's stone arch between palisades; a
    camp's palisade round tents and a fire, its gap toward the path, no stake within a cell and a metre (9 m) of the
    line out through it along the grid's rows or columns, whichever lie more across it, so a cell's middle always lies
-   in the gap for a way to reach the camp by (how it is measured waits on the owner: [[Open Questions]]); a watchtower with a brazier on its battlements; a
+   in the gap for a way to reach the camp by (measured so, as the owner kept it:
+   [[What the Owner Kept, Walking the Open Questions]]); a watchtower with a brazier on its battlements; a
    lighthouse; a jetty; a mill and its wheel; a quarry's stepped faces and crane; a wreck; a graveyard of hulls; ribs
    and a skull; a broken causeway; a cave's mouth; the wilds' outcrops and broken walls, set every 10 m round a ring
    at about 0.58 of its reach (an arena's every 8 m) with a share left out, round its standing stone.
