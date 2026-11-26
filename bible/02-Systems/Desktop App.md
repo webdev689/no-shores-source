@@ -182,8 +182,8 @@ it packs (`desktop.yml`), so a trial pack's update file names none (`updates.ts`
 ### Releases and downloads
 
 A merge into `main` releases the app once the same commit has passed the check, when what its installers are built
-from changed since the last release (`desktop/` but its tests, `client/src/desktop.ts`, the icon's art and
-`desktop.yml`): `ci.yml` calls `desktop.yml`, whose `ready` job asks `.github/deploy-ready.sh`, as the rooms and the
+from changed since the last release (`desktop/` but its tests, `client/src/desktop.ts`, the icon's art in
+`site/src/art`, the pixel kit it is drawn with in `client/src/art`, and `desktop.yml`): `ci.yml` calls `desktop.yml`, whose `ready` job asks `.github/deploy-ready.sh`, as the rooms and the
 bot do, and each release is recorded as a deployment to the `desktop` environment for the next to compare with. The
 owner's yes to the merge covers it ([[The Desktop App Releases With Each Merge That Changes It]]). Run by hand from
 `main`, it releases all the same. A merge of the game alone releases nothing: the app plays the game the site serves.
