@@ -6,7 +6,7 @@ import type { Climb } from '../firstperson/climbHands.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Pace } from '../firstperson/weaponMachine.ts';
 import type { Look } from '../network/messages.ts';
-import { type Action, DRINK_TICKS, type FighterView } from '../rules/fighters.ts';
+import { type Action, type FighterView } from '../rules/fighters.ts';
 import type { Body, MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
@@ -344,7 +344,7 @@ export class Walker {
       pose: own ? guardPose(own.action) : null,
       zoom,
       pace: own ? paceOf(own.action, this.tickSeconds) : null,
-      drinking: own?.action.kind === 'drink' ? own.action.elapsed / DRINK_TICKS : null,
+      drinking: own?.action.kind === 'drink' ? own.action.elapsed / FIGHT_TICKS.drink : null,
       spare: this.spare && {
         right: this.spare.right,
         left: this.spare.left,

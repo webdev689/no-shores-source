@@ -3,8 +3,8 @@ import { RUNNING } from './others.ts';
 import type { Doing, Fight } from './playerMoves.ts';
 import { type Action, type FighterView, type Shape, actionProgress, directionOf } from '../rules/fighters.ts';
 
-/** How long a dodge, a parry's deflect and a flinch last, and a death's fall, in ticks, as the combat crate times
- *  them. */
+/** How long a dodge, a parry's deflect and a flinch last, a death's fall, a bow's full draw and a drink, in ticks, as
+ *  the combat crate times them. */
 export const FIGHT_TICKS = { dodge: 26, parry: 18, flinch: 15, death: 48, drawFull: 60, drink: 60 } as const;
 /** A stagger reels: its figure's hurt frames play forth and back over this many ticks while it lasts. */
 const REEL_TICKS = 24;
