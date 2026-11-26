@@ -46,7 +46,8 @@ with no camera pan, the owner answered: "Keep removed. Rework dialouge to be bet
 tutorial". Asked whether the opening should teach the gifts the round does not use (the Mage's Vestige, the Vault
 Keeper's cloak, the Tailor's dye, the Postmaster's letter), the owner chose "Add steps", the option that read: "Add a
 step for each: open the Vestige at the Mage, take the cloak from the vault, wear the dye, take the letter. Claude
-writes them."
+writes them." Offered the house's cape as the pledged leader's gift, the owner answered: "the cape shouldn't be
+given", then: "Give a piece of uncommon faction gear".
 
 ## What it settles
 
@@ -56,7 +57,8 @@ writes them."
   ([[Quests]], [[Gear]]).
 - **The stranger gives no Aurem**, and her welcome no longer flies the camera to each stall: the round of the keepers
   shows the way ([[Prologue]]). She names no place; her words are reworked to read better ([[Prologue]]).
-- **Of the house leaders, only the leader of the house the player pledges to gives a gift** ([[Quests]], [[Factions]]).
+- **Of the house leaders, only the leader of the house the player pledges to gives a gift**: a piece of uncommon
+  faction gear, not the cape ([[Quests]], [[Factions]]).
 - **The opening teaches each gift**: a step each to open the Mage's Vestige, take the cloak from the vault, wear the
   dye and take the letter, written by Claude ([[Quests]]).
 - **Each house road's step that gives its Art has a horde to fight**, the Art's abilities on no cooldown and fully
