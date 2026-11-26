@@ -89,13 +89,17 @@ impl Sea {
     }
 
     /// Notes the account that keeps a player's character: what floats for that account, laid for them before they
-    /// dropped, is theirs again. False for a player not in the sea.
+    /// dropped, is theirs again. False for a player not in the sea, and for an account another player at sea already
+    /// has (one account is one player at sea, as in a room).
     pub fn own(&mut self, player: PlayerId, account: &str) -> bool {
         if !self.berths.contains_key(&player) {
             return false;
         }
         let before: Vec<PlayerId> =
             self.harbour.accounts.iter().filter(|(_, held)| *held == account).map(|(each, _)| *each).collect();
+        if before.iter().any(|each| *each != player && self.berths.contains_key(each)) {
+            return false;
+        }
         for piece in &mut self.harbour.flotsam.pieces {
             if before.contains(&piece.player) {
                 piece.player = player;
@@ -351,12 +355,15 @@ impl Sea {
         }
     }
 
-    /// Holds a course asked before the keeper answered for the player, the last one asked; whether it was held.
+    /// Holds a course asked before the keeper answered for the player, the last one asked; whether it was held. An
+    /// empty course (a stop, or a Face's turn) keeps the one held: there is no ship yet to stop.
     pub(super) fn hold_course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> bool {
         let Some(held) = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.get_mut(&player)) else {
             return false;
         };
-        *held = Some((points.to_vec(), pace));
+        if !points.is_empty() {
+            *held = Some((points.to_vec(), pace));
+        }
         true
     }
 

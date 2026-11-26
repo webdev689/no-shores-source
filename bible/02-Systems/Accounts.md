@@ -150,7 +150,7 @@ they play in holds it while they are there.
   and gives it to the player, trimming their fight by it. One account is one player in a room: a second socket of theirs
   signed in (a rejoin before the room saw the first close, or a second tab) sends the first away as played elsewhere
   before it is given the character, so a run keeps the first one's body for it, and the rules refuse to note one account
-  for two players (`Room::own`). While the accounts hold what this room last saved of the first, and gave no errand's
+  for two players (`Room::own`; at sea `Sea::own`, so a second tab moves nothing floating or owed to the first). While the accounts hold what this room last saved of the first, and gave no errand's
   answer onto it since, the room's own body of it is the newest, and the second takes that on, saved anew under its
   hold; first the first one's chests are opened and what lies for them is posted to their mail, as at a leave. A rejoin's old socket is one the page let go of already, so it plays on; a second tab's page stops there and
   joins no more, so two tabs never take the character back and forth.

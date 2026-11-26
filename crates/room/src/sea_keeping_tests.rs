@@ -482,3 +482,29 @@ fn a_ship_left_mid_fight_is_kept_turned_no_way_at_the_port_it_washes_up_at() {
     let character = kept(&sea, player);
     assert_eq!((character.ship_at, character.ship_heading), (Some([60_000, 50_000]), None));
 }
+
+#[test]
+fn a_face_asked_before_the_keeper_answers_leaves_the_held_course_to_be_sailed() {
+    let mut sea = sea();
+    sea.keep_characters();
+    let player = sea.join();
+    sea.course(player, &[[58_000.0, 50_000.0]], 10).unwrap();
+    // Not at sea yet: there is no ship to turn, and the course held stays the one asked.
+    assert!(sea.face(player, 1.0).is_err());
+    sea.none_kept(player);
+    let ship = sea.ships().find(|(each, _)| *each == player).expect("put to sea on the held course").1;
+    assert_eq!((ship.x, ship.y), (60_000.0, 50_000.0));
+}
+
+#[test]
+fn a_second_tab_of_an_account_already_at_sea_is_refused_and_moves_nothing_of_the_first() {
+    let mut sea = sea();
+    let first = sea.join();
+    assert!(sea.own(first, "unkept:a"));
+    let second = sea.join();
+    assert!(!sea.own(second, "unkept:a"), "one account is one player at sea");
+    assert_eq!(sea.harbour.accounts.get(&first).map(String::as_str), Some("unkept:a"));
+    assert!(!sea.harbour.accounts.contains_key(&second));
+    sea.leave(first);
+    assert!(sea.own(second, "unkept:a"), "once the first has left");
+}

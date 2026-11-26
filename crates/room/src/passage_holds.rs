@@ -52,7 +52,7 @@ impl Room {
     }
 
     /// Where a hold's piece stands: the dead lamp of its number, the reliquary or the lamp.
-    fn held_at(&self, target: Held) -> Option<[f64; 2]> {
+    pub(crate) fn held_at(&self, target: Held) -> Option<[f64; 2]> {
         let piece = self.zone()?.pieces.iter().find(|piece| match (piece.kind, target) {
             (PieceKind::Kindle(nth), Held::Kindle(wanted)) => nth == wanted,
             (PieceKind::Reliquary, Held::Reliquary) | (PieceKind::Lamp, Held::Lamp) => true,
