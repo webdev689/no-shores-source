@@ -21,6 +21,7 @@ const report: GpuReport = {
 
 test('only the asks the shell answers pass, each in its own shape', () => {
   assert.deepEqual(askOf({ ask: 'restart' }), { ask: 'restart' });
+  assert.deepEqual(askOf({ ask: 'play' }), { ask: 'play' });
   assert.deepEqual(askOf({ ask: 'graphics', api: 'd3d11' }), { ask: 'graphics', api: 'd3d11' });
   assert.equal(askOf({ ask: 'graphics', api: 'opengl' }), null);
   assert.equal(askOf({ ask: 'quit' }), null);

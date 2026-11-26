@@ -121,7 +121,9 @@ pub fn set_rim(bytes: &[u8]) -> bool {
 /// the intent, the player's number, the arms their hands hold (taken up as the room takes them, `Fighter::holding`),
 /// then every fighter it sees as a number and a glance. Answers the next fighter's
 /// numbers, then, if the tick let a shot go, its weapon's number, where it left and its velocity (a ball's as its
-/// whole line to where it stops among those seen, in a tick); or none when the numbers are not that.
+/// whole line to where it stops among those seen, in a tick); or, if its swing's blow landed, how many it hits as the
+/// room would judge them among those seen, and for each its number, the blow's damage before the gear's power, the
+/// stroke and 1 for a crit (`hits_of`); or none when the numbers are not that.
 #[must_use]
 pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let floats = floats_of(bytes);
@@ -141,10 +143,14 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
         .collect();
     let fighter = Fighter::from_floats(fighter).holding(combat::Arms::from_code(whole(*arms)));
     let intent = combat::Intent::from_floats(intent);
+    let mut hits = Vec::new();
     let (next, shot) = COURSE.with(|course| {
         FLOOR.with(|floor| {
             let (blocks, floor) = (course.borrow(), floor.borrow());
             let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &*blocks, &*floor);
+            if let Some(combat::Happening::Struck(attack)) = &happening {
+                hits = hits_of(whole(*id), &next, attack, &view, &blocks, &floor);
+            }
             let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
             if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
                 return (next, Some(shot));
@@ -167,7 +173,38 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
         floats.extend(shot.at);
         floats.extend(shot.velocity);
     }
+    if !hits.is_empty() {
+        floats.push((hits.len() / HIT_FLOATS) as f64);
+        floats.extend(hits);
+    }
     floats.iter().flat_map(|value| value.to_le_bytes()).collect()
+}
+
+/// The numbers `hits_of` gives each fighter a swing hits.
+const HIT_FLOATS: usize = 4;
+
+/// The fighters a player's swing hits among those it sees, as the room judges a player's blow (`Room::happened`):
+/// those its sweep reaches, each a hit by `combat::judge` as seen, not blocked, parried or dodged. For each its
+/// number, the blow's damage before the gear's power, the stroke, and 1 for a crit its statuses make.
+fn hits_of(
+    id: u32,
+    striker: &Fighter,
+    attack: &combat::fighter::Attack,
+    view: &[(u32, Fighter)],
+    blocks: &[Block],
+    floor: &Floor,
+) -> Vec<f64> {
+    combat::strike::struck(id, striker, attack, view, blocks, floor)
+        .into_iter()
+        .filter_map(|defender| {
+            let (_, then) = view.iter().find(|(other, _)| *other == defender)?;
+            let blow = combat::judge::swing_blow(id, striker, attack, defender);
+            let combat::Verdict::Hit { damage, .. } = combat::judge(&blow, then) else { return None };
+            let crit = combat::status::crits(&blow, Some(striker), then);
+            Some([f64::from(defender), damage, f64::from(attack.stroke as u8), f64::from(u8::from(crit))])
+        })
+        .flatten()
+        .collect()
 }
 
 /// A fighter's number from a float, 0 for anything that is not one.

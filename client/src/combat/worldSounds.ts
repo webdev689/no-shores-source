@@ -10,7 +10,7 @@ import type { Fired } from '../rules/combatRules.ts';
 import { type Action, type FighterView, type StatusName, fighterView } from '../rules/fighters.ts';
 import { audioPoint, listen } from '../listener.ts';
 import { playSample, recorded, rushOfCue } from '../soundSamples.ts';
-import { EVENT, blowLook } from './cues.ts';
+import { EVENT, blowLook, feltNow } from './cues.ts';
 import { HorseSounds, type Rider } from './horseSounds.ts';
 import type { Fighting } from './fighting.ts';
 import { elementOfArt } from './spellLooks.ts';
@@ -68,6 +68,8 @@ export interface WorldFrame {
   readonly quiet: boolean;
   readonly fight: HeardFight;
   readonly events: readonly FightEvent[];
+  /** The player's own hits foreseen this frame, heard as they land (`feltNow`). */
+  readonly foreseen?: readonly FightEvent[];
   readonly shots: { readonly fired: readonly Fired[]; readonly struck: readonly Struck[] };
   readonly eye: Point;
   readonly yaw: number;
@@ -208,7 +210,7 @@ export class WorldSounds {
     const spellLook = (id: number) => elementOfArt(fight.spells.arts.get(id));
     // A blow that kills is heard as its foe's death, not its hurt.
     const killed = new Set(frame.events.filter((event) => event.kind === EVENT.killed).map((event) => event.defender));
-    for (const event of frame.events) {
+    for (const event of feltNow(frame.foreseen ?? [], frame.events)) {
       const [striker, defender] = [byId.get(event.striker), byId.get(event.defender)];
       const look = blowLook(event, { player: fight.player, own: walker.look, spellLook });
       const arms = { striker: striker?.view.arms ?? 0, defender: defender?.view.arms ?? 0, look };
@@ -218,6 +220,10 @@ export class WorldSounds {
           (at === 'striker' ? striker : defender)?.at ?? null,
           at === 'striker' ? event.striker : event.defender,
         );
+    }
+    // A foe's voice answers the room's word, which alone knows whether a blow killed it.
+    for (const event of frame.events) {
+      const defender = byId.get(event.defender);
       const voice = defender?.voice;
       if (voice && event.kind === EVENT.killed) hear(voiceCue(voice, 'death', recorded), defender.at, event.defender);
       if (voice && event.kind === EVENT.hit && !killed.has(event.defender))

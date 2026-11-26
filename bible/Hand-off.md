@@ -297,22 +297,20 @@ The decisions in [[Open Questions]] are not repeated here.
   at the Saltgrass Downs), the plants' baked grass left as it is on the owner's "Only meadow"; and on "the color of the
   grass is too bright", the meadow's green stands a shade darker than its ground
   ([[The Meadow's Green Stands a Shade Darker]], pictured at three shades in daylight). Not yet seen in motion.
-- **The desktop app** (#210, merged; CI run 1100 on main passed), on the
-  owner's "develop the new install version along with implementing proper Vulcan support, electron" with DFO as the
-  reference, kept on Electron ([[The Desktop App Stays on Electron]]); every call in
-  [[The Desktop App as Claude Builds It]], how it works in [[Desktop App]]. Electron 45 plays the game at
-  `noshores.online/play/?room=live` in a sandboxed window; WebGPU on Direct3D 12 then 11 on Windows, Metal on a Mac,
-  Vulkan three ways on Linux, watched from the game's own adapter report. It opens on a launcher in the game's look
-  ([[The Desktop App Opens on a Launcher in the Game's Look]]): patch notes from each merged pull request's
-  "Patch notes" list, the servers (the rooms' new `/health`), the graphics as Settings has them, links, and Play.
-  Updates through electron-updater from `noshores.online/download/`, answered by the site's Worker from R2; releases
-  by hand from `main` (`desktop.yml`), the owner's yes each time. A five-lane audit's findings are fixed with their
-  tests; the PR lists what is left for the owner. Tested offline in a container with no GPU (unit tests, the app on
-  SwiftShader with the launcher's Play reaching the title, a Linux pack). Not seen: any real GPU, a truly blank
-  window, a Windows or Mac installer, an update installed, a Discord sign-in in the window, and the AppImage on
-  Ubuntu 23.10 or later. After a merge: the owner says when to cut the first release; the site's links to the
-  downloads and signing keys are open questions; performance is to be measured on a real GPU with `?perf`, in Chrome
-  and in the app, before any switch for it (an uncapped frame rate was proposed, not built).
+- **The desktop app** (#210 and #212, merged on the owner's "Merge and deploy" and "merge and deploy"), kept on Electron
+  ([[The Desktop App Stays on Electron]]); every call in [[The Desktop App as Claude Builds It]], how it works in
+  [[Desktop App]]. It plays the game at `noshores.online/play/?room=live`. Its launcher stands in a window of its own
+  ([[The Launcher Stands in a Window of Its Own]]), with the deployed patch notes, both servers timed on an open
+  connection, and the graphics as Settings has them. Its first release (2026.1125.1836) went out by hand; a merge that
+  changes the app now releases it once the commit passes CI
+  ([[The Desktop App Releases With Each Merge That Changes It]]), and the website's Download page offers it
+  ([[The Website Offers the Desktop App's Downloads]]). On the owner's note that hits did not register at once: the
+  wreck's cutscenes leave no inputs waiting, the click that draws a weapon swings it, and the player's own hits flash,
+  sound and hold as they land ([[The Drawing Click Swings, and the Player's Own Hits Show at Once]]). Not seen: any real
+  GPU, a Windows or Mac installer run, an update installed, the hit fixes played by hand, a Discord sign-in in the
+  window, and the AppImage on Ubuntu 23.10 or later. Open: signing keys; performance to be measured on a real GPU with
+  `?perf` before any switch for it; `shipTags.test.ts` fetches meshes from R2's rate-limited public host on every CI
+  run, and keeping them between runs with `actions/cache` was proposed.
 - **The ships at the Harbourmaster** (#201, merged on the owner's "merge and deploy", which deploys the page, the
   site, the rooms and the bot), on the owner's "integrating all our current models into the harbormaster", "shouldnt
   have a ship until they reach the harbor master", "their own standard defined statistics" and

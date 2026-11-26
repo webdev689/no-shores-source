@@ -35,4 +35,6 @@ status: in force
   as it is.
 - **Its design is as detailed and organized as possible.**
 
+Narrowed by [[The Launcher Stands in a Window of Its Own]]: the launcher has its own window, and Play opens the game's.
+
 [[Desktop App]].

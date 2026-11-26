@@ -99,15 +99,17 @@ test('every foe asked for comes, one with each input, even two asked for within 
 const STILL: Controls = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
 const UNPRESSED: FightButtons = { swing: false, shoot: false, guard: false, dodge: false, pitch: 0 };
 
-/** A fight in a room in the page, its player holding `right`, and a tick that steps it with these buttons pressed. */
-function fightIn(right: string) {
+/** A fight in a room in the page, its player holding `right`, and a tick that steps it with these buttons pressed;
+ *  each snapshot reaching the fight `late` ticks after the room sends it, as a server's would. */
+function fightIn(right: string, late = 0) {
   let fight: Fighting | null = null;
   let gear: GearState | null = null;
+  const coming: { snapshot: Snapshot; left: number }[] = [];
   const room = LocalRoom.open(
     compiled,
     course.start,
     course.blocks,
-    (snapshot: Snapshot) => fight?.receive(snapshot),
+    (snapshot: Snapshot) => (late > 0 ? coming.push({ snapshot, left: late }) : fight?.receive(snapshot)),
     (message) => {
       gear = message;
     },
@@ -122,12 +124,14 @@ function fightIn(right: string) {
   const tick = (buttons: Partial<FightButtons> = {}) => {
     fighting.press({ ...UNPRESSED, ...buttons });
     steps.step({} as Body, STILL);
+    for (const each of coming) each.left -= 1;
+    while (coming[0] && coming[0].left <= 0) fighting.receive(coming.shift()!.snapshot);
     room.pump(TICK);
   };
   // A weapon the starting kit lacks is handed out and worn first: the room takes arms from gear alone.
   const kind = right.startsWith('bow') ? KIND.bow : right.startsWith('pistolet') ? KIND.pistolet : null;
   if (kind !== null) wear(fighting, () => gear, tick, [kind]);
-  return { fighting, tick, gear: () => gear as GearState | null };
+  return { fighting, tick, room, gear: () => gear as GearState | null };
 }
 
 test('a guard or a swing tapped between two ticks still reaches the rules', () => {
@@ -189,7 +193,7 @@ function fightByHand() {
   const shot: Fired = { ranged: 3, at: [0, 0, 1], velocity: [0, -3600, 0] };
   const control = { firing: false };
   const rules = {
-    predict: (fighter: Float64Array) => ({ fighter, fired: control.firing ? shot : null }),
+    predict: (fighter: Float64Array) => ({ fighter, fired: control.firing ? shot : null, hits: [] }),
     strokeReach: () => 1,
   } as unknown as CombatRules;
   const link = {
@@ -739,3 +743,29 @@ test("in a Breach's run each input is predicted on its own tick's blocks, and th
   );
   assert.ok(armed.length > 0 && armed.every((arms) => arms === 0), 'bare handed while bearing it');
 });
+
+for (const late of [0, 6])
+  test(`the player's own hit is foreseen on the tick its blow lands, and the room's word on it comes as felt (${late} ticks late)`, () => {
+    const { fighting, tick, room } = fightIn('sword_iron', late);
+    const foe = room.standFoe(8, 1, course.start.x, course.start.y - 0.8, Math.PI, 1);
+    for (let ticks = 0; ticks < 20; ticks += 1) tick();
+    [fighting.takeForeseen(), fighting.takeEvents()];
+    const foreseen: { tick: number; defender: number }[] = [];
+    const told: { tick: number; felt: boolean }[] = [];
+    tick({ swing: true, swingPressed: true });
+    for (let ticks = 1; ticks < 40; ticks += 1) {
+      for (const event of fighting.takeForeseen()) foreseen.push({ tick: ticks, defender: event.defender });
+      for (const event of fighting.takeEvents())
+        if (event.kind === EVENT.hit && event.striker === fighting.player)
+          told.push({ tick: ticks, felt: !!event.felt });
+      tick();
+    }
+    assert.deepEqual(
+      foreseen.map((each) => each.defender),
+      [foe],
+      'one hit foreseen, on the foe',
+    );
+    assert.equal(told.length, 1, "the room's word on it");
+    assert.equal(told[0]?.felt, true, 'marked felt: its flash, sound and hold already played');
+    assert.equal((told[0]?.tick ?? 0) - (foreseen[0]?.tick ?? 0), late, 'foreseen as soon as the room struck it here');
+  });
