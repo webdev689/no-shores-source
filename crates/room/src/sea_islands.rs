@@ -83,7 +83,7 @@ pub struct Islands {
 }
 
 /// How far a point lies from a leg.
-fn off_leg(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
+pub(crate) fn off_leg(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
     let (along_x, along_y) = (to[0] - from[0], to[1] - from[1]);
     let length = along_x * along_x + along_y * along_y;
     let share = if length > 0.0 {

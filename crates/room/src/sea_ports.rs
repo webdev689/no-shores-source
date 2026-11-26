@@ -199,8 +199,9 @@ impl Sea {
         self.keep_hurts(player, kept);
     }
 
-    /// The harbour's tick, the sea's ships sailed: every repair runs on, and what floats drifts and is gathered.
-    pub(super) fn tick_harbour(&mut self) {
+    /// The harbour's tick, the sea's ships sailed from where they lay (`set_out`): every repair runs on, and what
+    /// floats drifts and is gathered along the leg each sailed.
+    pub(super) fn tick_harbour(&mut self, set_out: &BTreeMap<PlayerId, [f64; 2]>) {
         for (player, kept) in self.harbour.repairs.tick(TICK_SECONDS) {
             if let Some(berth) = self.berths.get_mut(&player) {
                 keep(berth, &mut self.harbour.characters, player, kept);
@@ -212,10 +213,12 @@ impl Sea {
         }
         // A boarder's ship gathers nothing while they stand on its enemy's deck, whose room holds their character.
         let on_deck = |player: &PlayerId| self.decks.boarded.iter().any(|deck| deck.aboard.contains_key(player));
-        let ships: Vec<(PlayerId, [f64; 2])> = self
+        let ships: Vec<(PlayerId, [[f64; 2]; 2])> = self
             .ships()
             .filter(|(player, _)| !on_deck(player))
-            .map(|(player, ship)| (player, [ship.x, ship.y]))
+            .map(|(player, ship)| {
+                (player, [set_out.get(&player).copied().unwrap_or([ship.x, ship.y]), [ship.x, ship.y]])
+            })
             .collect();
         let tick = self.clock as f64;
         for (event, player, held) in self.harbour.flotsam.tick(self.clock, &ships, &mut self.harbour.characters) {

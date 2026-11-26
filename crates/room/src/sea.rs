@@ -354,6 +354,8 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         let (hostiles, sailing_count) = (self.hostiles(), self.hostiles.sailing.len());
+        let set_out: BTreeMap<PlayerId, [f64; 2]> =
+            self.ships().map(|(player, ship)| (player, [ship.x, ship.y])).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
@@ -380,7 +382,7 @@ impl Sea {
             let way = berth.kept[1].max(0.5) * class.way;
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * way);
         }
-        self.tick_harbour();
+        self.tick_harbour(&set_out);
         self.give_guilds();
         self.tick_islands();
         self.fights.fit(&self.harbour.characters);
