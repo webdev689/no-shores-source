@@ -139,7 +139,8 @@ export function choice(
           // A long list scrolls inside this height, so every option stays in reach.
           maxHeight: LIST_HEIGHT,
           scroll: true,
-          float: { at: [0, 1], y: 2, z: 10 },
+          // Over whatever holds it, a window floated over the screen too: a layer of its own would sink under one.
+          float: { at: [0, 1], y: 2 },
           children: options.map((option): Node => ({
             id: `${id}:${option.value}`,
             press: true,

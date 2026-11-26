@@ -96,18 +96,19 @@ struct Sailing {
     course: VecDeque<[f64; 2]>,
 }
 
-/// A player's place at sea: their ship once it has put to sea, the tick of their last course, and the shares of hull,
-/// canvas and men its hurts leave it.
+/// A player's place at sea: their ship once it has put to sea, the tick of their last course and of their last
+/// travel judged, and the shares of hull, canvas and men its hurts leave it.
 #[derive(Debug)]
 struct Berth {
     sailing: Option<Sailing>,
     set_at: Option<u64>,
+    travel_at: Option<u64>,
     kept: [f64; 3],
 }
 
 impl Default for Berth {
     fn default() -> Self {
-        Berth { sailing: None, set_at: None, kept: [1.0; 3] }
+        Berth { sailing: None, set_at: None, travel_at: None, kept: [1.0; 3] }
     }
 }
 

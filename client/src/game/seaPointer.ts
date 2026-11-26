@@ -57,8 +57,9 @@ export function seaPointer(
     forgetPresses();
   });
   canvas.addEventListener('pointercancel', forgetPresses);
-  // On a struck ship's deck the keys and the pointer are the fight's on foot.
-  fightControls(canvas, () => (overInterface() || sea()?.boarding.onDeck ? null : (sea()?.fight ?? null)));
+  // On a struck ship's deck the keys and the pointer are the fight's on foot; what is let go is still the sea fight's.
+  const fighting = () => sea()?.fight ?? null;
+  fightControls(canvas, () => (overInterface() || sea()?.boarding.onDeck ? null : fighting()), fighting);
   canvas.addEventListener('wheel', (event) => {
     if (!atSea() && !mapUp()) return;
     if (mapUp()) map()?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
@@ -68,8 +69,13 @@ export function seaPointer(
 
 /** Hands the keys and the pointer to the fight while one is on, ahead of the sea's own controls: its controls as
  *  bound (the helm, the sails, the burst, the brace, the aim and fire, holding fire), a drag to look, the wheel for
- *  the load. */
-export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat | null): void {
+ *  the load. A key or button let go, and the window lost, go to `holding`, the fight whatever the pointer is over, so
+ *  nothing pressed stays held. */
+export function fightControls(
+  canvas: HTMLCanvasElement,
+  fight: () => SeaCombat | null,
+  holding: () => SeaCombat | null = fight,
+): void {
   const taken = (event: Event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -79,15 +85,15 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     // Under the gear screen or the chat's field the fight takes no key pressed, they are theirs; a key let go is still
     // the fight's, so nothing it held stays held.
     if (down && (gearScreenOpen() || chatOpen())) return;
-    if (!fight()?.key(down ? keyNameOf(event) : keyUpNameOf(event), down)) return;
+    if (!(down ? fight() : holding())?.key(down ? keyNameOf(event) : keyUpNameOf(event), down)) return;
     if (down) taken(event);
     else event.preventDefault();
   };
   addEventListener('keydown', key(true), { capture: true });
   addEventListener('keyup', key(false), { capture: true });
   // A key let go while the window is away is never heard: nothing it held stays held, as on land.
-  addEventListener('blur', () => fight()?.letGo());
-  document.addEventListener('visibilitychange', () => fight()?.letGo());
+  addEventListener('blur', () => holding()?.letGo());
+  document.addEventListener('visibilitychange', () => holding()?.letGo());
   let held = false;
   canvas.addEventListener(
     'pointerdown',
@@ -118,10 +124,11 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
   canvas.addEventListener(
     'pointerup',
     (event) => {
-      const combat = fight();
+      const combat = holding();
       held = false;
       if (!combat) return;
-      taken(event);
+      // Kept from the sea's own handlers only while the fight takes the pointer, so they still let go of their press.
+      if (fight()) taken(event);
       const own = FIGHT_CONTROLS.find((id) => BINDS.now[id].keys.includes(`mouse${event.button}`));
       if (own) combat.act(own, false);
     },
@@ -130,7 +137,7 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
   // A pointer let go without its button coming up on the canvas lets the aim go unfired.
   canvas.addEventListener('lostpointercapture', () => {
     held = false;
-    const combat = fight();
+    const combat = holding();
     if (combat?.aimingNow) combat.holdFire();
   });
   canvas.addEventListener(

@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import { PICTURES, pictureOf } from './art/pictures.ts';
 import { pngOf } from './art/sheet.ts';
 import { fillKeys, makePage, siteFoot, siteTop } from './page.ts';
-import { OUTSIDE, SITE_PAGES, pageOfPath, siteHref, type SitePage } from './siteMap.ts';
+import { DOWNLOADS, OUTSIDE, SITE_PAGES, pageOfPath, siteHref, type SitePage } from './siteMap.ts';
+import { LATEST_NAMES } from '../worker.ts';
 import { BOT_ORIGIN } from './panel/panelApi.ts';
 import { CONTENT_POLICY, policyOf } from './sitePlugin.ts';
 import { WORDS } from './words.ts';
@@ -55,7 +56,8 @@ test('every link goes to a page or a named address, never one typed into a page'
       const place = href.split('#')[0] ?? '';
       const named =
         SITE_PAGES.some((each) => siteHref(each.id)?.href === place) ||
-        Object.values(OUTSIDE).some((address) => address !== '' && address === place);
+        Object.values(OUTSIDE).some((address) => address !== '' && address === place) ||
+        Object.values(DOWNLOADS).includes(place);
       assert.ok(known || named, `${page.id} links to "${href}"`);
     }
     const typed = [...source(page).matchAll(/<a\b[^>]*\shref="([^"]*)"/g)].map((found) => found[1]);
@@ -203,4 +205,12 @@ test('the page for an address with no page is built, kept out of the foot and ou
 
 test('the foot holds the copyright of Vestige Studios on every page', () => {
   for (const { page, html } of made) assert.match(html, /© Vestige Studios/, page.id);
+});
+
+test("the site's downloads are the Worker's names that never move, each sent to the newest installer", () => {
+  assert.deepEqual(Object.keys(DOWNLOADS), [...LATEST_NAMES]);
+  for (const name of LATEST_NAMES) assert.equal(siteHref(name)?.href, `/download/${name}`);
+  const app = made.find((each) => each.page.id === 'app')?.html ?? '';
+  for (const name of LATEST_NAMES)
+    assert.ok(app.includes(`href="/download/${name}"`), `the Download page offers ${name}`);
 });

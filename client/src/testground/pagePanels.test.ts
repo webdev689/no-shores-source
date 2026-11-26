@@ -95,3 +95,19 @@ test('a canvas shrunk past the widest texture lays its panels at the ratio it wa
   assert.ok(Math.abs((ratios[0] ?? 0) - 1.6384) < 1e-9, `laid at ${ratios[0]}`);
   for (const name of ['addEventListener', 'document', 'window', 'devicePixelRatio']) delete page[name];
 });
+
+test('Tab moves the panels’ focus, never the page’s off its one canvas', () => {
+  const page = globalThis as unknown as Record<string, unknown>;
+  const heard: ((event: unknown) => void)[] = [];
+  Object.assign(page, {
+    addEventListener: (kind: string, run: (event: unknown) => void) => kind === 'keydown' && heard.push(run),
+    document: { pointerLockElement: null },
+  });
+  const canvas = { tabIndex: 0, style: { cursor: '' }, addEventListener: () => undefined };
+  new PagePanels({} as Gpu, canvas as unknown as HTMLCanvasElement, new Promise<Face>(() => undefined), () => false);
+  let prevented = false;
+  const tab = { key: 'Tab', shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
+  for (const run of heard) run({ ...tab, preventDefault: () => (prevented = true) });
+  assert.ok(prevented);
+  for (const name of ['addEventListener', 'document']) delete page[name];
+});

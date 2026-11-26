@@ -478,9 +478,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
         sea.leaveRoom();
         return enterSea(seas);
       })
-      .then(() => void (sea.travelling ?? sea.sailTo(sail, PLANNED_PACE)))
-      // A room that will not open leaves the ship sailing alone, and says so, as a link lost does.
-      .catch(() => sea.sailAlone(sail));
+      .then(() => void (onTheSea(playing.flow) && (sea.travelling ?? sea.sailTo(sail, PLANNED_PACE))))
+      // A room that will not open leaves the ship sailing alone, and says so; ashore by then, nothing sails.
+      .catch(() => void (onTheSea(playing.flow) && sea.sailAlone(sail, PLANNED_PACE)));
   };
 
   const { openMap, manage, leaveHelm, takeHelm, stopOrResume, choose } = helmControls(playing, input, {

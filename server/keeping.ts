@@ -37,6 +37,8 @@ export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
 /** What the keeper needs of the room. */
 export interface KeptRoom {
   character(player: number): string | null;
+  /** Opens a leaving player's chests and posts what lies for them to their mail (`partFrom`). */
+  mailLying?(player: number): void;
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
@@ -249,12 +251,18 @@ export class Keeper {
       if (this.closed && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
       return false;
     }
-    // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes
-    // first, so the room keeps that body before this player is given it.
+    // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes.
+    // While the accounts hold what this room last saved of it, and gave nothing back to it since (an errand's answer),
+    // the room's own body of it is the newest, with what it gained since that save: this player takes that on.
+    let takenOn = false;
     for (const [other, kept] of this.held)
       if (kept.account === claimed.account) {
+        const takeOn = kept.saved === claimed.body && body === claimed.body;
+        if (takeOn) this.room.mailLying?.(other);
+        const newest = takeOn ? this.room.character(other) : null;
         this.held.delete(other);
         this.lost(other);
+        if (newest !== null && newest !== body) takenOn ||= this.room.restoreCharacter(player, newest);
       }
     this.room.own(player, claimed.account);
     if (claimed.name !== null) this.room.name(player, claimed.name);
@@ -266,7 +274,7 @@ export class Keeper {
       holder,
       from: claimed.from,
       out: leftByWayOut(claimed.body),
-      changed: claimed.body === null || body !== claimed.body,
+      changed: claimed.body === null || body !== claimed.body || takenOn,
       savedAt: now(),
       saving: false,
       saved: claimed.body,

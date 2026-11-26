@@ -13,6 +13,8 @@ export interface DeckRoom {
   walk(sequence: number, controls: readonly number[]): void;
   readonly onDeck: { readonly acknowledged: number; readonly body: Body } | null;
   readonly words: number;
+  /** Whether the room has gone unheard so long that no step is sent until it speaks (`UNHEARD_MOST`). */
+  readonly quiet?: boolean;
 }
 
 /** The player's walk on a deck, from the spot behind its wheel, facing its bow. */
@@ -40,6 +42,8 @@ export class DeckWalk {
       step: (body, asked) => {
         // A deck is no saddle: the room walks every body aboard on foot, so the page does too.
         const controls = { ...asked, mounted: false };
+        // A room long unheard takes no step until it speaks, and the body stands meanwhile.
+        if (room.quiet === true) return body;
         room.walk(prediction.next(controls), floatsOfControls(controls));
         return movement.step(body, controls);
       },

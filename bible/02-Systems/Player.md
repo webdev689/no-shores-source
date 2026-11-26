@@ -40,7 +40,9 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   page that holds it chooses the rules: a fight's in a room, which sends each tick's intent on and predicts the
   fighter ([[Combat]]), or a ship's deck. In a fight the walker steps and shows the frame in two halves, the fight's
   buttons pressed before the step and what the fight holds the player to shown after it (`PlayerFight`), on the Test
-  Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
+  Ground and in the game's nodes alike. The fight steps only while its room's clock runs, so a cutscene that holds
+  the room (the wreck's) leaves no inputs waiting in its queue, and no blow late after it. A page may set the walker's
+  player: a move played from a panel.
 - **Riding** ([[Horses Are Items Worn in a Mount Slot]]): the mount key mounts only with a horse worn in the Mount
   slot, as the room allows (`mountAsked`). The walker rides only once the gear the room sends says a horse is worn
   (`ridesIn`, on foot, in the prologue's wreck and on the Test Ground alike); one taken off under its rider sets them

@@ -75,7 +75,7 @@ export class DrawnInterface {
     requestAnimationFrame((now) => {
       if (this.framing) return;
       // Heard by nothing while the world loads (the tap to start hears the page itself), so no key pressed then
-      // presses what takes the focus once the game's frames begin; but by the launcher, while it stands over all.
+      // presses what takes the focus once the game's frames begin; but by the launcher, which has its window alone.
       const taken = this.events.take();
       this.guard.run(() => {
         this.ui?.frame(this.view, launcherStanding() ? taken : [], Math.min(0.1, (now - before) / 1000));
