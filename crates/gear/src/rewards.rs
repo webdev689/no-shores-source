@@ -93,8 +93,10 @@ impl Clear {
     }
 }
 
-/// A Miniboss's rank, whose drops a dungeon's clear gives.
+/// A Miniboss's rank, whose colours a dungeon's clear gives.
 const MINIBOSS: u8 = 4;
+/// A dungeon clear's chance of a Vestige on a Normal voyage, apart from its Miniboss's own.
+pub(crate) const CLEAR_VESTIGE: f64 = 0.35;
 
 impl Character {
     /// Rewards a kill of a foe of this kind and rank (1 Minor to 5 Boss) this player had a hand in: the XP, to them
@@ -164,8 +166,8 @@ impl Character {
     }
 
     /// Pays a cleared node to a player who fought it: its clear's XP and Aurem at its level, raised by a harder voyage
-    /// as a kill's are; and from a dungeon an item as itself, coloured as its Miniboss's, and a Vestige as often as its
-    /// Miniboss leaves one, returned to be laid as `loot_kill`'s are, both from `source`.
+    /// as a kill's are; and from a dungeon an item as itself, coloured as its Miniboss's, and a Vestige by
+    /// `CLEAR_VESTIGE`, returned to be laid as `loot_kill`'s are, both from `source`.
     pub fn reward_clear(
         &mut self,
         clear: Clear,
@@ -194,7 +196,7 @@ impl Character {
             return Vec::new();
         }
         let raised = difficulty.reward() * share;
-        self.loot((vestige::chance(MINIBOSS) * raised, raised), MINIBOSS, level, source, dice)
+        self.loot((CLEAR_VESTIGE * raised, raised), MINIBOSS, level, source, dice)
     }
 
     /// Pays XP and Aurem worth so much at level 5, at `level` and the voyage's tier, as `earn_play_xp` takes XP.

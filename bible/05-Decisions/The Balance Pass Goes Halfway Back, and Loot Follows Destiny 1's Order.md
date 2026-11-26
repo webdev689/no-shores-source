@@ -6,7 +6,8 @@ status: in force
 # The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order
 
 Replaced in part by [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: the colours' spacing, the deck crew's drops, a Boss's and a Miniboss's standing again,
-items from bosses and dungeons, clears that pay, the cove's wreck and Shapes.
+items from bosses and dungeons, clears that pay, the cove's wreck and Shapes. Replaced in part by
+[[Kills Drop Four Times as Often, and a Miniboss Half the Time]]: a kill's chance of a Vestige by rank.
 
 > "1. We recently adjusted balance and I want to tone it back because it was overtuned
 >

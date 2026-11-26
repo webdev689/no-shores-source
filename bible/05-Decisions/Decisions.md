@@ -307,6 +307,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Set Names Stand as Claude Drafted Them]]
 - [[Weapons and Armour Carry Flavour Text]]
 - [[Commons Drop as Themselves, Never as Vestiges]]
+- [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]
 - [[Breach Weapons Come Normal and Forged]]
 - [[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]
 - [[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]

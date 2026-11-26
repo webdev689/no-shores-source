@@ -5,6 +5,9 @@ status: in force
 ---
 # Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss
 
+Replaced in part by [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]: a Miniboss's Vestige is 50 in
+100; a dungeon's clear keeps 35.
+
 > "Do an audit on this. Ensure its perfect"
 
 The audit was of [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]. Its findings were put to

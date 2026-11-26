@@ -226,10 +226,11 @@ fn dungeon_kill(level: u8, tier: Difficulty) -> Hour {
     majors.times(4.0 / 6.0).plus(kill_of(&[Foe::Brute, Foe::Archer], 3, level, tier).times(2.0 / 6.0))
 }
 
-/// A dungeon's clear (`Character::reward_clear`): its pay, an item and a Vestige by a Miniboss's chance.
+/// A dungeon's clear (`Character::reward_clear`): its pay, an item and a Vestige by the clear's own chance.
 fn dungeon_clear(level: u8, tier: Difficulty) -> Hour {
     let colour = shares(colours(4), level);
-    paid(Clear::Dungeon.worth(), level, tier).plus(vestiges(chance(4) * tier.reward(), colour)).plus(items(
+    let vestige = crate::rewards::CLEAR_VESTIGE * tier.reward();
+    paid(Clear::Dungeon.worth(), level, tier).plus(vestiges(vestige, colour)).plus(items(
         tier.reward(),
         colour,
         level,
