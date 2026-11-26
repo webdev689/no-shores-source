@@ -16,11 +16,11 @@ const YOU = { x: 1000, y: 2030, z: 30, facing: Math.PI };
 const OWN: Shot = { eye: [1000, 2034, 33], yaw: 0, pitch: 0.2, fov: 1, near: 0.1, far: 3000 };
 const settled = () => new Promise((resolve) => setImmediate(resolve));
 
-/** This room's gear for the player: claimed as theirs or not, and on the opening's first task (her gift owed) or past
- *  it. */
-const gearOf = (claimed: boolean, owed = true): GearState =>
+/** This room's gear for the player: claimed as theirs or not, and on the opening's first task (her task waiting) or
+ *  past it. */
+const gearOf = (claimed: boolean, waiting = true): GearState =>
   ({
-    quest: { quest: 1, task: owed ? 0 : 1, counts: [0], done: [], choices: [], at: null, claimed } as QuestState,
+    quest: { quest: 1, task: waiting ? 0 : 1, counts: [0], done: [], choices: [], at: null, claimed } as QuestState,
   }) as GearState;
 
 /** A stranger's last moment that speaks her words as soon as it is framed, saying each scene until `finish`, and is
@@ -48,35 +48,34 @@ function story(gear: { now: GearState | null } = { now: gearOf(true) }) {
       return [];
     },
   };
-  const gifts: string[] = [];
+  const asks: string[] = [];
   const after = new AfterStory();
   after.storyEnded(epilogue as unknown as Epilogue);
-  const ask = (asked: GearAsk) => void gifts.push(`${asked.kind}:${asked.column ?? ''}`);
+  const ask = (asked: GearAsk) => void asks.push(`${asked.kind}:${asked.column ?? ''}`);
   const frame = (node = SOCIAL) =>
     after.frame(OWN, VIEW, 1 / 30, 0, YOU, false, { node, floor: () => 30, gear: gear.now, ask, blocks: [] });
-  return { after, said, gifts, frame, finish: () => finishes.shift()?.(), pressed: () => pressed, epilogue };
+  return { after, said, asks, frame, finish: () => finishes.shift()?.(), pressed: () => pressed, epilogue };
 }
 
-test('on arriving in Overlook the stranger says her welcome, the keys held and the view hers, then gives her gift', async () => {
-  const { after, said, gifts, frame, finish, pressed } = story();
+test('on arriving in Overlook the stranger says her welcome face to face, the keys held, then her task is heard', async () => {
+  const { after, said, asks, frame, finish, pressed } = story();
   assert.equal(after.holding, false, 'the keys are the player’s before she speaks');
   frame();
   await settled();
   assert.equal(after.holding, true);
   after.press();
   assert.equal(pressed(), 1, 'Space moves her words on');
-  let flown = false;
   for (const step of TOUR) {
     assert.equal(said.at(-1), step.scene);
-    let shot = after.shot(OWN, FLY_S);
-    shot = after.shot(OWN, FLY_S);
-    if (step.kinds.length > 0) flown ||= Math.hypot(shot.eye[0] - OWN.eye[0], shot.eye[1] - OWN.eye[1]) > 10;
+    after.shot(OWN, FLY_S);
+    const shot = after.shot(OWN, FLY_S);
+    const pair = Math.hypot(shot.eye[0] - 1000.9, shot.eye[1] - 2029.5);
+    assert.ok(pair > 7 && pair < 11, `${step.scene}: the view on the pair, from their side: ${pair}`);
     finish();
     await settled();
   }
-  assert.ok(flown, 'the view flew off to the places she names');
   frame();
-  assert.deepEqual(gifts, ['64:18'], 'asked once, as she bids farewell');
+  assert.deepEqual(asks, ['64:18'], 'asked once, as she bids farewell');
   assert.equal(after.holding, false, "the keys are the player's again");
   assert.deepEqual(after.shot(OWN, FLY_S), OWN, 'the view is theirs');
   await settled();
@@ -84,8 +83,8 @@ test('on arriving in Overlook the stranger says her welcome, the keys held and t
   assert.equal(after.past, true, 'she has gone');
 });
 
-test('leaving mid-welcome gives the view and the keys back at once, with no gift', async () => {
-  const { after, gifts, frame, finish } = story();
+test('leaving mid-welcome gives the view and the keys back at once, nothing asked', async () => {
+  const { after, asks, frame, finish } = story();
   frame();
   await settled();
   finish();
@@ -95,7 +94,7 @@ test('leaving mid-welcome gives the view and the keys back at once, with no gift
   assert.deepEqual(after.shot(OWN, 1 / 30), OWN);
   finish();
   await settled();
-  assert.deepEqual(gifts, []);
+  assert.deepEqual(asks, []);
   assert.equal(after.past, true);
 });
 
@@ -107,9 +106,9 @@ test('nothing waits once the story has handed over no last moment', () => {
   assert.deepEqual(after.shot(OWN, 1), OWN);
 });
 
-test('a gift still owed is asked only once this room holds the player’s own gear with her task waiting', async () => {
+test('her task still waiting is asked heard only once this room holds the player’s own gear with it waiting', async () => {
   const gear: { now: GearState | null } = { now: null };
-  const { after, gifts, frame, finish } = story(gear);
+  const { after, asks, frame, finish } = story(gear);
   frame();
   await settled();
   after.leave();
@@ -117,18 +116,18 @@ test('a gift still owed is asked only once this room holds the player’s own ge
     gear.now = now;
     frame();
   }
-  assert.deepEqual(gifts, [], 'none before this room’s own word, nor a temporary character’s, nor one past her');
+  assert.deepEqual(asks, [], 'none before this room’s own word, nor a temporary character’s, nor one past her');
   finish();
   gear.now = gearOf(true);
   frame();
   frame();
-  assert.deepEqual(gifts, ['64:18'], 'once, when it is theirs and waits on her');
+  assert.deepEqual(asks, ['64:18'], 'once, when it is theirs and waits on her');
   frame(SOCIAL);
   const afield = { ...SOCIAL, kind: 'patrol' } as typeof SOCIAL;
   const other = story({ now: gearOf(true) });
   other.after.leave();
   other.frame(afield);
-  assert.deepEqual(other.gifts, [], 'only in a social space');
+  assert.deepEqual(other.asks, [], 'only in a social space');
 });
 
 test('while she speaks the HUD of the player’s own play is hidden, the dialogue box left to her', () => {

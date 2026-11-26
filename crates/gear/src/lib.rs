@@ -32,6 +32,7 @@ pub mod errand;
 pub mod factions;
 pub mod finds;
 pub mod gate;
+pub mod gifts;
 pub mod grid;
 pub mod guild;
 pub mod horses;
@@ -51,6 +52,7 @@ pub mod playlist;
 pub mod power;
 mod quest_defs;
 mod quest_goals;
+mod quest_lessons;
 pub mod quests;
 pub mod rarity;
 mod refusal;
@@ -110,7 +112,13 @@ mod factions_tests;
 #[cfg(test)]
 mod gate_tests;
 #[cfg(test)]
+mod gift_steps_tests;
+#[cfg(test)]
+mod gifts_tests;
+#[cfg(test)]
 mod horses_tests;
+#[cfg(test)]
+mod house_drops_tests;
 #[cfg(test)]
 mod item_tests;
 #[cfg(test)]

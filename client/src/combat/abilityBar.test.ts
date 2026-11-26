@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import type { Child } from '../ui/node.ts';
 import { test } from 'node:test';
-import { AbilityBar, ANIMA_ROWS, abilityBarOf, spentBetween, tenetShown } from './abilityBar.ts';
+import { AbilityBar, ANIMA_ROWS, abilityBarOf, spentBetween, tenetShown, UNBOUNDED_GLOW } from './abilityBar.ts';
 import { USED_SECONDS } from './ringSlot.ts';
 import { allOf, wordsIn } from './nodes.test.ts';
 
@@ -149,4 +149,65 @@ test('a Tenet its road has not earned stands dark under a padlock, saying which 
     'no wedge on one not to be had',
   );
   assert.deepEqual(wordsIn(slots[2]), ['G'], 'nor its seconds');
+});
+
+test("while the room holds the Art unbounded, each ability glows in the Art's colour under a mark that it costs nothing, gone the frame it is bound again", () => {
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  const bar = new AbilityBar(pictures);
+  const slots = () => bar.node(false)?.children ?? [];
+  const keys = (slot: number) => allOf(slots()[slot]).flatMap((node) => node.picture?.key ?? []);
+  const glows = (slot: number) => allOf(slots()[slot]).filter((node) => node.opacity === UNBOUNDED_GLOW);
+  const whole = { art: STORM, animaShare: 1, tenets: [1, 1] as const };
+  assert.equal(abilityBarOf(whole).unbounded, false, 'unsaid, bound');
+  assert.equal(abilityBarOf({ ...whole, unbounded: true }).unbounded, true);
+  bar.update({ ...whole, unbounded: true }, 1 / 60);
+  for (const slot of [0, 1, 2]) {
+    assert.ok(
+      keys(slot).some((key) => key.startsWith('ability unbounded')),
+      `slot ${slot} marked`,
+    );
+    assert.equal(glows(slot).length, 1, `slot ${slot} glowing`);
+  }
+  assert.equal(labelOf(slots()[0]), 'Tempest (R), unbounded, ready');
+  assert.equal(labelOf(slots()[2]), 'Arc Lash (G), unbounded, ready');
+  bar.update(whole, 1 / 60);
+  for (const slot of [0, 1, 2]) {
+    assert.equal(
+      keys(slot).some((key) => key.startsWith('ability unbounded')),
+      false,
+      `slot ${slot} bound`,
+    );
+    assert.equal(glows(slot).length, 0, `slot ${slot} no longer glowing`);
+  }
+  assert.equal(labelOf(slots()[0]), 'Tempest (R), ready');
+  bar.update({ ...whole, unbounded: true }, 1 / 60, true);
+  assert.equal(glows(1).length, 0, 'greyed while the player cannot cast');
+  assert.equal(
+    keys(1).some((key) => key.startsWith('ability unbounded')),
+    false,
+    'and unmarked',
+  );
+  assert.equal(labelOf(slots()[1]), 'Quicken (Q), cannot be cast now');
+  bar.update({ ...whole, unbounded: true, earned: 0b001 }, 1 / 60);
+  assert.ok(
+    keys(2).some((key) => key.startsWith('ability lock')),
+    'one not earned keeps its padlock',
+  );
+  assert.equal(glows(2).length, 0, 'and its dark, with no glow');
+});
+
+test('the unbounded glow swells slowly, and stands still where less motion is asked', () => {
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  const widths = (bar: AbilityBar) =>
+    allOf(bar.node(false)?.children?.[1]).flatMap((node) => (node.opacity === UNBOUNDED_GLOW ? [node.width] : []));
+  const state = { art: STORM, animaShare: 1, tenets: [1, 1] as const, unbounded: true };
+  const seen = (bar: AbilityBar) => new Set(Array.from({ length: 40 }, () => (bar.update(state, 0.1), widths(bar)[0])));
+  assert.ok(seen(new AbilityBar(pictures)).size > 1, 'it swells');
+  const media = globalThis.matchMedia;
+  globalThis.matchMedia = ((query: string) => ({ matches: query.includes('reduce') })) as typeof globalThis.matchMedia;
+  try {
+    assert.equal(seen(new AbilityBar(pictures)).size, 1, 'held still');
+  } finally {
+    globalThis.matchMedia = media;
+  }
 });

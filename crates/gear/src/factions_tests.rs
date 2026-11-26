@@ -37,7 +37,11 @@ pub(crate) fn caped(faction: u8) -> Character {
     let mut character = rich();
     assert_eq!(character.ask(Ask::Pledge { faction }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
     assert_eq!(character.ask(Ask::BuyFactionWare { faction, ware: CAPE }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
-    let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == Slot::Cloak).map(|(id, _)| *id);
+    let cape = character
+        .items
+        .iter()
+        .find(|(_, (item, at))| item.kind.slot() == Slot::Cloak && *at != crate::character::At::Vault)
+        .map(|(id, _)| *id);
     let wear = Ask::Wear { item: cape.expect("the cape carried"), slot: Slot::Cloak };
     assert_eq!(character.ask(wear, AFIELD, &DICE).map(|_| ()), Ok(()));
     character

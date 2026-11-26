@@ -44,6 +44,7 @@ export const FROM_WORDS = {
   Flotsam: 'Found in flotsam you gathered. You carried ten Vestiges, so it came here.',
   Salvage: 'Salvage you took. Its slot carried nine, so it came here.',
   Found: 'Something you found. Its slot carried nine and the vault was full, so it came here.',
+  Gift: "A welcome gift from Overlook's keepers. Take it, and the Mage will open it for you.",
 } as const;
 const WORDS_BY_SOURCE: readonly string[] = Object.values(FROM_WORDS);
 /** What a letter that tells of a letter a full mailbox let go adds. */

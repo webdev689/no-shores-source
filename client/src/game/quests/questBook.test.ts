@@ -16,11 +16,14 @@ import {
   failLine,
   goalNodes,
   goalOf,
+  MOUNT_NOTES,
   linesBetween,
+  offeredAt,
   puzzlePoints,
   talkAt,
   trackedOf,
 } from './questBook.ts';
+import { bookCard } from './questCard.ts';
 
 // The roads are written by their story's own hand and change: these tests read what they expect from the file.
 
@@ -96,9 +99,12 @@ test('the opening hears the stranger, then the round of the counters, each keepe
     [
       'hear-the-stranger',
       'find-your-way',
+      'ride-the-bay',
       'your-ship',
-      'arm-yourself',
+      'learn-the-helm',
+      'bring-it-home',
       'wear-them',
+      'use-your-gifts',
       'hear-three-houses',
       'choose-house',
     ],
@@ -115,14 +121,22 @@ test('the opening hears the stranger, then the round of the counters, each keepe
 });
 
 test('a smith whose ware a buy goal of the task asks is the one it lights, until it is bought', () => {
-  const arm = taskOf(1, 'arm-yourself');
-  const goals = goalsOf(1, arm);
-  const melee = goals.findIndex((goal) => goal.slot === 'melee');
-  assert.equal(buyAt(onTask(1, arm), 'weaponsmith'), true);
-  assert.equal(buyAt(onTask(1, arm), 'armorsmith'), true);
-  assert.equal(buyAt(onTask(1, arm), 'mage'), false);
-  const bought = goals.map((_goal, index) => (index === melee ? 1 : 0));
-  assert.equal(buyAt(onTask(1, arm, bought), 'weaponsmith'), false, 'bought');
+  // No task of the file asks a purchase now the keepers give the opening's gear: a task of buy goals, made here.
+  const goals: Goal[] = [
+    { kind: 'buy', slot: 'melee', text: 'A Melee weapon' },
+    { kind: 'buy', slot: 'head', text: 'Head armour' },
+  ];
+  const opening = QUESTS[0] as unknown as { tasks: unknown[] };
+  opening.tasks.push({ id: 'buy-here', task: 'Buy here', goals });
+  try {
+    const arm = taskOf(1, 'buy-here');
+    assert.equal(buyAt(onTask(1, arm), 'weaponsmith'), true);
+    assert.equal(buyAt(onTask(1, arm), 'armorsmith'), true);
+    assert.equal(buyAt(onTask(1, arm), 'mage'), false);
+    assert.equal(buyAt(onTask(1, arm, [1, 0]), 'weaponsmith'), false, 'bought');
+  } finally {
+    opening.tasks.pop();
+  }
   assert.equal(buyAt(onTask(1, taskOf(1, 'wear-them')), 'armorsmith'), false, 'worn is no smith of theirs');
 });
 
@@ -181,6 +195,30 @@ test('the tracker runs a clock as m:ss for a race, a defence, a tail and an unse
   }
   const escort = stepOf(LAMP, 'escort');
   assert.equal(trackedOf(onTask(LAMP, escort.task, [], { clock: 7 }))?.steps[escort.goal]?.clock, undefined);
+});
+
+test('an escort waiting for its player to mount says so under its step, and where a horse is had without one', () => {
+  const escort = stepOf(LAMP, 'escort');
+  const figure = (state: number) => [{ look: 1, x: 0, y: 0, z: 0, facing: 0, state }];
+  const noteOf = (state: number, horsed: boolean) =>
+    trackedOf(onTask(LAMP, escort.task, [], { figures: figure(state) }), 0, horsed)?.steps[escort.goal]?.note;
+  assert.equal(noteOf(5, true), MOUNT_NOTES.horsed);
+  assert.equal(noteOf(5, false), MOUNT_NOTES.none);
+  assert.equal(noteOf(1, true), undefined, 'riding: nothing');
+  assert.equal(noteOf(0, false), undefined, 'too far off to be waited for: the waypoint leads');
+});
+
+test("a house's horde shows its foes left while it runs, its wait after a fall, and its words alone before", () => {
+  for (const quest of [STORM, LAMP, VEIL]) {
+    const task = QUESTS[quest - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.horde)) ?? -1;
+    const goal = goalsOf(quest, task).findIndex((each) => each.horde);
+    assert.ok(task >= 0 && goal >= 0, `a horde on road ${quest}`);
+    const horde = { left: 17, all: 29 };
+    assert.equal(trackedOf(onTask(quest, task, [], { horde }))?.steps[goal]?.count, '17/29', 'its foes left of all');
+    const waiting = trackedOf(onTask(quest, task, [], { clock: 6 }))?.steps[goal];
+    assert.deepEqual([waiting?.clock, waiting?.count], [6, undefined], 'the wait to start again');
+    assert.equal(trackedOf(onTask(quest, task))?.steps[goal]?.count, undefined, 'none running here');
+  }
 });
 
 test("a defence shows its ward's health; a puzzle its points lit of all", () => {
@@ -259,15 +297,53 @@ test('no speaker says more than two lines in a row where one scene follows anoth
   }
 });
 
-test('every scene a road names is in its lines: begins, starts, ends, goals met, greetings, failures and shouts', () => {
+test('every scene a road names is in its lines: begins, starts, ends, goals met, greetings, failures, shouts and mounts', () => {
   const scenes = scenesOf(houses, castOf(castFile));
   for (const quest of QUESTS)
     for (const named of [
       quest.begin,
       ...quest.tasks.flatMap((task) => [task.start, task.end]),
       ...quest.tasks.flatMap((task) =>
-        task.goals.flatMap((goal) => [goal.scene, goal.greet, failLine(goal), goal.shout]),
+        task.goals.flatMap((goal) => [goal.scene, goal.greet, failLine(goal), goal.shout, goal.mount]),
       ),
     ])
       if (named !== undefined) assert.ok(scenes[named], `${quest.id} names ${named}`);
+});
+
+test('a quest offered by a keeper shows its offer at their counter, and the tracker leads there to acquire it', () => {
+  const opening = questOf('house');
+  const round = taskOf(opening, 'find-your-way');
+  assert.equal(offeredAt(onTask(opening, 0), 'weaponsmith'), null, "not on the stranger's task");
+  const waiting = onTask(opening, round, [], { offered: COUNTERS.weaponsmith });
+  const offered = offeredAt(waiting, 'weaponsmith');
+  assert.equal(offered?.quest.name, 'A House of Your Own');
+  assert.equal(offered?.acquired, false);
+  assert.equal(offeredAt(waiting, 'armorsmith'), null, 'another keeper offers it not');
+  assert.deepEqual(trackedOf(waiting), {
+    name: 'A House of Your Own',
+    task: 'Acquire it',
+    steps: [{ text: 'The Weaponsmith', done: false }],
+  });
+  assert.equal(talkAt(waiting, 'weaponsmith')?.text, 'The Weaponsmith', 'her keeper lit, the mark led there');
+  assert.equal(talkAt(waiting, 'armorsmith'), null, 'no other word counts before');
+  const acquired = onTask(opening, round, [1]);
+  assert.equal(offeredAt(acquired, 'weaponsmith')?.acquired, true, 'shown acquired while it is walked');
+  assert.equal(trackedOf(acquired)?.steps[0]?.done, true);
+  const road = onTask(STORM, 0, [], { offered: COUNTERS.stormcallers });
+  assert.equal(offeredAt(road, 'stormcallers')?.offer.story, 'stormBegin', 'a road from its leader, in their words');
+});
+
+test("the Journal's hover card is the keeper's card: the task's objectives ticked, a done quest's all, a waiting one where to acquire it", () => {
+  const opening = questOf('house');
+  const round = taskOf(opening, 'find-your-way');
+  const walking = bookCard('house', onTask(opening, round, [1, 0, 1]));
+  assert.deepEqual(
+    walking?.steps.slice(0, 3).map((step) => step.done),
+    [true, false, true],
+  );
+  assert.equal(walking?.said, 'Acquired');
+  assert.equal(bookCard('house', onTask(opening, round, [], { offered: 13 }))?.said, 'Acquire it from the Weaponsmith');
+  const done = bookCard('house', onTask(STORM, 0, [], { done: [1, 0, 0, 0] }));
+  assert.ok(done?.said === 'Done' && done.steps.every((step) => step.done));
+  assert.equal(bookCard('lamplighters', onTask(STORM, 0)), null, 'neither walked nor done');
 });

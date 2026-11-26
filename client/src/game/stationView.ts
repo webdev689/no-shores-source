@@ -1,13 +1,14 @@
 // A social space's station's screen in the menu, and its title: a keeper's (npc/npcScreen.ts), the pledged faction's
 // with its muster of officers under its wares, or the Harbourmaster's counter of ships, their dress, their names and
-// the Shipwright's modules (harbour/harbourPage.ts); and the bounty board's title, whose screen the menu builds with
+// the Shipwright's modules (harbour/harbourPage.ts) in his keeper's frame; and the bounty board's title, whose screen the menu builds with
 // the board's clock (bountyBoard.ts).
 import type { Node } from '../ui/node.ts';
 import { BOARD_TITLE } from './bountyBoard.ts';
 import type { Station } from './gearScreen.ts';
 import { HARBOURMASTER, KEEPERS } from './keepers.ts';
 import type { MenuContext } from './menuPage.ts';
-import { npcPage } from './npc/npcScreen.ts';
+import { bodyWidth } from './npc/keeperFrame.ts';
+import { keeperScreen, npcPage } from './npc/npcScreen.ts';
 import { harbourPage } from './harbour/harbourPage.ts';
 import { musterAt } from './shipPages.ts';
 import type { HullBuild } from './shipPanel.ts';
@@ -21,7 +22,11 @@ export function stationPage(
   chosen: readonly [string, number | null] = ['shipyard', null],
   choose: (part: string, hull: number | null) => void = () => undefined,
 ): Node {
-  if (view === 'harbourmaster') return harbourPage(context, builds, chosen, choose);
+  if (view === 'harbourmaster') {
+    // His parts lay themselves in the body's room, beside him.
+    const room = { width: bodyWidth(context.room, context.sizes.label), height: context.room.height };
+    return keeperScreen(context, view, [harbourPage({ ...context, room }, builds, chosen, choose)]);
+  }
   return npcPage(context, view, musterAt(context, KEEPERS[view].faction));
 }
 
