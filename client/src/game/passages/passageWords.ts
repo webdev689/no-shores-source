@@ -233,8 +233,8 @@ export interface LampPrompt {
 /** How long the lamp is held to light it, seconds. */
 export const LAMP_HOLD_S = 2;
 
-export function lampPrompt(lit: boolean, guarded: boolean, cold = false): LampPrompt {
-  if (lit) return { lit, deed: 'Home', under: 'Or go on: the ways on are open' };
+export function lampPrompt(lit: boolean, guarded: boolean, cold = false, onward = true): LampPrompt {
+  if (lit) return { lit, deed: 'Home', under: onward ? 'Or go on: the ways on are open' : null };
   const deed = cold ? 'Kindle the lamp' : 'Light the lamp';
   if (guarded) return { lit, deed, under: 'Not while its guard stands' };
   return {

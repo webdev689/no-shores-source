@@ -231,12 +231,15 @@ fn sites_of(zone: &Zone, dungeon: &Dungeon, onward_count: usize) -> Sites {
     floor.sort_by(|one, other| apart(*other, arrive).total_cmp(&apart(*one, arrive)).then(one[0].total_cmp(&other[0])));
     // A Hold's ring, the first spot's, stands where most of it lies on the floor, the farthest such from the way in.
     if zone.deal == Deal::Mission(Mission::Hold)
-        && let Some(best) = (0..floor.len()).max_by(|one, other| {
-            let whole = |at: [f64; 2]| (ring_clear(dungeon, at), ring_on_floor(dungeon, at));
-            let (one_whole, one_share) = whole(floor[*one]);
-            let (other_whole, other_share) = whole(floor[*other]);
-            one_whole.cmp(&other_whole).then(one_share.total_cmp(&other_share)).then(other.cmp(one))
-        })
+        && let Some(best) = {
+            // Each spot's ring judged once: whether it is whole on the floor, and how much of it lies there.
+            let whole: Vec<(bool, f64)> =
+                floor.iter().map(|&at| (ring_clear(dungeon, at), ring_on_floor(dungeon, at))).collect();
+            (0..floor.len()).max_by(|&one, &other| {
+                let ((one_whole, one_share), (other_whole, other_share)) = (whole[one], whole[other]);
+                one_whole.cmp(&other_whole).then(one_share.total_cmp(&other_share)).then(other.cmp(&one))
+            })
+        }
     {
         let ring = floor.remove(best);
         floor.insert(0, ring);

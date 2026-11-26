@@ -138,6 +138,8 @@ test('the lamp is held to light; lit, it offers Home or going on', () => {
   assert.equal(lampPrompt(false, false).deed, 'Light the lamp');
   assert.match(lampPrompt(false, true).under ?? '', /guard/);
   assert.equal(lampPrompt(true, false).deed, 'Home');
+  assert.match(lampPrompt(true, false).under ?? '', /ways on are open/);
+  assert.equal(lampPrompt(true, false, false, false).under, null, 'the deepest lamp has no ways on to offer');
   const cold = lampPrompt(false, false, true);
   assert.deepEqual([cold.deed, cold.under], ['Kindle the lamp', 'Gone cold for you: the Tithe come while you hold']);
   assert.match(lampPrompt(false, true, true).under ?? '', /guard/, 'its guard first, cold or not');

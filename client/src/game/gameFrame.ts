@@ -280,7 +280,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const nodes = nodeCardsAt(
       here.node.resources ?? [],
       here.gear?.gear ?? null,
-      (x, y) => parts.groundAt(x, y) ?? body.z,
+      (x, y) => here.groundAt(x, y) ?? body.z,
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);

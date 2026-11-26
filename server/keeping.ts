@@ -399,11 +399,12 @@ export class Keeper {
       gated;
     if (shut !== '' || !characters || !this.arrives) return shut;
     // A judge that throws (the room's module failing to lay the web) cannot judge: refused for now, as accounts that
-    // do not answer are.
+    // do not answer are, and said in the room's log.
     let came: boolean;
     try {
       came = this.arrives(from, body);
-    } catch {
+    } catch (error) {
+      console.error('arrival judge:', error);
       return undefined;
     }
     if (came) return '';

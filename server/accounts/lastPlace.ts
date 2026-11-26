@@ -1,5 +1,6 @@
 // Where a character logs back in, as its kept body says it (crates/gear/src/last.rs): the sea, or a social space's
-// node and where they stood in it; or the passage zone of its dive, when that zone's room held it last. The page asks
+// node and where they stood in it; or the passage zone of its dive, when that zone's room held it last or, for a public
+// dive, when the zone it went on from did. The page asks
 // for it with `/v1/me` to know where to go after the title; the rooms still stand the player there by their own word
 // on the character.
 import type { Db } from './database.ts';

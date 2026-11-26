@@ -144,7 +144,7 @@ export class PassageGame {
     if (held && 'lamp' in held) {
       const lit = seen?.lampLit ?? false;
       const cold = lampCold(gearOf(this.host.foot())?.athericBounties, zone.web.island, plan.zone.lamp ?? 0);
-      const prompt = lampPrompt(lit, !lit && !(seen?.done ?? false), cold);
+      const prompt = lampPrompt(lit, !lit && !(seen?.done ?? false), cold, plan.zone.onward.length > 0);
       if (lit) return { words: prompt.deed, under: prompt.under, run: () => this.home(ask) };
       if (prompt.under === 'Not while its guard stands')
         return { words: prompt.under, run: () => undefined, idle: true };
