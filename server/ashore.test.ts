@@ -104,3 +104,27 @@ test('a room whose page draws no parked ships names its players to the seas but 
   assert.equal(words.length, 3, 'named to every sea, so its ship stays seen at sea');
   assert.equal(given, null);
 });
+
+test('a sea’s last answer is handed on no longer than 45 s once it stops answering', async () => {
+  let answering = true;
+  const sea = () => ({
+    ashoreWord: () =>
+      answering ? Promise.resolve('[{"account":"ann","number":3}]') : Promise.reject(new Error('gone')),
+  });
+  let given = '';
+  const ashore = new Ashore(sea, (ships) => (given = ships));
+  ashore.stand({ seas: ['sea'], island: { continent: 'continent-1' }, draws: true });
+  const start = Date.now();
+  ashore.own(4, 'ann');
+  await new Promise((settled) => setImmediate(settled));
+  assert.equal((JSON.parse(given) as unknown[]).length, 1);
+  answering = false;
+  for (const after of [15_000, 30_000, 45_000]) {
+    ashore.due(start + after);
+    await new Promise((settled) => setImmediate(settled));
+    assert.equal((JSON.parse(given) as unknown[]).length, 1, `kept ${after / 1000} s on`);
+  }
+  ashore.due(start + 60_000);
+  await new Promise((settled) => setImmediate(settled));
+  assert.equal(given, '[]', 'past 45 s, as its namings there have lapsed');
+});

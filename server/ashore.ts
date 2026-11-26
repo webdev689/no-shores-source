@@ -13,6 +13,9 @@ import { nodeRoom, passageRoom, seaRoomName, startedAtSea } from './roomNames.ts
 /** How often a room names its players again: three times within the 45 s a naming keeps a ship seen. */
 export const ASHORE_EVERY_MS = 15_000;
 
+/** How long a sea's last answer is handed on once it stops answering: as long as a naming keeps a ship seen there. */
+const ANSWER_KEPT_MS = 45_000;
+
 /** How far apart the numbers of the ships of each sea after the first are set, so two seas' ships never share one. */
 const SEA_APART = 2 ** 30;
 
@@ -48,11 +51,11 @@ export function placeOf(
 }
 
 /** A room's naming of its players ashore: where it stands (none for a room on no island, which names no one), each
- *  player's account as the room learns it, and each sea's last answer. */
+ *  player's account as the room learns it, and each sea's last answer with the time of the naming it answered. */
 export class Ashore {
   private place: Place | null = null;
   private readonly accounts = new Map<number, string>();
-  private readonly answers = new Map<string, readonly { readonly number: number }[]>();
+  private readonly answers = new Map<string, { readonly at: number; readonly ships: readonly { number: number }[] }>();
   private told = 0;
   private readonly sea: (name: string) => { ashoreWord(word: string): Promise<string> };
   private readonly give: (ships: string) => void;
@@ -83,11 +86,14 @@ export class Ashore {
   }
 
   /** Tells each sea who stands here, and hands the room every ship the seas answer are parked here: a sea that does
-   *  not answer keeps its last answer, one not open has none. */
+   *  not answer keeps its last answer for `ANSWER_KEPT_MS`, one not open has none. */
   private name(now: number): void {
     const place = this.place;
     if (!place) return;
     this.told = now;
+    const lapsed = [...this.answers].filter(([, answer]) => now - answer.at > ANSWER_KEPT_MS);
+    lapsed.forEach(([sea]) => this.answers.delete(sea));
+    if (lapsed.length > 0) this.hand(place);
     const word = JSON.stringify({
       accounts: [...this.accounts.values()],
       ...place.island,
@@ -98,13 +104,16 @@ export class Ashore {
         .ashoreWord(word)
         .then((answer) => {
           const ships = answer ? (JSON.parse(answer) as { number: number }[]) : [];
-          this.answers.set(
-            sea,
-            ships.map((ship) => ({ ...ship, number: ship.number + index * SEA_APART })),
-          );
-          if (place.draws) this.give(JSON.stringify([...this.answers.values()].flat()));
+          const apart = ships.map((ship) => ({ ...ship, number: ship.number + index * SEA_APART }));
+          this.answers.set(sea, { at: now, ships: apart });
+          this.hand(place);
         })
         .catch(() => undefined);
     });
+  }
+
+  /** Hands the room every ship the seas' last answers hold, where its page draws them. */
+  private hand(place: Place): void {
+    if (place.draws) this.give(JSON.stringify([...this.answers.values()].flatMap((answer) => answer.ships)));
   }
 }
