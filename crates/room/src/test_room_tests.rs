@@ -23,6 +23,7 @@ fn every_player_joining_a_test_room_plays_the_test_character_and_elsewhere_a_new
     let tester = room.join().expect("in");
     assert_eq!(room.players[&tester].character.level(), 30);
     assert_eq!(room.players[&tester].character.prestige(), 120);
+    assert_ne!(room.players[&tester].trims, [combat::Trim::PLAIN; 2], "its perks trim its fight from the first blow");
     let (mut room, _) = run(Tier::Hard, 0);
     let player = room.join().expect("in");
     assert_eq!(room.players[&player].character.level(), 1);

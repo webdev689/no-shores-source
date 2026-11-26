@@ -138,6 +138,10 @@ they play in holds it while they are there.
   row, once, so nothing is lost or doubled; switched away from or deleted before that, the accounts part them first,
   as the rules would. A switch also counts the guild's week from the chosen character's own record on, so a switch
   back gives the guild nothing twice, and the benched characters' errands keep their answers as the one in play's.
+  A vault the room cannot read leaves the character untouched, new or kept, so no save writes an empty vault over it.
+  Either side deployed first loses nothing: a room meeting accounts older than the vault (a claim with no `vault` at
+  all) lets the character go untouched and plays it unkept, and the accounts save the body of a room older than the
+  vault alone (a save with no vault), its vault still in it.
 - **One room at a time.** A node's room ([[Server]]) holds each signed-in player's character: the gear crate's
   `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the
   room claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can

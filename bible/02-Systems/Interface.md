@@ -1265,7 +1265,10 @@ the plaque, the banners and the presses, scrolling.
 
 Play asks the accounts to put the slot in play (`AccountLink.play`); while the character in play is still held by a
 room (409) it asks again, five times a second apart, then says "Your character is still leaving its last room. Try
-again." The accounts out of reach say "The accounts did not answer." with Try again. Answered, the screen sets this
+again." The four are asked for once the page has its session, so a new visitor's guest is made first. The accounts
+out of reach say "The accounts did not answer." with Try again, and Play without saving, which goes on as a page
+without accounts does: the story as this browser keeps it, the rooms playing the character unkept. Answered, the
+screen sets this
 browser's state from the slot (`takeSlot`): its look (`noshores.look`, cleared for a new character so the helm starts
 afresh), the prologue (`noshores.prologue`, played or cleared) and where it logs back in, so the story plays from its
 storm for a new character and one past it arrives where it left ([[Game]], "Arriving"). A character in the first slot

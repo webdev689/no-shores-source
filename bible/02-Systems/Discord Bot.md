@@ -226,9 +226,10 @@ changes.
 **Developer roles** name the roles a developer holds ([[Developers Launch Activities From a Test Room, in Max Gear]]);
 the layout names the Founder and the Developer. The accounts ask through their own binding to the bot's `Members`
 entrypoint (`main.ts`, which Cloudflare runs: the routes and clock of `worker.ts` and this one question), never a web
-address: given a Discord user id, whether it holds one of those roles in any server where the module is on. Discord is
-asked each time, so a role given or taken counts at once; a member Discord does not find, or one it does not answer
-for, is none.
+address: given a Discord user id, whether it holds one of those roles in the No Shores Discord, a server where the
+module is on whose owner is one of the bot's owners (`BOT_OWNERS`); no other server's roles count, and with no owner
+named no one is a developer. Discord is asked each time, so a role given or taken counts at once; a member Discord
+does not find, or one it does not answer for, is none.
 
 `/link` answers privately how to link: open the game at `https://noshores.online/play/`, then in
 Settings open Account and press Sign in or link with Discord. The link itself is the accounts' own.

@@ -60,9 +60,11 @@ async function slotsOf(database: Db, bot: Developers | null, account: string) {
   const { slot: playing } = await playingOf(database, account);
   const rows = await database
     .prepare(
-      `SELECT slot, playing, body IS NOT NULL AS kept, look, saved_at, CASE json_type(b, '$.shown') WHEN 'object' THEN json_extract(b, '$.shown') END AS shown,
+      `SELECT slot, playing, body IS NOT NULL AS kept, look, saved_at,
+       CASE json_type(b, '$.shown') WHEN 'object' THEN json_extract(b, '$.shown') END AS shown,
        json_extract(b, '$.allegiance.pledge') AS pledge, json_extract(b, '$.last') AS last,
-       json_extract(b, '$.story.prologue') AS prologue
+       CASE WHEN b IS NULL THEN 0 WHEN json_type(b, '$.story') IS NULL THEN 1
+         ELSE json_extract(b, '$.story.prologue') END AS prologue
        FROM (SELECT slot, 1 AS playing, body, look, saved_at, CASE WHEN json_valid(body) THEN body END AS b
              FROM characters WHERE account_id = ?1
              UNION ALL SELECT slot, 0, body, look, saved_at, CASE WHEN json_valid(body) THEN body END

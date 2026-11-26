@@ -65,7 +65,10 @@ test('a kept character shows as its room kept it, its Aurem its own until a room
   const seen = await world.ask('GET', '/v1/me', undefined, token);
   assert.deepEqual(seen.body.place, { kind: 'sea' }, '/v1/me answers the place of the character in play');
   assert.equal(await kept.save(claimed.account, 'node-overlook-social:1', '{"xp":1}', '{"aurem":45}'), true);
-  assert.equal((await slots()).body.aurem, 45, 'the account’s vault row, once kept');
+  const after = await slots();
+  assert.equal(after.body.aurem, 45, 'the account’s vault row, once kept');
+  const [first] = after.body.slots as { prologue: boolean }[];
+  assert.equal(first?.prologue, true, 'a body kept before the story was is past it, as the rules read it');
 });
 
 test('switching benches the one in play with its body, look and rooms, and brings the chosen one back as it was', async () => {

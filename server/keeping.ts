@@ -230,6 +230,13 @@ export class Keeper {
       if ((this.closed || !passing) && here()) this.lost(player, passing ? ACCOUNTS_TROUBLE : this.unsigned, passing);
       return false;
     }
+    // Accounts older than the account's vault answer none: kept here, the first save would part the vault out of the
+    // body into nothing, so the character is let go untouched and played unkept, as with accounts that do not answer.
+    if ((claimed as { readonly vault?: unknown }).vault === undefined) {
+      await characters.release(claimed.account, holder, null, null).catch(() => false);
+      if (this.closed && here()) this.lost(player, ACCOUNTS_TROUBLE, true);
+      return false;
+    }
     const shut = await this.judged(player, claimed, here);
     if (shut === undefined) {
       // The company cannot be judged: refused for now, with nothing of this room saved over the character.
@@ -244,11 +251,12 @@ export class Keeper {
       return false;
     }
     // A new account's character is the one the room holds, given back so the room keeps it as any other.
-    // Either way, the account's vault and Aurem are joined in while the room holds it.
+    // Either way, the account's vault and Aurem are joined in while the room holds it; a vault this room cannot read
+    // leaves the character untouched, new or kept, so no save writes an empty one over it.
     const own = claimed.body === null ? this.room.keptApart(player) : null;
-    if (own !== null) this.room.restoreJoined(player, own.body, claimed.vault ?? own.vault);
+    const joined = own === null || this.room.restoreJoined(player, own.body, claimed.vault ?? own.vault);
     const body = claimed.body === null ? null : await this.answered(claimed.account, claimed.body, here);
-    const given = body === null || this.room.restoreJoined(player, body, claimed.vault);
+    const given = joined && (body === null || this.room.restoreJoined(player, body, claimed.vault));
     if (!here() || !given || this.held.has(player)) {
       // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null, null).catch(() => false);

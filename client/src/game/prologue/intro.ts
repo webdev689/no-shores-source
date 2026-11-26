@@ -35,7 +35,7 @@ type Phase = 'dark' | 'dawn' | 'cloud' | 'skipped' | 'home' | 'title';
  *  once, the title's intro passed (the page left the game for it). */
 export interface TitleGate {
   readonly straight: boolean;
-  open(): Promise<'story' | 'onward' | 'title'>;
+  open(): Promise<'story' | 'onward' | 'title' | 'unread'>;
 }
 
 /** The title's prompt, by whatever the player plays with: on the pad, its jump's button. */
@@ -145,7 +145,8 @@ export class Intro implements Beat {
     void this.gate.open().then(
       (answer) => {
         if (answer === 'title') return this.toTitle();
-        this.onward = answer === 'onward';
+        // The accounts not answering, the story goes on as this browser keeps it, as it does offline.
+        this.onward = answer === 'unread' ? null : answer === 'onward';
         this.done = true;
       },
       // A screen that failed leaves the story to go on as it would offline.

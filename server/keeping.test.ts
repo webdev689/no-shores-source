@@ -112,17 +112,11 @@ test('a player whose character another room took is let go; a token that is no s
 });
 
 test('a character this room cannot read, or a player gone before the claim is answered, is let go untouched', async () => {
-  const { clock, kept, token } = await world();
-  const room = roomOf();
-  room.held.set(1, 'not readable');
-  const keeper = new Keeper(kept, room, 'node-a', () => undefined);
-  await keeper.signIn(
-    1,
-    token,
-    () => clock.now,
-    () => true,
-  );
-  await keeper.leave(1);
+  const { database, clock, kept, token } = await world();
+  const claimed = await kept.claim(token, 'node-a:1');
+  assert.ok(claimed);
+  await kept.release(claimed.account, 'node-a:1', null, null);
+  await database.prepare("UPDATE characters SET body = 'not readable'").run();
   // Kept as something no room reads: the next room is handed it as it is and refuses it, saving nothing over it.
   const other = roomOf();
   other.held.set(4, '{"mine":1}');

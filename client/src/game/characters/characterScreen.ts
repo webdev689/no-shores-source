@@ -13,7 +13,7 @@ import type { Interface } from '../../ui/ui.ts';
 import type { Hint } from '../gearNodes.ts';
 import { play as sound } from '../uiSounds.ts';
 import { type ScreenMarked, keepTestRun, takeSlot } from './characterMark.ts';
-import { DELETE, PLAY, RETRY, TEST_ROOM, bannerId, charactersNode } from './characterNodes.ts';
+import { DELETE, PLAY, RETRY, TEST_ROOM, UNREAD, bannerId, charactersNode } from './characterNodes.ts';
 import type { SlotFigures } from './slotFigures.ts';
 import { TEST_BACK, launchId, testRoomNode } from './testRoomNodes.ts';
 import type { TestEntry } from './testRuns.ts';
@@ -32,11 +32,16 @@ export const STILL_LEAVING = 'Your character is still leaving its last room. Try
 export const NOT_ANSWERED = 'The accounts did not answer.';
 
 /** How the screen ends: the story played from its storm, on past it, or back at the title. */
-export type CharactersAnswer = 'story' | 'onward' | 'title';
+/** How the screen ends: the story from its storm, onward past it, back to the title, or `unread`, the accounts not
+ *  answering, the story going on as this browser keeps it, unkept as before the four. */
+export type CharactersAnswer = 'story' | 'onward' | 'title' | 'unread';
 
 /** What the screen reaches the accounts, the browser and the page through; a test gives stand-ins. */
 export interface CharacterReach {
-  readonly link: Pick<AccountLink, 'characters' | 'play' | 'deleteCharacter' | 'keepLook' | 'account' | 'place'>;
+  readonly link: Pick<
+    AccountLink,
+    'session' | 'characters' | 'play' | 'deleteCharacter' | 'keepLook' | 'account' | 'place'
+  >;
   /** The browser's storage (the look, the prologue), and the tab's (the test room asked for). */
   readonly browser: Kept;
   readonly tab: Kept;
@@ -107,14 +112,18 @@ export function openCharacters(
 
   const ask = () => {
     [answer, said] = [null, null];
-    void link.characters().then((heard) => {
-      answer = heard === OUT_OF_REACH ? NOT_ANSWERED : heard;
-      if (typeof heard === 'object') {
-        chosen = heard.playing;
-        focusFirst = true;
-        announce(`Characters. ${heard.slots.filter(Boolean).length} of 4 kept.`);
-      }
-    });
+    // A new visitor's guest is made as the page loads: the four are asked for once the session is.
+    void link
+      .session()
+      .then(() => link.characters())
+      .then((heard) => {
+        answer = heard === OUT_OF_REACH ? NOT_ANSWERED : heard;
+        if (typeof heard === 'object') {
+          chosen = heard.playing;
+          focusFirst = true;
+          announce(`Characters. ${heard.slots.filter(Boolean).length} of 4 kept.`);
+        }
+      });
   };
   /** Asks again while the character in play is still held by a room; the four once answered, else why not. */
   const persist = async (asking: () => Promise<Characters | Held | string>): Promise<Characters | null> => {
@@ -228,6 +237,7 @@ export function openCharacters(
       if (ui.clicked(PLAY)) void enter();
       if (ui.clicked(TEST_ROOM)) toTest();
       if (ui.clicked(RETRY)) ask();
+      if (ui.clicked(UNREAD) && typeof answer === 'string') finish('unread');
       const y = padHeld(PAD_Y);
       if (y && !padY && view === 'characters') toTest();
       padY = y;

@@ -405,6 +405,10 @@ impl Room {
         }
         self.players.insert(id, joined);
         self.arrived(id);
+        // The test character comes in its gear, its perks' trims and its weapon taken at once.
+        if self.test {
+            self.retrim(id);
+        }
         id
     }
 

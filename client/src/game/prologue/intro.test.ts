@@ -136,7 +136,7 @@ test('the story asks for a press by what the player plays with: on the pad, its 
 });
 
 test('with accounts, beginning opens the character screen; the intro ends once it answers, or the title comes back', async () => {
-  const answers: ((answer: 'story' | 'onward' | 'title') => void)[] = [];
+  const answers: ((answer: 'story' | 'onward' | 'title' | 'unread') => void)[] = [];
   const gate: TitleGate = { straight: false, open: () => new Promise((answer) => answers.push(answer)) };
   const { beat, shown, play } = intro(gate);
   play(1);
@@ -155,6 +155,18 @@ test('with accounts, beginning opens the character screen; the intro ends once i
   await Promise.resolve();
   assert.ok(beat.done);
   assert.equal(beat.onward, true, 'past the story');
+});
+
+test('the accounts not answering, the intro ends as offline, the story as this browser keeps it', async () => {
+  const gate: TitleGate = { straight: false, open: () => Promise.resolve('unread') };
+  const { beat, play } = intro(gate);
+  play(1);
+  beat.skip?.();
+  play(3);
+  beat.key?.('enter', true);
+  await Promise.resolve();
+  assert.ok(beat.done);
+  assert.equal(beat.onward, null, 'the browser’s own word on the prologue decides');
 });
 
 test('marked by the tab, the screen opens at once, and the title never rises behind it', () => {

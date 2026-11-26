@@ -22,6 +22,7 @@ export const PLAY = 'characters-play';
 export const DELETE = 'characters-delete';
 export const TEST_ROOM = 'characters-test-room';
 export const RETRY = 'characters-retry';
+export const UNREAD = 'characters-unread';
 export const bannerId = (slot: number): string => `characters-slot-${slot}`;
 
 /** What is lost to a delete, said under Delete while it is held. */
@@ -271,9 +272,11 @@ function bannerNode(ui: Interface, shown: CharactersShown, slot: number, width: 
         gap: 12,
         padding: [0, 16, 0, 22],
       });
+  const story = said.story ? `, ${said.story}` : '';
+  const ends = chosen ? ', chosen' : '';
   const label = kept
-    ? `Slot ${slot + 1}: level ${said.level}, Prestige ${said.prestige ?? 0}, ${said.house}, ${said.place}${said.story ? `, ${said.story}` : ''}${chosen ? ', chosen' : ''}`
-    : `Slot ${slot + 1}: empty. Create character${chosen ? ', chosen' : ''}`;
+    ? `Slot ${slot + 1}: level ${said.level}, Prestige ${said.prestige ?? 0}, ${said.house}, ${said.place}${story}${ends}`
+    : `Slot ${slot + 1}: empty. Create character${ends}`;
   return {
     width: 'grow',
     alignX: 'end',
@@ -353,7 +356,8 @@ function press(
 }
 
 /** Under the banners: what is under way or was refused, Play (Create on an empty slot), Delete held on a filled slot
- *  (what it loses said while held), the Test Room for a developer, and Try again where the accounts did not answer. */
+ *  (what it loses said while held), the Test Room for a developer, and where the accounts did not answer, Try again or
+ *  Play without saving. */
 function pressesNode(ui: Interface, shown: CharactersShown, fit: Fit): Node {
   const { answer } = shown;
   const slots = slotsOf(answer);
@@ -372,6 +376,7 @@ function pressesNode(ui: Interface, shown: CharactersShown, fit: Fit): Node {
         label: shown.said ?? String(answer),
       },
       failed && press(ui, RETRY, 'Try again', 'button', fit),
+      failed && press(ui, UNREAD, 'Play without saving', 'button', fit, 'Play on as this browser keeps you, unsaved'),
       slots &&
         press(ui, PLAY, kept ? 'Play' : 'Create', 'primary', fit, kept ? 'Play this character' : 'Create a character'),
       slots &&

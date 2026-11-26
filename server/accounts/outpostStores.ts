@@ -196,9 +196,10 @@ export const keepAnswer = (database: Db, rid: string, answer: number, now: numbe
 /** How long an errand's kept answer outlives its asking: well past a room's or a page's asking again under its id. */
 const ANSWER_KEPT_MS = 7 * DAY_MS;
 
-/** Forgets the kept answers older than a week whose errand no saved character carries, in play or benched, a few hundred at a time: one a
- *  character still carries is kept whatever its age, as the next room to hold the character asks it again. The match
- *  is the carried errands' index's own expression, and the id's `+` drops its text affinity, so the index is searched. */
+/** Forgets the kept answers older than a week whose errand no saved character carries, in play or benched, a few
+ *  hundred at a time: one a character still carries is kept whatever its age, as the next room to hold the character
+ *  asks it again. The match is the carried errands' index's own expression, and the id's `+` drops its text affinity,
+ *  so the index is searched. */
 export const forgetAnswers = (database: Db, now: number) =>
   database
     .prepare(

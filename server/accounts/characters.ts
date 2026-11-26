@@ -53,8 +53,9 @@ export async function liveAccount(database: Db, token: string, now: number): Pro
 export interface Characters {
   look(token: string): Promise<Claimed | null>;
   claim(token: string, holder: string): Promise<Claimed | null>;
-  save(account: string, holder: string, body: string, vault: string): Promise<boolean>;
-  release(account: string, holder: string, body: string | null, vault: string | null): Promise<boolean>;
+  /** `vault` is none from a room older than the account's vault, which never parts one out of its body. */
+  save(account: string, holder: string, body: string, vault?: string): Promise<boolean>;
+  release(account: string, holder: string, body: string | null, vault?: string | null): Promise<boolean>;
   present(token: string, room: string | null, water?: string | null): Promise<boolean>;
   companions(account: string, room: string): Promise<string[]>;
   launched(account: string, room: string, within?: number): Promise<boolean>;
@@ -162,15 +163,17 @@ export function characters(
     /** Saves a character its holder still holds, with the account's vault, and holds it longer; false once another
      *  has taken it, which saves neither. */
     async save(account, holder, body, vault) {
-      if (body.length > BODY_MOST || vault.length > BODY_MOST) return false;
-      const [, saved] = await database.batch([
-        vaultSaved(account, holder, vault),
-        database
-          .prepare(
-            'UPDATE characters SET body = ?1, held_until = ?2, saved_at = ?3 WHERE account_id = ?4 AND holder = ?5',
-          )
-          .bind(body, now() + HOLD_MS, now(), account, holder),
-      ]);
+      if (body.length > BODY_MOST || (vault !== undefined && vault.length > BODY_MOST)) return false;
+      const update = database
+        .prepare(
+          'UPDATE characters SET body = ?1, held_until = ?2, saved_at = ?3 WHERE account_id = ?4 AND holder = ?5',
+        )
+        .bind(body, now() + HOLD_MS, now(), account, holder);
+      // A room older than the account's vault saves its body alone, the vault still in it, as it always did.
+      const saved =
+        vault === undefined
+          ? await update.run()
+          : (await database.batch([vaultSaved(account, holder, vault), update]))[1];
       if (saved?.meta.changes !== 1) return false;
       // What the save added to the member's guild week goes to their guild; a failure there loses no save.
       await creditGuild(database, account, body).catch((error: unknown) => console.error('guild credit:', error));
@@ -180,7 +183,8 @@ export function characters(
      *  with nothing (the room turned it away, or never gave it), it was never there: the room before still held it
      *  last. */
     async release(account, holder, body, vault) {
-      const kept = body !== null && vault !== null && body.length <= BODY_MOST && vault.length <= BODY_MOST;
+      const parted = typeof vault === 'string';
+      const kept = body !== null && body.length <= BODY_MOST && (!parted || vault.length <= BODY_MOST);
       const statement = !kept
         ? database
             .prepare(
@@ -194,9 +198,10 @@ export function characters(
                  WHERE account_id = ?1 AND holder = ?2`,
             )
             .bind(account, holder, body, now());
-      const released = kept
-        ? (await database.batch([vaultSaved(account, holder, vault), statement]))[1]
-        : await statement.run();
+      const released =
+        kept && parted
+          ? (await database.batch([vaultSaved(account, holder, vault), statement]))[1]
+          : await statement.run();
       if (released?.meta.changes !== 1) return false;
       if (kept)
         await creditGuild(database, account, body).catch((error: unknown) => console.error('guild credit:', error));

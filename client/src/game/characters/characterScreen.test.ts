@@ -6,7 +6,7 @@ import { fakeInterface, wordsOf } from '../../ui/uiForTests.ts';
 import { Stack } from '../../ui/stack.ts';
 import { PROLOGUE_KEY } from '../prologue/beat.ts';
 import { characterMarked } from './characterMark.ts';
-import { DELETE, DELETE_WARNING, NEW_CHARACTER, PLAY, RETRY, TEST_ROOM, bannerId } from './characterNodes.ts';
+import { DELETE, DELETE_WARNING, NEW_CHARACTER, PLAY, RETRY, TEST_ROOM, UNREAD, bannerId } from './characterNodes.ts';
 import {
   type CharactersAnswer,
   DELETE_MS,
@@ -61,6 +61,8 @@ function opened(
     readonly list?: () => Characters | string;
     readonly play?: (slot: number) => Characters | Held | string;
     readonly remove?: (slot: number) => Characters | Held | string;
+    /** The session as the page makes it: at once unless a test holds it. */
+    readonly session?: () => Promise<null>;
   } = {},
   view: {
     width?: number;
@@ -80,6 +82,7 @@ function opened(
   const link = {
     account: { id: 'acct', username: 'Wayfarer', discord: true, guest: false },
     place: null as unknown,
+    session: async () => (await answers.session?.()) ?? null,
     characters: async () => (asked.push('list'), answers.list?.() ?? FOUR),
     play: async (slot: number) => (asked.push(`play ${slot}`), answers.play?.(slot) ?? FOUR),
     deleteCharacter: async (slot: number) => (asked.push(`delete ${slot}`), answers.remove?.(slot) ?? FOUR),
@@ -235,11 +238,30 @@ test('the accounts not answering are said, with Try again', async () => {
   const screen = opened({ list: () => (answering ? FOUR : 'The accounts could not be reached.') });
   await screen.settle();
   assert.match(screen.shows(), new RegExp(NOT_ANSWERED.replace('.', '\\.')));
-  assert.doesNotMatch(screen.shows(), /PLAY/);
+  assert.equal(screen.ui.boxOf(PLAY), null, 'no Play while the four are unread');
+  assert.match(screen.shows(), /PLAY WITHOUT SAVING/);
   answering = true;
   screen.click(RETRY);
   await screen.settle();
   assert.match(screen.shows(), /PLAY/);
+});
+
+test("a new visitor's four are asked for once the page has made their session", async () => {
+  let made: (none: null) => void = () => undefined;
+  const screen = opened({ session: () => new Promise((done) => (made = done)) });
+  await screen.settle();
+  assert.deepEqual(screen.asked, [], 'nothing asked before the session is');
+  made(null);
+  await screen.settle();
+  assert.deepEqual(screen.asked, ['list']);
+});
+
+test('the accounts not answering, Play without saving goes on as this browser keeps the story', async () => {
+  const screen = opened({ list: () => 'The accounts could not be reached.' });
+  await screen.settle();
+  screen.click(UNREAD);
+  await screen.settle();
+  assert.equal(screen.ended(), 'unread');
 });
 
 test('Delete is held two seconds, saying what is lost; let go early, nothing is deleted', async () => {
