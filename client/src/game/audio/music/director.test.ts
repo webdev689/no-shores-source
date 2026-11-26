@@ -29,9 +29,9 @@ function fakeAudio() {
     sampleRate: 44100,
     createGain: () => node({ gain: param() }),
     createOscillator: () => {
-      const oscillator = source({ frequency: param(), detune: param() }) as { frequency: { value: number } };
-      oscillators.push(oscillator);
-      return oscillator;
+      const frequency = param();
+      oscillators.push({ frequency });
+      return source({ frequency, detune: param() });
     },
     createBufferSource: () => source({ buffer: null, loop: false }),
     createBiquadFilter: () => node({ frequency: param(), Q: param(), gain: param(), type: 'lowpass' }),
