@@ -218,9 +218,22 @@ fn shaded(in: Out) -> vec4f {
 
 @group(0) @binding(1) var depths: texture_2d<f32>;
 
-// Over the finished picture: hidden where the scene's depth (reversed, nearer is more) stands nearer.
+// How far from the eye the point drawn at a pixel at \`depth\` (reversed) stands.
+fn eye_distance(pixel: vec2f, depth: f32) -> f32 {
+  let size = vec2f(textureDimensions(depths));
+  let ndc = pixel / size * vec2f(2.0, -2.0) + vec2f(-1.0, 1.0);
+  let seen = view.to_eye * vec4f(ndc, depth, 1.0);
+  return length(seen.xyz / seen.w);
+}
+
+// Over the finished picture: hidden where the scene's depth (reversed, nearer is more) stands nearer, by more than
+// the view's see-through distance (\`time.y\`, metres), so a lantern's flame shows through its glass.
 @fragment fn over_fragment(in: Out) -> @location(0) vec4f {
-  if (in.position.z < textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
+  let scene = textureLoad(depths, vec2i(in.position.xy), 0).r;
+  if (in.position.z < scene) {
+    if (view.time.y <= 0.0) { discard; }
+    if (eye_distance(in.position.xy, in.position.z) > eye_distance(in.position.xy, scene) + view.time.y) { discard; }
+  }
   let colour = shaded(in);
   if (colour.a <= 0.0) { discard; }
   return colour;

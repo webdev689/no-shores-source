@@ -1,8 +1,10 @@
 // A dungeon's lights that are not wall torches, drawn where the layout stands them: a brazier on its legs, a cluster
-// of candles, glowing crystals, a lantern on its chain, a hearth's fire and a cluster of glowing fungus. Each is shaped by where it stands, so no
-// two are alike and every machine draws them the same.
+// of candles, glowing crystals, a lantern on its chain, a hearth's fire and a cluster of glowing fungus. Each is shaped
+// by where it stands, so no two are alike and every machine draws them the same. Their flames are fires
+// (`fixtureFlames`), drawn by the game's fire (../cinema/flames.ts), not in the mesh.
 import type { MeshBuilder } from '../models/model.ts';
 import { FIXTURE } from './dungeonLayout.ts';
+import type { FlameAt } from './dungeonLight.ts';
 import { box, COLOUR, IRON } from './dungeonMesh.ts';
 
 type Point = readonly [number, number, number];
@@ -36,12 +38,7 @@ function spike(mesh: MeshBuilder, picture: Picture, foot: Point, tip: Point, hal
   });
 }
 
-/** A flame from its foot up `tall`, a narrow spike of glow. */
-function flame(mesh: MeshBuilder, [x, y, z]: Point, tall: number): void {
-  spike(mesh, [COLOUR.glow, 0], [x, y, z], [x, y, z + tall], tall * 0.3);
-}
-
-/** A brazier: an iron bowl on three legs, embers heaped in it and flames over them; the light is over the bowl. */
+/** A brazier: an iron bowl on three legs, embers heaped in it; the light is over the bowl. */
 function brazier(mesh: MeshBuilder, [x, y, z]: Point): void {
   const rim = z - 0.15;
   for (let leg = 0; leg < 3; leg++) {
@@ -52,29 +49,30 @@ function brazier(mesh: MeshBuilder, [x, y, z]: Point): void {
   box(mesh, IRON, [x - 0.3, y - 0.3, rim - 0.16], [x + 0.3, y + 0.3, rim - 0.12]);
   box(mesh, IRON, [x - 0.33, y - 0.33, rim - 0.12], [x + 0.33, y + 0.33, rim], false);
   box(mesh, [COLOUR.ember, 0], [x - 0.27, y - 0.27, rim - 0.12], [x + 0.27, y + 0.27, rim - 0.03]);
-  for (let tongue = 0; tongue < 4; tongue++) {
-    const [shiftX, shiftY] = [seeded(x, y, tongue + 1) - 0.5, seeded(y, x, tongue + 1) - 0.5];
-    flame(mesh, [x + shiftX * 0.3, y + shiftY * 0.3, rim - 0.04], 0.25 + seeded(x, y, tongue + 9) * 0.25);
-  }
 }
 
-/** A cluster of three to five candles round where the light stands, each a stick of wax with its own small flame. */
-function candles(mesh: MeshBuilder, [x, y, z]: Point): void {
+/** Where each of a cluster's three to five candles stands round where its light does: its foot and how tall. */
+function candlesOf([x, y, z]: Point): { foot: Point; tall: number }[] {
   const count = 3 + Math.floor(seeded(x, y, 0) * 3);
-  const base = z - 0.26;
-  for (let candle = 0; candle < count; candle++) {
+  return Array.from({ length: count }, (_unused, candle) => {
     const turn = (candle / count) * Math.PI * 2 + seeded(x, y, 1) * 3;
     const out = candle === 0 ? 0 : 0.06 + seeded(x, y, candle + 2) * 0.08;
-    const [candleX, candleY] = [x + Math.cos(turn) * out, y + Math.sin(turn) * out];
-    const tall = 0.08 + seeded(x, y, candle + 7) * 0.14;
+    return {
+      foot: [x + Math.cos(turn) * out, y + Math.sin(turn) * out, z - 0.26] as Point,
+      tall: 0.08 + seeded(x, y, candle + 7) * 0.14,
+    };
+  });
+}
+
+/** A cluster of candles, each a stick of wax its own small flame burns on. */
+function candles(mesh: MeshBuilder, where: Point): void {
+  for (const { foot, tall } of candlesOf(where))
     box(
       mesh,
       [COLOUR.wax, 0],
-      [candleX - 0.022, candleY - 0.022, base],
-      [candleX + 0.022, candleY + 0.022, base + tall],
+      [foot[0] - 0.022, foot[1] - 0.022, foot[2]],
+      [foot[0] + 0.022, foot[1] + 0.022, foot[2] + tall],
     );
-    flame(mesh, [candleX, candleY, base + tall], 0.05);
-  }
 }
 
 /** Five to eight crystals grown from the floor of their bed, each leaning out from its wall, all inside its box. */
@@ -115,14 +113,22 @@ function lantern(mesh: MeshBuilder, [x, y, z]: Point): void {
   box(mesh, IRON, [x - 0.012, y - 0.012, z + 0.17], [x + 0.012, y + 0.012, z + 0.55]);
 }
 
-/** A hearth's fire: embers on its floor and flames leaping over them. */
+/** A hearth's fire: embers on its floor, its flames leaping over them. */
 function hearthFire(mesh: MeshBuilder, [x, y, z]: Point): void {
   const floor = z - 0.35;
   box(mesh, [COLOUR.ember, 0], [x - 0.3, y - 0.18, floor], [x + 0.3, y + 0.18, floor + 0.08]);
-  for (let tongue = 0; tongue < 6; tongue++) {
-    const [shiftX, shiftY] = [seeded(x, y, tongue + 1) - 0.5, seeded(y, x, tongue + 1) - 0.5];
-    flame(mesh, [x + shiftX * 0.5, y + shiftY * 0.25, floor + 0.06], 0.25 + seeded(x, y, tongue + 9) * 0.35);
-  }
+}
+
+/** The flames a fixture burns, as the layout stands it (x, y, the light's height and its kind): a brazier's over its
+ *  embers, one on each candle's wick, a lantern's small one behind its glass, and a hearth's along its embers; none
+ *  for crystals and fungus, which glow. */
+export function fixtureFlames([x = 0, y = 0, z = 0, kind]: readonly number[]): FlameAt[] {
+  if (kind === FIXTURE.brazier) return [{ at: [x, y, z - 0.19], sizeM: 0.45 }];
+  if (kind === FIXTURE.candles)
+    return candlesOf([x, y, z]).map(({ foot, tall }) => ({ at: [foot[0], foot[1], foot[2] + tall], sizeM: 0.09 }));
+  if (kind === FIXTURE.lantern) return [{ at: [x, y, z - 0.15], sizeM: 0.14 }];
+  if (kind === FIXTURE.hearth) return [{ at: [x - 0.24, y, z - 0.29], sizeM: 0.45, along: [0.48, 0, 0] }];
+  return [];
 }
 
 /** Six to ten fungi grown from the floor of their bed, each a pale stalk under a glowing cap, all inside its box. */

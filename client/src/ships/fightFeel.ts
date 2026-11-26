@@ -4,6 +4,7 @@
 // (navalFeel.js) are here too: a ball going by its close whistles, a fall alongside throws its water over its rail, a
 // burning ship going down may blow its magazine, and its battered hull smokes. The World Editor's fights and the
 // sea's draw through it.
+import { flicker } from '../sky/flicker.ts';
 import type { RoomEvent } from '../rules/feelEvents.ts';
 import type { FightEvent, FightVessel, Point } from '../rules/fightRules.ts';
 import { DRESSES, type ShipSide } from './dress.ts';
@@ -519,7 +520,7 @@ export class FightFeel {
       radius: BURN_LIGHT.reachM * scale,
       colour: BURN_LIGHT.colour,
       blend: 'light' as const,
-      alpha: 0.8 + 0.2 * Math.sin(now * 13 + index * 2.3),
+      alpha: flicker(index, now),
     }));
     return [...this.effects.marks(now, scale), ...lights, ...this.flotsam.marks(now, scale, water, eye)];
   }

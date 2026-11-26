@@ -1,5 +1,6 @@
 // The night's lamps: the places that give light (a city's glowing solids), the light a player carries, and the ones
 // nearest the eye each frame, as the sky's uniform lays them out. A lamp is lit only as the daylight fades.
+import { flicker } from './flicker.ts';
 import { Nearest } from '../nearest.ts';
 import { LAMPS_MOST, type Lamp } from './skyUniform.ts';
 
@@ -45,7 +46,7 @@ const CARRIED = {
   lantern: { reachM: 13, light: [1.0, 0.74, 0.44], flicker: 0.4 },
 } as const;
 /** The carried light is held at the hand, this high over the carrier's feet. */
-const HAND_M = 1.1;
+export const HAND_M = 1.1;
 /** A lamp no brighter than this at full shows on nothing, so it takes no place among the few lit. */
 const FAINTEST = 0.05;
 /** A lamp is whole once it leads the first lamp left out by this much, metres, and fades to nothing as that one nears. */
@@ -69,14 +70,11 @@ export function lampsLit(daylight: number): number {
   return share * share * (3 - 2 * share);
 }
 
-/** A flame's gentle flicker, near 1, never the same beat twice for two seeds. */
-export function flicker(seed: number, seconds: number, depth = 1): number {
-  const wave =
-    Math.sin(seconds * 7.3 + seed * 12.9) * 0.5 +
-    Math.sin(seconds * 13.1 + seed * 4.7) * 0.3 +
-    Math.sin(seconds * 23.7 + seed * 8.1) * 0.2;
-  return 1 - depth * 0.08 * (1 + wave);
-}
+/** A flame's flicker, the one every light in the game flickers by (../sky/flicker.ts). */
+export { flicker };
+
+/** The seed a carried light flickers by, on land and under ground: no place's. */
+export const CARRIED_SEED = 4095;
 
 /**
  * The lamps lit round the eye (world metres) now: the carried light first, at the carrier's hand, then the places
@@ -100,7 +98,7 @@ export function lampsRound(
   ];
   if (carried) {
     const held = CARRIED[carried.light];
-    const shown = lit * flicker(0, seconds, held.flicker);
+    const shown = lit * flicker(CARRIED_SEED, seconds, held.flicker);
     const hand = fromEye([carried.feet[0], carried.feet[1], carried.feet[2] + HAND_M]);
     lamps.push({ fromEye: hand, reachM: held.reachM, light: held.light.map((part) => part * shown) as Rgb });
   }

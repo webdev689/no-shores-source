@@ -86,8 +86,17 @@ what show the ground there.
 
 - **Lamps.** A city's glowing solids (the Beacon's fire, the lanterns at its stations and courtyards) are its lamps:
   a fire's warm light from the solid's middle, reaching some ten metres from a lantern and up to sixty from a great
-  fire. They flicker gently, each on its own beat, and are lit only as the daylight fades, coming up through the dusk.
-  The glowing surfaces themselves burn brighter at night than by day.
+  fire. They flicker, each on its own beat, and are lit only as the daylight fades, coming up through the dusk. The
+  glowing surfaces themselves burn brighter at night than by day.
+- **One flicker, one breath.** Every light in the game moves by the same two (`client/src/sky/flicker.ts`, each with
+  its WGSL twin), seeded by its source: a flame's flicker, held through each of the fire's ten frames a second, never
+  below 80% at full depth; and a glow's slow breath, about seven seconds a swell, for crystal, fungus, runes and a
+  portal. Under ground and for a fire of the game's scene, a flame drawn and the light it casts share its seed, so they
+  move together ([[Lights as Claude Builds Them]]); a city's glowing solids flicker by where they burn and their
+  lamps by their own seeds.
+- **Fires.** The game's scene burns the fires lit in the world (`GameScene.fires`, the prologue's fire of [[Cinema]],
+  "Flames"), each casting its light as a lamp reaching eight times its height (at least four metres), seeded as its
+  flames are.
 - **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
   the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
   flickers, a lantern's thirteen and is steadier.

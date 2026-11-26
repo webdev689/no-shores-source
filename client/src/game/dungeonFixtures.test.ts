@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { meshBuilder } from '../models/model.ts';
-import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
+import { bedOf, fixtureFlames, fixtureMesh } from './dungeonFixtures.ts';
 import { FIXTURE } from './dungeonLayout.ts';
 import { COLOUR, IRON } from './dungeonMesh.ts';
 
@@ -21,16 +21,35 @@ function drawnOf(kind: number, where: readonly [number, number, number] = [4, 6,
   };
 }
 
-test('each fixture is drawn in its own colours: iron and fire, wax, crystal, lantern glass, embers, fungus', () => {
+test('each fixture is drawn in its own colours: iron, wax, crystal, lantern glass, embers, fungus; no flame in the mesh', () => {
   const has = (kind: number, picture: readonly [number, number]) => drawnOf(kind).pictures.has(picture.join('.'));
-  assert.ok(
-    has(FIXTURE.brazier, IRON) && has(FIXTURE.brazier, [COLOUR.ember, 0]) && has(FIXTURE.brazier, [COLOUR.glow, 0]),
-  );
-  assert.ok(has(FIXTURE.candles, [COLOUR.wax, 0]) && has(FIXTURE.candles, [COLOUR.glow, 0]));
+  assert.ok(has(FIXTURE.brazier, IRON) && has(FIXTURE.brazier, [COLOUR.ember, 0]));
+  assert.ok(has(FIXTURE.candles, [COLOUR.wax, 0]));
   assert.ok(has(FIXTURE.crystals, [COLOUR.crystal, 0]));
   assert.ok(has(FIXTURE.lantern, IRON) && has(FIXTURE.lantern, [COLOUR.lanternGlass, 0]));
-  assert.ok(has(FIXTURE.hearth, [COLOUR.ember, 0]) && has(FIXTURE.hearth, [COLOUR.glow, 0]));
+  assert.ok(has(FIXTURE.hearth, [COLOUR.ember, 0]));
   assert.ok(has(FIXTURE.fungus, [COLOUR.fungus, 0]) && has(FIXTURE.fungus, [COLOUR.wax, 0]));
+  for (const kind of Object.values(FIXTURE))
+    assert.ok(!has(kind, [COLOUR.glow, 0]), `${kind} draws its flames as fires`);
+});
+
+test('a fixture burns its flames as fires: over a brazier, on each candle, in a lantern, along a hearth; crystal and fungus none', () => {
+  const where = [4, 6, 1.1] as const;
+  const [brazier] = fixtureFlames([...where, FIXTURE.brazier]);
+  assert.ok(brazier && brazier.at[2] < where[2] && brazier.sizeM > 0.3);
+  const candles = fixtureFlames([...where, FIXTURE.candles]);
+  assert.ok(candles.length >= 3 && candles.length <= 5 && candles.every((flame) => flame.sizeM < 0.15));
+  const { high } = drawnOf(FIXTURE.candles);
+  assert.ok(Math.abs(Math.max(...candles.map((flame) => flame.at[2])) - high) < 1e-5, 'the tallest on its wick');
+  const [lantern] = fixtureFlames([...where, FIXTURE.lantern]);
+  assert.ok(
+    lantern && lantern.at[2] > where[2] - 0.16 && lantern.at[2] + lantern.sizeM < where[2] + 0.12,
+    'in its glass',
+  );
+  const [hearth] = fixtureFlames([...where, FIXTURE.hearth]);
+  assert.ok(hearth?.along && hearth.along[0] > 0.3);
+  assert.deepEqual(fixtureFlames([...where, FIXTURE.crystals]), []);
+  assert.deepEqual(fixtureFlames([...where, FIXTURE.fungus]), []);
 });
 
 test('crystals and fungus grow wholly inside their solid, from the floor to under its top, leaning out from the wall', () => {

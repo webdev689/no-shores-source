@@ -457,11 +457,11 @@ as standing none (`readDungeon`).
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
-  layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Each cell
+  layout's `boxes`, trimmed pillars, torches' brackets, the exit door and the return portal. Each cell
   wears its look (`cellLooks`): the style of its floor of the dungeon, with that style's two sets of pictures by role.
   Where a pillar's, a torch's or the portal's kit pieces are laid (`kitsOf`), the mesh leaves out its own pillar,
-  bracket or arch, and draws its own wherever they are not; the jambs, the flames, the portal's face and the exit
-  door stay the mesh's.
+  bracket or arch, and draws its own wherever they are not; the jambs, the portal's face and the exit door stay the
+  mesh's.
 - **Its packs** (`dungeonModules.ts`, [[Dungeon Modules]]): the packs of every style its looks wear are fetched behind the veil before it
   is first drawn (`stylePacks`). A style whose pack is not published, or fails to come within 15 s, is drawn as
   above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
@@ -471,7 +471,7 @@ as standing none (`readDungeon`).
   whose top is where the ceiling of the cells round the pillar's corner comes lowest over it, so under a dome or a
   vault it holds the curve up; wall sets every `wallEvery` cells along a straight wall where `wallIn` says, the cap's
   top where the ceiling comes lowest over it, and in the mines a timber set on both walls of a way with a beam
-  across; up to `features` a room on its quiet cells' walls; and a sconce at every torch, round the code-built flame,
+  across; up to `features` a room on its quiet cells' walls; and a sconce at every torch, round its flame,
   and arches round the portal and the exit door. Only the caverns stand sets on a cave's rock (`cave rooms`). A set
   or a feature on a cave's rock stands with its back on the wall's line, and the kits pass each piece's span along
   the wall and its top to the mesh (`flats`), which draws the rock flat behind it (`caveWall`). A set's cap rises to
@@ -500,9 +500,12 @@ as standing none (`readDungeon`).
   rises). The wall is cut at those edges, each piece within one of its lattice's triangles, so everywhere else the
   rock bulges exactly as its lattice lays it.
   Where two cells' ceilings differ along an edge, the higher one's side is closed up to it.
-- **Its light** (`dungeonLight.ts`): each torch, fixture and landmark's glow burns in its own colour, reach and
-  flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
-  glow's spirit, daylight, water and rune. Each look has its own faint light,
+- **Its light** (`dungeonLight.ts`): each torch, fixture and landmark's glow burns in its own colour and reach
+  (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
+  glow's spirit, daylight, water and rune. A fire's kind flickers and the rest breathe, by the game's one flicker and
+  one breath ([[Sky]], "Lights at night"), each seeded by its light's number (`burns`). The torch or lantern in the
+  player's left hand is a light among them, at their hand, a torch's or a lantern's kind
+  ([[Every Light Is Redesigned and Animated, and Each Casts Light]]). Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
   lights that reach farthest past the eye (`NearestLights`), and the figures are lit by the same 32, so the walls and
   the figures sum the same light (`lightAt`). Each channel of the sum
@@ -519,11 +522,19 @@ as standing none (`readDungeon`).
   their depth alone, then lit where a face's depth equals the depth laid or is nearer, writing none. Both draws share
   one vertex stage with its position invariant, so each lays a face's depth alike; each covered sample is lit once
   however many faces lie behind it.
-- **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
-  candles, five to eight glowing crystals, a lantern on its chain, a hearth's fire, and six to ten fungi, each a pale
-  stalk under a glowing cap. Each is shaped by where it
-  stands, so no two are alike.
-- **Glows and water** (`dungeonShaders.ts`): a crystal's and a lantern's glass glow by each triangle's own facing,
+- **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers, a cluster of three to five candles,
+  five to eight glowing crystals, a lantern on its chain, a hearth's embers, and six to ten fungi, each a pale stalk
+  under a glowing cap. Each is shaped by where it stands, so no two are alike.
+- **Its flames** are fires, the prologue's ([[Cinema]], "Flames"), not the mesh's: one out of each torch's cup, over a
+  brazier's embers, on each candle's wick, behind a lantern's glass and a lit passage lamp's, and along a hearth
+  (`torchFlame`, `fixtureFlames`, `passagePieceLights`), each seeded by its light's number, so a flame and the light
+  it casts flicker together ([[Lights as Claude Builds Them]]). The dungeon's scene draws them over the finished
+  picture (`DUNGEON_FLAMES`), seen through what stands up to 0.14 m nearer, so a lantern's shows through its glass;
+  past where its tongues read, a flame is its glow alone.
+- **Glows and water** (`dungeonShaders.ts`): an ember, a lantern's glass, a kit piece's or a landmark's flame, a
+  crystal, a fungus cap and the open portal move with the light nearest them its cluster lists, an ember and glass
+  flickering with their flame, the rest breathing (`nearest_seed`). A crystal's and a lantern's glass glow by each
+  triangle's own facing,
   from 0.55 of their glow edge on to all of it square to the eye, lifted a little toward it by the lights round them,
   so a crystal's faces differ. Their glows peak at 1, so no facet clips. Still water lies over its bed, its cell's
   floor picture (`WATER_FLAG`): through it the bed, darker and bluer, lit as a floor is; in it the room, brighter

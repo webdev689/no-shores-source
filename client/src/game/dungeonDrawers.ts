@@ -128,9 +128,10 @@ export class DungeonDrawers {
     this.shownEntrances = null;
   }
 
-  /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, and
-   *  the figures lit by the torches; `after` may draw over the finished picture, in the light where the eye stands,
-   *  and all of it drains toward grey by `drain`. */
+  /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, the
+   *  flames of its torches, fixtures and lamps over all of it (its scene draws them), the figures lit by its lights and
+   *  the one `carried` in the player's left hand; `after` may draw over the finished picture, in the light where the
+   *  eye stands, and all of it drains toward grey by `drain`. */
   draw(
     foot: Foot,
     shown: FootFrame,
@@ -139,7 +140,12 @@ export class DungeonDrawers {
     fight: { under: Drawer; over: Drawer },
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void,
     drain = 0,
+    carried: {
+      readonly left: string | null | undefined;
+      readonly feet: readonly [number, number, number];
+    } | null = null,
   ): void {
+    this.view.setCarried(carriedLight(carried?.left), carried?.feet ?? [0, 0, 0]);
     this.view.setCache(foot.held.cache);
     this.view.setFinds(foot.finds.drawn);
     const laid = this.piecesLaid();

@@ -1,6 +1,7 @@
 // The city's WGSL: the forged models instanced in the near cells and the solids, the masses and hulls stood up from
 // one shape each, and the ground plates dressed in their tiles. All share one view, one cell table and one array of
 // pictures, are lit as the land is, and dither between tiers by the same thresholds the CPU's tiers test.
+import { LIGHT_MOTION_WGSL } from '../sky/flicker.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { CRYSTAL_WGSL } from './crystal.ts';
@@ -179,15 +180,16 @@ ${CLOTH_CASES}
 // weather wets it. A glowing solid is a flame: brighter when the night round it is dark. The Lattice's crystal is
 // drawn by its own light (crystal.ts).
 ${CRYSTAL_WGSL}
+${LIGHT_MOTION_WGSL}
 
 // How far alight the crystal's core is: a module's, or a ruin's formation's (set by the surface drawing it).
 var<private> crystal_glow: f32 = CITY_CRYSTAL_GLOW;
 
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
-    // Each flame flickers on its own, a few times a second, by where it burns: all of one fire together.
+    // Each flame flickers on its own by where it burns, as every light does: all of one fire together.
     let place = floor((from_eye + view.eye.xyz) / 3.0);
-    let flicker = 0.86 + 0.16 * sky_noise(vec2f(view.eye.w * 7.0, place.x * 13.0 + place.y * 7.0 + place.z));
+    let flicker = light_flicker(place.x * 13.0 + place.y * 7.0 + place.z, view.eye.w, 1.0);
     return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * flicker;
   }
   let facing = normalize(normal);
