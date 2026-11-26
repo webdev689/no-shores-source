@@ -4,6 +4,7 @@ import factions from '../../../../content/gear/factions.json' with { type: 'json
 import type { GearState } from '../../network/gearMessages.ts';
 import { standing, state } from '../../network/gearForTests.ts';
 import { QUESTS } from './questBook.ts';
+import { giftNotice } from './questNews.ts';
 import { BEGUN_KEY, QuestWatch } from './questWatch.ts';
 
 /** A character's gear on quest `quest` at task `task`: that task's counts, pledged to `pledge`, each quest done by
@@ -249,4 +250,36 @@ test("a goal's scene is said as the room meets it, before its task's end where t
     held.look(counts(1), false);
     assert.deepEqual(held.look(counts(1), true).scenes, ['madeThere'], 'held through the welcome');
   });
+});
+
+test("each keeper's gift on the round is announced as it is given, through the one notice", () => {
+  const round = QUESTS[0]?.tasks.findIndex((task) => task.id === 'find-your-way') ?? -1;
+  const goals = QUESTS[0]?.tasks[round]?.goals.length ?? 0;
+  const counts = (heard: number) => Array.from({ length: goals }, (_none, index) => (index < heard ? 1 : 0));
+  const watch = heard(gear(1, round, { counts: counts(0) }));
+  assert.deepEqual(watch.look(gear(1, round, { counts: counts(1) }), true).toasts, [giftNotice('weapons')]);
+  assert.deepEqual(watch.look(gear(1, round, { counts: counts(3) }), true).toasts, [
+    giftNotice('armour'),
+    giftNotice('vestige'),
+  ]);
+  assert.deepEqual(watch.look(gear(1, round, { counts: counts(6) }), true).toasts, [
+    giftNotice('cloak'),
+    giftNotice('dye'),
+    giftNotice('horse'),
+  ]);
+  // The last keeper heard ends the round: the next task begins with nothing counted.
+  assert.deepEqual(watch.look(gear(1, round + 1, { counts: [0] }), true).toasts, [giftNotice('letter')]);
+  assert.deepEqual(watch.look(gear(1, round + 2, { counts: [0] }), true).toasts, [giftNotice('ship')]);
+  assert.match(giftNotice('weapons'), /Weaponsmith.*Melee.*Ranged/);
+});
+
+test('a first pledge before the round is done announces the gifts the round still held, as the rules give them', () => {
+  const round = QUESTS[0]?.tasks.findIndex((task) => task.id === 'find-your-way') ?? -1;
+  const watch = heard(gear(1, round, { counts: [1, 1, 0, 0, 0, 0, 0] }));
+  const pledged = watch.look(gear(STORM, 0, { pledge: 1 }), true).toasts;
+  assert.deepEqual(
+    pledged,
+    ['vestige', 'cloak', 'dye', 'letter'].map(giftNotice),
+    'the Tack and the ship at their counters',
+  );
 });

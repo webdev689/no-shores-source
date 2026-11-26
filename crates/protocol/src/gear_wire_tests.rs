@@ -301,12 +301,39 @@ fn each_smiths_ware_bought_takes_the_number_sent_and_the_gear_for_the_clients_te
             let items = &room.player(player).expect("in").character.items;
             let bought: Vec<u32> = items.keys().copied().filter(|id| !held.contains(id)).collect();
             assert_eq!(bought, [next], "{vendor:?}'s {ware} takes the number sent");
+            let bought = next;
             next = sent(&room);
+            // Dismantled once sent, so the Weaponsmith's eighteen starter pieces never fill a slot's nine.
+            assert_eq!(ask(&mut room, Asked::Gear(Ask::Dismantle { item: bought })), 0, "{vendor:?}'s {ware} let go");
         }
     }
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).expect("the folder");
     std::fs::write(format!("{folder}/gear_vended.bin"), written).expect("written");
+}
+
+/// While the Weaponsmith's gift is owed, her starter pieces of the slots owed are sent at no price, so the page shows
+/// them free; every other ware keeps its own.
+#[test]
+fn the_weaponsmiths_gift_crosses_as_her_starter_pieces_of_the_slots_owed_at_no_price() {
+    use gear::vendor::{STARTER_PRICE, Vendor, WARES};
+    let (mut room, player, _) = standing();
+    let kept = room.kept_character(player).expect("a player of the room");
+    let mut character = gear::Character::from_json(&kept).expect("a character");
+    character.quests.free = vec![gear::Slot::Ranged];
+    assert!(room.restore_character(player, &character.to_json()), "kept again");
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let wares: Vec<(u8, u8, u32)> =
+        gear.wares().expect("the stalls").iter().map(|ware| (ware.kind(), ware.rarity(), ware.price())).collect();
+    let armour = WARES + Vendor::Armorsmith.starter_kinds().len();
+    let weapons = &wares[armour..armour + WARES + Vendor::Weaponsmith.starter_kinds().len()];
+    for (place, (kind, _, price)) in weapons.iter().enumerate().skip(WARES) {
+        let ranged = Vendor::Weaponsmith.starter_kinds()[place - WARES].slot() == gear::Slot::Ranged;
+        assert_eq!(*price, if ranged { 0 } else { STARTER_PRICE }, "kind {kind}");
+    }
+    assert!(weapons[..WARES].iter().all(|(_, _, price)| *price > STARTER_PRICE), "the day's wares are sold");
+    assert!(wares[WARES..armour].iter().all(|(_, _, price)| *price == STARTER_PRICE), "the Armorsmith's are sold");
 }
 
 /// Each faction piece, as the page is sent it, and the layers the room lets its colour stand on in a dress others see,

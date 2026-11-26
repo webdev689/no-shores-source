@@ -1,54 +1,10 @@
 {
   "scenes": {
     "strangerHistory": [
-      { "who": "stranger", "say": "The Grey Tithe take a tenth of every hold. Overlook pays them nothing." },
-      { "who": "stranger", "say": "Three ports still stand. The rest are ruins, and nobody agrees how they fell." }
-    ],
-    "tourSmiths": [
-      { "who": "armorsmith", "say": "New face! Come here, let me guess your size." },
-      { "who": "stranger", "say": "The smiths. The sea kept your steel, so start with them." }
-    ],
-    "tourWeaponsmith": [{ "who": "weaponsmith", "say": "Plain steel's cheap here, always. The good pieces come and go." }],
-    "tourMage": [
-      { "who": "stranger", "say": "The Mage opens Vestiges. Don't ask how." },
-      { "who": "mage", "say": "Bring me anything sealed. We'll both be surprised by what's inside." }
-    ],
-    "tourVault": [
-      { "who": "stranger", "say": "The Vault. Anything you'd hate to lose, keep it there." },
-      { "who": "vaultkeeper", "say": "Nothing leaves my vault except in the hands that left it." }
-    ],
-    "tourTailor": [
-      { "who": "stranger", "say": "The Tailor. Colours, emblems, and opinions you didn't ask for." },
-      { "who": "tailor", "say": "Opinions are free. Looking like someone is not." }
-    ],
-    "tourTack": [
-      { "who": "stranger", "say": "The Tack has horses. Better than walking." },
-      { "who": "tack", "say": "There's always a Bay in my stable, love. The rest don't stay long." }
-    ],
-    "tourPost": [
-      { "who": "stranger", "say": "Anything you drop on the road tends to end up with the Postmaster." },
-      { "who": "postmaster", "say": "Letters too. I keep it all until you come for it." }
-    ],
-    "tourHarbour": [
-      { "who": "stranger", "say": "The Harbourmaster. Ships, and everything that keeps them afloat." },
-      { "who": "harbourmaster", "say": "Come and find me. I've a Sloop that wants a captain." }
-    ],
-    "tourHall": [{ "who": "stranger", "say": "The Hall of the Arts. Three houses, three chapels, and no two agree." }],
-    "tourHallStorm": [
-      { "who": "stranger", "say": "The Stormcallers. They keep the Storm, and never quietly." },
-      { "who": "stormcaller", "say": "Quiet never called a storm down. Come and see me." }
-    ],
-    "tourHallVeiled": [
-      { "who": "stranger", "say": "The Veiled keep the Shadow. Mind what you ask them." },
-      { "who": "veiled", "say": "We already know what you would ask." }
-    ],
-    "tourHallLamps": [
-      { "who": "stranger", "say": "And the Lamplighters keep the Divine. Hear all three before you choose." },
-      { "who": "maren", "say": "Whoever you choose, child, our lamps stay lit for you." }
+      { "who": "stranger", "say": "Three ports still stand against the Grey Tithe. Overlook pays them nothing." }
     ],
     "strangerFarewell": [
-      { "who": "stranger", "say": "Here. Four hundred Aurem. Spend it on steel first." },
-      { "who": "stranger", "say": "I wish you well. Stay out of the Tithe's books, if you can." }
+      { "who": "stranger", "say": "Every keeper here has a gift for you. Stay out of the Tithe's books." }
     ]
   }
 }

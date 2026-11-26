@@ -20,9 +20,9 @@ const CAST = castOf(cast);
 const SCENES = scenesOf(houses, CAST);
 const questOf = (id: string): number => QUESTS.findIndex((quest) => quest.id === id) + 1;
 const [STORM, LAMP, VEIL] = [questOf('stormcallers'), questOf('lamplighters'), questOf('veiled')];
-/** The opening's tasks by id: the houses heard, the smiths' wares bought. */
+/** The opening's tasks by id: the houses heard. */
 const taskOf = (id: string): number => QUESTS[0]?.tasks.findIndex((task) => task.id === id) ?? -1;
-const [HEAR, ARM] = [taskOf('hear-three-houses'), taskOf('arm-yourself')];
+const HEAR = taskOf('hear-three-houses');
 /** The first task of a road whose goals hold one of `kind`, and that goal. */
 function stepOf(quest: number, kind: string) {
   const task = QUESTS[quest - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.kind === kind)) ?? -1;
@@ -128,8 +128,23 @@ test('a keeper a talk goal names has something for the player, once the story an
 });
 
 test('a smith whose ware is to be bought is lit', async () => {
+  // No task of the file asks a purchase now the keepers give the opening's gear: a task of buy goals, made here.
+  const opening = QUESTS[0] as unknown as { tasks: unknown[] };
+  const goals = [
+    { kind: 'buy', slot: 'melee', text: 'A Melee weapon' },
+    { kind: 'buy', slot: 'head', text: 'Head armour' },
+  ];
+  opening.tasks.push({ id: 'buy-here', task: 'Buy here', goals });
+  try {
+    await smithLit();
+  } finally {
+    opening.tasks.pop();
+  }
+});
+
+async function smithLit() {
   const { quests, frame } = roads();
-  quests.hear(gear(1, ARM));
+  quests.hear(gear(1, taskOf('buy-here')));
   await frame();
   assert.deepEqual(
     ['weaponsmith', 'armorsmith', 'mage'].map((counter) => quests.wants(counter)),
@@ -141,7 +156,7 @@ test('a smith whose ware is to be bought is lit', async () => {
     null,
     'their counter opens as before, to buy',
   );
-});
+}
 
 test('the talk offer stands where the counter would open; elsewhere the counter opens as before', () => {
   const { quests } = roads();

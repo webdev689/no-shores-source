@@ -1,6 +1,6 @@
 //! The welcome to Overlook in the rules: a new character arrives with nothing, the smiths' starter stock is sold at
-//! the buyer's level for its price, a ware bought and a piece worn each meet their goals, and the opening's first
-//! task, the stranger heard, gives its Aurem once.
+//! the buyer's level for its price, a ware bought and a piece worn each meet their goals, and the stranger, heard
+//! once, gives nothing: the keepers on the round give the gifts (`gifts_tests.rs`).
 
 use crate::asks::{Ask, Here, Refusal};
 use crate::character::Character;
@@ -39,7 +39,9 @@ fn each_smith_sells_a_starter_stock_beside_the_days_wares_normal_at_the_buyers_l
     };
     let normal = |kind| (kind, Rarity::Normal, 7);
     assert_eq!(kinds(Vendor::Armorsmith, 7), [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs].map(normal));
-    assert_eq!(kinds(Vendor::Weaponsmith, 7), [Kind::SwordAndShield, Kind::Bow].map(normal));
+    let weapons: Vec<_> = Vendor::Weaponsmith.starter_kinds().iter().map(|kind| normal(*kind)).collect();
+    assert_eq!(kinds(Vendor::Weaponsmith, 7), weapons);
+    assert_eq!(weapons.len(), 18, "every Melee loadout and every Ranged one");
     assert!(kinds(Vendor::Shipwright, 7).is_empty(), "the Shipwright keeps no starter stock");
     assert_eq!(STARTER_PRICE, 50);
 }
@@ -76,18 +78,10 @@ fn opening_tasks() -> Vec<&'static str> {
 }
 
 #[test]
-fn the_opening_hears_the_stranger_walks_round_the_counters_takes_its_ship_arms_and_dresses_then_hears_the_houses() {
+fn the_opening_hears_the_stranger_walks_round_the_counters_takes_its_ship_dresses_then_hears_the_houses() {
     assert_eq!(
         opening_tasks(),
-        [
-            "hear-the-stranger",
-            "find-your-way",
-            "your-ship",
-            "arm-yourself",
-            "wear-them",
-            "hear-three-houses",
-            "choose-house"
-        ]
+        ["hear-the-stranger", "find-your-way", "your-ship", "wear-them", "hear-three-houses", "choose-house"]
     );
     let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
     let talks = |task: usize| -> Vec<(&str, Option<&str>)> {
@@ -105,7 +99,7 @@ fn the_opening_hears_the_stranger_walks_round_the_counters_takes_its_ship_arms_a
     assert!(talks(1).iter().all(|(_, scene)| scene.is_some()), "each keeper says what their counter is for");
     assert_eq!(talks(2), [("harbourmaster", Some("roundHarbour"))], "then the Harbourmaster, alone");
     assert!(opening.tasks[2].reward.ship && opening.tasks.iter().filter(|task| task.reward.ship).count() == 1);
-    assert_eq!(opening.tasks[0].reward.aurem, 400, "the stranger's gift");
+    assert_eq!(opening.tasks[0].reward.aurem, 0, "the stranger gives no Aurem");
 }
 
 /// A new character in Overlook: the stranger heard.
@@ -116,17 +110,17 @@ fn welcomed() -> Character {
 }
 
 #[test]
-fn the_strangers_gift_is_given_once_however_often_she_is_heard() {
+fn the_stranger_is_heard_once_and_gives_no_aurem() {
     let mut character = Character::starting();
     assert_eq!(character.materials.aurem, 0);
     assert_eq!(character.ask(Ask::Speak { keeper: keeper("stranger") }, AFIELD, &DICE), Err(Refusal::NotHere));
     let mut character = welcomed();
-    assert_eq!(character.materials.aurem, 400);
+    assert_eq!(character.materials.aurem, 0);
     // A second hearing finds her task done.
     let again = character.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE);
     assert_eq!(again, Err(Refusal::NothingToSay));
-    assert_eq!(character.materials.aurem, 400);
-    // Kept and read back as a room reads a character that joins, the gift stays given.
+    assert_eq!(character.materials.aurem, 0);
+    // Kept and read back as a room reads a character that joins, she is heard already.
     let mut kept = Character::from_json(&character.to_json()).expect("read");
     assert_eq!(kept.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
 }
@@ -135,7 +129,7 @@ fn the_strangers_gift_is_given_once_however_often_she_is_heard() {
 fn the_tack_gives_the_bay_worn_on_the_round_once_and_never_a_second_and_the_stranger_none() {
     let horses = |character: &Character| character.items.values().filter(|(item, _)| item.kind == Kind::Horse).count();
     let mut character = welcomed();
-    assert_eq!(horses(&character), 0, "the stranger gives her Aurem alone");
+    assert_eq!(horses(&character), 0, "the stranger gives nothing");
     assert!(!character.may_ride());
     let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
     let tack = opening.tasks[1].goals.iter().find(|goal| matches!(&goal.goal, Goal::Talk(talk) if talk.to == "tack"));
@@ -144,7 +138,7 @@ fn the_tack_gives_the_bay_worn_on_the_round_once_and_never_a_second_and_the_stra
     assert!(character.ask(Ask::Speak { keeper: keeper("tack") }, SOCIAL, &DICE).is_ok());
     assert!(character.may_ride(), "the Bay worn in the Mount slot as she is spoken with");
     assert_eq!(character.coat_worn(), Some(crate::horses::FIRST_HORSE));
-    assert_eq!((horses(&character), character.materials.aurem), (1, 400), "given, not sold");
+    assert_eq!((horses(&character), character.materials.aurem), (1, 0), "given, not sold");
     // Spoken with again, she has nothing more to give.
     let again = character.ask(Ask::Speak { keeper: keeper("tack") }, SOCIAL, &DICE);
     assert_eq!(again, Err(Refusal::NothingToSay));
@@ -177,48 +171,19 @@ fn one_who_pledged_before_the_round_reached_the_tack_takes_the_bay_from_her_for_
 }
 
 #[test]
-fn a_goal_gives_aurem_or_the_horse_and_nothing_of_a_house_s_nor_the_ship() {
+fn a_goal_gives_aurem_the_horse_or_a_gift_and_nothing_of_a_house_s_nor_the_ship() {
     let given = goal(r#"{ "kind": "talk", "to": "tack", "text": "t", "reward": { "horse": true, "aurem": 5 } }"#);
     assert!(given.reward.horse && given.reward.aurem == 5 && given.problem().is_none());
+    let gift = goal(r#"{ "kind": "talk", "to": "mage", "text": "t", "reward": { "gift": "vestige" } }"#);
+    assert!(gift.reward.gift == Some(crate::gifts::Gift::Vestige) && gift.problem().is_none());
+    let unknown: Result<GoalDef, _> =
+        serde_json::from_str(r#"{ "kind": "talk", "to": "mage", "text": "t", "reward": { "gift": "a-sword" } }"#);
+    assert!(unknown.is_err(), "a gift none of the keepers gives");
     assert!(goal(r#"{ "kind": "talk", "to": "tack", "text": "t" }"#).reward == crate::quests::RewardDef::default());
     for house in [r#"{ "art": true }"#, r#"{ "tenet": 1 }"#, r#"{ "fragments": 1 }"#, r#"{ "ship": true }"#] {
         let text = format!(r#"{{ "kind": "talk", "to": "tack", "text": "t", "reward": {house} }}"#);
         assert!(goal(&text).problem().is_some(), "{house}");
     }
-}
-
-#[test]
-fn the_round_of_the_counters_then_the_gift_spent_on_starter_gear_worn_reaches_the_houses() {
-    let mut character = welcomed();
-    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
-    }
-    let level = character.level();
-    let sword = starter(Vendor::Weaponsmith, Kind::SwordAndShield, level);
-    assert!(character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware: sword, day: 4 }, SOCIAL, &DICE).is_ok());
-    // A piece worn before its task is reached counts once the task is: the last buy reaches it.
-    let sword_id = character.items.iter().find(|(_, (item, _))| item.kind == Kind::SwordAndShield).map(|(id, _)| *id);
-    let worn = Ask::Wear { item: sword_id.expect("bought"), slot: Slot::Melee };
-    assert!(character.ask(worn, SOCIAL, &DICE).is_ok());
-    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
-        let ware = starter(Vendor::Armorsmith, kind, level);
-        assert!(character.ask(Ask::Vend { vendor: Vendor::Armorsmith, ware, day: 4 }, SOCIAL, &DICE).is_ok());
-    }
-    assert_eq!(character.materials.aurem, 400 - 5 * 50);
-    let task = |character: &Character| {
-        character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str())
-    };
-    assert_eq!(task(&character), Some("wear-them"));
-    let pieces: Vec<(u32, Slot)> = character
-        .items
-        .values()
-        .filter(|(item, _)| item.kind.armour())
-        .map(|(item, _)| (item.id, item.kind.slot()))
-        .collect();
-    for (item, slot) in pieces {
-        assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
-    }
-    assert_eq!(task(&character), Some("hear-three-houses"));
 }
 
 #[test]
@@ -234,7 +199,7 @@ fn a_character_already_on_the_houses_is_not_walked_round_again() {
 }
 
 #[test]
-fn a_paid_character_kept_on_an_opening_task_this_room_does_not_know_is_not_given_the_gift_again() {
+fn a_character_kept_on_an_opening_task_this_room_does_not_know_reads_on_the_houses_owed_no_gift() {
     // As a later room might keep it, then a room of this build read it: a task past the stranger's it never had.
     let mut kept = serde_json::to_value(welcomed()).expect("kept");
     let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
@@ -243,79 +208,7 @@ fn a_paid_character_kept_on_an_opening_task_this_room_does_not_know_is_not_given
     let task = read.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
     assert_eq!(task, Some("hear-three-houses"), "read as one kept before the round");
     assert_eq!(read.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
-    assert_eq!(read.materials.aurem, 400, "paid once");
-}
-
-#[test]
-fn starter_gear_bought_during_the_round_counts_once_its_task_is_reached() {
-    let mut character = welcomed();
-    let level = character.level();
-    let buy = |character: &mut Character, vendor, kind| {
-        let ware = starter(vendor, kind, level);
-        assert!(character.ask(Ask::Vend { vendor, ware, day: 4 }, SOCIAL, &DICE).is_ok());
-    };
-    buy(&mut character, Vendor::Weaponsmith, Kind::SwordAndShield);
-    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
-        buy(&mut character, Vendor::Armorsmith, kind);
-    }
-    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
-    }
-    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
-    assert_eq!(task, Some("wear-them"), "the pieces already owned arm the player: nothing more to buy");
-    assert_eq!(character.materials.aurem, 400 - 5 * 50);
-    // Carried, not worn: another answered ask leaves every piece still to put on.
-    buy(&mut character, Vendor::Weaponsmith, Kind::Bow);
-    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
-    assert_eq!(task, Some("wear-them"));
-    assert_eq!(character.quest_counts(), vec![0; 5]);
-}
-
-#[test]
-fn starter_gear_bought_and_worn_during_the_round_dresses_the_player_as_its_last_keeper_is_heard() {
-    let mut character = welcomed();
-    let level = character.level();
-    let buy = |character: &mut Character, vendor, kind| {
-        let ware = starter(vendor, kind, level);
-        assert!(character.ask(Ask::Vend { vendor, ware, day: 4 }, SOCIAL, &DICE).is_ok());
-    };
-    buy(&mut character, Vendor::Weaponsmith, Kind::SwordAndShield);
-    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
-        buy(&mut character, Vendor::Armorsmith, kind);
-    }
-    let pieces: Vec<(u32, Slot)> = character.items.values().map(|(item, _)| (item.id, item.kind.slot())).collect();
-    for (item, slot) in pieces {
-        assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
-    }
-    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
-    }
-    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
-    assert_eq!(task, Some("hear-three-houses"), "armed and dressed by the pieces already worn");
-}
-
-#[test]
-fn pieces_never_bought_from_a_smith_do_not_arm_the_player() {
-    let mut character = welcomed();
-    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
-    }
-    // Five Magic pieces looted, one for each slot the task asks.
-    for (kind, slot) in [(Kind::Sword, Slot::Melee), (Kind::Head, Slot::Head), (Kind::Torso, Slot::Torso)]
-        .into_iter()
-        .chain([(Kind::Arms, Slot::Arms), (Kind::Legs, Slot::Legs)])
-    {
-        let id = character.take_id();
-        character
-            .items
-            .insert(id, (crate::item::Item::new(id, kind, Rarity::Magic, 1, slot), crate::character::At::Carried));
-    }
-    // An ask answered, after which the quest hears what is held: one of the looted pieces put on.
-    let looted = character.items.values().find(|(item, _)| item.kind == Kind::Head).map(|(item, _)| item.id);
-    assert!(character.ask(Ask::Wear { item: looted.expect("looted"), slot: Slot::Head }, SOCIAL, &DICE).is_ok());
-    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
-    assert_eq!(task, Some("arm-yourself"), "nothing was bought");
-    assert_eq!(character.quest_counts(), vec![0; 5]);
+    assert!(read.quests.gifts.is_empty() && read.quests.free.is_empty(), "past the round: owed nothing");
 }
 
 #[test]
@@ -344,28 +237,7 @@ fn object_keys(character: &Character) -> Vec<String> {
 }
 
 #[test]
-fn the_openings_purchases_are_let_go_once_it_is_armed_so_a_later_buy_goal_counts_only_its_own() {
-    let mut character = welcomed();
-    for key in ["weaponsmith", "armorsmith", "mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
-        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
-    }
-    let level = character.level();
-    let buy = |character: &mut Character, vendor, kind| {
-        let ware = starter(vendor, kind, level);
-        assert!(character.ask(Ask::Vend { vendor, ware, day: 4 }, SOCIAL, &DICE).is_ok());
-    };
-    buy(&mut character, Vendor::Weaponsmith, Kind::SwordAndShield);
-    assert_eq!(character.quests.bought, vec![Slot::Melee], "kept while the opening asks");
-    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
-        buy(&mut character, Vendor::Armorsmith, kind);
-    }
-    assert!(character.quests.bought.is_empty(), "let go once its buy task is met");
-    buy(&mut character, Vendor::Weaponsmith, Kind::Bow);
-    assert_eq!(character.quests.bought, vec![Slot::Ranged], "a later purchase is a later goal's own");
-}
-
-#[test]
-fn plain_clothes_worn_meet_no_goal_to_put_armour_on_and_the_armour_bought_does() {
+fn plain_clothes_worn_meet_no_goal_to_put_armour_on_and_the_gifts_worn_do() {
     let mut character = Character::starting();
     character.story.prologue = false;
     assert!(character.ask(Ask::FinishPrologue, SOCIAL, &DICE).is_ok());
@@ -376,26 +248,47 @@ fn plain_clothes_worn_meet_no_goal_to_put_armour_on_and_the_armour_bought_does()
         assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
     }
     let level = character.level();
-    let sword = starter(Vendor::Weaponsmith, Kind::SwordAndShield, level);
-    assert!(character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware: sword, day: 4 }, SOCIAL, &DICE).is_ok());
-    for kind in [Kind::Head, Kind::Torso, Kind::Arms, Kind::Legs] {
-        let ware = starter(Vendor::Armorsmith, kind, level);
-        assert!(character.ask(Ask::Vend { vendor: Vendor::Armorsmith, ware, day: 4 }, SOCIAL, &DICE).is_ok());
+    for kind in [Kind::SwordAndShield, Kind::Bow] {
+        let ware = starter(Vendor::Weaponsmith, kind, level);
+        assert!(character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware, day: 4 }, SOCIAL, &DICE).is_ok());
     }
+    assert_eq!(character.materials.aurem, 0, "the Weaponsmith's gift, chosen free");
     let task = |character: &Character| {
         character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str())
     };
     assert_eq!(task(&character), Some("wear-them"));
     assert!(character.quest_counts().iter().all(|count| *count == 0), "the plain shirt and breeches count for none");
-    let bought: Vec<(u32, Slot)> = character
+    let given: Vec<(u32, Slot)> = character
         .items
         .values()
-        .filter(|(item, _)| !item.plain && (item.kind.armour() || item.kind == Kind::SwordAndShield))
+        .filter(|(item, at)| !item.plain && *at == crate::character::At::Carried && item.kind != Kind::Horse)
         .map(|(item, _)| (item.id, item.kind.slot()))
         .collect();
-    assert_eq!(bought.len(), 5);
-    for (item, slot) in bought {
+    assert_eq!(given.len(), 6, "two weapons and four armour pieces");
+    for (item, slot) in given {
         assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
     }
     assert_eq!(task(&character), Some("hear-three-houses"));
+}
+
+#[test]
+fn pieces_put_on_during_the_round_dress_the_player_as_its_last_keeper_is_heard() {
+    let mut character = welcomed();
+    for key in ["weaponsmith", "armorsmith"] {
+        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    }
+    let level = character.level();
+    for kind in [Kind::Warhammer, Kind::DoublePistolet] {
+        let ware = starter(Vendor::Weaponsmith, kind, level);
+        assert!(character.ask(Ask::Vend { vendor: Vendor::Weaponsmith, ware, day: 4 }, SOCIAL, &DICE).is_ok());
+    }
+    let pieces: Vec<(u32, Slot)> = character.items.values().map(|(item, _)| (item.id, item.kind.slot())).collect();
+    for (item, slot) in pieces {
+        assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
+    }
+    for key in ["mage", "vault", "tailor", "tack", "mail", "harbourmaster"] {
+        assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    }
+    let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("hear-three-houses"), "dressed by the pieces already worn");
 }

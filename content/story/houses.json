@@ -2,34 +2,35 @@
   "scenes": {
     "roundBegin": [
       { "who": "weaponsmith", "say": "You there, the one the stranger brought in. You can't walk about unarmed." },
-      { "who": "weaponsmith", "say": "Come and see me first. Then meet the rest of them." }
+      { "who": "weaponsmith", "say": "Come and see me first. I've a gift for you." }
     ],
     "roundWeaponsmith": [
-      { "who": "weaponsmith", "say": "Swords, shields, bows. Buy plain, and it'll keep you breathing." },
-      { "who": "weaponsmith", "say": "The finer pieces change with the day. Come back and look often." }
+      { "who": "weaponsmith", "say": "Pick one blade and one to shoot with. Both are my gift." },
+      { "who": "weaponsmith", "say": "Plain steel's always here. The finer pieces change with the day." }
     ],
     "roundArmorsmith": [
-      { "who": "armorsmith", "say": "Head, body, arms, legs. I'll fit all four, and you'll want all four." },
-      { "who": "armorsmith", "say": "Start plain. Plain's what you can afford, and plain still stops a blade." }
+      { "who": "armorsmith", "say": "Head, body, arms, legs. Here's a plain set of all four, on me." },
+      { "who": "armorsmith", "say": "Put them on before you go. Plain still stops a blade." }
     ],
     "roundMage": [
-      { "who": "mage", "say": "Vestiges wash up sealed tight. Bring them to me." },
-      { "who": "mage", "say": "I open them. Whatever's inside is yours, however strange it turns out." }
+      { "who": "mage", "say": "Vestiges wash up sealed tight. Here's one, to start you off." },
+      { "who": "mage", "say": "Hand it back and I'll open it. Whatever's inside is yours." }
     ],
     "roundVault": [
+      { "who": "vaultkeeper", "say": "I've laid a cloak in your vault. Take it out, it's yours." },
       { "who": "vaultkeeper", "say": "Bring me what you cannot carry. I count it in, and count it out." }
     ],
     "roundTailor": [
-      { "who": "tailor", "say": "Dyes for your armour, emblems for your back. I mix every colour myself." },
-      { "who": "tailor", "say": "Wear them proudly. Grey gets you mistaken for the Tithe." }
+      { "who": "tailor", "say": "Dyes for your armour, emblems for your name. Harbour Blue, on the house." },
+      { "who": "tailor", "say": "Wear it proudly. Grey gets you mistaken for the Tithe." }
     ],
     "roundTack": [
       { "who": "tack", "say": "First horse is on me. This Bay's never thrown anyone." },
       { "who": "tack", "say": "Barding too, to dress them in. A good mount spares your legs." }
     ],
     "roundMail": [
-      { "who": "postmaster", "say": "Whatever you drop and leave behind finds its way to my shelves." },
-      { "who": "postmaster", "say": "Letters come here too. Sign for them, and they're yours." }
+      { "who": "postmaster", "say": "There's a letter for you already. Sign for it, and it's yours." },
+      { "who": "postmaster", "say": "Whatever you drop and leave behind finds its way to my shelves." }
     ],
     "roundHarbour": [
       { "who": "harbourmaster", "say": "So the sea gave you back. You'll want a deck under you." },

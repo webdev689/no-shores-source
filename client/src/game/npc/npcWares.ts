@@ -260,19 +260,24 @@ function crateWare(gear: GearState): Ware {
 function smithRows(gear: GearState, vendor: number, heading: string, beside: readonly Row[] = []): Row[] {
   const wares = (vendorsOf(gear)[vendor]?.wares ?? []).map((ware, place) => {
     const price = { amount: ware.price, currency: 'aurem' as const };
-    return {
-      starter: ware.starter,
-      ware: itemWare(`buy-${vendor}-${place}`, ware.item, price, !ware.affordable, ware.press.ask),
-    };
+    const sold = itemWare(`buy-${vendor}-${place}`, ware.item, price, !ware.affordable, ware.press.ask);
+    // The room sends a starter piece at no price while it is the Weaponsmith's gift (`gifts.rs`).
+    const given = ware.starter && ware.price === 0;
+    return { starter: ware.starter, ware: given ? { ...sold, price: null, note: 'Free', words: GIFT_WORDS } : sold };
   });
-  const day = { heading, wares: wares.filter((each) => !each.starter).map((each) => each.ware) };
+  const day = { heading, wares: wares.filter((each) => !each.starter).map((each) => each.ware), empty: SOCIAL_ONLY };
   const start = wares.filter((each) => each.starter).map((each) => each.ware);
-  return [
-    ...(start.length > 0 ? [{ heading: 'To start', wares: start }] : []),
-    ...beside,
-    { ...day, empty: 'Sold only in a social space.' },
-  ];
+  const starting = start.length > 0 ? [{ heading: 'To start', wares: start }] : [];
+  // The Weaponsmith's eighteen plain pieces fill the screen: they lead while her gift is owed, and follow after.
+  const leads = vendor !== WEAPONSMITH || start.some((ware) => ware.note === 'Free');
+  return leads ? [...starting, ...beside, day] : [...beside, day, ...starting];
 }
+
+/** What a starter piece given free says on its card. */
+const GIFT_WORDS = 'My gift to you: one Melee weapon and one Ranged, your choice.';
+/** The Weaponsmith's number among the vendors (`Vendor::ALL`). */
+const WEAPONSMITH = 1;
+const SOCIAL_ONLY = 'Sold only in a social space.';
 
 function mageRows(gear: GearState): Row[] {
   const wares: Ware[] = gear.vestiges

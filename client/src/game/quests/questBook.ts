@@ -11,7 +11,8 @@ import type { Quest as Tracked, Step } from '../tasks.ts';
  *  places an `escort` or a `tail` walks between (`from`, `to`) and its figure (`who` a speaker, `foe` a roster type)
  *  with the line said as it first walks (`greet`), a `defend` goal's ward, a `puzzle`'s points and their `order`, a
  *  `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`) and an escort's
- *  `shout` as an ambush springs, and the slot a `buy` or a `wear` goal names. The rest the rules read alone. */
+ *  `shout` as an ambush springs, the slot a `buy` or a `wear` goal names, and what it gives as it is met. The rest the
+ *  rules read alone. */
 export interface Goal {
   readonly kind: string;
   readonly text: string;
@@ -39,14 +40,24 @@ export interface Goal {
   readonly rank?: string;
   readonly island?: string;
   readonly side?: string;
+  readonly reward?: Reward;
+}
+
+/** What a task gives as it is done, or a goal as it is met, of what the page tells: fragments to choose, the first
+ *  horse, the first ship and a keeper's gift by its name (`gifts.rs`). The rules give it. */
+export interface Reward {
+  readonly fragments?: number;
+  readonly horse?: boolean;
+  readonly ship?: boolean;
+  readonly gift?: string;
 }
 
 /** A task: its id, its tracker words, the scenes said as it begins and as it is done, its goals, and what it gives
- *  as it is done (of which the page reads only the fragments to choose). */
+ *  as it is done. */
 export interface Task {
   readonly id: string;
   readonly task: string;
-  readonly reward?: { readonly fragments?: number };
+  readonly reward?: Reward;
   readonly start?: string;
   readonly end?: string;
   readonly goals: readonly Goal[];

@@ -633,7 +633,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]). At sea DFO's messages are the
   notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
-  3.5 s), rising in over 0.2 s; one already shown keeps its place.
+  3.5 s), rising in over 0.2 s; one already shown keeps its place. A keeper's gift on the opening's round is one, its
+  words made by `giftNotice` alone ("The Armorsmith's gift: head, torso, arm and leg armour").
 - **The key strip** shows only the controls of what the player is doing now (`hints.ts`), in plain verbs, as a compact
   panel at the bottom right (`keyStrip.ts`, [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]):
   dark glass edged in brass at its left, as the notices are; at its head the moment's name in faint capitals beside a
@@ -1367,9 +1368,12 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   presses, Escape steps back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone,
   the keeper stands over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
-  The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: TO START, the sword
-  and shield and the bow, then WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how many of the five are
-  carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's six. The Tack: MOUNT,
+  The Armorsmith: TO START, the four starter pieces, then ARMOUR, the day's six. The Weaponsmith: SUPPLIES, the Ammo
+  crate with how many of the five are carried, then WEAPONS, the day's six, then TO START, every Melee kind and every
+  Ranged kind ([[Gear]], "Vendors"); while her gift is owed TO START comes first instead, each starter piece of a slot
+  still owed at no price: its tile says "Free" in place of the price, its card says "My gift to you: one Melee weapon
+  and one Ranged, your choice.", and holding it takes it as a purchase would ([[Quests]], "The opening"). Eighteen
+  pieces fill the screen, so once the gift is taken the day's wares lead. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's six. The Tack: MOUNT,
   the Bay Horse first, then the day's four horses and bardings, a horse as any item ware is, its picture, its card and
   "Normal Horse", kept once a horse in its coat is held. A piece kept says so.
 - **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen scrolls

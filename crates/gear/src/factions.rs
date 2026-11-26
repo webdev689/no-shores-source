@@ -216,7 +216,9 @@ impl Character {
             return Err(Refusal::Short);
         }
         self.materials.aurem -= cost;
-        // Told before the pledge changes the quest walked: the opening's last goal is this pledge.
+        // Before the pledge changes the quest walked: the keepers' gifts the opening still held are given, and it is
+        // told, its last goal being this pledge.
+        self.give_gifts_ahead();
         self.tell(&crate::quests::Event::Pledge);
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
         self.allegiance.pledge = faction;

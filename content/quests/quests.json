@@ -1,5 +1,5 @@
 {
-  "about": "The quests the rules keep and the page shows: the opening, which ends in a pledge, and each house's line, which gives its Art, its Tenets one at a time and three fragments of the player's choosing. A task's goals are all met before the next task begins; its reward is given as it ends, and a goal's own (Aurem or the first horse) as it is met. Its scenes are in content/story/houses.json. bible/02-Systems/Quests.md says how each goal is judged.",
+  "about": "The quests the rules keep and the page shows: the opening, which ends in a pledge, and each house's line, which gives its Art, its Tenets one at a time and three fragments of the player's choosing. A task's goals are all met before the next task begins; its reward is given as it ends, and a goal's own (Aurem, the first horse or a keeper's gift) as it is met. Its scenes are in content/story/houses.json. bible/02-Systems/Quests.md says how each goal is judged.",
   "quests": [
     {
       "id": "house",
@@ -17,10 +17,7 @@
               "to": "stranger",
               "text": "The stranger who found you"
             }
-          ],
-          "reward": {
-            "aurem": 400
-          }
+          ]
         },
         {
           "id": "find-your-way",
@@ -30,31 +27,46 @@
               "kind": "talk",
               "to": "weaponsmith",
               "scene": "roundWeaponsmith",
-              "text": "The Weaponsmith"
+              "text": "The Weaponsmith",
+              "reward": {
+                "gift": "weapons"
+              }
             },
             {
               "kind": "talk",
               "to": "armorsmith",
               "scene": "roundArmorsmith",
-              "text": "The Armorsmith"
+              "text": "The Armorsmith",
+              "reward": {
+                "gift": "armour"
+              }
             },
             {
               "kind": "talk",
               "to": "mage",
               "scene": "roundMage",
-              "text": "The Mage"
+              "text": "The Mage",
+              "reward": {
+                "gift": "vestige"
+              }
             },
             {
               "kind": "talk",
               "to": "vault",
               "scene": "roundVault",
-              "text": "The Vault Keeper"
+              "text": "The Vault Keeper",
+              "reward": {
+                "gift": "cloak"
+              }
             },
             {
               "kind": "talk",
               "to": "tailor",
               "scene": "roundTailor",
-              "text": "The Tailor"
+              "text": "The Tailor",
+              "reward": {
+                "gift": "dye"
+              }
             },
             {
               "kind": "talk",
@@ -69,7 +81,10 @@
               "kind": "talk",
               "to": "mail",
               "scene": "roundMail",
-              "text": "The Postmaster"
+              "text": "The Postmaster",
+              "reward": {
+                "gift": "letter"
+              }
             }
           ]
         },
@@ -89,39 +104,11 @@
           }
         },
         {
-          "id": "arm-yourself",
-          "task": "Arm yourself",
-          "goals": [
-            {
-              "kind": "buy",
-              "slot": "melee",
-              "text": "A Melee weapon from the Weaponsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "head",
-              "text": "Head armour from the Armorsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "torso",
-              "text": "Torso armour from the Armorsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "arms",
-              "text": "Arm armour from the Armorsmith"
-            },
-            {
-              "kind": "buy",
-              "slot": "legs",
-              "text": "Leg armour from the Armorsmith"
-            }
-          ]
-        },
-        {
           "id": "wear-them",
           "task": "Put them on",
+          "was": [
+            "arm-yourself"
+          ],
           "goals": [
             {
               "kind": "wear",
@@ -147,6 +134,11 @@
               "kind": "wear",
               "slot": "legs",
               "text": "Your leg armour"
+            },
+            {
+              "kind": "wear",
+              "slot": "ranged",
+              "text": "Your Ranged weapon"
             }
           ]
         },

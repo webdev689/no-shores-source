@@ -27,7 +27,7 @@ test('the Mage holds each Vestige carried to open it, and shows what one opened 
 
 test('the smiths sell their starter stock under To start, then six of the day’s wares, red when short', () => {
   // The message lists each vendor's stock in turn, each the day's six and then its starter pieces: the Armorsmith's
-  // four, the Weaponsmith's two, then the Shipwright's six alone.
+  // four, then the Weaponsmith's (two here), then the Shipwright's six alone.
   const six = (each: Parameters<typeof item>[0]) => Array.from({ length: 6 }, (_none, id) => item({ ...each, id }));
   const plain = (kinds: number[]) => kinds.map((kind, place) => item({ id: 6 + place, kind, rarity: 0, price: 50 }));
   const wares = [
@@ -50,9 +50,9 @@ test('the smiths sell their starter stock under To start, then six of the day’
     [true, { kind: ASKS.vend, column: 0, node: 0 }],
     'a short ware is still held, for the room to refuse and its keeper to answer',
   );
-  // The short rows first, side by side, so the day's six stay in view.
-  const [first, supplies, weapons] = rowsOf('weaponsmith', gear);
-  assert.deepEqual([first?.heading, supplies?.heading, weapons?.heading], ['To start', 'Supplies', 'Weapons']);
+  // Her gift taken, the day's wares lead and her plain pieces, every Melee and Ranged kind, follow.
+  const [supplies, weapons, first] = rowsOf('weaponsmith', gear);
+  assert.deepEqual([supplies?.heading, weapons?.heading, first?.heading], ['Supplies', 'Weapons', 'To start']);
   assert.deepEqual(
     first?.wares.map((ware) => ware.ask),
     [6, 7].map((node) => ({ kind: ASKS.vend, column: 1, node })),
@@ -137,4 +137,23 @@ test('a ware that cannot be asked for says why under its price, not "Not enough"
     (row) => row.heading === 'Supplies',
   )?.wares[0];
   assert.deepEqual(able && priceWord(able), { words: 'Not enough', short: true });
+});
+
+test("the Weaponsmith's starter pieces sent at no price are her gift: free, and saying so", () => {
+  const six = Array.from({ length: 6 }, (_none, id) => item({ id, kind: 2, rarity: 2, price: 2_000 }));
+  const armour = [...six, ...[13, 14, 15, 16].map((kind) => item({ kind, rarity: 0, price: 50 }))];
+  // A Melee piece still owed free, the Ranged one taken: the room sends each at its price for this player.
+  const weapons = [...six, item({ kind: 12, rarity: 0, price: 0 }), item({ kind: 8, rarity: 0, price: 50 })];
+  const rows = rowsOf('weaponsmith', state({ wares: [...armour, ...weapons], aurem: 0, cratePrice: 300 }));
+  assert.deepEqual(
+    rows.map((row) => row.heading),
+    ['To start', 'Supplies', 'Weapons'],
+    'her gift owed, it leads',
+  );
+  const [start] = rows;
+  const [given, sold] = start?.wares ?? [];
+  assert.deepEqual([given?.price, given?.note, given?.short], [null, 'Free', false]);
+  assert.match(given?.words ?? '', /gift/);
+  assert.deepEqual(given?.ask, { kind: ASKS.vend, column: 1, node: 6 }, 'held to take it, as a purchase is');
+  assert.deepEqual([sold?.price?.amount, sold?.note, sold?.short], [50, '', true], 'the other sold, short of Aurem');
 });

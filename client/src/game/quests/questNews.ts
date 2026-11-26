@@ -5,7 +5,7 @@ import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import factions from '../../../../content/gear/factions.json' with { type: 'json' };
 import type { GearState } from '../../network/gearMessages.ts';
 import { FIGURE_STATES } from '../../network/questMessages.ts';
-import { type Goal, QUESTS, type Task, type Walked, failLine } from './questBook.ts';
+import { type Goal, QUESTS, type Reward, type Task, type Walked, failLine } from './questBook.ts';
 
 /** What the page keeps of a character to tell what is new: where they walk, the task's counts and each goal's
  *  failures, the states of the figures walking for it, their pledge and Aurem, what each Art's road has earned and
@@ -99,12 +99,13 @@ export function greetBetween(before: Kept, after: Kept): string | undefined {
   return starts ? task.goals.find((goal) => goal.greet)?.greet : undefined;
 }
 
-/** The toasts for what a road gave between `before` and `after`: each Art, Tenet and fragment choice; and a choice
- *  its Art had no fragment left for, paid in Aurem at the counter's price. */
+/** The toasts for what a road gave between `before` and `after`: each keeper's gift on the opening's round
+ *  (`giftNotice`); each Art, Tenet and fragment choice; and a choice its Art had no fragment left for, paid in Aurem
+ *  at the counter's price. */
 export function giftsBetween(before: Kept, after: Kept): string[] {
   const given = tasksDone(before, after).reduce((sum, task) => sum + (task.reward?.fragments ?? 0), 0);
   const house = factions.factions.find((faction) => faction.id === QUESTS[before.quest - 1]?.faction);
-  return arts.arts.flatMap((art, place) => {
+  const artsGiven = arts.arts.flatMap((art, place) => {
     const earned = (after.earned[place] ?? 0) & ~(before.earned[place] ?? 0);
     const tenets = art.tenets.filter((_tenet, index) => (earned & (2 << index)) !== 0);
     const choosing = Math.max(0, (after.choices[place] ?? 0) - (before.choices[place] ?? 0));
@@ -117,5 +118,54 @@ export function giftsBetween(before: Kept, after: Kept): string[] {
       ...(choosing > 0 ? [`A ${art.name} fragment to choose`] : []),
       ...(paid > 0 ? [`No ${art.name} fragment left to choose: ${price} Aurem instead`] : []),
     ];
+  });
+  return [...keepersGiftsBetween(before, after).map(giftNotice), ...artsGiven];
+}
+
+/** What each keeper on the opening's round gives, by the name its goal's or task's reward gives it (`gifts.rs`, the
+ *  Tack's horse and the Harbourmaster's ship beside them). */
+const GIFT_NOTICES: Readonly<Record<string, string>> = {
+  weapons: "The Weaponsmith's gift: a Melee and a Ranged weapon of your choice, free at her counter",
+  armour: "The Armorsmith's gift: head, torso, arm and leg armour",
+  vestige: "The Mage's gift: a Vestige for her to open",
+  cloak: "The Vault Keeper's gift: a cloak, laid in your vault",
+  dye: "The Tailor's gift: Harbour Blue dye",
+  letter: "The Postmaster's gift: a letter at the mail counter",
+  horse: "The Tack's gift: the Bay Horse",
+  ship: "The Harbourmaster's gift: the Sloop",
+};
+
+/** The notice a keeper's gift is announced by: the one place its words are made, so the notice is restyled here. */
+export function giftNotice(gift: string): string {
+  return GIFT_NOTICES[gift] ?? 'A gift from a keeper';
+}
+
+/** The names of the keepers' gifts a word saw given, in the road's order: each goal met since `before` that gives one,
+ *  each task done that gives the ship; and as the opening is left by a first pledge, every gift its tasks from the one
+ *  walked still held, as the rules give them then (`give_gifts_ahead`). */
+export function keepersGiftsBetween(before: Kept, after: Kept): string[] {
+  const named = (reward: Reward | undefined) => [
+    ...(reward?.gift ? [reward.gift] : []),
+    ...(reward?.horse ? ['horse'] : []),
+    ...(reward?.ship ? ['ship'] : []),
+  ];
+  const quest = QUESTS[before.quest - 1];
+  if (quest?.faction === 0 && before.pledge === 0 && after.pledge > 0) {
+    // The opening left by a pledge: the gifts ahead, but the horse and the ship, which their counters give instead.
+    const ahead = quest.tasks
+      .slice(before.task)
+      .flatMap((task, later) =>
+        task.goals.filter((goal, index) => later > 0 || !met(goal, before.counts[index])).map((goal) => goal.reward),
+      );
+    return ahead.flatMap((reward) => (reward?.gift ? [reward.gift] : []));
+  }
+  const same = before.quest === after.quest && before.task === after.task;
+  const walked = same ? [QUESTS[after.quest - 1]?.tasks[after.task]] : tasksDone(before, after);
+  return walked.flatMap((task, later) => {
+    if (!task) return [];
+    const goals = task.goals.filter(
+      (goal, index) => (later > 0 || !met(goal, before.counts[index])) && (!same || met(goal, after.counts[index])),
+    );
+    return [...goals.flatMap((goal) => named(goal.reward)), ...(same ? [] : named({ ship: task.reward?.ship }))];
   });
 }

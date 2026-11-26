@@ -56,6 +56,7 @@ code:
   - crates/gear/src/catalogue.rs#catalogue
   - crates/gear/src/world.rs#island_levels
   - crates/gear/src/vendor.rs#wares
+  - crates/gear/src/gifts.rs#ware_price
   - crates/gear/src/element.rs#rolled
   - crates/gear/src/element.rs#Shield
   - crates/room/src/judging.rs#settle
@@ -531,7 +532,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
   as they left the room ("Drops"); a first clear's Vestige while the carried ten and the vault were full
   ([[Activities]], "Where it is paid"); a Vestige in flotsam gathered while the ten were full; a module salvaged while
   its slot carried nine ([[Ship Power]]); a Normal item found, or come in a Vestige's place, while its slot carried
-  nine and the vault was full ("Commons drop as themselves").
+  nine and the vault was full ("Commons drop as themselves"); and the keepers' gifts on the opening's round: the
+  Postmaster's letter, and the Mage's Vestige while the carried ten are full ([[Quests]], "The opening").
   Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
   past their most are not items, and stay as they were.
 - **Fifty letters.** A mailbox keeps 50 (`MAIL_MOST`). One more lets go the letter holding the least (by rarity, a
@@ -574,9 +576,18 @@ the factions' counters are in [[Factions]].
   Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
   slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
 - **The starter stock.** Beside the day's wares each smith always sells plain pieces to start with, Normal at the
-  buyer's level (at most 20), 50 Aurem each: the Armorsmith a head, a torso, arms and legs; the Weaponsmith a Sword &
-  Shield (Melee) and a bow (Ranged). Their screens show them first, under "To start". A smith's stock is numbered the
-  day's six first, then the starter stock (`gear::vendor::stock`).
+  buyer's level (at most 20), 50 Aurem each: the Armorsmith a head, a torso, arms and legs; the Weaponsmith every Melee
+  loadout (the Sword & Shield first, then the sword, greatsword, double swords, dagger & shield, double daggers, mace,
+  mace & shield, double mace, flail, warhammer, great axe and staff) and every Ranged one (the bow, crossbow,
+  pistolet, double pistolet and thunderlock), each drawn on the figure and in first person. Their screens show them
+  first, under "To start". A smith's stock is numbered the day's six first, then the starter stock
+  (`gear::vendor::stock`).
+- **The keepers' gifts** ([[Quests]], "The opening"; `gear::gifts`). While the Weaponsmith's gift is owed, one Melee
+  and one Ranged piece of her starter stock are free: the room sends each piece of an owed slot at no price, her screen
+  shows it "Free" with her words, and taking one spends that slot's gift (`Character::ware_price`). The Armorsmith
+  gives her four starter pieces, the Mage a sealed Magic Vestige, the Vault Keeper a Normal cloak laid in the vault,
+  the Tailor Harbour Blue and the Postmaster a letter holding a sealed Magic Vestige, each at the player's level and
+  once a character.
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic, 50 for a starter piece. It is bought only at its smith's
   counter, and carried with its slot's nine; the quest walked hears of it by its slot ([[Quests]]). The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
   bought at its counter by rank ([[Factions]]).
@@ -673,8 +684,8 @@ the Tack in [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes
   back as its own default, and is dropped, so a room rolled back and forward gives no horse; a coat bought from the
   older room meanwhile is dropped with it, and a character made there is read as one from before horses (the Bay
   worn). A room rolled back past the welcome to Overlook resets an opening task it does not know to its own first, so a
-  new character rolled back and forward reads on "Hear the three houses": the stranger's 400 Aurem and the round of the
-  counters are lost to it.
+  new character rolled back and forward reads on "Hear the three houses": the round of the counters and the gifts it
+  had not yet given are lost to it.
 
 ## Plain clothes
 
