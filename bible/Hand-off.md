@@ -231,14 +231,21 @@ The decisions in [[Open Questions]] are not repeated here.
   ("Arrivals", "Territories and runs"), [[Lattice]] and [[Modules]]. The airship and the crown are Blender modules
   (`tools/modules/airship.py`, `crown.py`), published to R2 by the modules workflow on the branch's pushes. Three
   read-only audits' 39 points are fixed, each with a test that fails on the code before it, or answered in the pull
-  request. Tested offline: every check on `ad938908` (the territories, merged with main at #207 and #215, which move
-  the door's event fingerprints but not the outcomes they pin), and again on `6825fc83` (main at #206 merged in, the
-  only clashes two bible lists, both sides kept); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
+  request. A last audit (rules; wire and page; models and notes) found 18 more: fixed are a shout reaching a foe
+  still in the airship, two ships to one ground meeting (a further ship now hangs 24 m abeam), the rumble played
+  where no ship is heard, landing dust following its foe, Arc Lash, Dusk Daggers and Volt's chain finding foes still
+  arriving, the airship's plates behind its planking, its lift frames, hatch, lanterns, windows, pipes and coal
+  (17,992 triangles), and stale notes; left as they are: the tests that tell a smaller group by its make-up, a test
+  of the airship's roll's sign, the quest guide pointing at a foe still arriving. Tested offline: every check on
+  `ad938908` (the territories, merged with main at #207 and #215, which move the door's event fingerprints but not
+  the outcomes they pin), and again on `6825fc83` (main at #206 merged in, the only clashes two bible lists, both
+  sides kept); the last audit's fixes by the room's and room-wasm's whole suites, the server's twins, the page's
+  changed tests, tsc, ESLint, clippy and `cargo xtask repo` (the raid's fingerprint moves, its outcome does not); a walk of each Saltmere zone's resources for 300 s meets 17 or 18 foes (main: 9 to
   15); the crown pictured forming and its foes forming under it, and the airship flying in, hanging, letting the
   raid's first wave down and leaving, in a development build (its crack and break not yet pictured). Not seen: the
   deployed game, a real GPU, the raid with players. After a merge: the owner judges the look in the game and which
-  areas hold territories ([[Open Questions]], "Foe arrivals"); the door test's scripted pair loses the heroic raid's
-  last wave, pinned as it is.
+  areas hold territories ([[Open Questions]], "Foe arrivals"), and how a cleared territory far from players is
+  retaken; the door test's scripted pair loses the heroic raid's last wave, pinned as it is.
 - **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
   the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
   each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
