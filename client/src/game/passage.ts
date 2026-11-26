@@ -167,6 +167,15 @@ export class Passage {
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
+  /** Plans a voyage to `point` as `sailTo` does, then sets sail through it and on straight through `after`, at a
+   *  click's pace: the way in to an island's anchorage from its offing. Whether it set sail; if not, it says why. */
+  sailVia(point: Point2, after: readonly Point2[]): boolean {
+    const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    if (!route.ok) this.said = REFUSED[route.reason];
+    else this.sailAlong([...detour(route.points, this.keepClear()).slice(1), ...after]);
+    return route.ok;
+  }
+
   /** Asks the room to travel the voyage still ahead: to take the ship to the other waters it ends in (`SeaTravel`).
    *  Answers the course sent, none with no voyage. */
   travel(): Point2[] {

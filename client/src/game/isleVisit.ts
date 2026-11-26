@@ -65,26 +65,34 @@ const DIFFICULTIES: readonly Difficulty[] = ['normal', 'elite', 'abyss'];
 
 /** The landing under way: the island the ship sails in to anchor off, until it lies at its anchorage. */
 export class IsleLanding {
-  private pending: number | null = null;
+  private pending: { readonly id: number; readonly words: string } | null = null;
 
-  /** Sets the ship's course round the island to its anchorage, unless it lies there already: whether there is one. */
+  /** Sets the ship's course to the island's offing, planned on water, and in to its anchorage, unless it lies there
+   *  already: whether there is one. With no way there the voyage's line says why, and nothing is made for. */
   begin(sea: Sea, isles: Isles, id: number): boolean {
     const isle = isles.all().find((each) => each.seen.id === id);
-    if (!isle?.built) return false;
-    this.pending = id;
+    const way = isle && approach(isle);
+    if (!isle || !way) return false;
     const [x, y] = sea.position;
-    const [anchorX, anchorY] = isle.built.anchorage;
-    if (Math.hypot(anchorX - x, anchorY - y) > ANCHORED_M || sea.course.length > 0)
-      sea.sailAlong(approach(sea.position, isle).slice(1));
+    const [anchorX, anchorY] = way.anchorage;
+    const under = Math.hypot(anchorX - x, anchorY - y) > ANCHORED_M || sea.course.length > 0;
+    if (under && !sea.sailIn(way.offing, way.anchorage)) return false;
+    this.pending = { id, words: isleWords(isle.seen) };
     return true;
+  }
+
+  /** The island being made for, if any: its number and its name in words. */
+  get making(): { readonly id: number; readonly words: string } | null {
+    return this.pending;
   }
 
   /** The island the ship has come to anchor off, once it lies at its anchorage, taken once; the landing given up if the
    *  island no longer stands, or the ship was turned elsewhere (steered, sent off on another voyage or a chase). */
   arrived(sea: Sea, isles: Isles): IsleHeld | null {
-    if (this.pending === null) return null;
-    const held = isles.byId(this.pending);
-    const isle = isles.all().find((each) => each.seen.id === this.pending);
+    const id = this.pending?.id;
+    if (id === undefined) return null;
+    const held = isles.byId(id);
+    const isle = isles.all().find((each) => each.seen.id === id);
     if (!held || !isle?.built) {
       this.pending = null;
       return null;
@@ -101,7 +109,7 @@ export class IsleLanding {
     return null;
   }
 
-  /** The landing given up: the player was washed up, or went elsewhere. */
+  /** The landing given up: another made for, a fight, or the player washed up. */
   cancel(): void {
     this.pending = null;
   }

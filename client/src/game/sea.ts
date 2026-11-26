@@ -273,9 +273,10 @@ export class Sea {
     if (ahead && !heaveTo) this.passage.straightOn();
   }
 
-  /** Sails a course already planned, through each of its points in turn: the way in to an island's anchorage. */
-  sailAlong(points: readonly Point2[]): void {
-    this.passage.sailAlong(points);
+  /** Sails for an island's `offing`, planned on water as `sailTo` plans, then in to its `anchorage`: whether it did. */
+  sailIn(offing: Point2, anchorage: Point2): boolean {
+    this.chase.stop();
+    return this.passage.sailVia(offing, [anchorage]);
   }
 
   /** Plans a voyage from the ship to a point and sets sail at `pace` (a click's, or the map's when planned there); a
@@ -519,7 +520,6 @@ export class Sea {
       note: this.note(),
       landfall: this.landfall,
       sailing: this.passage.sailing,
-      resumable: this.resumable,
       pace: this.passage.pace,
     };
   }

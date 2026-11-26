@@ -35,7 +35,7 @@ import { islesDrawing } from './islesDrawing.ts';
 import { SeaLandings } from './seaLandings.ts';
 import { seaLayer } from './seaScreen.ts';
 import { islandScreen } from './islandPanel.ts';
-import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
+import { ashoreOn, ashoreWords } from './isleVisit.ts';
 import { FootView } from './footView.ts';
 import { bootGame, SEA_SHIPS } from './gameBoot.ts';
 import { AfterStory } from './welcome/afterStory.ts';
@@ -176,12 +176,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     (error: unknown) => console.error('the waters could not be opened:', error),
   );
   const traffic = new FriendlyTraffic(waters, SEA_SHIPS);
-  /** The sea's islands the room tells of, and a landing at one under way. */
+  /** The sea's islands the room tells of. */
   const isles = new Isles(
     islePlanWorker(roomModule),
     continents.map((each) => each.climate),
   );
-  const isleLanding = new IsleLanding();
   // The islands' trees, shrubs and grass are the land's own plants (`isleNature.ts`), not the islands' modules.
   const { view: islesView, nature: islesNature, drawer: islesDrawer } = islesDrawing(gpu);
   /** The island the player stands on, drawn though the sea no longer tells of it, and the sea's word it opened on. */
@@ -395,15 +394,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   /** Moves the flow on for something that needs no veil. */
   const change = (happening: Happening) => void (playing.flow = next(playing.flow, happening));
 
-  /** The sea's clicks and the landings asked after: a landing answered yes sails round a sea island to anchor off it,
-   *  else flies the view up over the island to choose where (never while another landmass opens). */
+  /** The sea's clicks and the landings asked after: a landing on the open landmass flies the view up over the island
+   *  to choose where, only while the player is free (never while another landmass opens). */
   const landings = new SeaLandings({
     ...{ sea: () => playing.sea, landmass: () => playing.landmass, isles, free },
-    land: (aim) => {
-      if (playing.flow.mode !== 'sea' || !playing.sea || charting.busy) return;
-      if (aim.kind === 'isle') isleLanding.begin(playing.sea, isles, aim.id);
-      else if (playing.sea.goAshore()) change({ kind: 'view-landings' });
-    },
+    land: () => void (free() && playing.sea?.goAshore() && change({ kind: 'view-landings' })),
   });
 
   /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
@@ -457,12 +452,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       const told = isles.all().some((each) => each.seen.id === washed);
       if (held || !told) playing.seaWord?.takeWashedIsle();
       if (held) {
-        isleLanding.cancel();
+        landings.letGo();
         goIsle(held, ashoreWords(held, true));
       }
       return;
     }
-    const anchored = isleLanding.arrived(sea, isles);
+    const anchored = landings.anchored();
     if (anchored) goIsle(anchored, ashoreWords(anchored));
   };
 

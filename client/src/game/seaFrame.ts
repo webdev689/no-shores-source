@@ -44,9 +44,8 @@ export interface SeaFrame {
   readonly note: string;
   /** What the ship is offered off the island's coast: to dock, to go ashore, or nothing. */
   readonly landfall: Landfall;
-  /** Under way on a voyage; or stopped short of one, which can be resumed. */
+  /** Under way on a voyage, and the pace it was set at. */
   readonly sailing: boolean;
-  readonly resumable: boolean;
   readonly pace: Pace;
   /** Everyone aboard the player's Sloop once the view is down there, and whether the player sees through their own
    *  eyes on its deck. */
