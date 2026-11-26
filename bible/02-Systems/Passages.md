@@ -96,9 +96,10 @@ small zones across the island, twenty deep ([[Passages Web Out From the Patrol Z
 - **The public way**: one zone a depth (`Zone::public`), from a zone of the first depth along one of each marked
   zone's ways on, where players in public rooms meet.
 - **Each zone** is drawn its ground (under ground, a style by depth, chalk and barrow among them; above ground, a
-  hollow of six forms), its size (one step larger past depth 10, a lamp's zone and a vault medium at least), its
-  deal (a lamp at every fifth depth, else a skirmish, a mission of seven, a vault, a vein or a reliquary, by weight; a
-  vault only under ground, its draw above ground a mission), its currents (none to three by depth, three in four a
+  hollow of six forms), its size (small, medium or large, 40, 35 and 25 in a hundred to depth 10 and 15, 45 and 40
+  past it, a lamp's zone and a vault medium at least), its deal (a lamp at every fifth depth, else a skirmish, a
+  mission of seven, a vault, a vein or a reliquary, by weight; a vault only under ground, its draw above ground a
+  mission), its currents (none to three by depth, three in four a
   bane, each one its deal takes, none saying again what the week's two modifiers do: `Current::fits`,
   `Current::restates`), its seed and its name (`names.rs`): under a place of the island's already named within 28 km
   (`content/passages/saltmere.json`'s places), "Under Grey Point Light"; else its ground's and its deal's, "A chalk
@@ -406,7 +407,7 @@ back, to the patrol zone from a zone, or to the hub, told why (`wayOut`, `tripOr
 | Leave | 1.5 at most | The character turns to the mouth taken and walks into it, the foot's own camera following; the room is left once they reach it. A Home and a crossing gate have none |
 | Rise | 1.5 | From where the foot's camera last stood up to the island seen whole, framed as an island's side is framed from the ship (`frameSide`), every zone of the web inside the picture |
 | Draw | 2 | The way so far (the patrol zone and each zone passed this dive) shown, and the way being taken drawn a dot at a time, 10 a leg, to the next zone's place |
-| Wait | until ready | Held over the island while the room gone to is joined (`wayClock`), a hollow's kits asked for meanwhile (`warmIsle`); then while the place is drawn unseen under the island until it has drawn whole (`drawnWhole`); 20 s at most from the join (`READY_WAIT_S`, as the veil waits) |
+| Wait | until ready | Held over the island while the room gone to is joined (`wayClock`), a hollow's kits asked for meanwhile (`isles.warm`); then while the place is drawn unseen under the island until it has drawn whole (`drawnWhole`); 20 s at most from the join (`READY_WAIT_S`, as the veil waits) |
 | Down | 1.5 | Above ground, from a low framing over the arrival (3 m back, 10 m up, looking 12 m past it) into the foot's own camera (`settledShot`); under ground, where rock and ceilings stand over the place, none: the way cuts to the foot's own |
 | Walk | 1.5 | The character walks in from where the room stood them, the foot's own camera behind, kept out of the walls as on foot |
 
@@ -437,8 +438,9 @@ and a file of one's own asks for any other. Every picture is drawn by the game's
 
 - **A zone**: `zoneShot` (a `"call": true` shot) takes the week and the zone by its number, or the first of a form or
   style (`ground`) and `size`; the pieces' `state` and `done`; the size in pixels; and the eye behind the arrival
-  (`eye`: metres back and up, and its pitch), over the zone (`above`), or some metres before the first piece of a
-  kind (`aim`). Above ground the hollow is the islands' layer's ground and modules and the land's own plants
+  (`eye`: metres back and up, and its pitch), over the zone (`above`), some metres before the first piece of a kind
+  (`aim`), or above ground from the game's own camera behind a body at the arrival, or beside the placement nearest it
+  whose module begins `near` (a strand's wreck), facing it (`own`). Above ground the hollow is the islands' layer's ground and modules and the land's own plants
   (`IslesNature`), lit and shadowed by the sky of its climate where it lies at the world's `hour`, under a plain sky
   colour where the game draws its dome; under ground the dungeon's scene (`DungeonScene`) with its torches and the
   pieces' lights. The pieces' boxes are drawn only while their pack has not come, as in the game.

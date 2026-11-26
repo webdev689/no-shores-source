@@ -57,7 +57,7 @@ are in [[Crew]].
   to the fed one's level; the kept one keeps its rarity, nodes, choices and experience, the fed one is gone. Each
   level climbed costs 150 Aurem and 2 of the kept module's first material.
 - **Found** (`ship::found`): each piece of what floats where a ship went down holds one common material (1 to 3), a
-  chance of Heartwood (2% a rank) and of a module (12% and 4% a rank, so an hour at sea finds about a patrol zone's
+  chance of Heartwood (2% a rank) and of a module (36% and 12% a rank, so an hour at sea finds about a patrol zone's
   gear by colour: [[Activities]], "The band"); its chest holds three (2 to 4 each), Heartwood 25% and 5% a rank (a
   chest is rolled at a Miniboss's or a Boss's) and a module always. An island's wreckage
   holds one (1 to 2), Heartwood 1.5% and a module 3%, so a cove's two or three wrecks together hold less than a Minor

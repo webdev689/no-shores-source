@@ -596,8 +596,8 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   | 26 | 0.10 | 0.40 | 0.35 | 0.15 |
 
   A row for each island's band, each rank moving one way from band to band (Minors fewer, Elites and Minibosses
-  more); the rows at 16 and 22 lie evenly between those beside them, and those at 4, 7 and 10 send fewer Minors and
-  more Elites than they did, so an hour at sea keeps within the band from level 5
+  more); the rows at 16 and 22 lie evenly between those beside them, and those at 4, 7 and 10 send few enough Minors
+  and enough Elites that an hour at sea keeps within the band from level 5
   ([[The Sea and the Abyss Run Again Are Retuned Into the Band]], [[Activities]], "The band").
 
   No Boss comes by a roll: the Boss Frigate sails only at the Grey Tithe's sea strike, which is not built. Its level is

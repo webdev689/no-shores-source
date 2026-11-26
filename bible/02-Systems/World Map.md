@@ -94,6 +94,9 @@ turns every player away ([[Server]]). A pass opens a node by adding its id to th
 patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
 reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
 
+A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
+`&view=` picture it ([[Toolkit]], "Browser QA").
+
 ## Regions
 
 Every island is cut into three regions
@@ -112,9 +115,6 @@ landed at from the sea.
 Each patrol zone of an island holds a gate toward each other one: Saltmere's three link each to both others
 ([[Layouts]], "Gates"). At sea the held map lights the regions of the island whose waters the ship is in and sails
 for their anchorages ([[Held Map]], "Choosing").
-
-A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
-`&view=` picture it ([[Toolkit]], "Browser QA").
 
 ## Waters
 

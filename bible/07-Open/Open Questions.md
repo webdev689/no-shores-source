@@ -106,3 +106,16 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
     owner pick their own.
   - Whether the heroic raid is as hard as wanted: the room door's scripted pair loses its last wave (Marrow); the
     room's own raid test and the page's two bots beside its player win it ([[Public Events]], "Limits").
+- **The passages** ([[Passages as Claude Builds Them]]), each the owner's to say:
+  - Carrying the haul on past a lamp. The proposal the owner approved
+    ([[Passages Web Out From the Patrol Zone Across Its Island]]) had a structure let the player bank the haul and go
+    home or press on with it at risk, and death lose only what was found since the last structure passed; Claude's
+    call keeps the second by having a lamp lit always keep the haul, so no one presses on with it unkept.
+  - Where the Lattice come into the passages: the zones stand the Grey Tithe's alone.
+- **The held map at sea's redesign**, Claude's calls for the owner to confirm ([[Held Map]];
+  [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]):
+  - A node the quest names keeps a red-brown ring, though the owner's "Remove the tiny nodes on the held map" leaves
+    no node marked.
+  - A sea is locked while its island has no name in `ISLANDS`, so naming an island unlocks its sea.
+  - A locked sea is still sailed and travelled to as before: the lock is drawn, not enforced.
+  - A sea's name falls back to a plain word's size where its arch fits nowhere.

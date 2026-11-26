@@ -76,8 +76,9 @@ measuring every activity's rewards an hour. The owner:
 - **The layout rotates weekly**, and the week sets its primary modifiers; each zone adds smaller ones of its own,
   growing with depth.
 - **A return structure** that fits the lore stands about every 15 minutes of play, about five zones; at each the
-  player banks the haul and returns to the patrol zone, or presses on. Death loses only what was found since the last
-  structure.
+  player banks the haul and returns to the patrol zone, or presses on with it at risk. Death loses only what was found
+  since the last structure passed, never what was banked; how the build holds both is Claude's call
+  ([[Passages as Claude Builds Them]], "The haul").
 - **The first Atheric bounty** is for one of the Atherics, after Destiny 1's exotic bounties, and drops only, rarely,
   in the Saltgrass Downs' passages. Claude finds the lore for why passages exist.
 - **Daily and weekly rewards**, and **every activity's rewards an hour are measured and kept within one band**, so the

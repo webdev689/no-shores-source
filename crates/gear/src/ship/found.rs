@@ -47,8 +47,7 @@ pub(crate) struct Holds {
 pub(crate) fn holds(source: Source) -> Holds {
     match source {
         // A ship's lot holds modules often enough that an hour at sea finds about as much gear by colour as an hour
-        // in a patrol zone (`band`), whose kills drop four times as often as they did: a sure one in its chest, a
-        // Minor's piece about one time in two.
+        // in a patrol zone (`band`): a sure one in its chest, a Minor's piece about one time in two.
         Source::Flotsam { chest: true, rank } => {
             Holds { commons: 3, each: [2, 4], heartwood: 0.25 + 0.05 * f64::from(rank), module: 1.0 }
         }

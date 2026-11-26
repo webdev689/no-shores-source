@@ -80,7 +80,9 @@ Work that fans out goes to headless workers, each in its own git worktree.
 
 - Start one detached, `setsid nohup bash tools/claude-toolkit/workers/run-worker.sh <worktree> <brief> >/dev/null 2>&1
   </dev/null &`, and wait on it with `tools/claude-toolkit/workers/wait-worker.sh <name>` (Bash, in the background,
-  timeout 7200000, started again at that limit): a worker run as the background task itself dies with it at 2 h. Each
+  timeout 7200000, started again at that limit): a worker run as the background task itself dies with it at 2 h. The
+  waiter answers `DONE` at the log's last line, `WORKER <name> DONE`, written after any resume, and `GONE` for a worker
+  whose process died without it. Each
   gets Serena pinned to its worktree, Context7, Headroom, claude-mem and SkillsMP, and a
   worktree ready to test: the main checkout's `node_modules` linked, and its generated messages, WebAssembly and the
   message fixtures `cargo test -p protocol` writes built.

@@ -1,12 +1,13 @@
 ---
 type: decision
 date: 2026-11-20
-status: replaced
+status: in force
 ---
 # The Held Map Colours Each Water's Name by Its Difficulty
 
-Replaced by [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]: the level band
-stands with the island's name, and a sea's name is lettered across its sea.
+Replaced in part by [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]], for the
+waters' names: the level band stands with the island's name, in its difficulty's colour, and a sea's name is lettered
+across its sea. The difficulty's colours and the key's ramp stand.
 
 > "Do a detailed pass on the map"
 

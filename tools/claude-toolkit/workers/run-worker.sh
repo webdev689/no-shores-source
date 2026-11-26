@@ -4,7 +4,7 @@
 # usage: run-worker.sh <worktree dir> <brief file> [--resume]
 #   brief file: the whole task (common rules + the item). With --resume the brief is sent as a follow-up to the
 #   worker's last conversation in that worktree (claude -c), e.g. a controller update; its context is kept.
-# Log: <worktree>/../reports/<name>.log ; final report path is whatever the brief says.
+# Log: <worktree>/../reports/<name>.log ; report: <worktree>/../reports/<name>.md, the path the brief names.
 # Controller: start it detached, `setsid nohup bash run-worker.sh <worktree> <brief> >/dev/null 2>&1 </dev/null &`, and
 # wait with `wait-worker.sh <name>` (Bash run_in_background, timeout 7200000, started again at that limit): a worker
 # started as the background task itself is killed with it at 2 h. If one is stopped anyway: --resume it.
@@ -17,6 +17,8 @@ cd "$WT"
 # Refuse a brief copied from brief-common-template.md whose <...> lines were never filled in (check-tools expects this).
 left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lines)[^>]*>' "$BRIEF" | head -3 | tr '\n' ' ')
 [ -z "$left" ] || { echo "run-worker.sh: brief $BRIEF still has: $left(fill in the template's <...> lines first)" >&2; exit 2; }
+# Read once, here: a brief missing or empty when the worker starts would start it with no task.
+PROMPT=$(cat "$BRIEF" 2>/dev/null); [ -n "$PROMPT" ] || { echo "run-worker.sh: brief $BRIEF is missing or empty" >&2; exit 2; }
 INBOX="$OUT/inbox-$NAME.md"
 # A fresh run starts an empty inbox: one left by an earlier worker of this name is kept aside, not handed on.
 [ "$MODE" != "--resume" ] && [ -f "$INBOX" ] && mv "$INBOX" "$OUT/inbox-$NAME.$(date +%Y%m%d%H%M%S).md"
@@ -81,7 +83,7 @@ $NOTE" --strict-mcp-config --mcp-config "$CFG" \
   echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
 }
 C=(); [ "$MODE" = "--resume" ] && C=(-c)
-work "$(cat "$BRIEF")" "${C[@]}"
+work "$PROMPT" "${C[@]}"
 # The branch is the deliverable: a run that ends with its edits uncommitted is resumed once to commit them.
 left=$(git status --porcelain | grep -vc 'graphify-out/')
 if [ "$left" -gt 0 ]; then
@@ -95,3 +97,5 @@ if [ ! -f "$REPORT" ] || [ "$(stat -c %Y "$REPORT")" -lt "$(git log -1 --format=
   echo "WORKER $NAME REPORT STALE: resumed once to finish and write it" >> "$OUT/$NAME.log"
   work "Your run ended with your report ($REPORT) older than your last commit. Re-read your inbox, finish what your brief and inbox still ask (a review you started included), run the brief's checks, commit, write this round's report and give the final reply the brief asks for." -c
 fi
+# The last line, after every resume: what wait-worker.sh waits on.
+echo "WORKER $NAME DONE" >> "$OUT/$NAME.log"
