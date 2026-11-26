@@ -1,6 +1,8 @@
 """The healing flask in first person, drunk: the flask the figure drinks from (props3p.py `flask`: a round belly of red
-draught glowing through its glass, a clear neck, a cork, 0.16 m tall) in the right fist, the arm every first-person
-hand wears (fparm.py), closed round its neck as quaff.py closes it. Drawn as held things are (fpheldforge.py): the
+draught glowing through its glass, a clear neck, a cork) in the right fist, the arm every first-person hand wears
+(fparm.py), closed round the neck's foot where it leaves the belly, the neck and the cork standing clear past it. The
+flask is the hand's size to it as the figure's is (the first-person hand is drawn `fpguns.ARM['hand']` times a man's),
+its glass a clear shell round the draught, pale at its rim, the draught darker at its foot and bright at its top. Drawn as held things are (fpheldforge.py): the
 flask alone, and the hands alone in the bare glove or any armour set, cut where the flask lies nearer the eye. The
 spec's one record is the drink's four frames over its second, as the figure's: brought up from below the screen's
 right foot, raised before the face, tipped up at the lips, lowered away. Its draught lights the hand red.
@@ -14,8 +16,9 @@ The poses are keyed by hand (no picture of Daggerfall's to fit them to): each fr
 screen the fist's middle lies, how far before the eye, the way up the flask from its foot to its mouth, and the way the
 forearm leaves the wrist, in the eye's space (+X right, +Y away, +Z up).
 
-The part's space is the torch's (fptorch.py): the root the fist's middle on the neck's axis, +Z up the flask toward its
-mouth."""
+The part's space: the root the fist's middle on the neck's axis, +Z down the flask to its foot, which lies beyond the
+fist from the eye however the flask is held (fpstage.pose_matrix aims a part away from the eye), so a flask tipped up
+at the lips, its mouth nearer the eye than the fist, can be posed."""
 import math
 import os
 import sys
@@ -28,17 +31,21 @@ import fpguns  # noqa: E402
 import fptorch  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OWN = ('flask_draught', 'flask_glass', 'flask_cork')
+OWN = ('flask_draught', 'flask_glass', 'flask_cork', 'flask_shell')
 CLASSES = {n: 7 for n in OWN}
 SHEETS = ()
-HEIGHT = 0.16   # the flask's foot to its mouth (quaff.py HEIGHT)
-# the fist round its neck, up from its foot: higher than the figure's (quaff.py HOLD, 0.11), as near the eye a fist
-# that low would close inside the belly
-HOLD = 0.125
 SHAPE = {'focal': 200.0, 'aspect': 1.0, **fpguns.ARM, 'grip_tilt': -10.0}
+SCALE = SHAPE['hand']   # props3p's sizes, at the first-person hand's own
+BELLY = (0.052, 0.05, 0.052)   # props3p's belly: its middle's height, its radius, its half height
+NECK = (0.095, 0.15, [(0, 0.02), (0.3, 0.014), (1, 0.015)])   # props3p's neck: from, to, its profile
+CORK = (0.145, 0.165, [(0, 0.012), (1, 0.013)])
+HEIGHT = CORK[1] * SCALE   # the flask's foot to its mouth
+# the fist round the neck's foot, up from the flask's foot: its lower knuckles on the belly's shoulder
+HOLD = 0.107 * SCALE
+SHELL = 1.06   # the glass round the draught, its size to it
 GLOW_POWER = 3.0   # watts of the draught's light on the hand
 GLOW_COLOUR = (0.9, 0.08, 0.04)   # the draught's own glow (props3p.py `prop_draught`)
-DRAUGHT_GLOW = 0.5   # its strength, the figure's 1.5 less the light the eye's lamp lays on it
+DRAUGHT_GLOW = 0.6   # its strength, the figure's 1.5 less the light the eye's lamp lays on it
 
 
 def _profile(z0, z1, rings, n):
@@ -48,28 +55,37 @@ def _profile(z0, z1, rings, n):
     return z0 + (z1 - z0) * t, np.interp(t, s, r)
 
 
-def flask_mesh():
-    """The flask in its own space, its foot at the origin and +Z up to its mouth, as props3p.py `flask` builds it:
-    (vertices, triangles, material index among OWN)."""
+def _belly(k):
+    """The belly's ellipsoid, `k` times props3p's about its middle, at the hand's size."""
     from fpmodel import _axis_loft
-    a = np.linspace(-math.pi / 2, math.pi / 2, 18)   # the belly: an ellipsoid 0.05 across, 0.052 up
-    belly = _axis_loft(0.052 + 0.052 * np.sin(a), 0.05 * np.cos(a) + 1e-4, 0.05 * np.cos(a) + 1e-4, n=28)
-    neck = _axis_loft(*(lambda z, r: (z, r, r))(*_profile(0.095, 0.15, [(0, 0.02), (0.3, 0.014), (1, 0.015)], 8)),
-                      n=20, caps=(False, True))
-    cork = _axis_loft(*(lambda z, r: (z, r, r))(*_profile(0.145, 0.165, [(0, 0.012), (1, 0.013)], 4)), n=16,
-                      caps=(True, True))
-    return fptorch._join([(*belly, 0), (*neck, 1), (*cork, 2)])
+    mid, r, half = (x * SCALE for x in BELLY)
+    a = np.linspace(-math.pi / 2, math.pi / 2, 20)
+    rr = r * k * np.cos(a) + 1e-4
+    return _axis_loft(mid + half * k * np.sin(a), rr, rr, n=32)
+
+
+def _lathe(z0, z1, rings, n, caps):
+    from fpmodel import _axis_loft
+    z, r = _profile(z0 * SCALE, z1 * SCALE, [(s, x * SCALE) for s, x in rings], n)
+    return _axis_loft(z, r, r, n=20, caps=caps)
+
+
+def flask_mesh():
+    """The flask in its own space, its foot at the origin and +Z up to its mouth, as props3p.py `flask` builds it at
+    the hand's size, its draught in a glass shell: (vertices, triangles, material index among OWN)."""
+    return fptorch._join([(*_belly(1.0), 0), (*_lathe(*NECK, 8, (False, True)), 1), (*_lathe(*CORK, 4, (True, True)), 2),
+                          (*_belly(SHELL), 3)])
 
 
 def neck_r():
     """The neck's radius where the fist closes on it."""
-    z, r = _profile(0.095, 0.15, [(0, 0.02), (0.3, 0.014), (1, 0.015)], 64)
+    z, r = _profile(NECK[0] * SCALE, NECK[1] * SCALE, [(s, x * SCALE) for s, x in NECK[2]], 64)
     return float(np.interp(HOLD, z, r))
 
 
 def length(S, part=None):
-    """The fist to the flask's mouth: what a pose aims along."""
-    return HEIGHT - HOLD
+    """The fist to the flask's foot: what a pose aims along."""
+    return HOLD
 
 
 def _arm(S):
@@ -93,7 +109,8 @@ def scene(S, pose=None):
     fv = fv - np.array([0.0, 0.0, HOLD])
     axis = np.array([0.0, 0.0, 1.0])
     arm = fpguns._laid(_arm(S), np.zeros(3), axis, fore(S), 0.0, mirror=True)
-    return fptorch._join([(fv, fq, fm + len(fparm.mats())), arm])
+    v, q, m = fptorch._join([(fv, fq, fm + len(fparm.mats())), arm])
+    return v * np.array([1.0, -1.0, -1.0]), q, m   # turned half about X: +Z to the foot
 
 
 def part(S):
@@ -118,14 +135,84 @@ def _lets_light(m):
     return m
 
 
+# the draught's colour up the belly, foot to top (linear): dark at its foot, bright at its top, a pale line where it
+# meets the glass's shoulder, as a liquid in a bottle
+DRAUGHT_RAMP = ((0.0, (0.16, 0.005, 0.003)), (0.75, (0.9, 0.08, 0.04)), (0.86, (1.0, 0.32, 0.18)),
+                (0.9, (0.9, 0.08, 0.04)))
+
+
+def _draught(m):
+    """`m` (the figure's draught) shaded up the belly by DRAUGHT_RAMP, read off the part's rest position."""
+    nt = m.node_tree
+    at = nt.nodes.new('ShaderNodeAttribute')
+    at.attribute_type, at.attribute_name = 'GEOMETRY', 'rest'
+    sep = nt.nodes.new('ShaderNodeSeparateXYZ')
+    nt.links.new(at.outputs['Vector'], sep.inputs['Vector'])
+    up = nt.nodes.new('ShaderNodeMapRange')
+    mid, _, half = (x * SCALE for x in BELLY)
+    up.inputs['From Min'].default_value, up.inputs['From Max'].default_value = HOLD - (mid - half), HOLD - (mid + half)
+    nt.links.new(sep.outputs['Z'], up.inputs['Value'])
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    first, last = ramp.color_ramp.elements
+    first.position, first.color = DRAUGHT_RAMP[0][0], (*DRAUGHT_RAMP[0][1], 1)
+    last.position, last.color = DRAUGHT_RAMP[-1][0], (*DRAUGHT_RAMP[-1][1], 1)
+    for at_, rgb in DRAUGHT_RAMP[1:-1]:
+        ramp.color_ramp.elements.new(at_).color = (*rgb, 1)
+    nt.links.new(up.outputs['Result'], ramp.inputs['Fac'])
+    b = nt.nodes['Principled BSDF']
+    for name in ('Base Color', 'Emission Color'):
+        nt.links.new(ramp.outputs['Color'], b.inputs[name])
+    b.inputs['Emission Strength'].default_value = DRAUGHT_GLOW
+    return m
+
+
+SHELL_RIM = (0.85, 0.9, 0.92)   # the glass's rim, where it is seen edge on (linear)
+
+
+def _shell():
+    """The belly's glass: clear where it is seen through, pale toward its rim, with the lamps' highlights on it."""
+    import bpy
+    m = bpy.data.materials.new('flask_shell')
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    edge = nt.nodes.new('ShaderNodeLayerWeight')
+    edge.inputs['Blend'].default_value = 0.25
+    rim = nt.nodes.new('ShaderNodeMath')   # sharpened, so only the rim is pale
+    rim.operation = 'POWER'
+    rim.inputs[1].default_value = 2.0
+    nt.links.new(edge.outputs['Facing'], rim.inputs[0])
+    gloss = nt.nodes.new('ShaderNodeBsdfGlossy')
+    gloss.inputs['Roughness'].default_value = 0.08
+    gloss.inputs['Color'].default_value = (*SHELL_RIM, 1)
+    pale = nt.nodes.new('ShaderNodeEmission')
+    pale.inputs['Color'].default_value = (*SHELL_RIM, 1)
+    pale.inputs['Strength'].default_value = 0.6
+    lit = nt.nodes.new('ShaderNodeAddShader')
+    nt.links.new(gloss.outputs['BSDF'], lit.inputs[0])
+    nt.links.new(pale.outputs['Emission'], lit.inputs[1])
+    # the highlights everywhere, the pale glass only toward the rim
+    clear = nt.nodes.new('ShaderNodeAddShader')
+    nt.links.new(nt.nodes.new('ShaderNodeBsdfTransparent').outputs['BSDF'], clear.inputs[0])
+    shine = nt.nodes.new('ShaderNodeBsdfGlossy')
+    shine.inputs['Roughness'].default_value = 0.05
+    nt.links.new(shine.outputs['BSDF'], clear.inputs[1])
+    mix = nt.nodes.new('ShaderNodeMixShader')
+    nt.links.new(rim.outputs['Value'], mix.inputs['Fac'])
+    nt.links.new(clear.outputs['Shader'], mix.inputs[1])
+    nt.links.new(lit.outputs['Shader'], mix.inputs[2])
+    nt.links.new(mix.outputs['Shader'], nt.nodes.new('ShaderNodeOutputMaterial').inputs['Surface'])
+    return m
+
+
 def palette():
-    """The flask's materials, the figure's own (props3p.py): the draught glowing red, the clear glass, the cork's wood."""
+    """The flask's materials, the figure's own (props3p.py): the draught glowing red, shaded up the belly, the clear
+    neck, the cork's wood, and the belly's glass round the draught."""
     import props3p
     M = props3p.palette()
-    draught = M['prop_draught'].copy()   # lit by the eye's own lamp too: its glow held under white, a deep red
-    draught.node_tree.nodes['Principled BSDF'].inputs['Emission Strength'].default_value = DRAUGHT_GLOW
-    return {'flask_draught': _lets_light(draught), 'flask_glass': _lets_light(M['prop_flaskglass'].copy()),
-            'flask_cork': M['prop_wood']}
+    return {'flask_draught': _lets_light(_draught(M['prop_draught'].copy())),
+            'flask_glass': _lets_light(M['prop_flaskglass'].copy()), 'flask_cork': M['prop_wood'],
+            'flask_shell': _lets_light(_shell())}
 
 
 def variants(rec):
@@ -150,7 +237,7 @@ def over(eye, scr, pose, part, frame):
 
 def glow_point(S):
     """The belly's middle, in the part's space: the draught's light on the fist."""
-    return np.array([0.0, 0.0, 0.052 - HOLD])
+    return np.array([0.0, 0.0, HOLD - BELLY[0] * SCALE])
 
 
 def hold_pose(S, hold):
@@ -158,12 +245,13 @@ def hold_pose(S, hold):
     point `fist` at `depth` metres, the flask up `way` toward its mouth, turned about it so its forearm leaves as near
     `arm` as it can (each in the eye's space)."""
     import fpstage
-    d = fpguns._unit(hold['way'])
+    d = -fpguns._unit(hold['way'])   # the part runs from the fist to the foot
     at = fpstage.unproject(hold['fist'][0], hold['fist'][1], hold['depth'], S)
     tip = at + d * length(S)
     (bu, tu), (bv, tv), (bd, _) = fpstage.project(np.stack([at, tip]), S)
     pose = {'base': [float(bu), float(bv)], 'depth': float(bd), 'tip': [float(tu), float(tv)], 'roll': 0.0}
     M, _ = fpstage.pose_matrix(pose, S, length(S))
+    assert M[:3, 2] @ d > 0.999, f'a hold whose foot is nearer the eye than its fist cannot be posed: {hold}'
     want = fpguns._unit(hold['arm'])
     f = fore(S)
     best = max(range(0, 360, 2), key=lambda deg: float(want @ (

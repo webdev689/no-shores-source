@@ -43,11 +43,13 @@ The [[Test Ground]] shows them.
 The first-person frames are pictures of their own: each weapon's idle and its six strokes, the bow's draw and loose,
 fists and kicks, held things, and the hands that cast, climb, run, ride and work. DFO kept them outside the studio
 folder as its site's art; they are published with the rest. The healing flask is a held thing of the forge's own
-(`fpflask.py`, `specs/FLASK.json`): the figure's flask (`props3p.py` `flask`) in the right fist round its neck, held a
-little higher on it than the figure's so the fist clears the belly, its draught glowing red and lighting the hand
-through the glass. Its four frames over the drink are keyed by hand on the screen, as no picture of Daggerfall's
-gives them: brought up from below the screen's right foot, raised before the face, tipped up at the lips with its foot
-rising toward the eye, and lowered away. `fpflask.py --spec` writes the poses (`FLASK-fit.json`) and `--grade` the
+(`fpflask.py`, `specs/FLASK.json`): the figure's flask (`props3p.py` `flask`) at the first-person hand's size, in the
+right fist round the neck's foot, the neck and the cork standing clear past it. Its draught glows red, dark at its
+foot and bright at its top under a pale line, inside a clear glass shell pale at its rim, and lights the hand through
+the glass. Its four frames over the drink are keyed by hand on the screen, as no picture of Daggerfall's gives them:
+brought up from below the screen's right foot, half under it; raised before the face; tipped up at the lips, the neck
+toward the eye with the cork's end showing below the fist and the belly glowing past it; and lowered away, tilted out
+to the right. `fpflask.py --spec` writes the poses (`FLASK-fit.json`) and `--grade` the
 hands' grade, then `fpheldforge.py --spec tools/sprite-forge/specs/FLASK.json --objects` draws the flask and the hands
 in the bare glove and every armour set into `forge/held`. So are the instruments' first-person frames, and the
 pictures of things the forge renders from models of its own: items, props and the light set's pieces
