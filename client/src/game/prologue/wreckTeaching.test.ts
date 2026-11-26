@@ -346,7 +346,7 @@ test('a boarder that stopped as the player fell comes for them again once sent, 
       room.putPlayer(armsX, armsY);
     }
     const stopped = rose !== null && rose >= 0 && own && own.health > 0 && foe && foe.target !== fighting.player;
-    if (stopped && nth - asked >= 60) {
+    if (stopped && rose !== null && nth - asked >= 60) {
       if (nth - rose < 120) assert.equal(foe.target, null, 'with no one to fight once the player rose');
       asked = nth;
       assert.equal(storyOn(room, { ask: 'hunt', foe: id }), 1, 'sent at them');
