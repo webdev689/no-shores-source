@@ -113,7 +113,7 @@ What finishing a piece takes now, every node and one node a column (Aurem, fragm
 | Level 30 | Waits on a Breach module, as a player's on Breach armour | The owner's "Yes. Same for player gear. Thats always been the goal"; already so, unchanged |
 
 Replaced in part by [[Passages as Claude Builds Them]] ("The band, measured"): a sinking pays as twenty-one
-land kills of its rank, and a ship's piece holds a module 12 times in a hundred and 4 more a rank, its chest always.
+land kills of its rank, and a ship's piece holds a module 36 times in a hundred and 12 more a rank, its chest always.
 
 ### The fight on foot
 

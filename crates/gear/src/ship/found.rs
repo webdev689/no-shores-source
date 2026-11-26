@@ -47,13 +47,14 @@ pub(crate) struct Holds {
 pub(crate) fn holds(source: Source) -> Holds {
     match source {
         // A ship's lot holds modules often enough that an hour at sea finds about as much gear by colour as an hour
-        // in a patrol zone (`band`): a sure one in its chest, a Minor's piece one time in six.
+        // in a patrol zone (`band`), whose kills drop four times as often as they did: a sure one in its chest, a
+        // Minor's piece about one time in two.
         Source::Flotsam { chest: true, rank } => {
             Holds { commons: 3, each: [2, 4], heartwood: 0.25 + 0.05 * f64::from(rank), module: 1.0 }
         }
         Source::Flotsam { rank, .. } => {
             let rank = f64::from(rank.clamp(1, 5));
-            Holds { commons: 1, each: [1, 3], heartwood: 0.02 * rank, module: 0.12 + 0.04 * rank }
+            Holds { commons: 1, each: [1, 3], heartwood: 0.02 * rank, module: 0.36 + 0.12 * rank }
         }
         // A cove's two or three wrecks together hold less than a Minor ship's whole lot, as the owner chose: found
         // unguarded, once.

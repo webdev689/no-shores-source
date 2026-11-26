@@ -143,8 +143,8 @@ fn salvage_gives_ship_materials_and_its_modules_never_past_what_its_level_could_
             .filter(|tick| salvage(Source::Flotsam { rank: 1, chest: false }, 5, raised, &dice(*tick)).module.is_some())
             .count()
     };
-    assert!((260..380).contains(&found(1.0)), "a Minor's piece holds a module about one time in six: {}", found(1.0));
-    assert!((580..700).contains(&found(2.0)), "twice as often at Abyss: {}", found(2.0));
+    assert!((900..1_020).contains(&found(1.0)), "a Minor's piece holds a module about one time in two: {}", found(1.0));
+    assert!((1_870..1_970).contains(&found(2.0)), "twice as often at Abyss: {}", found(2.0));
 }
 
 #[test]

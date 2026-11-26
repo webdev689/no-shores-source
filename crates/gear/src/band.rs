@@ -230,11 +230,7 @@ fn dungeon_kill(level: u8, tier: Difficulty) -> Hour {
 fn dungeon_clear(level: u8, tier: Difficulty) -> Hour {
     let colour = shares(colours(4), level);
     let vestige = crate::rewards::CLEAR_VESTIGE * tier.reward();
-    paid(Clear::Dungeon.worth(), level, tier).plus(vestiges(vestige, colour)).plus(items(
-        tier.reward(),
-        colour,
-        level,
-    ))
+    paid(Clear::Dungeon.worth(), level, tier).plus(vestiges(vestige, colour)).plus(items(tier.reward(), colour, level))
 }
 
 /// The day's first clear as the dungeon of the day and the playlists pay it: a Boss Captain's kill and a sure Vestige
