@@ -70,6 +70,14 @@ export function shipSails(name: string): SailCorners[] {
   return [...(entry?.sails ?? [])];
 }
 
+/** Where a published ship's lanterns' flames burn in its own frame, metres, as its export found them; none for a ship
+ *  without a lantern. */
+export function shipLanterns(name: string): [number, number, number][] {
+  type Lit = { readonly lanterns?: readonly (readonly [number, number, number])[] };
+  const entry = (ships.ships as unknown as Readonly<Record<string, Lit>>)[name];
+  return (entry?.lanterns ?? []).map(([x, y, z]) => [x, y, z]);
+}
+
 /** A published ship's waterline as its export measured it, known before its mesh comes. */
 export function shipWaterline(name: string): Waterline {
   type Measured = {

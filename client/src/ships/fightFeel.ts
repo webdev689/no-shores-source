@@ -84,6 +84,8 @@ export const SMOKE_FROM = 0.6;
 const SMOKE_SPAN = 0.6;
 /** Its last volley's tally is shown this long once its last ball is down, seconds. */
 export const TALLY_S = 4;
+/** How deep a burning ship's light flickers, a share of a lamp's (`flicker`): from 0.6 of its full to its full. */
+const BURN_FLICKER = 2.5;
 /** A volley is down this long after its last shot at the most, seconds: longer than any ball's flight. */
 const VOLLEY_S = 4;
 /** A ball last frame is the same ball this frame within this, metres. */
@@ -520,7 +522,8 @@ export class FightFeel {
       radius: BURN_LIGHT.reachM * scale,
       colour: BURN_LIGHT.colour,
       blend: 'light' as const,
-      alpha: flicker(index, now),
+      // A fire's flicker, deeper than a lamp's: its light swells and sinks with its flames.
+      alpha: flicker(index + 1, now, BURN_FLICKER),
     }));
     return [...this.effects.marks(now, scale), ...lights, ...this.flotsam.marks(now, scale, water, eye)];
   }

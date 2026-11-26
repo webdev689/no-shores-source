@@ -34,3 +34,6 @@ of them. How it works is in [[Sky]] ("Lamps"), [[Dungeons]], [[Cities]] and [[Ci
 | The passages' lamp under ground | A fire in its cage and its light at the cage's middle (3.2 m), a dead lamp's in its glass off its crook | Its light stood at the middle of its post |
 | An open mouth under ground | Its way on drawn in daylight's pale colour, not stone | The owner: every glowing thing is redesigned; it was drawn as the cell's stone |
 | The light carried under ground | The dungeon's own torch or lantern kind at the hand, as on land, seeded apart from every place | The owner: the carried torch casts light under ground |
+| A ship's lantern | A glass between six iron posts on its taffrail post; its flame drawn through the glass by the ship's shader, a soft halo round it, its light a lamp reaching 13 m, as a carried lantern's | The ship's pieces are one mesh: the flame is drawn on its glass, not as a separate model |
+| A sea fight's lights | Each flash, blast and fire is a lamp for its life at DFO's reach; a fire's light flickers from 0.6 of its full | They are DFO's point lights |
+| Lamps on the sea | Open water scatters a little of a lamp's light and its foam more; each lamp glitters on the waves toward the eye, fading more slowly than its light | A light's path across dark water is how a lamp at sea reads |

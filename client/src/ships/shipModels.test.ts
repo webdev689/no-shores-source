@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SLOOP_HULL } from './hulls.ts';
-import { RETRY_MS, ShipModels } from './shipModels.ts';
+import { CITY_LAMPS } from '../sky/lamps.ts';
+import { lanternAt, RETRY_MS, ShipModels } from './shipModels.ts';
 import { standIns } from '../standIns.ts';
 import type { ShipPlace, ShipView } from './shipView.ts';
 
@@ -9,6 +10,7 @@ import type { ShipPlace, ShipView } from './shipView.ts';
 const viewOf = (slots: number[]) =>
   ({
     drawInto: (...args: unknown[]) => slots.push(args[3] as number),
+    lanterns: [],
     boundsAt: (place: ShipPlace, eye: readonly number[]) => [
       place.x - (eye[0] ?? 0),
       place.y - (eye[1] ?? 0),
@@ -126,4 +128,43 @@ test('a ship out of view is not drawn, and the next of its hull still takes the 
   });
   models.draw({} as GPURenderPassEncoder, [ahead(50), ahead(-50), ahead(80)], CAMERA);
   assert.deepEqual(slots, [0, 2], 'the one behind the eye is left out, its slot kept');
+});
+
+test('a lantern burns where its ship carries it: turned with its heading and heel, and as large as it is drawn', () => {
+  const [east, south, up] = lanternAt({ ...PLACE, heading: Math.PI / 2, scale: 2 }, [-10, 0, 4]);
+  // Heading east, ten metres aft is ten to the west, doubled.
+  assert.ok(Math.abs(east + 20) < 1e-9 && Math.abs(south + 50) < 1e-9 && Math.abs(up - 8) < 1e-9);
+});
+
+test("each ship's lanterns light the sky's lamps, in view or not, with the fight's lights, told only when they change", async () => {
+  // A device that answers every call with itself, enough for the halos' puffs to be laid.
+  const device: unknown = new Proxy(() => device, { get: () => device, apply: () => device });
+  const lit = { ...viewOf([]), lanterns: [[-10, 0, 4]], gpu: { device, format: 'bgra8unorm' } } as unknown as ShipView;
+  const models = new ShipModels(async () => lit);
+  await models.load(0);
+  const ship = (y: number) => ({ hull: 0, place: { ...PLACE, y }, rig: null, look: { side: 'tithe' as const } });
+  models.draw({} as GPURenderPassEncoder, [ship(-50), ship(50)], CAMERA, undefined, 3);
+  const flash = { at: [1, 2, 3] as const, reachM: 26, light: [1, 1, 1] as const, seed: 9 };
+  models.shine([flash]);
+  const shown = () => CITY_LAMPS.current.filter((lamp) => lamp.reachM === 13 || lamp === flash);
+  assert.deepEqual(
+    shown().map((lamp) => lamp.at),
+    [
+      [0, -40, 4],
+      [0, 60, 4],
+      [1, 2, 3],
+    ],
+    'both ships (heading north, so ten metres aft is ten south), the one behind the eye too, then the flash',
+  );
+  const first = CITY_LAMPS.current;
+  models.draw({} as GPURenderPassEncoder, [ship(-40), ship(50)], CAMERA, undefined, 4);
+  models.shine([flash]);
+  assert.equal(CITY_LAMPS.current, first, 'the same lamps, moved in place');
+  assert.deepEqual(shown()[0]?.at, [0, -30, 4]);
+  models.draw({} as GPURenderPassEncoder, [{ ...ship(-40), place: { ...PLACE, z: -4 } }], CAMERA, undefined, 5);
+  models.shine();
+  assert.equal(shown().length, 0, 'out on a ship sinking');
+  models.draw({} as GPURenderPassEncoder, [], CAMERA, undefined, 5);
+  models.shine();
+  assert.equal(shown().length, 0, 'gone with the ships');
 });
