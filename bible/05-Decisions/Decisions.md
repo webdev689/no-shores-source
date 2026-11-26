@@ -38,6 +38,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Third-Person Strikes Run Faster Than DFO's]]
 - [[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]
 - [[Come Sail Away's Sailing Comes Over]]
+- [[Ships' Lanterns Come Over From DFO]]
 - [[Ship Models Live on R2]]
 - [[The Sloop's Trim]]
 - [[The Server Gets Its Own Rules]]
@@ -426,6 +427,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea and the Abyss Run Again Are Retuned Into the Band]]
 - [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map's Seas Are Lettered Across Them, Ports Are Anchors and Other Seas Locked]]
+- [[Dialogue Waits for a Click by Default, With Auto as a Setting]]
+- [[Overlook's City Below Is Lit at Night, in Detail]]
 
 ## Replaced
 
