@@ -249,14 +249,21 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The hub's ground and walks, the ship's stern on the water, and music that repeats less** (#227, branch
   `claude/sleepy-einstein-f6fqvk`, waiting on CI on its head and the owner's yes to merge), on four asks of the owner:
   grass flickering through stone near the Hall (the walks round the Beacon now paved, `hub/walks.rs` `floors`); the
-  walks' flags not along the walks (`walkGrain.ts`); a pale square under a ship's stern (the footprint's
-  line kept inside the hull, every ship's footprint in its own hull's line, `hullLines.ts`, `hullMask.ts`); and a
-  detailed music pass, patrol zones first ([[The Music Repeats Less, Patrol Zones First]]). Tested offline, each fix
-  with a test that failed first, pictured headless before and after; not heard, not on a real GPU. The owner left
-  the PR's two questions to Claude ("Make the best decisions and fix any issues"): a joint's round and fillets run in
-  the grain of the walk on top there (`Social.grains`, `walkGrain.ts`), and the music is enough as it is. Known and
-  left: the ship's footprint up to 0.37 m inside its hull near the ends; no Frigate under way pictured after the
-  fix; the thin dark arcs round the obelisk's border, there before.
+  walks' flags not along the walks (`walkGrain.ts`, `Social.grains`); a pale square under a ship's stern (the
+  footprint's line kept inside the hull, every ship's footprint in its own hull's line, `hullLines.ts`,
+  `hullMask.ts`); and a detailed music pass, patrol zones first ([[The Music Repeats Less, Patrol Zones First]]). The
+  owner left the PR's questions to Claude ("Make the best decisions and fix any issues"). Then, on the owner's "Do a
+  comprehensive audit and deep detail pass", five read-only audits (the hub, the ship, the music's code, a note-by-note
+  detail pass of the new music, the bible and the tests), every finding fixed with a test that failed first: a walk
+  running straight through a joint lies on top there, capped where another stood over it; the plaza and the walks'
+  floors share one paving grain; crossing stone bands stand 5 mm apart (the obelisk's round flickered on `main`);
+  opening a hull's model is held to give its line; the new takes keep the takes' laws and every take is reached in
+  ten minutes; each place keeps its own last calm piece through deaths and voyages; the twelve new calm pieces,
+  several near copies of older ones, rewritten each its own, held by a variety law (`variety.test.ts`). Tested
+  offline: the city, layout, bake and room crates, the client's tests of what changed, types, lint; pictured headless
+  before the audit; not heard, not on a real GPU. Known and left: the ship's footprint up to 0.37 m inside its hull
+  near the ends; a friendly ship's footprint laid a moment before its model has come (on `main` before #227); no
+  Frigate under way pictured after the fix.
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
   modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,
