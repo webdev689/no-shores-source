@@ -226,37 +226,44 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The sea reworked, and the Playlist's crests in more detail** (#216, open, waiting on the owner's yes to merge;
-  a merge deploys the page, the site, the rooms and the bot; `main` with #217 merged in). Three asks:
-  - The owner's "I want you to redesign the Playlist nodes to be more detailed", both nodes, richer art and motion
-    ([[The Playlist's Nodes Are Drawn in More Detail, and Move]]): the screen's crests are worked metal shields on
-    ticked dials that turn, rising into place, the chosen glow breathing, a sweep as one is lit, a ring from a waiting
-    reward (`playlistCrest.ts`); nothing moves under reduced motion. The map's mark redrawn with it went with the sea
-    rework below.
-  - The owner's five sea asks, "take autonomy and be as detailed as possible, minimizing bugs"
-    ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]], every call of Claude's in
-    its table): the Oversea and Sealevel views switched by V or the console, the wheel zooming the Oversea view alone;
-    W, A, S and D at sea level only, a click sailing only Oversea; no pace dial, a voyage planned on the held map at
-    ×200 and a click at ×60, the sea room's ladder to 200; the ship's console (`shipConsole.ts`) in place of the sea's
-    bar, each view's own presses; docking asks first (`landingAsk.ts`, `seaLandings.ts`; L, Enter or the pad's A asks
-    where the ship lies), the dock button and the Playlist at sea gone; an Elite Dungeon gone into from the sea at
-    Normal (`node-<id>--sea`). At ×200 a ship sails past flotsam's 25 m reach in a tick, so the room gathers along the
-    leg sailed.
-  - Then the owner's "evenly designed rectangles on the screen ... with space between each", the Playlist's opening
-    its screen when clicked
-    ([[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]): over an island the
-    island's tiles (`islandPanel.ts`, `islandWords.ts`), the island's own with its chart and the way back, the port,
-    the Playlist, every patrol zone, Elite Dungeon, mission, world boss and outpost, each with its details; a click
-    does what a tile does.
-  - An independent audit of the sea change found seven defects, each fixed with a test that failed first: the first
-    place's landing went nowhere (the flow lands only at the node chosen); the page refused a Normal run started at
-    sea; the sea card's search stopped at each minute; the pad could not dock or decline; a question outlived the sea;
-    a click on a sea island's hills at sea level met nothing; a voyage sailing alone dropped to ×60.
-  - Tested offline: every JavaScript test and `cargo test` of `room`, `protocol` and `room-wasm` (the few that fail
-    here fail only on R2, which this container cannot reach; the PR has the counts), `cargo xtask repo`; the console,
-    the confirmation and the tiles pictured headless (`seaShots.ts`). Not seen in a running game: this environment's
-    network refuses R2 (`pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev`), so the page never loads. Open for the owner:
-    every call in the two decisions' tables.
+- **The sea reworked, the island's places as painted tiles, and the Playlist's crests in more detail** (#216, open,
+  waiting on CI on its head and the owner's yes to merge; a merge deploys the page, the site, the rooms and the bot,
+  and releases the desktop app, whose icon's code it changes). Four asks, each with its decision and Claude's calls in
+  its table:
+  - "I want you to redesign the Playlist nodes to be more detailed" ([[The Playlist's Nodes Are Drawn in More Detail, and Move]]):
+    the screen's crests are worked metal shields on ticked dials that turn, rising into place, the chosen glow
+    breathing, a sweep as one is lit or chosen, a ring from a waiting reward (`playlistCrest.ts`); still under
+    reduced motion. The map's mark went with the sea rework below.
+  - The owner's five sea asks ([[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]):
+    the Oversea and Sealevel views, W, A, S and D at sea level only, a voyage planned on the held map at ×200 and a
+    click at ×60, the ship's console (`shipConsole.ts`), docking that asks first (`landingAsk.ts`, `seaLandings.ts`),
+    no dock button and no Playlist at sea, an Elite Dungeon gone into from the sea at Normal (`node-<id>--sea`).
+  - "Evenly designed rectangles on the screen" ([[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]])
+    and "Painted vignettes" ([[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]):
+    over an island its places stand as tiles in a grid, each a pixel scene painted with the website's kit, now shared
+    from `client/src/art/`. Not built yet: the three landing zones, the zone's map to choose one from, their fast
+    travel; a patrol zone's tile lands at its one landing site.
+  - Audited twice. The first audit's seven sea defects were fixed before. The second, five read-only audits after
+    `main` (#211, #219, #220) was merged in (`c087e1be`), found 74 points; every real one is fixed with a test seen
+    failing first, but removals and note fixes. Among them: the island's scenes drawn stretched in a tile's padding;
+    the Playlist tile's crests open while shut; the lit tile flickering between the focus and the pointer; Enter
+    landing behind the menu; a rising tile taking clicks; the island's own tile painting in 57 to 475 ms (now 10 to
+    57, every texel the same); flotsam gathered along a chord across a turn of the course; a sea island's landing
+    sailing straight across land, not stopping a chase, and outliving a fight; a landing clicked far inland dropped;
+    the console reading ×60 while the room held the ship to ×5; dead code from the sea bar and the marks over an
+    island; some 30 notes that said otherwise than the code.
+  - Tested offline: `cargo xtask check` on `c087e1be` (the merge); on the fixes' head `a152e3fe`, the room's library
+    (1,144), clippy, rustfmt, `cargo xtask repo`, tsc, ESLint, Prettier and 3,120 client, server, site and desktop
+    tests. Not seen in a running game, on a real GPU or in a deployed room.
+  - Open for the owner, asked in the pull request: whether a Normal run started at sea should need the ship near its
+    dungeon's island (the server lets one in from any sea room; a company member also joins it from anywhere at
+    sea); which dungeon "Procedural dungeon if applicable" meant (built as the Elite Dungeon at Normal); whether
+    "salts patrol spaces" meant Saltmere's zones or every zone's; whether leaving the sea lets a landing made for go
+    (the decision lets only another course or a fight); adding `client/src/art` to `desktop.yml`'s paths and `CODE`
+    list, since the icon's drawing moved there (a deploy rule). Left as they are: the island's Elite Dungeon scene
+    and the website's gate are alike but not shared (one picture or the other would change); the port's tile paints
+    Overlook wherever it is docked (only Overlook's social space is open); the key strip lifting over the docking
+    question on views under about 950 px wide (unmeasured).
 - **Foe arrivals** (#211, a draft on branch `ccr-9e470c58-pm6nyz`, waiting on the owner's yes to merge), on the
   owner's "some enemies are already on the ground, while others come in from a dropship or spawn effect", the Grey
   Tithe's airships ("Large modified vessels retrofitted with combustible thrusters") and the Lattice's "crystallized
