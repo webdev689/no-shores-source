@@ -500,8 +500,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     wound up at them and no word of it finding them (a hit, a block, a broken guard or a parry) 0.6 s after it landed,
     as when the hop carried them out of its reach, of which the room says nothing. Once both are made, whichever came
     last, "F parries a blow as it lands; V dodges it" shows for 6 s and the fight runs as any. A boarder brought down
-    before both are made is followed by another. A boarder standing while the duel lasts that is not fighting the
-    player, as once they fall to it and rise at the checkpoint, is sent at them again (`Room::story_hunt`, the story's
+    before both are made is followed by another. Once the player falls in the duel and rises at the checkpoint, a
+    boarder still standing that is not fighting them is sent at them again (`Room::story_hunt`, the story's
     `hunt` ask), at most once a second. No foe climbs from the Brig's waist up onto its quarterdeck, so a boarder in
     the waist waits at the foot of the step for a player standing up there. Steps: Parry a blow (F), Dodge a blow (V),
     Bring the boarder down.

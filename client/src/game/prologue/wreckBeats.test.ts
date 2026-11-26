@@ -776,6 +776,12 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   assert.ok(calls.includes(`stage.parts.hud.toast(${reminder()})`), 'then the reminder');
   assert.deepEqual(hunts, [], 'a boarder fighting the player is left to it');
   state.view = { ...blow(30), target: null } as FighterView;
+  step();
+  assert.deepEqual(hunts, [], 'nor one that turned away from a player who never fell');
+  state.action = 'dead';
+  step();
+  assert.deepEqual(hunts, [], 'nor at a player lying dead');
+  state.action = 'idle';
   for (let nth = 0; nth < 12; nth++) step();
   assert.deepEqual(hunts, [7, 7], 'one that has stopped, as the player rose, is sent at them again, once a second');
   state.view = null;

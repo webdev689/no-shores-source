@@ -62,8 +62,8 @@ const FLOATS_M = 0.5;
 
 /** `mesh` with every heap that floats over the floor under its box (`floorUnder` of `ground`, by `gates`, each
  *  closing the zone one below its piece) set down until its lowest point stands on that floor; the rest as it is.
- *  shortcut: the heap closing the Brig's waist was piled on a spar over its deck by tools/wreck before its fix; once
- *  the wreck's workflow has published a mesh built since, no heap floats and this lowers nothing. */
+ *  shortcut: the published mesh's heap closing the Brig's waist stands on a spar over its deck; once the wreck's
+ *  workflow publishes a mesh built with tools/wreck's `floor_under`, no heap floats and this can go. */
 export function settleHeaps(
   mesh: WreckMesh,
   ground: readonly CourseBlock[],

@@ -121,6 +121,8 @@ export class WreckFight implements Beat {
   private clock = 0;
   /** When the boarder was last sent at the player again. */
   private rehunted = -Infinity;
+  /** Whether the player fell in the duel and the boarder has not yet come for them since. */
+  private fellInDuel = false;
   private lastHealth: { boss: number; you: number } | null = null;
   /** Whether a Tithe hand has cried out at the player. */
   private spotted = false;
@@ -466,7 +468,9 @@ export class WreckFight implements Beat {
     if (this.tutorial.wantsBoarder(run.boarder)) run.standBoarder();
     // A player risen from a fall is no one the boarder fights: it is sent at them again, so its blows come on.
     const boarder = run.boarderView;
-    const risen = (fight.own?.health ?? 0) > 0 && boarder?.target !== fight.player;
+    const dead = fight.own?.action.kind === 'dead';
+    this.fellInDuel = (this.fellInDuel || dead) && boarder?.target !== fight.player;
+    const risen = this.fellInDuel && !dead && (fight.own?.health ?? 0) > 0;
     if (this.tutorial.stage === 'duel' && boarder && risen && this.clock - this.rehunted >= REHUNT_S) {
       this.rehunted = this.clock;
       void run.openRoom.story({ ask: 'hunt', foe: run.boarderId });
