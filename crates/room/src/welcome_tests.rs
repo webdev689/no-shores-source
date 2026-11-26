@@ -16,6 +16,16 @@ fn speak(room: &mut Room, player: crate::PlayerId, keeper: u8) -> u8 {
     room.player(player).expect("in").answer
 }
 
+/// Acquires the round from the Weaponsmith, who offers it once the stranger is heard: the answer's number.
+fn acquire(room: &mut Room, player: crate::PlayerId) -> u8 {
+    room.answer(player, Asked::Gear(Ask::Acquire { keeper: WEAPONSMITH }));
+    room.player(player).expect("in").answer
+}
+
+/// The Weaponsmith's number in ask 64, and her counter.
+const WEAPONSMITH: u8 = 13;
+const HER_COUNTER: Counter = Counter { kind: CounterKind::Vendor(gear::vendor::Vendor::Weaponsmith), at: [10.0, 0.0] };
+
 fn aurem(room: &Room, player: crate::PlayerId) -> u32 {
     room.player(player).expect("in").character.materials.aurem
 }
@@ -38,11 +48,30 @@ fn the_stranger_is_heard_anywhere_in_a_social_space_once_and_gives_no_aurem() {
 }
 
 #[test]
+fn the_round_is_acquired_from_the_weaponsmith_at_her_counter_alone_and_counts_her_word() {
+    let mut room = node_room("harbour-social", &[]);
+    room.counters = Some(vec![HER_COUNTER]);
+    let player = joined(&mut room, &Character::starting(), [60.0, 0.0]);
+    assert_eq!(speak(&mut room, player, STRANGER), 0);
+    let offered = |room: &Room| room.player(player).expect("in").character.quest_offered();
+    assert_eq!(offered(&room), Some(WEAPONSMITH));
+    assert_eq!(acquire(&mut room, player), answer_code(Err(Refusal::NotHere)), "away from her counter");
+    assert_eq!(speak(&mut room, player, WEAPONSMITH), answer_code(Err(Refusal::NotHere)));
+    stand_at(&mut room, player, [10.0, 1.0]);
+    assert_eq!(speak(&mut room, player, WEAPONSMITH), answer_code(Err(Refusal::NothingToSay)), "Acquire is the word");
+    assert_eq!(acquire(&mut room, player), 0);
+    assert_eq!(offered(&room), None);
+    assert_eq!(room.player(player).expect("in").character.quest_counts()[0], 1, "her goal met by it");
+    assert_eq!(acquire(&mut room, player), answer_code(Err(Refusal::NothingOffered)), "once");
+}
+
+#[test]
 fn the_tack_gives_the_bay_worn_as_she_is_spoken_with_at_her_counter_on_the_round() {
     let mut room = node_room("harbour-social", &[]);
-    room.counters = Some(vec![Counter { kind: CounterKind::Tack, at: [10.0, 0.0] }]);
+    room.counters = Some(vec![Counter { kind: CounterKind::Tack, at: [10.0, 0.0] }, HER_COUNTER]);
     let player = joined(&mut room, &Character::starting(), [10.0, 1.0]);
     assert_eq!(speak(&mut room, player, STRANGER), 0);
+    assert_eq!(acquire(&mut room, player), 0);
     let tack = (1..=u8::MAX).find(|number| keeper_key(*number) == Some("tack")).expect("the Tack's number");
     stand_at(&mut room, player, [60.0, 0.0]);
     assert_eq!(speak(&mut room, player, tack), answer_code(Err(Refusal::NotHere)), "away from her counter");
@@ -57,9 +86,10 @@ fn the_tack_gives_the_bay_worn_as_she_is_spoken_with_at_her_counter_on_the_round
 #[test]
 fn the_postmaster_is_spoken_with_at_the_mail_counter() {
     let mut room = node_room("harbour-social", &[]);
-    room.counters = Some(vec![Counter { kind: CounterKind::Mail, at: [10.0, 0.0] }]);
+    room.counters = Some(vec![Counter { kind: CounterKind::Mail, at: [10.0, 0.0] }, HER_COUNTER]);
     let player = joined(&mut room, &Character::starting(), [10.0, 1.0]);
     assert_eq!(speak(&mut room, player, STRANGER), 0);
+    assert_eq!(acquire(&mut room, player), 0);
     let mail = (1..=u8::MAX).find(|number| keeper_key(*number) == Some("mail")).expect("the Postmaster's number");
     assert_eq!(speak(&mut room, player, mail), 0);
     let (quest, task) = room.player(player).expect("in").character.quest_now().expect("the opening");

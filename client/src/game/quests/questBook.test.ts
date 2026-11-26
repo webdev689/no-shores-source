@@ -19,10 +19,12 @@ import {
   MOUNT_NOTES,
   hordeRunning,
   linesBetween,
+  offeredAt,
   puzzlePoints,
   talkAt,
   trackedOf,
 } from './questBook.ts';
+import { bookCard } from './questCard.ts';
 
 // The roads are written by their story's own hand and change: these tests read what they expect from the file.
 
@@ -309,4 +311,42 @@ test('every scene a road names is in its lines: begins, starts, ends, goals met,
       ),
     ])
       if (named !== undefined) assert.ok(scenes[named], `${quest.id} names ${named}`);
+});
+
+test('a quest offered by a keeper shows its offer at their counter, and the tracker leads there to acquire it', () => {
+  const opening = questOf('house');
+  const round = taskOf(opening, 'find-your-way');
+  assert.equal(offeredAt(onTask(opening, 0), 'weaponsmith'), null, "not on the stranger's task");
+  const waiting = onTask(opening, round, [], { offered: COUNTERS.weaponsmith });
+  const offered = offeredAt(waiting, 'weaponsmith');
+  assert.equal(offered?.quest.name, 'A House of Your Own');
+  assert.equal(offered?.acquired, false);
+  assert.equal(offeredAt(waiting, 'armorsmith'), null, 'another keeper offers it not');
+  assert.deepEqual(trackedOf(waiting), {
+    name: 'A House of Your Own',
+    task: 'Acquire it',
+    steps: [{ text: 'The Weaponsmith', done: false }],
+  });
+  assert.equal(talkAt(waiting, 'weaponsmith')?.text, 'The Weaponsmith', 'her keeper lit, the mark led there');
+  assert.equal(talkAt(waiting, 'armorsmith'), null, 'no other word counts before');
+  const acquired = onTask(opening, round, [1]);
+  assert.equal(offeredAt(acquired, 'weaponsmith')?.acquired, true, 'shown acquired while it is walked');
+  assert.equal(trackedOf(acquired)?.steps[0]?.done, true);
+  const road = onTask(STORM, 0, [], { offered: COUNTERS.stormcallers });
+  assert.equal(offeredAt(road, 'stormcallers')?.offer.story, 'stormBegin', 'a road from its leader, in their words');
+});
+
+test("the Journal's hover card is the keeper's card: the task's objectives ticked, a done quest's all, a waiting one where to acquire it", () => {
+  const opening = questOf('house');
+  const round = taskOf(opening, 'find-your-way');
+  const walking = bookCard('house', onTask(opening, round, [1, 0, 1]));
+  assert.deepEqual(
+    walking?.steps.slice(0, 3).map((step) => step.done),
+    [true, false, true],
+  );
+  assert.equal(walking?.said, 'Acquired');
+  assert.equal(bookCard('house', onTask(opening, round, [], { offered: 13 }))?.said, 'Acquire it from the Weaponsmith');
+  const done = bookCard('house', onTask(STORM, 0, [], { done: [1, 0, 0, 0] }));
+  assert.ok(done?.said === 'Done' && done.steps.every((step) => step.done));
+  assert.equal(bookCard('lamplighters', onTask(STORM, 0)), null, 'neither walked nor done');
 });

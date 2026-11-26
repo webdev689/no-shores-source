@@ -10,6 +10,11 @@ code:
   - crates/gear/src/gifts.rs#Gift
   - crates/gear/src/gifts.rs#give_gift
   - client/src/game/quests/questNews.ts#giftNotice
+  - client/src/game/quests/questNews.ts#stepsBetween
+  - crates/gear/src/quest_defs.rs#OfferDef
+  - crates/gear/src/quests.rs#quest_offered
+  - client/src/game/quests/questBook.ts#offeredAt
+  - client/src/game/quests/questCard.ts#bookCard
   - crates/gear/src/arts.rs#WornArts
   - crates/room/src/quests.rs#QuestGround
   - crates/room/src/quests.rs#set_places
@@ -153,8 +158,10 @@ and at her counter for nothing to one who pledged before the round reached her
 **Choose a house**, the pledge. Its `begin` is the Weaponsmith calling the player over; the houses' task begins with
 Arlo's word to hear all three.
 
-The page announces each gift as it comes, in a toast ([[Interface]]), through one function, `giftNotice`: the
-Weaponsmith's, the Armorsmith's and the rest as their goals are met, the Sloop as its task is done.
+The page announces each gift as it comes, as a notice at the foot of the screen ([[Interface]], "Notices of what is
+obtained"), through one function, `giftNotice`: the Weaponsmith's, the Armorsmith's and the rest as their goals are
+met, the Sloop as its task is done, each by its keeper's mark; the Armorsmith's tells the Character key, the Tack's
+the Mount key.
 
 ### The lessons
 
@@ -162,8 +169,8 @@ Riding and sailing are taught as the wreck teaches ([[Prologue]], "The teaching"
 [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]): each step
 a goal the rooms tick from what the body, the horse or the ship did, so any input serves; a step done early stays
 done; the tracker names each step's keys as bound now on the keys or the pad played last (`lessonKeys`), the defaults
-on the keys below; and the page announces each step as the room ticks it, in a toast through the quest's news
-(`lessonsBetween`: "Riding: Gallop", "Sailing: Steer").
+on the keys below; and the page announces each step as the room ticks it, a notice at the foot under the Tack's or the
+Harbourmaster's mark, through the quest's news (`lessonsBetween`: "Riding", "Gallop"; "Sailing", "Steer").
 
 - **Ride the Bay**, in Overlook's social space, where the room lets a rider ride: Get up on your horse (`,`), Ride at
   a walk (W), Gallop (Shift), Spur it on (Space: a rider's jump is the boost), Get down (`,`), and Ride to the
@@ -234,10 +241,25 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   do: each kill's XP and Aurem, and the task's clear ([[Gear]], "A clear").
 - **On the wire**: the gear message's `quest_horde`, its foes left and all of them while it runs (empty else); and
   while it runs `arts_earned` holds every bit of the worn Art. The tracker shows the foes left of all of them beside
-  the goal ("17/29", as a puzzle's points lit of all), and the wait after a fall as a defence's; a toast says "Storm
-  unbounded: every ability ready" (the worn Art's name) as long as it runs, and "Storm bound again" for 4 s as it
-  ends. The ability bar shows every ability ready and none locked, each glowing in the Art's colour under an infinity
+  the goal ("17/29", as a puzzle's points lit of all), and the wait after a fall as a defence's; a notice under the
+  Art's emblem says "Storm unbounded", "Every ability ready" (the worn Art's name) as it begins, and "Storm bound
+  again", "Its abilities cost as before" as it ends. The ability bar shows every ability ready and none locked, each glowing in the Art's colour under an infinity
   mark while the horde runs (`hordeRunning`; [[Arts]], "The ability bar"), all from the room's word.
+
+## Offered by a keeper
+
+A quest may be offered as an item by a keeper (its `offer`;
+[[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]): the keeper by their key (`keeper`, a house's or a counter's, never the stranger's), the task
+from which it waits (`at`, its first when left out), and its card's words: its `kind`, its `rarity` (the gear's
+numbers), its `words`, the keeper's `quote` (a line, held to [[Dialogue]]'s words) and the scene of their longer words
+(`story`). The opening is offered by the Weaponsmith from **Find your way round Overlook** (the stranger's task walks
+before), so her word and her gift come as it is acquired; each house's road by its leader, at the chapel, from its
+first task, in its own begin's words. While the quest walked waits on the task its offer names with nothing counted
+there and is not acquired, nothing of it counts, the room walks and marks none of its goals (`goals_unmet` is empty),
+and no word is asked of anyone but by Acquire at that keeper's counter (ask 85), which is a word with them and is
+asked once until the room answers, the keeper thanking the player for it; a save with a place past it, or a count at it, reads as acquired. The
+acquired are kept by quest id (`acquired`). Claude's calls:
+[[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]].
 
 ## In the rules
 
@@ -265,7 +287,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
 
 ## On the wire
 
-- **Asks**: 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
+- **Asks**: 85 acquires the quest walked from the keeper who offers it (`column`: their number, as 64's), answered
+  only within reach of their counter and while it waits for them. 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
   the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster, 17 the Postmaster), answered only within reach of
   that counter; 18 the stranger, answered anywhere in a social space;
   65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list). At sea, a
@@ -276,9 +299,10 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
 - **The gear message** carries, at the end of its table: the quest walked (`quest`, its place in the file counted
   from 1, 0 for none), its task (`quest_task`), that task's goals' counts (`quest_counts`), each quest done
   (`quests_done`, 1 or 0 by place), each Art's earned bits (`arts_earned`: 1 the Art, 2 its first Tenet, 4 its
-  second), each Art's fragment choices waiting (`fragment_choices`), and where the task's first unmet goal with a
+  second), each Art's fragment choices waiting (`fragment_choices`), where the task's first unmet goal with a
   place stands in the player's room (`quest_at`: x, y and reach, empty when none is here; at sea, the Harbourmaster's
-  hulk while the sailing lesson asks a ball in it).
+  hulk while the sailing lesson asks a ball in it), and the keeper offering the quest walked while it waits
+  (`quest_offered`, their number as ask 64's, 0 for none).
 
 ## In the browser
 
@@ -294,8 +318,17 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is
   done and the next task's `start` as it begins, a `talk` goal's `scene` as the keeper is spoken with. A page that loads
   mid-road says nothing it has said before. How they are written: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
-- **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
-  with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
+- **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, or whose keeper offers
+  the quest walked while it waits, the offer reads "Speak with" and the keeper's name; pressed, it opens their screen
+  ([[Interface]], "The social space's counters"), which asks 64 as it opens and says the goal's scene there as the room
+  meets it, or shows the quest's card with Acquire. Otherwise the counter opens as before.
+- **A quest offered**: while it waits, the tracker shows its name, "Acquire it" and the keeper's goal words, its mark
+  leads to their counter and their keeper is lit; once acquired, the keeper's screen shows it as a small tile beside the
+  crest, its card, its boxes ticking, on the pointer, the keys or a tap, until it is done. The Journal's card of a quest
+  shows the same card in its hover card, a quest done with every box of its last task ticked, one waiting saying whom it
+  is acquired from (`bookCard`); the tracker's steps wear the card's box.
+- **What is noticed**: a quest acquired, each step done and a quest done, each gift and each Art, Tenet or fragment a
+  road gives, stand as notices at the foot of the screen (`stepsBetween`, `giftsBetween`).
 - **Marks**: every objective has a waypoint on the compass, on land and at sea, its distance under it, and on foot a
   mark on the screen where it points ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]];
   `client/src/game/quests/waypoint.ts`). It points at the task's first unmet goal with somewhere to point, step by step

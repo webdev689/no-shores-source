@@ -78,6 +78,10 @@ fn every_place() -> Vec<Place> {
 
 /// Meets every goal of the task the player is on, each until its count.
 fn meet_task(character: &mut Character, places: &[Place]) {
+    // A quest that waits to be acquired is acquired from its keeper first: nothing counts before.
+    if let Some(keeper) = character.quest_offered() {
+        character.ask(Ask::Acquire { keeper }, AT_COUNTER, &DICE).expect("acquired");
+    }
     let now = character.quest_now().expect("a task to meet");
     for (at, goal) in quests().quests[now.0].tasks[now.1].goals.iter().enumerate() {
         while character.quest_now() == Some(now) && character.quest_counts()[at] < goal.count {
@@ -210,6 +214,54 @@ fn the_opening_is_walked_by_speaking_with_each_keeper_it_names_and_ends_in_a_ple
     }
     assert!(character.quests_done()[opening], "the opening done");
     assert_eq!(character.quest_now(), Some((road_of(1), 0)), "the pledged house's road begins");
+}
+
+#[test]
+fn a_quest_offered_by_a_keeper_counts_nothing_until_acquired_from_them_at_their_counter() {
+    let opening = road_of(0);
+    let mut character = Character::starting();
+    // The stranger's task walks before anything is offered.
+    assert_eq!(character.quest_offered(), None, "the stranger's word is heard before the opening is offered");
+    assert!(character.ask(Ask::Speak { keeper: keeper("stranger") }, AT_COUNTER, &DICE).is_ok());
+    let weaponsmith = keeper("weaponsmith");
+    assert_eq!(character.quest_offered(), Some(weaponsmith), "the Weaponsmith offers the round");
+    let (quest, task) = character.quest_now().expect("the opening");
+    assert_eq!(character.ask(Ask::Speak { keeper: weaponsmith }, AT_COUNTER, &DICE), Err(Refusal::NothingToSay));
+    assert!(!character.tell(&Event::Talk("armorsmith")), "nothing counts before it is acquired");
+    assert_eq!(character.goals_unmet().count(), 0, "so the room walks and marks none of its goals");
+    assert_eq!(character.ask(Ask::Acquire { keeper: weaponsmith }, AFIELD, &DICE), Err(Refusal::NotHere));
+    let before = character.clone();
+    let armorsmith = keeper("armorsmith");
+    assert_eq!(character.ask(Ask::Acquire { keeper: armorsmith }, AT_COUNTER, &DICE), Err(Refusal::NothingOffered));
+    assert_eq!(character, before, "a refusal changes nothing");
+    assert!(character.ask(Ask::Acquire { keeper: weaponsmith }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.quest_offered(), None, "acquired");
+    assert_eq!(character.quest_now(), Some((quest, task)), "on the same task");
+    assert_eq!(character.quest_counts()[0], 1, "acquiring is a word with the Weaponsmith: her goal is met");
+    assert!(character.quests.gifts.contains(&"weapons".to_owned()), "and her gift given");
+    assert_eq!(character.ask(Ask::Acquire { keeper: weaponsmith }, AT_COUNTER, &DICE), Err(Refusal::NothingOffered));
+    assert!(character.quests.acquired.contains(&quests().quests[opening].id));
+    // A house's road waits to be acquired from its leader at the pledge.
+    assert!(character.ask(Ask::Pledge { faction: 2 }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.quest_offered(), Some(2), "Maren Hale offers the Lamplighters' road");
+    assert!(character.ask(Ask::Acquire { keeper: 2 }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.quest_offered(), None);
+}
+
+#[test]
+fn a_save_with_a_place_past_an_offer_or_a_count_at_it_reads_as_acquired() {
+    let mut character = Character::starting();
+    assert!(character.ask(Ask::Speak { keeper: keeper("stranger") }, AT_COUNTER, &DICE).is_ok());
+    let (quest, task) = character.quest_now().expect("the opening");
+    // A save kept before quests were offered, partway round the counters.
+    character.quests.roads.get_mut(&quests().quests[quest].id).expect("its road").counts[1] = 1;
+    assert_eq!(character.quest_offered(), None, "a count at the task: it was walked before offers");
+    let mut later = Character::starting();
+    later.quests.set_task(quest, task + 1);
+    later.quests.acquired.clear();
+    assert_eq!(later.quest_offered(), None, "a task past the offer");
+    let json = serde_json::to_value(&later.quests).expect("written");
+    assert!(json.get("acquired").is_none(), "none acquired is not written");
 }
 
 #[test]

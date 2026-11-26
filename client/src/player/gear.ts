@@ -170,6 +170,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   136: 'There is no such keeper.',
   137: 'They have nothing more to say to you now.',
   138: 'No fragment of that Art waits to be chosen.',
+  139: 'They have nothing to offer you now.',
   141: 'There is no such letter.',
   151: 'There is no such guild bounty this week.',
   152: 'Your guild has not finished that bounty yet.',

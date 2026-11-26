@@ -85,6 +85,8 @@ pub enum Refusal {
     NothingToSay = 136,
     /// No fragment choice waits for that Art.
     NoChoice = 137,
+    /// The keeper offers no quest waiting to be acquired.
+    NothingOffered = 138,
     /// No letter of that number waits in the mail, or none at all: answered as 141.
     NoSuchLetter = 140,
     /// The guild's asks: no such guild bounty this week, one the guild has not finished, one claimed already this

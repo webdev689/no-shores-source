@@ -21,8 +21,11 @@ fn keeper(key: &str) -> u8 {
     (1..=u8::MAX).find(|number| keeper_key(*number) == Some(key)).expect("a keeper")
 }
 
+/// A word with a keeper: Acquire where they offer the quest walked, as the round's first word is.
 fn speak(character: &mut Character, key: &str) {
-    assert!(character.ask(Ask::Speak { keeper: keeper(key) }, SOCIAL, &DICE).is_ok(), "{key}");
+    let keeper = keeper(key);
+    let word = if character.quest_offered() == Some(keeper) { Ask::Acquire { keeper } } else { Ask::Speak { keeper } };
+    assert!(character.ask(word, SOCIAL, &DICE).is_ok(), "{key}");
 }
 
 /// A new character in Overlook: the stranger heard.

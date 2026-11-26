@@ -1,7 +1,8 @@
 // The bounty board's screen in the menu, drawn by the game, opened at its counter in Overlook's plaza, after
-// Destiny's Bounty Tracker and laid as a keeper's screen is: the board itself on its lit stage at the left under its
-// mark and title; at the right its words and what the player holds, the day's bounties under "Available bounties" in
-// a row to each kind (the town's six, then the pledged faction's three), and the time to the next board at the foot.
+// Destiny's Bounty Tracker and laid in a keeper's frame (npc/keeperFrame.ts): the board itself at the left where a
+// keeper stands, its name and words at the foot; at the top right its mark and what the player holds, and under it the
+// day's bounties under "Available bounties" in a row to each kind (the town's six, then the pledged faction's three),
+// and the time to the next board at the foot.
 // The card of the tile pointed at or holding the keys floats beside it, and each bounty is taken and turned in there by
 // the day of the board shown. Nothing here judges a rule: the room refuses what the board no longer offers.
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
@@ -10,13 +11,14 @@ import { SLOTS, WORN } from '../player/gear.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { factionNamed, posterEmblem } from './bountyFaces.ts';
-import { boardStage } from './bountyStage.ts';
+import { GOLD, boardFigure, boardMark } from './bountyStage.ts';
 import { bountyCardNode, bountyTileNode, lockedTileNode, shutCardNode } from './bountyTiles.ts';
 import { nameCard } from './gearCard.ts';
 import { type Hint, INK, emblemNode, glyphNode, label, words } from './gearNodes.ts';
 import { countdownWords } from './journalWords.ts';
 import type { MenuContext } from './menuPage.ts';
 import { reputationOf } from './npc/factionRows.ts';
+import { bodyWidth, crestNode, keeperFrame, stageOf } from './npc/keeperFrame.ts';
 
 const SHUT = 'The bounty board opens after the prologue.';
 const LOCKED = 'Pledge to a faction at its counter in Overlook to take its bounties.';
@@ -26,8 +28,6 @@ export const BOARD_TITLE = 'The Bounty Board';
 const BOARD_WORDS = 'When Overlook needs a hand, it posts a bounty here. The factions post their own.';
 /** How many bounties a faction posts a day. */
 const FACTION_BOUNTIES = 3;
-/** A room narrower than this, in pixels, stands the board's stage over the rest, as a keeper's. */
-const NARROW = 600;
 /** The cloak's slot, where a faction's cape is worn. */
 const SLOT_CLOAK = SLOTS.indexOf('cloak');
 
@@ -223,67 +223,62 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
     if (id === shown) context.card(id, () => shutCardNode('Faction bounties', shut ? SHUT : LOCKED, sizes));
     return lockedTileNode(id, wide);
   });
-  const narrow = room.width < NARROW;
-  const stageWidth = narrow ? room.width : Math.floor((room.width * 2) / 5);
-  const sideWidth = narrow ? room.width : room.width - stageWidth;
+  const stage = stageOf(room);
+  const narrow = stage.narrow;
   const text = sizes.label;
+  const width = bodyWidth(room, text);
   const gap = wide ? 8 : 6;
   const row = (children: readonly Child[]): Node => ({ gap, wrap: true, children });
   const reset = resetAt();
-  return {
-    id: 'board',
-    width: room.width,
-    height: room.height,
-    direction: narrow ? 'column' : 'row',
-    children: [
-      boardStage(BOARD_TITLE, stageWidth, narrow ? Math.floor(room.height / 3) : room.height, wide),
-      {
-        width: sideWidth,
-        height: 'grow',
-        direction: 'column',
-        gap: 11,
-        padding: [11, 22],
-        children: [
-          {
-            width: 'grow',
-            gap: 22,
-            alignY: 'center',
-            children: [
-              { width: 'grow', text: { words: BOARD_WORDS, size: text, colour: INK.faint, wrap: true } },
-              purseNode(context, shown),
-            ],
-          },
-          {
-            // Its own scroll, so on a short screen the faction's row and the time to the next board can be reached.
-            id: 'board-bounties',
-            width: 'grow',
-            height: 'grow',
-            scroll: true,
-            direction: 'column',
-            gap,
-            padding: [11, 0, 0, 0],
-            children: [
-              {
-                width: 'grow',
-                direction: 'column',
-                gap: 4,
-                padding: [0, 0, 6, 0],
-                children: [
-                  label('Available bounties', narrow ? text : text + 1, INK.word),
-                  { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
-                ],
-              },
-              { direction: 'column', gap, opacity: shut ? 0.6 : 1, children: [row(town), row([...theirs, ...locked])] },
-              {
-                padding: [gap, 0, 0, 0],
-                children: [
-                  footNode(reset === null ? null : reset - now(), text, Math.min(wide ? 880 : 572, sideWidth - 44)),
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  };
+  const mark = boardMark(text > 1 ? 76 : 56);
+  const crest = crestNode(
+    mark,
+    { share: null, named: '' },
+    purseNode(context, shown),
+    GOLD,
+    Math.min(width, 520),
+    text,
+  );
+  return keeperFrame(
+    room,
+    text,
+    {
+      glow: GOLD,
+      figure: boardFigure(stage.width, stage.height),
+      role: "Overlook's bounties",
+      name: BOARD_TITLE,
+      about: BOARD_WORDS,
+      crest,
+      body: [
+        {
+          // Its own scroll, so on a short screen the faction's row and the time to the next board can be reached.
+          id: 'board-bounties',
+          width: 'grow',
+          height: 'grow',
+          scroll: true,
+          direction: 'column',
+          gap,
+          padding: [11, 0, 0, 0],
+          children: [
+            {
+              width: 'grow',
+              direction: 'column',
+              gap: 4,
+              padding: [0, 0, 6, 0],
+              children: [
+                label('Available bounties', narrow ? text : text + 1, INK.word),
+                { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
+              ],
+            },
+            { direction: 'column', gap, opacity: shut ? 0.6 : 1, children: [row(town), row([...theirs, ...locked])] },
+            {
+              padding: [gap, 0, 0, 0],
+              children: [footNode(reset === null ? null : reset - now(), text, Math.min(wide ? 880 : 572, width))],
+            },
+          ],
+        },
+      ],
+    },
+    'board',
+  );
 }

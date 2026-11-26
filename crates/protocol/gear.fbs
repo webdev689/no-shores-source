@@ -274,6 +274,9 @@ table Gear {
   // Their house's horde while it runs in their room: its foes left and all of them (empty while none runs). While it
   // runs the worn Art is theirs unbounded: its Anima and Tenets kept full, and arts_earned lends it whole.
   quest_horde: [ushort];
+  // The keeper who offers the quest they walk while it waits to be acquired from them, by the number ask 64 sends
+  // (0 for none): until it is, nothing of it counts.
+  quest_offered: ubyte;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

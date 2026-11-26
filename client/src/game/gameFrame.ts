@@ -377,7 +377,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.tasks.show(shown.quest ?? quests.tracked);
     const nameOf = (id: number) => (here.fight.others.has(id) ? (here.otherPlayers.plateOf(id)?.name ?? '') : null);
     reviveNotices.hear(shown.fight.events, here.fight.player, nameOf, performance.now());
-    hud.toast(...toldNow(), ...reviveNotices.lines(performance.now()), ...quests.toasts, ...playing.lore.toasts);
+    hud.toast(...toldNow(), ...reviveNotices.lines(performance.now()), ...playing.lore.toasts);
     heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
@@ -423,7 +423,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     playing.quests.hear(playing.sea?.gear?.gear);
     playing.quests.frame(seconds, playing.after.past, paused);
     playing.lore.hear(playing.sea?.gear?.gear);
-    hud.toast(...toldNow(), ...playing.quests.toasts, ...playing.lore.toasts);
+    hud.toast(...toldNow(), ...playing.lore.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);

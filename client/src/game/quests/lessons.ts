@@ -38,7 +38,7 @@ export function doneAnywhere(goal: Goal, atSea: boolean): boolean {
   return goal.kind === 'sail' && atSea && goal.act !== 'fire';
 }
 
-/** The notice a lesson's step is announced by as the room ticks it. */
-export function lessonNotice(goal: Goal): string {
-  return `${goal.kind === 'ride' ? 'Riding' : 'Sailing'}: ${goal.text}`;
+/** The notice a lesson's step is announced by as the room ticks it: the lesson, then the step. */
+export function lessonNotice(goal: Goal): { readonly title: string; readonly line: string } {
+  return { title: goal.kind === 'ride' ? 'Riding' : 'Sailing', line: goal.text };
 }

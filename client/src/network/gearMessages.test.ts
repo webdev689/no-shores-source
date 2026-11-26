@@ -347,6 +347,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
   Gear.addArtsEarned(builder, earned);
   Gear.addFragmentChoices(builder, choices);
   Gear.addQuestAt(builder, where);
+  Gear.addQuestOffered(builder, 13);
   Gear.addClaimed(builder, true);
   builder.finish(Gear.endGear(builder));
   const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
@@ -357,7 +358,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
     done: [1, 0, 0, 0],
     choices: [1, 0, 0],
     at: [120.5, -40, 30],
-    ...{ clock: null, fails: [], points: [], figures: [], ward: null, horde: null, claimed: true },
+    ...{ clock: null, fails: [], points: [], figures: [], ward: null, horde: null, offered: 13, claimed: true },
   });
   assert.deepEqual(read.arts?.earned, [0b011, 0, 0]);
   assert.deepEqual(
@@ -384,6 +385,7 @@ test("the roads' part of the gear message reads back: the quest walked, its coun
       figures: [],
       ward: null,
       horde: null,
+      offered: 0,
       claimed: false,
     },
     "none walked, nor on the player's own character",
@@ -430,6 +432,7 @@ test("the roads' asks carry the numbers the protocol reads them by, with the kee
   const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment], [number('SPEAK'), number('CHOOSE_FRAGMENT')]);
+  assert.equal(ASKS.acquire, number('ACQUIRE'));
   assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment, ASKS.usePoint], [64, 65, 66]);
   const bytes = inputBytes(6, {
     intent: new Float64Array(18),

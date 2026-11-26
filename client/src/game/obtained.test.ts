@@ -1,0 +1,98 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import type { Node } from '../ui/node.ts';
+import { laidOf, wordsIn } from '../ui/uiForTests.ts';
+import { LINE_INK, NOTICE_FILL, NOTICE_S, Obtained, WITH_KEY_S, noticeNode } from './obtained.ts';
+
+const notice = (title: string, more = {}) => ({ title, line: `${title}, given`, icon: null, ...more });
+
+test('what is obtained is noticed one at a time, in order, each its while, a repeat merged and none lost', () => {
+  const heard: string[] = [];
+  const obtained = new Obtained((said) => heard.push(said));
+  obtained.notify(notice('The Sloop'), notice('The Bay Horse'), notice('The Sloop'));
+  assert.equal(obtained.waiting, 2, 'the repeat merged into the one waiting');
+  assert.equal(obtained.shown(0, false)?.notice.title, 'The Sloop');
+  assert.deepEqual(heard, ['The Sloop. The Sloop, given'], 'read to a screen reader as it stands');
+  assert.equal(obtained.shown(NOTICE_S - 0.1, false)?.notice.title, 'The Sloop', 'it stands its while');
+  assert.equal(obtained.shown(NOTICE_S + 0.1, false)?.notice.title, 'The Bay Horse', 'then the next');
+  assert.equal(obtained.shown(NOTICE_S * 3, false), null, 'then none');
+});
+
+test('a notice waits while someone speaks, its clock held, and one with a key stands longer', () => {
+  const obtained = new Obtained(() => undefined);
+  obtained.notify(notice('Inventory', { key: 'inventory', line: 'Press {key} to open your inventory.' }));
+  assert.equal(obtained.shown(0, true), null, 'held while the dialogue box speaks');
+  assert.equal(obtained.shown(30, true), null);
+  assert.equal(obtained.shown(31, false)?.notice.title, 'Inventory', 'shown once the words end');
+  assert.ok(WITH_KEY_S > NOTICE_S);
+  assert.equal(obtained.shown(31 + WITH_KEY_S - 0.1, false)?.notice.title, 'Inventory', 'a key to press: longer');
+});
+
+/** Every word a node holds, in order. */
+function said(node: Node | null | undefined): string[] {
+  if (!node) return [];
+  const own = node.text
+    ? [typeof node.text.words === 'string' ? node.text.words : node.text.words.map((span) => span.words).join('')]
+    : [];
+  return [...own, ...(node.children ?? []).flatMap((child) => (child ? said(child) : []))];
+}
+
+test("the notice's band names it, its key on a keycap in its line, and the key and what it opens at the far right", () => {
+  const band = noticeNode(
+    {
+      title: 'Your gear',
+      line: 'Press {key} to open your character screen.',
+      icon: null,
+      key: 'character',
+      opens: 'Open Character',
+    },
+    { width: 1920, height: 1080 },
+    1,
+  );
+  const words = said(band);
+  assert.ok(words.includes('Your gear'));
+  assert.ok(words.includes('Press') && words.includes('to open your character screen.'), 'the line round its key');
+  assert.ok(words.includes('Open Character'), 'what the key opens, at the right');
+  assert.equal(band.through, true, 'the pointer passes to what is under it');
+  const phone = noticeNode(notice('The Sloop'), { width: 390, height: 844 }, 1);
+  assert.ok(!said(phone).includes('Open Character'), 'no key: no hint at the right');
+});
+
+/** A channel's share of a colour's relative luminance, as WCAG reckons it. */
+const linear = (channel: number) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+const luminance = ([red, green, blue]: readonly number[]) =>
+  0.2126 * linear((red ?? 0) / 255) + 0.7152 * linear((green ?? 0) / 255) + 0.0722 * linear((blue ?? 0) / 255);
+/** `top` at `alpha` laid over `under`. */
+const blend = (top: readonly number[], alpha: number, under: readonly number[]) =>
+  top.map((channel, index) => channel * alpha + (under[index] ?? 0) * (1 - alpha));
+
+test("the notice's band is a translucent grey the screen shows through, its words reading on it over white or black", () => {
+  const [red = 0, green = 0, blue = 0, alpha = 1] = (NOTICE_FILL.match(/[\d.]+/g) ?? []).map(Number);
+  assert.ok(alpha <= 0.8 && alpha >= 0.5, `translucent, as the reference's (${alpha})`);
+  for (const under of [
+    [255, 255, 255],
+    [0, 0, 0],
+    [128, 128, 128],
+  ]) {
+    const ground = blend([red, green, blue], alpha, under);
+    // The line, and the key and what it opens at the right, the dimmest of its words.
+    const [lineRed = 0, lineGreen = 0, lineBlue = 0, lineAlpha = 1] = (LINE_INK.match(/[\d.]+/g) ?? []).map(Number);
+    const line = blend([lineRed, lineGreen, lineBlue], lineAlpha, ground);
+    const ratio = (luminance(line) + 0.05) / (luminance(ground) + 0.05);
+    assert.ok(ratio >= 4.5, `the line reads at 4.5:1 over ${under.join(',')} (${ratio.toFixed(2)}:1)`);
+  }
+});
+
+test("on a phone a notice's long line wraps inside the view, none of it cut off at the right", () => {
+  const view = { width: 412, height: 915 };
+  const lines = [
+    notice('Quest acquired', { line: 'A House of Your Own. Follow its steps in the tracker.' }),
+    notice('Your horse', { key: 'mount', line: 'Press {key} to call your horse wherever you stand.', opens: 'Mount' }),
+  ];
+  for (const one of lines)
+    for (const laid of laidOf(noticeNode(one, view, 1), view.width, view.height).filter((each) => each.node.text))
+      assert.ok(
+        laid.box.x + laid.box.width <= view.width,
+        `${wordsIn(laid.node)} ends at ${laid.box.x + laid.box.width}`,
+      );
+});

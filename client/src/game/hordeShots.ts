@@ -1,7 +1,7 @@
 // Pictures of a house's horde on the HUD, headless (`tools/uiShot.mjs`), over a plain dusk in place of the world: the
-// Stormcallers' horde running, its foes left of all counted down in the tracker, the Art toasted unbounded and the
-// ability bar whole, full and glowing unbounded; and as it falls, the Art bound again and the bar as the road has
-// earned it. The game never imports it.
+// Stormcallers' horde running, its foes left of all counted down in the tracker and the ability bar whole, full and
+// glowing unbounded; and as it falls, the road on its next task and the bar as the road has earned it. Its notices are
+// pictured with the rest (obtained.ts). The game never imports it.
 import { AbilityBar, type AbilityState } from '../combat/abilityBar.ts';
 import type { QuestState } from '../network/questMessages.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';
@@ -9,7 +9,6 @@ import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { Hud } from './hud.ts';
 import { QUESTS, trackedOf } from './quests/questBook.ts';
-import { boundWords, unboundedWords } from './quests/quests.ts';
 
 const DUSK = '#4a5662';
 const STORM_ART = 1;
@@ -30,8 +29,8 @@ const onTask = (task: number, more: Partial<QuestState> = {}): QuestState => ({
 /** Each shot's HUD and bar, kept across its frames. */
 const kept = new Map<string, { hud: Hud; bar: AbilityBar }>();
 
-/** The HUD of shot `name` over dusk, its tracker showing `quest`, toasting `toast`, its bar showing `bar`. */
-function hordeOver(ui: Interface, name: string, quest: QuestState, toast: string, state: AbilityState): Node {
+/** The HUD of shot `name` over dusk, its tracker showing `quest`, its bar showing `bar`. */
+function hordeOver(ui: Interface, name: string, quest: QuestState, state: AbilityState): Node {
   let shot = kept.get(name);
   if (!shot) {
     shot = { hud: new Hud(), bar: new AbilityBar(abilityPictures) };
@@ -41,7 +40,6 @@ function hordeOver(ui: Interface, name: string, quest: QuestState, toast: string
   }
   const { hud, bar } = shot;
   hud.tasks.show(trackedOf(quest));
-  hud.toast(toast);
   bar.update(state, 1 / 60);
   return {
     width: 'grow',
@@ -66,12 +64,12 @@ function hordeOver(ui: Interface, name: string, quest: QuestState, toast: string
 export function hordeRunningShot(ui: Interface): Node {
   const quest = onTask(HORDE_TASK, { horde: { left: 17, all: 29 } });
   const state = { art: STORM_ART, animaShare: 1, tenets: [1, 1] as const, earned: 0b111, unbounded: true };
-  return hordeOver(ui, 'running', quest, unboundedWords('Storm'), state);
+  return hordeOver(ui, 'running', quest, state);
 }
 
 /** The horde fallen: the road on its next task, the Storm bound again, its unearned Tenets locked once more. */
 export function hordeBoundShot(ui: Interface): Node {
   const quest = onTask(HORDE_TASK + 1);
   const state = { art: STORM_ART, animaShare: 1, tenets: [1, 1] as const, earned: 0b001 };
-  return hordeOver(ui, 'bound', quest, boundWords('Storm'), state);
+  return hordeOver(ui, 'bound', quest, state);
 }

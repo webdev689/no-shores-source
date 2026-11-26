@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
-import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import { standing, state } from '../../network/gearForTests.ts';
 import type { QuestState } from '../../network/questMessages.ts';
 import type { Cards } from '../../player/cards.ts';
@@ -11,7 +11,9 @@ import type { Shot } from '../camera.ts';
 import { useAt } from '../footGear.ts';
 import { OPEN_AT } from '../gearScreen.ts';
 import type { StationInfo } from '../nodes.ts';
-import { QUESTS } from './questBook.ts';
+import { hush, screenOpened } from '../npc/npcSpeech.ts';
+import type { Notice } from '../obtained.ts';
+import { COUNTERS, QUESTS } from './questBook.ts';
 import { SPEAKERS } from './questLooks.ts';
 import { Quests } from './quests.ts';
 import { BEGUN_KEY } from './questWatch.ts';
@@ -66,8 +68,16 @@ function roads() {
     card: (id: number, _dress: unknown, anim: string) => ({ id, anim }),
     warm: (_dress: unknown, moves: () => readonly string[]) => void warmed.push([...moves()]),
   };
+  const noticed: Notice[] = [];
+  const parts = {
+    cast: CAST,
+    scenes: SCENES,
+    kept: keeping,
+    account: () => 'arlo-fan',
+    forge: forge as unknown as Cards,
+  };
   const quests = new Quests(
-    { cast: CAST, scenes: SCENES, kept: keeping, account: () => 'arlo-fan', forge: forge as unknown as Cards },
+    { ...parts, notify: (...notices: readonly Notice[]) => void noticed.push(...notices) },
     () => voice,
     () => now,
   );
@@ -76,7 +86,16 @@ function roads() {
     quests.frame(0.1, past, held);
     await Promise.resolve();
   };
-  return { quests, said, kept, warmed, frame, finish: () => finish(), clock: (millis: number) => (now = millis) };
+  return {
+    quests,
+    said,
+    kept,
+    warmed,
+    noticed,
+    frame,
+    finish: () => finish(),
+    clock: (millis: number) => (now = millis),
+  };
 }
 
 /** The first line of `scene`, as the box says it. */
@@ -91,24 +110,37 @@ const drawn = (quests: Quests) =>
       return [anim, Math.round(each.x * 10) / 10];
     });
 
-test('within reach of a counter a talk goal names, E asks the room to speak with its keeper; the scene comes as it is met', async () => {
+test("within reach of a counter a talk goal names, E opens its keeper's screen; the scene is said there as it is met", async () => {
   const { quests, said, frame } = roads();
   const goals = QUESTS[0]?.tasks[HEAR]?.goals ?? [];
   quests.hear(gear(1, HEAR, { counts: [0, 1, 0] }));
   await frame();
-  const asked: GearAsk[] = [];
-  const ask = (each: GearAsk) => void asked.push(each);
-  assert.equal(quests.speak('stormcallers', ask)?.words, 'Speak with Arlo Kestrel');
-  assert.equal(quests.speak('veiled', ask)?.words, 'Speak with Sable');
-  assert.equal(quests.speak('lamplighters', ask), null, 'Elder Maren Hale heard already');
-  assert.equal(quests.speak('mage', ask), null, 'no goal names the Mage');
-  quests.speak('stormcallers', ask)?.run();
-  await frame();
-  assert.deepEqual(asked, [{ kind: ASKS.speakWith, column: 1 }]);
-  assert.deepEqual(said, [], 'nothing said until the room meets it');
-  quests.hear(gear(1, HEAR, { counts: [1, 1, 0] }));
-  await frame();
-  assert.deepEqual(said, [opening(goals[0]?.scene)], 'met: its scene');
+  assert.equal(quests.speak('stormcallers')?.words, 'Speak with Arlo Kestrel');
+  assert.equal(quests.speak('veiled')?.words, 'Speak with Sable');
+  assert.equal(quests.speak('lamplighters'), null, 'Elder Maren Hale heard already');
+  assert.equal(quests.speak('mage'), null, 'no goal names the Mage');
+  const opened: unknown[] = [];
+  Object.assign(globalThis, { dispatchEvent: (event: CustomEvent) => opened.push([event.type, event.detail]) });
+  quests.speak('stormcallers')?.run();
+  assert.deepEqual(opened, [[OPEN_AT, { view: 'stormcallers' }]], 'his screen, where the word is asked');
+  const holder = globalThis as unknown as Record<string, unknown>;
+  const wasFrame = holder['requestAnimationFrame'];
+  holder['requestAnimationFrame'] = () => 0;
+  try {
+    screenOpened('stormcallers');
+    quests.hear(gear(1, HEAR, { counts: [1, 1, 0] }));
+    await frame(true, true);
+    assert.deepEqual(said, [], 'met with his screen up: said in it, not the box');
+    hush();
+    await frame(true, true);
+    quests.hear(gear(1, HEAR, { counts: [1, 1, 1] }));
+    await frame(true, true);
+    assert.deepEqual(said, [], 'with no screen to say it in, it waits for the box');
+    await frame(true, false);
+    assert.deepEqual(said, [opening(goals[2]?.scene)], 'said once the screen is gone');
+  } finally {
+    holder['requestAnimationFrame'] = wasFrame;
+  }
 });
 
 test('a keeper a talk goal names has something for the player, once the story and the welcome are past', async () => {
@@ -151,11 +183,7 @@ async function smithLit() {
     [true, true, false],
     'the two smiths, for the wares the task asks',
   );
-  assert.equal(
-    quests.speak('weaponsmith', () => undefined),
-    null,
-    'their counter opens as before, to buy',
-  );
+  assert.equal(quests.speak('weaponsmith'), null, 'their counter opens as before, to buy');
 }
 
 test('the talk offer stands where the counter would open; elsewhere the counter opens as before', () => {
@@ -166,19 +194,30 @@ test('the talk offer stands where the counter would open; elsewhere the counter 
     { kind: 'stormcallers', keeper: [0, -2], counter: [0, 0] },
     { kind: 'mage', keeper: [40, -2], counter: [40, 0] },
   ];
-  const asked: GearAsk[] = [];
-  const speak = (counter: string, ask: (asked: GearAsk) => void) => quests.speak(counter, ask);
-  const keeper = useAt(0.5, 0, { stations: HALL }, null, (each) => asked.push(each), speak);
-  assert.equal(keeper?.words, 'Speak with Arlo Kestrel');
-  keeper?.run();
-  assert.deepEqual(asked, [{ kind: ASKS.speakWith, column: 1 }]);
+  const speak = (counter: string) => quests.speak(counter);
   const opened: unknown[] = [];
   // The page's event, as the menu hears it, without a page.
   Object.assign(globalThis, { dispatchEvent: (event: CustomEvent) => opened.push([event.type, event.detail]) });
+  const keeper = useAt(0.5, 0, { stations: HALL }, null, () => undefined, speak);
+  assert.equal(keeper?.words, 'Speak with Arlo Kestrel');
+  keeper?.run();
   const mage = useAt(40, 0.5, { stations: HALL }, null, () => undefined, speak);
   assert.equal(mage?.words, 'The Mage');
   mage?.run();
-  assert.deepEqual(opened, [[OPEN_AT, { view: 'mage' }]]);
+  assert.deepEqual(opened, [
+    [OPEN_AT, { view: 'stormcallers' }],
+    [OPEN_AT, { view: 'mage' }],
+  ]);
+});
+
+test('a keeper offering the quest walked is spoken with to acquire it, and lit until it is', async () => {
+  const { quests, frame } = roads();
+  quests.hear(gear(1, 1, { offered: COUNTERS.weaponsmith ?? 0 }));
+  await frame();
+  assert.equal(quests.speak('weaponsmith')?.words, 'Speak with The Weaponsmith');
+  assert.equal(quests.wants('weaponsmith'), true);
+  assert.equal(quests.wants('armorsmith'), false, 'nothing else counts before it is acquired');
+  assert.equal(quests.tracked?.task, 'Acquire it');
 });
 
 test("lines are said one scene after another: a keeper's scene, then what the room's word begins", async () => {
@@ -235,10 +274,7 @@ test("nothing shows, says or marks from a room's starting character, nor until t
   await frame(false);
   const tracked = () => quests.tracked;
   assert.equal(tracked(), null);
-  assert.equal(
-    quests.speak('stormcallers', () => undefined),
-    null,
-  );
+  assert.equal(quests.speak('stormcallers'), null);
   assert.deepEqual([quests.nodes, quests.goalAt], [[], null]);
   await frame();
   assert.equal(tracked()?.task, QUESTS[LAMP - 1]?.tasks[3]?.task);
@@ -282,8 +318,8 @@ test("the HUD marks where the task's next goal stands in the node the player is 
   );
 });
 
-test("a road's gift is toasted for a while", async () => {
-  const { quests, frame, clock } = roads();
+test("a road's gift is noticed at the foot of the screen", async () => {
+  const { quests, frame, noticed } = roads();
   const earned = (bits: number) =>
     state({
       ...gear(STORM, 2, { pledge: 1 }),
@@ -293,10 +329,10 @@ test("a road's gift is toasted for a while", async () => {
   await frame();
   quests.hear(earned(1));
   await frame();
-  assert.deepEqual(quests.toasts, ['Storm Art earned: Tempest']);
-  clock(5000);
-  await frame();
-  assert.deepEqual(quests.toasts, []);
+  assert.deepEqual(
+    noticed.map((notice) => notice.title),
+    ['Storm Art earned'],
+  );
 });
 
 test("a step's figures glide between the room's words, warmed to ride and stand; an arrived one stands where it is", async () => {
@@ -347,33 +383,31 @@ test("a step's ward stands in the room the player is in, its plate held in view"
   );
 });
 
-test("a horde's Art is toasted unbounded while it runs, and bound again as it falls or is left", async () => {
-  const { quests, frame, clock } = roads();
+test("a horde's Art is noticed unbounded as it begins, and bound again as it falls or is left", async () => {
+  const { quests, frame, noticed } = roads();
   const task = QUESTS[STORM - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.horde)) ?? -1;
   const running = (horde: QuestState['horde']) => {
     const word = gear(STORM, task, { pledge: STORM, horde });
     return { ...word, arts: { art: 1, cores: [], anima: 1, tenets: [1, 1] as const } };
   };
-  clock(1_000);
+  const titles = () => noticed.map((notice) => notice.title);
   quests.hear(running(null));
   await frame();
-  assert.deepEqual(quests.toasts, [], 'none before it runs');
+  assert.deepEqual(titles(), [], 'none before it runs');
   quests.hear(running({ left: 29, all: 29 }));
   await frame();
-  assert.deepEqual(quests.toasts, ['Storm unbounded: every ability ready']);
+  assert.deepEqual(titles(), ['Storm unbounded']);
+  assert.ok(noticed[0]?.icon?.svg.startsWith('<svg'), "under the Art's emblem");
   quests.hear(running({ left: 3, all: 29 }));
   await frame();
-  assert.deepEqual(quests.toasts, ['Storm unbounded: every ability ready'], 'said once, as long as it runs');
+  assert.deepEqual(titles(), ['Storm unbounded'], 'once, as long as it runs');
   quests.hear(running(null));
   await frame();
-  assert.deepEqual(quests.toasts, ['Storm bound again'], 'its end seen');
-  clock(6_000);
-  await frame();
-  assert.deepEqual(quests.toasts, [], 'and gone a while after');
+  assert.deepEqual(titles(), ['Storm unbounded', 'Storm bound again'], 'its end seen');
   quests.hear(running({ left: 29, all: 29 }));
   quests.hear(null);
   await frame();
-  assert.deepEqual(quests.toasts, ['Storm bound again'], 'left: bound again too');
+  assert.deepEqual(titles().slice(-2), ['Storm unbounded', 'Storm bound again'], 'left: bound again too');
 });
 
 test('the tracker runs a step’s clock down between the room’s words, and each word sets it again', async () => {

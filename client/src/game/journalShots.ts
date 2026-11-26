@@ -72,7 +72,7 @@ const CAPE = item({ id: 40, kind: 17, bucket: 6, at: 8, rarity: 3, named: 'lampl
 
 /** A level 12 character pledged to the Lamplighters, their cape worn, two roads done (the house's and the
  *  Stormcallers') and walking the Lamplighters' at its fifth task, with the day's board. */
-const GEAR: GearState = state({
+export const GEAR: GearState = state({
   level: 12,
   prestige: 0,
   defense: 35,
@@ -219,7 +219,7 @@ export const settingsShot = menuShot('settings');
 
 /** Three letters at the Postmaster's: a Rare Vestige left lying, a Legendary hull salvaged into a full mailbox, and a
  *  piece with no name sent on. */
-const LETTERS: GearState = {
+export const LETTERS: GearState = {
   ...GEAR,
   mail: [
     {
@@ -255,7 +255,7 @@ const plain = (kinds: readonly (readonly [number, number])[], price = 50) =>
   kinds.map(([kind, bucket], place) => item({ id: 6 + place, kind, bucket, rarity: 0, level: 1, price }));
 /** The Weaponsmith's starter stock in `Vendor::starter_kinds`' order: thirteen Melee kinds, then five Ranged. */
 const WEAPONS = [12, 2, 22, 19, 18, 1, 3, 21, 20, 4, 6, 5, 7, 8, 9, 10, 23, 11];
-const ARRIVED: GearState = {
+export const ARRIVED: GearState = {
   ...GEAR,
   level: 1,
   defense: 0,

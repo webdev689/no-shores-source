@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ARTS } from './artsCards.ts';
 import type { GearItem, GearShip, GearState } from '../network/gearMessages.ts';
-import { gainsOf } from './gains.ts';
+import { gainsOf, lootNotices } from './gains.ts';
 
 const item = (id: number, rarity: number, place = 0): GearItem => ({
   id,
@@ -280,4 +280,28 @@ test('a chest that moved on while a kill paid Aurem is no gain: only the room na
     ['Aurem'],
     "the kill's Aurem, no chest",
   );
+});
+
+test('only the finest things found are noticed at the foot too, each with the key to the inventory', () => {
+  const found = (rarity: number, compact = false) =>
+    ({
+      key: `k${rarity}`,
+      name: `Piece ${rarity}`,
+      count: 1,
+      rarity,
+      glyph: 'item',
+      tint: 0,
+      item: null,
+      emblem: null,
+      icon: null,
+      compact,
+      word: null,
+    }) as const;
+  const notices = lootNotices([found(1), found(2), found(3), found(4), found(4, true)]);
+  assert.deepEqual(
+    notices.map((notice) => notice.title),
+    ['Piece 3', 'Piece 4'],
+  );
+  assert.equal(notices[0]?.key, 'inventory');
+  assert.ok(notices[0]?.icon?.svg.includes('<svg'), "the rarity's crystal for a piece with no glyph");
 });

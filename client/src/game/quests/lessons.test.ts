@@ -31,6 +31,7 @@ function kept(id: string, counts: readonly number[] = []): Kept {
     aurem: 0,
     earned: empty,
     choices: empty,
+    offered: 0,
   };
 }
 
@@ -69,18 +70,20 @@ test('each step names its keys as bound now, on the keys or on the pad', () => {
 });
 
 test('each step the room ticks is announced once, through the quest’s news', () => {
-  assert.deepEqual(lessonsBetween(kept('ride-the-bay'), kept('ride-the-bay', [1, 0, 1])), [
+  const words = (before: Kept, after: Kept) =>
+    lessonsBetween(before, after).map((notice) => `${notice.title}: ${notice.line}`);
+  assert.deepEqual(words(kept('ride-the-bay'), kept('ride-the-bay', [1, 0, 1])), [
     'Riding: Get up on your horse',
     'Riding: Gallop',
   ]);
-  assert.deepEqual(lessonsBetween(kept('ride-the-bay', [1]), kept('ride-the-bay', [1])), [], 'nothing new');
+  assert.deepEqual(words(kept('ride-the-bay', [1]), kept('ride-the-bay', [1])), [], 'nothing new');
   // The last step met ends the task: the steps left are announced with it.
-  assert.deepEqual(lessonsBetween(kept('learn-the-helm', [1, 1, 1, 1, 1]), kept('bring-it-home')), [
+  assert.deepEqual(words(kept('learn-the-helm', [1, 1, 1, 1, 1]), kept('bring-it-home')), [
     'Sailing: Put a ball in the hulk',
   ]);
   const fire = goalsOf('learn-the-helm')[5];
   assert.ok(fire);
-  assert.equal(lessonNotice(fire), 'Sailing: Put a ball in the hulk');
+  assert.deepEqual(lessonNotice(fire), { title: 'Sailing', line: 'Put a ball in the hulk' });
 });
 
 const OVERLOOK: NodeInfo = {
