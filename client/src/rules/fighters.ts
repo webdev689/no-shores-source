@@ -47,6 +47,9 @@ export type Action =
   | { readonly kind: 'drink'; readonly elapsed: number }
   | { readonly kind: 'dead'; readonly elapsed: number };
 
+/** How long a drink lasts, in ticks (crates/combat/src/tuning.rs DRINK_TICKS). */
+export const DRINK_TICKS = 60;
+
 /** A fighter as a browser draws and marks it. */
 export interface FighterView {
   readonly x: number;

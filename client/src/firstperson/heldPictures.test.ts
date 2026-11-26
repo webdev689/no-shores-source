@@ -3,7 +3,15 @@ import { test } from 'node:test';
 import type { Strip } from '../forge/compose.ts';
 import { type DyeTable, PaletteSnap, type Rgb } from '../forge/dyes.ts';
 import { FramePainter } from './fpFrames.ts';
-import { crossbowPath, crossbowPicture, gunPicture, heldPath, lightPicture, shieldPicture } from './heldPictures.ts';
+import {
+  crossbowPath,
+  crossbowPicture,
+  flaskPicture,
+  gunPicture,
+  heldPath,
+  lightPicture,
+  shieldPicture,
+} from './heldPictures.ts';
 
 const band: Rgb[] = Array.from({ length: 16 }, (_unused, step) => [step * 16, step * 16, step * 16]);
 const iron: Rgb[] = band.map(([red]) => [red, 0, 0]);
@@ -137,4 +145,15 @@ test('a torch stands at the left, its hand still while its flame moves; a lanter
   assert.deepEqual(torch?.at, [4, -5]);
   const hung = await lightPicture(source, 'lantern', null, 2);
   assert.deepEqual(hung?.at, [0, 62]);
+});
+
+test('the healing flask sits flush in the bottom right corner, the hand over it in the gauntlets worn', async () => {
+  const flask = strip(240, 200, (x, y) => (x === 120 && y === 100 ? [200, 20, 10] : null));
+  const hand = strip(240, 200, (x, y) => (x === 200 && y === 150 ? [128, 128, 128] : null));
+  const source = sourceOf({ [heldPath('FLASK', 0, 2, 'Flask')]: flask, [heldPath('FLASK', 0, 2, 'Hands')]: hand });
+  const drunk = await flaskPicture(source, null, 2);
+  assert.deepEqual([drunk?.at, drunk?.width, drunk?.height], [[80, 0], 240, 200]);
+  assert.deepEqual(drunk && pixelAt(drunk.pixels, 240, 120, 100), [200, 20, 10, 255], 'the draught as drawn');
+  assert.equal(drunk && pixelAt(drunk.pixels, 240, 200, 150)[3], 255, 'the hand over it');
+  assert.equal(await flaskPicture(source, null, 1), null, 'a frame not published: none');
 });
