@@ -200,3 +200,18 @@ fn a_guests_ship_is_never_parked_and_past_the_most_the_one_parked_longest_ago_is
     let first = format!("account-{PARKED_MOST:04}");
     assert!(!sea.parked.by_account.contains_key(&first), "the one parked longest ago let go");
 }
+
+#[test]
+fn a_hosts_time_near_the_most_neither_panics_nor_wraps_round_to_show_a_lapsed_naming_again() {
+    let mut sea = sea();
+    let near_most = u64::MAX - 100;
+    sea.tell_seconds(near_most);
+    let left = left_at(&mut sea, "ann", OFF_COAST);
+    assert_eq!(answered(&sea.ashore(ISLAND, &["ann"])), ["ann"]);
+    sea.tell_seconds(near_most + NAMED_S + 1);
+    assert!(sea.ashore(ISLAND, &[]).is_empty(), "lapsed, though kept unseen");
+    ticks(&mut sea, 120 * 60);
+    assert!(!shown(&sea).contains(&left), "still lapsed as the sea ticks on past the most");
+    left_at(&mut sea, "bea", OFF_COAST);
+    assert_eq!(answered(&sea.ashore(ISLAND, &["bea"])), ["bea"], "and a ship parked then is named as any is");
+}

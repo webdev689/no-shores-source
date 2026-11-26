@@ -86,7 +86,7 @@ impl Sea {
             return;
         }
         let ship = Ship { pace: 0, rate: 0, ..sailing.ship };
-        let (until, order) = (self.host_seconds() + NAMED_S, self.parked.parkings);
+        let (until, order) = (self.host_seconds().saturating_add(NAMED_S), self.parked.parkings);
         let parked = Parked { number: player, ship, look, plate, named: false, until, order };
         self.parked.parkings += 1;
         self.parked.by_account.insert(account.clone(), parked);
@@ -110,10 +110,11 @@ impl Sea {
     }
 
     /// The host's time, seconds since the Unix epoch: the latest it told, on by the sea's ticks since, and never
-    /// before the minute it set (`minute`, set as the sea starts ticking).
+    /// before the minute it set (`minute`, set as the sea starts ticking). Held at its most rather than wrapped round,
+    /// so a time told near it neither panics nor turns back to show a lapsed naming again.
     fn host_seconds(&self) -> u64 {
         let (seconds, clock) = self.parked.told;
-        (seconds + (self.clock - clock) / TICKS_A_SECOND).max(self.minute * 60)
+        seconds.saturating_add((self.clock - clock) / TICKS_A_SECOND).max(self.minute.saturating_mul(60))
     }
 
     /// A place's room names the accounts of the players it holds: each one's parked ship lying at its island (any
@@ -141,7 +142,7 @@ impl Sea {
         for account in accounts {
             let Some(parked) = self.parked.by_account.get_mut(*account) else { continue };
             if place == Ashore::Anywhere || lies_at(&parked.ship) {
-                (parked.named, parked.until) = (true, now + NAMED_S);
+                (parked.named, parked.until) = (true, now.saturating_add(NAMED_S));
             }
         }
         let seen = (self.parked.by_account.iter())
@@ -152,7 +153,7 @@ impl Sea {
     /// Lets go of every parked ship no room has named for `KEPT_S`.
     fn let_go_unnamed(&mut self) {
         let now = self.host_seconds();
-        self.parked.by_account.retain(|_, parked| now <= parked.until + KEPT_S);
+        self.parked.by_account.retain(|_, parked| now <= parked.until.saturating_add(KEPT_S));
     }
 
     /// Every parked ship seen: those a room has named, and whose naming holds.
