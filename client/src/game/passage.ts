@@ -8,7 +8,7 @@ import { CLICK_PACE, type Pace, SHIP_SPEED, secondsLeft, shipAt, type Voyage, vo
 import type { Lies } from '../ships/swellPose.ts';
 import { distanceText } from '../plus/compass.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
-import { type KeptClear, detour } from './isleLaw.ts';
+import { ANCHORED_M, type KeptClear, detour } from './isleLaw.ts';
 import { AHEAD, clearAhead, HELM_TURN, turned } from './seaHelm.ts';
 import {
   courseAhead,
@@ -37,6 +37,21 @@ const REFUSED: Record<RouteRefusal, string> = {
  *  again from there, metres. */
 const DRIFT_M = 30;
 
+/** How far along the way in to a berth (`points`, from its offing in) a ship at `ship` lies: the points still ahead
+ *  of it once it lies within an anchorage's reach of a leg of it; none off it. */
+function aheadOnWayIn(ship: Point2, points: readonly Point2[]): Point2[] | null {
+  for (let leg = 1; leg < points.length; leg++) {
+    const [from, to] = [points[leg - 1] ?? ship, points[leg] ?? ship];
+    const [alongX, alongY] = [to[0] - from[0], to[1] - from[1]];
+    const length = alongX * alongX + alongY * alongY;
+    const share = length > 0 ? ((ship[0] - from[0]) * alongX + (ship[1] - from[1]) * alongY) / length : 0;
+    const near = [from[0] + alongX * share, from[1] + alongY * share] as const;
+    if (share >= 0 && share <= 1 && Math.hypot(ship[0] - near[0], ship[1] - near[1]) <= ANCHORED_M)
+      return points.slice(leg);
+  }
+  return null;
+}
+
 export class Passage {
   private readonly outlines: readonly (readonly Point2[])[];
   /** The open landmass's fine sea mask, for a voyage within its window. */
@@ -48,6 +63,8 @@ export class Passage {
    *  helm's, straight on along its heading, set again as it nears its end. */
   private destination: Point2 | null = null;
   private straight = false;
+  /** The way in to a berth the voyage sails (`sailVia`): its offing and the points on in, resumed by it. */
+  private wayIn: { readonly through: Point2; readonly after: readonly Point2[] } | null = null;
   private travelled = 0;
   /** The pace the voyage was set at: a click's, or the held map's. */
   private set: Pace = CLICK_PACE;
@@ -169,21 +186,24 @@ export class Passage {
     }
     this.said = '';
     this.voyage = voyageOf(detour(route.points, this.keepClear()));
-    [this.destination, this.travelled, this.straight, this.set] = [point, 0, false, pace];
+    [this.destination, this.travelled, this.straight, this.set, this.wayIn] = [point, 0, false, pace, null];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
   /** Plans a voyage to `point` as `sailTo` does, then sets sail through it and on straight through `after`, at a
    *  click's pace: the way in to a berth from its offing. A plan that ends at the water nearest the point, its cell of
-   *  the mask holding land, goes on to the point itself. Whether it set sail; if not, it says why. */
+   *  the mask holding land, goes on to the point itself. Lying on that way in already, it sails straight on in from
+   *  where it lies. Whether it set sail; if not, it says why. */
   sailVia(point: Point2, after: readonly Point2[]): boolean {
-    const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
-    if (!route.ok) {
+    const ahead = aheadOnWayIn(this.position, [point, ...after]);
+    const route = ahead ? null : planSeaRoute(this.maskFor(this.position, point), this.position, point);
+    if (route && !route.ok) {
       this.said = REFUSED[route.reason];
       return false;
     }
-    const onTo = route.toShore ? [point] : [];
-    this.sailAlong([...detour(route.points, this.keepClear()).slice(1), ...onTo, ...after]);
+    const onTo = route?.toShore ? [point] : [];
+    this.sailAlong(ahead ?? [...detour(route?.points ?? [], this.keepClear()).slice(1), ...onTo, ...after]);
+    this.wayIn = { through: point, after };
     return true;
   }
 
@@ -202,7 +222,7 @@ export class Passage {
     if (!end) return;
     this.said = '';
     this.voyage = voyageOf([this.position, ...points.filter((point) => point !== this.position)]);
-    [this.destination, this.travelled, this.straight, this.set] = [end, 0, false, pace];
+    [this.destination, this.travelled, this.straight, this.set, this.wayIn] = [end, 0, false, pace, null];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
@@ -225,10 +245,18 @@ export class Passage {
     this.room?.course([], this.sailed);
   }
 
-  /** Sets sail again: straight on, or for the destination of the voyage last stopped, from wherever it lies now. */
+  /** Lets the voyage go: the ship stopped where it is, with nothing kept to resume. */
+  letGo(): void {
+    this.stop();
+    [this.destination, this.straight, this.wayIn] = [null, false, null];
+  }
+
+  /** Sets sail again: straight on, or for the destination of the voyage last stopped, from wherever it lies now; a way
+   *  in to a berth by its offing again, as the plan alone would end short of a berth by a pier or a coast. */
   resume(): void {
     if (!this.destination) return;
     if (this.straight) this.straightOn();
+    else if (this.wayIn) this.sailVia(this.wayIn.through, this.wayIn.after);
     else this.sailTo(this.destination, this.set);
   }
 
@@ -255,7 +283,7 @@ export class Passage {
     }
     this.said = '';
     this.voyage = voyageOf([this.position, point]);
-    [this.destination, this.travelled, this.straight, this.set] = [point, 0, true, CLICK_PACE];
+    [this.destination, this.travelled, this.straight, this.set, this.wayIn] = [point, 0, true, CLICK_PACE, null];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 
@@ -313,7 +341,7 @@ export class Passage {
    *  it again. */
   private arrived(): void {
     if (this.straight) this.said = 'Land lies ahead.';
-    [this.voyage, this.destination, this.straight] = [null, null, false];
+    [this.voyage, this.destination, this.straight, this.wayIn] = [null, null, false, null];
   }
 
   /** The room has it at rest, having taken its course, while the page sails it: at its end, it has arrived; short

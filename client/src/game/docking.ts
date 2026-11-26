@@ -30,13 +30,14 @@ export class Docking {
   private aboard = false;
 
   /** Sets the ship sailing in to the berth for its landing (off `landmass`), seen from the Oversea view, at a click's
-   *  pace (×60): planned on water to its offing, then straight in, unless it lies there already. Whether it is made
-   *  for: with no way there the voyage's line says why, and nothing is. */
+   *  pace (×60): planned on water to its offing, then straight in (along the pier from its lead), unless it lies
+   *  there already. Whether it is made for: with no way there the voyage's line says why, and nothing is, the view
+   *  left as it was. */
   begin(sea: Pick<Sea, 'position' | 'course' | 'sailIn' | 'switchLevel'>, berthed: Berthed): boolean {
-    const { at, offing } = berthed.berth;
-    sea.switchLevel('oversea');
+    const { at, offing, lead } = berthed.berth;
     const under = apart(sea.position, at) > ANCHORED_M || sea.course.length > 0;
-    if (under && !sea.sailIn(offing, at)) return false;
+    if (under && !sea.sailIn(offing, lead ? [lead, at] : [at])) return false;
+    sea.switchLevel('oversea');
     this.pending = berthed;
     return true;
   }
@@ -46,13 +47,15 @@ export class Docking {
     return this.pending?.aim ?? null;
   }
 
-  /** The landing berthed for once the ship lies at rest at its berth, taken once, and the ship docked there; given up if
-   *  the ship was turned elsewhere (steered, sent off on another voyage or a chase). */
-  arrived(sea: Pick<Sea, 'position' | 'course' | 'bound'>): LandingAim | null {
+  /** The landing berthed for once the ship lies at rest at its berth and `land` makes it, taken once, and the ship
+   *  docked there; kept while it cannot be made yet; given up if the ship was turned elsewhere (steered, sent off on
+   *  another voyage or a chase). */
+  arrived(sea: Pick<Sea, 'position' | 'course' | 'bound'>, land: (aim: LandingAim) => boolean = () => true) {
     const pending = this.pending;
     if (!pending) return null;
     const near = (point: Point2) => apart(point, pending.berth.at) <= ANCHORED_M;
     if (sea.course.length === 0 && near(sea.position)) {
+      if (!land(pending.aim)) return null;
       [this.pending, this.docked] = [null, pending];
       return pending.aim;
     }
@@ -78,9 +81,12 @@ export class Docking {
    *  from it (back to the sea from the island's tiles). */
   undock(sea: Pick<Sea, 'position' | 'course' | 'sighted' | 'passage'>): void {
     const docked = this.docked;
+    if (!docked) return;
     const setOff = sea.course.length > 0;
-    if (docked && !this.aboard && setOff) this.docked = null;
-    if (!this.aboard || !docked) return;
+    if (!this.aboard) {
+      if (setOff) this.docked = null;
+      return;
+    }
     const placed = sea.sighted?.settledShip ?? null;
     if (!setOff && (!placed || apart([placed.x, placed.y], sea.position) >= PLACED_M)) return;
     [this.aboard, this.docked] = [false, null];

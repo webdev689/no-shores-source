@@ -219,6 +219,16 @@ test('a voyage sails at the pace it was set at: ×200 planned, ×60 clicked; eas
   assert.equal(passage.pace, PLANNED_PACE, 'resumed at the pace it was set at');
 });
 
+test('stopped short it stays bound where it was, to be resumed; a voyage let go keeps nothing to resume', () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  passage.sailTo(place(0, -9_000));
+  passage.stop();
+  assert.deepEqual([passage.bound, passage.stoppedShort], [place(0, -9_000), true]);
+  passage.letGo();
+  passage.resume();
+  assert.deepEqual([passage.bound, passage.stoppedShort, passage.course], [null, false, []]);
+});
+
 test('a pace step the room refused is asked again once its word comes, until the two agree', () => {
   const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
   const { room, asked, word } = fakeRoom();

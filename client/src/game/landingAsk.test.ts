@@ -77,9 +77,11 @@ test('a landing is in reach where the sea offers it: its own port, any coast, it
 test('a landing made for lands once in reach, taken once; another course lets it go, a stop keeps it', () => {
   const course = new LandingCourse();
   course.begin(DOCK, HARBOUR);
-  assert.equal(course.due(null, HARBOUR), null, 'under way, out of reach');
+  // Under way or stopped short, the voyage is bound for the harbour still (`Passage.bound`), so the two read alike.
+  assert.equal(course.due(null, HARBOUR), null, 'under way or stopped short, out of reach');
+  assert.deepEqual(course.making, DOCK, 'still made for');
+  assert.equal(course.due({ kind: 'ashore' }, HARBOUR), null, 'off its coast, far from its harbour');
   assert.deepEqual(course.making, DOCK);
-  assert.equal(course.due(null, HARBOUR), null, 'stopped short, its voyage kept: still made for');
   assert.deepEqual(course.due({ kind: 'dock', port: 'Overlook' }, HARBOUR), DOCK, 'in reach');
   assert.equal(course.due({ kind: 'dock', port: 'Overlook' }, HARBOUR), null, 'taken once');
   course.begin(DOCK, HARBOUR);

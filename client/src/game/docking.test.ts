@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Snapshot } from '../network/roomConnection.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { maskFromOutlines } from '../overworld/seaRoute.ts';
-import { CLICK_PACE } from '../overworld/voyage.ts';
+import { CLICK_PACE, PLANNED_PACE } from '../overworld/voyage.ts';
 import { type Berth, berthOf } from './berths.ts';
 import { Docking } from './docking.ts';
 import type { FootContext } from './foot.ts';
@@ -101,6 +101,8 @@ test('a landing on a sea island ends a chase, as any other course does', async (
 test('docking is seen from the Oversea view, the ship sailing at ×60 through its offing and in to its berth', async () => {
   const { sea } = await seaAt(place(0, 0));
   sea.switchLevel('sealevel');
+  // Set at the held map's pace first, so the ×60 is docking's own.
+  sea.sailTo(place(-5_000, 0), PLANNED_PACE);
   const { at, offing } = berth(ASHORE);
   assert.equal(new Docking().begin(sea, { aim: ASHORE, berth: { at, offing }, landmass: 'continent-9' }), true);
   assert.equal(sea.level, 'oversea');
@@ -116,13 +118,19 @@ test('the landing is made only once the ship lies at rest at its berth, once; tu
     course: [] as Point2[],
     bound: null as Point2 | null,
     switchLevel: () => undefined,
-    sailIn: (from: Point2, to: Point2) => ([sea.course, sea.bound] = [[sea.position, from, to], to]),
+    sailIn: (from: Point2, inward: Point2[]) => ([sea.course, sea.bound] = [[sea.position, from, ...inward], at]),
   };
   const docking = new Docking();
   docking.begin(sea as never, { aim: ASHORE, berth: { at, offing }, landmass: 'continent-9' });
   assert.equal(docking.making, ASHORE);
   assert.equal(docking.arrived(sea as never), null, 'under way');
   [sea.position, sea.course] = [[at[0] + 3, at[1]], []];
+  assert.equal(
+    docking.arrived(sea as never, () => false),
+    null,
+    'not while it cannot be landed',
+  );
+  assert.equal(docking.making, ASHORE, 'kept until it is');
   assert.equal(docking.arrived(sea as never), ASHORE, 'at rest there');
   assert.equal(docking.arrived(sea as never), null, 'taken once');
   docking.begin(sea as never, { aim: ASHORE, berth: { at: place(0, 0), offing }, landmass: 'continent-9' });
@@ -145,6 +153,9 @@ async function backAboard(lying: Point2) {
 test('back aboard, once the room has placed the ship at its berth, it sails out at ×60 to the offing', async () => {
   const { at, offing } = berth(ASHORE);
   const { sea, hand, docking } = await backAboard(at);
+  // Its last voyage was set at the held map's pace, so the ×60 out is undocking's own.
+  sea.sailTo(place(-5_000, 0), PLANNED_PACE);
+  sea.stop();
   docking.undock(sea);
   hand(50, at);
   docking.undock(sea);
@@ -186,4 +197,46 @@ test('sailed off its berth with its player still aboard (back from the island’
   sea.sailTo(place(0, 0));
   docking.undock(sea);
   assert.equal(docking.docked, null);
+});
+
+test('a docking stopped short and resumed sails on through its offing to its berth, as it set out', async () => {
+  const { sea } = await seaAt(place(0, 0));
+  const { at, offing } = berth(ASHORE);
+  new Docking().begin(sea, { aim: ASHORE, berth: { at, offing }, landmass: 'continent-9' });
+  sea.stop();
+  sea.resume();
+  assert.deepEqual(sea.course.slice(-2), [offing, at], JSON.stringify(sea.course.slice(-3)));
+});
+
+test('lying on the way in already, more than an anchorage off its berth, the ship sails straight in', async () => {
+  const { at, offing } = berth(ASHORE);
+  const between: Point2 = [(at[0] + offing[0]) / 2, at[1]];
+  const { sea } = await seaAt(between);
+  assert.equal(new Docking().begin(sea, { aim: ASHORE, berth: { at, offing }, landmass: 'continent-9' }), true);
+  assert.deepEqual(sea.course, [between, at], 'never out to its offing and back');
+});
+
+test('at a pier the ship comes in along it, its last stretch from out along the pier', async () => {
+  const { sea } = await seaAt(place(0, 0));
+  const { at, offing } = berth(ASHORE);
+  const lead: Point2 = [at[0] - 40, at[1]];
+  new Docking().begin(sea, { aim: ASHORE, berth: { at, offing, lead }, landmass: 'continent-9' });
+  assert.deepEqual(sea.course.slice(-3), [offing, lead, at]);
+});
+
+test('a berth beyond the charts sets nothing sailing and leaves the view as it was', async () => {
+  const { sea } = await seaAt(place(0, 0));
+  sea.switchLevel('sealevel');
+  const beyond: Point2 = [-1e9, -1e9];
+  const docking = new Docking();
+  assert.equal(docking.begin(sea, { aim: ASHORE, berth: { at: beyond, offing: beyond }, landmass: 'x' }), false);
+  assert.deepEqual([sea.level, docking.making], ['sealevel', null]);
+});
+
+test('with nothing docked, undocking never asks after the course', () => {
+  let read = 0;
+  const sea = { position: place(0, 0), sighted: null, passage: {} };
+  Object.defineProperty(sea, 'course', { get: () => (read++, []) });
+  new Docking().undock(sea as never);
+  assert.equal(read, 0);
 });
