@@ -54,6 +54,8 @@ pub const RELIQUARY_FRAGMENTS: (u16, u16) = (2, 5);
 const ELITE: u8 = 3;
 const MINIBOSS: u8 = 4;
 const BOSS: u8 = 5;
+/// The weekly dungeon whose first clear's colours the fourth lamp's week rolls on top of its Boss's Vestige.
+pub(crate) const FOURTH_LAMP_ROLL: Weekly = Weekly::Elite;
 /// A reliquary's fragments' stock is rolled at this index of `Purpose::Passage`, clear of its count's (0) and of the
 /// Atheric bounties' finds (1 on, one a bounty).
 const FRAGMENT_STOCK: u32 = 100;
@@ -191,7 +193,7 @@ impl Character {
         }
         if number >= 4 {
             let elite = Dice { seed: dice.seed ^ 0x6c61_6d70, ..*dice };
-            self.keep_rolled(of_colours(Weekly::Elite.colours(), level, &elite), &elite);
+            self.keep_rolled(of_colours(FOURTH_LAMP_ROLL.colours(), level, &elite), &elite);
         }
     }
 

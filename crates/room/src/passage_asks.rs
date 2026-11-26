@@ -172,6 +172,7 @@ impl Room {
                 if let Some(zone) = self.zone_mut() {
                     zone.arrived.insert(player, clock);
                 }
+                self.first_arrival(player);
                 // Lit for them with the dive (`lamp_lit_for`), a company's guard there stands down.
                 if lit {
                     self.stand_down_guard();
@@ -179,6 +180,10 @@ impl Room {
             }
             _ => {
                 let island = dive.island.clone();
+                // One who left fallen keeps nothing home: a fall costs the haul, as a respawn does.
+                if found.character.left.is_some_and(|left| left.health == 0) {
+                    found.character.lose_haul();
+                }
                 let mouths_of = match self.passage.as_ref() {
                     Some(super::Passage::Mouths { island, .. }) => Some(*island),
                     _ => None,
@@ -190,6 +195,16 @@ impl Room {
                 }
             }
         }
+    }
+
+    /// Holds an account's first arrival in the zone for the player it keeps now, as they come in or are owned, in
+    /// either order: a reload never begins a Gauntlet's 90 s again.
+    pub(crate) fn first_arrival(&mut self, player: PlayerId) {
+        let Some(owner) = self.players.get(&player).and_then(|found| found.owner.clone()) else { return };
+        let Some(zone) = self.zone_mut() else { return };
+        let Some(&now) = zone.arrived.get(&player) else { return };
+        let first = *zone.came.entry(owner).or_insert(now);
+        zone.arrived.insert(player, first);
     }
 
     /// A company's lamp begun at stands no guard: its guards go and its deal is done for every member there, paying
@@ -232,11 +247,13 @@ impl Room {
         }
     }
 
-    /// A respawn asked for in a passage zone empties the haul.
+    /// A respawn asked for in a passage zone empties the haul, and loses with it the Vestiges still lying for the
+    /// player, which would go into it.
     pub(crate) fn lose_haul(&mut self, player: PlayerId) {
         if self.zone().is_none() {
             return;
         }
+        self.drops.retain(|drop| drop.player != player || !matches!(drop.what, crate::drops::Dropped::Vestige(_)));
         if let Some(found) = self.players.get_mut(&player) {
             found.character.lose_haul();
             found.gear_changed = true;

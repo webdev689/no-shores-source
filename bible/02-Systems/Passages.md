@@ -163,7 +163,8 @@ passages' own pieces standing in it with their solids.
 - **The haul** holds what is found in a passage zone: Vestiges picked up, items found as themselves, gathered
   resources, a cache's fragments, Vestiges left lying as the player goes on, and the cold lantern. While the player
   stands in a zone of their dive, the gear's own keeping (`pick_up`, `keep_found`, `gather`, `post`) sends each find
-  there. XP and Aurem are paid at once.
+  there. XP and Aurem are paid at once, and a Vestige paid outright (a guild's or a faction's package, a lamp's) is
+  never hauled: carried, else the vault, else the mail (`keep_paid`).
 - **A dive begins** at one of the patrol zone's mouths, the sealed doors of its runs, which the bake writes into the
   node file as `doors` (`bake::doors_of`): within 4 m of a door the page asks to begin, by its route, at the zone
   behind it, or at a lamp lit this week on that island or whose zone's foes stand at or under the player's level (its
@@ -175,12 +176,12 @@ passages' own pieces standing in it with their solids.
   room that is not the dive's zone ends the dive and loses its haul. The sea is not such a room: it never ends a
   dive, only marks it as kept by the sea (`Dive::sailed`), and the dive is judged in whatever room the character
   next lands in; a homeward one landed by sea in its patrol zone keeps its haul and stands where it landed. A respawn
-  asked for in a zone empties the haul and stands the player at its arrival, however the body fell, and is refused in
-  Gloom, where a company all down (the section's dead among them) falls back; a revive loses nothing. A body left
-  fallen comes back fallen, and past its two minutes whole, its haul lost. A reload or a closed tab costs no more
-  than a death:
-  logging in again, a character whose last room was its dive's zone goes back into it, on the same dive, as does a
-  public dive whose last room was the zone it went on from, reloaded on the way between
+  asked for in a zone empties the haul, losing the Vestiges still lying for the player with it, and stands the
+  player at its arrival, however the body fell, and is refused in Gloom, where a company all down (the section's dead
+  among them) falls back; a revive loses nothing. A body left fallen comes back fallen, and past its two minutes
+  whole, its haul lost; a homeward dive left fallen comes home with its haul lost. A reload or a closed tab costs no
+  more than a death: logging in again, a character whose last room was its dive's zone goes back into it, on the
+  same dive, as does a public dive whose last room was the zone it went on from, reloaded on the way between
   ([[Accounts]], "Where a player logs back in").
 
 ## A zone's room
@@ -223,12 +224,12 @@ passages' own pieces standing in it with their solids.
 |---|---|
 | Skirmish, vault, lamp | Its guard is down |
 | Reliquary | Its chest is opened, E held 5 s within 3 m (`passage_holds.rs`); the first hold calls a wave, its keepers |
-| Vein | Its six nodes are gathered, by any who take part, each gather calling a wave of two, into the haul as a patrol's |
+| Vein | Its six nodes are gathered, by any who take part, each gather calling a wave of two, into the haul as a patrol's, each node returning for its gatherer 9 minutes on (`keep_patrol`) |
 | Kindle | Its three dead lamps are lit, E held 3 s at each within 3 m; a wave comes every 30 s meanwhile, once the last is down |
 | Hold | Its ring (a piece at its first spot, 6 m round, drawn on the floor) is held 90 s by a living player; a wave every 30 s, once the last is down |
 | Hunt | The marked band, "The Marked", an Elite, leading it on a round of the spots, is down |
 | Reckoning | Its three collectors, each named "Collector", are down; each, once a player comes within 12 m, runs to the spot farthest from them |
-| Gauntlet | A player whose dive is here and not done, having stood within 6 m of the arrival this round, reaches the farthest onward mouth (marked in the sites, `Sites::far_mouth`); past 90 s from each one's arrival or the round's start, the later, it is late, and pays no cache; the page's seconds left run the same |
+| Gauntlet | A player whose dive is here and not done, having stood within 6 m of the arrival this round, reaches the farthest onward mouth (marked in the sites, `Sites::far_mouth`); past 90 s from each one's arrival (an account's first in the zone this round, whatever dive it comes on, so a reload keeps it) or the round's start, the later, it is late, and pays no cache; the page's seconds left run the same |
 | Ambush | Its three waves are beaten, each called as the last is down; its mouths are barred until then |
 | Sever | Its three tally posts, struck as foes standing still at their pieces and drawn as the posts alone, are broken; each is guarded |
 
@@ -239,7 +240,7 @@ player but 12 m from every one, each hunting the nearest player. A wave's foe, a
 floor at the navmesh's point nearest its place, never on a dungeon's rock or on a solid's top. Done, the deal has it done for the dive of each player in the zone, opening their mouths,
 and pays its cache, once a dive, to those who took part: who brought down one of its foes, lit a dead lamp, opened
 the reliquary, gathered a node of the vein, held the ring or reached the far mouth; only they count it toward the passages' bounties and the Atheric bounties. In a public room it begins again 60 s on, its guards and targets standing again, its bands as the players there
-now make room for, the rest standing again as more come; a player who came after
+now make room for (a Hunt's marked band always among them), the rest standing again as more come; a player who came after
 it was done goes on once that round is done. A company's room does not begin again, and a member who comes after it
 was done finds it done.
 

@@ -498,6 +498,34 @@ fn a_kindle_counts_toward_the_bounties_only_of_those_who_took_part() {
 }
 
 #[test]
+fn a_homeward_diver_who_left_fallen_and_reloads_home_loses_its_haul() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    assert!(room.open_mouths(ISLAND, vec![([0.0, 0.0], [0.0, 20.0])]));
+    let player = room.join().expect("joined");
+    let mut character = room.players[&player].character.clone();
+    let start = Start {
+        island: ISLAND,
+        week: 2_900,
+        route: Route::Public,
+        mouth: 0,
+        zone: 4,
+        depth: 5,
+        lamp: None,
+        seas: gear::Difficulty::Normal,
+    };
+    character.begin_dive(&start).expect("begun");
+    let dive = character.passage.as_mut().expect("diving");
+    (dive.lamp, dive.homeward) = (1, true);
+    dive.haul.materials.add(gear::character::Stuff::Fragments(gear::kinds::Stock::Weapon), 2);
+    character.left = Some(gear::left::Left { minute: room.minute, health: 0, ..gear::left::Left::default() });
+    let fragments = character.materials.weapon_fragments;
+    assert!(room.restore_character(player, &character.to_json()));
+    let found = &room.players[&player];
+    assert!(found.character.passage.is_none(), "the dive ends in the patrol zone");
+    assert_eq!(found.character.materials.weapon_fragments, fragments, "fallen, what it found after Home lost");
+}
+
+#[test]
 fn a_homeward_dive_joining_another_islands_patrol_zone_loses_its_haul() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     assert!(room.open_mouths("continent-2", vec![([0.0, 0.0], [0.0, 20.0])]));

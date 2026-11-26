@@ -456,7 +456,7 @@ fn lamp_zone(number: u8, depth: u8, level: u8) -> Hour {
 
 /// The lamps a player of `level` lights in a day and a week: the day's first (a dungeon of the day's clear and a sure
 /// Vestige in a Boss's colours) and each of the week's they reach (a Boss's Vestige, Essence from the second, the
-/// fourth's roll as the week's Abyss's first clear).
+/// fourth's roll as the game rolls it, `lamps::FOURTH_LAMP_ROLL`).
 fn lamps_paid(level: u8) -> Hour {
     let lamps = deepest(level) / 5;
     if lamps == 0 {
@@ -476,7 +476,7 @@ fn lamps_paid(level: u8) -> Hour {
             });
         let boss = Hour { essence, ..vestiges(1.0, shares(colours(5), at(number))) };
         let roll = if number >= 4 {
-            vestiges(1.0, shares(crate::activities::Weekly::Abyss.colours(), at(number)))
+            vestiges(1.0, shares(crate::lamps::FOURTH_LAMP_ROLL.colours(), at(number)))
         } else {
             Hour::default()
         };
