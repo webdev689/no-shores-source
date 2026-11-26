@@ -1,6 +1,7 @@
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { handle } from './accounts.ts';
 import { type Characters, type Claimed, characters } from './characters.ts';
+import type { Developers } from './developers.ts';
 import type { CompanyFinder } from './finder.ts';
 import { findingAt } from './finding.ts';
 import { type LinkedCharacter, linkedCharacter, linkedPledges } from './linked.ts';
@@ -20,13 +21,15 @@ interface Env {
   /** The Discord app's keys, as the Worker's secrets; without them, Discord sign-in says it is not set up. */
   readonly DISCORD_CLIENT_ID?: string;
   readonly DISCORD_CLIENT_SECRET?: string;
+  /** The bot's Members (`bot/main.ts`), which says who is a developer; without it, no one is. */
+  readonly BOT?: Developers;
 }
 
 const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
 
 /** The characters, for the rooms alone: reached only through the rooms' service binding, never from the web. */
 export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters {
-  private readonly kept = characters(this.env.DB, Date.now, wait);
+  private readonly kept = characters(this.env.DB, Date.now, wait, this.env.BOT ?? null);
 
   look(token: string): Promise<Claimed | null> {
     return this.kept.look(token);
@@ -36,12 +39,12 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
     return this.kept.claim(token, holder);
   }
 
-  save(account: string, holder: string, body: string): Promise<boolean> {
-    return this.kept.save(account, holder, body);
+  save(account: string, holder: string, body: string, vault: string): Promise<boolean> {
+    return this.kept.save(account, holder, body, vault);
   }
 
-  release(account: string, holder: string, body: string | null): Promise<boolean> {
-    return this.kept.release(account, holder, body);
+  release(account: string, holder: string, body: string | null, vault: string | null): Promise<boolean> {
+    return this.kept.release(account, holder, body, vault);
   }
 
   present(token: string, room: string | null, water: string | null = null): Promise<boolean> {
@@ -79,6 +82,10 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
   outpost(room: string): ReturnType<Characters['outpost']> {
     return this.kept.outpost(room);
   }
+
+  developer(token: string): ReturnType<Characters['developer']> {
+    return this.kept.developer(token);
+  }
 }
 
 /** A Discord member's linked character, for the Discord bot alone: reached only through its service binding. */
@@ -106,6 +113,7 @@ export default {
             fetch: (...asked: Parameters<typeof fetch>) => fetch(...asked),
           }
         : null;
-    return handle(request, { database: env.DB, now: Date.now, discord, pages: env.PAGES.split(/\s+/).filter(Boolean) });
+    const pages = env.PAGES.split(/\s+/).filter(Boolean);
+    return handle(request, { database: env.DB, now: Date.now, discord, pages, bot: env.BOT ?? null });
   },
 } satisfies ExportedHandler<Env>;

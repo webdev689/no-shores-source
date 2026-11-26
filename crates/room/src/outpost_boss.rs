@@ -83,6 +83,8 @@ impl Room {
         let guard = [RUNNER, COLLECTOR, CROSSBOWMAN, ENFORCER].map(|number| (number, Major));
         let members: Vec<_> = core::iter::once((HIGH_ASSESSOR, Boss)).chain(guard).collect();
         let Some(stood) = self.stand_arriving(ground, muster, MUSTER_REACH, &members, SPREAD, seed) else { return };
+        // The horn calls them in: under the open sky an airship brings them to the muster ground.
+        self.by_airship(&stood);
         for id in &stood {
             let Some(foe) = self.foes.get_mut(id) else { continue };
             let times = gear::power::foe_health_times(level) / gear::power::foe_health_times(foe.level);

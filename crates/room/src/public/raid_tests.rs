@@ -299,10 +299,10 @@ fn a_zone_whose_garrison_fills_its_own_places_still_stands_its_events_fullest_wa
         place(&mut room, *player, [100.0, 0.0]);
     }
     let husk = ::foes::foe_type(::foes::roster::HUSK).unwrap();
-    for nth in 0..crate::NODE_FOES_MOST {
+    for nth in 0..crate::PATROL_FOES_MOST {
         room.stand_foe(husk, ::foes::Rank::Minor, [-150.0 + nth as f64 * 2.0, 150.0, 0.0], 0.0, None);
     }
-    assert_eq!(room.others_most(), crate::NODE_FOES_MOST, "the garrison keeps a node's own places");
+    assert_eq!(room.others_most(), crate::PATROL_FOES_MOST, "the garrison keeps a patrol's own places");
     room.tick();
     assert_eq!(raid(&room).wave_foes.len(), 5 + 3, "the first wave and its three Runners more for a full party");
     let mut running = room.public.as_mut().unwrap().running.take().unwrap();
@@ -366,13 +366,14 @@ fn the_tithe_taker_keeps_his_way_from_tick_to_tick_and_lets_it_go_once_killed() 
 }
 
 #[test]
-fn the_garrison_keeps_a_nodes_own_places_beside_the_events_living_foes() {
+fn the_garrison_keeps_a_patrols_own_places_beside_the_events_living_foes() {
     let (mut room, players) = room_at(RAID_MINUTE, 1);
     place(&mut room, players[0], [100.0, 0.0]);
     room.tick();
     let event = standing(&room).len();
     assert!(event > 0);
-    assert_eq!(room.others_most(), crate::NODE_FOES_MOST + event, "the event's own never count against the garrison");
+    let most = crate::PATROL_FOES_MOST + event;
+    assert_eq!(room.others_most(), most, "the event's own never count against the garrison");
 }
 
 #[test]

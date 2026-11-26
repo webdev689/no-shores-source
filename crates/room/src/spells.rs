@@ -211,7 +211,7 @@ impl Room {
     pub(crate) fn foes_near(&self, at: [f64; 3], radius: f64, height: f64) -> Vec<FighterId> {
         let near =
             |body: &Body| libm::hypot(body.x - at[0], body.y - at[1]) <= radius && (body.z - at[2]).abs() <= height;
-        let living = self.foes.iter().filter(|(_, foe)| enemy(&foe.fighter));
+        let living = self.foes.iter().filter(|(id, foe)| enemy(&foe.fighter) && !self.arriving(**id));
         living.filter(|(_, foe)| near(&foe.fighter.body)).map(|(id, _)| *id).collect()
     }
 
@@ -227,7 +227,10 @@ impl Room {
     /// The living foe of a faction whose chest is nearest `at`, within `reach`, that a spell may seek: never one the
     /// Arts pass by (`arts_pass_by`).
     pub(crate) fn nearest_foe(&self, at: [f64; 3], reach: f64) -> Option<FighterId> {
-        let living = self.foes.iter().filter(|(id, foe)| enemy(&foe.fighter) && !self.arts_pass_by(**id));
+        let living = self
+            .foes
+            .iter()
+            .filter(|(id, foe)| enemy(&foe.fighter) && !self.arts_pass_by(**id) && !self.arriving(**id));
         let measured = living.map(|(id, foe)| (*id, distance(at, foe.fighter.chest())));
         measured.filter(|(_, far)| *far <= reach).min_by(|first, second| first.1.total_cmp(&second.1)).map(|(id, _)| id)
     }
@@ -532,7 +535,10 @@ impl Room {
             orb.velocity = way.map(|part| part * def.speed);
         }
         orb.at = moved(orb.at, orb.velocity);
-        let struck = self.foes.iter().find(|(_, foe)| enemy(&foe.fighter) && touches(orb.at, &foe.fighter));
+        let struck = self
+            .foes
+            .iter()
+            .find(|(id, foe)| enemy(&foe.fighter) && !self.arriving(**id) && touches(orb.at, &foe.fighter));
         if let Some(foe) = struck.map(|(id, _)| *id) {
             self.spell_strikes(&orb, foe, orb.at, def.damage);
             return None;

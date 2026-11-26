@@ -4,6 +4,8 @@
 // words from the rules (`activityWords.ts`), never judging a rule itself.
 import type { Layer } from '../ui/stack.ts';
 import { enterAskedRun } from './runAsked.ts';
+import { enterTestRun } from './characters/testLaunch.ts';
+import { leaveToCharacters } from './settingsPage.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { type Activities, activitiesAt, type Gates, gatesAt } from './activities.ts';
 import {
@@ -262,7 +264,7 @@ export function startActivities(
   nodes: readonly NodeInfo[],
   link: AccountLink | null,
   game: Omit<TripGame, 'foot' | 'companyPlaces'> & {
-    readonly foot: () => (TripFoot & ScreensFoot) | null;
+    readonly foot: () => (TripFoot & ScreensFoot & { readonly launchedFor?: string | null }) | null;
     /** The sea's last word of the character while the player is at sea or over an island's side (null before one),
      *  undefined anywhere else: the Playlist closes once the player is not there. */
     readonly atSea?: () => GearState | null | undefined;
@@ -301,6 +303,13 @@ export function startActivities(
     const inside = () => (game.foot() ? Boolean(game.foot()?.dungeon) : null);
     enterAskedRun(location.search, nodes, inside, trips.intoRun);
   }
+  // A test room launched from the Test Room: the rooms the player stands in on foot, none at sea, null under way.
+  const standing = () => {
+    const foot = game.foot();
+    if (foot) return [foot.dungeon?.room, foot.run?.run, foot.launchedFor];
+    return atSea?.() === undefined ? null : [];
+  };
+  enterTestRun(sessionStorage, nodes, standing, trips, () => leaveToCharacters('test'));
   return {
     trips,
     screens,

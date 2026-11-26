@@ -179,7 +179,9 @@ strikes ([[Public Events]]).
   they raise its awareness, and once it is alert it takes its target or searches again; short of that it walks on home,
   so a passing stir never leaves it standing short of its post. Either walk home takes a Boss or a Miniboss back to its
   first phase, and the foes it called fall ([[Enemies]]); walking home after a search it roars into no later phase, so
-  it arrives whole in its first. With nothing stirring it, a garrison foe keeps to its place: one a stir drew off, or an
+  it arrives whole in its first. A foe still arriving, let down from an airship or forming under a crown, neither
+  thinks, steps nor hears, and breaks with no fallen leader, until it lands ([[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]; [[Enemies]], "Arrivals").
+  With nothing stirring it, a garrison foe keeps to its place: one a stir drew off, or an
   ally walking past moved, walks back to it once idle. While its group walks its beat it keeps up with its place,
   walking at the share of a walk that its distance behind is of 2 m, its own walk at most, and faces its way.
 - **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";

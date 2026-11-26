@@ -60,3 +60,14 @@ fn the_penitents_come_as_much_more_often_as_the_living_company_is_larger_than_fo
     let (four, eight) = (walkers(4), walkers(8));
     assert!(eight >= four * 2 - 1, "eight see about twice four's walkers: {eight} against {four}");
 }
+
+#[test]
+fn in_a_test_room_what_unwrites_the_company_loses_nothing() {
+    let (mut room, players) = run(Tier::Hard, 1);
+    room.make_test();
+    super::fights_tests::begin_at(&mut room, &players, "mending", "mender");
+    room.breach.as_mut().expect("run").fights.mending.fused = [2, 1, 1];
+    room.tick();
+    assert!(breach(&room).lost.is_none(), "the fusions harm the tester but lose no attempt");
+    assert!(room.players[&players[0]].living(), "who still stands");
+}

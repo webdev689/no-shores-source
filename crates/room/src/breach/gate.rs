@@ -286,7 +286,7 @@ impl Room {
                 *claim = None;
             }
         }
-        let held = moorings.iter().enumerate().all(|(nth, at)| {
+        let held_at = |(nth, at): (usize, &[f64; 3])| {
             gate.claims[nth].is_none()
                 && company.players.iter().any(|player| {
                     self.players.get(player).is_some_and(|found| {
@@ -294,7 +294,10 @@ impl Room {
                             && apart([found.fighter.body.x, found.fighter.body.y], [at[0], at[1]]) <= MOORING_REACH_M
                     })
                 })
-        });
+        };
+        // In a test room one player is the whole company: any one mooring held fills the Spire as all three do.
+        let held =
+            if self.test { moorings.iter().enumerate().any(held_at) } else { moorings.iter().enumerate().all(held_at) };
         // A company gone from the hollow lets the gate go to the next.
         let near = company.players.iter().any(|player| {
             self.players
@@ -359,16 +362,30 @@ impl Room {
         }
     }
 
-    /// Bulwarks sent from the mouths to claim the moorings left empty; answers how many stood.
+    /// Bulwarks sent from the mouths to claim the moorings left empty, each mouth's formed under a crown over it, as
+    /// the Waking's are; answers how many stood.
     fn send_claimers(&mut self, gate: &mut Gate, moorings: &[[f64; 3]], count: usize) -> usize {
         let mouths: Vec<[f64; 3]> = (1..=4).filter_map(|number| gate.socket(&format!("mouth-{number}"))).collect();
+        let mut at_mouth: BTreeMap<usize, Vec<FighterId>> = BTreeMap::new();
+        let mut stood = count;
         for nth in 0..count {
-            let Some(mouth) = mouths.get((gate.waves + nth) % mouths.len().max(1)) else { return nth };
-            let Some(id) = self.stand_gate_foe(gate, (BULWARK, Rank::Elite), *mouth) else { return nth };
+            let mouth_number = (gate.waves + nth) % mouths.len().max(1);
+            let Some(mouth) = mouths.get(mouth_number) else {
+                stood = nth;
+                break;
+            };
+            let Some(id) = self.stand_gate_foe(gate, (BULWARK, Rank::Elite), *mouth) else {
+                stood = nth;
+                break;
+            };
             self.inert.insert(id);
             gate.claimers.push((id, (gate.waves + nth) % moorings.len().max(1)));
+            at_mouth.entry(mouth_number).or_default().push(id);
         }
-        count
+        for formed in at_mouth.values() {
+            self.under_crown(formed);
+        }
+        stood
     }
 
     /// Each claimer walks to its mooring and, finding it empty of the company, claims it and fights there; one that
@@ -404,16 +421,22 @@ impl Room {
         let holders = gate.held_by.as_ref().and_then(|run| gate.companies.get(run)).map_or(0, |company| {
             company.players.iter().filter(|player| self.players.get(player).is_some_and(Player::living)).count()
         });
+        // Each mouth's and each perch's foes form under a crown of crystal over it (`arrivals.rs`).
+        let mut at_mouths: Vec<Vec<FighterId>> = vec![Vec::new(); mouths.len()];
         for nth in 0..(2 + holders / 2).min(super::waves::WAVE_MOST) {
             let kind = if nth % 2 == 0 { (HUSK, Rank::Major) } else { (FLICKER, Rank::Major) };
-            if let Some(mouth) = mouths.get((gate.waves + nth) % mouths.len().max(1)) {
-                self.stand_gate_foe(gate, kind, *mouth);
+            let mouth = (gate.waves + nth) % mouths.len().max(1);
+            if let Some(&at) = mouths.get(mouth) {
+                at_mouths[mouth].extend(self.stand_gate_foe(gate, kind, at));
             }
         }
         if gate.waves % 2 == 1
             && let Some(perch) = perches.get(gate.waves / 2 % perches.len().max(1))
         {
-            self.stand_gate_foe(gate, (RAVAGER, Rank::Elite), *perch);
+            at_mouths.push(self.stand_gate_foe(gate, (RAVAGER, Rank::Elite), *perch).into_iter().collect());
+        }
+        for foes in at_mouths {
+            self.under_crown(&foes);
         }
         gate.waves += 1;
     }

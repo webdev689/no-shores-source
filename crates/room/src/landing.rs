@@ -25,7 +25,10 @@ impl Room {
 
     /// Whom a foe fights: none for one fallen or inert.
     fn fighting(&self, foe: FighterId) -> Option<FighterId> {
-        let found = self.foes.get(&foe).filter(|found| !found.fighter.dead() && !self.inert.contains(&foe))?;
+        let found = self
+            .foes
+            .get(&foe)
+            .filter(|found| !found.fighter.dead() && !self.inert.contains(&foe) && !self.arriving(foe))?;
         found.brain.fights()
     }
 

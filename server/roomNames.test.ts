@@ -17,6 +17,7 @@ import {
   seaRoomName,
   socketsMost,
   startedAtSea,
+  testRoom,
 } from './roomNames.ts';
 
 test('a node has one room at each difficulty, by one spelling each', () => {
@@ -455,4 +456,77 @@ test('a Breach’s run names its gate’s patrol zone and its tier before its in
   assert.deepEqual(breachRun(`node-${room}`), { zone: 'node-gullwing-vale', tier: 1 });
   assert.ok(privateRun(`node-${room}`));
   assert.ok('node-gullwing-vale--breach-normal--run-zzzzzzzz'.length <= 64);
+});
+
+test('a test run is named as its real run is with `--test-<instance>` last, and the Breach’s zone copy shares it', () => {
+  const run = { dungeon: null, playlist: null, guild: null, breach: null, test: true };
+  assert.deepEqual(nodeRoom('krakens-grotto--abyss--playlist-30--test-k3j4h5g6'), {
+    ...run,
+    id: 'krakens-grotto',
+    seas: 2,
+    run: 'k3j4h5g6',
+    playlist: 30,
+  });
+  assert.deepEqual(nodeRoom('krakens-grotto--elite--test-k3j4h5g6'), {
+    ...run,
+    id: 'krakens-grotto',
+    seas: 1,
+    run: 'k3j4h5g6',
+  });
+  assert.deepEqual(nodeRoom('gullwing-vale--breach-hard--test-k3j4h5g6'), {
+    ...run,
+    id: 'gullwing-vale',
+    seas: 0,
+    run: 'k3j4h5g6',
+    breach: 1,
+  });
+  assert.deepEqual(nodeRoom('gullwing-vale--test-k3j4h5g6'), { ...run, id: 'gullwing-vale', seas: 0, run: null });
+  for (const name of [
+    'krakens-grotto--test-k3j4h5g6',
+    'saltgrass-downs--test-k3j4h5g6',
+    'krakens-grotto--normal--test-k3j4h5g6',
+    'krakens-grotto--rough--test-k3j4h5g6',
+    'krakens-grotto--elite--test-k3j4h5g',
+    'krakens-grotto--elite--test-K3J4H5G6',
+    'krakens-grotto--elite--test-k3j4h5g6--test-k3j4h5g6',
+    'krakens-grotto--elite--run-k3j4h5g6--test-k3j4h5g6',
+    'krakens-grotto--elite--test-k3j4h5g6--run-k3j4h5g6',
+    'krakens-grotto--elite--sea--test-k3j4h5g6',
+    'krakens-grotto--elite--dungeon-0--test-k3j4h5g6',
+    'krakens-grotto--playlist-30--test-k3j4h5g6',
+    'gullwing-vale--elite--breach-hard--test-k3j4h5g6',
+    'gullwing-vale--breach-easy--test-k3j4h5g6',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--test-k3j4h5g6',
+    '--test-k3j4h5g6',
+  ])
+    assert.equal(nodeRoom(name), null, name);
+  assert.equal(nodeRoom('krakens-grotto--elite--run-k3j4h5g6')?.test, undefined, 'a real run is no test');
+  assert.equal(nodeRoom('gullwing-vale')?.test, undefined, 'nor a real zone');
+});
+
+test('a test run opens from its real run’s ask, holds a run’s sockets, and its Breach’s gate is its own zone copy', () => {
+  const playlist = 'node-krakens-grotto--abyss--playlist-30--test-k3j4h5g6';
+  assert.equal(runAsk(playlist, 7), runAsk('node-krakens-grotto--abyss--playlist-30--run-k3j4h5g6', 7));
+  assert.equal(startedAtSea(playlist), true, 'a playlist’s test run is entered from the sea as its run is');
+  const breach = 'node-gullwing-vale--breach-normal--test-k3j4h5g6';
+  assert.equal(breachAsk(breach, 7), breachAsk('node-gullwing-vale--breach-normal--run-k3j4h5g6', 7));
+  assert.deepEqual(breachRun(breach), { zone: 'node-gullwing-vale--test-k3j4h5g6', tier: 0 });
+  const zone = 'node-gullwing-vale--test-k3j4h5g6';
+  assert.equal(runAsk(zone, 7), null, 'the zone copy opens as its node does');
+  assert.equal(breachAsk(zone, 7), null);
+  for (const name of [playlist, breach, zone, 'node-krakens-grotto--elite--test-k3j4h5g6']) {
+    assert.ok(testRoom(name), name);
+    assert.ok(privateRun(name), name);
+  }
+  assert.equal(socketsMost(breach), BREACH_MOST * 2);
+  assert.equal(socketsMost(zone), BREACH_MOST * 2, 'the zone copy holds the Breach’s company');
+  assert.equal(socketsMost(playlist), RUN_MOST * 2);
+  for (const name of [
+    'node-krakens-grotto--elite--run-k3j4h5g6',
+    'node-gullwing-vale',
+    'test-course',
+    'node-krakens-grotto--test-k3j4h5g6',
+    'sea--test-k3j4h5g6',
+  ])
+    assert.equal(testRoom(name), false, name);
 });

@@ -221,6 +221,10 @@ fn a_player_who_only_struck_one_of_its_foes_from_afar_took_part_and_gets_a_chest
 fn failed_its_foes_walk_back_into_the_crack_at_four_metres_a_second_and_are_gone_there() {
     let (mut room, _) = begun();
     let foe = lesser(&room)[0];
+    // Formed under its crown (`arrivals.rs`), it walks.
+    while room.arriving(foe) {
+        room.tick();
+    }
     let found = room.foes.get_mut(&foe).unwrap();
     (found.fighter.body.x, found.fighter.body.y) = (FISSURE_AT[0] + 20.0, FISSURE_AT[1]);
     running_mut(&mut room).ticks_left = 1;

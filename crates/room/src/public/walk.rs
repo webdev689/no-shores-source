@@ -20,6 +20,10 @@ impl Room {
     /// way it goes: whether it stands there now. A foe no longer standing stands nowhere to move.
     pub(crate) fn walk_inert(&mut self, id: FighterId, to: [f64; 3], pace: f64) -> bool {
         let Some(foe) = self.foes.get(&id) else { return true };
+        // Still being let down, it walks nowhere yet.
+        if self.arriving(id) {
+            return false;
+        }
         let body = foe.fighter.body;
         let from = [body.x, body.y, body.z];
         if apart([from[0], from[1]], [to[0], to[1]]) <= ARRIVED {

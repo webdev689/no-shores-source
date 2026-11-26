@@ -187,7 +187,10 @@ the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet
 looking 17° down over the parapet onto the city, the harbour and the sea. Arriving from the story played through, the
 stranger's last moment plays there once the veil has fallen ([[Prologue]]); leaving the node ends it.
 
-A returning player, past the title with the story played before, goes back where they last left the overworld or a
+Where the page has accounts, the character screen stands between the title and all of this ([[Interface]], "The
+character screen"): the character chosen there decides whether the story plays and where the player arrives, and a
+developer's Test Room launch goes on from that arrival into its test room. A returning player, past the title with the
+story played before, goes back where they last left the overworld or a
 social space ([[A Player Logs Back In Where They Left the Overworld or a Social Space]], `relog.ts`): the veil says
 "Returning to your ship" and they are aboard, the ship where the sea room kept it (offline, where the page kept it);
 or "Arriving at" the social space, standing where they left it. Online the accounts say which (`/v1/me`'s `place`),

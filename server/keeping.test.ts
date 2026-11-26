@@ -112,17 +112,11 @@ test('a player whose character another room took is let go; a token that is no s
 });
 
 test('a character this room cannot read, or a player gone before the claim is answered, is let go untouched', async () => {
-  const { clock, kept, token } = await world();
-  const room = roomOf();
-  room.held.set(1, 'not readable');
-  const keeper = new Keeper(kept, room, 'node-a', () => undefined);
-  await keeper.signIn(
-    1,
-    token,
-    () => clock.now,
-    () => true,
-  );
-  await keeper.leave(1);
+  const { database, clock, kept, token } = await world();
+  const claimed = await kept.claim(token, 'node-a:1');
+  assert.ok(claimed);
+  await kept.release(claimed.account, 'node-a:1', null, null);
+  await database.prepare("UPDATE characters SET body = 'not readable'").run();
   // Kept as something no room reads: the next room is handed it as it is and refuses it, saving nothing over it.
   const other = roomOf();
   other.held.set(4, '{"mine":1}');
@@ -173,9 +167,9 @@ test('a leaving player whose release the accounts do not answer has their last s
       asked.push('release');
       return Promise.reject(new Error('the accounts are not answering'));
     },
-    save: (account: string, holder: string, body: string) => {
+    save: (account: string, holder: string, body: string, vault: string) => {
       asked.push('save');
-      return kept.save(account, holder, body);
+      return kept.save(account, holder, body, vault);
     },
   };
   const waited: number[] = [];
@@ -216,14 +210,14 @@ test('a change that changed nothing is not saved again, and a leaving save waits
   let landSave = () => undefined as void;
   const slow = {
     ...kept,
-    save: async (account: string, holder: string, body: string) => {
+    save: async (account: string, holder: string, body: string, vault: string) => {
       saved.push(body);
       if (body === '{"xp":2}') await new Promise<void>((resolve) => (landSave = resolve));
-      return kept.save(account, holder, body);
+      return kept.save(account, holder, body, vault);
     },
-    release: (account: string, holder: string, body: string | null) => {
+    release: (account: string, holder: string, body: string | null, vault: string | null) => {
       saved.push(`release ${body}`);
-      return kept.release(account, holder, body);
+      return kept.release(account, holder, body, vault);
     },
   };
   const keeper = new Keeper(slow, room, 'node-overlook', () => undefined);
@@ -305,8 +299,8 @@ test('a new account’s character is the one the room holds, given back to the r
   const room = roomOf();
   room.held.set(1, '{"starting":true}');
   const given: string[] = [];
-  const restore = room.restoreCharacter;
-  room.restoreCharacter = (player, body) => (given.push(body), restore(player, body));
+  const restore = room.restoreJoined;
+  room.restoreJoined = (player, body, vault) => (given.push(body), restore(player, body, vault));
   const keeper = new Keeper(kept, room, 'sea', () => undefined);
   assert.equal(
     await keeper.signIn(

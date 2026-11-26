@@ -421,6 +421,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     revives: -1,
     darkness: false,
     reviving: [],
+    arrivals: [],
     vessels: [],
     balls: [],
     naval: [],

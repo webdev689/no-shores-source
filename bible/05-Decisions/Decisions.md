@@ -308,6 +308,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Set Names Stand as Claude Drafted Them]]
 - [[Weapons and Armour Carry Flavour Text]]
 - [[Commons Drop as Themselves, Never as Vestiges]]
+- [[Kills Drop Four Times as Often, and a Miniboss Half the Time]]
 - [[Breach Weapons Come Normal and Forged]]
 - [[A Breach's Normal Weapons Carry No Element, and Its Forged Ones Always Do]]
 - [[Forged Perks Are Stronger, and Hard Armour Is Forged Too]]
@@ -398,6 +399,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Meadow's Green Stands a Shade Darker]]
 - [[The Desktop App Is Built in Full With Vulkan, on Claude's Autonomy]]
 - [[The Desktop App as Claude Builds It]]
+- [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]
+- [[Foe Arrivals as Claude Builds Them]]
+- [[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]
+- [[The Landing's Groups Are Let Go as Territories Are]]
 - [[The Desktop App Opens on a Launcher in the Game's Look]]
 - [[The Desktop App Stays on Electron]]
 - [[The Desktop App Releases With Each Merge That Changes It]]
@@ -410,6 +415,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea Has Two Views, Docking Asks First, and an Island's Nodes Stand in a Panel]]
 - [[An Island's Places Stand as Even Tiles in a Grid, and the Playlist's Opens Its Screen]]
 - [[The Island's Tiles Are Painted Scenes, and Each Patrol Zone Has Three Landing Zones]]
+- [[Each Account Keeps Four Characters, Chosen on a Screen After Destiny 1's]]
+- [[Developers Launch Activities From a Test Room, in Max Gear]]
+- [[Character Slots and the Test Room as Claude Builds Them]]
 
 ## Replaced
 

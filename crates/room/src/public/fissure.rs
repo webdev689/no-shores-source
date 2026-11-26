@@ -299,11 +299,14 @@ impl Room {
             members[0] = if nth % 2 == 0 { (BULWARK, Elite) } else { (RAVAGER, Elite) };
         }
         let start = draws.draw() * TAU;
+        let mut stood = Vec::new();
         for (turn, member) in members.into_iter().enumerate() {
             let facing = start + TAU * turn as f64 / size as f64;
             let place = [at[0] + libm::sin(facing) * POUR_OUT, at[1] - libm::cos(facing) * POUR_OUT, at[2]];
-            self.stand_event_foe(running, member, (place, facing), (at, public.level), true);
+            stood.extend(self.stand_event_foe(running, member, (place, facing), (at, public.level), true));
         }
+        // Each wave forms under a crown of crystal over the crack (`arrivals.rs`).
+        self.under_crown(&stood);
     }
 
     /// The seal complete on a heroic Fissure: its last push brings out the Warden, posted where it climbs out, clear of
@@ -316,6 +319,7 @@ impl Room {
         {
             self.toughen(id, usize::from(fissure.players_most));
             self.names.insert(id, WARDEN_NAME);
+            self.under_crown(&[id]);
             fissure.warden = Some(id);
             running.stage = 2;
             self.tell(EventKind::PublicStage, None, 0, id, 2.0);

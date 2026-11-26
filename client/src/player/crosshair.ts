@@ -71,15 +71,17 @@ export function crosshairPoint(
 }
 
 /** The feet of each body drawn (`drawn`, by the room's number) that a player's aimed shot would stop on, as the room
- *  flies it: a living foe, never a dead one nor one of the players' side (`foes`, the fight's). */
+ *  flies it: a living foe, never a dead one, one of the players' side, nor one still arriving, which no shot meets
+ *  until it lands (`foes`, the fight's). */
 export function shotBodies(
   drawn: ReadonlyMap<number, { readonly x: number; readonly y: number; readonly z: number }>,
-  foes: ReadonlyMap<number, { readonly view: Pick<FighterView, 'side' | 'action'> }>,
+  foes: ReadonlyMap<number, { readonly view: Pick<FighterView, 'side' | 'action'>; readonly arrival?: unknown }>,
 ): Point[] {
   return [...drawn]
     .filter(([id]) => {
-      const view = foes.get(id)?.view;
-      return view !== undefined && view.side !== 'players' && view.action.kind !== 'dead';
+      const foe = foes.get(id);
+      const view = foe?.view;
+      return view !== undefined && !foe?.arrival && view.side !== 'players' && view.action.kind !== 'dead';
     })
     .map(([, { x, y, z }]) => [x, y, z] as const);
 }

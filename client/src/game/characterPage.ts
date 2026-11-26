@@ -423,7 +423,7 @@ function heading(said: string, size: number, end: boolean, below: number): Node 
 }
 
 /** Prestige's own colour beside the level's brass: a pale steel. */
-const PRESTIGE_INK = '#d3e4f2';
+export const PRESTIGE_INK = '#d3e4f2';
 
 /** One of the two plaques over the figure: its name over a rule, and its number large. */
 function plaqueNode(name: string, value: number, colour: string, sizes: MenuContext['sizes']): Node {

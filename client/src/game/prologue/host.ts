@@ -7,6 +7,8 @@ import type { InputFrame } from '../../player/input.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { rosterOf } from '../../rules/roster.ts';
+import { characterGate } from '../characters/characterGate.ts';
+import type { NodeInfo } from '../worldData.ts';
 import { backAtHelm } from './accountAsk.ts';
 import { beatNamed, prologuePlayed } from './beat.ts';
 import type { Epilogue } from './epilogue.ts';
@@ -45,7 +47,7 @@ export class StoryHost {
   }
 
   /** Starts the story on the game's parts, once the rooms' module has compiled; `failed` if it cannot start. */
-  begin(game: Omit<StoryGame, 'roster'>, failed: () => void): void {
+  begin(game: Omit<StoryGame, 'roster' | 'gate'> & { readonly nodes?: readonly NodeInfo[] }, failed: () => void): void {
     // A player back from Discord picks the story up at the helm, where they left it; the mark is read and cleared
     // here, and a story played through is never begun again from it.
     const back = backAtHelm(sessionStorage, prologuePlayed(localStorage)) ? 'creation' : null;
@@ -53,8 +55,10 @@ export class StoryHost {
     const asked = new URLSearchParams(location.search);
     const arrival = import.meta.env.DEV && asked.get('arrival') === '1';
     const from = (import.meta.env.DEV ? beatNamed(arrival ? 'shore' : asked.get('prologue')) : null) ?? back;
+    // Where the page has accounts, beginning at the title opens the character screen.
+    const gate = game.link ? characterGate({ ...game, link: game.link }) : undefined;
     game.roomModule
-      .then((module) => startStory({ ...game, roster: rosterOf(module) }, from))
+      .then((module) => startStory({ ...game, roster: rosterOf(module), gate }, from))
       .then(
         (started) => {
           // A headless check reads the story's state from the page.
