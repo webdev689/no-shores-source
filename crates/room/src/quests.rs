@@ -280,6 +280,7 @@ impl Room {
                     | Goal::Wear(_)
                     | Goal::Ride(_)
                     | Goal::Sail(_)
+                    | Goal::Use(_)
                     | Goal::Escort(_)
                     | Goal::Tail(_)
                     | Goal::Defend(_)

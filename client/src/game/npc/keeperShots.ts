@@ -6,7 +6,8 @@ import type { GearState } from '../../network/gearMessages.ts';
 import { ARRIVED, GEAR, LETTERS } from '../journalShots.ts';
 import { menuShot } from '../mountShots.ts';
 import { COUNTERS, QUESTS } from '../quests/questBook.ts';
-import { giftNotice } from '../quests/questNews.ts';
+import { giftNotice, houseGiftNotice } from '../quests/questNews.ts';
+import { lessonNotice } from '../quests/lessons.ts';
 import { bookCard, questCardNode } from '../quests/questCard.ts';
 import { type Notice, Obtained, obtainedLayer } from '../obtained.ts';
 import type { Node } from '../../ui/node.ts';
@@ -82,6 +83,13 @@ export const acquiredNotice = withNotice('weaponsmith', ACQUIRED, {
 });
 export const armourNotice = withNotice('armorsmith', ARRIVED, giftNotice('armour'));
 export const horseNotice = withNotice('tack', GEAR, giftNotice('horse'));
+export const houseGiftShot = withNotice('lamplighters', GEAR, houseGiftNotice(2));
+/** The first step of "Use your gifts" as the room ticks it at the Mage's counter. */
+const opened = QUESTS[place('house') - 1]?.tasks[taskOf('house', 'use-your-gifts')]?.goals[0];
+export const useStepNotice = withNotice('mage', GEAR, {
+  ...(opened ? lessonNotice(opened) : { title: '', line: '' }),
+  icon: { key: 'keeper mage', svg: keeperMarkSvg('mage') },
+});
 /** The card the Journal's hover card shows for the quest walked, as its keeper offered it, its objectives ticked. */
 export const journalCard = (): Node => {
   const offered = ACQUIRED.quest ? bookCard('house', ACQUIRED.quest) : null;

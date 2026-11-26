@@ -66,6 +66,7 @@ fn meeting<'told>(goal: &'told GoalDef, places: &'told [Place]) -> Event<'told> 
         Goal::Wear(wear) => Event::Worn(wear.slot),
         Goal::Ride(ride) => Event::Ride { act: ride.act, at: ride.to.as_deref() },
         Goal::Sail(sail) => Event::Sail(sail.act),
+        Goal::Use(done) => Event::Used(done.act),
     }
 }
 

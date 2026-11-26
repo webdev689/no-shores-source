@@ -107,6 +107,8 @@ mod factions_tests;
 #[cfg(test)]
 mod gate_tests;
 #[cfg(test)]
+mod gift_steps_tests;
+#[cfg(test)]
 mod gifts_tests;
 #[cfg(test)]
 mod horses_tests;

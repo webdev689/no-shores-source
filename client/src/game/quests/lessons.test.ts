@@ -32,6 +32,7 @@ function kept(id: string, counts: readonly number[] = []): Kept {
     earned: empty,
     choices: empty,
     offered: 0,
+    houseGifts: 0,
   };
 }
 
@@ -121,4 +122,37 @@ test('the sailing lesson sends the player to their ship, then points at the hulk
   assert.equal(guideOf(onTask('learn-the-helm'), afloat(null), CHART).notes[5], null, 'nothing to search for');
   const home = guideOf(onTask('bring-it-home'), afloat(null), CHART);
   assert.deepEqual(home, { at: [1000, 0], notes: [LEGS.sail('Overlook')], goal: goalsOf('bring-it-home')[0] });
+});
+
+test('after Put them on, Use your gifts asks each gift used, at its counter or by its key', () => {
+  const ids = QUESTS[OPENING]?.tasks.map((task) => task.id) ?? [];
+  assert.equal(ids[ids.indexOf('wear-them') + 1], 'use-your-gifts');
+  const [identify, withdraw, dye, letter] = goalsOf('use-your-gifts');
+  assert.ok(identify && withdraw && dye && letter);
+  assert.deepEqual(
+    [identify, withdraw, dye, letter].map((goal) => [goal.act, goal.to]),
+    [
+      ['identify', 'mage'],
+      ['withdraw', 'vault'],
+      ['dye', undefined],
+      ['letter', 'mail'],
+    ],
+  );
+  assert.deepEqual(lessonKeys(dye, 'keys', DEFAULTS), ['I'], 'the dye worn on the Character screen');
+  assert.deepEqual(lessonKeys(identify, 'keys', DEFAULTS), [], 'a counter, not a key');
+  assert.ok(doneAnywhere(dye, false) && !doneAnywhere(letter, false));
+  const stations = ['mage', 'vault', 'mail'].map((kind, place) => ({
+    kind,
+    keeper: [1100 + place, 0],
+    counter: [1100 + place, 1],
+  }));
+  const square = { ...OVERLOOK, stations } as NodeInfo;
+  const guide = guideOf(onTask('use-your-gifts'), { ...ashore, node: square }, { nodes: [square], layouts: [] });
+  assert.deepEqual(guide.at, [1100, 1], 'the Mage first');
+  assert.deepEqual(
+    lessonsBetween(kept('use-your-gifts'), kept('use-your-gifts', [0, 0, 1, 0])).map(
+      (notice) => `${notice.title}: ${notice.line}`,
+    ),
+    ['Your gifts: Wear a dye'],
+  );
 });

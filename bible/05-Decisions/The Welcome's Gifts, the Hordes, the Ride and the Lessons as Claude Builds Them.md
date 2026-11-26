@@ -139,3 +139,23 @@ your baby". Each is the owner's to change.
 | The key and what it opens at the band's right | The line's ink, not dimmed as the reference's | Through the translucent band over a white scene a dimmer ink reads under 4.5:1; the bold title still leads |
 | A long notice line on a phone | One text the column's width, wrapping inside the view | It ran off the right edge as one unbroken line at 412 px |
 | Where notices stand | Across the foot over every layer (the menu's too, under the pad's cursor), the pointer passing through; DFO's messages stay toasts over the dialogue box | The reference's band; nothing under it is lost to a click |
+
+## The pledged house's gift and the steps that teach the gifts
+
+| Call | Chosen | Why |
+|---|---|---|
+| "Uncommon" | Magic, the game's second rarity | Normal, Magic, Rare, Legendary and Atheric stand for Destiny's Common, Uncommon, Rare, Legendary and Exotic |
+| The pledged house's gift | The house's own torso piece (the Stormcaller Hauberk, the Lamplighter Hauberk, the Veiled Hauberk), its look and name, made at Magic at the player's level and rolled as any Magic torso is, given by the room as the pledge is taken | The owner's "Give a piece of uncommon faction gear"; the torso shows the house's colours most |
+| How it is made | A rolled Magic torso (`vestige::make`) carrying the house's torso entry's name (`named`), its content the factions'; no new catalogue entry | The smallest way: the page and the room already draw and name a piece by its entry, and the catalogue, the wares (`factions::wares`), `sold_by_faction` and the Legendary pieces stay as they were. As a faction's piece it dismantles as a Normal one, as every faction's piece does |
+| How often | Once a character for each house, kept given by the entry's name in the quest log beside the keepers' gifts; a switch to another house gives that house's once, a switch back none | One rule with the keepers' gifts: a reload or a switch never gives it twice |
+| Where it goes | Carried, else laid in the vault, else posted as itself | A found Magic piece with no room becomes a sealed Vestige, which would lose the house's look; posted as itself it is never lost |
+| The leader's line | One line each (`giftStorm`, `giftLamp`, `giftVeil`), said as the piece is given; when the house's road begins in the same moment, its begin is said instead, its first line now "Wear our colours." | The begin is two lines of the same leader: a line before it would be three in a row ([[Dialogue]]) |
+| The notice | The leader's gift ("Arlo Kestrel's gift"), the piece's name and the Character key, under the house's Art's emblem | The houses keep no keeper's mark; the Art is the house's sign on the page |
+| How the page sees it | A Magic piece of the house's torso entry, of the house pledged to, held now and not before, as the pledge changes; one posted with the bag and the vault full shows its letter, not the notice | The room's word carries the items; no new field on the wire |
+| The steps' task | "Use your gifts", right after "Put them on": Have the Mage open a Vestige, Take your cloak from the vault, Wear a dye, Take your letter from the mail; no start or end line | The owner's "Add steps"; after the armour and weapons are worn, before the houses; the houses' task begins with Arlo's line, so a line of the task's own would add a seam for nothing |
+| The goal kind | `use`, its `act` (`identify`, `withdraw`, `dye`, `letter`) and the counter it is done at (`to`), checked against the act as the file is read; ticked from the ask the room answered (`Event::Used`) | No event heard these asks; one small kind as `ride` and `sail` are |
+| What counts | Any Vestige opened, any piece taken from the vault, any dye worn, any letter taken | The step teaches the act; the gift is the first thing to do it with |
+| A step done before the task | Counted only when done again, but a Vestige opened with none left sealed and a letter taken with the mail empty are met as the task begins | Taking a piece out and wearing a dye can always be done again; opening and taking cannot once nothing is left, so no save is stuck |
+| Pay | None: it is done at the keepers' counters, as "Put them on" is | The rule pays a mission's clear only for a task that sends the player out |
+| The tracker | The Mage's, the Vault Keeper's and the Postmaster's counters pointed at; the dye "Anywhere", its key the Character key | As the lessons name their places and keys |
+| The houses' begins | Each begin's first line now opens with the gift ("Wear our colours. The Tithe took our storm-glass, and Pell went after it.") | Said with the piece given, in place of the leader's own line |

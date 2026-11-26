@@ -4,17 +4,19 @@
 // The watch (questWatch.ts) decides when they are said.
 import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import factions from '../../../../content/gear/factions.json' with { type: 'json' };
+import items from '../../../../content/gear/items.json' with { type: 'json' };
 import type { GearState } from '../../network/gearMessages.ts';
 import { emblemSvg } from '../artsCards.ts';
 import { keeperMarkSvg } from '../npc/npcMarks.ts';
 import type { Notice } from '../obtained.ts';
 import { FIGURE_STATES } from '../../network/questMessages.ts';
 import { type Goal, QUESTS, type Reward, type Task, type Walked, failLine } from './questBook.ts';
-import { lessonNotice } from './lessons.ts';
+import { isLesson, lessonNotice } from './lessons.ts';
 
 /** What the page keeps of a character to tell what is new: where they walk, the task's counts and each goal's
  *  failures, the states of the figures walking for it, their pledge and Aurem, what each Art's road has earned and
- *  each Art's fragment choices waiting, in the Arts' order, and the keeper offering the quest walked while it waits. */
+ *  each Art's fragment choices waiting, in the Arts' order, the keeper offering the quest walked while it waits, and
+ *  the houses whose own piece they hold as its leader gives it (Magic), a bit each by the house's number less one. */
 export interface Kept extends Walked {
   readonly offered: number;
   readonly counts: readonly number[];
@@ -24,6 +26,7 @@ export interface Kept extends Walked {
   readonly aurem: number;
   readonly earned: readonly number[];
   readonly choices: readonly number[];
+  readonly houseGifts: number;
 }
 
 /** What a gear message holds of the roads; none from a room that sends none, or from a word not on the player's own
@@ -44,6 +47,14 @@ export function keptOf(gear: GearState | null): Kept | null {
     earned: gear.arts?.earned ?? [],
     choices,
     offered: quest.offered ?? 0,
+    // shortcut: a piece posted with the bag and the vault full is not seen, so its notice is not shown; the letter is.
+    houseGifts: factions.factions.reduce(
+      (bits, house) =>
+        gear.items.some((held) => held.named === houseTorso(house.id)?.id && held.rarity === MAGIC)
+          ? bits | (1 << (house.id - 1))
+          : bits,
+      0,
+    ),
   };
 }
 
@@ -87,16 +98,19 @@ export function metBetween(before: Kept, after: Kept): string[] {
   return scenes;
 }
 
-/** The notices of the riding and sailing lessons' steps the room ticked between `before` and `after`, in the task's
- *  order: those met in the task still walked, or every one left of a task the word saw done. */
+/** The keeper each lesson's steps are announced under: the Tack's riding, the Harbourmaster's sailing; a gift's step
+ *  its counter's keeper, the Tailor's for the dye. */
+const lessonKeeper = (goal: Goal): string =>
+  goal.kind === 'ride' ? 'tack' : goal.kind === 'sail' ? 'harbourmaster' : (goal.to ?? 'tailor');
+
+/** The notices of the riding, sailing and gifts' lessons' steps the room ticked between `before` and `after`, in
+ *  the task's order: those met in the task still walked, or every one left of a task the word saw done. */
 export function lessonsBetween(before: Kept, after: Kept): Notice[] {
   const same = before.quest === after.quest && before.task === after.task;
   const task = same ? QUESTS[after.quest - 1]?.tasks[after.task] : tasksDone(before, after)[0];
   return (task?.goals ?? []).flatMap((goal, index) =>
-    (goal.kind === 'ride' || goal.kind === 'sail') &&
-    !met(goal, before.counts[index]) &&
-    (!same || met(goal, after.counts[index]))
-      ? [{ ...lessonNotice(goal), icon: keeperIcon(goal.kind === 'ride' ? 'tack' : 'harbourmaster') }]
+    isLesson(goal) && !met(goal, before.counts[index]) && (!same || met(goal, after.counts[index]))
+      ? [{ ...lessonNotice(goal), icon: keeperIcon(lessonKeeper(goal)) }]
       : [],
   );
 }
@@ -170,7 +184,53 @@ export function giftsBetween(before: Kept, after: Kept): Notice[] {
       ...(paid > 0 ? [{ title: `No ${art.name} fragment left to choose`, line: `${price} Aurem instead.`, icon }] : []),
     ];
   });
-  return [...keepersGiftsBetween(before, after).map(giftNotice), ...artsGiven];
+  const pledged = houseGiftGiven(before, after);
+  return [
+    ...keepersGiftsBetween(before, after).map(giftNotice),
+    ...(pledged ? [houseGiftNotice(pledged)] : []),
+    ...artsGiven,
+  ];
+}
+
+/** Each house's leader and the line they say as they give its own piece (`content/story/houses.json`), by its key. */
+const LEADERS: Readonly<Record<string, { readonly leader: string; readonly scene: string }>> = {
+  stormcallers: { leader: 'Arlo Kestrel', scene: 'giftStorm' },
+  lamplighters: { leader: 'Elder Maren Hale', scene: 'giftLamp' },
+  veiled: { leader: 'Sable', scene: 'giftVeil' },
+};
+
+/** The rarity a house's leader gives its piece at: Magic, the game's Uncommon. */
+const MAGIC = 1;
+
+/** A house's own torso piece in the catalogue, whose look and name its leader's gift wears (`give_house_piece`). */
+function houseTorso(house: number) {
+  const key = factions.factions.find((each) => each.id === house)?.key;
+  return items.items.find((named) => named.faction === key && named.kind === 'torso');
+}
+
+/** The house whose piece a word saw given, by its number: the one pledged to by it, whose Magic piece is held now and
+ *  was not before; none for a pledge to a house whose piece was given before. */
+export function houseGiftGiven(before: Kept, after: Kept): number | null {
+  const bit = after.pledge > 0 ? 1 << (after.pledge - 1) : 0;
+  return after.pledge !== before.pledge && (after.houseGifts & ~before.houseGifts & bit) !== 0 ? after.pledge : null;
+}
+
+/** The line a house's leader says as they give its piece. */
+export const houseGiftScene = (house: number): string | undefined =>
+  LEADERS[factions.factions.find((found) => found.id === house)?.key ?? '']?.scene;
+
+/** The notice a house's piece is announced by: its leader's gift, under the house's Art, with the key to wear it. */
+export function houseGiftNotice(house: number): Notice {
+  const found = factions.factions.find((each) => each.id === house);
+  const art = arts.arts.find((each) => each.id === found?.art);
+  const leader = LEADERS[found?.key ?? '']?.leader ?? 'Your house';
+  const name = houseTorso(house)?.name ?? 'Your house colours';
+  return {
+    title: `${leader}'s gift`,
+    line: `${name}. Press {key} to wear it.`,
+    icon: art ? artIcon(art) : null,
+    ...CHARACTER,
+  };
 }
 
 /** The notices of a quest acquired and of each step done between `before` and `after`, and of a quest done. */

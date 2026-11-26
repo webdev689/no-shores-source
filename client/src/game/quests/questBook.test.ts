@@ -105,6 +105,7 @@ test('the opening hears the stranger, then the round of the counters, each keepe
       'learn-the-helm',
       'bring-it-home',
       'wear-them',
+      'use-your-gifts',
       'hear-three-houses',
       'choose-house',
     ],

@@ -1,6 +1,7 @@
 //! The opening's riding and sailing lessons, as goals: each step a thing the body, the horse or the ship does, which
 //! the rooms judge from what they step and tell the quest log of (`Event::Ride`, `Event::Sail`); the page names its
-//! keys as bound now.
+//! keys as bound now. And the steps that teach the keepers' gifts (`Use`): each an ask the room answered
+//! (`Event::Used`).
 
 use serde::Deserialize;
 
@@ -28,6 +29,55 @@ pub enum SailAct {
     Trim,
     Fire,
     Map,
+}
+
+/// What a player does with a keeper's gift for a use goal: has the Mage open a Vestige, takes a piece out of the vault,
+/// wears a dye, or takes a letter from the mail.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum UseAct {
+    Identify,
+    Withdraw,
+    Dye,
+    Letter,
+}
+
+impl UseAct {
+    /// The act an ask the room answered was: any Vestige opened, any piece taken from the vault, any dye worn, any
+    /// letter taken; none for any other ask.
+    #[must_use]
+    pub fn of(ask: &crate::asks::Ask) -> Option<Self> {
+        use crate::asks::Ask;
+        match ask {
+            Ask::Identify { .. } => Some(Self::Identify),
+            Ask::Withdraw { .. } => Some(Self::Withdraw),
+            Ask::TakeLetter { .. } | Ask::TakeAllLetters => Some(Self::Letter),
+            Ask::WearCosmetic { cosmetic } => crate::cosmetics::cosmetics()
+                .get(usize::from(*cosmetic))
+                .is_some_and(|found| found.kind == crate::cosmetics::CosmeticKind::Dye)
+                .then_some(Self::Dye),
+            _ => None,
+        }
+    }
+
+    /// The keeper's counter it is done at, by their key (`talk`'s `to`): none for a dye, worn anywhere.
+    #[must_use]
+    pub fn counter(self) -> Option<&'static str> {
+        match self {
+            Self::Identify => Some("mage"),
+            Self::Withdraw => Some("vault"),
+            Self::Dye => None,
+            Self::Letter => Some("mail"),
+        }
+    }
+}
+
+/// A use goal: its act, and the counter it is done at, which the page points at (`UseAct::counter`).
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Use {
+    pub act: UseAct,
+    pub to: Option<String>,
 }
 
 /// A riding goal: its act, and for an arrival the counter ridden up to, by its keeper's key (`talk`'s `to`).

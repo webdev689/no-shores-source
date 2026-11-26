@@ -32,7 +32,8 @@ fn places_of(goal: &GoalDef) -> Vec<&str> {
         | Goal::Buy(_)
         | Goal::Wear(_)
         | Goal::Ride(_)
-        | Goal::Sail(_) => goal.goal.place().into_iter().collect(),
+        | Goal::Sail(_)
+        | Goal::Use(_) => goal.goal.place().into_iter().collect(),
     }
 }
 
@@ -181,6 +182,11 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         // The stranger keeps no counter to ride up to.
         (r#"{ "kind": "ride", "act": "arrive", "to": "stranger", "text": "t" }"#, "to"),
         (r#"{ "kind": "ride", "act": "mount", "to": "tack", "text": "t" }"#, "to"),
+        // A gift's step names the counter its act is done at, and a dye, worn anywhere, none; each done once.
+        (r#"{ "kind": "use", "act": "identify", "text": "t" }"#, "to"),
+        (r#"{ "kind": "use", "act": "letter", "to": "vault", "text": "t" }"#, "to"),
+        (r#"{ "kind": "use", "act": "dye", "to": "tailor", "text": "t" }"#, "to"),
+        (r#"{ "kind": "use", "act": "withdraw", "to": "vault", "count": 2, "text": "t" }"#, "count"),
     ] {
         let problem = goal(text).expect(text).problem();
         assert!(problem.as_deref().is_some_and(|said| said.contains(field)), "{text}: {problem:?}");
@@ -304,6 +310,7 @@ const TASK_IDS: &[(&str, &str)] = &[
     ("house", "your-ship"),
     ("house", "arm-yourself"),
     ("house", "wear-them"),
+    ("house", "use-your-gifts"),
     ("house", "hear-three-houses"),
     ("house", "choose-house"),
     ("stormcallers", "climb-old-beacon"),

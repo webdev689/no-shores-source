@@ -10,6 +10,8 @@ import type { Notice } from '../obtained.ts';
 import {
   type Kept,
   behind,
+  houseGiftGiven,
+  houseGiftScene,
   giftsBetween,
   greetBetween,
   keptOf,
@@ -64,7 +66,11 @@ export class QuestWatch {
       notices = [...lessonsBetween(before, after), ...stepsBetween(before, after), ...giftsBetween(before, after)];
       moments = past ? momentsBetween(before, after) : [];
       this.hold([...this.greet(before, after), ...metBetween(before, after), ...linesBetween(before, after)], 0);
-      if (after.task === 0 && before.quest !== after.quest) this.begin(after.quest);
+      const begins = after.task === 0 && before.quest !== after.quest && this.begin(after.quest);
+      // The house's own piece: its leader's line, unless the road's begin, which tells of it, is said instead.
+      const house = houseGiftGiven(before, after);
+      const line = house && !begins ? houseGiftScene(house) : undefined;
+      if (line) this.hold([line], 0);
     }
     return { scenes: past ? this.release() : [], moments, notices };
   }
@@ -82,11 +88,12 @@ export class QuestWatch {
     this.held.push(...scenes.map((scene) => ({ scene, begins })));
   }
 
-  /** Holds the quest's begin, unless the browser has said it for this account or holds it already. */
-  private begin(place: number): void {
+  /** Holds the quest's begin, unless the browser has said it for this account or holds it already; whether it did. */
+  private begin(place: number): boolean {
     const quest = QUESTS[place - 1];
-    if (!quest || this.begun(quest.id) || this.held.some((each) => each.begins === place)) return;
+    if (!quest || this.begun(quest.id) || this.held.some((each) => each.begins === place)) return false;
     this.hold(beginOf(quest), place);
+    return true;
   }
 
   /** The scenes held, now to be said: a begin only of the quest walked now, so one left meanwhile (the opening left by

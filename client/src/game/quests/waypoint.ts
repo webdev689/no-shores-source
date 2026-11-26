@@ -90,15 +90,15 @@ const nearest = <T>(from: Point, all: readonly T[], spot: (each: T) => Point): T
 /** Where a zone is landed at: its first spawn, or its middle. */
 const landingOf = (node: NodeInfo): Point => node.spawns[0] ?? node.centre;
 
-/** Whether a goal is done at a keeper's counter: a talk, a pledge, a buy, or riding up to one. */
+/** Whether a goal is done at a keeper's counter: a talk, a pledge, a buy, riding up to one, or a gift used at one. */
 const atCounter = (goal: Goal): boolean =>
   goal.kind === 'talk' ||
   goal.kind === 'pledge' ||
   goal.kind === 'buy' ||
-  (goal.kind === 'ride' && goal.to !== undefined);
+  ((goal.kind === 'ride' || goal.kind === 'use') && goal.to !== undefined);
 
-/** The counters a talk, a pledge, a buy or a ride up to one is done at, by their stations' kinds; the stranger, at
- *  none: she is heard anywhere in a social space. */
+/** The counters a talk, a pledge, a buy, a ride up to one or a gift used at one is done at, by their stations'
+ *  kinds; the stranger, at none: she is heard anywhere in a social space. */
 function countersOf(goal: Goal): readonly string[] {
   if (goal.kind === 'pledge') return HOUSES;
   if (goal.kind === 'buy') return [SMITH_OF[goal.slot ?? ''] ?? ''];

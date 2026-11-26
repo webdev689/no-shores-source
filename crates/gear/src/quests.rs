@@ -17,7 +17,7 @@ pub use crate::quest_goals::{
     Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, HORDE_WAVE_MOST, InSlot, KILL_PAST, Landing, Plain,
     PointDef, Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
 };
-pub use crate::quest_lessons::{Ride, RideAct, Sail, SailAct};
+pub use crate::quest_lessons::{Ride, RideAct, Sail, SailAct, Use, UseAct};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -84,6 +84,8 @@ pub enum Event<'told> {
     },
     /// A captain's act at sea.
     Sail(SailAct),
+    /// A keeper's gift used, as the room answered the ask (`UseAct::of`).
+    Used(UseAct),
     /// A step the room ran met, of a kind, in a node, at its goal's anchor (`GoalDef::anchor`).
     Stepped {
         kind: GoalKind,
@@ -349,7 +351,8 @@ impl Character {
         }
         // A task that sent the player out, not one of words, purchases or dress at a keeper's, pays as a mission's
         // clear does, at their level: Destiny 1 paid each mission done.
-        let errand = |kind| matches!(kind, GoalKind::Talk | GoalKind::Pledge | GoalKind::Buy | GoalKind::Wear);
+        let errand =
+            |kind| matches!(kind, GoalKind::Talk | GoalKind::Pledge | GoalKind::Buy | GoalKind::Wear | GoalKind::Use);
         if !goals.iter().all(|goal| errand(goal.kind())) {
             let level = self.level();
             self.pay(crate::rewards::Clear::Mission.worth(), level, None, crate::world::Difficulty::Normal);
@@ -362,13 +365,22 @@ impl Character {
     }
 
     /// Tells the quest walked of every piece worn but plain clothes, and of every slot a smith has sold a piece for, so
-    /// a piece bought or put on before its task was reached counts once it is.
+    /// a piece bought or put on before its task was reached counts once it is; and, to a use goal, of a Vestige opened
+    /// and a letter taken while none is left to open or take, so a save that used them before the task is not stuck.
     pub(crate) fn tell_held(&mut self) {
         // Told again until nothing more counts: a task met here may reach one the pieces held already meet.
         loop {
             let asks = |kind| self.goals_unmet().any(|(_, goal)| goal.kind() == kind);
             let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
             let mut told = false;
+            if asks(GoalKind::Use) {
+                if self.vestiges.is_empty() {
+                    told |= self.tell(&Event::Used(UseAct::Identify));
+                }
+                if self.mail.is_empty() {
+                    told |= self.tell(&Event::Used(UseAct::Letter));
+                }
+            }
             for slot in Slot::VESTIGE {
                 // Plain clothes are not what a wear goal asks put on: armour of the player's own.
                 if wear && self.worn(slot).is_some_and(|item| !item.plain) {

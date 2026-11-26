@@ -78,7 +78,8 @@ fn opening_tasks() -> Vec<&'static str> {
 }
 
 #[test]
-fn the_opening_hears_the_stranger_walks_round_rides_takes_its_ship_sails_dresses_then_hears_the_houses() {
+fn the_opening_hears_the_stranger_walks_round_rides_takes_its_ship_sails_dresses_uses_its_gifts_then_hears_the_houses()
+{
     assert_eq!(
         opening_tasks(),
         [
@@ -89,6 +90,7 @@ fn the_opening_hears_the_stranger_walks_round_rides_takes_its_ship_sails_dresses
             "learn-the-helm",
             "bring-it-home",
             "wear-them",
+            "use-your-gifts",
             "hear-three-houses",
             "choose-house"
         ]
@@ -290,7 +292,7 @@ fn plain_clothes_worn_meet_no_goal_to_put_armour_on_and_the_gifts_worn_do() {
     for (item, slot) in given {
         assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
     }
-    assert_eq!(task(&character), Some("hear-three-houses"));
+    assert_eq!(task(&character), Some("use-your-gifts"));
 }
 
 #[test]
@@ -315,7 +317,7 @@ fn pieces_put_on_during_the_round_dress_the_player_as_its_last_keeper_is_heard()
     assert!(character.ask(word(&character, "harbourmaster"), SOCIAL, &DICE).is_ok());
     character.sail_the_lesson();
     let task = character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
-    assert_eq!(task, Some("hear-three-houses"), "dressed by the pieces already worn");
+    assert_eq!(task, Some("use-your-gifts"), "dressed by the pieces already worn");
 }
 
 #[test]

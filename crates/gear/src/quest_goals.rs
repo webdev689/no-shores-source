@@ -4,7 +4,7 @@
 
 use crate::kinds::Slot;
 use crate::quest_defs::RewardDef;
-use crate::quest_lessons::{Ride, Sail};
+use crate::quest_lessons::{Ride, Sail, Use};
 use crate::quests::{Event, Kill};
 use serde::de::{Deserializer, Error as _};
 use serde::{Deserialize, Serialize};
@@ -37,6 +37,7 @@ pub enum GoalKind {
     Wear,
     Ride,
     Sail,
+    Use,
 }
 
 impl GoalKind {
@@ -58,7 +59,8 @@ impl GoalKind {
             | Self::Buy
             | Self::Wear
             | Self::Ride
-            | Self::Sail => false,
+            | Self::Sail
+            | Self::Use => false,
         }
     }
 }
@@ -267,6 +269,7 @@ pub enum Goal {
     Wear(InSlot),
     Ride(Ride),
     Sail(Sail),
+    Use(Use),
 }
 
 /// One goal: the tracker's words, how many times it is met (1 when left out), the scene said as it is met, what it
@@ -326,6 +329,7 @@ impl Goal {
             Goal::Wear(_) => GoalKind::Wear,
             Goal::Ride(_) => GoalKind::Ride,
             Goal::Sail(_) => GoalKind::Sail,
+            Goal::Use(_) => GoalKind::Use,
         }
     }
 
@@ -352,7 +356,8 @@ impl Goal {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => None,
+            | Goal::Sail(_)
+            | Goal::Use(_) => None,
         }
     }
 
@@ -379,7 +384,8 @@ impl Goal {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => None,
+            | Goal::Sail(_)
+            | Goal::Use(_) => None,
         }
     }
 
@@ -405,7 +411,8 @@ impl Goal {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => None,
+            | Goal::Sail(_)
+            | Goal::Use(_) => None,
         }
     }
 
@@ -431,7 +438,8 @@ impl Goal {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => Box::new(core::iter::empty()),
+            | Goal::Sail(_)
+            | Goal::Use(_) => Box::new(core::iter::empty()),
         }
     }
 
@@ -458,7 +466,8 @@ impl Goal {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => Vec::new(),
+            | Goal::Sail(_)
+            | Goal::Use(_) => Vec::new(),
         };
         lines.into_iter().filter_map(Option::as_deref).collect()
     }
@@ -498,6 +507,7 @@ impl Goal {
             Goal::Wear(wear) => matches!(event, Event::Worn(slot) if *slot == wear.slot),
             Goal::Ride(ride) => matches!(event, Event::Ride { act, at } if ride.met_by(*act, *at)),
             Goal::Sail(sail) => matches!(event, Event::Sail(act) if *act == sail.act),
+            Goal::Use(done) => matches!(event, Event::Used(act) if *act == done.act),
         }
     }
 }

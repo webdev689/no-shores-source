@@ -206,6 +206,7 @@ impl Character {
     ///
     /// The ask's refusal, having changed nothing.
     pub fn ask(&mut self, ask: Ask, here: Here, dice: &Dice) -> Result<Done, Refusal> {
+        let used = crate::quests::UseAct::of(&ask);
         match ask {
             Ask::Wear { item, slot } => self.wear(item, slot),
             Ask::TakeOff { slot } => self.take_off(slot),
@@ -232,7 +233,7 @@ impl Character {
             Ask::Dismiss { officer } => self.dismiss(officer),
             Ask::Train { officer, column, node } => self.train(officer, usize::from(column), node),
             Ask::ChooseOfficer { officer, column, node } => self.choose_officer(officer, usize::from(column), node),
-            Ask::Pledge { faction } => self.pledge(faction, here),
+            Ask::Pledge { faction } => self.pledge(faction, here, dice),
             Ask::BuyFactionWare { faction, ware } => self.buy_faction_ware(faction, ware, here, dice),
             Ask::CollectPackage { faction } => self.collect_package(faction, here, dice),
             Ask::RiseArt { art, fragment } => self.rise_art(art, fragment, here),
@@ -252,6 +253,9 @@ impl Character {
             // nothing to own is paid; a piece held or worn counts for the quest walked.
             self.earn_due();
             self.settle_choices();
+            if let Some(act) = used {
+                self.tell(&crate::quests::Event::Used(act));
+            }
             self.tell_held();
             done.unwrap_or(Done::Done)
         })

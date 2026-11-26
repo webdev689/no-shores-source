@@ -182,7 +182,7 @@ fn the_gifts_dress_the_player_and_put_them_on_asks_both_weapons_and_the_armour()
         assert_eq!(task(&character), Some("wear-them"), "{slots:?}");
         assert!(character.ask(Ask::Wear { item, slot }, SOCIAL, &DICE).is_ok());
     }
-    assert_eq!(task(&character), Some("hear-three-houses"));
+    assert_eq!(task(&character), Some("use-your-gifts"));
 }
 
 #[test]
@@ -260,8 +260,10 @@ fn a_character_past_the_round_before_the_gifts_is_owed_nothing_new() {
         read.earn_due();
         assert!(read.quests.gifts.is_empty() && read.quests.free.is_empty(), "{past}");
         assert!(read.ask(Ask::Pledge { faction: 1 }, SOCIAL, &DICE).is_ok());
-        let gifted = read.items.values().any(|(item, _)| matches!(item.kind, Kind::Head | Kind::Cloak));
-        assert!(read.quests.gifts.is_empty() && !gifted && read.mail.is_empty(), "{past}");
+        // The house's own piece alone: given to everyone who pledges.
+        let gifted =
+            read.items.values().any(|(item, _)| matches!(item.kind, Kind::Head | Kind::Cloak) && item.named.is_none());
+        assert!(read.quests.gifts == ["stormcallers_hauberk"] && !gifted && read.mail.is_empty(), "{past}");
     }
 }
 

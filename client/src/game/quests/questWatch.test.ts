@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import factions from '../../../../content/gear/factions.json' with { type: 'json' };
-import type { GearState } from '../../network/gearMessages.ts';
-import { standing, state } from '../../network/gearForTests.ts';
+import type { GearItem, GearState } from '../../network/gearMessages.ts';
+import { item, standing, state } from '../../network/gearForTests.ts';
 import { QUESTS } from './questBook.ts';
-import { giftNotice } from './questNews.ts';
+import { giftNotice, houseGiftNotice } from './questNews.ts';
 import { BEGUN_KEY, type News, QuestWatch } from './questWatch.ts';
 
 /** A character's gear on quest `quest` at task `task`: that task's counts, pledged to `pledge`, each quest done by
@@ -24,13 +24,15 @@ function gear(
     aurem?: number;
     claimed?: boolean;
     offered?: number;
+    items?: GearItem[];
   } = {},
 ): GearState {
   const { counts = [], pledge = 0, done = [0, 0, 0, 0], earned = [0, 0, 0], choices = [0, 0, 0] } = more;
-  const { fails = [], figures = [], aurem = 0, claimed = true, offered = 0 } = more;
+  const { fails = [], figures = [], aurem = 0, claimed = true, offered = 0, items = [] } = more;
   const walking = figures.map((figureState) => ({ look: 22, x: 0, y: 0, z: 0, facing: 0, state: figureState }));
   return state({
     aurem,
+    items,
     standing: standing({ pledge }),
     arts: { art: 0, cores: [], anima: 0, tenets: [0, 0], earned },
     quest: { quest, task, counts, done, choices, at: null, fails, figures: walking, claimed, offered },
@@ -328,4 +330,31 @@ test('a first pledge before the round is done announces the gifts the round stil
     ['vestige', 'cloak', 'dye', 'letter'].map(giftNotice),
     'the Tack and the ship at their counters',
   );
+});
+
+test("the house pledged to gives its own piece once, its leader's line said unless its road's begin says it", () => {
+  const torsos = ['stormcallers_hauberk', 'lamplighters_vestments', 'veiled_coat'];
+  const piece = (house: number) => item({ id: 90 + house, named: torsos[house - 1] ?? '', rarity: 1 });
+  const given = (news: News) => news.notices.filter((notice) => notice.line.includes('Hauberk'));
+  const watch = heard(gear(1, 1));
+  // A first pledge: the piece given, and the road's begin, which tells of it, said in place of its own line.
+  const storm = watch.look(gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0], items: [piece(1)] }), true);
+  assert.deepEqual(given(storm), [houseGiftNotice(1)]);
+  assert.deepEqual(storm.scenes, said(QUESTS[STORM - 1]?.begin, starting(STORM, 0)));
+  // A switch to a road walked before: the piece given, its leader's own line said.
+  const lamp = watch.look(gear(LAMP, 2, { pledge: 2, done: [1, 0, 0, 0], items: [piece(1), piece(2)] }), true);
+  assert.deepEqual(given(lamp), [houseGiftNotice(2)]);
+  assert.deepEqual(lamp.scenes, ['giftLamp']);
+  // Back to a house whose piece was given: nothing.
+  const back = watch.look(gear(STORM, 1, { pledge: 1, done: [1, 0, 0, 0], items: [piece(1), piece(2)] }), true);
+  assert.deepEqual([given(back), back.scenes], [[], []]);
+  // A house's Legendary, bought, is no gift.
+  const bought = { ...piece(3), rarity: 3 };
+  const veil = watch.look(
+    gear(LAMP + 1, 1, { pledge: 3, done: [1, 0, 0, 0], items: [piece(1), piece(2), bought] }),
+    true,
+  );
+  assert.deepEqual(given(veil), []);
+  assert.match(`${houseGiftNotice(1).title} ${houseGiftNotice(1).line}`, /Arlo Kestrel.*Stormcaller Hauberk/);
+  assert.equal(houseGiftNotice(3).key, 'character', 'the key to wear it');
 });

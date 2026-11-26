@@ -175,6 +175,35 @@
           ]
         },
         {
+          "id": "use-your-gifts",
+          "task": "Use your gifts",
+          "goals": [
+            {
+              "kind": "use",
+              "act": "identify",
+              "to": "mage",
+              "text": "Have the Mage open a Vestige"
+            },
+            {
+              "kind": "use",
+              "act": "withdraw",
+              "to": "vault",
+              "text": "Take your cloak from the vault"
+            },
+            {
+              "kind": "use",
+              "act": "dye",
+              "text": "Wear a dye"
+            },
+            {
+              "kind": "use",
+              "act": "letter",
+              "to": "mail",
+              "text": "Take your letter from the mail"
+            }
+          ]
+        },
+        {
           "id": "hear-three-houses",
           "task": "Hear the three houses",
           "start": "houseBegin",

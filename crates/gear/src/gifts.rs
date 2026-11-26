@@ -4,9 +4,11 @@
 //! pieces; the Mage a sealed Vestige to open; the Vault Keeper a cloak laid in the vault; the Tailor a dye; the
 //! Postmaster a letter holding a sealed Vestige. Each is given once a character, kept by name in the quest log, so a
 //! reload, a rejoin or a later round never gives it twice. One who pledges before the round reaches a keeper is given
-//! that keeper's gift as they pledge, the Weaponsmith's choice kept free at her counter, as the Tack gives the Bay.
+//! that keeper's gift as they pledge, as the Tack gives the Bay; the house pledged to gives its own
+//! (`give_house_piece`).
 
-use crate::character::{At, Character, VAULT_MOST, Vestige};
+use crate::character::{At, CARRIED_MOST, Character, VAULT_MOST, Vestige};
+use crate::dice::Dice;
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::{Kind, Slot};
 use crate::mail::{Posted, Source};
@@ -142,5 +144,37 @@ impl Character {
         for gift in gifts {
             self.give_gift(gift);
         }
+    }
+
+    /// Gives the house pledged to's own torso piece as the pledge is taken: its look and name (its catalogue entry,
+    /// `named`), made at Magic at the player's level and rolled as any Magic torso is, once a character for each house,
+    /// kept given by the entry's name beside the keepers' gifts. Carried, else laid in the vault, else posted as
+    /// itself, never lost. The catalogue's entry stays the Legendary the house sells.
+    pub(crate) fn give_house_piece(&mut self, faction: u8, dice: &Dice) {
+        let Some(def) = crate::factions::factions().faction(faction) else { return };
+        let wares = crate::factions::wares(faction);
+        let Some(named) =
+            wares.iter().find(|named| named.kind == Kind::Torso && named.faction.as_ref() == Some(&def.key))
+        else {
+            return;
+        };
+        if self.quests.gifts.contains(&named.id) {
+            return;
+        }
+        let level = self.level().clamp(1, NAMED_LEVEL);
+        let made = crate::vestige::make(0, Rarity::Magic, Slot::Torso, level, crate::source::Source::Faction, dice);
+        let Some(mut piece) = made.filter(|piece| piece.kind == Kind::Torso) else { return };
+        self.quests.gifts.push(named.id.clone());
+        piece.named = Some(named.id.clone());
+        let at = if self.carried_in(Slot::Torso) < CARRIED_MOST {
+            At::Carried
+        } else if self.vaulted(piece.kind.stock()) < VAULT_MOST {
+            At::Vault
+        } else {
+            self.post(Source::Gift, Posted::Item(piece));
+            return;
+        };
+        let id = self.take_id();
+        self.items.insert(id, (Item { id, ..piece }, at));
     }
 }

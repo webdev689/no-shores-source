@@ -541,7 +541,8 @@ impl Room {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => None,
+            | Goal::Sail(_)
+            | Goal::Use(_) => None,
         }
     }
 }

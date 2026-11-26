@@ -306,10 +306,11 @@ impl GoalDef {
                 (!(ride.fits() && keeper)).then_some("to")
             }
             Goal::Sail(_) => None,
+            Goal::Use(done) => (done.to.as_deref() != done.act.counter()).then_some("to"),
         };
         // A piece held is told again on every ask (`tell_held`), so one piece would meet a count above one.
-        let once =
-            self.kind().stepped() || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_) | Goal::Ride(_) | Goal::Sail(_));
+        let once = self.kind().stepped()
+            || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_) | Goal::Ride(_) | Goal::Sail(_) | Goal::Use(_));
         if let Some(field) = wrong.or((!ranks).then_some("rank")) {
             Some(format!("{text}: {field} holds a value none of its own"))
         } else if self.count == 0 || once && self.count != 1 {

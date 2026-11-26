@@ -593,7 +593,9 @@ the factions' counters are in [[Factions]].
   shows it "Free" with her words, and taking one spends that slot's gift (`Character::ware_price`). The Armorsmith
   gives her four starter pieces, the Mage a sealed Magic Vestige, the Vault Keeper a Normal cloak laid in the vault,
   the Tailor Harbour Blue and the Postmaster a letter holding a sealed Magic Vestige, each at the player's level and
-  once a character.
+  once a character. "Use your gifts" then asks each used ([[Quests]], "The opening"). The house pledged to gives its
+  own torso piece at Magic as the pledge is taken, once a character for each house, kept given by its entry's name
+  ([[Factions]], "The pledge").
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic, 50 for a starter piece. It is bought only at its smith's
   counter, and carried with its slot's nine; the quest walked hears of it by its slot ([[Quests]]). The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
   bought at its counter by rank ([[Factions]]).

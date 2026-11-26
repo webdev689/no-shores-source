@@ -347,7 +347,8 @@ impl Room {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => return false,
+            | Goal::Sail(_)
+            | Goal::Use(_) => return false,
         };
         if matches!(kind, Stepping::Figure(_)) {
             self.quests.arrived.remove(&player);
@@ -449,7 +450,8 @@ impl Room {
             | Goal::Buy(_)
             | Goal::Wear(_)
             | Goal::Ride(_)
-            | Goal::Sail(_) => {}
+            | Goal::Sail(_)
+            | Goal::Use(_) => {}
         }
     }
 }

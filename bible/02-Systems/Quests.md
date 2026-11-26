@@ -113,8 +113,8 @@ gift (`gift`, by its name: `weapons`, `armour`, `vestige`, `cloak`, `dye` or `le
 is the quest's house's. A task's reward is given as it ends; a goal may carry one of its own (`reward` beside its other
 fields), given as it is met, of Aurem, the first horse or a gift alone: a house's gifts come with its tasks, in their
 order, and the ship with its own task ([[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]).
-A lesson's goal (`ride`, `sail`) has a count of 1.
-Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy` and `wear`) pays a mission's
+A lesson's goal (`ride`, `sail`, `use`) has a count of 1.
+Beside it, every task that sends the player out (any goal but `talk`, `pledge`, `buy`, `wear` and `use`) pays a mission's
 clear at their level, 400 XP and 30 Aurem at level 5 raised as a kill is, as Destiny 1 paid each mission done
 ([[Gear]], "A clear"; [[The Balance and Economy Pass as Claude Shapes It]]).
 
@@ -150,7 +150,8 @@ from the Harbourmaster**, its reward the Sloop (`"ship": true`), which a new pla
 sea; **Bring it home**, an `enter` goal of Overlook's social space ("Dock at Overlook"), his line said as it is done
 (`sailHome`); and **Put them on**, a wear goal for each of the Melee weapon, the four armour pieces and the Ranged weapon, each a count
 of 1, told of the pieces held after every answered ask and as every task begins, again until nothing more counts, so
-pieces worn during the round meet it as soon as it begins; plain clothes never do. The Tack's Bay is worn unless one is, never a second,
+pieces worn during the round meet it as soon as it begins; plain clothes never do; then **Use your gifts**
+("Using the gifts" below). The Tack's Bay is worn unless one is, never a second,
 and at her counter for nothing to one who pledged before the round reached her
 ([[Other Ships Wear Their Players' Marks, the Sea Map Has No Fog, and New Players Ride a Bay That Bursts]],
 [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]). Then
@@ -162,6 +163,27 @@ The page announces each gift as it comes, as a notice at the foot of the screen 
 obtained"), through one function, `giftNotice`: the Weaponsmith's, the Armorsmith's and the rest as their goals are
 met, the Sloop as its task is done, each by its keeper's mark; the Armorsmith's tells the Character key, the Tack's
 the Mount key.
+
+### Using the gifts
+
+**Use your gifts** follows **Put them on** and teaches the four gifts the round gives and does not use, each a `use`
+goal of a count of 1 that the room ticks as it answers the ask (`Event::Used`, from the ask itself, `UseAct::of`),
+never on the page's word, met in any order:
+
+| Step | Its act (`act`) | Met by | Pointed at |
+|---|---|---|---|
+| Have the Mage open a Vestige | `identify` | Any Vestige opened | The Mage's counter (`to`: `mage`) |
+| Take your cloak from the vault | `withdraw` | Any piece taken out of the vault | The Vault Keeper's counter (`vault`) |
+| Wear a dye | `dye` | Any dye worn (a cosmetic of the dye kind) | Anywhere; the tracker names the Character key (I) |
+| Take your letter from the mail | `letter` | Any letter taken, one or all | The Postmaster's counter (`mail`) |
+
+A `use` goal names the counter its act is done at, and a dye none; the file is refused otherwise. Done before the task
+begins, a step counts only once it is done again, but a Vestige opened while none is held, sealed, carried or vaulted,
+and a letter taken while the mail is empty, are met as the task begins and after every ask (`tell_held`), so a save
+that used them before (or one kept before the gifts, with nothing to open or take) is never stuck. The page announces
+each step as the room ticks it, under its keeper's mark ("Your gifts", "Wear a dye"), as the lessons' are. The task
+pays no clear: it is done at the keepers'. A save on the round or on **Put them on** walks on into it; one on the houses
+or later is not sent back.
 
 ### The lessons
 
