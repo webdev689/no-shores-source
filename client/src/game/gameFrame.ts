@@ -13,7 +13,7 @@ import { PERF, perfOn, PerfMeter } from '../perfMeter.ts';
 import { autoChosen, heardFrame } from './renderScale.ts';
 import type { Foot } from './foot.ts';
 import { type Fallen, ReviveNotices } from './footRevive.ts';
-import { contextOf, withoutTaken } from './gameKeys.ts';
+import { contextOf, interfaceKeys, withoutTaken } from './gameKeys.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withFollow, withMapKey } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
@@ -497,7 +497,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The sheet takes the keys and the pad but while it waits for one to bind, as a window does; while a control waits
     // to be bound, from the sheet or Settings, the interface hears nothing that would press behind it.
     const bound = binding();
-    const tookWheel = ui.hear(seconds, !input.locked && !bound, (windowUp && !bound) || hud.controls.takesKeys);
+    const over = { window: windowUp, binding: bound, sheet: hud.controls.takesKeys };
+    const tookWheel = ui.hear(seconds, !input.locked && !bound, interfaceKeys(playing.flow.mode, over));
     const top = hud.controls.open
       ? 'sheet'
       : gearTakesKeys()

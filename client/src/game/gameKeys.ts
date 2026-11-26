@@ -5,7 +5,7 @@
 import { type BindId, CONTROLS, type Context } from '../player/binds.ts';
 import { type Action, BINDS, type Input, type InputFrame, keyNameOf } from '../player/input.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
-import type { Happening } from './flow.ts';
+import type { Flow, Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { openGearWindow } from './gearScreen.ts';
 import { gearScreenOpen } from './gearWindow.ts';
@@ -53,6 +53,16 @@ export function contextOf(playing: Pick<Playing, 'flow' | 'sea' | 'foot'>): Cont
   return sea?.fight ? 'fight' : 'helm';
 }
 
+/** Whether the interface takes the keys and the pad this frame: under a window (the menu, the creation, the chat) or
+ *  over the island's tiles, which the arrows, Tab and the pad's cross walk and Enter and A press; never while a
+ *  control waits to be bound, but the sheet's, which waits for it itself. */
+export function interfaceKeys(
+  mode: Flow['mode'],
+  over: { readonly window: boolean; readonly binding: boolean; readonly sheet: boolean },
+): boolean {
+  return ((over.window || mode === 'landing') && !over.binding) || over.sheet;
+}
+
 /** What the pad's B pressed as it let go of a piece being placed, taken from the next frame's controls. */
 let taken: ReadonlySet<Action> = new Set();
 
@@ -68,10 +78,10 @@ export function withoutTaken(frame: InputFrame): InputFrame {
 /** Hears the keys and the pad's presses for what `game` does with them. */
 export function listenForControls(game: Controlled): void {
   const { playing, input, ui, hud, story, change } = game;
-  /** What the controls `pressed` do here, Escape among them for a key: the helm's map first, a struck deck's asks, a
-   *  retry once a travel failed, the chat, then the sea's and the foot's own. */
   /** Whether a window or the chat stands over the game. */
   const overGame = () => gearScreenOpen() || socialUp() || chatOpen();
+  /** What the controls `pressed` do here, Escape among them for a key: the helm's map first, a struck deck's asks, a
+   *  retry once a travel failed, the chat, then the sea's and the foot's own. */
   const act = (pressed: (id: BindId) => boolean, escape: boolean) => {
     const here = contextOf(playing);
     const acts = (id: BindId) => pressed(id) && CONTROLS[id].where.includes(here);
@@ -99,8 +109,9 @@ export function listenForControls(game: Controlled): void {
     else if (acts('ashore') || (acts('confirm') && sailing)) game.landings.askHere();
     else if (acts('voyage') && flow.mode === 'sea') game.stopOrResume();
     else if (acts('map') || acts('landMap')) game.openMap();
-    else if (acts('manage')) game.manage();
-    else if (acts('leaveHelm')) game.leaveHelm();
+    // Manage and Leave the helm are the Sealevel view's, as its console offers them.
+    else if (acts('manage') && sea?.level === 'sealevel') game.manage();
+    else if (acts('leaveHelm') && sea?.level === 'sealevel') game.leaveHelm();
     // The repair is the helm's, and its key repairs walking the ship's own deck too, where the Arts are not cast.
     else if (
       pressed('repair') &&
@@ -113,8 +124,9 @@ export function listenForControls(game: Controlled): void {
     else if (acts('use') && sea?.aboard.walking) game.takeHelm();
     else if (acts('use') && flow.mode === 'foot' && playing.through) game.goThrough();
     else if (acts('use') && flow.mode === 'foot') playing.foot?.use();
-    // Over the island's tiles, as no window above them hears it.
-    else if (acts('confirm') && flow.mode === 'landing' && !overGame()) game.landAt(flow.chosen);
+    // Over the island's tiles, as no window above them hears it; a tile the keys or the pad focused is pressed by the
+    // interface itself, so Enter acts once.
+    else if (acts('confirm') && flow.mode === 'landing' && !overGame() && !ui.focused) game.landAt(flow.chosen);
     else if (acts('respawn') && flow.mode === 'foot') game.respawn();
     else if (acts('seaView') && flow.mode === 'sea') sea?.switchLevel();
   };
@@ -128,10 +140,9 @@ export function listenForControls(game: Controlled): void {
     if (welcome && BINDS.now.jump.keys.includes(key)) return void playing.after.press();
     act((id) => !welcome && BINDS.now[id].keys.includes(key), key === 'escape');
   });
-  // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
-  // Escape at the helm's map, at a landing, a landing's confirmation and while a piece of decoration is placed; in the story, and while she
-  // speaks, A is a tap. Start and View open and
-  // shut the menu and the sheet wherever their keys would.
+  // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are. B is Escape at
+  // the helm's map, at a landing, at a landing's confirmation and while a piece of decoration is placed; in the story,
+  // and while she speaks, A is a tap. Start and View open and shut the menu and the sheet wherever their keys would.
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
     if (hud.controls.rebinding.slot) return;
