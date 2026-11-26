@@ -441,11 +441,11 @@ const defeat = (): Song =>
       w.hit('heart', bar, 0, velocity);
   });
 
-/** The second cadence: the reed falling G, F, E to the low A over the minor four, the strings leaning on C sharp. */
+/** The second cadence: the reed falling B flat, G, F, E to A in long steps, the strings leaning on C sharp. */
 const secondCadence = (): Song =>
   makeSong({ ...SONG, name: 'dry-cadence-2', bars: 3, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('Gm | Bb/A | A'), 0.85);
-    lay(w, 'reed', 0, tune('G4:1 Bb4:1 A4:1.5 | G4:1 F4:1 E4:.5 F4:.5 G4:.5 | A4:3.5'), 92, { legato: 0.97 });
+    lay(w, 'reed', 0, tune('Bb4:2 G4:1.5 | F4:2 E4:1.5 | A4:3.5'), 92, { legato: 0.97 });
     lay(w, 'strings', 0, tune('D4:2 Bb3:1.5 | D4:2 C#4:1.5 | A3:3.5'), 72, { legato: 0.98 });
     w.note('timpani', 2, 0, 0.9, 'A2', 84);
     w.hit('heart', 2, 0, 78);

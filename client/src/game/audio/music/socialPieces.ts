@@ -105,7 +105,7 @@ function lamplight(): Song {
     sections: [
       { bars: 'Dm | Bbmaj7 | Dm | Asus', parts: ['pad', 'arp', 'bass'], level: 0.75 },
       {
-        bars: 'Dm | Bb | F | C | Dm | Bb | Gm | Asus/A',
+        bars: 'Dm | Bb | F | C | Dm | Gm | C | Asus/A',
         parts: ['pad', 'arp', 'bass', 'lead'],
         lead: 'D4:1.5 A4:2.5 | Bb4:2 A4:2 | F4:1.5 G4:.5 A4:2 | G4:2 E4:2 | D4:1.5 A4:2.5 | Bb4:1 C5:1 D5:2 | C5:1.5 Bb4:.5 A4:1 G4:1 | A4:3 r:1',
       },
@@ -117,7 +117,7 @@ function lamplight(): Song {
         level: 0.9,
       },
       {
-        bars: 'Dm | Bb | F | C | Dm | Bb | Gm | Asus/A',
+        bars: 'Dm | Bb | F | C | Dm | Gm | C | Asus/A',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
         lead: 'D4:1.5 A4:2.5 | Bb4:2 A4:2 | F4:1.5 G4:.5 A4:2 | G4:2 E4:2 | D4:1.5 A4:2.5 | Bb4:1 C5:1 D5:2 | C5:1.5 Bb4:.5 A4:1 G4:1 | A4:3 r:1',
         counter: 'D3:4 | D3:4 | C3:4 | C3:4 | Bb2:4 | Bb2:4 | G2:2 A2:2 | A2:4',
@@ -193,7 +193,8 @@ function tithe(): Song {
  *  is laid along the quay. */
 function ropewalk(): Song {
   const tune =
-    'C4:1.5 D4:.5 Eb4:2 | F4:1 A4:1 G4:1 F4:1 | D4:3 F4:1 | Eb4:4 | G4:1.5 F4:.5 Eb4:1 C4:1 | A4:2 F4:2 | Ab4:1.5 G4:.5 F4:1 Eb4:1 | D4:4';
+    'G4:1 C5:1 Bb4:1 G4:1 | Bb4:2 D5:1 Bb4:1 | A4:1.5 G4:.5 F4:2 | G4:1 Eb4:3 | F4:1 D4:1 F4:1 Bb4:1 | G4:2 Eb4:2' +
+    ' | A4:1 C5:1 A4:1 F4:1 | D4:4';
   return calmPiece({
     name: 'ropewalk',
     bpm: 80,
@@ -201,10 +202,11 @@ function ropewalk(): Song {
     tracks: { pad, bass, arp: pizzicato, lead: oboe, counter: horn },
     chords: {
       Cm: { bass: 'C2', pad: 'G3 C4 Eb4', arp: 'C3 G3 C4 Eb4' },
+      Gm: { bass: 'G2', pad: 'G3 Bb3 D4', arp: 'G2 D3 G3 Bb3' },
       F: { bass: 'F2', pad: 'F3 A3 C4', arp: 'F2 C3 A3 C4' },
       Bb: { bass: 'Bb1', pad: 'F3 Bb3 D4', arp: 'Bb2 F3 Bb3 D4' },
       Eb: { bass: 'Eb2', pad: 'G3 Bb3 Eb4', arp: 'Eb3 Bb3 Eb4 G4' },
-      Gm: { bass: 'G2', pad: 'G3 Bb3 D4', arp: 'G2 D3 G3 Bb3' },
+      G: { bass: 'G2', pad: 'G3 B3 D4', arp: 'G2 D3 G3 B3' },
       Ab: { bass: 'Ab1', pad: 'Ab3 C4 Eb4', arp: 'Ab2 Eb3 Ab3 C4' },
     },
     arp: { step: 0.5, order: [0, 2, 1, 2, 0, 2, 1, 3], velocity: [56, 34, 44, 34, 50, 34, 42, 36] },
@@ -221,20 +223,20 @@ function ropewalk(): Song {
       ],
     },
     sections: [
-      { bars: 'Cm | F | Cm | F', parts: ['pad', 'arp', 'bass'], level: 0.7 },
-      { bars: 'Cm | F | Bb | Eb | Cm | F | Ab | Gm', parts: ['pad', 'arp', 'bass', 'lead'], lead: tune },
+      { bars: 'Cm | Bb | Cm | Bb', parts: ['pad', 'arp', 'bass'], level: 0.7 },
+      { bars: 'Cm | Gm | F | Cm | Bb | Eb | F | G', parts: ['pad', 'arp', 'bass', 'lead'], lead: tune },
       {
-        bars: 'Eb | Bb | F | Cm | Ab | Eb | F | Gm',
+        bars: 'Eb | Bb | F | Cm | Eb | F | Gm | G',
         parts: ['pad', 'arp', 'bass', 'counter', 'lead'],
-        counter: 'Bb3:2 G3:2 | F3:2 D4:2 | C4:2 A3:2 | G3:4 | C4:2 Eb4:2 | Bb3:2 G3:2 | A3:2 C4:2 | Bb3:4',
-        lead: 'Eb4:4 | D4:4 | F4:4 | Eb4:4 | Eb4:4 | G4:4 | F4:4 | D4:4',
+        counter: 'Bb3:2 G3:2 | D4:2 F4:2 | C4:2 A3:2 | G3:4 | Bb3:2 Eb4:2 | C4:2 A3:2 | D4:2 Bb3:2 | B3:4',
+        lead: 'G4:4 | F4:4 | A4:4 | G4:4 | Eb4:4 | C5:4 | Bb4:4 | B4:4',
         level: 0.9,
       },
       {
-        bars: 'Cm | F | Bb | Eb | Cm | F | Ab | Gm',
+        bars: 'Cm | Gm | F | Cm | Bb | Eb | F | G',
         parts: ['pad', 'arp', 'bass', 'lead', 'counter', 'drums'],
         lead: tune,
-        counter: 'G3:4 | A3:4 | F3:4 | G3:4 | G3:4 | A3:4 | C4:4 | Bb3:4',
+        counter: 'Eb4:4 | D4:4 | C4:4 | C4:4 | D4:4 | Bb3:4 | C4:4 | B3:4',
       },
       {
         bars: 'Cm | Ab | Gm | Cm',

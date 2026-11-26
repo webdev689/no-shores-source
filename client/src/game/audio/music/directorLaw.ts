@@ -165,7 +165,8 @@ export interface Memory {
   readonly restUntil: number;
   /** Where the last frame was heard, for its pieces and its rests. */
   readonly where: Where | null;
-  /** Each place's piece last begun, never begun twice running there: kept through other places, deaths and the story. */
+  /** Each place's piece last begun, never begun twice running there, kept through other places, deaths and the
+   *  story. */
   readonly lastPieces: Readonly<Partial<Record<Where, Cue>>>;
   /** Whether it lay off a coast to land on last frame, and when landfall last began. */
   readonly offCoast: boolean;

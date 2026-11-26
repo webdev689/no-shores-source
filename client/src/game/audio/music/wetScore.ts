@@ -443,11 +443,12 @@ const secondCadence = (): Song =>
     w.hit('heart', 1, 0, 64);
   });
 
-/** The second victory: the tune's opening on B and on C sharp, then F sharp major, the congas in their second groove. */
+/** The second victory: a slow climb from F sharp through B and C sharp to F sharp major, the congas in their second
+ *  groove. */
 const secondVictory = (): Song =>
   makeSong({ ...SONG, name: 'wet-victory-2', bars: 4, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('Bm | C# | F# | F#'), 1);
-    const rise = tune('B4:.75 D5:.75 F#5:.5 D5:2 | C#5:.75 F5:.75 G#5:.5 F5:2 | A#4:.75 C#5:.75 F#5:.5 C#5:2 | F#5:4');
+    const rise = tune('F#4:2 A4:1 B4:1 | C#5:3 G#4:1 | A#4:2 C#5:2 | F#5:4');
     lay(w, 'reed', 0, rise, 104, { octave: -1 });
     lay(w, 'strings', 0, rise, 80, { octave: -1 });
     for (let bar = 0; bar < 2; bar++) drums(w, bar, 1, 2, bar === 1 ? 1 : null);
