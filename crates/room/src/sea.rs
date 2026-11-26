@@ -132,6 +132,7 @@ pub struct Sea {
     harbour: crate::harbour::Harbour,
     decks: decks::Decks,
     islands: islands::Islands,
+    parked: parked::ParkedShips,
     /// The minute it is, counted from the Unix epoch, as the host sets it.
     pub minute: u64,
 }
@@ -168,6 +169,7 @@ impl Sea {
             },
             decks: decks::Decks::default(),
             islands: islands::Islands::new(seed, layout.continents.iter().map(islands::climate_and_resource).collect()),
+            parked: parked::ParkedShips::new(layout),
             minute: 0,
         }
     }
@@ -182,6 +184,7 @@ impl Sea {
     }
 
     pub fn leave(&mut self, player: PlayerId) {
+        self.park(player);
         self.remember_left(player);
         self.stop_repair(player);
         self.leave_decks(player);
@@ -560,6 +563,8 @@ pub(crate) mod fight_measure_tests;
 mod guilds;
 #[path = "sea_islands.rs"]
 pub mod islands;
+#[path = "sea_parked.rs"]
+pub mod parked;
 #[path = "sea_plates.rs"]
 mod plates;
 pub use plates::ShipLook;

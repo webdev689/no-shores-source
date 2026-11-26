@@ -23,7 +23,12 @@ const COAST: [number, number][] = [
   [1_100_000, 1_100_000],
   [1_000_000, 1_100_000],
 ];
-const reach = (gatedFrom: string[] = [], social = false): Reach => ({ social, coast: COAST, gatedFrom });
+const reach = (gatedFrom: string[] = [], social = false): Reach => ({
+  social,
+  continent: 'continent-1',
+  coast: COAST,
+  gatedFrom,
+});
 const [OFF_COAST, FAR_OFF]: [number, number][] = [
   [1_050_000, 1_120_000],
   [1_050_000, 1_200_000],
@@ -151,6 +156,7 @@ test('a node’s reach reads from the bake’s index, and a ship’s place from 
   const continents = [{ id: 'continent-1', outline: COAST }];
   assert.deepEqual(reachOf(index, continents, 'tidewall'), {
     social: false,
+    continent: 'continent-1',
     coast: COAST,
     gatedFrom: ['gullwing-vale'],
   });

@@ -1,7 +1,7 @@
 //! The continents' coasts as the sea judges courses by them: each ring with its bounds, so a point or a leg is judged
 //! against the few coasts whose bounds it falls in, in whole metres.
 
-use world::geometry::{Point, edges, ring_contains, segments_meet};
+use world::geometry::{Point, circle_clear_of_ring, edges, ring_contains, segments_meet};
 use world::layout::Layout;
 
 /// A continent's coast, with its bounds to pass over it quickly.
@@ -25,13 +25,27 @@ impl Coast {
 
     /// Each continent's coast of a layout that has three corners or more.
     pub(crate) fn of(layout: &Layout) -> Vec<Coast> {
-        layout
-            .continents
-            .iter()
-            .filter(|continent| continent.outline.len() >= 3)
-            .map(|continent| Coast::ring(continent.outline.clone()))
-            .collect()
+        coasted(layout).map(|continent| Coast::ring(continent.outline.clone())).collect()
     }
+
+    /// The id of each continent `of` gives a coast, in its order.
+    pub(crate) fn ids(layout: &Layout) -> Vec<String> {
+        coasted(layout).map(|continent| continent.id.clone()).collect()
+    }
+
+    /// Whether a point lies within `reach` metres of the coast, or inside it.
+    pub(crate) fn within(&self, point: Point, reach: i64) -> bool {
+        let near_box = self.west - reach <= point.x
+            && point.x <= self.east + reach
+            && self.north - reach <= point.y
+            && point.y <= self.south + reach;
+        near_box && !circle_clear_of_ring(point, reach, &self.ring)
+    }
+}
+
+/// Each continent of a layout with three corners or more: those with a coast.
+fn coasted(layout: &Layout) -> impl Iterator<Item = &world::layout::Continent> {
+    layout.continents.iter().filter(|continent| continent.outline.len() >= 3)
 }
 
 /// Whether a point lies on a continent.

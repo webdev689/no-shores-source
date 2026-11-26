@@ -108,6 +108,7 @@ impl Sea {
                 || pieces.iter().any(|piece| piece.player == *each)
         });
         self.harbour.accounts.insert(player, account.to_owned());
+        self.unpark(account);
         self.moor_left(player);
         true
     }
@@ -506,3 +507,7 @@ mod leaving_tests;
 #[cfg(test)]
 #[path = "sea_berths_tests.rs"]
 mod berths_tests;
+
+#[cfg(test)]
+#[path = "sea_parked_tests.rs"]
+mod parked_tests;

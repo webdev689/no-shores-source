@@ -3,9 +3,9 @@
 //! their screen last showed (`sent.rs`); at sea what floats, each ship's kept hurts, what the sea tells and each deck
 //! boarded go only to the player they are for, and a deck's own snapshot only to its boarders, each their own; and
 //! each player is sent only the ships near them: the hostile ships their ship keeps at sea (within `KEEP_SHARE` times
-//! its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in their fight; and
-//! only those walking the decks of the ships they are sent; and about once a second, every ship in the sea on its
-//! chart, for the held map.
+//! its sight, as it reckons it), the other players' and the ships parked within `PLAYERS_SEEN_M`, and every player in
+//! their fight; and only those walking the decks of the ships they are sent; and about once a second, every ship in
+//! the sea on its chart, for the held map.
 
 use crate::{Opened, with_open};
 use combat::shots::Line;
@@ -43,6 +43,8 @@ pub fn forget() {
 struct SeaParts {
     tick: u64,
     ships: Vec<(PlayerId, room::sea::Ship)>,
+    /// Each parked ship seen, by the number it is sent under (`room::sea::parked`).
+    parked: Vec<(PlayerId, room::sea::Ship)>,
     hostiles: Vec<room::hostiles::Hostile>,
     fights: Vec<room::battle::FightSeen>,
     /// The players in each fight.
@@ -87,7 +89,7 @@ impl SeaParts {
                     east * east + south * south <= PLAYERS_SEEN_M * PLAYERS_SEEN_M
                 })
         };
-        let ships = self.ships.iter().filter(seen).copied().collect();
+        let ships = self.ships.iter().chain(&self.parked).filter(seen).copied().collect();
         // A Lookout sights each ship from farther off: its sight, as this player is sent it, is that much longer.
         let lookout = self.lookouts.iter().find(|(each, _)| *each == player).map_or(1.0, |(_, times)| *times);
         let sighted = self
@@ -169,7 +171,10 @@ pub fn prepare() {
                     (seen, finders.collect())
                 })
                 .collect();
-            let plates: Vec<_> = sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect();
+            let mut plates: Vec<_> = sea.ships().filter_map(|(player, _)| Some((player, sea.plate(player)?))).collect();
+            plates.extend(sea.parked().map(|parked| (parked.number, parked.plate.clone())));
+            let mut looks: Vec<_> = sea.ships().filter_map(|(player, _)| Some((player, sea.look(player)?))).collect();
+            looks.extend(sea.parked().map(|parked| (parked.number, parked.look)));
             let chart = charting(CHARTED.get(), sea.clock());
             if chart {
                 CHARTED.set(Some(sea.clock()));
@@ -180,6 +185,7 @@ pub fn prepare() {
             Prepared::Sea(Box::new(SeaParts {
                 tick: sea.clock(),
                 ships: sea.ships().collect(),
+                parked: sea.parked().map(|parked| (parked.number, parked.ship)).collect(),
                 hostiles: sea.hostiles(),
                 fights,
                 crews,
@@ -194,7 +200,7 @@ pub fn prepare() {
                     friendlies: sea.friendlies(),
                     charted: charted.collect(),
                     plates,
-                    looks: sea.ships().filter_map(|(player, _)| Some((player, sea.look(player)?))).collect(),
+                    looks,
                 },
                 deck_views,
                 islands,
@@ -308,6 +314,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 reviving: &reviving,
                 // A deck's boarders are its own: none arrives.
                 arrivals: &[],
+                ships: &[],
             };
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })

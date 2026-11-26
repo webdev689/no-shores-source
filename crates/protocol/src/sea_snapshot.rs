@@ -37,14 +37,9 @@ pub fn sea_snapshot_bytes(
     let players = Some(builder.create_vector(&each));
     let each: Vec<_> = ships
         .iter()
-        .map(|&(player, Ship { x, y, heading, rate, .. })| {
+        .map(|&(player, ship)| {
             let look = harbour.looks.iter().find(|(each, _)| *each == player).map(|(_, look)| *look);
-            let built = || (gear::ship::fleet::Dress::default().numbers(), [gear::ship::fleet::NO_WORD; 2]);
-            let (dress, name) = look.map_or_else(built, |look| (look.dress, look.name));
-            let (dress, name) = (Some(builder.create_vector(&dress)), Some(builder.create_vector(&name)));
-            let (hull, emblem) = look.map_or((0, 0), |look| (look.hull, look.emblem));
-            let args = messages::ShipArgs { player, x, y, heading, pace: rate, hull, dress, name, emblem };
-            messages::Ship::create(&mut builder, &args)
+            ship_offset(&mut builder, player, ship, look)
         })
         .collect();
     let ships = Some(builder.create_vector(&each));
@@ -162,6 +157,22 @@ pub fn sea_snapshot_bytes(
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
+}
+
+/// A ship as a snapshot carries it: its player's number, where it lies, its heading and the pace it sailed at, and its
+/// looks, the Sloop as built for none.
+pub(crate) fn ship_offset<'built>(
+    builder: &mut flatbuffers::FlatBufferBuilder<'built>,
+    player: PlayerId,
+    Ship { x, y, heading, rate, .. }: Ship,
+    look: Option<room::sea::ShipLook>,
+) -> flatbuffers::WIPOffset<messages::Ship<'built>> {
+    let built = || (gear::ship::fleet::Dress::default().numbers(), [gear::ship::fleet::NO_WORD; 2]);
+    let (dress, name) = look.map_or_else(built, |look| (look.dress, look.name));
+    let (dress, name) = (Some(builder.create_vector(&dress)), Some(builder.create_vector(&name)));
+    let (hull, emblem) = look.map_or((0, 0), |look| (look.hull, look.emblem));
+    let args = messages::ShipArgs { player, x, y, heading, pace: rate, hull, dress, name, emblem };
+    messages::Ship::create(builder, &args)
 }
 
 /// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,

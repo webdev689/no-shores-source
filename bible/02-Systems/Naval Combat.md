@@ -571,7 +571,8 @@ as hostile to the player, so the task does not count it among the ships left to 
 ## At sea
 
 The sea room ([[Server]]) sails hostile ships among the players' on the [[Overworld]]: DFO's director, trimmed to
-the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
+the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]). A ship lying parked while its player is
+ashore ([[Server]], "Parked ships") is out of play: no hostile ship sights, chases or meets it.
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
   falls due while they fight comes as the fight ends. A travel to other waters waits the next roll at least half a

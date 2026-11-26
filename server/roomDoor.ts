@@ -79,8 +79,14 @@ export interface RoomDoor {
   /** The open sea's word on the standing island whose door leads into a dungeon's room (its name at Normal), as
    *  `seaIsland` gives it: empty if no island the sea holds has that door. */
   seaDungeon(room: string): string;
-  /** Holds the open sea's island by its number and seed while players stand ashore: whether it stands. */
-  holdAshore(id: number, seed: string): boolean;
+  /** The open sea's answer to a place's room naming its players ashore (crates/room-wasm/src/parked_door.rs): the word
+   *  is JSON of their `accounts` and the place's `continent` id, or a sea island's `island` number and `seed` (which it
+   *  holds), or neither for a run started at sea; the answer is JSON of the ships parked at that island, each its
+   *  `account`, `number`, `x`, `y`, `heading`, `hull`, `dress`, `name` and `emblem`. Empty with no sea open. */
+  seaAshore(word: string): string;
+  /** Gives the open room on land the ships parked at its island, as its seas answered (`seaAshore`, each `number` as
+   *  the host gives it): its snapshots send each player every one but their own. Whether a room on land is open. */
+  parked(ships: string): boolean;
   /** The number of the open sea's landing of an account on its island of that number and seed (its ship at rest at
    *  the island's anchorage when last at sea), or 0 if it is not landed there. */
   seaLanded(id: number, seed: string, account: string): number;
@@ -279,7 +285,8 @@ interface RoomExports {
   room_open_island(address: number, length: number): number;
   room_sea_island(id: number): bigint;
   room_sea_dungeon(address: number, length: number): bigint;
-  room_hold_ashore(id: number, low: number, high: number): number;
+  room_sea_ashore(address: number, length: number): bigint;
+  room_parked(address: number, length: number): number;
   room_sea_landed(id: number, low: number, high: number, address: number, length: number): number;
   room_isle_check_landings(): number;
   room_make_test(): number;
@@ -421,7 +428,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openIsland: (word) => openWith(exports.room_open_island, word),
     seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
     seaDungeon: (room) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_dungeon, room))),
-    holdAshore: (id, seed) => exports.room_hold_ashore(id >>> 0, ...halves(seed)) === 1,
+    seaAshore: (word) => new TextDecoder().decode(take(openWithAnswer(exports.room_sea_ashore, word))),
+    parked: (ships) => openWith(exports.room_parked, ships),
     seaLanded: (id, seed, account) => {
       const bytes = new TextEncoder().encode(account);
       return lend(bytes, (address) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, bytes.length));
