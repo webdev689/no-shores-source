@@ -286,7 +286,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   under). They are walked as their smooth slope (`slope_at`): the upper floor at the head's edge falling 8 m over
   12.8 m (0.625) to the lower floor at the foot's edge, taken as a share of the way between the edges so it meets
   each landing's floor exactly, level past either end. Their ceiling is 3.2 m over the slope. The walk crosses a
-  flight from one storey to the other (`walk_from`).
+  flight from one storey to the other (`walk_from`), stepping onto and off it only at its landings: a cell beside its
+  head on the lower storey, or beside its foot on the upper, lies a storey off the slope.
 - **Spans** (`spans`): each column of cells holds open spans, lowest first: a storey's open cell from its floor to its
   ceiling; a flight's one span from its slope's lowest in the column to 3.2 m over its highest; a Void lifting the
   span under it to the Void's own ceiling (a Void over rock opens nothing). Rock holds none.
@@ -346,8 +347,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Checkpoints** ([[Revives]]): each room whose band stands lays one, and an Elite Dungeon one at each seal's room and
   one at the Court, each at the doorway cell the walk from the way in enters its room by, facing in. One is won as its
   band falls, its seal breaks or the Court's Boss wakes (with no seal, once a living player has stood in the Court with
-  it); a player who respawns stands at the one won farthest along,
-  before any at the arrival, and every player is told "Checkpoint reached" as it moves on. In a run a band whose fall
+  it); a player who respawns stands at the one won farthest along by its room's walk, the Court's always last
+  (a seal's room may lie farther by walk than the end), before any at the arrival, and every player is told "Checkpoint reached" as it moves on. In a run a band whose fall
   won its room's checkpoint does not stand again while anyone is in the room; in a shared dungeon it stands again as
   any group does, and the checkpoint falls back to the one won before it.
 - **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Under feet at z
@@ -747,6 +748,9 @@ as standing none (`readDungeon`).
   deepest block everywhere.
 - Nothing may stand under a flight: the navmesh bakes a flight's column as its lowest floor, so a column under a
   flight is rock.
+- The ground keeps a body off rock by cells, not by sides: on the lower storey, in a cell beside a flight's head (or on
+  the upper, beside its foot), a body's shoulder may reach its half-width into the flight's drawn end, though it
+  never steps onto the flight there.
 - A span holds a body whose crouched head (1 m) fits under its ceiling: a standing body's head may reach 0.8 m
   into a slab, since the ground knows the feet alone.
 - Lines across storeys take no corner of rock between two cells, as one storey's do, only the cells they cross.

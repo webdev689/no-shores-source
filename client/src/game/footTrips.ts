@@ -10,7 +10,7 @@ import type { Reviving } from '../network/messages.ts';
 import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { BreachSeen } from '../network/breachMessages.ts';
 import { TIERS } from './activityWords.ts';
-import { askDungeon, type DungeonAsk, type DungeonLayout, storeyAt } from './dungeonLayout.ts';
+import { askDungeon, type DungeonAsk, type DungeonLayout, STOREY_M, storeyAt } from './dungeonLayout.ts';
 import { cacheOf } from './dungeonChest.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -195,8 +195,8 @@ export class Entrances {
   }
 }
 
-/** What E offers about going in and out where a player stands at (x, y): in a dungeon, "Leave" within reach of its
- *  exit door, or of its return portal while that stands open; on a patrol or an Elite Dungeon's node, "Enter" and the
+/** What E offers about going in and out where a player stands at (x, y), feet at `feet` (0 if unsaid): in a dungeon,
+ *  "Leave" within reach of its exit door, or of its return portal while that stands open, on its storey; on a patrol or an Elite Dungeon's node, "Enter" and the
  *  dungeon's name within reach of an entrance's door. */
 export function tripAt(
   x: number,
@@ -207,13 +207,15 @@ export function tripAt(
     patrol: NodeInfo;
     entrances: Entrances;
     module: WebAssembly.Module;
+    feet?: number;
   },
   trips: Trips,
 ): Use | null {
   const { dungeon } = here;
   if (dungeon) {
     const { exitDoor, portal } = dungeon.layout;
-    const reaches = (door: { x: number; y: number }) => Math.hypot(door.x - x, door.y - y) <= DOOR_REACH_M;
+    const reaches = (door: { x: number; y: number; z?: number }) =>
+      Math.hypot(door.x - x, door.y - y) <= DOOR_REACH_M && Math.abs((door.z ?? 0) - (here.feet ?? 0)) < STOREY_M / 2;
     const out = reaches(exitDoor) || (here.portalOpen && reaches(portal));
     return out ? { words: 'Leave', run: () => trips.leave() } : null;
   }

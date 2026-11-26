@@ -179,7 +179,9 @@ impl Room {
         // are blocks.
         let mut room = Self::node(floor, pads, Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
-        room.ways_out = Some((dungeon.exit_door(), dungeon.portal_door()));
+        let ([door_x, door_y], [portal_x, portal_y]) = (dungeon.exit_door(), dungeon.portal_door());
+        let (door_z, portal_z) = (dungeon.floor_of(dungeon.way_in.cell), dungeon.floor_of(dungeon.portal.cell));
+        room.ways_out = Some(([door_x, door_y, door_z], [portal_x, portal_y, portal_z]));
         // Shut by its seas alone, as a node with no patrol is; a patrol's own dungeon is gated as its patrol.
         room.place = Some(gear::gate::Place::Node);
         room.world_seed = node_seed(name);

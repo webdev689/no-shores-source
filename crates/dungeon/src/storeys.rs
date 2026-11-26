@@ -179,12 +179,34 @@ impl Dungeon {
     }
 
     /// The cells a walk steps to from a cell: those beside it on its storey that are open but open air, which is a
-    /// way down alone, and a flight's twin.
+    /// way down alone, and a flight's twin; onto and off a flight only at its landings.
     pub fn walk_from(&self, cell: usize) -> impl Iterator<Item = usize> + '_ {
         SIDES
             .into_iter()
             .filter_map(move |side| self.beside(cell, side))
-            .filter(|&next| self.open(next) && self.cells[next] != Cell::Void)
+            .filter(move |&next| self.open(next) && self.cells[next] != Cell::Void && self.steps_between(cell, next))
             .chain(self.stair_twin(cell))
+    }
+
+    /// Whether a body steps between two open cells side by side: a flight's cell joins its flight's own cells, and
+    /// its head on its upper storey and its foot on the lower each their landing, never another cell beside them.
+    fn steps_between(&self, from: usize, to: usize) -> bool {
+        let landing = |number: u16, end: usize| {
+            let flight = self.stairs.get(usize::from(number))?;
+            let (storey, at, plane) = (self.storey_of(end), end % self.plane(), self.plane());
+            if storey == flight.upper && at == flight.cells[0] {
+                Some(storey * plane + flight.top)
+            } else if storey == flight.upper + 1 && at == flight.cells[FLIGHT_CELLS - 1] {
+                Some(storey * plane + flight.bottom)
+            } else {
+                None
+            }
+        };
+        match (self.cells[from], self.cells[to]) {
+            (Cell::Stair(one), Cell::Stair(other)) => one == other,
+            (Cell::Stair(number), _) => landing(number, from) == Some(to),
+            (_, Cell::Stair(number)) => landing(number, to) == Some(from),
+            _ => true,
+        }
     }
 }

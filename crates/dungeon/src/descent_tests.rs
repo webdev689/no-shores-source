@@ -262,3 +262,29 @@ fn the_main_way_runs_from_the_way_in_to_the_end_and_braziers_flank_the_doorways_
     }
     assert!((0.6..1.0).contains(&share(flanked, leaving)), "{flanked} of {leaving} ways on flanked");
 }
+
+#[test]
+fn a_walk_steps_onto_and_off_a_flight_at_its_landings_alone() {
+    for dungeon in DUNGEONS.iter() {
+        let plane = dungeon.plane();
+        for cell in 0..dungeon.cells.len() {
+            for next in dungeon.walk_from(cell) {
+                let number = match (dungeon.cells[cell], dungeon.cells[next]) {
+                    (Cell::Stair(one), Cell::Stair(other)) => {
+                        assert_eq!(one, other, "from one flight onto another");
+                        continue;
+                    }
+                    (Cell::Stair(number), _) | (_, Cell::Stair(number)) => usize::from(number),
+                    _ => continue,
+                };
+                let flight = &dungeon.stairs[number];
+                let (upper, lower) = (flight.upper * plane, (flight.upper + 1) * plane);
+                let ends =
+                    [(upper + flight.cells[0], upper + flight.top), (lower + flight.cells[3], lower + flight.bottom)];
+                let step =
+                    |(end, landing): (usize, usize)| [cell, next] == [end, landing] || [next, cell] == [end, landing];
+                assert!(ends.into_iter().any(step), "a step from {cell} to {next} past flight {number}'s landings");
+            }
+        }
+    }
+}

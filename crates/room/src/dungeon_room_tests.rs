@@ -479,17 +479,17 @@ fn a_player_leaving_a_dungeon_by_its_exit_door_or_its_open_portal_is_kept_as_com
     let mut room = Room::dungeon("saltgrass-downs", 0, None).expect("its first dungeon");
     let player = room.join().expect("a room with space");
     let (door, portal) = room.ways_out.expect("a dungeon's ways out");
-    let out = |room: &Room| {
+    let out = |room: &mut Room, [x, y, z]: [f64; 3]| {
+        let body = &mut room.players.get_mut(&player).expect("in the room").fighter.body;
+        (body.x, body.y, body.z) = (x, y, z);
         let kept = gear::Character::from_json(&room.kept_character(player).expect("kept")).expect("a character");
         kept.left.expect("its body left").out
     };
-    stand_player(&mut room, player, door);
-    assert!(out(&room), "at its exit door");
-    let middle = [(door[0] + portal[0]) / 2.0, (door[1] + portal[1]) / 2.0];
-    stand_player(&mut room, player, middle);
-    assert!(!out(&room), "within it, away from either way out");
-    stand_player(&mut room, player, portal);
-    assert!(!out(&room), "at its portal while it stands shut");
+    assert!(out(&mut room, door), "at its exit door");
+    assert!(!out(&mut room, [door[0], door[1], door[2] - dungeon::STOREY_M]), "a storey under it");
+    let middle = [(door[0] + portal[0]) / 2.0, (door[1] + portal[1]) / 2.0, door[2]];
+    assert!(!out(&mut room, middle), "within it, away from either way out");
+    assert!(!out(&mut room, portal), "at its portal while it stands shut");
     room.cache.as_mut().expect("its cache").open = true;
-    assert!(out(&room), "at its portal once it stands open");
+    assert!(out(&mut room, portal), "at its portal once it stands open");
 }

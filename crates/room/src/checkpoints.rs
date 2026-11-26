@@ -51,8 +51,12 @@ impl Room {
     pub(crate) fn lay_dungeon_checkpoints(&mut self, dungeon: &Dungeon, bands: &[(usize, usize)]) {
         let walks = crate::encounter_plan::walks(dungeon);
         let mut laid = Vec::new();
+        // The Court is the last checkpoint, though a seal's room may lie farther by walk than the end's.
+        let farthest = dungeon.rooms.iter().map(|found| found.walk).max().unwrap_or(0);
         let mut lay = |room: usize, won: Won| {
-            let along = f64::from(dungeon.rooms.get(room).map_or(0, |found| found.walk));
+            let walk =
+                if won == Won::Court { farthest + 1 } else { dungeon.rooms.get(room).map_or(0, |found| found.walk) };
+            let along = f64::from(walk);
             if let Some((at, facing)) = doorway_of(dungeon, &walks, room) {
                 laid.push(Checkpoint { at, facing, along, won });
             }

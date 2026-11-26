@@ -494,6 +494,7 @@ export class Foot {
       patrol: this.node,
       entrances: this.held.entrances,
       module: this.module,
+      feet: walker.player.body.z,
     };
     const placeUse = this.outpost
       ? this.outpost.uses(x, y, (asked) => fight.askGear(asked), walker.player.facing, controls.held('use'))
