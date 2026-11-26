@@ -60,7 +60,7 @@ rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop
 sail the other hulls ([[Hulls]]) by the same laws. A new player is taught the helm in the opening, once the
 Harbourmaster hands over the Sloop: aboard, under way, steered, trimmed on the pace dial, the held map raised and a
 ball put in a Tithe hulk moored off Overlook, then home to dock, each step ticked by the sea from what the ship did
-([[Quests]], "The lessons").
+([[Quests]], "The lessons"; [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]).
 
 ## How it works
 

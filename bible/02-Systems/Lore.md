@@ -47,7 +47,7 @@ Houses":
 | The Keeper's Hours | Lamplighters | dark amber, the lantern | a chapter for each task of "The Keeper's Lamp" |
 | Unwritten | The Veiled | dusk purple, the moon | a chapter for each task of "What the Tithe Writes" |
 
-Each house's book's eleven chapters come one as each task of its road is done, in the road's order, the last as the road ends.
+Each house's book's twelve chapters come one as each task of its road is done, in the road's order, the last as the road ends.
 Together they tell where each Art came from. Its words keep to the owner's: no em or en dashes; and every bold and
 italic is closed, a document's every line set in and a break alone, or a check fails.
 How they are written, detailed and shown rather than explained:

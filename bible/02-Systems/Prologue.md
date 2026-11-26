@@ -58,7 +58,6 @@ code:
   - crates/room/src/story.rs#story_wreck
   - client/src/game/prologue/wreckLayout.ts#readWreck
   - client/src/game/prologue/wreckView.ts#WreckView
-  - client/src/game/prologue/wreckView.ts#settleHeaps
   - client/src/game/prologue/wreckLayout.ts#floorUnder
   - tools/wreck/build_wreck.py
   - tools/wreck/light_wreck.py
@@ -176,11 +175,11 @@ to head, is on the player's view, or a minute after she set off if she still sta
 the town's middle. Leaving Overlook's social space before then ends her part at once, her words with it. The game is
 the player's from there.
 
-**The stranger's welcome** ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]], replaced in
-part by [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]). Her
+**The stranger's welcome** ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]],
+[[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]). Her
 words (`content/story/welcome.json`, said on the story's stage in the dialogue box, `welcome/tour.ts`) are two lines,
-one a scene: a little of the world (three ports standing against the Grey Tithe, Overlook paying them nothing); then her
-farewell, sending the player to the keepers, each of whom has a gift for them ([[Quests]], "The opening"). She names no
+one a scene: a little of the world (the Grey Tithe taking a tenth of every hold, Overlook paying them nothing); then
+her farewell, wishing the player well and sending them to the keepers, each of whom has a gift for them ([[Quests]], "The opening"). She names no
 place and the camera flies to none: the round of the keepers shows the way. Both are seen face to face
 (`welcome/framing.ts`): from the side of the pair nearer the player's view unless a solid stands between, from 2.8, 3.4
 then 2.4 m over their feet, as far off as puts their crowns 14% and their feet 36% down the view (some 8 to 10 m), both
@@ -327,9 +326,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   left out. Over 2,000 m2 of it is walked, across some 75 m by 55 m.
 - **Built in CI.** The wreck workflow builds and lights the wreck whenever its tools change, in a job that holds no
   secret, and publishes the mesh, the light and the model to R2 from a second job that only uploads them
-  ([[Toolchain]]). It keeps the layout it wrote (artifact `wreck-level`), which a commit takes whole once the run has
-  published: a build on another machine can lay the ground a hair differently, and the game walks the ground the mesh
-  was built with.
+  ([[Toolchain]]). It keeps the layout it wrote (artifact `wreck-level`), which a commit takes once the run has published:
+  a build on another machine can lay the ground a hair differently, and the game walks the ground the mesh was built
+  with. The file's mast (`masts`) and its rank 2 boarders are not written by the tools, so a commit keeps them.
 - **The layout** is `content/prologue/wreck.json`, written by the export: the mesh's and the light's keys on R2, the
   ground's blocks, each heap's block, the fires, where the sea is not drawn (`dry`), where the player wakes, the
   path, the zones with their waves and the Brig's crew, the arena and Thule's place. Figures stand at the middle of
@@ -372,11 +371,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   piled 2.9 m over the deck or the ramp it stands on and out over the bulwarks, standing from the start. A heap in
   the wreck's own frame is piled on the floor most of its box stands on: the middle height of the faces looking up
   under it, sampled every 0.3 m (`floor_under`), so a spar or a rail across it is not taken for its deck; one on a ship's
-  frame, on the deck or ramp under its box's middle. The page sets a heap whose lowest point stands 0.5 m or more over
-  the floor under its box (`floorUnder`, the middle height of the ground there) down onto it as the mesh is read
-  (`settleHeaps`), and its block in the layout tops it where it is drawn, so the room's wall and the drawn heap
-  agree. It is
-  cleared once its zone's wave has stood whole and fallen. The steps up to the Frigate's quarterdeck at its front's
+  frame, on the deck or ramp under its box's middle. Its block in the layout tops it where it is drawn, so the room's
+  wall and the drawn heap agree, 2.3 to 3.6 m over the ground under its box (`floorUnder`, the middle height of the
+  ground there; held by `wreckLayout.test.ts`). It is cleared once its zone's wave has stood whole and fallen. The steps up to the Frigate's quarterdeck at its front's
   corners are closed for good by heaps on cores of stacked crates, higher than its rails, so the arena's only way in
   is up from the wreckage off its port quarter. A player found past a heap still standing is brought back to their
   last checkpoint.

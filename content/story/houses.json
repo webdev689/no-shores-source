@@ -14,7 +14,7 @@
     ],
     "roundArmorsmith": [
       { "who": "armorsmith", "say": "Head, body, arms, legs. Here's a plain set of all four, on me." },
-      { "who": "armorsmith", "say": "Put them on before you go. Plain still stops a blade." }
+      { "who": "armorsmith", "say": "Wear them when you can. Plain still stops a blade." }
     ],
     "roundMage": [
       { "who": "mage", "say": "Vestiges wash up sealed tight. Here's one, to start you off." },

@@ -138,7 +138,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   while the pad was played last its button, drawn on the cap as the ship's bar draws one (`hudKeys`, `capFace`). A
   spell just cast flashes its frame white for 0.5 s; while the player cannot cast (staggered, down, drinking or dead),
   every icon greys under a hatch. While a house's horde runs for the player (the room's `quest_horde`; [[Quests]], "A
-  house's horde"), the Art is unbounded and the bar shows it: each ability glows in the Art's colour, stronger than a
+  house's horde"; [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]), the Art is unbounded and the bar shows it: each ability glows in the Art's colour, stronger than a
   ready one and swelling slowly from 2 to 4 px over 4 s (still at 3 px with less motion asked for), under an infinity
   mark, 11 by 5 cells, standing above it to say it costs nothing; a screen reader hears "unbounded, ready". The glow
   and the marks go the frame the room's word no longer holds the horde, and while the player cannot cast; an ability

@@ -92,9 +92,9 @@ fn the_helms_acts_are_ticked_as_the_sea_sails_the_ship() {
     sail(&mut sea, player, &[[at.x, at.y - 5_000.0]], 20);
     ticks(&mut sea, 2);
     assert!(met(&sea, player).contains(&"Trim your sails"), "the pace dial moved under way");
-    assert!(!met(&sea, player).contains(&"Raise your chart"), "the page has said nothing of the map");
+    assert!(!met(&sea, player).contains(&"Open the held map"), "the page has said nothing of the map");
     sea.charted(player);
-    assert!(met(&sea, player).contains(&"Raise your chart"));
+    assert!(met(&sea, player).contains(&"Open the held map"));
 }
 
 #[test]
@@ -109,7 +109,11 @@ fn the_hulk_lies_off_overlook_and_comes_into_a_fight_of_the_captains_own_as_they
     ticks(&mut sea, 1_200);
     let (fighting, fought) = sea.fights().next().expect("the hulk's fight");
     assert_eq!((fighting, hulk_in(fought)), (player, Some(player)));
-    assert!(sea.fight_views().iter().all(|seen| seen.lesson), "the page is told the fight is the lesson's hulk");
+    let views = sea.fight_views();
+    assert!(
+        !views.is_empty() && views.iter().all(|seen| seen.lesson),
+        "the page is told the fight is the lesson's hulk"
+    );
     let hulk = fought.fight.vessel(CAPTAIN).expect("the hulk");
     assert_eq!(hulk.damage.state, State::Struck, "its colours struck");
     let off = libm::hypot(hulk.ship.x - mooring[0], hulk.ship.y - mooring[1]);

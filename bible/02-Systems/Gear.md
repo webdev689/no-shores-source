@@ -585,9 +585,10 @@ the factions' counters are in [[Factions]].
   loadout (the Sword & Shield first, then the sword, greatsword, double swords, dagger & shield, double daggers, mace,
   mace & shield, double mace, flail, warhammer, great axe and staff) and every Ranged one (the bow, crossbow,
   pistolet, double pistolet and thunderlock), each drawn on the figure and in first person. Their screens show them
-  first, under "To start". A smith's stock is numbered the day's six first, then the starter stock
+  under "To start": the Armorsmith's first, the Weaponsmith's after her day's wares, or first while her gift is owed
+  ([[Interface]], "The keepers' rows"). A smith's stock is numbered the day's six first, then the starter stock
   (`gear::vendor::stock`).
-- **The keepers' gifts** ([[Quests]], "The opening"; `gear::gifts`). While the Weaponsmith's gift is owed, one Melee
+- **The keepers' gifts** ([[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]]; [[Quests]], "The opening"; `gear::gifts`). While the Weaponsmith's gift is owed, one Melee
   and one Ranged piece of her starter stock are free: the room sends each piece of an owed slot at no price, her screen
   shows it "Free" with her words, and taking one spends that slot's gift (`Character::ware_price`). The Armorsmith
   gives her four starter pieces, the Mage a sealed Magic Vestige, the Vault Keeper a Normal cloak laid in the vault,

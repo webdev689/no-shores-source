@@ -125,7 +125,7 @@
             { "kind": "sail", "act": "sail", "text": "Set sail" },
             { "kind": "sail", "act": "steer", "text": "Steer" },
             { "kind": "sail", "act": "trim", "text": "Trim your sails" },
-            { "kind": "sail", "act": "map", "text": "Raise your chart" },
+            { "kind": "sail", "act": "map", "text": "Open the held map" },
             { "kind": "sail", "act": "fire", "text": "Put a ball in the hulk" }
           ]
         },

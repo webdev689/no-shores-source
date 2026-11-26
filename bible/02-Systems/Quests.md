@@ -137,17 +137,17 @@ their counter is for and what they give, and giving it as they are spoken with (
 | The Mage | A sealed Magic Vestige for the head, at the player's level, carried (`vestige`) | Having a Vestige opened |
 | The Vault Keeper | A Normal cloak at the player's level, laid in the vault (`cloak`) | Taking a piece out of the vault |
 | The Tailor | Harbour Blue, a dye, kept (`dye`) | Wearing a dye |
-| The Tack | The Bay Horse, worn (`"horse": true`), as before | Riding |
+| The Tack | The Bay Horse, worn (`"horse": true`) | Riding |
 | The Postmaster | A letter (its source the keepers' gift) holding a sealed Magic Vestige for the legs, at the player's level (`letter`) | Taking a letter |
 
 Each gift is given once a character, kept by name in its quest log (`gifts`), so a second hearing, a reload, a rejoin or
 a later round never gives it again; the Weaponsmith's slots still free are kept beside it (`free`) until taken. A gift
 with no room where it goes is kept as anything found is: armour carried, else in the vault, else posted; a Vestige
 carried, else posted; the cloak in the vault, else carried, else posted. Then **Ride the Bay**, the Tack's lesson
-("The lessons"), the Harbourmaster calling the player down to her stall as it begins (`rideBegin`); **Take your ship
+("The lessons"), the Harbourmaster calling the player down to his stall as it begins (`rideBegin`); **Take your ship
 from the Harbourmaster**, its reward the Sloop (`"ship": true`), which a new player has none of until then
-([[Shipyard]]), her lines sending the player out to a Tithe hulk moored offshore; **Learn the helm**, her lesson at
-sea; **Bring it home**, an `enter` goal of Overlook's social space ("Dock at Overlook"), her line said as it is done
+([[Shipyard]]), his lines sending the player out to a Tithe hulk moored offshore; **Learn the helm**, his lesson at
+sea; **Bring it home**, an `enter` goal of Overlook's social space ("Dock at Overlook"), his line said as it is done
 (`sailHome`); and **Put them on**, a wear goal for each of the Melee weapon, the four armour pieces and the Ranged weapon, each a count
 of 1, told of the pieces held after every answered ask and as every task begins, again until nothing more counts, so
 pieces worn during the round meet it as soon as it begins; plain clothes never do. The Tack's Bay is worn unless one is, never a second,
@@ -172,14 +172,14 @@ done; the tracker names each step's keys as bound now on the keys or the pad pla
 on the keys below; and the page announces each step as the room ticks it, a notice at the foot under the Tack's or the
 Harbourmaster's mark, through the quest's news (`lessonsBetween`: "Riding", "Gallop"; "Sailing", "Steer").
 
-- **Ride the Bay**, in Overlook's social space, where the room lets a rider ride: Get up on your horse (`,`), Ride at
+- **Ride the Bay**, wherever the room lets a rider ride, the last step at Overlook's counters: Get up on your horse (`,`), Ride at
   a walk (W), Gallop (Shift), Spur it on (Space: a rider's jump is the boost), Get down (`,`), and Ride to the
   Harbourmaster's stall, in the saddle. The room watches a rider each tick while their task asks a riding act
   (`Room::keep_lessons`), measuring their stretches at a walk and at a gallop from the body's own pace, and forgets
   them once it asks none. The compass and the screen's mark point at the Harbourmaster's counter; the other steps
   read "Anywhere".
 - **Learn the helm**, at sea: Go aboard your Sloop (M held, its step reading "Hold M to return to your ship" ashore),
-  Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Raise your chart (N), and Put a ball in the
+  Set sail (W), Steer (A, D), Trim your sails (`[`, `]`, the pace dial), Open the held map (N), and Put a ball in the
   hulk (the right button laid and let go, the pad's RT). The sea watches each captain on it each tick
   (`Sea::keep_lessons`), keeping their heading and pace as last seen and how far they have turned under way. The page
   asks the sea (ask 4) each time the held map is raised at the helm (`Sea::charted`); the sea takes it only for a
@@ -201,9 +201,9 @@ Each lesson's task pays a mission's clear as it is done, as every task that send
 before the lessons keeps its place by its task's id: one on the round rides once it is done, one on **Take your ship**
 or later is not sent back, and one that pledges midway through a lesson walks its house's road from then on.
 
-Every save keeps its place. A save on the old **Arm yourself** task (a Melee weapon and the four armour pieces bought)
-reads on **Put them on** (its `was`), its counts at nothing. A save kept partway round the counters before the keepers
-gave gifts is given, as it is read, the gift of each keeper it has heard, and the rest as it hears them. One who pledges
+Every save keeps its place. A save on `arm-yourself` (a Melee weapon and the four armour pieces bought) reads on
+**Put them on** (its `was`), its counts at nothing. A save kept partway round the counters with no gift recorded is
+given, as it is read, the gift of each keeper it has heard, and the rest as it hears them. One who pledges
 before the round is done is given, as they pledge, every gift the opening's tasks still held, the Weaponsmith's choice
 kept free at her counter, as the Tack gives the Bay. A character past the round before the gifts (on **Take your ship from the Harbourmaster** or
 later, or pledged) is owed nothing new, as one past the Tack's goal is given no Bay. A character whose log stood at the
@@ -221,7 +221,7 @@ Field**, after the false lights are doused; the Veiled's **Let the dark out at t
 reached unseen. Each is a `defend` goal with `horde`, at the Art task's own place on the Saltgrass Downs, of four
 waves of the Tithe's roster, 29 foes in all: 6, then 7, 8 and 8, Runners, Collectors, Crossbowmen and Enforcers
 (Major), at the node's levels. The house's speaker calls the horde in as it begins (its `start`) and says the power is
-spent as it falls (its `end`); the next task teaches the Art's abilities one at a time, as before.
+spent as it falls (its `end`); the next task teaches the Art's abilities one at a time.
 
 - **How it runs** (`steps_horde.rs`): as the player comes within the place's reach, alive, the first wave stands 18
   m from the place's middle (nearer where a walk from the middle reaches no further, so none stands up a bank it

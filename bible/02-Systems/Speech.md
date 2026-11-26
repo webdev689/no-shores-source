@@ -58,7 +58,7 @@ types each line as it is heard, and short barks over a speaker's head, their wor
   after a ware bought and a line for a player short of the price, each a one-line scene of
   `content/story/keepers.json` said in turn, and a quest's scene they say alone while their screen is open, a line at
   a time, each held 1.6 s once typed (`sayInScreen`); the line stands over their name, their name in their screen's
-  colour ([[Interface]], "The social space's counters"). A scene with another speaker, and the stranger's, waits for
+  colour ([[Interface]], "The social space's counters"; [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]]). A scene with another speaker, and the stranger's, waits for
   the screen to close and is said in the dialogue box, which keeps the face-to-face shot. The stranger's welcome to Overlook is `content/story/welcome.json`
   ([[Prologue]], "The stranger's welcome"). Each speaker talks in a voice of their own
   ([[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]]).

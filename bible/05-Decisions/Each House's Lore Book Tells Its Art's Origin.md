@@ -23,7 +23,8 @@ The owner wrote:
 
 Under "Be as detailed as possible", the owner's to change:
 
-- **A chapter for each task.** Each house's road has eleven tasks, so its book has eleven chapters, one found as each
+- **A chapter for each task.** Each house's road has twelve tasks, so its book has twelve chapters (the horde's
+  added in [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]), one found as each
   task is done, the last as the road ends in the Hall of the Arts.
 - **The books.** They sit in one category, "The Three Houses", whose tile wears the lighthouse, since the Hall of the
   Arts and its chapels stand in the Beacon's base. Each book is a record its house keeps:

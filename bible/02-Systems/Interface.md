@@ -344,7 +344,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   there is no room beside it; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
   reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view (the hints
   wrapping in their row on a phone, the presses beside them), and Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
-  Art's and Appearance stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
+  Art's, Appearance and every station's (a keeper's, the Harbourmaster's, the board's) stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
   the figures, the horse and the keepers drawn from the forge's pixels, kept whole. A page that needs no gear (Ship,
   Social, Settings and the pages to come) takes only the interface, the room, the sizes and the holds
   (`PlainContext`); Social and Settings keep what the accounts answered while they show, asked again each time they
@@ -656,8 +656,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   or whose hull is beaten low. The ship's own state is the fight's readout ([[The Sea's Screens Wear Enhanced Plus]]). At sea DFO's messages are the
   notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
-  3.5 s), rising in over 0.2 s; one already shown keeps its place. A keeper's gift on the opening's round is one, its
-  words made by `giftNotice` alone ("The Armorsmith's gift: head, torso, arm and leg armour").
+  3.5 s), rising in over 0.2 s; one already shown keeps its place. A keeper's gift is not one: it is a notice of what
+  is obtained, its title and line made by `giftNotice` ("The Armorsmith's gift", "Head, torso, arm and leg armour.").
 - **The key strip** shows only the controls of what the player is doing now (`hints.ts`), in plain verbs, as a compact
   panel at the bottom right (`keyStrip.ts`, [[The Key Strip Is a Compact Panel, a Held Key Leaves, and Settings Has Tabs]]):
   dark glass edged in brass at its left, as the notices are; at its head the moment's name in faint capitals beside a

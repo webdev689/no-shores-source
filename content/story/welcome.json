@@ -1,10 +1,10 @@
 {
   "scenes": {
     "strangerHistory": [
-      { "who": "stranger", "say": "Three ports still stand against the Grey Tithe. Overlook pays them nothing." }
+      { "who": "stranger", "say": "The Grey Tithe take a tenth of every hold. Overlook pays them nothing." }
     ],
     "strangerFarewell": [
-      { "who": "stranger", "say": "Every keeper here has a gift for you. Stay out of the Tithe's books." }
+      { "who": "stranger", "say": "I wish you well. Every keeper here has a gift for you." }
     ]
   }
 }
