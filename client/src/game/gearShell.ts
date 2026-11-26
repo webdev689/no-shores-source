@@ -183,7 +183,8 @@ export function footerNode(
         gap: 18,
         alignY: 'center',
         wrap: true,
-        children: [answer !== '' && words(answer, 1, colour), hintsNode(hints, sizes.label)],
+        // The hints given the row's room, so on a phone they wrap inside it rather than run past the window's edge.
+        children: [answer !== '' && words(answer, 1, colour), { ...hintsNode(hints, sizes.label), width: 'grow' }],
       },
       // Too many to stand on one line (an item's page on a narrow screen), the presses wrap.
       { gap: 8, alignY: 'center', alignX: 'end', wrap: true, children: actions },
