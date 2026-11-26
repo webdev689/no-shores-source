@@ -199,14 +199,14 @@ on, and the sky over it.
   plays its phase by its wards broken instead, its last stand still by its health (`courtPart`). A new phase begins on the bar line, on one of its opening takes.
 - **Stings.** A boss engaged plays its wake if its score has one, straight into its first phase. A boss fallen plays
   its fall; the player dead plays the score's defeat. A fight that ends plays the family's cadence, or its victory
-  if the player killed a foe in it; a family has two of each, heard in turn (`stingOf`). A sting holds the next song
+  if the player killed a foe in it; a family has two of each, heard in its own turn (`stingOf`). A sting holds the next song
   until it ends; where none is written, silence
   stands in.
 - **Calm pieces.** Out of danger a calm piece comes now and then, played whole and once through, the ambience at 0.8
   under it; none in rain or snow, a storm or fog, and a sky turning foul fades the one playing. Each place has its own
   pieces and silences (`RESTS`): at sea the sky's two in turn (the sea at night's once dusk is gone, the still sea's
-  in a
-  wind under 4 m/s, the open sea's otherwise), 4 to 8 minutes of silence after it, the first at least four minutes after
+  in a wind under 4 m/s, the open sea's otherwise), the turn kept through stops ashore, a death and the story, the
+  session's first by the die, 4 to 8 minutes of silence after it, the first at least four minutes after
   arriving or after danger; in the social space one of its four, 2½ to 5 minutes of silence after it, the first half
   a minute after arriving; on an island one of its family's four, 5 to 9 minutes of silence after it, the first two
   minutes after arriving or after danger. A piece is never the one begun last in its place while there is another. As

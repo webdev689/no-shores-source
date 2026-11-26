@@ -248,8 +248,9 @@ export class MusicDirector {
   private once: Song | null = null;
   /** A moment the game asks for outside the law's own (a public event begun, won or lost), played next frame. */
   private asked: 'cadence' | 'victory' | 'defeat' | null = null;
-  /** How many of each family ending have played, so its two cadences and two victories come in turn. */
-  private readonly endings = { cadence: 0, victory: 0, defeat: 0 };
+  /** How many of each ending each family has played (by `family:kind`), so its two cadences and its two victories
+   *  come in its own turn. */
+  private readonly endings = new Map<string, number>();
 
   constructor({
     output = musicOutput,
@@ -307,7 +308,9 @@ export class MusicDirector {
     const moment: Sting | null = verdict.sting ?? (wanted ? askedSting(wanted, hearing) : null);
     if (moment) {
       const family = moment.kind !== 'wake' && moment.kind !== 'fallen' && moment.cue.kind === 'family';
-      const nth = family ? this.endings[moment.kind]++ : 0;
+      const key = family ? `${moment.cue.family}:${moment.kind}` : '';
+      const nth = this.endings.get(key) ?? 0;
+      if (family) this.endings.set(key, nth + 1);
       this.sting(stingOf(scores, moment, nth), moment.kind === 'wake', now);
     }
     const asked = songOf(scores, verdict.cue);

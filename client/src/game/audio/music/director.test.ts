@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import { type Scores, MusicDirector, overlookScores, songOf, stingOf } from './director.ts';
 import type { HeardFoe, Hearing } from './directorLaw.ts';
 import type { BandHeard } from './band.ts';
-import { makeSong } from './score.ts';
+import { fmVoice, noteToHz } from './fmBank.ts';
+import { type Song, makeSong, midiNote } from './score.ts';
 
 const scores = overlookScores();
 /** The scores with the green family's fight and Saltmere's theme unwritten. */
@@ -12,6 +13,7 @@ const unwritten: Scores = { ...scores, families: { ...scores.families, green: nu
 /** An audio context that builds nothing, keeping when each source was asked to start. */
 function fakeAudio() {
   const starts: number[] = [];
+  const oscillators: { frequency: { value: number } }[] = [];
   const param = () => ({
     value: 0,
     setValueAtTime() {},
@@ -26,7 +28,11 @@ function fakeAudio() {
     currentTime: 0,
     sampleRate: 44100,
     createGain: () => node({ gain: param() }),
-    createOscillator: () => source({ frequency: param(), detune: param() }),
+    createOscillator: () => {
+      const oscillator = source({ frequency: param(), detune: param() }) as { frequency: { value: number } };
+      oscillators.push(oscillator);
+      return oscillator;
+    },
     createBufferSource: () => source({ buffer: null, loop: false }),
     createBiquadFilter: () => node({ frequency: param(), Q: param(), gain: param(), type: 'lowpass' }),
     createStereoPanner: () => node({ pan: param() }),
@@ -35,12 +41,12 @@ function fakeAudio() {
     createWaveShaper: () => node({ curve: null, oversample: 'none' }),
     createBuffer: (_channels: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
   };
-  return { audio: audio as unknown as BaseAudioContext, starts };
+  return { audio: audio as unknown as BaseAudioContext, starts, oscillators };
 }
 
 /** A director over a fake output, run frame by frame on its own clock; what it lowered the ambience to, each time. */
 function directed(made: () => Scores = () => scores, random: () => number = Math.random) {
-  const { audio, starts } = fakeAudio();
+  const { audio, starts, oscillators } = fakeAudio();
   const ducks: number[] = [];
   let now = 0;
   const out = audio.createGain();
@@ -59,7 +65,10 @@ function directed(made: () => Scores = () => scores, random: () => number = Math
       director.pump(now);
     }
   };
-  return { frames, starts, ducks, clock: () => now };
+  /** Whether a note of `pitch` on the piano has sounded since the count `from` of oscillators made. */
+  const sounded = (pitch: string, from = 0) =>
+    oscillators.slice(from).some((each) => each.frequency.value === noteToHz(midiNote(pitch)) * fmVoice(0).car);
+  return { frames, starts, ducks, clock: () => now, sounded, made: () => oscillators.length };
 }
 
 const island: Hearing = {
@@ -147,6 +156,44 @@ test('a family score leads into the fight: its tension quietly, its fight on the
   const quiet = starts.length;
   frames(island, 6);
   assert.ok(starts.filter((when) => when > clock() - 3).length === 0 && starts.length === quiet, 'and silence after');
+});
+
+test("each family's two cadences come in its own turn, whatever another family's fights end on", () => {
+  /** A bar of piano on one pitch: a fight's song, or an ending told apart by its pitch. */
+  const piano = (name: string, pitch: string): Song =>
+    makeSong(
+      {
+        name,
+        bpm: 120,
+        bars: 1,
+        tracks: { keys: { program: 0, volume: 100, pan: 64, role: 'bed' } },
+        kit: { volume: 100, role: 'combat', keys: {} },
+      },
+      (w) => w.note('keys', 0, 0, 2, pitch, 90),
+    );
+  const family = (name: string, octave: number) => ({
+    song: piano(`${name}-fight`, `C${octave + 2}`),
+    cadence: piano(`${name}-cadence`, `E${octave}`),
+    secondCadence: piano(`${name}-cadence-2`, `G${octave}`),
+  });
+  const made: Scores = {
+    ...scores,
+    families: { ...scores.families, green: family('green', 1), dry: family('dry', 2) },
+  };
+  const { frames, sounded, made: count } = directed(() => made);
+  const desert: Hearing = { ...island, place: { kind: 'island', climate: 'desert', node: 'patrol' } };
+  const ending = (place: Hearing) => {
+    const from = count();
+    frames({ ...place, foes: [brute({ engaged: true })], struck: true }, 4);
+    frames(place, 16);
+    return from;
+  };
+  const green1 = ending(island);
+  assert.ok(sounded('E1', green1) && !sounded('G1', green1), "green's first cadence");
+  const dry1 = ending(desert);
+  assert.ok(sounded('E2', dry1) && !sounded('G2', dry1), "dry's own first cadence");
+  const green2 = ending(island);
+  assert.ok(sounded('G1', green2) && !sounded('E1', green2), "then green's second, a dry fight between");
 });
 
 test("a piece of the social space's plays a while after arriving there, the ambience a little under it", () => {
