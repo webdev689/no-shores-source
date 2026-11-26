@@ -389,3 +389,29 @@ fn a_holds_ring_lies_whole_on_its_zones_floor_under_ground_and_above() {
     assert!(off.is_empty(), "{} of {rings} rings off the floor: {off:?}", off.len());
     assert!(buried.is_empty(), "rings above ground buried or standing over the floor: {buried:?}");
 }
+
+#[test]
+fn a_hollows_dressing_stands_clear_of_its_holds_levelled_ring() {
+    let mut on = Vec::new();
+    for week in 2_900..2_908 {
+        let web = Web::of(saltmere(), week);
+        for zone in web.zones.iter().filter(|zone| zone.deal == Deal::Mission(Mission::Hold)) {
+            let Some(plan) = Plan::of(&web, zone.number) else { continue };
+            let Laid::Open(hollow) = &plan.ground else { continue };
+            let ring = plan.pieces.iter().find(|piece| piece.kind == Kind::Ring).expect("a ring");
+            let inside = |at: [f64; 2]| libm::hypot(at[0] - ring.at[0], at[1] - ring.at[1]) < plan::RING_M + 1.0;
+            let corners = |block: &movement::Block| {
+                [
+                    [block.min_x, block.min_y],
+                    [block.max_x, block.min_y],
+                    [block.max_x, block.max_y],
+                    [block.min_x, block.max_y],
+                ]
+            };
+            if hollow.blocks.iter().any(|block| corners(block).into_iter().any(inside)) {
+                on.push((week, zone.number));
+            }
+        }
+    }
+    assert!(on.is_empty(), "dressing on a Hold's ring: {on:?}");
+}

@@ -131,7 +131,7 @@ passages' own pieces standing in it with their solids.
   room's most foes hold in bands of two (`Size::posts`: 3, 4 and 6), spread over the floor. It is dressed from the
   islands' kit of its climate: cliffs along its walls, each 3 m out along its own wall's normal, facing in, boulders at
   their feet, trees, shrubs and grass by its form, a court's ruins, a strand's wrecks, each keeping its footprint 5 m
-  from the arrival, 2.5 m from a mouth, 4.5 m from the lamp and 1 m past each band's 2.5 m spread, tried at up to
+  from the arrival, 2.5 m from a mouth, 4.5 m from the lamp, 1 m past each band's 2.5 m spread and a metre past a Hold's ring, tried at up to
   eight places. A Hold's ring stands the farthest from the way in where it lies whole inside the floor's ring, its floor
   levelled a metre past it and eased into the floor round it over 4 m, so its stones lie in it; the page grows no meadow
   there.

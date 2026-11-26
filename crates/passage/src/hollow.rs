@@ -392,8 +392,8 @@ fn dress(laying: &Laying, (sites, wanted): (&Sites, usize), kit: &str, draws: &m
     let mouths: Vec<[f64; 2]> = sites.onward.iter().chain([&sites.way_in]).map(|door| door.at).collect();
     let clear_of_mouths = |at: [f64; 2], off: f64| mouths.iter().all(|mouth| apart(*mouth, at) >= off);
     // A module's footprint, the round its turned base fills, kept clear of the arrival, the mouths, the `wanted`
-    // spots the deal stands its things on, the lamp and where each band stands round its post, so a body walks in,
-    // sees the zone and reaches every mouth, thing and foe.
+    // spots the deal stands its things on, the lamp, where each band stands round its post and a Hold's levelled
+    // ring, so a body walks in, sees the zone and reaches every mouth, thing and foe.
     let clear = |at: [f64; 2], module: u16, scale: f64| {
         let size = book.module(module).size;
         let reach = libm::hypot(size[0], size[1]) / 2.0 * scale;
@@ -402,6 +402,7 @@ fn dress(laying: &Laying, (sites, wanted): (&Sites, usize), kit: &str, draws: &m
             && sites.spots.iter().take(wanted).all(|spot| apart(*spot, at) - reach >= MOUTH_CLEAR_M)
             && sites.lamp.is_none_or(|lamp| apart(lamp, at) - reach >= LAMP_CLEAR_M)
             && sites.posts.iter().all(|post| apart(*post, at) - reach >= crate::walk::BAND_SPREAD_M + BAND_CLEAR_M)
+            && laying.level.is_none_or(|(ring, _)| apart(ring, at) - reach >= crate::plan::RING_M + LEVEL_PAST_M)
     };
     let ring = outline.ring();
     let mut walked = 0.0;
