@@ -91,13 +91,15 @@ export type ModelBuffers = {
 };
 
 /** Lays every model into one vertex and one index buffer, each vertex wearing its part's layer, then `meshes` (each in
- *  a model's frame, every vertex with its own layer) after them, as models too. */
+ *  a model's frame, every vertex with its own layer) after them, as models too. A model `windowed` says (a lit city's
+ *  building) has its pieces numbered in its layer words too (PIECE_SHIFT); every other's words hold its layer alone. */
 export function modelBuffers(
   models: readonly (ForgedModel | null)[],
   layerOf: (archive: number, record: number) => number,
   meshes: readonly MeshData[] = [],
+  windowed: (model: number) => boolean = () => false,
 ): ModelBuffers {
-  return finished(modelBufferSteps(models, layerOf, meshes));
+  return finished(modelBufferSteps(models, layerOf, meshes, windowed));
 }
 
 /** The buffers as `modelBuffers` lays them, a model or a mesh a step (`steps.ts`). */
@@ -105,6 +107,7 @@ export function* modelBufferSteps(
   models: readonly (ForgedModel | null)[],
   layerOf: (archive: number, record: number) => number,
   meshes: readonly MeshData[] = [],
+  windowed: (model: number) => boolean = () => false,
 ): Generator<void, ModelBuffers> {
   const vertexCount =
     models.reduce((sum, model) => sum + (model ? model.positions.length / 3 : 0), 0) +
@@ -118,7 +121,7 @@ export function* modelBufferSteps(
   const entries: ModelEntry[] = [];
   const triangles: number[] = [];
   let [vertexAt, indexAt] = [0, 0];
-  for (const model of models) {
+  for (const [number, model] of models.entries()) {
     if (!model) {
       entries.push({ firstIndex: indexAt, indexCount: 0, baseVertex: vertexAt });
       triangles.push(0);
@@ -131,12 +134,12 @@ export function* modelBufferSteps(
       floats.set(model.normals.subarray(k * 3, k * 3 + 3), slot + 3);
       floats.set(model.uvs.subarray(k * 2, k * 2 + 2), slot + 6);
     }
-    const pieces = pieceNumbers(model.indices, model.positions);
+    const pieces = windowed(number) ? pieceNumbers(model.indices, model.positions) : null;
     for (const part of model.parts) {
       const layer = layerOf(part.archive, part.record) | (part.clear ? CLEAR_GLASS : 0);
       for (let k = part.start; k < part.start + part.count; k++) {
         const vertex = model.indices[k];
-        whole[(vertexAt + vertex) * MODEL_FLOATS + 8] = layer | ((pieces[vertex] ?? 0) << PIECE_SHIFT);
+        whole[(vertexAt + vertex) * MODEL_FLOATS + 8] = layer | ((pieces?.[vertex] ?? 0) << PIECE_SHIFT);
       }
     }
     indices.set(model.indices, indexAt);

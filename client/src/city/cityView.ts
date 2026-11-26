@@ -77,8 +77,10 @@ export const CITY_FIRST_SLICE_MS = 24;
 type Owned = { destroy(): void };
 
 type Drawn = {
-  /** The city's drawing less its solids, which are let go once on the GPU. */
-  readonly data: Omit<CityData, 'solids'>;
+  /** The city's drawing less its solids and its lights at night, which are let go once on the GPU. */
+  readonly data: Omit<CityData, 'solids' | 'night'>;
+  /** Where its light map lies (west, north from the city's middle, metres east and south), or null for a city not lit. */
+  readonly pools: readonly [number, number, number, number] | null;
   readonly painter: CityPainter;
   readonly group: GPUBindGroup;
   readonly owned: Owned[];
@@ -233,7 +235,7 @@ export class CityView implements CityDrawer {
   /** The city's drawing put on the GPU once its build's steps are done, a step a large buffer; whatever is made goes
    *  into `owned`, to be let go if the build is. */
   private *drawnSteps(building: Generator<void, CityData>, owned: Owned[]): Generator<void, Drawn> {
-    const { solids, ...data } = yield* building;
+    const { solids, night, ...data } = yield* building;
     const { device } = this.gpu;
     const buffer = (contents: ArrayBufferView | ArrayBuffer, usage: number, least = 16): GPUBuffer => {
       const bytes =
@@ -264,7 +266,7 @@ export class CityView implements CityDrawer {
     const painter = new CityPainter(this.gpu, data.book, () => this.onPainted());
     owned.push(painter);
     yield;
-    const { pools } = data.night;
+    const { pools } = night;
     const poolMap = pools
       ? device.createTexture({
           size: [pools.width, pools.height],
@@ -280,7 +282,7 @@ export class CityView implements CityDrawer {
       ]);
       yield;
     }
-    const glows = data.night.glows.length ? new GlowPoints(this.gpu, data.night.glows, data.origin) : null;
+    const glows = night.glows.length ? new GlowPoints(this.gpu, night.glows, data.origin) : null;
     if (glows) owned.push(glows);
     const view = buffer(new ArrayBuffer(VIEW_BYTES), CITY_BUFFER_USAGE.uniform);
     const cellTable = buffer(data.cells, CITY_BUFFER_USAGE.storage);
@@ -318,6 +320,7 @@ export class CityView implements CityDrawer {
     yield;
     return {
       data,
+      pools: pools && [pools.west, pools.north, pools.width * POOL_TEXEL_M, pools.height * POOL_TEXEL_M],
       painter,
       group,
       owned,
@@ -406,10 +409,9 @@ export class CityView implements CityDrawer {
     uniforms.set(data.grid, 20);
     uniforms[22] = data.plates.width;
     uniforms[23] = data.ruined ? 1 : 0;
-    const { pools } = data.night;
     uniforms[24] = hourOf(SKY_NOW.current.worldS);
-    uniforms[25] = pools ? 1 : 0;
-    if (pools) uniforms.set([pools.west, pools.north, pools.width * POOL_TEXEL_M, pools.height * POOL_TEXEL_M], 28);
+    uniforms[25] = drawn.pools ? 1 : 0;
+    if (drawn.pools) uniforms.set(drawn.pools, 28);
     this.lastEye = shot.eye;
     this.gpu.device.queue.writeBuffer(drawn.view, 0, uniforms);
     this.seen = this.selector.select(data, fromEye, eye, shadow?.active ? shadow : null);

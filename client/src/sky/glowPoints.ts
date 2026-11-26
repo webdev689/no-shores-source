@@ -107,7 +107,9 @@ fn pulled(offset: vec3f) -> vec3f {
   out.position = vec4f(0.0, 0.0, -1.0, 1.0);
   if (clip.w <= 0.05) { return out; }
   // its middle's size in pixels, the true one and as drawn
-  let true_px = point.place.w / clip.w * view.from_eye[1][1] * view.look.w;
+  // the projection's focal length: its row that gives the picture's height is the view's up scaled by it
+  let focal = length(vec3f(view.from_eye[0][1], view.from_eye[1][1], view.from_eye[2][1]));
+  let true_px = max(point.place.w / clip.w * focal * view.look.w, 0.0);
   let px = max(true_px, ${LEAST_PX});
   let bright = clamp(sqrt(true_px / px), 0.45, 1.0);
   // the glow reaches three times its middle's size, so its halo falls off softly
@@ -116,7 +118,7 @@ fn pulled(offset: vec3f) -> vec3f {
   if (column) {
     // the ripples stretch its mirror image down the water toward the eye, six times as long as its light stands over
     // it, as wide as its middle
-    let fall = max(point.water.x * 6.0 / clip.w * view.from_eye[1][1] * view.look.w, ${COLUMN_LEAST_PX});
+    let fall = max(point.water.x * 6.0 / clip.w * focal * view.look.w, ${COLUMN_LEAST_PX});
     half = vec2f(max(px * 0.6, 1.5), fall * 0.5);
     shift = vec2f(0.0, -fall * 0.4);
   }
@@ -153,6 +155,54 @@ const ADD = { srcFactor: 'one', dstFactor: 'one', operation: 'add' } as const;
 const KEEP = { srcFactor: 'zero', dstFactor: 'one', operation: 'add' } as const;
 const VIEW_BYTES = 96;
 
+const made = new WeakMap<
+  GPUDevice,
+  Map<GPUTextureFormat, { layout: GPUBindGroupLayout; pipeline: GPURenderPipeline }>
+>();
+
+/** The glows' pipeline and its layout, made once a device and format, so a city built again makes none. */
+function glowPipeline(gpu: Gpu): { layout: GPUBindGroupLayout; pipeline: GPURenderPipeline } {
+  const { device } = gpu;
+  const byFormat = made.get(device) ?? new Map();
+  made.set(device, byFormat);
+  const known = byFormat.get(gpu.format);
+  if (known) return known;
+  const module = device.createShaderModule({ code: GLOW_WGSL });
+  const layout = device.createBindGroupLayout({
+    entries: [
+      { binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} },
+      { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
+    ],
+  });
+  const pipeline = device.createRenderPipeline({
+    layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
+    vertex: {
+      module,
+      entryPoint: 'glow_vertex',
+      buffers: [
+        {
+          arrayStride: GLOW_FLOATS * 4,
+          stepMode: 'instance',
+          attributes: [0, 1, 2].map((location) => ({
+            shaderLocation: location,
+            offset: location * 16,
+            format: 'float32x4' as const,
+          })),
+        },
+      ],
+    },
+    fragment: {
+      module,
+      entryPoint: 'glow_fragment',
+      targets: [{ format: gpu.format, blend: { color: ADD, alpha: KEEP } }],
+    },
+    primitive: { topology: 'triangle-list', cullMode: 'none' },
+  });
+  const found = { layout, pipeline };
+  byFormat.set(gpu.format, found);
+  return found;
+}
+
 /** A set of glowing points on the GPU, laid once, drawn over the finished picture each frame they are lit. */
 export class GlowPoints {
   private readonly device: GPUDevice;
@@ -170,37 +220,7 @@ export class GlowPoints {
     const { device } = gpu;
     this.device = device;
     this.origin = origin;
-    const module = device.createShaderModule({ code: GLOW_WGSL });
-    this.layout = device.createBindGroupLayout({
-      entries: [
-        { binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} },
-        { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
-      ],
-    });
-    this.pipeline = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
-      vertex: {
-        module,
-        entryPoint: 'glow_vertex',
-        buffers: [
-          {
-            arrayStride: GLOW_FLOATS * 4,
-            stepMode: 'instance',
-            attributes: [0, 1, 2].map((location) => ({
-              shaderLocation: location,
-              offset: location * 16,
-              format: 'float32x4' as const,
-            })),
-          },
-        ],
-      },
-      fragment: {
-        module,
-        entryPoint: 'glow_fragment',
-        targets: [{ format: gpu.format, blend: { color: ADD, alpha: KEEP } }],
-      },
-      primitive: { topology: 'triangle-list', cullMode: 'none' },
-    });
+    ({ layout: this.layout, pipeline: this.pipeline } = glowPipeline(gpu));
     this.view = device.createBuffer({ size: VIEW_BYTES, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     const floats = glowInstances(points, origin);
     this.count = floats.length / GLOW_FLOATS;

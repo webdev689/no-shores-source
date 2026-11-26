@@ -36,11 +36,18 @@ test('each window of a model is a piece of its own, numbered in its layer word s
   positions.splice(12 * 3, 3, ...positions.slice(9 * 3, 9 * 3 + 3));
   positions.splice(13 * 3, 3, ...positions.slice(11 * 3, 11 * 3 + 3));
   assert.deepEqual([...pieceNumbers(indices, positions)], [1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3]);
-  const buffers = modelBuffers(
-    [{ ...model(false), positions: Float32Array.from({ length: 18 }, (_slot, index) => index) }],
-    (archive) => archive,
-  );
-  const words = new Uint32Array(buffers.vertices);
-  const pieceAt = (vertex: number) => (words[vertex * MODEL_FLOATS + 8] ?? 0) >>> PIECE_SHIFT;
-  assert.deepEqual([pieceAt(0), pieceAt(3)], [1, 2], 'the wall and the window apart');
+  const spread = { ...model(false), positions: Float32Array.from({ length: 18 }, (_slot, index) => index) };
+  const pieceOf = (windowed: boolean) => {
+    const buffers = modelBuffers(
+      [spread],
+      (archive) => archive,
+      [],
+      () => windowed,
+    );
+    const words = new Uint32Array(buffers.vertices);
+    return [0, 3].map((vertex) => (words[vertex * MODEL_FLOATS + 8] ?? 0) >>> PIECE_SHIFT);
+  };
+  assert.deepEqual(pieceOf(true), [1, 2], "a building's wall and its window apart");
+  // a dungeon's models, and a city's props, keep their layer alone: their shaders read it whole
+  assert.deepEqual(pieceOf(false), [0, 0]);
 });

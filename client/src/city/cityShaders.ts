@@ -226,7 +226,6 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   return surface * (light + sky_lamps(from_eye, facing) + city_pool(from_eye, facing)) + sky_sheen(mirror, from_eye, wet);
 }
 
-
 struct Surface {
   @builtin(position) clip: vec4f,
   @location(0) normal: vec3f,
@@ -244,7 +243,6 @@ struct Surface {
   @location(8) wall: vec2f,
   @location(9) @interpolate(flat) span: vec2f,
 };
-
 
 // A broken wall's edge: how far under the break it has fallen at a point, 0 to 1, the same over each 1.5 m square.
 fn jagged(point: vec3f) -> f32 {

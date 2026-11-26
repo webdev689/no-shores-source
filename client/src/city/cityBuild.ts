@@ -419,7 +419,13 @@ export function* cityBuildSteps(
 
   const posts = postMeshes(book.materials.iron, book.materials.glow);
   yield;
-  const modelData = yield* modelBufferSteps(models, book.layerOf, [...formations, ...posts]);
+  // a building's windows are lit or dark a piece at a time; a prop's cut-out texels are no window
+  const modelData = yield* modelBufferSteps(
+    models,
+    book.layerOf,
+    [...formations, ...posts],
+    (model) => !(keys[model] ?? 'prop:').startsWith('prop:'),
+  );
   const plates = yield* groundPlateSteps(plan, blocks, book.ground, book.materials.paving);
   const cleared = yield* clearedGroundSteps(plan);
   const pools = yield* poolMapSteps(lights, origin);
