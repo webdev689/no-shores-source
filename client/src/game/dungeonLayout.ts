@@ -5,8 +5,9 @@ import type { Block } from '../rules/movementRules.ts';
 
 type Triple = readonly [number, number, number];
 
-/** A dungeon style's key: the Forge's crypt, hall, cells and temple, and its cave and mine. */
-export type StyleKey = 'crypt' | 'halls' | 'cells' | 'sanctum' | 'caverns' | 'mines';
+/** A dungeon style's key: the Forge's crypt, hall, cells and temple, its cave and mine, and the passages' chalk and
+ *  barrow. */
+export type StyleKey = 'crypt' | 'halls' | 'cells' | 'sanctum' | 'caverns' | 'mines' | 'chalk' | 'barrow';
 
 /** What a room's ceiling is drawn as: flat, a barrel vault along its longer side, a dome, or rough rock. */
 export type CeilingForm = 'flat' | 'vault' | 'dome' | 'cave';

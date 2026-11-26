@@ -86,6 +86,24 @@ function cloudLight(look: SkyLook): readonly [number, number, number] {
   ) as unknown as readonly [number, number, number];
 }
 
+/** A place drawn alone in its own frame: its climate, and where that frame's origin lies in the world (metres). */
+export interface Alone {
+  readonly climate: string;
+  readonly at: readonly [number, number];
+}
+
+/** The air a frame is drawn in, and how far the eye's frame lies from the world's, where the sky is read: the open
+ *  sea's at sea; a place drawn alone (`bare`) its own climate's where it lies, with no sea round it; else the land's
+ *  under the eye. */
+export function airOf(
+  more: { readonly atSea?: boolean; readonly bare?: Alone | null },
+  landClimate: string | undefined,
+): { readonly climate: string; readonly sea: boolean; readonly at: readonly [number, number] } {
+  if (more.atSea) return { climate: 'sea', sea: true, at: [0, 0] };
+  if (more.bare) return { climate: more.bare.climate, sea: false, at: more.bare.at };
+  return { climate: landClimate ?? 'sea', sea: true, at: [0, 0] };
+}
+
 /**
  * One landmass drawn for the game: its 1 km land in rings round the eye, the exact ground round the player, the
  * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
@@ -284,6 +302,9 @@ export class GameScene {
       readonly blur?: number;
       readonly drain?: number;
       readonly dark?: number;
+      /** A place drawn alone (a passage's hollow): none of the open landmass's ground or sea under or round it, and its
+       *  sky its own climate's over where it lies in the world. */
+      readonly bare?: Alone | null;
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -321,7 +342,9 @@ export class GameScene {
       SKY_NOW.current.look.daylight,
       time,
     );
-    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps, ground);
+    const placed = airOf(more, view.climate);
+    const skyEye = [shot.eye[0] + placed.at[0], shot.eye[1] + placed.at[1], shot.eye[2]] as const;
+    const { look } = this.sky.frame(skyEye, placed.climate, lamps, ground);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
     this.shadow.update(shot.eye, shot.yaw, above, look.key);
     perfZone('shadows');
@@ -347,7 +370,7 @@ export class GameScene {
       },
     });
     for (const drawer of drawers) if (drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
-    drawn.drawInto(pass, this.shadow);
+    if (!more.bare) drawn.drawInto(pass, this.shadow);
     for (const drawer of drawers) if (!drawer.coversGround) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     pass.end();
     this.copy.encode(encoder, targets.multidepth, targets.depth);
@@ -382,6 +405,7 @@ export class GameScene {
       shadow: this.shadow,
       drawn: targets,
       target,
+      sea: placed.sea,
     });
     perfZone('over water');
     for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);

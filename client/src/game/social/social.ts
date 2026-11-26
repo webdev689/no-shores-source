@@ -11,6 +11,9 @@ import type { Stack } from '../../ui/stack.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { rosterNow } from '../companyHud.ts';
 import { ACCOUNT_CHANGED } from '../gearScreen.ts';
+import type { FootContext } from '../foot.ts';
+import { rulesOf } from '../footRoom.ts';
+import { setItemRules } from '../itemStats.ts';
 import { charge } from '../uiSounds.ts';
 import { promptChip } from '../usePrompt.ts';
 import {
@@ -342,8 +345,13 @@ export function startSocial(
   stack.add((ui) => started.node(ui));
 }
 
-/** Sets each piece another player wears, on Inspect, beside the piece of `mine` worn in its slot. */
-export function inspectAgainst(mine: () => GearState | null): void {
+/** Sets each piece another player wears, on Inspect, beside the piece of `mine` worn in its slot; and gives the gear's
+ *  pages the rules the player's fighter is predicted by, to ask items' fight numbers of. */
+export function inspectAgainst(context: Pick<FootContext, 'roomModule'>, mine: () => GearState | null): void {
+  rulesOf(context).then(
+    ({ combat }) => setItemRules(combat),
+    (error: unknown) => console.error('the gear pages have no rules to ask items’ numbers of:', error),
+  );
   social?.compareWith(mine);
 }
 

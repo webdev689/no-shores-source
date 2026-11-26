@@ -144,8 +144,8 @@ export function instancesOf(
   const floats = new Float32Array(sorted.length * INSTANCE_FLOATS);
   const runs: Run[] = [];
   sorted.forEach((placement, index) => {
-    const [module, x, y, z, turn, scale, lift] = placement;
-    floats.set([x, y, z, scale, Math.sin(turn), Math.cos(turn), lift, 0], index * INSTANCE_FLOATS);
+    const [module, x, y, z, turn, scale, lift, cold = 0] = placement;
+    floats.set([x, y, z, scale, Math.sin(turn), Math.cos(turn), lift, cold], index * INSTANCE_FLOATS);
     const name = MODULE_NAMES[module] ?? '';
     const last = runs[runs.length - 1];
     if (last && last.name === name) runs[runs.length - 1] = { ...last, count: last.count + 1 };
@@ -217,6 +217,21 @@ export class IslesView {
     this.drawn = next;
     // A pack that failed is asked for again by a show once PACK_RETRY_MS have passed.
     for (const kit of new Set(next.flatMap((drawn) => drawn.kits))) this.ask(kit);
+  }
+
+  /** Fetches the kits `isle` is drawn with before it is shown, so a place gone to has them by the time it is shown
+   *  (they go on the GPU as it is drawn): resolves once each has come or failed, never failing. */
+  async warm(isle: IsleShown): Promise<void> {
+    const biome = kitOfClimate(isle.climate);
+    const { runs } = instancesOf(isle.plan.placements, this.leaves);
+    const kits = new Set([...(biome ? [biome] : []), ...runs.map((run) => run.kit)]);
+    const urls = [...kits].map((kit) => [kit, packUrl(kit, this.manifest, this.prefix)] as const);
+    await Promise.all(urls.map(([kit, url]) => url && loadKitPack(kit, url)));
+  }
+
+  /** Whether a kit's pack has come holding `module`, so it is drawn. */
+  hasModule(kit: string, module: string): boolean {
+    return this.packs.get(kit)?.pack.modules.has(module) ?? false;
   }
 
   /** The ground's height at a world point: the nearest shown island's there, null off every island. */
@@ -411,11 +426,15 @@ export class IslesView {
       });
       device.queue.writeBuffer(instances, 0, floats);
     }
-    const look = groundLook(shown.climate);
+    const look = shown.ground ?? groundLook(shown.climate);
     const isle = new Float32Array(ISLE_FLOATS);
-    isle.set([...look.inland, 0, ...look.high, look.snowM], 4);
+    isle.set([...look.inland, look.paved ? 1 : 0, ...look.high, look.snowM], 4);
+    // A ground's own rock is its kit's rock, and its second rock a shade darker.
+    const rocks: Record<string, readonly number[]> = look.rock
+      ? { rock: look.rock, rockAlt: look.rock.map((channel) => channel * 0.88) }
+      : {};
     partColours(shown.climate).forEach((colour, part) =>
-      isle.set([...colour, PARTS[part] === 'ember' ? 1 : 0], 12 + part * 4),
+      isle.set([...(rocks[PARTS[part] ?? ''] ?? colour), PARTS[part] === 'ember' ? 1 : 0], 12 + part * 4),
     );
     const uniform = device.createBuffer({
       size: isle.byteLength,

@@ -187,7 +187,8 @@ impl Room {
     /// Whether a fallen garrison post may stand again: never an Elite Dungeon's Boss, whose Court is fought once a run,
     /// nor a group holding the ground its fall won while anyone is in the room (`checkpoints.rs`).
     pub(crate) fn stands_again(&self, post: usize) -> bool {
-        (post != 0 || self.encounters.is_none()) && !self.holds_ground(post)
+        // A passage zone's guards stand again only as its deal begins again (`passage_deal.rs`).
+        (post != 0 || self.encounters.is_none()) && !self.holds_ground(post) && self.zone().is_none()
     }
 
     /// Whether a garrison post is held back: an Elite Dungeon's Boss's while a seal holds.

@@ -60,6 +60,7 @@ const guarded = <T>(call: () => T, fallback: T) => {
 function keptRoom(room: RoomDoor, kept: Characters, name: string, lost: number[]) {
   const keeping = {
     keptApart: (player: number) => room.keptApart(player),
+    judgedMoved: (player: number) => room.judgedMoved(player),
     restoreJoined: (player: number, body: string, vault: string | null) => room.restoreJoined(player, body, vault),
     own: (player: number, account: string) => room.own(player, account) && room.hold(player, false),
     shut: (player: number, body: string | null) => room.shut(player, body),

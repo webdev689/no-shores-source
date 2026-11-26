@@ -1,6 +1,6 @@
 use crate::{
-    CELL_M, Cell, Dungeon, LANDMARKS, PER_PATROL, PILLAR_HALF_M, Placed, SIDES, STYLES, Side, of_patrol, posts_for,
-    turned, turned_box,
+    CELL_M, Cell, Dungeon, EVERY_STYLE, LANDMARKS, PER_PATROL, PILLAR_HALF_M, Placed, SIDES, Side, of_patrol,
+    posts_for, turned, turned_box,
 };
 use std::sync::LazyLock;
 
@@ -23,8 +23,9 @@ fn patrols() -> Vec<String> {
 
 /// The dungeons the placement tests read: 2,000 seeds over the six styles, then every patrol's three.
 static DUNGEONS: LazyLock<Vec<Dungeon>> = LazyLock::new(|| {
-    let seeds = (0..2000)
-        .map(|seed: u32| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]));
+    let seeds = (0..2000).map(|seed: u32| {
+        Dungeon::forge(seed.wrapping_mul(2_654_435_761), EVERY_STYLE[seed as usize % EVERY_STYLE.len()])
+    });
     let patrols = patrols().into_iter().flat_map(|patrol| {
         (0..PER_PATROL).map(move |number| {
             let (seed, style) = of_patrol(&patrol, number);
@@ -84,7 +85,7 @@ fn the_table_is_landmarks_json() {
         assert_eq!(entry["wall"], landmark.wall, "{}'s wall", landmark.module);
         assert_eq!(rows(&entry["solids"]), landmark.solids.iter().map(|solid| solid.to_vec()).collect::<Vec<_>>());
         assert_eq!(rows(&entry["glows"]), landmark.glows.iter().map(|glow| glow.to_vec()).collect::<Vec<_>>());
-        assert!(STYLES.iter().any(|style| style.key == landmark.style), "{} is a style's", landmark.module);
+        assert!(EVERY_STYLE.iter().any(|style| style.key == landmark.style), "{} is a style's", landmark.module);
         let [wide, deep] = landmark.cells.map(|cells| cells as f64 * CELL_M);
         for &[min_x, min_y, max_x, max_y, top] in landmark.solids {
             assert!(min_x >= 0.0 && min_y >= 0.0 && max_x <= wide && max_y <= deep && top > 0.0, "{}", landmark.module);

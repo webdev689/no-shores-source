@@ -128,6 +128,8 @@ test("in a dungeon's room the words under its name start with the room's", () =>
   const dungeon = { kind: 'dungeon', continent: 'continent-1' } as const;
   assert.ok(placeWords(dungeon, 'the Ossuary').startsWith('The Ossuary · Dungeon'));
   assert.ok(placeWords(dungeon, null).startsWith('Dungeon'));
+  const zone = { ...dungeon, id: 'passage-continent-1-w2900-z7', kind: 'patrol' as const, continent: 'continent-1' };
+  assert.equal(placeWords(zone, 'the Ossuary'), 'Passage · Saltmere', 'a passage zone, under ground or above');
 });
 
 test('in an Abyss run the words under its name end with the revives its company has left', () => {

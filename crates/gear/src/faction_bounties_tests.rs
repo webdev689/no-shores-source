@@ -3,8 +3,8 @@
 
 use crate::activity::{Activity, BOUNTIES, BOUNTY_PLACES, FACTION_BOUNTIES, POSTING_FACTIONS};
 use crate::bounties::{
-    BOUNTY_NAME_MOST, DUNGEONS, FACTION_POOLS, LAND, SEA, bounty_at, bounty_pay, faction_at, faction_board,
-    faction_bounty_reputation, faction_places,
+    BOUNTY_NAME_MOST, DUNGEONS, FACTION_POOLS, LAND, PASSAGES, SEA, board, bounty_at, bounty_pay, faction_at,
+    faction_board, faction_bounty_reputation, faction_places,
 };
 use crate::dice::Dice;
 use crate::factions::factions;
@@ -44,12 +44,12 @@ fn felling_place(faction: u8) -> Option<(u8, u32)> {
 fn each_faction_posts_three_of_its_own_four_a_day_at_its_places_after_the_towns_six() {
     let ids: Vec<u8> = factions().factions.iter().map(|faction| faction.id).collect();
     assert_eq!(ids, (1..=POSTING_FACTIONS).collect::<Vec<_>>(), "the pools follow the factions' numbers");
-    assert_eq!(BOUNTY_PLACES, 15);
+    assert_eq!(BOUNTY_PLACES, 17);
     assert_eq!([faction_places(1), faction_places(2), faction_places(3)], [6..9, 9..12, 12..15]);
     let owners: Vec<Option<u8>> = (0..=BOUNTY_PLACES).map(faction_at).collect();
     let mut expected = vec![Some(0); 6];
     expected.extend([1, 1, 1, 2, 2, 2, 3, 3, 3].map(Some));
-    expected.push(None);
+    expected.extend([Some(0), Some(0), None]);
     assert_eq!(owners, expected);
     assert_eq!((faction_board(DAY, 0), faction_board(DAY, 4)), (None, None), "the town and no faction post none here");
     for faction in 1..=POSTING_FACTIONS {
@@ -71,11 +71,15 @@ fn each_faction_posts_three_of_its_own_four_a_day_at_its_places_after_the_towns_
     }
     assert_eq!(bounty_at(DAY, BOUNTY_PLACES), None);
     assert!(bounty_at(DAY, BOUNTIES - 1).is_some_and(|bounty| bounty.faction == 0));
+    // The passages' two are the town's, at places 15 and 16 after the factions', as the board's last pair.
+    let town = board(DAY);
+    assert_eq!([bounty_at(DAY, 15), bounty_at(DAY, 16)], [Some(town[6].clone()), Some(town[7].clone())]);
+    assert!(town[6..].iter().all(|bounty| bounty.pool == 3));
 }
 
 #[test]
 fn every_bounty_of_the_town_and_the_factions_has_a_short_plain_name_of_its_own() {
-    let towns = LAND.iter().chain(&SEA).chain(&DUNGEONS);
+    let towns = LAND.iter().chain(&SEA).chain(&DUNGEONS).chain(&PASSAGES);
     let names: Vec<&str> = towns.chain(FACTION_POOLS.iter().flatten()).map(|template| template.name).collect();
     let unique: BTreeSet<&str> = names.iter().copied().collect();
     assert_eq!(unique.len(), names.len(), "each its own name");
@@ -97,7 +101,7 @@ fn a_factions_bounty_is_taken_only_pledged_to_it() {
     assert_eq!(stormcaller.ask(take(9), at_board(DAY), &DICE), Err(Refusal::NotPledged), "another's");
     assert_eq!(stormcaller.ask(take(6), at_board(DAY), &DICE), Ok(Done::Done));
     assert_eq!(stormcaller.ask(take(6), at_board(DAY), &DICE), Err(Refusal::BountyHeld));
-    assert_eq!(stormcaller.ask(take(15), at_board(DAY), &DICE), Err(Refusal::NoSuchBounty), "past the board");
+    assert_eq!(stormcaller.ask(take(17), at_board(DAY), &DICE), Err(Refusal::NoSuchBounty), "past the board");
     let mut shut = serving(1);
     shut.story.prologue = false;
     assert_eq!(shut.ask(take(6), at_board(DAY), &DICE), Err(Refusal::BoardShut));
@@ -109,7 +113,11 @@ fn a_factions_bounty_counts_only_while_its_cape_is_worn_and_pays_xp_and_its_repu
     let (place, target) = felling_place(faction).expect("found");
     let mut character = serving(faction);
     character.ask(Ask::TakeBounty { place, day: DAY }, at_board(DAY), &DICE).expect("taken");
-    let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == Slot::Cloak).map(|(id, _)| *id);
+    let cape = character
+        .items
+        .iter()
+        .find(|(_, (item, at))| item.kind.slot() == Slot::Cloak && *at != crate::character::At::Vault)
+        .map(|(id, _)| *id);
     character.items.remove(&cape.expect("the cape kept"));
     assert_eq!(character.cape_worn(), None);
     assert!(!character.saw(&ELITE_FOE, DAY), "no cape, no count");
@@ -238,6 +246,7 @@ fn feat_for(objective: &Objective) -> Feat<'static> {
         Objective::Gather { .. } => Feat::Gathered { resource: 0 },
         Objective::Sink { rank, .. } => Feat::Sunk { water: None, rank: rank.unwrap_or(1) },
         Objective::Clear { .. } => Feat::Cleared { island: None, tier: Difficulty::Normal },
+        Objective::Passage(_) => unreachable!("no faction posts a passage's bounty"),
     }
 }
 

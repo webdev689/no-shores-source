@@ -63,7 +63,7 @@ your diff. The reviewer is ONE Agent call (general-purpose) on `git diff <base>.
 tests; fix what is real (one fix round). A cloud clone holds only the working branch, so `<base>` is `origin/main`
 (or another `origin/` ref), never a bare `main`. Then:
 1. Commit in your worktree. Commit trailer: <the session's attribution lines>.
-2. Report to <reports dir>/<item>.md, then a final reply under 15 lines: Status (DONE | DONE_WITH_CONCERNS | BLOCKED),
+2. Report to <reports dir>/<worktree name>.md, then a final reply under 15 lines: Status (DONE | DONE_WITH_CONCERNS | BLOCKED),
    commits, test summary, what a user now sees, concerns, the INBOX line, one line per tool (serena, graphify, claude-mem, headroom,
    context7, skillsmp, ponytail; "not needed, because ..." is fine), plus one line "OBSERVATIONS: ..." listing friction
    worth keeping (a tool clash, a rule that slowed you down, a step you had to work out yourself), or

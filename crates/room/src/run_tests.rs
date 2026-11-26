@@ -89,7 +89,7 @@ fn shields(id: &str, run: Option<Run>) -> Vec<Option<gear::Element>> {
 #[test]
 fn ironclad_shields_more_foes_and_every_foe_shielded_without_it_keeps_its_shield() {
     let (mut plain, mut ironclad) = (0, 0);
-    for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors", "highwater-glen", "aurora-wastes"] {
+    for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors", "highwater-fells", "whitewind-tundra"] {
         let (without, with) = (shields(id, None), shields(id, Some(run_of(vec![Modifier::Ironclad]))));
         assert_eq!(without.len(), with.len());
         for (one, other) in without.iter().zip(&with) {

@@ -257,8 +257,14 @@ fn fights_seen() -> Vec<room::battle::FightSeen> {
         fight.put_to_sea(player, at(0.0, 0.0, 0.0), &Open, 0.0);
         naval::wire::view_numbers(&fight, naval::fight::PLAYER, &events, Some(&aim), &Open, 0.0)
     };
-    let seen =
-        |player, numbers, may_board| room::battle::FightSeen { player, numbers, captain: TITHE_MINIBOSS, may_board };
+    // The second fight stands for the hulk's: never boarded, the lesson's.
+    let seen = |player, numbers, may_board| room::battle::FightSeen {
+        player,
+        numbers,
+        captain: TITHE_MINIBOSS,
+        may_board,
+        lesson: !may_board,
+    };
     vec![seen(2, view(&captains), true), seen(5, view(&captains[..1]), false)]
 }
 
@@ -310,6 +316,7 @@ pub(crate) fn snapshot<'snapshot>(
         darkness: false,
         reviving: &[],
         arrivals: &[],
+        passage: None,
     }
 }
 
@@ -406,20 +413,6 @@ fn bytes_that_are_not_an_input_and_numbers_of_the_wrong_count_are_refused() {
     let short = messages::Input::create(&mut builder, &messages::InputArgs { controls, ..Default::default() });
     builder.finish(short, None);
     assert_eq!(read_input(builder.finished_data()), Err("controls are 8 numbers, not 6".to_owned()));
-}
-
-#[test]
-fn a_course_reads_back_as_its_points_and_pace_and_odd_numbers_are_refused() {
-    let points = [[50_000.0, 150_000.5], [51_000.0, 149_000.0]];
-    assert_eq!(read_course(&course_bytes(&points, 20)), Ok((points.to_vec(), 20)));
-    assert_eq!(read_course(&course_bytes(&[], 5)), Ok((Vec::new(), 5)));
-    assert!(read_course(&[1, 2, 3]).is_err());
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let odd = Some(builder.create_vector(&[1.0, 2.0, 3.0]));
-    let course =
-        messages::Course::create(&mut builder, &messages::CourseArgs { points: odd, pace: 5, ..Default::default() });
-    builder.finish(course, None);
-    assert_eq!(read_course(builder.finished_data()), Err("a course's points are pairs, not 3 numbers".to_owned()));
 }
 
 #[test]
@@ -553,7 +546,9 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "the fight's captain a Grey Tithe Miniboss");
     assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
-    assert!(fight.may_board() && !sea.fights().unwrap().get(1).may_board(), "whether each player may board");
+    let hulk = sea.fights().unwrap().get(1);
+    assert!(fight.may_board() && !hulk.may_board(), "whether each player may board");
+    assert!(!fight.lesson() && hulk.lesson(), "whether each fight is the lesson's hulk");
     let numbers =
         |numbers: Option<flatbuffers::Vector<'_, f64>>| -> Option<Vec<f64>> { Some(numbers?.iter().collect()) };
     let alone = sea.fights().unwrap().get(1);
@@ -571,51 +566,6 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
 /// A player off the helm on their deck, in their ship's frame: their number, their last step taken, their body.
 fn aboard_seen() -> Vec<(PlayerId, u32, Body)> {
     vec![(3, 41, Body { z: 0.8, facing: 0.5, ..standing(0.25, 2.5) })]
-}
-
-#[test]
-fn a_step_of_a_walk_on_deck_and_the_helm_cross_in_a_course_message() {
-    let controls = Controls { forward: 1.0, sideways: -0.5, yaw: 0.25, run: true, ..Controls::default() };
-    assert_eq!(read_sea_input(&walk_bytes(12, &controls)), Ok(SeaInput::Walk(12, controls)));
-    assert_eq!(read_sea_input(&helm_bytes(true)), Ok(SeaInput::LeaveHelm));
-    assert_eq!(read_sea_input(&helm_bytes(false)), Ok(SeaInput::TakeHelm));
-    assert_eq!(read_sea_input(&face_bytes(1.25)), Ok(SeaInput::Face(1.25)));
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let (points, facing) = (Some(builder.create_vector(&[1.0, 2.0])), Some(builder.create_vector(&[0.5])));
-    let args = messages::CourseArgs { points, facing, ..Default::default() };
-    let both = messages::Course::create(&mut builder, &args);
-    builder.finish(both, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "a course's legs turn it, not a facing");
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let facing = Some(builder.create_vector(&[0.5, 1.0]));
-    let two = messages::Course::create(&mut builder, &messages::CourseArgs { facing, ..Default::default() });
-    builder.finish(two, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "it faces one heading");
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let walk = Some(builder.create_vector(&[1.0, 0.0]));
-    let short = messages::Course::create(&mut builder, &messages::CourseArgs { walk, ..Default::default() });
-    builder.finish(short, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "a step's controls are all its numbers");
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let odd = messages::Course::create(&mut builder, &messages::CourseArgs { helm: 4, ..Default::default() });
-    builder.finish(odd, None);
-    assert!(read_sea_input(builder.finished_data()).is_err(), "the helm is left or taken, or a chase, nothing else");
-    assert_eq!(read_sea_input(&chase_bytes(7)), Ok(SeaInput::Chase(Some(7))), "a chase of ship 7");
-    assert_eq!(read_sea_input(&chase_bytes(0)), Ok(SeaInput::Chase(None)), "the chase let go");
-}
-
-#[test]
-fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
-    let orders = Orders {
-        helm: sailing::ship::Helm { steer: 0.5, climb: -1 },
-        aim: None,
-        fire: true,
-        brace: false,
-        load: None,
-        boost: true,
-    };
-    assert_eq!(read_sea_input(&orders_bytes(&orders)), Ok(SeaInput::Orders(orders)));
-    assert_eq!(read_sea_input(&course_bytes(&[[1.0, 2.0]], 5)), Ok(SeaInput::Course(vec![[1.0, 2.0]], 5)));
 }
 
 /// The client's test reads these bytes to check that what the server writes, the browser reads to the bit.
@@ -732,13 +682,6 @@ fn a_rooms_darkness_and_each_revive_under_way_cross_in_its_snapshot_and_cost_not
     let seen = flatbuffers::root::<messages::FromRoom>(&bare).expect("a message").snapshot().expect("a snapshot");
     assert!(!seen.darkness() && seen.reviving().is_none(), "none sent");
     assert_eq!(bare.len(), snapshot_bytes(&Snapshot { darkness: false, reviving: &[], ..plain }).len());
-}
-
-#[test]
-fn a_course_asked_with_the_travel_flag_reads_as_a_travel_and_one_without_as_a_course() {
-    let points = vec![[50_000.0, 150_000.0], [550_000.0, 150_000.0]];
-    assert_eq!(read_sea_input(&travel_bytes(&points, 20)), Ok(SeaInput::Travel(points.clone(), 20)));
-    assert_eq!(read_sea_input(&course_bytes(&points, 20)), Ok(SeaInput::Course(points, 20)));
 }
 
 #[test]

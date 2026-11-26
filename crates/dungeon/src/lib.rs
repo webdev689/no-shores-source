@@ -43,7 +43,9 @@ pub use storeys::{
     FLIGHT_CEILING_M, FLIGHT_CELLS, FLIGHT_M, STOREY_M, STOREYS_MOST, Span, Stair, storey_at, storey_floor,
     storey_under,
 };
-pub use styles::{Form, STYLES, Style};
+#[cfg(test)]
+pub(crate) use styles::EVERY_STYLE;
+pub use styles::{Form, PASSAGE_STYLES, STYLES, Style};
 pub use torches::{TORCH_M, TORCH_REACH_M, Torch};
 
 /// A cell's side in metres, and a block's.
@@ -129,11 +131,11 @@ impl Side {
     }
 }
 
-/// The style a key names (crypt, halls, cells, sanctum, caverns or mines), for a dungeon laid by a seed where there is
-/// no patrol, as on a sea island.
+/// The style a key names (crypt, halls, cells, sanctum, caverns or mines, or the passages' chalk or barrow), for a
+/// dungeon laid by a seed where there is no patrol, as on a sea island or in a passage.
 #[must_use]
 pub fn style_of(key: &str) -> Option<Style> {
-    STYLES.into_iter().find(|style| style.key == key)
+    STYLES.into_iter().chain(PASSAGE_STYLES).find(|style| style.key == key)
 }
 
 /// A patrol's dungeon by its number: its seed, from the patrol's id, and its style. A patrol's dungeons take three

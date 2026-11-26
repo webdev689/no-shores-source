@@ -1,9 +1,10 @@
 use crate::dungeon::EXIT_WIDTH_M;
 use crate::torches::{TORCH_APART_M, TORCH_INSET_M, Torch};
-use crate::{CELL_M, Dungeon, SIDES, STYLES};
+use crate::{CELL_M, Dungeon, EVERY_STYLE, SIDES};
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
-    (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
+    (0..count)
+        .map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), EVERY_STYLE[seed as usize % EVERY_STYLE.len()]))
 }
 
 fn cell_of(dungeon: &Dungeon, torch: &Torch) -> usize {

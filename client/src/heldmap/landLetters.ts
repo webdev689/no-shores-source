@@ -55,9 +55,62 @@ const LEAST_CROWN = 1.4;
 /** How far a place's name stands from its middle, units, clear of a glyph standing there: under it, else over it,
  *  else twice as far under or over. */
 const NAME_OFF = GLYPH_HALF + PORT_PX * 0.6 + 1;
+/** How far a name beside a glyph stands from its middle to its near end, units: where none is free under or over. */
+const NAME_SIDE = GLYPH_HALF + 3;
+/** The least room between two names on a line, units. */
+const NAME_GAP = 6;
 
 const overlaps = (one: Rect, two: Rect) =>
   one.x < two.x + two.width && two.x < one.x + one.width && one.y < two.y + two.height && two.y < one.y + one.height;
+
+/** Where each place's name stands, in `sheet`'s order: under its middle, else over it, else twice as far, else
+ *  beside it, clear of `clear` and of the names before it (a gap apart on a line); a place on the map by its edge has
+ *  its name whole inside it, moved along its line, and one off the map is left where it falls, so panning does not
+ *  drag names in after it. A name with no room is left off; so is a `near` one with no room beside its mark nearer
+ *  it than any other mark, never moved along the map's edge or twice as far, so it cannot be taken for another's. */
+function nameSpots(
+  sheet: LandSheet,
+  ink: { readonly width: number; readonly height: number },
+  scale: number,
+  onMap: (point: Point2) => Point2,
+  painter: Painter,
+  clear: readonly Rect[],
+): { readonly name: string; readonly middle: number; readonly box: Rect; readonly loss: boolean }[] {
+  const gap = NAME_GAP * scale;
+  const spaced = (name: Rect): Rect => ({ ...name, x: name.x - gap, width: name.width + 2 * gap });
+  const spots: { readonly name: string; readonly middle: number; readonly box: Rect; readonly loss: boolean }[] = [];
+  const marks = sheet.marks.map((mark) => onMap(mark.at));
+  const apart = (box: Rect, [across, down]: Point2) =>
+    Math.hypot(
+      Math.max(box.x - across, 0, across - box.x - box.width),
+      Math.max(box.y - down, 0, down - box.y - box.height),
+    );
+  for (const { name, at, near = false, loss = false } of sheet.places) {
+    const [x, y] = onMap(at);
+    const [width, height] = [painter.measureText(name).width * scale, PORT_PX * 1.2 * scale];
+    const onInk = x >= 0 && y >= 0 && x <= ink.width && y <= ink.height;
+    const beside = NAME_SIDE * scale + width / 2;
+    const spot = [
+      ...(near ? [1, -1] : [1, -1, 2, -2]).map((away) => [x, y + away * NAME_OFF * scale] as const),
+      [x + beside, y] as const,
+      [x - beside, y] as const,
+    ]
+      .map(([centre, middle]) => {
+        const slid = onInk && !near;
+        const left = slid ? Math.max(0, Math.min(centre - width / 2, ink.width - width)) : centre - width / 2;
+        return { name, middle, loss, box: { x: left, y: middle - height / 2, width, height } };
+      })
+      .filter(({ box }) => !onInk || (box.y >= 0 && box.y + box.height <= ink.height))
+      .filter(({ box }) => !near || (box.x >= 0 && box.x + box.width <= ink.width))
+      .filter(({ box }) => !near || marks.every((mark) => apart(box, mark) >= apart(box, [x, y]) - 0.5))
+      .find(
+        ({ box }) =>
+          !clear.some((other) => overlaps(box, other)) && !spots.some((other) => overlaps(spaced(box), other.box)),
+      );
+    if (spot) spots.push(spot);
+  }
+  return spots;
+}
 
 /** Paints `painting` onto the parchment's picture: `inkAt` is where the map's top-left stands in it, and `dpr` its
  *  pixels a screen pixel. The picture is cleared first, and nothing is painted outside the map. Answers where the
@@ -120,7 +173,18 @@ export function paintLand(
   fills(sheet.walks, WALK);
   // Every track's casing before any track's way, so where tracks meet their ways run on together; then the
   // footpaths, dashed, a little narrower than they are laid so they read as trodden.
-  const [tracks, footpaths] = [sheet.paths.filter((path) => path.track), sheet.paths.filter((path) => !path.track)];
+  lines(
+    sheet.paths.filter((path) => path.faint).map((path) => path.points),
+    RELIEF,
+    scale,
+  );
+  lines(
+    sheet.paths.filter((path) => path.inked).map((path) => path.points),
+    LIGHT_INK,
+    1.4 * scale,
+  );
+  const drawn = sheet.paths.filter((path) => !path.faint && !path.inked);
+  const [tracks, footpaths] = [drawn.filter((path) => path.track), drawn.filter((path) => !path.track)];
   const across = (path: (typeof tracks)[number], share = 1) => Math.max(1.2 * scale, path.width * share * view.scale);
   for (const path of tracks) lines([path.points], CASING, across(path) + 1.4 * scale);
   for (const path of tracks) lines([path.points], TRACK, across(path));
@@ -160,31 +224,28 @@ export function paintLand(
     draw();
     painter.restore();
   };
-  // Every mark as its glyph; then each place's name under its middle, else over it, where it keeps clear of the
-  // glyphs, the names before it and the gauntlets; then the player's arrow over all, and the table.
+  // Every mark as its glyph; each place's name under its middle, else over it, else beside it, where it keeps clear
+  // of the glyphs, the names before it and the gauntlets; the table in the corner over the fewest glyphs and names,
+  // and the names laid again clear of it, so none is lettered under it; then the table.
   const half = GLYPH_HALF * scale;
-  const taken: Rect[] = sheet.marks.map((mark) => {
+  const glyphs: Rect[] = sheet.marks.map((mark) => {
     const [x, y] = onMap(mark.at);
     return { x: x - half, y: y - half, width: 2 * half, height: 2 * half };
   });
   for (const mark of sheet.marks) local(onMap(mark.at), () => paintGlyph(painter, mark.glyph));
-  painter.font = `500 ${PORT_PX}px ${FACE}`;
-  painter.textAlign = 'center';
-  for (const place of sheet.places) {
-    const [x, y] = onMap(place.at);
-    const [width, height] = [painter.measureText(place.name).width * scale, PORT_PX * 1.2 * scale];
-    const spot = [1, -1, 2, -2]
-      .map((away) => y + away * NAME_OFF * scale)
-      .map((middle) => ({ middle, box: { x: x - width / 2, y: middle - height / 2, width, height } }))
-      .find(({ box }) => ![...taken, ...painting.covers].some((other) => overlaps(box, other)));
-    if (!spot) continue;
-    taken.push(spot.box);
-    local([x, spot.middle], () => word(painter, place.name, 0, 0, INK));
-  }
   const rows = tableRows(sheet, marksOf(painting).others);
   const size = tableSize(painter, sheet.name, rows);
-  const box = { width: size.width * scale, height: size.height * scale };
-  const place = tablePlace(ink, box, scale, taken, painting.covers, painting.table);
+  painter.font = `500 ${PORT_PX}px ${FACE}`;
+  painter.textAlign = 'center';
+  const named = (clear: readonly Rect[]) =>
+    nameSpots(sheet, ink, scale, onMap, painter, [...clear, ...painting.covers]);
+  const tableBox = { width: size.width * scale, height: size.height * scale };
+  const first = named(glyphs).map((spot) => spot.box);
+  const place = tablePlace(ink, tableBox, scale, [...glyphs, ...first], painting.covers, painting.table);
+  for (const spot of named([...glyphs, place.box]))
+    local([spot.box.x + spot.box.width / 2, spot.middle], () =>
+      word(painter, spot.name, 0, 0, spot.loss ? ROUTE : INK),
+    );
   paintTable(painter, place, scale, { name: sheet.name, rows, bar: barOf(view, scale) });
   painter.restore();
   return place;

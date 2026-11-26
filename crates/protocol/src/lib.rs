@@ -49,6 +49,7 @@ mod quest_wire;
 mod sea_snapshot;
 pub mod ship_wire;
 pub use sea_snapshot::{IsleSeen, SeaHarbour, sea_snapshot_bytes};
+pub mod passage_wire;
 mod public_wire;
 mod standing_wire;
 
@@ -235,6 +236,8 @@ pub enum SeaInput {
     Board,
     /// To leave its deck once its crew has fallen.
     LeaveDeck,
+    /// The held map raised at the helm, which only the page sees.
+    Chart,
 }
 
 /// What a message to the sea room asks, or why it does not read: the helm when it asks for it, a step when it carries
@@ -247,7 +250,12 @@ pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
         1 => return Ok(SeaInput::Repair),
         2 => return Ok(SeaInput::Board),
         3 => return Ok(SeaInput::LeaveDeck),
-        other => return Err(format!("an ask is a repair (1), a boarding (2) or leaving a deck (3), not {other}")),
+        4 => return Ok(SeaInput::Chart),
+        other => {
+            return Err(format!(
+                "an ask is a repair (1), a boarding (2), leaving a deck (3) or the chart raised (4), not {other}"
+            ));
+        }
     }
     match course.helm() {
         0 => {}
@@ -463,6 +471,9 @@ pub fn body_of(numbers: &[f64]) -> Option<Body> {
 #[cfg(test)]
 #[path = "arrival_wire_tests.rs"]
 mod arrival_wire_tests;
+#[cfg(test)]
+#[path = "course_wire_tests.rs"]
+mod course_wire_tests;
 #[cfg(test)]
 #[path = "encounter_wire_tests.rs"]
 mod encounter_wire_tests;

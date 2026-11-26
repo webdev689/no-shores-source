@@ -335,6 +335,35 @@ def read_pack(data):
     return header, modules
 
 
+class PassageEnvelopes(unittest.TestCase):
+    def test_a_passage_piece_keeps_to_its_size_from_its_middle_and_may_sink_its_foot(self):
+        self.assertEqual(broken('passage.reliquary', [corner_at((0.0, 0.0, -0.2))]), [])
+        found = broken('passage.reliquary', [corner_at((0.0, 0.0, -0.4))])
+        self.assertTrue(any('reach z < -0.3' in problem for problem in found), found)
+        found = broken('passage.reliquary', [corner_at((0.75, 0.0, 0.5))])
+        self.assertTrue(any('reach x > 0.7' in problem for problem in found), found)
+
+    def test_nothing_in_the_walk_zone_but_over_a_box_or_a_disc(self):
+        self.assertEqual(broken('passage.lamp', [corner_at((0.5, 0.5, 1.0)), corner_at((0.0, -3.5, 2.0))]), [])
+        found = broken('passage.lamp', [corner_at((2.0, 0.0, 1.0))])
+        self.assertTrue(any('walk zone' in problem for problem in found), found)
+        # A lamp over the plinth, above head height, needs no solid.
+        self.assertEqual(broken('passage.lamp', [corner_at((0.0, 0.0, 3.0))]), [])
+
+    def test_a_long_triangle_across_the_walk_zone_is_caught_at_its_middle(self):
+        found = broken('passage.mouth.open', [((-1.0, 0.0, 1.0), (1.0, 0.0, 1.0), (0.0, 0.0, 1.1))])
+        self.assertTrue(any('walk zone' in problem for problem in found), found)
+
+    def test_the_lamps_stones_stand_on_its_ring_as_the_passages_rules_stand_them(self):
+        stones = catalog.PASSAGE_MODULES['passage.lamp']['discs']
+        self.assertEqual(len(stones), 5)
+        for number, (x, y, radius, top) in enumerate(stones):
+            turn = math.radians(72 * number)
+            self.assertAlmostEqual(x, 3.5 * math.sin(turn), places=3)
+            self.assertAlmostEqual(y, -3.5 * math.cos(turn), places=3)
+            self.assertEqual((radius, top), (0.5, 2.2))
+
+
 class Pack(unittest.TestCase):
     def corners(self, faces, part):
         return [[(point, shapes.normal_of(list(corners)), (point[0], point[2]), part) for point in corners]
@@ -365,7 +394,7 @@ class Pack(unittest.TestCase):
 
     @unittest.skipUnless(os.environ.get('DUNGEON_MODULES'), "set DUNGEON_MODULES to a build's --out folder")
     def test_a_builds_packs_read_whole_and_hold_every_module_in_order(self):
-        for style in catalog.STYLES:
+        for style in catalog.PACKS:
             with open(os.path.join(os.environ['DUNGEON_MODULES'], f'{style}.modules'), 'rb') as file:
                 header, modules = read_pack(file.read())
             self.assertEqual((header['style'], list(modules)), (style, catalog.required(style)))
@@ -459,6 +488,14 @@ class Catalog(unittest.TestCase):
             self.assertTrue(all(catalog.landmark(name)['style'] == style for name in names[len(catalog.PIECES):]))
         self.assertEqual(catalog.piece_of('mines.wall.cap'), 'wall.cap')
         self.assertIsNone(catalog.piece_of('mines.collapse'))
+
+    def test_the_passages_pack_holds_its_own_modules_and_no_style_holds_them(self):
+        self.assertEqual(catalog.PACKS[-1], 'passage')
+        names = catalog.required('passage')
+        self.assertEqual(names, list(catalog.PASSAGE_MODULES))
+        self.assertTrue(all(name.startswith('passage.') for name in names))
+        self.assertTrue(all(catalog.piece_of(name) is None and catalog.landmark(name) is None for name in names))
+        self.assertIn(catalog.PASSAGE_PICTURES, catalog.STYLES)
 
 
 if __name__ == '__main__':

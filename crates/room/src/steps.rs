@@ -1,6 +1,6 @@
 //! The roads' steps a room runs a player at a time (`gear::quests::GoalKind::stepped`): a figure met at a place and
 //! walked to another, the player keeping up with it (an escort, with an ambush halfway) or following it unseen (a
-//! tail); a ward held through waves of foes; a puzzle's points used in order, or in any (ask 66); a place reached
+//! tail); a ward held through waves of foes; a horde fought with the house's Art unbounded; a puzzle's points used in order, or in any (ask 66); a place reached
 //! unseen, its watchers standing; and a race between checkpoints against the clock. A figure, a ward and a puzzle's
 //! points are the player's own, sent to them alone; a ward is a fighter on the players' side that thinks nothing and
 //! fights no one, kept out of every snapshot, which the waves' foes come at. What met counts on the player's quest log;
@@ -13,8 +13,13 @@ use gear::quests::{Escort, Event, Goal, GoalDef, Place, Tail, speaker_place};
 use movement::Terrain;
 use std::collections::BTreeSet;
 
-/// A figure's walking pace, metres a second: the game's own walk.
+/// A figure's pace on foot (a tail's quarry), metres a second: the game's own walk.
 pub const FIGURE_PACE: f64 = movement::TUNING.walk;
+/// An escort's figure's pace on its horse, metres a second: the player's own gallop.
+pub const FIGURE_RIDE: f64 = movement::TUNING.ride_gallop;
+/// How fast a figure turns to face its way, radians a second: at a gallop a corner is rounded over a few metres, not
+/// in a tick, and the page between the room's words never sees it spin.
+pub const FIGURE_TURN: f64 = core::f64::consts::TAU;
 /// How long a failed step waits before it is tried again, in ticks: a defence the first time (then twice as long each
 /// time, to `RETRY_MOST`), a tail noticed, an unseen step seen.
 pub const RETRY_TICKS: u64 = 600;
@@ -39,6 +44,8 @@ pub const WALKING: u8 = 1;
 pub const NOTICED: u8 = 2;
 pub const ARRIVED: u8 = 3;
 pub const HELD: u8 = 4;
+/// An escort's figure waiting, its player near, for them to get on their horse.
+pub const MOUNTING: u8 = 5;
 
 /// A player's step running in this room: its goal, by its quest, task and place in the task, its failures this task,
 /// and how it stands.
@@ -55,6 +62,7 @@ pub(crate) struct Step {
 pub(crate) enum Stepping {
     Figure(Figure),
     Defence(Defence),
+    Horde(Horde),
     Puzzle(Lit),
     Unseen(Watched),
     Race(Raced),
@@ -84,6 +92,17 @@ pub(crate) struct Defence {
     pub retry: Option<u64>,
 }
 
+/// A horde: the point its waves stand round while it runs (none before the player comes, and while it waits after
+/// they fell), the next wave to stand, its foes standing, how many of its foes fell, and when it may be tried again.
+#[derive(Debug, Default)]
+pub(crate) struct Horde {
+    pub at: Option<[f64; 3]>,
+    pub wave: usize,
+    pub standing: Vec<FighterId>,
+    pub fallen: usize,
+    pub retry: Option<u64>,
+}
+
 /// A puzzle: its points on the ground, those lit in the order they were, and the tick it takes a use again from.
 #[derive(Debug, Default)]
 pub(crate) struct Lit {
@@ -108,7 +127,8 @@ pub(crate) struct Raced {
     pub started: Option<u64>,
 }
 
-/// What a player is sent of their step: the clock, each goal's failures, the puzzle's points, the figure and the ward.
+/// What a player is sent of their step: the clock, each goal's failures, the puzzle's points, the figure, the ward,
+/// and a horde's foes left and all of them while it runs.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct StepSeen {
     pub clock: f64,
@@ -116,6 +136,7 @@ pub struct StepSeen {
     pub points: Vec<f64>,
     pub figures: Vec<f64>,
     pub ward: Vec<f64>,
+    pub horde: Vec<u16>,
 }
 
 /// A point `out` metres from another at a bearing (radians from north, clockwise).
@@ -292,6 +313,7 @@ impl Room {
                 let Some(figure) = self.figure_at(from, to, who.as_deref(), foe.as_deref()) else { return false };
                 Stepping::Figure(figure)
             }
+            Goal::Defend(defend) if defend.horde => Stepping::Horde(Horde::default()),
             Goal::Defend(_) => Stepping::Defence(Defence::default()),
             Goal::Puzzle(puzzle) => {
                 let Some(middle) = self.place_named(&puzzle.place) else { return false };
@@ -323,7 +345,10 @@ impl Room {
             | Goal::Scavenge(_)
             | Goal::Enter(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => return false,
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_)
+            | Goal::Use(_) => return false,
         };
         if matches!(kind, Stepping::Figure(_)) {
             self.quests.arrived.remove(&player);
@@ -348,6 +373,7 @@ impl Room {
         let Some(step) = self.quests.steps.remove(&player) else { return };
         let gone = match step.kind {
             Stepping::Defence(defence) => defence.ward.into_iter().chain(defence.standing).collect(),
+            Stepping::Horde(horde) => horde.standing,
             Stepping::Figure(figure) => {
                 let ambush = figure.ambush.clone().unwrap_or_default();
                 if figure.state == ARRIVED {
@@ -398,8 +424,15 @@ impl Room {
     fn run_step(&mut self, player: PlayerId, goal: &'static GoalDef) {
         let Some(at) = self.fighter(player).map(|fighter| [fighter.body.x, fighter.body.y]) else { return };
         match &goal.goal {
-            Goal::Escort(escort) => self.walk_figure(player, goal, (escort.near, None, !escort.ambush.is_empty()), at),
-            Goal::Tail(tail) => self.walk_figure(player, goal, (tail.near, Some(tail.far), false), at),
+            Goal::Escort(escort) => {
+                let afoot = !self.players.get(&player).is_some_and(|found| found.mounted);
+                let ambushed = !escort.ambush.is_empty();
+                self.walk_figure(player, goal, (FIGURE_RIDE, escort.near, None, ambushed, afoot), at);
+            }
+            Goal::Tail(tail) => {
+                self.walk_figure(player, goal, (FIGURE_PACE, tail.near, Some(tail.far), false, false), at)
+            }
+            Goal::Defend(defend) if defend.horde => self.keep_horde(player, goal, defend, at),
             Goal::Defend(defend) => self.defend(player, goal, defend, at),
             Goal::Unseen(unseen) => self.keep_unseen(player, goal, unseen, at),
             Goal::Race(race) => self.race(player, goal, race, at),
@@ -415,13 +448,19 @@ impl Room {
             | Goal::Scavenge(_)
             | Goal::Enter(_)
             | Goal::Buy(_)
-            | Goal::Wear(_) => {}
+            | Goal::Wear(_)
+            | Goal::Ride(_)
+            | Goal::Sail(_)
+            | Goal::Use(_) => {}
         }
     }
 }
 
 #[path = "steps_kinds.rs"]
 mod kinds;
+
+#[path = "steps_horde.rs"]
+mod horde;
 
 #[cfg(test)]
 #[path = "steps_tests.rs"]
@@ -434,3 +473,7 @@ mod step_grounds_tests;
 #[cfg(test)]
 #[path = "step_play_tests.rs"]
 mod step_play_tests;
+
+#[cfg(test)]
+#[path = "horde_tests.rs"]
+mod horde_tests;

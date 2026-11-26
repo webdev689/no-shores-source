@@ -4,13 +4,17 @@ import { test } from 'node:test';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
 import { dungeonBook, WATER_FLAG } from './dungeonBook.ts';
-import { dressingOf, stylePacks } from './dungeonDressing.ts';
+import { dressingOf, passagePieceLights, passagePiecesLaid, stylePacks } from './dungeonDressing.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
-import { COLOUR, dungeonMesh, lookAt, ROLE } from './dungeonMesh.ts';
-import type { ModulePack } from './dungeonModules.ts';
+import { COLOUR, dungeonMesh, IRON, lookAt, ROLE } from './dungeonMesh.ts';
+import { type ModulePack, PARTS, readModulePack } from './dungeonModules.ts';
 import { storeyPlanes } from './dungeonStoreyPlanes.ts';
-import { FULL_PACKS, propPlansOf } from './dungeonPacks.test.ts';
+import { FULL_PACKS, packOf, propPlansOf, type Written } from './dungeonPacks.test.ts';
+import manifest from '../../../content/dungeon/modules.json' with { type: 'json' };
+import { MATERIALS } from '../city/pictures.ts';
+import type { PassagePiece } from '../rules/passageRules.ts';
+import { UNTOUCHED } from './passages/passagePieces.ts';
 
 const module = await WebAssembly.compile(new Uint8Array(readFileSync('client/public/room.wasm')));
 /** Real dungeons of every style, each storey that stands landmarks as the dressing draws it: one storey's dungeon. */
@@ -202,4 +206,95 @@ test('the packs of every style the looks wear are each asked for once, and one t
   });
   assert.deepEqual(asked, [...new Set([first, second])]);
   assert.deepEqual([...packs.keys()], [first]);
+});
+
+/** A passage module of one upright triangle from its foot 1 m east, wearing `part`. */
+const upright = (name: string, part: string): Written => {
+  const worn = PARTS.indexOf(part);
+  return {
+    name,
+    vertices: [
+      [0, 0, 0, 0, -1, 0, worn],
+      [1, 0, 0, 0, -1, 0, worn],
+      [0, 0, 1, 0, -1, 0, worn],
+    ],
+    indices: [0, 1, 2],
+  };
+};
+const PASSAGE_MODULES = readModulePack(
+  packOf(
+    [
+      upright('passage.mouth.shut', 'iron'),
+      upright('passage.mouth.open', 'wood'),
+      upright('passage.lamp', 'glow'),
+      upright('passage.kindle', 'glow'),
+      upright('passage.tally-post', 'iron'),
+      upright('passage.tally-post.broken', 'wood'),
+    ],
+    { style: 'passage' },
+  ),
+);
+
+test("a passage zone's pieces are laid from the passages' pack as the deal stands, lit or cold, turned to their facing", () => {
+  assert.ok(manifest.styles.passage, "the passages' pack is published and named in the manifest");
+  const layout = LAYOUTS[0];
+  if (!layout) throw new Error('no layout');
+  const piece = (kind: PassagePiece['kind'], module: string, x: number, facing = 0): PassagePiece => ({
+    kind,
+    module,
+    number: 0,
+    at: [x, layout.cell * 1.5, 0],
+    facing,
+  });
+  const pieces = [
+    piece('mouth', 'passage.mouth.shut', layout.cell * 1.5, Math.PI / 2),
+    piece('lamp', 'passage.lamp', layout.cell * 1.5),
+    piece('kindle', 'passage.kindle', layout.cell * 1.5),
+    piece('post', 'passage.tally-post', layout.cell * 1.5),
+  ];
+  const laid = (state: typeof UNTOUCHED) => {
+    const mesh = meshBuilder();
+    passagePiecesLaid(layout, PASSAGE_MODULES, 'temperate', pieces, state, false)(mesh);
+    return mesh.model();
+  };
+  const look = lookAt(layout, layout.columns + 1);
+  const timber = `${MATERIALS.temperate.timber[0]}.${MATERIALS.temperate.timber[1]}`;
+  const [iron, glow, stone] = [`${IRON[0]}.${IRON[1]}`, `${COLOUR.glow}.0`, `${look.set}.${look.wall}`];
+  const cold = counted(laid(UNTOUCHED));
+  assert.equal(cold.get(stone), 2, 'the lamp and the dead lamp cold, in the cell’s stone');
+  assert.equal(cold.get(glow), undefined);
+  assert.equal(cold.get(timber), undefined);
+  assert.equal(cold.get(iron), 2, 'the mouth shut and the post whole, in iron');
+  const lit = counted(laid({ lampLit: true, openMouths: [0], kindled: [0], broken: [0] }));
+  assert.equal(lit.get(glow), 2, 'the lamp and the dead lamp lit');
+  assert.equal(lit.get(timber), 2, 'the mouth open and the post broken');
+  // The mouth faces east: its triangle's far corner, 1 m east of its foot unturned, lies 1 m south of it.
+  const model = laid(UNTOUCHED);
+  const [x, y] = [layout.cell * 1.5, layout.cell * 1.5];
+  const corners = Array.from({ length: model.positions.length / 3 }, (_unused, vertex) =>
+    [0, 1, 2].map((axis) => model.positions[vertex * 3 + axis] ?? 0),
+  );
+  assert.ok(corners.some(([east, south]) => Math.abs((east ?? 0) - x) < EPS && Math.abs((south ?? 0) - y - 1) < EPS));
+});
+
+test('under ground a lit lamp, a lit dead lamp and an open mouth each light the room; cold and shut, none', () => {
+  const piece = (kind: PassagePiece['kind'], number = 0): PassagePiece => ({
+    kind,
+    module: `passage.${kind}`,
+    number,
+    at: [10, 20, 0],
+    facing: Math.PI / 2,
+  });
+  const pieces = [piece('lamp'), piece('kindle', 1), piece('mouth', 0), piece('mouth', 1), piece('post')];
+  assert.deepEqual(passagePieceLights(pieces, UNTOUCHED), []);
+  const lights = passagePieceLights(pieces, { lampLit: true, openMouths: [1], kindled: [1], broken: [] });
+  assert.deepEqual(
+    lights.map((light) => light.number),
+    [0, 1, 2],
+  );
+  const [lamp, kindle, mouth] = lights;
+  assert.ok(lamp && kindle && mouth);
+  assert.deepEqual([lamp.at[2], kindle.at[2]], [1.8, 2.25], 'each from its glass, over the floor');
+  // The open mouth faces east, into the room: its light stands behind its face, west of its foot, the way on.
+  assert.ok(mouth.at[0] < 10 && Math.abs(mouth.at[1] - 20) < 1e-6);
 });

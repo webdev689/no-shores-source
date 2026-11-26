@@ -40,8 +40,15 @@ export type ModuleMesh = {
   readonly bounds: Bounds;
 };
 
+/** The passages' own pieces' pack (tools/dungeon/styles/passage), built beside the styles' and worn in any of them. */
+export const PASSAGE_PACK = 'passage';
+/** A pack's key in the manifest: a style's, or the passages'. */
+export type PackKey = StyleKey | typeof PASSAGE_PACK;
 /** A style's pieces by name: `<style>.<piece>` for its kit, and each of its landmarks by its `module`. */
-export type ModulePack = { readonly style: StyleKey; readonly modules: ReadonlyMap<string, ModuleMesh> };
+export type ModulePack = {
+  readonly style: PackKey;
+  readonly modules: ReadonlyMap<string, ModuleMesh>;
+};
 
 /** Where a piece is laid. A landmark gives its footprint, W × D metres, and is turned within it, `origin` the turned
  *  footprint's north-west corner; a kit piece is turned about its own origin. `stretch` lays the piece's z 0 to 1
@@ -125,7 +132,7 @@ export function readModulePack(bytes: ArrayBuffer): ModulePack {
   const { parts, style } = header;
   if (!Array.isArray(parts) || parts.length !== PARTS.length || parts.some((part, index) => part !== PARTS[index]))
     throw new Error("a module pack's parts are not the kits' parts, in their order");
-  if (typeof style !== 'string' || !Object.hasOwn(kits.styles, style))
+  if (typeof style !== 'string' || (style !== PASSAGE_PACK && !Object.hasOwn(kits.styles, style)))
     throw new Error(`a module pack is for ${String(style)}, a style the kits do not know`);
   if (!Array.isArray(header.modules)) throw new Error('a module pack lists no modules');
   const entries = header.modules.map(entryOf);
@@ -141,17 +148,17 @@ export function readModulePack(bytes: ArrayBuffer): ModulePack {
     if (modules.has(entry.name)) throw new Error(`a module pack holds ${entry.name} twice`);
     modules.set(entry.name, moduleOf(data, entry, vertices, corners));
   }
-  return { style: style as StyleKey, modules };
+  return { style: style as PackKey, modules };
 }
 
 /** Where each style's pack is published: `base` and the key under it. */
-type Manifest = { readonly base: string; readonly styles: Readonly<Partial<Record<StyleKey, string>>> };
+type Manifest = { readonly base: string; readonly styles: Readonly<Partial<Record<PackKey, string>>> };
 
 const packs = new Map<string, Promise<ModulePack | null>>();
 /** How long a pack may take to come before it is given up, so a stalled fetch never holds the veil up for good. */
 const PACK_TIMEOUT_MS = 15000;
 
-async function fetchPack(url: string, style: StyleKey): Promise<ModulePack> {
+async function fetchPack(url: string, style: PackKey): Promise<ModulePack> {
   const answer = await fetch(url, { signal: AbortSignal.timeout(PACK_TIMEOUT_MS) });
   if (!answer.ok) throw new Error(`${url} answered ${answer.status}`);
   const pack = readModulePack(await answer.arrayBuffer());
@@ -159,11 +166,11 @@ async function fetchPack(url: string, style: StyleKey): Promise<ModulePack> {
   return pack;
 }
 
-/** A style's pack, fetched from where `published` says (the repository's manifest unless a test gives another) and
- *  kept once it comes: none while no pack is published for it, and none, with one warning, if it fails to come in
- *  time or to read, so its dungeons are drawn as they are without one. A failure is not kept: the next ask, the next
- *  dungeon entered, tries again. */
-export function loadStylePack(style: StyleKey, published: Manifest = manifest): Promise<ModulePack | null> {
+/** A style's pack or the passages' (`PASSAGE_PACK`), fetched from where `published` says (the repository's
+ *  manifest unless a test gives another) and kept once it comes: none while no pack is published for it, and none,
+ *  with one warning, if it fails to come in time or to read, so its dungeons are drawn as they are without one. A
+ *  failure is not kept: the next ask, the next dungeon entered, tries again. */
+export function loadStylePack(style: PackKey, published: Manifest = manifest): Promise<ModulePack | null> {
   const key = published.styles[style];
   if (!key) return Promise.resolve(null);
   const url = published.base + key;

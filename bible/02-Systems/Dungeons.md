@@ -105,7 +105,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   that is the FNV-1a hash of the lane's name, as DFO's lanes draw ([[Agree to the Bit]]).
 - **A patrol's three.** `of_patrol` gives each its seed, from the patrol's id and its number, and its style; the
   three take three different styles of the six, shuffled by the patrol's id. `name` names one for its first style
-  and its patrol: The Crypt of the Saltgrass Downs, The Caverns of the Sunken Fen.
+  and its patrol: The Crypt of the Saltgrass Downs.
 - **Laid where no patrol is.** A place that is no patrol, as a sea island, lays its dungeon by its own seed and a
   style by its key (`style_of`): `Room::dungeon_run` stands its room as a run of its own (`RunOf::Sea`), the room
   module answers its layout to an ask by seed and style, and the page reads it with `askLayout`. A patrol's dungeon is
@@ -122,6 +122,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 | Sanctum (`sanctum`) | 2 to 4 | rectangles 3 to 10; Ls, octagons 4 to 10; crosses 6 to 10 by 4 to 10 | 4.4 to 5.6 | arched | 124, 122 | Crypt | 43601, 43602 |
 | Caverns (`caverns`) | 2 to 4 | caves 3 to 8, and a few rectangles 3 to 6 | 4.4 to 5.6 | rough | 120, 119 | Crypt | 43603, 43604 |
 | Mines (`mines`) | 2 to 4 | galleries 5 to 12 by 2; stopes (caves) 3 to 8; a few rectangles 2 to 5 | 3.2 to 4.4 | flat | 119, 120 | Caverns | 43603, 43604 |
+| Chalk (`chalk`, in `PASSAGE_STYLES`: no patrol's or the sea's draw) | 3 to 5 | galleries 4 to 7 by 2; rectangles 3 to 5 by 3 to 4; Ls 4 to 6 | 3.2 to 4.0 | flat | 123, 120 | Barrow | 43603, 43604 |
+| Barrow (`barrow`, in `PASSAGE_STYLES`) | 3 to 5 | rectangles 2 to 4; alcoves 3 to 5 by 3 to 4; octagons 4 to 5 | 3.6 to 4.8 | arched | 124, 122 | Caverns | 43601, 43602 |
 
   A room's sides are its form's and its part's, whichever is less, so the largest stand where a storey is split least.
 
@@ -762,8 +764,8 @@ as standing none (`readDungeon`).
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
 - The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off
   centre would leave their bounds short on one side.
-- A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 31 end rooms and 28 of 20,037 other
-  rooms lay none; over the 27 patrols' 81 dungeons, 1 end room and 1 other room.
+- A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 10 end rooms and 28 of 19,866 other
+  rooms lay none; over the 11 patrols' 33 dungeons, 2 end rooms and no other room.
 - No fountain or cart is laid: each is wider than a cell.
 - A caverns wall set spans most of its wall and its whole height, so wherever one stands, at most every third cell
   along a cave room's straight walls, that wall is drawn as flat rock.

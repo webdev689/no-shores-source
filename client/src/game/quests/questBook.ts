@@ -3,15 +3,17 @@
 // varied step's goal (a puzzle's, a ward's, an ambush's), and the scenes each step of a road says. The rules judge
 // every goal and give every reward; the page only shows.
 import book from '../../../../content/quests/quests.json' with { type: 'json' };
-import type { QuestState } from '../../network/questMessages.ts';
+import { FIGURE_STATES, type QuestState } from '../../network/questMessages.ts';
 import type { Quest as Tracked, Step } from '../tasks.ts';
 
 /** A goal as the file writes it: its tracker words, its count (1 when left out), its kind, and what its kind names:
  *  the counter a `talk` goal speaks at (`to`), the scene said as it is met, the node and place a goal stands at, the
  *  places an `escort` or a `tail` walks between (`from`, `to`) and its figure (`who` a speaker, `foe` a roster type)
- *  with the line said as it first walks (`greet`), a `defend` goal's ward, a `puzzle`'s points and their `order`, a
- *  `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`) and an escort's
- *  `shout` as an ambush springs, and the slot a `buy` or a `wear` goal names. The rest the rules read alone. */
+ *  with the line said as it first walks (`greet`), a `defend` goal's ward or its `horde`, a `puzzle`'s points and
+ *  their `order`, a `race`'s checkpoints, the line said as it fails (`lost`, `late`, `seen`, `noticed`, `wrong`), an
+ *  escort's `shout` as an ambush springs, its `mount` as it waits for the player to get on their horse and the coat of
+ *  the horse it rides (`horse`), the slot a `buy` or a `wear` goal names, the act a `ride` or a `sail` lesson asks
+ *  (`act`, a riding arrival's counter its `to`), and what it gives as it is met. The rest the rules read alone. */
 export interface Goal {
   readonly kind: string;
   readonly text: string;
@@ -24,6 +26,7 @@ export interface Goal {
   readonly who?: string;
   readonly foe?: string;
   readonly ward?: string;
+  readonly horde?: boolean;
   readonly points?: readonly { readonly name: string }[];
   readonly checkpoints?: readonly string[];
   readonly lost?: string;
@@ -33,32 +36,60 @@ export interface Goal {
   readonly wrong?: string;
   readonly shout?: string;
   readonly greet?: string;
+  readonly mount?: string;
+  readonly horse?: string;
   readonly order?: readonly number[];
   readonly slot?: string;
   readonly types?: readonly string[];
   readonly rank?: string;
   readonly island?: string;
   readonly side?: string;
+  readonly act?: string;
+  readonly reward?: Reward;
+}
+
+/** What a task gives as it is done, or a goal as it is met, of what the page tells: fragments to choose, the first
+ *  horse, the first ship and a keeper's gift by its name (`gifts.rs`). The rules give it. */
+export interface Reward {
+  readonly fragments?: number;
+  readonly horse?: boolean;
+  readonly ship?: boolean;
+  readonly gift?: string;
 }
 
 /** A task: its id, its tracker words, the scenes said as it begins and as it is done, its goals, and what it gives
- *  as it is done (of which the page reads only the fragments to choose). */
+ *  as it is done. */
 export interface Task {
   readonly id: string;
   readonly task: string;
-  readonly reward?: { readonly fragments?: number };
+  readonly reward?: Reward;
   readonly start?: string;
   readonly end?: string;
   readonly goals: readonly Goal[];
 }
 
-/** A quest: its name, its house (0 the opening), the scene said as it begins, and its tasks in order. */
+/** A quest offered as an item by a keeper (their counter's kind, `keeper`), from its task `at` (its first when left
+ *  out): its card's kind, its rarity's number, its words and the keeper's quote, and the scene of the keeper's longer
+ *  words (`story`). The rules hold it unwalked until it is acquired. */
+export interface Offer {
+  readonly keeper: string;
+  readonly at?: string;
+  readonly kind: string;
+  readonly rarity: number;
+  readonly words: string;
+  readonly quote: string;
+  readonly story: string;
+}
+
+/** A quest: its name, its house (0 the opening), the scene said as it begins, its tasks in order, and the keeper who
+ *  offers it, if one does. */
 export interface QuestLine {
   readonly id: string;
   readonly name: string;
   readonly faction: number;
   readonly begin: string;
   readonly tasks: readonly Task[];
+  readonly offer?: Offer;
 }
 
 /** The quests in the file's order, the opening first: the gear message counts them from 1. */
@@ -93,13 +124,29 @@ export const SMITH_OF: Readonly<Record<string, string>> = {
 /** How many a goal asks for. */
 const most = (goal: Goal): number => goal.count ?? 1;
 
-/** The quest walked and its task now, with that task's goals' counts; none for no quest or one the file lacks, and
- *  none from a word not on the player's own character (a room's starting character, before theirs is given). */
-function walked(state: QuestState | null | undefined): { quest: QuestLine; task: Task; counts: number[] } | null {
+/** The counter's kind of a keeper by the number ask 64 names them by. */
+export const counterOf = (number: number): string | null =>
+  Object.entries(COUNTERS).find(([, each]) => each === number)?.[0] ?? null;
+
+/** The task the quest walked stands at while it waits to be acquired: one goal, a word with the keeper who offers it,
+ *  which Acquire at their counter is. */
+function waiting(quest: QuestLine, keeper: string): Task {
+  const named = quest.tasks.flatMap((task) => task.goals).find((goal) => goal.to === keeper)?.text;
+  return { id: 'acquire', task: 'Acquire it', goals: [{ kind: 'talk', to: keeper, text: named ?? keeper }] };
+}
+
+/** The quest walked and its task now, with that task's goals' counts; while it waits to be acquired, a word with its
+ *  keeper in its task's place (`waiting`), so the tracker, the marks and the keeper's pulse lead there. None for no
+ *  quest or one the file lacks, and none from a word not on the player's own character (a room's starting character,
+ *  before theirs is given). */
+export function walked(
+  state: QuestState | null | undefined,
+): { quest: QuestLine; task: Task; counts: number[] } | null {
   const quest = state && state.claimed !== false ? QUESTS[state.quest - 1] : undefined;
-  const task = quest?.tasks[state?.task ?? 0];
+  const offered = state?.offered ? counterOf(state.offered) : null;
+  const task = quest && offered ? waiting(quest, offered) : quest?.tasks[state?.task ?? 0];
   if (!state || !quest || !task) return null;
-  return { quest, task, counts: task.goals.map((_goal, index) => state.counts[index] ?? 0) };
+  return { quest, task, counts: task.goals.map((_goal, index) => (offered ? 0 : (state.counts[index] ?? 0))) };
 }
 
 /** Whether the goal at `index` of the task now is met. */
@@ -117,17 +164,26 @@ export function openGoals(state: QuestState | null | undefined): { readonly goal
  *  quarry that noticed, the player seen) is tried again. An escort waits on no clock: it waits for the player. */
 const CLOCKED: ReadonlySet<string> = new Set(['race', 'defend', 'tail', 'unseen']);
 
+/** What an escort's step says under it while its figure waits for the player, near it, to get on their horse: that,
+ *  or, `horsed` false (none worn in the Mount slot), where one is had. */
+export const MOUNT_NOTES = {
+  horsed: 'Get on your horse',
+  none: 'No horse worn: the Tack in Overlook gives one',
+} as const;
+
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
  *  count, ticked once met; the clock running beside the first unmet goal that runs it, a ward's health beside its
- *  defence while it stands, and a puzzle's points lit of all of them. None while no quest is walked. The clock runs
- *  down `ran` seconds from the room's last word on it, never below none. */
-export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracked | null {
+ *  defence while it stands, a horde's foes left of all of them beside it while it runs, a puzzle's points lit of all
+ *  of them, and under an escort waiting for the player to mount what to do (`MOUNT_NOTES`). None while no quest is
+ *  walked. The clock runs down `ran` seconds from the room's last word on it, never below none. */
+export function trackedOf(state: QuestState | null | undefined, ran = 0, horsed = true): Tracked | null {
   const now = walked(state);
   if (!state || !now) return null;
   const clocked = now.task.goals.findIndex(
     (goal, index) => CLOCKED.has(goal.kind) && !met(goal, now.counts[index] ?? 0),
   );
-  const { points = [], clock, ward } = state;
+  const { points = [], clock, ward, horde, figures = [] } = state;
+  const mounting = figures.some((figure) => figure.state === FIGURE_STATES.mounting);
   const steps = now.task.goals.map((goal, index): Step => {
     const left = Math.max(0, most(goal) - (now.counts[index] ?? 0));
     const shown = { text: goal.text, done: left === 0 };
@@ -135,6 +191,8 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracke
     if (index === clocked && clock !== undefined && clock !== null)
       return { ...shown, clock: Math.max(0, clock - ran) };
     if (goal.kind === 'defend' && ward) return { ...shown, share: ward.health };
+    if (goal.kind === 'escort' && mounting) return { ...shown, note: horsed ? MOUNT_NOTES.horsed : MOUNT_NOTES.none };
+    if (goal.kind === 'defend' && goal.horde && horde) return { ...shown, count: `${horde.left}/${horde.all}` };
     if (goal.kind === 'puzzle' && points.length > 0)
       return { ...shown, count: `${points.filter((point) => point.lit).length}/${points.length}` };
     return most(goal) > 1 ? { ...shown, count: left } : shown;
@@ -170,6 +228,21 @@ export function puzzlePoints(state: QuestState | null | undefined): PuzzlePoint[
 /** The line a goal says as it fails: a ward lost, a race late, seen, noticed, a wrong point. */
 export const failLine = (goal: Goal): string | undefined =>
   goal.lost ?? goal.late ?? goal.seen ?? goal.noticed ?? goal.wrong;
+
+/** The quest the keeper at `counter` (a station's kind) offers, as their screen shows it: the quest walked, from the
+ *  task its offer names, and whether it is acquired yet; its objectives are the tracker's. None while they offer none
+ *  now. */
+export function offeredAt(
+  state: QuestState | null | undefined,
+  counter: string,
+): { readonly quest: QuestLine; readonly offer: Offer; readonly acquired: boolean } | null {
+  const quest = state && state.claimed !== false ? QUESTS[state.quest - 1] : undefined;
+  const offer = quest?.offer;
+  if (!state || !quest || !offer || offer.keeper !== counter) return null;
+  const from = offer.at === undefined ? 0 : quest.tasks.findIndex((task) => task.id === offer.at);
+  if (from < 0 || state.task < from) return null;
+  return { quest, offer, acquired: state.offered !== COUNTERS[counter] };
+}
 
 /** The unmet `talk` goal of the task now that the counter `counter` (a station's kind) answers, if one does. */
 export function talkAt(state: QuestState | null | undefined, counter: string): Goal | null {

@@ -98,17 +98,19 @@ export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltm
 /** The words under a place's name: the room of a dungeon the player stands in, the place's kind, its island's name
  *  where it has one, in an Abyss run the revives its company has left (-1, none counted, elsewhere), whether it is a
  *  darkness zone now, where no one respawns by their own ask, and in a dungeon its chests counted ("Chests 2 of 5",
- *  finds.ts). A ruined city's place is no social space: it says only that it lies in ruins. */
+ *  finds.ts). A ruined city's place is no social space: it says only that it lies in ruins; a passage zone's room
+ *  (`passage-...`) is a passage, under ground or above. */
 export function placeWords(
-  node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string },
+  node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string; readonly id?: string },
   room?: string | null,
   revives = -1,
   darkness = false,
   chests: string | null = null,
 ): string {
   const island = ISLANDS[node.continent];
-  const kind = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
-  const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${kind}` : kind;
+  const ruined = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
+  const kind = node.id?.startsWith('passage-') ? 'Passage' : ruined;
+  const named = room && kind !== 'Passage' ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${kind}` : kind;
   const left = revives === 0 ? 'No revives left' : `${revives} revive${revives === 1 ? '' : 's'} left`;
   const dark = darkness ? ['Darkness zone'] : [];
   const counted = chests ? [chests] : [];

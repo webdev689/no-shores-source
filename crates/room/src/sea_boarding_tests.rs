@@ -231,10 +231,20 @@ fn a_boarded_deck_room_takes_the_seas_tier() {
 }
 
 /// A character pledged to `faction`, its road at `task`, kept by the sea for `player`.
-fn on_road(sea: &mut Sea, player: PlayerId, faction: u8, task: u8) {
+/// The task of a house's road whose goal is a ship beaten at sea.
+fn sea_task(faction: u8) -> usize {
+    let road = &gear::quests::quests().quests[usize::from(faction)];
+    road.tasks
+        .iter()
+        .position(|task| task.goals.iter().any(|goal| matches!(goal.goal, gear::quests::Goal::Sea(_))))
+        .expect("a sea task on its road")
+}
+
+/// A character on a house's road at its sea task.
+fn on_road(sea: &mut Sea, player: PlayerId, faction: u8) {
     let mut character = gear::Character::starting();
     character.allegiance.pledge = faction;
-    character.quests.set_task(usize::from(faction), usize::from(task));
+    character.quests.set_task(usize::from(faction), sea_task(faction));
     sea.harbour.characters.insert(player, gear::Character::from_json(&character.to_json()).unwrap());
 }
 
@@ -249,14 +259,15 @@ fn a_ship_that_went_down_tells_each_who_fought_it_its_side_and_whether_it_struck
     // A Tithe ship beaten any way, one boarded, and the wreckers' ship: the Stormcallers', the Veiled's and the
     // Lamplighters'.
     for (player, faction) in players.iter().zip([1, 3, 2]) {
-        on_road(&mut sea, *player, faction, 5);
+        on_road(&mut sea, *player, faction);
     }
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
     let tithe = crate::hostiles::Hostile::standing(1, 7, commission, [0.0, 0.0], 0.0, false);
     let sank = |hostile, struck| Sank { hostile, at: [0.0, 0.0], players: players.clone(), wind: [0.0; 2], struck };
     sea.after_fights(Vec::new(), &[sank(tithe, true)]);
     let roads: Vec<_> = players.iter().map(|player| road(&sea, *player)).collect();
-    assert_eq!(roads, [Some((1, 6)), Some((3, 5)), Some((2, 6))], "struck: not boarded");
+    let past = |faction: u8, by: usize| Some((usize::from(faction), sea_task(faction) + by));
+    assert_eq!(roads, [past(1, 1), past(3, 0), past(2, 1)], "struck: not boarded");
     assert!(sea.harbour.changed.contains(&players[0]), "its gear goes out");
 }
 
@@ -264,7 +275,7 @@ fn a_ship_that_went_down_tells_each_who_fought_it_its_side_and_whether_it_struck
 fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
     let mut sea = super::tests::sea();
     let player = sea.join();
-    on_road(&mut sea, player, 3, 5);
+    on_road(&mut sea, player, 3);
     sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
     let standing = crate::hostiles::Hostile::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
@@ -284,7 +295,7 @@ fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
     sea.tick();
     ticks(&mut sea, HOLD_TICKS as usize + 1);
     assert!(!sea.on_deck(player), "stepped off");
-    assert_eq!(road(&sea, player), Some((3, 6)), "the tally ship boarded and taken");
+    assert_eq!(road(&sea, player), Some((3, sea_task(3) + 1)), "the tally ship boarded and taken");
 }
 
 #[test]

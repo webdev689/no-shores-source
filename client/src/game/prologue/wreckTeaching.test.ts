@@ -6,13 +6,14 @@ import { Fighting } from '../../combat/fighting.ts';
 import { ALL_EARNED, earnedOf } from '../../network/artMessages.ts';
 import { ASKS, type GearState } from '../../network/gearMessages.ts';
 import { LocalRoom } from '../../network/localRoom.ts';
+import { storyOn } from '../../network/roomServe.ts';
 import type { Cards } from '../../player/cards.ts';
 import { slotOf, WORN } from '../../player/gear.ts';
 import type { Picture } from '../../player/picture.ts';
 import { startCombatRules } from '../../rules/combatRules.ts';
 import type { MovementRules } from '../../rules/movementRules.ts';
 import { armouredDress, FIRST_LOOK } from './look.ts';
-import { Freeze } from './tutorial.ts';
+import { DodgeWatch, Freeze, ticksToLand } from './tutorial.ts';
 import { courseOf, inArea, readWreck, topAt } from './wreckLayout.ts';
 import { IN_THE_SEA_M } from './wreckProgress.ts';
 import {
@@ -199,9 +200,13 @@ test('on the wreck the room dresses the player in the story’s steel, gives its
   assert.equal(earnedOf(arts, STORM), ALL_EARNED, 'its Anima and both Tenets earned');
 });
 
-test("frozen on the boarder's blow, a guard pressed parries it; frozen on the next, a dodge dodges it", async () => {
+const TICK = 1 / 60;
+
+/** The quiet deck's duel as the run plays it: the player armed where they took their arms up, the boarder stood at the
+ *  far end and sent at them. Each tick presses the buttons given, a dodge going to the right, or with `back` straight
+ *  back from where they face. */
+async function duel() {
   const compiled = new WebAssembly.Module(await readFile(MODULE));
-  const TICK = 1 / 60;
   let fight: Fighting | null = null;
   let gear: GearState | null = null;
   const room = LocalRoom.openOverSea(
@@ -218,9 +223,11 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
   fight = fighting;
   fighting.arms = rules.armsCode('sword_steel', 'shield_kite_steel', true);
   const steps = fighting.steps({ tickSeconds: TICK } as unknown as MovementRules);
-  const tick = (buttons: { guard?: boolean; guardPressed?: boolean; dodge?: boolean } = {}, yaw = 0) => {
+  type Buttons = { guard?: boolean; guardPressed?: boolean; dodge?: boolean; back?: boolean };
+  const tick = ({ back, ...buttons }: Buttons = {}, yaw = 0) => {
     fighting.press({ swing: false, shoot: false, guard: false, dodge: false, pitch: 0, ...buttons });
-    const controls = { forward: 0, sideways: buttons.dodge ? 1 : 0, yaw, run: false, jump: false, crouch: false };
+    const [forward, sideways] = buttons.dodge ? (back ? [-1, 0] : [0, 1]) : [0, 0];
+    const controls = { forward, sideways, yaw, run: false, jump: false, crouch: false };
     steps.step({} as never, { ...controls, mounted: false });
     room.pump(TICK);
   };
@@ -239,6 +246,11 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
   const { at, facing } = boarderAt(layout, armsX, armsY);
   const id = room.standFoe(BOARDER.type, BOARDER.rank, ...at, facing, 1);
   assert.ok(room.storyHunt(id), 'sent at the player, as the run sends it');
+  return { room, fighting, tick, id };
+}
+
+test("frozen on the boarder's blow, a guard pressed parries it; frozen on the next, a dodge dodges it", async () => {
+  const { fighting, tick, id } = await duel();
   const freeze = new Freeze();
   const lessons: ('parry' | 'dodge')[] = ['parry', 'dodge'];
   // Each freeze the player answered, by its lesson: one each, the first answer meeting it.
@@ -273,6 +285,30 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
   assert.deepEqual(answers, ['parry', 'dodge'], 'each met at its first freeze');
 });
 
+test('a dodge that carries the player clear of the blow, out of its reach, is a dodge the lesson counts', async () => {
+  const { fighting, tick, id } = await duel();
+  const freeze = new Freeze();
+  const watch = new DodgeWatch();
+  const answers: number[] = [];
+  const told: string[] = [];
+  let met: number | null = null;
+  for (let nth = 0; nth < 60 * 60 && met === null; nth++) {
+    const foe = fighting.foes.get(id)?.view ?? null;
+    const teaching = { player: fighting.player, own: fighting.own, lesson: 'dodge' as const, parryOpen: false };
+    const frozen = freeze.holds(foe, teaching);
+    const answered = frozen && !freeze.frame(foe, teaching, () => ({ locked: true, guard: false, dodge: true }));
+    if (answered) answers.push(nth);
+    const own = fighting.own;
+    const yaw = own && foe ? Math.atan2(foe.x - own.x, own.y - foe.y) : 0;
+    tick({ dodge: answered, back: true }, yaw);
+    const events = fighting.takeEvents();
+    told.push(...events.filter((event) => event.defender === fighting.player).map((event) => String(event.kind)));
+    if (watch.frame(fighting.foes.get(id)?.view ?? null, fighting.own, fighting.player, events, TICK)) met = nth;
+  }
+  assert.notEqual(met, null, `the events on the player: ${told.join(', ')}`);
+  assert.equal(answers.length, 1, 'met at its first freeze');
+});
+
 test('the bow lying shows its line of light as the sword and shield do, and is drawn larger to be seen', async () => {
   const { forge } = forged();
   const place = armsAt(layout);
@@ -289,4 +325,36 @@ test('the bow lying shows its line of light as the sword and shield do, and is d
   assert.ok(bowLine.length > 0, 'the bow has its line of light');
   assert.equal(bowLine.length, swordLine.length, 'as the sword and shield have');
   assert.equal(bowCard?.scale, (swordCard?.scale ?? 0) * 1.5, 'the thin bow half again its size, to read far off');
+});
+
+test('a boarder that stopped as the player fell comes for them again once sent, as the run sends it', async () => {
+  const { room, fighting, tick, id } = await duel();
+  // Blows landing at the player, before they fall and after they rise; the run's ask made once a second.
+  const blows = { before: 0, after: 0 };
+  let [left, rose, asked]: [number | null, number | null, number] = [null, null, -Infinity];
+  for (let nth = 0; nth < 60 * 60 && blows.after < 2; nth++) {
+    const foe = fighting.foes.get(id)?.view ?? null;
+    const now = foe ? ticksToLand(foe, fighting.player) : null;
+    if (left !== null && left > 0 && (now === null || now <= 0)) blows[rose === null ? 'before' : 'after'] += 1;
+    left = now;
+    const own = fighting.own;
+    if (rose === null && blows.before > 0 && own?.action.kind === 'dead') rose = -1;
+    if (rose === -1 && own && own.action.kind !== 'dead') {
+      rose = nth;
+      // Risen at the checkpoint up on the quarterdeck, which no foe climbs to, they come back down to it.
+      const [armsX, armsY] = armsAt(layout);
+      room.putPlayer(armsX, armsY);
+    }
+    const stopped = rose !== null && rose >= 0 && own && own.health > 0 && foe && foe.target !== fighting.player;
+    if (stopped && rose !== null && nth - asked >= 60) {
+      if (nth - rose < 120) assert.equal(foe.target, null, 'with no one to fight once the player rose');
+      asked = nth;
+      assert.equal(storyOn(room, { ask: 'hunt', foe: id }), 1, 'sent at them');
+    }
+    const yaw = own && foe ? Math.atan2(foe.x - own.x, own.y - foe.y) : 0;
+    tick({}, yaw);
+    fighting.takeEvents();
+  }
+  assert.ok(rose !== null && rose >= 0, `the player fell to its blows and rose (${blows.before} landed)`);
+  assert.equal(blows.after, 2, 'its blows come again');
 });

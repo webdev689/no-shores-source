@@ -37,21 +37,23 @@ fn rank_of(source: Source) -> u8 {
 
 /// What a source holds: how many common materials (each this many, from the first to the last), its chance of one
 /// Heartwood, and its chance of a module.
-struct Holds {
-    commons: u16,
-    each: [u16; 2],
-    heartwood: f64,
-    module: f64,
+pub(crate) struct Holds {
+    pub(crate) commons: u16,
+    pub(crate) each: [u16; 2],
+    pub(crate) heartwood: f64,
+    pub(crate) module: f64,
 }
 
-fn holds(source: Source) -> Holds {
+pub(crate) fn holds(source: Source) -> Holds {
     match source {
+        // A ship's lot holds modules often enough that an hour at sea finds about as much gear by colour as an hour
+        // in a patrol zone (`band`): a sure one in its chest, a Minor's piece about one time in two.
         Source::Flotsam { chest: true, rank } => {
-            Holds { commons: 3, each: [2, 4], heartwood: 0.25 + 0.05 * f64::from(rank), module: 0.5 }
+            Holds { commons: 3, each: [2, 4], heartwood: 0.25 + 0.05 * f64::from(rank), module: 1.0 }
         }
         Source::Flotsam { rank, .. } => {
             let rank = f64::from(rank.clamp(1, 5));
-            Holds { commons: 1, each: [1, 3], heartwood: 0.02 * rank, module: 0.03 + 0.01 * rank }
+            Holds { commons: 1, each: [1, 3], heartwood: 0.02 * rank, module: 0.36 + 0.12 * rank }
         }
         // A cove's two or three wrecks together hold less than a Minor ship's whole lot, as the owner chose: found
         // unguarded, once.

@@ -7,8 +7,17 @@ export type Flow =
   | { readonly mode: 'story' }
   | { readonly mode: 'loading'; readonly words: string; readonly then: Flow }
   | { readonly mode: 'foot'; readonly node: string }
+  /** The way between passage zones, or across between two patrol zones (passages/passageWay.ts), played instead of
+   *  the veil while the room changes. */
+  | { readonly mode: 'passing'; readonly then: Flow }
   | { readonly mode: 'sea' }
   | { readonly mode: 'landing'; readonly chosen: string | null };
+
+/** The veil stays down until everything round the player is ready, or this long; and once it is, for this many frames
+ *  more drawn whole under it, so the first frames' own work (pipelines made, pictures sent) is done unseen
+ *  ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]). The way between passage zones waits as long
+ *  on the body its room stands. */
+export const READY_WAIT_S = 20;
 
 /** Something that happened, from the player or the world. */
 export type Happening =
@@ -26,6 +35,11 @@ export type Happening =
   | { readonly kind: 'wash-up'; readonly node: string; readonly words: string }
   | { readonly kind: 'isle'; readonly node: string; readonly words: string }
   | { readonly kind: 'back' }
+  /** Through a passage's mouth to the zone beyond, or by a lamp's Home back to the patrol zone. `loaded` then ends
+   *  the way only once it has played to its end (`wayAt`'s `done`) and the place has come. */
+  | { readonly kind: 'onward'; readonly node: string }
+  | { readonly kind: 'home'; readonly node: string }
+  | { readonly kind: 'cross'; readonly node: string; readonly name: string }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }
   | { readonly kind: 'shut'; readonly why: string; readonly ashore?: { readonly node: string; readonly name: string } };
 
@@ -43,7 +57,12 @@ export function onTheSea(flow: Flow): boolean {
 export function next(flow: Flow, happening: Happening): Flow {
   switch (happening.kind) {
     case 'loaded':
-      return flow.mode === 'loading' ? flow.then : flow;
+      // Behind the veil the place has come; on the way between passage zones, the way has played to its end too.
+      return flow.mode === 'loading' || flow.mode === 'passing' ? flow.then : flow;
+    case 'cross':
+    case 'onward':
+    case 'home':
+      return flow.mode === 'foot' ? { mode: 'passing', then: { mode: 'foot', node: happening.node } } : flow;
     case 'return-to-ship':
       if (flow.mode !== 'foot') return flow;
       return { mode: 'loading', words: 'Returning to your ship', then: { mode: 'sea' } };
@@ -108,7 +127,7 @@ export function next(flow: Flow, happening: Happening): Flow {
     case 'shut': {
       // A room whose gate shuts to the player sends them back to their ship, or ashore where one waits for them, the
       // veil saying why.
-      if (flow.mode !== 'foot' && flow.mode !== 'loading') return flow;
+      if (flow.mode !== 'foot' && flow.mode !== 'loading' && flow.mode !== 'passing') return flow;
       const { why, ashore } = happening;
       if (ashore)
         return {

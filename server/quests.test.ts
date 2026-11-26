@@ -191,6 +191,8 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
   assert.deepEqual([heard.quest, heard.task, heard.counts], [1, choose, [0]], 'the next task at once');
   const pledged = walker.standAt(10, 151, { kind: ASKS.pledge, column: 1 });
   assert.deepEqual([pledged.quest, pledged.task, pledged.done], [2, 0, [1, 0, 0, 0]], "the Stormcallers' road");
+  // The road is offered by its leader at their counter, where it is acquired before anything of it counts.
+  assert.equal(walker.standAt(10, 151, { kind: ASKS.acquire, column: 1 }).answer, 0, 'acquired from the leader');
   // On foot the page tells its room the story is behind it, which a patrol's gate asks.
   walker.standAt(10, 151, { kind: ASKS.finishPrologue });
   const character = hall.character(walker.player);

@@ -6,29 +6,35 @@ import type { Happening } from './flow.ts';
 import type { Playing } from './gameFrame.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import { landSheetOf } from './landMap.ts';
+import type { LandSheet } from '../heldmap/landSheet.ts';
 
-/** What the controls ask of the game: a landing made, the flow moved on, and the ground under a point. */
+/** What the controls ask of the game: a landing made, the flow moved on, the ground under a point, and the web's map
+ *  where the player stands in a passage zone (none elsewhere). */
 interface HelmGame {
   readonly landAt: (id: string) => void;
   readonly change: (happening: Happening) => void;
   readonly groundAt: (x: number, y: number) => number | null;
+  readonly passageMap: () => LandSheet | null;
 }
 
 /** The helm's and the map's controls over `playing`, the pointer `input` locked to walk the deck. */
-export function helmControls(playing: Playing, input: { lock(): void }, { landAt, change, groundAt }: HelmGame) {
+export function helmControls(playing: Playing, input: { lock(): void }, game: HelmGame) {
+  const { landAt, change, groundAt } = game;
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
-   *  pointer let go to pan it; none in a dungeon, under no land. */
+   *  pointer let go to pan it, or in a passage zone the web's, under ground too; none in a dungeon or a Breach's run,
+   *  under no land. */
   const openMap = () => {
     const { flow, sea, foot } = playing;
     if (flow.mode === 'sea' && sea) playing.helmMap.open(sea);
-    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen && !foot.mapless) {
+    else if (flow.mode === 'foot' && !gearScreenOpen() && foot && !foot.fallen) {
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
-      playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
-      document.exitPointerLock();
-    } else if (flow.mode === 'foot' && !gearScreenOpen() && foot?.dungeon && !foot.fallen) {
-      // In a dungeon the same key opens its own map.
-      DUNGEON_MAP.toggle();
+      const passage = game.passageMap();
+      // In a dungeon the same key opens its own map; in a passage zone, under ground or not, the web's.
+      if (!passage && foot.dungeon) DUNGEON_MAP.toggle();
+      else if (passage || !foot.mapless)
+        playing.helmMap.openLand(passage ?? landSheetOf(foot.node, playing.landmass, groundAt));
+      else return;
       document.exitPointerLock();
     }
   };

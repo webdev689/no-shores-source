@@ -65,14 +65,14 @@ pub fn dungeon_json(text: &[u8]) -> String {
     layout.to_string()
 }
 
-/// A laid dungeon as JSON, as the page's `DungeonLayout` reads it ([[Dungeons]] names each field). Points are x east,
-/// y south, z up from its north-west corner at its top storey's floor, every z absolute; `cells`, `ceilings` and
-/// `cellLooks` hold a plane for each storey, storey by storey. A cell is -2 rock, -1 a corridor, -3 a flight's, -4 open
-/// air over the storey under it, or its room's number; a side is 0 east, 1 south, 2 west, 3 north; a bearing is
-/// radians clockwise from north. A box is (min x, min y, max x, max y, bottom, top): the jambs, the pillars, then the
-/// props', the fixtures' and the landmarks' solids.
-#[must_use]
-pub fn layout_json(laid: &Dungeon, name: &str) -> Value {
+/// A laid dungeon as JSON, as the page's `DungeonLayout` reads it, under its name: what a page draws a dungeon or a
+/// passage zone under ground from ([[Dungeons]] names each field). Points are x east, y south, z up from its
+/// north-west corner at its top storey's floor, every z absolute; `cells`, `ceilings` and `cellLooks` hold a plane for
+/// each storey, storey by storey. A cell is -2 rock, -1 a corridor, -3 a flight's, -4 open air over the storey under
+/// it, or its room's number; a side is 0 east, 1 south, 2 west, 3 north; a bearing is radians clockwise from north. A
+/// box is (min x, min y, max x, max y, bottom, top): the jambs, the pillars, then the props', the fixtures' and the
+/// landmarks' solids.
+pub(crate) fn layout_json(laid: &Dungeon, name: &str) -> Value {
     let style = laid.style;
     let cells: Vec<i32> = laid
         .cells
@@ -231,6 +231,11 @@ pub(crate) fn pads_of(text: &[u8], laid: &Dungeon) -> Vec<movement::Block> {
     pads
 }
 
+/// Why a locked node's room takes no player, in the words the page shows; None while it is open.
+pub(crate) fn lock_words(locked: bool, name: &str) -> Option<String> {
+    locked.then(|| format!("{name} is locked"))
+}
+
 /// Opens the room of a patrol's dungeon by its number, from the patrol's node file's text: its garrison at the patrol's
 /// island band, and locked while its patrol is. Answers whether the text was a patrol's and the number one of its
 /// dungeons.
@@ -240,7 +245,7 @@ pub fn open_dungeon(text: &[u8], number: usize) -> bool {
         return false;
     }
     let Some(room) = Room::dungeon(&node.id, number, gear::world::island_levels(&node.continent)) else { return false };
-    let refusal = crate::lock_words(node.locked, &node.name);
+    let refusal = lock_words(node.locked, &node.name);
     keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
     true
 }
@@ -273,7 +278,7 @@ pub unsafe extern "C" fn room_open_dungeon(address: *const u8, length: usize, nu
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join_at(number: u32) -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, refusal: None, .. } => {
+        Opened::Land { room, refusal: None, .. } if !room.shifted() => {
             usize::try_from(number).ok().and_then(|number| room.join_at(number))
         }
         Opened::Land { .. } | Opened::Sea(_) | Opened::Fleet(_) => None,
@@ -327,8 +332,8 @@ mod tests {
     /// last a style deeper, and the fifth is laid by a seed and a style where no patrol lays it.
     const AGREED_ASKS: [&[u8]; 5] = [
         br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#,
-        br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
-        br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
+        br#"{"patrol":"highwater-fells","name":"The Highwater Fells","number":1}"#,
+        br#"{"patrol":"whitewind-tundra","name":"The Whitewind Tundra","number":2}"#,
         br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
         br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];

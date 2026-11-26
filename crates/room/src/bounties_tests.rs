@@ -115,7 +115,7 @@ fn a_run_counts_on_its_own_island_and_a_sea_islands_on_its_continent() {
     use crate::RunOf;
     let elite = RunOf::Elite { place: "pearl-tomb".into() };
     let sea = RunOf::Sea { seed: 7, style: "crypt".into(), continent: "continent-4".into() };
-    let patrol = RunOf::Patrol { patrol: "highwater-glen".into(), number: 1 };
+    let patrol = RunOf::Patrol { patrol: "highwater-fells".into(), number: 1 };
     let islands = [elite, sea, patrol]
         .map(|of| Room::dungeon_run(&of, gear::Difficulty::Normal, FRIDAY_NINE).expect("a run's room").island);
     assert_eq!(islands, [Some("continent-1"), Some("continent-4"), Some("continent-2")]);
@@ -177,7 +177,10 @@ fn a_foe_felled_counts_toward_a_factions_bounty_only_for_the_player_wearing_its_
         character.ask(gear::Ask::Pledge { faction }, here, &dice).expect("pledged");
         if caped {
             character.ask(gear::Ask::BuyFactionWare { faction, ware: 0 }, here, &dice).expect("the cape");
-            let cape = character.items.iter().find(|(_, (item, _))| item.kind.slot() == gear::Slot::Cloak);
+            let cape = character
+                .items
+                .iter()
+                .find(|(_, (item, at))| item.kind.slot() == gear::Slot::Cloak && *at != gear::character::At::Vault);
             let item = *cape.expect("the cape carried").0;
             character.ask(gear::Ask::Wear { item, slot: gear::Slot::Cloak }, here, &dice).expect("the cape worn");
         }

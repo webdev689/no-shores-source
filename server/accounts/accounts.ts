@@ -214,7 +214,7 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
         .first<{ slot: number }>();
       return json({
         account: shown(account),
-        place: await lastPlace(database, account.id),
+        place: await lastPlace(database, account.id, now),
         playing: playing?.slot ?? 0,
       });
     }

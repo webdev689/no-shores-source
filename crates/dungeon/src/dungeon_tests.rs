@@ -2,13 +2,13 @@ use crate::dungeon::{DOORWAY_HALF_M, JAMB_DEPTH_M};
 use crate::shapes::Ceiling;
 use crate::torches::TORCH_M;
 use crate::{
-    BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, ELITE_BLOCKS, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor,
-    name, of_patrol,
+    BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, ELITE_BLOCKS, EVERY_STYLE, PER_PATROL, Room, SIDES, STYLES, Shape,
+    Side, WallDoor, name, of_patrol,
 };
 
 #[test]
 fn every_style_is_found_by_its_key_and_no_other_key_names_one() {
-    for style in STYLES {
+    for style in EVERY_STYLE {
         assert_eq!(crate::style_of(style.key).map(|found| found.key), Some(style.key));
     }
     assert!(crate::style_of("grotto").is_none());
@@ -16,7 +16,8 @@ fn every_style_is_found_by_its_key_and_no_other_key_names_one() {
 }
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
-    (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
+    (0..count)
+        .map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), EVERY_STYLE[seed as usize % EVERY_STYLE.len()]))
 }
 
 #[test]
@@ -62,7 +63,7 @@ fn a_square_no_block_stands_on_is_rock() {
 
 #[test]
 fn the_same_seed_lays_the_same_dungeon() {
-    for style in STYLES {
+    for style in EVERY_STYLE {
         assert_eq!(Dungeon::forge(9, style), Dungeon::forge(9, style));
         assert_ne!(Dungeon::forge(9, style), Dungeon::forge(10, style));
     }
@@ -366,6 +367,27 @@ fn the_six_styles_keys_breaks_pictures_and_entrances() {
 }
 
 #[test]
+fn the_passages_two_styles_are_found_by_key_and_never_drawn_for_a_patrol() {
+    use crate::PASSAGE_STYLES;
+    assert_eq!(PASSAGE_STYLES.map(|style| style.key), ["chalk", "barrow"]);
+    assert_eq!(PASSAGE_STYLES.map(|style| style.style_below().key), ["barrow", "caverns"]);
+    assert_eq!(PASSAGE_STYLES.map(|style| style.pictures), [[123, 120], [124, 122]]);
+    assert_eq!(PASSAGE_STYLES[0].entrances, &[43603, 43604]);
+    assert_eq!(PASSAGE_STYLES[1].entrances, &[43601, 43602]);
+    for patrol in (0..300).map(|nth| format!("patrol-{nth}")) {
+        for number in 0..PER_PATROL {
+            let (_, style) = of_patrol(&patrol, number);
+            assert!(STYLES.iter().any(|kept| kept.key == style.key), "{} is drawn for {patrol}", style.key);
+        }
+    }
+    for style in PASSAGE_STYLES {
+        let dungeon = Dungeon::forge(7, style);
+        assert_eq!(dungeon.style.key, style.key);
+        assert!(dungeon.rooms.iter().all(|room| !room.name.is_empty()));
+    }
+}
+
+#[test]
 fn sizes_span_two_to_five_blocks_each_about_as_often() {
     let mut counts = [0; 6];
     for dungeon in every_dungeon(2000) {
@@ -440,7 +462,9 @@ fn the_return_portal_stands_on_a_rock_wall_of_the_end_room() {
 #[test]
 fn a_dungeon_forged_within_four_and_five_blocks_takes_one_of_them_and_the_forges_own_count_is_unchanged() {
     let counts: std::collections::BTreeSet<usize> = (0..200_u32)
-        .map(|seed| Dungeon::forge_within(seed, STYLES[seed as usize % STYLES.len()], ELITE_BLOCKS).squares.len())
+        .map(|seed| {
+            Dungeon::forge_within(seed, EVERY_STYLE[seed as usize % EVERY_STYLE.len()], ELITE_BLOCKS).squares.len()
+        })
         .collect();
     assert_eq!(counts, std::collections::BTreeSet::from([4, 5]));
     for seed in [0, 7, 4242] {

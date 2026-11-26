@@ -1,7 +1,7 @@
 use crate::block::{BLOCK_CELLS, BlockLayout, Opening, opening_cell};
 use crate::descent::StoreyPlan;
 use crate::lane::Lane;
-use crate::{Cell, STYLES, Shape, Side, Style};
+use crate::{Cell, EVERY_STYLE, STYLES, Shape, Side, Style};
 
 /// A block storey's plan as a seed draws it: up to two doorways, each on a side of its own, and no flight.
 fn ends(seed: u32) -> StoreyPlan {
@@ -29,7 +29,7 @@ fn open_cells(block: &BlockLayout) -> Vec<(usize, usize)> {
 #[test]
 fn every_block_is_one_walk_its_rim_rock_but_where_its_openings_pass() {
     for seed in 0..2000 {
-        let style = STYLES[seed as usize % STYLES.len()];
+        let style = EVERY_STYLE[seed as usize % EVERY_STYLE.len()];
         let gaps = ends(seed);
         let block = BlockLayout::sound(seed, &gaps, &style, seed % 5 == 0);
         let open = open_cells(&block);
@@ -67,7 +67,7 @@ fn every_block_is_one_walk_its_rim_rock_but_where_its_openings_pass() {
 fn the_same_seed_lays_the_same_block() {
     let openings = vec![Opening { side: Side::North, cell: 3 }, Opening { side: Side::East, cell: 7 }];
     let gaps = StoreyPlan { openings, ..StoreyPlan::default() };
-    for style in STYLES {
+    for style in EVERY_STYLE {
         assert_eq!(BlockLayout::sound(77, &gaps, &style, true), BlockLayout::sound(77, &gaps, &style, true));
         assert_ne!(BlockLayout::sound(77, &gaps, &style, true), BlockLayout::sound(78, &gaps, &style, true));
     }
@@ -86,7 +86,7 @@ fn of_a_form(style: &Style, shape: Shape, width: usize, depth: usize) -> bool {
 
 #[test]
 fn rooms_take_their_styles_forms_and_heights_and_every_form_is_drawn() {
-    for style in STYLES {
+    for style in EVERY_STYLE {
         let (mut shapes, mut simplest) = (Vec::new(), 0);
         for seed in 0..600 {
             let block = BlockLayout::sound(seed, &ends(seed), &style, false);
@@ -146,7 +146,7 @@ fn an_ell_leaves_one_corner_quarter_of_its_rectangle_rock() {
 #[test]
 fn the_way_ins_block_has_its_exit_door_against_rock_in_a_room_never_on_a_stone() {
     for seed in 0..500 {
-        let block = BlockLayout::sound(seed, &ends(seed), &STYLES[seed as usize % STYLES.len()], true);
+        let block = BlockLayout::sound(seed, &ends(seed), &EVERY_STYLE[seed as usize % EVERY_STYLE.len()], true);
         let (x, y, side) = block.exit_spot().unwrap();
         assert!(matches!(block.cells[y * BLOCK_CELLS + x], Cell::Room(_)), "seed {seed}: the door is in a room");
         let (dx, dy) = side.step();

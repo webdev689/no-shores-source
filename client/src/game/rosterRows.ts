@@ -1,5 +1,6 @@
 import type { Person, Roster } from '../network/accounts.ts';
-import { nodeOfRoom } from './rooms.ts';
+import { ISLANDS } from './hudLaw.ts';
+import { nodeOfRoom, passageRoom } from './rooms.ts';
 
 /**
  * What the Roster's three columns hold, after Destiny 1's: Game (the company, then the players in the same room),
@@ -44,6 +45,8 @@ export const ROWS_LEAST = 6;
 export function placeWords(place: string | null): string {
   if (place === null) return 'Away';
   if (place === 'sea') return 'At sea';
+  const passage = passageRoom(place);
+  if (passage) return ['In the passages', ...(ISLANDS[passage.island] ? [ISLANDS[passage.island]] : [])].join(' · ');
   const node = nodeOfRoom(place);
   if (!node) return 'Playing';
   const { id, seas, dungeon, run, guild, breach } = node;

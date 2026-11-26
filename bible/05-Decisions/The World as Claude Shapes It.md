@@ -1,5 +1,5 @@
 ---
-type: decision
+type: claude-calls
 date: 2026-11-16
 status: in force
 ---
@@ -54,3 +54,8 @@ owner can change any of them.
 | A landmark's stone | Every great stone mass dressed with pilasters a bay apart and a cornice of trim | A landmark reads as built from the plaza and the sea, as the Tower's walls do |
 | Woods from afar | The land coloured with its biome's canopy where nature's grove field puts the trees, past their drawn reach | Destiny's islands read as wooded from orbit and from the sea |
 | Death | The world drains to grey until respawn | Destiny's death greys the world |
+
+Replaced in part by [[Each Island Keeps One Patrol Zone, the One by Its Port City]] and
+[[Each Island Has Three Regions, and Saltmere's Three Patrol Zones Stay, Linked]]: every island but Saltmere keeps one
+patrol zone, the one by its port city, Saltmere keeps its three, and each island is cut into three regions
+([[World Map]], "Regions").

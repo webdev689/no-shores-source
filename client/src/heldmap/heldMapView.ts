@@ -24,7 +24,7 @@ struct Ink {
   view: vec4f,
   // The coast field's columns and rows and its cell's side, metres.
   field: vec4f,
-  // The islands shown, a bit each by their place among the outlines.
+  // The islands shown, a bit each by their place among the outlines; then 1 while the lit cells are a region's land.
   known: vec4u,
   // The parchment's rectangle, screen pixels: the pass covers it, the map's ink only within the map.
   sheet: vec4f,
@@ -45,6 +45,8 @@ struct Ink {
 @group(0) @binding(7) var hatch: texture_2d<f32>;
 // The water under the pointer, 1 over its cells and the land beside them (litCells, heldMapAsk.ts).
 @group(0) @binding(8) var lit: texture_2d<f32>;
+// The locked seas and their islands, 1 over their cells (shutCells, watersWash.ts).
+@group(0) @binding(9) var shut: texture_2d<f32>;
 // The parchment's words, marks and key, painted at its own pixels, premultiplied (mapLetters.ts).
 @group(1) @binding(0) var lettering: texture_2d<f32>;
 
@@ -57,6 +59,8 @@ const PULSE_HZ = ${PULSE_HZ.toFixed(3)};
 const LIT_RGB = vec3f(255.0, 250.0, 232.0) / 255.0;
 const LIT_ALPHA = 0.22;
 const LIT_EDGE_ALPHA = 0.45;
+// How far a locked sea and its island are darkened toward the ink.
+const SHUT_ALPHA = 0.42;
 // How strong the waters' wash is; the Lattice's and the Grey Tithe's level hatching, each its strength, colour and
 // lines' spacing, device pixels (watersWash.ts).
 const WASH_ALPHA = ${WASH_STRENGTH.toFixed(3)};
@@ -165,13 +169,19 @@ fn route_at(world: vec2f) -> f32 {
   let washed = hatched + tinted * (1.0 - hatched);
   let washedRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
   // The lit water brightened, and softly lined where its share crosses a half between its cells and another's.
-  let share = textureSampleLevel(lit, soft, world / size, 0.0).r * sea;
-  let edge = LIT_EDGE_ALPHA * (1.0 - smoothstep(0.1, 0.4, abs(share - 0.5))) * sea;
+  // A water lit lights its sea; a region lit, its land (known.y 1), brightened and lined as a water's sea is.
+  let litOn = select(sea, 1.0 - sea, ink.known.y == 1u);
+  let share = textureSampleLevel(lit, soft, world / size, 0.0).r * litOn;
+  let edge = LIT_EDGE_ALPHA * (1.0 - smoothstep(0.1, 0.4, abs(share - 0.5))) * litOn;
   let bright = LIT_ALPHA * share;
   let lifted = bright + washed * (1.0 - bright);
   let liftedRgb = LIT_RGB * bright + washedRgb * (1.0 - bright);
-  let under = edge + lifted * (1.0 - edge);
-  let underRgb = INK_RGB * edge + liftedRgb * (1.0 - edge);
+  let lined = edge + lifted * (1.0 - edge);
+  let linedRgb = INK_RGB * edge + liftedRgb * (1.0 - edge);
+  // A locked sea and its island, darkened toward the ink under the coasts' lines.
+  let shade = SHUT_ALPHA * textureSampleLevel(shut, soft, world / size, 0.0).r * select(0.0, 1.0, inside);
+  let under = shade + lined * (1.0 - shade);
+  let underRgb = INK_RGB * shade + linedRgb * (1.0 - shade);
   // The route and a lit coin's rings in the route's red-brown, as the sea's map rings a place a quest names.
   let course = select(0.0, max(route_at(world), pulse_at(at.xy)), onMap);
   let over = max(alpha, 0.9 * course);
@@ -224,6 +234,9 @@ export class HeldMapView {
   private readonly wash: GPUTexture;
   private readonly hatch: GPUTexture;
   private readonly lit: GPUTexture;
+  private readonly shut: GPUTexture;
+  /** Whether the cells lit are a region's land, not a water. */
+  private litLand = false;
   private readonly inkGroup: GPUBindGroup;
   private readonly letteringLayout: GPUBindGroupLayout;
   /** The parchment's picture on the device, made again when its size changes. */
@@ -252,6 +265,7 @@ export class HeldMapView {
         { binding: 6, visibility: SHADER_STAGE.fragment, texture: {} },
         { binding: 7, visibility: SHADER_STAGE.fragment, texture: {} },
         { binding: 8, visibility: SHADER_STAGE.fragment, texture: {} },
+        { binding: 9, visibility: SHADER_STAGE.fragment, texture: {} },
       ],
     });
     this.letteringLayout = device.createBindGroupLayout({
@@ -283,6 +297,7 @@ export class HeldMapView {
     this.wash = texture('rgba8unorm');
     this.hatch = texture('rg8unorm');
     this.lit = texture('r8unorm');
+    this.shut = texture('r8unorm');
     this.inkGroup = device.createBindGroup({
       layout: inkLayout,
       entries: [
@@ -294,6 +309,7 @@ export class HeldMapView {
         { binding: 6, resource: this.wash.createView() },
         { binding: 7, resource: this.hatch.createView() },
         { binding: 8, resource: this.lit.createView() },
+        { binding: 9, resource: this.shut.createView() },
       ],
     });
   }
@@ -333,11 +349,20 @@ export class HeldMapView {
     queue.writeTexture({ texture: this.hatch }, wash.hatch, { bytesPerRow: columns * 2 }, [columns, rows]);
   }
 
-  /** Lights the water under the pointer: a byte a cell on the coast field's own cells (`litCells`). */
-  setLit(cells: Uint8Array): void {
+  /** Lights the water under the pointer, or with `land` a region's land: a byte a cell on the coast field's own
+   *  cells (`litCells`, `regionCells`). */
+  setLit(cells: Uint8Array, land = false): void {
     const { columns, rows } = this.field;
     if (cells.length !== columns * rows) throw new Error('the lit water is not on the coast field’s cells');
+    this.litLand = land;
     this.gpu.device.queue.writeTexture({ texture: this.lit }, cells, { bytesPerRow: columns }, [columns, rows]);
+  }
+
+  /** Darkens the locked seas and their islands: a byte a cell on the coast field's own cells (`shutCells`). */
+  setShut(cells: Uint8Array): void {
+    const { columns, rows } = this.field;
+    if (cells.length !== columns * rows) throw new Error('the locked seas are not on the coast field’s cells');
+    this.gpu.device.queue.writeTexture({ texture: this.shut }, cells, { bytesPerRow: columns }, [columns, rows]);
   }
 
   /** The parchment's picture copied to the device, its texture made again only when its size changes. */
@@ -397,7 +422,7 @@ export class HeldMapView {
       ...[view.left, view.top, view.scale, points],
       ...[this.field.columns, this.field.rows, this.field.cellM, 0],
     ]);
-    new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, 0, 0, 0]);
+    new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, this.litLand ? 1 : 0, 0, 0]);
     const { parchment } = frame;
     new Float32Array(uniforms, 80, 4).set([parchment.x, parchment.y, parchment.width, parchment.height]);
     const { coins, seconds, held } = frame.pulses;

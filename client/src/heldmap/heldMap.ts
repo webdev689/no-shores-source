@@ -32,12 +32,15 @@ import { Kept, layoutKey } from './heldMapKept.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 import { GLYPH_HALF } from './landGlyphs.ts';
 import { LandLettering } from './landLetters.ts';
-import type { LandSheet, MapMarks } from './landSheet.ts';
+import type { LandSheet } from './landSheet.ts';
+import type { Course, HeldMapScene, IsleMark, MapPlace } from './heldMapScene.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
+import { insideCells, MapRegions, paintCard } from './mapRegions.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
 import { dotInks, fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
-import type { MapWater, MapWaters } from './watersWash.ts';
+import { type MapWater, type MapWaters, shutCells } from './watersWash.ts';
+import type { MapRegion } from '../overworld/regions.ts';
 import { motionReduced } from '../plus/kit.ts';
 import type { Child } from '../ui/node.ts';
 import type { Stack } from '../ui/stack.ts';
@@ -47,7 +50,7 @@ import type { Interface } from '../ui/ui.ts';
 const WORLD = { width: WORLD_FRAME.widthM, height: WORLD_FRAME.heightM } as const;
 /** How much of the land the map first shows across, metres, and the most it zooms in there, screen pixels a metre. */
 const LAND_SPAN_M = 400;
-const LAND_SCALE_MOST = 8;
+export const LAND_SCALE_MOST = 8;
 /** On land the world's ink is turned off the sheet, which shows only what is painted on it. */
 const OFF_WORLD = { left: -1e7, top: -1e7, scale: 1 } as const;
 /** The forge's held-map art: the parchment, and the gauntlets' strips of 17 frames, one a set and one bare. */
@@ -57,43 +60,6 @@ const handsPath = (gauntlets: string | null) =>
   `@art/held-map-forge-hands${gauntlets ? `-${forgeName(gauntlets)}` : ''}.png`;
 /** The gauntlets' fidget: the fingers of each hand flex in turn, every few seconds, a frame each twelfth of a second. */
 const FIDGET = { every: 6, frameS: 1 / 12 } as const;
-
-/** Something the map shows: a port or a node, where it lies, what it is, and where a ship sails for
- *  it (a node's nearest coast). */
-export interface MapPlace {
-  readonly id: string;
-  readonly name: string;
-  readonly kind: string;
-  readonly at: Point2;
-  readonly sail: Point2;
-}
-
-/** A found island as the map marks it: where it lies in the world, its kind (`cove`, `ruin`, `quarry`), and whether it
- *  is an isle, which is marked with a tower. */
-export interface IsleMark {
-  readonly at: Point2;
-  readonly kind: string;
-  readonly isle: boolean;
-}
-
-/** A route as the map inks it, or why there is none. */
-export type Course =
-  { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string };
-
-/** What the map is asked each frame: where the ship lies and heads (on land, the player, in the world), what it
- *  shows, the course sailed now, and the places the quest walked names, which it rings; on land, whether a
- *  keeper's coin is lit (`lit`, by its glyph): its keeper has something for the player, so its rings pulse. */
-export interface HeldMapScene {
-  readonly ship: Point2;
-  readonly heading: number;
-  readonly places: readonly MapPlace[];
-  readonly knownIslands: number;
-  readonly course: readonly Point2[];
-  readonly quest?: readonly string[];
-  readonly lit?: (glyph: string) => boolean;
-  /** On land, what moves on it: the other players and the public event running (`MapMarks`), in the world. */
-  readonly moving?: MapMarks;
-}
 
 type Phase =
   | { readonly kind: 'closed' }
@@ -159,6 +125,8 @@ export class HeldMap {
   /** The waters once they are open: their wash, letters and key, and which cities are ports. */
   private waters: HeldMapWaters | null = null;
   private isles: readonly IsleMark[] = [];
+  /** Every island's regions (`content/world/regions.json`), set as the world is read; one under the pointer lit. */
+  readonly regions = new MapRegions();
   /** The land the map shows while raised on foot (`openLand`), and what its view is held to: the world at sea. */
   private land: LandSheet | null = null;
   private extent: Extent = WORLD;
@@ -183,6 +151,24 @@ export class HeldMap {
     this.waters = new HeldMapWaters(open.map, (point) => open.rules.waterAt(point)?.continent ?? null);
     this.chartings++;
     this.view.setWash(this.waters.wash());
+    this.shade();
+  }
+
+  /** The islands' regions: a named island (`regions.names`) carries its level band, every other's sea is darkened
+   *  and locked. */
+  setRegions(all: readonly MapRegion[]): void {
+    this.regions.all = all;
+    this.chartings++;
+    this.shade();
+  }
+
+  private shade(): void {
+    if (!this.waters) return;
+    const map = this.waters.waters;
+    const locked = map.waters.filter((water) => !this.regions.names[water.id]);
+    const outlines = this.regions.all.filter((region) => locked.some((water) => water.id === region.island));
+    const lands = [...new Set(outlines.map((region) => region.outline))].map((outline) => insideCells(map, outline));
+    this.view.setShut(shutCells(map, this.field, new Set(locked.map((water) => water.continent)), lands));
   }
 
   /** The found islands the map marks from now on, each where it lies. */
@@ -227,7 +213,7 @@ export class HeldMap {
     if (this.phase.kind !== 'closed') return;
     [this.land, this.extent] = [sheet, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }];
     this.landLettering.forget();
-    this.raise(viewport, gauntlets, (ink) => viewOn(standing, ink, this.extent, LAND_SPAN_M));
+    this.raise(viewport, gauntlets, (ink) => viewOn(standing, ink, this.extent, sheet.span ?? LAND_SPAN_M));
   }
 
   /** Lifts the map from its foot in `gauntlets`, its view as `viewed` lays it on the screen's map. */
@@ -312,10 +298,13 @@ export class HeldMap {
     const [inkX, inkY] = [x - this.ink.x, y - this.ink.y];
     if (inkX < 0 || inkY < 0 || inkX > this.ink.width || inkY > this.ink.height) return;
     const mark = nearestMark(this.placed, inkX, inkY);
-    const point = mark ? mark.place.sail : (toWorld(this.mapView, inkX, inkY) as Point2);
+    // A region of the ship's island is sailed for at its anchorage, as a node is at its coast.
+    const [world, ship] = [toWorld(this.mapView, inkX, inkY) as Point2, this.shipAt];
+    const region = mark ? null : this.regions.under(this.waters, ship, world);
+    const point = mark ? mark.place.sail : (region?.anchorage ?? world);
     this.choice = {
       at: point,
-      name: mark ? mark.place.name : 'This stretch of sea',
+      name: mark ? mark.place.name : (region?.name ?? 'This stretch of sea'),
       course: this.plan(point),
       place: mark?.place.id ?? null,
     };
@@ -369,7 +358,8 @@ export class HeldMap {
     this.shipAt = scene.ship;
     const waters = this.land || this.press?.panning ? null : this.waters;
     const hovered = waters && this.ask.hover(waters.waters, waters.judge, this.mapView, this.ink, scene.ship);
-    if (hovered?.cells) this.view.setLit(hovered.cells);
+    const lit = this.regions.hover(waters, scene.ship, this.mapView, this.ink, this.ask, hovered?.cells ?? null);
+    if (lit) this.view.setLit(lit, this.regions.lit !== null);
     const scaled = (rect: Rect, down: number): Rect => ({
       x: rect.x * dpr,
       y: (rect.y + down) * dpr,
@@ -398,7 +388,8 @@ export class HeldMap {
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const size = { width, height, inkAt, dpr };
-    const letteringChanged = this.letter(reads, scene, stage.sprite, size, hovered?.said ?? null);
+    const said = (waters && this.portUnder()) ?? this.regions.said() ?? hovered?.said ?? null;
+    const letteringChanged = this.letter(reads, scene, stage.sprite, size, said);
     const land = this.land !== null;
     const ink = scaled(stage.ink, drop);
     return {
@@ -414,6 +405,13 @@ export class HeldMap {
       knownIslands: land ? 0 : scene.knownIslands,
       route: routeOf(this.choice?.course.ok ? this.choice.course.points : land ? [] : scene.course, ROUTE_POINTS),
     };
+  }
+
+  /** The port or ruin whose anchor the pointer is over (or a node the quest rings), its name for the card over it. */
+  private portUnder(): HoverSaid | null {
+    const pointer = this.ask.pointer;
+    const mark = pointer && nearestMark(this.placed, pointer.x - this.ink.x, pointer.y - this.ink.y);
+    return mark ? { line: mark.place.name, x: mark.x, y: mark.y, card: true } : null;
   }
 
   /** The lit keepers' coins on the land's sheet, `scene.lit` saying which, as the view rings them: each one's middle
@@ -465,7 +463,8 @@ export class HeldMap {
     this.landLettering.forget();
     paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles, others);
     // While the prompt asks, it says what the pointer's words would.
-    if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
+    if (said?.card && !asked) paintCard(this.painter, said, [said.x, said.y], this.ink, lettering.scale);
+    else if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
     if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
     return true;
   }
@@ -511,23 +510,23 @@ export class HeldMap {
     const places = [];
     for (const place of ruinedPlaces(scene.places, this.waters?.waters.mainPorts ?? null)) {
       const [x, y] = toInk(this.mapView, place.at[0], place.at[1]);
-      if (!onSheet(x, y)) continue;
-      this.placed.push({ place, x, y });
       const quest = scene.quest?.includes(place.id) === true;
+      // A node is no mark at sea, but for the ring round one the quest names.
+      if (!onSheet(x, y) || (place.kind !== 'port' && place.kind !== 'ruin' && !quest)) continue;
+      this.placed.push({ place, x, y });
       places.push({ text: place.name, x, y, kind: place.kind, chosen: this.choice?.place === place.id, quest });
     }
+    const inked = (x: number, y: number) => toInk(this.mapView, x, y);
+    const waters = this.waters?.letters(this.ink, inked, (x, y) => toWorld(this.mapView, x, y)) ?? [];
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
     const lettering = layOut({
       ink: { width: this.ink.width, height: this.ink.height },
       scale: letterScale(this.ink),
       covers: handsCover(sprite, this.ink),
       places,
-      waters:
-        this.waters?.letters(
-          this.ink,
-          (x, y) => toInk(this.mapView, x, y),
-          (x, y) => toWorld(this.mapView, x, y),
-        ) ?? [],
+      waters,
+      islands: this.regions.islandLetters(this.waters?.waters ?? null, inked, onSheet),
+      locks: waters.flatMap((water) => (this.regions.names[water.id] || !water.point ? [] : [water.point])),
       ship: onSheet(shipX, shipY) ? { x: shipX, y: shipY, heading: scene.heading } : null,
       widthOf: (text, kind) => this.widthOf(text, kind),
       land: (box) => landUnder(this.field, scene.knownIslands, this.mapView, box),

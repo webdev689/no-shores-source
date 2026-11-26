@@ -9,10 +9,12 @@ const CAST: &str = "content/story/cast.json";
 /// they put on the screen.
 pub const QUESTS: &str = "content/quests/quests.json";
 /// The fields of a quest, a task or a goal that name a scene, a speaker, or words shown on the screen.
-const SCENE_FIELDS: [&str; 11] =
-    ["begin", "start", "end", "scene", "greet", "shout", "lost", "late", "wrong", "noticed", "seen"];
+const SCENE_FIELDS: [&str; 13] =
+    ["begin", "start", "end", "scene", "greet", "shout", "mount", "lost", "late", "wrong", "noticed", "seen", "story"];
 const SPEAKER_FIELDS: [&str; 1] = ["who"];
-const SHOWN_FIELDS: [&str; 3] = ["name", "task", "text"];
+const SHOWN_FIELDS: [&str; 6] = ["name", "task", "text", "kind", "words", "quote"];
+/// The shown field a keeper signs, a quest's card's quote: a line of theirs, held to a line's words.
+const SIGNED_FIELD: &str = "quote";
 
 /// The Dialogue rule's numbers: words a line, words a bark, lines one speaker says in a row, lines a scene.
 const LINE_WORDS: usize = 14;
@@ -244,6 +246,9 @@ fn check_quests(value: &Value, scenes: &BTreeMap<String, &Value>, speakers: &[St
                     if SPEAKER_FIELDS.contains(&key.as_str()) && !speakers.iter().any(|speaker| speaker == said) {
                         found.push(problem(QUESTS, format!("\"{key}\" names \"{said}\", who is not in the cast")));
                     }
+                    if key == SIGNED_FIELD && said.split_whitespace().count() > LINE_WORDS {
+                        found.push(problem(QUESTS, format!("\"{said}\" is over {LINE_WORDS} words")));
+                    }
                     if SHOWN_FIELDS.contains(&key.as_str()) {
                         for (mark, named) in BANNED.iter().filter(|(mark, _)| said.contains(mark)) {
                             found.push(problem(QUESTS, format!("\"{said}\" shows {named} ({mark})")));
@@ -334,6 +339,31 @@ mod tests {
             .map(|path| ((*path).to_owned(), std::fs::read_to_string(format!("{root}{path}")).expect(path)))
             .collect();
         assert_eq!(check(&files).into_iter().map(|found| found.message).collect::<Vec<_>>(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_quests_offer_names_a_scene_for_its_story_and_its_card_keeps_the_marks_out_and_its_quote_to_a_line() {
+        let long = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen";
+        let quests = format!(
+            "{{\"quests\": [{{\"begin\": \"deck\", \"offer\": {{\"story\": \"nowhere\", \"kind\": \"A road...\", \
+             \"words\": \"Go.\", \"quote\": \"{long}\"}}, \"tasks\": []}}]}}"
+        );
+        let story = r#"{"scenes": {"deck": [{"who": "mate", "say": "Ready."}]}}"#;
+        let files = vec![
+            (CAST.to_owned(), cast_text()),
+            ("content/story/one.json".to_owned(), story.to_owned()),
+            (QUESTS.to_owned(), quests),
+        ];
+        let mut found: Vec<String> = check(&files).into_iter().map(|found| found.message).collect();
+        found.sort();
+        assert_eq!(
+            found,
+            [
+                "\"A road...\" shows an ellipsis (...)".to_owned(),
+                format!("\"{long}\" is over 14 words"),
+                "\"story\" names the scene \"nowhere\", which no story holds".to_owned(),
+            ]
+        );
     }
 
     #[test]

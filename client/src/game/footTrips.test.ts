@@ -60,6 +60,8 @@ test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entr
   assert.equal(tripAt(10, 2.4, { ...inside, feet: -8 }, trips), null, 'a storey under it');
   assert.equal(tripAt(40, 4.5, inside, trips), null, 'the return portal shut while the cache is');
   assert.equal(tripAt(40, 4.5, { ...inside, portalOpen: true }, trips)?.words, 'Leave', 'and open while it is');
+  const zone = { ...inside, dungeon: { ...dungeon, passage: true } };
+  assert.equal(tripAt(10, 2.4, zone, trips), null, "a passage zone's exit is its way in, and no way out");
   entrances.heard([100, 100, 0, 0, 0]);
   const outside = { dungeon: null, portalOpen: false, patrol, entrances, module: roomModule };
   const offer = tripAt(100, 102 + 2, outside, trips);

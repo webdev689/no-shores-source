@@ -45,10 +45,7 @@ const PAST_ITS_DOOR: &str = "a body gets past its door";
 const WALKS_ROUND: &str = "a body walks round the door across its face";
 /// The failures known, each run with what it fails by and why, so a new one fails the test and one mended must be
 /// taken off this list (`cargo test --release -p room --test runs_everywhere -- --nocapture` names them).
-const KNOWN: [(&str, &str, &str); 2] = [
-    ("continent-2: highwater-glen Test Ledge", STOPS_SHORT, "its way meets a face a body would climb"),
-    ("continent-5: lion-grasslands Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
-];
+const KNOWN: [(&str, &str, &str); 1] = [("continent-5: lion-grasslands Test Rampart", PAST_ITS_DOOR, WALKS_ROUND)];
 
 /// Every patrol zone of one continent given every run, and what fails: each run by name, what it fails by, and how far.
 fn fails_on(only: &str) -> Vec<(String, &'static str, String)> {
