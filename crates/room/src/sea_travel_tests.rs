@@ -222,13 +222,19 @@ fn a_travel_of_no_point_is_refused_and_leaves_the_ship_and_its_course_as_they_we
 }
 
 #[test]
-fn a_travel_to_where_the_ship_lies_keeps_its_heading() {
+fn a_travel_that_would_leave_the_ship_where_it_lies_is_refused_and_holds_no_roll() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
-    sea.course(player, &[[260_000.0, 150_000.0]], 10).unwrap();
+    ticks(&mut sea, 600);
+    let (before, wait) = (ship(&sea, player), sea.hostiles.wait_of(player));
+    let refused = Err(TravelRefused::Course(CourseRefused::BadCourse));
+    assert_eq!(sea.travel(player, &[[before.x.round(), before.y.round()]], 10), refused, "its own place");
     ticks(&mut sea, COURSE_EVERY_TICKS);
-    let before = ship(&sea, player);
-    assert!((before.heading - FRAC_PI_2).abs() < 1e-9, "heading east: {}", before.heading);
-    assert_eq!(sea.travel(player, &[[before.x.round(), before.y.round()]], 10), Ok(()));
-    assert_eq!(ship(&sea, player).heading, before.heading, "no leg to head along");
+    let near = [before.x.round(), before.y.round() - 300.0];
+    assert_eq!(sea.travel(player, &[near], 10), refused, "300 m: laid at the leg's start, where it lies");
+    assert_eq!(ship(&sea, player), before, "the ship as it was");
+    assert!(sea.hostiles.wait_of(player) <= wait, "its roll not held back: {:?}", sea.hostiles.wait_of(player));
+    ticks(&mut sea, COURSE_EVERY_TICKS);
+    let bend = [before.x.round() + 5_000.0, before.y.round()];
+    assert_eq!(sea.travel(player, &[bend, [bend[0], bend[1] - 300.0]], 10), Ok(()), "a short last leg 5 km off");
 }

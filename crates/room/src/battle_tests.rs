@@ -165,3 +165,16 @@ fn only_captains_still_in_a_fight_with_players_are_where_its_captains_lie() {
         assert_eq!(fights.captains_at().count(), usize::from(id == CAPTAIN), "none sunk or sailed off");
     }
 }
+
+#[test]
+fn a_captain_breaks_off_once_every_player_it_fights_lies_inside_home_waters() {
+    let mut fights = begun();
+    fights.break_off_home(|_| false);
+    assert!(fights.list[0].fight.vessel(CAPTAIN).is_some_and(Vessel::in_fight), "no player inside home waters");
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3], HullKind::Sloop), &[], 0.0));
+    fights.break_off_home(|[_, y]| y < 100.0);
+    assert!(fights.list[0].fight.vessel(CAPTAIN).is_some_and(Vessel::in_fight), "one still past them");
+    fights.break_off_home(|_| true);
+    assert!(fights.list[0].fight.vessel(CAPTAIN).is_some_and(|vessel| !vessel.in_fight()), "both inside: it sails off");
+    assert!(fights.list[0].pending.contains(&Event::Gone { ship: CAPTAIN, end: End::Gone }), "and the fight is told");
+}

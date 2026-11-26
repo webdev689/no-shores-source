@@ -623,6 +623,8 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   only steps away from their coast, so it sails out), it takes the open heading nearest its last, a twenty-fourth of a turn at a time
   either way, so it follows the coast round; with none open it goes about. Its temper is its
   seed's: an Elite and a Miniboss are always bold, any other one in four.
+- **Home waters end a fight.** Every captain afloat and unstruck in a fight whose players all lie inside home waters
+  breaks off and leaves it, as one out of reach does ([[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]).
 - **Coming for the player.** A bold ship that has sighted a player who is not fighting and not in home waters comes
   for them (`come_for`; home waters shelter a player whole, [[Home Waters Shelter Fully, Islands Keep Clear of the Lanes, and Travel Fades Out and In]]):
   it steers to intercept, heading to where their ship will be when it can reach it at its way on that player's

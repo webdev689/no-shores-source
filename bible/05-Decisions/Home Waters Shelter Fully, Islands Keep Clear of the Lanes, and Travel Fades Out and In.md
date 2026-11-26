@@ -30,11 +30,24 @@ Told that a new level-1 player in the starting Sloop can meet a level-4 Elite Ti
 whether to keep the Lantern Sea's mix, the owner chose "Keep as chosen", the option that read: "Levels 1 to 4 with the
 usual mix, Elites included, as the 10 km answer chose."
 
+Asked after a second audit, told that travel now takes about 2.5 s and every travel holds the next hostile roll back
+30 s, and that the room accepted a travel that does not move the ship at all, which a modified client could send every
+29 s to meet no roll, the owner chose "Refuse no-move travels", the option that read: "The room refuses a travel that
+would leave the ship where it lies; every real travel still holds the roll, as you chose."
+
+Told that a sea fight begun just past the 10 km line goes on when the player sails back inside home waters, the captain
+following them toward Overlook, and asked whether home waters should end a fight, the owner chose "Captain breaks
+off", the option that read: "A captain whose foe crosses into home waters breaks off and leaves the fight, as one that
+sails off does; home waters shelter fully."
+
 ## What it settles
 
 - No hostile ship takes a player inside home waters for its quarry, and none stays at sea for one; travel from
   Overlook is never refused as chased ([[Naval Combat]], "At sea").
-- Every travel still holds the next hostile roll back to at least 30 s.
+- Every travel still holds the next hostile roll back to at least 30 s, and the room refuses a travel that would
+  leave the ship where it lies ([[Sailing]], "Travel by the held map").
+- A captain whose foe crosses into home waters breaks off and leaves the fight, as one that sails off does
+  ([[Naval Combat]]).
 - A travel by the held map is a screen fade out and fade in, with no cinematic: the picture fades to black, waits
   while the room moves the ship and the new waters load, and fades in ([[Sailing]], "Travel by the held map"). This
   replaces in part [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]], where the camera showed the ship
@@ -55,3 +68,5 @@ usual mix, Elites included, as the 10 km answer chose."
 | When the ship is laid at its new place | Once the picture is black; an answer during the fade waits | The view changes only at black |
 | A travel's wait for the room | 13 s from the yes | Room for a tier's room to be joined and the ship put to sea |
 | A travel with no sea room | Not begun; the course is sailed as Set sail sails it | Nothing would answer it |
+| A fight with several players | Its captains break off once every player in it lies inside home waters; one struck or going down stays | Each captain fights the fight's players together; a struck one waits on boarders |
+| A no-move travel's answer | Refused as a course the sea would not take ("The sea would not take that course.") | No new words for a travel the page never asks |

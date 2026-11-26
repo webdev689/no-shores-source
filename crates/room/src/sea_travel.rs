@@ -94,11 +94,15 @@ impl Sea {
 }
 
 impl Sea {
-    /// Why a travel by `points` from `ship` is refused where it goes: its last leg, in waters the player was never told
-    /// of, across a standing island or ending the ship on one.
+    /// Why a travel by `points` from `ship` is refused where it goes: one that would leave the ship where it lies; or
+    /// its last leg, in waters the player was never told of, across a standing island or ending the ship on one.
     fn refused_where(&self, points: &[[f64; 2]], ship: super::Ship) -> Option<TravelRefused> {
         let [start, end] = last_leg(points, [ship.x, ship.y])?;
         let (placed, _) = placed_on(start, end);
+        let (east, south) = (placed[0] - ship.x, placed[1] - ship.y);
+        if east * east + south * south < 1.0 {
+            return Some(TravelRefused::Course(CourseRefused::BadCourse));
+        }
         let islands: Vec<&Coast> = self.islands.coasts().collect();
         let whole = |at: [f64; 2]| super::whole(&at);
         let lies_on = whole(placed).is_some_and(|at| on_land(islands.iter().copied(), at));

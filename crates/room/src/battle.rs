@@ -565,20 +565,14 @@ impl Fights {
         (outcomes, sank)
     }
 
-    /// Where each captain still in a fight with players lies: none that has sunk or sailed off.
-    pub fn captains_at(&self) -> impl Iterator<Item = [f64; 2]> + '_ {
-        self.list.iter().flat_map(|fought| {
-            let vessels = fought.hostiles.keys().filter_map(|id| fought.fight.vessel(*id));
-            vessels.filter(|vessel| vessel.in_fight()).map(|vessel| [vessel.ship.x, vessel.ship.y])
-        })
-    }
-
     /// Each player in a fight with their fight, in the order the fights began and then of their number.
     pub fn each(&self) -> impl Iterator<Item = (PlayerId, &SeaFight)> + '_ {
         self.list.iter().flat_map(|fought| fought.crews.keys().map(move |player| (*player, fought)))
     }
 }
 
+#[path = "battle_at_sea.rs"]
+mod at_sea;
 #[path = "battle_views.rs"]
 mod views;
 

@@ -384,6 +384,8 @@ impl Sea {
         self.give_guilds();
         self.tick_islands();
         self.fights.fit(&self.harbour.characters);
+        let chart = &self.chart;
+        self.fights.break_off_home(|at| chart.home(at));
         let (outcomes, sank) = self.fights.step(&self.coasts, time);
         self.friendlies.back_from_clash(&[], std::mem::take(&mut self.fights.freed));
         self.after_fights(outcomes, &sank);
@@ -572,6 +574,9 @@ mod puts_in;
 #[path = "sea_travel.rs"]
 pub mod travel;
 
+#[cfg(test)]
+#[path = "sea_home_tests.rs"]
+mod sea_home_tests;
 #[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;
