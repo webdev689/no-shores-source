@@ -48,7 +48,8 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   switch back gives none; carried, else laid in the vault, else posted as itself. The catalogue's entry stays the
   Legendary the house sells: the gift is no ware and changes nothing a house sells. Its leader says a line of their
   own as it is given (`giftStorm`, `giftLamp`, `giftVeil` in `content/story/houses.json`), unless the house's road
-  begins in the same moment, whose begin tells of it instead ("Wear our colours."); the page shows it as the
+  begins in the same moment, when its begin is said as it stands and the notice alone tells of the piece; the page
+  shows it as the
   leader's gift notice (`houseGiftNotice`). A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
   of its fragments are earned, the Art first shown off unbounded against a horde. Reputation with every faction is kept across a switch. A saved character from before
   the factions reads pledged to none, and a broken one is made whole.

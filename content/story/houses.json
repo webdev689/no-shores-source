@@ -65,7 +65,7 @@
       { "who": "veiled", "say": "We read what the Tithe writes. Pledge here, and you will read it too." }
     ],
     "stormBegin": [
-      { "who": "stormcaller", "say": "Wear our colours. The Tithe took our storm-glass, and Pell went after it." },
+      { "who": "stormcaller", "say": "The Tithe have taken our storm-glass from the Old Beacon. Pell went after it." },
       { "who": "stormcaller", "say": "Climb the Old Beacon on the Downs. I'll speak to you on the wind." }
     ],
     "stormBeacon": [
@@ -153,7 +153,7 @@
       { "who": "pell", "say": "Thank you. I won't sell the sky again. Not for anything." }
     ],
     "lampBegin": [
-      { "who": "maren", "say": "Wear our colours, child. Our Beacon's lens is stolen. It shines half as far." },
+      { "who": "maren", "say": "Someone has stolen our Beacon's lens, child. The light reaches half as far." },
       { "who": "maren", "say": "A ship broke on Shingle Landing. Go. Our lamps will carry my voice." }
     ],
     "lampShingle": [
@@ -240,7 +240,7 @@
       { "who": "maren", "say": "Tobin watched it light from Ewe Fold. You light the way now." }
     ],
     "veilBegin": [
-      { "who": "veiled", "say": "Wear our colours. Your name was in the Tithe's book before you washed ashore." },
+      { "who": "veiled", "say": "Your name was in the Tithe's book before you washed ashore." },
       { "who": "veiled", "say": "I want that page. Their collectors carry tallies through Saltgrass. Follow one." }
     ],
     "veilTail": [
