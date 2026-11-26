@@ -81,6 +81,13 @@ fn the_helms_acts_are_ticked_as_the_sea_sails_the_ship() {
     ticks(&mut sea, 30);
     assert!(met(&sea, player).contains(&"Steer"), "{:?}", met(&sea, player));
     assert!(!met(&sea, player).contains(&"Trim your sails"), "the same pace");
+    // The page eases to the world's own pace while the view is close on the ship, and back: no trim of the dial's.
+    for pace in [crate::sea::WORLD_PACE, 10] {
+        let at = sea.ships().find(|(each, _)| *each == player).expect("at sea").1;
+        sail(&mut sea, player, &[[at.x, at.y - 5_000.0]], pace);
+        ticks(&mut sea, 2);
+        assert!(!met(&sea, player).contains(&"Trim your sails"), "eased to {pace}");
+    }
     let at = sea.ships().find(|(each, _)| *each == player).expect("at sea").1;
     sail(&mut sea, player, &[[at.x, at.y - 5_000.0]], 20);
     ticks(&mut sea, 2);
@@ -106,6 +113,11 @@ fn the_hulk_lies_off_overlook_and_comes_into_a_fight_of_the_captains_own_as_they
     assert_eq!(hulk.damage.state, State::Struck, "its colours struck");
     let off = libm::hypot(hulk.ship.x - mooring[0], hulk.ship.y - mooring[1]);
     assert!(off < 20.0, "hove to where it is moored, drifting a little: {off} m");
+    // Alongside it and at rest, as a boarder would lie by a struck captain.
+    let (fought, crew) = sea.fights.of_mut(player).expect("the hulk's fight");
+    let at = fought.fight.vessel(CAPTAIN).expect("the hulk").ship;
+    let own = fought.fight.ships.get_mut(&crew.ship).expect("their ship");
+    (own.ship.x, own.ship.y, own.ship.ahead, own.ship.abeam, own.ship.rung) = (at.x + 12.0, at.y, 0.0, 0.0, 0);
     assert!(sea.board(player).is_err(), "no one boards it");
     ticks(&mut sea, 60 * 100);
     assert_eq!(sea.fights().count(), 1, "never scuttled while its captain stays");

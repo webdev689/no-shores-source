@@ -280,9 +280,12 @@ impl Fights {
             .ships
             .iter()
             .filter(|(_, vessel)| vessel.damage.state == State::Struck && vessel.command().is_some())
-            // A captain whose deck would hold no crew is not boarded, its hold opening at once; nor the Harbourmaster's hulk.
+            // A captain whose deck would hold no crew is not boarded, its hold opening at once; nor a lesson's hulk.
             .filter(|(id, _)| {
-                fought.hostiles.get(id).is_some_and(crewed) && crate::sea::lessons::hulk_in(fought).is_none()
+                fought
+                    .hostiles
+                    .get(id)
+                    .is_some_and(|hostile| crewed(hostile) && crate::sea::lessons::hulks_captain(hostile.id).is_none())
             })
             .map(|(id, vessel)| (*id, apart([own.x, own.y], [vessel.ship.x, vessel.ship.y]), way(&vessel.ship)))
             .filter(|(_, apart, its_way)| *apart <= BOARD_REACH_M && *its_way < BOARD_WAY_M_S)

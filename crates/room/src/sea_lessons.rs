@@ -19,9 +19,10 @@ use std::collections::BTreeMap;
 
 /// The first number the hulks take among the sea's ships: each captain's is this and their own player's number.
 pub const HULK_FROM: u32 = 0xF000_0000;
-/// How far out from Overlook's roadstead the hulk lies, metres, nearest first: the first clear water on a bearing
-/// whose way from the roadstead meets no land.
-const MOORED_OUT_M: [f64; 3] = [1_200.0, 800.0, 500.0];
+/// How far out from Overlook's roadstead the hulk lies, metres, farthest first: the first clear water on a bearing
+/// whose way from the roadstead meets no land. Each lies past `HULK_NEAR_M`, so a ship putting to sea is not called
+/// to it before it has sailed.
+const MOORED_OUT_M: [f64; 2] = [1_200.0, 1_000.0];
 /// The bearings the hulk's mooring is looked for on, degrees apart, clockwise from north.
 const BEARING_STEP_DEG: f64 = 15.0;
 /// How near the hulk a captain on its lesson sails before the sea puts it into a fight of theirs, metres.
@@ -144,9 +145,12 @@ impl Sea {
                     SailAct::Board => true,
                     SailAct::Sail => under_way,
                     SailAct::Steer => helmed.is_some_and(|(_, now)| now.turned >= STEERED_RAD),
-                    SailAct::Trim => {
-                        helmed.is_some_and(|(was, now)| was.under_way && under_way && now.pace != was.pace)
-                    }
+                    // The page eases the pace to the world's own while the view is close on the ship: only the dial's
+                    // paces are trimmed.
+                    SailAct::Trim => helmed.is_some_and(|(was, now)| {
+                        let dialed = |pace: u16| super::PACES.contains(&pace);
+                        was.under_way && under_way && dialed(was.pace) && dialed(now.pace) && now.pace != was.pace
+                    }),
                     SailAct::Map => false,
                     SailAct::Fire => {
                         let near = ship

@@ -317,7 +317,7 @@ fn the_lessons_hold_no_save_back_and_stop_no_pledge() {
     let task = |character: &Character| {
         character.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str())
     };
-    // A save past the Tack's or the Harbourmaster's before the lessons were laid keeps its place by its task's id.
+    // A save on the Harbourmaster's task or later keeps its place by its task's id, never sent back to a lesson.
     for past in ["your-ship", "wear-them", "hear-three-houses"] {
         let mut character = welcomed();
         character.quests.set_task(opening, at(past));

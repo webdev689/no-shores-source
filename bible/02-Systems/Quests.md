@@ -175,7 +175,7 @@ on the keys below; and the page announces each step as the room ticks it, in a t
   captain whose task asks it.
 - **The hulk**: a Grey Tithe Sloop of the lowest rank, its colours struck, moored off Overlook's roadstead on the first
   bearing clockwise from north, 15 degrees apart, whose water lies clear 1,200 m out and is reached from the roadstead
-  over no land (else 800 m, else 500 m; `Sea::mooring`). A captain on its step who sails within 900 m of it, out of a
+  over no land (else 1,000 m; `Sea::mooring`). A captain on its step who sails within 900 m of it, out of a
   fight, is put into a fight of their own with it, their ship hove to (`moor_hulk`): it lies hove to with its hull at
   the share it struck at, is never scuttled and never boarded, and fires nothing. A ball of the captain's that strikes
   it is the step. Sailed more than 1,500 m from it, it leaves the fight, which ends; while the step waits it is put in
