@@ -144,10 +144,13 @@ are written with paving last, since the first group carries the parts and paving
     (`shipkit.py` takes `tools/ships/ship_hull.py` in, its painted parts read as the kit's timber, canvas and iron),
     its masts and sails left off; two outrigger beams through its bulwarks braced to its sides with iron, a drum
     thruster hung under each end (an intake cowl forward, five bands, a flared bell aft, its throat alight), two lift
-    bells under its keel, an iron furnace house amidships with a glowing firebox door, coal and two banded stacks with
-    flared caps, pipes run out along the beams, iron stays from its foremast's stub and its stacks to the beams' ends,
-    iron plate over its lower sides under two wales, an iron spur at its stem, its drop hatch's doors hung open under
-    it, a lantern at its bow and two at its stern, its cabin's windows lit across its stern, a crow's nest and a grey
+    bells under its keel in iron frames run up into its bottom, an iron furnace house amidships with a glowing firebox
+    door, coal between it and the fore beam and two banded stacks with flared caps, pipes run from the furnace house's
+    sides down to the beams and out along them, iron stays from its foremast's stub and its stacks to the beams' ends,
+    iron plate laid on its lower sides (bent with its planking, proud of it everywhere) under two wales, an iron spur at
+    its stem, its drop hatch's frame strutted to its bottom and the doors hung open under it, a lantern on an iron post
+    at its bow and one on its rail each side of its stern, its cabin's windows lit round its stern where the Brig has
+    them, a crow's nest and a grey
     banner on its foremast's stub, its mainmast's stump, crates and barrels on deck. Its bow points along the
     module's front, its keel's bottom amidships at the origin; its sockets are each thruster's mouth (`thrust-1` to
     `-4`, facing aft), each lift's (`lift-1`, `-2`), each stack's top (`stack-1`, `-2`) and its hatch (`hatch`). Its

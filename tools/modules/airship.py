@@ -53,6 +53,27 @@ def tube(module, start, end, radius, end_radius=None, material='iron', sides=12,
     return item
 
 
+def underside(shape, x, y):
+    """The height of her bottom's planking `y` out from her middle at `x`, out on her keel's fin or her body."""
+    rows = shape.section(x)
+    for (y0, z0), (y1, z1) in zip(rows, rows[1:]):
+        if y0 < y1 and y0 <= y <= y1:
+            return z0 + (y - y0) / (y1 - y0) * (z1 - z0)
+    raise ValueError(f'{y} m is past her side at {x}')
+
+
+def laid(shape, x, z, side, off):
+    """The point `off` out from her side at `x` and height `z`: where her section folds, out along both faces'
+    middle way."""
+    (_, y, height), out = shape.surface(x, z)
+    if any(abs(z - row) < 1e-9 for _, row in shape.section(x)):
+        below, above = shape.surface(x, z - 1e-6)[1], shape.surface(x, z + 1e-6)[1]
+        out = [b + a for b, a in zip(below, above, strict=True)]
+        length = math.hypot(*out)
+        out = [v / length for v in out]
+    return (x, side * (y + out[1] * off), height + out[2] * off)
+
+
 def thruster(module, at, way, sockets, name):
     """A thruster hung at `at`, its bell aft along `way` (a unit vector): its drum banded, an intake cowl at its front,
     bands round it, the bell flared, its throat alight; its mouth's socket named `name`."""
@@ -93,18 +114,25 @@ def beams(module, shape, sockets):
                 board(module, Frame(), (drum[0] + along, drum[1], z - HANG_M / 2 + 0.1), (0.14, 0.32, HANG_M), 'iron')
             turn += 1
             thruster(module, drum, (-1.0, 0.0, 0.0), sockets, f'thrust-{turn}')
-            tube(module, (x + 0.3, side * 1.8, z + 0.36), (x + 0.3, side * (BEAM_OUT_M - 0.6), z + 0.36), 0.12,
-                 sides=8)
+            # The pipe from her furnace house's side, high over the stores on her deck, down to the beam and out it.
+            aft, fore, half, high = FURNACE
+            wall = (fore - 0.4 if x > fore else aft + 0.4, side * (half + 0.12),
+                    shape.deck((aft + fore) / 2) + high - 0.4)
+            start = (x + 0.3, side * (half + 0.12), z + 0.36)
+            tube(module, wall, start, 0.12, sides=8)
+            tube(module, start, (x + 0.3, side * (BEAM_OUT_M - 0.6), z + 0.36), 0.12, sides=8)
             tube(module, (x + 0.3, side * (BEAM_OUT_M - 0.6), z + 0.36), (drum[0] + 0.8, drum[1], drum[2] + DRUM_M),
                  0.12, sides=8)
 
 
 def lifts(module, shape, sockets):
-    """The two thrusters under her keel, hung in iron frames, bells down."""
+    """The two thrusters under her keel, hung in iron frames from her bottom, bells down."""
     for number, x in enumerate(LIFTS_X, start=1):
         keel = shape.keel(x)
         for side in (1, -1):
-            board(module, Frame(), (x, side * 0.5, keel - 0.35), (1.2, 0.12, 0.9), 'iron')
+            # Each cheek runs up into her planking, where it is bolted.
+            up = max(underside(shape, x + along, 0.56) for along in (-0.6, 0.6)) + 0.05
+            board(module, Frame(), (x, side * 0.5, (up + keel - 0.8) / 2), (1.2, 0.12, up - keel + 0.8), 'iron')
         top, low = keel - 0.55, keel - 1.7
         tube(module, (x, 0.0, top), (x, 0.0, low), LIFT_M, sides=14)
         for band in (top - 0.25, low + 0.25):
@@ -132,8 +160,9 @@ def furnace(module, shape, sockets):
             board(module, Frame(), (x, side * (half + 0.02), deck + high / 2), (0.06, 0.04, high - 0.1), 'iron')
     board(module, Frame(), (fore + 0.03, 0.0, deck + 0.55), (0.05, 0.8, 0.6), 'glow')
     board(module, Frame(), (fore + 0.06, 0.0, deck + 0.55), (0.04, 1.0, 0.08), 'iron')
-    kit.rock(module, (fore + 1.1, 0.9, deck), (0.9, 0.7, 0.45), 31, part=False, detail=2)
-    kit.rock(module, (fore + 1.0, -0.8, deck), (0.7, 0.6, 0.35), 32, part=False, detail=2)
+    # The coal between the firebox and the fore outrigger beam, clear of both.
+    kit.rock(module, (fore + 0.5, 0.9, deck), (0.6, 0.9, 0.55), 31, part=False, detail=2)
+    kit.rock(module, (fore + 0.5, -0.8, deck), (0.55, 0.8, 0.45), 32, part=False, detail=2)
     for number, (x, y) in enumerate(STACKS, start=1):
         base, top = deck + high, deck + high + STACK_HIGH_M
         tube(module, (x, y, base), (x, y, top), STACK_M, sides=12)
@@ -179,20 +208,42 @@ def mast(module, shape):
 
 def plating(module, shape):
     """Iron plate over her lower sides, where the sea once was, a plate every 2 m along her, each laid on her
-    planking and standing a hand's breadth proud of it."""
+    planking and standing a hand's breadth proud of it: bent at each of her sections along it and at each fold of
+    them, so it follows her planking face by face."""
+    low, high = 1.0, 2.7
+    stations = shape.stations()
     for side in (1, -1):
         for k in range(12):
-            x0 = -11.6 + 2.0 * k
-            inner, outer = [], []
-            for x, z in ((x0, 1.0), (x0 + 1.9, 1.0), (x0 + 1.9, 2.7), (x0, 2.7)):
-                (_, y, height), out = shape.surface(x, z)
-                inner.append((x, side * (y + out[1] * 0.02), height + out[2] * 0.02))
-                outer.append((x, side * (y + out[1] * 0.07), height + out[2] * 0.07))
-            points = inner + outer
-            faces = [(4, 5, 6, 7), (0, 3, 2, 1), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
-            # Each face wound to face away from her middle, out of the plate.
-            middle = [sum(point[axis] for point in points) / 8 for axis in range(3)]
-            faces = kit.oriented(points, faces, lambda at, middle=middle: [at[axis] - middle[axis] for axis in range(3)])
+            x0, x1 = -11.6 + 2.0 * k, -11.6 + 2.0 * k + 1.9
+            columns = [x0] + [x for x in stations if x0 < x < x1] + [x1]
+            folds = sorted({row for x in columns for row, (_, z) in enumerate(shape.section(x)) if low < z < high})
+            points = []
+            for x in columns:
+                rows = shape.section(x)
+                heights = [rows[row][1] for row in folds]
+                # A fold that is under (or over) the plate at one end of it but on it at the other takes the plate's
+                # edge with it there, so no band of it is ever flat.
+                edges = [min(low, heights[0] - 0.05), max(high, heights[-1] + 0.05)] if folds else [low, high]
+                for z in [edges[0]] + heights + [edges[1]]:
+                    points += [laid(shape, x, z, side, 0.02), laid(shape, x, z, side, 0.07)]
+            count = len(folds) + 2
+            at = lambda column, level, out: (column * count + level) * 2 + out  # noqa: E731
+            spans = range(len(columns) - 1)
+            outer = [(at(c, n, 1), at(c + 1, n, 1), at(c + 1, n + 1, 1), at(c, n + 1, 1))
+                     for c in spans for n in range(count - 1)]
+            inner = [(at(c, n, 0), at(c + 1, n, 0), at(c + 1, n + 1, 0), at(c, n + 1, 0))
+                     for c in spans for n in range(count - 1)]
+            bottom = [(at(c, 0, 0), at(c + 1, 0, 0), at(c + 1, 0, 1), at(c, 0, 1)) for c in spans]
+            top = [(at(c, count - 1, 0), at(c + 1, count - 1, 0), at(c + 1, count - 1, 1), at(c, count - 1, 1))
+                   for c in spans]
+            aft = [(at(0, n, 0), at(0, n + 1, 0), at(0, n + 1, 1), at(0, n, 1)) for n in range(count - 1)]
+            last = len(columns) - 1
+            fore = [(at(last, n, 0), at(last, n + 1, 0), at(last, n + 1, 1), at(last, n, 1)) for n in range(count - 1)]
+            faces = []
+            # Each face wound out of the plate: its face out from her side, its back in, its edges up, down and along.
+            for group, way in ((outer, (0, side, 0)), (inner, (0, -side, 0)), (bottom, (0, 0, -1)), (top, (0, 0, 1)),
+                               (aft, (-1, 0, 0)), (fore, (1, 0, 0))):
+                faces += kit.oriented(points, group, lambda _, way=way: way)
             kit.solid_of(module, 'plate', points, faces, 'iron')
 
 
@@ -253,32 +304,42 @@ def stays(module, shape):
 
 
 def hatch(module, shape, sockets):
-    """Her drop hatch amidships under her: an iron frame round it, its two doors hung open below her."""
+    """Her drop hatch amidships under her: an iron frame round it, hung from her bottom by a strut at each corner,
+    its two doors hung open below her."""
     keel = shape.keel(0.0)
     for side in (1, -1):
         board(module, Frame(), (0.0, side * 1.2, keel - 0.06), (3.3, 0.14, 0.12), 'iron')
         board(module, Frame(), (side * 1.6, 0.0, keel - 0.06), (0.14, 2.5, 0.12), 'iron')
         board(module, Frame(), (0.0, side * 1.42, keel - 0.6), (3.0, 0.08, 1.1), rotation=(side * 0.35, 0.0, 0.0))
+        for end in (1, -1):
+            up = underside(shape, end * 1.6, 1.27) + 0.05
+            board(module, Frame(), (end * 1.6, side * 1.2, (up + keel) / 2), (0.14, 0.14, up - keel), 'iron')
     module.socket('hatch', (0.0, 0.0, keel - 0.1), (0.0, 0.0))
     sockets.append('hatch')
 
 
 def lanterns(module, shape):
-    """A lantern at her bow and two at her stern, an iron cage round a flame; and her cabin's windows lit across her
-    stern, each in its frame."""
-    places = [(15.2, 0.0, shape.deck(15.2) + 2.3), (-15.3, 1.1, shape.deck(-15.3) + 2.7),
-              (-15.3, -1.1, shape.deck(-15.3) + 2.7)]
+    """A lantern on an iron post at her bow and one on her rail each side of her stern, an iron cage round a flame;
+    and her cabin's windows lit round her stern where the Brig has them, each in its frame square to her side."""
+    bow = 15.2
+    rail = shape.section(-15.3)[-1]
+    # Her rail's cap stands 0.08 m over her bulwark, across it from 0.05 m outside it to 0.04 m inside.
+    places = [(bow, 0.0, shape.deck(bow) + 2.3)] + [(-15.3, side * (rail[0] - 0.085), rail[1] + 0.08 + 0.23)
+                                                   for side in (1, -1)]
     for at in places:
         board(module, Frame(), at, (0.26, 0.26, 0.34), 'glow')
         board(module, Frame(), (at[0], at[1], at[2] + 0.21), (0.34, 0.34, 0.06), 'iron')
         board(module, Frame(), (at[0], at[1], at[2] - 0.21), (0.34, 0.34, 0.06), 'iron')
-    aft = shape.aft
-    for y in (-1.5, -0.5, 0.5, 1.5):
-        x = aft + 0.32 + 0.1 * abs(y)
-        z = shape.deck(x) + 0.85
-        board(module, Frame(), (x - 0.04, y, z), (0.06, 0.62, 0.5), 'glow')
-        board(module, Frame(), (x - 0.08, y, z), (0.05, 0.72, 0.08), 'timber')
-        board(module, Frame(), (x - 0.08, y, z + 0.3), (0.05, 0.76, 0.1), 'timber')
+    foot, head = shape.floor_at(bow), places[0][2] - 0.23
+    board(module, Frame(), (bow, 0.0, (foot + head) / 2), (0.08, 0.08, head - foot), 'iron')
+    middle = shape.deck(shape.aft + 1) - 0.72
+    for x, side in shape.numbers['stern_windows']:
+        (_, y, _), _ = shape.surface(x, middle)
+        out_x, out_y = shape.plan_out(x)
+        frame = Frame((x, side * y, middle), math.atan2(side * out_y, out_x))
+        board(module, frame, (0.07, 0.0, 0.0), (0.06, 0.62, 0.5), 'glow')
+        board(module, frame, (0.12, 0.0, 0.0), (0.05, 0.72, 0.08), 'timber')
+        board(module, frame, (0.12, 0.0, 0.3), (0.05, 0.76, 0.1), 'timber')
 
 
 def airship(module):
