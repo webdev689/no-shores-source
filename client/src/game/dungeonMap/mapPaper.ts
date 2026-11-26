@@ -6,9 +6,8 @@ import type { MapShown, PaperMark } from './dungeonMap.ts';
 import { INK as INKED } from './mapInk.ts';
 
 /** What the interface lays over the map this frame (null while it is shut), and the dungeon's chests as counted for
- *  the player ("Chests 2 of 5"): the hook the dungeon chests' count is hung on once the gear carries it, none till
- *  then. */
-export const PAPER: { node: Node | null; chests: () => string | null } = { node: null, chests: () => null };
+ *  the player ("Chests 2 of 5"), set by the frame from the gear before the map is drawn. */
+export const PAPER: { node: Node | null; chests: string | null } = { node: null, chests: null };
 
 /** The ink the words are written in, and each mark's colour. */
 const INK = '#3a2816';

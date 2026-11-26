@@ -32,6 +32,7 @@ import { gearScreenOpen } from './gearWindow.ts';
 import { stripOf, withFollow, withMapKey } from './hints.ts';
 import { runPlaceWords } from './breachWords.ts';
 import { chestsCounted } from './finds.ts';
+import { PAPER } from './dungeonMap/mapPaper.ts';
 import { ofRun, releaseRunModules } from '../city/modules.ts';
 import { FALLEN, refusedWords } from './toShip.ts';
 import { binding } from './rebinding.ts';
@@ -348,12 +349,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const near = [...shown.figures, ...nodes, ...walking, ...crews];
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
     const you = { feet: [body.x, body.y, body.z] as const, facing: walker.player.facing, name: '', seconds };
+    const chests = chestsCounted(here.gear?.gear);
+    PAPER.chests = chests;
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain, you);
     else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain, carried);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);
     const run = here.run && runPlaceWords(here.run.plan, here.held.breach, here.run.tier);
-    const chests = chestsCounted(here.gear?.gear);
     hud.place(
       here.node.name,
       run || placeWords(here.node, here.roomName, here.held.revives, here.held.darkness, chests),

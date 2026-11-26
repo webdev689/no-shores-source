@@ -166,7 +166,7 @@ export class DungeonDrawers {
       }));
     const shown = DUNGEON_MAP.frame(you.seconds, paper, company);
     const walked = DUNGEON_MAP.dungeon;
-    PAPER.node = shown && paperNode(shown, dungeon.layout.name, PAPER.chests(), performance.now() / 1000);
+    PAPER.node = shown && paperNode(shown, dungeon.layout.name, PAPER.chests, performance.now() / 1000);
     if (!shown || !walked) return null;
     const ink = (this.ink ??= new MapInk(this.gpu));
     ink.setCells(walked.words);

@@ -84,8 +84,9 @@ Only what the player has walked or seen is drawn, never the whole dungeon.
   tilt, its needle from the middle to a dot at the north, an N past
   it. The dungeon's name stands at the top left, the storey line and the chests counted
   under it. No key's tip is written on the paper.
-- **The chests counted.** The line under the storey's ("Chests 2 of 5") comes from `PAPER.chests`, the hook the
-  dungeon chests' count is hung on; until the gear carries that count it says nothing.
+- **The chests counted.** The line under the storey's ("Chests 2 of 5") is the place line's own count
+  (`chestsCounted`, [[Dungeons]] "Its chests and containers"), set into `PAPER.chests` each frame before the map is
+  drawn: the chests the player has opened of all the dungeon stands.
 
 ## Limits
 
