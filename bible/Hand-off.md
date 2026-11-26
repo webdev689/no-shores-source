@@ -232,10 +232,11 @@ The decisions in [[Open Questions]] are not repeated here.
   walks' flags not along the walks (`solidMesh.ts` `walkUvs`); a pale square under a ship's stern (the footprint's
   line kept inside the hull, every ship's footprint in its own hull's line, `hullLines.ts`, `hullMask.ts`); and a
   detailed music pass, patrol zones first ([[The Music Repeats Less, Patrol Zones First]]). Tested offline, each fix
-  with a test that failed first, pictured headless before and after; not heard, not on a real GPU. Open for the
-  owner: whether a walk's joints (rounds and fillets, still on the world's grain) take one walk's grain instead,
-  whether the music has variety enough. Known and left: the ship's footprint up to 0.37 m inside its hull near the
-  ends; no Frigate under way pictured after the fix.
+  with a test that failed first, pictured headless before and after; not heard, not on a real GPU. The owner left
+  the PR's two questions to Claude ("Make the best decisions and fix any issues"): a joint's round and fillets run in
+  the grain of the walk on top there (`Social.grains`, `walkGrain.ts`), and the music is enough as it is. Known and
+  left: the ship's footprint up to 0.37 m inside its hull near the ends; no Frigate under way pictured after the
+  fix; the thin dark arcs round the obelisk's border, there before.
 - **Foe arrivals** (#211, merged on the owner's "Merge and deploy": CI's run 1173 on `main` passed and deployed the
   rooms, the accounts, the page and the site, while the bot and the desktop app, unchanged, did not deploy; the
   modules workflow published the re-baked airship to R2; its branch `ccr-9e470c58-pm6nyz` is the owner's to delete,
