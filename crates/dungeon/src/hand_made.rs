@@ -1,5 +1,5 @@
 //! A dungeon of two storeys laid by hand, for the tests of every crate that stands bodies, bakes paths or draws in a
-//! storeyed dungeon while the generator still lays one storey. One block of 16 by 16 cells:
+//! storeyed dungeon. One block of 16 by 16 cells:
 //!
 //! - storey 0 (floor 0 m): room 0 (x 1-4, y 1-4, the way in's, a Void at its cell (2, 4)), a corridor (x 5-6, y 2) to
 //!   room 1 (x 7-10, y 1-4), and the top landing (9, 5) under room 1;

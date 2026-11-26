@@ -70,6 +70,12 @@ pub fn storey_at(storeys: usize, z: f64) -> usize {
     if below > 0.0 { (below as usize).min(storeys.max(1) - 1) } else { 0 }
 }
 
+/// The storey a point at a height is in, of `storeys` (at least 1): the highest floor at or under it.
+#[must_use]
+pub fn storey_under(storeys: usize, z: f64) -> usize {
+    (0..storeys).find(|&storey| storey_floor(storey) <= z).unwrap_or(storeys.max(1) - 1)
+}
+
 impl Dungeon {
     /// The cells of one storey.
     #[must_use]
@@ -137,7 +143,8 @@ impl Dungeon {
                     spans.push(Span { storey, floor: low, ceiling: high + FLIGHT_CEILING_M, stair });
                 }
                 Cell::Void => {
-                    if let Some(under) = spans.last_mut() {
+                    // Only over the storey just under it: a Void over rock opens nothing.
+                    if let Some(under) = spans.last_mut().filter(|under| under.storey == storey + 1) {
                         under.ceiling = floor + self.ceilings[cell];
                     }
                 }

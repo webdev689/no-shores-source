@@ -120,3 +120,15 @@ fn a_foes_path_from_the_top_storey_to_the_lower_goes_by_the_flight() {
         assert!(path.iter().any(|point| (point[0] - flight_x).abs() < CELL_M / 2.0 && point[1] > 6.0 * CELL_M));
     }
 }
+
+#[test]
+fn a_body_leaping_high_in_a_tall_lower_room_keeps_to_its_storey() {
+    let mut laid = two_storeys();
+    let lower: Vec<usize> = laid.rooms[2].cells.clone();
+    lower.iter().for_each(|&cell| laid.ceilings[cell] = 5.6);
+    let ground = DungeonGround::of(&laid).unwrap();
+    // Over half way up to the floor over it, the feet are still the lower room's.
+    let [x, y] = middle(3, 6);
+    assert_eq!(ground.storey_of_feet(x, y, -3.6), 1);
+    assert!(!ground.walled_at((x, y), (x, y + 0.1), -3.6), "the top storey's rock is not its wall");
+}

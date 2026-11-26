@@ -85,12 +85,6 @@ impl DungeonGround {
         &self.solids
     }
 
-    /// How many storeys it holds.
-    #[must_use]
-    pub const fn storeys(&self) -> usize {
-        self.storeys
-    }
-
     /// The storey feet at `z` stand on: the one whose floor lies nearest.
     #[must_use]
     pub fn storey_at(&self, z: f64) -> usize {
@@ -117,7 +111,7 @@ impl DungeonGround {
     }
 
     /// A span's reach for a body or a line: from its floor to its ceiling, but below the deepest storey's floor and
-    /// over the top storey's ceiling nothing bounds it, as nothing did when a dungeon had one floor.
+    /// over the top storey's ceiling nothing bounds it, so a shot sinking under the floor is met by the floor alone.
     pub(crate) fn span_reach(&self, span: &Span) -> (f64, f64) {
         let flat = span.stair.is_none();
         let low = if flat && span.storey + 1 == self.storeys { f64::NEG_INFINITY } else { span.floor };
@@ -125,14 +119,24 @@ impl DungeonGround {
         (low, high)
     }
 
-    /// Whether a column has a span that holds feet at `z`: its floor within a step of them and its ceiling over them.
-    fn holds(&self, x: f64, y: f64, z: f64) -> bool {
-        let Some(column) = self.column_at(x, y) else { return false };
-        self.spans[column].iter().any(|span| {
+    /// The span of a column that holds feet at `z`: its floor within a step of them and its ceiling over a crouched
+    /// body's head.
+    fn holding(&self, x: f64, y: f64, z: f64) -> Option<&Span> {
+        let column = self.column_at(x, y)?;
+        self.spans[column].iter().find(|span| {
             let (low, high) = self.span_reach(span);
             let low = if low == f64::NEG_INFINITY { low } else { self.span_floor(span, x, y) };
-            low <= z + TUNING.step && z < high
+            low <= z + TUNING.step && z + TUNING.crouched_height <= high
         })
+    }
+
+    /// The storey whose rock and solids wall feet at `z` at a point: the storey of the room or corridor they stand in,
+    /// so a body leaping high in a lower room keeps to it; on a flight, in the air or in rock, the nearest floor's.
+    pub(crate) fn storey_of_feet(&self, x: f64, y: f64, z: f64) -> usize {
+        match self.holding(x, y, z) {
+            Some(span) if span.stair.is_none() => span.storey,
+            _ => self.storey_at(z),
+        }
     }
 
     /// Whether a solid stands on a storey.
@@ -168,7 +172,7 @@ impl DungeonGround {
 
     /// How deep a point with feet at `z` lies inside a solid of their storey, metres: 0 on open floor.
     pub(crate) fn depth_in_solid(&self, x: f64, y: f64, z: f64) -> f64 {
-        (-self.clearance(x, y, self.storey_at(z))).max(0.0)
+        (-self.clearance(x, y, self.storey_of_feet(x, y, z))).max(0.0)
     }
 
     /// Whether the straight line between two points of a storey passes `keep` metres or more from all its rock, the
@@ -244,8 +248,8 @@ impl Terrain for DungeonGround {
     /// that storey and nearer than it began: a body slides along a wall and steps away from one, but never into its
     /// face, and one shoved inside a solid can only move out of it.
     fn walled_at(&self, from: (f64, f64), to: (f64, f64), z: f64) -> bool {
-        let storey = self.storey_at(z);
-        if self.planes[storey].walled(from, to) || !self.holds(to.0, to.1, z) {
+        let storey = self.storey_of_feet(from.0, from.1, z);
+        if self.planes[storey].walled(from, to) || self.holding(to.0, to.1, z).is_none() {
             return true;
         }
         let ends = self.clearance(to.0, to.1, storey);

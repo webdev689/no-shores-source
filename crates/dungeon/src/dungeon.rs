@@ -527,6 +527,6 @@ impl Dungeon {
     /// The storey a point at a height is in, or a solid with that top stands on: the highest floor at or under it.
     #[must_use]
     pub fn storey_under(&self, z: f64) -> usize {
-        (0..self.storeys).find(|&storey| crate::storey_floor(storey) <= z).unwrap_or(self.storeys - 1)
+        crate::storey_under(self.storeys, z)
     }
 }

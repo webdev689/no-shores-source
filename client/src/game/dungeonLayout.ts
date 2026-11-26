@@ -34,7 +34,7 @@ export interface DungeonLayout {
   readonly cell: number;
   readonly columns: number;
   readonly rows: number;
-  /** Its storeys, STOREY_M apart downward, each at its floor; a module older than storeys answers none, read as one. */
+  /** Its storeys, STOREY_M apart downward, each at its floor; none answered is read as one. */
   readonly storeys?: number;
   readonly storeyM?: number;
   readonly floors?: readonly number[];
@@ -144,7 +144,7 @@ export const CORRIDOR = -1;
 /** A flight's cell, on both its storeys, and open air over the storey under it. */
 export const STAIR = -3;
 export const VOID = -4;
-/** How far each storey stands under the one over it, as a module older than storeys stood its one (m). */
+/** How far each storey stands under the one over it, where a layout names none (m). */
 const STOREY_M = 8;
 /** A flight's ceiling over its slope, and the step a body walks up (movement's TUNING.step) (m). */
 const FLIGHT_CEILING_M = 3.2;
@@ -217,7 +217,7 @@ export function styleAt(layout: DungeonLayout, cell: number): StyleKey | null {
   return layout.looks[layout.cellLooks[cell] ?? -1]?.style ?? null;
 }
 
-/** The storeys a layout holds: one from a module older than storeys. */
+/** The storeys a layout holds: one where it names none. */
 export function storeysOf(layout: DungeonLayout): number {
   return layout.storeys ?? 1;
 }
@@ -261,6 +261,7 @@ export function slopeAt(layout: DungeonLayout, stair: Stair, x: number, y: numbe
 
 /** An open span of a column: its floor (a flight's lowest in the column) and its ceiling, absolute, and its flight. */
 export interface Span {
+  readonly storey: number;
   readonly floor: number;
   readonly ceiling: number;
   readonly stair: Stair | null;
@@ -285,11 +286,12 @@ export function spansAt(layout: DungeonLayout, column: number, row: number): Spa
         slopeAt(layout, stair, west, north),
         slopeAt(layout, stair, west + layout.cell, north + layout.cell),
       ];
-      spans.push({ floor: Math.min(one, other), ceiling: Math.max(one, other) + FLIGHT_CEILING_M, stair });
+      spans.push({ storey, floor: Math.min(one, other), ceiling: Math.max(one, other) + FLIGHT_CEILING_M, stair });
     } else if (kind === VOID) {
-      const under = spans.pop();
-      if (under) spans.push({ ...under, ceiling: floor + ceiling });
-    } else if (kind !== ROCK) spans.push({ floor, ceiling: floor + ceiling, stair: null });
+      // Only over the storey just under it: a Void over rock opens nothing.
+      const under = spans.at(-1);
+      if (under && under.storey === storey + 1) spans[spans.length - 1] = { ...under, ceiling: floor + ceiling };
+    } else if (kind !== ROCK) spans.push({ storey, floor, ceiling: floor + ceiling, stair: null });
   }
   return spans;
 }

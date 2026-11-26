@@ -37,6 +37,7 @@ pub use purposes::{Bank, Facing, Lay, Light, Lit, Pattern, Purpose};
 pub use shapes::{Ceiling, Roof, Shape};
 pub use storeys::{
     FLIGHT_CEILING_M, FLIGHT_CELLS, FLIGHT_M, STOREY_M, STOREYS_MOST, Span, Stair, storey_at, storey_floor,
+    storey_under,
 };
 pub use styles::{Form, STYLES, Style};
 pub use torches::{TORCH_M, TORCH_REACH_M, Torch};

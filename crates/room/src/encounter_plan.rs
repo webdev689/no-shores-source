@@ -101,14 +101,14 @@ impl EncounterPlan {
         self.seals.iter().flat_map(|seal| seal.pads.iter().copied()).collect()
     }
 
-    /// The cell a point (x, y, z) lies in, on the storey whose floor lies nearest it.
+    /// The cell a point (x, y, z) lies in, on the storey of the highest floor at or under it.
     #[must_use]
     pub fn cell_at(&self, [x, y, z]: [f64; 3]) -> Option<usize> {
         if x < 0.0 || y < 0.0 {
             return None;
         }
         let (column, row) = ((x / CELL_M) as usize, (y / CELL_M) as usize);
-        let storey = dungeon::storey_at(self.storeys, z);
+        let storey = dungeon::storey_under(self.storeys, z);
         (column < self.columns && row < self.rows).then_some((storey * self.rows + row) * self.columns + column)
     }
 }

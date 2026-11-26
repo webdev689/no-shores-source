@@ -107,7 +107,10 @@ impl Finds {
             .filter(|prop| dungeon::models::holder(prop.model).is_some() && !in_kept(prop.at))
             .filter_map(|prop| {
                 let model = f64::from(prop.model);
-                prop.solid.map(|[west, north, east, south, top]| [west, north, east, south, 0.0, top, model])
+                prop.solid.map(|[west, north, east, south, top]| {
+                    let bottom = dungeon::storey_floor(dungeon.storey_under(top));
+                    [west, north, east, south, bottom, top, model]
+                })
             })
             .filter(|held| {
                 let storey = dungeon.storey_under(held[5]);

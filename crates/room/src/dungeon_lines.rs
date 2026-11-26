@@ -71,7 +71,7 @@ const DEEP: f64 = -1.0e9;
 const HIGH: f64 = 1.0e9;
 
 impl DungeonGround {
-    /// A solid's bottom for a line: none on the deepest storey, as nothing lay under a dungeon's one floor.
+    /// A solid's bottom for a line: none on the deepest storey, where the floor alone meets a line under it.
     fn solid_bottom(&self, number: usize) -> f64 {
         if self.on_storey(number, self.storeys - 1) { DEEP } else { self.solids[number][4] }
     }

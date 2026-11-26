@@ -137,8 +137,8 @@ function fungus(mesh: MeshBuilder, [x, y]: Point, bed: Bed): void {
   }
 }
 
-/** Where a cluster of crystals or fungus grows: its solid's box (min x, min y, max x, max y, top), and the way out
- *  from its wall into the room. */
+/** Where a cluster of crystals or fungus grows: its solid's box (min x, min y, max x, max y, bottom, top), and the
+ *  way out from its wall into the room. */
 export interface Bed {
   readonly box: readonly [number, number, number, number, number, number];
   readonly out: readonly [number, number];

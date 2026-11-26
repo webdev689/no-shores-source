@@ -94,3 +94,11 @@ fn a_height_finds_its_storey() {
     assert_eq!(dungeon.storey_at(-4.1), 1);
     assert_eq!(dungeon.storey_at(-30.0), 1);
 }
+
+#[test]
+fn a_void_over_rock_opens_nothing() {
+    let mut dungeon = two_storeys();
+    let under = dungeon.plane() + VOID_AT.1 * dungeon.columns + VOID_AT.0;
+    dungeon.cells[under] = Cell::Rock;
+    assert!(dungeon.spans(VOID_AT.1 * dungeon.columns + VOID_AT.0).is_empty());
+}

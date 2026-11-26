@@ -231,7 +231,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   flight from one storey to the other (`walk_from`).
 - **Spans** (`spans`): each column of cells holds open spans, lowest first: a storey's open cell from its floor to its
   ceiling; a flight's one span from its slope's lowest in the column to 3.2 m over its highest; a Void lifting the
-  span under it to the Void's own ceiling. Rock holds none.
+  span under it to the Void's own ceiling (a Void over rock opens nothing). Rock holds none.
 - **What a body stands on** (`heights`, `boxes`): each storey's plane of open cells (a flight's and a Void's open) and
   none for rock, in cells of 3.2 m; and as boxes (min x, min y, max x, max y, bottom, top) the jambs, then the
   pillars, then the props' solids, then the fixtures', then the landmarks'. A box stands on the highest floor at or
@@ -295,9 +295,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Under feet at z
   (`height_under`) it is the highest span floor or flight's slope at or below a step (0.5 m) over them, or a solid's
   top where the solid's bottom is; with none, a wall 10 m over the feet's storey. So a body walks down a flight and up
-  again without a jump, and walks off a Void's edge and falls to the floor under it. The feet's storey is the one
-  whose floor lies nearest them (`storey_at`). A move is walled where it crosses that storey's rock, where it ends in
-  a column with no span holding the feet (its floor within a step of them and its ceiling over them; under the
+  again without a jump, and walks off a Void's edge and falls to the floor under it. The feet's storey is that of the
+  room or corridor span holding them, so a body leaping high in a tall lower room keeps to it; on a flight, in the
+  air or in rock, the storey whose floor lies nearest them (`storey_of_feet`). A move is walled where it crosses that
+  storey's rock, where it ends in a column with no span holding the feet (its floor within a step of them and its
+  ceiling over a crouched body's head, 1 m; under the
   deepest storey's floor and over the top storey's ceiling nothing bounds a span, as nothing bounded the one floor),
   or where it ends nearer than a body's half-width (0.35 m) to that storey's rock or a solid standing on it and nearer
   than it began: a body slides along a wall, steps away from one, and never stands in its face. Inside a solid, as a shove
@@ -631,8 +633,8 @@ as standing none (`readDungeon`).
 - The generator lays one storey; the ground, the bake, the room and the page stand more (`hand_made`).
 - Nothing may stand under a flight: the navmesh bakes a flight's column as its lowest floor, so a column under a
   flight is rock.
-- The ground walls a body by the storey whose floor lies nearest its feet, and a Void's fall is walled sideways by
-  that storey's rock until the feet pass half way down.
+- A span holds a body whose crouched head (1 m) fits under its ceiling: a standing body's head may reach 0.8 m
+  into a slab, since the ground knows the feet alone.
 - Lines across storeys take no corner of rock between two cells, as one storey's do, only the cells they cross.
 - The page's ground and ceiling for marks, shots and the camera are those of the player's own storey.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.

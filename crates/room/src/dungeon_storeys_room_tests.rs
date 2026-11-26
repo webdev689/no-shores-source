@@ -78,3 +78,14 @@ fn an_elite_dungeons_court_anchors_stand_on_the_end_rooms_storey() {
         assert!(seal.doors.iter().all(|door| door[2] == floor));
     }
 }
+
+#[test]
+fn a_player_respawns_on_a_lower_storeys_checkpoint() {
+    let (dungeon, mut room) = laid((REEVE, Miniboss));
+    let [x, y, z] = dungeon.standing_point(dungeon.rooms[2].cells[5]);
+    let won = crate::checkpoints::Won::Post(0);
+    room.respawning.checkpoints.push(crate::checkpoints::Checkpoint { at: [x, y, z], facing: 0.0, along: 99.0, won });
+    room.garrison[0].cleared_at = Some(room.clock);
+    let body = room.at_checkpoint().expect("won");
+    assert_eq!((body.x, body.y, body.z), (x, y, -8.0));
+}
