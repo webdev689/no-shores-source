@@ -29,10 +29,8 @@ import fptorch  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OWN = ('flask_draught', 'flask_glass', 'flask_cork')
-EXTRA = fptorch.EXTRA
 CLASSES = {n: 7 for n in OWN}
 SHEETS = ()
-GRADE_AS = {}
 HEIGHT = 0.16   # the flask's foot to its mouth (quaff.py HEIGHT)
 # the fist round its neck, up from its foot: higher than the figure's (quaff.py HOLD, 0.11), as near the eye a fist
 # that low would close inside the belly

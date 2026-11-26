@@ -99,6 +99,8 @@ export async function gunPicture(
 
 /** The healing flask's frames over a drink: brought up, raised before the face, tipped up at the lips, lowered. */
 export const FLASK_FRAMES = 4;
+/** The flask's frame `share` of the way through a drink (0 to 1): a quarter of the drink each. */
+export const flaskFrame = (share: number) => Math.min(FLASK_FRAMES - 1, Math.floor(share * FLASK_FRAMES));
 
 /** The healing flask in the right hand at the drink's frame `frame`, the hand round its neck in the gauntlets worn. Its
  *  colours are its own, its draught's red undyed. It sits flush in the screen's bottom right corner. */

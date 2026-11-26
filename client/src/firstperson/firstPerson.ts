@@ -38,6 +38,7 @@ import {
   LIGHT_FRAMES,
   SHIELD_FRAMES,
   crossbowPicture,
+  flaskFrame,
   flaskPicture,
   gunPicture,
   lightPicture,
@@ -274,9 +275,6 @@ export class FirstPerson {
     this.wanted = this.wantedNow(state, worn, drop, sway, shot);
     // What is wanted now is asked for first, ahead of the rest of a new look's pictures.
     for (const wanted of this.wanted) this.request(wanted);
-    // A drink's later frames are asked for as it begins, so each is ready when its share of the drink comes.
-    if (state.drinking != null)
-      for (let frame = 0; frame < FLASK_FRAMES; frame++) this.request(this.flaskWanted(worn, frame, 0));
     if (lookKey !== this.look) {
       this.look = lookKey;
       this.prefetch(worn, !!state.mounted);
@@ -317,10 +315,8 @@ export class FirstPerson {
     const views = this.hands.views().filter((view) => !shot || holds(view.holding));
     const drinking = state.drinking ?? null;
     if (this.lower < LOWERED_GONE) {
-      if (drinking !== null) {
-        const frame = Math.min(FLASK_FRAMES - 1, Math.floor(drinking * FLASK_FRAMES));
-        wanted.push(this.flaskWanted(worn, frame, drop));
-      } else if (state.running && !shot && (!this.plan || this.hands.bareAtRest)) {
+      if (drinking !== null) wanted.push(this.flaskWanted(worn, flaskFrame(drinking), drop));
+      else if (state.running && !shot && (!this.plan || this.hands.bareAtRest)) {
         for (const left of [false, true]) wanted.push(this.runWanted(worn, runFrameAt(state.stride, left), left, drop));
       } else {
         if (this.plan?.held) wanted.push(this.heldWanted(this.plan.held, worn, drop));
@@ -458,6 +454,8 @@ export class FirstPerson {
   /** Asks for every picture a new look shows, so a swing's frames are ready before it needs them. */
   private prefetch(worn: Worn, mounted: boolean): void {
     for (let frame = 0; frame < RUN_FRAMES; frame++) this.request(this.runWanted(worn, frame, false, 0));
+    // The flask's too, so a drink shows from its first frame.
+    for (let frame = 0; frame < FLASK_FRAMES; frame++) this.request(this.flaskWanted(worn, frame, 0));
     if (mounted) for (const shot of RIDE_AHEAD) for (const wanted of this.rideWanted(shot, worn)) this.request(wanted);
     if (this.plan) this.prefetchHands(this.plan, worn);
   }

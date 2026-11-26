@@ -367,8 +367,6 @@ test("a drink shows the flask's frame by its progress where the flask is publish
   const begun = await frame(0.016, drinking(0.1));
   assert.deepEqual(begun.quads, [{ x: 318, y: 199, width: 2, height: 1, flip: false }], 'flush in the corner');
   assert.ok(asked.includes('forge/held/FLASK_0-0_Flask.png'));
-  await frame(0.016, drinking(0.6));
-  assert.ok(asked.includes('forge/held/FLASK_0-2_Flask.png'), 'its third frame past half way');
   assert.ok(asked.includes('forge/held/FLASK_0-3_Flask.png'), 'every frame asked for ahead');
   assert.deepEqual((await frame(0.016, standing)).quads, [{ x: 50, y: 80, width: 2, height: 1, flip: false }]);
   const { frame: bare } = firstPerson(wholeFrames);

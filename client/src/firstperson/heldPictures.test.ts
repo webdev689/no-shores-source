@@ -6,6 +6,7 @@ import { FramePainter } from './fpFrames.ts';
 import {
   crossbowPath,
   crossbowPicture,
+  flaskFrame,
   flaskPicture,
   gunPicture,
   heldPath,
@@ -156,4 +157,9 @@ test('the healing flask sits flush in the bottom right corner, the hand over it 
   assert.deepEqual(drunk && pixelAt(drunk.pixels, 240, 120, 100), [200, 20, 10, 255], 'the draught as drawn');
   assert.equal(drunk && pixelAt(drunk.pixels, 240, 200, 150)[3], 255, 'the hand over it');
   assert.equal(await flaskPicture(source, null, 1), null, 'a frame not published: none');
+});
+
+test("a drink's quarters each show the flask's next frame, its end the last", () => {
+  const shares = [0, 0.24, 0.25, 0.5, 0.75, 0.99, 1, 1.5];
+  assert.deepEqual(shares.map(flaskFrame), [0, 0, 1, 2, 3, 3, 3, 3]);
 });
