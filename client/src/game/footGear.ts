@@ -55,13 +55,15 @@ export interface HeldUse {
 
 /** What E does where a player stands: its deed in words, and the doing; what it does as E is held there, if anything,
  *  or the fallen ally it revives (`footRevive.ts`); for a deed done once E is held through, how far it has been held
- *  (0 to 1); and `idle` where the words are a refusal and E does nothing, so no key is shown for it. */
+ *  (0 to 1); `idle` where the words are a refusal and E does nothing, so no key is shown for it; and `under`, faint
+ *  words beneath the deed. */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
   readonly hold?: HeldUse;
   readonly held?: number;
   readonly idle?: boolean;
+  readonly under?: string | null;
   readonly revive?: number;
 }
 

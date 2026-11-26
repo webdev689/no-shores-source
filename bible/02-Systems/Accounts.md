@@ -187,7 +187,8 @@ they play in holds it while they are there.
   feet, alive (`keep_spots`), so a save made mid-jump or after a fall keeps the last spot they stood at. No other
   room writes it, so one who logs out in a patrol zone, a dungeon or on an island comes back to whichever of
   the two they were in last, but a character on a dive whose last room was a room of its dive's zone, not homeward,
-  logs back into that zone ([[Passages]], "A dive"). `GET /v1/me` answers it beside the account (`place`:
+  logs back into that zone, as does a public dive whose last room was the zone it went on from (reloaded on the way
+  between; a company's route there is its company's to find, so it comes back as above) ([[Passages]], "A dive"). `GET /v1/me` answers it beside the account (`place`:
   `{ "kind": "sea" }`, `{ "kind": "social", "node", "at", "facing" }` in metres and radians,
   `{ "kind": "passage", "room" }` the zone's first public room or its company's route's own, or null; `lastPlace.ts`). After the title the
   page goes there (`relog.ts`): aboard, where the sea room puts the ship it kept; into the dive's zone, which takes

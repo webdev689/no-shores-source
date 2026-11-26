@@ -56,6 +56,8 @@ test('a mission points at the next of its pieces left: a dead lamp cold, a post 
   const ring = [piece('ring', 0, 7, 8)];
   assert.deepEqual(passageWaypoint(planOf('hold', ring), seenOf(), [0, 0], []), [7, 8]);
   assert.deepEqual(passageWaypoint(planOf('gauntlet'), seenOf(), [0, 0], []), [60, 0], 'the far mouth');
+  const opened = seenOf({ open: true });
+  assert.deepEqual(passageWaypoint(planOf('gauntlet'), opened, [0, 30], []), [60, 0], 'its mouths open from the start');
 });
 
 test('once its mouths are open the nearest way on; in a lamp’s zone its lamp, and Home there at the last', () => {

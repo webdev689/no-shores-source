@@ -174,7 +174,8 @@ passages' own pieces standing in it with their solids.
   Gloom, where a company all down (the section's dead among them) falls back; a revive loses nothing. A body left
   fallen comes back fallen, and past its two minutes whole, its haul lost. A reload or a closed tab costs no more
   than a death:
-  logging in again, a character whose last room was its dive's zone goes back into it, on the same dive
+  logging in again, a character whose last room was its dive's zone goes back into it, on the same dive, as does a
+  public dive whose last room was the zone it went on from, reloaded on the way between
   ([[Accounts]], "Where a player logs back in").
 
 ## A zone's room
@@ -335,13 +336,16 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
 - **The room's yes**: an ask of the passages is yes once the dive has moved (begun, gone on to another zone, or for
   a lamp's Home turned homeward, as the gear carries it); it plays the way between zones while the room gone to is
   joined. A passage refusal is said in a toast, as is no answer in 10 s; other asks answered meanwhile, done or not,
-  are not taken for it.
+  are not taken for it. A hold asked (the lamp, a dead lamp, the reliquary) changes no dive: only its refusal is
+  said, as the room's next answer ("Not while foes are near.", "It is lit already.", "Come closer."), and nothing
+  waits on it.
 - **A zone's room**: the server's by its name (`passageRoomName`, spelled as the server spells it): the first public
-  room, the next copy (`--2`, `--3`) when one says "This passage is full.", or a company's route's own, a member's
+  room, the next copy (`--2`, `--3`) when one says "This passage is full." (judged full, or at its most sockets), or a company's route's own, a member's
   room found as runs are. A room is joined once the gear's dive names its zone: a room holds a player it has not
   judged and sends its snapshots meanwhile, and says it is full only after the judge. A zone gone on to that refuses
   the dive as come by no way there (the room left shut before the move was saved) sends the page back into the zone
-  it left, where the accounts still keep the dive; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
+  it left, where the accounts still keep the dive, saying "You cannot reach this place from where you were."; should
+  the zone left refuse it in turn (its move saved meanwhile), the zone gone on to is joined once more; or, playing alone, the same room in the rooms' worker opened from its ask (`open_passage`'s
   JSON), the character the last room let go of given to it so the dive goes on. Under ground the zone is a dungeon to
   the page, its layout drawn by the dungeon's renderer; above ground its hollow is an island to the islands' layer
   (`zoneIsle`, by an id no sea island has), stood on as a sea island's beach, and drawn alone: no land or sea of the
@@ -367,13 +371,17 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
   Tuesday 09:00 UTC "The web shifts" with its clock. The compass points at what the deal asks next, in place of the
   houses' roads ([[Every Objective Has a Waypoint on the Compass, on Land and at Sea]], `passageWaypoint`): the nearest
   foe standing, the Marked or a collector; a dead lamp still cold, a tally post whole, a node ungathered; the ring or
-  the reliquary; a Gauntlet's far mouth; once the player's mouths are open, a lamp's zone's lamp until lit, then the
+  the reliquary; a Gauntlet's far mouth, though its mouths are open from the start; once the player's mouths are open, a lamp's zone's lamp until lit, then the
   nearest way on (the lamp again where there is none, for Home); a round done before they came, nothing. Each mission is named by its kind (Kindle, Hold, Hunt, Reckoning,
   Gauntlet, Ambush, Sever) on its sign, the card, the tracker and the map. Near an onward mouth its sign shows a Gauntlet's far mouth as its goal ("The Gauntlet's far mouth: reach it in
   time."), the zone beyond, whether it lies on the week's public way, its foes' levels ("Foes 15 to 18", in the loss's colour where the strongest stands three or more over the
   player) and, shut, "Shut until this place's work is done."; E there goes on through it once open. E held at the lamp lights it, its prompt ringed as the room counts
-  the hold; once lit E there is Home. The fourth lamp standing cold for one on Lanternfall's last step says "Kindle
-  the lamp" ("Gone cold for you: the Tithe come while you hold"), and the tracker "Kindle the cold lamp". E held at a dead lamp kindles it. E let go ends a hold, as a gather's. The haul
+  the hold, with its second line beneath ("What you carry is kept once it burns"; once lit, "Or go on: the ways on
+  are open"); once lit E there is Home. The fourth lamp standing cold for one on Lanternfall's last step says "Kindle
+  the lamp" ("Gone cold for you: the Tithe come while you hold"), and the tracker "Kindle the cold lamp". E held at a dead lamp kindles it; one lit already is passed over for a mouth beside it. A vein's six nodes stand
+  as the island's resource nodes do, drawn where the room stands them for the player and gathered by E held, under
+  ground among the dungeon's figures. A begin at a lamp lays the lamp's zone the room begins it at (the mouth's place
+  among the mouths, or the last). E let go ends a hold, as a gather's. The haul
   stands on the right while anything is carried, its first five lines and then "and 4 more" (on a phone's narrow view two, under the tracker), no wider than the view,
   with "Carried, not kept. Fall or leave, and it is lost."; the leave held adds "What you carry is lost"; a respawn
   that empties it says "What you carried is lost." The cold lantern found stands a moment low in the view (on a narrow one in

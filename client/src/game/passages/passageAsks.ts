@@ -32,6 +32,8 @@ export interface Asked {
 
 export class PassageAsks {
   private asked: Asked | null = null;
+  /** A hold asked, awaiting the room's next answer: the foot it was asked on and how many asks the room had answered. */
+  private holding: { readonly foot: Foot; readonly answered: number } | null = null;
   private readonly now: () => number;
   private readonly tell: (words: string) => void;
 
@@ -50,11 +52,28 @@ export class PassageAsks {
     send(asked);
   }
 
+  /** Sends `asked`, a hold begun (a lamp lit, a dead lamp kindled, the reliquary opened), whose yes changes no dive:
+   *  only its refusal is said, as the room's next answer. */
+  hold(foot: Foot, asked: GearAsk, send: (sent: GearAsk) => void): void {
+    const gear = gearOf(foot);
+    if (gear) this.holding = { foot, answered: gear.answered };
+    send(asked);
+  }
+
   /** Each frame: the room's answer to the ask awaited, heard on `foot`'s gear; an ask of a room since left is no ask
    *  of the room stood in now. */
   frame(foot: Foot | null): void {
     if (this.asked && this.asked.foot !== foot) this.asked = null;
     const gear = gearOf(foot);
+    const holding = this.holding;
+    if (holding && (holding.foot !== foot || !gear || gear.answered !== holding.answered)) {
+      this.holding = null;
+      const heard =
+        holding.foot === foot &&
+        gear &&
+        answerHeard({ answered: holding.answered, dive: gear.dive ?? null }, gear, false);
+      if (heard && heard !== 'yes' && heard !== 'unanswered') this.tell(answerText(heard.refused));
+    }
     const asked = this.asked;
     const late = asked !== null && this.now() / 1000 - asked.since > ANSWER_WAIT_S;
     const heard = asked && gear && answerHeard(asked, gear, late);

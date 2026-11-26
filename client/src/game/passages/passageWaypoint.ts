@@ -45,7 +45,8 @@ export function passageWaypoint(
   const { zone, sites } = plan;
   const ways = sites.onward.map((mouth) => mouth.at);
   if (zone.lamp !== null && seen.done) return seen.lampLit ? (nearest(here, ways) ?? sites.lamp) : sites.lamp;
-  if (seen.open) return nearest(here, ways);
+  // A Gauntlet's mouths are open from the start, but what it asks is its far one.
+  if (seen.open && !(zone.deal === 'gauntlet' && !seen.done)) return nearest(here, ways);
   const pieces = (kind: PassagePiece['kind']) => plan.pieces.filter((piece) => piece.kind === kind);
   const unset = (kind: PassagePiece['kind'], bits: number) =>
     pieces(kind).flatMap((piece) => (((bits >> piece.number) & 1) === 0 ? [footOf(piece)] : []));

@@ -9,7 +9,7 @@ import type { NodeInfo } from '../worldData.ts';
 import { ASKS, type GearAsk } from '../../network/gearMessages.ts';
 import type { PassageSeenState } from '../../network/passageMessages.ts';
 import type { PassagePlan, PassageWeb, PassageZone } from '../../rules/passageRules.ts';
-import { passageRoomName } from '../rooms.ts';
+import { NO_WAY_HERE, passageRoomName } from '../rooms.ts';
 import { PassageGame, type PassageHost } from './passageGame.ts';
 import type { WayPlayed } from './wayBetween.ts';
 
@@ -398,4 +398,96 @@ test('back into a passage zone only where its room names one the web lays, its p
   assert.equal(await passages.resumeIn(passageRoomName('continent-1', 2_901, 7)), false, 'a week with no web');
   inside.door = null;
   assert.equal(await passages.resumeIn(passageRoomName('continent-1', 2_900, 7)), false, 'no door: no passages');
+});
+
+test('a held ask the room refuses is said in the room’s words, and one it takes says nothing', () => {
+  const asks: GearAsk[] = [];
+  const foot = footIn('passage-k', { online: true, dive: null }, asks);
+  const { held, inside, passages } = game(foot);
+  const kindled = {
+    ...planOf(3),
+    pieces: [{ module: 'kindle', kind: 'kindle', number: 0, at: [4, 5, 0], facing: 0 }],
+  } as unknown as PassagePlan;
+  inside.zone = { ...zoneIn('passage-k', 3), entry: { plan: kindled, room: 'passage-k', patrol } };
+  inside.door = { web: () => web, plan: () => null };
+  const ask = (asked: GearAsk) => void asks.push(asked);
+  passages.uses()?.(4, 5, ask)?.run();
+  assert.deepEqual(asks, [{ kind: ASKS.kindle, column: 0 }]);
+  foot.held.gear = { ...foot.held.gear!, answered: 1, answer: 185 };
+  passages.frame(false);
+  assert.deepEqual(held.told, ['Not while foes are near.']);
+  passages.uses()?.(4, 5, ask)?.run();
+  foot.held.gear = { ...foot.held.gear!, answered: 2, answer: 0 };
+  passages.frame(false);
+  passages.frame(false);
+  assert.deepEqual(held.told, ['Not while foes are near.'], 'a hold begun is no refusal');
+});
+
+test('at the lamp, the use carries the prompt’s second line', () => {
+  const foot = footIn('passage-l', { online: true, dive: null });
+  const { inside, passages } = game(foot);
+  const lamped = {
+    ...planOf(3),
+    zone: { ...planOf(3).zone, lamp: 1 },
+    pieces: [{ module: 'lamp', kind: 'lamp', number: 0, at: [4, 5, 0], facing: 0 }],
+  } as unknown as PassagePlan;
+  inside.zone = { ...zoneIn('passage-l', 3), entry: { plan: lamped, room: 'passage-l', patrol } };
+  foot.held.passage = { lampLit: false, open: true, done: true, holding: null } as unknown as PassageSeenState;
+  inside.door = { web: () => web, plan: () => null };
+  const use = passages.uses()?.(4, 5, () => undefined);
+  assert.equal(use?.words, 'Light the lamp');
+  assert.equal(use?.under, 'What you carry is kept once it burns');
+});
+
+test('a begin at a lamp lays the lamp’s zone the room begins it at: the mouth’s place among the mouths', () => {
+  const foot = footIn(patrol.id, { online: true, dive: null });
+  const { inside } = game(foot);
+  const laid: number[] = [];
+  const lamped = {
+    ...web,
+    mouths: [...web.mouths, { run: 'The Stair', zone: 7 }],
+    zones: [...web.zones, { ...zoneAt(5, [1_800, 2_800]), lamp: 2 }, { ...zoneAt(6, [1_900, 2_900]), lamp: 2 }],
+  };
+  inside.door = {
+    web: () => lamped,
+    plan: (island: string, week: number, zone: number) => (laid.push(zone), planOf(zone)),
+  };
+  inside.mouth = 1;
+  inside.begin('public', 2);
+  assert.deepEqual(laid, [6]);
+});
+
+test('a way on the zone gone to refuses as come by no way there, back in the zone left, says why', async () => {
+  const dive = { island: 'continent-1', week: 2_900, zone: 3, mouth: 0, homeward: false };
+  const foot = footIn('passage-m', { online: true, dive });
+  let joins = 0;
+  const { held, inside, passages } = game(foot);
+  // Each zone stood in is joined: the first, the zone gone to, refuses.
+  const standing = passages as unknown as { standIn: () => Promise<void> };
+  standing.standIn = () => (joins++ ? Promise.resolve() : Promise.reject(new Error(NO_WAY_HERE)));
+  let work: (() => Promise<void>) | null = null;
+  passages.ways.play = (way, working) => void (work = working);
+  inside.zone = { ...zoneIn('passage-m', 3), entry: { plan: onwardPlan(3), room: 'passage-m', patrol, ...dive } };
+  inside.door = { web: () => web, plan: (island: string, week: number, zone: number) => onwardPlan(zone) };
+  inside.goOn(0, () => undefined);
+  foot.held.gear = { ...foot.held.gear!, answered: 1, dive: { ...dive, zone: 7 } };
+  passages.frame(false);
+  await tick();
+  await (work as unknown as () => Promise<void>)();
+  assert.equal(joins, 2, 'the zone gone to, then the zone left');
+  assert.deepEqual(held.told, [NO_WAY_HERE]);
+});
+
+test('a dead lamp lit already gives way to the open mouth beside it', () => {
+  const foot = footIn('passage-n', { online: true, dive: null });
+  const { inside, passages } = game(foot);
+  const beside = {
+    ...onwardPlan(3),
+    sites: { onward: [{ at: [7, 5], facing: 0 }] },
+    pieces: [{ module: 'kindle', kind: 'kindle', number: 0, at: [4, 7, 0], facing: 0 }],
+  } as unknown as PassagePlan;
+  inside.zone = { ...zoneIn('passage-n', 3), entry: { plan: beside, room: 'passage-n', patrol } };
+  inside.door = { web: () => web, plan: () => null };
+  foot.held.passage = { lit: 1, open: true, done: true, holding: null } as unknown as PassageSeenState;
+  assert.equal(passages.uses()?.(4, 5, () => undefined)?.words, 'On to Zone 7');
 });

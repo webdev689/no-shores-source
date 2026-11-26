@@ -224,11 +224,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     } as const;
     const guided = quests.guide(afoot, { nodes: playing.zones, layouts: playing.landmass.layouts });
     // In a passage zone the compass points at what its deal asks, not at the roads, as its tracker shows its deal.
-    const inZone = [...here.fight.foes.values()].map((foe) => {
-      const standing = foe.view.health > 0 && foe.view.action.kind !== 'dead';
-      return { at: [foe.view.x, foe.view.y] as const, name: foe.name ?? '', standing };
-    });
-    const questAt = parts.passages.standsIn() ? parts.passages.waypoint(inZone) : guided.at;
+    // Read only while standing in a zone.
+    const inZone = () =>
+      [...here.fight.foes.values()].map((foe) => {
+        const standing = foe.view.health > 0 && foe.view.action.kind !== 'dead';
+        return { at: [foe.view.x, foe.view.y] as const, name: foe.name ?? '', standing };
+      });
+    const questAt = parts.passages.standsIn() ? parts.passages.waypoint(inZone()) : guided.at;
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     // A Breach's Rewritten are marked so on their plates.
@@ -285,7 +287,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // While she speaks, none but her and the player stands within reach of the tour's eye.
     const near = [...shown.figures, ...nodes, ...walking, ...crews];
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
-    if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
+    // Under ground a node (a vein's) stands among the figures, lit by the torches as they are.
+    const below = nodes.length > 0 ? { ...shown, figures: [...shown.figures, ...nodes] } : shown;
+    if (here.dungeon) parts.dungeons.draw(here, below, size, clock, fight, hands, more.drain);
     else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain, carried);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);

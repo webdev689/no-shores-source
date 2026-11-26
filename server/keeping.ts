@@ -265,12 +265,14 @@ export class Keeper {
     // A new account's character is the one the room holds, given back so the room keeps it as any other.
     // Either way, the account's vault and Aurem are joined in while the room holds it; a vault this room cannot read
     // leaves the character untouched, new or kept, so no save writes an empty one over it.
-    const own = claimed.body === null ? this.room.keptApart(player) : null;
-    const joined = own === null || this.room.restoreJoined(player, own.body, claimed.vault ?? own.vault);
     const body = claimed.body === null ? null : await this.answered(claimed.account, claimed.body, here);
-    const given = joined && (body === null || this.room.restoreJoined(player, body, claimed.vault));
-    // Another sign-in may have been kept while the errand was asked again: the room is judged full again, at last.
+    // Another sign-in may have been kept while the errand was asked again: the room is judged full again, at last,
+    // before it is given the character, so a player turned away is never sent it as kept.
     const full = this.fullWith(claimed.account);
+    const own = full === null && claimed.body === null ? this.room.keptApart(player) : null;
+    const joined =
+      full === null && (own === null || this.room.restoreJoined(player, own.body, claimed.vault ?? own.vault));
+    const given = joined && (body === null || this.room.restoreJoined(player, body, claimed.vault));
     if (!here() || !given || this.held.has(player) || full !== null) {
       // Gone already, full now, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null, null).catch(() => false);
@@ -395,7 +397,16 @@ export class Keeper {
       (drawn ? '' : FROM_THE_PLAYLIST) ||
       (outsider ? ANOTHER_GUILD : '') ||
       gated;
-    if (shut !== '' || !characters || !this.arrives || this.arrives(from, body)) return shut;
+    if (shut !== '' || !characters || !this.arrives) return shut;
+    // A judge that throws (the room's module failing to lay the web) cannot judge: refused for now, as accounts that
+    // do not answer are.
+    let came: boolean;
+    try {
+      came = this.arrives(from, body);
+    } catch {
+      return undefined;
+    }
+    if (came) return '';
     if (this.alone) return NO_WAY_HERE;
     const launchedHere = this.launchedHere;
     const launched = launchedHere ? await this.tried(() => launchedHere(player, account), here) : false;

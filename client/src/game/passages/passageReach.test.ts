@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { LaidRun } from '../../layout/layouts.ts';
 import type { PassagePlan, PassageWeb } from '../../rules/passageRules.ts';
-import { holdAt, homeSpot, mouthAt, onwardAt } from './passageReach.ts';
+import type { NodeInfo } from '../worldData.ts';
+import resources from '../../../../content/gear/resources.json' with { type: 'json' };
+import { holdAt, homeSpot, mouthAt, onwardAt, zonePlace } from './passageReach.ts';
 
 const run = (name: string, door: readonly [number, number]): LaidRun => ({
   name,
@@ -50,4 +52,21 @@ test('in a zone, an onward mouth within 4 m and the lamp or a dead lamp within 3
 test('home, a player stands 2 m out from the mouth they began at, toward its run’s end arena, as the room does', () => {
   assert.deepEqual(homeSpot([0, 0], [0, 100]), [0, 2]);
   assert.deepEqual(homeSpot([5, 5], [5, 5]), [5, 5], 'no arena apart from the door');
+});
+
+test('a vein zone holds its node pieces as its island resource’s nodes, in the room’s order', () => {
+  const resource = resources.resources[0]!;
+  const patrol = { id: 'p', kind: 'patrol', name: 'P', continent: resource.continent } as unknown as NodeInfo;
+  const node = (x: number) => ({ module: 'node', kind: 'node', number: 0, at: [x, 5, 0], facing: 0 });
+  const vein = {
+    zone: { name: 'A Vein' },
+    sites: { arrive: [0, 0] },
+    ground: { kind: 'open' },
+    pieces: [node(1), { module: 'lamp', kind: 'lamp', number: 0, at: [0, 20, 0], facing: 0 }, node(2)],
+  } as unknown as PassagePlan;
+  assert.deepEqual(zonePlace(vein, patrol, 'z').resources, [
+    { at: [1, 5], holds: resource.id },
+    { at: [2, 5], holds: resource.id },
+  ]);
+  assert.equal(zonePlace({ ...vein, pieces: [] }, patrol, 'z').resources, undefined, 'none where no node stands');
 });

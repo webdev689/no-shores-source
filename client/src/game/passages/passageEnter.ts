@@ -52,7 +52,13 @@ export type Joining = (name: string) => Promise<{ readonly link: RoomLink; reado
 export async function joinPassage(base: string, join: Joining): Promise<RoomLink> {
   const route = base.includes('--run-');
   for (let copy = 1; copy <= (route ? 1 : PASSAGE_COPIES); copy++) {
-    const { link, full } = await join(copy > 1 ? `${base}--${copy}` : base);
+    // A copy at its most sockets turns the player away before it welcomes them: full, as one at its most accounts.
+    const joined = await join(copy > 1 ? `${base}--${copy}` : base).catch((error: unknown) => {
+      if (error instanceof Error && error.message.includes(PASSAGE_FULL)) return null;
+      throw error;
+    });
+    if (!joined) continue;
+    const { link, full } = joined;
     if (!full && !link.shut) return link;
     link.close?.();
     if (!full && link.shut) throw new Error(link.shut);
@@ -60,18 +66,27 @@ export async function joinPassage(base: string, join: Joining): Promise<RoomLink
   throw new Error(PASSAGE_FULL);
 }
 
+const noWayHere = (error: unknown) => error instanceof Error && error.message.includes(NO_WAY_HERE);
+
 /** Joins the zone the dive went on to by `onward`, or, should it refuse the dive as come by no way leading there,
  *  the zone left by `back`: the room left may have shut before the move was saved, so the accounts keep the dive in
- *  the zone left, which takes it back. Whether the zone gone on to was joined. */
+ *  the zone left, which takes it back. Should the zone left refuse it too, its move saved meanwhile, the zone gone on
+ *  to is joined once more. Whether the zone gone on to was joined. */
 export async function onwardOrBack(onward: () => Promise<void>, back: (() => Promise<void>) | null): Promise<boolean> {
   try {
     await onward();
     return true;
   } catch (error) {
-    if (!back || !(error instanceof Error) || !error.message.includes(NO_WAY_HERE)) throw error;
+    if (!back || !noWayHere(error)) throw error;
+  }
+  try {
     await back();
     return false;
+  } catch (error) {
+    if (!noWayHere(error)) throw error;
   }
+  await onward();
+  return true;
 }
 
 /** Joins a server's room by `open` (its gear told to the second argument too) and waits to hear whether it takes the
@@ -130,17 +145,30 @@ export async function enterZone(context: FootContext, entry: ZoneEntry): Promise
   const link = await linked(heard, (sent) => (gear.gear = sent));
   const open = (received: (snapshot: Snapshot) => void) => ((hear = received), link);
   const boxes = hollowBoxes(plan);
-  try {
-    const foot = await Foot.onDeck(context, place, Array.from(entry.heights), open, {
-      boxes,
-      facing: plan.sites.facing,
-      gear,
-    });
+  const heights = Array.from(entry.heights);
+  return grounded(
+    link,
+    () => Foot.onDeck(context, place, heights, open, { boxes, facing: plan.sites.facing, gear }),
     // The deck's grid stood the step; the fight predicts on the hollow's own ground and blocks, as its room does.
-    if (!(await rulesOf(context)).combat.setPassage(ask)) throw new Error('the passage’s ground did not load');
+    async () => (await rulesOf(context)).combat.setPassage(ask),
+  );
+}
+
+/** The foot `make` stands on `link`, once `ground` lays its ground; should either fail, the foot made is left whole
+ *  (its room, its listeners, its figures), or with none made, the link is closed. */
+export async function grounded<Made extends Pick<Foot, 'leave'>>(
+  link: Pick<RoomLink, 'close'>,
+  make: () => Promise<Made>,
+  ground: () => Promise<boolean>,
+): Promise<Made> {
+  let foot: Made | null = null;
+  try {
+    foot = await make();
+    if (!(await ground())) throw new Error('the passage’s ground did not load');
     return foot;
   } catch (error) {
-    link.close?.();
+    if (foot) foot.leave();
+    else link.close?.();
     throw error;
   }
 }
