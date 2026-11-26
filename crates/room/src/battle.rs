@@ -114,13 +114,15 @@ fn struck(vessel: &naval::fight::Vessel) -> bool {
 }
 
 /// A fighting player's fight as their browser is sent it: the naval crate's numbers, its first captain's commission,
-/// and whether a boarding they asked now would be taken (`Fights::alongside`).
+/// whether a boarding they asked now would be taken (`Fights::alongside`), and whether it is the Harbourmaster's
+/// hulk's, whose fight the page shows as the sailing lesson's step.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FightSeen {
     pub player: PlayerId,
     pub numbers: Vec<f64>,
     pub captain: Commission,
     pub may_board: bool,
+    pub lesson: bool,
 }
 
 /// The shares of hull, canvas and men a ship's hurts leave it.

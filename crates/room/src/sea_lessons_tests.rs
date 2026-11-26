@@ -2,7 +2,7 @@
 //! page's word, and the hulk moored off Overlook, put into a fight of the captain's own as they come near, never
 //! boarded, a ball in it the act, and gone from the fight as they sail off.
 
-use super::{HULK_LEFT_M, HULK_NEAR_M, hulk_in, hulk_of};
+use super::{HULK_NEAR_M, hulk_in, hulk_of};
 use crate::PlayerId;
 use crate::harbour::Harbours;
 use crate::sea::{COURSE_EVERY_TICKS, Sea};
@@ -109,6 +109,7 @@ fn the_hulk_lies_off_overlook_and_comes_into_a_fight_of_the_captains_own_as_they
     ticks(&mut sea, 1_200);
     let (fighting, fought) = sea.fights().next().expect("the hulk's fight");
     assert_eq!((fighting, hulk_in(fought)), (player, Some(player)));
+    assert!(sea.fight_views().iter().all(|seen| seen.lesson), "the page is told the fight is the lesson's hulk");
     let hulk = fought.fight.vessel(CAPTAIN).expect("the hulk");
     assert_eq!(hulk.damage.state, State::Struck, "its colours struck");
     let off = libm::hypot(hulk.ship.x - mooring[0], hulk.ship.y - mooring[1]);
@@ -137,7 +138,8 @@ fn a_ball_in_the_hulk_is_the_act_and_it_leaves_as_the_captain_sails_off() {
     assert_eq!(sea.lesson_mark(player), None, "nothing more to mark");
     let (fought, crew) = sea.fights.of_mut(player).expect("still fighting");
     let own = fought.fight.ships.get_mut(&crew.ship).expect("their ship");
-    own.ship.y = mooring[1] + HULK_LEFT_M + 10.0;
+    // Overlook's roadstead lies past `HULK_NEAR_M` of the hulk: there the fight is over and the way in is open.
+    own.ship.y = mooring[1] + HULK_NEAR_M + 10.0;
     ticks(&mut sea, 3);
     assert_eq!(sea.fights().count(), 0, "the hulk left the fight, which ended");
     assert!(sea.hostiles().iter().all(|hostile| hostile.id != hulk_of(player)), "and is not at sea");

@@ -246,8 +246,14 @@ fn fights_seen() -> Vec<room::battle::FightSeen> {
         fight.put_to_sea(player, at(0.0, 0.0, 0.0), &Open, 0.0);
         naval::wire::view_numbers(&fight, naval::fight::PLAYER, &events, Some(&aim), &Open, 0.0)
     };
-    let seen =
-        |player, numbers, may_board| room::battle::FightSeen { player, numbers, captain: TITHE_MINIBOSS, may_board };
+    // The second fight stands for the hulk's: never boarded, the lesson's.
+    let seen = |player, numbers, may_board| room::battle::FightSeen {
+        player,
+        numbers,
+        captain: TITHE_MINIBOSS,
+        may_board,
+        lesson: !may_board,
+    };
     vec![seen(2, view(&captains), true), seen(5, view(&captains[..1]), false)]
 }
 
@@ -537,7 +543,9 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "the fight's captain a Grey Tithe Miniboss");
     assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
-    assert!(fight.may_board() && !sea.fights().unwrap().get(1).may_board(), "whether each player may board");
+    let hulk = sea.fights().unwrap().get(1);
+    assert!(fight.may_board() && !hulk.may_board(), "whether each player may board");
+    assert!(!fight.lesson() && hulk.lesson(), "whether each fight is the lesson's hulk");
     let numbers =
         |numbers: Option<flatbuffers::Vector<'_, f64>>| -> Option<Vec<f64>> { Some(numbers?.iter().collect()) };
     let alone = sea.fights().unwrap().get(1);

@@ -132,8 +132,9 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
     at: [ship.x, ship.y] as const,
   }));
   const guided = state.quests.guide({ on: 'sea', at: shown.focus, isles, hostiles }, state.chart, state.past);
-  // The Harbourmaster's hulk is fought for the lesson: the tracker keeps its step until the ball is in.
-  const task = fight && !deck && !state.quests.firing ? fight.readout(state.clock) : null;
+  // The Harbourmaster's hulk is fought for the lesson: in its fight the tracker keeps the quest (its step, then the
+  // way home); a Tithe ship met meanwhile is fought on the fight's own readout.
+  const task = fight && !deck && !here.sighted?.hulk ? fight.readout(state.clock) : null;
   hud.tasks.show(task ? seaFightQuest('Sea fight', task.left, task.men) : state.quests.tracked);
   hud.marks(shown.marks);
   // The player's plate, its abilities' bar, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),

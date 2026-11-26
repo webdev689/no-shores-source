@@ -178,10 +178,12 @@ on the keys below; and the page announces each step as the room ticks it, in a t
   over no land (else 1,000 m; `Sea::mooring`). A captain on its step who sails within 900 m of it, out of a
   fight, is put into a fight of their own with it, their ship hove to (`moor_hulk`): it lies hove to with its hull at
   the share it struck at, is never scuttled and never boarded, and fires nothing. A ball of the captain's that strikes
-  it is the step. Sailed more than 1,500 m from it, it leaves the fight, which ends; while the step waits it is put in
-  again as they come near. Gone down, it lays nothing, pays nothing, and counts for no road and no bounty. While the
+  it is the step. Sailed more than 1,500 m from it while the step waits, or 900 m once the ball is in (short of the
+  roadstead, so the way in is open), it leaves the fight, which ends; while the step waits it is put in again as
+  they come near. Gone down, it lays nothing, pays nothing, and counts for no road and no bounty. While the
   step waits the sea's gear marks its mooring (`quest_at`, from `Sea::lesson_mark`), which the compass points at,
-  and in its fight the tracker keeps the lesson in place of the fight's own task.
+  and in its fight (the sea's word says which fight is the hulk's, `lesson`) the tracker keeps the quest in place of
+  the fight's own task: the step, then the way home. A Tithe ship met during the lesson is fought on its own task.
 - **Bring it home**: docking at Overlook enters its social space, which meets it.
 
 Each lesson's task pays a mission's clear as it is done, as every task that sends the player out does. A save kept

@@ -24,7 +24,7 @@ import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
 import { BINDS } from '../../player/input.ts';
-import { COUNTERS, buyAt, goalNodes, openGoals, talkAt, trackedOf, walked } from './questBook.ts';
+import { COUNTERS, buyAt, goalNodes, talkAt, trackedOf, walked } from './questBook.ts';
 import { lessonKeys } from './lessons.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { type Chart, type Guide, type Standing, guideOf } from './waypoint.ts';
@@ -183,12 +183,6 @@ export class Quests {
         return { ...step, ...(notes[index] ? { note: notes[index] } : {}), ...(keys.length > 0 ? { keys } : {}) };
       }),
     };
-  }
-
-  /** Whether the task walked still asks a ball in the Harbourmaster's hulk: its fight then shows the lesson in the
-   *  tracker, not the fight's own task. */
-  get firing(): boolean {
-    return this.past && openGoals(this.gear?.quest).some(({ goal }) => goal.kind === 'sail' && goal.act === 'fire');
   }
 
   /** The nodes the task's goals name, for the held map. */
