@@ -69,17 +69,19 @@ test('the map’s ask lights the water under the pointer once, and lets it go of
 
 test('the map’s ask asks for a course anywhere at sea, in another water or its own; no lets it go, a new choice asks again', () => {
   const ask = new MapAsk();
+  // Read through a call: a strict assert that it is null would narrow `ask.asking` for the rest of the test.
+  const asked = (): string | null => ask.asking?.name ?? null;
   ask.choose(waters, exact, { ok: true, points: [WEST, EAST] }, WEST);
-  assert.equal(ask.asking?.name, 'The Elmwater');
+  assert.equal(asked(), 'The Elmwater');
   assert.equal(ask.answerNo(), true, 'no is taken while it asks');
-  assert.equal(ask.asking, null);
+  assert.equal(asked(), null);
   assert.equal(ask.answerNo(), false, 'and not again');
   ask.choose(waters, exact, { ok: true, points: [WEST, [500, 2_500]] }, WEST);
-  assert.equal(ask.asking?.name, 'The Lantern Sea', 'within the ship’s own water');
+  assert.equal(asked(), 'The Lantern Sea', 'within the ship’s own water');
   ask.choose(waters, exact, { ok: false, why: 'No water leads there.' }, WEST);
-  assert.equal(ask.asking, null, 'a course refused');
+  assert.equal(asked(), null, 'a course refused');
   ask.choose(waters, exact, { ok: true, points: [WEST, LAND] }, WEST);
-  assert.equal(ask.asking, null, 'an end whose water is unknown asks nothing');
+  assert.equal(asked(), null, 'an end whose water is unknown asks nothing');
 });
 
 test('the prompt is judged by the exact rule, not the grid: a coast’s sea the grid reads as land still asks', () => {
