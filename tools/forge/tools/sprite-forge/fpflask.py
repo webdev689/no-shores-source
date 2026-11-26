@@ -2,10 +2,11 @@
 draught glowing through its glass, a clear neck, a cork) in the right fist, the arm every first-person hand wears
 (fparm.py), closed round the neck's foot where it leaves the belly, the neck and the cork standing clear past it. The
 flask is the hand's size to it as the figure's is (the first-person hand is drawn `fpguns.ARM['hand']` times a man's),
-its glass a clear shell round the draught, pale at its rim, the draught darker at its foot and bright at its top. Drawn as held things are (fpheldforge.py): the
-flask alone, and the hands alone in the bare glove or any armour set, cut where the flask lies nearer the eye. The
-spec's one record is the drink's four frames over its second, as the figure's: brought up from below the screen's
-right foot, raised before the face, tipped up at the lips, lowered away. Its draught lights the hand red.
+its glass a clear shell round the draught, pale at its rim, the draught darker at its foot and bright at its top.
+Drawn as held things are (fpheldforge.py): the flask alone, and the hands alone in the bare glove or any armour set,
+cut where the flask lies nearer the eye. The spec's one record is the drink's four frames over its second, as the
+figure's: brought up from below the screen's right foot, raised before the face, tipped up at the lips, lowered away.
+Its draught lights the hand red.
 
     python -I tools/sprite-forge/fpflask.py --spec tools/sprite-forge/specs/FLASK.json            # its poses
     python -I tools/sprite-forge/fpflask.py --spec tools/sprite-forge/specs/FLASK.json --grade    # the hands' grade
@@ -39,7 +40,6 @@ SCALE = SHAPE['hand']   # props3p's sizes, at the first-person hand's own
 BELLY = (0.052, 0.05, 0.052)   # props3p's belly: its middle's height, its radius, its half height
 NECK = (0.095, 0.15, [(0, 0.02), (0.3, 0.014), (1, 0.015)])   # props3p's neck: from, to, its profile
 CORK = (0.145, 0.165, [(0, 0.012), (1, 0.013)])
-HEIGHT = CORK[1] * SCALE   # the flask's foot to its mouth
 # the fist round the neck's foot, up from the flask's foot: its lower knuckles on the belly's shoulder
 HOLD = 0.107 * SCALE
 SHELL = 1.06   # the glass round the draught, its size to it
@@ -73,8 +73,8 @@ def _lathe(z0, z1, rings, n, caps):
 def flask_mesh():
     """The flask in its own space, its foot at the origin and +Z up to its mouth, as props3p.py `flask` builds it at
     the hand's size, its draught in a glass shell: (vertices, triangles, material index among OWN)."""
-    return fptorch._join([(*_belly(1.0), 0), (*_lathe(*NECK, 8, (False, True)), 1), (*_lathe(*CORK, 4, (True, True)), 2),
-                          (*_belly(SHELL), 3)])
+    return fptorch._join([(*_belly(1.0), 0), (*_lathe(*NECK, 8, (False, True)), 1),
+                          (*_lathe(*CORK, 4, (True, True)), 2), (*_belly(SHELL), 3)])
 
 
 def neck_r():
@@ -135,8 +135,8 @@ def _lets_light(m):
     return m
 
 
-# the draught's colour up the belly, foot to top (linear): dark at its foot, bright at its top, a pale line where it
-# meets the glass's shoulder, as a liquid in a bottle
+# the draught's colour up the belly, foot to top (linear): dark at its foot, bright at its top, a pale line near its
+# top, as a liquid in a bottle
 DRAUGHT_RAMP = ((0.0, (0.16, 0.005, 0.003)), (0.75, (0.9, 0.08, 0.04)), (0.86, (1.0, 0.32, 0.18)),
                 (0.9, (0.9, 0.08, 0.04)))
 
