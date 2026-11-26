@@ -399,9 +399,11 @@ as its other asks do, and a refusal is said in the room's words (174 to 185).
   kit's ember) glowing once lit and the kit's stone while cold; only while that pack has not come do they stand as
   plain boxes. Under ground they are the dungeon pack `passage`'s modules (`passagePiecesLaid`), laid at each piece's
   foot turned to its facing, in the pictures of the cell it stands on, into a mesh of the dungeon's own made again as
-  the deal's state changes; a lamp's and a dead lamp's `glow` part is lit, or the cell's stone while cold. The lamp
-  lit burns from its glass across its room and each dead lamp lit as a lantern, and an open mouth shows its way on in
-  daylight's pale light behind its face (`passagePieceLights`), lighting the room as its torches do. While the pack is
+  the deal's state changes; a lamp's and a dead lamp's `glow` part is lit, or the cell's stone while cold, and an open
+  mouth's is daylight, drawn as light. The lamp lit burns from a flame in its cage, its light at the cage's middle
+  3.2 m up, across its room, and each dead lamp lit as a lantern from a small flame in its glass off its crook, each
+  flame a fire flickering with its light ([[Dungeons]], "Its flames"); an open mouth shows its way on in daylight's
+  pale light behind its face (`passagePieceLights`), lighting the room as its torches do. While the pack is
   coming, or if it fails, they are plain boxes to their solids' sizes (`pieceMesh`).
 
 ### The way between zones

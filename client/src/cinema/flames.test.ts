@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { FIRE_FRAMES_PER_SECOND, type Fire, fireFrame, fireParts, GLOW_REACH, inSmoke } from './flameParts.ts';
-import { fireLit, MOST_PARTS, packFires } from './flames.ts';
+import { farFire, fireLit, MOST_PARTS, packFires } from './flames.ts';
+import { flicker } from '../light/flicker.ts';
 import { PART, PART_KINDS } from './flamesShader.ts';
 
 const FIRE: Fire = { at: [10, 20, 3], sizeM: 1, seed: 4 };
@@ -257,4 +258,38 @@ test('its smoke column holds every puff it rolls up, for any wind, and nothing w
   const [round] = fires;
   assert.ok(round && !inSmoke(round, [0, 0], [round.at[0] + 6, round.at[1], round.at[2] + 3], 1), 'well beside it');
   assert.ok(round && !inSmoke(round, [0, 0], [round.at[0], round.at[1], round.at[2] - 2], 0), 'under the fire');
+});
+
+test('a fire flickers with the light it casts: its glow and its core flame burn as `flicker` does for its seed', () => {
+  for (let frame = 0; frame < 30; frame++) {
+    const seconds = frame * FRAME_S + 0.03;
+    const parts = fireParts(FIRE, seconds, CALM);
+    assert.equal(parts.glows[0]?.strength, flicker(FIRE.seed, seconds));
+    const burning = (flicker(FIRE.seed, seconds) - 0.8) / 0.2;
+    assert.ok(Math.abs((parts.tongues[0]?.height ?? 0) - FIRE.sizeM * (0.55 + 0.45 * burning)) < 1e-9);
+  }
+});
+
+test("a torch's or a candle's small fire takes fewer parts; from half a metre up a fire takes them all", () => {
+  const count = (sizeM: number) => {
+    const parts = fireParts({ ...FIRE, sizeM }, 2, CALM);
+    return [parts.tongues.length, parts.smoke.length, parts.embers.length];
+  };
+  const [full, torch, candle] = [count(0.5), count(0.27), count(0.09)];
+  assert.deepEqual(count(1).slice(0, 2), full.slice(0, 2));
+  full.forEach((parts, kind) => {
+    assert.ok((torch[kind] ?? 0) < parts && (candle[kind] ?? 0) <= (torch[kind] ?? 0));
+    assert.ok((candle[kind] ?? 0) >= 1, 'at least one of each');
+  });
+});
+
+test('past where its tongues read a fire is its glow alone, flickering as near', () => {
+  const torch: Fire = { at: [0, 0, 2], sizeM: 0.27, seed: 3 };
+  const into = new Float32Array(1024 * 12);
+  assert.ok(!farFire(torch, [10, 0, 2]) && farFire(torch, [40, 0, 2]));
+  const near = packFires([torch], 2, CALM, [10, 0, 2], into);
+  assert.ok(near.shown > 0 && near.glows === 1);
+  const far = packFires([torch], 2, CALM, [40, 0, 2], into);
+  assert.deepEqual(far, { shown: 0, glows: 1 });
+  assert.ok(Math.abs((into[11] ?? 0) - (fireParts(torch, 2, CALM).glows[0]?.strength ?? -1)) < 1e-6);
 });

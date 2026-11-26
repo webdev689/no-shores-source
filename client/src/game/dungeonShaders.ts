@@ -1,6 +1,6 @@
 // The dungeon's WGSL: its floor's mesh, its fixtures and its cache in the dungeon's pictures, lit by its lights and
-// the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each flame, ember, lantern, crystal and fungus
-// cap glowing in its own colour, a crystal's and a lantern's glass by their facets, and still water over its bed,
+// the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each ember, lantern, crystal and fungus cap
+// glowing in its own colour, moving with the light nearest it, a crystal's and a lantern's glass by their facets, and still water over its bed,
 // mirroring the lit room and catching the lights. A lit surface sums only the lights its cluster lists (`reaching`).
 import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, FOUL_FLAG, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
@@ -18,7 +18,7 @@ export const VIEW_FLOATS = { fromEye: 0, eye: 16, lights: 20, grid: 24, moods: 2
 export const LIGHT_FLOATS = 12;
 
 /** A light as the shader's `Light` holds it, written into `into` from `start`: where it burns and its number, its
- *  colour and reach, and its flicker, its pulse and how much of a gleam still water shows of it. */
+ *  colour and reach, and how deep it flickers, how deep it breathes and how much of a gleam still water shows of it. */
 export function lightFloats({ at, number, burning }: Light, into: Float32Array, start = 0): Float32Array {
   const { colour } = burning;
   into[start] = at[0];
@@ -30,7 +30,7 @@ export function lightFloats({ at, number, burning }: Light, into: Float32Array, 
   into[start + 6] = colour[2];
   into[start + 7] = burning.reach;
   into[start + 8] = burning.flicker;
-  into[start + 9] = burning.pulse ?? 0;
+  into[start + 9] = burning.breath ?? 0;
   into[start + 10] = burning.gleams === false ? 0 : 1;
   into[start + 11] = 0;
   return into;
@@ -69,6 +69,7 @@ const EMBER = ${DUNGEON_LAYERS.ember}u;
 const LANTERN_GLASS = ${DUNGEON_LAYERS.lanternGlass}u;
 const CRYSTAL = ${DUNGEON_LAYERS.crystal}u;
 const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
+const DAYLIGHT = ${DUNGEON_LAYERS.daylight}u;
 // A layer with this bit set is the portal's face, in the picture the rest of its number names.
 const PORTAL = ${PORTAL_FLAG}u;
 // A layer with this bit set is still water, over a bed in the picture the rest of its number names.
@@ -188,8 +189,7 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f, spa
     let image = flame_image(dot(mirror, towards / max(distance, 1e-3)), distance);
     // The line to a flame is walked only where its image would show.
     if image > 0.001 && !rock_between(point.x, point.y, lamp.place.x, lamp.place.y) {
-      let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
-      gleam += lamp.colour.rgb * FLAME_IN_WATER * image * burns * lamp.shape.z;
+      gleam += lamp.colour.rgb * FLAME_IN_WATER * image * burns(lamp, time) * lamp.shape.z;
     }
   }
   let mirrors = fresnel(max(dot(rippled, to_eye), 0.0));
@@ -225,6 +225,22 @@ fn fresnel(cosine: f32) -> f32 {
   return WATER_F0 + (1.0 - WATER_F0) * pow(1.0 - cosine, 5.0);
 }
 
+// The number of the light its cluster lists nearest a point, which a glow drawn there moves with: a lantern's glass
+// with its flame, a crystal with its own light. With none listed, a number from where it stands.
+fn nearest_seed(point: vec3f, span: vec3u) -> f32 {
+  var seed = point.x * 0.7 + point.y * 1.3;
+  var nearest = 1e9;
+  for (var order = 0u; order < span.y; order++) {
+    let lamp = lights[reaching_light(span, order)];
+    let distance = length(lamp.place.xyz - point);
+    if distance < nearest {
+      nearest = distance;
+      seed = lamp.place.w;
+    }
+  }
+  return seed;
+}
+
 // How much of a glowing facet's glow shows: all of it square to the eye, a little over half edge on.
 fn facing_share(face: vec3f, to_eye: vec3f) -> f32 {
   return 0.55 + 0.45 * abs(dot(face, to_eye));
@@ -253,37 +269,43 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let flat_normal = across / max(length(across), 1e-8);
   let face = flat_normal * select(-1.0, 1.0, dot(flat_normal, to_eye) >= 0.0);
   let time = view.eye.w;
-  // Each glow by where it burns, so no two flicker in step.
-  let phase = surface.point.x * 0.7 + surface.point.y * 1.3;
+  let span = reaching(surface.point);
+  // Each glow moves with the light nearest it: a flame's embers and a lantern's glass flicker with its flame, a
+  // crystal, a fungus cap and the open portal breathe as their light does.
+  let fiery = layer == GLOW || layer == EMBER || layer == LANTERN_GLASS;
+  let glows = fiery || layer == CRYSTAL || layer == FUNGUS || portal;
+  var seed = 0.0;
+  if glows {
+    seed = nearest_seed(surface.point, span);
+  }
   if layer == GLOW {
-    return vec4f(FLAME * flicker(time, phase, 1.0), 1.0);
+    return vec4f(FLAME * light_flicker(seed, time, 1.0), 1.0);
   }
   if layer == EMBER {
-    return vec4f(EMBER_GLOW * flicker(time * 0.5, phase, 1.4), 1.0);
+    return vec4f(EMBER_GLOW * light_flicker(seed, time, 1.4), 1.0);
   }
-  let span = reaching(surface.point);
   if layer == LANTERN_GLASS {
-    return vec4f(facet(LANTERN_GLOW * flicker(time, phase, 0.35), surface.point, face, to_eye, time, span), 1.0);
+    return vec4f(facet(LANTERN_GLOW * light_flicker(seed, time, 0.35), surface.point, face, to_eye, time, span), 1.0);
   }
   if layer == CRYSTAL {
-    // A slow swell through each crystal, from its foot to its tip.
-    let swell = 0.85 + 0.15 * sin(time * 1.3 + phase + surface.point.z * 2.0);
-    return vec4f(facet(CRYSTAL_GLOW * swell, surface.point, face, to_eye, time, span), 1.0);
+    return vec4f(facet(CRYSTAL_GLOW * light_breath(seed, time, 0.75), surface.point, face, to_eye, time, span), 1.0);
   }
   if layer == FUNGUS {
-    // A slower breath through each cap.
-    let breath = 0.8 + 0.2 * sin(time * 0.7 + phase * 1.7);
-    return vec4f(FUNGUS_GLOW * breath, 1.0);
+    return vec4f(FUNGUS_GLOW * light_breath(seed, time, 0.75), 1.0);
+  }
+  if layer == DAYLIGHT {
+    // An open mouth's way on, daylight far off down it.
+    return vec4f(DAYLIGHT_GLOW, 1.0);
   }
   if portal && view.lights.y > 0.5 {
-    // Open, a doorway of light that shimmers across its face.
-    let shimmer = 0.9 + 0.1 * sin(time * 2.3 + surface.uv.y * 9.0 + sin(surface.uv.x * 7.0 + time));
-    return vec4f(PORTAL_LIGHT * shimmer, 1.0);
+    // Open, a doorway of light breathing with its light, a faint shimmer across its face.
+    let shimmer = 0.94 + 0.06 * sin(time * 2.3 + surface.uv.y * 9.0 + sin(surface.uv.x * 7.0 + time));
+    return vec4f(PORTAL_LIGHT * light_breath(seed, time, 0.75) * shimmer, 1.0);
   }
   let normal = normalize(surface.normal);
   let mood = mood_at(surface.point, normal);
   if water && foul {
-    let breath = 0.6 + 0.4 * sin(time * 1.7 + phase);
+    let breath = 0.6 + 0.4 * sin(time * 1.7 + surface.point.x * 0.7 + surface.point.y * 1.3);
     let seething = FOUL_BUBBLE * foul_bubbles(surface.point.xy, time);
     return vec4f(water_at(surface.point, normal, time, mood, sampled, span) * FOUL_TINT + FOUL_GLOW * breath + seething, 1.0);
   }

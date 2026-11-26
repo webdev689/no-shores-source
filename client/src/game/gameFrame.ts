@@ -289,7 +289,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
     // Under ground a node (a vein's) stands among the figures, lit by the torches as they are.
     const below = nodes.length > 0 ? { ...shown, figures: [...shown.figures, ...nodes] } : shown;
-    if (here.dungeon) parts.dungeons.draw(here, below, size, clock, fight, hands, more.drain);
+    if (here.dungeon) parts.dungeons.draw(here, below, size, clock, fight, hands, more.drain, carried);
     else if (here.run) parts.dungeons.drawRun(shown, size, clock, fight, parts.eventProps, hands, more.drain, carried);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing, here.fell);

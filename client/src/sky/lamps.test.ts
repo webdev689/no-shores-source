@@ -20,10 +20,10 @@ test('a torch or a lantern in the left hand carries a light; anything else none'
   assert.equal(carriedLight(null), null);
 });
 
-test('a flame flickers gently: never above full, never below 84%', () => {
+test('a flame flickers gently: never above full, never below 80%', () => {
   for (let seconds = 0; seconds < 20; seconds += 0.013) {
     const shown = flicker(3, seconds);
-    assert.ok(shown <= 1 && shown >= 0.84, `${shown} at ${seconds}`);
+    assert.ok(shown <= 1 && shown >= 0.8, `${shown} at ${seconds}`);
   }
   assert.notEqual(flicker(1, 2), flicker(2, 2));
 });

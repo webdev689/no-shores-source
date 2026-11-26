@@ -4,7 +4,16 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { FLAMES_WGSL, GLOW_GAIN, NOISE_SEEDS, PART, PART_KINDS } from './flamesShader.ts';
 import { inverted } from './inverted.ts';
-import { FIRE_TEXELS_PER_METRE, type Fire, fireFrame, fireParts, type Point, type Wind } from './flameParts.ts';
+import { FIRELIGHT, type LampPlace } from '../sky/lamps.ts';
+import {
+  FIRE_TEXELS_PER_METRE,
+  type Fire,
+  fireFrame,
+  fireGlows,
+  fireParts,
+  type Point,
+  type Wind,
+} from './flameParts.ts';
 
 /** Floats a part takes: where it stands from the eye and its kind, its shape and lean, its colour and strength. */
 const PART_FLOATS = 12;
@@ -22,22 +31,38 @@ export function fireLit(colour: readonly number[], strength: number, near: numbe
 export const MOST_PARTS = 16_384;
 const PREMULTIPLIED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
 
+/** How far a fire's tongues read, metres a metre of its height, and never nearer than the least: past it, a fire is its
+ *  glow alone, flickering with its light. */
+export const TONGUES_READ_M = { perSize: 120, least: 12 } as const;
+/** How far a fire's light reaches, metres a metre of its height, and never less than the least. */
+const LAMP_REACH_M = { perSize: 8, least: 4 } as const;
+
+/** Whether `fire` stands past where its tongues read from `eye`. */
+export function farFire(fire: Fire, eye: Point): boolean {
+  const reads = Math.max(TONGUES_READ_M.least, TONGUES_READ_M.perSize * fire.sizeM);
+  return Math.hypot(fire.at[0] - eye[0], fire.at[1] - eye[1], fire.at[2] - eye[2]) > reads;
+}
+
 /** A fire's parts in one frame of its flicker, packed as instances in world metres: what it shows, then its glows. */
 interface Packed {
   readonly frame: number;
+  readonly far: boolean;
   readonly shown: Float64Array;
   readonly glows: Float64Array;
 }
 const packedOf = new WeakMap<Fire, Packed>();
 
-/** The fire's packed parts at `time`, worked out again only when its frame turns; a change in the wind is taken up
- *  then. Its tongues go after its smoke, the core one last, so the brightest flame stands over the rest. Each part
- *  carries its kind and a noise seed of its own from the fire's, so its licks and edges never hang on its slot. */
-function packedFire(fire: Fire, time: number, wind: Wind): Packed {
+/** The fire's packed parts at `time`, worked out again only when its frame turns or it comes near or goes `far`; a
+ *  change in the wind is taken up then. Far, it is its glows alone. Its tongues go after its smoke, the core one last,
+ *  so the brightest flame stands over the rest. Each part carries its kind and a noise seed of its own from the
+ *  fire's, so its licks and edges never hang on its slot. */
+function packedFire(fire: Fire, time: number, wind: Wind, far: boolean): Packed {
   const frame = fireFrame(fire, time);
   const known = packedOf.get(fire);
-  if (known?.frame === frame) return known;
-  const parts = fireParts(fire, time, wind);
+  if (known?.frame === frame && known.far === far) return known;
+  const parts = far
+    ? { smoke: [], wisps: [], tongues: [], embers: [], held: 0, glows: fireGlows(fire, time) }
+    : fireParts(fire, time, wind);
   const shown: number[] = [];
   const glows: number[] = [];
   let part = 0;
@@ -65,14 +90,14 @@ function packedFire(fire: Fire, time: number, wind: Wind): Packed {
     );
   for (const glow of parts.glows)
     add(glows, glow.position, PART.glow, glow.reach, 0, 0, 0, ...GLOW_COLOUR, glow.strength);
-  const packed = { frame, shown: Float64Array.from(shown), glows: Float64Array.from(glows) };
+  const packed = { frame, far, shown: Float64Array.from(shown), glows: Float64Array.from(glows) };
   packedOf.set(fire, packed);
   return packed;
 }
 
 /** The fires' parts at `time`, each as `PART_FLOATS` floats measured from `eye`, into `into` from its start: every
- *  fire's smoke, wisps, flames and embers, then every glow. Gives how many of each were written; past the buffer's
- *  room, parts are left out before any glow is. */
+ *  fire's smoke, wisps, flames and embers, then every glow, a fire past where its tongues read its glow alone. Gives
+ *  how many of each were written; past the buffer's room, parts are left out before any glow is. */
 export function packFires(
   fires: Iterable<Fire>,
   time: number,
@@ -81,7 +106,7 @@ export function packFires(
   into: Float32Array,
 ): { shown: number; glows: number } {
   const most = Math.floor(into.length / PART_FLOATS);
-  const all = Array.from(fires, (fire) => packedFire(fire, time, wind));
+  const all = Array.from(fires, (fire) => packedFire(fire, time, wind, farFire(fire, eye)));
   const glows = Math.min(
     most,
     all.reduce((sum, packed) => sum + packed.glows.length / PART_FLOATS, 0),
@@ -106,6 +131,8 @@ export function packFires(
 export class Flames {
   /** The wind the smoke leans with, m/s east and south. */
   wind: Wind = [0, 0];
+  /** How far through what stands nearer its flames still show, metres: a lantern's glass round its flame. */
+  seeThroughM = 0;
   private readonly device: GPUDevice;
   private readonly module: GPUShaderModule;
   private readonly overLayout: GPUBindGroupLayout;
@@ -118,6 +145,7 @@ export class Flames {
   private instances: GPUBuffer | null = null;
   private readonly values = new Float32Array(MOST_PARTS * PART_FLOATS);
   private counts = { shown: 0, glows: 0 };
+  private lit: LampPlace[] | null = null;
 
   constructor(gpu: Gpu) {
     const { device } = gpu;
@@ -175,17 +203,37 @@ export class Flames {
   light(base: Point, sizeM: number, seed: number, along?: Point): number {
     const id = this.nextId++;
     this.fires.set(id, along ? { at: base, sizeM, seed, along } : { at: base, sizeM, seed });
+    this.lit = null;
     return id;
   }
 
   /** Puts every fire out. */
   clear(): void {
     this.fires.clear();
+    this.lit = null;
+  }
+
+  /** How many fires burn. */
+  get count(): number {
+    return this.fires.size;
+  }
+
+  /** The light each fire casts, as the sky's lamps take it: at its glow, reaching with its size, in fire's colour,
+   *  seeded as its flames are so it flickers with them. */
+  get lamps(): readonly LampPlace[] {
+    this.lit ??= [...this.fires.values()].map((fire) => ({
+      at: fireGlows(fire, 0)[0]?.position ?? fire.at,
+      reachM: Math.max(LAMP_REACH_M.least, LAMP_REACH_M.perSize * fire.sizeM),
+      light: FIRELIGHT,
+      seed: fire.seed,
+    }));
+    return this.lit;
   }
 
   /** Lets go of the fires' buffers on the GPU; with no fire left, nothing is drawn again. */
   destroy(): void {
     this.fires.clear();
+    this.lit = null;
     this.view.destroy();
     this.instances?.destroy();
     this.instances = null;
@@ -206,7 +254,7 @@ export class Flames {
     this.device.queue.writeBuffer(
       this.view,
       0,
-      Float32Array.from([...fromEye.subarray(0, 16), ...toEye, time, 0, 0, 0]),
+      Float32Array.from([...fromEye.subarray(0, 16), ...toEye, time, this.seeThroughM, 0, 0]),
     );
   }
 

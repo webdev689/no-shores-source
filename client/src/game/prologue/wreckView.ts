@@ -5,6 +5,7 @@
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { contentBytes } from '../../contentCache.ts';
 import { FRONT_FACE, holdPictures, releasePictures } from '../../ships/shipView.ts';
+import { LIGHT_MOTION_WGSL } from '../../light/flicker.ts';
 import { SKY_WGSL, skyUniformFor } from '../../sky/skyUniform.ts';
 import { SHIP_PICTURE_TEXELS } from '../../textures/shipPictures.ts';
 import { SAMPLES } from '../../water/waterView.ts';
@@ -104,6 +105,7 @@ struct Place {
 @group(0) @binding(4) var lit: sampler;
 
 ${SKY_WGSL}
+${LIGHT_MOTION_WGSL}
 
 // The share of the near light added whole over the timber's own colour.
 const NEAR_WASH = 0.06;
@@ -144,23 +146,12 @@ fn vertex_main(
   return drawn;
 }
 
-fn hashed(cell: vec3f) -> f32 {
-  return fract(sin(dot(cell, vec3f(12.9898, 78.233, 37.719))) * 43758.5453);
-}
-
-// A smooth noise through space and time: each stretch of timber's light flickers as its own fire does.
+// Each stretch of timber's light flickers as the fires do (\`light_flicker\`), one flicker blending into the next
+// across the wreck, so no seam steps across it.
 fn flicker(at: vec3f, time: f32) -> f32 {
-  let point = vec3f(at.xy * 0.4, time * 2.1);
-  let base = floor(point);
-  let part = fract(point);
-  let eased = part * part * (3.0 - 2.0 * part);
-  var sum = 0.0;
-  for (var corner = 0u; corner < 8u; corner++) {
-    let pick = vec3f(f32(corner & 1u), f32((corner >> 1u) & 1u), f32((corner >> 2u) & 1u));
-    let weight = mix(1.0 - eased, eased, pick);
-    sum += hashed(base + pick) * weight.x * weight.y * weight.z;
-  }
-  return 0.78 + 0.3 * sum + 0.06 * sin(time * 13.0 + at.x * 1.7 + at.y * 1.1);
+  let stretch = at.x * 0.13 + at.y * 0.09;
+  let whole = floor(stretch);
+  return 1.07 * mix(light_flicker(whole, time, 1.5), light_flicker(whole + 1.0, time, 1.5), stretch - whole);
 }
 
 // The sky lights the wreck as it lights a ship (its hour, its cloud, its lightning), shut out where the bake found
