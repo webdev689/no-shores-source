@@ -213,7 +213,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         | Ask::Recruit { faction, .. } => Some(CounterKind::Faction(*faction)),
         Ask::RiseArt { art, .. } | Ask::BuyFragment { art, .. } => art_faction(*art),
         Ask::BuyFromShape { .. } => Some(CounterKind::Shape),
-        Ask::Speak { keeper } => keeper_counter(*keeper),
+        Ask::Speak { keeper } | Ask::Acquire { keeper } => keeper_counter(*keeper),
         Ask::TakeBounty { .. } | Ask::TurnInBounty { .. } => Some(CounterKind::Board),
         Ask::TakeLetter { .. } | Ask::TakeAllLetters => Some(CounterKind::Mail),
         // The Harbourmaster's counter is the Shipwright's.
@@ -224,7 +224,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
 
 /// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the one its key
 /// (`gear::quests::KEEPERS`) names; the stranger keeps none.
-fn keeper_counter(keeper: u8) -> Option<CounterKind> {
+pub(crate) fn keeper_counter(keeper: u8) -> Option<CounterKind> {
     if let Some(house) = gear::factions::factions().faction(keeper) {
         return Some(CounterKind::Faction(house.id));
     }

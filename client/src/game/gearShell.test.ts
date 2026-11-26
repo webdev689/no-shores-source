@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BINDS } from '../player/input.ts';
-import { fakeInterface, nodesOf } from '../ui/uiForTests.ts';
-import { tabsNode } from './gearShell.ts';
+import { fakeInterface, laidOf, laidWith, nodesOf } from '../ui/uiForTests.ts';
+import { sizesOf } from './gearNodes.ts';
+import { footerNode, tabsNode } from './gearShell.ts';
 
 test('where keys show, a tab’s name steps down a size once it and its keycap would not fit the tab together', () => {
   const { ui } = fakeInterface(1500, 1080);
@@ -27,4 +28,23 @@ test("on the pad a tab's keycap is the pad's button, never its name's words", ()
   } finally {
     BINDS.device = 'keys';
   }
+});
+
+test("on a phone the footer's hints wrap inside the window, its presses beside them", () => {
+  const hints = [
+    ['Click', 'Acquire'],
+    ['Hold', 'Buy'],
+    ['character', 'Open Character'],
+    ['Esc', 'Dismiss'],
+  ] as const;
+  const close = { id: 'close', width: 100, height: 20 };
+  const foot = footerNode('', '#fff', hints, [close], sizesOf(412, 915, 1));
+  const laid = laidOf({ width: 'grow', direction: 'column', children: [foot] }, 380, 900);
+  const past = laid.filter((each) => each.box.x + each.box.width > 380);
+  assert.deepEqual(
+    past.map((each) => each.node.id ?? each.node.text?.words),
+    [],
+    'nothing past the edge',
+  );
+  assert.ok(laidWith(laid, 'close'), 'Close laid');
 });

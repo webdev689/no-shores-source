@@ -67,6 +67,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::ArtLevel { art: 3, level: 4 }),
         Asked::Grant(Grant::Worn(Kind::Thunderlock)),
         Asked::Gear(Ask::Speak { keeper: 12 }),
+        Asked::Gear(Ask::Acquire { keeper: 13 }),
         Asked::Gear(Ask::ChooseFragment { art: 2, fragment: 4 }),
         Asked::UsePoint { point: 3 },
         Asked::ToShip,

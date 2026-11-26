@@ -32,7 +32,7 @@ from wreck_fire import fires, standing_ground  # noqa: E402
 from wreck_frames import wreck_frames  # noqa: E402
 from wreck_level import ARENA_ZONE, PATH, THULE, WAKE, ZONES, check, game, game_area  # noqa: E402
 from wreck_reach import CLIMB_M, Reach  # noqa: E402
-from wreck_scene import BOW, FRIGATE, SLOOP, STERN  # noqa: E402
+from wreck_scene import BOW, BRIG_MAINMAST_X, FRIGATE, SLOOP, STERN  # noqa: E402
 from wreck_ships import SEA_Z, placing  # noqa: E402
 
 CONTENT = os.path.join(os.path.dirname(TOOLS), 'content', 'prologue', 'wreck.json')
@@ -142,6 +142,8 @@ def level(gates, burning):
         'path': [list(game(point)) for point in PATH],
         'zones': zones,
         'arena': {'zone': ARENA_ZONE, 'thule': centred(game(THULE))},
+        # The Brig's mainmast stump the wisp wanders round, its foot where her stern half lies.
+        'masts': [list(game((placing(**STERN) @ Vector((BRIG_MAINMAST_X, 0.0, SEA_Z)))[:2]))],
         'dry': dry(),
         'fires': [{'at': [round(fire['at'].x, 3), round(-fire['at'].y, 3), round(fire['at'].z - SEA_Z, 3)],
                    'size': fire['size'],

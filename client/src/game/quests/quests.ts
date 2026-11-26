@@ -1,15 +1,20 @@
 // The houses' roads in the browser: once the story and the stranger's welcome are past, the tracker shows the
-// quest walked; its lines are said in the dialogue box one scene after another (questWatch.ts); a counter that a talk
-// goal of the task names offers to speak with its keeper; the HUD marks where the task's next goal stands and the
+// quest walked; its lines are said one scene after another (questWatch.ts), in the keeper's own screen where it is
+// open and the keeper says the scene alone, else in the dialogue box; a counter that a talk goal of the task names (or
+// whose keeper offers the quest) offers to speak with its keeper, whose screen it opens; the HUD marks where the task's next goal stands and the
 // held map the nodes its goals name; a varied step's figures and ward stand in the world (questFigures.ts); and what
-// a road gives is toasted. Each is the room's word read, never a judgement of the page's own.
+// a road gives is noticed at the foot of the screen (obtained.ts), and so is a house's horde: its Art unbounded as it
+// begins, and bound again as it ends. Each is the room's word read, never a judgement of the page's own.
+import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import houses from '../../../../content/story/houses.json' with { type: 'json' };
 import type { MarkedFoe } from '../../combat/foePlate.ts';
-import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
+import type { Rider } from '../../combat/horseSounds.ts';
+import type { GearState } from '../../network/gearMessages.ts';
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { placeMarks } from '../../overworld/overworldMarks.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
+import { MOUNT_SLOT, worn } from '../../player/gear.ts';
 import type { FoeType } from '../../rules/roster.ts';
 import { type Cast, type Line, castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
@@ -18,12 +23,18 @@ import type { Shot } from '../camera.ts';
 import type { Use } from '../footGear.ts';
 import type { ScreenMark } from '../hudMarks.ts';
 import { distanceText } from '../../plus/compass.ts';
-import { HARBOURMASTER, keeperOf } from '../keepers.ts';
+import { type Station, openGearWindow } from '../gearScreen.ts';
+import { keeperOf } from '../keepers.ts';
+import { sayInScreen } from '../npc/npcSpeech.ts';
 import { rosterFor } from '../footRoom.ts';
 import { actorCards } from '../prologue/actors.ts';
 import type { Quest } from '../tasks.ts';
 import { worldOutput } from '../uiSounds.ts';
-import { COUNTERS, buyAt, goalNodes, talkAt, trackedOf } from './questBook.ts';
+import { BINDS } from '../../player/input.ts';
+import { type Notice, notify } from '../obtained.ts';
+import { buyAt, goalNodes, talkAt, trackedOf, walked } from './questBook.ts';
+import { lessonKeys } from './lessons.ts';
+import { artIcon } from './questNews.ts';
 import { FIGURE_MOVES, FigureGlides, questActors, wardPlate } from './questFigures.ts';
 import { type Chart, type Guide, type Standing, guideOf } from './waypoint.ts';
 import { QuestWatch } from './questWatch.ts';
@@ -34,8 +45,18 @@ export interface QuestVoice {
   frame(seconds: number): void;
 }
 
-/** How long a toast for a road's gift stands, milliseconds. */
-const TOAST_MS = 4000;
+type Art = (typeof arts.arts)[number];
+/** What is noticed of a horde's Art, under its emblem: as it begins, and as it ends. */
+export const unboundedNotice = (art: Art): Notice => ({
+  title: `${art.name} unbounded`,
+  line: 'Every ability ready.',
+  icon: artIcon(art),
+});
+export const boundNotice = (art: Art): Notice => ({
+  title: `${art.name} bound again`,
+  line: 'Its abilities cost as before.',
+  icon: artIcon(art),
+});
 /** How far over the ground the quest's mark stands, metres; its size on the screen; and how far in from the top and
  *  foot it is held, clear of the place's name and the fight's bars. */
 const MARK_RISE_M = 2;
@@ -56,9 +77,14 @@ export class Quests {
   private readonly waiting: string[] = [];
   /** The scene being said, if one is. */
   private saying: string | null = null;
-  private toasted: { readonly text: string; readonly until: number }[] = [];
+  /** The Art a horde holds unbounded in the room the player is in, while it runs. */
+  private unbounded: Art | null = null;
+  /** Where what the roads give is noticed (obtained.ts). */
+  private readonly notify: (...notices: readonly Notice[]) => void;
   /** The step's figures, drawn between the room's words on them. */
   private readonly glides = new FigureGlides();
+  /** The step's figures on horseback as last drawn, heard as riders are, by numbers no fighter has. */
+  private riding: Rider[] = [];
   /** When the room's last word on the quest came, milliseconds on `now`. */
   private heardAt = 0;
   /** Where the compass last pointed for the quest walked, and each step's word, from where the player stood. */
@@ -76,6 +102,7 @@ export class Quests {
       readonly kept?: Pick<Storage, 'getItem' | 'setItem'>;
       readonly account?: () => string | null;
       readonly forge?: Cards;
+      readonly notify?: (...notices: readonly Notice[]) => void;
     },
     voice: () => QuestVoice,
     now: () => number = () => performance.now(),
@@ -83,6 +110,7 @@ export class Quests {
     [this.cast, this.scenes, this.voice, this.now] = [parts.cast, parts.scenes, voice, now];
     this.watch = new QuestWatch(parts.kept ?? null, parts.account);
     this.forge = parts.forge ?? null;
+    this.notify = parts.notify ?? notify;
   }
 
   /** The step's figures and its ward's figure in the room the player is in, as cards for an eye at `eye` at `clock`
@@ -94,8 +122,15 @@ export class Quests {
   ): CardAt[] {
     const now = this.now();
     const actors = questActors(this.here?.quest, this.roster, groundAt, (index, figure) => {
-      return this.glides.place(index, now) ?? [figure.x, figure.y, figure.z];
+      return this.glides.place(index, now) ?? [figure.x, figure.y, figure.z, figure.facing];
     });
+    const ridden = actors.filter((actor) => actor.anim.startsWith('horse'));
+    this.riding = ridden.map((actor) => ({
+      id: -actor.id,
+      feet: [actor.x, actor.y, actor.z],
+      mounted: true,
+      boosting: 0,
+    }));
     const forge = this.forge;
     if (!forge) return [];
     for (const actor of actors) forge.warm(actor.dress, () => FIGURE_MOVES, 0, actor.id);
@@ -116,6 +151,12 @@ export class Quests {
     if (own !== this.here) this.glides.heard(own?.quest?.figures ?? [], this.now());
     // Each word sets the step's clock afresh; between words the tracker runs it down from when it came.
     if (own && own.quest !== this.gear?.quest) this.heardAt = this.now();
+    const art = arts.arts.find((each) => each.id === own?.arts?.art);
+    const unbounded = own?.quest?.horde && art ? art : null;
+    // The horde over, fallen or left, the power ends where the player sees it.
+    if (this.unbounded && this.unbounded !== unbounded) this.notify(boundNotice(this.unbounded));
+    if (unbounded && this.unbounded !== unbounded) this.notify(unboundedNotice(unbounded));
+    this.unbounded = unbounded;
     this.here = own;
     if (own) this.gear = own;
   }
@@ -124,57 +165,62 @@ export class Quests {
    *  view: what is new is taken, and the next scene waiting is said once none is and nothing holds the view. */
   frame(seconds: number, past: boolean, held: boolean): void {
     this.past = past;
-    const now = this.now();
     const news = this.watch.look(this.gear, past);
     this.waiting.push(...news.scenes);
     // A moment's line waiting or being said already is not said twice: the player hears it once for the moment.
     for (const line of news.moments) if (line !== this.saying && !this.waiting.includes(line)) this.waiting.push(line);
-    this.toasted = [
-      ...this.toasted.filter((toast) => toast.until > now),
-      ...news.toasts.map((text) => ({ text, until: now + TOAST_MS })),
-    ];
-    const next = !held && this.saying === null ? this.waiting.shift() : undefined;
-    if (next !== undefined) this.say(next);
+    this.notify(...news.notices);
+    // While a screen stands over the view, only a scene its keeper says alone is said, in their screen.
+    const head = this.saying === null ? this.waiting[0] : undefined;
+    const onScreen = head !== undefined && held ? sayInScreen(this.scenes[head] ?? []) : null;
+    if (head !== undefined && (onScreen || !held)) this.say(this.waiting.shift() ?? head, onScreen);
     this.spoken?.frame(held ? 0 : seconds);
   }
 
-  /** Says `scene`'s lines, the next waiting once they end. */
-  private say(scene: string): void {
+  /** Says `scene`'s lines (in a keeper's screen where it took them, `onScreen`), the next waiting once they end. */
+  private say(scene: string, onScreen: Promise<void> | null = null): void {
     const lines = this.scenes[scene];
     if (!lines) return console.error(`the roads' scene ${scene} is not in houses.json`);
-    this.spoken ??= this.voice();
     this.saying = scene;
     const said = () => void (this.saying = null);
+    if (onScreen) return void onScreen.then(said);
+    this.spoken ??= this.voice();
     this.spoken.play(lines, this.cast, { auto: true }).then(said, (error: unknown) => {
       console.error(`the roads' scene ${scene} could not be played:`, error);
       said();
     });
   }
 
-  /** The toasts for what the roads gave lately. */
-  get toasts(): string[] {
-    return this.toasted.map((toast) => toast.text);
-  }
-
   /** Where the compass points for the quest walked from where the player stands (`standing`), over `chart`, kept for
    *  the tracker's words; none before the story and the welcome are past. At sea, where no frame runs the roads (their
-   *  lines and toasts wait for land), `past` says whether they are. */
+   *  lines and notices wait for land), `past` says whether they are. */
   guide(standing: Standing, chart: Chart, past = this.past): Guide {
     this.past = past;
-    const marked = this.goalAt;
-    const where = standing.on === 'land' ? { ...standing, marked } : standing;
+    const where = { ...standing, marked: this.goalAt };
     this.guided = this.past ? guideOf(this.gear?.quest, where, chart) : { at: null, notes: [] };
     return this.guided;
   }
 
-  /** What the tracker shows: the quest walked, once the story and the welcome are past, each step with its way. */
+  /** The step's figures on horseback as last drawn (`cards`), for their hooves to be heard. */
+  get riders(): readonly Rider[] {
+    return this.riding;
+  }
+
+  /** What the tracker shows: the quest walked, once the story and the welcome are past, each step with its way, and
+   *  a lesson's step its keys as bound now on the keys or the pad played last. */
   get tracked(): Quest | null {
-    const tracked = this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000) : null;
+    const horsed = !this.gear || worn(this.gear, MOUNT_SLOT) !== undefined;
+    const tracked = this.past ? trackedOf(this.gear?.quest, (this.now() - this.heardAt) / 1000, horsed) : null;
     if (!tracked) return null;
     const { notes } = this.guided;
+    const goals = walked(this.gear?.quest)?.task.goals ?? [];
     return {
       ...tracked,
-      steps: tracked.steps.map((step, index) => ({ ...step, ...(notes[index] ? { note: notes[index] } : {}) })),
+      steps: tracked.steps.map((step, index) => {
+        const goal = goals[index];
+        const keys = goal && !step.done ? lessonKeys(goal, BINDS.device, BINDS.now) : [];
+        return { ...step, ...(notes[index] ? { note: notes[index] } : {}), ...(keys.length > 0 ? { keys } : {}) };
+      }),
     };
   }
 
@@ -190,23 +236,22 @@ export class Quests {
   }
 
   /** Whether the keeper at the counter `counter` (a station's kind) has something for the player, once the story
-   *  and the welcome are past: a step of the quest walked asks to speak with them, as `speak` answers, or to buy one
-   *  of their wares. */
+   *  and the welcome are past: a step of the quest walked asks to speak with them (or to acquire it from them), as
+   *  `speak` answers, or to buy one of their wares. */
   wants(counter: string): boolean {
-    return this.speak(counter, () => undefined) !== null || (this.past && buyAt(this.gear?.quest, counter));
+    return this.speak(counter) !== null || (this.past && buyAt(this.gear?.quest, counter));
   }
 
   /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names
-   *  it: speaks with its keeper, asking the room (ask 64); the goal's scene is said as the room meets it. Null
-   *  otherwise, so the counter opens as before. */
-  speak(counter: string, ask: (asked: GearAsk) => void): Use | null {
-    const state = this.gear?.quest;
-    const goal = this.past ? talkAt(state, counter) : null;
-    const column = COUNTERS[counter];
-    if (!state || !goal || column === undefined) return null;
+   *  it, or its keeper offers the quest walked: "Speak with" its keeper, opening their screen, where the word is asked
+   *  of the room and its lines said (npc/npcScreen.ts). Null otherwise, so the counter opens as before. */
+  speak(counter: string): Use | null {
+    const goal = this.past ? talkAt(this.gear?.quest, counter) : null;
     const keeper = keeperOf(counter);
-    const name = (keeper && this.cast.speakers[keeper.speaker]?.name) ?? HARBOURMASTER;
-    return { words: `Speak with ${name}`, run: () => ask({ kind: ASKS.speakWith, column }) };
+    if (!goal || !keeper) return null;
+    const name = this.cast.speakers[keeper.speaker]?.name ?? keeper.title;
+    // A counter with a keeper is a station's.
+    return { words: `Speak with ${name}`, run: () => openGearWindow({ view: counter as Station }) };
   }
 
   /** The quest's mark on the screen through `shot` on a picture `viewport` CSS pixels, standing on `groundAt`'s

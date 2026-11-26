@@ -62,11 +62,12 @@ pub(crate) fn standing_of<'built>(
             .into_iter()
             .flat_map(|vendor| {
                 let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
-                gear::vendor::stock(vendor, room.day(), level).into_iter().enumerate()
+                gear::vendor::stock(vendor, room.day(), level).into_iter().enumerate().map(move |ware| (vendor, ware))
             })
-            .map(|(place, mut ware)| {
+            .map(|(vendor, (place, mut ware))| {
                 ware.id = u32::try_from(place).unwrap_or_default();
-                let price = gear::vendor::price(ware.rarity);
+                // Nothing for a piece the Weaponsmith owes as her gift: the page shows it free.
+                let price = character.ware_price(vendor, &ware);
                 crate::gear_wire::item_offset(builder, &ware, At::Carried, price)
             })
             .collect()

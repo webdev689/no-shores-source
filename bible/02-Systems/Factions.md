@@ -39,13 +39,23 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   file, so both read one set of numbers.
 - **The pledge.** A character keeps the faction pledged (none at first), and for each faction its reputation and the
   packages collected (`Allegiance`). Pledging is an ask served only at that faction's counter: the first is free, a
-  switch costs 2,500 Aurem, the faction already pledged is refused. A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
-  of its fragments are earned. Reputation with every faction is kept across a switch. A saved character from before
+  switch costs 2,500 Aurem, the faction already pledged is refused. The house pledged to gives its own torso piece
+  as the pledge is taken, the first time the character pledges to it (`give_house_piece`): the house's torso entry's
+  look and name (the Stormcaller Hauberk, the Lamplighter Hauberk, the Veiled Hauberk) made at Magic, the game's
+  Uncommon, at the player's level and rolled as any Magic torso is (`vestige::house_piece`, as the house's pieces
+  that drop in the world are: [[Gear]], "The house's pieces in the world's loot"). It is kept given by the entry's name beside the
+  keepers' gifts ([[Gear]], "The keepers' gifts"), so a switch to another house gives that house's piece once and a
+  switch back gives none; carried, else laid in the vault, else posted as itself. The catalogue's entry stays the
+  Legendary the house sells: the gift is no ware and changes nothing a house sells. Its leader says a line of their
+  own as it is given (`giftStorm`, `giftLamp`, `giftVeil` in `content/story/houses.json`), unless the house's road
+  begins in the same moment, when its begin is said as it stands and the notice alone tells of the piece; the page
+  shows it as the
+  leader's gift notice (`houseGiftNotice`). A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
+  of its fragments are earned, the Art first shown off unbounded against a horde. Reputation with every faction is kept across a switch. A saved character from before
   the factions reads pledged to none, and a broken one is made whole.
 - **The houses introduced.** Before the pledge the opening quest has the player hear all three, each keeper
   introducing their house when spoken to at its counter (`content/story/houses.json`): Arlo Kestrel the Stormcallers,
-  Elder Maren Hale the Lamplighters, Sable the Veiled. The stranger names the three chapels as she welcomes the player
-  ([[Prologue]]). How the keepers speak: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
+  Elder Maren Hale the Lamplighters, Sable the Veiled. How the keepers speak: [[Every Line Reads as Spoken, and the Lore Is Detailed, Mysterious and Gripping]].
 - **Reputation.** Every deed's XP, as the room pays it after the seas' share (a kill, a clear, a chest, a sinking, a
   bounty, the day's and the week's clears and a road's task; [[Gear]], "XP"), goes as reputation to the faction
   pledged, but only while the player wears that faction's cape (`earn_reputation`), and a kill's a quarter more while

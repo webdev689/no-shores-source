@@ -282,8 +282,9 @@ export function startGearWindow(
     if (frame.clicked('press-step')) stepOnce();
     if (view !== shown) return [];
     const body = frame.boxOf('gear-body');
-    // The Art's and the Appearance screens stand to the body's edges; every other page inside its padding.
-    const bleed = shown === 'character' && (appearance || (arts && Boolean(now?.gear?.arts))) && inspecting === null;
+    // The Art's, the Appearance and every station's screen stand to the body's edges; the rest inside its padding.
+    const opened = station !== null ? Boolean(now?.gear) : appearance || (arts && Boolean(now?.gear?.arts));
+    const bleed = (station !== null || shown === 'character') && opened && inspecting === null;
     const [aroundX, aroundY] = bleed ? [0, 0] : [40, 24];
     const room = {
       width: Math.max(0, (body?.width ?? 0) - aroundX),
@@ -437,9 +438,10 @@ export function startGearWindow(
           ? journal.hourglass(frame)
           : accountMark(frame, account, figure.picture, toAccount, sizes.ratio),
       ),
-      // On a short screen an item's page takes the banner's height back for its nodes.
+      // An item's page on a short screen takes the banner's room back; a station's crest holds what it shows.
       (named !== null || bannerGear !== null) &&
         !(item && sizes.short) &&
+        station === null &&
         bannerNode(frame, emblemOf(bannerGear?.emblem ?? 0), named, bannerGear, gear, shown !== 'inventory', sizes),
     ];
     cardFor(MARK, () => nameCard(sizes, markName(account)));

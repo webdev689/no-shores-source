@@ -7,8 +7,8 @@ use naval::wire::view_numbers;
 
 impl Fights {
     /// Each fighting player's view of their fight (the naval crate's numbers, their ship as its player's), its lay
-    /// over the fight's waters now, its first captain's commission, and whether they may board (`alongside`); then
-    /// the kept last views of fights that ended unseen.
+    /// over the fight's waters now, its first captain's commission, whether they may board (`alongside`) and whether
+    /// it is a lesson's hulk; then the kept last views of fights that ended unseen.
     pub(crate) fn views<'fights>(
         &'fights self,
         coasts: &'fights [Coast],
@@ -30,7 +30,8 @@ impl Fights {
             let waters = CoastWaters { coasts, swell: &fought.swell };
             let numbers = view_numbers(&fought.fight, crew.ship, &fought.events, aim.as_ref(), &waters, time);
             let may_board = self.alongside(*player).is_ok();
-            FightSeen { player: *player, numbers, captain: fought.first_captain(), may_board }
+            let lesson = crate::sea::lessons::hulk_in(fought).is_some();
+            FightSeen { player: *player, numbers, captain: fought.first_captain(), may_board, lesson }
         })
     }
 

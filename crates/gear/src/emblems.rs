@@ -162,6 +162,7 @@ impl Character {
         }
         self.earn_cosmetics_due();
         self.give_ship_due();
+        self.give_gifts_due();
         self.find_lore_due(crate::lore::lore());
     }
 
