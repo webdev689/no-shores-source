@@ -229,3 +229,29 @@ fn a_parked_ship_lies_at_the_one_coast_nearest_it_and_only_that_places_rooms_see
     assert_eq!(answered(&sea.ashore(ISLAND, &["ann", "bea"])), ["ann"], "nor Bea's from the first's");
     assert_eq!(shown(&sea), [ann, bea]);
 }
+
+#[test]
+fn an_island_is_rolled_clear_of_a_parked_ship_as_of_one_sailing() {
+    // The first island rolled near a ship lying still, and the tick it stood; with Ann's ship parked at `moored` first.
+    let rolled = |moored: Option<[f64; 2]>, most: usize| {
+        let text = r#"{ "continents": [{ "id": "continent-4", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+        let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
+        left_at(&mut sea, "ann", OFF_COAST);
+        if let Some([x, y]) = moored {
+            let parked = &mut sea.parked.by_account.get_mut("ann").unwrap().ship;
+            (parked.x, parked.y) = (x, y);
+        }
+        let player = sea.join();
+        sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+        for tick in 0..most {
+            sea.tick();
+            if let Some(island) = sea.islands().standing().next() {
+                return Some((island.at, tick + 1));
+            }
+        }
+        None
+    };
+    let (first, at) = rolled(None, 60 * 60 * 3).expect("an island rolled near the ship");
+    let clear = rolled(Some(first), at).map(|(island, _)| island);
+    assert!(clear.is_none_or(|island| combat::sight::apart(island, first) >= 1_200.0), "not on the parked ship");
+}

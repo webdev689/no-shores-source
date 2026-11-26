@@ -70,7 +70,7 @@ The sea room holds its islands (`sea_islands.rs`):
 
 - **Rolled** every ten seconds round each ship at sea that has fewer than two islands within 8 km, three times in ten:
   3 to 7 km from it, in hostile water (never in home waters), 3 km clear of every coast and every other island, 1.2 km
-  clear of every ship and hostile ship, and clear of every ship's course by its reach and 300 m. At most 96 stand.
+  clear of every ship, hostile ship and parked ship, and clear of every ship's course by its reach and 300 m. At most 96 stand.
   An island in a climate the contract does not dress is not rolled.
 - **Seen and found.** Each player is told of the islands within 20 km of their ship and of those they have found;
   a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand.
