@@ -384,7 +384,7 @@ test('the keys and the pad walk the tiles and press the one they reach, which th
 
 test('tiles step their size four pixels at a time: each texel of a scene two pixels, and a resize paints few', () => {
   for (let width = 1280; width <= 1920; width += 1)
-    for (let height = 700; height <= 1080; height += 19) {
+    for (let height = 700; height <= 1080; height += 1) {
       const { tile } = gridOf(width, height);
       assert.ok(tile.width % 2 === 0 && tile.height % 2 === 0, `${tile.width}x${tile.height} at ${width}x${height}`);
     }
