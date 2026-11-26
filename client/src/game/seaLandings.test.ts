@@ -352,7 +352,7 @@ test('while the view is not over the ship nothing docks or lands: a landing come
   assert.equal(landed.length, 1);
 });
 
-test('leaving the ship while it sails for a landing lets its voyage go too; leaving it otherwise keeps the voyage', () => {
+test('leaving the ship while it sails for a landing lets its voyage go too; leaving otherwise keeps the voyage', () => {
   const { landings, sea, asked } = landingsOf();
   landings.click({ kind: 'mark', id: 'overlook-port' });
   landings.answer(true);

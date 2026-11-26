@@ -1,7 +1,7 @@
 // Where a ship docks for a landing, and the way in to it and out of it again: at a living port a place of its pier no
 // ship lies in, come to along the pier, or, every place taken, anchored off it clear of the others; at a coast with no
-// port just off the shore nearest where it was clicked; at a sea island its anchorage, or out along its way in clear of
-// the ships there. Each berth has its offing, out at sea, which the ship sails in from and out to: the port's
+// port just off the shore nearest where it was clicked; at a sea island its anchorage, or abreast of it clear of the
+// ships there. Each berth has its offing, out at sea, which the ship sails in from and out to: the port's
 // roadstead, 600 m off the coast, the island's offing.
 import { insideRing } from '../editor/placeDrawing.ts';
 import type { Point2 } from '../overworld/ground.ts';
@@ -26,6 +26,9 @@ type Lying = { readonly x: number; readonly y: number };
 export const TAKEN_M = 15;
 /** How far apart ships anchored off a pier lie, metres: a Frigate's length and room to swing round her anchor. */
 export const ANCHORED_APART_M = 100;
+/** How far apart ships lie abreast off a sea island's anchorage, metres: clear of each other's beam, and the fifth
+ *  still within the 30 m of it the page anchors within, so the sea lands its player (`sea_islands.rs`, `LANDING_M`). */
+export const ABREAST_M = 15;
 /** How far out along a pier's bearing the last stretch in to a place of it starts, metres: over twice a Sloop's
  *  length, so the ship has come round onto the pier's line before she lies beside it. */
 export const LEAD_M = 40;
@@ -90,15 +93,20 @@ export function portBerth(
   return { at: anchorage, offing: anchorage };
 }
 
-/** A sea island's berth: its anchorage, or the first place out from it along its way in no ship lies near, the water
- *  a voyage keeps to; its offing, or as far again beyond a place that passes it. */
+/** A sea island's berth: its anchorage, or the first place abreast of it, `ABREAST_M` at a time either side across
+ *  its way in, that no ship lies within half that of, its offing as far across from the island's own, so the ship
+ *  comes straight in; every place taken, the anchorage, where the sea still lands its player. */
 function isleBerth(way: { readonly offing: Point2; readonly anchorage: Point2 }, ships: readonly Lying[]): Berth {
   const { anchorage, offing } = way;
   const out = unitTo(anchorage, offing);
-  const lies = clearOut(anchorage, out, ships);
-  const beyond = Math.hypot(lies[0] - anchorage[0], lies[1] - anchorage[1]) + ANCHORED_APART_M;
-  if (beyond <= Math.hypot(offing[0] - anchorage[0], offing[1] - anchorage[1])) return { at: lies, offing };
-  return { at: lies, offing: [anchorage[0] + out[0] * beyond, anchorage[1] + out[1] * beyond] };
+  for (let step = 0; step < 5; step++) {
+    const side = (step % 2 === 1 ? (step + 1) / 2 : -step / 2) * ABREAST_M;
+    const [acrossX, acrossY] = [-out[1] * side, out[0] * side];
+    const lies: Point2 = [anchorage[0] + acrossX, anchorage[1] + acrossY];
+    if (ships.every((ship) => apart(lies, ship) > ABREAST_M / 2))
+      return { at: lies, offing: [offing[0] + acrossX, offing[1] + acrossY] };
+  }
+  return { at: anchorage, offing };
 }
 
 /** A coast's berth, for a landing toward `toward` (a point clicked on its land, or the ship off it): just off the shore

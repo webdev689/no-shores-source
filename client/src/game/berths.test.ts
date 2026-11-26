@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Point2 } from '../overworld/ground.ts';
-import { ANCHORED_APART_M, berthOf, coastBerth, freePlaces, LEAD_M, portBerth, TAKEN_M } from './berths.ts';
-import { approach, type IsleAt } from './isleLaw.ts';
+import { ABREAST_M, ANCHORED_APART_M, berthOf, coastBerth, freePlaces, LEAD_M, portBerth, TAKEN_M } from './berths.ts';
+import { ANCHORED_M, approach, type IsleAt } from './isleLaw.ts';
 import { OFFSHORE, offshore, offshoreStretch } from './seaLaw.ts';
 
 /** Land west of x = 1000, the sea shelving away east of it: 1 m down a metre. */
@@ -42,7 +42,7 @@ const ship = (x: number, y: number) => ({ x, y });
 /** The way in to a place of the pier, its last stretch along the pier from `LEAD_M` out along its bearing (east). */
 const along = (x: number, y: number) => ({ at: [x, y], offing: ROADSTEAD, lead: [x + LEAD_M, y] });
 
-test("a port's berth is the first place of its pier no ship lies in, sailed in to from its roadstead along the pier", () => {
+test("a port's berth is the first place of its pier no ship lies in, come to from its roadstead along the pier", () => {
   assert.deepEqual(portBerth(PORT, []), along(1_050, 490));
   const first = ship(1_050 + TAKEN_M / 2, 490);
   assert.deepEqual(portBerth(PORT, [first]), along(1_080, 510), 'the first taken');
@@ -108,10 +108,17 @@ test('a sea island is berthed at its anchorage, from its offing', () => {
   assert.equal(berthOf({ ...aim, id: 4 }, LAND, [cove], []), null, 'an island not told of');
   const ashore = { kind: 'ashore', coast: 'Saltmere', toward: [300, 6_000] } as const;
   assert.deepEqual(berthOf(ashore, LAND, [], []), coastBerth(LAND, [300, 6_000]));
-  // Another ship anchored there already: this one anchors out along the way in, clear of her, its offing beyond it.
+  // Another ship anchored there already: this one anchors abreast of her, near enough for the sea to land its player.
   const other = ship(0, -50_150);
   const clear = berthOf(aim, LAND, [cove], [other]);
-  assert.ok(clear && apart(clear.at, [other.x, other.y]) >= ANCHORED_APART_M, JSON.stringify(clear));
-  assert.equal(clear?.at[0], 0, 'on its way in');
-  assert.ok((clear?.offing[1] ?? 0) < (clear?.at[1] ?? 0), 'its offing still out beyond it');
+  assert.ok(clear, 'berthed');
+  assert.ok(apart(clear.at, [other.x, other.y]) >= ABREAST_M, JSON.stringify(clear));
+  assert.ok(apart(clear.at, [0, -50_150]) <= ANCHORED_M, 'within the anchorage the page anchors at');
+  assert.deepEqual([clear.offing[0], clear.offing[1] - clear.at[1]], [clear.at[0], (way?.offing[1] ?? 0) + 50_150]);
+  const crowded = [-30, -15, 0, 15, 30].map((x) => ship(x, -50_150));
+  assert.deepEqual(
+    berthOf(aim, LAND, [cove], crowded),
+    { at: way?.anchorage, offing: way?.offing },
+    'every place taken',
+  );
 });
