@@ -219,6 +219,28 @@ its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **The welcome's gifts, the hordes, the riding escort, the riding and sailing lessons, the wreck's fixes and the
+  keepers' screens after Destiny 2's** (#223, open, not merged; the owner's words in
+  [[Keepers Give Gifts, the House Arts Come With a Horde, Escorts Ride, and the Horse and Ship Are Taught]] and
+  [[Keepers, Quests and Items Obtained Follow Destiny 2's Vendor Screen]], every call Claude made in
+  [[The Welcome's Gifts, the Hordes, the Ride and the Lessons as Claude Builds Them]]). How each works is in [[Quests]]
+  ("The opening", "A house's horde", "Offered by a keeper", the lessons), [[Gear]], [[Arts]], [[Prologue]],
+  [[Interface]] and [[Speech]]. Tested offline: `cargo xtask check` at 6715b443; each piece reviewed alone and the six
+  together, and pictured headless at 1920x1080 and on a phone (the keepers' screens on 5173 with the forge's art).
+  Merging it replaces the stranger's 400 Aurem and her tour (the welcome's line under Done, and #172's pictures under
+  Next, no longer stand). The owner's to say:
+  - An old save on "Put them on" or "Arm yourself" is owed no gifts (it is past the round) and buys its Ranged weapon
+    at 50 Aurem.
+  - A horde's kills pay XP and Aurem again after a fall, as a defence's retried waves do.
+  - Where the keepers' screen differs from the reference: the menu's frame stays round it; the Mage, who sells for
+    nothing, shows no currency row; the notice's key at the far right is not dim (dimmed, it read under 4.5:1); a keeper
+    with no faction shows a plain rule beside their crest, not a reputation bar.
+  - In the wreck's duel the boarder waits at the foot of the quarterdeck's step for a player up there: no foe climbs it.
+  Left after merge: the wreck workflow republishes the wreck's mesh (`tools/wreck`'s heap fix), until which the page
+  sets the floating heap down and its baked light sits where it floated. Not yet seen: the escort on its horse and the
+  hulk at sea (the offline room cannot load a character on those steps), anything in a deployed room or on a real GPU,
+  or played by hand.
+
 - **The horse's and the foes' sounds** (#206; [[The Grey Tithe and the Lattice Each Have Their Own Voice]]): 18 of
   the 22 cues have the owner's picks, on R2 and in `sounds.json` (the `freesound` runs 45664528450 and 45683215622,
   each file fetched back and its hash checked). The horse: walking on the ground and on stone, galloping on the ground
