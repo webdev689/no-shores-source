@@ -141,3 +141,4 @@ Claude's choices, each open to change.
 | Which vault | Off the main way, on the deepest storey it can, a dead end first, then the farthest along the walk; no landmark in it | The best of a dungeon found by looking round, deep down |
 | Who guards first | The main way's rooms stand their bands first, spread along it; then each vault while foes remain; then the others | Fights on the way through, and a vault worth guarding |
 | The flights' light | A torch at each landing | A flight lit from both its ends |
+| Passages under ground | One storey, as their zones were laid for; a laying taken only where every way on has its mouth and its foes a post, a zone laid as one great room standing its post at its clear floor farthest from the arrival | Their zones were built and checked on one storey: whether they go deeper is the owner's to say |
