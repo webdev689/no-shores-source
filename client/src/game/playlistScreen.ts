@@ -56,11 +56,16 @@ const CREST = 104;
 /** The steps a crest's side goes in as the screen is resized. */
 const SIDE_STEP = 4;
 /** The steps a chart's picture is drawn again at as the screen is resized, so a drag draws it a few times, not each
- *  pixel. */
+ *  pixel: its box is the room it stands in, in these steps down, laid in the middle of it. */
 const CHART_STEP = 64;
 /** The list that scrolls: the card's column side by side, the crests and the card together stacked. */
 const SCROLLS = { besides: 'playlist-card-column', stacked: 'playlist-body' } as const;
-const stepped = (pixels: number) => Math.max(1, Math.round(pixels / CHART_STEP)) * CHART_STEP;
+const stepped = (pixels: number) => Math.max(1, Math.floor(pixels / CHART_STEP)) * CHART_STEP;
+/** The room `id` as it was laid last frame (`guess` before it is), in `CHART_STEP` steps down. */
+const steppedRoom = (ui: Interface, id: string, guess: { readonly width: number; readonly height: number }) => {
+  const room = ui.boxOf(id) ?? guess;
+  return { width: stepped(room.width), height: stepped(room.height) };
+};
 /** The entry up or down takes the choice to: a playlist's and its week's dungeon, a Breach's two tiers. */
 const PAIRS: Readonly<Record<PlaylistKind, PlaylistKind>> = {
   elite: 'week-elite',
@@ -246,14 +251,21 @@ export class PlaylistView {
           padding: [0, 20],
           children: [
             {
-              id: 'playlist-chart',
+              // Clipped, so the chart's box from last frame never holds its room open past what it is given.
+              id: 'playlist-chart-room',
               width: 'grow',
               height: 'grow',
-              picture: {
-                key: `playlist chart ${stepped(chartWide)} ${stepped(view.height - 170)}`,
-                source: { draw: drawChart },
-              },
-              children: [...dials, ...crests],
+              clip: true,
+              alignX: 'center',
+              alignY: 'center',
+              children: [
+                {
+                  id: 'playlist-chart',
+                  ...steppedRoom(ui, 'playlist-chart-room', { width: chartWide, height: view.height - 170 }),
+                  picture: { key: 'playlist chart', source: { draw: drawChart } },
+                  children: [...dials, ...crests],
+                },
+              ],
             },
             scrolledNode(
               ui,
@@ -281,20 +293,26 @@ export class PlaylistView {
                   direction: 'column',
                   gap: 8,
                   padding: [8, 0],
-                  picture: {
-                    key: `playlist ground ${stepped(view.width - 40)} ${stepped(view.height / 2)}`,
-                    source: { draw: drawGround },
-                  },
-                  children: crests
-                    .flatMap((_crest, first) => (first % 2 === 0 ? [first] : []))
-                    .map((first) => ({
-                      width: 'grow',
-                      children: crests.slice(first, first + 2).map((crest) => ({
-                        width: '50%',
-                        alignX: 'center',
-                        children: [crest],
+                  children: [
+                    {
+                      // Its ground in steps of the crests' room, in the middle of it: between the scrim (19) and the
+                      // screen (20), so under the crests, and scrolled with them.
+                      ...steppedRoom(ui, 'playlist-chart', { width: view.width - 48, height: view.height / 2 }),
+                      through: true,
+                      float: { to: 'parent', anchor: [0.5, 0.5], at: [0.5, 0.5], z: 19.5, clipped: true },
+                      picture: { key: 'playlist ground', source: { draw: drawGround } },
+                    },
+                    ...crests
+                      .flatMap((_crest, first) => (first % 2 === 0 ? [first] : []))
+                      .map((first): Node => ({
+                        width: 'grow',
+                        children: crests.slice(first, first + 2).map((crest) => ({
+                          width: '50%',
+                          alignX: 'center',
+                          children: [crest],
+                        })),
                       })),
-                    })),
+                  ],
                 },
                 cardOf(entry, screen.note, size, 'grow'),
               ],

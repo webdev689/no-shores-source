@@ -269,11 +269,18 @@ test('the chosen crest’s rule is as wide as its name, not its line beneath', (
   }
 });
 
-test('the chart is drawn again only at 64-pixel steps of the screen, not each pixel of a resize', () => {
-  const keyAt = (width: number, height: number) =>
-    byId(standing(width, height).built(), 'playlist-chart')?.picture?.key;
-  assert.equal(keyAt(1600, 900), keyAt(1610, 905));
-  assert.notEqual(keyAt(1600, 900), keyAt(1700, 900));
+test('the chart and its ground are drawn again only at 64-pixel steps of a resize, not at each pixel', () => {
+  // A picture is drawn again whenever the box it is laid in changes size.
+  const boxAt = (width: number, height: number) => {
+    const screen = standing(width, height);
+    screen.frame();
+    const laid = screen.ui.laid.find((each) => /^playlist (chart|ground)/.test(each.node.picture?.key ?? ''));
+    assert.ok(laid, `${width}x${height}`);
+    return `${laid.box.width}x${laid.box.height}`;
+  };
+  assert.equal(boxAt(1600, 900), boxAt(1610, 905));
+  assert.notEqual(boxAt(1600, 900), boxAt(1700, 900));
+  assert.equal(boxAt(390, 844), boxAt(392, 846), 'stacked, its ground');
 });
 
 test('the crests, glows and dials are drawn again only every few pixels of a resize', () => {
