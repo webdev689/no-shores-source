@@ -1,5 +1,5 @@
 ---
-id: 271
+id: 282
 title: "A server test file's type errors are not shown by `tsc -p server/tsconfig.json`; only `npm run types` (all five configs) catches them"
 status: open
 type: internal

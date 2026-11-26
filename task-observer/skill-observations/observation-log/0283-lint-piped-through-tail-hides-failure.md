@@ -1,5 +1,5 @@
 ---
-id: 272
+id: 283
 title: "`npx eslint ... | tail -3 && git commit` commits through a lint error: the pipe's status is tail's"
 status: open
 type: internal
