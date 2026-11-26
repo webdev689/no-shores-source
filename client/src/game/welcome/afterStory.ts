@@ -17,7 +17,7 @@ import { StrangerWelcome } from './tour.ts';
 /** How far along her way the player is turned to look as she walks off, metres. */
 const AHEAD_M = 3;
 /** While she speaks no figure is drawn nearer the tour's eye than this, metres: a townsman walking past the camera
- *  would fill the view. Her pair stands 6 m off it and a keeper at least 5.5 m (`framing.ts`). */
+ *  would fill the view. Her pair stands some 9 m off it and a keeper at least 5.5 m (`framing.ts`). */
 export const TOUR_CLEAR_M = 4;
 
 /** The soft warm light over the pair while she speaks: a lantern of the town's (`glowLamps`), dimmer, hung over the

@@ -52,9 +52,13 @@ export function slotOf(kind: number): number {
 }
 /** The coats, in the order a horse's name counts them. */
 const COATS = COSMETICS.filter((each) => each.kind === 'coat');
+/** The first horse's coat, the Bay, which the Tack gives (`horses.rs`, `FIRST_HORSE`). */
+export const FIRST_HORSE = 'bay';
 /** The coat a horse wears, by its id; null for an item that is no horse. */
 export const coatOfHorse = (item: Pick<GearItem, 'kind' | 'name'>): string | null =>
   item.kind === HORSE ? (COATS[item.name]?.id ?? null) : null;
+/** Whether a piece has no stats, and so no level or power to show: a horse, or plain clothes. */
+export const statless = (item: Pick<GearItem, 'kind' | 'plain'>): boolean => item.kind === HORSE || item.plain === true;
 /** Whether a piece may be dismantled: one carried, never a horse. */
 export const dismantlable = (item: Pick<GearItem, 'at' | 'kind'>): boolean =>
   item.at === CARRIED && item.kind !== HORSE;
@@ -201,19 +205,24 @@ export function answerText(answer: number): string {
 /** Each armour and weapon kind's word, said after its set's name ("Portwatch Helm"). */
 const KIND_WORDS: Readonly<Record<string, string | undefined>> = rolled.kinds;
 
+/** Plain clothes' names and words, by their kind's key. */
+const PLAIN: Readonly<Record<string, { readonly name: string; readonly words: string } | undefined>> = rolled.plain;
+
 /** What a Breach's piece won at Hard is called after its set's name: its Forged version, as Destiny's raid weapons
  *  are Adept (the decisions "Breach Weapons Come Normal and Forged" and "Forged Perks Are Stronger, and Hard Armour
  *  Is Forged Too"). */
 export const FORGED = '(Forged)';
 
-/** An item's name: a named item's own (a faction's piece's is its set's); a rolled armour piece or weapon its set's
- *  and its kind's word, by the look it is drawn in, the prologue's armour by its steel, a Breach's piece won at Hard
- *  Forged; a horse by its coat; the cloak its kind's. Ship modules are named by `gearName`. */
+/** An item's name: a named item's own (a faction's piece's is its set's); plain clothes' their own; a rolled armour
+ *  piece or weapon its set's and its kind's word, by the look it is drawn in, the prologue's armour by its steel, a
+ *  Breach's piece won at Hard Forged; a horse by its coat; the cloak its kind's. Ship modules are named by `gearName`. */
 export function itemName(
-  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'> &
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story' | 'plain'> &
     Partial<Pick<GearItem, 'breach' | 'hard'>>,
 ): string {
   if (item.named) return items.items.find((found) => found.id === item.named)?.name ?? item.named;
+  const plain = item.plain ? PLAIN[kindKey(item.kind)] : undefined;
+  if (plain) return plain.name;
   const parts = rolledParts(item);
   if (parts) return item.breach && item.hard ? `${parts.set} ${parts.word} ${FORGED}` : `${parts.set} ${parts.word}`;
   // A horse by its coat's name among its kind's; the cloak by its kind.
@@ -225,7 +234,7 @@ export function itemName(
 /** A rolled armour piece's or weapon's set name and kind word, by the look it is drawn in, the prologue's armour by
  *  its steel; null for a kind with no word (a horse, the cloak). */
 function rolledParts(
-  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story' | 'plain'>,
 ): { readonly set: string; readonly word: string } | null {
   const kind = kindKey(item.kind);
   const word = KIND_WORDS[kind];
@@ -245,13 +254,15 @@ function rolledParts(
 /** Each rolled set's words for each kind it is made in, by set name and kind word (`content/gear/words.json`). */
 const SET_WORDS: Readonly<Record<string, Readonly<Record<string, string | undefined>> | undefined>> = words.sets;
 
-/** An item's words: a named item's own, a faction's piece with none its faction's; a rolled armour piece's or
- *  weapon's its set's for its kind; a horse's its coat's; else none. */
+/** An item's words: a named item's own, a faction's piece with none its faction's; plain clothes' their own; a rolled
+ *  armour piece's or weapon's its set's for its kind; a horse's its coat's; else none. */
 export function itemWords(
-  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story'>,
+  item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'name' | 'id' | 'level' | 'source' | 'story' | 'plain'>,
 ): string {
   const coat = coatOfHorse(item);
   if (coat) return COSMETICS.find((each) => each.id === coat)?.words ?? '';
+  const plain = item.plain ? PLAIN[kindKey(item.kind)] : undefined;
+  if (plain) return plain.words;
   if (item.named) {
     const found = items.items.find((each) => each.id === item.named);
     const faction = found && 'faction' in found ? factions.factions.find((each) => each.key === found.faction) : null;

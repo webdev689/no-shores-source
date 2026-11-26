@@ -1,15 +1,17 @@
 // A horse's sounds, from Freesound as the world's are: its hooves at a walk, a gallop and a boost on the ground, stone
-// or water (`stepCue`'s grounds, wood ringing as stone), one cue a stride; the rider mounting, the horse whinnying as they do, and getting down;
-// a snort now and then while it stands; and the boost's start. Each is silent until the owner picks its recording on
-// the sound sheet, as every cue of the world's is.
-import { type StepGround, stepCue, stepsBetween } from './worldCues.ts';
+// or water (`stepCue`'s grounds, wood ringing as stone), a stride's recording after another as it goes; the rider
+// mounting, the horse whinnying as they do, and getting down; a snort now and then while it stands; and the boost's
+// start. Each is silent until the owner picks its recording on the sound sheet, as every cue of the world's is, but a
+// hoofbeat on stone or in water, which plays its gait's on the ground until it has its own.
+import { lengthOfCue, recorded } from '../soundSamples.ts';
+import { type StepGround, stepCue } from './worldCues.ts';
 
 type Point = readonly [number, number, number];
 
 /** How a horse goes: at a walk, a gallop or boosted. */
 export type Gait = 'walk' | 'gallop' | 'boost';
-/** How far a horse goes a stride at each gait, metres: its hooves' cue sounds once a stride. */
-export const STRIDE_M: Readonly<Record<Gait, number>> = { walk: 1.7, gallop: 3.4, boost: 4.6 };
+/** The seconds a cue's recording lasts; null where it has none yet. */
+export type Length = (cue: string) => number | null;
 /** Faster than this a horse gallops (metres a second): between the walk's 6 and the gallop's 12. */
 const GALLOP_SPEED = 8;
 /** A horse standing this long snorts, and again each time as long. */
@@ -32,9 +34,12 @@ export const HORSE_CUES: readonly string[] = [
 export const hoofGround = (step: ReturnType<typeof stepCue>): Exclude<typeof step, 'step.wood'> =>
   step === 'step.wood' ? 'step.stone' : step;
 
-/** The hooves' cue at `gait` on the ground a footstep there would sound on. */
-export const hoofCue = (gait: Gait, step: ReturnType<typeof stepCue>): string =>
-  `horse.${gait}.${hoofGround(step).slice('step.'.length)}`;
+/** The hooves' cue at `gait` on the ground a footstep there would sound on; on stone or in water with no recording
+ *  of its own (`picked`), the gait's on the ground in its place, on the owner's "play a sound in their place". */
+export function hoofCue(gait: Gait, step: ReturnType<typeof stepCue>, picked: (cue: string) => boolean): string {
+  const own = `horse.${gait}.${hoofGround(step).slice('step.'.length)}`;
+  return picked(own) ? own : `horse.${gait}.ground`;
+}
 
 /** Someone as their horse is heard: their fighter's number, their feet, whether they ride, and the seconds their
  *  boost still runs. */
@@ -45,17 +50,26 @@ export interface Rider {
   readonly boosting: number;
 }
 
-/** A rider as last heard: whether they rode, where, the metres ridden, their boost and how long their horse stood. */
+/** A rider as last heard: whether they rode, where, the seconds left of the stride heard, their boost and how long
+ *  their horse stood. */
 interface Kept {
   mounted: boolean;
   at: Point;
-  ridden: number;
+  stride: number;
   boosting: number;
   standing: number;
 }
 
 export class HorseSounds {
   private readonly kept = new Map<number, Kept>();
+  private readonly length: Length;
+  private readonly picked: (cue: string) => boolean;
+
+  /** `length`: how long each cue's recording lasts, which paces the strides; `picked`: whether a cue has one. */
+  constructor(length: Length = lengthOfCue, picked: (cue: string) => boolean = recorded) {
+    this.length = length;
+    this.picked = picked;
+  }
 
   /** `riders` `seconds` on from the last frame, over `ground`: each cue heard where it is, with whose it is. */
   frame(
@@ -70,7 +84,7 @@ export class HorseSounds {
       present.add(id);
       const kept = this.kept.get(id);
       if (!kept) {
-        this.kept.set(id, { mounted, at: feet, ridden: 0, boosting, standing: 0 });
+        this.kept.set(id, { mounted, at: feet, stride: 0, boosting, standing: 0 });
         continue;
       }
       if (mounted !== kept.mounted) {
@@ -79,12 +93,20 @@ export class HorseSounds {
       }
       const moved = Math.hypot(feet[0] - kept.at[0], feet[1] - kept.at[1]);
       const speed = seconds > 0 && moved < LEAP_M ? moved / seconds : 0;
+      kept.stride = Math.max(0, kept.stride - seconds);
       if (mounted) {
         const gait: Gait = boosting > 0 ? 'boost' : speed > GALLOP_SPEED ? 'gallop' : 'walk';
-        const ridden = kept.ridden + (moved < LEAP_M ? moved : 0);
-        if (stepsBetween(kept.ridden, ridden, STRIDE_M[gait]) > 0) hear(hoofCue(gait, stepCue(feet, ground)), feet, id);
+        // A horse keeps its stride's pace at a gait, going faster by a longer stride: the next stride is heard as the
+        // last one's recording ends, so strides played back to back keep the recording's own pace.
+        if (speed >= STILL_SPEED && kept.stride <= 0) {
+          const cue = hoofCue(gait, stepCue(feet, ground), this.picked);
+          const lasts = this.length(cue);
+          if (lasts !== null && lasts > 0) {
+            hear(cue, feet, id);
+            kept.stride = lasts;
+          }
+        }
         if (boosting > 0 && kept.boosting <= 0) hear('horse.boost', feet, id);
-        kept.ridden = ridden;
         kept.standing = speed < STILL_SPEED ? kept.standing + seconds : 0;
         if (kept.standing >= SNORT_S) {
           hear('horse.snort', feet, id);

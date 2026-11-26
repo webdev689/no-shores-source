@@ -525,92 +525,168 @@
     },
     {
       "id": "horse.walk.ground",
-      "use": "A horse walking on earth or grass, one stride",
-      "query": "horse walk dirt",
+      "use": "A horse walking on earth or grass, one stride cut from a run of them",
+      "query": "horse trotting",
       "seconds": [
-        0.3,
-        1.5
-      ]
+        1.0,
+        30.0
+      ],
+      "skip": [
+        264469,
+        465911,
+        538697,
+        581833,
+        813383
+      ],
+      "picked": 166099,
+      "cut": [
+        7.0,
+        0.63
+      ],
+      "mono": true
     },
     {
       "id": "horse.walk.stone",
-      "use": "A horse walking on stone, one stride",
-      "query": "horse walk cobblestone",
+      "use": "A horse walking on stone, one stride cut from a run of them",
+      "query": "horse cart cobblestone",
       "seconds": [
-        0.3,
-        1.5
-      ]
+        1.0,
+        30.0
+      ],
+      "skip": [
+        126189,
+        264469,
+        479797,
+        527430
+      ],
+      "picked": 187610,
+      "cut": [
+        1.1,
+        0.97
+      ],
+      "mono": true
     },
     {
       "id": "horse.walk.water",
-      "use": "A horse walking through water, one stride",
-      "query": "horse walk water splash",
+      "use": "A horse walking through water, one stride cut from a run of them",
+      "query": "horse river crossing",
       "seconds": [
-        0.3,
-        1.5
+        1.0,
+        30.0
+      ],
+      "skip": [
+        479696
       ]
     },
     {
       "id": "horse.gallop.ground",
-      "use": "A horse galloping on earth or grass, one stride",
-      "query": "horse gallop dirt",
+      "use": "A horse galloping on earth or grass, one stride cut from a run of them",
+      "query": "horse galloping",
       "seconds": [
-        0.3,
-        1.2
-      ]
+        1.0,
+        30.0
+      ],
+      "picked": 403026,
+      "skip": [
+        403025,
+        574316
+      ],
+      "cut": [
+        3.64,
+        0.6
+      ],
+      "mono": true
     },
     {
       "id": "horse.gallop.stone",
-      "use": "A horse galloping on stone, one stride",
-      "query": "horse gallop cobblestone",
+      "use": "A horse galloping on stone, one stride cut from a run of them",
+      "query": "horse gallop street",
       "seconds": [
-        0.3,
-        1.2
-      ]
+        1.0,
+        30.0
+      ],
+      "skip": [
+        479769
+      ],
+      "picked": 631829,
+      "cut": [
+        12.27,
+        0.71
+      ],
+      "mono": true
     },
     {
       "id": "horse.gallop.water",
-      "use": "A horse galloping through water, one stride",
-      "query": "horse gallop water splash",
+      "use": "A horse galloping through water, one stride cut from a run of them",
+      "query": "horse running water splash",
       "seconds": [
-        0.3,
-        1.2
+        1.0,
+        30.0
+      ],
+      "skip": [
+        25819,
+        479696,
+        479729
       ]
     },
     {
       "id": "horse.boost.ground",
-      "use": "A horse boosted to its fastest gallop on earth or grass, one stride",
-      "query": "horse gallop fast dirt",
+      "use": "A horse boosted to its fastest gallop on earth or grass, one stride cut from a run of them",
+      "query": "horse running",
       "seconds": [
-        0.2,
-        1.0
-      ]
+        1.0,
+        30.0
+      ],
+      "picked": 490751,
+      "skip": [
+        165532,
+        466208,
+        792860
+      ],
+      "cut": [
+        1.1,
+        0.55
+      ],
+      "mono": true
     },
     {
       "id": "horse.boost.stone",
-      "use": "A horse boosted to its fastest gallop on stone, one stride",
-      "query": "horse gallop fast cobblestone",
+      "use": "A horse boosted to its fastest gallop on stone, one stride cut from a run of them",
+      "query": "galloping horse asphalt",
       "seconds": [
-        0.2,
-        1.0
+        1.0,
+        30.0
+      ],
+      "skip": [
+        479727
       ]
     },
     {
       "id": "horse.boost.water",
-      "use": "A horse boosted to its fastest gallop through water, one stride",
-      "query": "horse gallop fast water splash",
+      "use": "A horse boosted to its fastest gallop through water, one stride cut from a run of them",
+      "query": "horses running through water",
       "seconds": [
-        0.2,
-        1.0
+        1.0,
+        30.0
+      ],
+      "skip": [
+        209419,
+        479692,
+        479729
       ]
     },
     {
       "id": "horse.mount",
       "use": "A rider climbs into the saddle",
-      "query": "saddle leather creak",
+      "query": "horse saddle",
       "seconds": [
         0.3,
-        2.0
+        4.0
+      ],
+      "picked": 642555,
+      "skip": [
+        322449,
+        445699
       ]
     },
     {
@@ -620,16 +696,23 @@
       "seconds": [
         0.5,
         3.0
+      ],
+      "picked": 439670,
+      "skip": [
+        321957,
+        322445,
+        419231
       ]
     },
     {
       "id": "horse.dismount",
       "use": "A rider gets down from the saddle",
-      "query": "dismount horse",
+      "query": "saddle leather",
       "seconds": [
         0.3,
-        2.0
-      ]
+        4.0
+      ],
+      "picked": 321981
     },
     {
       "id": "horse.snort",
@@ -638,15 +721,27 @@
       "seconds": [
         0.3,
         2.0
+      ],
+      "picked": 116267,
+      "skip": [
+        475480,
+        529463,
+        868302
       ]
     },
     {
       "id": "horse.boost",
       "use": "A rider's boost begins: the horse kicks off",
-      "query": "horse neigh gallop start",
+      "query": "horse neigh",
       "seconds": [
-        0.3,
-        2.0
+        0.5,
+        4.0
+      ],
+      "picked": 322450,
+      "skip": [
+        321957,
+        448090,
+        751206
       ]
     },
     {
@@ -1126,6 +1221,137 @@
         856777
       ],
       "picked": 858795
+    },
+    {
+      "id": "foe.tithe.alert",
+      "use": "A Grey Tithe raider spots the player: a rough shout, no word clear",
+      "query": "battle cry",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "skip": [
+        203594,
+        221670,
+        368824,
+        623441
+      ],
+      "picked": [
+        695384,
+        695389,
+        695388,
+        695386
+      ]
+    },
+    {
+      "id": "foe.tithe.attack",
+      "use": "A Grey Tithe raider's effort as its blow swings: a short grunt",
+      "query": "male attack grunt",
+      "seconds": [
+        0.1,
+        1.5
+      ],
+      "picked": [
+        695379,
+        695378,
+        695383,
+        695382
+      ]
+    },
+    {
+      "id": "foe.tithe.hurt",
+      "use": "A Grey Tithe raider struck: a pained grunt",
+      "query": "male pain grunt",
+      "seconds": [
+        0.1,
+        1.5
+      ],
+      "picked": [
+        547209,
+        464486,
+        129346
+      ],
+      "skip": [
+        464487
+      ]
+    },
+    {
+      "id": "foe.tithe.death",
+      "use": "A Grey Tithe raider falls: a dying cry",
+      "query": "male death scream",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 547209,
+      "skip": [
+        243382,
+        396801,
+        648983
+      ]
+    },
+    {
+      "id": "foe.lattice.alert",
+      "use": "One of the Lattice spots the player: a crystalline shriek",
+      "query": "glass screech",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "picked": 499607,
+      "skip": [
+        104346,
+        208740,
+        499607
+      ]
+    },
+    {
+      "id": "foe.lattice.attack",
+      "use": "One of the Lattice's blows swings: an inhuman snarl, no glass",
+      "query": "monster attack growl",
+      "seconds": [
+        0.1,
+        2.0
+      ],
+      "skip": [
+        203381,
+        219840,
+        390729,
+        418194
+      ],
+      "picked": 560589
+    },
+    {
+      "id": "foe.lattice.hurt",
+      "use": "One of the Lattice struck: an inhuman cry of pain, no glass",
+      "query": "monster pain",
+      "seconds": [
+        0.1,
+        2.0
+      ],
+      "skip": [
+        38009,
+        204118,
+        699266,
+        865789
+      ],
+      "picked": 177454
+    },
+    {
+      "id": "foe.lattice.death",
+      "use": "One of the Lattice falls: an inhuman death cry, no glass",
+      "query": "monster death",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "skip": [
+        156579,
+        219940,
+        686849,
+        758207
+      ],
+      "picked": 535320
     },
     {
       "id": "respawn",
@@ -1696,7 +1922,7 @@
     {
       "id": "amb.social.hum",
       "use": "A port city far below the plaza: its streets' murmur and work, no word clear, looped",
-      "query": "distant city",
+      "query": "old town ambience -park -klankbeeld",
       "seconds": [
         20,
         600
@@ -1705,9 +1931,34 @@
         760377,
         787823,
         832577,
-        837047
+        837047,
+        450676,
+        852764,
+        381677,
+        859168,
+        711134,
+        837901,
+        832379,
+        832662,
+        837072,
+        850102,
+        878297,
+        850139,
+        557193,
+        557392,
+        557393,
+        583612,
+        625300,
+        760163,
+        592847,
+        591323,
+        512282,
+        329057,
+        212035,
+        815854,
+        452438
       ],
-      "picked": 450676
+      "picked": 824369
     },
     {
       "id": "amb.land.breeze",

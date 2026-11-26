@@ -21,6 +21,7 @@ import {
   resourceWords,
   forgedOn,
   slotOf,
+  statless,
   traitOf,
   wearAsks,
 } from '../player/gear.ts';
@@ -134,11 +135,12 @@ export function cardOf(item: GearItem, worn: GearItem | null = null, nodesAside 
     : item.defense
       ? { label: 'Defense', value: item.defense }
       : null;
-  // A horse has no level, as it has no stats.
-  const rows: [string, string][] = item.kind === HORSE ? [] : [['Level', String(item.level)]];
+  // A horse and plain clothes have no level, as they have no stats.
+  const rows: [string, string][] = statless(item) ? [] : [['Level', String(item.level)]];
   if (item.prestige) rows.push(['Prestige', String(item.prestige)]);
-  // Where it was earned, which its look says too; a ship's module and a horse, its coat its look, keep none of a content.
-  if (!isModule(item.kind) && item.kind !== HORSE) rows.push(['From', capital(earnedFrom(item))]);
+  // Where it was earned, which its look says too; a ship's module, a horse (its coat its look) and plain clothes keep
+  // none of a content.
+  if (!isModule(item.kind) && !statless(item)) rows.push(['From', capital(earnedFrom(item))]);
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);

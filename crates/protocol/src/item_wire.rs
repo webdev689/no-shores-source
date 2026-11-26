@@ -1,6 +1,6 @@
-//! An item as the gear message carries it: its kind, rarity, level, name, nodes, the content it came from and whether it is the prologue's, and
-//! each column of its nodes with what a node costs. The gear, the mail, a faction's wares and the ship's officers all
-//! write theirs here.
+//! An item as the gear message carries it: its kind, rarity, level, name, nodes, the content it came from, whether it
+//! is the prologue's and whether plain clothes, and each column of its nodes with what a node costs. The gear, the
+//! mail, a faction's wares and the ship's officers all write theirs here.
 
 use crate::gear_wire::at_number;
 use crate::messages;
@@ -73,6 +73,11 @@ pub(crate) fn item_offset<'built>(
         element: item.element.map_or(0, |element| element as u8),
         source: item.source as u8,
         story: item.story,
+        plain: item.plain,
     };
     messages::GearItem::create(builder, &args)
 }
+
+#[cfg(test)]
+#[path = "item_wire_tests.rs"]
+mod item_wire_tests;

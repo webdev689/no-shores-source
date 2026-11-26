@@ -43,7 +43,7 @@ jobs:
           sudo apt-get install -y -q ffmpeg > /dev/null
       - name: Test the page reader
         run: node --test tools/freesound/pages.test.mjs
-      - name: Test the publisher loads here
+      - name: Test the publish, as it loads here with no numpy
         run: python3 -I tools/freesound/test_publish.py
       - name: Find the candidates
         env:

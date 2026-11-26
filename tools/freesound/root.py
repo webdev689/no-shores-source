@@ -6,19 +6,13 @@ note; publish.py copies it onto the pick's entry in content/audio/sounds.json.
     python3 -I tools/freesound/root.py <preview.mp3>...
 
 It decodes a stranger's audio, so it runs where no key is held."""
-import re
 import shutil
 import subprocess
 import sys
 
-try:
-    import numpy
-except ImportError:  # publish.py reads ROOT on the freesound workflow's machine, which has no numpy
-    numpy = None
+import numpy
 
 RATE = 44100
-# A root as written: a note ("C3", "F#2", "Bb1") and, where it is off it, its cents (the game's rootNote reads it).
-ROOT = re.compile(r'[A-G](#|b)?-?\d([+-]\d{1,2})?')
 NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 # The lowest and highest fundamentals looked for, hertz: C1 to C8. A recording above the scores' range (B5) is played
 # down to it, so a cap there would name it an octave low.
@@ -100,8 +94,6 @@ def main():
     paths = sys.argv[1:]
     if not paths:
         sys.exit(__doc__)
-    if numpy is None:
-        sys.exit('numpy is needed to measure a root')
     for path in paths:
         hertz = fundamental(decoded(path))
         if hertz is None:

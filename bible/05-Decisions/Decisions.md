@@ -402,6 +402,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Some Foes Stand Already, Others Arrive by the Tithe's Airships and the Lattice's Crystal]]
 - [[Foe Arrivals as Claude Builds Them]]
 - [[Patrol Foes Hold Territories Across the Zone, and None Comes on a Timer]]
+- [[The Tack Gives the First Horse, the Prologue Ends in Plain Clothes, and Each Speaker Is Named in a Colour]]
+- [[The Grey Tithe and the Lattice Each Have Their Own Voice]]
 
 ## Replaced
 

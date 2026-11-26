@@ -22,7 +22,6 @@ import {
   wearAsks,
 } from '../player/gear.ts';
 import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts';
-import { earnedFrom } from '../player/sourceLooks.ts';
 
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'compendium', 'ship', 'social', 'guild', 'settings'] as const;
@@ -145,12 +144,11 @@ export function characterOf(state: GearState): Character {
   };
 }
 
-/** An item's detail: its name and kind, numbers, each column of nodes, its words and what may be done with it. */
+/** An item's detail: its name and kind, each column of nodes, its words and what may be done with it. */
 export interface ItemDetail {
   readonly name: string;
   readonly colour: string;
   readonly kind: string;
-  readonly numbers: readonly (readonly [string, string])[];
   readonly columns: readonly { readonly nodes: readonly NodeShown[] }[];
   readonly words: string;
   readonly presses: readonly Press[];
@@ -158,21 +156,13 @@ export interface ItemDetail {
 
 /** An item's detail; `atVault`, seen at the vault's counter, where it may be put in or taken out. */
 export function itemDetailOf(item: GearItem, state: GearState, atVault = false): ItemDetail {
-  const numbers: [string, string][] = [];
-  if (item.attack) numbers.push(['Attack', String(item.attack)]);
-  if (item.defense) numbers.push(['Defense', String(item.defense)]);
-  if (item.prestige) numbers.push(['Prestige', String(item.prestige)]);
-  numbers.push(['Level', String(item.level)]);
-  // A module is fitted in its slot and infused, and its nodes are priced in the ship's materials; it keeps no look of
-  // a content, as anything else does of where it was earned.
+  // A module is fitted in its slot and infused, and its nodes are priced in the ship's materials.
   const module = isModule(item.kind);
-  if (!module) numbers.push(['From', capital(earnedFrom(item))]);
   const nodeAt = module ? moduleNode : nodeShown;
   return {
     name: gearName(item),
     colour: colourOf(item.rarity),
     kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}${item.breach ? ` · from a Breach${item.hard ? ', Hard' : ''}` : ''}`,
-    numbers,
     columns: item.columns.map((column, index) => ({
       nodes: Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>
         nodeAt(item, index, node),
