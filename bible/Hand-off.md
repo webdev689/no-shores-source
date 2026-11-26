@@ -9,7 +9,7 @@ in its system note ([[Systems]]); history stays in git and the pull requests.
 
 ## Open pull requests
 
-- **For the owner's yes**: this session's audit and cleanup (branch `claude/epic-faraday-xmfrot`: the sea's held map
+- **For the owner's yes**: #232, this session's audit and cleanup (branch `claude/epic-faraday-xmfrot`: the sea's held map
   some twenty times faster and no longer laid out as the ship sails, a settled rig no longer redrawing the far shadow
   map, six audits' fixes across the client, rooms, server, bot and repo checks, the bible's review; its description
   says what and how it was tested); #159 (the rooms' worker tests wait for what they check; it conflicts with `main`
