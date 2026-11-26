@@ -198,9 +198,21 @@ export class SailRig {
     });
   }
 
-  /** One step of `seconds` at `time` (seconds, for a luff's flapping). */
+  /** One step of `seconds` at `time` (seconds, for a luff's flapping). It counts as a change only when what its
+   *  canvas reads moved: the share set, a sail's trim, or a sail's wind while any canvas is set. */
   step(seconds: number, wind: SailWind, time: number): void {
-    this.changes += 1;
+    const before = this.drawn();
+    this.stepped(seconds, wind, time);
+    if (this.drawn() !== before) this.changes += 1;
+  }
+
+  /** What its canvas reads, as one string. */
+  private drawn(): string {
+    const winds = this.setShare > 0 ? this.sails.map((sail) => Math.min(1, Math.max(-1, sail.wind))) : [];
+    return JSON.stringify([this.setShare, this.sails.map((sail) => sail.trimDeg), winds]);
+  }
+
+  private stepped(seconds: number, wind: SailWind, time: number): void {
     [this.offDeg, this.time] = [wind.offDeg, time];
     this.harm.step(seconds, wind.way ?? 0, time);
     this.setShare = toward(this.setShare, wind.set ? 1 : 0, seconds / SET_S);

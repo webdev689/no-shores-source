@@ -208,7 +208,11 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let open = select(1.0, 0.0, sky_sheltered(from_eye + facing * 0.6));
   let rise = sqrt(max(1.0 - facing.z * facing.z, 0.0)) / max(facing.z, 1e-3);
   let snow = sky_fresh_snow(sky_state.puddle_place.z, rise) * open;
-  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95) * (1.0 - snow) * open;
+  // A branch, not a select, which would read the puddles' noise for every wall's pixel too.
+  var puddle = 0.0;
+  if (facing.z > 0.95) {
+    puddle = sky_puddle(from_eye, 0.0) * (1.0 - snow) * open;
+  }
   let wet = max(sky_state.ambient_sky.w * 0.7 * (1.0 - snow), puddle) * open;
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
   let surface = sky_soaked(sky_snowed(albedo, snow), wet);

@@ -881,7 +881,10 @@ sun has turned a texel at the square's corner, 0.04 degrees; only the square's r
 moves with them. Its casters draw into a pass that draws nothing, which keeps their calls and signs them: every draw
 with what it reads, and what no draw shows, where a ship lies and how far an event's prop has risen. The map is drawn
 from those calls when the signature or the view changes, and at least once in 60 frames whatever holds still. A still
-city costs no far pass; a ship moving in the far square draws it every frame.
+city costs no far pass; a ship moving in the far square draws it every frame, and so does one whose canvas moves (it
+is being set or struck, trimmed or luffing), but not one whose rig has settled to a steady wind or lies furled: its
+rig counts a change only when what its canvas reads moves (`SailRig.changes`), and its harm only while something of it
+has fallen.
 
 **The figures' shadows.** A figure's card casts turned square to the sun about its feet, its clear texels cut away,
 the picture kept the way round the eye sees it; it is drawn into the near map only. The card the eye sees is lit

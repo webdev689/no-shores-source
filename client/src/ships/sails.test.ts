@@ -209,3 +209,21 @@ test('a rig counts each change to it and to its harm, so a canvas laid from it i
     assert.notDeepEqual(counted(), before, String(move));
   }
 });
+
+test('a rig settled before a steady wind, set or furled, counts no change; one being set or luffing does', () => {
+  const rig = new SailRig([STAY, GAFF]);
+  const changes = (seconds: number, offDeg: number, set: boolean) => {
+    const before = rig.changes;
+    sailFor(rig, seconds, offDeg, set);
+    return rig.changes - before;
+  };
+  assert.ok(changes(5, 90, true) > 0, 'set and trimmed to the wind abeam');
+  assert.equal(changes(1, 90, true), 0, 'then drawing steadily: its canvas laid once holds');
+  assert.ok(changes(5, 90, false) > 0, 'furled');
+  assert.equal(changes(1, 90, false), 0, 'furled and still');
+  assert.equal(changes(1, 179, false), 0, 'furled, its canvas reads no wind, though the wind luffs it');
+  assert.ok(changes(1, 179, true) > 0, 'set into the wind it luffs and flaps');
+  const harm = rig.harm.changes;
+  rig.harm.step(1 / 60, 3, 1);
+  assert.equal(rig.harm.changes, harm, 'a whole rig’s harm draws nothing new as it sails');
+});
