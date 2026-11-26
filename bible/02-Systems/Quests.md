@@ -134,7 +134,8 @@ spent as it falls (its `end`); the next task teaches the Art's abilities one at 
   again. Once two or fewer of the foes standing are left, the next wave stands, so the horde keeps coming. A wave the
   room's cap on foes has no room for waits a tick; one that stands nobody counts as fallen. The last wave fallen meets
   the goal.
-- **Unbounded**: while the horde runs, the player's worn Art is theirs whole, for them alone: the room keeps its
+- **Unbounded**: while the horde runs, from its first wave standing (one waiting on the room's cap on foes lends
+  nothing), the player's worn Art is theirs whole, for them alone: the room keeps its
   Anima and both Tenets full (a cast spends its share as ever, and the next tick fills it, its word sent at once),
   and casts any of its three abilities, a Tenet the road has not yet given included. As it ends, by its fall, the
   player's or a leave, the Art is bound again: what is earned, and the shares as they stand.

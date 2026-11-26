@@ -121,6 +121,8 @@ fn every_houses_horde_stands_as_the_player_comes_counts_down_as_it_falls_and_mee
             rounds += 1;
         }
         assert!(met(&room, player, key), "{faction}: the last wave fallen, the horde is beaten");
+        let ended = !room.unbounded(player) && room.step_seen(player).horde.is_empty();
+        assert!(ended, "{faction}: bound again on the tick it falls, so that tick's word shows no power");
         run(&mut room, 1);
         assert!(!room.unbounded(player) && room.step_seen(player).horde.is_empty(), "and the Art bound again");
     }
@@ -204,4 +206,15 @@ fn a_player_leaving_mid_horde_takes_its_waves_and_its_power_with_them() {
     room.leave(player);
     run(&mut room, 1);
     assert!(living(&room).is_empty(), "its waves gone with them");
+}
+
+#[test]
+fn a_horde_begun_with_no_wave_yet_standing_lends_no_power() {
+    let (mut room, player, _, _) = horde(1, [0.0, 10.0]);
+    run_baked(&mut room, 1);
+    assert!(room.unbounded(player), "its first wave stood");
+    // As a horde stands whose first wave waits for the room's cap on foes, or for its mesh.
+    let Some(Step { kind: Stepping::Horde(horde), .. }) = room.quests.steps.get_mut(&player) else { panic!("a horde") };
+    (horde.wave, horde.standing) = (0, Vec::new());
+    assert!(!room.unbounded(player), "no foe to fight, no power to fight it with");
 }

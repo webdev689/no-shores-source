@@ -23,9 +23,10 @@ const HORDE_BEARINGS: u32 = 12;
 /// The stream a horde's draws come from.
 const HORDE_STREAM: u64 = 0x686f_7264;
 
-/// What a player is sent of their horde while it runs: its foes left and all of them; nothing while it waits.
+/// What a player is sent of their horde while it runs, as `Room::unbounded` holds it: its foes left and all of them;
+/// nothing while it waits, the page reading the power from it.
 pub(super) fn seen(defend: &Defend, horde: &Horde) -> Vec<u16> {
-    if horde.at.is_none() {
+    if horde.at.is_none() || horde.wave == 0 {
         return Vec::new();
     }
     let all = defend.waves.iter().map(Vec::len).sum::<usize>();
@@ -34,10 +35,12 @@ pub(super) fn seen(defend: &Defend, horde: &Horde) -> Vec<u16> {
 }
 
 impl Room {
-    /// Whether a player's house's Art is theirs unbounded now: their horde runs here.
+    /// Whether a player's house's Art is theirs unbounded now: their horde runs here and a wave of it has stood, so a
+    /// horde whose first wave waits on the room's cap on foes lends nothing meanwhile.
     #[must_use]
     pub fn unbounded(&self, player: PlayerId) -> bool {
-        matches!(self.quests.steps.get(&player), Some(Step { kind: Stepping::Horde(Horde { at: Some(_), .. }), .. }))
+        let running = self.quests.steps.get(&player);
+        matches!(running, Some(Step { kind: Stepping::Horde(Horde { at: Some(_), wave: 1.., .. }), .. }))
     }
 
     /// A horde's tick: with none running, it starts as the player comes within its place's reach (alive, its wait
@@ -117,6 +120,8 @@ impl Room {
             let (wave, cleared) = (horde.wave, horde.standing.is_empty());
             let Some(list) = defend.waves.get(wave) else {
                 if cleared {
+                    // Bound again on this tick, not the next as the step ends, so this tick's word shows no power.
+                    self.set_horde(player, |horde| horde.at = None);
                     self.stepped(player, goal);
                 }
                 return;
