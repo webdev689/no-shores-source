@@ -69,6 +69,9 @@ code:
   - client/src/game/seaClose.ts#CloseZoom
   - client/src/game/landingAsk.ts#clickAtSea
   - client/src/game/seaLandings.ts#SeaLandings
+  - client/src/game/docking.ts#Docking
+  - client/src/game/berths.ts#berthOf
+  - client/src/game/moorings.ts#shipsLying
   - client/src/game/shipConsole.ts#shipConsoleNode
   - client/src/game/islandWords.ts#islandPanelOf
   - client/src/game/islandPanel.ts#islandScreen
