@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { DungeonLayout } from '../dungeonLayout.ts';
-import { cellIndex, floorAt, kindAt, storeyOfHeight, storeysOf } from './mapStoreys.ts';
+import { cellIndex, floorAt, kindAt, storeyOfHeight, readStoreys } from './mapStoreys.ts';
 
 /** Today's one-storey layout: a room, a corridor and rock in a row. */
 const flat = { cell: 3.2, columns: 3, rows: 1, cells: [0, -1, -2], ceilings: [4, 3.2, 0] } as unknown as DungeonLayout;
@@ -23,7 +23,7 @@ export const STOREYED = {
 } as unknown as DungeonLayout;
 
 test('a layout without storeys reads as one storey at 0 m with no stairs', () => {
-  const storeys = storeysOf(flat);
+  const storeys = readStoreys(flat);
   assert.deepEqual(storeys, { count: 1, floors: [0], plane: 3, stairs: [], storeyM: 8 });
   assert.equal(kindAt(flat, storeys, 0, 0, 0), 'open');
   assert.equal(kindAt(flat, storeys, 0, 1, 0), 'open');
@@ -33,7 +33,7 @@ test('a layout without storeys reads as one storey at 0 m with no stairs', () =>
 });
 
 test('a storeyed layout reads its storeys, its flights on both storeys and a void', () => {
-  const storeys = storeysOf(STOREYED);
+  const storeys = readStoreys(STOREYED);
   assert.equal(storeys.count, 2);
   assert.deepEqual(storeys.floors, [0, -8]);
   assert.equal(cellIndex(STOREYED, 1, 2, 0), 8);
@@ -45,7 +45,7 @@ test('a storeyed layout reads its storeys, its flights on both storeys and a voi
 });
 
 test('a flight is walked as its ramp, from the upper floor down to the lower', () => {
-  const storeys = storeysOf(STOREYED);
+  const storeys = readStoreys(STOREYED);
   assert.equal(floorAt(STOREYED, storeys, 0, 0, 0), 0);
   assert.equal(floorAt(STOREYED, storeys, 0, 1, 0), -1);
   assert.equal(floorAt(STOREYED, storeys, 1, 4, 0), -7);
@@ -54,7 +54,7 @@ test('a flight is walked as its ramp, from the upper floor down to the lower', (
 });
 
 test('the storey a body stands on is the highest floor under its feet by less than half a storey', () => {
-  const storeys = storeysOf(STOREYED);
+  const storeys = readStoreys(STOREYED);
   assert.equal(storeyOfHeight(storeys, 0), 0);
   assert.equal(storeyOfHeight(storeys, -0.4), 0);
   assert.equal(storeyOfHeight(storeys, -3), 0, "on the flight's upper half, still the storey over");

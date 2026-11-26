@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { DungeonLayout } from '../dungeonLayout.ts';
 import { Reveal, REVEAL } from './mapReveal.ts';
 import { STOREYED } from './mapStoreys.test.ts';
-import { cellIndex, storeysOf } from './mapStoreys.ts';
+import { cellIndex, readStoreys } from './mapStoreys.ts';
 
 /** A row of twelve cells (38.4 m): a room of three, a corridor of eight, rock at the far end, and rock under it. */
 const row = {
@@ -16,9 +16,9 @@ const row = {
 } as unknown as DungeonLayout;
 
 /** The same row with a pillar standing across the corridor's fourth cell. */
-const blocked = { ...row, boxes: [[16, 0, 19.2, 3.2, 4]] } as unknown as DungeonLayout;
+const blocked = { ...row, boxes: [[16, 0, 19.2, 3.2, 0, 4]] } as unknown as DungeonLayout;
 
-const revealOf = (layout: DungeonLayout) => new Reveal(layout, storeysOf(layout));
+const revealOf = (layout: DungeonLayout) => new Reveal(layout, readStoreys(layout));
 
 test('a cell is drawn once it is walked or seen across the floor, as far as the sight reaches', () => {
   const reveal = revealOf(row);
@@ -53,7 +53,7 @@ test('a step between two reads is walked through, and the cells it crosses are w
 });
 
 test('on a storeyed layout sight goes down a flight to the storey under, never up one', () => {
-  const storeys = storeysOf(STOREYED);
+  const storeys = readStoreys(STOREYED);
   const upper = new Reveal(STOREYED, storeys);
   upper.tick([1.6, 1.6, 0], REVEAL.everyS);
   assert.ok(upper.cells.has(cellIndex(STOREYED, 0, 4, 0)), 'down the flight');
@@ -68,7 +68,7 @@ test('on a storeyed layout sight goes down a flight to the storey under, never u
 });
 
 test('from half way down a flight, sight goes on down it and never back up', () => {
-  const storeys = storeysOf(STOREYED);
+  const storeys = readStoreys(STOREYED);
   const reveal = new Reveal(STOREYED, storeys);
   reveal.tick([8, 1.6, -3], REVEAL.everyS);
   assert.ok(reveal.cells.has(cellIndex(STOREYED, 1, 4, 0)), 'the flight under the feet');
@@ -79,7 +79,7 @@ test('from half way down a flight, sight goes on down it and never back up', () 
 test('what was revealed is kept and given back', () => {
   const reveal = revealOf(row);
   reveal.tick([1.6, 1.6, 0], REVEAL.everyS);
-  const again = new Reveal(row, storeysOf(row), [...reveal.cells]);
+  const again = new Reveal(row, readStoreys(row), [...reveal.cells]);
   assert.deepEqual([...again.cells].sort(), [...reveal.cells].sort());
 });
 
@@ -89,7 +89,7 @@ test('sight crosses open air over the storey under, at the height it was cast fr
     stairs: [],
     cells: [0, -3, -3, 0, -2, -2, 1, 1, 1, 1, -2, -2],
   } as unknown as DungeonLayout;
-  const reveal = new Reveal(gallery, storeysOf(gallery));
+  const reveal = new Reveal(gallery, readStoreys(gallery));
   reveal.tick([1.6, 1.6, 0], REVEAL.everyS);
   assert.ok(reveal.cells.has(cellIndex(gallery, 0, 2, 0)), 'the open air');
   assert.ok(reveal.cells.has(cellIndex(gallery, 0, 3, 0)), 'the floor across it');

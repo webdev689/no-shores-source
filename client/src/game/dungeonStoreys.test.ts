@@ -7,6 +7,7 @@ import {
   ceilingAt,
   courseOf,
   type DungeonLayout,
+  feltAt,
   floorOf,
   groundAt,
   planeOf,
@@ -52,6 +53,15 @@ test("a flight's slope falls a storey along it, as the rules walk it", () => {
     Math.abs((ceilingAt(layout, 9.6, 1.6, -4) ?? NaN) + 0.8) < 1e-12,
     "the camera keeps under the flight's slope",
   );
+});
+
+test("the camera's line feels the treads and the slope's ceiling behind a body on a flight, never the storey under", () => {
+  // Feet near the flight's foot (7 m down); a point of the line up the flight 1 m under the head's floor.
+  const felt = feltAt(layout, () => -7);
+  assert.equal(groundAt(layout, 6.4, 1.6, -7), null, 'from the feet the treads up the flight are out of a step');
+  assert.ok(Math.abs((felt.ground(6.4, 1.6, -1) ?? NaN) + 2) < 1e-12, 'the tread under the line');
+  assert.ok(Math.abs((felt.roof(9.6, 1.6, -1) ?? NaN) + 0.8) < 1e-12, "the slope's ceiling over it");
+  assert.equal(feltAt(layout, () => 0).ground(4.8, 4.8, -3), 0, 'under the floor, the feet’s storey’s');
 });
 
 test('the ground under a body is its own storey’s, a Void falls through, and rock or the outside holds none', () => {

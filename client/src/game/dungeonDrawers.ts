@@ -155,6 +155,8 @@ export class DungeonDrawers {
     const dungeon = foot.dungeon;
     if (!dungeon) return null;
     DUNGEON_MAP.enter(JSON.stringify(dungeon.ask), dungeon.layout);
+    // A fallen player sees the death screen, which the map would cover.
+    if (foot.fallen && DUNGEON_MAP.open) DUNGEON_MAP.toggle();
     DUNGEON_MAP.tick(you, you.seconds);
     const paper = { width: this.canvas?.clientWidth || size.width, height: this.canvas?.clientHeight || size.height };
     // The company is gathered only while the map shows them.
@@ -166,9 +168,10 @@ export class DungeonDrawers {
         name: each.plate.name,
       }));
     const shown = DUNGEON_MAP.frame(you.seconds, paper, company);
-    const walked = DUNGEON_MAP.dungeon;
     PAPER.node =
       shown && paperNode(shown, dungeon.layout.name, chestsCounted(foot.gear?.gear), performance.now() / 1000);
+    // The cells' words are counted again as the reveal grows: only while the map shows.
+    const walked = shown && DUNGEON_MAP.dungeon;
     if (!shown || !walked) return null;
     const ink = (this.ink ??= new MapInk(this.gpu));
     ink.setCells(walked.words);

@@ -321,6 +321,17 @@ export function ceilingAt(layout: DungeonLayout, x: number, y: number, z = 0): n
   return span.stair ? slopeAt(layout, span.stair, x, y) + FLIGHT_CEILING_M : span.ceiling;
 }
 
+/** A dungeon's ground and ceiling as the player feels them, the camera's line among them: at a point, from the height
+ *  `z` stands at there (the feet's where unsaid), never under the feet's own (`feet`), so a line behind a body on a
+ *  flight meets the treads and the sloped ceiling over it, and one under the floor never the storey under. */
+export function feltAt(layout: DungeonLayout, feet: () => number) {
+  const from = (z: number | undefined) => Math.max(z ?? feet(), feet());
+  return {
+    ground: (x: number, y: number, z?: number) => groundAt(layout, x, y, from(z)),
+    roof: (x: number, y: number, z?: number) => ceilingAt(layout, x, y, from(z)),
+  };
+}
+
 /** The doorways' jambs, the pillars and the solids, and an Elite Dungeon's Ascents' pads, as blocks, each standing on
  *  its own floor. */
 export function courseOf(layout: DungeonLayout): Block[] {

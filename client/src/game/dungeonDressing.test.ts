@@ -13,7 +13,7 @@ import { storeyPlanes } from './dungeonStoreyPlanes.ts';
 import { FULL_PACKS, propPlansOf } from './dungeonPacks.test.ts';
 
 const module = await WebAssembly.compile(new Uint8Array(readFileSync('client/public/room.wasm')));
-/** Real dungeons of every style, each storey that stands landmarks as the dressing draws it: a dungeon of one storey. */
+/** Real dungeons of every style, each storey that stands landmarks as the dressing draws it: one storey's dungeon. */
 const PLANES = Array.from({ length: 12 }, (_unused, patrol) =>
   [0, 1, 2].map((number) => askDungeon(module, `patrol-${patrol}`, 'The Patrol', number)),
 )

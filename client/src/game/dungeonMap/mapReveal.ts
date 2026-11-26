@@ -16,14 +16,9 @@ export const REVEAL = { trailM: 1, everyS: 0.2, fillM: 3, sightM: 20, rays: 144,
 /** A solid as sight meets it: its footprint and the heights it stands between (m). */
 type Solid = { minX: number; minY: number; maxX: number; maxY: number; bottom: number; top: number };
 
-/** A layout's solids: a storeyed layout's boxes end in their bottom and top, an older layout's in their top alone,
- *  standing on its one floor. */
+/** A layout's solids, each box's footprint, bottom and top. */
 function solidsOf(layout: DungeonLayout): Solid[] {
-  return layout.boxes.map((box: readonly number[]) => {
-    const [minX, minY, maxX, maxY] = box;
-    const storeyed = box.length > 5;
-    return { minX, minY, maxX, maxY, bottom: storeyed ? box[4] : 0, top: (storeyed ? box[5] : box[4]) ?? 0 };
-  });
+  return layout.boxes.map(([minX, minY, maxX, maxY, bottom, top]) => ({ minX, minY, maxX, maxY, bottom, top }));
 }
 
 /** The walked and seen cells of one dungeon, storey-major, and the trail they were found from. */

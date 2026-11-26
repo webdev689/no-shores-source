@@ -6,7 +6,7 @@ code:
   - client/src/game/dungeonMap/mapCamera.ts#toPaper
   - client/src/game/dungeonMap/mapCamera.ts#restView
   - client/src/game/dungeonMap/mapReveal.ts#Reveal
-  - client/src/game/dungeonMap/mapStoreys.ts#storeysOf
+  - client/src/game/dungeonMap/mapStoreys.ts#readStoreys
   - client/src/game/dungeonMap/mapStoreys.ts#kindAt
   - client/src/game/dungeonMap/mapKept.ts#writeKept
   - client/src/game/dungeonMap/mapInk.ts#MapInk

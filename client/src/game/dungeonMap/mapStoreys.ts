@@ -1,16 +1,7 @@
 // The dungeon map's reader of a layout's storeys: how many, each one's floor, its flights, and what each cell of each
-// storey is. A layout from before the storeys (no `storeys` key) is one storey at 0 m with no flights, so the map
-// reads today's dungeons and a storeyed one alike. Cells are storey-major: storey k's plane follows storey k - 1's.
-import { CORRIDOR, type DungeonLayout, ROCK } from '../dungeonLayout.ts';
-
-/** A flight between storey `upper` and the one under it: its four cells (plane indices, head first) and its landings'
- *  cells, `top` on the upper storey and `bottom` on the lower. */
-export interface MapStair {
-  readonly upper: number;
-  readonly cells: readonly number[];
-  readonly top: number;
-  readonly bottom: number;
-}
+// storey is. A layout without storeys is one storey at 0 m with no flights. Cells are storey-major: storey k's plane
+// follows storey k - 1's.
+import { CORRIDOR, type DungeonLayout, floorOf, ROCK, type Stair, STOREY_M, storeysOf } from '../dungeonLayout.ts';
 
 /** A layout's storeys as the map reads them: their count, each floor's height (m, storey 0 the top), the cells in a
  *  storey's plane, the flights and how far apart the storeys stand. */
@@ -18,7 +9,7 @@ export interface Storeys {
   readonly count: number;
   readonly floors: readonly number[];
   readonly plane: number;
-  readonly stairs: readonly MapStair[];
+  readonly stairs: readonly Stair[];
   readonly storeyM: number;
 }
 
@@ -26,24 +17,12 @@ export interface Storeys {
  *  storey under it. */
 export type CellKind = 'rock' | 'open' | 'stair' | 'void';
 
-/** The keys a storeyed layout adds, each missing from a layout laid before the storeys. */
-type StoreyKeys = {
-  readonly storeys?: number;
-  readonly storeyM?: number;
-  readonly floors?: readonly number[];
-  readonly stairs?: readonly MapStair[];
-};
-
-/** How far apart the storeys stand where the layout does not say (m). */
-const STOREY_M = 8;
-
-/** The storeys of `layout`. */
-export function storeysOf(layout: DungeonLayout): Storeys {
-  const keys = layout as DungeonLayout & StoreyKeys;
-  const count = Math.max(1, keys.storeys ?? 1);
-  const storeyM = keys.storeyM ?? STOREY_M;
-  const floors = keys.floors ?? [...Array(count).keys()].map((storey) => 0 - storey * storeyM);
-  return { count, floors, plane: layout.columns * layout.rows, stairs: keys.stairs ?? [], storeyM };
+/** The storeys of `layout`, as the map reads them. */
+export function readStoreys(layout: DungeonLayout): Storeys {
+  const count = storeysOf(layout);
+  const floors = [...Array(count).keys()].map((storey) => floorOf(layout, storey));
+  const storeyM = layout.storeyM ?? STOREY_M;
+  return { count, floors, plane: layout.columns * layout.rows, stairs: layout.stairs ?? [], storeyM };
 }
 
 /** The storey-major index of a cell. */
@@ -51,7 +30,7 @@ export const cellIndex = (layout: DungeonLayout, storey: number, column: number,
   storey * layout.columns * layout.rows + row * layout.columns + column;
 
 /** The flight a cell of a storey belongs to, and its place along it (0 at the head), or null. */
-function stairAt(storeys: Storeys, storey: number, cell: number): { stair: MapStair; place: number } | null {
+function stairAt(storeys: Storeys, storey: number, cell: number): { stair: Stair; place: number } | null {
   for (const stair of storeys.stairs) {
     const place = stair.cells.indexOf(cell);
     if (place >= 0 && (storey === stair.upper || storey === stair.upper + 1)) return { stair, place };

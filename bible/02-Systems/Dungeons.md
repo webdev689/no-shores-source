@@ -754,6 +754,10 @@ as standing none (`readDungeon`).
 - A span holds a body whose crouched head (1 m) fits under its ceiling: a standing body's head may reach 0.8 m
   into a slab, since the ground knows the feet alone.
 - Lines across storeys take no corner of rock between two cells, as one storey's do, only the cells they cross.
+- A line across a flight's cell is held by that cell's lowest tread and its ceiling over the highest, so a sight line
+  may pass up to 2 m under the slope within it; a shot stops at the slope itself.
+- The encounter plan keeps a seal's pieces, pads and leaps clear of every storey's solids and props over a cell, so a
+  room under a well-furnished one fits fewer seals than it could.
 - The page's ground and ceiling for marks and shots are those of the player's own storey.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
 - The clusters take the eye's matrix to be a centred perspective, as `fromEyeMatrix` makes it; a lens shifted off

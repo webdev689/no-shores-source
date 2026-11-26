@@ -10,7 +10,14 @@ import type { Banner, BannerBeat, BannerTone } from '../combat/publicBanner.ts';
 import type { PlaceMark } from '../plus/compass.ts';
 import { type EncounterSeen, RUNE, SEAL_KIND, SEAL_STATE, type SealSeen } from '../network/encounterMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
-import { type DungeonLayout, type EncounterLayout, floorOf, type SealLayout, storeyAt } from './dungeonLayout.ts';
+import {
+  type DungeonLayout,
+  type EncounterLayout,
+  floorOf,
+  type SealLayout,
+  storeyAt,
+  storeyUnder,
+} from './dungeonLayout.ts';
 import { markBeam } from './footGear.ts';
 import { TICKS_A_SECOND } from './hudLaw.ts';
 import { clockWords } from './tasks.ts';
@@ -81,12 +88,14 @@ function sealHere(
   feet: Point,
 ): { index: number; inside: boolean } | null {
   const [column, row] = [Math.floor(feet[0] / layout.cell), Math.floor(feet[1] / layout.cell)];
-  const room = column >= 0 && row >= 0 && column < layout.columns ? layout.cells[row * layout.columns + column] : -2;
+  const inside = column >= 0 && row >= 0 && column < layout.columns && row < layout.rows;
+  const index = (storeyUnder(layout, feet[2]) * layout.rows + row) * layout.columns + column;
+  const room = inside ? layout.cells[index] : -2;
   const unbroken = plan.seals.flatMap((seal, index) =>
     seen.seals[index] && seen.seals[index].state !== SEAL_STATE.broken ? [{ seal, index }] : [],
   );
-  const inside = unbroken.find(({ seal }) => seal.room === room);
-  if (inside) return { index: inside.index, inside: true };
+  const standing = unbroken.find(({ seal }) => seal.room === room);
+  if (standing) return { index: standing.index, inside: true };
   const away = ({ seal }: (typeof unbroken)[number]) => {
     const found = layout.rooms[seal.room];
     if (!found) return Infinity;

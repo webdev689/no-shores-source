@@ -103,6 +103,13 @@ test('the banner names the seal the player stands in, its task in a line, its pr
   assert.deepEqual([none?.tone, none?.title], ['next', 'Broken 2 of 2'], 'every seal broken, the Boss not yet up');
 });
 
+test("in a seal's room under another storey, the banner reads its own storey's cell, not the one over it", () => {
+  // Room 1, the Weighing's, lies on storey 1 under room 2; the player stands in it, on a pad 4 m over its floor.
+  const storeyed = { ...layout, storeys: 2, storeyM: 8, floors: [0, -8], cells: [0, 0, 2, 2, -2, -2, 1, 1] };
+  const banner = encounterBanner(storeyed as DungeonLayout, seen(), [9, 1.6, -4]);
+  assert.deepEqual([banner?.title, banner?.tone], ['The Weighing', 'running']);
+});
+
 test('away from every seal the banner names the nearest unbroken one, never one running farther off', () => {
   // The Litany runs in room 0; the player stands past the east end, nearer the Weighing's room.
   const away = encounterBanner(layout, seen(), [20, 1.6, 0]);

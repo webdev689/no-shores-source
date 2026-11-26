@@ -376,8 +376,9 @@ impl Dungeon {
     }
 
     /// Furnishes and lights every room by its purpose, each on lanes of its own, after a pair of braziers flanking the
-    /// doorway the main way leaves it by, on the room's wall either side of it or, where that holds none, outside it. The Reeve's post, and the floor round it where his cache and its Vestiges
-    /// lie, are kept clear. Each room's pieces and lights are laid on its own storey's floor.
+    /// doorway the main way leaves it by, on the room's wall either side of it or, where that holds none, outside it.
+    /// The Reeve's post, and the floor round it where his cache and its Vestiges lie, are kept clear. Each room's
+    /// pieces and lights are laid on its own storey's floor.
     pub(crate) fn furnish(&mut self, seed: u32, steps: &[u32]) {
         let post = self.nearest_middle(self.end, 1).first().copied();
         let mut kept = vec![self.way_in.cell, self.portal.cell];

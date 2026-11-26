@@ -18,7 +18,7 @@ import {
 } from './mapCamera.ts';
 import { readKept, writeKept } from './mapKept.ts';
 import { Reveal } from './mapReveal.ts';
-import { cellIndex, kindAt, storeyOfHeight, type Storeys, storeysOf } from './mapStoreys.ts';
+import { cellIndex, kindAt, storeyOfHeight, type Storeys, readStoreys } from './mapStoreys.ts';
 
 type Point = readonly [number, number, number];
 type Size = { readonly width: number; readonly height: number };
@@ -78,7 +78,7 @@ class Walked {
     const kept = readKept(key);
     this.key = key;
     this.layout = layout;
-    this.storeys = storeysOf(layout);
+    this.storeys = readStoreys(layout);
     this.reveal = new Reveal(layout, this.storeys, kept?.cells ?? []);
     this.view = kept?.view ?? null;
     this.words = new Uint32Array(this.storeys.count * this.storeys.plane);
