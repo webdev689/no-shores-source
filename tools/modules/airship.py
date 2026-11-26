@@ -54,12 +54,12 @@ def tube(module, start, end, radius, end_radius=None, material='iron', sides=12,
 
 
 def underside(shape, x, y):
-    """The height of her bottom's planking `y` out from her middle at `x`, out on her keel's fin or her body."""
+    """The height of her bottom's planking `y` out from her middle at `x`, past her keel's fin."""
     rows = shape.section(x)
     for (y0, z0), (y1, z1) in zip(rows, rows[1:]):
         if y0 < y1 and y0 <= y <= y1:
             return z0 + (y - y0) / (y1 - y0) * (z1 - z0)
-    raise ValueError(f'{y} m is past her side at {x}')
+    raise ValueError(f'{y} m out is not on her bottom at {x}')
 
 
 def laid(shape, x, z, side, off):

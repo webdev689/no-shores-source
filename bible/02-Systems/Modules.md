@@ -154,7 +154,7 @@ are written with paving last, since the first group carries the parts and paving
     banner on its foremast's stub, its mainmast's stump, crates and barrels on deck. Its bow points along the
     module's front, its keel's bottom amidships at the origin; its sockets are each thruster's mouth (`thrust-1` to
     `-4`, facing aft), each lift's (`lift-1`, `-2`), each stack's top (`stack-1`, `-2`) and its hatch (`hatch`). Its
-    canvas is the Tithe's grey. 16,588 triangles.
+    canvas is the Tithe's grey. 17,992 triangles.
   - The Lattice's crown (`lattice-crown`, `crown.py`): a heart of its light held in seven great spars reaching down
     like a claw, seven shorter splayed nearly level between them, a cluster pointing down and points standing up, a halo of
     small shards round its waist and a long shard dripping from each spar's end, all the Lattice's own shards
